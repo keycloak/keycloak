@@ -125,7 +125,7 @@ public class CookieTokenStoreAdapterTest {
             RealmModel realm = session.realms().getRealmByName("demo");
             int originalTokenTimeout = realm.getAccessTokenLifespan();
             realm.setAccessTokenLifespan(3);
-            session.getTransaction().commit();
+            session.getTransactionManager().commit();
             session.close();
 
             // login to customer-cookie-portal
@@ -164,7 +164,7 @@ public class CookieTokenStoreAdapterTest {
             session = keycloakRule.startSession();
             realm = session.realms().getRealmByName("demo");
             realm.setAccessTokenLifespan(originalTokenTimeout);
-            session.getTransaction().commit();
+            session.getTransactionManager().commit();
             session.close();
         } finally {
             Time.setOffset(0);

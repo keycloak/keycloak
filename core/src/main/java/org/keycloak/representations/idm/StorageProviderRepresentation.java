@@ -15,20 +15,36 @@
  * limitations under the License.
  */
 
-package org.keycloak.models.entities;
+package org.keycloak.representations.idm;
 
 import java.util.Map;
 
 /**
- * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
- * @version $Revision: 1 $
+ * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class StorageProviderEntity extends AbstractIdentifiableEntity {
-    protected String providerName;
-    protected Map<String, String> config;
-    protected int priority;
-    protected String displayName;
+public class StorageProviderRepresentation {
 
+    private String id;
+    private String displayName;
+    private String providerName;
+    private Map<String, String> config;
+    private int priority;
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public String getDisplayName() {
+        return displayName;
+    }
+
+    public void setDisplayName(String displayName) {
+        this.displayName = displayName;
+    }
 
     public String getProviderName() {
         return providerName;
@@ -37,6 +53,7 @@ public class StorageProviderEntity extends AbstractIdentifiableEntity {
     public void setProviderName(String providerName) {
         this.providerName = providerName;
     }
+
 
     public Map<String, String> getConfig() {
         return config;
@@ -54,12 +71,20 @@ public class StorageProviderEntity extends AbstractIdentifiableEntity {
         this.priority = priority;
     }
 
-    public String getDisplayName() {
-        return displayName;
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        StorageProviderRepresentation that = (StorageProviderRepresentation) o;
+
+        if (!id.equals(that.id)) return false;
+
+        return true;
     }
 
-    public void setDisplayName(String displayName) {
-        this.displayName = displayName;
+    @Override
+    public int hashCode() {
+        return id.hashCode();
     }
-
 }

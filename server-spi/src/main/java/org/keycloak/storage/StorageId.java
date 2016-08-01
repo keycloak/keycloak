@@ -16,6 +16,7 @@
  */
 package org.keycloak.storage;
 
+import org.keycloak.component.ComponentModel;
 import org.keycloak.models.UserModel;
 
 import java.io.Serializable;
@@ -27,26 +28,43 @@ import java.io.Serializable;
 public class StorageId implements Serializable {
     private String id;
     private String providerId;
-    private String storageId;
+    private String externalId;
 
 
     public StorageId(String id) {
         this.id = id;
         if (!id.startsWith("f:")) {
-            storageId = id;
+            externalId = id;
             return;
         }
         int providerIndex = id.indexOf(':', 2);
         providerId = id.substring(2, providerIndex);
-        storageId = id.substring(providerIndex + 1);
+        externalId = id.substring(providerIndex + 1);
 
     }
 
-    public StorageId(String providerId, String storageId) {
-        this.id = "f:" + providerId + ":" + storageId;
+    public StorageId(String providerId, String externalId) {
+        this.id = "f:" + providerId + ":" + externalId;
         this.providerId = providerId;
-        this.storageId = storageId;
+        this.externalId = externalId;
     }
+
+    /**
+     * generate the id string that should be returned by UserModel.getId()
+     *
+     * @param model
+     * @param externalId id used to resolve user in external storage
+     * @return
+     */
+    public static String keycloakId(ComponentModel model, String externalId) {
+        return new StorageId(model.getId(), externalId).getId();
+    }
+
+    public static String externalId(String keycloakId) {
+        return new StorageId(keycloakId).getExternalId();
+    }
+
+
 
     public static String resolveProviderId(UserModel user) {
         return new StorageId(user.getId()).getProviderId();
@@ -63,8 +81,8 @@ public class StorageId implements Serializable {
         return providerId;
     }
 
-    public String getStorageId() {
-        return storageId;
+    public String getExternalId() {
+        return externalId;
     }
 
 

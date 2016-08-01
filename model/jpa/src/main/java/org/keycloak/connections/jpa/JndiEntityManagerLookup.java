@@ -14,20 +14,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.storage.changeset;
+package org.keycloak.connections.jpa;
 
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserCredentialModel;
-import org.keycloak.models.UserModel;
 
-import java.util.List;
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
+import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public interface UserDataCredentialValidator {
-    boolean validCredentials(KeycloakSession session, RealmModel realm, UserModel user, List<UserCredentialModel> input);
-    boolean validCredentials(KeycloakSession session, RealmModel realm, UserModel user, UserCredentialModel... input);
+public class JndiEntityManagerLookup {
+    public static EntityManager getSessionEntityManager(KeycloakSession session, String entityManagerFactoryJndiName) {
+        EntityManagerFactory factory = null;
+        try {
+            factory = (EntityManagerFactory)new InitialContext().lookup(entityManagerFactoryJndiName);
+        } catch (NamingException e) {
+            throw new RuntimeException(e);
+        }
+        EntityManager em = factory.createEntityManager();
+        session.getTransactionManager().enlist(new JpaKeycloakTransaction(em));
+        return em;
+    }
 }

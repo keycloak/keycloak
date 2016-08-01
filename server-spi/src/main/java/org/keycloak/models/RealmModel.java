@@ -18,13 +18,17 @@
 package org.keycloak.models;
 
 import org.keycloak.common.enums.SslRequired;
+import org.keycloak.component.ComponentModel;
 import org.keycloak.provider.ProviderEvent;
-import org.keycloak.storage.StorageProviderModel;
+import org.keycloak.storage.UserStorageProvider;
+import org.keycloak.storage.UserStorageProviderModel;
 
 import java.security.Key;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.X509Certificate;
+import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -277,12 +281,23 @@ public interface RealmModel extends RoleContainerModel {
     public IdentityProviderMapperModel getIdentityProviderMapperByName(String brokerAlias, String name);
 
 
-    StorageProviderModel addStorageProvider(StorageProviderModel model);
-    void updateStorageProvider(StorageProviderModel provider);
-    void removeStorageProvider(StorageProviderModel provider);
-    void setStorageProviders(List<StorageProviderModel> providers);
-    List<StorageProviderModel> getStorageProviders();
-    StorageProviderModel getStorageProvider(String id);
+    ComponentModel addComponentModel(ComponentModel model);
+    void updateComponent(ComponentModel component);
+    void removeComponent(ComponentModel component);
+    void removeComponents(String parentId);
+    List<ComponentModel> getComponents(String parentId, String providerType);
+    List<ComponentModel> getComponents();
+    ComponentModel getComponent(String id);
+
+    default
+    List<UserStorageProviderModel> getUserStorageProviders() {
+        List<UserStorageProviderModel> list = new LinkedList<>();
+        for (ComponentModel component : getComponents(getId(), UserStorageProvider.class.getName())) {
+            list.add(new UserStorageProviderModel(component));
+        }
+        Collections.sort(list, UserStorageProviderModel.comparator);
+        return list;
+    }
 
     // Should return list sorted by UserFederationProviderModel.priority
     List<UserFederationProviderModel> getUserFederationProviders();

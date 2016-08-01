@@ -149,22 +149,26 @@
             <column name="STORAGE_PROVIDER_ID" type="VARCHAR(36)"/>
         </createTable>
 
-        <createTable tableName="STORAGE_PROVIDER_CONFIG">
-            <column name="STORAGE_PROVIDER_ID" type="VARCHAR(36)">
-                <constraints nullable="false"/>
-            </column>
-            <column name="VALUE" type="VARCHAR(255)"/>
-            <column name="NAME" type="VARCHAR(255)">
-                <constraints nullable="false"/>
-            </column>
-        </createTable>
-        <createTable tableName="STORAGE_PROVIDER">
+        <createTable tableName="COMPONENT_CONFIG">
             <column name="ID" type="VARCHAR(36)">
                 <constraints nullable="false"/>
             </column>
-            <column name="DISPLAY_NAME" type="VARCHAR(255)"/>
-            <column name="PRIORITY" type="INT"/>
-            <column name="PROVIDER_NAME" type="VARCHAR(255)"/>
+            <column name="COMPONENT_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="NAME" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="VALUE" type="VARCHAR(4096)"/>
+        </createTable>
+        <createTable tableName="COMPONENT">
+            <column name="ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="NAME" type="VARCHAR(255)"/>
+            <column name="PARENT_ID" type="VARCHAR(36)"/>
+            <column name="PROVIDER_ID" type="VARCHAR(36)"/>
+            <column name="PROVIDER_TYPE" type="VARCHAR(255)"/>
             <column name="REALM_ID" type="VARCHAR(36)"/>
         </createTable>
 
@@ -185,10 +189,10 @@
         <addPrimaryKey columnNames="ROLE_ID, USER_ID" constraintName="CONSTR_FED_USER_ROLE" tableName="FED_USER_ROLE_MAPPING"/>
         <addPrimaryKey columnNames="REQUIRED_ACTION, USER_ID" constraintName="CONSTR_FED_REQUIRED_ACTION" tableName="FED_USER_REQUIRED_ACTION"/>
 
-        <addPrimaryKey columnNames="ID" constraintName="CONSTR_STORAGE_PROVIDER_PK" tableName="STORAGE_PROVIDER"/>
-        <addPrimaryKey columnNames="STORAGE_PROVIDER_ID, NAME" constraintName="CONSTR_STORAGE_CONFIG" tableName="STORAGE_PROVIDER_CONFIG"/>
-        <!--
-        <addForeignKeyConstraint baseColumnNames="REALM_ID" baseTableName="STORAGE_PROVIDER" constraintName="FK_STORAGE_PROVIDER_REALM" referencedColumnNames="ID" referencedTableName="REALM"/>
-        -->
+        <addPrimaryKey columnNames="ID" constraintName="CONSTR_COMPONENT_PK" tableName="COMPONENT"/>
+        <addPrimaryKey columnNames="ID" constraintName="CONSTR_COMPONENT_CONFIG_PK" tableName="COMPONENT_CONFIG"/>
+        <addForeignKeyConstraint baseColumnNames="REALM_ID" baseTableName="COMPONENT" constraintName="FK_COMPONENT_REALM" referencedColumnNames="ID" referencedTableName="REALM"/>
+        <addForeignKeyConstraint baseColumnNames="COMPONENT_ID" baseTableName="COMPONENT_CONFIG" constraintName="FK_COMPONENT_CONFIG" referencedColumnNames="ID" referencedTableName="COMPONENT"/>
+
     </changeSet>
 </databaseChangeLog>

@@ -85,7 +85,7 @@ public class RealmEntity extends AbstractIdentifiableEntity {
     private List<String> defaultGroups = new LinkedList<String>();
 
     private List<RequiredCredentialEntity> requiredCredentials = new LinkedList<>();
-    private List<StorageProviderEntity> storageProviders = new LinkedList<>();
+    private List<ComponentEntity> componentEntities = new LinkedList<>();
     private List<UserFederationProviderEntity> userFederationProviders = new LinkedList<UserFederationProviderEntity>();
     private List<UserFederationMapperEntity> userFederationMappers = new LinkedList<UserFederationMapperEntity>();
     private List<IdentityProviderEntity> identityProviders = new LinkedList<IdentityProviderEntity>();
@@ -685,12 +685,12 @@ public class RealmEntity extends AbstractIdentifiableEntity {
         this.defaultGroups = defaultGroups;
     }
 
-    public List<StorageProviderEntity> getStorageProviders() {
-        return storageProviders;
+    public List<ComponentEntity> getComponentEntities() {
+        return componentEntities;
     }
 
-    public void setStorageProviders(List<StorageProviderEntity> storageProviders) {
-        this.storageProviders = storageProviders;
+    public void setComponentEntities(List<ComponentEntity> componentEntities) {
+        this.componentEntities = componentEntities;
     }
 }
 

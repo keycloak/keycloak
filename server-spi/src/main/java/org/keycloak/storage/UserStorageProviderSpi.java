@@ -14,26 +14,36 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.keycloak.storage;
 
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.GroupModel;
-import org.keycloak.models.ProtocolMapperModel;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.RoleModel;
-import org.keycloak.models.UserModel;
 import org.keycloak.provider.Provider;
+import org.keycloak.provider.ProviderFactory;
+import org.keycloak.provider.Spi;
 
 /**
- * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
- * @version $Revision: 1 $
+ * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public interface StorageProvider extends Provider {
+public class UserStorageProviderSpi implements Spi {
 
-    void preRemove(RealmModel realm);
-    void preRemove(RealmModel realm, GroupModel group);
-    void preRemove(RealmModel realm, RoleModel role);
-    void preRemove(RealmModel realm, StorageProviderModel model);
+    @Override
+    public boolean isInternal() {
+        return true;
+    }
+
+    @Override
+    public String getName() {
+        return "storage";
+    }
+
+    @Override
+    public Class<? extends Provider> getProviderClass() {
+        return UserStorageProvider.class;
+    }
+
+    @Override
+    public Class<? extends ProviderFactory> getProviderFactoryClass() {
+        return UserStorageProviderFactory.class;
+    }
 
 }
-

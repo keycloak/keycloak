@@ -16,6 +16,7 @@
  */
 package org.keycloak.testsuite.federation.storage;
 
+import org.keycloak.component.ComponentModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -23,11 +24,9 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.storage.StorageId;
-import org.keycloak.storage.StorageProvider;
-import org.keycloak.storage.StorageProviderModel;
+import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.adapter.AbstractUserAdapter;
 import org.keycloak.storage.adapter.AbstractUserAdapterFederatedStorage;
-import org.keycloak.storage.federated.UserFederatedStorageProvider;
 import org.keycloak.storage.user.UserCredentialValidatorProvider;
 import org.keycloak.storage.user.UserLookupProvider;
 import org.keycloak.storage.user.UserQueryProvider;
@@ -42,14 +41,14 @@ import java.util.Properties;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class UserPropertyFileStorage implements UserLookupProvider, StorageProvider, UserCredentialValidatorProvider, UserQueryProvider {
+public class UserPropertyFileStorage implements UserLookupProvider, UserStorageProvider, UserCredentialValidatorProvider, UserQueryProvider {
 
     protected Properties userPasswords;
-    protected StorageProviderModel model;
+    protected ComponentModel model;
     protected KeycloakSession session;
     protected boolean federatedStorageEnabled;
 
-    public UserPropertyFileStorage(KeycloakSession session, StorageProviderModel model, Properties userPasswords) {
+    public UserPropertyFileStorage(KeycloakSession session, ComponentModel model, Properties userPasswords) {
         this.session = session;
         this.model = model;
         this.userPasswords = userPasswords;
@@ -60,7 +59,7 @@ public class UserPropertyFileStorage implements UserLookupProvider, StorageProvi
     @Override
     public UserModel getUserById(String id, RealmModel realm) {
         StorageId storageId = new StorageId(id);
-        final String username = storageId.getStorageId();
+        final String username = storageId.getExternalId();
         if (!userPasswords.containsKey(username)) return null;
 
         return createUser(realm, username);
@@ -113,11 +112,6 @@ public class UserPropertyFileStorage implements UserLookupProvider, StorageProvi
 
     @Override
     public void preRemove(RealmModel realm, RoleModel role) {
-
-    }
-
-    @Override
-    public void preRemove(RealmModel realm, StorageProviderModel model) {
 
     }
 

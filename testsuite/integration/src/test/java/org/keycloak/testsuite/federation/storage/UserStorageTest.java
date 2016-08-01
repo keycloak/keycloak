@@ -21,6 +21,7 @@ import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.component.ComponentModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -30,7 +31,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.cache.infinispan.UserAdapter;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.storage.StorageId;
-import org.keycloak.storage.StorageProviderModel;
+import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.testsuite.OAuthClient;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
@@ -47,31 +48,35 @@ import java.util.Set;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class UserFederationStorageTest {
-    public static StorageProviderModel memoryProvider = null;
+public class UserStorageTest {
+    public static ComponentModel memoryProvider = null;
     @ClassRule
     public static KeycloakRule keycloakRule = new KeycloakRule(new KeycloakRule.KeycloakSetup() {
 
         @Override
         public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-            StorageProviderModel model = new StorageProviderModel();
-            model.setDisplayName("memory");
+            UserStorageProviderModel model = new UserStorageProviderModel();
+            model.setName("memory");
             model.setPriority(0);
-            model.setProviderName(UserMapStorageFactory.PROVIDER_ID);
-            memoryProvider = appRealm.addStorageProvider(model);
-            model = new StorageProviderModel();
-            model.setDisplayName("read-only-user-props");
+            model.setProviderId(UserMapStorageFactory.PROVIDER_ID);
+            model.setParentId(appRealm.getId());
+            memoryProvider = appRealm.addComponentModel(model);
+
+            model = new UserStorageProviderModel();
+            model.setName("read-only-user-props");
             model.setPriority(1);
-            model.setProviderName(UserPropertyFileStorageFactory.PROVIDER_ID);
-            model.getConfig().put("property.file", "/storage-test/read-only-user-password.properties");
-            appRealm.addStorageProvider(model);
-            model = new StorageProviderModel();
-            model.setDisplayName("user-props");
+            model.setProviderId(UserPropertyFileStorageFactory.PROVIDER_ID);
+            model.setParentId(appRealm.getId());
+            model.getConfig().putSingle("property.file", "/storage-test/read-only-user-password.properties");
+            appRealm.addComponentModel(model);
+            model = new UserStorageProviderModel();
+            model.setName("user-props");
             model.setPriority(2);
-            model.setProviderName(UserPropertyFileStorageFactory.PROVIDER_ID);
-            model.getConfig().put("property.file", "/storage-test/user-password.properties");
-            model.getConfig().put("USER_FEDERATED_STORAGE", "true");
-            appRealm.addStorageProvider(model);
+            model.setParentId(appRealm.getId());
+            model.setProviderId(UserPropertyFileStorageFactory.PROVIDER_ID);
+            model.getConfig().putSingle("property.file", "/storage-test/user-password.properties");
+            model.getConfig().putSingle("USER_FEDERATED_STORAGE", "true");
+            appRealm.addComponentModel(model);
         }
     });
     @Rule
@@ -259,6 +264,29 @@ public class UserFederationStorageTest {
         user = session.users().getUserByUsername("memuser", realm);
         Assert.assertEquals(memoryProvider.getId(), StorageId.resolveProviderId(user));
         Assert.assertEquals(0, user.getCredentialsDirectly().size());
+        session.users().removeUser(realm, user);
+        Assert.assertNull(session.users().getUserByUsername("memuser", realm));
+        keycloakRule.stopSession(session, true);
+
+    }
+
+    @Test
+    public void testLifecycle() {
+        UserMapStorage.allocations.set(0);
+        UserMapStorage.closings.set(0);
+        KeycloakSession session = keycloakRule.startSession();
+        RealmModel realm = session.realms().getRealmByName("test");
+        UserModel user = session.users().addUser(realm, "memuser");
+        Assert.assertNotNull(user);
+        user = session.users().getUserByUsername("nonexistent", realm);
+        Assert.assertNull(user);
+        keycloakRule.stopSession(session, true);
+        Assert.assertEquals(1, UserMapStorage.allocations.get());
+        Assert.assertEquals(1, UserMapStorage.closings.get());
+
+        session = keycloakRule.startSession();
+        realm = session.realms().getRealmByName("test");
+        user = session.users().getUserByUsername("memuser", realm);
         session.users().removeUser(realm, user);
         Assert.assertNull(session.users().getUserByUsername("memuser", realm));
         keycloakRule.stopSession(session, true);

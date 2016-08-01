@@ -177,7 +177,7 @@ public class DefaultBruteForceProtector implements Runnable, BruteForceProtector
                         queue.drainTo(events, TRANSACTION_SIZE);
                         Collections.sort(events); // we sort to avoid deadlock due to ordered updates.  Maybe I'm overthinking this.
                         KeycloakSession session = factory.create();
-                        session.getTransaction().begin();
+                        session.getTransactionManager().begin();
                         try {
                             for (LoginEvent event : events) {
                                 if (event instanceof FailedLogin) {
@@ -186,9 +186,9 @@ public class DefaultBruteForceProtector implements Runnable, BruteForceProtector
                                     run = false;
                                 }
                             }
-                            session.getTransaction().commit();
+                            session.getTransactionManager().commit();
                         } catch (Exception e) {
-                            session.getTransaction().rollback();
+                            session.getTransactionManager().rollback();
                             throw e;
                         } finally {
                             for (LoginEvent event : events) {

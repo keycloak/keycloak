@@ -34,7 +34,6 @@ import org.keycloak.models.jpa.entities.GroupEntity;
 import org.keycloak.models.jpa.entities.RealmEntity;
 import org.keycloak.models.jpa.entities.RoleEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.storage.StorageProviderModel;
 
 import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
@@ -128,9 +127,6 @@ public class JpaRealmProvider implements RealmProvider {
         em.refresh(realm);
         final RealmAdapter adapter = new RealmAdapter(session, em, realm);
         session.users().preRemove(adapter);
-        for (StorageProviderModel provider : adapter.getStorageProviders()) {
-            adapter.removeStorageProvider(provider);
-        }
 
         realm.getDefaultGroups().clear();
         em.flush();
@@ -140,6 +136,10 @@ public class JpaRealmProvider implements RealmProvider {
         num = em.createNamedQuery("deleteGroupAttributesByRealm")
                 .setParameter("realm", realm).executeUpdate();
         num = em.createNamedQuery("deleteGroupsByRealm")
+                .setParameter("realm", realm).executeUpdate();
+        num = em.createNamedQuery("deleteComponentConfigByRealm")
+                .setParameter("realm", realm).executeUpdate();
+        num = em.createNamedQuery("deleteComponentByRealm")
                 .setParameter("realm", realm).executeUpdate();
 
         TypedQuery<String> query = em.createNamedQuery("getClientIdsByRealm", String.class);

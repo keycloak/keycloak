@@ -58,7 +58,7 @@ public class KeycloakRule extends AbstractKeycloakRule {
 
     public void configure(KeycloakSetup configurer) {
         KeycloakSession session = server.getSessionFactory().create();
-        session.getTransaction().begin();
+        session.getTransactionManager().begin();
 
         try {
             RealmManager manager = new RealmManager(session);
@@ -70,7 +70,7 @@ public class KeycloakRule extends AbstractKeycloakRule {
             configurer.session = session;
             configurer.config(manager, adminstrationRealm, appRealm);
 
-            session.getTransaction().commit();
+            session.getTransactionManager().commit();
         } finally {
             session.close();
         }
