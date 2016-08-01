@@ -26,12 +26,17 @@ import org.keycloak.authorization.client.AuthorizationDeniedException;
 import org.keycloak.authorization.client.AuthzClient;
 import org.keycloak.authorization.client.representation.AuthorizationRequest;
 import org.keycloak.authorization.client.representation.AuthorizationResponse;
+import org.keycloak.authorization.client.representation.EntitlementRequest;
 import org.keycloak.authorization.client.representation.EntitlementResponse;
 import org.keycloak.authorization.client.representation.PermissionRequest;
 import org.keycloak.authorization.client.representation.PermissionResponse;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.adapters.config.PolicyEnforcerConfig.PathConfig;
+import org.keycloak.representations.idm.authorization.Permission;
+import org.keycloak.util.JsonSerialization;
 
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -52,7 +57,6 @@ public class KeycloakAdapterPolicyEnforcer extends AbstractPolicyEnforcer {
 
         while (retry > 0) {
             if (super.isAuthorized(pathConfig, requiredScopes, accessToken, httpFacade)) {
-                original.setAuthorization(accessToken.getAuthorization());
                 return true;
             }
 
@@ -61,6 +65,21 @@ public class KeycloakAdapterPolicyEnforcer extends AbstractPolicyEnforcer {
             if (accessToken == null) {
                 return false;
             }
+
+            AccessToken.Authorization authorization = original.getAuthorization();
+
+            if (authorization == null) {
+                authorization = new AccessToken.Authorization();
+                authorization.setPermissions(new ArrayList<Permission>());
+            }
+
+            AccessToken.Authorization newAuthorization = accessToken.getAuthorization();
+
+            if (newAuthorization != null) {
+                authorization.getPermissions().addAll(newAuthorization.getPermissions());
+            }
+
+            original.setAuthorization(authorization);
 
             retry--;
         }
@@ -107,8 +126,21 @@ public class KeycloakAdapterPolicyEnforcer extends AbstractPolicyEnforcer {
                 return null;
             } else {
                 LOGGER.debug("Obtaining entitlements for authenticated user.");
-                EntitlementResponse authzResponse = authzClient.entitlement(accessToken).getAll(authzClient.getConfiguration().getClientId());
-                return RSATokenVerifier.verifyToken(authzResponse.getRpt(), deployment.getRealmKey(), deployment.getRealmInfoUrl());
+                AccessToken token = httpFacade.getSecurityContext().getToken();
+
+                if (token.getAuthorization() == null) {
+                    EntitlementResponse authzResponse = authzClient.entitlement(accessToken).getAll(authzClient.getConfiguration().getClientId());
+                    return RSATokenVerifier.verifyToken(authzResponse.getRpt(), deployment.getRealmKey(), deployment.getRealmInfoUrl());
+                } else {
+                    EntitlementRequest request = new EntitlementRequest();
+                    PermissionRequest permissionRequest = new PermissionRequest();
+                    permissionRequest.setResourceSetId(pathConfig.getId());
+                    permissionRequest.setResourceSetName(pathConfig.getName());
+                    permissionRequest.setScopes(new HashSet<>(pathConfig.getScopes()));
+                    request.addPermission(permissionRequest);
+                    EntitlementResponse authzResponse = authzClient.entitlement(accessToken).get(authzClient.getConfiguration().getClientId(), request);
+                    return RSATokenVerifier.verifyToken(authzResponse.getRpt(), deployment.getRealmKey(), deployment.getRealmInfoUrl());
+                }
             }
         } catch (AuthorizationDeniedException e) {
             return null;

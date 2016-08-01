@@ -27,9 +27,12 @@ import org.keycloak.authorization.entitlement.representation.EntitlementRequest;
 import org.keycloak.authorization.entitlement.representation.EntitlementResponse;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
+import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.permission.ResourcePermission;
 import org.keycloak.authorization.policy.evaluation.DecisionResultCollector;
 import org.keycloak.authorization.policy.evaluation.Result;
+import org.keycloak.authorization.store.ResourceStore;
+import org.keycloak.authorization.store.ScopeStore;
 import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.authorization.util.Permissions;
 import org.keycloak.authorization.util.Tokens;
@@ -41,6 +44,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.authorization.Permission;
+import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.resources.Cors;
 
@@ -56,6 +60,8 @@ import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -115,7 +121,7 @@ public class EntitlementService {
 
             @Override
             protected void onComplete(List<Result> results) {
-                List<Permission> entitlements = Permissions.allPermits(results);
+                List<Permission> entitlements = Permissions.allPermits(results, authorization);
 
                 if (entitlements.isEmpty()) {
                     HashMap<Object, Object> error = new HashMap<>();
@@ -168,10 +174,17 @@ public class EntitlementService {
 
             @Override
             protected void onComplete(List<Result> results) {
-                List<Permission> entitlements = Permissions.allPermits(results);
+                List<Permission> entitlements = Permissions.allPermits(results, authorization);
 
                 if (entitlements.isEmpty()) {
-                    asyncResponse.resume(new ErrorResponseException("not_authorized", "Authorization denied.", Status.FORBIDDEN));
+                    HashMap<Object, Object> error = new HashMap<>();
+
+                    error.put(OAuth2Constants.ERROR, "not_authorized");
+
+                    asyncResponse.resume(Cors.add(request, Response.status(Status.FORBIDDEN)
+                            .entity(error))
+                            .allowedOrigins(identity.getAccessToken())
+                            .exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS).build());
                 } else {
                     asyncResponse.resume(Cors.add(request, Response.ok().entity(new EntitlementResponse(createRequestingPartyToken(entitlements)))).allowedOrigins(identity.getAccessToken()).allowedMethods("GET").exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS).build());
                 }
@@ -203,18 +216,42 @@ public class EntitlementService {
                 resource = storeFactory.getResourceStore().findByName(requestedResource.getResourceSetName(), resourceServer.getId());
             }
 
-            if (resource == null) {
+            if (resource == null && (requestedResource.getScopes() == null || requestedResource.getScopes().isEmpty())) {
                 throw new ErrorResponseException("invalid_resource", "Resource with id [" + requestedResource.getResourceSetId() + "] or name [" + requestedResource.getResourceSetName() + "] does not exist.", Status.FORBIDDEN);
             }
 
-            permissionsToEvaluate.put(resource.getId(), requestedResource.getScopes());
+            Set<ScopeRepresentation> requestedScopes = requestedResource.getScopes().stream().map(ScopeRepresentation::new).collect(Collectors.toSet());
+            Set<String> collect = requestedScopes.stream().map(ScopeRepresentation::getName).collect(Collectors.toSet());
+
+            if (resource != null) {
+                permissionsToEvaluate.put(resource.getId(), collect);
+            } else {
+                ResourceStore resourceStore = authorization.getStoreFactory().getResourceStore();
+                ScopeStore scopeStore = authorization.getStoreFactory().getScopeStore();
+                List<Resource> resources = new ArrayList<Resource>();
+
+                resources.addAll(resourceStore.findByScope(requestedScopes.stream().map(scopeRepresentation -> {
+                    Scope scope = scopeStore.findByName(scopeRepresentation.getName(), resourceServer.getId());
+
+                    if (scope == null) {
+                        return null;
+                    }
+
+                    return scope.getId();
+                }).filter(s -> s != null).collect(Collectors.toList()).toArray(new String[requestedScopes.size()])));
+
+                for (Resource resource1 : resources) {
+                    permissionsToEvaluate.put(resource1.getId(), collect);
+                }
+
+                permissionsToEvaluate.put("$KC_SCOPE_PERMISSION", collect);
+            }
         });
 
         String rpt = entitlementRequest.getRpt();
 
         if (rpt != null && !"".equals(rpt)) {
             KeycloakContext context = authorization.getKeycloakSession().getContext();
-
             if (!Tokens.verifySignature(rpt, context.getRealm().getPublicKey())) {
                 throw new ErrorResponseException("invalid_rpt", "RPT signature is invalid", Status.FORBIDDEN);
             }
@@ -231,28 +268,47 @@ public class EntitlementService {
                 AccessToken.Authorization authorizationData = requestingPartyToken.getAuthorization();
 
                 if (authorizationData != null) {
-                    authorizationData.getPermissions().forEach(permission -> {
-                        Resource resourcePermission = storeFactory.getResourceStore().findById(permission.getResourceSetId());
+                    List<Permission> permissions = authorizationData.getPermissions();
 
-                        if (resourcePermission != null) {
-                            Set<String> scopes = permissionsToEvaluate.get(resourcePermission.getId());
+                    if (permissions != null) {
+                        permissions.forEach(permission -> {
+                            Resource resourcePermission = storeFactory.getResourceStore().findById(permission.getResourceSetId());
 
-                            if (scopes == null) {
-                                scopes = new HashSet<>();
-                                permissionsToEvaluate.put(resourcePermission.getId(), scopes);
+                            if (resourcePermission != null) {
+                                Set<String> scopes = permissionsToEvaluate.get(resourcePermission.getId());
+
+                                if (scopes == null) {
+                                    scopes = new HashSet<>();
+                                    permissionsToEvaluate.put(resourcePermission.getId(), scopes);
+                                }
+
+                                Set<String> scopePermission = permission.getScopes();
+
+                                if (scopePermission != null) {
+                                    scopes.addAll(scopePermission);
+                                }
                             }
-
-                            scopes.addAll(permission.getScopes());
-                        }
-                    });
+                        });
+                    }
                 }
             }
         }
 
         return permissionsToEvaluate.entrySet().stream()
                 .flatMap((Function<Map.Entry<String, Set<String>>, Stream<ResourcePermission>>) entry -> {
-                    Resource entryResource = storeFactory.getResourceStore().findById(entry.getKey());
-                    return Permissions.createResourcePermissions(entryResource, entry.getValue(), authorization).stream();
+                    String key = entry.getKey();
+
+                    if ("$KC_SCOPE_PERMISSION".equals(key)) {
+                        ScopeStore scopeStore = authorization.getStoreFactory().getScopeStore();
+                        List<Scope> scopes = entry.getValue().stream().map(scopeName -> {
+                            Scope byName = scopeStore.findByName(scopeName, resourceServer.getId());
+                            return byName;
+                        }).collect(Collectors.toList());
+                        return Arrays.asList(new ResourcePermission(null, scopes, resourceServer)).stream();
+                    } else {
+                        Resource entryResource = storeFactory.getResourceStore().findById(key);
+                        return Permissions.createResourcePermissions(entryResource, entry.getValue(), authorization).stream();
+                    }
                 }).collect(Collectors.toList());
     }
 }
