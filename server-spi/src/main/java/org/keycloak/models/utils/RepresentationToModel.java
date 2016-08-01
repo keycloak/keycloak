@@ -21,6 +21,7 @@ import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.store.ResourceServerStore;
 import org.keycloak.hash.Pbkdf2PasswordHashProvider;
+import org.keycloak.migration.migrators.MigrationUtils;
 import org.keycloak.models.ClientTemplateModel;
 import org.keycloak.models.Constants;
 import org.keycloak.common.util.Base64;
@@ -204,6 +205,9 @@ public class RepresentationToModel {
         if (rep.getRequiredActions() != null) {
             for (RequiredActionProviderRepresentation action : rep.getRequiredActions()) {
                 RequiredActionProviderModel model = toModel(action);
+
+                MigrationUtils.updateOTPRequiredAction(model);
+
                 newRealm.addRequiredActionProvider(model);
             }
         } else {

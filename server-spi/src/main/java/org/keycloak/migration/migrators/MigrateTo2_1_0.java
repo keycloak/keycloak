@@ -52,11 +52,9 @@ public class MigrateTo2_1_0 {
     private void migrateDefaultRequiredAction(RealmModel realm) {
         RequiredActionProviderModel otpAction = realm.getRequiredActionProviderByAlias(UserModel.RequiredAction.CONFIGURE_TOTP.name());
 
-        if (otpAction == null) return;
-        if (!otpAction.getProviderId().equals(UserModel.RequiredAction.CONFIGURE_TOTP.name())) return;
-        if (!otpAction.getName().equals("Configure Totp")) return;
+        MigrationUtils.updateOTPRequiredAction(otpAction);
 
-        otpAction.setName("Configure OTP");
+        realm.updateRequiredActionProvider(otpAction);
     }
 
     // KEYCLOAK-3338: Changes to how role policy config is stored"
