@@ -31,6 +31,7 @@ import org.keycloak.authorization.permission.ResourcePermission;
 import org.keycloak.authorization.policy.evaluation.DecisionResultCollector;
 import org.keycloak.authorization.policy.evaluation.EvaluationContext;
 import org.keycloak.authorization.policy.evaluation.Result;
+import org.keycloak.authorization.store.ScopeStore;
 import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.authorization.util.Permissions;
 import org.keycloak.models.ClientModel;
@@ -147,14 +148,15 @@ public class PolicyEvaluationService {
 
             StoreFactory storeFactory = authorization.getStoreFactory();
 
-            List<Scope> scopes = givenScopes.stream().map(scopeName -> storeFactory.getScopeStore().findByName(scopeName, this.resourceServer.getId())).collect(Collectors.toList());
-
             if (resource.getId() != null) {
                 Resource resourceModel = storeFactory.getResourceStore().findById(resource.getId());
-                return Stream.of(new ResourcePermission(resourceModel, scopes, resourceServer));
+                return Permissions.createResourcePermissions(resourceModel, givenScopes, authorization).stream();
             } else if (resource.getType() != null) {
-                return storeFactory.getResourceStore().findByType(resource.getType()).stream().map(resource1 -> new ResourcePermission(resource1, scopes, resourceServer));
+                Set<String> finalGivenScopes = givenScopes;
+                return storeFactory.getResourceStore().findByType(resource.getType()).stream().flatMap(resource1 -> Permissions.createResourcePermissions(resource1, finalGivenScopes, authorization).stream());
             } else {
+                ScopeStore scopeStore = storeFactory.getScopeStore();
+                List<Scope> scopes = givenScopes.stream().map(scopeName -> scopeStore.findByName(scopeName, this.resourceServer.getId())).collect(Collectors.toList());
                 List<ResourcePermission> collect = scopes.stream().map(scope -> new ResourcePermission(null, asList(scope), resourceServer)).collect(Collectors.toList());
 
                 for (Scope scope : scopes) {

@@ -140,6 +140,10 @@ public abstract class AbstractPolicyEnforcer {
                         return true;
                     }
                 }
+            } else {
+                if (hasResourceScopePermission(requiredScopes, permission, actualPathConfig)) {
+                    return true;
+                }
             }
         }
 
