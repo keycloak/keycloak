@@ -127,7 +127,9 @@ public class ServerInfoAdminResource {
                         rep.setId(pi.getId());
                         ConfiguredProvider configured = (ConfiguredProvider)pi;
                         rep.setHelpText(configured.getHelpText());
-                        rep.setProperties(ModelToRepresentation.toRepresentation(configured.getConfigProperties()));
+                        List<ProviderConfigProperty> configProperties = configured.getConfigProperties();
+                        if (configProperties == null) configProperties = Collections.EMPTY_LIST;
+                        rep.setProperties(ModelToRepresentation.toRepresentation(configProperties));
                         List<ComponentTypeRepresentation> reps = info.getComponentTypes().get(spi.getProviderClass().getName());
                         if (reps == null) {
                             reps = new LinkedList<>();
