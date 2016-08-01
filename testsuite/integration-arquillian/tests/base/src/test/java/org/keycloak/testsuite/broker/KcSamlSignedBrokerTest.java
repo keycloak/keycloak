@@ -1,6 +1,5 @@
 package org.keycloak.testsuite.broker;
 
-import org.junit.Ignore;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -11,7 +10,6 @@ import java.util.Map;
 
 import static org.keycloak.testsuite.broker.BrokerTestConstants.*;
 
-@Ignore
 public class KcSamlSignedBrokerTest extends KcSamlBrokerTest {
 
     @Override
