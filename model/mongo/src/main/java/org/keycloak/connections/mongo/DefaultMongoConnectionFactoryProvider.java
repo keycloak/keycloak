@@ -79,6 +79,7 @@ public class DefaultMongoConnectionFactoryProvider implements MongoConnectionPro
             "org.keycloak.models.entities.RequiredActionProviderEntity",
             "org.keycloak.models.entities.PersistentUserSessionEntity",
             "org.keycloak.models.entities.PersistentClientSessionEntity",
+            "org.keycloak.models.entities.StorageProviderEntity",
             "org.keycloak.authorization.mongo.entities.PolicyEntity",
             "org.keycloak.authorization.mongo.entities.ResourceEntity",
             "org.keycloak.authorization.mongo.entities.ResourceServerEntity",
