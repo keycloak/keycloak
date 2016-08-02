@@ -33,6 +33,20 @@ There's no way standard way to invalidate an HTTP session based on a session id.
 In the snippet above there are two url-patterns.
  _/protected/*_ are the files we want protected, while the _/keycloak/*_ url-pattern handles callbacks from the {{book.project.name}} server.
 
+If you need to exclude some paths beneath the configured `url-patterns` you can use the Filter init-param `keycloak.config.skipPattern` to configure
+a regular expression that describes a path-pattern for which the keycloak filter should immediately delegate to the filter-chain.
+By default no skipPattern is configured.
+
+Patterns are matched against the `requestURI` without the `context-path`. Given the context-path `/myapp` a request for `/myapp/index.html` will be matched with `/index.html` against the skip pattern.
+
+[source,xml]
+----
+<init-param>
+    <param-name>keycloak.config.skipPattern</param-name>
+    <param-value>^/(path1|path2|path3).*</param-value>
+</init-param>
+----
+
 Note that you should configure your client in the {{book.project.name}} Admin Console with an Admin URL that points to a secured section covered by the filter's url-pattern.
 
 The Admin URL will make callbacks to the Admin URL to do things like backchannel logout.
