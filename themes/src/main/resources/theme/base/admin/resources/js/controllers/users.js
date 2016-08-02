@@ -592,6 +592,34 @@ module.controller('UserCredentialsCtrl', function($scope, realm, user, RequiredA
     };
 });
 
+module.controller('UserStorageCtrl', function($scope, $location, $route, realm, serverInfo, Components, Notifications, Dialog) {
+    console.log('UserStorageCtrl ++++****');
+    $scope.realm = realm;
+    $scope.providers = serverInfo.componentTypes['org.keycloak.storage.UserStorageProvider'];
+
+    $scope.addProvider = function(provider) {
+        console.log('Add provider: ' + provider.id);
+        $location.url("/create/user-storage/" + realm.realm + "/providers/" + provider.id);
+    };
+
+    $scope.instances = Components.query({realm: realm.realm,
+        parent: realm.id,
+        type: 'org.keycloak.storage.UserStorageProvider'
+    });
+
+    $scope.removeUserStorage = function(instance) {
+        Dialog.confirmDelete(instance.name, 'user storage provider', function() {
+            Components.remove({
+                realm : realm.realm,
+                componentId : instance.id
+            }, function() {
+                $route.reload();
+                Notifications.success("The provider has been deleted.");
+            });
+        });
+    };
+});
+
 module.controller('UserFederationCtrl', function($scope, $location, $route, realm, UserFederationProviders, UserFederationInstances, Notifications, Dialog) {
     console.log('UserFederationCtrl ++++****');
     $scope.realm = realm;

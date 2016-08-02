@@ -1629,3 +1629,16 @@ module.factory('DefaultGroups', function($resource) {
         }
     });
 });
+
+module.factory('Components', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/components/:componentId', {
+        realm : '@realm',
+        componentId : '@componentId'
+    }, {
+        update : {
+            method : 'PUT'
+        }
+    });
+});
+
+

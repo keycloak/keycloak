@@ -20,9 +20,12 @@ import org.keycloak.Config;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.storage.UserStorageProviderFactory;
 
 import java.io.IOException;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Properties;
 
 /**
@@ -38,7 +41,7 @@ public class UserPropertyFileStorageFactory implements UserStorageProviderFactor
     public UserPropertyFileStorage create(KeycloakSession session, ComponentModel model) {
         Properties props = new Properties();
         try {
-            props.load(getClass().getResourceAsStream(model.getConfig().getFirst("property.file")));
+            props.load(getClass().getResourceAsStream(model.getConfig().getFirst("propertyFile")));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -48,6 +51,19 @@ public class UserPropertyFileStorageFactory implements UserStorageProviderFactor
     @Override
     public String getId() {
         return PROVIDER_ID;
+    }
+
+    static List<ProviderConfigProperty> OPTIONS = new LinkedList<>();
+    static {
+        ProviderConfigProperty prop = new ProviderConfigProperty("propertyFile", "Property File", "file that contains name value pairs", ProviderConfigProperty.STRING_TYPE, null);
+        OPTIONS.add(prop);
+        prop = new ProviderConfigProperty("federatedStorage", "User Federated Storage", "use federated storage?", ProviderConfigProperty.BOOLEAN_TYPE, null);
+        OPTIONS.add(prop);
+
+    }
+    @Override
+    public List<ProviderConfigProperty> getConfigProperties() {
+         return OPTIONS;
     }
 
     @Override

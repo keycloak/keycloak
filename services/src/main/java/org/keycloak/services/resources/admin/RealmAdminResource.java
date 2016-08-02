@@ -207,6 +207,18 @@ public class RealmAdminResource {
     }
 
     /**
+     * Base path for managing components under this realm.
+     *
+     * @return
+     */
+    @Path("components")
+    public ComponentResource getComponents() {
+        ComponentResource resource = new ComponentResource(realm, auth, adminEvent);
+        ResteasyProviderFactory.getInstance().injectProperties(resource);
+        return resource;
+    }
+
+    /**
      * base path for managing realm-level roles of this realm
      *
      * @return

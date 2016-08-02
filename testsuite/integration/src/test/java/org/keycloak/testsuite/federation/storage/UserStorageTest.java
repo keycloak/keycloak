@@ -67,15 +67,15 @@ public class UserStorageTest {
             model.setPriority(1);
             model.setProviderId(UserPropertyFileStorageFactory.PROVIDER_ID);
             model.setParentId(appRealm.getId());
-            model.getConfig().putSingle("property.file", "/storage-test/read-only-user-password.properties");
+            model.getConfig().putSingle("propertyFile", "/storage-test/read-only-user-password.properties");
             appRealm.addComponentModel(model);
             model = new UserStorageProviderModel();
             model.setName("user-props");
             model.setPriority(2);
             model.setParentId(appRealm.getId());
             model.setProviderId(UserPropertyFileStorageFactory.PROVIDER_ID);
-            model.getConfig().putSingle("property.file", "/storage-test/user-password.properties");
-            model.getConfig().putSingle("USER_FEDERATED_STORAGE", "true");
+            model.getConfig().putSingle("propertyFile", "/storage-test/user-password.properties");
+            model.getConfig().putSingle("federatedStorage", "true");
             appRealm.addComponentModel(model);
         }
     });
