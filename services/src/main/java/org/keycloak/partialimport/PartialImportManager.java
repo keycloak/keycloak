@@ -62,7 +62,7 @@ public class PartialImportManager {
             try {
                 partialImport.prepare(rep, realm, session);
             } catch (ErrorResponseException error) {
-                if (session.getTransaction().isActive()) session.getTransaction().setRollbackOnly();
+                if (session.getTransactionManager().isActive()) session.getTransactionManager().setRollbackOnly();
                 return error.getResponse();
             }
         }
@@ -72,7 +72,7 @@ public class PartialImportManager {
                 partialImport.removeOverwrites(realm, session);
                 results.addAllResults(partialImport.doImport(rep, realm, session));
             } catch (ErrorResponseException error) {
-                if (session.getTransaction().isActive()) session.getTransaction().setRollbackOnly();
+                if (session.getTransactionManager().isActive()) session.getTransactionManager().setRollbackOnly();
                 return error.getResponse();
             }
         }
@@ -84,8 +84,8 @@ public class PartialImportManager {
             }
         }
 
-        if (session.getTransaction().isActive()) {
-            session.getTransaction().commit();
+        if (session.getTransactionManager().isActive()) {
+            session.getTransactionManager().commit();
         }
 
         return Response.ok(results).build();

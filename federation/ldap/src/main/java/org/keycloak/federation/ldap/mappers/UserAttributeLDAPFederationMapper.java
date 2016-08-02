@@ -163,7 +163,7 @@ public class UserAttributeLDAPFederationMapper extends AbstractLDAPFederationMap
 
             UserModel that = session.userStorage().getUserByEmail(email, realm);
             if (that != null && !that.getId().equals(user.getId())) {
-                session.getTransaction().setRollbackOnly();
+                session.getTransactionManager().setRollbackOnly();
                 String exceptionMessage = String.format("Can't import user '%s' from LDAP because email '%s' already exists in Keycloak. Existing user with this email is '%s'", user.getUsername(), email, that.getUsername());
                 throw new ModelDuplicateException(exceptionMessage, UserModel.EMAIL);
             }

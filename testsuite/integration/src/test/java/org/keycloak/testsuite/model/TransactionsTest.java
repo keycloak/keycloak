@@ -35,14 +35,14 @@ public class TransactionsTest {
     public void testTransactionActive() {
         KeycloakSession session = kc.startSession();
 
-        Assert.assertTrue(session.getTransaction().isActive());
-        session.getTransaction().commit();
-        Assert.assertFalse(session.getTransaction().isActive());
+        Assert.assertTrue(session.getTransactionManager().isActive());
+        session.getTransactionManager().commit();
+        Assert.assertFalse(session.getTransactionManager().isActive());
 
-        session.getTransaction().begin();
-        Assert.assertTrue(session.getTransaction().isActive());
-        session.getTransaction().rollback();
-        Assert.assertFalse(session.getTransaction().isActive());
+        session.getTransactionManager().begin();
+        Assert.assertTrue(session.getTransactionManager().isActive());
+        session.getTransactionManager().rollback();
+        Assert.assertFalse(session.getTransactionManager().isActive());
 
         session.close();
     }

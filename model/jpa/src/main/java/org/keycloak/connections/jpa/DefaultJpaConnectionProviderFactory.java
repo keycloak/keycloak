@@ -63,7 +63,7 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
 
         EntityManager em = emf.createEntityManager();
         em = PersistenceExceptionConverter.create(em);
-        session.getTransaction().enlist(new JpaKeycloakTransaction(em));
+        session.getTransactionManager().enlist(new JpaKeycloakTransaction(em));
         return new DefaultJpaConnectionProvider(em);
     }
 

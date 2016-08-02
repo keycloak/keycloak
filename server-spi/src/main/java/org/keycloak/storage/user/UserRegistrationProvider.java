@@ -25,7 +25,6 @@ import org.keycloak.models.UserModel;
  * @version $Revision: 1 $
  */
 public interface UserRegistrationProvider {
-    UserModel addUser(RealmModel realm, String id, String username, boolean addDefaultRoles, boolean addDefaultRequiredActions);
 
     UserModel addUser(RealmModel realm, String username);
 

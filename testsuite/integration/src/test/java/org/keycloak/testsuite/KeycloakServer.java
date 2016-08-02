@@ -39,7 +39,6 @@ import org.keycloak.testsuite.util.cli.TestsuiteCLI;
 import org.keycloak.util.JsonSerialization;
 
 import javax.servlet.DispatcherType;
-import javax.ws.rs.core.Application;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -249,7 +248,7 @@ public class KeycloakServer {
 
     public void importRealm(RealmRepresentation rep) {
         KeycloakSession session = sessionFactory.create();;
-        session.getTransaction().begin();
+        session.getTransactionManager().begin();
 
         try {
             RealmManager manager = new RealmManager(session);
@@ -268,7 +267,7 @@ public class KeycloakServer {
 
             info("Imported realm " + realm.getName());
 
-            session.getTransaction().commit();
+            session.getTransactionManager().commit();
         } finally {
             session.close();
         }
@@ -278,11 +277,11 @@ public class KeycloakServer {
         if (System.getProperty("keycloak.createAdminUser", "true").equals("true")) {
             KeycloakSession session = sessionFactory.create();
             try {
-                session.getTransaction().begin();
+                session.getTransactionManager().begin();
                 if (new ApplianceBootstrap(session).isNoMasterUser()) {
                     new ApplianceBootstrap(session).createMasterRealmUser("admin", "admin");
                 }
-                session.getTransaction().commit();
+                session.getTransactionManager().commit();
             } finally {
                 session.close();
             }

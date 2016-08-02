@@ -21,6 +21,7 @@ import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
 import com.mongodb.QueryBuilder;
 
+import org.keycloak.component.ComponentModel;
 import org.keycloak.connections.mongo.api.MongoStore;
 import org.keycloak.connections.mongo.api.context.MongoStoreInvocationContext;
 import org.keycloak.models.ClientModel;
@@ -44,7 +45,6 @@ import org.keycloak.models.entities.UserConsentEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoUserConsentEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoUserEntity;
 import org.keycloak.models.utils.CredentialValidation;
-import org.keycloak.storage.StorageProviderModel;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -632,7 +632,7 @@ public class MongoUserProvider implements UserProvider {
     }
 
     @Override
-    public void preRemove(RealmModel realm, StorageProviderModel link) {
+    public void preRemove(RealmModel realm, ComponentModel component) {
 
     }
 }

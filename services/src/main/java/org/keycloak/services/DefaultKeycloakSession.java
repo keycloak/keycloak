@@ -36,6 +36,7 @@ public class DefaultKeycloakSession implements KeycloakSession {
     private final Map<Integer, Provider> providers = new HashMap<>();
     private final List<Provider> closable = new LinkedList<Provider>();
     private final DefaultKeycloakTransactionManager transactionManager;
+    private final Map<String, Object> attributes = new HashMap<>();
     private RealmProvider model;
     private UserProvider userModel;
     private UserStorageManager userStorageManager;
@@ -81,7 +82,22 @@ public class DefaultKeycloakSession implements KeycloakSession {
     }
 
     @Override
-    public KeycloakTransactionManager getTransaction() {
+    public Object getAttribute(String attribute) {
+        return attributes.get(attribute);
+    }
+
+    @Override
+    public Object removeAttribute(String attribute) {
+        return attributes.remove(attribute);
+    }
+
+    @Override
+    public void setAttribute(String name, Object value) {
+        attributes.put(name, value);
+    }
+
+    @Override
+    public KeycloakTransactionManager getTransactionManager() {
         return transactionManager;
     }
 
