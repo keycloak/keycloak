@@ -1338,6 +1338,18 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'RealmSessionStatsCtrl'
         })
+        .when('/realms/:realm/user-storage', {
+            templateUrl : resourceUrl + '/partials/user-storage.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                serverInfo : function(ServerInfoLoader) {
+                    return ServerInfoLoader();
+                }
+            },
+            controller : 'UserStorageCtrl'
+        })
         .when('/realms/:realm/user-federation', {
             templateUrl : resourceUrl + '/partials/user-federation.html',
             resolve : {

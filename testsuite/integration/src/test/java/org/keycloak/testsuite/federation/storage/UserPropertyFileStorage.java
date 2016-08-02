@@ -52,7 +52,7 @@ public class UserPropertyFileStorage implements UserLookupProvider, UserStorageP
         this.session = session;
         this.model = model;
         this.userPasswords = userPasswords;
-        this.federatedStorageEnabled = model.getConfig().containsKey("USER_FEDERATED_STORAGE");
+        this.federatedStorageEnabled = model.getConfig().containsKey("federatedStorage") && Boolean.valueOf(model.getConfig().getFirst("federatedStorage")).booleanValue();
     }
 
 
