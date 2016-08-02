@@ -40,6 +40,7 @@ import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.cache.CacheRealmProvider;
@@ -58,6 +59,7 @@ import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.PartialImportRepresentation;
 import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.LDAPConnectionTestManager;
 import org.keycloak.services.managers.RealmManager;
@@ -204,6 +206,56 @@ public class RealmAdminResource {
         ClientInitialAccessResource resource = new ClientInitialAccessResource(realm, auth, adminEvent);
         ResteasyProviderFactory.getInstance().injectProperties(resource);
         return resource;
+    }
+
+    /**
+     * Get default roles.
+     *
+     * @return
+     */
+    @GET
+    @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("default-roles")
+    public List<RoleRepresentation> getDefaultRoles() {
+        auth.requireView();
+
+        List<RoleRepresentation> defaults = new LinkedList<>();
+        for (String defaultRoleName : realm.getDefaultRoles()) {
+            RoleModel role = realm.getRole(defaultRoleName);
+            defaults.add(ModelToRepresentation.toRepresentation(role));
+        }
+        return defaults;
+    }
+
+    @PUT
+    @NoCache
+    @Path("default-roles/{roleName}")
+    public void addDefaultRole(@PathParam("roleName") String roleName) {
+        auth.requireManage();
+
+        RoleModel role = realm.getRole(roleName);
+        if (role == null) {
+            throw new NotFoundException("Role not found");
+        }
+        realm.addDefaultRole(roleName);
+
+        adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo).success();
+    }
+
+    @DELETE
+    @NoCache
+    @Path("default-roles/{roleName}")
+    public void removeDefaultRole(@PathParam("roleName") String roleName) {
+        auth.requireManage();
+
+        RoleModel role = realm.getRole(roleName);
+        if (role == null) {
+            throw new NotFoundException("Role not found");
+        }
+        realm.removeDefaultRoles(roleName);
+
+        adminEvent.operation(OperationType.DELETE).resourcePath(uriInfo).success();
     }
 
     /**
