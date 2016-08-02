@@ -25,6 +25,7 @@ import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.store.PolicyStore;
+import org.keycloak.authorization.store.ResourceServerStore;
 import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.models.ClientModel;
@@ -48,6 +49,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
@@ -244,6 +246,26 @@ public final class Models {
             }
             return scope;
         }).collect(Collectors.toSet()));
+
+        resource.setTypedScopes(new ArrayList<>());
+
+        if (resource.getType() != null) {
+            ResourceStore resourceStore = authorization.getStoreFactory().getResourceStore();
+            for (Resource typed : resourceStore.findByType(resource.getType())) {
+                if (typed.getOwner().equals(resourceServer.getClientId()) && !typed.getId().equals(resource.getId())) {
+                    resource.setTypedScopes(typed.getScopes().stream().map(model1 -> {
+                        ScopeRepresentation scope = new ScopeRepresentation();
+                        scope.setId(model1.getId());
+                        scope.setName(model1.getName());
+                        String iconUri = model1.getIconUri();
+                        if (iconUri != null) {
+                            scope.setIconUri(iconUri);
+                        }
+                        return scope;
+                    }).filter(scopeRepresentation -> !resource.getScopes().contains(scopeRepresentation)).collect(Collectors.toList()));
+                }
+            }
+        }
 
         resource.setPolicies(new ArrayList<>());
 

@@ -119,6 +119,7 @@ public class KeycloakInstalled {
                 .queryParam(OAuth2Constants.CLIENT_ID, deployment.getResourceName())
                 .queryParam(OAuth2Constants.REDIRECT_URI, redirectUri)
                 .queryParam(OAuth2Constants.STATE, state)
+                .queryParam(OAuth2Constants.SCOPE, OAuth2Constants.SCOPE_OPENID)
                 .build().toString();
 
         Desktop.getDesktop().browse(new URI(authUrl));
@@ -175,6 +176,7 @@ public class KeycloakInstalled {
                 .queryParam(OAuth2Constants.RESPONSE_TYPE, OAuth2Constants.CODE)
                 .queryParam(OAuth2Constants.CLIENT_ID, deployment.getResourceName())
                 .queryParam(OAuth2Constants.REDIRECT_URI, redirectUri)
+                .queryParam(OAuth2Constants.SCOPE, OAuth2Constants.SCOPE_OPENID)
                 .build().toString();
 
         printer.println("Open the following URL in a browser. After login copy/paste the code back and press <enter>");

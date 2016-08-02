@@ -32,6 +32,7 @@ import org.keycloak.services.ErrorResponseException;
 import javax.ws.rs.core.Response;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -64,51 +65,69 @@ public class AbstractPermissionService {
         return request.stream().map(request1 -> {
             String resourceSetId = request1.getResourceSetId();
             String resourceSetName = request1.getResourceSetName();
+            boolean resourceNotProvider = resourceSetId == null && resourceSetName == null;
 
-            if (resourceSetId == null && resourceSetName == null) {
-                throw new ErrorResponseException("invalid_resource_set_id", "Resource id or name not provided.", Response.Status.BAD_REQUEST);
-            }
-
-            Resource resource;
-
-            if (resourceSetId != null) {
-                resource = storeFactory.getResourceStore().findById(resourceSetId);
-            } else {
-                resource = storeFactory.getResourceStore().findByName(resourceSetName, this.resourceServer.getId());
-            }
-
-            if (resource == null) {
-                if (resourceSetId != null) {
-                    throw new ErrorResponseException("nonexistent_resource_set_id", "Resource set with id[" + resourceSetId + "] does not exists in this server.", Response.Status.BAD_REQUEST);
-                } else {
-                    throw new ErrorResponseException("nonexistent_resource_set_name", "Resource set with name[" + resourceSetName + "] does not exists in this server.", Response.Status.BAD_REQUEST);
+            if (resourceNotProvider) {
+                if ((request1.getScopes() == null || request1.getScopes().isEmpty())) {
+                    throw new ErrorResponseException("invalid_resource_set_id", "Resource id or name not provided.", Response.Status.BAD_REQUEST);
                 }
             }
 
-            return new ResourceRepresentation(resource.getName(), verifyRequestedScopes(request1, resource));
+            Resource resource = null;
+
+            if (!resourceNotProvider) {
+                if (resourceSetId != null) {
+                    resource = storeFactory.getResourceStore().findById(resourceSetId);
+                } else {
+                    resource = storeFactory.getResourceStore().findByName(resourceSetName, this.resourceServer.getId());
+                }
+
+                if (resource == null) {
+                    if (resourceSetId != null) {
+                        throw new ErrorResponseException("nonexistent_resource_set_id", "Resource set with id[" + resourceSetId + "] does not exists in this server.", Response.Status.BAD_REQUEST);
+                    } else {
+                        throw new ErrorResponseException("nonexistent_resource_set_name", "Resource set with name[" + resourceSetName + "] does not exists in this server.", Response.Status.BAD_REQUEST);
+                    }
+                }
+            }
+
+            Set<ScopeRepresentation> scopes = verifyRequestedScopes(request1, resource);
+
+            if (resource != null) {
+                if (scopes.isEmpty() && !request1.getScopes().isEmpty()) {
+                    return new ResourceRepresentation(null, request1.getScopes().stream().map(ScopeRepresentation::new).collect(Collectors.toSet()));
+                }
+                return new ResourceRepresentation(resource.getName(), scopes);
+            }
+
+            return new ResourceRepresentation(null, scopes);
         }).collect(Collectors.toList());
     }
 
     private Set<ScopeRepresentation> verifyRequestedScopes(PermissionRequest request, Resource resource) {
         return request.getScopes().stream().map(scopeName -> {
-            for (Scope scope : resource.getScopes()) {
-                if (scope.getName().equals(scopeName)) {
-                    return new ScopeRepresentation(scopeName);
+            if (resource != null) {
+                for (Scope scope : resource.getScopes()) {
+                    if (scope.getName().equals(scopeName)) {
+                        return new ScopeRepresentation(scopeName);
+                    }
                 }
-            }
 
-            for (Resource baseResource : authorization.getStoreFactory().getResourceStore().findByType(resource.getType())) {
-                if (baseResource.getOwner().equals(resource.getResourceServer().getClientId())) {
-                    for (Scope baseScope : baseResource.getScopes()) {
-                        if (baseScope.getName().equals(scopeName)) {
-                            return new ScopeRepresentation(scopeName);
+                for (Resource baseResource : authorization.getStoreFactory().getResourceStore().findByType(resource.getType())) {
+                    if (baseResource.getOwner().equals(resource.getResourceServer().getClientId())) {
+                        for (Scope baseScope : baseResource.getScopes()) {
+                            if (baseScope.getName().equals(scopeName)) {
+                                return new ScopeRepresentation(scopeName);
+                            }
                         }
                     }
                 }
-            }
 
-            throw new ErrorResponseException("invalid_scope", "Scope [" + scopeName + " is not valid.", Response.Status.BAD_REQUEST);
-        }).collect(Collectors.toSet());
+                return null;
+            } else {
+                return new ScopeRepresentation(scopeName);
+            }
+        }).filter(scopeRepresentation -> scopeRepresentation != null).collect(Collectors.toSet());
     }
 
     private String createPermissionTicket(List<ResourceRepresentation> resources) {

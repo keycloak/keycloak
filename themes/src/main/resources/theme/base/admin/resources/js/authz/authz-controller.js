@@ -1321,6 +1321,11 @@ module.controller('PolicyEvaluateCtrl', function($scope, $http, $route, $locatio
                 rsrid: $scope.newResource._id
             }, function (data) {
                 $scope.scopes = data.scopes;
+                if (data.typedScopes) {
+                    for (i=0;i<data.typedScopes.length;i++) {
+                        $scope.scopes.push(data.typedScopes[i]);
+                    }
+                }
             });
         } else {
             ResourceServerScope.query({realm : realm.realm, client : client.id}, function (data) {
