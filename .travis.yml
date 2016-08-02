@@ -12,7 +12,7 @@ before_script:
   - export MAVEN_SKIP_RC=true
 
 install: 
-  - mvn install -Pdistribution -DskipTests=true -B -V | grep -e "Maven" -e "Java" -e "Building Keycloak"
+  - ( mvn install -Pdistribution -DskipTests=true -B -V -q ) & ( MYPID=$!; while [  $(ps -ef | grep $MYPID | grep -v grep | wc -l) -gt 0 ]; do    sleep 10;     date; done; )
 
 script:
   - mvn test -B
