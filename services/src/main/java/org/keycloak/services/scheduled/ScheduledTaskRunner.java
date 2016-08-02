@@ -45,7 +45,7 @@ public class ScheduledTaskRunner implements Runnable {
         } catch (Throwable t) {
             logger.failedToRunScheduledTask(t, task.getClass().getSimpleName());
 
-            session.getTransaction().rollback();
+            session.getTransactionManager().rollback();
         } finally {
             try {
                 session.close();
@@ -56,9 +56,9 @@ public class ScheduledTaskRunner implements Runnable {
     }
 
     protected void runTask(KeycloakSession session) {
-        session.getTransaction().begin();
+        session.getTransactionManager().begin();
         task.run(session);
-        session.getTransaction().commit();
+        session.getTransactionManager().commit();
 
         logger.debug("Executed scheduled task " + task.getClass().getSimpleName());
     }

@@ -536,7 +536,7 @@ public class AuthenticationManagementResource {
 
         AuthenticationExecutionModel model = realm.getAuthenticationExecutionById(rep.getId());
         if (model == null) {
-            session.getTransaction().setRollbackOnly();
+            session.getTransactionManager().setRollbackOnly();
             throw new NotFoundException("Illegal execution");
 
         }
@@ -596,7 +596,7 @@ public class AuthenticationManagementResource {
 
         AuthenticationExecutionModel model = realm.getAuthenticationExecutionById(execution);
         if (model == null) {
-            session.getTransaction().setRollbackOnly();
+            session.getTransactionManager().setRollbackOnly();
             throw new NotFoundException("Illegal execution");
 
         }
@@ -642,7 +642,7 @@ public class AuthenticationManagementResource {
 
         AuthenticationExecutionModel model = realm.getAuthenticationExecutionById(execution);
         if (model == null) {
-            session.getTransaction().setRollbackOnly();
+            session.getTransactionManager().setRollbackOnly();
             throw new NotFoundException("Illegal execution");
 
         }
@@ -682,7 +682,7 @@ public class AuthenticationManagementResource {
 
         AuthenticationExecutionModel model = realm.getAuthenticationExecutionById(execution);
         if (model == null) {
-            session.getTransaction().setRollbackOnly();
+            session.getTransactionManager().setRollbackOnly();
             throw new NotFoundException("Illegal execution");
 
         }
@@ -718,7 +718,7 @@ public class AuthenticationManagementResource {
 
         AuthenticationExecutionModel model = realm.getAuthenticationExecutionById(execution);
         if (model == null) {
-            session.getTransaction().setRollbackOnly();
+            session.getTransactionManager().setRollbackOnly();
             throw new NotFoundException("Illegal execution");
 
         }

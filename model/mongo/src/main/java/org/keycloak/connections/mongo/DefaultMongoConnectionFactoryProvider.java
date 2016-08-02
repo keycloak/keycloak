@@ -22,7 +22,6 @@ import java.net.UnknownHostException;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.net.ssl.SSLSocketFactory;
 
@@ -79,6 +78,7 @@ public class DefaultMongoConnectionFactoryProvider implements MongoConnectionPro
             "org.keycloak.models.entities.RequiredActionProviderEntity",
             "org.keycloak.models.entities.PersistentUserSessionEntity",
             "org.keycloak.models.entities.PersistentClientSessionEntity",
+            "org.keycloak.models.entities.StorageProviderEntity",
             "org.keycloak.authorization.mongo.entities.PolicyEntity",
             "org.keycloak.authorization.mongo.entities.ResourceEntity",
             "org.keycloak.authorization.mongo.entities.ResourceServerEntity",
@@ -141,7 +141,7 @@ public class DefaultMongoConnectionFactoryProvider implements MongoConnectionPro
         lazyInit(session);
 
         TransactionMongoStoreInvocationContext invocationContext = new TransactionMongoStoreInvocationContext(mongoStore);
-        session.getTransaction().enlist(new MongoKeycloakTransaction(invocationContext));
+        session.getTransactionManager().enlist(new MongoKeycloakTransaction(invocationContext));
         return new DefaultMongoConnectionProvider(db, mongoStore, invocationContext);
     }
 

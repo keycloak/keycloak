@@ -19,6 +19,7 @@ package org.keycloak.models.cache.infinispan;
 
 import org.jboss.logging.Logger;
 import org.keycloak.common.constants.ServiceAccountConstants;
+import org.keycloak.component.ComponentModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.CredentialValidationOutput;
 import org.keycloak.models.FederatedIdentityModel;
@@ -39,7 +40,6 @@ import org.keycloak.models.cache.infinispan.entities.CachedUser;
 import org.keycloak.models.cache.infinispan.entities.CachedUserConsent;
 import org.keycloak.models.cache.infinispan.entities.CachedUserConsents;
 import org.keycloak.models.cache.infinispan.entities.UserListQuery;
-import org.keycloak.storage.StorageProviderModel;
 
 import java.util.*;
 
@@ -65,7 +65,7 @@ public class UserCacheSession implements CacheUserProvider {
         this.cache = cache;
         this.session = session;
         this.startupRevision = cache.getCurrentCounter();
-        session.getTransaction().enlistAfterCompletion(getTransaction());
+        session.getTransactionManager().enlistAfterCompletion(getTransaction());
     }
 
     @Override
@@ -665,7 +665,8 @@ public class UserCacheSession implements CacheUserProvider {
     }
 
     @Override
-    public void preRemove(RealmModel realm, StorageProviderModel provider) {
-        getDelegate().preRemove(realm, provider);
+    public void preRemove(RealmModel realm, ComponentModel component) {
+        getDelegate().preRemove(realm, component);
+
     }
 }

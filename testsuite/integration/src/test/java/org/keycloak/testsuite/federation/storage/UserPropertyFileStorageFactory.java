@@ -17,33 +17,28 @@
 package org.keycloak.testsuite.federation.storage;
 
 import org.keycloak.Config;
+import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.provider.ProviderFactory;
-import org.keycloak.storage.StorageProvider;
-import org.keycloak.storage.StorageProviderFactory;
-import org.keycloak.storage.StorageProviderModel;
+import org.keycloak.storage.UserStorageProviderFactory;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Properties;
-import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class UserPropertyFileStorageFactory implements StorageProviderFactory<UserPropertyFileStorage> {
+public class UserPropertyFileStorageFactory implements UserStorageProviderFactory<UserPropertyFileStorage> {
 
 
     public static final String PROVIDER_ID = "user-password-props";
 
     @Override
-    public UserPropertyFileStorage getInstance(KeycloakSession session, StorageProviderModel model) {
+    public UserPropertyFileStorage create(KeycloakSession session, ComponentModel model) {
         Properties props = new Properties();
         try {
-            props.load(getClass().getResourceAsStream(model.getConfig().get("property.file")));
+            props.load(getClass().getResourceAsStream(model.getConfig().getFirst("property.file")));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -53,11 +48,6 @@ public class UserPropertyFileStorageFactory implements StorageProviderFactory<Us
     @Override
     public String getId() {
         return PROVIDER_ID;
-    }
-
-    @Override
-    public StorageProvider create(KeycloakSession session) {
-        return null;
     }
 
     @Override

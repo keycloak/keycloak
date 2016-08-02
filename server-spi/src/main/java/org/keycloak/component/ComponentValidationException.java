@@ -14,18 +14,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.storage.changeset;
-
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.entities.UserEntity;
-import org.keycloak.storage.StorageId;
+package org.keycloak.component;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public interface UserDataLookup {
-    UserData getUserById(RealmModel realm, StorageId id);
-    UserData getUserByUsername(RealmModel realm, String username);
-    UserData getUserByEmail(RealmModel realm, String email);
+public class ComponentValidationException extends RuntimeException {
+    public ComponentValidationException() {
+    }
+
+    public ComponentValidationException(String message) {
+        super(message);
+    }
+
+    public ComponentValidationException(String message, Throwable cause) {
+        super(message, cause);
+    }
+
+    public ComponentValidationException(Throwable cause) {
+        super(cause);
+    }
+
+    public ComponentValidationException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
+        super(message, cause, enableSuppression, writableStackTrace);
+    }
 }

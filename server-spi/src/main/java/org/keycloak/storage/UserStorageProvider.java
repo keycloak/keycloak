@@ -16,13 +16,18 @@
  */
 package org.keycloak.storage;
 
+import org.keycloak.models.GroupModel;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
+import org.keycloak.provider.Provider;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public interface UserStorageProvider {
+public interface UserStorageProvider extends Provider {
     void preRemove(RealmModel realm);
-
+    void preRemove(RealmModel realm, GroupModel group);
+    void preRemove(RealmModel realm, RoleModel role);
 }
+

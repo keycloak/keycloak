@@ -40,7 +40,7 @@ public class InfinispanStoreFactoryProvider implements CachedStoreFactoryProvide
     InfinispanStoreFactoryProvider(KeycloakSession delegate) {
         this.session = delegate;
         this.transaction = new CacheTransaction();
-        this.session.getTransaction().enlistAfterCompletion(transaction);
+        this.session.getTransactionManager().enlistAfterCompletion(transaction);
     }
 
     @Override

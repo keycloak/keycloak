@@ -17,6 +17,7 @@
 
 package org.keycloak.storage.federated;
 
+import org.keycloak.component.ComponentModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.ProtocolMapperModel;
@@ -25,7 +26,6 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.provider.Provider;
-import org.keycloak.storage.StorageProviderModel;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -44,7 +44,7 @@ public interface UserFederatedStorageProvider extends Provider,
 
     void preRemove(RealmModel realm, UserFederationProviderModel link);
 
-    public void preRemove(RealmModel realm, GroupModel group);
+    void preRemove(RealmModel realm, GroupModel group);
 
     void preRemove(RealmModel realm, RoleModel role);
 
@@ -54,5 +54,5 @@ public interface UserFederatedStorageProvider extends Provider,
 
     void preRemove(RealmModel realm, UserModel user);
 
-    void preRemove(RealmModel realm, StorageProviderModel model);
+    void preRemove(RealmModel realm, ComponentModel model);
 }

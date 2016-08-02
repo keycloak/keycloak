@@ -145,9 +145,6 @@ public class RealmEntity {
     List<UserFederationProviderEntity> userFederationProviders = new ArrayList<>();
 
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
-    List<StorageProviderEntity> storageProviders = new ArrayList<>();
-
-    @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
     Collection<UserFederationMapperEntity> userFederationMappers = new ArrayList<UserFederationMapperEntity>();
 
     @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
@@ -552,14 +549,6 @@ public class RealmEntity {
 
     public void setUserFederationProviders(List<UserFederationProviderEntity> userFederationProviders) {
         this.userFederationProviders = userFederationProviders;
-    }
-
-    public List<StorageProviderEntity> getStorageProviders() {
-        return storageProviders;
-    }
-
-    public void setStorageProviders(List<StorageProviderEntity> storageProviders) {
-        this.storageProviders = storageProviders;
     }
 
     public Collection<UserFederationMapperEntity> getUserFederationMappers() {

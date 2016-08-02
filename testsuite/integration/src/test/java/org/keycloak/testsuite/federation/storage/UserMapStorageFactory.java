@@ -17,22 +17,19 @@
 package org.keycloak.testsuite.federation.storage;
 
 import org.keycloak.Config;
+import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.storage.StorageProvider;
-import org.keycloak.storage.StorageProviderFactory;
-import org.keycloak.storage.StorageProviderModel;
+import org.keycloak.storage.UserStorageProviderFactory;
 
-import java.io.IOException;
 import java.util.Hashtable;
 import java.util.Map;
-import java.util.Properties;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class UserMapStorageFactory implements StorageProviderFactory<UserMapStorage> {
+public class UserMapStorageFactory implements UserStorageProviderFactory<UserMapStorage> {
 
 
     public static final String PROVIDER_ID = "user-password-map";
@@ -40,18 +37,13 @@ public class UserMapStorageFactory implements StorageProviderFactory<UserMapStor
     protected Map<String, String> userPasswords = new Hashtable<>();
 
     @Override
-    public UserMapStorage getInstance(KeycloakSession session, StorageProviderModel model) {
+    public UserMapStorage create(KeycloakSession session, ComponentModel model) {
         return new UserMapStorage(session, model, userPasswords);
     }
 
     @Override
     public String getId() {
         return PROVIDER_ID;
-    }
-
-    @Override
-    public StorageProvider create(KeycloakSession session) {
-        return null;
     }
 
     @Override

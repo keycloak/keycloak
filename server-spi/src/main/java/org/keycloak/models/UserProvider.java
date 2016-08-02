@@ -17,8 +17,8 @@
 
 package org.keycloak.models;
 
+import org.keycloak.component.ComponentModel;
 import org.keycloak.provider.Provider;
-import org.keycloak.storage.StorageProviderModel;
 import org.keycloak.storage.user.UserCredentialValidatorProvider;
 import org.keycloak.storage.user.UserLookupProvider;
 import org.keycloak.storage.user.UserQueryProvider;
@@ -56,10 +56,20 @@ public interface UserProvider extends Provider,
     List<UserModel> getUsers(RealmModel realm, boolean includeServiceAccounts);
     List<UserModel> getUsers(RealmModel realm, int firstResult, int maxResults, boolean includeServiceAccounts);
 
+    /**
+     * only used for local storage
+     *
+     * @param realm
+     * @param id
+     * @param username
+     * @param addDefaultRoles
+     * @param addDefaultRequiredActions
+     * @return
+     */
+    UserModel addUser(RealmModel realm, String id, String username, boolean addDefaultRoles, boolean addDefaultRequiredActions);
     void preRemove(RealmModel realm);
 
     void preRemove(RealmModel realm, UserFederationProviderModel link);
-    void preRemove(RealmModel realm, StorageProviderModel link);
 
     void preRemove(RealmModel realm, RoleModel role);
     void preRemove(RealmModel realm, GroupModel group);
@@ -73,4 +83,6 @@ public interface UserProvider extends Provider,
 
 
     void close();
+
+    void preRemove(RealmModel realm, ComponentModel component);
 }

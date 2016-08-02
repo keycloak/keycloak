@@ -17,16 +17,24 @@
 
 package org.keycloak.storage;
 
+import org.keycloak.Config;
+import org.keycloak.component.ComponentFactory;
+import org.keycloak.component.ComponentModel;
+import org.keycloak.component.ComponentValidationException;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.provider.ProviderFactory;
+import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.provider.ProviderConfigProperty;
 
-import java.util.Set;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public interface StorageProviderFactory<T extends StorageProvider> extends ProviderFactory<StorageProvider> {
+public interface UserStorageProviderFactory<T extends UserStorageProvider> extends ComponentFactory<T, UserStorageProvider> {
+
+
     /**
      * called per Keycloak transaction.
      *
@@ -34,7 +42,7 @@ public interface StorageProviderFactory<T extends StorageProvider> extends Provi
      * @param model
      * @return
      */
-    T getInstance(KeycloakSession session, StorageProviderModel model);
+    T create(KeycloakSession session, ComponentModel model);
 
     /**
      * This is the name of the provider and will be showed in the admin console as an option.
@@ -44,11 +52,34 @@ public interface StorageProviderFactory<T extends StorageProvider> extends Provi
     @Override
     String getId();
 
-    /**
-     * This method is never called and is only an artifact of ProviderFactory.  Returning null with no implementation is recommended.
-     * @param session
-     * @return
-     */
     @Override
-    StorageProvider create(KeycloakSession session);
+    default void init(Config.Scope config) {
+
+    }
+
+    @Override
+    default void postInit(KeycloakSessionFactory factory) {
+
+    }
+
+    @Override
+    default void close() {
+
+    }
+
+    @Override
+    default String getHelpText() {
+        return "";
+    }
+
+    @Override
+    default List<ProviderConfigProperty> getConfigProperties() {
+        return Collections.EMPTY_LIST;
+    }
+
+    @Override
+    default void validateConfiguration(KeycloakSession session, ComponentModel config) throws ComponentValidationException {
+
+    }
+
 }

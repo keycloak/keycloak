@@ -20,8 +20,6 @@ package org.keycloak.storage.federated;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.Spi;
-import org.keycloak.storage.StorageProvider;
-import org.keycloak.storage.StorageProviderFactory;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

@@ -110,38 +110,54 @@ public final class Permissions {
         return permissions;
     }
 
-    public static List<Permission> allPermits(List<Result> evaluation) {
+    public static List<Permission> allPermits(List<Result> evaluation, AuthorizationProvider authorizationProvider) {
         Map<String, Permission> permissions = new HashMap<>();
 
         for (Result evaluationResult : evaluation) {
             ResourcePermission permission = evaluationResult.getPermission();
             Set<String> scopes = permission.getScopes().stream().map(Scope::getName).collect(Collectors.toSet());
+
             if (evaluationResult.getEffect().equals(Effect.DENY)) {
                 continue;
             }
+
+            List<Resource> resources = new ArrayList<>();
             Resource resource = permission.getResource();
 
             if (resource != null) {
-                String resourceId = resource.getId();
-                String resourceName = resource.getName();
-                Permission evalPermission = permissions.get(resource.getId());
+                resources.add(resource);
+            } else {
+                List<Scope> permissionScopes = permission.getScopes();
 
-                if (evalPermission == null) {
-                    evalPermission = new Permission(resourceId, resourceName, scopes);
-                    permissions.put(resourceId, evalPermission);
+                if (!permissionScopes.isEmpty()) {
+                    ResourceStore resourceStore = authorizationProvider.getStoreFactory().getResourceStore();
+                    resources.addAll(resourceStore.findByScope(permissionScopes.stream().map(Scope::getId).collect(Collectors.toList()).toArray(new String[permissionScopes.size()])));
                 }
+            }
 
-                if (scopes != null && !scopes.isEmpty()) {
-                    Set<String> finalScopes = evalPermission.getScopes();
+            if (!resources.isEmpty()) {
+                for (Resource allowedResource : resources) {
+                    String resourceId = allowedResource.getId();
+                    String resourceName = allowedResource.getName();
+                    Permission evalPermission = permissions.get(allowedResource.getId());
 
-                    if (finalScopes == null) {
-                        finalScopes = new HashSet();
-                        evalPermission.setScopes(finalScopes);
+                    if (evalPermission == null) {
+                        evalPermission = new Permission(resourceId, resourceName, scopes);
+                        permissions.put(resourceId, evalPermission);
                     }
 
-                    for (String scopeName : scopes) {
-                        if (!finalScopes.contains(scopeName)) {
-                            finalScopes.add(scopeName);
+                    if (scopes != null && !scopes.isEmpty()) {
+                        Set<String> finalScopes = evalPermission.getScopes();
+
+                        if (finalScopes == null) {
+                            finalScopes = new HashSet();
+                            evalPermission.setScopes(finalScopes);
+                        }
+
+                        for (String scopeName : scopes) {
+                            if (!finalScopes.contains(scopeName)) {
+                                finalScopes.add(scopeName);
+                            }
                         }
                     }
                 }

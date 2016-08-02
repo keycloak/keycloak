@@ -17,6 +17,7 @@
 
 package org.keycloak.representations.info;
 
+import org.keycloak.representations.idm.ComponentTypeRepresentation;
 import org.keycloak.representations.idm.PasswordPolicyTypeRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperTypeRepresentation;
@@ -43,6 +44,7 @@ public class ServerInfoRepresentation {
     private Map<String, List<ProtocolMapperTypeRepresentation>> protocolMapperTypes;
     private Map<String, List<ProtocolMapperRepresentation>> builtinProtocolMappers;
     private Map<String, List<ClientInstallationRepresentation>> clientInstallations;
+    private Map<String, List<ComponentTypeRepresentation>> componentTypes;
 
     private List<PasswordPolicyTypeRepresentation> passwordPolicies;
 
@@ -144,4 +146,11 @@ public class ServerInfoRepresentation {
         this.passwordPolicies = passwordPolicies;
     }
 
+    public Map<String, List<ComponentTypeRepresentation>> getComponentTypes() {
+        return componentTypes;
+    }
+
+    public void setComponentTypes(Map<String, List<ComponentTypeRepresentation>> componentTypes) {
+        this.componentTypes = componentTypes;
+    }
 }

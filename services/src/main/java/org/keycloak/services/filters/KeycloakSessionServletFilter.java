@@ -82,7 +82,7 @@ public class KeycloakSessionServletFilter implements Filter {
         session.getContext().setConnection(connection);
         ResteasyProviderFactory.pushContext(ClientConnection.class, connection);
 
-        KeycloakTransaction tx = session.getTransaction();
+        KeycloakTransaction tx = session.getTransactionManager();
         ResteasyProviderFactory.pushContext(KeycloakTransaction.class, tx);
         tx.begin();
 
@@ -123,8 +123,8 @@ public class KeycloakSessionServletFilter implements Filter {
     private void closeSession(KeycloakSession session) {
         // KeycloakTransactionCommitter is responsible for committing the transaction, but if an exception is thrown it's not invoked and transaction
         // should be rolled back
-        if (session.getTransaction() != null && session.getTransaction().isActive()) {
-            session.getTransaction().rollback();
+        if (session.getTransactionManager() != null && session.getTransactionManager().isActive()) {
+            session.getTransactionManager().rollback();
         }
 
         session.close();

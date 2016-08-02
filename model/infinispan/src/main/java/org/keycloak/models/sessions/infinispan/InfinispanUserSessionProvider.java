@@ -81,7 +81,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         this.loginFailureCache = loginFailureCache;
         this.tx = new InfinispanKeycloakTransaction();
 
-        session.getTransaction().enlistAfterCompletion(tx);
+        session.getTransactionManager().enlistAfterCompletion(tx);
     }
 
     protected Cache<String, SessionEntity> getCache(boolean offline) {
