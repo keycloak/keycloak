@@ -1841,6 +1841,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         RequiredActionProviderEntity entity = getRequiredActionProviderEntity(model.getId());
         if (entity == null) return;
         entity.setAlias(model.getAlias());
+        entity.setName(model.getName());
         entity.setProviderId(model.getProviderId());
         entity.setEnabled(model.isEnabled());
         entity.setDefaultAction(model.isDefaultAction());
@@ -2066,7 +2067,6 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
             entity.setId(model.getId());
         }
         entity.setConfig(model.getConfig());
-        entity.setId(model.getId());
         entity.setParentId(model.getParentId());
         entity.setProviderType(model.getProviderType());
         entity.setProviderId(model.getProviderId());
@@ -2083,7 +2083,6 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         for (ComponentEntity entity : realm.getComponentEntities()) {
             if (entity.getId().equals(model.getId())) {
                 entity.setConfig(model.getConfig());
-                entity.setId(model.getId());
                 entity.setParentId(model.getParentId());
                 entity.setProviderType(model.getProviderType());
                 entity.setProviderId(model.getProviderId());
