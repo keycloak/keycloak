@@ -265,7 +265,7 @@ public class AdapterTestStrategy extends ExternalResource {
         RealmModel realm = session.realms().getRealmByName("demo");
         int originalIdle = realm.getSsoSessionIdleTimeout();
         realm.setSsoSessionIdleTimeout(1);
-        session.getTransaction().commit();
+        session.getTransactionManager().commit();
         session.close();
 
         Time.setOffset(2);
@@ -278,7 +278,7 @@ public class AdapterTestStrategy extends ExternalResource {
         session = keycloakRule.startSession();
         realm = session.realms().getRealmByName("demo");
         realm.setSsoSessionIdleTimeout(originalIdle);
-        session.getTransaction().commit();
+        session.getTransactionManager().commit();
         session.close();
 
         Time.setOffset(0);
@@ -300,7 +300,7 @@ public class AdapterTestStrategy extends ExternalResource {
         RealmModel realm = session.realms().getRealmByName("demo");
         int originalIdle = realm.getSsoSessionIdleTimeout();
         realm.setSsoSessionIdleTimeout(1);
-        session.getTransaction().commit();
+        session.getTransactionManager().commit();
         session.close();
 
         Time.setOffset(2);
@@ -308,7 +308,7 @@ public class AdapterTestStrategy extends ExternalResource {
         session = keycloakRule.startSession();
         realm = session.realms().getRealmByName("demo");
         session.sessions().removeExpired(realm);
-        session.getTransaction().commit();
+        session.getTransactionManager().commit();
         session.close();
 
         // test SSO
@@ -321,7 +321,7 @@ public class AdapterTestStrategy extends ExternalResource {
         UserModel user = session.users().getUserByUsername("bburke@redhat.com", realm);
         new ResourceAdminManager(session).logoutUser(null, realm, user, session);
         realm.setSsoSessionIdleTimeout(originalIdle);
-        session.getTransaction().commit();
+        session.getTransactionManager().commit();
         session.close();
 
         Time.setOffset(0);
@@ -343,7 +343,7 @@ public class AdapterTestStrategy extends ExternalResource {
         RealmModel realm = session.realms().getRealmByName("demo");
         int original = realm.getSsoSessionMaxLifespan();
         realm.setSsoSessionMaxLifespan(1);
-        session.getTransaction().commit();
+        session.getTransactionManager().commit();
         session.close();
 
         Time.setOffset(2);
@@ -356,7 +356,7 @@ public class AdapterTestStrategy extends ExternalResource {
         session = keycloakRule.startSession();
         realm = session.realms().getRealmByName("demo");
         realm.setSsoSessionMaxLifespan(original);
-        session.getTransaction().commit();
+        session.getTransactionManager().commit();
         session.close();
 
         Time.setOffset(0);

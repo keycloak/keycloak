@@ -58,7 +58,7 @@ public abstract class AbstractAuthorizationTest {
 
     protected <R> R onAuthorizationSession(Function<AuthorizationProvider, R> function) {
         KeycloakSession keycloakSession = startKeycloakSession();
-        KeycloakTransactionManager transaction = keycloakSession.getTransaction();
+        KeycloakTransactionManager transaction = keycloakSession.getTransactionManager();
 
         try {
             AuthorizationProvider authorizationProvider = keycloakSession.getProvider(AuthorizationProvider.class);
@@ -80,7 +80,7 @@ public abstract class AbstractAuthorizationTest {
 
     protected void onAuthorizationSession(Consumer<AuthorizationProvider> consumer) {
         KeycloakSession keycloakSession = startKeycloakSession();
-        KeycloakTransactionManager transaction = keycloakSession.getTransaction();
+        KeycloakTransactionManager transaction = keycloakSession.getTransactionManager();
 
         try {
             AuthorizationProvider authorizationProvider = keycloakSession.getProvider(AuthorizationProvider.class);

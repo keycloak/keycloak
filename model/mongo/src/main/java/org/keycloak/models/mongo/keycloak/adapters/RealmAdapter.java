@@ -20,6 +20,8 @@ package org.keycloak.models.mongo.keycloak.adapters;
 import com.mongodb.DBObject;
 import com.mongodb.QueryBuilder;
 
+import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.component.ComponentModel;
 import org.keycloak.connections.mongo.api.context.MongoStoreInvocationContext;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.jose.jwk.JWKBuilder;
@@ -47,20 +49,18 @@ import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.entities.AuthenticationExecutionEntity;
 import org.keycloak.models.entities.AuthenticationFlowEntity;
 import org.keycloak.models.entities.AuthenticatorConfigEntity;
+import org.keycloak.models.entities.ComponentEntity;
 import org.keycloak.models.entities.IdentityProviderEntity;
 import org.keycloak.models.entities.IdentityProviderMapperEntity;
 import org.keycloak.models.entities.RequiredActionProviderEntity;
 import org.keycloak.models.entities.RequiredCredentialEntity;
-import org.keycloak.models.entities.StorageProviderEntity;
 import org.keycloak.models.entities.UserFederationMapperEntity;
 import org.keycloak.models.entities.UserFederationProviderEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoClientEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoClientTemplateEntity;
-import org.keycloak.models.mongo.keycloak.entities.MongoGroupEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoRealmEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoRoleEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.storage.StorageProviderModel;
 
 import java.security.Key;
 import java.security.PrivateKey;
@@ -1171,166 +1171,6 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     }
 
     @Override
-    public StorageProviderModel addStorageProvider(StorageProviderModel model) {
-        KeycloakModelUtils.ensureUniqueDisplayName(model.getDisplayName(), null, getStorageProviders());
-
-        StorageProviderEntity entity = new StorageProviderEntity();
-        entity.setId(KeycloakModelUtils.generateId());
-        entity.setPriority(model.getPriority());
-        entity.setProviderName(model.getProviderName());
-        entity.setConfig(model.getConfig());
-        String displayName = model.getDisplayName();
-        if (displayName == null) {
-            displayName = entity.getId();
-        }
-        entity.setDisplayName(displayName);
-        realm.getStorageProviders().add(entity);
-        updateRealm();
-
-        StorageProviderModel providerModel = new StorageProviderModel(entity.getId(), model.getProviderName(),
-                model.getConfig(), model.getPriority(), displayName);
-
-
-        return providerModel;
-    }
-
-    @Override
-    public void updateStorageProvider(StorageProviderModel provider) {
-        KeycloakModelUtils.ensureUniqueDisplayName(provider.getDisplayName(), provider, getStorageProviders());
-
-        Iterator<StorageProviderEntity> it = realm.getStorageProviders().iterator();
-        while (it.hasNext()) {
-            StorageProviderEntity entity = it.next();
-            if (entity.getId().equals(provider.getId())) {
-                entity.setProviderName(provider.getProviderName());
-                entity.setConfig(provider.getConfig());
-                entity.setPriority(provider.getPriority());
-                String displayName = provider.getDisplayName();
-                if (displayName != null) {
-                    entity.setDisplayName(provider.getDisplayName());
-                }
-            }
-        }
-        updateRealm();
-
-    }
-
-    @Override
-    public void removeStorageProvider(StorageProviderModel provider) {
-        Iterator<StorageProviderEntity> it = realm.getStorageProviders().iterator();
-        while (it.hasNext()) {
-            StorageProviderEntity entity = it.next();
-            if (entity.getId().equals(provider.getId())) {
-                session.users().preRemove(this, new StorageProviderModel(entity.getId(), entity.getProviderName(), entity.getConfig(), entity.getPriority(), entity.getDisplayName()
-                        ));
-
-                it.remove();
-            }
-        }
-        updateRealm();
-
-    }
-
-    @Override
-    public void setStorageProviders(List<StorageProviderModel> providers) {
-        for (StorageProviderModel currentProvider : providers) {
-            KeycloakModelUtils.ensureUniqueDisplayName(currentProvider.getDisplayName(), currentProvider, providers);
-        }
-
-        List<StorageProviderEntity> existingProviders = realm.getStorageProviders();
-        List<StorageProviderEntity> toRemove = new LinkedList<>();
-        for (StorageProviderEntity entity : existingProviders) {
-            boolean found = false;
-            for (StorageProviderModel model : providers) {
-                if (entity.getId().equals(model.getId())) {
-                    entity.setConfig(model.getConfig());
-                    entity.setPriority(model.getPriority());
-                    entity.setProviderName(model.getProviderName());
-                    String displayName = model.getDisplayName();
-                    if (displayName != null) {
-                        entity.setDisplayName(displayName);
-                    }
-                    found = true;
-                    break;
-                }
-
-            }
-            if (found) continue;
-            session.users().preRemove(this, new StorageProviderModel(entity.getId(), entity.getProviderName(),
-                    entity.getConfig(), entity.getPriority(), entity.getDisplayName()));
-            toRemove.add(entity);
-        }
-
-        for (StorageProviderEntity entity : toRemove) {
-            realm.getStorageProviders().remove(entity);
-        }
-
-        List<StorageProviderModel> add = new LinkedList<>();
-        for (StorageProviderModel model : providers) {
-            boolean found = false;
-            for (StorageProviderEntity entity : realm.getStorageProviders()) {
-                if (entity.getId().equals(model.getId())) {
-                    found = true;
-                    break;
-                }
-            }
-            if (!found) add.add(model);
-        }
-
-        for (StorageProviderModel model : add) {
-            StorageProviderEntity entity = new StorageProviderEntity();
-            if (model.getId() != null) {
-                entity.setId(model.getId());
-            } else {
-                String id = KeycloakModelUtils.generateId();
-                entity.setId(id);
-                model.setId(id);
-            }
-            entity.setProviderName(model.getProviderName());
-            entity.setConfig(model.getConfig());
-            entity.setPriority(model.getPriority());
-            String displayName = model.getDisplayName();
-            if (displayName == null) {
-                displayName = entity.getId();
-            }
-            entity.setDisplayName(displayName);
-            realm.getStorageProviders().add(entity);
-
-        }
-
-        updateRealm();
-
-    }
-
-    @Override
-    public List<StorageProviderModel> getStorageProviders() {
-        List<StorageProviderEntity> entities = realm.getStorageProviders();
-        if (entities.isEmpty()) return Collections.EMPTY_LIST;
-        List<StorageProviderEntity> copy = new LinkedList<>();
-        for (StorageProviderEntity entity : entities) {
-            copy.add(entity);
-
-        }
-        List<StorageProviderModel> result = new LinkedList<>();
-        for (StorageProviderEntity entity : copy) {
-            result.add(new StorageProviderModel(entity.getId(), entity.getProviderName(), entity.getConfig(), entity.getPriority(), entity.getDisplayName()
-                    ));
-        }
-
-        Collections.sort(result, StorageProviderModel.comparator);
-        return Collections.unmodifiableList(result);
-    }
-
-    @Override
-    public StorageProviderModel getStorageProvider(String id) {
-        for (StorageProviderEntity entity : realm.getStorageProviders()) {
-            if (entity.getId().equals(id)) return new StorageProviderModel(entity.getId(), entity.getProviderName(),
-                    entity.getConfig(), entity.getPriority(), entity.getDisplayName());
-        }
-        return null;
-    }
-
-    @Override
     public boolean isEventsEnabled() {
         return realm.isEventsEnabled();
     }
@@ -2217,5 +2057,115 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         return model.getClientTemplateById(id, this);
     }
 
+    @Override
+    public ComponentModel addComponentModel(ComponentModel model) {
+        ComponentEntity entity = new ComponentEntity();
+        if (model.getId() == null) {
+            entity.setId(KeycloakModelUtils.generateId());
+        } else {
+            entity.setId(model.getId());
+        }
+        entity.setConfig(model.getConfig());
+        entity.setId(model.getId());
+        entity.setParentId(model.getParentId());
+        entity.setProviderType(model.getProviderType());
+        entity.setProviderId(model.getProviderId());
+        entity.setName(model.getName());
+        model.setId(entity.getId());
+        realm.getComponentEntities().add(entity);
+        updateRealm();
 
+        return model;
+    }
+
+    @Override
+    public void updateComponent(ComponentModel model) {
+        for (ComponentEntity entity : realm.getComponentEntities()) {
+            if (entity.getId().equals(model.getId())) {
+                entity.setConfig(model.getConfig());
+                entity.setId(model.getId());
+                entity.setParentId(model.getParentId());
+                entity.setProviderType(model.getProviderType());
+                entity.setProviderId(model.getProviderId());
+                entity.setName(model.getName());
+
+            }
+        }
+        updateRealm();
+
+    }
+
+    @Override
+    public void removeComponent(ComponentModel component) {
+        Iterator<ComponentEntity> it = realm.getComponentEntities().iterator();
+        while(it.hasNext()) {
+            if (it.next().getId().equals(component.getId())) {
+                session.users().preRemove(this, component);
+                it.remove();
+                break;
+            }
+        }
+        updateRealm();
+
+    }
+
+    @Override
+    public void removeComponents(String parentId) {
+        Iterator<ComponentEntity> it = realm.getComponentEntities().iterator();
+        while(it.hasNext()) {
+            ComponentEntity next = it.next();
+            if (next.getParentId().equals(parentId)) {
+                session.users().preRemove(this, entityToModel(next));
+                it.remove();
+            }
+        }
+        updateRealm();
+
+    }
+
+    @Override
+    public List<ComponentModel> getComponents(String parentId, String providerType) {
+        List<ComponentModel> results = new LinkedList<>();
+        for (ComponentEntity entity : realm.getComponentEntities()) {
+            if (entity.getParentId().equals(parentId) && entity.getProviderType().equals(providerType)) {
+                ComponentModel model = entityToModel(entity);
+                results.add(model);
+            }
+
+        }
+        return results;
+    }
+
+    protected ComponentModel entityToModel(ComponentEntity entity) {
+        ComponentModel model = new ComponentModel();
+        model.setId(entity.getId());
+        model.setName(entity.getName());
+        model.setParentId(entity.getParentId());
+        model.setProviderId(entity.getProviderId());
+        model.setProviderType(entity.getProviderType());
+        MultivaluedHashMap<String, String> map = new MultivaluedHashMap<>();
+        map.putAll(entity.getConfig());
+        model.setConfig(map);
+        return model;
+    }
+
+    @Override
+    public List<ComponentModel> getComponents() {
+        List<ComponentModel> results = new LinkedList<>();
+        for (ComponentEntity entity : realm.getComponentEntities()) {
+            ComponentModel model = entityToModel(entity);
+            results.add(model);
+        }
+        return results;
+    }
+
+    @Override
+    public ComponentModel getComponent(String id) {
+        for (ComponentEntity entity : realm.getComponentEntities()) {
+            if (entity.getId() == entity.getId()) {
+                return entityToModel(entity);
+            }
+        }
+        return null;
+    }
 }

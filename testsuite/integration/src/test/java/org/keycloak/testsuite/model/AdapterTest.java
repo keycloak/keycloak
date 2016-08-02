@@ -74,7 +74,7 @@ public class AdapterTest extends AbstractModelTest {
         realmModel.setAccessTokenLifespan(1000);
         realmModel.addDefaultRole("foo");
 
-        session.getTransaction().commit();
+        session.getTransactionManager().commit();
         resetSession();
 
         realmModel = realmManager.getRealm(realmModel.getId());

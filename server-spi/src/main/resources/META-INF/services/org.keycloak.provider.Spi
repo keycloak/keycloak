@@ -16,7 +16,7 @@
 #
 
 org.keycloak.models.UserFederationSpi
-org.keycloak.storage.StorageProviderSpi
+org.keycloak.storage.UserStorageProviderSpi
 org.keycloak.storage.federated.UserFederatedStorageProviderSpi
 org.keycloak.mappers.UserFederationMapperSpi
 org.keycloak.models.RealmSpi

@@ -17,6 +17,7 @@
 package org.keycloak.storage.jpa;
 
 import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.component.ComponentModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.GroupModel;
@@ -31,11 +32,10 @@ import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.jpa.entities.CredentialEntity;
 import org.keycloak.models.utils.FederatedCredentials;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.storage.StorageId;
-import org.keycloak.storage.StorageProviderModel;
+import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.federated.UserAttributeFederatedStorage;
 import org.keycloak.storage.federated.UserBrokerLinkFederatedStorage;
 import org.keycloak.storage.federated.UserConsentFederatedStorage;
@@ -719,7 +719,9 @@ public class JpaUserFederatedStorageProvider implements
     }
 
     @Override
-    public void preRemove(RealmModel realm, StorageProviderModel model) {
+    public void preRemove(RealmModel realm, ComponentModel model) {
+        if (!model.getProviderType().equals(UserStorageProvider.class.getName())) return;
+
         em.createNamedQuery("deleteBrokerLinkByStorageProvider")
                 .setParameter("storageProviderId", model.getId())
                 .executeUpdate();

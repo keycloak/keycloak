@@ -127,7 +127,7 @@ public class UsersResource {
     @Context
     protected HttpHeaders headers;
 
-    public UsersResource(RealmModel realm, RealmAuth auth, TokenManager tokenManager, AdminEventBuilder adminEvent) {
+    public UsersResource(RealmModel realm, RealmAuth auth, AdminEventBuilder adminEvent) {
         this.auth = auth;
         this.realm = realm;
         this.adminEvent = adminEvent;
@@ -172,8 +172,8 @@ public class UsersResource {
             updateUserFromRep(user, rep, attrsToRemove, realm, session, true);
             adminEvent.operation(OperationType.UPDATE).resourcePath(uriInfo).representation(rep).success();
 
-            if (session.getTransaction().isActive()) {
-                session.getTransaction().commit();
+            if (session.getTransactionManager().isActive()) {
+                session.getTransactionManager().commit();
             }
             return Response.noContent().build();
         } catch (ModelDuplicateException e) {
@@ -214,19 +214,19 @@ public class UsersResource {
 
             adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo, user.getId()).representation(rep).success();
 
-            if (session.getTransaction().isActive()) {
-                session.getTransaction().commit();
+            if (session.getTransactionManager().isActive()) {
+                session.getTransactionManager().commit();
             }
 
             return Response.created(uriInfo.getAbsolutePathBuilder().path(user.getId()).build()).build();
         } catch (ModelDuplicateException e) {
-            if (session.getTransaction().isActive()) {
-                session.getTransaction().setRollbackOnly();
+            if (session.getTransactionManager().isActive()) {
+                session.getTransactionManager().setRollbackOnly();
             }
             return ErrorResponse.exists("User exists with same username or email");
         } catch (ModelException me){
-            if (session.getTransaction().isActive()) {
-                session.getTransaction().setRollbackOnly();
+            if (session.getTransactionManager().isActive()) {
+                session.getTransactionManager().setRollbackOnly();
             }
             return ErrorResponse.exists("Could not create user");
         }

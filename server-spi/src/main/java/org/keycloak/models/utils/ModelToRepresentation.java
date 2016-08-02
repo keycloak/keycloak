@@ -17,6 +17,7 @@
 
 package org.keycloak.models.utils;
 
+import org.keycloak.component.ComponentModel;
 import org.keycloak.events.Event;
 import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.events.admin.AuthDetails;
@@ -44,6 +45,7 @@ import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 
+import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.AuthDetailsRepresentation;
 import org.keycloak.representations.idm.AuthenticationExecutionExportRepresentation;
@@ -51,6 +53,8 @@ import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientTemplateRepresentation;
+import org.keycloak.representations.idm.ComponentRepresentation;
+import org.keycloak.representations.idm.ConfigPropertyRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
@@ -565,7 +569,7 @@ public class ModelToRepresentation {
         return rep;
     }
 
-    public static UserFederationMapperRepresentation toRepresentation(RealmModel realm, UserFederationMapperModel model) {
+     public static UserFederationMapperRepresentation toRepresentation(RealmModel realm, UserFederationMapperModel model) {
         UserFederationMapperRepresentation rep = new UserFederationMapperRepresentation();
         rep.setId(model.getId());
         rep.setName(model.getName());
@@ -736,4 +740,27 @@ public class ModelToRepresentation {
         return rep;
     }
 
+    public static List<ConfigPropertyRepresentation> toRepresentation(List<ProviderConfigProperty> configProperties) {
+        List<ConfigPropertyRepresentation> propertiesRep = new LinkedList<>();
+        for (ProviderConfigProperty prop : configProperties) {
+            ConfigPropertyRepresentation propRep = new ConfigPropertyRepresentation();
+            propRep.setName(prop.getName());
+            propRep.setLabel(prop.getLabel());
+            propRep.setType(prop.getType());
+            propRep.setDefaultValue(prop.getDefaultValue());
+            propRep.setHelpText(prop.getHelpText());
+            propertiesRep.add(propRep);
+        }
+        return propertiesRep;
+    }
+
+    public static ComponentRepresentation toRepresentation(ComponentModel component) {
+        ComponentRepresentation rep = new ComponentRepresentation();
+        rep.setId(component.getId());
+        rep.setName(component.getName());
+        rep.setProviderId(component.getProviderId());
+        rep.setProviderType(component.getProviderType());
+        rep.setConfig(component.getConfig());
+        return rep;
+    }
 }
