@@ -77,10 +77,10 @@ public class PasswordPolicy extends Authentication {
 
     public enum Type {
 
-        HASH_ITERATIONS("HashIterations"), LENGTH("Length"), DIGITS("Digits"), LOWER_CASE("LowerCase"),
-        UPPER_CASE("UpperCase"), SPECIAL_CHARS("SpecialChars"), NOT_USERNAME("NotUsername"),
-        REGEX_PATTERN("RegexPattern"), PASSWORD_HISTORY("PasswordHistory"),
-        FORCE_EXPIRED_PASSWORD_CHANGE("ForceExpiredPasswordChange");
+        HASH_ITERATIONS("Hashing Iterations"), LENGTH("Minimum Length"), DIGITS("Digits"), LOWER_CASE("Lowercase Characters"),
+        UPPER_CASE("Uppercase Characters"), SPECIAL_CHARS("Special Characters"), NOT_USERNAME("Not Username"),
+        REGEX_PATTERN("Regular Expression"), PASSWORD_HISTORY("Not Recently Used"),
+        FORCE_EXPIRED_PASSWORD_CHANGE("Expire Password"), HASH_ALGORITHM("Hashing Algorithm");
 
         private String name;
 
