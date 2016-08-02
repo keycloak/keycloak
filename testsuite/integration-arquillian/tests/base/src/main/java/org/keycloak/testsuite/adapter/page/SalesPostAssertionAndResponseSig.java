@@ -19,18 +19,14 @@ package org.keycloak.testsuite.adapter.page;
 
 import org.jboss.arquillian.container.test.api.OperateOnDeployment;
 import org.jboss.arquillian.test.api.ArquillianResource;
-import org.openqa.selenium.WebElement;
-import org.openqa.selenium.support.FindBy;
 
 import java.net.URL;
 
 /**
- *
- * @author tkyjovsk
+ * @author mhajas
  */
-public class InputPortal extends SAMLServlet {
-
-    public static final String DEPLOYMENT_NAME = "input-portal";
+public class SalesPostAssertionAndResponseSig extends SAMLServlet {
+    public static final String DEPLOYMENT_NAME = "sales-post-assertion-and-response-sig";
 
     @ArquillianResource
     @OperateOnDeployment(DEPLOYMENT_NAME)
@@ -40,17 +36,4 @@ public class InputPortal extends SAMLServlet {
     public URL getInjectedUrl() {
         return url;
     }
-
-    @FindBy(id = "parameter")
-    private WebElement parameter;
-
-    @FindBy(name = "submit")
-    private WebElement submit;
-
-    public void execute(String param) {
-        parameter.clear();
-        parameter.sendKeys(param);
-        submit.click();
-    }
-
 }

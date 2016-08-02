@@ -2,6 +2,8 @@ package org.keycloak.testsuite.adapter.servlet;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
+import org.junit.Test;
 import org.keycloak.testsuite.arquillian.annotation.UseServletFilter;
 
 /**
@@ -25,11 +27,12 @@ public abstract class AbstractSAMLFilterServletAdapterTest extends AbstractSAMLS
         salesPostSigEmailServletPage.checkRoles(true);
         salesPostSigPersistentServletPage.checkRoles(true);
         salesPostSigTransientServletPage.checkRoles(true);
-        employee2ServletPage.navigateTo();
+        salesPostAssertionAndResponseSigPage.checkRoles(true);
 
         //using endpoint instead of query param because we are not able to put query param to IDP initiated login
+        employee2ServletPage.navigateTo();
         testRealmLoginPage.form().login(bburkeUser);
-        employee2ServletPage.checkRolesEndPoint();
+        employee2ServletPage.checkRolesEndPoint(true);
         employee2ServletPage.logout();
 
         forbiddenIfNotAuthenticated = false;
@@ -50,5 +53,19 @@ public abstract class AbstractSAMLFilterServletAdapterTest extends AbstractSAMLS
         salesPostSigEmailServletPage.checkRoles(false);
         salesPostSigPersistentServletPage.checkRoles(false);
         salesPostSigTransientServletPage.checkRoles(false);
+    }
+
+    @Test
+    @Override
+    @Ignore
+    public void testSavedPostRequest() {
+
+    }
+
+    @Test
+    @Override
+    @Ignore
+    public void testErrorHandling() {
+
     }
 }
