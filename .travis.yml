@@ -11,8 +11,12 @@ jdk:
 before_script:
   - export MAVEN_SKIP_RC=true
 
+cache:
+  directories:
+    - $HOME/.m2
+
 install: 
-  - ( mvn install -Pdistribution -DskipTests=true -B -V -q ) & ( MYPID=$!; while [  $(ps -ef | grep $MYPID | grep -v grep | wc -l) -gt 0 ]; do    sleep 10;     date; done; )
+  - mvn install -Pdistribution -DskipTests=true -B -V -q
 
 script:
   - mvn test -B
