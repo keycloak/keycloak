@@ -46,7 +46,6 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
-import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.idm.CredentialRepresentation;
@@ -682,7 +681,7 @@ public class UsersResource {
             if (username != null) {
                 attributes.put(UserModel.USERNAME, username);
             }
-            userModels = session.users().searchForUserByAttributes(attributes, realm, firstResult, maxResults);
+            userModels = session.users().searchForUser(attributes, realm, firstResult, maxResults);
         } else {
             userModels = session.users().getUsers(realm, firstResult, maxResults, false);
         }

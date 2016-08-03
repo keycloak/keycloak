@@ -253,12 +253,12 @@ public class MongoUserProvider implements UserProvider {
     }
 
     @Override
-    public List<UserModel> searchForUserByAttributes(Map<String, String> attributes, RealmModel realm) {
-        return searchForUserByAttributes(attributes, realm, -1, -1);
+    public List<UserModel> searchForUser(Map<String, String> attributes, RealmModel realm) {
+        return searchForUser(attributes, realm, -1, -1);
     }
 
     @Override
-    public List<UserModel> searchForUserByAttributes(Map<String, String> attributes, RealmModel realm, int firstResult, int maxResults) {
+    public List<UserModel> searchForUser(Map<String, String> attributes, RealmModel realm, int firstResult, int maxResults) {
         QueryBuilder queryBuilder = new QueryBuilder()
                 .and("realmId").is(realm.getId());
 

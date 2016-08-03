@@ -29,24 +29,79 @@ import java.util.Map;
  */
 public interface UserQueryProvider {
 
-    // Service account is included for counts
     int getUsersCount(RealmModel realm);
 
     List<UserModel> getUsers(RealmModel realm);
-    List<UserModel> searchForUserByAttributes(Map<String, String> attributes, RealmModel realm);
-
     List<UserModel> getUsers(RealmModel realm, int firstResult, int maxResults);
+
+    /**
+     * Search for users with username, email or first + last name that is like search string.
+     *
+     * If possible, implementations should treat the parameter values as partial match patterns i.e. in RDMBS terms use LIKE.
+     *
+     * This method is used by the admin console search box
+     *
+     * @param search
+     * @param realm
+     * @return
+     */
+    List<UserModel> searchForUser(String search, RealmModel realm);
+
+    /**
+     * Search for users with username, email or first + last name that is like search string.
+     *
+     * If possible, implementations should treat the parameter values as partial match patterns i.e. in RDMBS terms use LIKE.
+     *
+     * This method is used by the admin console search box
+     *
+     * @param search
+     * @param realm
+     * @param firstResult
+     * @param maxResults
+     * @return
+     */
     List<UserModel> searchForUser(String search, RealmModel realm, int firstResult, int maxResults);
-    List<UserModel> searchForUserByAttributes(Map<String, String> attributes, RealmModel realm, int firstResult, int maxResults);
 
+    /**
+     * Search for user by parameter.  Valid parameters are:
+     * "first" - first name
+     * "last" - last name
+     * "email" - email
+     * "username" - username
+     *
+     * If possible, implementations should treat the parameter values as partial match patterns i.e. in RDMBS terms use LIKE.
+     *
+     * This method is used by the REST API when querying users.
+     *
+     *
+     * @param params
+     * @param realm
+     * @return
+     */
+    List<UserModel> searchForUser(Map<String, String> params, RealmModel realm);
 
-
-
+    /**
+     * Search for user by parameter.  Valid parameters are:
+     * "first" - first name
+     * "last" - last name
+     * "email" - email
+     * "username" - username
+     *
+     * If possible, implementations should treat the parameter values as patterns i.e. in RDMBS terms use LIKE.
+     * This method is used by the REST API when querying users.
+     *
+     *
+     * @param params
+     * @param realm
+     * @param firstResult
+     * @param maxResults
+     * @return
+     */
+    List<UserModel> searchForUser(Map<String, String> params, RealmModel realm, int firstResult, int maxResults);
 
     List<UserModel> getGroupMembers(RealmModel realm, GroupModel group, int firstResult, int maxResults);
     List<UserModel> getGroupMembers(RealmModel realm, GroupModel group);
 
-    List<UserModel> searchForUser(String search, RealmModel realm);
 
     // Searching by UserModel.attribute (not property)
     List<UserModel> searchForUserByUserAttribute(String attrName, String attrValue, RealmModel realm);

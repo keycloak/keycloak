@@ -49,6 +49,7 @@ import javax.persistence.TypedQuery;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -547,7 +548,7 @@ public class JpaUserProvider implements UserProvider {
             query.setMaxResults(maxResults);
         }
         List<UserEntity> results = query.getResultList();
-        List<UserModel> users = new ArrayList<UserModel>();
+        List<UserModel> users = new LinkedList<>();
         for (UserEntity entity : results) users.add(new UserAdapter(session, realm, em, entity));
         return users;
     }
@@ -564,7 +565,7 @@ public class JpaUserProvider implements UserProvider {
         }
         List<UserEntity> results = query.getResultList();
 
-        List<UserModel> users = new ArrayList<UserModel>();
+        List<UserModel> users = new LinkedList<>();
         for (UserEntity user : results) {
             users.add(new UserAdapter(session, realm, em, user));
         }
@@ -588,18 +589,18 @@ public class JpaUserProvider implements UserProvider {
             query.setMaxResults(maxResults);
         }
         List<UserEntity> results = query.getResultList();
-        List<UserModel> users = new ArrayList<UserModel>();
+        List<UserModel> users = new LinkedList<>();
         for (UserEntity entity : results) users.add(new UserAdapter(session, realm, em, entity));
         return users;
     }
 
     @Override
-    public List<UserModel> searchForUserByAttributes(Map<String, String> attributes, RealmModel realm) {
-        return searchForUserByAttributes(attributes, realm, -1, -1);
+    public List<UserModel> searchForUser(Map<String, String> attributes, RealmModel realm) {
+        return searchForUser(attributes, realm, -1, -1);
     }
 
     @Override
-    public List<UserModel> searchForUserByAttributes(Map<String, String> attributes, RealmModel realm, int firstResult, int maxResults) {
+    public List<UserModel> searchForUser(Map<String, String> attributes, RealmModel realm, int firstResult, int maxResults) {
         StringBuilder builder = new StringBuilder("select u from UserEntity u where u.realmId = :realmId");
         for (Map.Entry<String, String> entry : attributes.entrySet()) {
             String attribute = null;
