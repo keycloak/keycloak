@@ -193,9 +193,13 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
     private Configuration getRevisionCacheConfig(boolean managed, long maxEntries) {
         ConfigurationBuilder cb = new ConfigurationBuilder();
         cb.invocationBatching().enable().transaction().transactionMode(TransactionMode.TRANSACTIONAL);
-        if (!managed) {
+
+        // Workaround: Use Dummy manager even in managed ( wildfly/eap ) environment. Without this workaround, there is an issue in EAP7 overlay.
+        // After start+end revisions batch is left the JTA transaction in committed state. This is incorrect and causes other issues afterwards.
+        // TODO: Investigate
+        // if (!managed)
             cb.transaction().transactionManagerLookup(new DummyTransactionManagerLookup());
-        }
+
         cb.transaction().lockingMode(LockingMode.PESSIMISTIC);
 
         cb.eviction().strategy(EvictionStrategy.LRU).type(EvictionType.COUNT).size(maxEntries);
