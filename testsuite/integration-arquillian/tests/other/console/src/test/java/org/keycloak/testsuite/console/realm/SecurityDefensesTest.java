@@ -73,7 +73,7 @@ public class SecurityDefensesTest extends AbstractRealmTest {
 
     @Test
     public void maxLoginFailuresTest() throws InterruptedException {
-        final short secondsToWait = 3;
+        final short secondsToWait = 10; // For slower browsers/webdrivers (like IE) we need higher value
         final short maxLoginFailures = 2;
 
         bruteForceDetectionPage.form().setProtectionEnabled(true);
@@ -89,7 +89,7 @@ public class SecurityDefensesTest extends AbstractRealmTest {
 
     @Test
     public void quickLoginCheck() throws InterruptedException {
-        final short secondsToWait = 3;
+        final short secondsToWait = 10;
 
         bruteForceDetectionPage.form().setProtectionEnabled(true);
         bruteForceDetectionPage.form().setMaxLoginFailures("100");
@@ -104,7 +104,7 @@ public class SecurityDefensesTest extends AbstractRealmTest {
 
     @Test
     public void maxWaitLoginFailures() throws InterruptedException {
-        final short secondsToWait = 5;
+        final short secondsToWait = 15;
 
         bruteForceDetectionPage.form().setProtectionEnabled(true);
         bruteForceDetectionPage.form().setMaxLoginFailures("1");
@@ -120,7 +120,7 @@ public class SecurityDefensesTest extends AbstractRealmTest {
     @Test
     public void failureResetTime() throws InterruptedException {
         final short failureResetTime = 3;
-        final short waitIncrement = 3;
+        final short waitIncrement = 5;
 
         bruteForceDetectionPage.form().setProtectionEnabled(true);
         bruteForceDetectionPage.form().setMaxLoginFailures("1");
@@ -199,8 +199,8 @@ public class SecurityDefensesTest extends AbstractRealmTest {
 
         wait *= 1000;
 
-        log.debug("Wait: " + wait);
-        Thread.sleep(wait);
+        log.info("Wait: " + wait);
+        pause(wait);
 
         if (finalLogin) {
             testRealmLoginPage.form().login(testUser);

@@ -45,6 +45,7 @@ import javax.ws.rs.core.UriBuilder;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
 import org.keycloak.representations.idm.EventRepresentation;
@@ -207,10 +208,9 @@ public class AccountTest extends TestRealmKeycloakTest {
         testRealm.setPasswordPolicy(policy);
         testRealm().update(testRealm);
     }
-    @Test
-    public void changePasswordWithLengthPasswordPolicy() {
-        setPasswordPolicy("length");
 
+    @Test
+    public void changePasswordWithBlankCurrentPassword() {
         changePasswordPage.open();
         loginPage.login("test-user@localhost", "password");
         events.expectLogin().client("account").detail(Details.REDIRECT_URI, ACCOUNT_REDIRECT + "?path=password").assertEvent();
@@ -219,7 +219,130 @@ public class AccountTest extends TestRealmKeycloakTest {
         Assert.assertEquals("Please specify password.", profilePage.getError());
         events.expectAccount(EventType.UPDATE_PASSWORD_ERROR).error(Errors.PASSWORD_MISSING).assertEvent();
 
-        changePasswordPage.changePassword("password", "new-password", "new-password");
+        changePasswordPage.changePassword("password", "new", "new");
+        Assert.assertEquals("Your password has been updated.", profilePage.getSuccess());
+        events.expectAccount(EventType.UPDATE_PASSWORD).assertEvent();
+    }
+
+    @Test
+    public void changePasswordWithLengthPasswordPolicy() {
+        setPasswordPolicy("length(8)");
+
+        changePasswordPage.open();
+        loginPage.login("test-user@localhost", "password");
+        events.expectLogin().client("account").detail(Details.REDIRECT_URI, ACCOUNT_REDIRECT + "?path=password").assertEvent();
+
+        changePasswordPage.changePassword("password", "1234", "1234");
+        Assert.assertEquals("Invalid password: minimum length 8.", profilePage.getError());
+        events.expectAccount(EventType.UPDATE_PASSWORD_ERROR).error(Errors.PASSWORD_REJECTED).assertEvent();
+
+        changePasswordPage.changePassword("password", "12345678", "12345678");
+        Assert.assertEquals("Your password has been updated.", profilePage.getSuccess());
+        events.expectAccount(EventType.UPDATE_PASSWORD).assertEvent();
+    }
+
+    @Test
+    public void changePasswordWithDigitsPolicy() {
+        setPasswordPolicy("digits(2)");
+
+        changePasswordPage.open();
+        loginPage.login("test-user@localhost", "password");
+        events.expectLogin().client("account").detail(Details.REDIRECT_URI, ACCOUNT_REDIRECT + "?path=password").assertEvent();
+
+        changePasswordPage.changePassword("password", "invalidPassword1", "invalidPassword1");
+        Assert.assertEquals("Invalid password: must contain at least 2 numerical digits.", profilePage.getError());
+        events.expectAccount(EventType.UPDATE_PASSWORD_ERROR).error(Errors.PASSWORD_REJECTED).assertEvent();
+
+        changePasswordPage.changePassword("password", "validPassword12", "validPassword12");
+        Assert.assertEquals("Your password has been updated.", profilePage.getSuccess());
+        events.expectAccount(EventType.UPDATE_PASSWORD).assertEvent();
+    }
+
+    @Test
+    public void changePasswordWithLowerCasePolicy() {
+        setPasswordPolicy("lowerCase(2)");
+
+        changePasswordPage.open();
+        loginPage.login("test-user@localhost", "password");
+        events.expectLogin().client("account").detail(Details.REDIRECT_URI, ACCOUNT_REDIRECT + "?path=password").assertEvent();
+
+        changePasswordPage.changePassword("password", "iNVALIDPASSWORD", "iNVALIDPASSWORD");
+        Assert.assertEquals("Invalid password: must contain at least 2 lower case characters.", profilePage.getError());
+        events.expectAccount(EventType.UPDATE_PASSWORD_ERROR).error(Errors.PASSWORD_REJECTED).assertEvent();
+
+        changePasswordPage.changePassword("password", "vaLIDPASSWORD", "vaLIDPASSWORD");
+        Assert.assertEquals("Your password has been updated.", profilePage.getSuccess());
+        events.expectAccount(EventType.UPDATE_PASSWORD).assertEvent();
+    }
+
+    @Test
+    public void changePasswordWithUpperCasePolicy() {
+        setPasswordPolicy("upperCase(2)");
+
+        changePasswordPage.open();
+        loginPage.login("test-user@localhost", "password");
+        events.expectLogin().client("account").detail(Details.REDIRECT_URI, ACCOUNT_REDIRECT + "?path=password").assertEvent();
+
+        changePasswordPage.changePassword("password", "Invalidpassword", "Invalidpassword");
+        Assert.assertEquals("Invalid password: must contain at least 2 upper case characters.", profilePage.getError());
+        events.expectAccount(EventType.UPDATE_PASSWORD_ERROR).error(Errors.PASSWORD_REJECTED).assertEvent();
+
+
+        changePasswordPage.changePassword("password", "VAlidpassword", "VAlidpassword");
+        Assert.assertEquals("Your password has been updated.", profilePage.getSuccess());
+        events.expectAccount(EventType.UPDATE_PASSWORD).assertEvent();
+    }
+
+    @Test
+    public void changePasswordWithSpecialCharsPolicy() {
+        setPasswordPolicy("specialChars(2)");
+
+        changePasswordPage.open();
+        loginPage.login("test-user@localhost", "password");
+        events.expectLogin().client("account").detail(Details.REDIRECT_URI, ACCOUNT_REDIRECT + "?path=password").assertEvent();
+
+        changePasswordPage.changePassword("password", "invalidPassword*", "invalidPassword*");
+        Assert.assertEquals("Invalid password: must contain at least 2 special characters.", profilePage.getError());
+        events.expectAccount(EventType.UPDATE_PASSWORD_ERROR).error(Errors.PASSWORD_REJECTED).assertEvent();
+
+
+        changePasswordPage.changePassword("password", "validPassword*#", "validPassword*#");
+        Assert.assertEquals("Your password has been updated.", profilePage.getSuccess());
+        events.expectAccount(EventType.UPDATE_PASSWORD).assertEvent();
+    }
+
+    @Test
+    public void changePasswordWithNotUsernamePolicy() {
+        setPasswordPolicy("notUsername(1)");
+
+        changePasswordPage.open();
+        loginPage.login("test-user@localhost", "password");
+        events.expectLogin().client("account").detail(Details.REDIRECT_URI, ACCOUNT_REDIRECT + "?path=password").assertEvent();
+
+        changePasswordPage.changePassword("password", "test-user@localhost", "test-user@localhost");
+        Assert.assertEquals("Invalid password: must not be equal to the username.", profilePage.getError());
+        events.expectAccount(EventType.UPDATE_PASSWORD_ERROR).error(Errors.PASSWORD_REJECTED).assertEvent();
+
+
+        changePasswordPage.changePassword("password", "newPassword", "newPassword");
+        Assert.assertEquals("Your password has been updated.", profilePage.getSuccess());
+        events.expectAccount(EventType.UPDATE_PASSWORD).assertEvent();
+    }
+
+    @Test
+    public void changePasswordWithRegexPatternsPolicy() {
+        setPasswordPolicy("regexPattern(^[A-Z]+#[a-z]{8}$)");
+
+        changePasswordPage.open();
+        loginPage.login("test-user@localhost", "password");
+        events.expectLogin().client("account").detail(Details.REDIRECT_URI, ACCOUNT_REDIRECT + "?path=password").assertEvent();
+
+        changePasswordPage.changePassword("password", "invalidPassword", "invalidPassword");
+        Assert.assertEquals("Invalid password: fails to match regex pattern(s).", profilePage.getError());
+        events.expectAccount(EventType.UPDATE_PASSWORD_ERROR).error(Errors.PASSWORD_REJECTED).assertEvent();
+
+
+        changePasswordPage.changePassword("password", "VALID#password", "VALID#password");
         Assert.assertEquals("Your password has been updated.", profilePage.getSuccess());
         events.expectAccount(EventType.UPDATE_PASSWORD).assertEvent();
     }
