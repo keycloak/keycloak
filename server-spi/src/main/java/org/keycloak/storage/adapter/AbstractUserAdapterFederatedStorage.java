@@ -55,6 +55,7 @@ public abstract class AbstractUserAdapterFederatedStorage implements UserModel {
     public static String CREATED_TIMESTAMP_ATTRIBUTE = "CREATED_TIMESTAMP";
     public static String ENABLED_ATTRIBUTE = "ENABLED";
     public static String OTP_ENABLED_ATTRIBUTE = "OTP_ENABLED";
+    public static String UPDATED_TIMESTAMP_ATTRIBUTE = "UPDATED_TIMESTAMP";
 
 
     protected KeycloakSession session;
@@ -246,6 +247,20 @@ public abstract class AbstractUserAdapterFederatedStorage implements UserModel {
     public void setOtpEnabled(boolean totp) {
         setSingleAttribute(OTP_ENABLED_ATTRIBUTE, Boolean.toString(totp));
 
+    }
+
+    @Override
+    public Long getUpdatedTimestamp() {
+        String val = getFirstAttribute(UPDATED_TIMESTAMP_ATTRIBUTE);
+        if(val == null) {
+            return null;
+        }
+        return Long.valueOf(val);
+    }
+
+    @Override
+    public void setUpdatedTimestamp(Long timestamp) {
+        setSingleAttribute(UPDATED_TIMESTAMP_ATTRIBUTE, timestamp.toString());
     }
 
     /**

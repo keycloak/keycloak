@@ -195,4 +195,12 @@
         <addForeignKeyConstraint baseColumnNames="COMPONENT_ID" baseTableName="COMPONENT_CONFIG" constraintName="FK_COMPONENT_CONFIG" referencedColumnNames="ID" referencedTableName="COMPONENT"/>
 
     </changeSet>
+
+    <changeSet author="thomas.darimont@gmail.com" id="2.1.0-1">
+        <addColumn tableName="USER_ENTITY">
+            <column name="UPDATED_TIMESTAMP" type="BIGINT">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
 </databaseChangeLog>

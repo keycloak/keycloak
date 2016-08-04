@@ -28,6 +28,7 @@ public class UserEntity extends AbstractIdentifiableEntity {
 
     private String username;
     private Long createdTimestamp;
+    private Long updatedTimestamp;
     private String firstName;
     private String lastName;
     private String email;
@@ -63,6 +64,13 @@ public class UserEntity extends AbstractIdentifiableEntity {
         this.createdTimestamp = timestamp;
     }
 
+    public Long getUpdatedTimestamp() {
+        return updatedTimestamp;
+    }
+
+    public void setUpdatedTimestamp(Long updatedTimestamp) {
+        this.updatedTimestamp = updatedTimestamp;
+    }
 
     public String getFirstName() {
         return firstName;

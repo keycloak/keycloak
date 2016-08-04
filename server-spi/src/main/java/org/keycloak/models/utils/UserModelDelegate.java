@@ -250,6 +250,16 @@ public class UserModelDelegate implements UserModel {
     }
 
     @Override
+    public Long getUpdatedTimestamp() {
+        return delegate.getUpdatedTimestamp();
+    }
+
+    @Override
+    public void setUpdatedTimestamp(Long timestamp) {
+        delegate.setUpdatedTimestamp(timestamp);
+    }
+
+    @Override
     public Set<GroupModel> getGroups() {
         return delegate.getGroups();
     }

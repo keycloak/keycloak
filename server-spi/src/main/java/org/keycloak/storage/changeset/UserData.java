@@ -39,6 +39,8 @@ public class UserData {
     private boolean usernameChanged;
     private Long createdTimestamp;
     private boolean createdTimestampChanged;
+    private Long updatedTimestamp;
+    private boolean updatedTimestampChanged;
     private String firstName;
     private boolean firstNameChanged;
     private String lastName;
@@ -69,6 +71,7 @@ public class UserData {
         original.id = id;
         original.username = username;
         original.createdTimestamp = createdTimestamp;
+        original.updatedTimestamp = updatedTimestamp;
         original.firstName = firstName;
         original.lastName = lastName;
         original.email = email;
@@ -87,6 +90,7 @@ public class UserData {
         idChanged = false;
         usernameChanged = false;
         createdTimestampChanged = false;
+        updatedTimestampChanged = false;
         firstNameChanged = false;
         lastNameChanged = false;
         emailChanged = false;
@@ -104,6 +108,7 @@ public class UserData {
         return !idChanged
         && !usernameChanged
         && !createdTimestampChanged
+        && !updatedTimestampChanged
         && !firstNameChanged
         && !lastNameChanged
         && !emailChanged
@@ -127,6 +132,10 @@ public class UserData {
 
     public boolean isCreatedTimestampChanged() {
         return createdTimestampChanged;
+    }
+
+    public boolean isUpdatedTimestampChanged() {
+        return updatedTimestampChanged;
     }
 
     public boolean isFirstNameChanged() {
@@ -200,6 +209,14 @@ public class UserData {
         createdTimestampChanged = true;
     }
 
+    public Long getUpdatedTimestamp() {
+        return updatedTimestamp;
+    }
+
+    public void setUpdatedTimestamp(Long timestamp) {
+        this.updatedTimestamp = timestamp;
+        updatedTimestampChanged = true;
+    }
 
     public String getFirstName() {
         return firstName;

@@ -96,6 +96,18 @@ public class UserAdapter implements UserModel {
     }
 
     @Override
+    public Long getUpdatedTimestamp() {
+        if (updated != null) return updated.getUpdatedTimestamp();
+        return cached.getUpdatedTimestamp();
+    }
+
+    @Override
+    public void setUpdatedTimestamp(Long timestamp) {
+        getDelegateForUpdate();
+        updated.setUpdatedTimestamp(timestamp);
+    }
+
+    @Override
     public boolean isEnabled() {
         if (updated != null) return updated.isEnabled();
         return cached.isEnabled();
