@@ -369,6 +369,17 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     }
 
     @Override
+    public boolean isIncludeIdTokenInRefreshTokenResponse() {
+        return realm.isIncludeIdTokenInRefreshTokenResponse();
+    }
+
+    @Override
+    public void setIncludeIdTokenInRefreshTokenResponse(boolean includeIdTokenInRefreshTokenResponse) {
+        realm.setIncludeIdTokenInRefreshTokenResponse(includeIdTokenInRefreshTokenResponse);
+        updateRealm();
+    }
+
+    @Override
     public int getSsoSessionIdleTimeout() {
         return realm.getSsoSessionIdleTimeout();
     }

@@ -195,4 +195,16 @@
         <addForeignKeyConstraint baseColumnNames="COMPONENT_ID" baseTableName="COMPONENT_CONFIG" constraintName="FK_COMPONENT_CONFIG" referencedColumnNames="ID" referencedTableName="COMPONENT"/>
 
     </changeSet>
+
+    <changeSet author="thomas.darimont@gmail.com" id="2.1.0-1">
+        <addColumn tableName="REALM">
+            <column name="INCLUDE_ID_TOKEN_IN_REFRESH" type="BOOLEAN" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+
+        <update tableName="REALM">
+            <column name="INCLUDE_ID_TOKEN_IN_REFRESH" valueBoolean="true"></column>
+        </update>
+    </changeSet>
 </databaseChangeLog>

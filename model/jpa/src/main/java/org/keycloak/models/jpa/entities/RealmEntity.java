@@ -98,6 +98,10 @@ public class RealmEntity {
 
     @Column(name="REVOKE_REFRESH_TOKEN")
     private boolean revokeRefreshToken;
+
+    @Column(name="INCLUDE_ID_TOKEN_IN_REFRESH")
+    private boolean includeIdTokenInRefreshResponse;
+
     @Column(name="SSO_IDLE_TIMEOUT")
     private int ssoSessionIdleTimeout;
     @Column(name="SSO_MAX_LIFESPAN")
@@ -319,6 +323,14 @@ public class RealmEntity {
 
     public void setRevokeRefreshToken(boolean revokeRefreshToken) {
         this.revokeRefreshToken = revokeRefreshToken;
+    }
+
+    public boolean isIncludeIdTokenInRefreshResponse() {
+        return includeIdTokenInRefreshResponse;
+    }
+
+    public void setIncludeIdTokenInRefreshResponse(boolean includeIdTokenInRefreshResponse) {
+        this.includeIdTokenInRefreshResponse = includeIdTokenInRefreshResponse;
     }
 
     public int getSsoSessionIdleTimeout() {

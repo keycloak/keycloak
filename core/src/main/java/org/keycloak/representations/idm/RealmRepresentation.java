@@ -32,6 +32,7 @@ public class RealmRepresentation {
     protected String displayNameHtml;
     protected Integer notBefore;
     protected Boolean revokeRefreshToken;
+    protected Boolean includeIdTokenOnTokenRefresh;
     protected Integer accessTokenLifespan;
     protected Integer accessTokenLifespanForImplicitFlow;
     protected Integer ssoSessionIdleTimeout;
@@ -218,6 +219,14 @@ public class RealmRepresentation {
 
     public void setRevokeRefreshToken(Boolean revokeRefreshToken) {
         this.revokeRefreshToken = revokeRefreshToken;
+    }
+
+    public Boolean getIncludeIdTokenOnTokenRefresh() {
+        return includeIdTokenOnTokenRefresh;
+    }
+
+    public void setIncludeIdTokenOnTokenRefresh(Boolean includeIdTokenOnTokenRefresh) {
+        this.includeIdTokenOnTokenRefresh = includeIdTokenOnTokenRefresh;
     }
 
     public Integer getAccessTokenLifespan() {

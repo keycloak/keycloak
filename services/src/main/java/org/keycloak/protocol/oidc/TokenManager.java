@@ -235,9 +235,14 @@ public class TokenManager {
         validation.clientSession.setTimestamp(currentTime);
         validation.userSession.setLastSessionRefresh(currentTime);
 
-        AccessTokenResponse res = responseBuilder(realm, authorizedClient, event, session, validation.userSession, validation.clientSession)
-                .accessToken(validation.newToken)
-                .generateIDToken()
+        AccessTokenResponseBuilder accessTokenResponseBuilder = responseBuilder(realm, authorizedClient, event, session, validation.userSession, validation.clientSession)
+                .accessToken(validation.newToken);
+
+        if (realm.isIncludeIdTokenInRefreshTokenResponse()) {
+            accessTokenResponseBuilder = accessTokenResponseBuilder.generateIDToken();
+        }
+
+        AccessTokenResponse res = accessTokenResponseBuilder
                 .generateRefreshToken()
                 .build();
 
