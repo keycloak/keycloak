@@ -219,13 +219,15 @@ public class LDAPEmbeddedServer {
         ldapServer.setSearchBaseDn(this.baseDN);
 
         // Read the transports
-        Transport ldap = new TcpTransport(this.bindHost, this.bindPort, 3, 50);
+        Transport ldaps = new TcpTransport(this.bindHost, this.bindPort, 3, 50);
         if (enableSSL) {
-            ldap.setEnableSSL(true);
+            ldaps.setEnableSSL(true);
             ldapServer.setKeystoreFile(keystoreFile);
             ldapServer.setCertificatePassword(certPassword);
+            Transport ldap = new TcpTransport(this.bindHost, 10389, 3, 50);
+            ldapServer.addTransports( ldap );
         }
-        ldapServer.addTransports( ldap );
+        ldapServer.addTransports( ldaps );
 
         // Associate the DS to this LdapServer
         ldapServer.setDirectoryService( directoryService );
