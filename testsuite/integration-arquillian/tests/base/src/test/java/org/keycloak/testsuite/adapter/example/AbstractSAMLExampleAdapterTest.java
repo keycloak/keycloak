@@ -118,7 +118,7 @@ public abstract class AbstractSAMLExampleAdapterTest extends AbstractExampleAdap
         waitUntilElement(By.xpath("//body")).text().contains("Welcome to the Employee Tool,");
 
         samlRedirectSigExamplePage.logout();
-        waitUntilElement(By.xpath("//body")).text().contains("Logged out.");
+        URLAssert.assertCurrentUrlStartsWith(testRealmSAMLRedirectLoginPage);
 
         samlRedirectSigExamplePage.navigateTo();
         URLAssert.assertCurrentUrlStartsWith(testRealmSAMLRedirectLoginPage);

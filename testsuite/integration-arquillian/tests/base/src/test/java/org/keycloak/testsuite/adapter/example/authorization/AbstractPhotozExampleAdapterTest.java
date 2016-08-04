@@ -21,6 +21,7 @@ import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
+import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.ClientResource;
@@ -47,10 +48,8 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -73,6 +72,17 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
 
     @Page
     private PhotozClientAuthzTestApp clientPage;
+
+    @Override
+    public void setDefaultPageUriParameters() {
+        super.setDefaultPageUriParameters();
+        testRealmPage.setAuthRealm(REALM_NAME);
+    }
+
+    @Before
+    public void beforePhotozExampleAdapterTest() {
+        deleteAllCookiesForClientPage();
+    }
 
     @Override
     public void addAdapterTestRealms(List<RealmRepresentation> testRealms) {
@@ -104,7 +114,7 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
         try {
             this.deployer.deploy(RESOURCE_SERVER_ID);
 
-            this.clientPage.login("alice", "alice");
+            loginToClientPage("alice", "alice");
             this.clientPage.createAlbum("Alice Family Album");
 
             List<ResourceRepresentation> resources = getAuthorizationResource().resources().resources();
@@ -123,10 +133,10 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
     public void testOnlyOwnerCanDeleteAlbum() throws Exception {
         try {
             this.deployer.deploy(RESOURCE_SERVER_ID);
-            this.clientPage.login("alice", "alice");
+            loginToClientPage("alice", "alice");
             this.clientPage.createAlbum("Alice-Family-Album");
 
-            this.clientPage.login("admin", "admin");
+            loginToClientPage("admin", "admin");
             this.clientPage.navigateToAdminAlbum();
 
             List<ResourceRepresentation> resources = getAuthorizationResource().resources().resources();
@@ -139,7 +149,7 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
                 }
             }
 
-            this.clientPage.login("admin", "admin");
+            loginToClientPage("admin", "admin");
 
             this.clientPage.navigateToAdminAlbum();
             this.clientPage.deleteAlbum("Alice-Family-Album");
@@ -169,7 +179,7 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
         try {
             this.deployer.deploy(RESOURCE_SERVER_ID);
 
-            this.clientPage.login("alice", "alice");
+            loginToClientPage("alice", "alice");
             this.clientPage.navigateToAdminAlbum();
             assertTrue(this.clientPage.wasDenied());
         } finally {
@@ -182,7 +192,7 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
         try {
             this.deployer.deploy(RESOURCE_SERVER_ID);
 
-            this.clientPage.login("admin", "admin");
+            loginToClientPage("admin", "admin");
             this.clientPage.navigateToAdminAlbum();
             assertFalse(this.clientPage.wasDenied());
 
@@ -206,10 +216,10 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
         try {
             this.deployer.deploy(RESOURCE_SERVER_ID);
 
-            this.clientPage.login("alice", "alice");
+            loginToClientPage("alice", "alice");
             this.clientPage.createAlbum("Alice Family Album");
 
-            this.clientPage.login("admin", "admin");
+            loginToClientPage("admin", "admin");
             this.clientPage.navigateToAdminAlbum();
             assertFalse(this.clientPage.wasDenied());
 
@@ -269,10 +279,10 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
         try {
             this.deployer.deploy(RESOURCE_SERVER_ID);
 
-            this.clientPage.login("alice", "alice");
+            loginToClientPage("alice", "alice");
             this.clientPage.createAlbum("Alice Family Album");
 
-            this.clientPage.login("admin", "admin");
+            loginToClientPage("admin", "admin");
             this.clientPage.navigateToAdminAlbum();
             assertFalse(this.clientPage.wasDenied());
 
@@ -288,10 +298,10 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
                 }
             }
 
-            this.clientPage.login("alice", "alice");
+            loginToClientPage("alice", "alice");
             this.clientPage.createAlbum("Alice Family Album");
 
-            this.clientPage.login("admin", "admin");
+            loginToClientPage("admin", "admin");
             this.clientPage.navigateToAdminAlbum();
             this.clientPage.viewAlbum("Alice Family Album");
             assertFalse(this.clientPage.wasDenied());
@@ -324,7 +334,7 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
         try {
             this.deployer.deploy(RESOURCE_SERVER_ID);
 
-            this.clientPage.login("alice", "alice");
+            loginToClientPage("alice", "alice");
             assertFalse(this.clientPage.wasDenied());
 
             UsersResource usersResource = realmsResouce().realm(REALM_NAME).users();
@@ -347,10 +357,10 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
 
             roleResource.update(roleRepresentation);
 
-            this.clientPage.login("alice", "alice");
+            loginToClientPage("alice", "alice");
             assertTrue(this.clientPage.wasDenied());
 
-            this.clientPage.loginWithScopes("alice", "alice", RESOURCE_SERVER_ID + "/manage-albums");
+            loginToClientPage("alice", "alice", RESOURCE_SERVER_ID + "/manage-albums");
             assertFalse(this.clientPage.wasDenied());
         } finally {
             this.deployer.undeploy(RESOURCE_SERVER_ID);
@@ -362,7 +372,7 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
         try {
             this.deployer.deploy(RESOURCE_SERVER_ID);
 
-            this.clientPage.login("alice", "alice");
+            loginToClientPage("alice", "alice");
 
             assertFalse(this.clientPage.wasDenied());
 
@@ -386,7 +396,7 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
 
             manageAlbumRole.update(roleRepresentation);
 
-            this.clientPage.login("alice", "alice");
+            loginToClientPage("alice", "alice");
             assertTrue(this.clientPage.wasDenied());
 
             for (PolicyRepresentation policy : getAuthorizationResource().policies().policies()) {
@@ -405,7 +415,7 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
                 }
             }
 
-            this.clientPage.login("alice", "alice");
+            loginToClientPage("alice", "alice");
             assertFalse(this.clientPage.wasDenied());
         } finally {
             this.deployer.undeploy(RESOURCE_SERVER_ID);
@@ -417,7 +427,7 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
         try {
             this.deployer.deploy(RESOURCE_SERVER_ID);
 
-            this.clientPage.login("alice", "alice");
+            loginToClientPage("alice", "alice");
             String resourceName = "My Resource Instance";
             this.clientPage.createAlbum(resourceName);
             assertFalse(this.clientPage.wasDenied());
@@ -431,7 +441,7 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
 
             this.clientPage.createAlbum(resourceName);
 
-            this.clientPage.login("admin", "admin");
+            loginToClientPage("admin", "admin");
 
             this.clientPage.navigateToAdminAlbum();
             this.clientPage.viewAlbum(resourceName);
@@ -441,7 +451,7 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
             this.clientPage.deleteAlbum(resourceName);
             assertFalse(this.clientPage.wasDenied());
 
-            this.clientPage.login("alice", "alice");
+            loginToClientPage("alice", "alice");
             this.clientPage.createAlbum(resourceName);
             assertFalse(this.clientPage.wasDenied());
 
@@ -466,7 +476,7 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
                 }
             });
 
-            this.clientPage.login("admin", "admin");
+            loginToClientPage("admin", "admin");
 
             this.clientPage.navigateToAdminAlbum();
             this.clientPage.viewAlbum(resourceName);
@@ -476,7 +486,7 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
             this.clientPage.deleteAlbum(resourceName);
             assertTrue(this.clientPage.wasDenied());
 
-            this.clientPage.login("alice", "alice");
+            loginToClientPage("alice", "alice");
             this.clientPage.deleteAlbum(resourceName);
             assertFalse(this.clientPage.wasDenied());
 
@@ -493,7 +503,7 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
         try {
             this.deployer.deploy(RESOURCE_SERVER_ID);
 
-            this.clientPage.login("alice", "alice");
+            loginToClientPage("alice", "alice");
 
             String resourceName = "My Resource Instance";
             this.clientPage.createAlbum(resourceName);
@@ -508,7 +518,7 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
 
             this.clientPage.createAlbum(resourceName);
 
-            this.clientPage.login("admin", "admin");
+            loginToClientPage("admin", "admin");
 
             this.clientPage.navigateToAdminAlbum();
             this.clientPage.viewAlbum(resourceName);
@@ -518,7 +528,7 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
             this.clientPage.deleteAlbum(resourceName);
             assertFalse(this.clientPage.wasDenied());
 
-            this.clientPage.login("alice", "alice");
+            loginToClientPage("alice", "alice");
             this.clientPage.createAlbum(resourceName);
             assertFalse(this.clientPage.wasDenied());
 
@@ -544,7 +554,7 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
                 }
             });
 
-            this.clientPage.login("admin", "admin");
+            loginToClientPage("admin", "admin");
 
             this.clientPage.navigateToAdminAlbum();
             this.clientPage.viewAlbum(resourceName);
@@ -561,7 +571,7 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
                 }
             });
 
-            this.clientPage.login("admin", "admin");
+            loginToClientPage("admin", "admin");
 
             this.clientPage.navigateToAdminAlbum();
             this.clientPage.viewAlbum(resourceName);
@@ -571,7 +581,7 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
             this.clientPage.deleteAlbum(resourceName);
             assertTrue(this.clientPage.wasDenied());
 
-            this.clientPage.login("alice", "alice");
+            loginToClientPage("alice", "alice");
             this.clientPage.deleteAlbum(resourceName);
             assertFalse(this.clientPage.wasDenied());
             List<ResourceRepresentation> resources = resourcesResource.resources();
@@ -600,5 +610,18 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
         ClientsResource clients = this.realmsResouce().realm(REALM_NAME).clients();
         ClientRepresentation resourceServer = clients.findByClientId(clientId).get(0);
         return clients.get(resourceServer.getId());
+    }
+
+    private void deleteAllCookiesForClientPage() {
+        clientPage.navigateTo();
+        driver.manage().deleteAllCookies();
+    }
+    
+    private void loginToClientPage(String username, String password, String... scopes) {
+        // We need to log out by deleting cookies because the log out button sometimes doesn't work in PhantomJS
+        deleteAllCookiesForClientPage();
+        deleteAllCookiesForTestRealm();
+        clientPage.navigateTo();
+        clientPage.login(username, password, scopes);
     }
 }
