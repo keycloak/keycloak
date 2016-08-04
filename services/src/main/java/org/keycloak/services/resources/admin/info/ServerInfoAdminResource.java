@@ -95,6 +95,7 @@ public class ServerInfoAdminResource {
     }
 
     private void setProviders(ServerInfoRepresentation info) {
+        info.setComponentTypes(new HashMap<>());
         LinkedHashMap<String, SpiInfoRepresentation> spiReps = new LinkedHashMap<>();
 
         List<Spi> spis = new LinkedList<>(session.getKeycloakSessionFactory().getSpis());
@@ -115,7 +116,6 @@ public class ServerInfoAdminResource {
             Map<String, ProviderRepresentation> providers = new HashMap<>();
 
             if (providerIds != null) {
-                info.setComponentTypes(new HashMap<>());
                 for (String name : providerIds) {
                     ProviderRepresentation provider = new ProviderRepresentation();
                     ProviderFactory<?> pi = session.getKeycloakSessionFactory().getProviderFactory(spi.getProviderClass(), name);

@@ -28,6 +28,10 @@ import javax.persistence.NamedQuery;
 @NamedQueries({
         @NamedQuery(name="getUserByUsername", query="select u from UserEntity u where u.username = :username"),
         @NamedQuery(name="getUserByEmail", query="select u from UserEntity u where u.email = :email"),
+        @NamedQuery(name="getUserCount", query="select count(u) from UserEntity u"),
+        @NamedQuery(name="getAllUsers", query="select u from UserEntity u"),
+        @NamedQuery(name="searchForUser", query="select u from UserEntity u where " +
+                "( lower(u.username) like :search or u.email like :search ) order by u.username"),
 })
 @Entity
 public class UserEntity {

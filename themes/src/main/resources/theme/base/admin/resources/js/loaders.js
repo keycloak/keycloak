@@ -126,6 +126,15 @@ module.factory('UserLoader', function(Loader, User, $route, $q) {
     });
 });
 
+module.factory('ComponentLoader', function(Loader, Components, $route, $q) {
+    return Loader.get(Components, function() {
+        return {
+            realm : $route.current.params.realm,
+            componentId: $route.current.params.componentId
+        }
+    });
+});
+
 module.factory('UserFederationInstanceLoader', function(Loader, UserFederationInstances, $route, $q) {
     return Loader.get(UserFederationInstances, function() {
         return {

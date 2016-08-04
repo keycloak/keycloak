@@ -404,17 +404,17 @@ public class UserFederationManager implements UserProvider {
     }
 
     @Override
-    public List<UserModel> searchForUserByAttributes(Map<String, String> attributes, RealmModel realm) {
-        return searchForUserByAttributes(attributes, realm, 0, Integer.MAX_VALUE - 1);
+    public List<UserModel> searchForUser(Map<String, String> attributes, RealmModel realm) {
+        return searchForUser(attributes, realm, 0, Integer.MAX_VALUE - 1);
     }
 
     @Override
-    public List<UserModel> searchForUserByAttributes(final Map<String, String> attributes, RealmModel realm, int firstResult, int maxResults) {
+    public List<UserModel> searchForUser(final Map<String, String> attributes, RealmModel realm, int firstResult, int maxResults) {
         federationLoad(realm, attributes);
         return query(new PaginatedQuery() {
             @Override
             public List<UserModel> query(RealmModel realm, int first, int max) {
-                return session.userStorage().searchForUserByAttributes(attributes, realm, first, max);
+                return session.userStorage().searchForUser(attributes, realm, first, max);
             }
         }, realm, firstResult, maxResults);
     }

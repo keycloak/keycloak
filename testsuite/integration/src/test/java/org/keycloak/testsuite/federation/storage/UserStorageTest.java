@@ -108,7 +108,6 @@ public class UserStorageTest {
         Assert.assertEquals("Invalid username or password.", loginPage.getError());
     }
 
-
     @Test
     public void testLoginSuccess() {
         loginSuccessAndLogout("tbrady", "goat");
@@ -258,12 +257,14 @@ public class UserStorageTest {
         user.updateCredential(UserCredentialModel.password("password"));
         keycloakRule.stopSession(session, true);
         loginSuccessAndLogout("memuser", "password");
+        loginSuccessAndLogout("memuser", "password");
+        loginSuccessAndLogout("memuser", "password");
 
         session = keycloakRule.startSession();
         realm = session.realms().getRealmByName("test");
         user = session.users().getUserByUsername("memuser", realm);
         Assert.assertEquals(memoryProvider.getId(), StorageId.resolveProviderId(user));
-        Assert.assertEquals(0, user.getCredentialsDirectly().size());
+        Assert.assertEquals(1, user.getCredentialsDirectly().size());
         session.users().removeUser(realm, user);
         Assert.assertNull(session.users().getUserByUsername("memuser", realm));
         keycloakRule.stopSession(session, true);

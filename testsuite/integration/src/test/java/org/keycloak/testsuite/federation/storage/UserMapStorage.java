@@ -22,6 +22,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
+import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageProvider;
@@ -30,6 +31,7 @@ import org.keycloak.storage.user.UserCredentialValidatorProvider;
 import org.keycloak.storage.user.UserLookupProvider;
 import org.keycloak.storage.user.UserRegistrationProvider;
 
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -38,7 +40,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class UserMapStorage implements UserLookupProvider, UserStorageProvider, UserCredentialValidatorProvider, UserRegistrationProvider {
+public class UserMapStorage implements UserLookupProvider, UserStorageProvider, UserRegistrationProvider {
 
     protected Map<String, String> userPasswords;
     protected ComponentModel model;
@@ -79,9 +81,31 @@ public class UserMapStorage implements UserLookupProvider, UserStorageProvider, 
             @Override
             public void updateCredential(UserCredentialModel cred) {
                 if (cred.getType().equals(UserCredentialModel.PASSWORD)) {
-                    userPasswords.put(username, cred.getValue());
+                    userPasswords.put(getUsername(), cred.getValue());
                 } else {
                     super.updateCredential(cred);
+                }
+            }
+
+            @Override
+            public List<UserCredentialValueModel> getCredentialsDirectly() {
+                UserCredentialValueModel pw = new UserCredentialValueModel();
+                pw.setId(getId());
+                pw.setType(UserCredentialModel.PASSWORD);
+                pw.setAlgorithm("text");
+                pw.setValue(userPasswords.get(getUsername()));
+                List<UserCredentialValueModel> creds = new LinkedList<>();
+                creds.addAll(super.getCredentialsDirectly());
+                creds.add(pw);
+                return creds;
+            }
+
+            @Override
+            public void updateCredentialDirectly(UserCredentialValueModel cred) {
+                if (cred.getType().equals(UserCredentialModel.PASSWORD)) {
+                    //userPasswords.put(getUsername(), cred.getValue());
+                } else {
+                    super.updateCredentialDirectly(cred);
                 }
             }
         };
@@ -129,19 +153,6 @@ public class UserMapStorage implements UserLookupProvider, UserStorageProvider, 
     public void preRemove(RealmModel realm, RoleModel role) {
 
     }
-
-    @Override
-    public boolean validCredentials(KeycloakSession session, RealmModel realm, UserModel user, List<UserCredentialModel> input) {
-        for (UserCredentialModel cred : input) {
-            if (!cred.getType().equals(UserCredentialModel.PASSWORD)) return false;
-            String password = (String)userPasswords.get(user.getUsername());
-            if (password == null) return false;
-            if (!password.equals(cred.getValue())) return false;
-        }
-        return true;
-    }
-
-
 
     @Override
     public void close() {
