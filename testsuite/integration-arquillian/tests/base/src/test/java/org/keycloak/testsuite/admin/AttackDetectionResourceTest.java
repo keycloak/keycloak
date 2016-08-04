@@ -68,13 +68,13 @@ public class AttackDetectionResourceTest extends AbstractAdminTest {
         assertBruteForce(detection.bruteForceUserStatus("nosuchuser"), 0, false, false);
 
         detection.clearBruteForceForUser(findUser("test-user@localhost").getId());
-        assertAdminEvents.assertEvent("test", OperationType.DELETE, AdminEventPaths.attackDetectionClearBruteForceForUserPath(findUser("test-user@localhost").getId()), ResourceType.USER);
+        assertAdminEvents.assertEvent("test", OperationType.DELETE, AdminEventPaths.attackDetectionClearBruteForceForUserPath(findUser("test-user@localhost").getId()), ResourceType.USER_LOGIN_FAILURE);
 
         assertBruteForce(detection.bruteForceUserStatus(findUser("test-user@localhost").getId()), 0, false, false);
         assertBruteForce(detection.bruteForceUserStatus(findUser("test-user2").getId()), 2, true, true);
 
         detection.clearAllBruteForce();
-        assertAdminEvents.assertEvent("test", OperationType.DELETE, AdminEventPaths.attackDetectionClearAllBruteForcePath(), ResourceType.USER);
+        assertAdminEvents.assertEvent("test", OperationType.DELETE, AdminEventPaths.attackDetectionClearAllBruteForcePath(), ResourceType.USER_LOGIN_FAILURE);
 
         assertBruteForce(detection.bruteForceUserStatus(findUser("test-user@localhost").getId()), 0, false, false);
         assertBruteForce(detection.bruteForceUserStatus(findUser("test-user2").getId()), 0, false, false);

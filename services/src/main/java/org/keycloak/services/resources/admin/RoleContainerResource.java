@@ -172,7 +172,6 @@ public class RoleContainerResource extends RoleResource {
             throw new NotFoundException("Could not find client");
         }
 
-        RoleRepresentation rep = getRole(roleName);
         RoleModel role = roleContainer.getRole(roleName);
         if (role == null) {
             throw new NotFoundException("Could not find role");

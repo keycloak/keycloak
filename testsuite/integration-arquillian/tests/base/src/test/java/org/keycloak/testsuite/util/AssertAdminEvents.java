@@ -162,7 +162,7 @@ public class AssertAdminEvents implements TestRule {
         }
 
         public ExpectedAdminEvent resourceType(ResourceType resourceType){
-            this.resourceType = resourceType;
+            expected.setResourceType(resourceType.toString());
             return this;
         }
 
@@ -199,7 +199,7 @@ public class AssertAdminEvents implements TestRule {
         public AdminEventRepresentation assertEvent(AdminEventRepresentation actual) {
             Assert.assertEquals(expected.getRealmId(), actual.getRealmId());
             Assert.assertThat(actual.getResourcePath(), resourcePath);
-            Assert.assertEquals(actual.getResourceType(), resourceType);
+            Assert.assertEquals(expected.getResourceType(), actual.getResourceType());
             Assert.assertEquals(expected.getOperationType(), actual.getOperationType());
 
             Assert.assertTrue(ObjectUtil.isEqualOrBothNull(expected.getError(), actual.getError()));

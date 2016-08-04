@@ -158,7 +158,7 @@ public class ClientTest extends AbstractAdminTest {
         foundClientRep.setDefaultRoles(new String[]{"test"});
         realm.clients().get(id).update(foundClientRep);
 
-        assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, AdminEventPaths.clientResourcePath(id), rep, ResourceType.CLIENT_ROLE);
+        assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, AdminEventPaths.clientResourcePath(id), rep, ResourceType.CLIENT);
 
         assertArrayEquals(new String[]{"test"}, realm.clients().get(id).toRepresentation().getDefaultRoles());
 
@@ -339,8 +339,8 @@ public class ClientTest extends AbstractAdminTest {
         realm.roles().create(roleRep1);
         realm.roles().create(roleRep2);
 
-        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.roleResourcePath("role1"), roleRep1, ResourceType.CLIENT_ROLE);
-        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.roleResourcePath("role2"), roleRep2, ResourceType.CLIENT_ROLE);
+        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.roleResourcePath("role1"), roleRep1, ResourceType.REALM_ROLE);
+        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.roleResourcePath("role2"), roleRep2, ResourceType.REALM_ROLE);
 
         roleRep1 = realm.roles().get("role1").toRepresentation();
         roleRep2 = realm.roles().get("role2").toRepresentation();

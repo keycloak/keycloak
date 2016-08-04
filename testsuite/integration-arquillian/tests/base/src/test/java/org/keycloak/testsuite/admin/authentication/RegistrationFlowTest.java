@@ -63,7 +63,7 @@ public class RegistrationFlowTest extends AbstractAuthenticationTest {
 
         // Should success to add execution under form flow
         authMgmtResource.addExecution("registrationForm2", data2);
-        assertAdminEvents.assertEvent(REALM_NAME, OperationType.CREATE, AdminEventPaths.authAddExecutionPath("registrationForm2"), data2, ResourceType.AUTH_EXECUTION_FLOW);
+        assertAdminEvents.assertEvent(REALM_NAME, OperationType.CREATE, AdminEventPaths.authAddExecutionPath("registrationForm2"), data2, ResourceType.AUTH_EXECUTION);
     }
 
     // TODO: More type-safety instead of passing generic maps

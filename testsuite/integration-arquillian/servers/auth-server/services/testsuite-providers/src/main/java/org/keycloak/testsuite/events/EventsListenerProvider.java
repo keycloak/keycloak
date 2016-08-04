@@ -69,6 +69,7 @@ public class EventsListenerProvider implements EventListenerProvider {
         newEvent.setAuthDetails(adminEvent.getAuthDetails());
         newEvent.setError(adminEvent.getError());
         newEvent.setOperationType(adminEvent.getOperationType());
+        newEvent.setResourceType(adminEvent.getResourceType());
         newEvent.setRealmId(adminEvent.getRealmId());
         newEvent.setRepresentation(adminEvent.getRepresentation());
         newEvent.setResourcePath(adminEvent.getResourcePath());

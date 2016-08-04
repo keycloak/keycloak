@@ -258,14 +258,14 @@ public class UserFederationMapperTest extends AbstractAdminTest {
 
         Map<String, Object> eventRep = new HashMap<>();
         eventRep.put("action", "fedToKeycloak");
-        assertAdminEvents.assertEvent(realmId, OperationType.ACTION, AdminEventPaths.userFederationMapperResourcePath(ldapProviderId, mapperId) + "/sync", eventRep, ResourceType.USER_FEDERATION_MAPPER);
+        assertAdminEvents.assertEvent(realmId, OperationType.ACTION, AdminEventPaths.userFederationMapperResourcePath(ldapProviderId, mapperId) + "/sync", eventRep, ResourceType.USER_FEDERATION_PROVIDER);
 
         // Try keycloak to fed
         result = ldapProviderResource().syncMapperData(mapperId, "keycloakToFed");
         Assert.assertEquals("dummyKeycloakToFedSuccess mapper=some-dummy", result.getStatus());
 
         eventRep.put("action", "keycloakToFed");
-        assertAdminEvents.assertEvent(realmId, OperationType.ACTION, AdminEventPaths.userFederationMapperResourcePath(ldapProviderId, mapperId) + "/sync", ResourceType.USER_FEDERATION_MAPPER);
+        assertAdminEvents.assertEvent(realmId, OperationType.ACTION, AdminEventPaths.userFederationMapperResourcePath(ldapProviderId, mapperId) + "/sync", ResourceType.USER_FEDERATION_PROVIDER);
 
     }
 

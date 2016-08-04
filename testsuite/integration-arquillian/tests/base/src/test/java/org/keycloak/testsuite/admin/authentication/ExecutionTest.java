@@ -84,7 +84,7 @@ public class ExecutionTest extends AbstractAuthenticationTest {
         // add execution - should succeed
         params.put("provider", "idp-review-profile");
         authMgmtResource.addExecution("Copy-of-browser", params);
-        assertAdminEvents.assertEvent(REALM_NAME, OperationType.CREATE, AdminEventPaths.authAddExecutionPath("Copy-of-browser"), params, ResourceType.AUTH_EXECUTION_FLOW);
+        assertAdminEvents.assertEvent(REALM_NAME, OperationType.CREATE, AdminEventPaths.authAddExecutionPath("Copy-of-browser"), params, ResourceType.AUTH_EXECUTION);
 
         // check execution was added
         List<AuthenticationExecutionInfoRepresentation> executionReps = authMgmtResource.getExecutions("Copy-of-browser");

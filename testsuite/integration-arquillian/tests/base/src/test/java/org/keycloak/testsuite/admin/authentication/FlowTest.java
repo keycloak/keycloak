@@ -142,7 +142,7 @@ public class FlowTest extends AbstractAuthenticationTest {
 
         // delete non-built-in flow
         authMgmtResource.deleteFlow(found.getId());
-        assertAdminEvents.assertEvent(REALM_NAME, OperationType.DELETE, AdminEventPaths.authFlowPath(found.getId()), ResourceType.AUTH_EXECUTION_FLOW);
+        assertAdminEvents.assertEvent(REALM_NAME, OperationType.DELETE, AdminEventPaths.authFlowPath(found.getId()), ResourceType.AUTH_FLOW);
 
         // check the deleted flow is no longer returned
         flows = authMgmtResource.getFlows();

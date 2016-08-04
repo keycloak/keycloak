@@ -36,6 +36,7 @@ import org.keycloak.broker.provider.IdentityProviderFactory;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.events.EventType;
 import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.policy.PasswordPolicyProvider;
 import org.keycloak.policy.PasswordPolicyProviderFactory;
@@ -68,7 +69,7 @@ import org.keycloak.representations.info.ThemeInfoRepresentation;
  */
 public class ServerInfoAdminResource {
 
-    private static final Map<String, List<String>> ENUMS = createEnumsMap(EventType.class, OperationType.class);
+    private static final Map<String, List<String>> ENUMS = createEnumsMap(EventType.class, OperationType.class, ResourceType.class);
 
     @Context
     private KeycloakSession session;

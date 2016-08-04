@@ -296,7 +296,7 @@ public class UserFederationTest extends AbstractAdminTest {
         // update LDAP provider with kerberos
         ldapRep = userFederation().get(id).toRepresentation();
         userFederation().get(id).update(ldapRep);
-        assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, AdminEventPaths.userFederationResourcePath(id), ldapRep, ResourceType.REALM);
+        assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, AdminEventPaths.userFederationResourcePath(id), ldapRep, ResourceType.USER_FEDERATION_PROVIDER);
 
         // Assert kerberos authenticator still REQUIRED
         kerberosExecution = findKerberosExecution();
@@ -305,7 +305,7 @@ public class UserFederationTest extends AbstractAdminTest {
         // Cleanup
         kerberosExecution.setRequirement(AuthenticationExecutionModel.Requirement.DISABLED.toString());
         realm.flows().updateExecutions("browser", kerberosExecution);
-        assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, AdminEventPaths.authUpdateExecutionPath("browser"), kerberosExecution, ResourceType.REALM);
+        assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, AdminEventPaths.authUpdateExecutionPath("browser"), kerberosExecution, ResourceType.AUTH_EXECUTION);
         removeUserFederationProvider(id);
 
     }
