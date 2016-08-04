@@ -20,6 +20,7 @@ package org.keycloak.services.resources.admin;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
@@ -116,6 +117,13 @@ public class RoleContainerResource extends RoleResource {
             role.setScopeParamRequired(scopeParamRequired);
 
             rep.setId(role.getId());
+
+            if (role.isClientRole()) {
+                adminEvent.resource(ResourceType.CLIENT_ROLE);
+            } else {
+                adminEvent.resource(ResourceType.REALM_ROLE);
+            }
+
             adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo, role.getName()).representation(rep).success();
 
             return Response.created(uriInfo.getAbsolutePathBuilder().path(role.getName()).build()).build();
@@ -171,6 +179,12 @@ public class RoleContainerResource extends RoleResource {
         }
         deleteRole(role);
 
+        if (role.isClientRole()) {
+            adminEvent.resource(ResourceType.CLIENT_ROLE);
+        } else {
+            adminEvent.resource(ResourceType.REALM_ROLE);
+        }
+
         adminEvent.operation(OperationType.DELETE).resourcePath(uriInfo).success();
 
     }
@@ -198,6 +212,12 @@ public class RoleContainerResource extends RoleResource {
         }
         try {
             updateRole(rep, role);
+
+            if (role.isClientRole()) {
+                adminEvent.resource(ResourceType.CLIENT_ROLE);
+            } else {
+                adminEvent.resource(ResourceType.REALM_ROLE);
+            }
 
             adminEvent.operation(OperationType.UPDATE).resourcePath(uriInfo).representation(rep).success();
 

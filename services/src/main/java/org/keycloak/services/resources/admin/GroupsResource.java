@@ -20,6 +20,7 @@ import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -53,7 +54,7 @@ public class GroupsResource {
         this.realm = realm;
         this.session = session;
         this.auth = auth;
-        this.adminEvent = adminEvent;
+        this.adminEvent = adminEvent.resource(ResourceType.GROUP);
         auth.init(RealmAuth.Resource.USER);
 
     }

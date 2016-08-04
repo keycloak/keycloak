@@ -74,6 +74,13 @@ public interface AdminEventQuery {
     AdminEventQuery operation(OperationType... operations);
 
     /**
+     * Search by {@link ResourceType}.
+     * @param resourceTypes
+     * @return <code>this</code> for method chaining
+     */
+    AdminEventQuery resourceType(ResourceType ... resourceTypes);
+
+    /**
      * Search by resource path. Supports wildcards <code>*</code> and <code>**</code>. For example:
      * <ul>
      * <li><b>*&#47;master</b> - matches 'realms/master'</li>
@@ -124,5 +131,4 @@ public interface AdminEventQuery {
      * @return
      */
     List<AdminEvent> getResultList();
-
 }

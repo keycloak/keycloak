@@ -19,6 +19,7 @@ package org.keycloak.services.resources.admin;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
@@ -70,7 +71,7 @@ public class ClientRoleMappingsResource {
         this.auth = auth;
         this.user = user;
         this.client = client;
-        this.adminEvent = adminEvent;
+        this.adminEvent = adminEvent.resource(ResourceType.CLIENT_ROLE_MAPPING);
     }
 
     /**

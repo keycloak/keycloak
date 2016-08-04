@@ -20,6 +20,7 @@ import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
@@ -63,7 +64,7 @@ public class ClientsResource {
     public ClientsResource(RealmModel realm, RealmAuth auth, AdminEventBuilder adminEvent) {
         this.realm = realm;
         this.auth = auth;
-        this.adminEvent = adminEvent;
+        this.adminEvent = adminEvent.resource(ResourceType.CLIENT);
 
         auth.init(RealmAuth.Resource.CLIENT);
     }

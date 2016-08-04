@@ -24,6 +24,7 @@ import org.jboss.resteasy.spi.NotAcceptableException;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.keycloak.common.util.StreamUtil;
 import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -79,7 +80,7 @@ public class ClientAttributeCertificateResource {
         this.attributePrefix = attributePrefix;
         this.privateAttribute = attributePrefix + "." + PRIVATE_KEY;
         this.certificateAttribute = attributePrefix + "." + X509CERTIFICATE;
-        this.adminEvent = adminEvent;
+        this.adminEvent = adminEvent.resource(ResourceType.CLIENT);
     }
 
     /**
