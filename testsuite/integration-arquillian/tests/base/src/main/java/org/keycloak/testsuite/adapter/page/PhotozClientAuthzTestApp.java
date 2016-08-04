@@ -31,6 +31,7 @@ import java.net.URL;
 import java.util.List;
 
 import static org.keycloak.testsuite.util.WaitUtils.pause;
+import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -38,6 +39,7 @@ import static org.keycloak.testsuite.util.WaitUtils.pause;
 public class PhotozClientAuthzTestApp extends AbstractPageWithInjectedUrl {
 
     public static final String DEPLOYMENT_NAME = "photoz-html5-client";
+    public static final int WAIT_AFTER_OPERATION = 2000;
 
     @ArquillianResource
     @OperateOnDeployment(DEPLOYMENT_NAME)
@@ -55,8 +57,9 @@ public class PhotozClientAuthzTestApp extends AbstractPageWithInjectedUrl {
         WaitUtils.waitUntilElement(id);
         this.driver.findElement(id).click();
         Form.setInputValue(this.driver.findElement(By.id("album.name")), name);
+        pause(200); // We need to wait a bit for the form to "accept" the input (otherwise it registers the input as empty)
         this.driver.findElement(By.id("save-album")).click();
-        pause(500);
+        pause(WAIT_AFTER_OPERATION);
     }
 
     @Override
@@ -65,23 +68,20 @@ public class PhotozClientAuthzTestApp extends AbstractPageWithInjectedUrl {
     }
 
     public void deleteAlbum(String name) {
-        By id = By.id("delete-" + name);
-        WaitUtils.waitUntilElement(id);
-        this.driver.findElements(id).forEach(WebElement::click);
-        pause(500);
+        driver.findElements(By.xpath("//a[text()='" + name + "']/following-sibling::a[text()='X']")).forEach(WebElement::click);
+        pause(WAIT_AFTER_OPERATION);
     }
 
     public void navigateToAdminAlbum() {
         this.driver.navigate().to(this.getInjectedUrl().toString() + "/#/admin/album");
-        pause(500);
+        pause(WAIT_AFTER_OPERATION);
     }
 
     public void logOut() {
         navigateTo();
         By by = By.xpath("//a[text() = 'Sign Out']");
-        WaitUtils.waitUntilElement(by);
         this.driver.findElement(by).click();
-        pause(500);
+        pause(WAIT_AFTER_OPERATION);
     }
 
     public void login(String username, String password) throws InterruptedException {

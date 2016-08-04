@@ -59,6 +59,8 @@ public class JSConsoleTestApp extends AbstractPageWithInjectedUrl {
     @FindBy(xpath = "//button[text() = 'Get Profile']")
     private WebElement getProfileButton;
 
+    @FindBy(xpath = "//button[text() = 'Show Error Response']")
+    private WebElement showErrorButton;
     @FindBy(xpath = "//button[text() = 'Show Token']")
     private WebElement showTokenButton;
     @FindBy(xpath = "//button[text() = 'Show Refresh Token']")
@@ -136,5 +138,9 @@ public class JSConsoleTestApp extends AbstractPageWithInjectedUrl {
 
     public WebElement getInitButtonElement() {
         return initButton;
+    }
+
+    public void showErrorResponse() {
+        showErrorButton.click();
     }
 }

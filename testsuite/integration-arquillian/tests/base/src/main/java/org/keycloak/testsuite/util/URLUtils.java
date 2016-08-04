@@ -40,8 +40,12 @@ public final class URLUtils {
         driver.navigate().to(uri);
 
         if (waitForMatch) {
+            // Possible login URL; this is to eliminate unnecessary wait when navigating to a secured page and being
+            // redirected to the login page
+            String loginUrl = "^[^\\?]+/auth/realms/[^/]+/(protocol|login-actions).+$";
+
             try {
-                (new WebDriverWait(driver, 3)).until(urlMatches("^" + Pattern.quote(uri) + ".*$"));
+                (new WebDriverWait(driver, 3)).until(or(urlMatches("^" + Pattern.quote(uri) + ".*$"), urlMatches(loginUrl)));
             } catch (TimeoutException e) {
                 log.info("new current URL doesn't start with desired URL");
             }
