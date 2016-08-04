@@ -32,7 +32,7 @@
  . link:topics/clustering.adoc[Clustering]
  .. link:topics/clustering/recommended.adoc[Recommended Network Architecture]
  .. link:topics/clustering/example.adoc[Cluster Example]
- .. link:topics/clustering/load-balancer.adoc[Setting Up a Load Balancer]
+ .. link:topics/clustering/load-balancer.adoc[Setting Up a Load Balancer or Proxy]
  .. link:topics/clustering/multicast.adoc[Multicast Network Setup]
  .. link:topics/clustering/serialized.adoc[Serialized Cluster Startup]
  .. link:topics/clustering/booting.adoc[Booting the Cluster]
