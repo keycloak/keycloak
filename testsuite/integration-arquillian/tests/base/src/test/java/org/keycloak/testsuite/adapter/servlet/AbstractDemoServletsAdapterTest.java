@@ -21,6 +21,7 @@ import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
@@ -116,6 +117,13 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
     @Deployment(name = TokenMinTTLPage.DEPLOYMENT_NAME)
     protected static WebArchive tokenMinTTLPage() {
         return servletDeployment(TokenMinTTLPage.DEPLOYMENT_NAME, AdapterActionsFilter.class, AbstractShowTokensServlet.class, TokenMinTTLServlet.class, ErrorServlet.class);
+    }
+
+    @Before
+    public void beforeDemoServletsAdapterTest() {
+        // Delete all cookies from token-min-ttl page to be sure we are logged out
+        tokenMinTTLPage.navigateTo();
+        driver.manage().deleteAllCookies();
     }
 
     @Test
