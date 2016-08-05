@@ -23,6 +23,7 @@ import org.junit.Test;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.RolesResource;
 import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.util.AdminEventPaths;
@@ -75,7 +76,7 @@ public class ClientRolesTest extends AbstractClientTest {
     public void testAddRole() {
         RoleRepresentation role1 = makeRole("role1");
         rolesRsc.create(role1);
-        assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE, AdminEventPaths.clientRoleResourcePath(clientDbId, "role1"), role1);
+        assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE, AdminEventPaths.clientRoleResourcePath(clientDbId, "role1"), role1, ResourceType.CLIENT_ROLE);
         assertTrue(hasRole(rolesRsc, "role1"));
     }
 
@@ -83,10 +84,10 @@ public class ClientRolesTest extends AbstractClientTest {
     public void testRemoveRole() {
         RoleRepresentation role2 = makeRole("role2");
         rolesRsc.create(role2);
-        assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE, AdminEventPaths.clientRoleResourcePath(clientDbId, "role2"), role2);
+        assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE, AdminEventPaths.clientRoleResourcePath(clientDbId, "role2"), role2, ResourceType.CLIENT_ROLE);
 
         rolesRsc.deleteRole("role2");
-        assertAdminEvents.assertEvent(getRealmId(), OperationType.DELETE, AdminEventPaths.clientRoleResourcePath(clientDbId, "role2"));
+        assertAdminEvents.assertEvent(getRealmId(), OperationType.DELETE, AdminEventPaths.clientRoleResourcePath(clientDbId, "role2"), ResourceType.CLIENT_ROLE);
 
         assertFalse(hasRole(rolesRsc, "role2"));
     }
@@ -95,24 +96,24 @@ public class ClientRolesTest extends AbstractClientTest {
     public void testComposites() {
         RoleRepresentation roleA = makeRole("role-a");
         rolesRsc.create(roleA);
-        assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE, AdminEventPaths.clientRoleResourcePath(clientDbId, "role-a"), roleA);
+        assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE, AdminEventPaths.clientRoleResourcePath(clientDbId, "role-a"), roleA, ResourceType.CLIENT_ROLE);
 
         assertFalse(rolesRsc.get("role-a").toRepresentation().isComposite());
         assertEquals(0, rolesRsc.get("role-a").getRoleComposites().size());
 
         RoleRepresentation roleB = makeRole("role-b");
         rolesRsc.create(roleB);
-        assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE, AdminEventPaths.clientRoleResourcePath(clientDbId, "role-b"), roleB);
+        assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE, AdminEventPaths.clientRoleResourcePath(clientDbId, "role-b"), roleB, ResourceType.CLIENT_ROLE);
 
         RoleRepresentation roleC = makeRole("role-c");
         testRealmResource().roles().create(roleC);
-        assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE, AdminEventPaths.roleResourcePath("role-c"), roleC);
+        assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE, AdminEventPaths.roleResourcePath("role-c"), roleC, ResourceType.REALM_ROLE);
 
         List<RoleRepresentation> l = new LinkedList<>();
         l.add(rolesRsc.get("role-b").toRepresentation());
         l.add(testRealmResource().roles().get("role-c").toRepresentation());
         rolesRsc.get("role-a").addComposites(l);
-        assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE, AdminEventPaths.clientRoleResourceCompositesPath(clientDbId, "role-a"), l);
+        assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE, AdminEventPaths.clientRoleResourceCompositesPath(clientDbId, "role-a"), l, ResourceType.CLIENT_ROLE);
 
         Set<RoleRepresentation> composites = rolesRsc.get("role-a").getRoleComposites();
 
@@ -126,7 +127,7 @@ public class ClientRolesTest extends AbstractClientTest {
         Assert.assertNames(clientComposites, "role-b");
 
         rolesRsc.get("role-a").deleteComposites(l);
-        assertAdminEvents.assertEvent(getRealmId(), OperationType.DELETE, AdminEventPaths.clientRoleResourceCompositesPath(clientDbId, "role-a"), l);
+        assertAdminEvents.assertEvent(getRealmId(), OperationType.DELETE, AdminEventPaths.clientRoleResourceCompositesPath(clientDbId, "role-a"), l, ResourceType.CLIENT_ROLE);
 
         assertFalse(rolesRsc.get("role-a").toRepresentation().isComposite());
         assertEquals(0, rolesRsc.get("role-a").getRoleComposites().size());

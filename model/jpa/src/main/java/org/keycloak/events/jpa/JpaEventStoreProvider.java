@@ -28,6 +28,7 @@ import org.keycloak.events.Event;
 import org.keycloak.events.EventQuery;
 import org.keycloak.events.EventStoreProvider;
 import org.keycloak.events.EventType;
+import org.keycloak.events.admin.ResourceType;
 
 import javax.persistence.EntityManager;
 
@@ -150,6 +151,11 @@ public class JpaEventStoreProvider implements EventStoreProvider {
         adminEventEntity.setRealmId(adminEvent.getRealmId());
         setAuthDetails(adminEventEntity, adminEvent.getAuthDetails());
         adminEventEntity.setOperationType(adminEvent.getOperationType().toString());
+
+        if (adminEvent.getResourceType() != null) {
+            adminEventEntity.setResourceType(adminEvent.getResourceType().toString());
+        }
+
         adminEventEntity.setResourcePath(adminEvent.getResourcePath());
         adminEventEntity.setError(adminEvent.getError());
         
@@ -165,6 +171,11 @@ public class JpaEventStoreProvider implements EventStoreProvider {
         adminEvent.setRealmId(adminEventEntity.getRealmId());
         setAuthDetails(adminEvent, adminEventEntity);
         adminEvent.setOperationType(OperationType.valueOf(adminEventEntity.getOperationType()));
+
+        if (adminEventEntity.getResourceType() != null) {
+            adminEvent.setResourceType(ResourceType.valueOf(adminEventEntity.getResourceType()));
+        }
+
         adminEvent.setResourcePath(adminEventEntity.getResourcePath());
         adminEvent.setError(adminEventEntity.getError());
         

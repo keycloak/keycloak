@@ -195,4 +195,5 @@
         <addForeignKeyConstraint baseColumnNames="COMPONENT_ID" baseTableName="COMPONENT_CONFIG" constraintName="FK_COMPONENT_CONFIG" referencedColumnNames="ID" referencedTableName="COMPONENT"/>
 
     </changeSet>
+
 </databaseChangeLog>

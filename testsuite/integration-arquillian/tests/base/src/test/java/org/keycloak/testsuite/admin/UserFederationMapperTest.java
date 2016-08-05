@@ -33,6 +33,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.UserFederationProviderResource;
 import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
 import org.keycloak.federation.ldap.mappers.UserAttributeLDAPFederationMapper;
 import org.keycloak.federation.ldap.mappers.UserAttributeLDAPFederationMapperFactory;
 import org.keycloak.federation.ldap.mappers.membership.role.RoleLDAPFederationMapperFactory;
@@ -65,7 +66,7 @@ public class UserFederationMapperTest extends AbstractAdminTest {
         Response resp = realm.userFederation().create(ldapRep);
         this.ldapProviderId = ApiUtil.getCreatedId(resp);
         resp.close();
-        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.userFederationResourcePath(this.ldapProviderId), ldapRep);
+        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.userFederationResourcePath(this.ldapProviderId), ldapRep, ResourceType.USER_FEDERATION_PROVIDER);
 
         UserFederationProviderRepresentation dummyRep = UserFederationProviderBuilder.create()
                 .displayName("dummy-1")
@@ -75,16 +76,16 @@ public class UserFederationMapperTest extends AbstractAdminTest {
         resp = realm.userFederation().create(dummyRep);
         this.dummyProviderId = ApiUtil.getCreatedId(resp);
         resp.close();
-        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.userFederationResourcePath(this.dummyProviderId), dummyRep);
+        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.userFederationResourcePath(this.dummyProviderId), dummyRep, ResourceType.USER_FEDERATION_PROVIDER);
     }
 
     @After
     public void cleanFederationProviders() {
         realm.userFederation().get(ldapProviderId).remove();
-        assertAdminEvents.assertEvent(realmId, OperationType.DELETE, AdminEventPaths.userFederationResourcePath(ldapProviderId));
+        assertAdminEvents.assertEvent(realmId, OperationType.DELETE, AdminEventPaths.userFederationResourcePath(ldapProviderId), ResourceType.USER_FEDERATION_PROVIDER);
 
         realm.userFederation().get(dummyProviderId).remove();
-        assertAdminEvents.assertEvent(realmId, OperationType.DELETE, AdminEventPaths.userFederationResourcePath(dummyProviderId));
+        assertAdminEvents.assertEvent(realmId, OperationType.DELETE, AdminEventPaths.userFederationResourcePath(dummyProviderId), ResourceType.USER_FEDERATION_PROVIDER);
     }
 
 
@@ -169,14 +170,14 @@ public class UserFederationMapperTest extends AbstractAdminTest {
         mapperRep.getConfig().put(UserAttributeLDAPFederationMapper.USER_MODEL_ATTRIBUTE, "email-updated");
         mapperRep.getConfig().put(UserAttributeLDAPFederationMapper.LDAP_ATTRIBUTE, "mail-updated");
         ldapProviderResource().updateMapper(mapperId, mapperRep);
-        assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, AdminEventPaths.userFederationMapperResourcePath(ldapProviderId, mapperId), mapperRep);
+        assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, AdminEventPaths.userFederationMapperResourcePath(ldapProviderId, mapperId), mapperRep, ResourceType.USER_FEDERATION_MAPPER);
 
         mapperRep = ldapProviderResource().getMapperById(mapperId);
         assertMapper(mapperRep, mapperId, "email-mapper", UserAttributeLDAPFederationMapperFactory.PROVIDER_ID, UserAttributeLDAPFederationMapper.USER_MODEL_ATTRIBUTE, "email-updated", UserAttributeLDAPFederationMapper.LDAP_ATTRIBUTE, "mail-updated");
 
         // Test removed successfully
         ldapProviderResource().removeMapper(mapperId);
-        assertAdminEvents.assertEvent(realmId, OperationType.DELETE, AdminEventPaths.userFederationMapperResourcePath(ldapProviderId, mapperId));
+        assertAdminEvents.assertEvent(realmId, OperationType.DELETE, AdminEventPaths.userFederationMapperResourcePath(ldapProviderId, mapperId), ResourceType.USER_FEDERATION_MAPPER);
 
         try {
             ldapProviderResource().getMapperById(mapperId);
@@ -192,7 +193,7 @@ public class UserFederationMapperTest extends AbstractAdminTest {
         response.close();
         String mapperId = ApiUtil.getCreatedId(response);
 
-        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.userFederationMapperResourcePath(userFederationProviderId , mapperId), mapper);
+        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.userFederationMapperResourcePath(userFederationProviderId , mapperId), mapper, ResourceType.USER_FEDERATION_MAPPER);
 
         return mapperId;
     }
@@ -227,7 +228,7 @@ public class UserFederationMapperTest extends AbstractAdminTest {
 
         // Remove role mapper and assert not found anymore
         ldapProviderResource().removeMapper(roleMapperId);
-        assertAdminEvents.assertEvent(realmId, OperationType.DELETE, AdminEventPaths.userFederationMapperResourcePath(ldapProviderId, roleMapperId));
+        assertAdminEvents.assertEvent(realmId, OperationType.DELETE, AdminEventPaths.userFederationMapperResourcePath(ldapProviderId, roleMapperId), ResourceType.USER_FEDERATION_MAPPER);
 
         mappers = ldapProviderResource().getMappers();
         Assert.assertNull(findMapperByName(mappers, "role-mapper"));
@@ -257,14 +258,14 @@ public class UserFederationMapperTest extends AbstractAdminTest {
 
         Map<String, Object> eventRep = new HashMap<>();
         eventRep.put("action", "fedToKeycloak");
-        assertAdminEvents.assertEvent(realmId, OperationType.ACTION, AdminEventPaths.userFederationMapperResourcePath(ldapProviderId, mapperId) + "/sync", eventRep);
+        assertAdminEvents.assertEvent(realmId, OperationType.ACTION, AdminEventPaths.userFederationMapperResourcePath(ldapProviderId, mapperId) + "/sync", eventRep, ResourceType.USER_FEDERATION_PROVIDER);
 
         // Try keycloak to fed
         result = ldapProviderResource().syncMapperData(mapperId, "keycloakToFed");
         Assert.assertEquals("dummyKeycloakToFedSuccess mapper=some-dummy", result.getStatus());
 
         eventRep.put("action", "keycloakToFed");
-        assertAdminEvents.assertEvent(realmId, OperationType.ACTION, AdminEventPaths.userFederationMapperResourcePath(ldapProviderId, mapperId) + "/sync");
+        assertAdminEvents.assertEvent(realmId, OperationType.ACTION, AdminEventPaths.userFederationMapperResourcePath(ldapProviderId, mapperId) + "/sync", ResourceType.USER_FEDERATION_PROVIDER);
 
     }
 

@@ -26,6 +26,7 @@ import org.keycloak.dom.saml.v2.metadata.IndexedEndpointType;
 import org.keycloak.dom.saml.v2.metadata.KeyTypes;
 import org.keycloak.dom.saml.v2.metadata.SPSSODescriptorType;
 import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperTypeRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
@@ -122,7 +123,7 @@ public class IdentityProviderTest extends AbstractAdminTest {
         representation.getConfig().put("clientId", "changedClientId");
 
         identityProviderResource.update(representation);
-        assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, AdminEventPaths.identityProviderPath("update-identity-provider"), representation);
+        assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, AdminEventPaths.identityProviderPath("update-identity-provider"), representation, ResourceType.IDENTITY_PROVIDER);
 
         identityProviderResource = realm.identityProviders().get(representation.getInternalId());
 
@@ -150,7 +151,7 @@ public class IdentityProviderTest extends AbstractAdminTest {
         assertNotNull(representation);
 
         identityProviderResource.remove();
-        assertAdminEvents.assertEvent(realmId, OperationType.DELETE, AdminEventPaths.identityProviderPath("remove-identity-provider"));
+        assertAdminEvents.assertEvent(realmId, OperationType.DELETE, AdminEventPaths.identityProviderPath("remove-identity-provider"), ResourceType.IDENTITY_PROVIDER);
 
         try {
             realm.identityProviders().get("remove-identity-provider").toRepresentation();
@@ -165,7 +166,7 @@ public class IdentityProviderTest extends AbstractAdminTest {
         Assert.assertNotNull(ApiUtil.getCreatedId(response));
         response.close();
 
-        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.identityProviderPath(idpRep.getAlias()), idpRep);
+        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.identityProviderPath(idpRep.getAlias()), idpRep, ResourceType.IDENTITY_PROVIDER);
     }
 
     private IdentityProviderRepresentation createRep(String id, String providerId) {
@@ -320,7 +321,7 @@ public class IdentityProviderTest extends AbstractAdminTest {
         String id = ApiUtil.getCreatedId(response);
         Assert.assertNotNull(id);
         response.close();
-        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.identityProviderMapperPath("google", id), mapper);
+        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.identityProviderMapperPath("google", id), mapper, ResourceType.IDENTITY_PROVIDER_MAPPER);
 
         // list mappers
         List<IdentityProviderMapperRepresentation> mappers = provider.getMappers();
@@ -337,7 +338,7 @@ public class IdentityProviderTest extends AbstractAdminTest {
         // update mapper
         mapper.getConfig().put("role", "master-realm.manage-realm");
         provider.update(id, mapper);
-        assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, AdminEventPaths.identityProviderMapperPath("google", id), mapper);
+        assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, AdminEventPaths.identityProviderMapperPath("google", id), mapper, ResourceType.IDENTITY_PROVIDER_MAPPER);
 
         mapper = provider.getMapperById(id);
         Assert.assertNotNull("mapperById not null", mapper);
@@ -345,7 +346,7 @@ public class IdentityProviderTest extends AbstractAdminTest {
 
         // delete mapper
         provider.delete(id);
-        assertAdminEvents.assertEvent(realmId, OperationType.DELETE, AdminEventPaths.identityProviderMapperPath("google", id));
+        assertAdminEvents.assertEvent(realmId, OperationType.DELETE, AdminEventPaths.identityProviderMapperPath("google", id), ResourceType.IDENTITY_PROVIDER_MAPPER);
         try {
             provider.getMapperById(id);
             Assert.fail("Should fail with NotFoundException");

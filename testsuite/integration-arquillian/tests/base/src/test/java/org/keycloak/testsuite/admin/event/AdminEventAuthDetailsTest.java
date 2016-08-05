@@ -27,6 +27,7 @@ import org.junit.Test;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -136,6 +137,7 @@ public class AdminEventAuthDetailsTest extends AbstractAuthTest {
                     .realmId(realmUuid)
                     .operationType(OperationType.UPDATE)
                     .resourcePath(AdminEventPaths.userResourcePath(appUserId))
+                    .resourceType(ResourceType.USER)
                     .representation(rep)
                     .authDetails(expectedRealmId, expectedClientUuid, expectedUserId)
                     .assertEvent();

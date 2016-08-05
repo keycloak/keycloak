@@ -28,6 +28,7 @@ import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.Constants;
@@ -99,6 +100,8 @@ import org.keycloak.services.resources.AccountService;
 import org.keycloak.common.util.Time;
 import org.keycloak.services.validation.Validation;
 
+import static org.keycloak.events.admin.ResourceType.GROUP_MEMBERSHIP;
+
 /**
  * Base resource for managing users
  *
@@ -129,7 +132,7 @@ public class UsersResource {
     public UsersResource(RealmModel realm, RealmAuth auth, AdminEventBuilder adminEvent) {
         this.auth = auth;
         this.realm = realm;
-        this.adminEvent = adminEvent;
+        this.adminEvent = adminEvent.resource(ResourceType.USER);
 
         auth.init(RealmAuth.Resource.USER);
     }
@@ -961,7 +964,7 @@ public class UsersResource {
         try {
             if (user.isMemberOf(group)){
                 user.leaveGroup(group);
-                adminEvent.operation(OperationType.DELETE).representation(ModelToRepresentation.toRepresentation(group, true)).resourcePath(uriInfo).success();
+                adminEvent.operation(OperationType.DELETE).resource(ResourceType.GROUP_MEMBERSHIP).representation(ModelToRepresentation.toRepresentation(group, true)).resourcePath(uriInfo).success();
             }
         } catch (ModelException me) {
             Properties messages = AdminRoot.getMessages(session, realm, auth.getAuth().getToken().getLocale());
@@ -986,7 +989,7 @@ public class UsersResource {
         }
         if (!user.isMemberOf(group)){
             user.joinGroup(group);
-            adminEvent.operation(OperationType.CREATE).representation(ModelToRepresentation.toRepresentation(group, true)).resourcePath(uriInfo).success();
+            adminEvent.operation(OperationType.CREATE).resource(ResourceType.GROUP_MEMBERSHIP).representation(ModelToRepresentation.toRepresentation(group, true)).resourcePath(uriInfo).success();
         }
     }
 

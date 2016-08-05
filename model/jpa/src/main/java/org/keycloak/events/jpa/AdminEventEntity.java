@@ -17,8 +17,12 @@
 
 package org.keycloak.events.jpa;
 
+import org.keycloak.events.admin.ResourceType;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
@@ -41,6 +45,9 @@ public class AdminEventEntity {
     
     @Column(name="OPERATION_TYPE")
     private String operationType;
+
+    @Column(name="RESOURCE_TYPE", length = 64)
+    private String resourceType;
     
     @Column(name="AUTH_REALM_ID")
     private String authRealmId;
@@ -151,4 +158,11 @@ public class AdminEventEntity {
         this.error = error;
     }
 
+    public String getResourceType() {
+        return resourceType;
+    }
+
+    public void setResourceType(String resourceType) {
+        this.resourceType = resourceType;
+    }
 }
