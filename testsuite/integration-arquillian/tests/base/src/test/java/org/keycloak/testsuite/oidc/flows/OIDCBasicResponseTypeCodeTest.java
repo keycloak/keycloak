@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.oidc.resptype;
+package org.keycloak.testsuite.oidc.flows;
 
 import java.util.Collections;
 import java.util.List;
@@ -61,12 +61,11 @@ public class OIDCBasicResponseTypeCodeTest extends AbstractOIDCResponseTypeTest 
 
     @Test
     public void nonceNotUsed() {
-        super.nonceNotUsed();
-    }
+        EventRepresentation loginEvent = loginUser(null);
 
-
-    @Test
-    public void nonceMatches() {
-        super.nonceMatches();
+        List<IDToken> idTokens = retrieveIDTokens(loginEvent);
+        for (IDToken idToken : idTokens) {
+            Assert.assertNull(idToken.getNonce());
+        }
     }
 }
