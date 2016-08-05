@@ -340,6 +340,12 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
             return redirectErrorToClient(parsedResponseMode, OAuthErrorException.REQUEST_URI_NOT_SUPPORTED, null);
         }
 
+        if (parsedResponseType.isImplicitOrHybridFlow() && nonce == null) {
+            logger.missingParameter(OIDCLoginProtocol.NONCE_PARAM);
+            event.error(Errors.INVALID_REQUEST);
+            return redirectErrorToClient(parsedResponseMode, OAuthErrorException.INVALID_REQUEST, "Missing parameter: nonce");
+        }
+
         return null;
     }
 
