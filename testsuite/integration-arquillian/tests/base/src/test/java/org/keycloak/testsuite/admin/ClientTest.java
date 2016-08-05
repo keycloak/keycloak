@@ -129,7 +129,7 @@ public class ClientTest extends AbstractAdminTest {
         OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("password", "test-user@localhost", "password");
         assertEquals(200, response.getStatusCode());
 
-        OAuthClient.AuthorizationCodeResponse codeResponse = oauth.doLogin("test-user@localhost", "password");
+        OAuthClient.AuthorizationEndpointResponse codeResponse = oauth.doLogin("test-user@localhost", "password");
 
         OAuthClient.AccessTokenResponse response2 = oauth.doAccessTokenRequest(codeResponse.getCode(), "password");
         assertEquals(200, response2.getStatusCode());

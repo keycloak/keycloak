@@ -171,11 +171,11 @@ public class OIDCLoginProtocol implements LoginProtocol {
                     .build();
 
             if (responseType.hasResponseType(OIDCResponseType.ID_TOKEN)) {
-                redirectUri.addParam("id_token", res.getIdToken());
+                redirectUri.addParam(OAuth2Constants.ID_TOKEN, res.getIdToken());
             }
 
             if (responseType.hasResponseType(OIDCResponseType.TOKEN)) {
-                redirectUri.addParam("access_token", res.getToken());
+                redirectUri.addParam(OAuth2Constants.ACCESS_TOKEN, res.getToken());
                 redirectUri.addParam("token_type", res.getTokenType());
                 redirectUri.addParam("session_state", res.getSessionState());
                 redirectUri.addParam("expires_in", String.valueOf(res.getExpiresIn()));

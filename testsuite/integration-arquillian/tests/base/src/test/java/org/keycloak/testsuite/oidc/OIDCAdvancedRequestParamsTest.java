@@ -47,7 +47,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 /**
- * Test for supporting advanced parameters of OIDC specs (max_age, nonce, prompt, ...)
+ * Test for supporting advanced parameters of OIDC specs (max_age, prompt, ...)
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
@@ -169,7 +169,7 @@ public class OIDCAdvancedRequestParamsTest extends TestRealmKeycloakTest {
         events.assertEmpty();
 
         // Assert error response was sent because not logged in
-        OAuthClient.AuthorizationCodeResponse resp = new OAuthClient.AuthorizationCodeResponse(oauth);
+        OAuthClient.AuthorizationEndpointResponse resp = new OAuthClient.AuthorizationEndpointResponse(oauth);
         Assert.assertNull(resp.getCode());
         Assert.assertEquals(OAuthErrorException.LOGIN_REQUIRED, resp.getError());
 
@@ -224,7 +224,7 @@ public class OIDCAdvancedRequestParamsTest extends TestRealmKeycloakTest {
             assertTrue(appPage.isCurrent());
             Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-            OAuthClient.AuthorizationCodeResponse resp = new OAuthClient.AuthorizationCodeResponse(oauth);
+            OAuthClient.AuthorizationEndpointResponse resp = new OAuthClient.AuthorizationEndpointResponse(oauth);
             Assert.assertNull(resp.getCode());
             Assert.assertEquals(OAuthErrorException.INTERACTION_REQUIRED, resp.getError());
 
@@ -242,7 +242,7 @@ public class OIDCAdvancedRequestParamsTest extends TestRealmKeycloakTest {
             driver.navigate().to(oauth.getLoginFormUrl() + "&prompt=none");
             Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-            resp = new OAuthClient.AuthorizationCodeResponse(oauth);
+            resp = new OAuthClient.AuthorizationEndpointResponse(oauth);
             Assert.assertNotNull(resp.getCode());
             Assert.assertNull(resp.getError());
 
@@ -289,37 +289,6 @@ public class OIDCAdvancedRequestParamsTest extends TestRealmKeycloakTest {
 
     }
 
-
-    // NONCE
-
-    @Test
-    public void nonceNotUsed() {
-        driver.navigate().to(oauth.getLoginFormUrl());
-
-        loginPage.assertCurrent();
-        loginPage.login("test-user@localhost", "password");
-        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-
-        EventRepresentation loginEvent = events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
-        IDToken idToken = sendTokenRequestAndGetIDToken(loginEvent);
-
-        Assert.assertNull(idToken.getNonce());
-    }
-
-    @Test
-    public void nonceMatches() {
-        driver.navigate().to(oauth.getLoginFormUrl() + "&nonce=abcdef123456");
-
-        loginPage.assertCurrent();
-        loginPage.login("test-user@localhost", "password");
-        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-
-        EventRepresentation loginEvent = events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
-        IDToken idToken = sendTokenRequestAndGetIDToken(loginEvent);
-
-        Assert.assertEquals("abcdef123456", idToken.getNonce());
-    }
-
     // DISPLAY & OTHERS
 
     @Test
@@ -346,7 +315,7 @@ public class OIDCAdvancedRequestParamsTest extends TestRealmKeycloakTest {
         assertTrue(appPage.isCurrent());
 
         // Assert error response was sent because not logged in
-        OAuthClient.AuthorizationCodeResponse resp = new OAuthClient.AuthorizationCodeResponse(oauth);
+        OAuthClient.AuthorizationEndpointResponse resp = new OAuthClient.AuthorizationEndpointResponse(oauth);
         Assert.assertNull(resp.getCode());
         Assert.assertEquals(OAuthErrorException.REQUEST_NOT_SUPPORTED, resp.getError());
     }
@@ -359,7 +328,7 @@ public class OIDCAdvancedRequestParamsTest extends TestRealmKeycloakTest {
         assertTrue(appPage.isCurrent());
 
         // Assert error response was sent because not logged in
-        OAuthClient.AuthorizationCodeResponse resp = new OAuthClient.AuthorizationCodeResponse(oauth);
+        OAuthClient.AuthorizationEndpointResponse resp = new OAuthClient.AuthorizationEndpointResponse(oauth);
         Assert.assertNull(resp.getCode());
         Assert.assertEquals(OAuthErrorException.REQUEST_URI_NOT_SUPPORTED, resp.getError());
     }

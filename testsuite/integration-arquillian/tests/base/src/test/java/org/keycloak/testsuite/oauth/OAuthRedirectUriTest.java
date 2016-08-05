@@ -154,7 +154,7 @@ public class OAuthRedirectUriTest extends AbstractKeycloakTest {
     @Test
     public void testValid() throws IOException {
         oauth.redirectUri(APP_ROOT + "/auth");
-        OAuthClient.AuthorizationCodeResponse response = oauth.doLogin("test-user@localhost", "password");
+        OAuthClient.AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
 
         Assert.assertNotNull(response.getCode());
         URL url = new URL(driver.getCurrentUrl());
@@ -175,7 +175,7 @@ public class OAuthRedirectUriTest extends AbstractKeycloakTest {
     @Test
     public void testWithParams() throws IOException {
         oauth.redirectUri(APP_ROOT + "/auth?key=value");
-        OAuthClient.AuthorizationCodeResponse response = oauth.doLogin("test-user@localhost", "password");
+        OAuthClient.AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
 
         Assert.assertNotNull(response.getCode());
         URL url = new URL(driver.getCurrentUrl());
