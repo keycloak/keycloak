@@ -29,6 +29,7 @@
     <button onclick="keycloak.register()">Register</button>
     <button onclick="refreshToken(9999)">Refresh Token</button>
     <button onclick="refreshToken(30)">Refresh Token (if <30s validity)</button>
+    <button onclick="showError()">Show Error Response</button>
     <button onclick="loadProfile()">Get Profile</button>
     <button onclick="loadUserInfo()">Get User Info</button>
     <button onclick="output(keycloak.tokenParsed)">Show Token</button>
@@ -106,6 +107,20 @@
         }
 
         output(o);
+    }
+
+    function showError() {
+        output("Error: " + getParameterByName("error") + "\n" + "Error description: " + getParameterByName("error_description"));
+    }
+
+    function getParameterByName(name, url) {
+        if (!url) url = window.location.href;
+        name = name.replace(/[\[\]]/g, "\\$&");
+        var regex = new RegExp("[?&#]" + name + "(=([^&#]*)|&|#|$)"),
+                results = regex.exec(url);
+        if (!results) return null;
+        if (!results[2]) return '';
+        return decodeURIComponent(results[2].replace(/\+/g, " "));
     }
 
     function output(data) {

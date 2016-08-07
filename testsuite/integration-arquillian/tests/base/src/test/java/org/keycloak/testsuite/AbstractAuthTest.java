@@ -101,10 +101,7 @@ public abstract class AbstractAuthTest extends AbstractKeycloakTest {
     }
 
     public void deleteAllCookiesForTestRealm() {
-        // testRealmPage.navigateTo();
-        testRealmAccountPage.navigateTo();  // Because IE webdriver freezes when loading a JSON page (realm page), we need to use this alternative
-        log.debug("deleting cookies in test realm");
-        driver.manage().deleteAllCookies();
+        deleteAllCookiesForRealm(testRealmAccountPage);
     }
 
     public void listCookies() {

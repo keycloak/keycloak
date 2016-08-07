@@ -31,6 +31,7 @@ import org.keycloak.events.EventType;
 import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.events.admin.AdminEventQuery;
 import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
 import org.keycloak.exportimport.ClientDescriptionConverter;
 import org.keycloak.exportimport.ClientDescriptionConverterFactory;
 import org.keycloak.jose.jws.JWSBuilder;
@@ -127,7 +128,7 @@ public class RealmAdminResource {
         this.auth = auth;
         this.realm = realm;
         this.tokenManager = tokenManager;
-        this.adminEvent = adminEvent.realm(realm);
+        this.adminEvent = adminEvent.realm(realm).resource(ResourceType.REALM);
 
         auth.init(RealmAuth.Resource.REALM);
         auth.requireAny();
@@ -413,7 +414,7 @@ public class RealmAdminResource {
         UserSessionModel userSession = session.sessions().getUserSession(realm, sessionId);
         if (userSession == null) throw new NotFoundException("Sesssion not found");
         AuthenticationManager.backchannelLogout(session, realm, userSession, uriInfo, connection, headers, true);
-        adminEvent.operation(OperationType.DELETE).resourcePath(uriInfo).success();
+        adminEvent.operation(OperationType.DELETE).resource(ResourceType.USER_SESSION).resourcePath(uriInfo).success();
 
     }
 
@@ -600,7 +601,8 @@ public class RealmAdminResource {
                                                     @QueryParam("authUser") String authUser, @QueryParam("authIpAddress") String authIpAddress,
                                                     @QueryParam("resourcePath") String resourcePath, @QueryParam("dateFrom") String dateFrom,
                                                     @QueryParam("dateTo") String dateTo, @QueryParam("first") Integer firstResult,
-                                                    @QueryParam("max") Integer maxResults) {
+                                                    @QueryParam("max") Integer maxResults,
+                                                    @QueryParam("resourceTypes") List<String> resourceTypes) {
         auth.init(RealmAuth.Resource.EVENTS).requireView();
 
         EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
@@ -633,6 +635,16 @@ public class RealmAdminResource {
             }
             query.operation(t);
         }
+
+        if (resourceTypes != null && !resourceTypes.isEmpty()) {
+            ResourceType[] t = new ResourceType[resourceTypes.size()];
+            for (int i = 0; i < t.length; i++) {
+                t[i] = ResourceType.valueOf(resourceTypes.get(i));
+            }
+            query.resourceType(t);
+        }
+
+
 
         if(dateFrom != null) {
             SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
@@ -757,7 +769,7 @@ public class RealmAdminResource {
         }
         realm.addDefaultGroup(group);
 
-        adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo).success();
+        adminEvent.operation(OperationType.CREATE).resource(ResourceType.GROUP).resourcePath(uriInfo).success();
     }
 
     @DELETE
@@ -772,7 +784,7 @@ public class RealmAdminResource {
         }
         realm.removeDefaultGroup(group);
 
-        adminEvent.operation(OperationType.DELETE).resourcePath(uriInfo).success();
+        adminEvent.operation(OperationType.DELETE).resource(ResourceType.GROUP).resourcePath(uriInfo).success();
     }
 
 

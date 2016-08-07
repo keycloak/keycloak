@@ -18,7 +18,6 @@
 package org.keycloak.representations.idm;
 
 /**
- *
  * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
  */
 public class AdminEventRepresentation {
@@ -27,6 +26,7 @@ public class AdminEventRepresentation {
     private String realmId;
     private AuthDetailsRepresentation authDetails;
     private String operationType;
+    private String resourceType;
     private String resourcePath;
     private String representation;
     private String error;
@@ -63,6 +63,14 @@ public class AdminEventRepresentation {
         this.operationType = operationType;
     }
 
+    public String getResourceType() {
+        return resourceType;
+    }
+
+    public void setResourceType(String resourceType) {
+        this.resourceType = resourceType;
+    }
+
     public String getResourcePath() {
         return resourcePath;
     }
@@ -86,5 +94,4 @@ public class AdminEventRepresentation {
     public void setError(String error) {
         this.error = error;
     }
-
 }

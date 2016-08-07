@@ -21,6 +21,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.RolesResource;
 import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.testsuite.Assert;
@@ -78,11 +79,11 @@ public class RealmRolesTest extends AbstractAdminTest {
 
         resource = adminClient.realm(REALM_NAME).roles();
 
-        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.roleResourcePath("role-a"), roleA);
-        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.roleResourcePath("role-b"), roleB);
+        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.roleResourcePath("role-a"), roleA, ResourceType.REALM_ROLE);
+        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.roleResourcePath("role-b"), roleB, ResourceType.REALM_ROLE);
 
-        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.clientResourcePath(clientUuid), clientRep);
-        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.clientRoleResourcePath(clientUuid, "role-c"), roleC);
+        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.clientResourcePath(clientUuid), clientRep, ResourceType.CLIENT);
+        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.clientRoleResourcePath(clientUuid, "role-c"), roleC, ResourceType.CLIENT_ROLE);
     }
 
     @Test
@@ -102,7 +103,7 @@ public class RealmRolesTest extends AbstractAdminTest {
         role.setDescription("Role A New");
 
         resource.get("role-a").update(role);
-        assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, AdminEventPaths.roleResourcePath("role-a"), role);
+        assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, AdminEventPaths.roleResourcePath("role-a"), role, ResourceType.REALM_ROLE);
 
         role = resource.get("role-a-new").toRepresentation();
 
@@ -116,7 +117,7 @@ public class RealmRolesTest extends AbstractAdminTest {
     public void deleteRole() {
         assertNotNull(resource.get("role-a"));
         resource.deleteRole("role-a");
-        assertAdminEvents.assertEvent(realmId, OperationType.DELETE, AdminEventPaths.roleResourcePath("role-a"));
+        assertAdminEvents.assertEvent(realmId, OperationType.DELETE, AdminEventPaths.roleResourcePath("role-a"), ResourceType.REALM_ROLE);
 
         try {
             resource.get("role-a").toRepresentation();
@@ -136,7 +137,7 @@ public class RealmRolesTest extends AbstractAdminTest {
         l.add(RoleBuilder.create().id(ids.get("role-c")).build());
         resource.get("role-a").addComposites(l);
 
-        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.roleResourceCompositesPath("role-a"), l);
+        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.roleResourceCompositesPath("role-a"), l, ResourceType.REALM_ROLE);
 
         Set<RoleRepresentation> composites = resource.get("role-a").getRoleComposites();
 
@@ -150,7 +151,7 @@ public class RealmRolesTest extends AbstractAdminTest {
         Assert.assertNames(clientComposites, "role-c");
 
         resource.get("role-a").deleteComposites(l);
-        assertAdminEvents.assertEvent(realmId, OperationType.DELETE, AdminEventPaths.roleResourceCompositesPath("role-a"), l);
+        assertAdminEvents.assertEvent(realmId, OperationType.DELETE, AdminEventPaths.roleResourceCompositesPath("role-a"), l, ResourceType.REALM_ROLE);
 
         assertFalse(resource.get("role-a").toRepresentation().isComposite());
         assertEquals(0, resource.get("role-a").getRoleComposites().size());

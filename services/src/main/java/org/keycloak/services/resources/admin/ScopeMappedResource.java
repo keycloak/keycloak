@@ -20,6 +20,7 @@ package org.keycloak.services.resources.admin;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -65,7 +66,7 @@ public class ScopeMappedResource {
         this.auth = auth;
         this.scopeContainer = scopeContainer;
         this.session = session;
-        this.adminEvent = adminEvent;
+        this.adminEvent = adminEvent.resource(ResourceType.REALM_SCOPE_MAPPING);
     }
 
     /**

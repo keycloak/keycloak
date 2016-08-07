@@ -26,6 +26,7 @@ import org.keycloak.common.util.Time;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.events.Event;
 import org.keycloak.events.admin.AdminEvent;
+import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
@@ -492,6 +493,9 @@ public class TestingResourceProvider implements RealmResourceProvider {
         event.setAuthDetails(repToModel(rep.getAuthDetails()));
         event.setError(rep.getError());
         event.setOperationType(OperationType.valueOf(rep.getOperationType()));
+        if (rep.getResourceType() != null) {
+            event.setResourceType(ResourceType.valueOf(rep.getResourceType()));
+        }
         event.setRealmId(rep.getRealmId());
         event.setRepresentation(rep.getRepresentation());
         event.setResourcePath(rep.getResourcePath());

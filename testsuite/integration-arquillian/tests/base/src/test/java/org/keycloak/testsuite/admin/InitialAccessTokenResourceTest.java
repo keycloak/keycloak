@@ -22,6 +22,7 @@ import org.junit.Test;
 import org.keycloak.admin.client.resource.ClientInitialAccessResource;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
 import org.keycloak.representations.idm.ClientInitialAccessCreatePresentation;
 import org.keycloak.representations.idm.ClientInitialAccessPresentation;
 import org.keycloak.testsuite.util.AdminEventPaths;
@@ -54,7 +55,7 @@ public class InitialAccessTokenResourceTest extends AbstractAdminTest {
         int time = Time.currentTime();
 
         ClientInitialAccessPresentation response = resource.create(rep);
-        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.clientInitialAccessPath(response.getId()), rep);
+        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.clientInitialAccessPath(response.getId()), rep, ResourceType.CLIENT_INITIAL_ACCESS_MODEL);
 
         assertNotNull(response.getId());
         assertEquals(new Integer(2), response.getCount());
@@ -65,12 +66,12 @@ public class InitialAccessTokenResourceTest extends AbstractAdminTest {
 
         rep.setCount(3);
         response = resource.create(rep);
-        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.clientInitialAccessPath(response.getId()), rep);
+        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.clientInitialAccessPath(response.getId()), rep, ResourceType.CLIENT_INITIAL_ACCESS_MODEL);
 
         rep.setCount(4);
         response = resource.create(rep);
         String lastId = response.getId();
-        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.clientInitialAccessPath(lastId), rep);
+        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.clientInitialAccessPath(lastId), rep, ResourceType.CLIENT_INITIAL_ACCESS_MODEL);
 
         List<ClientInitialAccessPresentation> list = resource.list();
         assertEquals(3, list.size());
@@ -80,7 +81,7 @@ public class InitialAccessTokenResourceTest extends AbstractAdminTest {
 
         // Delete last and assert it was deleted
         resource.delete(lastId);
-        assertAdminEvents.assertEvent(realmId, OperationType.DELETE, AdminEventPaths.clientInitialAccessPath(lastId));
+        assertAdminEvents.assertEvent(realmId, OperationType.DELETE, AdminEventPaths.clientInitialAccessPath(lastId), ResourceType.CLIENT_INITIAL_ACCESS_MODEL);
 
         list = resource.list();
         assertEquals(2, list.size());

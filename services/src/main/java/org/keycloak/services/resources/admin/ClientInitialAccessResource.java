@@ -18,6 +18,7 @@
 package org.keycloak.services.resources.admin;
 
 import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.ClientInitialAccessModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -49,7 +50,7 @@ public class ClientInitialAccessResource {
     public ClientInitialAccessResource(RealmModel realm, RealmAuth auth, AdminEventBuilder adminEvent) {
         this.auth = auth;
         this.realm = realm;
-        this.adminEvent = adminEvent;
+        this.adminEvent = adminEvent.resource(ResourceType.CLIENT_INITIAL_ACCESS_MODEL);
 
         auth.init(RealmAuth.Resource.CLIENT);
     }

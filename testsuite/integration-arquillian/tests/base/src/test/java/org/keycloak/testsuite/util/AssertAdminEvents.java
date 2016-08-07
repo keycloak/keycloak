@@ -38,6 +38,7 @@ import org.junit.runners.model.Statement;
 import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.common.util.reflections.Reflections;
 import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.representations.AccessToken;
@@ -106,22 +107,23 @@ public class AssertAdminEvents implements TestRule {
 
 
 
-    public AdminEventRepresentation assertEvent(String realmId, OperationType operationType, String resourcePath) {
-        return assertEvent(realmId, operationType, resourcePath, null);
+    public AdminEventRepresentation assertEvent(String realmId, OperationType operationType, String resourcePath, ResourceType resourceType) {
+        return assertEvent(realmId, operationType, resourcePath, null, resourceType);
     }
 
-    public AdminEventRepresentation assertEvent(String realmId, OperationType operationType, Matcher<String> resourcePath) {
-        return assertEvent(realmId, operationType, resourcePath, null);
+    public AdminEventRepresentation assertEvent(String realmId, OperationType operationType, Matcher<String> resourcePath, ResourceType resourceType) {
+        return assertEvent(realmId, operationType, resourcePath, null, resourceType);
     }
 
-    public AdminEventRepresentation assertEvent(String realmId, OperationType operationType, String resourcePath, Object representation) {
-        return assertEvent(realmId, operationType, Matchers.equalTo(resourcePath), representation);
+    public AdminEventRepresentation assertEvent(String realmId, OperationType operationType, String resourcePath, Object representation, ResourceType resourceType) {
+        return assertEvent(realmId, operationType, Matchers.equalTo(resourcePath), representation, resourceType);
     }
 
-    public AdminEventRepresentation assertEvent(String realmId, OperationType operationType, Matcher<String> resourcePath, Object representation) {
+    public AdminEventRepresentation assertEvent(String realmId, OperationType operationType, Matcher<String> resourcePath, Object representation, ResourceType resourceType) {
         return expect().realmId(realmId)
                 .operationType(operationType)
                 .resourcePath(resourcePath)
+                .resourceType(resourceType)
                 .representation(representation)
                 .assertEvent();
     }
@@ -132,6 +134,7 @@ public class AssertAdminEvents implements TestRule {
 
         private AdminEventRepresentation expected = new AdminEventRepresentation();
         private Matcher<String> resourcePath;
+        private ResourceType resourceType;
         private Object expectedRep;
 
         public ExpectedAdminEvent realmId(String realmId) {
@@ -155,6 +158,11 @@ public class AssertAdminEvents implements TestRule {
 
         public ExpectedAdminEvent resourcePath(Matcher<String> resourcePath) {
             this.resourcePath = resourcePath;
+            return this;
+        }
+
+        public ExpectedAdminEvent resourceType(ResourceType resourceType){
+            expected.setResourceType(resourceType.toString());
             return this;
         }
 
@@ -191,6 +199,7 @@ public class AssertAdminEvents implements TestRule {
         public AdminEventRepresentation assertEvent(AdminEventRepresentation actual) {
             Assert.assertEquals(expected.getRealmId(), actual.getRealmId());
             Assert.assertThat(actual.getResourcePath(), resourcePath);
+            Assert.assertEquals(expected.getResourceType(), actual.getResourceType());
             Assert.assertEquals(expected.getOperationType(), actual.getOperationType());
 
             Assert.assertTrue(ObjectUtil.isEqualOrBothNull(expected.getError(), actual.getError()));
