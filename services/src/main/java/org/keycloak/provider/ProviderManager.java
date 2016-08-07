@@ -16,8 +16,10 @@
  */
 package org.keycloak.provider;
 
+import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.services.ServicesLogger;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.LinkedList;
@@ -33,7 +35,8 @@ public class ProviderManager {
     private static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
 
     private List<ProviderLoader> loaders = new LinkedList<ProviderLoader>();
-    private Map<String, List<ProviderFactory>> cache = new HashMap<String, List<ProviderFactory>>();
+    private MultivaluedHashMap<Class<? extends Provider>, ProviderFactory> cache = new MultivaluedHashMap<>();
+
 
     public ProviderManager(ClassLoader baseClassLoader, String... resources) {
         List<ProviderLoaderFactory> factories = new LinkedList<ProviderLoaderFactory>();
@@ -65,6 +68,10 @@ public class ProviderManager {
         }
     }
 
+    public ProviderManager(ClassLoader baseClassLoader) {
+        loaders.add(new DefaultProviderLoader(baseClassLoader));
+    }
+
     public synchronized List<Spi> loadSpis() {
         // Use a map to prevent duplicates, since the loaders may have overlapping classpaths.
         Map<String, Spi> spiMap = new HashMap<>();
@@ -80,9 +87,7 @@ public class ProviderManager {
     }
 
     public synchronized List<ProviderFactory> load(Spi spi) {
-        List<ProviderFactory> factories = cache.get(spi.getName());
-        if (factories == null) {
-            factories = new LinkedList<ProviderFactory>();
+        if (!cache.containsKey(spi.getProviderClass())) {
             IdentityHashMap factoryClasses = new IdentityHashMap();
             for (ProviderLoader loader : loaders) {
                 List<ProviderFactory> f = loader.load(spi);
@@ -90,14 +95,26 @@ public class ProviderManager {
                     for (ProviderFactory pf: f) {
                         // make sure there are no duplicates
                         if (!factoryClasses.containsKey(pf.getClass())) {
-                            factories.add(pf);
+                            cache.add(spi.getProviderClass(), pf);
                             factoryClasses.put(pf.getClass(), pf);
                         }
                     }
                 }
             }
         }
-        return factories;
+        List<ProviderFactory> rtn = cache.get(spi.getProviderClass());
+        return rtn == null ? Collections.EMPTY_LIST : rtn;
+    }
+
+    /**
+     * returns a copy of internal factories.
+     *
+     * @return
+     */
+    public synchronized MultivaluedHashMap<Class<? extends Provider>, ProviderFactory> getLoadedFactories() {
+        MultivaluedHashMap<Class<? extends Provider>, ProviderFactory> copy = new MultivaluedHashMap<>();
+        copy.addAll(cache);
+        return copy;
     }
 
     public synchronized ProviderFactory load(Spi spi, String providerId) {
