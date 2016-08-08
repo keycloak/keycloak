@@ -15,14 +15,16 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.oidc.resptype;
+package org.keycloak.testsuite.oidc.flows;
 
 import java.util.List;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Rule;
+import org.junit.Test;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.events.Details;
+import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -30,10 +32,8 @@ import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.TestRealmKeycloakTest;
 import org.keycloak.testsuite.admin.AbstractAdminTest;
-import org.keycloak.testsuite.pages.AccountUpdateProfilePage;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
-import org.keycloak.testsuite.pages.OAuthGrantPage;
 import org.keycloak.testsuite.util.OAuthClient;
 
 import static org.junit.Assert.assertFalse;
@@ -46,6 +46,9 @@ import static org.junit.Assert.assertTrue;
  */
 public abstract class AbstractOIDCResponseTypeTest extends TestRealmKeycloakTest {
 
+    // Harcoded for now
+    Algorithm jwsAlgorithm = Algorithm.RS256;
+
     @Rule
     public AssertEvents events = new AssertEvents(this);
 
@@ -54,12 +57,6 @@ public abstract class AbstractOIDCResponseTypeTest extends TestRealmKeycloakTest
 
     @Page
     protected LoginPage loginPage;
-
-    @Page
-    protected AccountUpdateProfilePage profilePage;
-
-    @Page
-    protected OAuthGrantPage grantPage;
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
@@ -73,14 +70,9 @@ public abstract class AbstractOIDCResponseTypeTest extends TestRealmKeycloakTest
     }
 
 
-    protected void nonceMatches() {
-        driver.navigate().to(oauth.getLoginFormUrl() + "&nonce=abcdef123456");
-
-        loginPage.assertCurrent();
-        loginPage.login("test-user@localhost", "password");
-        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-
-        EventRepresentation loginEvent = events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
+    @Test
+    public void nonceMatches() {
+        EventRepresentation loginEvent = loginUser("abcdef123456");
         List<IDToken> idTokens = retrieveIDTokens(loginEvent);
 
         for (IDToken idToken : idTokens) {
@@ -89,23 +81,8 @@ public abstract class AbstractOIDCResponseTypeTest extends TestRealmKeycloakTest
     }
 
 
-    protected void nonceNotUsed() {
-        driver.navigate().to(oauth.getLoginFormUrl());
-
-        loginPage.assertCurrent();
-        loginPage.login("test-user@localhost", "password");
-        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-
-        EventRepresentation loginEvent = events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
-
-        List<IDToken> idTokens = retrieveIDTokens(loginEvent);
-        for (IDToken idToken : idTokens) {
-            Assert.assertNull(idToken.getNonce());
-        }
-    }
-
-
-    protected void nonceNotUsedErrorExpected() {
+    protected void validateNonceNotUsedErrorExpected() {
+        oauth.nonce(null);
         driver.navigate().to(oauth.getLoginFormUrl());
 
         assertFalse(loginPage.isCurrent());
@@ -117,6 +94,21 @@ public abstract class AbstractOIDCResponseTypeTest extends TestRealmKeycloakTest
         Assert.assertNull(resp.getIdToken());
         Assert.assertEquals(OAuthErrorException.INVALID_REQUEST, resp.getError());
         Assert.assertEquals("Missing parameter: nonce", resp.getErrorDescription());
+    }
+
+
+    protected EventRepresentation loginUser(String nonce) {
+        if (nonce != null) {
+            oauth.nonce(nonce);
+        }
+
+        driver.navigate().to(oauth.getLoginFormUrl());
+
+        loginPage.assertCurrent();
+        loginPage.login("test-user@localhost", "password");
+        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+
+        return events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
     }
 
     protected abstract List<IDToken> retrieveIDTokens(EventRepresentation loginEvent);

@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.oidc.resptype;
+package org.keycloak.testsuite.oidc.flows;
 
 import java.util.Collections;
 import java.util.List;
@@ -23,6 +23,7 @@ import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.events.Details;
+import org.keycloak.jose.jws.crypto.HashProvider;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.idm.EventRepresentation;
@@ -31,28 +32,33 @@ import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.OAuthClient;
 
 /**
- * Tests with response_type=id_token
+ * Tests with response_type=id_token token
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class OIDCImplicitResponseTypeIDTokenTest extends AbstractOIDCResponseTypeTest {
+public class OIDCImplicitResponseTypeIDTokenTokenTest extends AbstractOIDCResponseTypeTest {
 
     @Before
     public void clientConfiguration() {
         ClientManager.realm(adminClient.realm("test")).clientId("test-app").standardFlow(false).implicitFlow(true);
 
         oauth.clientId("test-app");
-        oauth.responseType(OIDCResponseType.ID_TOKEN);
+        oauth.responseType(OIDCResponseType.ID_TOKEN + " " + OIDCResponseType.TOKEN);
     }
 
 
     protected List<IDToken> retrieveIDTokens(EventRepresentation loginEvent) {
-        Assert.assertEquals(OIDCResponseType.ID_TOKEN, loginEvent.getDetails().get(Details.RESPONSE_TYPE));
+        Assert.assertEquals(OIDCResponseType.ID_TOKEN + " " + OIDCResponseType.TOKEN, loginEvent.getDetails().get(Details.RESPONSE_TYPE));
 
         OAuthClient.AuthorizationEndpointResponse authzResponse = new OAuthClient.AuthorizationEndpointResponse(oauth, true);
-        Assert.assertNull(authzResponse.getAccessToken());
+        Assert.assertNotNull(authzResponse.getAccessToken());
         String idTokenStr = authzResponse.getIdToken();
         IDToken idToken = oauth.verifyIDToken(idTokenStr);
+
+        // Validate "at_hash"
+        Assert.assertNotNull(idToken.getAccessTokenHash());
+        Assert.assertEquals(idToken.getAccessTokenHash(), HashProvider.oidcHash(jwsAlgorithm, authzResponse.getAccessToken()));
+        Assert.assertNull(idToken.getCodeHash());
 
         return Collections.singletonList(idToken);
     }
@@ -60,13 +66,6 @@ public class OIDCImplicitResponseTypeIDTokenTest extends AbstractOIDCResponseTyp
 
     @Test
     public void nonceNotUsedErrorExpected() {
-        super.nonceNotUsedErrorExpected();
+        super.validateNonceNotUsedErrorExpected();
     }
-
-
-    @Test
-    public void nonceMatches() {
-        super.nonceMatches();
-    }
-
 }
