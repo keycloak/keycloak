@@ -23,21 +23,27 @@ import org.keycloak.testsuite.auth.page.login.OIDCLogin;
 import org.keycloak.testsuite.page.AbstractPageWithInjectedUrl;
 import org.keycloak.testsuite.page.Form;
 import org.keycloak.testsuite.pages.ConsentPage;
+import org.keycloak.testsuite.util.URLUtils;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
+import org.openqa.selenium.support.FindBy;
 
 import java.net.URL;
 import java.util.List;
 
+import static org.keycloak.testsuite.util.WaitUtils.IMPLICIT_ELEMENT_WAIT_MILLIS;
 import static org.keycloak.testsuite.util.WaitUtils.pause;
+import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
+ * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
 public class PhotozClientAuthzTestApp extends AbstractPageWithInjectedUrl {
 
     public static final String DEPLOYMENT_NAME = "photoz-html5-client";
+    public static final int WAIT_AFTER_OPERATION = 2000;
 
     @ArquillianResource
     @OperateOnDeployment(DEPLOYMENT_NAME)
@@ -49,14 +55,16 @@ public class PhotozClientAuthzTestApp extends AbstractPageWithInjectedUrl {
     @Page
     protected ConsentPage consentPage;
 
+    @FindBy(xpath = "//a[@ng-click = 'Identity.logout()']")
+    WebElement signOutButton;
+
     public void createAlbum(String name) {
         navigateTo();
-        By id = By.id("create-album");
-        WaitUtils.waitUntilElement(id);
-        this.driver.findElement(id).click();
+        this.driver.findElement(By.id("create-album")).click();
         Form.setInputValue(this.driver.findElement(By.id("album.name")), name);
+        pause(200); // We need to wait a bit for the form to "accept" the input (otherwise it registers the input as empty)
         this.driver.findElement(By.id("save-album")).click();
-        pause(500);
+        pause(WAIT_AFTER_OPERATION);
     }
 
     @Override
@@ -65,76 +73,44 @@ public class PhotozClientAuthzTestApp extends AbstractPageWithInjectedUrl {
     }
 
     public void deleteAlbum(String name) {
-        By id = By.id("delete-" + name);
-        WaitUtils.waitUntilElement(id);
-        this.driver.findElements(id).forEach(WebElement::click);
-        pause(500);
+        driver.findElements(By.xpath("//a[text()='" + name + "']/following-sibling::a[text()='X']")).forEach(WebElement::click);
+        pause(WAIT_AFTER_OPERATION);
     }
 
     public void navigateToAdminAlbum() {
-        this.driver.navigate().to(this.getInjectedUrl().toString() + "/#/admin/album");
-        pause(500);
+        URLUtils.navigateToUri(driver, toString() + "/#/admin/album", true);
+        driver.navigate().refresh(); // This is sometimes necessary for loading the new policy settings
+        waitForPageToLoad(driver);
+        pause(WAIT_AFTER_OPERATION);
     }
 
     public void logOut() {
-        navigateTo();
-        By by = By.xpath("//a[text() = 'Sign Out']");
-        WaitUtils.waitUntilElement(by);
-        this.driver.findElement(by).click();
-        pause(500);
+        signOutButton.click(); // Sometimes doesn't work in PhantomJS!
+        pause(WAIT_AFTER_OPERATION);
     }
 
-    public void login(String username, String password) throws InterruptedException {
-        navigateTo();
-        Thread.sleep(2000);
-        if (this.driver.getCurrentUrl().startsWith(getInjectedUrl().toString())) {
-            Thread.sleep(2000);
-            logOut();
-            navigateTo();
-        }
+    public void login(String username, String password, String... scopes) {
+        if (scopes.length > 0) {
+            StringBuilder scopesValue = new StringBuilder();
 
-        Thread.sleep(2000);
-
-        this.loginPage.form().login(username, password);
-
-        // simple check if we are at the consent page, if so just click 'Yes'
-        if (this.consentPage.isCurrent()) {
-            consentPage.confirm();
-            Thread.sleep(2000);
-        }
-    }
-
-    public void loginWithScopes(String username, String password, String... scopes) throws Exception {
-        navigateTo();
-        Thread.sleep(2000);
-        if (this.driver.getCurrentUrl().startsWith(getInjectedUrl().toString())) {
-            Thread.sleep(2000);
-            logOut();
-            navigateTo();
-        }
-
-        Thread.sleep(2000);
-
-        StringBuilder scopesValue = new StringBuilder();
-
-        for (String scope : scopes) {
-            if (scopesValue.length() != 0) {
-                scopesValue.append(" ");
+            for (String scope : scopes) {
+                if (scopesValue.length() != 0) {
+                    scopesValue.append(" ");
+                }
+                scopesValue.append(scope);
             }
-            scopesValue.append(scope);
+
+            URLUtils.navigateToUri(driver, this.driver.getCurrentUrl() + " " + scopesValue, true);
         }
-
-        this.driver.navigate().to(this.driver.getCurrentUrl() + " " + scopesValue);
-
-        Thread.sleep(2000);
 
         this.loginPage.form().login(username, password);
 
         // simple check if we are at the consent page, if so just click 'Yes'
         if (this.consentPage.isCurrent()) {
             consentPage.confirm();
-            Thread.sleep(2000);
         }
+
+        pause(WAIT_AFTER_OPERATION);
     }
 
     public boolean wasDenied() {
@@ -142,10 +118,20 @@ public class PhotozClientAuthzTestApp extends AbstractPageWithInjectedUrl {
     }
 
     public void viewAlbum(String name) throws InterruptedException {
-        Thread.sleep(2000);
-        By id = By.id("view-" + name);
-        WaitUtils.waitUntilElement(id);
-        this.driver.findElements(id).forEach(WebElement::click);
-        pause(500);
+        this.driver.findElement(By.xpath("//a[text() = '" + name + "']")).click();
+        waitForPageToLoad(driver);
+        driver.navigate().refresh(); // This is sometimes necessary for loading the new policy settings
+        pause(WAIT_AFTER_OPERATION);
+    }
+
+    @Override
+    public void navigateTo(boolean waitForMatch) {
+        super.navigateTo(waitForMatch);
+        pause(WAIT_AFTER_OPERATION);
+    }
+
+    @Override
+    public boolean isCurrent() {
+        return URLUtils.currentUrlStartWith(driver, toString());
     }
 }

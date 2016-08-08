@@ -34,7 +34,7 @@
             <div class="form-group">
                 <label class="col-md-2 control-label">{{:: 'endpoints' | translate}}</label>
                 <div class="col-md-6">
-                    <a lass="form-control" ng-href="/auth/realms/{{realm.id}}/.well-known/openid-configuration" target="_blank">OpenID Endpoint Configuration</a>
+                    <a class="form-control" ng-href="{{authUrl}}/realms/{{realm.id}}/.well-known/openid-configuration" target="_blank">OpenID Endpoint Configuration</a>
                 </div>
                 <kc-tooltip>{{:: 'realm-detail.oidc-endpoints.tooltip' | translate}}</kc-tooltip>
             </div>

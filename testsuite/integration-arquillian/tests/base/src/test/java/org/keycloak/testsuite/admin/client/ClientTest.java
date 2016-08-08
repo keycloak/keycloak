@@ -19,13 +19,12 @@ package org.keycloak.testsuite.admin.client;
 
 import java.util.List;
 
-import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.testsuite.util.AdminEventPaths;
-import org.keycloak.testsuite.util.AssertAdminEvents;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -66,7 +65,7 @@ public class ClientTest extends AbstractClientTest {
         clientRsc.remove();
         assertNull(findClientResource("deleteMe"));
 
-        assertAdminEvents.assertEvent(getRealmId(), OperationType.DELETE, AdminEventPaths.clientResourcePath(clientDbId));
+        assertAdminEvents.assertEvent(getRealmId(), OperationType.DELETE, AdminEventPaths.clientResourcePath(clientDbId), ResourceType.CLIENT);
     }
 
     @Test
@@ -87,7 +86,7 @@ public class ClientTest extends AbstractClientTest {
         ClientRepresentation expectedClientRep = new ClientRepresentation();
         expectedClientRep.setClientId("updateMe");
         expectedClientRep.setName("iWasUpdated");
-        assertAdminEvents.assertEvent(getRealmId(), OperationType.UPDATE, AdminEventPaths.clientResourcePath(clientRep.getId()), expectedClientRep);
+        assertAdminEvents.assertEvent(getRealmId(), OperationType.UPDATE, AdminEventPaths.clientResourcePath(clientRep.getId()), expectedClientRep, ResourceType.CLIENT);
     }
 
     @Test

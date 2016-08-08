@@ -268,14 +268,14 @@ public abstract class AbstractJSConsoleExampleAdapterTest extends AbstractExampl
         jsConsoleTestAppPage.init();
 
         jsConsoleTestAppPage.logIn();
-        assertTrue(driver.getPageSource().contains("Implicit flow is disabled for the client"));
+        assertResponseError("Implicit flow is disabled for the client");
 
-        setImplicitFlowFroClient();
+        setImplicitFlowForClient();
 
         jsConsoleTestAppPage.navigateTo();
         jsConsoleTestAppPage.init();
         jsConsoleTestAppPage.logIn();
-        assertTrue(driver.getPageSource().contains("Standard flow is disabled for the client"));
+        assertResponseError("Standard flow is disabled for the client");
 
         logInAndInit("implicit");
 
@@ -284,19 +284,19 @@ public abstract class AbstractJSConsoleExampleAdapterTest extends AbstractExampl
 
     @Test
     public void implicitFlowQueryTest() {
-        setImplicitFlowFroClient();
+        setImplicitFlowForClient();
 
         jsConsoleTestAppPage.navigateTo();
         jsConsoleTestAppPage.setFlow("implicit");
         jsConsoleTestAppPage.setResponseMode("query");
         jsConsoleTestAppPage.init();
         jsConsoleTestAppPage.logIn();
-        assertTrue(driver.getPageSource().contains("Invalid parameter: response_mode"));
+        assertResponseError("Response_mode 'query' not allowed");
     }
 
     @Test
     public void implicitFlowRefreshTokenTest() {
-        setImplicitFlowFroClient();
+        setImplicitFlowForClient();
 
         logInAndInit("implicit");
 
@@ -311,7 +311,7 @@ public abstract class AbstractJSConsoleExampleAdapterTest extends AbstractExampl
         realm.setAccessTokenLifespanForImplicitFlow(5);
         testRealmResource().update(realm);
 
-        setImplicitFlowFroClient();
+        setImplicitFlowForClient();
 
         logInAndInit("implicit");
 
@@ -351,7 +351,7 @@ public abstract class AbstractJSConsoleExampleAdapterTest extends AbstractExampl
         waitUntilElement(jsConsoleTestAppPage.getOutputElement()).text().contains("Init Success (Authenticated)");
     }
 
-    private void setImplicitFlowFroClient() {
+    private void setImplicitFlowForClient() {
         ClientResource clientResource = ApiUtil.findClientResourceByClientId(testRealmResource(), "js-console");
         ClientRepresentation client = clientResource.toRepresentation();
         client.setImplicitFlowEnabled(true);
@@ -371,6 +371,11 @@ public abstract class AbstractJSConsoleExampleAdapterTest extends AbstractExampl
 
     private void logInAndInit(String flow) {
         logInAndInit(flow, "user");
+    }
+
+    private void assertResponseError(String errorDescription) {
+        jsConsoleTestAppPage.showErrorResponse();
+        assertTrue(jsConsoleTestAppPage.getOutputElement().getText().contains(errorDescription));
     }
 
 }

@@ -29,6 +29,7 @@ import org.keycloak.events.Event;
 import org.keycloak.events.EventQuery;
 import org.keycloak.events.EventStoreProvider;
 import org.keycloak.events.EventType;
+import org.keycloak.events.admin.ResourceType;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -172,6 +173,9 @@ public class MongoEventStoreProvider implements EventStoreProvider {
         adminEvent.setTime(o.getLong("time"));
         adminEvent.setRealmId(o.getString("realmId"));
         adminEvent.setOperationType(OperationType.valueOf(o.getString("operationType")));
+        if (o.getString("resourceType") != null) {
+            adminEvent.setResourceType(ResourceType.valueOf(o.getString("resourceType")));
+        }
         setAuthDetails(adminEvent, o);
         adminEvent.setResourcePath(o.getString("resourcePath"));
         adminEvent.setError(o.getString("error"));

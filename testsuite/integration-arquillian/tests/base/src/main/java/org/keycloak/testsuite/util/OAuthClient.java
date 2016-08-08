@@ -41,6 +41,7 @@ import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.protocol.oidc.representations.JSONWebKeySet;
+import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.RefreshToken;
@@ -120,7 +121,7 @@ public class OAuthClient {
         maxAge = null;
     }
 
-    public AuthorizationCodeResponse doLogin(String username, String password) {
+    public AuthorizationEndpointResponse doLogin(String username, String password) {
         openLoginForm();
         String src = driver.getPageSource();
         try {
@@ -132,7 +133,7 @@ public class OAuthClient {
             throw t;
         }
 
-        return new AuthorizationCodeResponse(this);
+        return new AuthorizationEndpointResponse(this);
     }
 
     public void doLoginGrant(String username, String password) {
@@ -637,7 +638,7 @@ public class OAuthClient {
         return realm;
     }
 
-    public static class AuthorizationCodeResponse {
+    public static class AuthorizationEndpointResponse {
 
         private boolean isRedirected;
         private String code;
@@ -645,11 +646,25 @@ public class OAuthClient {
         private String error;
         private String errorDescription;
 
-        public AuthorizationCodeResponse(OAuthClient client) {
-            this(client, false);
+        // Just during OIDC implicit or hybrid flow
+        private String accessToken;
+        private String idToken;
+
+        public AuthorizationEndpointResponse(OAuthClient client) {
+            boolean fragment;
+            try {
+                fragment = client.responseType != null && OIDCResponseType.parse(client.responseType).isImplicitOrHybridFlow();
+            } catch (IllegalArgumentException iae) {
+                fragment = false;
+            }
+            init (client, fragment);
         }
 
-        public AuthorizationCodeResponse(OAuthClient client, boolean fragment) {
+        public AuthorizationEndpointResponse(OAuthClient client, boolean fragment) {
+            init(client, fragment);
+        }
+
+        private void init(OAuthClient client, boolean fragment) {
             isRedirected = client.getCurrentRequest().equals(client.getRedirectUri());
             Map<String, String> params = fragment ? client.getCurrentFragment() : client.getCurrentQuery();
 
@@ -657,6 +672,8 @@ public class OAuthClient {
             state = params.get(OAuth2Constants.STATE);
             error = params.get(OAuth2Constants.ERROR);
             errorDescription = params.get(OAuth2Constants.ERROR_DESCRIPTION);
+            accessToken = params.get(OAuth2Constants.ACCESS_TOKEN);
+            idToken = params.get(OAuth2Constants.ID_TOKEN);
         }
 
         public boolean isRedirected() {
@@ -677,6 +694,14 @@ public class OAuthClient {
 
         public String getErrorDescription() {
             return errorDescription;
+        }
+
+        public String getAccessToken() {
+            return accessToken;
+        }
+
+        public String getIdToken() {
+            return idToken;
         }
     }
 

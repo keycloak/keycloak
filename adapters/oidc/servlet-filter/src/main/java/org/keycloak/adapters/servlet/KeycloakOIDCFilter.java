@@ -47,6 +47,7 @@ import java.io.InputStream;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -56,10 +57,18 @@ public class KeycloakOIDCFilter implements Filter {
     protected AdapterDeploymentContext deploymentContext;
     protected SessionIdMapper idMapper = new InMemorySessionIdMapper();
     protected NodesRegistrationManagement nodesRegistrationManagement;
+    protected Pattern skipPattern;
+
     private final static Logger log = Logger.getLogger(""+KeycloakOIDCFilter.class);
 
     @Override
     public void init(final FilterConfig filterConfig) throws ServletException {
+
+        String skipPatternDefinition = filterConfig.getInitParameter("keycloak.config.skipPattern");
+        if (skipPatternDefinition != null) {
+            skipPattern = Pattern.compile(skipPatternDefinition, Pattern.DOTALL);
+        }
+
         String configResolverClass = filterConfig.getInitParameter("keycloak.config.resolver");
         if (configResolverClass != null) {
             try {
@@ -85,13 +94,7 @@ public class KeycloakOIDCFilter implements Filter {
                 if (pathParam != null) path = pathParam;
                 is = filterConfig.getServletContext().getResourceAsStream(path);
             }
-            KeycloakDeployment kd;
-            if (is == null) {
-                log.fine("No adapter configuration. Keycloak is unconfigured and will deny all requests.");
-                kd = new KeycloakDeployment();
-            } else {
-                kd = KeycloakDeploymentBuilder.build(is);
-            }
+            KeycloakDeployment kd = createKeycloakDeploymentFrom(is);
             deploymentContext = new AdapterDeploymentContext(kd);
             log.fine("Keycloak is using a per-deployment configuration.");
         }
@@ -99,13 +102,30 @@ public class KeycloakOIDCFilter implements Filter {
         nodesRegistrationManagement = new NodesRegistrationManagement();
     }
 
+    private KeycloakDeployment createKeycloakDeploymentFrom(InputStream is) {
+
+        if (is == null) {
+            log.fine("No adapter configuration. Keycloak is unconfigured and will deny all requests.");
+            return new KeycloakDeployment();
+        }
+
+        return KeycloakDeploymentBuilder.build(is);
+    }
+
 
     @Override
     public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain) throws IOException, ServletException {
+
         log.fine("Keycloak OIDC Filter");
         //System.err.println("Keycloak OIDC Filter: " + ((HttpServletRequest)req).getRequestURL().toString());
         HttpServletRequest request = (HttpServletRequest) req;
         HttpServletResponse response = (HttpServletResponse) res;
+
+        if (shouldSkip(request)) {
+            chain.doFilter(req, res);
+            return;
+        }
+
         OIDCServletHttpFacade facade = new OIDCServletHttpFacade(request, response);
         KeycloakDeployment deployment = deploymentContext.resolveDeployment(facade);
         if (deployment == null || !deployment.isConfigured()) {
@@ -169,6 +189,26 @@ public class KeycloakOIDCFilter implements Filter {
         }
         response.sendError(403);
 
+    }
+
+    /**
+     * Decides whether this {@link Filter} should skip the given {@link HttpServletRequest} based on the configured {@link KeycloakOIDCFilter#skipPattern}.
+     * Patterns are matched against the {@link HttpServletRequest#getRequestURI() requestURI} of a request without the context-path.
+     * A request for {@code /myapp/index.html} would be tested with {@code /index.html} against the skip pattern.
+     * Skipped requests will not be processed further by {@link KeycloakOIDCFilter} and immediately delegated to the {@link FilterChain}.
+     *
+     * @param request the request to check
+     * @return {@code true} if the request should not be handled,
+     *         {@code false} otherwise.
+     */
+    private boolean shouldSkip(HttpServletRequest request) {
+
+        if (skipPattern == null) {
+            return false;
+        }
+
+        String requestPath = request.getRequestURI().substring(request.getContextPath().length());
+        return skipPattern.matcher(requestPath).matches();
     }
 
     @Override

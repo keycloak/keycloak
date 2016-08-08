@@ -178,6 +178,12 @@ public class PasswordPolicyTest extends AbstractConsoleTest {
 
         testUserCredentialsPage.resetPassword("firstPassword");
         assertAlertDanger();
+
+        testUserCredentialsPage.resetPassword("thirdPassword");
+        assertAlertSuccess();
+
+        testUserCredentialsPage.resetPassword("firstPassword");
+        assertAlertSuccess();
     }
 
 }

@@ -78,7 +78,7 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
     public void authorizationRequest() throws IOException {
         oauth.state("OpenIdConnect.AuthenticationProperties=2302984sdlk");
 
-        OAuthClient.AuthorizationCodeResponse response = oauth.doLogin("test-user@localhost", "password");
+        OAuthClient.AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
 
         Assert.assertTrue(response.isRedirected());
         Assert.assertNotNull(response.getCode());
@@ -116,7 +116,7 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
 
         oauth.state("mystate");
 
-        OAuthClient.AuthorizationCodeResponse response = oauth.doLogin("test-user@localhost", "password");
+        OAuthClient.AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
 
         Assert.assertTrue(response.isRedirected());
         Assert.assertNotNull(response.getCode());
@@ -131,7 +131,7 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
     public void authorizationRequestNoState() throws IOException {
         oauth.state(null);
 
-        OAuthClient.AuthorizationCodeResponse response = oauth.doLogin("test-user@localhost", "password");
+        OAuthClient.AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
 
         Assert.assertTrue(response.isRedirected());
         Assert.assertNotNull(response.getCode());
@@ -150,7 +150,7 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
         UriBuilder b = UriBuilder.fromUri(oauth.getLoginFormUrl());
         driver.navigate().to(b.build().toURL());
 
-        OAuthClient.AuthorizationCodeResponse errorResponse = new OAuthClient.AuthorizationCodeResponse(oauth, true);
+        OAuthClient.AuthorizationEndpointResponse errorResponse = new OAuthClient.AuthorizationEndpointResponse(oauth, true);
         Assert.assertTrue(errorResponse.isRedirected());
         Assert.assertEquals(errorResponse.getError(), OAuthErrorException.UNSUPPORTED_RESPONSE_TYPE);
         Assert.assertEquals(errorResponse.getErrorDescription(), "Client is not allowed to initiate browser login with given response_type. Implicit flow is disabled for the client.");
@@ -164,7 +164,7 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
         UriBuilder b = UriBuilder.fromUri(oauth.getLoginFormUrl());
         driver.navigate().to(b.build().toURL());
 
-        OAuthClient.AuthorizationCodeResponse errorResponse = new OAuthClient.AuthorizationCodeResponse(oauth);
+        OAuthClient.AuthorizationEndpointResponse errorResponse = new OAuthClient.AuthorizationEndpointResponse(oauth);
         Assert.assertTrue(errorResponse.isRedirected());
         Assert.assertEquals(errorResponse.getError(), OAuthErrorException.INVALID_REQUEST);
 
@@ -177,7 +177,7 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
         UriBuilder b = UriBuilder.fromUri(oauth.getLoginFormUrl());
         driver.navigate().to(b.build().toURL());
 
-        OAuthClient.AuthorizationCodeResponse errorResponse = new OAuthClient.AuthorizationCodeResponse(oauth);
+        OAuthClient.AuthorizationEndpointResponse errorResponse = new OAuthClient.AuthorizationEndpointResponse(oauth);
         Assert.assertTrue(errorResponse.isRedirected());
         Assert.assertEquals(errorResponse.getError(), OAuthErrorException.UNSUPPORTED_RESPONSE_TYPE);
 

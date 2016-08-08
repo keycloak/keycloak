@@ -25,6 +25,7 @@ import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.IdentityProviderFactory;
 import org.keycloak.connections.httpclient.HttpClientProvider;
 import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
@@ -71,7 +72,7 @@ public class IdentityProvidersResource {
         this.session = session;
         this.auth = auth;
         this.auth.init(RealmAuth.Resource.IDENTITY_PROVIDER);
-        this.adminEvent = adminEvent;
+        this.adminEvent = adminEvent.resource(ResourceType.IDENTITY_PROVIDER);
     }
 
     /**

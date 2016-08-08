@@ -52,7 +52,7 @@ public class UserPropertyFileStorage implements UserLookupProvider, UserStorageP
         this.session = session;
         this.model = model;
         this.userPasswords = userPasswords;
-        this.federatedStorageEnabled = model.getConfig().containsKey("USER_FEDERATED_STORAGE");
+        this.federatedStorageEnabled = model.getConfig().containsKey("federatedStorage") && Boolean.valueOf(model.getConfig().getFirst("federatedStorage")).booleanValue();
     }
 
 
@@ -141,7 +141,7 @@ public class UserPropertyFileStorage implements UserLookupProvider, UserStorageP
     }
 
     @Override
-    public List<UserModel> searchForUserByAttributes(Map<String, String> attributes, RealmModel realm) {
+    public List<UserModel> searchForUser(Map<String, String> attributes, RealmModel realm) {
         return Collections.EMPTY_LIST;
     }
 
@@ -178,7 +178,7 @@ public class UserPropertyFileStorage implements UserLookupProvider, UserStorageP
     }
 
     @Override
-    public List<UserModel> searchForUserByAttributes(Map<String, String> attributes, RealmModel realm, int firstResult, int maxResults) {
+    public List<UserModel> searchForUser(Map<String, String> attributes, RealmModel realm, int firstResult, int maxResults) {
         if (attributes.size() != 1) return Collections.EMPTY_LIST;
         String username = attributes.get(UserModel.USERNAME);
         if (username == null) return Collections.EMPTY_LIST;

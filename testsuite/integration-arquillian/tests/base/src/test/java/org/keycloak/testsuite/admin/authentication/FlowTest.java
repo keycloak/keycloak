@@ -20,6 +20,7 @@ package org.keycloak.testsuite.admin.authentication;
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
 import org.keycloak.representations.idm.AuthenticationExecutionExportRepresentation;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.testsuite.util.AdminEventPaths;
@@ -119,7 +120,7 @@ public class FlowTest extends AbstractAuthenticationTest {
         // Successfully add flow
         data.put("alias", "SomeFlow");
         authMgmtResource.addExecutionFlow("browser-2", data);
-        assertAdminEvents.assertEvent(REALM_NAME, OperationType.CREATE, AdminEventPaths.authAddExecutionFlowPath("browser-2"), data);
+        assertAdminEvents.assertEvent(REALM_NAME, OperationType.CREATE, AdminEventPaths.authAddExecutionFlowPath("browser-2"), data, ResourceType.AUTH_EXECUTION_FLOW);
 
         // check that new flow is returned in a children list
         flows = authMgmtResource.getFlows();
@@ -141,7 +142,7 @@ public class FlowTest extends AbstractAuthenticationTest {
 
         // delete non-built-in flow
         authMgmtResource.deleteFlow(found.getId());
-        assertAdminEvents.assertEvent(REALM_NAME, OperationType.DELETE, AdminEventPaths.authFlowPath(found.getId()));
+        assertAdminEvents.assertEvent(REALM_NAME, OperationType.DELETE, AdminEventPaths.authFlowPath(found.getId()), ResourceType.AUTH_FLOW);
 
         // check the deleted flow is no longer returned
         flows = authMgmtResource.getFlows();
@@ -184,7 +185,7 @@ public class FlowTest extends AbstractAuthenticationTest {
         // copy that should succeed
         params.put("newName", "Copy of browser");
         response = authMgmtResource.copy("browser", params);
-        assertAdminEvents.assertEvent(REALM_NAME, OperationType.CREATE, AdminEventPaths.authCopyFlowPath("browser"), params);
+        assertAdminEvents.assertEvent(REALM_NAME, OperationType.CREATE, AdminEventPaths.authCopyFlowPath("browser"), params, ResourceType.AUTH_FLOW);
         try {
             Assert.assertEquals("Copy flow", 201, response.getStatus());
         } finally {
@@ -219,7 +220,7 @@ public class FlowTest extends AbstractAuthenticationTest {
         Response response = authMgmtResource.copy("browser", params);
         Assert.assertEquals(201, response.getStatus());
         response.close();
-        assertAdminEvents.assertEvent(REALM_NAME, OperationType.CREATE, AdminEventPaths.authCopyFlowPath("browser"), params);
+        assertAdminEvents.assertEvent(REALM_NAME, OperationType.CREATE, AdminEventPaths.authCopyFlowPath("browser"), params, ResourceType.AUTH_FLOW);
 
         params = new HashMap<>();
         params.put("alias", "child");
@@ -228,7 +229,7 @@ public class FlowTest extends AbstractAuthenticationTest {
         params.put("type", "basic-flow");
 
         authMgmtResource.addExecutionFlow("parent", params);
-        assertAdminEvents.assertEvent(REALM_NAME, OperationType.CREATE, AdminEventPaths.authAddExecutionFlowPath("parent"), params);
+        assertAdminEvents.assertEvent(REALM_NAME, OperationType.CREATE, AdminEventPaths.authAddExecutionFlowPath("parent"), params, ResourceType.AUTH_EXECUTION_FLOW);
     }
 
 }

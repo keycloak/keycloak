@@ -28,6 +28,11 @@ public class AdminEvent {
 
     private AuthDetails authDetails;
 
+    /**
+     * The resource type an AdminEvent was triggered for.
+     */
+    private ResourceType resourceType;
+
     private OperationType operationType;
 
     private String resourcePath;
@@ -133,4 +138,16 @@ public class AdminEvent {
         this.error = error;
     }
 
+    /**
+     * Returns the type of the affected {@link ResourceType} for this {@link AdminEvent}, e.g. {@link ResourceType#USER USER}, {@link ResourceType#GROUP GROUP} etc.
+     *
+     * @return
+     */
+    public ResourceType getResourceType() {
+        return resourceType;
+    }
+
+    public void setResourceType(ResourceType resourceType) {
+        this.resourceType = resourceType;
+    }
 }

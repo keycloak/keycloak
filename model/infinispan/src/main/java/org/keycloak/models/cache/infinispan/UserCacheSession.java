@@ -393,13 +393,13 @@ public class UserCacheSession implements CacheUserProvider {
     }
 
     @Override
-    public List<UserModel> searchForUserByAttributes(Map<String, String> attributes, RealmModel realm) {
-        return getDelegate().searchForUserByAttributes(attributes, realm);
+    public List<UserModel> searchForUser(Map<String, String> attributes, RealmModel realm) {
+        return getDelegate().searchForUser(attributes, realm);
     }
 
     @Override
-    public List<UserModel> searchForUserByAttributes(Map<String, String> attributes, RealmModel realm, int firstResult, int maxResults) {
-        return getDelegate().searchForUserByAttributes(attributes, realm, firstResult, maxResults);
+    public List<UserModel> searchForUser(Map<String, String> attributes, RealmModel realm, int firstResult, int maxResults) {
+        return getDelegate().searchForUser(attributes, realm, firstResult, maxResults);
     }
 
     @Override

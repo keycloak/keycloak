@@ -42,6 +42,10 @@ public interface OAuth2Constants {
 
     String RESPONSE_TYPE = "response_type";
 
+    String ACCESS_TOKEN = "access_token";
+
+    String ID_TOKEN = "id_token";
+
     String REFRESH_TOKEN = "refresh_token";
 
     String AUTHORIZATION_CODE = "authorization_code";

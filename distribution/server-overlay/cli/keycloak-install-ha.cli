@@ -4,6 +4,7 @@ embed-server --server-config=standalone-ha.xml
 /subsystem=infinispan/cache-container=keycloak/transport=TRANSPORT:add(lock-timeout=60000)
 /subsystem=infinispan/cache-container=keycloak/invalidation-cache=realms:add(mode="SYNC")
 /subsystem=infinispan/cache-container=keycloak/invalidation-cache=users:add(mode="SYNC")
+/subsystem=infinispan/cache-container=keycloak/invalidation-cache=users/eviction=EVICTION:add(max-entries=10000,strategy=LRU)
 /subsystem=infinispan/cache-container=keycloak/distributed-cache=sessions:add(mode="SYNC",owners="1")
 /subsystem=infinispan/cache-container=keycloak/distributed-cache=offlineSessions:add(mode="SYNC",owners="1")
 /subsystem=infinispan/cache-container=keycloak/distributed-cache=loginFailures:add(mode="SYNC",owners="1")

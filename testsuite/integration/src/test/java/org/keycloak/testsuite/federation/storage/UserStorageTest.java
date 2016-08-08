@@ -67,15 +67,15 @@ public class UserStorageTest {
             model.setPriority(1);
             model.setProviderId(UserPropertyFileStorageFactory.PROVIDER_ID);
             model.setParentId(appRealm.getId());
-            model.getConfig().putSingle("property.file", "/storage-test/read-only-user-password.properties");
+            model.getConfig().putSingle("propertyFile", "/storage-test/read-only-user-password.properties");
             appRealm.addComponentModel(model);
             model = new UserStorageProviderModel();
             model.setName("user-props");
             model.setPriority(2);
             model.setParentId(appRealm.getId());
             model.setProviderId(UserPropertyFileStorageFactory.PROVIDER_ID);
-            model.getConfig().putSingle("property.file", "/storage-test/user-password.properties");
-            model.getConfig().putSingle("USER_FEDERATED_STORAGE", "true");
+            model.getConfig().putSingle("propertyFile", "/storage-test/user-password.properties");
+            model.getConfig().putSingle("federatedStorage", "true");
             appRealm.addComponentModel(model);
         }
     });
@@ -107,7 +107,6 @@ public class UserStorageTest {
         loginPage.login("username", "badpassword");
         Assert.assertEquals("Invalid username or password.", loginPage.getError());
     }
-
 
     @Test
     public void testLoginSuccess() {
@@ -258,12 +257,14 @@ public class UserStorageTest {
         user.updateCredential(UserCredentialModel.password("password"));
         keycloakRule.stopSession(session, true);
         loginSuccessAndLogout("memuser", "password");
+        loginSuccessAndLogout("memuser", "password");
+        loginSuccessAndLogout("memuser", "password");
 
         session = keycloakRule.startSession();
         realm = session.realms().getRealmByName("test");
         user = session.users().getUserByUsername("memuser", realm);
         Assert.assertEquals(memoryProvider.getId(), StorageId.resolveProviderId(user));
-        Assert.assertEquals(0, user.getCredentialsDirectly().size());
+        Assert.assertEquals(1, user.getCredentialsDirectly().size());
         session.users().removeUser(realm, user);
         Assert.assertNull(session.users().getUserByUsername("memuser", realm));
         keycloakRule.stopSession(session, true);

@@ -42,6 +42,7 @@ import javax.ws.rs.core.UriInfo;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
 import org.keycloak.mappers.FederationConfigValidationException;
 import org.keycloak.mappers.UserFederationMapper;
 import org.keycloak.mappers.UserFederationMapperFactory;
@@ -87,7 +88,7 @@ public class UserFederationProviderResource {
         this.realm = realm;
         this.auth = auth;
         this.federationProviderModel = federationProviderModel;
-        this.adminEvent = adminEvent;
+        this.adminEvent = adminEvent.resource(ResourceType.USER_FEDERATION_PROVIDER);
     }
 
     /**
@@ -311,7 +312,7 @@ public class UserFederationProviderResource {
 
         model = realm.addUserFederationMapper(model);
 
-        adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo, model.getId())
+        adminEvent.operation(OperationType.CREATE).resource(ResourceType.USER_FEDERATION_MAPPER).resourcePath(uriInfo, model.getId())
                 .representation(mapper).success();
 
         return Response.created(uriInfo.getAbsolutePathBuilder().path(model.getId()).build()).build();
@@ -364,7 +365,7 @@ public class UserFederationProviderResource {
         validateModel(model);
 
         realm.updateUserFederationMapper(model);
-        adminEvent.operation(OperationType.UPDATE).resourcePath(uriInfo).representation(rep).success();
+        adminEvent.operation(OperationType.UPDATE).resource(ResourceType.USER_FEDERATION_MAPPER).resourcePath(uriInfo).representation(rep).success();
 
     }
 
@@ -386,7 +387,7 @@ public class UserFederationProviderResource {
         UserFederationMapperModel model = realm.getUserFederationMapperById(id);
         if (model == null) throw new NotFoundException("Model not found");
         realm.removeUserFederationMapper(model);
-        adminEvent.operation(OperationType.DELETE).resourcePath(uriInfo).success();
+        adminEvent.operation(OperationType.DELETE).resource(ResourceType.USER_FEDERATION_MAPPER).resourcePath(uriInfo).success();
 
     }
 

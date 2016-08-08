@@ -66,20 +66,20 @@ public class UserModelTest extends AbstractModelTest {
 
         Map<String, String> attributes = new HashMap<String, String>();
         attributes.put(UserModel.LAST_NAME, "last-name");
-        List<UserModel> search = session.users().searchForUserByAttributes(attributes, realm);
+        List<UserModel> search = session.users().searchForUser(attributes, realm);
         Assert.assertEquals(search.size(), 1);
         Assert.assertEquals(search.get(0).getUsername(), "user");
 
         attributes.clear();
         attributes.put(UserModel.EMAIL, "email");
-        search = session.users().searchForUserByAttributes(attributes, realm);
+        search = session.users().searchForUser(attributes, realm);
         Assert.assertEquals(search.size(), 1);
         Assert.assertEquals(search.get(0).getUsername(), "user");
 
         attributes.clear();
         attributes.put(UserModel.LAST_NAME, "last-name");
         attributes.put(UserModel.EMAIL, "email");
-        search = session.users().searchForUserByAttributes(attributes, realm);
+        search = session.users().searchForUser(attributes, realm);
         Assert.assertEquals(search.size(), 1);
         Assert.assertEquals(search.get(0).getUsername(), "user");
     }
