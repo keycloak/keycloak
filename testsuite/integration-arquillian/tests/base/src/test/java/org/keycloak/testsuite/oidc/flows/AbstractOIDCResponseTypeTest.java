@@ -17,13 +17,18 @@
 
 package org.keycloak.testsuite.oidc.flows;
 
+import java.io.IOException;
+import java.net.MalformedURLException;
 import java.util.List;
+
+import javax.ws.rs.core.UriBuilder;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.events.Details;
+import org.keycloak.events.Errors;
 import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.idm.EventRepresentation;
@@ -34,6 +39,7 @@ import org.keycloak.testsuite.TestRealmKeycloakTest;
 import org.keycloak.testsuite.admin.AbstractAdminTest;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
+import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.OAuthClient;
 
 import static org.junit.Assert.assertFalse;
@@ -81,6 +87,21 @@ public abstract class AbstractOIDCResponseTypeTest extends TestRealmKeycloakTest
     }
 
 
+    @Test
+    public void authorizationRequestMissingResponseType() throws IOException {
+        oauth.responseType(null);
+        UriBuilder b = UriBuilder.fromUri(oauth.getLoginFormUrl());
+        driver.navigate().to(b.build().toURL());
+
+        // Always read error from the "query"
+        OAuthClient.AuthorizationEndpointResponse errorResponse = new OAuthClient.AuthorizationEndpointResponse(oauth, false);
+        org.junit.Assert.assertTrue(errorResponse.isRedirected());
+        org.junit.Assert.assertEquals(errorResponse.getError(), OAuthErrorException.INVALID_REQUEST);
+
+        events.expectLogin().error(Errors.INVALID_REQUEST).user((String) null).session((String) null).clearDetails().assertEvent();
+    }
+
+
     protected void validateNonceNotUsedErrorExpected() {
         oauth.nonce(null);
         driver.navigate().to(oauth.getLoginFormUrl());
@@ -95,6 +116,45 @@ public abstract class AbstractOIDCResponseTypeTest extends TestRealmKeycloakTest
         Assert.assertEquals(OAuthErrorException.INVALID_REQUEST, resp.getError());
         Assert.assertEquals("Missing parameter: nonce", resp.getErrorDescription());
     }
+
+
+    protected void validateErrorImplicitFlowNotAllowed() throws Exception {
+        // Disable implicit flow for client
+        clientManagerBuilder().implicitFlow(false);
+
+        UriBuilder b = UriBuilder.fromUri(oauth.getLoginFormUrl());
+        driver.navigate().to(b.build().toURL());
+
+        OAuthClient.AuthorizationEndpointResponse errorResponse = new OAuthClient.AuthorizationEndpointResponse(oauth);
+        Assert.assertTrue(errorResponse.isRedirected());
+        Assert.assertEquals(errorResponse.getError(), OAuthErrorException.UNSUPPORTED_RESPONSE_TYPE);
+        Assert.assertEquals(errorResponse.getErrorDescription(), "Client is not allowed to initiate browser login with given response_type. Implicit flow is disabled for the client.");
+
+        events.expectLogin().error(Errors.NOT_ALLOWED).user((String) null).session((String) null).clearDetails().assertEvent();
+
+        // Revert
+        clientManagerBuilder().implicitFlow(true);
+    }
+
+
+    protected void validateErrorStandardFlowNotAllowed() throws Exception {
+        // Disable standard flow for client
+        clientManagerBuilder().standardFlow(false);
+
+        UriBuilder b = UriBuilder.fromUri(oauth.getLoginFormUrl());
+        driver.navigate().to(b.build().toURL());
+
+        OAuthClient.AuthorizationEndpointResponse errorResponse = new OAuthClient.AuthorizationEndpointResponse(oauth);
+        Assert.assertTrue(errorResponse.isRedirected());
+        Assert.assertEquals(errorResponse.getError(), OAuthErrorException.UNSUPPORTED_RESPONSE_TYPE);
+        Assert.assertEquals(errorResponse.getErrorDescription(), "Client is not allowed to initiate browser login with given response_type. Standard flow is disabled for the client.");
+
+        events.expectLogin().error(Errors.NOT_ALLOWED).user((String) null).session((String) null).clearDetails().assertEvent();
+
+        // Revert
+        clientManagerBuilder().standardFlow(true);
+    }
+
 
 
     protected EventRepresentation loginUser(String nonce) {
@@ -112,4 +172,8 @@ public abstract class AbstractOIDCResponseTypeTest extends TestRealmKeycloakTest
     }
 
     protected abstract List<IDToken> retrieveIDTokens(EventRepresentation loginEvent);
+
+    protected ClientManager.ClientManagerBuilder clientManagerBuilder() {
+        return ClientManager.realm(adminClient.realm("test")).clientId("test-app");
+    }
 }

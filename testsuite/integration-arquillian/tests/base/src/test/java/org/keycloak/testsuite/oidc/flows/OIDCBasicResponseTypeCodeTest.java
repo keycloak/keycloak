@@ -39,7 +39,7 @@ public class OIDCBasicResponseTypeCodeTest extends AbstractOIDCResponseTypeTest 
 
     @Before
     public void clientConfiguration() {
-        ClientManager.realm(adminClient.realm("test")).clientId("test-app").standardFlow(true).implicitFlow(false);
+        clientManagerBuilder().standardFlow(true).implicitFlow(false);
 
         oauth.clientId("test-app");
         oauth.responseType(OIDCResponseType.CODE);
@@ -67,5 +67,10 @@ public class OIDCBasicResponseTypeCodeTest extends AbstractOIDCResponseTypeTest 
         for (IDToken idToken : idTokens) {
             Assert.assertNull(idToken.getNonce());
         }
+    }
+
+    @Test
+    public void errorStandardFlowNotAllowed() throws Exception {
+        super.validateErrorStandardFlowNotAllowed();
     }
 }
