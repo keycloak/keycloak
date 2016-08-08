@@ -20,6 +20,7 @@
 <config>
    <subsystems>
       <subsystem>logging.xml</subsystem>
+      <subsystem>deployment-scanner.xml</subsystem>
       <subsystem>bean-validation.xml</subsystem>
       <subsystem supplement="default">keycloak-datasources.xml</subsystem>
       <subsystem>ee.xml</subsystem>

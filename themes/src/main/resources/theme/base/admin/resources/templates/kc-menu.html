@@ -34,7 +34,6 @@
             <li data-ng-show="access.viewRealm" data-ng-class="(path[2] == 'roles' || path[2] == 'default-roles' || (path[1] == 'role' && path[3] != 'clients')) && 'active'"><a href="#/realms/{{realm.realm}}/roles"><i class="fa fa-tasks"></i> {{:: 'roles' | translate}}</a></li>
             <li data-ng-show="access.viewIdentityProviders" data-ng-class="(path[2] == 'identity-provider-settings' || path[2] == 'identity-provider-mappers') && 'active'"><a href="#/realms/{{realm.realm}}/identity-provider-settings"><i class="fa fa-exchange"></i> {{:: 'identity-providers' | translate}}</a></li>
             <li data-ng-show="access.viewUsers" data-ng-class="(path[1] == 'user-federation' || path[2] == 'user-federation') && 'active'"><a href="#/realms/{{realm.realm}}/user-federation"><i class="fa fa-database"></i> {{:: 'user-federation' | translate}}</a></li>
-            <li data-ng-show="access.viewUsers" data-ng-class="(path[1] == 'user-storage' || path[2] == 'user-storage') && 'active'"><a href="#/realms/{{realm.realm}}/user-storage"><i class="fa fa-database"></i> {{:: 'user-storage' | translate}}</a></li>
             <li data-ng-show="access.viewRealm" data-ng-class="(path[1] == 'authentication' || path[2] == 'authentication') && 'active'"><a href="#/realms/{{realm.realm}}/authentication/flows"><i class="fa fa-lock"></i> {{:: 'authentication' | translate}}</a></li>
         </ul>
     </div>

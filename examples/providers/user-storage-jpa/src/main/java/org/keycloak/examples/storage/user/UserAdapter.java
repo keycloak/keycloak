@@ -22,7 +22,6 @@ import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
-import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.adapter.AbstractUserAdapterFederatedStorage;
 
@@ -35,7 +34,7 @@ import java.util.Map;
  * @version $Revision: 1 $
  */
 public class UserAdapter extends AbstractUserAdapterFederatedStorage {
-    private static final Logger logger = Logger.getLogger(ExampleUserStorageProvider.class);
+    private static final Logger logger = Logger.getLogger(EjbExampleUserStorageProvider.class);
     protected UserEntity entity;
     protected String keycloakId;
 

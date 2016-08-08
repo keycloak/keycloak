@@ -14,36 +14,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.keycloak.transaction;
 
-package org.keycloak.storage;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.services.ServicesLogger;
 
-import org.keycloak.provider.Provider;
-import org.keycloak.provider.ProviderFactory;
-import org.keycloak.provider.Spi;
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
+import javax.transaction.TransactionManager;
 
 /**
- * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
+ * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
+ * @version $Revision: 1 $
  */
-public class UserStorageProviderSpi implements Spi {
+public class JtaRegistration {
 
-    @Override
-    public boolean isInternal() {
-        return false;
+
+
+    public void begin(KeycloakSession session) {
+        TransactionManager tm = session.getProvider(JtaTransactionManagerLookup.class).getTransactionManager();
+        if (tm == null) return;
+
+        session.getTransactionManager().enlist(new JtaTransactionWrapper(tm));
     }
-
-    @Override
-    public String getName() {
-        return "storage";
-    }
-
-    @Override
-    public Class<? extends Provider> getProviderClass() {
-        return UserStorageProvider.class;
-    }
-
-    @Override
-    public Class<? extends ProviderFactory> getProviderFactoryClass() {
-        return UserStorageProviderFactory.class;
-    }
-
 }
