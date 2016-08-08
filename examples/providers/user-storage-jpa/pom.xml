@@ -23,7 +23,7 @@
         <version>2.1.0-SNAPSHOT</version>
     </parent>
 
-    <name>Properties Authentication Provider Example</name>
+    <name>User Storage JPA Provider Exapmle</name>
     <description/>
     <modelVersion>4.0.0</modelVersion>
 
@@ -75,14 +75,7 @@
                     <target>1.8</target>
                 </configuration>
             </plugin>
-            <plugin>
-                <groupId>org.jboss.as.plugins</groupId>
-                <artifactId>jboss-as-maven-plugin</artifactId>
-                <configuration>
-                    <skip>false</skip>
-                </configuration>
-            </plugin>
-            <plugin>
+             <plugin>
                 <groupId>org.wildfly.plugins</groupId>
                 <artifactId>wildfly-maven-plugin</artifactId>
                 <configuration>

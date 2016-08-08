@@ -14,36 +14,40 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.services;
+package org.keycloak.transaction;
 
 import org.keycloak.models.KeycloakTransaction;
 
-import javax.transaction.HeuristicMixedException;
-import javax.transaction.HeuristicRollbackException;
+import javax.transaction.InvalidTransactionException;
 import javax.transaction.NotSupportedException;
-import javax.transaction.RollbackException;
 import javax.transaction.Status;
 import javax.transaction.SystemException;
+import javax.transaction.Transaction;
+import javax.transaction.TransactionManager;
 import javax.transaction.UserTransaction;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class UserTransactionWrapper implements KeycloakTransaction {
-    protected UserTransaction ut;
+public class JtaTransactionWrapper implements KeycloakTransaction {
+    protected TransactionManager tm;
+    protected Transaction ut;
+    protected Transaction suspended;
 
-    public UserTransactionWrapper(UserTransaction ut) {
-        this.ut = ut;
+    public JtaTransactionWrapper(TransactionManager tm) {
+        this.tm = tm;
+        try {
+            suspended = tm.suspend();
+            tm.begin();
+            ut = tm.getTransaction();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
     public void begin() {
-        try {
-            ut.begin();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
     }
 
     @Override
@@ -61,6 +65,8 @@ public class UserTransactionWrapper implements KeycloakTransaction {
             ut.rollback();
         } catch (Exception e) {
             throw new RuntimeException(e);
+        } finally {
+            end();
         }
 
     }
@@ -90,5 +96,16 @@ public class UserTransactionWrapper implements KeycloakTransaction {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    protected void end() {
+        if (suspended != null) {
+            try {
+                tm.resume(suspended);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+
     }
 }

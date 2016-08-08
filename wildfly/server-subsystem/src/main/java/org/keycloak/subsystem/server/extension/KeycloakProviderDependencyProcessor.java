@@ -61,8 +61,6 @@ public class KeycloakProviderDependencyProcessor implements DeploymentUnitProces
 
         if (!isKeycloakProviderDeployment(deploymentUnit)) return;
 
-        logger.info("FOUND KEYCLOAK PROVIDER DEPLOYMENT!!!!: " + deploymentUnit.getName());
-
         final ModuleSpecification moduleSpecification = deploymentUnit.getAttachment(Attachments.MODULE_SPECIFICATION);
         final ModuleLoader moduleLoader = Module.getBootModuleLoader();
         moduleSpecification.addSystemDependency(new ModuleDependency(moduleLoader, KEYCLOAK_COMMON, false, false, false, false));

@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.storage;
+package org.keycloak.transaction;
 
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
@@ -24,26 +24,26 @@ import org.keycloak.provider.Spi;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class UserStorageProviderSpi implements Spi {
+public class TransactionManagerLookupSpi implements Spi {
 
     @Override
     public boolean isInternal() {
-        return false;
+        return true;
     }
 
     @Override
     public String getName() {
-        return "storage";
+        return "jta-lookup";
     }
 
     @Override
     public Class<? extends Provider> getProviderClass() {
-        return UserStorageProvider.class;
+        return JtaTransactionManagerLookup.class;
     }
 
     @Override
     public Class<? extends ProviderFactory> getProviderFactoryClass() {
-        return UserStorageProviderFactory.class;
+        return JtaTransactionManagerLookup.class;
     }
 
 }

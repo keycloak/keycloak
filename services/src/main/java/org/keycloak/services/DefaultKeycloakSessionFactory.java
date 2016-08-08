@@ -28,15 +28,16 @@ import org.keycloak.provider.ProviderManager;
 import org.keycloak.provider.ProviderManagerDeployer;
 import org.keycloak.provider.ProviderManagerRegistry;
 import org.keycloak.provider.Spi;
-import org.keycloak.services.ServicesLogger;
+import org.keycloak.transaction.JtaRegistration;
+import org.keycloak.transaction.JtaTransactionManagerLookup;
+import org.keycloak.transaction.JtaTransactionWrapper;
 
-import java.util.Collections;
+import javax.transaction.TransactionManager;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -48,7 +49,7 @@ public class DefaultKeycloakSessionFactory implements KeycloakSessionFactory, Pr
     private Map<Class<? extends Provider>, String> provider = new HashMap<>();
     private volatile Map<Class<? extends Provider>, Map<String, ProviderFactory>> factoriesMap = new HashMap<>();
     protected CopyOnWriteArrayList<ProviderEventListener> listeners = new CopyOnWriteArrayList<>();
-    private JtaRegistration jta;
+    private TransactionManager tm;
 
     // TODO: Likely should be changed to int and use Time.currentTime() to be compatible with all our "time" reps
     protected long serverStartupTimestamp;
@@ -72,7 +73,6 @@ public class DefaultKeycloakSessionFactory implements KeycloakSessionFactory, Pr
 
     public void init() {
         serverStartupTimestamp = System.currentTimeMillis();
-        jta = new JtaRegistration();
 
         ProviderManager pm = new ProviderManager(getClass().getClassLoader(), Config.scope().getArray("providers"));
         spis.addAll(pm.loadSpis());
@@ -96,6 +96,9 @@ public class DefaultKeycloakSessionFactory implements KeycloakSessionFactory, Pr
         }
         // make the session factory ready for hot deployment
         ProviderManagerRegistry.SINGLETON.setDeployer(this);
+
+        JtaTransactionManagerLookup lookup = (JtaTransactionManagerLookup)getProviderFactory(JtaTransactionManagerLookup.class);
+        if (lookup != null) tm = lookup.getTransactionManager();
     }
     protected Map<Class<? extends Provider>, Map<String, ProviderFactory>> getFactoriesCopy() {
         Map<Class<? extends Provider>, Map<String, ProviderFactory>> copy = new HashMap<>();
@@ -190,15 +193,18 @@ public class DefaultKeycloakSessionFactory implements KeycloakSessionFactory, Pr
                 }
 
                 Config.Scope scope = Config.scope(spi.getName(), provider);
-                factory.init(scope);
+                if (scope.getBoolean("enabled", true)) {
 
-                if (spi.isInternal() && !isInternal(factory)) {
-                    logger.spiMayChange(factory.getId(), factory.getClass().getName(), spi.getName());
+                    factory.init(scope);
+
+                    if (spi.isInternal() && !isInternal(factory)) {
+                        logger.spiMayChange(factory.getId(), factory.getClass().getName(), spi.getName());
+                    }
+
+                    factories.put(factory.getId(), factory);
+
+                    logger.debugv("Loaded SPI {0} (provider = {1})", spi.getName(), provider);
                 }
-
-                factories.put(factory.getId(), factory);
-
-                logger.debugv("Loaded SPI {0} (provider = {1})", spi.getName(), provider);
             } else {
                 for (ProviderFactory factory : pm.load(spi)) {
                     Config.Scope scope = Config.scope(spi.getName(), factory.getId());
@@ -276,7 +282,9 @@ public class DefaultKeycloakSessionFactory implements KeycloakSessionFactory, Pr
 
     public KeycloakSession create() {
         KeycloakSession session =  new DefaultKeycloakSession(this);
-        jta.begin(session);
+        if (tm != null) {
+            session.getTransactionManager().enlist(new JtaTransactionWrapper(tm));
+        }
         return session;
     }
 

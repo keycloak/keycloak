@@ -130,5 +130,13 @@
             "hostname-verification-policy": "${keycloak.truststore.policy:WILDCARD}",
             "disabled": "${keycloak.truststore.disabled:false}"
         }
+    },
+
+    "jta-lookup": {
+        "provider": "${keycloak.jta.lookup.provider:jboss}",
+        "jboss" : {
+            "enabled": true
+        }
+
     }
 }

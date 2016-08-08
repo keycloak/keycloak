@@ -49,35 +49,11 @@ public class EjbExampleUserStorageProviderFactory implements UserStorageProvider
 
     @Override
     public String getId() {
-        return "example-user-storage";
+        return "example-user-storage-jpa";
     }
 
     @Override
-    public void init(Config.Scope config) {
-
-    }
-
-    @Override
-    public void postInit(KeycloakSessionFactory factory) {
-    }
-
-    static List<ProviderConfigProperty> OPTIONS = new LinkedList<>();
-    static {
-        ProviderConfigProperty prop = new ProviderConfigProperty("propertyFile", "Property File", "file that contains name value pairs", ProviderConfigProperty.STRING_TYPE, null);
-        OPTIONS.add(prop);
-        prop = new ProviderConfigProperty("federatedStorage", "User Federated Storage", "use federated storage?", ProviderConfigProperty.BOOLEAN_TYPE, null);
-        OPTIONS.add(prop);
-
-    }
-    @Override
-    public List<ProviderConfigProperty> getConfigProperties() {
-        return OPTIONS;
-    }
-
-
-
-    @Override
-    public void close() {
-
+    public String getHelpText() {
+        return "JPA Example User Storage Provider";
     }
 }

@@ -14,13 +14,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.services;
+package org.keycloak.transaction;
 
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.services.ServicesLogger;
 
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
-import javax.transaction.Transaction;
 import javax.transaction.TransactionManager;
 
 /**
@@ -28,24 +28,11 @@ import javax.transaction.TransactionManager;
  * @version $Revision: 1 $
  */
 public class JtaRegistration {
-    private static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
 
-    private TransactionManager tm;
 
-    public JtaRegistration() {
-        try {
-            InitialContext ctx = new InitialContext();
-            tm = (TransactionManager)ctx.lookup("java:jboss/TransactionManager");
-            if (tm == null) {
-                logger.debug("Could not locate TransactionManager");
-            }
-        } catch (NamingException e) {
-            logger.debug("Could not load TransactionManager", e);
-        }
-
-    }
 
     public void begin(KeycloakSession session) {
+        TransactionManager tm = session.getProvider(JtaTransactionManagerLookup.class).getTransactionManager();
         if (tm == null) return;
 
         session.getTransactionManager().enlist(new JtaTransactionWrapper(tm));
