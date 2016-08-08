@@ -103,6 +103,8 @@ public class OAuthClient {
 
     private String responseMode;
 
+    private String nonce;
+
     private Map<String, PublicKey> publicKeys = new HashMap<>();
 
     public void init(Keycloak adminClient, WebDriver driver) {
@@ -521,8 +523,11 @@ public class OAuthClient {
         if (state != null) {
             b.queryParam(OAuth2Constants.STATE, state);
         }
-        if(uiLocales != null){
+        if (uiLocales != null){
             b.queryParam(OAuth2Constants.UI_LOCALES_PARAM, uiLocales);
+        }
+        if (nonce != null){
+            b.queryParam(OIDCLoginProtocol.NONCE_PARAM, nonce);
         }
 
         String scopeParam = TokenUtil.attachOIDCScope(scope);
@@ -631,6 +636,11 @@ public class OAuthClient {
 
     public OAuthClient responseMode(String responseMode) {
         this.responseMode = responseMode;
+        return this;
+    }
+
+    public OAuthClient nonce(String nonce) {
+        this.nonce = nonce;
         return this;
     }
 

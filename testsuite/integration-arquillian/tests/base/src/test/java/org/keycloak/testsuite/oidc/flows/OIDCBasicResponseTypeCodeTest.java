@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.oidc.resptype;
+package org.keycloak.testsuite.oidc.flows;
 
 import java.util.Collections;
 import java.util.List;
@@ -39,7 +39,7 @@ public class OIDCBasicResponseTypeCodeTest extends AbstractOIDCResponseTypeTest 
 
     @Before
     public void clientConfiguration() {
-        ClientManager.realm(adminClient.realm("test")).clientId("test-app").standardFlow(true).implicitFlow(false);
+        clientManagerBuilder().standardFlow(true).implicitFlow(false);
 
         oauth.clientId("test-app");
         oauth.responseType(OIDCResponseType.CODE);
@@ -61,12 +61,16 @@ public class OIDCBasicResponseTypeCodeTest extends AbstractOIDCResponseTypeTest 
 
     @Test
     public void nonceNotUsed() {
-        super.nonceNotUsed();
+        EventRepresentation loginEvent = loginUser(null);
+
+        List<IDToken> idTokens = retrieveIDTokens(loginEvent);
+        for (IDToken idToken : idTokens) {
+            Assert.assertNull(idToken.getNonce());
+        }
     }
 
-
     @Test
-    public void nonceMatches() {
-        super.nonceMatches();
+    public void errorStandardFlowNotAllowed() throws Exception {
+        super.validateErrorStandardFlowNotAllowed();
     }
 }

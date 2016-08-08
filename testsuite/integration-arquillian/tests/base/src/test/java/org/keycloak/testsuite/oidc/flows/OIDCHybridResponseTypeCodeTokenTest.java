@@ -15,9 +15,8 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.oidc.resptype;
+package org.keycloak.testsuite.oidc.flows;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -28,49 +27,51 @@ import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.testsuite.Assert;
-import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.OAuthClient;
 
 /**
- * Tests with response_type=code id_token
+ * Tests with response_type=code token
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class OIDCHybridResponseTypeCodeIDTokenTest extends AbstractOIDCResponseTypeTest {
+public class OIDCHybridResponseTypeCodeTokenTest extends AbstractOIDCResponseTypeTest  {
 
     @Before
     public void clientConfiguration() {
-        ClientManager.realm(adminClient.realm("test")).clientId("test-app").standardFlow(true).implicitFlow(true);
+        clientManagerBuilder().standardFlow(true).implicitFlow(true);
 
         oauth.clientId("test-app");
-        oauth.responseType(OIDCResponseType.CODE + " " + OIDCResponseType.ID_TOKEN);
+        oauth.responseType(OIDCResponseType.CODE + " " + OIDCResponseType.TOKEN);
     }
 
 
     protected List<IDToken> retrieveIDTokens(EventRepresentation loginEvent) {
-        Assert.assertEquals(OIDCResponseType.CODE + " " + OIDCResponseType.ID_TOKEN, loginEvent.getDetails().get(Details.RESPONSE_TYPE));
+        Assert.assertEquals(OIDCResponseType.CODE + " " + OIDCResponseType.TOKEN, loginEvent.getDetails().get(Details.RESPONSE_TYPE));
 
-        // IDToken from the authorization response
         OAuthClient.AuthorizationEndpointResponse authzResponse = new OAuthClient.AuthorizationEndpointResponse(oauth, true);
-        Assert.assertNull(authzResponse.getAccessToken());
-        String idTokenStr = authzResponse.getIdToken();
-        IDToken idToken = oauth.verifyIDToken(idTokenStr);
+        Assert.assertNotNull(authzResponse.getAccessToken());
+        Assert.assertNull(authzResponse.getIdToken());
 
         // IDToken exchanged for the code
         IDToken idToken2 = sendTokenRequestAndGetIDToken(loginEvent);
 
-        return Arrays.asList(idToken, idToken2);
+        return Collections.singletonList(idToken2);
     }
 
 
     @Test
     public void nonceNotUsedErrorExpected() {
-        super.nonceNotUsedErrorExpected();
+        super.validateNonceNotUsedErrorExpected();
     }
-
 
     @Test
-    public void nonceMatches() {
-        super.nonceMatches();
+    public void errorStandardFlowNotAllowed() throws Exception {
+        super.validateErrorStandardFlowNotAllowed();
     }
+
+    @Test
+    public void errorImplicitFlowNotAllowed() throws Exception {
+        super.validateErrorImplicitFlowNotAllowed();
+    }
+
 }

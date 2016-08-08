@@ -165,10 +165,24 @@ public class OIDCLoginProtocol implements LoginProtocol {
         // Implicit or hybrid flow
         if (responseType.isImplicitOrHybridFlow()) {
             TokenManager tokenManager = new TokenManager();
-            AccessTokenResponse res = tokenManager.responseBuilder(realm, clientSession.getClient(), event, session, userSession, clientSession)
-                    .generateAccessToken()
-                    .generateIDToken()
-                    .build();
+            TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager.responseBuilder(realm, clientSession.getClient(), event, session, userSession, clientSession)
+                    .generateAccessToken();
+
+            if (responseType.hasResponseType(OIDCResponseType.ID_TOKEN)) {
+
+                responseBuilder.generateIDToken();
+
+                if (responseType.hasResponseType(OIDCResponseType.TOKEN)) {
+                    responseBuilder.generateAccessTokenHash();
+                }
+
+                if (responseType.hasResponseType(OIDCResponseType.CODE)) {
+                    responseBuilder.generateCodeHash(accessCode.getCode());
+                }
+
+            }
+
+            AccessTokenResponse res = responseBuilder.build();
 
             if (responseType.hasResponseType(OIDCResponseType.ID_TOKEN)) {
                 redirectUri.addParam(OAuth2Constants.ID_TOKEN, res.getIdToken());
