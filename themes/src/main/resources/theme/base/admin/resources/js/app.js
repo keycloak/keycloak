@@ -1338,18 +1338,6 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'RealmSessionStatsCtrl'
         })
-        .when('/realms/:realm/user-storage', {
-            templateUrl : resourceUrl + '/partials/user-storage.html',
-            resolve : {
-                realm : function(RealmLoader) {
-                    return RealmLoader();
-                },
-                serverInfo : function(ServerInfoLoader) {
-                    return ServerInfoLoader();
-                }
-            },
-            controller : 'UserStorageCtrl'
-        })
         .when('/create/user-storage/:realm/providers/:provider', {
             templateUrl : resourceUrl + '/partials/user-storage-generic.html',
             resolve : {
@@ -1393,6 +1381,9 @@ module.config([ '$routeProvider', function($routeProvider) {
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
+                },
+                serverInfo : function(ServerInfoLoader) {
+                    return ServerInfoLoader();
                 }
             },
             controller : 'UserFederationCtrl'

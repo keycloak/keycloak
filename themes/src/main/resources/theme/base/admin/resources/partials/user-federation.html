@@ -27,11 +27,11 @@
         </thead>
         <tbody>
         <tr ng-repeat="instance in instances">
-            <td><a href="#/realms/{{realm.realm}}/user-federation/providers/{{instance.providerName}}/{{instance.id}}">{{instance.displayName}}</a></td>
-            <td>{{instance.providerName|capitalize}}</td>
-            <td>{{instance.priority}}</td>
-            <td class="kc-action-cell" kc-open="/realms/{{realm.realm}}/user-federation/providers/{{instance.providerName}}/{{instance.id}}">{{:: 'edit' | translate}}</td>
-            <td class="kc-action-cell" data-ng-click="removeUserFederation(instance)">{{:: 'delete' | translate}}</td>
+            <td><a href="#{{getInstanceLink(instance)}}">{{getInstanceName(instance)}}</a></td>
+            <td>{{getInstanceProvider(instance)|capitalize}}</td>
+            <td>{{getInstancePriority(instance)}}</td>
+            <td class="kc-action-cell" kc-open="{{getInstanceLink(instance)}}">{{:: 'edit' | translate}}</td>
+            <td class="kc-action-cell" data-ng-click="removeInstance(instance)">{{:: 'delete' | translate}}</td>
          </tr>
         <tr data-ng-show="!instances || instances.length == 0">
             <td class="text-muted">{{:: 'no-user-federation-providers-configured' | translate}}</td>
