@@ -28,7 +28,6 @@ import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.testsuite.Assert;
-import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.OAuthClient;
 
 /**
@@ -40,7 +39,7 @@ public class OIDCHybridResponseTypeCodeIDTokenTest extends AbstractOIDCResponseT
 
     @Before
     public void clientConfiguration() {
-        ClientManager.realm(adminClient.realm("test")).clientId("test-app").standardFlow(true).implicitFlow(true);
+        clientManagerBuilder().standardFlow(true).implicitFlow(true);
 
         oauth.clientId("test-app");
         oauth.responseType(OIDCResponseType.CODE + " " + OIDCResponseType.ID_TOKEN);
@@ -71,5 +70,15 @@ public class OIDCHybridResponseTypeCodeIDTokenTest extends AbstractOIDCResponseT
     @Test
     public void nonceNotUsedErrorExpected() {
         super.validateNonceNotUsedErrorExpected();
+    }
+
+    @Test
+    public void errorStandardFlowNotAllowed() throws Exception {
+        super.validateErrorStandardFlowNotAllowed();
+    }
+
+    @Test
+    public void errorImplicitFlowNotAllowed() throws Exception {
+        super.validateErrorImplicitFlowNotAllowed();
     }
 }
