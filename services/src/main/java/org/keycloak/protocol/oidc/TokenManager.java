@@ -24,9 +24,11 @@ import org.keycloak.OAuthErrorException;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
+import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
+import org.keycloak.jose.jws.crypto.HashProvider;
 import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
@@ -80,6 +82,9 @@ import java.util.Set;
 public class TokenManager {
     protected static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
     private static final String JWT = "JWT";
+
+    // Harcoded for now
+    Algorithm jwsAlgorithm = Algorithm.RS256;
 
     public static void applyScope(RoleModel role, RoleModel scope, Set<RoleModel> visited, Set<RoleModel> requested) {
         if (visited.contains(scope)) return;
@@ -619,7 +624,7 @@ public class TokenManager {
                 .type(JWT)
                 .kid(realm.getKeyId())
                 .jsonContent(token)
-                .rsa256(realm.getPrivateKey());
+                .sign(jwsAlgorithm, realm.getPrivateKey());
         return encodedToken;
     }
 
@@ -638,6 +643,9 @@ public class TokenManager {
         AccessToken accessToken;
         RefreshToken refreshToken;
         IDToken idToken;
+
+        boolean generateAccessTokenHash = false;
+        String codeHash;
 
         public AccessTokenResponseBuilder(RealmModel realm, ClientModel client, EventBuilder event, KeycloakSession session, UserSessionModel userSession, ClientSessionModel clientSession) {
             this.realm = realm;
@@ -712,6 +720,15 @@ public class TokenManager {
             return this;
         }
 
+        public AccessTokenResponseBuilder generateAccessTokenHash() {
+            generateAccessTokenHash = true;
+            return this;
+        }
+
+        public AccessTokenResponseBuilder generateCodeHash(String code) {
+            codeHash = HashProvider.oidcHash(jwsAlgorithm, code);
+            return this;
+        }
 
 
         public AccessTokenResponse build() {
@@ -729,12 +746,8 @@ public class TokenManager {
             }
 
             AccessTokenResponse res = new AccessTokenResponse();
-            if (idToken != null) {
-                String encodedToken = new JWSBuilder().type(JWT).kid(realm.getKeyId()).jsonContent(idToken).rsa256(realm.getPrivateKey());
-                res.setIdToken(encodedToken);
-            }
             if (accessToken != null) {
-                String encodedToken = new JWSBuilder().type(JWT).kid(realm.getKeyId()).jsonContent(accessToken).rsa256(realm.getPrivateKey());
+                String encodedToken = new JWSBuilder().type(JWT).kid(realm.getKeyId()).jsonContent(accessToken).sign(jwsAlgorithm, realm.getPrivateKey());
                 res.setToken(encodedToken);
                 res.setTokenType("bearer");
                 res.setSessionState(accessToken.getSessionState());
@@ -742,8 +755,21 @@ public class TokenManager {
                     res.setExpiresIn(accessToken.getExpiration() - Time.currentTime());
                 }
             }
+
+            if (generateAccessTokenHash) {
+                String atHash = HashProvider.oidcHash(jwsAlgorithm, res.getToken());
+                idToken.setAccessTokenHash(atHash);
+            }
+            if (codeHash != null) {
+                idToken.setCodeHash(codeHash);
+            }
+
+            if (idToken != null) {
+                String encodedToken = new JWSBuilder().type(JWT).kid(realm.getKeyId()).jsonContent(idToken).sign(jwsAlgorithm, realm.getPrivateKey());
+                res.setIdToken(encodedToken);
+            }
             if (refreshToken != null) {
-                String encodedToken = new JWSBuilder().type(JWT).kid(realm.getKeyId()).jsonContent(refreshToken).rsa256(realm.getPrivateKey());
+                String encodedToken = new JWSBuilder().type(JWT).kid(realm.getKeyId()).jsonContent(refreshToken).sign(jwsAlgorithm, realm.getPrivateKey());
                 res.setRefreshToken(encodedToken);
                 if (refreshToken.getExpiration() != 0) {
                     res.setRefreshExpiresIn(refreshToken.getExpiration() - Time.currentTime());
