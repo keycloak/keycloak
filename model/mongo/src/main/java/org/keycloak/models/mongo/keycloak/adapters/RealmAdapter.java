@@ -2135,6 +2135,19 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         return results;
     }
 
+    @Override
+    public List<ComponentModel> getComponents(String parentId) {
+        List<ComponentModel> results = new LinkedList<>();
+        for (ComponentEntity entity : realm.getComponentEntities()) {
+            if (entity.getParentId().equals(parentId)) {
+                ComponentModel model = entityToModel(entity);
+                results.add(model);
+            }
+
+        }
+        return results;
+    }
+
     protected ComponentModel entityToModel(ComponentEntity entity) {
         ComponentModel model = new ComponentModel();
         model.setId(entity.getId());

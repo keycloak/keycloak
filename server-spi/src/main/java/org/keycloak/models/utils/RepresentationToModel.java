@@ -20,6 +20,7 @@ package org.keycloak.models.utils;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.store.ResourceServerStore;
+import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.hash.Pbkdf2PasswordHashProvider;
 import org.keycloak.migration.migrators.MigrationUtils;
@@ -63,6 +64,7 @@ import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
 import org.keycloak.representations.idm.ClaimRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientTemplateRepresentation;
+import org.keycloak.representations.idm.ComponentExportRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
@@ -285,6 +287,12 @@ public class RepresentationToModel {
             newRealm.setBrowserSecurityHeaders(BrowserSecurityHeaders.defaultHeaders);
         }
 
+        if (rep.getComponents() != null) {
+            MultivaluedHashMap<String, ComponentExportRepresentation> components = rep.getComponents();
+            String parentId = newRealm.getId();
+            importComponents(newRealm, components, parentId);
+        }
+
         List<UserFederationProviderModel> providerModels = null;
         if (rep.getUserFederationProviders() != null) {
             providerModels = convertFederationProviders(rep.getUserFederationProviders());
@@ -343,6 +351,25 @@ public class RepresentationToModel {
         }
         if(rep.getDefaultLocale() != null){
             newRealm.setDefaultLocale(rep.getDefaultLocale());
+        }
+    }
+
+    protected static void importComponents(RealmModel newRealm, MultivaluedHashMap<String, ComponentExportRepresentation> components, String parentId) {
+        for (Map.Entry<String, List<ComponentExportRepresentation>> entry : components.entrySet()) {
+            String providerType = entry.getKey();
+            for (ComponentExportRepresentation compRep : entry.getValue()) {
+                ComponentModel component = new ComponentModel();
+                component.setId(compRep.getId());
+                component.setName(compRep.getName());
+                component.setConfig(compRep.getConfig());
+                component.setProviderType(providerType);
+                component.setProviderId(compRep.getProviderId());
+                component.setParentId(parentId);
+                component = newRealm.addComponentModel(component);
+                if (compRep.getSubComponents() != null) {
+                    importComponents(newRealm, compRep.getSubComponents(), component.getId());
+                }
+            }
         }
     }
 
