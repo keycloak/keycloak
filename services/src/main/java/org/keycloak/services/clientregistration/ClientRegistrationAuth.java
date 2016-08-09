@@ -21,8 +21,10 @@ import org.jboss.resteasy.spi.Failure;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.UnauthorizedException;
 import org.keycloak.Config;
+import org.keycloak.OAuthErrorException;
 import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.common.util.Time;
+import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.AdminRoles;
@@ -33,7 +35,9 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
 import org.keycloak.representations.JsonWebToken;
+import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.ForbiddenException;
+import org.keycloak.services.ServicesLogger;
 import org.keycloak.util.TokenUtil;
 
 import javax.ws.rs.core.HttpHeaders;
@@ -65,23 +69,24 @@ public class ClientRegistrationAuth {
 
         String authorizationHeader = session.getContext().getRequestHeaders().getRequestHeaders().getFirst(HttpHeaders.AUTHORIZATION);
         if (authorizationHeader == null) {
-            return;
+            throw unauthorized("Missing Authorization header");
         }
 
         String[] split = authorizationHeader.split(" ");
         if (!split[0].equalsIgnoreCase("bearer")) {
-            return;
+            throw unauthorized("Invalid Authorization header. Expected type: Bearer");
         }
 
-        jwt = ClientRegistrationTokenUtils.verifyToken(realm, uri, split[1]);
-        if (jwt == null) {
-            throw unauthorized();
+        ClientRegistrationTokenUtils.TokenVerification tokenVerification = ClientRegistrationTokenUtils.verifyToken(realm, uri, split[1]);
+        if (tokenVerification.getError() != null) {
+            throw unauthorized(tokenVerification.getError().getMessage());
         }
+        jwt = tokenVerification.getJwt();
 
         if (isInitialAccessToken()) {
             initialAccessModel = session.sessions().getClientInitialAccessModel(session.getContext().getRealm(), jwt.getId());
             if (initialAccessModel == null) {
-                throw unauthorized();
+                throw unauthorized("Initial Access Token not found");
             }
         }
     }
@@ -115,7 +120,7 @@ public class ClientRegistrationAuth {
             }
         }
 
-        throw unauthorized();
+        throw unauthorized("Not authorized to view client. Maybe bad token type.");
     }
 
     public void requireView(ClientModel client) {
@@ -131,18 +136,18 @@ public class ClientRegistrationAuth {
                 throw forbidden();
             }
         } else if (isRegistrationAccessToken()) {
-            if (client.getRegistrationToken() != null && client != null && client.getRegistrationToken().equals(jwt.getId())) {
+            if (client.getRegistrationToken() != null && client.getRegistrationToken().equals(jwt.getId())) {
                 return;
             }
         } else if (isInitialAccessToken()) {
-            throw unauthorized();
+            throw unauthorized("Not initial access token");
         } else {
             if (authenticateClient(client)) {
                 return;
             }
         }
 
-        throw unauthorized();
+        throw unauthorized("Not authorized to view client. Maybe bad token type.");
     }
 
     public void requireUpdate(ClientModel client) {
@@ -163,7 +168,7 @@ public class ClientRegistrationAuth {
             }
         }
 
-        throw unauthorized();
+        throw unauthorized("Not authorized to update client. Maybe bad token type.");
     }
 
     public ClientInitialAccessModel getInitialAccessModel() {
@@ -218,36 +223,36 @@ public class ClientRegistrationAuth {
         Response response = processor.authenticateClient();
         if (response != null) {
             event.client(client.getClientId()).error(Errors.NOT_ALLOWED);
-            throw unauthorized();
+            throw unauthorized("Failed to authenticate client");
         }
 
         ClientModel authClient = processor.getClient();
-        if (client == null) {
+        if (authClient == null) {
             event.client(client.getClientId()).error(Errors.NOT_ALLOWED);
-            throw unauthorized();
+            throw unauthorized("No client authenticated");
         }
 
         if (!authClient.getClientId().equals(client.getClientId())) {
             event.client(client.getClientId()).error(Errors.NOT_ALLOWED);
-            throw unauthorized();
+            throw unauthorized("Different client authenticated");
         }
 
         return true;
     }
 
-    private Failure unauthorized() {
-        event.error(Errors.NOT_ALLOWED);
-        return new UnauthorizedException();
+    private Failure unauthorized(String errorDescription) {
+        event.detail(Details.REASON, errorDescription).error(Errors.INVALID_TOKEN);
+        throw new ErrorResponseException(OAuthErrorException.INVALID_TOKEN, errorDescription, Response.Status.UNAUTHORIZED);
     }
 
     private Failure forbidden() {
         event.error(Errors.NOT_ALLOWED);
-        return new ForbiddenException();
+        throw new ErrorResponseException(OAuthErrorException.INSUFFICIENT_SCOPE, "Forbidden", Response.Status.FORBIDDEN);
     }
 
     private Failure notFound() {
-        event.error(Errors.NOT_ALLOWED);
-        return new NotFoundException("Client not found");
+        event.error(Errors.CLIENT_NOT_FOUND);
+        throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Client not found", Response.Status.NOT_FOUND);
     }
 
 }

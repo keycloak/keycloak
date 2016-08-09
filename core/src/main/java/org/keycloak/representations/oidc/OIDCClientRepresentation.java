@@ -27,13 +27,19 @@ import java.util.List;
 @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY, getterVisibility = JsonAutoDetect.Visibility.NONE, setterVisibility = JsonAutoDetect.Visibility.NONE)
 public class OIDCClientRepresentation {
 
+    // OIDC Dynamic client registration properties
+
     private List<String> redirect_uris;
 
     private String token_endpoint_auth_method;
 
+    private String token_endpoint_auth_signing_alg;
+
     private List<String> grant_types;
 
     private List<String> response_types;
+
+    private String application_type;
 
     private String client_id;
 
@@ -47,7 +53,7 @@ public class OIDCClientRepresentation {
 
     private String scope;
 
-    private String contacts;
+    private List<String> contacts;
 
     private String tos_uri;
 
@@ -57,10 +63,47 @@ public class OIDCClientRepresentation {
 
     private String jwks;
 
+    private String sector_identifier_uri;
+
+    private String subject_type;
+
+    private String id_token_signed_response_alg;
+
+    private String id_token_encrypted_response_alg;
+
+    private String id_token_encrypted_response_enc;
+
+    private String userinfo_signed_response_alg;
+
+    private String userinfo_encrypted_response_alg;
+
+    private String userinfo_encrypted_response_enc;
+
+    private String request_object_signing_alg;
+
+    private String request_object_encryption_alg;
+
+    private String request_object_encryption_enc;
+
+    private Integer default_max_age;
+
+    private Boolean require_auth_time;
+
+    private List<String> default_acr_values;
+
+    private String initiate_login_uri;
+
+    private List<String> request_uris;
+
+    // OIDC Session Management
+    private List<String> post_logout_redirect_uris;
+
+    // Not sure from which specs this comes
     private String software_id;
 
     private String software_version;
 
+    // OIDC Dynamic Client Registration Response
     private Integer client_id_issued_at;
 
     private Integer client_secret_expires_at;
@@ -85,6 +128,14 @@ public class OIDCClientRepresentation {
         this.token_endpoint_auth_method = token_endpoint_auth_method;
     }
 
+    public String getTokenEndpointAuthSigningAlg() {
+        return token_endpoint_auth_signing_alg;
+    }
+
+    public void setTokenEndpointAuthSigningAlg(String token_endpoint_auth_signing_alg) {
+        this.token_endpoint_auth_signing_alg = token_endpoint_auth_signing_alg;
+    }
+
     public List<String> getGrantTypes() {
         return grant_types;
     }
@@ -99,6 +150,14 @@ public class OIDCClientRepresentation {
 
     public void setResponseTypes(List<String> responseTypes) {
         this.response_types = responseTypes;
+    }
+
+    public String getApplicationType() {
+        return application_type;
+    }
+
+    public void setApplicationType(String applicationType) {
+        this.application_type = applicationType;
     }
 
     public String getClientId() {
@@ -149,11 +208,11 @@ public class OIDCClientRepresentation {
         this.scope = scope;
     }
 
-    public String getContacts() {
+    public List<String> getContacts() {
         return contacts;
     }
 
-    public void setContacts(String contacts) {
+    public void setContacts(List<String> contacts) {
         this.contacts = contacts;
     }
 
@@ -187,6 +246,142 @@ public class OIDCClientRepresentation {
 
     public void setJwks(String jwks) {
         this.jwks = jwks;
+    }
+
+    public String getSectorIdentifierUri() {
+        return sector_identifier_uri;
+    }
+
+    public void setSectorIdentifierUri(String sectorIdentifierUri) {
+        this.sector_identifier_uri = sectorIdentifierUri;
+    }
+
+    public String getSubjectType() {
+        return subject_type;
+    }
+
+    public void setSubjectType(String subjectType) {
+        this.subject_type = subjectType;
+    }
+
+    public String getIdTokenSignedResponseAlg() {
+        return id_token_signed_response_alg;
+    }
+
+    public void setIdTokenSignedResponseAlg(String idTokenSignedResponseAlg) {
+        this.id_token_signed_response_alg = idTokenSignedResponseAlg;
+    }
+
+    public String getIdTokenEncryptedResponseAlg() {
+        return id_token_encrypted_response_alg;
+    }
+
+    public void setIdTokenEncryptedResponseAlg(String idTokenEncryptedResponseAlg) {
+        this.id_token_encrypted_response_alg = idTokenEncryptedResponseAlg;
+    }
+
+    public String getIdTokenEncryptedResponseEnc() {
+        return id_token_encrypted_response_enc;
+    }
+
+    public void setIdTokenEncryptedResponseEnc(String idTokenEncryptedResponseEnc) {
+        this.id_token_encrypted_response_enc = idTokenEncryptedResponseEnc;
+    }
+
+    public String getUserinfoSignedResponseAlg() {
+        return userinfo_signed_response_alg;
+    }
+
+    public void setUserinfoSignedResponseAlg(String userinfo_signed_response_alg) {
+        this.userinfo_signed_response_alg = userinfo_signed_response_alg;
+    }
+
+    public String getUserinfoEncryptedResponseAlg() {
+        return userinfo_encrypted_response_alg;
+    }
+
+    public void setUserinfoEncryptedResponseAlg(String userinfo_encrypted_response_alg) {
+        this.userinfo_encrypted_response_alg = userinfo_encrypted_response_alg;
+    }
+
+    public String getUserinfoEncryptedResponseEnc() {
+        return userinfo_encrypted_response_enc;
+    }
+
+    public void setUserinfoEncryptedResponseEnc(String userinfo_encrypted_response_enc) {
+        this.userinfo_encrypted_response_enc = userinfo_encrypted_response_enc;
+    }
+
+    public String getRequestObjectSigningAlg() {
+        return request_object_signing_alg;
+    }
+
+    public void setRequestObjectSigningAlg(String request_object_signing_alg) {
+        this.request_object_signing_alg = request_object_signing_alg;
+    }
+
+    public String getRequestObjectEncryptionAlg() {
+        return request_object_encryption_alg;
+    }
+
+    public void setRequestObjectEncryptionAlg(String request_object_encryption_alg) {
+        this.request_object_encryption_alg = request_object_encryption_alg;
+    }
+
+    public String getRequestObjectEncryptionEnc() {
+        return request_object_encryption_enc;
+    }
+
+    public void setRequestObjectEncryptionEnc(String request_object_encryption_enc) {
+        this.request_object_encryption_enc = request_object_encryption_enc;
+    }
+
+    public Integer getDefaultMaxAge() {
+        return default_max_age;
+    }
+
+    public void setDefaultMaxAge(Integer default_max_age) {
+        this.default_max_age = default_max_age;
+    }
+
+    public Boolean getRequireAuthTime() {
+        return require_auth_time;
+    }
+
+    public void setRequireAuthTime(Boolean require_auth_time) {
+        this.require_auth_time = require_auth_time;
+    }
+
+    public List<String> getDefaultAcrValues() {
+        return default_acr_values;
+    }
+
+    public void setDefaultAcrValues(List<String> default_acr_values) {
+        this.default_acr_values = default_acr_values;
+    }
+
+    public String getInitiateLoginUri() {
+        return initiate_login_uri;
+    }
+
+    public void setInitiateLoginUri(String initiate_login_uri) {
+        this.initiate_login_uri = initiate_login_uri;
+    }
+
+    public List<String> getRequestUris() {
+        return request_uris;
+    }
+
+    public void setRequestUris(List<String> requestUris) {
+        this.request_uris = requestUris;
+    }
+
+    public List<String> getPostLogoutRedirectUris() {
+        return post_logout_redirect_uris;
+    }
+
+    public void setPostLogoutRedirectUris(List<String> post_logout_redirect_uris) {
+        this.post_logout_redirect_uris = post_logout_redirect_uris;
     }
 
     public String getSoftwareId() {
