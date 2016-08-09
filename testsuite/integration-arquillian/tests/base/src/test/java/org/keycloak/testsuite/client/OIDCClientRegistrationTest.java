@@ -20,7 +20,6 @@ package org.keycloak.testsuite.client;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.OAuthErrorException;
 import org.keycloak.client.registration.Auth;
 import org.keycloak.client.registration.ClientRegistrationException;
 import org.keycloak.client.registration.HttpErrorException;
@@ -28,12 +27,14 @@ import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.representations.idm.ClientInitialAccessCreatePresentation;
 import org.keycloak.representations.idm.ClientInitialAccessPresentation;
-import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
+import org.keycloak.representations.idm.ClientRegistrationTrustedHostRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.testsuite.Assert;
 
 import java.util.Arrays;
 import java.util.Collections;
+
+import javax.ws.rs.core.Response;
 
 import static org.junit.Assert.*;
 
@@ -50,11 +51,16 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
         reg.auth(Auth.token(token));
     }
 
-    public OIDCClientRepresentation create() throws ClientRegistrationException {
+    private OIDCClientRepresentation createRep() {
         OIDCClientRepresentation client = new OIDCClientRepresentation();
         client.setClientName("RegistrationAccessTokenTest");
         client.setClientUri("http://root");
         client.setRedirectUris(Collections.singletonList("http://redirect"));
+        return client;
+    }
+
+    public OIDCClientRepresentation create() throws ClientRegistrationException {
+        OIDCClientRepresentation client = createRep();
 
         OIDCClientRepresentation response = reg.oidc().create(client);
 
@@ -62,21 +68,41 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
     }
 
     @Test
-    public void testMissingToken() throws Exception {
+    public void testCreateWithTrustedHost() throws Exception {
         reg.auth(null);
 
-        OIDCClientRepresentation client = new OIDCClientRepresentation();
-        client.setClientName("RegistrationAccessTokenTest");
-        client.setClientUri("http://root");
-        client.setRedirectUris(Collections.singletonList("http://redirect"));
+        OIDCClientRepresentation client = createRep();
 
+        // Failed to create client
         try {
             reg.oidc().create(client);
             Assert.fail("Not expected to successfuly register client");
         } catch (ClientRegistrationException expected) {
             HttpErrorException httpEx = (HttpErrorException) expected.getCause();
             Assert.assertEquals(401, httpEx.getStatusLine().getStatusCode());
-            Assert.assertEquals(OAuthErrorException.INVALID_TOKEN, httpEx.toErrorRepresentation().getError());
+        }
+
+        // Create trusted host entry
+        Response response = adminClient.realm(REALM_NAME).clientRegistrationTrustedHost().create(ClientRegistrationTrustedHostRepresentation.create("localhost", 2, 2));
+        Assert.assertEquals(201, response.getStatus());
+
+        // Successfully register client
+        reg.oidc().create(client);
+
+        // Just one remaining available
+        ClientRegistrationTrustedHostRepresentation rep = adminClient.realm(REALM_NAME).clientRegistrationTrustedHost().get("localhost");
+        Assert.assertEquals(1, rep.getRemainingCount().intValue());
+
+        // Successfully register client2
+        reg.oidc().create(client);
+
+        // Failed to create 3rd client
+        try {
+            reg.oidc().create(client);
+            Assert.fail("Not expected to successfuly register client");
+        } catch (ClientRegistrationException expected) {
+            HttpErrorException httpEx = (HttpErrorException) expected.getCause();
+            Assert.assertEquals(401, httpEx.getStatusLine().getStatusCode());
         }
     }
 
