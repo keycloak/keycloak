@@ -204,6 +204,47 @@ public class ModelToRepresentation {
         return rep;
     }
 
+    public static List<String> buildRealmRoleNames(Set<RoleModel> realmRoleMappings){
+
+        if (realmRoleMappings == null || realmRoleMappings.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        List<String> realmRoleNames = new ArrayList<>();
+        for (RoleModel realmRole : realmRoleMappings) {
+            realmRoleNames.add(realmRole.getName());
+        }
+
+        return realmRoleNames;
+    }
+
+
+    public static Map<String, List<String>> buildClientRoleNamesMapping(UserModel user, List<ClientModel> clients) {
+
+        if (user == null || clients == null || clients.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        Map<String, List<String>> clientRoleNamesMapping = new HashMap<>();
+        for (ClientModel client : clients) {
+
+            Set<RoleModel> clientRoleMappings = user.getClientRoleMappings(client);
+
+            if (clientRoleMappings != null && !clientRoleMappings.isEmpty()) {
+
+                List<String> clientRoleNames = new ArrayList<>();
+
+                for (RoleModel clientRole : clientRoleMappings) {
+                    clientRoleNames.add(clientRole.getName());
+                }
+
+                clientRoleNamesMapping.put(client.getClientId(), clientRoleNames);
+            }
+        }
+
+        return clientRoleNamesMapping;
+    }
+
     public static EventRepresentation toRepresentation(Event event) {
         EventRepresentation rep = new EventRepresentation();
         rep.setTime(event.getTime());

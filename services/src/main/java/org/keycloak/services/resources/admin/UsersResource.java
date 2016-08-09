@@ -43,6 +43,7 @@ import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.ModelReadOnlyException;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserLoginFailureModel;
@@ -100,7 +101,6 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-
 /**
  * Base resource for managing users
  *
@@ -235,7 +235,7 @@ public class UsersResource {
         }
     }
 
-    public static void updateUserFromRep(UserModel user, UserRepresentation rep, Set<String> attrsToRemove, RealmModel realm, KeycloakSession session, boolean removeMissingRequiredActions) {
+    private void updateUserFromRep(UserModel user, UserRepresentation rep, Set<String> attrsToRemove, RealmModel realm, KeycloakSession session, boolean removeMissingRequiredActions) {
         if (rep.getUsername() != null && realm.isEditUsernameAllowed()) {
             user.setUsername(rep.getUsername());
         }
@@ -271,6 +271,48 @@ public class UsersResource {
                 user.removeAttribute(attr);
             }
         }
+
+        grantRealmRoles(user, realm, rep.getRealmRoles());
+        grantClientRoles(user, realm, rep.getClientRoles());
+    }
+
+    private void grantRealmRoles(UserModel user, RealmModel realm, List<String> realmRoles) {
+
+        if (realmRoles == null || realmRoles.isEmpty()) {
+            return;
+        }
+
+        for (String roleName : realmRoles) {
+            RoleModel realmRole = realm.getRole(roleName);
+            if (realmRole == null) {
+                continue;
+            }
+
+            user.grantRole(realmRole);
+        }
+    }
+
+    private void grantClientRoles(UserModel user, RealmModel realm, Map<String, List<String>> clientRoles) {
+
+        if (clientRoles == null || clientRoles.isEmpty()) {
+            return;
+        }
+
+        for (Map.Entry<String,List<String>> clientRolesEntry : clientRoles.entrySet()) {
+
+            ClientModel client = realm.getClientByClientId(clientRolesEntry.getKey());
+            if (client == null) {
+                continue;
+            }
+
+            for (String roleName : clientRolesEntry.getValue()) {
+                RoleModel clientRole = client.getRole(roleName);
+                if (clientRole == null) {
+                    continue;
+                }
+                user.grantRole(clientRole);
+            }
+        }
     }
 
     /**
@@ -301,6 +343,9 @@ public class UsersResource {
         if (session.getProvider(BruteForceProtector.class).isTemporarilyDisabled(session, realm, user)) {
             rep.setEnabled(false);
         }
+
+        rep.setRealmRoles(ModelToRepresentation.buildRealmRoleNames(user.getRealmRoleMappings()));
+        rep.setClientRoles(ModelToRepresentation.buildClientRoleNamesMapping(user, realm.getClients()));
 
         return rep;
     }
