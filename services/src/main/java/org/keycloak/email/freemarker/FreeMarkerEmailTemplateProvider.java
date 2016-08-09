@@ -26,6 +26,7 @@ import org.keycloak.email.freemarker.beans.EventBean;
 import org.keycloak.email.freemarker.beans.ProfileBean;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventType;
+import org.keycloak.models.ClientModel;
 import org.keycloak.theme.FreeMarkerException;
 import org.keycloak.theme.FreeMarkerUtil;
 import org.keycloak.theme.Theme;
@@ -144,6 +145,19 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
         attributes.put("realmName", getRealmName());
 
         send("emailVerificationSubject", "email-verification.ftl", attributes);
+    }
+
+    @Override
+    public void sendWelcomeEmail(String link) throws EmailException{
+
+        String realmName = getRealmName();
+
+        Map<String, Object> attributes = new HashMap<String, Object>();
+        attributes.put("user", new ProfileBean(user));
+        attributes.put("realmName", realmName);
+        attributes.put("link", link);
+
+        send("welcomeSubject", Arrays.asList(realmName, user.getUsername()), "welcome.ftl", attributes);
     }
 
     private void send(String subjectKey, String template, Map<String, Object> attributes) throws EmailException {
