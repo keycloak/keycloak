@@ -298,6 +298,18 @@ module.factory('ClientInitialAccess', function($resource) {
     });
 });
 
+module.factory('ClientRegistrationTrustedHost', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/clients-trusted-hosts/:hostname', {
+        realm : '@realm',
+        hostname : '@hostname'
+    }, {
+         update : {
+             method : 'PUT'
+         }
+       }
+    );
+});
+
 
 module.factory('ClientProtocolMapper', function($resource) {
     return $resource(authUrl + '/admin/realms/:realm/clients/:client/protocol-mappers/models/:id', {
