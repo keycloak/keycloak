@@ -14,43 +14,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.keycloak.admin.client.resource;
 
-import org.jboss.resteasy.annotations.cache.NoCache;
-import org.keycloak.representations.idm.GroupRepresentation;
+import org.jboss.resteasy.spi.NotFoundException;
+import org.keycloak.representations.idm.ComponentRepresentation;
 
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
-import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import java.util.List;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public interface GroupsResource {
+public interface ComponentResource {
     @GET
-    @NoCache
-    @Produces(MediaType.APPLICATION_JSON)
-    List<GroupRepresentation> groups();
+    public ComponentRepresentation toRepresentation();
 
-    /**
-     * create or add a top level realm groupSet or create child.  This will update the group and set the parent if it exists.  Create it and set the parent
-     * if the group doesn't exist.
-     *
-     * @param rep
-     */
-    @POST
+    @PUT
     @Consumes(MediaType.APPLICATION_JSON)
-    Response add(GroupRepresentation rep);
+    public void update(ComponentRepresentation rep);
 
-    @Path("{id}")
-    GroupResource group(@PathParam("id") String id);
-
+    @DELETE
+    public void remove();
 }

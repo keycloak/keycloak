@@ -763,6 +763,7 @@ public class ModelToRepresentation {
         rep.setName(component.getName());
         rep.setProviderId(component.getProviderId());
         rep.setProviderType(component.getProviderType());
+        rep.setParentId(component.getParentId());
         rep.setConfig(component.getConfig());
         return rep;
     }

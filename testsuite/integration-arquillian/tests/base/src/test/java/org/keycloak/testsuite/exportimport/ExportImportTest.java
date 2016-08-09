@@ -19,10 +19,12 @@ package org.keycloak.testsuite.exportimport;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.exportimport.ExportImportConfig;
 import org.keycloak.exportimport.dir.DirExportProvider;
 import org.keycloak.exportimport.dir.DirExportProviderFactory;
 import org.keycloak.exportimport.singlefile.SingleFileExportProviderFactory;
+import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 
 import java.io.File;
@@ -137,6 +139,63 @@ public class ExportImportTest extends AbstractExportImportTest {
 
         ExportImportUtil.assertDataImportedInRealm(adminClient, testingClient, testRealmRealm.toRepresentation());
     }
+
+    @Test
+    public void testComponentExportImport() throws Throwable {
+        RealmRepresentation realmRep = new RealmRepresentation();
+        realmRep.setRealm("component-realm");
+        adminClient.realms().create(realmRep);
+        Assert.assertEquals(4, adminClient.realms().findAll().size());
+        RealmResource realm = adminClient.realm("component-realm");
+        realmRep = realm.toRepresentation();
+        ComponentRepresentation component = new ComponentRepresentation();
+        component.setProviderId("dummy");
+        component.setProviderType("dummyType");
+        component.setName("dummy-name");
+        component.setParentId(realmRep.getId());
+        component.setConfig(new MultivaluedHashMap<>());
+        component.getConfig().add("name", "value");
+        realm.components().add(component);
+
+
+        ExportImportConfig.setProvider(SingleFileExportProviderFactory.PROVIDER_ID);
+        String targetFilePath = getExportImportTestDirectory() + File.separator + "singleFile-realm.json";
+        ExportImportConfig.setFile(targetFilePath);
+
+        ExportImportConfig.setAction(ExportImportConfig.ACTION_EXPORT);
+        ExportImportConfig.setRealmName("component-realm");
+
+        testingClient.testing().runExport();
+
+        // Delete some realm (and some data in admin realm)
+        adminClient.realm("component-realm").remove();
+
+        Assert.assertEquals(3, adminClient.realms().findAll().size());
+
+        // Configure import
+        ExportImportConfig.setAction(ExportImportConfig.ACTION_IMPORT);
+
+        testingClient.testing().runImport();
+
+        realmRep = realm.toRepresentation();
+
+        List<ComponentRepresentation> components = realm.components().query();
+
+        Assert.assertEquals(1, components.size());
+
+        component = components.get(0);
+
+        Assert.assertEquals("dummy-name", component.getName());
+        Assert.assertEquals("dummyType", component.getProviderType());
+        Assert.assertEquals("dummy", component.getProviderId());
+        Assert.assertEquals(realmRep.getId(), component.getParentId());
+        Assert.assertEquals(1, component.getConfig().size());
+        Assert.assertEquals("value", component.getConfig().getFirst("name"));
+
+        adminClient.realm("component-realm").remove();
+    }
+
+
 
 
     private void removeRealm(String realmName) {
