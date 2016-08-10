@@ -53,7 +53,8 @@
 
                 <div class="col-md-4">
                     <select ui-select2="{ minimumInputLength: 1}" id="roles" data-ng-model="selectedRole" data-ng-change="selectRole(selectedRole);" data-placeholder="{{:: 'select-a-role' | translate}}..."
-                            ng-options="role as role.name for role in roles" data-ng-required="selectedUsers.length == 0 && selectedRoles.length == 0">
+                            ng-options="role as role.name for role in roles" data-ng-required="selectedRoles.length == 0">
+                        <option></option>
                     </select>
                 </div>
 
@@ -104,6 +105,7 @@
                 <div class="col-md-4">
                     <select ui-select2="{ minimumInputLength: 1}" id="clientRoles" data-ng-model="selectedRole" data-ng-change="selectRole(selectedRole);" data-placeholder="{{:: 'select-a-role' | translate}}..."
                             ng-options="role as role.name for role in clientRoles" data-ng-required="selectedRoles.length == 0" data-ng-disabled="!selectedClient">
+                        <option></option>
                     </select>
                 </div>
 
