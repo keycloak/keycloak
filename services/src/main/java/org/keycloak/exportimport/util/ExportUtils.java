@@ -24,6 +24,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import org.keycloak.common.Version;
 import org.keycloak.common.util.Base64;
+import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.component.ComponentModel;
 import org.keycloak.models.*;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.*;
@@ -178,7 +180,26 @@ public class ExportUtils {
             }
         }
 
+        // components
+        MultivaluedHashMap<String, ComponentExportRepresentation> components = exportComponents(realm, realm.getId());
+        rep.setComponents(components);
+
         return rep;
+    }
+
+    public static MultivaluedHashMap<String, ComponentExportRepresentation> exportComponents(RealmModel realm, String parentId) {
+        List<ComponentModel> componentList = realm.getComponents(parentId);
+        MultivaluedHashMap<String, ComponentExportRepresentation> components = new MultivaluedHashMap<>();
+        for (ComponentModel component : componentList) {
+            ComponentExportRepresentation compRep = new ComponentExportRepresentation();
+            compRep.setId(component.getId());
+            compRep.setProviderId(component.getProviderId());
+            compRep.setConfig(component.getConfig());
+            compRep.setName(component.getName());
+            compRep.setSubComponents(exportComponents(realm, component.getId()));
+            components.add(component.getProviderType(), compRep);
+        }
+        return components;
     }
 
     /**

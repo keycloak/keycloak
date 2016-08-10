@@ -2195,6 +2195,21 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
         return rtn;
     }
 
+    @Override
+    public List<ComponentModel> getComponents(String parentId) {
+        TypedQuery<ComponentEntity> query = em.createNamedQuery("getComponentsByParent", ComponentEntity.class)
+                .setParameter("realm", realm)
+                .setParameter("parentId", parentId);
+        List<ComponentEntity> results = query.getResultList();
+        List<ComponentModel> rtn = new LinkedList<>();
+        for (ComponentEntity c : results) {
+            ComponentModel model = entityToModel(c);
+            rtn.add(model);
+
+        }
+        return rtn;
+    }
+
     protected ComponentModel entityToModel(ComponentEntity c) {
         ComponentModel model = new ComponentModel();
         model.setId(c.getId());

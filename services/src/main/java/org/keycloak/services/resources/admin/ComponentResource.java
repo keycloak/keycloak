@@ -42,6 +42,7 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -82,8 +83,15 @@ public class ComponentResource {
     @Produces(MediaType.APPLICATION_JSON)
     public List<ComponentRepresentation> getComponents(@QueryParam("parent") String parent, @QueryParam("type") String type) {
         auth.requireManage();
-        if (parent == null) parent = realm.getId();
-        List<ComponentModel> components = realm.getComponents(parent, type);
+        List<ComponentModel> components = Collections.EMPTY_LIST;
+        if (parent == null) {
+            components = realm.getComponents();
+
+        } else if (type == null) {
+            components = realm.getComponents(parent);
+        } else {
+            components = realm.getComponents(parent, type);
+        }
         List<ComponentRepresentation> reps = new LinkedList<>();
         for (ComponentModel component : components) {
             ComponentRepresentation rep = ModelToRepresentation.toRepresentation(component);
