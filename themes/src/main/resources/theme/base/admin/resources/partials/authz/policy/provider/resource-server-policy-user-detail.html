@@ -34,9 +34,8 @@
                 <label class="col-md-2 control-label" for="users">{{:: 'users' | translate}} <span class="required">*</span></label>
 
                 <div class="col-md-6">
-                    <select ui-select2="{ minimumInputLength: 1}" id="users" data-ng-model="selectedUser" data-ng-change="selectUser(selectedUser);" data-placeholder="Select an user..."
-                            ng-options="user as user.username for user in users" data-ng-required="selectedRoles.length == 0">
-                    </select>
+                    <input type="hidden" ui-select2="usersUiSelect" id="users" data-ng-model="selectedUser" data-ng-change="selectUser(selectedUser);" data-placeholder="Select an user..." data-ng-required="selectedUsers.length == 0"">
+                    </input>
                 </div>
                 <kc-tooltip>{{:: 'authz-policy-user-users.tooltip' | translate}}</kc-tooltip>
             </div>

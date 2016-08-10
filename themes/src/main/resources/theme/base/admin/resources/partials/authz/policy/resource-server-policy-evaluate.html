@@ -59,12 +59,9 @@
                                                                                      data-ng-show="!authzRequest.roleIds || authzRequest.roleIds.length == 0">*</span></label>
 
                         <div class="col-md-6">
-                            <select ui-select2="{ minimumInputLength: 1, allowClear:true}" id="users"
-                                    data-ng-model="authzRequest.userId" data-placeholder="{{:: 'authz-select-user' | translate}}..."
-                                    ng-options="user.id as user.username for user in users track by user.id"
-                                    data-ng-required="!authzRequest.roleIds || authzRequest.roleIds.length == 0">
-                                <option value=""></option>
-                            </select>
+                            <input type="hidden" ui-select2="usersUiSelect" id="users" data-ng-model="selectedUser" data-ng-change="selectUser(selectedUser);" data-placeholder="{{:: 'authz-select-user' | translate}}..."
+                                   data-ng-required="!authzRequest.roleIds || authzRequest.roleIds.length == 0">
+                            </input>
                         </div>
 
                         <kc-tooltip>{{:: 'authz-evaluation-user.tooltip' | translate}}</kc-tooltip>

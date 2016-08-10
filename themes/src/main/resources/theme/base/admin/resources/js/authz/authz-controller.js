@@ -665,9 +665,25 @@ module.controller('ResourceServerPolicyUserDetailCtrl', function($scope, $route,
         },
 
         onInit : function() {
-            User.query({realm: $route.current.params.realm}, function(data) {
-                $scope.users = data;
-            });
+            $scope.usersUiSelect = {
+                minimumInputLength: 1,
+                delay: 500,
+                allowClear: true,
+                query: function (query) {
+                    var data = {results: []};
+                    if ('' == query.term.trim()) {
+                        query.callback(data);
+                        return;
+                    }
+                    User.query({realm: $route.current.params.realm, search: query.term.trim(), max: 20}, function(response) {
+                        data.results = response;
+                        query.callback(data);
+                    });
+                },
+                formatResult: function(object, container, query) {
+                    return object.username;
+                }
+            };
 
             $scope.selectedUsers = [];
 
@@ -676,7 +692,14 @@ module.controller('ResourceServerPolicyUserDetailCtrl', function($scope, $route,
                     return;
                 }
 
-                $scope.selectedUser = {};
+                $scope.selectedUser = null;
+
+                for (i = 0; i < $scope.selectedUsers.length; i++) {
+                    if ($scope.selectedUsers[i].id == user.id) {
+                        return;
+                    }
+                }
+
                 $scope.selectedUsers.push(user);
             }
 
@@ -750,7 +773,14 @@ module.controller('ResourceServerPolicyRoleDetailCtrl', function($scope, $route,
                     return;
                 }
 
-                $scope.selectedRole = {};
+                $scope.selectedRole = null;
+
+                for (i = 0; i < $scope.selectedRoles.length; i++) {
+                    if ($scope.selectedRoles[i].id == role.id) {
+                        return;
+                    }
+                }
+
                 $scope.selectedRoles.push(role);
 
                 var clientRoles = [];
@@ -1158,8 +1188,6 @@ module.service("PolicyController", function($http, $route, $location, ResourceSe
     return PolicyController;
 });
 
-
-
 module.controller('PolicyEvaluateCtrl', function($scope, $http, $route, $location, realm, clients, roles, ResourceServer, client, ResourceServerResource, ResourceServerScope, User, Notifications) {
     $scope.realm = realm;
     $scope.client = client;
@@ -1381,9 +1409,26 @@ module.controller('PolicyEvaluateCtrl', function($scope, $http, $route, $locatio
         $scope.showRpt = false;
     }
 
-    User.query({realm: $route.current.params.realm}, function(data) {
-        $scope.users = data;
-    });
+    $scope.usersUiSelect = {
+        minimumInputLength: 1,
+        delay: 500,
+        allowClear: true,
+        query: function (query) {
+            var data = {results: []};
+            if ('' == query.term.trim()) {
+                query.callback(data);
+                return;
+            }
+            User.query({realm: $route.current.params.realm, search: query.term.trim(), max: 20}, function(response) {
+                data.results = response;
+                query.callback(data);
+            });
+        },
+        formatResult: function(object, container, query) {
+            object.text = object.username;
+            return object.username;
+        }
+    };
 
     ResourceServerResource.query({realm : realm.realm, client : client.id}, function (data) {
         $scope.resources = data;
@@ -1395,4 +1440,15 @@ module.controller('PolicyEvaluateCtrl', function($scope, $http, $route, $locatio
     }, function(data) {
         $scope.server = data;
     });
+
+    $scope.selectUser = function(user) {
+        if (!user || !user.id) {
+            $scope.selectedUser = null;
+            $scope.authzRequest.userId = '';
+            return;
+        }
+
+        $scope.authzRequest.userId = user.id;
+    }
+
 });

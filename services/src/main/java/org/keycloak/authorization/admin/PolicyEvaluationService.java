@@ -159,6 +159,10 @@ public class PolicyEvaluationService {
                 List<Scope> scopes = givenScopes.stream().map(scopeName -> scopeStore.findByName(scopeName, this.resourceServer.getId())).collect(Collectors.toList());
                 List<ResourcePermission> collect = scopes.stream().map(scope -> new ResourcePermission(null, asList(scope), resourceServer)).collect(Collectors.toList());
 
+                if (scopes.isEmpty()) {
+                    scopes = scopeStore.findByResourceServer(resourceServer.getId());
+                }
+
                 for (Scope scope : scopes) {
                     collect.addAll(storeFactory.getResourceStore().findByScope(scope.getId()).stream().map(resource12 -> new ResourcePermission(resource12, asList(scope), resourceServer)).collect(Collectors.toList()));
                 }
