@@ -43,7 +43,20 @@
     </build>
     <modules>
         <module>jpa</module>
-        <module>mongo</module>
         <module>infinispan</module>
     </modules>
+
+    <profiles>
+        <profile>
+            <id>community</id>
+            <activation>
+                <property>
+                    <name>!productProfile</name>
+                </property>
+            </activation>
+            <modules>
+                <module>mongo</module>
+            </modules>
+        </profile>
+    </profiles>
 </project>

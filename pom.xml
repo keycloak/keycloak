@@ -172,7 +172,6 @@
         <module>server-spi</module>
         <module>saml-core-api</module>
         <module>saml-core</module>
-        <module>proxy</module>
         <module>federation</module>
         <module>services</module>
         <module>themes</module>
@@ -1456,6 +1455,18 @@
                     </plugin>
                 </plugins>
             </build>
+        </profile>
+
+        <profile>
+            <id>community</id>
+            <activation>
+                <property>
+                    <name>!productProfile</name>
+                </property>
+            </activation>
+            <modules>
+                <module>proxy</module>
+            </modules>
         </profile>
     </profiles>
 </project>
