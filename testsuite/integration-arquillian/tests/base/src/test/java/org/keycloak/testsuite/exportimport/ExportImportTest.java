@@ -75,11 +75,11 @@ public class ExportImportTest extends AbstractExportImportTest {
 
     @Test
     public void testDirFullExportImport() throws Throwable {
-        ExportImportConfig.setProvider(DirExportProviderFactory.PROVIDER_ID);
-        String targetDirPath = getExportImportTestDirectory() + File.separator + "dirExport";
+        testingClient.testing().setProvider(DirExportProviderFactory.PROVIDER_ID);
+        String targetDirPath = testingClient.testing().getExportImportTestDirectory()+ File.separator + "dirExport";
         DirExportProvider.recursiveDeleteDir(new File(targetDirPath));
-        ExportImportConfig.setDir(targetDirPath);
-        ExportImportConfig.setUsersPerFile(ExportImportConfig.DEFAULT_USERS_PER_FILE);
+        testingClient.testing().setDir(targetDirPath);
+        testingClient.testing().setUsersPerFile(ExportImportConfig.DEFAULT_USERS_PER_FILE);
 
         testFullExportImport();
 
@@ -89,11 +89,11 @@ public class ExportImportTest extends AbstractExportImportTest {
 
     @Test
     public void testDirRealmExportImport() throws Throwable {
-        ExportImportConfig.setProvider(DirExportProviderFactory.PROVIDER_ID);
-        String targetDirPath = getExportImportTestDirectory() + File.separator + "dirRealmExport";
+        testingClient.testing().setProvider(DirExportProviderFactory.PROVIDER_ID);
+        String targetDirPath = testingClient.testing().getExportImportTestDirectory() + File.separator + "dirRealmExport";
         DirExportProvider.recursiveDeleteDir(new File(targetDirPath));
-        ExportImportConfig.setDir(targetDirPath);
-        ExportImportConfig.setUsersPerFile(3);
+        testingClient.testing().setDir(targetDirPath);
+        testingClient.testing().setUsersPerFile(3);
 
         testRealmExportImport();
 
@@ -104,18 +104,18 @@ public class ExportImportTest extends AbstractExportImportTest {
 
     @Test
     public void testSingleFileFullExportImport() throws Throwable {
-        ExportImportConfig.setProvider(SingleFileExportProviderFactory.PROVIDER_ID);
-        String targetFilePath = getExportImportTestDirectory() + File.separator + "singleFile-full.json";
-        ExportImportConfig.setFile(targetFilePath);
+        testingClient.testing().setProvider(SingleFileExportProviderFactory.PROVIDER_ID);
+        String targetFilePath = testingClient.testing().getExportImportTestDirectory() + File.separator + "singleFile-full.json";
+        testingClient.testing().setFile(targetFilePath);
 
         testFullExportImport();
     }
 
     @Test
     public void testSingleFileRealmExportImport() throws Throwable {
-        ExportImportConfig.setProvider(SingleFileExportProviderFactory.PROVIDER_ID);
-        String targetFilePath = getExportImportTestDirectory() + File.separator + "singleFile-realm.json";
-        ExportImportConfig.setFile(targetFilePath);
+        testingClient.testing().setProvider(SingleFileExportProviderFactory.PROVIDER_ID);
+        String targetFilePath = testingClient.testing().getExportImportTestDirectory() + File.separator + "singleFile-realm.json";
+        testingClient.testing().setFile(targetFilePath);
 
         testRealmExportImport();
     }
@@ -126,12 +126,12 @@ public class ExportImportTest extends AbstractExportImportTest {
         removeRealm("test-realm");
 
         // Set the realm, which doesn't have builtin clients/roles inside JSON
-        ExportImportConfig.setProvider(SingleFileExportProviderFactory.PROVIDER_ID);
+        testingClient.testing().setProvider(SingleFileExportProviderFactory.PROVIDER_ID);
         URL url = ExportImportTest.class.getResource("/model/testrealm.json");
         String targetFilePath = new File(url.getFile()).getAbsolutePath();
-        ExportImportConfig.setFile(targetFilePath);
+        testingClient.testing().setFile(targetFilePath);
 
-        ExportImportConfig.setAction(ExportImportConfig.ACTION_IMPORT);
+        testingClient.testing().setAction(ExportImportConfig.ACTION_IMPORT);
 
         testingClient.testing().runImport();
 
@@ -203,8 +203,8 @@ public class ExportImportTest extends AbstractExportImportTest {
     }
 
     private void testFullExportImport() throws LifecycleException {
-        ExportImportConfig.setAction(ExportImportConfig.ACTION_EXPORT);
-        ExportImportConfig.setRealmName(null);
+        testingClient.testing().setAction(ExportImportConfig.ACTION_EXPORT);
+        testingClient.testing().setRealmName("");
 
         testingClient.testing().runExport();
 
@@ -218,7 +218,7 @@ public class ExportImportTest extends AbstractExportImportTest {
         assertNotAuthenticated("test", "user3", "password");
 
         // Configure import
-        ExportImportConfig.setAction(ExportImportConfig.ACTION_IMPORT);
+        testingClient.testing().setAction(ExportImportConfig.ACTION_IMPORT);
 
         testingClient.testing().runImport();
 
@@ -232,8 +232,8 @@ public class ExportImportTest extends AbstractExportImportTest {
     }
 
     private void testRealmExportImport() throws LifecycleException {
-        ExportImportConfig.setAction(ExportImportConfig.ACTION_EXPORT);
-        ExportImportConfig.setRealmName("test");
+        testingClient.testing().setAction(ExportImportConfig.ACTION_EXPORT);
+        testingClient.testing().setRealmName("test");
 
         testingClient.testing().runExport();
 
@@ -248,7 +248,7 @@ public class ExportImportTest extends AbstractExportImportTest {
         assertNotAuthenticated("test", "user3", "password");
 
         // Configure import
-        ExportImportConfig.setAction(ExportImportConfig.ACTION_IMPORT);
+        testingClient.testing().setAction(ExportImportConfig.ACTION_IMPORT);
 
         testingClient.testing().runImport();
 
