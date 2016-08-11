@@ -163,7 +163,7 @@ public class PolicyEvaluationResponse {
 
                 if (policy.getStatus().equals(Effect.DENY)) {
                     Policy policyModel = authorization.getStoreFactory().getPolicyStore().findById(policy.getPolicy().getId());
-                    for (ScopeRepresentation scope : policyModel.getScopes().stream().map(scope -> Models.toRepresentation(scope, authorization)).collect(Collectors.toList())) {
+                    for (ScopeRepresentation scope : policyModel.getScopes().stream().map(scopeModel -> Models.toRepresentation(scopeModel, authorization)).collect(Collectors.toList())) {
                         if (!policy.getScopes().contains(scope)) {
                             policy.getScopes().add(scope);
                         }
