@@ -15,22 +15,40 @@
  * limitations under the License.
  */
 
-package org.keycloak.authentication.authenticators.client;
-
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-
-import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
+package org.keycloak.models.sessions.infinispan.entities;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class ClientAuthUtil {
+public class ClientRegistrationTrustedHostEntity extends SessionEntity {
 
+    private String hostName;
 
-    public static Response errorResponse(int status, String error, String errorDescription) {
-        OAuth2ErrorRepresentation errorRep = new OAuth2ErrorRepresentation(error, errorDescription);
-        return Response.status(status).entity(errorRep).type(MediaType.APPLICATION_JSON_TYPE).build();
+    private int count;
+
+    private int remainingCount;
+
+    public String getHostName() {
+        return hostName;
     }
 
+    public void setHostName(String hostName) {
+        this.hostName = hostName;
+    }
+
+    public int getCount() {
+        return count;
+    }
+
+    public void setCount(int count) {
+        this.count = count;
+    }
+
+    public int getRemainingCount() {
+        return remainingCount;
+    }
+
+    public void setRemainingCount(int remainingCount) {
+        this.remainingCount = remainingCount;
+    }
 }

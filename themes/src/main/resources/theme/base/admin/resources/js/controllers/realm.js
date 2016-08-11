@@ -2149,9 +2149,23 @@ module.controller('AuthenticationConfigCreateCtrl', function($scope, realm, flow
 
 });
 
-module.controller('ClientInitialAccessCtrl', function($scope, realm, clientInitialAccess, ClientInitialAccess, Dialog, Notifications, $route) {
+module.controller('ClientInitialAccessCtrl', function($scope, realm, clientInitialAccess, clientRegTrustedHosts, ClientInitialAccess, ClientRegistrationTrustedHost, Dialog, Notifications, $route, $location) {
     $scope.realm = realm;
     $scope.clientInitialAccess = clientInitialAccess;
+    $scope.clientRegTrustedHosts = clientRegTrustedHosts;
+
+    $scope.updateHost = function(hostname) {
+        $location.url('/realms/' + realm.realm + '/client-reg-trusted-hosts/' + hostname);
+    };
+
+    $scope.removeHost = function(hostname) {
+        Dialog.confirmDelete(hostname, 'trusted host for client registration', function() {
+            ClientRegistrationTrustedHost.remove({ realm: realm.realm, hostname: hostname }, function() {
+                Notifications.success("The trusted host for client registration was deleted.");
+                $route.reload();
+            });
+        });
+    };
 
     $scope.remove = function(id) {
         Dialog.confirmDelete(id, 'initial access token', function() {
@@ -2162,6 +2176,57 @@ module.controller('ClientInitialAccessCtrl', function($scope, realm, clientIniti
         });
     }
 });
+
+module.controller('ClientRegistrationTrustedHostDetailCtrl', function($scope, realm, clientRegTrustedHost, ClientRegistrationTrustedHost, Dialog, Notifications, $route, $location) {
+    $scope.realm = realm;
+
+    $scope.create = !clientRegTrustedHost.hostName;
+    $scope.changed = false;
+
+    if ($scope.create) {
+        $scope.count = 5;
+    } else {
+        $scope.hostName = clientRegTrustedHost.hostName;
+        $scope.count = clientRegTrustedHost.count;
+        $scope.remainingCount = clientRegTrustedHost.remainingCount;
+    }
+
+    $scope.save = function() {
+        if ($scope.create) {
+            ClientRegistrationTrustedHost.save({
+                realm: realm.realm
+            }, { hostName: $scope.hostName, count: $scope.count, remainingCount: $scope.count }, function (data) {
+                Notifications.success("The trusted host was created.");
+                $location.url('/realms/' + realm.realm + '/client-reg-trusted-hosts/' + $scope.hostName);
+            });
+        } else {
+            ClientRegistrationTrustedHost.update({
+                realm: realm.realm, hostname: $scope.hostName
+            }, { hostName: $scope.hostName, count: $scope.count, remainingCount: $scope.count }, function (data) {
+                Notifications.success("The trusted host was updated.");
+                $route.reload();
+            });
+        }
+    };
+
+    $scope.cancel = function() {
+        $location.url('/realms/' + realm.realm + '/client-initial-access');
+    };
+
+    $scope.resetRemainingCount = function() {
+        $scope.save();
+    }
+
+    $scope.$watch('count', function(newVal, oldVal) {
+        if (oldVal == newVal) {
+            return;
+        }
+
+        $scope.changed = true;
+    });
+
+});
+
 
 module.controller('ClientInitialAccessCreateCtrl', function($scope, realm, ClientInitialAccess, TimeUnit, Dialog, $location, $translate) {
     $scope.expirationUnit = 'Days';

@@ -510,6 +510,23 @@ module.factory('ClientInitialAccessLoader', function(Loader, ClientInitialAccess
     });
 });
 
+module.factory('ClientRegistrationTrustedHostListLoader', function(Loader, ClientRegistrationTrustedHost, $route) {
+    return Loader.query(ClientRegistrationTrustedHost, function() {
+        return {
+            realm: $route.current.params.realm
+        }
+    });
+});
+
+module.factory('ClientRegistrationTrustedHostLoader', function(Loader, ClientRegistrationTrustedHost, $route) {
+    return Loader.get(ClientRegistrationTrustedHost, function() {
+        return {
+            realm: $route.current.params.realm,
+            hostname : $route.current.params.hostname
+        }
+    });
+});
+
 
 
 

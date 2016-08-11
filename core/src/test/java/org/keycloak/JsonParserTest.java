@@ -33,6 +33,7 @@ import org.junit.Test;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.adapters.config.AdapterConfig;
+import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.util.JsonSerialization;
 
 /**
@@ -123,6 +124,17 @@ public class JsonParserTest {
         }
         m.appendTail(sb);
         System.out.println(sb.toString());
+    }
+
+    @Test
+    public void testReadOIDCClientRep() throws IOException {
+        String stringRep = "{\"subject_type\": \"public\", \"jwks_uri\": \"https://op.certification.openid.net:60720/export/jwk_60720.json\", \"contacts\": [\"roland.hedberg@umu.se\"], \"application_type\": \"web\", \"grant_types\": [\"authorization_code\"], \"post_logout_redirect_uris\": [\"https://op.certification.openid.net:60720/logout\"], \"redirect_uris\": [\"https://op.certification.openid.net:60720/authz_cb\"], \"response_types\": [\"code\"], \"require_auth_time\": true, \"default_max_age\": 3600}";
+        OIDCClientRepresentation clientRep = JsonSerialization.readValue(stringRep, OIDCClientRepresentation.class);
+        Assert.assertEquals("public", clientRep.getSubjectType());
+        Assert.assertTrue(clientRep.getRequireAuthTime());
+        Assert.assertEquals(3600, clientRep.getDefaultMaxAge().intValue());
+        Assert.assertEquals(1, clientRep.getRedirectUris().size());
+        Assert.assertEquals("https://op.certification.openid.net:60720/authz_cb", clientRep.getRedirectUris().get(0));
     }
 
 }
