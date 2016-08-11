@@ -184,12 +184,6 @@ public class AdminEventBuilder {
         return path.substring(path.indexOf(realmRelative) + realmRelative.length());
     }
 
-    public void error(String error) {
-        adminEvent.setOperationType(OperationType.valueOf(adminEvent.getOperationType().name() + "_ERROR"));
-        adminEvent.setError(error);
-        send();
-    }
-
     public AdminEventBuilder representation(Object value) {
         if (value == null || value.equals("")) {
             return this;
