@@ -208,6 +208,9 @@ module.config([ '$routeProvider', function($routeProvider) {
                 },
                 clientInitialAccess : function(ClientInitialAccessLoader) {
                     return ClientInitialAccessLoader();
+                },
+                clientRegTrustedHosts : function(ClientRegistrationTrustedHostListLoader) {
+                    return ClientRegistrationTrustedHostListLoader();
                 }
             },
             controller : 'ClientInitialAccessCtrl'
@@ -220,6 +223,30 @@ module.config([ '$routeProvider', function($routeProvider) {
                 }
             },
             controller : 'ClientInitialAccessCreateCtrl'
+        })
+        .when('/realms/:realm/client-reg-trusted-hosts/create', {
+            templateUrl : resourceUrl + '/partials/client-reg-trusted-host-create.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                clientRegTrustedHost : function() {
+                    return {};
+                }
+            },
+            controller : 'ClientRegistrationTrustedHostDetailCtrl'
+        })
+        .when('/realms/:realm/client-reg-trusted-hosts/:hostname', {
+            templateUrl : resourceUrl + '/partials/client-reg-trusted-host-detail.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                clientRegTrustedHost : function(ClientRegistrationTrustedHostLoader) {
+                    return ClientRegistrationTrustedHostLoader();
+                }
+            },
+            controller : 'ClientRegistrationTrustedHostDetailCtrl'
         })
         .when('/realms/:realm/keys-settings', {
             templateUrl : resourceUrl + '/partials/realm-keys.html',

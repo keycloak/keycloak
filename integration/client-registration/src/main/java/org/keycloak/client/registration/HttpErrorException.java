@@ -18,6 +18,8 @@
 package org.keycloak.client.registration;
 
 import org.apache.http.StatusLine;
+import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
+import org.keycloak.util.JsonSerialization;
 
 import java.io.IOException;
 
@@ -26,14 +28,31 @@ import java.io.IOException;
  */
 public class HttpErrorException extends IOException {
 
-    private StatusLine statusLine;
+    private final StatusLine statusLine;
+    private final String errorResponse;
 
-    public HttpErrorException(StatusLine statusLine) {
+    public HttpErrorException(StatusLine statusLine, String errorResponse) {
         this.statusLine = statusLine;
+        this.errorResponse = errorResponse;
     }
 
     public StatusLine getStatusLine() {
         return statusLine;
     }
 
+    public String getErrorResponse() {
+        return errorResponse;
+    }
+
+    public OAuth2ErrorRepresentation toErrorRepresentation() {
+        if (errorResponse == null) {
+            return null;
+        }
+
+        try {
+            return JsonSerialization.readValue(errorResponse, OAuth2ErrorRepresentation.class);
+        } catch (IOException ioe) {
+            throw new RuntimeException("Not OAuth2 error");
+        }
+    }
 }

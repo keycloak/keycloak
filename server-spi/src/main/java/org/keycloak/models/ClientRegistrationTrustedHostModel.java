@@ -15,22 +15,22 @@
  * limitations under the License.
  */
 
-package org.keycloak.authentication.authenticators.client;
-
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-
-import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
+package org.keycloak.models;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class ClientAuthUtil {
+public interface ClientRegistrationTrustedHostModel {
 
+    RealmModel getRealm();
 
-    public static Response errorResponse(int status, String error, String errorDescription) {
-        OAuth2ErrorRepresentation errorRep = new OAuth2ErrorRepresentation(error, errorDescription);
-        return Response.status(status).entity(errorRep).type(MediaType.APPLICATION_JSON_TYPE).build();
-    }
+    String getHostName();
+
+    int getCount();
+    void setCount(int count);
+
+    int getRemainingCount();
+    void setRemainingCount(int remainingCount);
+    void decreaseRemainingCount();
 
 }

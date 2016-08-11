@@ -56,40 +56,44 @@ public class ClientRegistrationTokenUtils {
         return createToken(realm, uri, model.getId(), TYPE_INITIAL_ACCESS_TOKEN, model.getExpiration() > 0 ? model.getTimestamp() + model.getExpiration() : 0);
     }
 
-    public static JsonWebToken verifyToken(RealmModel realm, UriInfo uri, String token) {
+    public static TokenVerification verifyToken(RealmModel realm, UriInfo uri, String token) {
+        if (token == null) {
+            return TokenVerification.error(new RuntimeException("Missing token"));
+        }
+
         JWSInput input;
         try {
             input = new JWSInput(token);
         } catch (JWSInputException e) {
-            return null;
+            return TokenVerification.error(new RuntimeException("Invalid token", e));
         }
 
         if (!RSAProvider.verify(input, realm.getPublicKey())) {
-            return null;
+            return TokenVerification.error(new RuntimeException("Failed verify token"));
         }
 
         JsonWebToken jwt;
         try {
             jwt = input.readJsonContent(JsonWebToken.class);
         } catch (JWSInputException e) {
-            return null;
+            return TokenVerification.error(new RuntimeException("Token is not JWT", e));
         }
 
         if (!getIssuer(realm, uri).equals(jwt.getIssuer())) {
-            return null;
+            return TokenVerification.error(new RuntimeException("Issuer from token don't match with the realm issuer."));
         }
 
         if (!jwt.isActive()) {
-            return null;
+            return TokenVerification.error(new RuntimeException("Token not active."));
         }
 
         if (!(TokenUtil.TOKEN_TYPE_BEARER.equals(jwt.getType()) ||
                 TYPE_INITIAL_ACCESS_TOKEN.equals(jwt.getType()) ||
                 TYPE_REGISTRATION_ACCESS_TOKEN.equals(jwt.getType()))) {
-            return null;
+            return TokenVerification.error(new RuntimeException("Invalid type of token"));
         }
 
-        return jwt;
+        return TokenVerification.success(jwt);
     }
 
     private static String createToken(RealmModel realm, UriInfo uri, String id, String type, int expiration) {
@@ -110,6 +114,33 @@ public class ClientRegistrationTokenUtils {
 
     private static String getIssuer(RealmModel realm, UriInfo uri) {
         return Urls.realmIssuer(uri.getBaseUri(), realm.getName());
+    }
+
+    protected static class TokenVerification {
+
+        private final JsonWebToken jwt;
+        private final RuntimeException error;
+
+        public static TokenVerification success(JsonWebToken jwt) {
+            return new TokenVerification(jwt, null);
+        }
+
+        public static TokenVerification error(RuntimeException error) {
+            return new TokenVerification(null, error);
+        }
+
+        private TokenVerification(JsonWebToken jwt, RuntimeException error) {
+            this.jwt = jwt;
+            this.error = error;
+        }
+
+        public JsonWebToken getJwt() {
+            return jwt;
+        }
+
+        public RuntimeException getError() {
+            return error;
+        }
     }
 
 }

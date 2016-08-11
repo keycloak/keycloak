@@ -24,6 +24,7 @@ import org.keycloak.authentication.Authenticator;
 import org.keycloak.authentication.AuthenticatorFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -36,12 +37,8 @@ import java.util.Map;
  */
 public abstract class AbstractDirectGrantAuthenticator implements Authenticator, AuthenticatorFactory {
     public Response errorResponse(int status, String error, String errorDescription) {
-        Map<String, String> e = new HashMap<String, String>();
-        e.put(OAuth2Constants.ERROR, error);
-        if (errorDescription != null) {
-            e.put(OAuth2Constants.ERROR_DESCRIPTION, errorDescription);
-        }
-        return Response.status(status).entity(e).type(MediaType.APPLICATION_JSON_TYPE).build();
+        OAuth2ErrorRepresentation errorRep = new OAuth2ErrorRepresentation(error, errorDescription);
+        return Response.status(status).entity(errorRep).type(MediaType.APPLICATION_JSON_TYPE).build();
     }
 
     @Override

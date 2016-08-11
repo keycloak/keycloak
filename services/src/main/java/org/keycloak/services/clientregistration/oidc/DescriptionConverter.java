@@ -66,6 +66,8 @@ public class DescriptionConverter {
     public static OIDCClientRepresentation toExternalResponse(ClientRepresentation client, URI uri) {
         OIDCClientRepresentation response = new OIDCClientRepresentation();
         response.setClientId(client.getClientId());
+        response.setClientSecret(client.getSecret());
+        response.setClientSecretExpiresAt(0);
         response.setClientName(client.getName());
         response.setClientUri(client.getBaseUrl());
         response.setClientSecret(client.getSecret());
