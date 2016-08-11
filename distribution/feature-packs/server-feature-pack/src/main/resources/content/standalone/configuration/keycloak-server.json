@@ -75,5 +75,13 @@
         "default": {
             "cacheContainer" : "java:comp/env/infinispan/Keycloak"
         }
+    },
+
+    "jta-lookup": {
+        "provider": "${keycloak.jta.lookup.provider:jboss}",
+        "jboss" : {
+            "enabled": true
+        }
+
     }
 }

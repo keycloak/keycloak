@@ -38,7 +38,7 @@ public interface GroupsResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public List<GroupRepresentation> groups();
+    List<GroupRepresentation> groups();
 
     /**
      * create or add a top level realm groupSet or create child.  This will update the group and set the parent if it exists.  Create it and set the parent
@@ -48,9 +48,9 @@ public interface GroupsResource {
      */
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response add(GroupRepresentation rep);
+    Response add(GroupRepresentation rep);
 
     @Path("{id}")
-    public GroupResource group(@PathParam("id") String id);
+    GroupResource group(@PathParam("id") String id);
 
 }

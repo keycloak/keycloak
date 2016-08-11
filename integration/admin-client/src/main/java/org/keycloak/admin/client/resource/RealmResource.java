@@ -193,4 +193,7 @@ public interface RealmResource {
     @DELETE
     void deleteSession(@PathParam("session") String sessionId);
 
+    @Path("components")
+    ComponentsResource components();
+
 }

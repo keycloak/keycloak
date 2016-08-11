@@ -271,12 +271,10 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
     }
 
     private Response checkResponseType() {
-        OIDCResponseMode defaultResponseMode = client.isImplicitFlowEnabled() ? OIDCResponseMode.FRAGMENT : OIDCResponseMode.QUERY;
-
         if (responseType == null) {
             logger.missingParameter(OAuth2Constants.RESPONSE_TYPE);
             event.error(Errors.INVALID_REQUEST);
-            return redirectErrorToClient(defaultResponseMode, OAuthErrorException.INVALID_REQUEST, "Missing parameter: response_type");
+            return redirectErrorToClient(OIDCResponseMode.QUERY, OAuthErrorException.INVALID_REQUEST, "Missing parameter: response_type");
         }
 
         event.detail(Details.RESPONSE_TYPE, responseType);
@@ -289,7 +287,7 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         } catch (IllegalArgumentException iae) {
             logger.error(iae.getMessage());
             event.error(Errors.INVALID_REQUEST);
-            return redirectErrorToClient(defaultResponseMode, OAuthErrorException.UNSUPPORTED_RESPONSE_TYPE, null);
+            return redirectErrorToClient(OIDCResponseMode.QUERY, OAuthErrorException.UNSUPPORTED_RESPONSE_TYPE, null);
         }
 
         OIDCResponseMode parsedResponseMode = null;
@@ -298,7 +296,7 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         } catch (IllegalArgumentException iae) {
             logger.invalidParameter(OIDCLoginProtocol.RESPONSE_MODE_PARAM);
             event.error(Errors.INVALID_REQUEST);
-            return redirectErrorToClient(defaultResponseMode, OAuthErrorException.INVALID_REQUEST, "Invalid parameter: response_mode");
+            return redirectErrorToClient(OIDCResponseMode.QUERY, OAuthErrorException.INVALID_REQUEST, "Invalid parameter: response_mode");
         }
 
         event.detail(Details.RESPONSE_MODE, parsedResponseMode.toString().toLowerCase());
@@ -307,7 +305,7 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         if (parsedResponseType.isImplicitOrHybridFlow() && parsedResponseMode == OIDCResponseMode.QUERY) {
             logger.responseModeQueryNotAllowed();
             event.error(Errors.INVALID_REQUEST);
-            return redirectErrorToClient(defaultResponseMode, OAuthErrorException.INVALID_REQUEST, "Response_mode 'query' not allowed for implicit or hybrid flow");
+            return redirectErrorToClient(OIDCResponseMode.QUERY, OAuthErrorException.INVALID_REQUEST, "Response_mode 'query' not allowed for implicit or hybrid flow");
         }
 
         if ((parsedResponseType.hasResponseType(OIDCResponseType.CODE) || parsedResponseType.hasResponseType(OIDCResponseType.NONE)) && !client.isStandardFlowEnabled()) {

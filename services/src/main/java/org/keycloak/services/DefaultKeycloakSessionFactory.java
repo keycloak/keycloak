@@ -17,6 +17,7 @@
 package org.keycloak.services;
 
 import org.keycloak.Config;
+import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.Provider;
@@ -24,26 +25,31 @@ import org.keycloak.provider.ProviderEvent;
 import org.keycloak.provider.ProviderEventListener;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.ProviderManager;
+import org.keycloak.provider.ProviderManagerDeployer;
+import org.keycloak.provider.ProviderManagerRegistry;
 import org.keycloak.provider.Spi;
-import org.keycloak.services.ServicesLogger;
+import org.keycloak.transaction.JtaRegistration;
+import org.keycloak.transaction.JtaTransactionManagerLookup;
+import org.keycloak.transaction.JtaTransactionWrapper;
 
+import javax.transaction.TransactionManager;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-public class DefaultKeycloakSessionFactory implements KeycloakSessionFactory {
+public class DefaultKeycloakSessionFactory implements KeycloakSessionFactory, ProviderManagerDeployer {
 
     private static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
 
     private Set<Spi> spis = new HashSet<>();
-    private Map<Class<? extends Provider>, String> provider = new HashMap<Class<? extends Provider>, String>();
-    private Map<Class<? extends Provider>, Map<String, ProviderFactory>> factoriesMap = new HashMap<Class<? extends Provider>, Map<String, ProviderFactory>>();
-    protected CopyOnWriteArrayList<ProviderEventListener> listeners = new CopyOnWriteArrayList<ProviderEventListener>();
+    private Map<Class<? extends Provider>, String> provider = new HashMap<>();
+    private volatile Map<Class<? extends Provider>, Map<String, ProviderFactory>> factoriesMap = new HashMap<>();
+    protected CopyOnWriteArrayList<ProviderEventListener> listeners = new CopyOnWriteArrayList<>();
+    private TransactionManager tm;
 
     // TODO: Likely should be changed to int and use Time.currentTime() to be compatible with all our "time" reps
     protected long serverStartupTimestamp;
@@ -69,15 +75,155 @@ public class DefaultKeycloakSessionFactory implements KeycloakSessionFactory {
         serverStartupTimestamp = System.currentTimeMillis();
 
         ProviderManager pm = new ProviderManager(getClass().getClassLoader(), Config.scope().getArray("providers"));
-
-        // Load the SPI classes through the provider manager, so both Keycloak internal SPI's and
-        // the ones defined in deployed modules will be found.
-        loadSPIs(pm, pm.loadSpis());
+        spis.addAll(pm.loadSpis());
+        factoriesMap = loadFactories(pm);
+        for (ProviderManager manager : ProviderManagerRegistry.SINGLETON.getPreBoot()) {
+            Map<Class<? extends Provider>, Map<String, ProviderFactory>> factoryMap = loadFactories(manager);
+            for (Map.Entry<Class<? extends Provider>,  Map<String, ProviderFactory>> entry : factoryMap.entrySet()) {
+                Map<String, ProviderFactory> factories = factoriesMap.get(entry.getKey());
+                if (factories == null) {
+                    factoriesMap.put(entry.getKey(), entry.getValue());
+                } else {
+                    factories.putAll(entry.getValue());
+                }
+            }
+        }
+        checkProvider();
         for ( Map<String, ProviderFactory> factories : factoriesMap.values()) {
             for (ProviderFactory factory : factories.values()) {
                 factory.postInit(this);
             }
         }
+        // make the session factory ready for hot deployment
+        ProviderManagerRegistry.SINGLETON.setDeployer(this);
+
+        JtaTransactionManagerLookup lookup = (JtaTransactionManagerLookup)getProviderFactory(JtaTransactionManagerLookup.class);
+        if (lookup != null) tm = lookup.getTransactionManager();
+    }
+    protected Map<Class<? extends Provider>, Map<String, ProviderFactory>> getFactoriesCopy() {
+        Map<Class<? extends Provider>, Map<String, ProviderFactory>> copy = new HashMap<>();
+        for (Map.Entry<Class<? extends Provider>, Map<String, ProviderFactory>> entry : factoriesMap.entrySet()) {
+            Map<String, ProviderFactory> valCopy = new HashMap<>();
+            valCopy.putAll(entry.getValue());
+            copy.put(entry.getKey(), valCopy);
+        }
+        return copy;
+
+    }
+
+    @Override
+    public void deploy(ProviderManager pm) {
+        Map<Class<? extends Provider>, Map<String, ProviderFactory>> copy = getFactoriesCopy();
+        Map<Class<? extends Provider>, Map<String, ProviderFactory>> newFactories = loadFactories(pm);
+        List<ProviderFactory> undeployed = new LinkedList<>();
+
+        for (Map.Entry<Class<? extends Provider>, Map<String, ProviderFactory>> entry : newFactories.entrySet()) {
+            Map<String, ProviderFactory> current = copy.get(entry.getKey());
+            if (current == null) {
+                copy.put(entry.getKey(), entry.getValue());
+            } else {
+                for (ProviderFactory f : entry.getValue().values()) {
+                    ProviderFactory old = current.remove(f.getId());
+                    if (old != null) undeployed.add(old);
+                }
+                current.putAll(entry.getValue());
+            }
+
+        }
+        factoriesMap = copy;
+        for (ProviderFactory factory : undeployed) {
+            factory.close();
+        }
+    }
+
+    @Override
+    public void undeploy(ProviderManager pm) {
+        // we make a copy to avoid concurrent access exceptions
+        Map<Class<? extends Provider>, Map<String, ProviderFactory>> copy = getFactoriesCopy();
+        MultivaluedHashMap<Class<? extends Provider>, ProviderFactory> factories = pm.getLoadedFactories();
+        List<ProviderFactory> undeployed = new LinkedList<>();
+        for (Map.Entry<Class<? extends Provider>, List<ProviderFactory>> entry : factories.entrySet()) {
+            Map<String, ProviderFactory> registered = copy.get(entry.getKey());
+            for (ProviderFactory factory : entry.getValue()) {
+                undeployed.add(factory);
+                if (registered != null) {
+                    registered.remove(factory.getId());
+                }
+            }
+        }
+        factoriesMap = copy;
+        for (ProviderFactory factory : undeployed) {
+            factory.close();
+        }
+    }
+
+    protected void checkProvider() {
+        for (Spi spi : spis) {
+            String provider = Config.getProvider(spi.getName());
+            if (provider != null) {
+                this.provider.put(spi.getProviderClass(), provider);
+                if (getProviderFactory(spi.getProviderClass(), provider) == null) {
+                    throw new RuntimeException("Failed to find provider " + provider + " for " + spi.getName());
+                }
+            } else {
+                Map<String, ProviderFactory> factories = factoriesMap.get(spi.getProviderClass());
+                if (factories != null && factories.size() == 1) {
+                    provider = factories.values().iterator().next().getId();
+                    this.provider.put(spi.getProviderClass(), provider);
+                }
+            }
+        }
+    }
+
+    protected Map<Class<? extends Provider>, Map<String, ProviderFactory>> loadFactories(ProviderManager pm) {
+        Map<Class<? extends Provider>, Map<String, ProviderFactory>> factoryMap = new HashMap<>();
+        Set<Spi> spiList = spis;
+
+        for (Spi spi : spiList) {
+
+            Map<String, ProviderFactory> factories = new HashMap<String, ProviderFactory>();
+            factoryMap.put(spi.getProviderClass(), factories);
+
+            String provider = Config.getProvider(spi.getName());
+            if (provider != null) {
+
+                ProviderFactory factory = pm.load(spi, provider);
+                if (factory == null) {
+                    continue;
+                }
+
+                Config.Scope scope = Config.scope(spi.getName(), provider);
+                if (scope.getBoolean("enabled", true)) {
+
+                    factory.init(scope);
+
+                    if (spi.isInternal() && !isInternal(factory)) {
+                        logger.spiMayChange(factory.getId(), factory.getClass().getName(), spi.getName());
+                    }
+
+                    factories.put(factory.getId(), factory);
+
+                    logger.debugv("Loaded SPI {0} (provider = {1})", spi.getName(), provider);
+                }
+            } else {
+                for (ProviderFactory factory : pm.load(spi)) {
+                    Config.Scope scope = Config.scope(spi.getName(), factory.getId());
+                    if (scope.getBoolean("enabled", true)) {
+                        factory.init(scope);
+
+                        if (spi.isInternal() && !isInternal(factory)) {
+                            logger.spiMayChange(factory.getId(), factory.getClass().getName(), spi.getName());
+                        }
+
+                        factories.put(factory.getId(), factory);
+                    } else {
+                        logger.debugv("SPI {0} provider {1} disabled", spi.getName(), factory.getId());
+                    }
+                }
+            }
+        }
+        return factoryMap;
+
     }
 
     protected void loadSPIs(ProviderManager pm, List<Spi> spiList) {
@@ -135,7 +281,11 @@ public class DefaultKeycloakSessionFactory implements KeycloakSessionFactory {
     }
 
     public KeycloakSession create() {
-        return new DefaultKeycloakSession(this);
+        KeycloakSession session =  new DefaultKeycloakSession(this);
+        if (tm != null) {
+            session.getTransactionManager().enlist(new JtaTransactionWrapper(tm));
+        }
+        return session;
     }
 
     <T extends Provider> String getDefaultProvider(Class<T> clazz) {
@@ -180,6 +330,7 @@ public class DefaultKeycloakSessionFactory implements KeycloakSessionFactory {
     }
 
     public void close() {
+        ProviderManagerRegistry.SINGLETON.setDeployer(null);
         for (Map<String, ProviderFactory> factories : factoriesMap.values()) {
             for (ProviderFactory factory : factories.values()) {
                 factory.close();

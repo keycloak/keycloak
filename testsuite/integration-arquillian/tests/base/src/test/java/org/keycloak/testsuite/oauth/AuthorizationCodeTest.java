@@ -145,33 +145,6 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
     }
 
     @Test
-    public void authorizationRequestImplicitFlowDisabled() throws IOException {
-        oauth.responseType("token id_token");
-        UriBuilder b = UriBuilder.fromUri(oauth.getLoginFormUrl());
-        driver.navigate().to(b.build().toURL());
-
-        OAuthClient.AuthorizationEndpointResponse errorResponse = new OAuthClient.AuthorizationEndpointResponse(oauth, true);
-        Assert.assertTrue(errorResponse.isRedirected());
-        Assert.assertEquals(errorResponse.getError(), OAuthErrorException.UNSUPPORTED_RESPONSE_TYPE);
-        Assert.assertEquals(errorResponse.getErrorDescription(), "Client is not allowed to initiate browser login with given response_type. Implicit flow is disabled for the client.");
-
-        events.expectLogin().error(Errors.NOT_ALLOWED).user((String) null).session((String) null).clearDetails().detail(Details.RESPONSE_TYPE, "token id_token").assertEvent();
-    }
-
-    @Test
-    public void authorizationRequestMissingResponseType() throws IOException {
-        oauth.responseType(null);
-        UriBuilder b = UriBuilder.fromUri(oauth.getLoginFormUrl());
-        driver.navigate().to(b.build().toURL());
-
-        OAuthClient.AuthorizationEndpointResponse errorResponse = new OAuthClient.AuthorizationEndpointResponse(oauth);
-        Assert.assertTrue(errorResponse.isRedirected());
-        Assert.assertEquals(errorResponse.getError(), OAuthErrorException.INVALID_REQUEST);
-
-        events.expectLogin().error(Errors.INVALID_REQUEST).user((String) null).session((String) null).clearDetails().assertEvent();
-    }
-
-    @Test
     public void authorizationRequestInvalidResponseType() throws IOException {
         oauth.responseType("tokenn");
         UriBuilder b = UriBuilder.fromUri(oauth.getLoginFormUrl());

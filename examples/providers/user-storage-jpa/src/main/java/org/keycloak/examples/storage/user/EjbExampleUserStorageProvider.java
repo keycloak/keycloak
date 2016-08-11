@@ -32,9 +32,12 @@ import org.keycloak.storage.user.UserLookupProvider;
 import org.keycloak.storage.user.UserQueryProvider;
 import org.keycloak.storage.user.UserRegistrationProvider;
 
+import javax.ejb.Local;
+import javax.ejb.Remove;
+import javax.ejb.Stateful;
 import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
 import javax.persistence.TypedQuery;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -44,19 +47,26 @@ import java.util.Map;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class ExampleUserStorageProvider implements UserStorageProvider,
+@Stateful
+@Local(EjbExampleUserStorageProvider.class)
+public class EjbExampleUserStorageProvider implements UserStorageProvider,
         UserLookupProvider,
         UserRegistrationProvider,
         UserCredentialValidatorProvider,
         UserQueryProvider {
-    private static final Logger logger = Logger.getLogger(ExampleUserStorageProvider.class);
+    private static final Logger logger = Logger.getLogger(EjbExampleUserStorageProvider.class);
+
+    @PersistenceContext
     protected EntityManager em;
+
     protected ComponentModel model;
     protected KeycloakSession session;
 
-    public ExampleUserStorageProvider(EntityManager em, ComponentModel model, KeycloakSession session) {
-        this.em = em;
+    public void setModel(ComponentModel model) {
         this.model = model;
+    }
+
+    public void setSession(KeycloakSession session) {
         this.session = session;
     }
 
@@ -75,9 +85,9 @@ public class ExampleUserStorageProvider implements UserStorageProvider,
 
     }
 
+    @Remove
     @Override
     public void close() {
-        em.close();
     }
 
     @Override
