@@ -91,7 +91,7 @@ public class SslMailServer {
             ksKeys.load(keyStoreIS, keyStorePassphrase);
 
             // KeyManager decides which key material to use.
-            KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
+            KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
             kmf.init(ksKeys, keyStorePassphrase);
 
             // Trust store for client authentication.
@@ -101,7 +101,7 @@ public class SslMailServer {
             ksTrust.load(trustStoreIS, trustStorePassphrase);
 
             // TrustManager decides which certificate authorities to use.
-            TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
+            TrustManagerFactory tmf = TrustManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
             tmf.init(ksTrust);
 
             final SSLContext sslContext = SSLContext.getInstance("TLS");
