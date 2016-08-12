@@ -56,12 +56,17 @@ import java.io.*;
 import java.net.URI;
 import java.net.URL;
 import java.util.*;
+import org.jboss.dmr.ModelNode;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
 public class KeycloakApplication extends Application {
+    // This param name is defined again in Keycloak Server Subsystem class
+    // org.keycloak.subsystem.server.extension.KeycloakServerDeploymentProcessor.  We have this value in
+    // two places to avoid dependency between Keycloak Subsystem and Keycloak Services module.
+    public static final String KEYCLOAK_CONFIG_PARAM_NAME = "org.keycloak.server-subsystem.Config";
 
     private static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
 
@@ -73,7 +78,7 @@ public class KeycloakApplication extends Application {
 
     public KeycloakApplication(@Context ServletContext context, @Context Dispatcher dispatcher) {
         try {
-            loadConfig();
+            loadConfig(context);
 
             this.contextPath = context.getContextPath();
             this.sessionFactory = createSessionFactory();
@@ -209,12 +214,18 @@ public class KeycloakApplication extends Application {
         return uriInfo.getBaseUriBuilder().replacePath(getContextPath()).build();
     }
 
-    public static void loadConfig() {
+    public static void loadConfig(ServletContext context) {
         try {
             JsonNode node = null;
+            
+            String dmrConfig = loadDmrConfig(context);
+            if (dmrConfig != null) {
+                node = new ObjectMapper().readTree(dmrConfig);
+                logger.loadingFrom("standalone.xml or domain.xml");
+            }
 
             String configDir = System.getProperty("jboss.server.config.dir");
-            if (configDir != null) {
+            if (node == null && configDir != null) {
                 File f = new File(configDir + File.separator + "keycloak-server.json");
                 if (f.isFile()) {
                     logger.loadingFrom(f.getAbsolutePath());
@@ -235,11 +246,22 @@ public class KeycloakApplication extends Application {
                 Config.init(new JsonConfigProvider(node, properties));
                 return;
             } else {
-                throw new RuntimeException("Config 'keycloak-server.json' not found");
+                throw new RuntimeException("Keycloak config not found.");
             }
         } catch (IOException e) {
             throw new RuntimeException("Failed to load config", e);
         }
+    }
+    
+    private static String loadDmrConfig(ServletContext context) {
+        String dmrConfig = context.getInitParameter(KEYCLOAK_CONFIG_PARAM_NAME);
+        if (dmrConfig == null) return null;
+
+        ModelNode dmrConfigNode = ModelNode.fromString(dmrConfig);
+        if (dmrConfigNode.asPropertyList().isEmpty()) return null;
+        
+        // note that we need to resolve expressions BEFORE we convert to JSON
+        return dmrConfigNode.resolve().toJSONString(true);
     }
 
     public static KeycloakSessionFactory createSessionFactory() {
