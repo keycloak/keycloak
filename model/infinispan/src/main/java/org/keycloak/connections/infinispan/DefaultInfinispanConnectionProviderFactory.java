@@ -108,7 +108,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
 
             cacheManager.defineConfiguration(InfinispanConnectionProvider.USER_REVISIONS_CACHE_NAME, getRevisionCacheConfig(true, maxEntries));
             cacheManager.getCache(InfinispanConnectionProvider.USER_REVISIONS_CACHE_NAME, true);
-
+            cacheManager.getCache(InfinispanConnectionProvider.AUTHORIZATION_CACHE_NAME, true);
             logger.debugv("Using container managed Infinispan cache container, lookup={1}", cacheContainerLookup);
         } catch (Exception e) {
             throw new RuntimeException("Failed to retrieve cache container", e);
@@ -161,6 +161,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
         cacheManager.defineConfiguration(InfinispanConnectionProvider.SESSION_CACHE_NAME, sessionCacheConfiguration);
         cacheManager.defineConfiguration(InfinispanConnectionProvider.OFFLINE_SESSION_CACHE_NAME, sessionCacheConfiguration);
         cacheManager.defineConfiguration(InfinispanConnectionProvider.LOGIN_FAILURE_CACHE_NAME, sessionCacheConfiguration);
+        cacheManager.defineConfiguration(InfinispanConnectionProvider.AUTHORIZATION_CACHE_NAME, sessionCacheConfiguration);
 
         ConfigurationBuilder replicationConfigBuilder = new ConfigurationBuilder();
         if (clustered) {
@@ -177,9 +178,6 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
 
         cacheManager.defineConfiguration(InfinispanConnectionProvider.REALM_REVISIONS_CACHE_NAME, getRevisionCacheConfig(false, InfinispanConnectionProvider.REALM_REVISIONS_CACHE_DEFAULT_MAX));
         cacheManager.getCache(InfinispanConnectionProvider.REALM_CACHE_NAME, true);
-
-        cacheManager.defineConfiguration(InfinispanConnectionProvider.AUTHORIZATION_CACHE_NAME,
-                new ConfigurationBuilder().eviction().type(EvictionType.COUNT).size(100).simpleCache(true).build());
 
         long maxEntries = cacheManager.getCache(InfinispanConnectionProvider.USER_CACHE_NAME).getCacheConfiguration().eviction().maxEntries();
         if (maxEntries <= 0) {

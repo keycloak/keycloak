@@ -21,10 +21,14 @@ package org.keycloak.models.authorization.infinispan.entities;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
 
+import java.io.Serializable;
+
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-public class CachedScope implements Scope {
+public class CachedScope implements Scope, Serializable {
+
+    private static final long serialVersionUID = -3919706923417065454L;
 
     private final String id;
     private String resourceServerId;
