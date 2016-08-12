@@ -21,10 +21,14 @@ package org.keycloak.models.authorization.infinispan.entities;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.representations.idm.authorization.PolicyEnforcementMode;
 
+import java.io.Serializable;
+
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-public class CachedResourceServer implements ResourceServer {
+public class CachedResourceServer implements ResourceServer, Serializable {
+
+    private static final long serialVersionUID = 5054253390723121289L;
 
     private final String id;
     private String clientId;

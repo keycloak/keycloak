@@ -175,7 +175,7 @@ public class CachedScopeStore implements ScopeStore {
                 if (this.updated == null) {
                     this.updated = getDelegate().findById(getId());
                     if (this.updated == null) throw new IllegalStateException("Not found in database");
-                    transaction.whenCommit(() -> cache.evict(getCacheKeyForScope(getId())));
+                    transaction.whenCommit(() -> cache.remove(getCacheKeyForScope(getId())));
                 }
 
                 return this.updated;
