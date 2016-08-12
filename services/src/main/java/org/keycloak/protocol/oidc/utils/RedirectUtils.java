@@ -77,7 +77,7 @@ public class RedirectUtils {
         } else {
             redirectUri = lowerCaseHostname(redirectUri);
 
-            String r = redirectUri.indexOf('?') != -1 ? redirectUri.substring(0, redirectUri.indexOf('?')) : redirectUri;
+            String r = redirectUri;
             Set<String> resolveValidRedirects = resolveValidRedirects(uriInfo, rootUrl, validRedirects);
 
             boolean valid = matchesRedirects(resolveValidRedirects, r);
@@ -134,15 +134,17 @@ public class RedirectUtils {
 
     private static boolean matchesRedirects(Set<String> validRedirects, String redirect) {
         for (String validRedirect : validRedirects) {
-            if (validRedirect.endsWith("*")) {
+            if (validRedirect.endsWith("*") && !validRedirect.contains("?")) {
+                // strip off the query component - we don't check them when wildcards are effective
+                String r = redirect.contains("?") ? redirect.substring(0, redirect.indexOf("?")) : redirect;
                 // strip off *
                 int length = validRedirect.length() - 1;
                 validRedirect = validRedirect.substring(0, length);
-                if (redirect.startsWith(validRedirect)) return true;
+                if (r.startsWith(validRedirect)) return true;
                 // strip off trailing '/'
                 if (length - 1 > 0 && validRedirect.charAt(length - 1) == '/') length--;
                 validRedirect = validRedirect.substring(0, length);
-                if (validRedirect.equals(redirect)) return true;
+                if (validRedirect.equals(r)) return true;
             } else if (validRedirect.equals(redirect)) return true;
         }
         return false;

@@ -97,6 +97,11 @@ public class OAuthRedirectUriTest extends AbstractKeycloakTest {
                 .secret("password");
         realm.client(installedApp6);
 
+        ClientBuilder installedApp7 = ClientBuilder.create().id("test-query-component").name("test-query-component")
+                .redirectUris("http://localhost?foo=bar", "http://localhost?foo=bar*")
+                .secret("password");
+        realm.client(installedApp7);
+
         testRealms.add(realm.build());
     }
 
@@ -183,6 +188,26 @@ public class OAuthRedirectUriTest extends AbstractKeycloakTest {
         Assert.assertTrue(url.getQuery().contains("key=value"));
         Assert.assertTrue(url.getQuery().contains("state="));
         Assert.assertTrue(url.getQuery().contains("code="));
+    }
+
+    @Test
+    public void testQueryComponents() throws IOException {
+        // KEYCLOAK-3420
+        oauth.clientId("test-query-component");
+        checkRedirectUri("http://localhost?foo=bar", true);
+        checkRedirectUri("http://localhost?foo=bara", false);
+        checkRedirectUri("http://localhost?foo=bar/", false);
+        checkRedirectUri("http://localhost?foo2=bar2&foo=bar", false);
+        checkRedirectUri("http://localhost?foo=b", false);
+        checkRedirectUri("http://localhost?foo", false);
+        checkRedirectUri("http://localhost?foo=bar&bar=foo", false);
+        checkRedirectUri("http://localhost?foo&bar=foo", false);
+        checkRedirectUri("http://localhost?foo&bar", false);
+        checkRedirectUri("http://localhost", false);
+
+        // KEYCLOAK-3418
+        oauth.clientId("test-installed");
+        checkRedirectUri("http://localhost?foo=bar", false);
     }
 
     @Test
