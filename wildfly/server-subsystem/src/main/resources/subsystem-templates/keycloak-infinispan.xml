@@ -95,6 +95,7 @@
                 <distributed-cache name="sessions" mode="SYNC" owners="1"/>
                 <distributed-cache name="offlineSessions" mode="SYNC" owners="1"/>
                 <distributed-cache name="loginFailures" mode="SYNC" owners="1"/>
+                <distributed-cache name="authorization" mode="SYNC" owners="1"/>
                 <replicated-cache name="work" mode="SYNC" />
             </cache-container>
             <cache-container name="server" aliases="singleton cluster" default-cache="default" module="org.wildfly.clustering.server">
