@@ -158,12 +158,12 @@ public class ExportImportTest extends AbstractExportImportTest {
         realm.components().add(component);
 
 
-        ExportImportConfig.setProvider(SingleFileExportProviderFactory.PROVIDER_ID);
-        String targetFilePath = getExportImportTestDirectory() + File.separator + "singleFile-realm.json";
-        ExportImportConfig.setFile(targetFilePath);
+        testingClient.testing().setProvider(SingleFileExportProviderFactory.PROVIDER_ID);
 
-        ExportImportConfig.setAction(ExportImportConfig.ACTION_EXPORT);
-        ExportImportConfig.setRealmName("component-realm");
+        String targetFilePath = testingClient.testing().getExportImportTestDirectory() + File.separator + "singleFile-realm.json";
+        testingClient.testing().setFile(targetFilePath);
+        testingClient.testing().setAction(ExportImportConfig.ACTION_EXPORT);
+        testingClient.testing().setRealmName("component-realm");
 
         testingClient.testing().runExport();
 
@@ -173,7 +173,7 @@ public class ExportImportTest extends AbstractExportImportTest {
         Assert.assertEquals(3, adminClient.realms().findAll().size());
 
         // Configure import
-        ExportImportConfig.setAction(ExportImportConfig.ACTION_IMPORT);
+        testingClient.testing().setAction(ExportImportConfig.ACTION_IMPORT);
 
         testingClient.testing().runImport();
 

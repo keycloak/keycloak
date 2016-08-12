@@ -34,7 +34,7 @@ Q: Does the OP have a .well-known/openid-configuration endpoint?
 A: Yes
 
 Q: Do the provider support dynamic client registration?
-A: No (just for easier start)
+A: No (See below for how to run with dynamic client registration)
 
 Q: redirect_uris
 Non-editable value: https://op.certification.openid.net:60720/authz_cb
@@ -61,6 +61,21 @@ Nothing filled
 
 4) After setup, you will be redirected to the testing application. Something like `https://op.certification.openid.net:60720/` and can run individual tests.
 Some tests require some manual actions (eg. delete cookies). The conformance testsuite should guide you.
+
+Run conformance testsuite with Dynamic client registration
+----------------------------------------------------------
+1) The steps are similar to above, however for question:
+
+Q: Do the provider support dynamic client registration?
+The answer will be: Yes
+
+Then you don't need to configure redirect_uris, client_id and client_secret.
+
+2) With the setup from previous point, OIDC Conformance testsuite will dynamically register new client in Keycloak. But you also need to allow the anonymous
+ client registration requests from the OIDC conformance to register clients.
+ 
+ So you need to login to Keycloak admin console and in tab "Initial Access Tokens" for realm master, you need to fill new trusted host. Fill the hostname "op.certification.openid.net" and enable big 
+ count of registrations for it (1000 or so) as running each test will register new client. 
 
 
 Update the openshift cartridge with latest Keycloak

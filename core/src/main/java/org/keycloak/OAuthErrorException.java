@@ -37,12 +37,18 @@ public class OAuthErrorException extends Exception {
     public static final String REQUEST_NOT_SUPPORTED = "request_not_supported";
     public static final String REQUEST_URI_NOT_SUPPORTED = "request_uri_not_supported";
 
+    // OAuth2 Bearer Token Usage
+    public static final String INVALID_TOKEN = "invalid_token";
+    public static final String INSUFFICIENT_SCOPE = "insufficient_scope";
+
+    // OIDC Dynamic Client Registration
+    public static final String INVALID_REDIRECT_URI = "invalid_redirect_uri";
+    public static final String INVALID_CLIENT_METADATA = "invalid_client_metadata";
+
     // Others
     public static final String INVALID_CLIENT = "invalid_client";
     public static final String INVALID_GRANT = "invalid_grant";
     public static final String UNSUPPORTED_GRANT_TYPE = "unsupported_grant_type";
-    public static final String INVALID_TOKEN = "invalid_token";
-    public static final String INSUFFICIENT_SCOPE = "insufficient_scope";
 
     public OAuthErrorException(String error, String description, String message, Throwable cause) {
         super(message, cause);

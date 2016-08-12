@@ -19,6 +19,7 @@ package org.keycloak.models.jpa;
 
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.common.util.StringPropertyReplacer;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.jose.jwk.JWKBuilder;

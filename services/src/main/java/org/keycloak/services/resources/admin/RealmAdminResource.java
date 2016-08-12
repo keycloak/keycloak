@@ -207,6 +207,19 @@ public class RealmAdminResource {
         return resource;
     }
 
+
+    /**
+     * Base path for managing client initial access tokens
+     *
+     * @return
+     */
+    @Path("clients-trusted-hosts")
+    public ClientRegistrationTrustedHostResource getClientRegistrationTrustedHost() {
+        ClientRegistrationTrustedHostResource resource = new ClientRegistrationTrustedHostResource(realm, auth, adminEvent);
+        ResteasyProviderFactory.getInstance().injectProperties(resource);
+        return resource;
+    }
+
     /**
      * Base path for managing components under this realm.
      *
