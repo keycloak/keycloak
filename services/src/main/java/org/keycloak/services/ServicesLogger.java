@@ -425,4 +425,9 @@ public interface ServicesLogger extends BasicLogger {
     @LogMessage(level = ERROR)
     @Message(id=95, value="Client is not allowed to initiate browser login with given response_type. %s flow is disabled for the client.")
     void flowNotAllowed(String flowName);
+
+    @LogMessage(level = WARN)
+    @Message(id=96, value="Not found JWK of supported keyType under jwks_uri for usage: %s")
+    void supportedJwkNotFound(String usage);
+
 }

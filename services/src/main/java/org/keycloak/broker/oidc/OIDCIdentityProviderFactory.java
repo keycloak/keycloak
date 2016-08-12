@@ -16,14 +16,14 @@
  */
 package org.keycloak.broker.oidc;
 
-import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.broker.provider.AbstractIdentityProviderFactory;
 import org.keycloak.jose.jwk.JWK;
-import org.keycloak.jose.jwk.JWKParser;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.protocol.oidc.representations.JSONWebKeySet;
+import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
+import org.keycloak.protocol.oidc.utils.JWKSUtils;
+import org.keycloak.services.ServicesLogger;
 import org.keycloak.util.JsonSerialization;
 
 import java.io.IOException;
@@ -35,6 +35,8 @@ import java.util.Map;
  * @author Pedro Igor
  */
 public class OIDCIdentityProviderFactory extends AbstractIdentityProviderFactory<OIDCIdentityProvider> {
+
+    private static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
 
     public static final String PROVIDER_ID = "oidc";
 
@@ -59,7 +61,7 @@ public class OIDCIdentityProviderFactory extends AbstractIdentityProviderFactory
     }
 
     protected static Map<String, String> parseOIDCConfig(InputStream inputStream) {
-        OIDCConfigurationRepresentation rep = null;
+        OIDCConfigurationRepresentation rep;
         try {
             rep = JsonSerialization.readValue(inputStream, OIDCConfigurationRepresentation.class);
         } catch (IOException e) {
@@ -72,31 +74,24 @@ public class OIDCIdentityProviderFactory extends AbstractIdentityProviderFactory
         config.setTokenUrl(rep.getTokenEndpoint());
         config.setUserInfoUrl(rep.getUserinfoEndpoint());
         if (rep.getJwksUri() != null) {
-            String uri = rep.getJwksUri();
-            String keySetString = null;
-            try {
-                keySetString = SimpleHttp.doGet(uri).asString();
-                JSONWebKeySet keySet = JsonSerialization.readValue(keySetString, JSONWebKeySet.class);
-                for (JWK jwk : keySet.getKeys()) {
-                    JWKParser parse = JWKParser.create(jwk);
-                    if (parse.getJwk().getPublicKeyUse().equals(JWK.SIG_USE) && keyTypeSupported(jwk.getKeyType())) {
-                        PublicKey key = parse.toPublicKey();
-                        config.setPublicKeySignatureVerifier(KeycloakModelUtils.getPemFromKey(key));
-                        config.setValidateSignature(true);
-                        break;
-                    }
-
-                }
-            } catch (IOException e) {
-                throw new RuntimeException("Failed to query JWKSet from: " + uri, e);
-            }
-
+            sendJwksRequest(rep, config);
         }
         return config.getConfig();
     }
 
-    protected static boolean keyTypeSupported(String type) {
-        return type != null && type.equals("RSA");
+    protected static void sendJwksRequest(OIDCConfigurationRepresentation rep, OIDCIdentityProviderConfig config) {
+        try {
+            JSONWebKeySet keySet = JWKSUtils.sendJwksRequest(rep.getJwksUri());
+            PublicKey key = JWKSUtils.getKeyForUse(keySet, JWK.Use.SIG);
+            if (key == null) {
+                logger.supportedJwkNotFound(JWK.Use.SIG.asString());
+            } else {
+                config.setPublicKeySignatureVerifier(KeycloakModelUtils.getPemFromKey(key));
+                config.setValidateSignature(true);
+            }
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to query JWKSet from: " + rep.getJwksUri(), e);
+        }
     }
 
 }
