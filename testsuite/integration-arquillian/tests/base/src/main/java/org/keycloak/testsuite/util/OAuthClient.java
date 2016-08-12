@@ -40,7 +40,7 @@ import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
-import org.keycloak.protocol.oidc.representations.JSONWebKeySet;
+import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.IDToken;

@@ -18,6 +18,7 @@
 package org.keycloak.representations.oidc;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import org.keycloak.jose.jwk.JSONWebKeySet;
 
 import java.util.List;
 
@@ -61,7 +62,7 @@ public class OIDCClientRepresentation {
 
     private String jwks_uri;
 
-    private String jwks;
+    private JSONWebKeySet jwks;
 
     private String sector_identifier_uri;
 
@@ -240,11 +241,11 @@ public class OIDCClientRepresentation {
         this.jwks_uri = jwks_uri;
     }
 
-    public String getJwks() {
+    public JSONWebKeySet getJwks() {
         return jwks;
     }
 
-    public void setJwks(String jwks) {
+    public void setJwks(JSONWebKeySet jwks) {
         this.jwks = jwks;
     }
 
