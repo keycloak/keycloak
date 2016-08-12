@@ -30,16 +30,17 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
 import org.keycloak.protocol.oidc.utils.JWKSUtils;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
+import org.keycloak.representations.idm.CertificateRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.services.clientregistration.ClientRegistrationException;
+import org.keycloak.services.util.CertificateInfoHelper;
 
 import java.io.IOException;
 import java.net.URI;
 import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
 
@@ -95,10 +96,10 @@ public class DescriptionConverter {
             }
 
             String publicKeyPem = KeycloakModelUtils.getPemFromKey(publicKey);
-            if (client.getAttributes() == null) {
-                client.setAttributes(new HashMap<>());
-            }
-            client.getAttributes().put(JWTClientAuthenticator.PUBLIC_KEY_ATTR, publicKeyPem);
+
+            CertificateRepresentation rep = new CertificateRepresentation();
+            rep.setPublicKey(publicKeyPem);
+            CertificateInfoHelper.updateClientRepresentationCertificateInfo(client, rep, JWTClientAuthenticator.ATTR_PREFIX);
         }
 
         return client;

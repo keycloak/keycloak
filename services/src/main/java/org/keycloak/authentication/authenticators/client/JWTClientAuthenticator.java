@@ -44,8 +44,10 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.JsonWebToken;
+import org.keycloak.representations.idm.CertificateRepresentation;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.Urls;
+import org.keycloak.services.util.CertificateInfoHelper;
 
 /**
  * Client authentication based on JWT signed by client private key .
@@ -61,8 +63,8 @@ public class JWTClientAuthenticator extends AbstractClientAuthenticator {
     protected static ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
 
     public static final String PROVIDER_ID = "client-jwt";
+    public static final String ATTR_PREFIX = "jwt.credential";
     public static final String CERTIFICATE_ATTR = "jwt.credential.certificate";
-    public static final String PUBLIC_KEY_ATTR = "jwt.credential.publicKey";
 
     public static final AuthenticationExecutionModel.Requirement[] REQUIREMENT_CHOICES = {
             AuthenticationExecutionModel.Requirement.ALTERNATIVE,
@@ -161,15 +163,17 @@ public class JWTClientAuthenticator extends AbstractClientAuthenticator {
     }
 
     protected PublicKey getSignatureValidationKey(ClientModel client, ClientAuthenticationFlowContext context) {
-        String encodedCertificate = client.getAttribute(CERTIFICATE_ATTR);
-        String encodedPublicKey = client.getAttribute(PUBLIC_KEY_ATTR);
+        CertificateRepresentation certInfo = CertificateInfoHelper.getCertificateFromClient(client, ATTR_PREFIX);
+
+        String encodedCertificate = certInfo.getCertificate();
+        String encodedPublicKey = certInfo.getPublicKey();
+
         if (encodedCertificate == null && encodedPublicKey == null) {
             Response challengeResponse = ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "unauthorized_client", "Client '" + client.getClientId() + "' doesn't have certificate or publicKey configured");
             context.failure(AuthenticationFlowError.CLIENT_CREDENTIALS_SETUP_REQUIRED, challengeResponse);
             return null;
         }
 
-        // TODO: Needs to be improved. Maybe just publicKey should be saved and existing clients migrated from certificate to publicKey...
         if (encodedCertificate != null && encodedPublicKey != null) {
             Response challengeResponse = ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "unauthorized_client", "Client '" + client.getClientId() + "' has both publicKey and certificate configured");
             context.failure(AuthenticationFlowError.CLIENT_CREDENTIALS_SETUP_REQUIRED, challengeResponse);
