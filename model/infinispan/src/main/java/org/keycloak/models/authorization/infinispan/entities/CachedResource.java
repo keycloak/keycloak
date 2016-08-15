@@ -22,6 +22,7 @@ import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -29,7 +30,9 @@ import java.util.stream.Collectors;
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-public class CachedResource implements Resource {
+public class CachedResource implements Resource, Serializable {
+
+    private static final long serialVersionUID = -6886179034626995165L;
 
     private final String id;
     private String resourceServerId;
