@@ -22,6 +22,7 @@ import org.keycloak.Config;
 import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.cache.authorization.CachedStoreFactoryProvider;
 
 import java.util.concurrent.Executor;
@@ -35,13 +36,7 @@ public class DefaultAuthorizationProviderFactory implements AuthorizationProvide
 
     @Override
     public AuthorizationProvider create(KeycloakSession session) {
-        StoreFactory storeFactory = session.getProvider(CachedStoreFactoryProvider.class);
-
-        if (storeFactory == null) {
-            storeFactory = session.getProvider(StoreFactory.class);
-        }
-
-        return new AuthorizationProvider(session, storeFactory);
+        return create(session, session.getContext().getRealm());
     }
 
     @Override
@@ -69,5 +64,16 @@ public class DefaultAuthorizationProviderFactory implements AuthorizationProvide
     @Override
     public String getId() {
         return "authorization";
+    }
+
+    @Override
+    public AuthorizationProvider create(KeycloakSession session, RealmModel realm) {
+        StoreFactory storeFactory = session.getProvider(CachedStoreFactoryProvider.class);
+
+        if (storeFactory == null) {
+            storeFactory = session.getProvider(StoreFactory.class);
+        }
+
+        return new AuthorizationProvider(session, realm, storeFactory);
     }
 }

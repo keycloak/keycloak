@@ -18,10 +18,14 @@
 
 package org.keycloak.authorization;
 
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
 import org.keycloak.provider.ProviderFactory;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 public interface AuthorizationProviderFactory extends ProviderFactory<AuthorizationProvider> {
+
+    AuthorizationProvider create(KeycloakSession session, RealmModel realm);
 }
