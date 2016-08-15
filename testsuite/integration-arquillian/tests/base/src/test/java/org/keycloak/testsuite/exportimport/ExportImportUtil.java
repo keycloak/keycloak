@@ -17,14 +17,18 @@
 
 package org.keycloak.testsuite.exportimport;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Predicate;
+
 import org.junit.Assert;
 import org.keycloak.admin.client.Keycloak;
+import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientTemplateResource;
 import org.keycloak.admin.client.resource.RealmResource;
@@ -50,6 +54,10 @@ import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserFederationMapperRepresentation;
 import org.keycloak.representations.idm.UserFederationProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.idm.authorization.PolicyRepresentation;
+import org.keycloak.representations.idm.authorization.ResourceRepresentation;
+import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
+import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.util.RealmRepUtil;
@@ -86,7 +94,7 @@ public class ExportImportUtil {
         Assert.assertEquals(0, userRsc.getFederatedIdentity().size());
 
         List<ClientRepresentation> resources = realmRsc.clients().findAll();
-        Assert.assertEquals(8, resources.size());
+        Assert.assertEquals(9, resources.size());
 
         // Test applications imported
         ClientRepresentation application = ApiUtil.findClientByClientId(realmRsc, "Application").toRepresentation();
@@ -97,7 +105,7 @@ public class ExportImportUtil {
         Assert.assertNotNull(otherApp);
         Assert.assertNull(nonExisting);
         List<ClientRepresentation> clients = realmRsc.clients().findAll();
-        Assert.assertEquals(8, clients.size());
+        Assert.assertEquals(9, clients.size());
         Assert.assertTrue(hasClient(clients, application));
         Assert.assertTrue(hasClient(clients, otherApp));
         Assert.assertTrue(hasClient(clients, accountApp));
@@ -366,6 +374,8 @@ public class ExportImportUtil {
         UserRepresentation linked = testingClient.testing().getUserByServiceAccountClient(realm.getRealm(), otherApp.getClientId());//session.users().getUserByServiceAccountClient(otherApp);
         Assert.assertNotNull(linked);
         Assert.assertEquals("my-service-user", linked.getUsername());
+
+        assertAuthorizationSettings(realmRsc);
     }
 
     private static boolean isProtocolMapperGranted(Map<String, Object> consent, ProtocolMapperRepresentation mapperRep) {
@@ -544,4 +554,89 @@ public class ExportImportUtil {
         return false;
     }
 
+    private static void assertAuthorizationSettings(RealmResource realmRsc) {
+        AuthorizationResource authzResource = ApiUtil.findAuthorizationSettings(realmRsc, "test-app-authz");
+
+        Assert.assertNotNull(authzResource);
+
+        List<ResourceRepresentation> resources = authzResource.resources().resources();
+        Assert.assertEquals(4, resources.size());
+        ResourceServerRepresentation authzSettings = authzResource.getSettings();
+        List<Predicate<ResourceRepresentation>> resourcePredicates = new ArrayList<>();
+        resourcePredicates.add(resourceRep -> {
+            if ("Admin Resource".equals(resourceRep.getName())) {
+                Assert.assertEquals(authzSettings.getClientId(), resourceRep.getOwner().getId());
+                Assert.assertEquals("/protected/admin/*", resourceRep.getUri());
+                Assert.assertEquals("http://test-app-authz/protected/admin", resourceRep.getType());
+                Assert.assertEquals("http://icons.com/icon-admin", resourceRep.getIconUri());
+                Assert.assertEquals(1, resourceRep.getScopes().size());
+                return true;
+            }
+            return false;
+        });
+        resourcePredicates.add(resourceRep -> {
+            if ("Protected Resource".equals(resourceRep.getName())) {
+                Assert.assertEquals(authzSettings.getClientId(), resourceRep.getOwner().getId());
+                Assert.assertEquals("/*", resourceRep.getUri());
+                Assert.assertEquals("http://test-app-authz/protected/resource", resourceRep.getType());
+                Assert.assertEquals("http://icons.com/icon-resource", resourceRep.getIconUri());
+                Assert.assertEquals(1, resourceRep.getScopes().size());
+                return true;
+            }
+            return false;
+        });
+        resourcePredicates.add(resourceRep -> {
+            if ("Premium Resource".equals(resourceRep.getName())) {
+                Assert.assertEquals(authzSettings.getClientId(), resourceRep.getOwner().getId());
+                Assert.assertEquals("/protected/premium/*", resourceRep.getUri());
+                Assert.assertEquals("urn:test-app-authz:protected:resource", resourceRep.getType());
+                Assert.assertEquals("http://icons.com/icon-premium", resourceRep.getIconUri());
+                Assert.assertEquals(1, resourceRep.getScopes().size());
+                return true;
+            }
+            return false;
+        });
+        resourcePredicates.add(resourceRep -> {
+            if ("Main Page".equals(resourceRep.getName())) {
+                Assert.assertEquals(authzSettings.getClientId(), resourceRep.getOwner().getId());
+                Assert.assertNull(resourceRep.getUri());
+                Assert.assertEquals("urn:test-app-authz:protected:resource", resourceRep.getType());
+                Assert.assertEquals("http://icons.com/icon-main-page", resourceRep.getIconUri());
+                Assert.assertEquals(3, resourceRep.getScopes().size());
+                return true;
+            }
+            return false;
+        });
+        assertPredicate(resources, resourcePredicates);
+
+        List<ScopeRepresentation> scopes = authzResource.scopes().scopes();
+        Assert.assertEquals(6, scopes.size());
+        List<Predicate<ScopeRepresentation>> scopePredicates = new ArrayList<>();
+        scopePredicates.add(scopeRepresentation -> "admin-access".equals(scopeRepresentation.getName()));
+        scopePredicates.add(scopeRepresentation -> "resource-access".equals(scopeRepresentation.getName()));
+        scopePredicates.add(scopeRepresentation -> "premium-access".equals(scopeRepresentation.getName()));
+        scopePredicates.add(scopeRepresentation -> "urn:test-app-authz:page:main:actionForAdmin".equals(scopeRepresentation.getName()));
+        scopePredicates.add(scopeRepresentation -> "urn:test-app-authz:page:main:actionForUser".equals(scopeRepresentation.getName()));
+        scopePredicates.add(scopeRepresentation -> "urn:test-app-authz:page:main:actionForPremiumUser".equals(scopeRepresentation.getName()));
+        assertPredicate(scopes, scopePredicates);
+
+        List<PolicyRepresentation> policies = authzResource.policies().policies();
+        Assert.assertEquals(10, policies.size());
+        List<Predicate<PolicyRepresentation>> policyPredicates = new ArrayList<>();
+        policyPredicates.add(policyRepresentation -> "Any Admin Policy".equals(policyRepresentation.getName()));
+        policyPredicates.add(policyRepresentation -> "Any User Policy".equals(policyRepresentation.getName()));
+        policyPredicates.add(policyRepresentation -> "Only Premium User Policy".equals(policyRepresentation.getName()));
+        policyPredicates.add(policyRepresentation -> "All Users Policy".equals(policyRepresentation.getName()));
+        policyPredicates.add(policyRepresentation -> "Premium Resource Permission".equals(policyRepresentation.getName()));
+        policyPredicates.add(policyRepresentation -> "Administrative Resource Permission".equals(policyRepresentation.getName()));
+        policyPredicates.add(policyRepresentation -> "Protected Resource Permission".equals(policyRepresentation.getName()));
+        policyPredicates.add(policyRepresentation -> "Action 1 on Main Page Resource Permission".equals(policyRepresentation.getName()));
+        policyPredicates.add(policyRepresentation -> "Action 2 on Main Page Resource Permission".equals(policyRepresentation.getName()));
+        policyPredicates.add(policyRepresentation -> "Action 3 on Main Page Resource Permission".equals(policyRepresentation.getName()));
+        assertPredicate(policies, policyPredicates);
+    }
+
+    private static <D> void assertPredicate(List<D> source, List<Predicate<D>> predicate) {
+        Assert.assertTrue(!source.stream().filter(object -> !predicate.stream().filter(predicate1 -> predicate1.test(object)).findFirst().isPresent()).findAny().isPresent());
+    }
 }

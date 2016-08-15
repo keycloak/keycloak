@@ -19,7 +19,6 @@ package org.keycloak.authorization.admin;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.keycloak.authorization.AuthorizationProvider;
-import org.keycloak.authorization.admin.util.Models;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
@@ -27,7 +26,6 @@ import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
-import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.resources.admin.RealmAuth;
 
@@ -45,7 +43,8 @@ import javax.ws.rs.core.Response.Status;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static org.keycloak.authorization.admin.util.Models.toRepresentation;
+import static org.keycloak.models.utils.ModelToRepresentation.toRepresentation;
+import static org.keycloak.models.utils.RepresentationToModel.toModel;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -75,7 +74,7 @@ public class ResourceSetService {
             return ErrorResponse.exists("Resource with name [" + resource.getName() + "] already exists.");
         }
 
-        Resource model = Models.toModel(resource, this.resourceServer, authorization);
+        Resource model = toModel(resource, this.resourceServer, authorization);
 
         ResourceRepresentation representation = new ResourceRepresentation();
 
@@ -99,14 +98,7 @@ public class ResourceSetService {
             return Response.status(Status.NOT_FOUND).build();
         }
 
-        model.setName(resource.getName());
-        model.setType(resource.getType());
-        model.setUri(resource.getUri());
-        model.setIconUri(resource.getIconUri());
-
-        model.updateScopes(resource.getScopes().stream()
-                .map((ScopeRepresentation scope) -> Models.toModel(scope, this.resourceServer, authorization))
-                .collect(Collectors.toSet()));
+        toModel(resource, resourceServer, authorization);
 
         return Response.noContent().build();
     }

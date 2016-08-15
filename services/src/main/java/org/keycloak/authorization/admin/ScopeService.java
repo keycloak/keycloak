@@ -44,8 +44,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static org.keycloak.authorization.admin.util.Models.toModel;
-import static org.keycloak.authorization.admin.util.Models.toRepresentation;
+import static org.keycloak.models.utils.ModelToRepresentation.toRepresentation;
+import static org.keycloak.models.utils.RepresentationToModel.toModel;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -88,8 +88,7 @@ public class ScopeService {
             return Response.status(Status.NOT_FOUND).build();
         }
 
-        model.setName(scope.getName());
-        model.setIconUri(scope.getIconUri());
+        toModel(scope, resourceServer, authorization);
 
         return Response.noContent().build();
     }
