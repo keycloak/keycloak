@@ -45,6 +45,10 @@ public class KerberosUserProviderForm extends Form {
         setInputValue(consoleDisplayNameInput, name);
     }
 
+    public String getConsoleDisplayNameInput() {
+        return getInputValue(consoleDisplayNameInput);
+    }
+
     public void setPriorityInput(Integer priority) {
         setInputValue(priorityInput, String.valueOf(priority));
     }
