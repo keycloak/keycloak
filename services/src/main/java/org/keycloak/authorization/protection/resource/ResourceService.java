@@ -19,12 +19,12 @@ package org.keycloak.authorization.protection.resource;
 
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.admin.ResourceSetService;
-import org.keycloak.authorization.admin.util.Models;
 import org.keycloak.authorization.identity.Identity;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.protection.resource.representation.UmaResourceRepresentation;
 import org.keycloak.authorization.protection.resource.representation.UmaScopeRepresentation;
 import org.keycloak.authorization.store.StoreFactory;
+import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceOwnerRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
@@ -133,25 +133,25 @@ public class ResourceService {
 
                 if ("name".equals(filterType)) {
                     resources.addAll(storeFactory.getResourceStore().findByResourceServer(this.resourceServer.getId()).stream().filter(description -> filterValue == null || filterValue.equals(description.getName())).collect(Collectors.toSet()).stream()
-                            .map(resource -> Models.toRepresentation(resource, this.resourceServer, authorization))
+                            .map(resource -> ModelToRepresentation.toRepresentation(resource, this.resourceServer, authorization))
                             .collect(Collectors.toList()));
                 } else if ("type".equals(filterType)) {
                     resources.addAll(storeFactory.getResourceStore().findByResourceServer(this.resourceServer.getId()).stream().filter(description -> filterValue == null || filterValue.equals(description.getType())).collect(Collectors.toSet()).stream()
-                            .map(resource -> Models.toRepresentation(resource, this.resourceServer, authorization))
+                            .map(resource -> ModelToRepresentation.toRepresentation(resource, this.resourceServer, authorization))
                             .collect(Collectors.toList()));
                 } else if ("uri".equals(filterType)) {
                     resources.addAll(storeFactory.getResourceStore().findByResourceServer(this.resourceServer.getId()).stream().filter(description -> filterValue == null || filterValue.equals(description.getUri())).collect(Collectors.toSet()).stream()
-                            .map(resource -> Models.toRepresentation(resource, this.resourceServer, authorization))
+                            .map(resource -> ModelToRepresentation.toRepresentation(resource, this.resourceServer, authorization))
                             .collect(Collectors.toList()));
                 } else if ("owner".equals(filterType)) {
                     resources.addAll(storeFactory.getResourceStore().findByResourceServer(this.resourceServer.getId()).stream().filter(description -> filterValue == null || filterValue.equals(description.getOwner())).collect(Collectors.toSet()).stream()
-                            .map(resource -> Models.toRepresentation(resource, this.resourceServer, authorization))
+                            .map(resource -> ModelToRepresentation.toRepresentation(resource, this.resourceServer, authorization))
                             .collect(Collectors.toList()));
                 }
             }
         } else {
             resources = storeFactory.getResourceStore().findByOwner(identity.getId()).stream()
-                    .map(resource -> Models.toRepresentation(resource, this.resourceServer, authorization))
+                    .map(resource -> ModelToRepresentation.toRepresentation(resource, this.resourceServer, authorization))
                     .collect(Collectors.toSet());
         }
 
