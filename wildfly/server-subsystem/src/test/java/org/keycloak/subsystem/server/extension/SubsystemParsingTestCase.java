@@ -41,6 +41,7 @@ public class SubsystemParsingTestCase extends AbstractSubsystemBaseTest {
     protected Properties getResolvedProperties() {
         Properties properties = new Properties();
         properties.put("jboss.home.dir", System.getProperty("java.io.tmpdir"));
+        properties.put("keycloak.jta.lookup.provider", "jboss");
         return properties;
     }
     

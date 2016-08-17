@@ -47,7 +47,7 @@ import static org.keycloak.subsystem.server.extension.ThemeResourceDefinition.WE
  */
 public class JsonConfigConverter {
 
-    private static final List<String> NON_SPI_LIST = new ArrayList();
+    private static final List<String> NON_SPI_LIST = new ArrayList<>();
     
     static {
         NON_SPI_LIST.add("providers");

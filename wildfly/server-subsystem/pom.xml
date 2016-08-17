@@ -47,8 +47,23 @@
                         <include>**/*TestCase.java</include>
                     </includes>
                 </configuration>
-            </plugin>            
+            </plugin>        
         </plugins>
+        <filters>
+            <filter>src/main/config/default-server-subsys-config.properties</filter>
+        </filters>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+            </resource>
+        </resources>
+        <testResources>
+            <testResource>
+                <directory>src/test/resources</directory>
+                <filtering>true</filtering>
+            </testResource>
+        </testResources>
     </build>
 
     <dependencies>
