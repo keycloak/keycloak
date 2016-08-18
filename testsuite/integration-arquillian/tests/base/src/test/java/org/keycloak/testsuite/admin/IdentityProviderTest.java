@@ -177,6 +177,7 @@ public class IdentityProviderTest extends AbstractAdminTest {
         IdentityProviderRepresentation idp = new IdentityProviderRepresentation();
 
         idp.setAlias(id);
+        idp.setDisplayName(id);
         idp.setProviderId(providerId);
         idp.setEnabled(true);
         if (config != null) {

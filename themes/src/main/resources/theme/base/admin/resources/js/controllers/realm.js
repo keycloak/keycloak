@@ -759,6 +759,8 @@ module.controller('RealmIdentityProviderCtrl', function($scope, $filter, $upload
         $scope.identityProvider.config = {};
         $scope.identityProvider.alias = providerFactory.id;
         $scope.identityProvider.providerId = providerFactory.id;
+        $scope.identityProvider.displayName = providerFactory.displayName;
+
         $scope.identityProvider.enabled = true;
         $scope.identityProvider.authenticateByDefault = false;
         $scope.identityProvider.firstBrokerLoginFlowAlias = 'first broker login';
@@ -821,7 +823,6 @@ module.controller('RealmIdentityProviderCtrl', function($scope, $filter, $upload
             $scope.identityProvider.config[key] = data[key];
         }
     }
-
 
     $scope.uploadFile = function() {
         if (!$scope.identityProvider.alias) {
@@ -895,10 +896,15 @@ module.controller('RealmIdentityProviderCtrl', function($scope, $filter, $upload
 
                     if (provider.groupName == 'Social' && (provider.id == configProvidedId)) {
                         $scope.allProviders.splice(i, 1);
+                        configuredProviders[j].displayName = provider.name;
+                        break;
+                    } else if (!configuredProviders[j].displayName) {
+                        configuredProviders[j].displayName = configProvidedId;
                         break;
                     }
                 }
             }
+            $scope.configuredProviders = angular.copy(configuredProviders);
         }
     }, true);
 

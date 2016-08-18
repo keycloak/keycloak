@@ -1524,6 +1524,7 @@ public class RepresentationToModel {
 
         identityProviderModel.setInternalId(representation.getInternalId());
         identityProviderModel.setAlias(representation.getAlias());
+        identityProviderModel.setDisplayName(representation.getDisplayName());
         identityProviderModel.setProviderId(representation.getProviderId());
         identityProviderModel.setEnabled(representation.isEnabled());
         identityProviderModel.setTrustEmail(representation.isTrustEmail());

@@ -25,6 +25,7 @@ import java.util.Map;
 public class IdentityProviderRepresentation {
 
     protected String alias;
+    protected String displayName;
     protected String internalId;
     protected String providerId;
     protected boolean enabled = true;
@@ -174,6 +175,14 @@ public class IdentityProviderRepresentation {
 
     public void setTrustEmail(boolean trustEmail) {
         this.trustEmail = trustEmail;
+    }
+
+    public String getDisplayName() {
+        return displayName;
+    }
+
+    public void setDisplayName(String displayName) {
+        this.displayName = displayName;
     }
 
 }
