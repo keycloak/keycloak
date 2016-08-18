@@ -22,6 +22,7 @@ import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
 import org.keycloak.Config;
+import org.keycloak.component.ComponentModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.ModelDuplicateException;
@@ -36,6 +37,9 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.RealmManager;
+import org.keycloak.storage.UserStorageProvider;
+import org.keycloak.storage.UserStorageProviderModel;
+import org.keycloak.testsuite.federation.storage.UserMapStorageFactory;
 
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -74,7 +78,7 @@ public class AdapterTest extends AbstractModelTest {
         realmModel.setAccessTokenLifespan(1000);
         realmModel.addDefaultRole("foo");
 
-        session.getTransaction().commit();
+        session.getTransactionManager().commit();
         resetSession();
 
         realmModel = realmManager.getRealm(realmModel.getId());
@@ -86,7 +90,7 @@ public class AdapterTest extends AbstractModelTest {
         Assert.assertEquals(realmModel.getName(), "JUGGLER");
         Assert.assertArrayEquals(realmModel.getPrivateKey().getEncoded(), keyPair.getPrivate().getEncoded());
         Assert.assertArrayEquals(realmModel.getPublicKey().getEncoded(), keyPair.getPublic().getEncoded());
-        Assert.assertEquals(2, realmModel.getDefaultRoles().size());
+        Assert.assertEquals(3, realmModel.getDefaultRoles().size());
         Assert.assertTrue(realmModel.getDefaultRoles().contains("foo"));
     }
 
@@ -112,7 +116,7 @@ public class AdapterTest extends AbstractModelTest {
         Assert.assertEquals(realmModel.getName(), "JUGGLER");
         Assert.assertArrayEquals(realmModel.getPrivateKey().getEncoded(), keyPair.getPrivate().getEncoded());
         Assert.assertArrayEquals(realmModel.getPublicKey().getEncoded(), keyPair.getPublic().getEncoded());
-        Assert.assertEquals(2, realmModel.getDefaultRoles().size());
+        Assert.assertEquals(3, realmModel.getDefaultRoles().size());
         Assert.assertTrue(realmModel.getDefaultRoles().contains("foo"));
 
         realmModel.getId();
@@ -164,11 +168,11 @@ public class AdapterTest extends AbstractModelTest {
         Assert.assertTrue(userProvider.validCredentials(session, realmModel, user, UserCredentialModel.password("geheim")));
         List<UserCredentialValueModel> creds = user.getCredentialsDirectly();
         Assert.assertEquals(creds.get(0).getHashIterations(), 20000);
-        realmModel.setPasswordPolicy(new PasswordPolicy("hashIterations(200)"));
+        realmModel.setPasswordPolicy(PasswordPolicy.parse(realmManager.getSession(), "hashIterations(200)"));
         Assert.assertTrue(userProvider.validCredentials(session, realmModel, user, UserCredentialModel.password("geheim")));
         creds = user.getCredentialsDirectly();
         Assert.assertEquals(creds.get(0).getHashIterations(), 200);
-        realmModel.setPasswordPolicy(new PasswordPolicy("hashIterations(1)"));
+        realmModel.setPasswordPolicy(PasswordPolicy.parse(realmManager.getSession(), "hashIterations(1)"));
     }
 
     @Test
@@ -462,7 +466,7 @@ public class AdapterTest extends AbstractModelTest {
         realmModel.addRole("admin");
         realmModel.addRole("user");
         Set<RoleModel> roles = realmModel.getRoles();
-        Assert.assertEquals(4, roles.size());
+        Assert.assertEquals(5, roles.size());
         UserModel user = realmManager.getSession().users().addUser(realmModel, "bburke");
         RoleModel realmUserRole = realmModel.getRole("user");
         user.grantRole(realmUserRole);
@@ -488,7 +492,7 @@ public class AdapterTest extends AbstractModelTest {
         user.grantRole(application.getRole("user"));
 
         roles = user.getRealmRoleMappings();
-        Assert.assertEquals(roles.size(), 3);
+        Assert.assertEquals(4, roles.size());
         assertRolesContains(realmUserRole, roles);
         Assert.assertTrue(user.hasRole(realmUserRole));
         // Role "foo" is default realm role
@@ -503,13 +507,13 @@ public class AdapterTest extends AbstractModelTest {
         // Test that application role 'user' don't clash with realm role 'user'
         Assert.assertNotEquals(realmModel.getRole("user").getId(), application.getRole("user").getId());
 
-        Assert.assertEquals(7, user.getRoleMappings().size());
+        Assert.assertEquals(8, user.getRoleMappings().size());
 
         // Revoke some roles
         user.deleteRoleMapping(realmModel.getRole("foo"));
         user.deleteRoleMapping(appBarRole);
         roles = user.getRoleMappings();
-        Assert.assertEquals(5, roles.size());
+        Assert.assertEquals(6, roles.size());
         assertRolesContains(realmUserRole, roles);
         assertRolesContains(application.getRole("user"), roles);
         Assert.assertFalse(user.hasRole(appBarRole));
@@ -829,6 +833,61 @@ public class AdapterTest extends AbstractModelTest {
         Assert.assertEquals(Config.getAdminRealm(), masterAdminClient.getRealm().getId());
 
         realmManager.removeRealm(realmModel);
+    }
+
+    @Test
+    public void testComponentModelCRUD() {
+        // Add
+        realmModel = realmManager.createRealm("foo-realm");
+        UserStorageProviderModel model = new UserStorageProviderModel();
+        model.setName("memory");
+        model.setPriority(0);
+        model.setProviderId(UserMapStorageFactory.PROVIDER_ID);
+        model.setParentId(realmModel.getId());
+        ComponentModel createdModel = realmModel.addComponentModel(model);
+        String id = createdModel.getId();
+        Assert.assertNotNull(id);
+
+        commit();
+
+        realmModel = realmManager.getRealmByName("foo-realm");
+        ComponentModel foundModel = realmModel.getComponent(id);
+        assertComponentModel(foundModel, id, UserMapStorageFactory.PROVIDER_ID, realmModel.getId(), "memory");
+
+        List<ComponentModel> components = realmModel.getComponents();
+        Assert.assertEquals(components.size(), 1);
+        assertComponentModel(components.get(0), id, UserMapStorageFactory.PROVIDER_ID, realmModel.getId(), "memory");
+
+        components = realmModel.getComponents(realmModel.getId(), UserStorageProvider.class.getName());
+        Assert.assertEquals(components.size(), 1);
+        assertComponentModel(components.get(0), id, UserMapStorageFactory.PROVIDER_ID, realmModel.getId(), "memory");
+
+        // Update
+        foundModel.getConfig().putSingle("foo", "bar");
+        realmModel.updateComponent(foundModel);
+
+        commit();
+
+        realmModel = realmManager.getRealmByName("foo-realm");
+        foundModel = realmModel.getComponent(id);
+        assertComponentModel(foundModel, id, UserMapStorageFactory.PROVIDER_ID, realmModel.getId(), "memory");
+        Assert.assertEquals("bar", foundModel.getConfig().getFirst("foo"));
+
+        // Remove
+        realmModel.removeComponent(foundModel);
+
+        commit();
+
+        realmModel = realmManager.getRealmByName("foo-realm");
+        foundModel = realmModel.getComponent(id);
+        Assert.assertNull(foundModel);
+    }
+
+    private void assertComponentModel(ComponentModel componentModel, String expectedId, String expectedProviderId, String expectedParentId, String expectedName) {
+        Assert.assertEquals(expectedId, componentModel.getId());
+        Assert.assertEquals(expectedProviderId, componentModel.getProviderId());
+        Assert.assertEquals(expectedParentId, componentModel.getParentId());
+        Assert.assertEquals(expectedName, componentModel.getName());
     }
 
     private KeyPair generateKeypair() throws NoSuchAlgorithmException {

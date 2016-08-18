@@ -31,6 +31,7 @@ import org.keycloak.events.EventType;
 import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.events.admin.AdminEventQuery;
 import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
 import org.keycloak.exportimport.ClientDescriptionConverter;
 import org.keycloak.exportimport.ClientDescriptionConverterFactory;
 import org.keycloak.jose.jws.JWSBuilder;
@@ -86,6 +87,7 @@ import javax.ws.rs.core.UriInfo;
 
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.cert.X509Certificate;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -126,7 +128,7 @@ public class RealmAdminResource {
         this.auth = auth;
         this.realm = realm;
         this.tokenManager = tokenManager;
-        this.adminEvent = adminEvent.realm(realm);
+        this.adminEvent = adminEvent.realm(realm).resource(ResourceType.REALM);
 
         auth.init(RealmAuth.Resource.REALM);
         auth.requireAny();
@@ -205,6 +207,31 @@ public class RealmAdminResource {
         return resource;
     }
 
+
+    /**
+     * Base path for managing client initial access tokens
+     *
+     * @return
+     */
+    @Path("clients-trusted-hosts")
+    public ClientRegistrationTrustedHostResource getClientRegistrationTrustedHost() {
+        ClientRegistrationTrustedHostResource resource = new ClientRegistrationTrustedHostResource(realm, auth, adminEvent);
+        ResteasyProviderFactory.getInstance().injectProperties(resource);
+        return resource;
+    }
+
+    /**
+     * Base path for managing components under this realm.
+     *
+     * @return
+     */
+    @Path("components")
+    public ComponentResource getComponents() {
+        ComponentResource resource = new ComponentResource(realm, auth, adminEvent);
+        ResteasyProviderFactory.getInstance().injectProperties(resource);
+        return resource;
+    }
+
     /**
      * base path for managing realm-level roles of this realm
      *
@@ -268,7 +295,18 @@ public class RealmAdminResource {
                 }
             }
 
-            RepresentationToModel.updateRealm(rep, realm);
+            if (!"GENERATE".equals(rep.getPublicKey()) && (rep.getCertificate() != null)) {
+                try {
+                    X509Certificate cert = PemUtils.decodeCertificate(rep.getCertificate());
+                    if (cert == null) {
+                        return ErrorResponse.error("Failed to decode certificate", Status.BAD_REQUEST);
+                    }
+                } catch (Exception e)  {
+                    return ErrorResponse.error("Failed to decode certificate", Status.BAD_REQUEST);
+                }
+            }
+
+            RepresentationToModel.updateRealm(rep, realm, session);
 
             // Refresh periodic sync tasks for configured federationProviders
             List<UserFederationProviderModel> federationProviders = realm.getUserFederationProviders();
@@ -309,7 +347,7 @@ public class RealmAdminResource {
      */
     @Path("users")
     public UsersResource users() {
-        UsersResource users = new UsersResource(realm, auth, tokenManager, adminEvent);
+        UsersResource users = new UsersResource(realm, auth, adminEvent);
         ResteasyProviderFactory.getInstance().injectProperties(users);
         //resourceContext.initResource(users);
         return users;
@@ -389,7 +427,7 @@ public class RealmAdminResource {
         UserSessionModel userSession = session.sessions().getUserSession(realm, sessionId);
         if (userSession == null) throw new NotFoundException("Sesssion not found");
         AuthenticationManager.backchannelLogout(session, realm, userSession, uriInfo, connection, headers, true);
-        adminEvent.operation(OperationType.DELETE).resourcePath(uriInfo).success();
+        adminEvent.operation(OperationType.DELETE).resource(ResourceType.USER_SESSION).resourcePath(uriInfo).success();
 
     }
 
@@ -484,9 +522,9 @@ public class RealmAdminResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     public List<EventRepresentation> getEvents(@QueryParam("type") List<String> types, @QueryParam("client") String client,
-            @QueryParam("user") String user, @QueryParam("dateFrom") String dateFrom, @QueryParam("dateTo") String dateTo,
-            @QueryParam("ipAddress") String ipAddress, @QueryParam("first") Integer firstResult,
-            @QueryParam("max") Integer maxResults) {
+                                               @QueryParam("user") String user, @QueryParam("dateFrom") String dateFrom, @QueryParam("dateTo") String dateTo,
+                                               @QueryParam("ipAddress") String ipAddress, @QueryParam("first") Integer firstResult,
+                                               @QueryParam("max") Integer maxResults) {
         auth.init(RealmAuth.Resource.EVENTS).requireView();
 
         EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
@@ -573,10 +611,11 @@ public class RealmAdminResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     public List<AdminEventRepresentation> getEvents(@QueryParam("operationTypes") List<String> operationTypes, @QueryParam("authRealm") String authRealm, @QueryParam("authClient") String authClient,
-            @QueryParam("authUser") String authUser, @QueryParam("authIpAddress") String authIpAddress,
-            @QueryParam("resourcePath") String resourcePath, @QueryParam("dateFrom") String dateFrom,
-            @QueryParam("dateTo") String dateTo, @QueryParam("first") Integer firstResult,
-            @QueryParam("max") Integer maxResults) {
+                                                    @QueryParam("authUser") String authUser, @QueryParam("authIpAddress") String authIpAddress,
+                                                    @QueryParam("resourcePath") String resourcePath, @QueryParam("dateFrom") String dateFrom,
+                                                    @QueryParam("dateTo") String dateTo, @QueryParam("first") Integer firstResult,
+                                                    @QueryParam("max") Integer maxResults,
+                                                    @QueryParam("resourceTypes") List<String> resourceTypes) {
         auth.init(RealmAuth.Resource.EVENTS).requireView();
 
         EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
@@ -609,6 +648,16 @@ public class RealmAdminResource {
             }
             query.operation(t);
         }
+
+        if (resourceTypes != null && !resourceTypes.isEmpty()) {
+            ResourceType[] t = new ResourceType[resourceTypes.size()];
+            for (int i = 0; i < t.length; i++) {
+                t[i] = ResourceType.valueOf(resourceTypes.get(i));
+            }
+            query.resourceType(t);
+        }
+
+
 
         if(dateFrom != null) {
             SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
@@ -733,7 +782,7 @@ public class RealmAdminResource {
         }
         realm.addDefaultGroup(group);
 
-        adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo).success();
+        adminEvent.operation(OperationType.CREATE).resource(ResourceType.GROUP).resourcePath(uriInfo).success();
     }
 
     @DELETE
@@ -748,7 +797,7 @@ public class RealmAdminResource {
         }
         realm.removeDefaultGroup(group);
 
-        adminEvent.operation(OperationType.DELETE).resourcePath(uriInfo).success();
+        adminEvent.operation(OperationType.DELETE).resource(ResourceType.GROUP).resourcePath(uriInfo).success();
     }
 
 

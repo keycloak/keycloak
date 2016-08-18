@@ -158,6 +158,8 @@ module.factory('Notifications', function($rootScope, $timeout) {
     $rootScope.notification = notifications.current;
 
 	notifications.message = function(type, header, message) {
+        notifications.current.remove();
+        
         notifications.current.type = type;
         notifications.current.header = header;
         notifications.current.message = message;
@@ -227,15 +229,15 @@ module.factory('RealmAdminEvents', function($resource) {
 });
 
 module.factory('BruteForce', function($resource) {
-    return $resource(authUrl + '/admin/realms/:realm/attack-detection/brute-force/usernames', {
+    return $resource(authUrl + '/admin/realms/:realm/attack-detection/brute-force/users', {
         realm : '@realm'
     });
 });
 
 module.factory('BruteForceUser', function($resource) {
-    return $resource(authUrl + '/admin/realms/:realm/attack-detection/brute-force/usernames/:username', {
+    return $resource(authUrl + '/admin/realms/:realm/attack-detection/brute-force/users/:userId', {
         realm : '@realm',
-        username : '@username'
+        userId : '@userId'
     });
 });
 
@@ -294,6 +296,18 @@ module.factory('ClientInitialAccess', function($resource) {
         realm : '@realm',
         id : '@id'
     });
+});
+
+module.factory('ClientRegistrationTrustedHost', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/clients-trusted-hosts/:hostname', {
+        realm : '@realm',
+        hostname : '@hostname'
+    }, {
+         update : {
+             method : 'PUT'
+         }
+       }
+    );
 });
 
 
@@ -1236,90 +1250,6 @@ module.factory('TimeUnit2', function() {
     return t;
 });
 
-
-module.factory('PasswordPolicy', function() {
-    var p = {};
-
-    p.policyMessages = {
-        hashAlgorithm: 	"Default hashing algorithm.  Default is 'pbkdf2'.",
-        hashIterations: 	"Number of hashing iterations.  Default is 1.  Recommended is 50000.",
-        length:         	"Minimal password length (integer type). Default value is 8.",
-        digits:         	"Minimal number (integer type) of digits in password. Default value is 1.",
-        lowerCase:      	"Minimal number (integer type) of lowercase characters in password. Default value is 1.",
-        upperCase:      	"Minimal number (integer type) of uppercase characters in password. Default value is 1.",
-        specialChars:   	"Minimal number (integer type) of special characters in password. Default value is 1.",
-        notUsername:    	"Block passwords that are equal to the username",
-        regexPattern:  	    "Block passwords that do not match the regex pattern (string type).",
-        passwordHistory:  	"Block passwords that are equal to previous passwords. Default value is 3.",
-        forceExpiredPasswordChange:  	"Force password change when password credential is expired. Default value is 365 days."
-    }
-
-    p.allPolicies = [
-        { name: 'hashAlgorithm', value: 'pbkdf2' },
-        { name: 'hashIterations', value: 1 },
-        { name: 'length', value: 8 },
-        { name: 'digits', value: 1 },
-        { name: 'lowerCase', value: 1 },
-        { name: 'upperCase', value: 1 },
-        { name: 'specialChars', value: 1 },
-        { name: 'notUsername', value: 1 },
-        { name: 'regexPattern', value: ''},
-        { name: 'passwordHistory', value: 3 },
-        { name: 'forceExpiredPasswordChange', value: 365 }
-    ];
-
-    p.parse = function(policyString) {
-        var policies = [];
-        var re, policyEntry;
-
-        if (!policyString || policyString.length == 0){
-            return policies;
-        }
-
-        var policyArray = policyString.split(" and ");
-
-        for (var i = 0; i < policyArray.length; i ++){
-            var policyToken = policyArray[i];
-            
-            if(policyToken.indexOf('hashAlgorithm') === 0 || policyToken.indexOf('regexPattern') === 0) {
-            	re = /(\w+)\((.*)\)/;
-            	policyEntry = re.exec(policyToken);
-                if (null !== policyEntry) {
-                	policies.push({ name: policyEntry[1], value: policyEntry[2] });
-                }
-            } else {
-            	re = /(\w+)\(*(\d*)\)*/;
-            	policyEntry = re.exec(policyToken);
-                if (null !== policyEntry) {
-                	policies.push({ name: policyEntry[1], value: parseInt(policyEntry[2]) });
-                }
-            }
-        }
-        return policies;
-    };
-
-    p.toString = function(policies) {
-        if (!policies || policies.length == 0) {
-            return "";
-        }
-        var policyString = "";
-
-        for (var i = 0; i < policies.length; i++) {
-            policyString += policies[i].name;
-            if ( policies[i].value ){
-                policyString += '(' + policies[i].value + ')';
-            }
-            policyString += " and ";
-        }
-
-        policyString = policyString.substring(0, policyString.length - 5);
-
-        return policyString;
-    };
-
-    return p;
-});
-
 module.filter('removeSelectedPolicies', function() {
     return function(policies, selectedPolicies) {
         var result = [];
@@ -1327,7 +1257,7 @@ module.filter('removeSelectedPolicies', function() {
             var policy = policies[i];
             var policyAvailable = true;
             for(var j in selectedPolicies) {
-                if(policy.name === selectedPolicies[j].name && policy.name !== 'regexPattern') {
+                if(policy.id === selectedPolicies[j].id && !policy.multipleSupported) {
                     policyAvailable = false;
                 }
             }
@@ -1711,3 +1641,16 @@ module.factory('DefaultGroups', function($resource) {
         }
     });
 });
+
+module.factory('Components', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/components/:componentId', {
+        realm : '@realm',
+        componentId : '@componentId'
+    }, {
+        update : {
+            method : 'PUT'
+        }
+    });
+});
+
+

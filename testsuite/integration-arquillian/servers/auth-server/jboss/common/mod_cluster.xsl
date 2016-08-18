@@ -22,8 +22,26 @@
 
     <xsl:output method="xml" version="1.0" encoding="UTF-8" indent="yes" xalan:indent-amount="4" standalone="no"/>
     <xsl:strip-space elements="*"/>
-
-    <!--add socket binding-->
+    
+    <xsl:param name="load.metric" select="'simple'" />\
+    
+    <!-- mod-cluster-config -->
+    <xsl:template match="//*[local-name()='mod-cluster-config']">
+        <mod-cluster-config advertise-socket="modcluster" connector="ajp">
+            <xsl:choose>
+                <xsl:when test="$load.metric='simple'">
+                    <simple-load-provider factor="1"/>
+                </xsl:when>
+                <xsl:otherwise>
+                    <dynamic-load-provider>
+                        <load-metric type="{$load.metric}"/>
+                    </dynamic-load-provider>
+                </xsl:otherwise>
+            </xsl:choose>
+        </mod-cluster-config>
+    </xsl:template>
+    
+    <!--add socket-binding-->
     <xsl:template match="//*[local-name()='socket-binding-group' and @name='standard-sockets']/*[local-name()='socket-binding' and @name='modcluster']">
         <socket-binding name="modcluster" interface="private" port="0" multicast-address="${{jboss.default.multicast.address:230.0.0.4}}" multicast-port="23364"/>
     </xsl:template>

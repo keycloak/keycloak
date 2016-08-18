@@ -39,6 +39,13 @@ public interface DBLockProvider extends Provider {
      */
     void releaseLock();
 
+    /**
+     * Check if I have lock
+     *
+     * @return
+     */
+    boolean hasLock();
+
 
     /**
      * @return true if provider supports forced unlock at startup

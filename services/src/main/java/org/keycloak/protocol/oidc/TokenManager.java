@@ -24,9 +24,11 @@ import org.keycloak.OAuthErrorException;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
+import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
+import org.keycloak.jose.jws.crypto.HashProvider;
 import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
@@ -44,6 +46,7 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.protocol.oidc.mappers.OIDCAccessTokenMapper;
 import org.keycloak.protocol.oidc.mappers.OIDCIDTokenMapper;
+import org.keycloak.protocol.oidc.mappers.UserInfoTokenMapper;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.protocol.oidc.utils.WebOriginsUtils;
 import org.keycloak.representations.AccessToken;
@@ -78,6 +81,10 @@ import java.util.Set;
  */
 public class TokenManager {
     protected static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    private static final String JWT = "JWT";
+
+    // Harcoded for now
+    Algorithm jwsAlgorithm = Algorithm.RS256;
 
     public static void applyScope(RoleModel role, RoleModel scope, Set<RoleModel> visited, Set<RoleModel> requested) {
         if (visited.contains(scope)) return;
@@ -198,6 +205,11 @@ public class TokenManager {
             return false;
         }
 
+        ClientSessionModel clientSession = session.sessions().getClientSession(realm, token.getClientSession());
+        if (clientSession == null) {
+            return false;
+        }
+
         return true;
     }
 
@@ -238,16 +250,23 @@ public class TokenManager {
     }
 
     public RefreshToken verifyRefreshToken(RealmModel realm, String encodedRefreshToken) throws OAuthErrorException {
+        return verifyRefreshToken(realm, encodedRefreshToken, true);
+    }
+
+    public RefreshToken verifyRefreshToken(RealmModel realm, String encodedRefreshToken, boolean checkExpiration) throws OAuthErrorException {
         try {
             RefreshToken refreshToken = toRefreshToken(realm, encodedRefreshToken);
 
-            if (refreshToken.getExpiration() != 0 && refreshToken.isExpired()) {
-                throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Refresh token expired");
+            if (checkExpiration) {
+                if (refreshToken.getExpiration() != 0 && refreshToken.isExpired()) {
+                    throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Refresh token expired");
+                }
+
+                if (refreshToken.getIssuedAt() < realm.getNotBefore()) {
+                    throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Stale refresh token");
+                }
             }
 
-            if (refreshToken.getIssuedAt() < realm.getNotBefore()) {
-                throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Stale refresh token");
-            }
             return refreshToken;
         } catch (JWSInputException e) {
             throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Invalid refresh token", e);
@@ -492,6 +511,27 @@ public class TokenManager {
         }
         return token;
     }
+
+    public AccessToken transformUserInfoAccessToken(KeycloakSession session, AccessToken token, RealmModel realm, ClientModel client, UserModel user,
+                                            UserSessionModel userSession, ClientSessionModel clientSession) {
+        Set<ProtocolMapperModel> mappings = new ClientSessionCode(realm, clientSession).getRequestedProtocolMappers();
+        KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
+        for (ProtocolMapperModel mapping : mappings) {
+
+            ProtocolMapper mapper = (ProtocolMapper)sessionFactory.getProviderFactory(ProtocolMapper.class, mapping.getProtocolMapper());
+            if (mapper == null || !(mapper instanceof OIDCAccessTokenMapper)) continue;
+
+            if(mapper instanceof UserInfoTokenMapper){
+                token = ((UserInfoTokenMapper)mapper).transformUserInfoToken(token, mapping, session, userSession, clientSession);
+                continue;
+            }
+
+            token = ((OIDCAccessTokenMapper)mapper).transformAccessToken(token, mapping, session, userSession, clientSession);
+
+        }
+        return token;
+    }
+
     public void transformIDToken(KeycloakSession session, IDToken token, RealmModel realm, ClientModel client, UserModel user,
                                       UserSessionModel userSession, ClientSessionModel clientSession) {
         Set<ProtocolMapperModel> mappings = new ClientSessionCode(realm, clientSession).getRequestedProtocolMappers();
@@ -517,6 +557,17 @@ public class TokenManager {
         token.issuedFor(client.getClientId());
         token.issuer(clientSession.getNote(OIDCLoginProtocol.ISSUER));
         token.setNonce(clientSession.getNote(OIDCLoginProtocol.NONCE_PARAM));
+
+        // Best effort for "acr" value. Use 0 if clientSession was authenticated through cookie ( SSO )
+        // TODO: Add better acr support. See KEYCLOAK-3314
+        String acr = (AuthenticationManager.isSSOAuthentication(clientSession)) ? "0" : "1";
+        token.setAcr(acr);
+
+        String authTime = session.getNote(AuthenticationManager.AUTH_TIME);
+        if (authTime != null) {
+            token.setAuthTime(Integer.parseInt(authTime));
+        }
+
         if (session != null) {
             token.setSessionState(session.getId());
         }
@@ -570,8 +621,10 @@ public class TokenManager {
 
     public String encodeToken(RealmModel realm, Object token) {
         String encodedToken = new JWSBuilder()
+                .type(JWT)
+                .kid(realm.getKeyId())
                 .jsonContent(token)
-                .rsa256(realm.getPrivateKey());
+                .sign(jwsAlgorithm, realm.getPrivateKey());
         return encodedToken;
     }
 
@@ -590,6 +643,9 @@ public class TokenManager {
         AccessToken accessToken;
         RefreshToken refreshToken;
         IDToken idToken;
+
+        boolean generateAccessTokenHash = false;
+        String codeHash;
 
         public AccessTokenResponseBuilder(RealmModel realm, ClientModel client, EventBuilder event, KeycloakSession session, UserSessionModel userSession, ClientSessionModel clientSession) {
             this.realm = realm;
@@ -656,12 +712,23 @@ public class TokenManager {
             idToken.issuedFor(accessToken.getIssuedFor());
             idToken.issuer(accessToken.getIssuer());
             idToken.setNonce(accessToken.getNonce());
+            idToken.setAuthTime(accessToken.getAuthTime());
             idToken.setSessionState(accessToken.getSessionState());
             idToken.expiration(accessToken.getExpiration());
+            idToken.setAcr(accessToken.getAcr());
             transformIDToken(session, idToken, realm, client, userSession.getUser(), userSession, clientSession);
             return this;
         }
 
+        public AccessTokenResponseBuilder generateAccessTokenHash() {
+            generateAccessTokenHash = true;
+            return this;
+        }
+
+        public AccessTokenResponseBuilder generateCodeHash(String code) {
+            codeHash = HashProvider.oidcHash(jwsAlgorithm, code);
+            return this;
+        }
 
 
         public AccessTokenResponse build() {
@@ -679,12 +746,8 @@ public class TokenManager {
             }
 
             AccessTokenResponse res = new AccessTokenResponse();
-            if (idToken != null) {
-                String encodedToken = new JWSBuilder().jsonContent(idToken).rsa256(realm.getPrivateKey());
-                res.setIdToken(encodedToken);
-            }
             if (accessToken != null) {
-                String encodedToken = new JWSBuilder().jsonContent(accessToken).rsa256(realm.getPrivateKey());
+                String encodedToken = new JWSBuilder().type(JWT).kid(realm.getKeyId()).jsonContent(accessToken).sign(jwsAlgorithm, realm.getPrivateKey());
                 res.setToken(encodedToken);
                 res.setTokenType("bearer");
                 res.setSessionState(accessToken.getSessionState());
@@ -692,8 +755,21 @@ public class TokenManager {
                     res.setExpiresIn(accessToken.getExpiration() - Time.currentTime());
                 }
             }
+
+            if (generateAccessTokenHash) {
+                String atHash = HashProvider.oidcHash(jwsAlgorithm, res.getToken());
+                idToken.setAccessTokenHash(atHash);
+            }
+            if (codeHash != null) {
+                idToken.setCodeHash(codeHash);
+            }
+
+            if (idToken != null) {
+                String encodedToken = new JWSBuilder().type(JWT).kid(realm.getKeyId()).jsonContent(idToken).sign(jwsAlgorithm, realm.getPrivateKey());
+                res.setIdToken(encodedToken);
+            }
             if (refreshToken != null) {
-                String encodedToken = new JWSBuilder().jsonContent(refreshToken).rsa256(realm.getPrivateKey());
+                String encodedToken = new JWSBuilder().type(JWT).kid(realm.getKeyId()).jsonContent(refreshToken).sign(jwsAlgorithm, realm.getPrivateKey());
                 res.setRefreshToken(encodedToken);
                 if (refreshToken.getExpiration() != 0) {
                     res.setRefreshExpiresIn(refreshToken.getExpiration() - Time.currentTime());

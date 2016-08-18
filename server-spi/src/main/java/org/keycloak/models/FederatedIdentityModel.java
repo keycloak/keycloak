@@ -57,4 +57,25 @@ public class FederatedIdentityModel {
     public void setToken(String token) {
         this.token = token;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        FederatedIdentityModel that = (FederatedIdentityModel) o;
+
+        if (userId != null ? !userId.equals(that.userId) : that.userId != null) return false;
+        if (!identityProvider.equals(that.identityProvider)) return false;
+        return userName != null ? userName.equals(that.userName) : that.userName == null;
+
+    }
+
+    @Override
+    public int hashCode() {
+        int result = userId != null ? userId.hashCode() : 0;
+        result = 31 * result + identityProvider.hashCode();
+        result = 31 * result + (userName != null ? userName.hashCode() : 0);
+        return result;
+    }
 }

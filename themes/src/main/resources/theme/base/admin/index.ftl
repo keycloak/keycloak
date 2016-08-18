@@ -36,6 +36,10 @@
     <script src="${resourceUrl}/lib/angular/select2.js" type="text/javascript"></script>
     <script src="${resourceUrl}/lib/fileupload/angular-file-upload.min.js"></script>
     <script src="${resourceUrl}/lib/filesaver/FileSaver.js"></script>
+    <script src="${resourceUrl}/lib/ui-ace/src-min-noconflict/ace.js"></script>
+    <script src="${resourceUrl}/lib/ui-ace/src-min-noconflict/theme-github.js"></script>
+    <script src="${resourceUrl}/lib/ui-ace/src-min-noconflict/mode-javascript.js"></script>
+    <script src="${resourceUrl}/lib/ui-ace/ui-ace.min.js"></script>
 
     <script src="${authUrl}/js/${resourceVersion}/keycloak.js" type="text/javascript"></script>
 
@@ -46,6 +50,20 @@
     <script src="${resourceUrl}/js/controllers/groups.js" type="text/javascript"></script>
     <script src="${resourceUrl}/js/loaders.js" type="text/javascript"></script>
     <script src="${resourceUrl}/js/services.js" type="text/javascript"></script>
+
+    <!-- Authorization -->
+    <script src="${resourceUrl}/js/authz/lib/ace/ace.js" type="text/javascript"></script>
+    <script src="${resourceUrl}/js/authz/lib/ace/mode-javascript.js" type="text/javascript"></script>
+    <script src="${resourceUrl}/js/authz/lib/ace/ui-ace.min.js" type="text/javascript"></script>
+    <script src="${resourceUrl}/js/authz/authz-app.js" type="text/javascript"></script>
+    <script src="${resourceUrl}/js/authz/authz-controller.js" type="text/javascript"></script>
+    <script src="${resourceUrl}/js/authz/authz-services.js" type="text/javascript"></script>
+
+    <#if properties.scripts?has_content>
+        <#list properties.scripts?split(' ') as script>
+            <script type="text/javascript" src="${resourceUrl}/${script}"></script>
+        </#list>
+    </#if>
 </head>
 <body data-ng-controller="GlobalCtrl" data-ng-cloak data-ng-show="auth.user">
 

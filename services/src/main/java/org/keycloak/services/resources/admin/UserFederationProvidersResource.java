@@ -21,7 +21,9 @@ import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.common.constants.KerberosConstants;
 import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
 import org.keycloak.mappers.FederationConfigValidationException;
+import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserFederationProvider;
@@ -83,7 +85,7 @@ public class UserFederationProvidersResource {
     public UserFederationProvidersResource(RealmModel realm, RealmAuth auth, AdminEventBuilder adminEvent) {
         this.auth = auth;
         this.realm = realm;
-        this.adminEvent = adminEvent;
+        this.adminEvent = adminEvent.resource(ResourceType.USER_FEDERATION_PROVIDER);
 
         auth.init(RealmAuth.Resource.USER);
     }
@@ -98,7 +100,8 @@ public class UserFederationProvidersResource {
     public static boolean checkKerberosCredential(KeycloakSession session, RealmModel realm, UserFederationProviderModel model) {
         String allowKerberosCfg = model.getConfig().get(KerberosConstants.ALLOW_KERBEROS_AUTHENTICATION);
         if (Boolean.valueOf(allowKerberosCfg)) {
-            CredentialHelper.setAlternativeCredential(session, CredentialRepresentation.KERBEROS, realm);
+            CredentialHelper.setOrReplaceAuthenticationRequirement(session, realm, CredentialRepresentation.KERBEROS,
+                    AuthenticationExecutionModel.Requirement.ALTERNATIVE, AuthenticationExecutionModel.Requirement.DISABLED);
             return true;
         }
 

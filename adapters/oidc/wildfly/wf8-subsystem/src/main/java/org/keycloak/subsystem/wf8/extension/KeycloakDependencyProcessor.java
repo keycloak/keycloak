@@ -46,8 +46,7 @@ public abstract class KeycloakDependencyProcessor implements DeploymentUnitProce
     public void deploy(DeploymentPhaseContext phaseContext) throws DeploymentUnitProcessingException {
         final DeploymentUnit deploymentUnit = phaseContext.getDeploymentUnit();
 
-        String deploymentName = deploymentUnit.getName();
-        if (!KeycloakAdapterConfigService.getInstance().isSecureDeployment(deploymentName)) {
+        if (!KeycloakAdapterConfigService.getInstance().isSecureDeployment(deploymentUnit)) {
             WarMetaData warMetaData = deploymentUnit.getAttachment(WarMetaData.ATTACHMENT_KEY);
             if (warMetaData == null) {
                 return;

@@ -21,12 +21,15 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.OAuthErrorException;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
+import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.oidc.TokenMetadataRepresentation;
+import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.TestRealmKeycloakTest;
 import org.keycloak.testsuite.util.KeycloakModelUtils;
@@ -112,7 +115,9 @@ public class TokenIntrospectionTest extends TestRealmKeycloakTest {
         AccessTokenResponse accessTokenResponse = oauth.doAccessTokenRequest(code, "password");
         String tokenResponse = oauth.introspectAccessTokenWithClientCredential("confidential-cli", "bad_credential", accessTokenResponse.getAccessToken());
 
-        assertEquals("{\"error_description\":\"Authentication failed.\",\"error\":\"invalid_request\"}", tokenResponse);
+        OAuth2ErrorRepresentation errorRep = JsonSerialization.readValue(tokenResponse, OAuth2ErrorRepresentation.class);
+        Assert.assertEquals("Authentication failed.", errorRep.getErrorDescription());
+        Assert.assertEquals(OAuthErrorException.INVALID_REQUEST, errorRep.getError());
     }
 
     @Test
@@ -122,7 +127,7 @@ public class TokenIntrospectionTest extends TestRealmKeycloakTest {
         EventRepresentation loginEvent = events.expectLogin().assertEvent();
         String sessionId = loginEvent.getSessionId();
         AccessTokenResponse accessTokenResponse = oauth.doAccessTokenRequest(code, "password");
-        String tokenResponse = oauth.introspectAccessTokenWithClientCredential("confidential-cli", "secret1", accessTokenResponse.getAccessToken());
+        String tokenResponse = oauth.introspectRefreshTokenWithClientCredential("confidential-cli", "secret1", accessTokenResponse.getAccessToken());
         ObjectMapper objectMapper = new ObjectMapper();
         JsonNode jsonNode = objectMapper.readTree(tokenResponse);
 
@@ -157,7 +162,9 @@ public class TokenIntrospectionTest extends TestRealmKeycloakTest {
         AccessTokenResponse accessTokenResponse = oauth.doAccessTokenRequest(code, "password");
         String tokenResponse = oauth.introspectAccessTokenWithClientCredential("public-cli", "it_doesnt_matter", accessTokenResponse.getAccessToken());
 
-        assertEquals("{\"error_description\":\"Client not allowed.\",\"error\":\"invalid_request\"}", tokenResponse);
+        OAuth2ErrorRepresentation errorRep = JsonSerialization.readValue(tokenResponse, OAuth2ErrorRepresentation.class);
+        Assert.assertEquals("Client not allowed.", errorRep.getErrorDescription());
+        Assert.assertEquals(OAuthErrorException.INVALID_REQUEST, errorRep.getError());
     }
 
     @Test

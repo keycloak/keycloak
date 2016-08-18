@@ -53,10 +53,10 @@ public class OIDCClientRegistrationProvider extends AbstractClientRegistrationPr
         }
 
         try {
-            ClientRepresentation client = DescriptionConverter.toInternal(clientOIDC);
+            ClientRepresentation client = DescriptionConverter.toInternal(session, clientOIDC);
             client = create(client);
             URI uri = session.getContext().getUri().getAbsolutePathBuilder().path(client.getClientId()).build();
-            clientOIDC = DescriptionConverter.toExternalResponse(client, uri);
+            clientOIDC = DescriptionConverter.toExternalResponse(session, client, uri);
             clientOIDC.setClientIdIssuedAt(Time.currentTime());
             return Response.created(uri).entity(clientOIDC).build();
         } catch (ClientRegistrationException cre) {
@@ -70,7 +70,7 @@ public class OIDCClientRegistrationProvider extends AbstractClientRegistrationPr
     @Produces(MediaType.APPLICATION_JSON)
     public Response getOIDC(@PathParam("clientId") String clientId) {
         ClientRepresentation client = get(clientId);
-        OIDCClientRepresentation clientOIDC = DescriptionConverter.toExternalResponse(client, session.getContext().getUri().getRequestUri());
+        OIDCClientRepresentation clientOIDC = DescriptionConverter.toExternalResponse(session, client, session.getContext().getUri().getRequestUri());
         return Response.ok(clientOIDC).build();
     }
 
@@ -79,10 +79,10 @@ public class OIDCClientRegistrationProvider extends AbstractClientRegistrationPr
     @Consumes(MediaType.APPLICATION_JSON)
     public Response updateOIDC(@PathParam("clientId") String clientId, OIDCClientRepresentation clientOIDC) {
         try {
-            ClientRepresentation client = DescriptionConverter.toInternal(clientOIDC);
+            ClientRepresentation client = DescriptionConverter.toInternal(session, clientOIDC);
             client = update(clientId, client);
             URI uri = session.getContext().getUri().getAbsolutePathBuilder().path(client.getClientId()).build();
-            clientOIDC = DescriptionConverter.toExternalResponse(client, uri);
+            clientOIDC = DescriptionConverter.toExternalResponse(session, client, uri);
             return Response.ok(clientOIDC).build();
         } catch (ClientRegistrationException cre) {
             logger.clientRegistrationException(cre.getMessage());

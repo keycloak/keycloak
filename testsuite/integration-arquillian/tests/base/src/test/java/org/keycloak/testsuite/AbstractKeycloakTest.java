@@ -169,13 +169,19 @@ public abstract class AbstractKeycloakTest {
     }
 
     public void deleteAllCookiesForMasterRealm() {
-        masterRealmPage.navigateTo();
-        log.debug("deleting cookies in master realm");
+        deleteAllCookiesForRealm(accountPage);
+    }
+
+    protected void deleteAllCookiesForRealm(Account realmAccountPage) {
+        // masterRealmPage.navigateTo();
+        realmAccountPage.navigateTo(); // Because IE webdriver freezes when loading a JSON page (realm page), we need to use this alternative
+        log.info("deleting cookies in '" + realmAccountPage.getAuthRealm() + "' realm");
         driver.manage().deleteAllCookies();
     }
 
     protected void driverSettings() {
-        driver.manage().timeouts().pageLoadTimeout(WaitUtils.PAGELOAD_TIMEOUT, TimeUnit.MILLISECONDS);
+        driver.manage().timeouts().implicitlyWait(WaitUtils.IMPLICIT_ELEMENT_WAIT_MILLIS, TimeUnit.MILLISECONDS);
+        driver.manage().timeouts().pageLoadTimeout(WaitUtils.PAGELOAD_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
         driver.manage().window().maximize();
     }
 

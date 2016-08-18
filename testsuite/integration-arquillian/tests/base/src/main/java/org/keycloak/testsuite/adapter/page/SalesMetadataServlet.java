@@ -25,7 +25,7 @@ import java.net.URL;
 /**
  * @author mhajas
  */
-public class SalesMetadataServlet extends SAMLServletWithLogout {
+public class SalesMetadataServlet extends SAMLServlet {
     public static final String DEPLOYMENT_NAME = "sales-metadata";
 
     @ArquillianResource

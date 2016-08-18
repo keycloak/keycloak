@@ -33,6 +33,10 @@ import org.keycloak.connections.mongo.impl.context.TransactionMongoStoreInvocati
 import org.keycloak.connections.mongo.updater.MongoUpdaterProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.KeycloakSessionTask;
+import org.keycloak.models.dblock.DBLockManager;
+import org.keycloak.models.dblock.DBLockProvider;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.provider.ServerInfoAwareProviderFactory;
 
 import com.mongodb.DB;
@@ -74,6 +78,11 @@ public class DefaultMongoConnectionFactoryProvider implements MongoConnectionPro
             "org.keycloak.models.entities.RequiredActionProviderEntity",
             "org.keycloak.models.entities.PersistentUserSessionEntity",
             "org.keycloak.models.entities.PersistentClientSessionEntity",
+            "org.keycloak.models.entities.ComponentEntity",
+            "org.keycloak.authorization.mongo.entities.PolicyEntity",
+            "org.keycloak.authorization.mongo.entities.ResourceEntity",
+            "org.keycloak.authorization.mongo.entities.ResourceServerEntity",
+            "org.keycloak.authorization.mongo.entities.ScopeEntity"
     };
 
     private static final Logger logger = Logger.getLogger(DefaultMongoConnectionFactoryProvider.class);
@@ -132,7 +141,7 @@ public class DefaultMongoConnectionFactoryProvider implements MongoConnectionPro
         lazyInit(session);
 
         TransactionMongoStoreInvocationContext invocationContext = new TransactionMongoStoreInvocationContext(mongoStore);
-        session.getTransaction().enlist(new MongoKeycloakTransaction(invocationContext));
+        session.getTransactionManager().enlist(new MongoKeycloakTransaction(invocationContext));
         return new DefaultMongoConnectionProvider(db, mongoStore, invocationContext);
     }
 
@@ -166,6 +175,29 @@ public class DefaultMongoConnectionFactoryProvider implements MongoConnectionPro
                 throw new RuntimeException("Can't update database: Mongo updater provider not found");
             }
 
+            DBLockProvider dbLock = new DBLockManager(session).getDBLock();
+            if (dbLock.hasLock()) {
+                updateOrValidateDB(databaseSchema, session, mongoUpdater);
+            } else {
+                logger.trace("Don't have DBLock retrieved before upgrade. Needs to acquire lock first in separate transaction");
+
+                KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), new KeycloakSessionTask() {
+
+                    @Override
+                    public void run(KeycloakSession lockSession) {
+                        DBLockManager dbLockManager = new DBLockManager(lockSession);
+                        DBLockProvider dbLock2 = dbLockManager.getDBLock();
+                        dbLock2.waitForLock();
+                        try {
+                            updateOrValidateDB(databaseSchema, session, mongoUpdater);
+                        } finally {
+                            dbLock2.releaseLock();
+                        }
+                    }
+
+                });
+            }
+
             if (databaseSchema.equals("update")) {
                 mongoUpdater.update(session, db);
             } else if (databaseSchema.equals("validate")) {
@@ -183,6 +215,16 @@ public class DefaultMongoConnectionFactoryProvider implements MongoConnectionPro
             entityClasses[i] = getClass().getClassLoader().loadClass(entities[i]);
         }
         return entityClasses;
+    }
+
+    protected void updateOrValidateDB(String databaseSchema, KeycloakSession session, MongoUpdaterProvider mongoUpdater) {
+        if (databaseSchema.equals("update")) {
+            mongoUpdater.update(session, db);
+        } else if (databaseSchema.equals("validate")) {
+            mongoUpdater.validate(session, db);
+        } else {
+            throw new RuntimeException("Invalid value for databaseSchema: " + databaseSchema);
+        }
     }
 
     @Override

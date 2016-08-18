@@ -5,12 +5,15 @@ Currently Keycloak supports securing your web applications running inside [JBoss
 - Jetty8 adapter for both JBoss Fuse 6.2 and Apache Karaf 3, that include [Jetty8](http://eclipse.org/jetty/) server under the covers and Jetty is used for running various kinds of web applications
 - Jetty9 adapter for both JBoss Fuse 6.3 and Apache Karaf 4, that include [Jetty9](http://eclipse.org/jetty/) server under the covers and Jetty is used for running various kinds of web applications
 
-The Fuse example is slightly modified version of Keycloak base demo applications. The main difference among base demo is that for Fuse demo 
-are applications running on separate Fuse/Karaf server. Keycloak server is supposed to run separately on Wildfly.
+**WARNING:** Running your applications inside standalone Apache Karaf may work, however we are testing just with JBoss Fuse and not with standalone Karaf server. 
+So if you really want adapter on standalone Karaf server, it's up to you to figure exact steps to have it working.
 
-What is supported for Fuse/Karaf is:
-* Security for classic WAR applications deployed on Fuse/Karaf with [pax-war extender](https://ops4j1.jira.com/wiki/display/ops4j/Pax+Web+Extender+-+War). 
-* Security for servlets deployed on Fuse/Karaf as OSGI services with [pax-whiteboard extender](https://ops4j1.jira.com/wiki/display/ops4j/Pax+Web+Extender+-+Whiteboard).
+The Fuse example is slightly modified version of Keycloak base demo applications. The main difference among base demo is that for Fuse demo 
+are applications running on separate Fuse server. Keycloak server is supposed to run separately on Wildfly.
+
+What is supported for Fuse is:
+* Security for classic WAR applications deployed on Fuse with [pax-war extender](https://ops4j1.jira.com/wiki/display/ops4j/Pax+Web+Extender+-+War). 
+* Security for servlets deployed on Fuse as OSGI services with [pax-whiteboard extender](https://ops4j1.jira.com/wiki/display/ops4j/Pax+Web+Extender+-+Whiteboard).
 * Security for [Apache Camel](http://camel.apache.org/) Jetty endpoints running with [camel-jetty](http://camel.apache.org/jetty.html) component.
 * Security for [Apache CXF](http://cxf.apache.org/) endpoints running on their own separate [Jetty engine](http://cxf.apache.org/docs/jetty-configuration.html). 
 Supports both securing JAX-RS and JAX-WS endpoints.
@@ -27,7 +30,7 @@ The customer-app-fuse invokes the endpoint to get data
 * **cxf-jaxws** [Apache CXF](http://cxf.apache.org/) JAX-WS endpoint running on separate Jetty engine on [http://localhost:8282/PersonServiceCF](http://localhost:8282/PersonServiceCF). 
 The product-app-fuse invokes the endpoint to get data.
 
-Running of demo consists of 2 steps. First you need to run separate Keycloak server and then Fuse/Karaf server with the applications
+Running of demo consists of 2 steps. First you need to run separate Keycloak server and then Fuse server with the applications
 
 Base steps
 ----------
@@ -73,25 +76,6 @@ features:addurl mvn:org.keycloak/keycloak-osgi-features/1.9.4.Final/xml/features
 features:addurl mvn:org.keycloak.example.demo/keycloak-fuse-example-features/1.9.4.Final/xml/features
 features:install keycloak-fuse-6.3-example
 ```
-
-Running demo on Apache Karaf 3.0.3
-----------------------------------
-
-Demo is using Apache camel and Apache CXF, which are not in standalone Karaf by default. So you will need to install feature repositories for both of them.
-Next step is to add feature repository for main set of Keycloak karaf features and for the demo. Once all feature URLs are added, you just need to install `keycloak-fuse-example` feature,
-which automatically installs all other needed stuff.
-
-Once you run Apache Karaf, you need to run these commands from Karaf console (Make sure to replace keycloak versions in the example with actual Keycloak version):
-
-```
-feature:repo-add mvn:org.apache.camel.karaf/apache-camel/2.15.1/xml/features
-feature:repo-add mvn:org.apache.cxf.karaf/apache-cxf/3.0.4/xml/features
-feature:repo-add mvn:org.keycloak/keycloak-osgi-features/1.9.4.Final/xml/features
-feature:repo-add mvn:org.keycloak.example.demo/keycloak-fuse-example-features/1.9.4.Final/xml/features
-feature:install keycloak-fuse-example
-```
-
-Now you can test example applications similarly like described for "JBoss Fuse 6.2" section.
 
 
 How to secure your own applications

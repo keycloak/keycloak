@@ -45,6 +45,7 @@ import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.ExecutionBuilder;
 import org.keycloak.testsuite.util.FlowBuilder;
 import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.RealmRepUtil;
 import org.keycloak.testsuite.util.UserBuilder;
 
 import static org.junit.Assert.assertEquals;
@@ -73,7 +74,7 @@ public class CustomFlowTest extends AbstractFlowTest {
                                               .build();
         testRealm.getClients().add(dummyClient);
 
-        ClientRepresentation testApp = findClientInRealmRep(testRealm, "test-app");
+        ClientRepresentation testApp = RealmRepUtil.findClientByClientId(testRealm, "test-app");
         testApp.setClientAuthenticatorType(PassThroughClientAuthenticator.PROVIDER_ID);
         testApp.setDirectAccessGrantsEnabled(true);
     }

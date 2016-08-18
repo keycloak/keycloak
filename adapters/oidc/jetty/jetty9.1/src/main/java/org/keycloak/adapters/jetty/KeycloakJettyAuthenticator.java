@@ -52,7 +52,7 @@ public class KeycloakJettyAuthenticator extends AbstractKeycloakJettyAuthenticat
     }
 
     @Override
-    protected Authentication createAuthentication(UserIdentity userIdentity) {
+    protected Authentication createAuthentication(UserIdentity userIdentity, Request request) {
         return new KeycloakAuthentication(getAuthMethod(), userIdentity) {
             @Override
             public void logout() {

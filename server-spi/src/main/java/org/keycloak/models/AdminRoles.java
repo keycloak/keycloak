@@ -37,13 +37,15 @@ public class AdminRoles {
     public static String VIEW_CLIENTS = "view-clients";
     public static String VIEW_EVENTS = "view-events";
     public static String VIEW_IDENTITY_PROVIDERS = "view-identity-providers";
+    public static String VIEW_AUTHORIZATION = "view-authorization";
 
     public static String MANAGE_REALM = "manage-realm";
     public static String MANAGE_USERS = "manage-users";
     public static String MANAGE_IDENTITY_PROVIDERS = "manage-identity-providers";
     public static String MANAGE_CLIENTS = "manage-clients";
     public static String MANAGE_EVENTS = "manage-events";
+    public static String MANAGE_AUTHORIZATION = "manage-authorization";
 
-    public static String[] ALL_REALM_ROLES = {CREATE_CLIENT, VIEW_REALM, VIEW_USERS, VIEW_CLIENTS, VIEW_EVENTS, VIEW_IDENTITY_PROVIDERS, MANAGE_REALM, MANAGE_USERS, MANAGE_CLIENTS, MANAGE_EVENTS, MANAGE_IDENTITY_PROVIDERS};
+    public static String[] ALL_REALM_ROLES = {CREATE_CLIENT, VIEW_REALM, VIEW_USERS, VIEW_CLIENTS, VIEW_EVENTS, VIEW_IDENTITY_PROVIDERS, VIEW_AUTHORIZATION, MANAGE_REALM, MANAGE_USERS, MANAGE_CLIENTS, MANAGE_EVENTS, MANAGE_IDENTITY_PROVIDERS, MANAGE_AUTHORIZATION};
 
 }

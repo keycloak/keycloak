@@ -48,32 +48,35 @@ public class LiquibaseDBLockProvider implements DBLockProvider {
 
     private CustomLockService lockService;
     private Connection dbConnection;
+    private boolean initialized = false;
 
     private int maxAttempts = DEFAULT_MAX_ATTEMPTS;
 
     public LiquibaseDBLockProvider(LiquibaseDBLockProviderFactory factory, KeycloakSession session) {
         this.factory = factory;
         this.session = session;
-        init();
     }
 
-    private void init() {
-        LiquibaseConnectionProvider liquibaseProvider = session.getProvider(LiquibaseConnectionProvider.class);
-        JpaConnectionProviderFactory jpaProviderFactory = (JpaConnectionProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(JpaConnectionProvider.class);
+    private void lazyInit() {
+        if (!initialized) {
+            LiquibaseConnectionProvider liquibaseProvider = session.getProvider(LiquibaseConnectionProvider.class);
+            JpaConnectionProviderFactory jpaProviderFactory = (JpaConnectionProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(JpaConnectionProvider.class);
 
-        this.dbConnection = jpaProviderFactory.getConnection();
-        String defaultSchema = jpaProviderFactory.getSchema();
+            this.dbConnection = jpaProviderFactory.getConnection();
+            String defaultSchema = jpaProviderFactory.getSchema();
 
-        try {
-            Liquibase liquibase = liquibaseProvider.getLiquibase(dbConnection, defaultSchema);
+            try {
+                Liquibase liquibase = liquibaseProvider.getLiquibase(dbConnection, defaultSchema);
 
-            this.lockService = new CustomLockService();
-            lockService.setChangeLogLockWaitTime(factory.getLockWaitTimeoutMillis());
-            lockService.setDatabase(liquibase.getDatabase());
-        } catch (LiquibaseException exception) {
-            safeRollbackConnection();
-            safeCloseConnection();
-            throw new IllegalStateException(exception);
+                this.lockService = new CustomLockService();
+                lockService.setChangeLogLockWaitTime(factory.getLockWaitTimeoutMillis());
+                lockService.setDatabase(liquibase.getDatabase());
+                initialized = true;
+            } catch (LiquibaseException exception) {
+                safeRollbackConnection();
+                safeCloseConnection();
+                throw new IllegalStateException(exception);
+            }
         }
     }
 
@@ -82,15 +85,19 @@ public class LiquibaseDBLockProvider implements DBLockProvider {
         safeCloseConnection();
         this.dbConnection = null;
         this.lockService = null;
-        init();
+        initialized = false;
+        lazyInit();
     }
 
 
     @Override
     public void waitForLock() {
+        lazyInit();
+
         while (maxAttempts > 0) {
             try {
                 lockService.waitForLock();
+                factory.setHasLock(true);
                 this.maxAttempts = DEFAULT_MAX_ATTEMPTS;
                 return;
             } catch (LockRetryException le) {
@@ -109,8 +116,16 @@ public class LiquibaseDBLockProvider implements DBLockProvider {
 
     @Override
     public void releaseLock() {
+        lazyInit();
+
         lockService.releaseLock();
         lockService.reset();
+        factory.setHasLock(false);
+    }
+
+    @Override
+    public boolean hasLock() {
+        return factory.hasLock();
     }
 
     @Override
@@ -121,6 +136,8 @@ public class LiquibaseDBLockProvider implements DBLockProvider {
 
     @Override
     public void destroyLockInfo() {
+        lazyInit();
+
         try {
             this.lockService.destroy();
             dbConnection.commit();
@@ -147,7 +164,7 @@ public class LiquibaseDBLockProvider implements DBLockProvider {
     }
 
     private void safeCloseConnection() {
-        // Close after creating EntityManagerFactory to prevent in-mem databases from closing
+        // Close to prevent in-mem databases from closing
         if (dbConnection != null) {
             try {
                 dbConnection.close();

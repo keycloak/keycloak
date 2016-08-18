@@ -246,9 +246,9 @@ module.controller('UserListCtrl', function($scope, realm, User, UserImpersonatio
 
     $scope.query = {
         realm: realm.realm,
-        max : 5,
+        max : 20,
         first : 0
-    }
+    };
 
     $scope.impersonate = function(userId) {
         UserImpersonation.save({realm : realm.realm, user: userId}, function (data) {
@@ -365,7 +365,7 @@ module.controller('UserDetailCtrl', function($scope, realm, user, BruteForceUser
         console.log('realm brute force? ' + realm.bruteForceProtected)
         $scope.temporarilyDisabled = false;
         var isDisabled = function () {
-            BruteForceUser.get({realm: realm.realm, username: user.username}, function(data) {
+            BruteForceUser.get({realm: realm.realm, userId: user.id}, function(data) {
                 console.log('here in isDisabled ' + data.disabled);
                 $scope.temporarilyDisabled = data.disabled;
             });
@@ -375,7 +375,7 @@ module.controller('UserDetailCtrl', function($scope, realm, user, BruteForceUser
         isDisabled();
 
         $scope.unlockUser = function() {
-            BruteForceUser.delete({realm: realm.realm, username: user.username}, function(data) {
+            BruteForceUser.delete({realm: realm.realm, userId: user.id}, function(data) {
                 isDisabled();
             });
         }
@@ -592,30 +592,220 @@ module.controller('UserCredentialsCtrl', function($scope, realm, user, RequiredA
     };
 });
 
-module.controller('UserFederationCtrl', function($scope, $location, $route, realm, UserFederationProviders, UserFederationInstances, Notifications, Dialog) {
+module.controller('UserFederationCtrl', function($scope, $location, $route, realm, serverInfo, Components, UserFederationProviders, UserFederationInstances, Notifications, Dialog) {
     console.log('UserFederationCtrl ++++****');
     $scope.realm = realm;
-    $scope.providers = UserFederationProviders.query({realm: realm.realm});
+    $scope.providers = serverInfo.componentTypes['org.keycloak.storage.UserStorageProvider'];
+    for (var i = 0; i < $scope.providers.length; i++) {
+        $scope.providers[i].isUserFederationProvider = false;
+    }
+    UserFederationProviders.query({realm: realm.realm}, function(data) {
+        for (var i = 0; i < data.length; i++) {
+            data[i].isUserFederationProvider = true;
+            $scope.providers.push(data[i]);
+        }
+    });
 
     $scope.addProvider = function(provider) {
         console.log('Add provider: ' + provider.id);
-        $location.url("/create/user-federation/" + realm.realm + "/providers/" + provider.id);
+        if (provider.isUserFederationProvider) {
+            $location.url("/create/user-federation/" + realm.realm + "/providers/" + provider.id);
+        } else {
+            $location.url("/create/user-storage/" + realm.realm + "/providers/" + provider.id);
+            
+        }
     };
 
-    $scope.instances = UserFederationInstances.query({realm: realm.realm});
+    $scope.getInstanceLink = function(instance) {
+        if (instance.isUserFederationProvider) {
+            return "/realms/" + realm.realm + "/user-federation/providers/" + instance.providerName + "/" + instance.id;
+        } else {
+            return "/realms/" + realm.realm + "/user-storage/providers/" + instance.providerId + "/" + instance.id;
+        }
+    }
 
-    $scope.removeUserFederation = function(instance) {
-        Dialog.confirmDelete(instance.displayName, 'user federation provider', function() {
-            UserFederationInstances.remove({
-                realm : realm.realm,
-                instance : instance.id
-            }, function() {
-                $route.reload();
-                Notifications.success("The provider has been deleted.");
-            });
+    $scope.getInstanceName = function(instance) {
+        if (instance.isUserFederationProvider) {
+            return instance.displayName;
+        } else {
+            return instance.name;
+        }
+    }
+    $scope.getInstanceProvider = function(instance) {
+        if (instance.isUserFederationProvider) {
+            return instance.providerName;
+        } else {
+            return instance.providerId;
+        }
+    }
+
+    $scope.getInstancePriority = function(instance) {
+        if (instance.isUserFederationProvider) {
+            return instance.priority;
+        } else {
+            return instance.config['priority'][0];
+        }
+    }
+
+    Components.query({realm: realm.realm,
+        parent: realm.id,
+        type: 'org.keycloak.storage.UserStorageProvider'
+    }, function(data) {
+        $scope.instances = data;
+        for (var i = 0; i < data.length; i++) {
+            data[i].isUserFederationProvider = false;
+        }
+        UserFederationInstances.query({realm: realm.realm}, function(data) {
+            for (var i = 0; i < data.length; i++) {
+                data[i].isUserFederationProvider = true;
+                $scope.instances.push(data[i]);
+            }
+            
         });
+    });
+
+    $scope.removeInstance = function(instance) {
+        if (instance.isUserFederationProvider) {
+            Dialog.confirmDelete(instance.displayName, 'user federation provider', function() {
+                UserFederationInstances.remove({
+                    realm : realm.realm,
+                    instance : instance.id
+                }, function() {
+                    $route.reload();
+                    Notifications.success("The provider has been deleted.");
+                });
+            });
+
+        } else {
+            Dialog.confirmDelete(instance.name, 'user storage provider', function() {
+                Components.remove({
+                    realm : realm.realm,
+                    componentId : instance.id
+                }, function() {
+                    $route.reload();
+                    Notifications.success("The provider has been deleted.");
+                });
+            });
+        }
     };
 });
+
+module.controller('GenericUserStorageCtrl', function($scope, $location, Notifications, $route, Dialog, realm, serverInfo, instance, providerId, Components) {
+    console.log('GenericUserStorageCtrl');
+    console.log('providerId: ' + providerId);
+    $scope.create = !instance.providerId;
+    console.log('create: ' + $scope.create);
+    var providers = serverInfo.componentTypes['org.keycloak.storage.UserStorageProvider'];
+    console.log('providers length ' + providers.length);
+    var providerFactory = null;
+    for (var i = 0; i < providers.length; i++) {
+        var p = providers[i];
+        console.log('provider: ' + p.id);
+        if (p.id == providerId) {
+            $scope.providerFactory = p;
+            providerFactory = p;
+            break;
+        }
+
+    }
+    $scope.provider = instance;
+
+    console.log("providerFactory: " + providerFactory.id);
+
+    function initUserStorageSettings() {
+        if ($scope.create) {
+            instance.name = providerFactory.id;
+            instance.providerId = providerFactory.id;
+            instance.providerType = 'org.keycloak.storage.UserStorageProvider';
+            instance.parentId = realm.id;
+            instance.config = {
+
+            };
+            instance.config['priority'] = ["0"];
+
+            if (providerFactory.properties) {
+
+                for (var i = 0; i < providerFactory.properties.length; i++) {
+                    var configProperty = providerFactory.properties[i];
+                    if (configProperty.defaultValue) {
+                        instance.config[configProperty.name] = [configProperty.defaultValue];
+                    } else {
+                        instance.config[configProperty.name] = [''];
+                    }
+
+                }
+            }
+
+        } else {
+            /*
+            console.log('Manage instance');
+            console.log(instance.name);
+            console.log(instance.providerId);
+            console.log(instance.providerType);
+            console.log(instance.parentId);
+            for (var k in instance.config) {
+                console.log('config[' + k + "] =");
+            }
+            */
+        }
+
+        $scope.changed = false;
+    }
+
+    initUserStorageSettings();
+    $scope.instance = angular.copy(instance);
+    $scope.realm = realm;
+
+     $scope.$watch('instance', function() {
+        if (!angular.equals($scope.instance, instance)) {
+            $scope.changed = true;
+        }
+
+    }, true);
+
+    $scope.save = function() {
+        $scope.changed = false;
+        if ($scope.create) {
+            Components.save({realm: realm.realm}, $scope.instance,  function (data, headers) {
+                var l = headers().location;
+                var id = l.substring(l.lastIndexOf("/") + 1);
+
+                $location.url("/realms/" + realm.realm + "/user-storage/providers/" + $scope.instance.providerId + "/" + id);
+                Notifications.success("The provider has been created.");
+            }, function (errorResponse) {
+                if (errorResponse.data && errorResponse.data['error_description']) {
+                    Notifications.error(errorResponse.data['error_description']);
+                }
+            });
+        } else {
+            Components.update({realm: realm.realm,
+                    componentId: instance.id
+                },
+                $scope.instance,  function () {
+                    $route.reload();
+                    Notifications.success("The provider has been updated.");
+                }, function (errorResponse) {
+                    if (errorResponse.data && errorResponse.data['error_description']) {
+                        Notifications.error(errorResponse.data['error_description']);
+                    }
+                });
+        }
+    };
+
+    $scope.reset = function() {
+        initUserStorageSettings();
+        $scope.instance = angular.copy(instance);
+    };
+
+    $scope.cancel = function() {
+        if ($scope.create) {
+            $location.url("/realms/" + realm.realm + "/user-storage");
+        } else {
+            $route.reload();
+        }
+    };
+});
+
 
 module.controller('UserFederationTabCtrl', function(Dialog, $scope, Current, Notifications, $location) {
     $scope.removeUserFederation = function() {

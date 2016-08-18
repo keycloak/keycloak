@@ -36,7 +36,8 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
         "client-keystore", "client-keystore-password", "client-key-password",
         "always-refresh-token",
         "register-node-at-startup", "register-node-period", "token-store", "principal-attribute",
-        "proxy-url"
+        "proxy-url", "turn-off-change-session-id-on-login", "token-minimum-time-to-live",
+        "policy-enforcer"
 })
 public class AdapterConfig extends BaseAdapterConfig {
 
@@ -68,6 +69,10 @@ public class AdapterConfig extends BaseAdapterConfig {
     protected String principalAttribute;
     @JsonProperty("turn-off-change-session-id-on-login")
     protected Boolean turnOffChangeSessionIdOnLogin;
+    @JsonProperty("token-minimum-time-to-live")
+    protected int tokenMinimumTimeToLive = 0;
+    @JsonProperty("policy-enforcer")
+    protected PolicyEnforcerConfig policyEnforcerConfig;
 
     /**
      * The Proxy url to use for requests to the auth-server, configurable via the adapter config property {@code proxy-url}.
@@ -187,6 +192,14 @@ public class AdapterConfig extends BaseAdapterConfig {
         this.turnOffChangeSessionIdOnLogin = turnOffChangeSessionIdOnLogin;
     }
 
+    public PolicyEnforcerConfig getPolicyEnforcerConfig() {
+        return policyEnforcerConfig;
+    }
+
+    public void setPolicyEnforcerConfig(PolicyEnforcerConfig policyEnforcerConfig) {
+        this.policyEnforcerConfig = policyEnforcerConfig;
+    }
+
     public String getProxyUrl() {
         return proxyUrl;
     }
@@ -194,4 +207,13 @@ public class AdapterConfig extends BaseAdapterConfig {
     public void setProxyUrl(String proxyUrl) {
         this.proxyUrl = proxyUrl;
     }
+
+    public int getTokenMinimumTimeToLive() {
+        return tokenMinimumTimeToLive;
+    }
+
+    public void setTokenMinimumTimeToLive(final int tokenMinimumTimeToLive) {
+        this.tokenMinimumTimeToLive = tokenMinimumTimeToLive;
+    }
+
 }

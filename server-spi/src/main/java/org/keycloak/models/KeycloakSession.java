@@ -18,6 +18,9 @@
 package org.keycloak.models;
 
 import org.keycloak.provider.Provider;
+import org.keycloak.scripting.ScriptingProvider;
+import org.keycloak.storage.federated.UserFederatedStorageProvider;
+import org.keycloak.storage.federated.UserFederatedStorageProviderFactory;
 
 import java.util.Set;
 
@@ -29,15 +32,47 @@ public interface KeycloakSession {
 
     KeycloakContext getContext();
 
-    KeycloakTransactionManager getTransaction();
+    KeycloakTransactionManager getTransactionManager();
 
+    /**
+     * Get dedicated provider instance of provider type clazz that was created for this session.  If one hasn't been created yet,
+     * find the factory and allocate by calling ProviderFactory.create(KeycloakSession).  The provider to use is determined
+     * by the "provider" config entry in keycloak-server boot configuration. (keycloak-server.json)
+     *
+     *
+     *
+     * @param clazz
+     * @param <T>
+     * @return
+     */
     <T extends Provider> T getProvider(Class<T> clazz);
 
+    /**
+     * Get dedicated provider instance for a specific provider factory of id of provider type clazz that was created for this session.
+     * If one hasn't been created yet,
+     * find the factory and allocate by calling ProviderFactory.create(KeycloakSession).
+
+     * @param clazz
+     * @param id
+     * @param <T>
+     * @return
+     */
     <T extends Provider> T getProvider(Class<T> clazz, String id);
 
+    /**
+     * Get all provider factories that manage provider instances of class.
+     *
+     * @param clazz
+     * @param <T>
+     * @return
+     */
     <T extends Provider> Set<String> listProviderIds(Class<T> clazz);
 
     <T extends Provider> Set<T> getAllProviders(Class<T> clazz);
+
+    Object getAttribute(String attribute);
+    Object removeAttribute(String attribute);
+    void setAttribute(String name, Object value);
 
     void enlistForClose(Provider provider);
 
@@ -66,14 +101,42 @@ public interface KeycloakSession {
     void close();
 
     /**
-     * Possibly both cached and federated view of users depending on configuration.
+     * A cached view of all users in system.
      *
      * @return
      */
     UserFederationManager users();
 
+
     /**
-     *  Keycloak user storage.  Non-federated, but possibly cache (if it is on) view of users.
+     * Un-cached view of all users in system that does NOT include users available from the deprecated UserFederationProvider SPI.
+     *
+     * @return
+     */
+    UserProvider userStorageManager();
+
+    /**
+     *  A cached view of all users in system that does NOT include users available from the deprecated UserFederationProvider SPI.
      */
     UserProvider userStorage();
+
+    /**
+     * Keycloak specific local storage for users.  No cache in front, this api talks directly to database.
+     *
+     * @return
+     */
+    UserProvider userLocalStorage();
+
+    /**
+     * Hybrid storage for UserStorageProviders that can't store a specific piece of keycloak data in their external storage.
+     *
+     * @return
+     */
+    UserFederatedStorageProvider userFederatedStorage();
+
+
+    /**
+     * Keycloak scripting support.
+     */
+    ScriptingProvider scripting();
 }

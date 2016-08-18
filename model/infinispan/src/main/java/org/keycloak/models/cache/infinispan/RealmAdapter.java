@@ -19,8 +19,9 @@ package org.keycloak.models.cache.infinispan;
 
 import org.keycloak.Config;
 import org.keycloak.common.enums.SslRequired;
+import org.keycloak.common.util.StringPropertyReplacer;
+import org.keycloak.component.ComponentModel;
 import org.keycloak.models.*;
-import org.keycloak.models.cache.CacheRealmProvider;
 import org.keycloak.models.cache.infinispan.entities.CachedRealm;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
@@ -400,6 +401,12 @@ public class RealmAdapter implements RealmModel {
     public void setAccessCodeLifespanLogin(int seconds) {
         getDelegateForUpdate();
         updated.setAccessCodeLifespanLogin(seconds);
+    }
+
+    @Override
+    public String getKeyId() {
+        if (isUpdated()) return updated.getKeyId();
+        return cached.getKeyId();
     }
 
     @Override
@@ -1402,6 +1409,60 @@ public class RealmAdapter implements RealmModel {
         return cacheSession.getClientTemplateById(id, this);
     }
 
+    @Override
+    public ComponentModel addComponentModel(ComponentModel model) {
+        getDelegateForUpdate();
+        return updated.addComponentModel(model);
+    }
 
+    @Override
+    public void updateComponent(ComponentModel component) {
+        getDelegateForUpdate();
+        updated.updateComponent(component);
 
+    }
+
+    @Override
+    public void removeComponent(ComponentModel component) {
+        getDelegateForUpdate();
+        updated.removeComponent(component);
+
+    }
+
+    @Override
+    public void removeComponents(String parentId) {
+        getDelegateForUpdate();
+        updated.removeComponents(parentId);
+
+    }
+
+    @Override
+    public List<ComponentModel> getComponents(String parentId, String providerType) {
+        if (isUpdated()) return updated.getComponents(parentId, providerType);
+        List<ComponentModel> components = cached.getComponentsByParentAndType().getList(parentId + providerType);
+        if (components == null) return Collections.EMPTY_LIST;
+        return Collections.unmodifiableList(components);
+    }
+
+    @Override
+    public List<ComponentModel> getComponents(String parentId) {
+        if (isUpdated()) return updated.getComponents(parentId);
+        List<ComponentModel> components = cached.getComponentsByParent().getList(parentId);
+        if (components == null) return Collections.EMPTY_LIST;
+        return Collections.unmodifiableList(components);
+    }
+
+    @Override
+    public List<ComponentModel> getComponents() {
+        if (isUpdated()) return updated.getComponents();
+        List<ComponentModel> results = new LinkedList<>();
+        results.addAll(cached.getComponents().values());
+         return Collections.unmodifiableList(results);
+    }
+
+    @Override
+    public ComponentModel getComponent(String id) {
+        if (isUpdated()) return updated.getComponent(id);
+        return cached.getComponents().get(id);
+    }
 }

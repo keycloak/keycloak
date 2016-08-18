@@ -17,6 +17,7 @@
 package org.keycloak.testsuite.admin;
 
 import org.jboss.logging.Logger;
+import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.RoleResource;
@@ -58,6 +59,15 @@ public class ApiUtil {
         }
         String path = location.getPath();
         return path.substring(path.lastIndexOf('/') + 1);
+    }
+
+    public static ClientResource findClientResourceById(RealmResource realm, String id) {
+        for (ClientRepresentation c : realm.clients().findAll()) {
+            if (c.getId().equals(id)) {
+                return realm.clients().get(c.getId());
+            }
+        }
+        return null;
     }
 
     public static ClientResource findClientResourceByClientId(RealmResource realm, String clientId) {
@@ -182,5 +192,14 @@ public class ApiUtil {
             }
         }
         return contains;
+    }
+
+    public static AuthorizationResource findAuthorizationSettings(RealmResource realm, String clientId) {
+        for (ClientRepresentation c : realm.clients().findAll()) {
+            if (c.getClientId().equals(clientId)) {
+                return realm.clients().get(c.getId()).authorization();
+            }
+        }
+        return null;
     }
 }

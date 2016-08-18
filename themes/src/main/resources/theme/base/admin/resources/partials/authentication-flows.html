@@ -35,7 +35,7 @@
             <td class="kc-sorter">
                     <button data-ng-hide="flow.builtIn" data-ng-disabled="$first" class="btn btn-default btn-sm" data-ng-click="raisePriority(execution)"><i class="fa fa-angle-up"></i></button>
                     <button data-ng-hide="flow.builtIn" data-ng-disabled="$last" class="btn btn-default btn-sm" data-ng-click="lowerPriority(execution)"><i class="fa fa-angle-down"></i></button>
-                    <span>{{execution.displayName|capitalize}}</span>
+                    <span>{{execution.displayName|capitalize}}<span ng-if="execution.alias">({{execution.alias}})</span></span>
             </td>
             <td ng-repeat="lev in execution.postLevels"></td>
             <td ng-repeat="choice in execution.requirementChoices">

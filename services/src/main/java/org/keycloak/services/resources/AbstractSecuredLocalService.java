@@ -34,6 +34,7 @@ import org.keycloak.services.managers.Auth;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.util.CookieHelper;
 import org.keycloak.common.util.UriUtils;
+import org.keycloak.util.TokenUtil;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -237,15 +238,14 @@ public abstract class AbstractSecuredLocalService {
 
         public Response redirect(UriInfo uriInfo, String redirectUri) {
             String state = getStateCode();
+            String scopeParam = TokenUtil.attachOIDCScope(scope);
 
             UriBuilder uriBuilder = UriBuilder.fromUri(authUrl)
                     .queryParam(OAuth2Constants.CLIENT_ID, clientId)
                     .queryParam(OAuth2Constants.REDIRECT_URI, redirectUri)
                     .queryParam(OAuth2Constants.STATE, state)
-                    .queryParam(OAuth2Constants.RESPONSE_TYPE, OAuth2Constants.CODE);
-            if (scope != null) {
-                uriBuilder.queryParam(OAuth2Constants.SCOPE, scope);
-            }
+                    .queryParam(OAuth2Constants.RESPONSE_TYPE, OAuth2Constants.CODE)
+                    .queryParam(OAuth2Constants.SCOPE, scopeParam);
 
             URI url = uriBuilder.build();
 

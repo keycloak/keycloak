@@ -18,7 +18,10 @@
 package org.keycloak.models;
 
 import org.jboss.logging.Logger;
+import org.keycloak.component.ComponentModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.policy.PasswordPolicyManagerProvider;
+import org.keycloak.policy.PolicyError;
 import org.keycloak.services.managers.UserManager;
 
 import java.util.ArrayList;
@@ -175,6 +178,38 @@ public class UserFederationManager implements UserProvider {
     }
 
     @Override
+    public void addConsent(RealmModel realm, UserModel user, UserConsentModel consent) {
+        validateUser(realm, user);
+        session.userStorage().addConsent(realm, user, consent);
+
+    }
+
+    @Override
+    public UserConsentModel getConsentByClient(RealmModel realm, UserModel user, String clientInternalId) {
+        validateUser(realm, user);
+        return session.userStorage().getConsentByClient(realm, user, clientInternalId);
+    }
+
+    @Override
+    public List<UserConsentModel> getConsents(RealmModel realm, UserModel user) {
+        validateUser(realm, user);
+        return session.userStorage().getConsents(realm, user);
+    }
+
+    @Override
+    public void updateConsent(RealmModel realm, UserModel user, UserConsentModel consent) {
+        validateUser(realm, user);
+        session.userStorage().updateConsent(realm, user, consent);
+
+    }
+
+    @Override
+    public boolean revokeConsentForClient(RealmModel realm, UserModel user, String clientInternalId) {
+        validateUser(realm, user);
+        return session.userStorage().revokeConsentForClient(realm, user, clientInternalId);
+    }
+
+    @Override
     public UserModel getUserById(String id, RealmModel realm) {
         UserModel user = session.userStorage().getUserById(id, realm);
         if (user != null) {
@@ -265,8 +300,8 @@ public class UserFederationManager implements UserProvider {
     }
 
     @Override
-    public UserModel getUserByServiceAccountClient(ClientModel client) {
-        UserModel user = session.userStorage().getUserByServiceAccountClient(client);
+    public UserModel getServiceAccount(ClientModel client) {
+        UserModel user = session.userStorage().getServiceAccount(client);
         if (user != null) {
             user = validateAndProxyUser(client.getRealm(), user);
         }
@@ -277,6 +312,16 @@ public class UserFederationManager implements UserProvider {
     public List<UserModel> getUsers(RealmModel realm, boolean includeServiceAccounts) {
         return getUsers(realm, 0, Integer.MAX_VALUE - 1, includeServiceAccounts);
 
+    }
+
+    @Override
+    public List<UserModel> getUsers(RealmModel realm) {
+        return getUsers(realm, false);
+    }
+
+    @Override
+    public List<UserModel> getUsers(RealmModel realm, int firstResult, int maxResults) {
+        return getUsers(realm, firstResult, maxResults, false);
     }
 
     @Override
@@ -359,17 +404,17 @@ public class UserFederationManager implements UserProvider {
     }
 
     @Override
-    public List<UserModel> searchForUserByAttributes(Map<String, String> attributes, RealmModel realm) {
-        return searchForUserByAttributes(attributes, realm, 0, Integer.MAX_VALUE - 1);
+    public List<UserModel> searchForUser(Map<String, String> attributes, RealmModel realm) {
+        return searchForUser(attributes, realm, 0, Integer.MAX_VALUE - 1);
     }
 
     @Override
-    public List<UserModel> searchForUserByAttributes(final Map<String, String> attributes, RealmModel realm, int firstResult, int maxResults) {
+    public List<UserModel> searchForUser(final Map<String, String> attributes, RealmModel realm, int firstResult, int maxResults) {
         federationLoad(realm, attributes);
         return query(new PaginatedQuery() {
             @Override
             public List<UserModel> query(RealmModel realm, int first, int max) {
-                return session.userStorage().searchForUserByAttributes(attributes, realm, first, max);
+                return session.userStorage().searchForUser(attributes, realm, first, max);
             }
         }, realm, firstResult, maxResults);
     }
@@ -445,7 +490,7 @@ public class UserFederationManager implements UserProvider {
     public void updateCredential(RealmModel realm, UserModel user, UserCredentialModel credential) {
         if (credential.getType().equals(UserCredentialModel.PASSWORD)) {
             if (realm.getPasswordPolicy() != null) {
-                PasswordPolicy.Error error = realm.getPasswordPolicy().validate(session, user, credential.getValue());
+                PolicyError error = session.getProvider(PasswordPolicyManagerProvider.class).validate(user, credential.getValue());
                 if (error != null) throw new ModelException(error.getMessage(), error.getParameters());
             }
         }
@@ -552,6 +597,11 @@ public class UserFederationManager implements UserProvider {
 
         // For now, validCredentials(realm, input) is not supported for local userProviders
         return (result != null) ? result : CredentialValidationOutput.failed();
+    }
+
+    @Override
+    public void preRemove(RealmModel realm, ComponentModel component) {
+
     }
 
     @Override

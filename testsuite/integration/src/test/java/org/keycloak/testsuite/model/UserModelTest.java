@@ -66,20 +66,20 @@ public class UserModelTest extends AbstractModelTest {
 
         Map<String, String> attributes = new HashMap<String, String>();
         attributes.put(UserModel.LAST_NAME, "last-name");
-        List<UserModel> search = session.users().searchForUserByAttributes(attributes, realm);
+        List<UserModel> search = session.users().searchForUser(attributes, realm);
         Assert.assertEquals(search.size(), 1);
         Assert.assertEquals(search.get(0).getUsername(), "user");
 
         attributes.clear();
         attributes.put(UserModel.EMAIL, "email");
-        search = session.users().searchForUserByAttributes(attributes, realm);
+        search = session.users().searchForUser(attributes, realm);
         Assert.assertEquals(search.size(), 1);
         Assert.assertEquals(search.get(0).getUsername(), "user");
 
         attributes.clear();
         attributes.put(UserModel.LAST_NAME, "last-name");
         attributes.put(UserModel.EMAIL, "email");
-        search = session.users().searchForUserByAttributes(attributes, realm);
+        search = session.users().searchForUser(attributes, realm);
         Assert.assertEquals(search.size(), 1);
         Assert.assertEquals(search.get(0).getUsername(), "user");
     }
@@ -217,7 +217,7 @@ public class UserModelTest extends AbstractModelTest {
         UserModel user1 = session.users().addUser(realm, "user1");
 
         commit();
-
+        realm = session.realms().getRealmByName("original");
         List<UserModel> users = session.users().searchForUser("user", realm, 0, 7);
         Assert.assertTrue(users.contains(user1));
     }
@@ -238,6 +238,7 @@ public class UserModelTest extends AbstractModelTest {
         user3.setSingleAttribute("key2", "value21");
 
         commit();
+        realm = session.realms().getRealmByName("original");
 
         List<UserModel> users = session.users().searchForUserByUserAttribute("key1", "value1", realm);
         Assert.assertEquals(2, users.size());
@@ -271,7 +272,7 @@ public class UserModelTest extends AbstractModelTest {
         user2.setLastName("Doe");
 
         // Search
-        Assert.assertNull(session.users().getUserByServiceAccountClient(client));
+        Assert.assertNull(session.users().getServiceAccount(client));
         List<UserModel> users = session.users().searchForUser("John Doe", realm);
         Assert.assertEquals(2, users.size());
         Assert.assertTrue(users.contains(user1));
@@ -284,7 +285,8 @@ public class UserModelTest extends AbstractModelTest {
 
         // Search and assert service account user not found
         realm = realmManager.getRealmByName("original");
-        UserModel searched = session.users().getUserByServiceAccountClient(client);
+        client = realm.getClientByClientId("foo");
+        UserModel searched = session.users().getServiceAccount(client);
         Assert.assertEquals(searched, user1);
         users = session.users().searchForUser("John Doe", realm);
         Assert.assertEquals(1, users.size());

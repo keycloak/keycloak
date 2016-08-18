@@ -17,6 +17,15 @@
 
 package org.keycloak.models.utils;
 
+import org.keycloak.authorization.AuthorizationProvider;
+import org.keycloak.authorization.model.Policy;
+import org.keycloak.authorization.model.Resource;
+import org.keycloak.authorization.model.ResourceServer;
+import org.keycloak.authorization.model.Scope;
+import org.keycloak.authorization.store.PolicyStore;
+import org.keycloak.authorization.store.ResourceStore;
+import org.keycloak.authorization.store.StoreFactory;
+import org.keycloak.component.ComponentModel;
 import org.keycloak.events.Event;
 import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.events.admin.AuthDetails;
@@ -30,6 +39,7 @@ import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.OTPPolicy;
 import org.keycloak.models.ProtocolMapperModel;
@@ -44,6 +54,7 @@ import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 
+import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.AuthDetailsRepresentation;
 import org.keycloak.representations.idm.AuthenticationExecutionExportRepresentation;
@@ -51,6 +62,8 @@ import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientTemplateRepresentation;
+import org.keycloak.representations.idm.ComponentRepresentation;
+import org.keycloak.representations.idm.ConfigPropertyRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
@@ -68,8 +81,25 @@ import org.keycloak.representations.idm.UserFederationProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
 import org.keycloak.common.util.Time;
+import org.keycloak.representations.idm.authorization.PolicyRepresentation;
+import org.keycloak.representations.idm.authorization.ResourceOwnerRepresentation;
+import org.keycloak.representations.idm.authorization.ResourceRepresentation;
+import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
+import org.keycloak.representations.idm.authorization.ScopeRepresentation;
+import org.keycloak.util.JsonSerialization;
 
-import java.util.*;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -195,6 +225,9 @@ public class ModelToRepresentation {
             rep.setAuthDetails(toRepresentation(adminEvent.getAuthDetails()));
         }
         rep.setOperationType(adminEvent.getOperationType().toString());
+        if (adminEvent.getResourceType() != null) {
+            rep.setResourceType(adminEvent.getResourceType().toString());
+        }
         rep.setResourcePath(adminEvent.getResourcePath());
         rep.setRepresentation(adminEvent.getRepresentation());
         rep.setError(adminEvent.getError());
@@ -218,6 +251,8 @@ public class ModelToRepresentation {
         rep.setDescription(role.getDescription());
         rep.setScopeParamRequired(role.isScopeParamRequired());
         rep.setComposite(role.isComposite());
+        rep.setClientRole(role.isClientRole());
+        rep.setContainerId(role.getContainerId());
         return rep;
     }
 
@@ -563,7 +598,7 @@ public class ModelToRepresentation {
         return rep;
     }
 
-    public static UserFederationMapperRepresentation toRepresentation(RealmModel realm, UserFederationMapperModel model) {
+     public static UserFederationMapperRepresentation toRepresentation(RealmModel realm, UserFederationMapperModel model) {
         UserFederationMapperRepresentation rep = new UserFederationMapperRepresentation();
         rep.setId(model.getId());
         rep.setName(model.getName());
@@ -734,4 +769,205 @@ public class ModelToRepresentation {
         return rep;
     }
 
+    public static List<ConfigPropertyRepresentation> toRepresentation(List<ProviderConfigProperty> configProperties) {
+        List<ConfigPropertyRepresentation> propertiesRep = new LinkedList<>();
+        for (ProviderConfigProperty prop : configProperties) {
+            ConfigPropertyRepresentation propRep = new ConfigPropertyRepresentation();
+            propRep.setName(prop.getName());
+            propRep.setLabel(prop.getLabel());
+            propRep.setType(prop.getType());
+            propRep.setDefaultValue(prop.getDefaultValue());
+            propRep.setHelpText(prop.getHelpText());
+            propertiesRep.add(propRep);
+        }
+        return propertiesRep;
+    }
+
+    public static ComponentRepresentation toRepresentation(ComponentModel component) {
+        ComponentRepresentation rep = new ComponentRepresentation();
+        rep.setId(component.getId());
+        rep.setName(component.getName());
+        rep.setProviderId(component.getProviderId());
+        rep.setProviderType(component.getProviderType());
+        rep.setParentId(component.getParentId());
+        rep.setConfig(component.getConfig());
+        return rep;
+    }
+
+    public static ScopeRepresentation toRepresentation(Scope model, AuthorizationProvider authorizationProvider) {
+        ScopeRepresentation scope = new ScopeRepresentation();
+
+        scope.setId(model.getId());
+        scope.setName(model.getName());
+        scope.setIconUri(model.getIconUri());
+
+        StoreFactory storeFactory = authorizationProvider.getStoreFactory();
+
+        scope.setResources(new ArrayList<>());
+
+        storeFactory.getResourceStore().findByScope(model.getId()).forEach(resource -> scope.getResources().add(toRepresentation(resource, resource.getResourceServer(), authorizationProvider)));
+
+        PolicyStore policyStore = storeFactory.getPolicyStore();
+
+        scope.setPolicies(new ArrayList<>());
+
+        policyStore.findByScopeIds(Arrays.asList(model.getId()), model.getResourceServer().getId()).forEach(policyModel -> {
+            PolicyRepresentation policy = new PolicyRepresentation();
+
+            policy.setId(policyModel.getId());
+            policy.setName(policyModel.getName());
+            policy.setType(policyModel.getType());
+
+            if (!scope.getPolicies().contains(policy)) {
+                scope.getPolicies().add(policy);
+            }
+        });
+
+        return scope;
+    }
+
+    public static ResourceServerRepresentation toRepresentation(ResourceServer model, ClientModel client) {
+        ResourceServerRepresentation server = new ResourceServerRepresentation();
+
+        server.setId(model.getId());
+        server.setClientId(model.getClientId());
+        server.setName(client.getClientId());
+        server.setAllowRemoteResourceManagement(model.isAllowRemoteResourceManagement());
+        server.setPolicyEnforcementMode(model.getPolicyEnforcementMode());
+
+        return server;
+    }
+
+    public static PolicyRepresentation toRepresentation(Policy model, AuthorizationProvider authorization) {
+        PolicyRepresentation representation = new PolicyRepresentation();
+
+        representation.setId(model.getId());
+        representation.setName(model.getName());
+        representation.setDescription(model.getDescription());
+        representation.setType(model.getType());
+        representation.setDecisionStrategy(model.getDecisionStrategy());
+        representation.setLogic(model.getLogic());
+        representation.setConfig(new HashMap<>(model.getConfig()));
+
+        List<Policy> policies = authorization.getStoreFactory().getPolicyStore().findDependentPolicies(model.getId());
+
+        representation.setDependentPolicies(policies.stream().map(policy -> {
+            PolicyRepresentation representation1 = new PolicyRepresentation();
+
+            representation1.setId(policy.getId());
+            representation1.setName(policy.getName());
+
+            return representation1;
+        }).collect(Collectors.toList()));
+
+        List<PolicyRepresentation> associatedPolicies = new ArrayList<>();
+
+        List<String> obj = model.getAssociatedPolicies().stream().map(policy -> {
+            PolicyRepresentation representation1 = new PolicyRepresentation();
+
+            representation1.setId(policy.getId());
+            representation1.setName(policy.getName());
+            representation1.setType(policy.getType());
+
+            associatedPolicies.add(representation1);
+
+            return policy.getId();
+        }).collect(Collectors.toList());
+
+        representation.setAssociatedPolicies(associatedPolicies);
+
+        try {
+            representation.getConfig().put("applyPolicies", JsonSerialization.writeValueAsString(obj));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return representation;
+    }
+
+    public static ResourceRepresentation toRepresentation(Resource model, ResourceServer resourceServer, AuthorizationProvider authorization) {
+        ResourceRepresentation resource = new ResourceRepresentation();
+
+        resource.setId(model.getId());
+        resource.setType(model.getType());
+        resource.setName(model.getName());
+        resource.setUri(model.getUri());
+        resource.setIconUri(model.getIconUri());
+
+        ResourceOwnerRepresentation owner = new ResourceOwnerRepresentation();
+
+        owner.setId(model.getOwner());
+
+        KeycloakSession keycloakSession = authorization.getKeycloakSession();
+        RealmModel realm = authorization.getRealm();
+
+        if (owner.getId().equals(resourceServer.getClientId())) {
+            ClientModel clientModel = realm.getClientById(resourceServer.getClientId());
+            owner.setName(clientModel.getClientId());
+        } else {
+            UserModel userModel = keycloakSession.users().getUserById(owner.getId(), realm);
+
+            if (userModel == null) {
+                throw new RuntimeException("Could not find the user [" + owner.getId() + "] who owns the Resource [" + resource.getId() + "].");
+            }
+
+            owner.setName(userModel.getUsername());
+        }
+
+        resource.setOwner(owner);
+
+        resource.setScopes(model.getScopes().stream().map(model1 -> {
+            ScopeRepresentation scope = new ScopeRepresentation();
+            scope.setId(model1.getId());
+            scope.setName(model1.getName());
+            String iconUri = model1.getIconUri();
+            if (iconUri != null) {
+                scope.setIconUri(iconUri);
+            }
+            return scope;
+        }).collect(Collectors.toSet()));
+
+        resource.setTypedScopes(new ArrayList<>());
+
+        if (resource.getType() != null) {
+            ResourceStore resourceStore = authorization.getStoreFactory().getResourceStore();
+            for (Resource typed : resourceStore.findByType(resource.getType())) {
+                if (typed.getOwner().equals(resourceServer.getClientId()) && !typed.getId().equals(resource.getId())) {
+                    resource.setTypedScopes(typed.getScopes().stream().map(model1 -> {
+                        ScopeRepresentation scope = new ScopeRepresentation();
+                        scope.setId(model1.getId());
+                        scope.setName(model1.getName());
+                        String iconUri = model1.getIconUri();
+                        if (iconUri != null) {
+                            scope.setIconUri(iconUri);
+                        }
+                        return scope;
+                    }).filter(scopeRepresentation -> !resource.getScopes().contains(scopeRepresentation)).collect(Collectors.toList()));
+                }
+            }
+        }
+
+        resource.setPolicies(new ArrayList<>());
+
+        Set<Policy> policies = new HashSet<>();
+        PolicyStore policyStore = authorization.getStoreFactory().getPolicyStore();
+
+        policies.addAll(policyStore.findByResource(resource.getId()));
+        policies.addAll(policyStore.findByResourceType(resource.getType(), resourceServer.getId()));
+        policies.addAll(policyStore.findByScopeIds(resource.getScopes().stream().map(scope -> scope.getId()).collect(Collectors.toList()), resourceServer.getId()));
+
+        for (Policy policyModel : policies) {
+            PolicyRepresentation policy = new PolicyRepresentation();
+
+            policy.setId(policyModel.getId());
+            policy.setName(policyModel.getName());
+            policy.setType(policyModel.getType());
+
+            if (!resource.getPolicies().contains(policy)) {
+                resource.getPolicies().add(policy);
+            }
+        }
+
+        return resource;
+    }
 }

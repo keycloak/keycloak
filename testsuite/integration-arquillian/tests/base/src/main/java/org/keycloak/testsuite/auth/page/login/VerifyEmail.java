@@ -28,9 +28,17 @@ public class VerifyEmail extends Authenticate {
 
     @FindBy(xpath = "//div[@id='kc-form-wrapper']/p")
     private WebElement instruction;
-    
+
+    @FindBy(id = "kc-error-message")
+    private WebElement error;
+
     public String getInstructionMessage() {
         waitUntilElement(instruction).is().present();
         return instruction.getText();
+    }
+
+    public String getErrorMessage() {
+        waitUntilElement(error).is().present();
+        return error.getText();
     }
 }

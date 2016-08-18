@@ -26,6 +26,8 @@ import javax.ws.rs.GET;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 
+import org.keycloak.OAuth2Constants;
+import org.keycloak.OAuthErrorException;
 import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.events.Details;
@@ -40,6 +42,7 @@ import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.AuthorizationEndpointBase;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.utils.OIDCRedirectUriBuilder;
 import org.keycloak.protocol.oidc.utils.OIDCResponseMode;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
@@ -50,6 +53,7 @@ import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.services.util.CacheControlUtil;
+import org.keycloak.util.TokenUtil;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -95,6 +99,10 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         KNOWN_REQ_PARAMS.add(OIDCLoginProtocol.PROMPT_PARAM);
         KNOWN_REQ_PARAMS.add(AdapterConstants.KC_IDP_HINT);
         KNOWN_REQ_PARAMS.add(OIDCLoginProtocol.NONCE_PARAM);
+        KNOWN_REQ_PARAMS.add(OIDCLoginProtocol.MAX_AGE_PARAM);
+        KNOWN_REQ_PARAMS.add(OIDCLoginProtocol.UI_LOCALES_PARAM);
+        KNOWN_REQ_PARAMS.add(OIDCLoginProtocol.REQUEST_PARAM);
+        KNOWN_REQ_PARAMS.add(OIDCLoginProtocol.REQUEST_URI_PARAM);
     }
 
     private enum Action {
@@ -106,6 +114,7 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
 
     private Action action;
     private OIDCResponseType parsedResponseType;
+    private OIDCResponseMode parsedResponseMode;
 
     private String clientId;
     private String redirectUri;
@@ -117,6 +126,7 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
     private String loginHint;
     private String prompt;
     private String nonce;
+    private String maxAge;
     private String idpHint;
     protected Map<String, String> additionalReqParams = new HashMap<>();
 
@@ -139,14 +149,27 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         prompt = params.getFirst(OIDCLoginProtocol.PROMPT_PARAM);
         idpHint = params.getFirst(AdapterConstants.KC_IDP_HINT);
         nonce = params.getFirst(OIDCLoginProtocol.NONCE_PARAM);
+        maxAge = params.getFirst(OIDCLoginProtocol.MAX_AGE_PARAM);
 
         extractAdditionalReqParams(params);
 
         checkSsl();
         checkRealm();
-        checkResponseType();
         checkClient();
         checkRedirectUri();
+        Response errorResponse = checkResponseType();
+        if (errorResponse != null) {
+            return errorResponse;
+        }
+
+        if (!TokenUtil.isOIDCRequest(scope)) {
+            logger.oidcScopeMissing();
+        }
+
+        errorResponse = checkOIDCParams(params);
+        if (errorResponse != null) {
+            return errorResponse;
+        }
 
         createClientSession();
         // So back button doesn't work
@@ -234,28 +257,24 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
             throw new ErrorPageException(session, Messages.CLIENT_NOT_FOUND);
         }
 
+        if (!client.isEnabled()) {
+            event.error(Errors.CLIENT_DISABLED);
+            throw new ErrorPageException(session, Messages.CLIENT_DISABLED);
+        }
+
         if (client.isBearerOnly()) {
             event.error(Errors.NOT_ALLOWED);
             throw new ErrorPageException(session, Messages.BEARER_ONLY);
         }
 
-        if ((parsedResponseType.hasResponseType(OIDCResponseType.CODE) || parsedResponseType.hasResponseType(OIDCResponseType.NONE)) && !client.isStandardFlowEnabled()) {
-            event.error(Errors.NOT_ALLOWED);
-            throw new ErrorPageException(session, Messages.STANDARD_FLOW_DISABLED);
-        }
-
-        if (parsedResponseType.isImplicitOrHybridFlow() && !client.isImplicitFlowEnabled()) {
-            event.error(Errors.NOT_ALLOWED);
-            throw new ErrorPageException(session, Messages.IMPLICIT_FLOW_DISABLED);
-        }
-
         session.getContext().setClient(client);
     }
 
-    private void checkResponseType() {
+    private Response checkResponseType() {
         if (responseType == null) {
+            logger.missingParameter(OAuth2Constants.RESPONSE_TYPE);
             event.error(Errors.INVALID_REQUEST);
-            throw new ErrorPageException(session, Messages.MISSING_PARAMETER, OIDCLoginProtocol.RESPONSE_TYPE_PARAM);
+            return redirectErrorToClient(OIDCResponseMode.QUERY, OAuthErrorException.INVALID_REQUEST, "Missing parameter: response_type");
         }
 
         event.detail(Details.RESPONSE_TYPE, responseType);
@@ -266,26 +285,81 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
                 action = Action.CODE;
             }
         } catch (IllegalArgumentException iae) {
-            logger.error(iae);
+            logger.error(iae.getMessage());
             event.error(Errors.INVALID_REQUEST);
-            throw new ErrorPageException(session, Messages.INVALID_PARAMETER, OIDCLoginProtocol.RESPONSE_TYPE_PARAM);
+            return redirectErrorToClient(OIDCResponseMode.QUERY, OAuthErrorException.UNSUPPORTED_RESPONSE_TYPE, null);
         }
 
+        OIDCResponseMode parsedResponseMode = null;
         try {
-            OIDCResponseMode parsedResponseMode = OIDCResponseMode.parse(responseMode, parsedResponseType);
-            event.detail(Details.RESPONSE_MODE, parsedResponseMode.toString().toLowerCase());
-
-            // Disallowed by OIDC specs
-            if (parsedResponseType.isImplicitOrHybridFlow() && parsedResponseMode == OIDCResponseMode.QUERY) {
-                logger.responseModeQueryNotAllowed();
-                event.error(Errors.INVALID_REQUEST);
-                throw new ErrorPageException(session, Messages.INVALID_PARAMETER, OIDCLoginProtocol.RESPONSE_MODE_PARAM);
-            }
-
+            parsedResponseMode = OIDCResponseMode.parse(responseMode, parsedResponseType);
         } catch (IllegalArgumentException iae) {
+            logger.invalidParameter(OIDCLoginProtocol.RESPONSE_MODE_PARAM);
             event.error(Errors.INVALID_REQUEST);
-            throw new ErrorPageException(session, Messages.INVALID_PARAMETER, OIDCLoginProtocol.RESPONSE_MODE_PARAM);
+            return redirectErrorToClient(OIDCResponseMode.QUERY, OAuthErrorException.INVALID_REQUEST, "Invalid parameter: response_mode");
         }
+
+        event.detail(Details.RESPONSE_MODE, parsedResponseMode.toString().toLowerCase());
+
+        // Disallowed by OIDC specs
+        if (parsedResponseType.isImplicitOrHybridFlow() && parsedResponseMode == OIDCResponseMode.QUERY) {
+            logger.responseModeQueryNotAllowed();
+            event.error(Errors.INVALID_REQUEST);
+            return redirectErrorToClient(OIDCResponseMode.QUERY, OAuthErrorException.INVALID_REQUEST, "Response_mode 'query' not allowed for implicit or hybrid flow");
+        }
+
+        if ((parsedResponseType.hasResponseType(OIDCResponseType.CODE) || parsedResponseType.hasResponseType(OIDCResponseType.NONE)) && !client.isStandardFlowEnabled()) {
+            logger.flowNotAllowed("Standard");
+            event.error(Errors.NOT_ALLOWED);
+            return redirectErrorToClient(parsedResponseMode, OAuthErrorException.UNSUPPORTED_RESPONSE_TYPE, "Client is not allowed to initiate browser login with given response_type. Standard flow is disabled for the client.");
+        }
+
+        if (parsedResponseType.isImplicitOrHybridFlow() && !client.isImplicitFlowEnabled()) {
+            logger.flowNotAllowed("Implicit");
+            event.error(Errors.NOT_ALLOWED);
+            return redirectErrorToClient(parsedResponseMode, OAuthErrorException.UNSUPPORTED_RESPONSE_TYPE, "Client is not allowed to initiate browser login with given response_type. Implicit flow is disabled for the client.");
+        }
+
+        this.parsedResponseMode = parsedResponseMode;
+
+        return null;
+    }
+
+    private Response checkOIDCParams(MultivaluedMap<String, String> params) {
+        if (params.getFirst(OIDCLoginProtocol.REQUEST_PARAM) != null) {
+            logger.unsupportedParameter(OIDCLoginProtocol.REQUEST_PARAM);
+            event.error(Errors.INVALID_REQUEST);
+            return redirectErrorToClient(parsedResponseMode, OAuthErrorException.REQUEST_NOT_SUPPORTED, null);
+        }
+
+        if (params.getFirst(OIDCLoginProtocol.REQUEST_URI_PARAM) != null) {
+            logger.unsupportedParameter(OIDCLoginProtocol.REQUEST_URI_PARAM);
+            event.error(Errors.INVALID_REQUEST);
+            return redirectErrorToClient(parsedResponseMode, OAuthErrorException.REQUEST_URI_NOT_SUPPORTED, null);
+        }
+
+        if (parsedResponseType.isImplicitOrHybridFlow() && nonce == null) {
+            logger.missingParameter(OIDCLoginProtocol.NONCE_PARAM);
+            event.error(Errors.INVALID_REQUEST);
+            return redirectErrorToClient(parsedResponseMode, OAuthErrorException.INVALID_REQUEST, "Missing parameter: nonce");
+        }
+
+        return null;
+    }
+
+    private Response redirectErrorToClient(OIDCResponseMode responseMode, String error, String errorDescription) {
+        OIDCRedirectUriBuilder errorResponseBuilder = OIDCRedirectUriBuilder.fromUri(redirectUri, responseMode)
+                .addParam(OAuth2Constants.ERROR, error);
+
+        if (errorDescription != null) {
+            errorResponseBuilder.addParam(OAuth2Constants.ERROR_DESCRIPTION, errorDescription);
+        }
+
+        if (state != null) {
+            errorResponseBuilder.addParam(OAuth2Constants.STATE, state);
+        }
+
+        return errorResponseBuilder.build();
     }
 
     private void checkRedirectUri() {
@@ -309,6 +383,7 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
 
         if (state != null) clientSession.setNote(OIDCLoginProtocol.STATE_PARAM, state);
         if (nonce != null) clientSession.setNote(OIDCLoginProtocol.NONCE_PARAM, nonce);
+        if (maxAge != null) clientSession.setNote(OIDCLoginProtocol.MAX_AGE_PARAM, maxAge);
         if (scope != null) clientSession.setNote(OIDCLoginProtocol.SCOPE_PARAM, scope);
         if (loginHint != null) clientSession.setNote(OIDCLoginProtocol.LOGIN_HINT_PARAM, loginHint);
         if (prompt != null) clientSession.setNote(OIDCLoginProtocol.PROMPT_PARAM, prompt);
@@ -338,7 +413,7 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         this.event.event(EventType.LOGIN);
         clientSession.setNote(Details.AUTH_TYPE, CODE_AUTH_TYPE);
 
-        return handleBrowserAuthenticationRequest(clientSession, new OIDCLoginProtocol(session, realm, uriInfo, headers, event), prompt != null && prompt.equals("none"), false);
+        return handleBrowserAuthenticationRequest(clientSession, new OIDCLoginProtocol(session, realm, uriInfo, headers, event), TokenUtil.hasPrompt(prompt, OIDCLoginProtocol.PROMPT_VALUE_NONE), false);
     }
 
     private Response buildRegister() {

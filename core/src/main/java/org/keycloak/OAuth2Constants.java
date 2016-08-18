@@ -26,6 +26,8 @@ public interface OAuth2Constants {
 
     String CLIENT_ID = "client_id";
 
+    String CLIENT_SECRET = "client_secret";
+
     String ERROR = "error";
 
     String ERROR_DESCRIPTION = "error_description";
@@ -39,6 +41,10 @@ public interface OAuth2Constants {
     String GRANT_TYPE = "grant_type";
 
     String RESPONSE_TYPE = "response_type";
+
+    String ACCESS_TOKEN = "access_token";
+
+    String ID_TOKEN = "id_token";
 
     String REFRESH_TOKEN = "refresh_token";
 
@@ -60,7 +66,20 @@ public interface OAuth2Constants {
     // http://openid.net/specs/openid-connect-core-1_0.html#OfflineAccess
     String OFFLINE_ACCESS = "offline_access";
 
+    // http://openid.net/specs/openid-connect-core-1_0.html#AuthRequest
+    String SCOPE_OPENID = "openid";
+
+    // http://openid.net/specs/openid-connect-core-1_0.html#ScopeClaims
+    String SCOPE_PROFILE = "profile";
+    String SCOPE_EMAIL = "email";
+    String SCOPE_ADDRESS = "address";
+    String SCOPE_PHONE = "phone";
+
     String UI_LOCALES_PARAM = "ui_locales";
+
+    String PROMPT = "prompt";
+
+    String MAX_AGE = "max_age";
 
 
 }

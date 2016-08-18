@@ -18,8 +18,11 @@
 package org.keycloak.models.jpa;
 
 import org.jboss.logging.Logger;
-import org.keycloak.connections.jpa.util.JpaUtils;
+import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.common.util.StringPropertyReplacer;
+import org.keycloak.component.ComponentModel;
 import org.keycloak.common.enums.SslRequired;
+import org.keycloak.jose.jwk.JWKBuilder;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.AuthenticatorConfigModel;
@@ -460,6 +463,12 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
     }
 
     @Override
+    public String getKeyId() {
+        PublicKey publicKey = getPublicKey();
+        return publicKey != null ? JWKBuilder.create().rs256(publicKey).getKeyId() : null;
+    }
+
+    @Override
     public String getPublicKeyPem() {
         return realm.getPublicKeyPem();
     }
@@ -805,6 +814,15 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
         em.flush();
     }
 
+
+    private void removeFederationMappersForProvider(String federationProviderId) {
+        Set<UserFederationMapperEntity> mappers = getUserFederationMapperEntitiesByFederationProvider(federationProviderId);
+        for (UserFederationMapperEntity mapper : mappers) {
+            realm.getUserFederationMappers().remove(mapper);
+            em.remove(mapper);
+        }
+    }
+
     @Override
     public List<UserFederationProviderModel> getUserFederationProviders() {
         List<UserFederationProviderEntity> entities = realm.getUserFederationProviders();
@@ -875,15 +893,6 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
             }
         }
     }
-
-    private void removeFederationMappersForProvider(String federationProviderId) {
-        Set<UserFederationMapperEntity> mappers = getUserFederationMapperEntitiesByFederationProvider(federationProviderId);
-        for (UserFederationMapperEntity mapper : mappers) {
-            realm.getUserFederationMappers().remove(mapper);
-            em.remove(mapper);
-        }
-    }
-
     @Override
     public void updateUserFederationProvider(UserFederationProviderModel model) {
         KeycloakModelUtils.ensureUniqueDisplayName(model.getDisplayName(), model, getUserFederationProviders());
@@ -1034,7 +1043,7 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
     @Override
     public PasswordPolicy getPasswordPolicy() {
         if (passwordPolicy == null) {
-            passwordPolicy = new PasswordPolicy(realm.getPasswordPolicy());
+            passwordPolicy = PasswordPolicy.parse(session, realm.getPasswordPolicy());
         }
         return passwordPolicy;
     }
@@ -2098,4 +2107,146 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
         return session.realms().getClientTemplateById(id, this);
     }
 
+    @Override
+    public ComponentModel addComponentModel(ComponentModel model) {
+        ComponentEntity c = new ComponentEntity();
+        if (model.getId() == null) {
+            c.setId(KeycloakModelUtils.generateId());
+        } else {
+            c.setId(model.getId());
+        }
+        c.setName(model.getName());
+        c.setParentId(model.getParentId());
+        c.setProviderType(model.getProviderType());
+        c.setProviderId(model.getProviderId());
+        c.setRealm(realm);
+        em.persist(c);
+        setConfig(model, c);
+        model.setId(c.getId());
+        return model;
+    }
+
+    protected void setConfig(ComponentModel model, ComponentEntity c) {
+        for (String key : model.getConfig().keySet()) {
+            List<String> vals = model.getConfig().get(key);
+            for (String val : vals) {
+                ComponentConfigEntity config = new ComponentConfigEntity();
+                config.setId(KeycloakModelUtils.generateId());
+                config.setName(key);
+                config.setValue(val);
+                config.setComponent(c);
+                em.persist(config);
+            }
+        }
+    }
+
+    @Override
+    public void updateComponent(ComponentModel component) {
+        ComponentEntity c = em.find(ComponentEntity.class, component.getId());
+        if (c == null) return;
+        c.setName(component.getName());
+        c.setProviderId(component.getProviderId());
+        c.setProviderType(component.getProviderType());
+        c.setParentId(component.getParentId());
+        em.createNamedQuery("deleteComponentConfigByComponent").setParameter("component", c).executeUpdate();
+        em.flush();
+        setConfig(component, c);
+
+
+    }
+
+    @Override
+    public void removeComponent(ComponentModel component) {
+        ComponentEntity c = em.find(ComponentEntity.class, component.getId());
+        if (c == null) return;
+        session.users().preRemove(this, component);
+        em.createNamedQuery("deleteComponentConfigByComponent").setParameter("component", c).executeUpdate();
+        em.remove(c);
+    }
+
+    @Override
+    public void removeComponents(String parentId) {
+        TypedQuery<String> query = em.createNamedQuery("getComponentIdsByParent", String.class)
+                .setParameter("realm", realm)
+                .setParameter("parentId", parentId);
+        List<String> results = query.getResultList();
+        if (results.isEmpty()) return;
+        for (String id : results) {
+            session.users().preRemove(this, getComponent(id));
+        }
+        em.createNamedQuery("deleteComponentConfigByParent").setParameter("parentId", parentId).executeUpdate();
+        em.createNamedQuery("deleteComponentByParent").setParameter("parentId", parentId).executeUpdate();
+
+    }
+
+    @Override
+    public List<ComponentModel> getComponents(String parentId, String providerType) {
+        if (parentId == null) parentId = getId();
+        TypedQuery<ComponentEntity> query = em.createNamedQuery("getComponentsByParentAndType", ComponentEntity.class)
+                .setParameter("realm", realm)
+                .setParameter("parentId", parentId)
+                .setParameter("providerType", providerType);
+        List<ComponentEntity> results = query.getResultList();
+        List<ComponentModel> rtn = new LinkedList<>();
+        for (ComponentEntity c : results) {
+            ComponentModel model = entityToModel(c);
+            rtn.add(model);
+
+        }
+        return rtn;
+    }
+
+    @Override
+    public List<ComponentModel> getComponents(String parentId) {
+        TypedQuery<ComponentEntity> query = em.createNamedQuery("getComponentsByParent", ComponentEntity.class)
+                .setParameter("realm", realm)
+                .setParameter("parentId", parentId);
+        List<ComponentEntity> results = query.getResultList();
+        List<ComponentModel> rtn = new LinkedList<>();
+        for (ComponentEntity c : results) {
+            ComponentModel model = entityToModel(c);
+            rtn.add(model);
+
+        }
+        return rtn;
+    }
+
+    protected ComponentModel entityToModel(ComponentEntity c) {
+        ComponentModel model = new ComponentModel();
+        model.setId(c.getId());
+        model.setName(c.getName());
+        model.setProviderType(c.getProviderType());
+        model.setProviderId(c.getProviderId());
+        model.setParentId(c.getParentId());
+        MultivaluedHashMap<String, String> config = new MultivaluedHashMap<>();
+        TypedQuery<ComponentConfigEntity> configQuery = em.createNamedQuery("getComponentConfig", ComponentConfigEntity.class)
+                .setParameter("component", c);
+        List<ComponentConfigEntity> configResults = configQuery.getResultList();
+        for (ComponentConfigEntity configEntity : configResults) {
+            config.add(configEntity.getName(), configEntity.getValue());
+        }
+        model.setConfig(config);
+        return model;
+    }
+
+    @Override
+    public List<ComponentModel> getComponents() {
+        TypedQuery<ComponentEntity> query = em.createNamedQuery("getComponents", ComponentEntity.class)
+                .setParameter("realm", realm);
+        List<ComponentEntity> results = query.getResultList();
+        List<ComponentModel> rtn = new LinkedList<>();
+        for (ComponentEntity c : results) {
+            ComponentModel model = entityToModel(c);
+            rtn.add(model);
+
+        }
+        return rtn;
+    }
+
+    @Override
+    public ComponentModel getComponent(String id) {
+        ComponentEntity c = em.find(ComponentEntity.class, id);
+        if (c == null) return null;
+        return entityToModel(c);
+    }
 }

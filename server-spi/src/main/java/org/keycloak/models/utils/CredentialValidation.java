@@ -17,19 +17,18 @@
 
 package org.keycloak.models.utils;
 
+import org.keycloak.common.util.Time;
 import org.keycloak.hash.PasswordHashManager;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OTPPolicy;
-import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.PasswordToken;
-import org.keycloak.common.util.Time;
 
 import java.util.List;
 
@@ -39,16 +38,7 @@ import java.util.List;
  */
 public class CredentialValidation {
 
-    private static int hashIterations(RealmModel realm) {
-        PasswordPolicy policy = realm.getPasswordPolicy();
-        if (policy != null) {
-            return policy.getHashIterations();
-        }
-        return -1;
-
-    }
-
-    /**
+   /**
      * Will update password if hash iteration policy has changed
      *
      * @param realm
@@ -78,8 +68,7 @@ public class CredentialValidation {
         boolean validated = PasswordHashManager.verify(session, realm, unhashedCredValue, credential);
 
         if (validated) {
-            int iterations = hashIterations(realm);
-            if (iterations > -1 && iterations != credential.getHashIterations()) {
+            if (realm.getPasswordPolicy().getHashIterations() != credential.getHashIterations()) {
 
                 UserCredentialValueModel newCred = PasswordHashManager.encode(session, realm, unhashedCredValue);
                 user.updateCredentialDirectly(newCred);
@@ -195,7 +184,7 @@ public class CredentialValidation {
         return true;
     }
 
-    private static boolean validCredential(KeycloakSession session, RealmModel realm, UserModel user, UserCredentialModel credential) {
+    public static boolean validCredential(KeycloakSession session, RealmModel realm, UserModel user, UserCredentialModel credential) {
         if (credential.getType().equals(UserCredentialModel.PASSWORD)) {
             if (!validPassword(session, realm, user, credential.getValue())) {
                 return false;

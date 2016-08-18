@@ -23,8 +23,16 @@
         "provider": "${keycloak.user.provider:jpa}"
     },
 
+    "userFederatedStorage": {
+        "provider": "${keycloak.userFederatedStorage.provider:jpa}"
+    },
+
     "userSessionPersister": {
         "provider": "${keycloak.userSessionPersister.provider:jpa}"
+    },
+
+    "authorizationPersister": {
+        "provider": "${keycloak.authorization.provider:jpa}"
     },
 
     "userCache": {
@@ -117,10 +125,18 @@
 
     "truststore": {
         "file": {
-            "file": "${keycloak.truststore.file:src/main/keystore/keycloak.truststore}",
+            "file": "${keycloak.truststore.file:src/test/resources/keystore/keycloak.truststore}",
             "password": "${keycloak.truststore.password:secret}",
             "hostname-verification-policy": "${keycloak.truststore.policy:WILDCARD}",
-            "disabled": "${keycloak.truststore.disabled:true}"
+            "disabled": "${keycloak.truststore.disabled:false}"
         }
+    },
+
+    "jta-lookup": {
+        "provider": "${keycloak.jta.lookup.provider:jboss}",
+        "jboss" : {
+            "enabled": true
+        }
+
     }
 }

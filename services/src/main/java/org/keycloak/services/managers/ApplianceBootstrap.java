@@ -84,6 +84,8 @@ public class ApplianceBootstrap {
 
     public void createMasterRealmUser(String username, String password) {
         RealmModel realm = session.realms().getRealm(Config.getAdminRealm());
+        session.getContext().setRealm(realm);
+
         if (session.users().getUsersCount(realm) > 0) {
             throw new IllegalStateException("Can't create initial user as users already exists");
         }

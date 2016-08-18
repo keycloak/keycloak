@@ -32,6 +32,8 @@ import static org.jboss.logging.Logger.Level.ERROR;
 import static org.jboss.logging.Logger.Level.FATAL;
 import static org.jboss.logging.Logger.Level.INFO;
 import static org.jboss.logging.Logger.Level.WARN;
+
+import org.jboss.logging.annotations.Once;
 import org.keycloak.email.EmailException;
 import org.keycloak.events.EventListenerProvider;
 import org.keycloak.models.ModelDuplicateException;
@@ -404,6 +406,28 @@ public interface ServicesLogger extends BasicLogger {
     void failedToCloseProviderSession(@Cause Throwable t);
 
     @LogMessage(level = WARN)
-    @Message(id=91, value="Forced release of DB lock at startup requested by System property. Make sure to not use this in production environment! And especially when more cluster nodes are started concurrently.")
-    void forcedReleaseDBLock();
+    @Message(id=91, value="Request is missing scope 'openid' so it's not treated as OIDC, but just pure OAuth2 request. This can have impact in future versions (eg. removed IDToken from the Token Response)")
+    @Once
+    void oidcScopeMissing();
+
+    @LogMessage(level = ERROR)
+    @Message(id=92, value="Missing parameter: %s")
+    void missingParameter(String paramName);
+
+    @LogMessage(level = ERROR)
+    @Message(id=93, value="Invalid parameter value for: %s")
+    void invalidParameter(String paramName);
+
+    @LogMessage(level = ERROR)
+    @Message(id=94, value="Unsupported parameter: %s")
+    void unsupportedParameter(String paramName);
+
+    @LogMessage(level = ERROR)
+    @Message(id=95, value="Client is not allowed to initiate browser login with given response_type. %s flow is disabled for the client.")
+    void flowNotAllowed(String flowName);
+
+    @LogMessage(level = WARN)
+    @Message(id=96, value="Not found JWK of supported keyType under jwks_uri for usage: %s")
+    void supportedJwkNotFound(String usage);
+
 }

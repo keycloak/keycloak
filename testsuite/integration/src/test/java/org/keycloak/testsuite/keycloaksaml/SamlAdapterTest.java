@@ -51,6 +51,7 @@ public class SamlAdapterTest {
             initializeSamlSecuredWar("/keycloak-saml/simple-post2", "/sales-post2",  "post.war", classLoader);
             initializeSamlSecuredWar("/keycloak-saml/simple-post-passive", "/sales-post-passive", "post-passive.war", classLoader);
             initializeSamlSecuredWar("/keycloak-saml/signed-post", "/sales-post-sig",  "post-sig.war", classLoader);
+            initializeSamlSecuredWar("/keycloak-saml/sales-post-assertion-and-response-sig", "/sales-post-assertion-and-response-sig",  "sales-post-assertion-and-response-sig.war", classLoader);
             initializeSamlSecuredWar("/keycloak-saml/signed-post-email", "/sales-post-sig-email",  "post-sig-email.war", classLoader);
             initializeSamlSecuredWar("/keycloak-saml/signed-post-transient", "/sales-post-sig-transient",  "post-sig-transient.war", classLoader);
             initializeSamlSecuredWar("/keycloak-saml/signed-post-persistent", "/sales-post-sig-persistent",  "post-sig-persistent.war", classLoader);
@@ -60,6 +61,8 @@ public class SamlAdapterTest {
             initializeSamlSecuredWar("/keycloak-saml/signed-front-get", "/employee-sig-front",  "employee-sig-front.war", classLoader);
             initializeSamlSecuredWar("/keycloak-saml/bad-client-signed-post", "/bad-client-sales-post-sig",  "bad-client-post-sig.war", classLoader);
             initializeSamlSecuredWar("/keycloak-saml/bad-realm-signed-post", "/bad-realm-sales-post-sig",  "bad-realm-post-sig.war", classLoader);
+            initializeSamlSecuredWar("/keycloak-saml/bad-assertion-signed-post", "/bad-assertion-sales-post-sig",  "bad-assertion-post-sig.war", classLoader);
+            initializeSamlSecuredWar("/keycloak-saml/missing-assertion-sig", "/missing-assertion-sig",  "missing-assertion-sig.war", classLoader);
             initializeSamlSecuredWar("/keycloak-saml/encrypted-post", "/sales-post-enc",  "post-enc.war", classLoader);
             System.setProperty("app.server.base.url", "http://localhost:8081");
             initializeSamlSecuredWar("/keycloak-saml/simple-input", "/input-portal",  "input.war", classLoader, InputServlet.class, "/secured/*");
@@ -87,6 +90,16 @@ public class SamlAdapterTest {
     @Test
     public void testPostBadRealmSignature() {
         testStrategy.testPostBadRealmSignature();
+    }
+
+    @Test
+    public void testPostBadAssertionSignature() {
+        testStrategy.testPostBadAssertionSignature();
+    }
+
+    @Test
+    public void testMissingAssertionSignature() {
+        testStrategy.testMissingAssertionSignature();
     }
 
     @Test
@@ -187,6 +200,11 @@ public class SamlAdapterTest {
     @Test
     public void testPostSignedLoginLogout() {
         testStrategy.testPostSignedLoginLogout();
+    }
+
+    @Test
+    public void testPostSignedResponseAndAssertionLoginLogout() {
+        testStrategy.testPostSignedResponseAndAssertionLoginLogout();
     }
 
     @Test

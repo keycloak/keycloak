@@ -17,6 +17,8 @@
 
 package org.keycloak.connections.jpa.updater.liquibase.lock;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.common.util.Time;
@@ -32,6 +34,9 @@ public class LiquibaseDBLockProviderFactory implements DBLockProviderFactory {
     private static final Logger logger = Logger.getLogger(LiquibaseDBLockProviderFactory.class);
 
     private long lockWaitTimeoutMillis;
+
+    // True if this node has a lock acquired
+    private AtomicBoolean hasLock = new AtomicBoolean(false);
 
     protected long getLockWaitTimeoutMillis() {
         return lockWaitTimeoutMillis;
@@ -67,5 +72,13 @@ public class LiquibaseDBLockProviderFactory implements DBLockProviderFactory {
     @Override
     public String getId() {
         return "jpa";
+    }
+
+    public boolean hasLock() {
+        return hasLock.get();
+    }
+
+    public void setHasLock(boolean hasLock) {
+        this.hasLock.set(hasLock);
     }
 }

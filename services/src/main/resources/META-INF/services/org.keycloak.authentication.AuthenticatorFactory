@@ -18,6 +18,7 @@
 org.keycloak.authentication.authenticators.browser.CookieAuthenticatorFactory
 org.keycloak.authentication.authenticators.browser.UsernamePasswordFormFactory
 org.keycloak.authentication.authenticators.browser.OTPFormAuthenticatorFactory
+org.keycloak.authentication.authenticators.browser.ScriptBasedAuthenticatorFactory
 org.keycloak.authentication.authenticators.browser.SpnegoAuthenticatorFactory
 org.keycloak.authentication.authenticators.directgrant.ValidateOTP
 org.keycloak.authentication.authenticators.directgrant.ValidatePassword

@@ -32,6 +32,10 @@
         "provider": "jpa"
     },
 
+    "authorizationPersister": {
+        "provider": "jpa"
+    },
+
     "timer": {
         "provider": "basic"
     },
@@ -61,7 +65,6 @@
     },
 
     "realmCache": {
-        "provider": "default",
         "default" : {
             "enabled": true
         }
@@ -72,5 +75,13 @@
         "default": {
             "cacheContainer" : "java:comp/env/infinispan/Keycloak"
         }
+    },
+
+    "jta-lookup": {
+        "provider": "${keycloak.jta.lookup.provider:jboss}",
+        "jboss" : {
+            "enabled": true
+        }
+
     }
 }

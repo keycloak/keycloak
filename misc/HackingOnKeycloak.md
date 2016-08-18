@@ -61,9 +61,3 @@ Here's a quick check list for a good pull request (PR):
 * Do a rebase on upstream master
 
 Once you're happy with your changes go to GitHub and create a PR.
-
-
-Release Keycloak
-----------------
-
-* [Release Process](ReleaseProcess.md)

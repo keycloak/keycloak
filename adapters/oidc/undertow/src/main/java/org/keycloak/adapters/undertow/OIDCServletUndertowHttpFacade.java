@@ -17,16 +17,16 @@
 package org.keycloak.adapters.undertow;
 
 import io.undertow.server.HttpServerExchange;
-import io.undertow.util.AttachmentKey;
 import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.adapters.OIDCHttpFacade;
+
+import static org.keycloak.adapters.undertow.OIDCUndertowHttpFacade.KEYCLOAK_SECURITY_CONTEXT_KEY;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
 public class OIDCServletUndertowHttpFacade extends ServletHttpFacade implements OIDCHttpFacade {
-    public static final AttachmentKey<KeycloakSecurityContext> KEYCLOAK_SECURITY_CONTEXT_KEY = AttachmentKey.create(KeycloakSecurityContext.class);
 
     public OIDCServletUndertowHttpFacade(HttpServerExchange exchange) {
         super(exchange);

@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <title>Photoz HTML5 Client</title>
+
+    <!-- Load AngularJS -->
+    <script src="lib/angular/angular.min.js"></script>
+    <script src="lib/angular/angular-resource.min.js"></script>
+    <script src="lib/angular/angular-route.min.js"></script>
+    <script src="lib/jwt-decode.min.js"></script>
+
+    <script src="http://localhost:8180/auth/js/keycloak.js"></script>
+    <script src="http://localhost:8180/auth/js/keycloak-authz.js"></script>
+    <script src="js/identity.js" type="text/javascript"></script>
+    <script src="js/app.js" type="text/javascript"></script>
+</head>
+
+<body data-ng-controller="TokenCtrl">
+
+<a href data-ng-click="showRpt()">Show Requesting Party Token </a> | <a href data-ng-click="showAccessToken()">Show Access Token </a> | <a href data-ng-click="requestEntitlements()">Request Entitlements</a> | <a href="" ng-click="Identity.logout()">Sign Out</a>
+
+<div id="content-area" class="col-md-9" role="main">
+    <div id="content" ng-view/>
+</div>
+
+<pre style="background-color: #ddd; border: 1px solid #ccc; padding: 10px;" id="output"></pre>
+
+</body>
+</html>

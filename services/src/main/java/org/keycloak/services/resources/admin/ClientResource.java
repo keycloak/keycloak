@@ -20,7 +20,9 @@ import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.BadRequestException;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
+import org.keycloak.authorization.admin.AuthorizationService;
 import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
@@ -98,7 +100,7 @@ public class ClientResource {
         this.auth = auth;
         this.client = clientModel;
         this.session = session;
-        this.adminEvent = adminEvent;
+        this.adminEvent = adminEvent.resource(ResourceType.CLIENT);
 
         auth.init(RealmAuth.Resource.CLIENT);
     }
@@ -133,12 +135,18 @@ public class ClientResource {
         }
     }
 
-    public static void updateClientFromRep(ClientRepresentation rep, ClientModel client, KeycloakSession session) throws ModelDuplicateException {
+    public void updateClientFromRep(ClientRepresentation rep, ClientModel client, KeycloakSession session) throws ModelDuplicateException {
         if (TRUE.equals(rep.isServiceAccountsEnabled()) && !client.isServiceAccountsEnabled()) {
             new ClientManager(new RealmManager(session)).enableServiceAccount(client);
         }
 
         RepresentationToModel.updateClient(rep, client);
+
+        if (TRUE.equals(rep.getAuthorizationServicesEnabled())) {
+            authorization().enable();
+        } else {
+            authorization().disable();
+        }
     }
 
     /**
@@ -156,7 +164,11 @@ public class ClientResource {
             throw new NotFoundException("Could not find client");
         }
 
-        return ModelToRepresentation.toRepresentation(client);
+        ClientRepresentation representation = ModelToRepresentation.toRepresentation(client);
+
+        representation.setAuthorizationServicesEnabled(authorization().isEnabled());
+
+        return representation;
     }
 
     /**
@@ -304,11 +316,11 @@ public class ClientResource {
             throw new NotFoundException("Could not find client");
         }
 
-        UserModel user = session.users().getUserByServiceAccountClient(client);
+        UserModel user = session.users().getServiceAccount(client);
         if (user == null) {
             if (client.isServiceAccountsEnabled()) {
                 new ClientManager(new RealmManager(session)).enableServiceAccount(client);
-                user = session.users().getUserByServiceAccountClient(client);
+                user = session.users().getServiceAccount(client);
             } else {
                 throw new BadRequestException("Service account not enabled for the client '" + client.getClientId() + "'");
             }
@@ -332,7 +344,7 @@ public class ClientResource {
             throw new NotFoundException("Could not find client");
         }
 
-        adminEvent.operation(OperationType.ACTION).resourcePath(uriInfo).success();
+        adminEvent.operation(OperationType.ACTION).resourcePath(uriInfo).resource(ResourceType.CLIENT).success();
         return new ResourceAdminManager(session).pushClientRevocationPolicy(uriInfo.getRequestUri(), realm, client);
 
     }
@@ -485,7 +497,7 @@ public class ClientResource {
         }
         if (logger.isDebugEnabled()) logger.debug("Register node: " + node);
         client.registerNode(node, Time.currentTime());
-        adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo, node).success();
+        adminEvent.operation(OperationType.CREATE).resource(ResourceType.CLUSTER_NODE).resourcePath(uriInfo, node).success();
     }
 
     /**
@@ -510,7 +522,7 @@ public class ClientResource {
             throw new NotFoundException("Client does not have node ");
         }
         client.unregisterNode(node);
-        adminEvent.operation(OperationType.DELETE).resourcePath(uriInfo).success();
+        adminEvent.operation(OperationType.DELETE).resource(ResourceType.CLUSTER_NODE).resourcePath(uriInfo).success();
     }
 
     /**
@@ -533,8 +545,16 @@ public class ClientResource {
 
         logger.debug("Test availability of cluster nodes");
         GlobalRequestResult result = new ResourceAdminManager(session).testNodesAvailability(uriInfo.getRequestUri(), realm, client);
-        adminEvent.operation(OperationType.ACTION).resourcePath(uriInfo).representation(result).success();
+        adminEvent.operation(OperationType.ACTION).resource(ResourceType.CLUSTER_NODE).resourcePath(uriInfo).representation(result).success();
         return result;
     }
 
+    @Path("/authz")
+    public AuthorizationService authorization() {
+        AuthorizationService resource = new AuthorizationService(this.session, this.client, this.auth);
+
+        ResteasyProviderFactory.getInstance().injectProperties(resource);
+
+        return resource;
+    }
 }

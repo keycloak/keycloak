@@ -39,6 +39,7 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.util.BasicAuthHelper;
 import org.keycloak.common.util.PemUtils;
+import org.keycloak.util.TokenUtil;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 
@@ -442,9 +443,10 @@ public class OAuthClient {
         if(uiLocales != null){
             b.queryParam(OAuth2Constants.UI_LOCALES_PARAM, uiLocales);
         }
-        if (scope != null) {
-            b.queryParam(OAuth2Constants.SCOPE, scope);
-        }
+
+        String scopeParam = TokenUtil.attachOIDCScope(scope);
+        b.queryParam(OAuth2Constants.SCOPE, scopeParam);
+
         return b.build(realm).toString();
     }
 

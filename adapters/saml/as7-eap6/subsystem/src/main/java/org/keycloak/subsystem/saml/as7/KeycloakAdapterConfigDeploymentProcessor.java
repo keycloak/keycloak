@@ -51,7 +51,6 @@ public class KeycloakAdapterConfigDeploymentProcessor implements DeploymentUnitP
     @Override
     public void deploy(DeploymentPhaseContext phaseContext) throws DeploymentUnitProcessingException {
         DeploymentUnit deploymentUnit = phaseContext.getDeploymentUnit();
-        String deploymentName = deploymentUnit.getName();
 
         WarMetaData warMetaData = deploymentUnit.getAttachment(WarMetaData.ATTACHMENT_KEY);
         if (warMetaData == null) {
@@ -69,30 +68,30 @@ public class KeycloakAdapterConfigDeploymentProcessor implements DeploymentUnitP
 
         try {
             boolean webRequiresKC = loginConfig != null && "KEYCLOAK-SAML".equalsIgnoreCase(loginConfig.getAuthMethod());
-            boolean hasSubsystemConfig = Configuration.INSTANCE.isSecureDeployment(deploymentName);
+            boolean hasSubsystemConfig = Configuration.INSTANCE.isSecureDeployment(deploymentUnit);
             if (hasSubsystemConfig || webRequiresKC) {
-                log.debug("Setting up KEYCLOAK-SAML auth method for WAR: " + deploymentName);
+                log.debug("Setting up KEYCLOAK-SAML auth method for WAR: " + deploymentUnit.getName());
 
                 // if secure-deployment configuration exists for web app, we force KEYCLOAK-SAML auth method on it
                 if (hasSubsystemConfig) {
-                    addXMLData(getXML(deploymentName), warMetaData);
+                    addXMLData(getXML(deploymentUnit), warMetaData);
                     if (loginConfig != null) {
                         loginConfig.setAuthMethod("KEYCLOAK-SAML");
                         //loginConfig.setRealmName(service.getRealmName(deploymentName));
                     } else {
-                        log.warn("Failed to set up KEYCLOAK-SAML auth method for WAR: " + deploymentName + " (loginConfig == null)");
+                        log.warn("Failed to set up KEYCLOAK-SAML auth method for WAR: " + deploymentUnit.getName() + " (loginConfig == null)");
                     }
                 }
                 addValve(webMetaData);
-                KeycloakLogger.ROOT_LOGGER.deploymentSecured(deploymentName);
+                KeycloakLogger.ROOT_LOGGER.deploymentSecured(deploymentUnit.getName());
             }
         } catch (Exception e) {
             throw new DeploymentUnitProcessingException("Failed to configure KeycloakSamlExtension from subsystem model", e);
         }
     }
 
-    private String getXML(String deploymentName) throws XMLStreamException {
-        ModelNode node = Configuration.INSTANCE.getSecureDeployment(deploymentName);
+    private String getXML(DeploymentUnit deploymentUnit) throws XMLStreamException {
+        ModelNode node = Configuration.INSTANCE.getSecureDeployment(deploymentUnit);
         if (node != null) {
             KeycloakSubsystemParser writer = new KeycloakSubsystemParser();
             ByteArrayOutputStream output = new ByteArrayOutputStream();

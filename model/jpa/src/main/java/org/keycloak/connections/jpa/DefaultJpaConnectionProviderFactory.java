@@ -20,32 +20,28 @@ package org.keycloak.connections.jpa;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 
 import javax.naming.InitialContext;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
-import javax.persistence.Persistence;
-import javax.persistence.spi.PersistenceUnitTransactionType;
 import javax.sql.DataSource;
 
-import org.hibernate.boot.registry.classloading.internal.ClassLoaderServiceImpl;
 import org.hibernate.ejb.AvailableSettings;
-import org.hibernate.jpa.boot.internal.ParsedPersistenceXmlDescriptor;
-import org.hibernate.jpa.boot.internal.PersistenceXmlParser;
-import org.hibernate.jpa.boot.spi.Bootstrap;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.connections.jpa.updater.JpaUpdaterProvider;
 import org.keycloak.connections.jpa.util.JpaUtils;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.KeycloakSessionTask;
+import org.keycloak.models.dblock.DBLockProvider;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.provider.ServerInfoAwareProviderFactory;
+import org.keycloak.models.dblock.DBLockManager;
 import org.keycloak.timer.TimerProvider;
 
 /**
@@ -67,7 +63,7 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
 
         EntityManager em = emf.createEntityManager();
         em = PersistenceExceptionConverter.create(em);
-        session.getTransaction().enlist(new JpaKeycloakTransaction(em));
+        session.getTransactionManager().enlist(new JpaKeycloakTransaction(em));
         return new DefaultJpaConnectionProvider(em);
     }
 
@@ -98,8 +94,6 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
             synchronized (this) {
                 if (emf == null) {
                     logger.debug("Initializing JPA connections");
-
-                    Connection connection = null;
 
                     Map<String, Object> properties = new HashMap<String, Object>();
 
@@ -132,23 +126,26 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
                     }
 
 
-                    String databaseSchema = config.get("databaseSchema");
-                    if (databaseSchema == null) {
+                    String databaseSchema;
+                    String databaseSchemaConf = config.get("databaseSchema");
+                    if (databaseSchemaConf == null) {
                         throw new RuntimeException("Property 'databaseSchema' needs to be specified in the configuration");
                     }
                     
-                    if (databaseSchema.equals("development-update")) {
+                    if (databaseSchemaConf.equals("development-update")) {
                         properties.put("hibernate.hbm2ddl.auto", "update");
                         databaseSchema = null;
-                    } else if (databaseSchema.equals("development-validate")) {
+                    } else if (databaseSchemaConf.equals("development-validate")) {
                         properties.put("hibernate.hbm2ddl.auto", "validate");
                         databaseSchema = null;
+                    } else {
+                        databaseSchema = databaseSchemaConf;
                     }
 
                     properties.put("hibernate.show_sql", config.getBoolean("showSql", false));
                     properties.put("hibernate.format_sql", config.getBoolean("formatSql", true));
 
-                    connection = getConnection();
+                    Connection connection = getConnection();
                     try{ 
 	                    prepareOperationalInfo(connection);
 
@@ -164,29 +161,30 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
 	                        if (updater == null) {
 	                            throw new RuntimeException("Can't update database: JPA updater provider not found");
 	                        }
-	
-	                        if (databaseSchema.equals("update")) {
-	                            String currentVersion = null;
-	                            try {
-	                                ResultSet resultSet = connection.createStatement().executeQuery(updater.getCurrentVersionSql(schema));
-	                                if (resultSet.next()) {
-	                                    currentVersion = resultSet.getString(1);
-	                                }
-	                            } catch (SQLException e) {
-	                            }
-	
-	                            if (currentVersion == null || !JpaUpdaterProvider.LAST_VERSION.equals(currentVersion)) {
-	                                updater.update(connection, schema);
-	                            } else {
-	                                logger.debug("Database is up to date");
-	                            }
-	                        } else if (databaseSchema.equals("validate")) {
-	                            updater.validate(connection, schema);
-	                        } else {
-	                            throw new RuntimeException("Invalid value for databaseSchema: " + databaseSchema);
-	                        }
-	
-	                        logger.trace("Database update completed");
+
+                            // Check if having DBLock before trying to initialize hibernate
+                            DBLockProvider dbLock = new DBLockManager(session).getDBLock();
+                            if (dbLock.hasLock()) {
+                                updateOrValidateDB(databaseSchema, connection, updater, schema);
+                            } else {
+                                logger.trace("Don't have DBLock retrieved before upgrade. Needs to acquire lock first in separate transaction");
+
+                                KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), new KeycloakSessionTask() {
+
+                                    @Override
+                                    public void run(KeycloakSession lockSession) {
+                                        DBLockManager dbLockManager = new DBLockManager(lockSession);
+                                        DBLockProvider dbLock2 = dbLockManager.getDBLock();
+                                        dbLock2.waitForLock();
+                                        try {
+                                            updateOrValidateDB(databaseSchema, connection, updater, schema);
+                                        } finally {
+                                            dbLock2.releaseLock();
+                                        }
+                                    }
+
+                                });
+                            }
 	                    }
 
                         int globalStatsInterval = config.getInt("globalStatsInterval", -1);
@@ -195,7 +193,7 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
                         }
 
 	                    logger.trace("Creating EntityManagerFactory");
-	                    emf = JpaUtils.createEntityManagerFactory(unitName, properties, getClass().getClassLoader());
+	                    emf = JpaUtils.createEntityManagerFactory(session, unitName, properties, getClass().getClassLoader());
 	                    logger.trace("EntityManagerFactory created");
 
                         if (globalStatsInterval != -1) {
@@ -282,6 +280,20 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
         logger.debugf("Started Hibernate statistics with the interval %s seconds", globalStatsIntervalSecs);
         TimerProvider timer = session.getProvider(TimerProvider.class);
         timer.scheduleTask(new HibernateStatsReporter(emf), globalStatsIntervalSecs * 1000, "ReportHibernateGlobalStats");
+    }
+
+
+    // Needs to be called with acquired DBLock
+    protected void updateOrValidateDB(String databaseSchema, Connection connection, JpaUpdaterProvider updater, String schema) {
+        if (databaseSchema.equals("update")) {
+            updater.update(connection, schema);
+            logger.trace("Database update completed");
+        } else if (databaseSchema.equals("validate")) {
+            updater.validate(connection, schema);
+            logger.trace("Database validation completed");
+        } else {
+            throw new RuntimeException("Invalid value for databaseSchema: " + databaseSchema);
+        }
     }
 
 

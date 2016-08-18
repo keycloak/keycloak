@@ -21,16 +21,22 @@ import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.common.Version;
+import org.keycloak.common.util.Time;
 import org.keycloak.constants.AdapterConstants;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
+import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.VersionRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.adapter.AbstractServletsAdapterTest;
+import org.keycloak.testsuite.adapter.filter.AdapterActionsFilter;
 import org.keycloak.testsuite.adapter.page.*;
+import org.keycloak.testsuite.util.URLUtils;
 import org.keycloak.util.BasicAuthHelper;
 
 import javax.ws.rs.client.Client;
@@ -70,6 +76,8 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
     private ProductPortal productPortal;
     @Page
     private InputPortal inputPortal;
+    @Page
+    private TokenMinTTLPage tokenMinTTLPage;
 
     @Deployment(name = CustomerPortal.DEPLOYMENT_NAME)
     protected static WebArchive customerPortal() {
@@ -104,6 +112,18 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
     @Deployment(name = InputPortal.DEPLOYMENT_NAME)
     protected static WebArchive inputPortal() {
         return servletDeployment(InputPortal.DEPLOYMENT_NAME, "keycloak.json", InputServlet.class);
+    }
+
+    @Deployment(name = TokenMinTTLPage.DEPLOYMENT_NAME)
+    protected static WebArchive tokenMinTTLPage() {
+        return servletDeployment(TokenMinTTLPage.DEPLOYMENT_NAME, AdapterActionsFilter.class, AbstractShowTokensServlet.class, TokenMinTTLServlet.class, ErrorServlet.class);
+    }
+
+    @Before
+    public void beforeDemoServletsAdapterTest() {
+        // Delete all cookies from token-min-ttl page to be sure we are logged out
+        tokenMinTTLPage.navigateTo();
+        driver.manage().deleteAllCookies();
     }
 
     @Test
@@ -407,5 +427,64 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
         securePortal.navigateTo();
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
     }
+
+    // Tests "token-minimum-time-to-live" adapter configuration option
+    @Test
+    public void testTokenMinTTL() {
+        // Login
+        tokenMinTTLPage.navigateTo();
+        testRealmLoginPage.form().waitForUsernameInputPresent();
+        assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
+        testRealmLoginPage.form().login("bburke@redhat.com", "password");
+        assertCurrentUrlEquals(tokenMinTTLPage);
+
+        // Get time of token
+        AccessToken token = tokenMinTTLPage.getAccessToken();
+        int tokenIssued1 = token.getIssuedAt();
+
+        // Sets 5 minutes offset and assert access token will be still the same
+        setAdapterAndServerTimeOffset(300, tokenMinTTLPage.toString());
+        token = tokenMinTTLPage.getAccessToken();
+        int tokenIssued2 = token.getIssuedAt();
+        Assert.assertEquals(tokenIssued1, tokenIssued2);
+        Assert.assertFalse(token.isExpired());
+
+        // Sets 9 minutes offset and assert access token will be refreshed (accessTokenTimeout is 10 minutes, token-min-ttl is 2 minutes. Hence 8 minutes or more should be sufficient)
+        setAdapterAndServerTimeOffset(540, tokenMinTTLPage.toString());
+        token = tokenMinTTLPage.getAccessToken();
+        int tokenIssued3 = token.getIssuedAt();
+        Assert.assertTrue(tokenIssued3 > tokenIssued1);
+
+        // Revert times
+        setAdapterAndServerTimeOffset(0, tokenMinTTLPage.toString());
+    }
+
+    // Tests forwarding of parameters like "prompt"
+    @Test
+    public void testOIDCParamsForwarding() {
+        // test login to customer-portal which does a bearer request to customer-db
+        securePortal.navigateTo();
+        assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
+        testRealmLoginPage.form().login("bburke@redhat.com", "password");
+        assertCurrentUrlEquals(securePortal);
+        String pageSource = driver.getPageSource();
+        assertTrue(pageSource.contains("Bill Burke") && pageSource.contains("Stian Thorgersen"));
+
+        int currentTime = Time.currentTime();
+        setAdapterAndServerTimeOffset(10, securePortal.toString());
+
+        // Test I need to reauthenticate with prompt=login
+        String appUri = tokenMinTTLPage.getUriBuilder().queryParam(OIDCLoginProtocol.PROMPT_PARAM, OIDCLoginProtocol.PROMPT_VALUE_LOGIN).build().toString();
+        URLUtils.navigateToUri(driver, appUri, true);
+        assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
+        testRealmLoginPage.form().login("bburke@redhat.com", "password");
+        AccessToken token = tokenMinTTLPage.getAccessToken();
+        int authTime = token.getAuthTime();
+        Assert.assertTrue(currentTime + 10 <= authTime);
+
+        // Revert times
+        setAdapterAndServerTimeOffset(0, tokenMinTTLPage.toString());
+    }
+
 
 }

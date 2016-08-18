@@ -24,6 +24,7 @@ package org.keycloak.provider;
 public class ProviderConfigProperty {
     public static final String BOOLEAN_TYPE="boolean";
     public static final String STRING_TYPE="String";
+    public static final String SCRIPT_TYPE="Script";
     public static final String ROLE_TYPE="Role";
     public static final String LIST_TYPE="List";
     public static final String CLIENT_LIST_TYPE="ClientList";
@@ -34,6 +35,17 @@ public class ProviderConfigProperty {
     protected String helpText;
     protected String type;
     protected Object defaultValue;
+
+    public ProviderConfigProperty() {
+    }
+
+    public ProviderConfigProperty(String name, String label, String helpText, String type, Object defaultValue) {
+        this.name = name;
+        this.label = label;
+        this.helpText = helpText;
+        this.type = type;
+        this.defaultValue = defaultValue;
+    }
 
     public String getName() {
         return name;

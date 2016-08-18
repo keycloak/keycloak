@@ -64,7 +64,7 @@ public class ApplicationsBean {
             MultivaluedHashMap<String, ClientRoleEntry> resourceRolesGranted = new MultivaluedHashMap<String, ClientRoleEntry>();
             List<String> claimsGranted = new LinkedList<String>();
             if (client.isConsentRequired()) {
-                UserConsentModel consent = user.getConsentByClient(client.getId());
+                UserConsentModel consent = session.users().getConsentByClient(realm, user, client.getId());
 
                 if (consent != null) {
                     processRoles(consent.getGrantedRoles(), realmRolesGranted, resourceRolesGranted);

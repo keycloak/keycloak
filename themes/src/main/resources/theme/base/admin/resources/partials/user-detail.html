@@ -77,7 +77,7 @@
                 </div>
             </div>
             <div class="form-group clearfix block" data-ng-show="!create && user.federationLink">
-                <label class="col-md-2 control-label" for="userEnabled">{{:: 'federation-link' | translate}}</label>
+                <label class="col-md-2 control-label">{{:: 'federation-link' | translate}}</label>
                 <div class="col-md-6">
                     <a href="{{federationLink}}">{{federationLinkName}}</a>
                 </div>
@@ -117,7 +117,7 @@
                 <label class="col-md-2 control-label" for="impersonate">{{:: 'impersonate-user' | translate}}</label>
 
                 <div class="col-md-6">
-                    <button id="impersonate" data-ng-show="access.impersonation" class="btn btn-default" data-ng-click="impersonate()">{{:: 'impersonate' | translate}}</button>
+                    <button id="impersonate" data-ng-show="access.impersonation" kc-read-only-ignore class="btn btn-default" data-ng-click="impersonate()">{{:: 'impersonate' | translate}}</button>
                 </div>
                 <kc-tooltip>{{:: 'impersonate-user.tooltip' | translate}}</kc-tooltip>
             </div>

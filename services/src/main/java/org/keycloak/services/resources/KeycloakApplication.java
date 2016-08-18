@@ -26,7 +26,8 @@ import org.keycloak.exportimport.ExportImportManager;
 import org.keycloak.migration.MigrationModelManager;
 import org.keycloak.models.*;
 import org.keycloak.models.dblock.DBLockProvider;
-import org.keycloak.services.managers.DBLockManager;
+import org.keycloak.models.dblock.DBLockManager;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.PostMigrationEvent;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -91,62 +92,37 @@ public class KeycloakApplication extends Application {
 
         singletons.add(new ObjectMapperResolver(Boolean.parseBoolean(System.getProperty("keycloak.jsonPrettyPrint", "false"))));
 
-        ExportImportManager exportImportManager;
+        ExportImportManager[] exportImportManager = new ExportImportManager[1];
 
-        DBLockManager dbLockManager = new DBLockManager(sessionFactory.create());
-        dbLockManager.checkForcedUnlock();
-        DBLockProvider dbLock = dbLockManager.getDBLock();
-        dbLock.waitForLock();
-        try {
-            migrateModel();
+        KeycloakModelUtils.runJobInTransaction(sessionFactory, new KeycloakSessionTask() {
 
-            KeycloakSession session = sessionFactory.create();
-            try {
-                session.getTransaction().begin();
-
-                ApplianceBootstrap applianceBootstrap = new ApplianceBootstrap(session);
-                exportImportManager = new ExportImportManager(session);
-
-                boolean createMasterRealm = applianceBootstrap.isNewInstall();
-                if (exportImportManager.isRunImport() && exportImportManager.isImportMasterIncluded()) {
-                    createMasterRealm = false;
+            @Override
+            public void run(KeycloakSession lockSession) {
+                DBLockManager dbLockManager = new DBLockManager(lockSession);
+                dbLockManager.checkForcedUnlock();
+                DBLockProvider dbLock = dbLockManager.getDBLock();
+                dbLock.waitForLock();
+                try {
+                    exportImportManager[0] = migrateAndBootstrap();
+                } finally {
+                    dbLock.releaseLock();
                 }
-
-                if (createMasterRealm) {
-                    applianceBootstrap.createMasterRealm(contextPath);
-                }
-                session.getTransaction().commit();
-            } catch (RuntimeException re) {
-                if (session.getTransaction().isActive()) {
-                    session.getTransaction().rollback();
-                }
-                throw re;
-            } finally {
-                session.close();
             }
 
-            if (exportImportManager.isRunImport()) {
-                exportImportManager.runImport();
-            } else {
-                importRealms();
-            }
+        });
 
-            importAddUser();
-        } finally {
-            dbLock.releaseLock();
-        }
 
-        if (exportImportManager.isRunExport()) {
-            exportImportManager.runExport();
+        if (exportImportManager[0].isRunExport()) {
+            exportImportManager[0].runExport();
         }
 
         boolean bootstrapAdminUser = false;
         KeycloakSession session = sessionFactory.create();
         try {
-            session.getTransaction().begin();
+            session.getTransactionManager().begin();
             bootstrapAdminUser = new ApplianceBootstrap(session).isNoMasterUser();
 
-            session.getTransaction().commit();
+            session.getTransactionManager().commit();
         } finally {
             session.close();
         }
@@ -158,14 +134,57 @@ public class KeycloakApplication extends Application {
         setupScheduledTasks(sessionFactory);
     }
 
+
+    // Migrate model, bootstrap master realm, import realms and create admin user. This is done with acquired dbLock
+    protected ExportImportManager migrateAndBootstrap() {
+        ExportImportManager exportImportManager;
+        migrateModel();
+
+        KeycloakSession session = sessionFactory.create();
+        try {
+            session.getTransactionManager().begin();
+
+            ApplianceBootstrap applianceBootstrap = new ApplianceBootstrap(session);
+            exportImportManager = new ExportImportManager(session);
+
+            boolean createMasterRealm = applianceBootstrap.isNewInstall();
+            if (exportImportManager.isRunImport() && exportImportManager.isImportMasterIncluded()) {
+                createMasterRealm = false;
+            }
+
+            if (createMasterRealm) {
+                applianceBootstrap.createMasterRealm(contextPath);
+            }
+            session.getTransactionManager().commit();
+        } catch (RuntimeException re) {
+            if (session.getTransactionManager().isActive()) {
+                session.getTransactionManager().rollback();
+            }
+            throw re;
+        } finally {
+            session.close();
+        }
+
+        if (exportImportManager.isRunImport()) {
+            exportImportManager.runImport();
+        } else {
+            importRealms();
+        }
+
+        importAddUser();
+
+        return exportImportManager;
+    }
+
+
     protected void migrateModel() {
         KeycloakSession session = sessionFactory.create();
         try {
-            session.getTransaction().begin();
+            session.getTransactionManager().begin();
             MigrationModelManager.migrate(session);
-            session.getTransaction().commit();
+            session.getTransactionManager().commit();
         } catch (Exception e) {
-            session.getTransaction().rollback();
+            session.getTransactionManager().rollback();
             logger.migrationFailure(e);
             throw e;
         } finally {
@@ -275,7 +294,7 @@ public class KeycloakApplication extends Application {
         KeycloakSession session = sessionFactory.create();
         boolean exists = false;
         try {
-            session.getTransaction().begin();
+            session.getTransactionManager().begin();
 
             try {
                 RealmManager manager = new RealmManager(session);
@@ -294,9 +313,9 @@ public class KeycloakApplication extends Application {
                     RealmModel realm = manager.importRealm(rep);
                     logger.importedRealm(realm.getName(), from);
                 }
-                session.getTransaction().commit();
+                session.getTransactionManager().commit();
             } catch (Throwable t) {
-                session.getTransaction().rollback();
+                session.getTransactionManager().rollback();
                 if (!exists) {
                     logger.unableToImportRealm(t, rep.getRealm(), from);
                 }
@@ -326,7 +345,7 @@ public class KeycloakApplication extends Application {
                     for (UserRepresentation userRep : realmRep.getUsers()) {
                         KeycloakSession session = sessionFactory.create();
                         try {
-                            session.getTransaction().begin();
+                            session.getTransactionManager().begin();
 
                             RealmModel realm = session.realms().getRealmByName(realmRep.getRealm());
                             if (realm == null) {
@@ -338,13 +357,13 @@ public class KeycloakApplication extends Application {
                                 RepresentationToModel.createRoleMappings(userRep, user, realm);
                             }
 
-                            session.getTransaction().commit();
+                            session.getTransactionManager().commit();
                             logger.addUserSuccess(userRep.getUsername(), realmRep.getRealm());
                         } catch (ModelDuplicateException e) {
-                            session.getTransaction().rollback();
+                            session.getTransactionManager().rollback();
                             logger.addUserFailedUserExists(userRep.getUsername(), realmRep.getRealm());
                         } catch (Throwable t) {
-                            session.getTransaction().rollback();
+                            session.getTransactionManager().rollback();
                             logger.addUserFailed(t, userRep.getUsername(), realmRep.getRealm());
                         } finally {
                             session.close();

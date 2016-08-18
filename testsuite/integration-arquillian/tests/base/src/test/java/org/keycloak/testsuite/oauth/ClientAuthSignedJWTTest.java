@@ -613,7 +613,7 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
     }
 
     @Test
-    @Ignore // Waiting for KEYCLOAK-2986 to be implemented
+    // KEYCLOAK-2986
     public void testMissingExpirationClaim() throws Exception {
         // Missing only exp; the lifespan should be calculated from issuedAt
         OAuthClient.AccessTokenResponse response = testMissingClaim("expiration");
@@ -840,9 +840,7 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
 
             int now = Time.currentTime();
             if (isClaimEnabled("issuedAt")) reqToken.issuedAt(now);
-            // For the time being there's no getter for tokenTimeout in JWTClientCredentialsProvider
-            // This is fine because KC doesn't care when exp claim is missing (see KEYCLOAK-2986)
-            /*if (isClaimEnabled("expiration")) reqToken.expiration(now + getTokenTimeout());*/
+            if (isClaimEnabled("expiration")) reqToken.expiration(now + getTokenTimeout());
             if (isClaimEnabled("notBefore")) reqToken.notBefore(now);
 
             return reqToken;

@@ -28,7 +28,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.models.UsernameLoginFailureModel;
+import org.keycloak.models.UserLoginFailureModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.services.managers.UserManager;
 import org.keycloak.testsuite.rule.KeycloakRule;
@@ -471,10 +471,10 @@ public class UserSessionProviderTest {
 
     @Test
     public void loginFailures() {
-        UsernameLoginFailureModel failure1 = session.sessions().addUserLoginFailure(realm, "user1");
+        UserLoginFailureModel failure1 = session.sessions().addUserLoginFailure(realm, "user1");
         failure1.incrementFailures();
 
-        UsernameLoginFailureModel failure2 = session.sessions().addUserLoginFailure(realm, "user2");
+        UserLoginFailureModel failure2 = session.sessions().addUserLoginFailure(realm, "user2");
         failure2.incrementFailures();
         failure2.incrementFailures();
 

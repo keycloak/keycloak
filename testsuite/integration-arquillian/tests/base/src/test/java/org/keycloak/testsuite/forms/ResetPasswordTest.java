@@ -314,6 +314,7 @@ public class ResetPasswordTest extends TestRealmKeycloakTest {
 
         assertTrue(updatePasswordPage.isCurrent());
         assertEquals(error, updatePasswordPage.getError());
+        events.expectRequiredAction(EventType.UPDATE_PASSWORD_ERROR).error(Errors.PASSWORD_REJECTED).user(userId).detail(Details.USERNAME, "login-test").assertEvent().getSessionId();
     }
 
     @Test
@@ -543,6 +544,8 @@ public class ResetPasswordTest extends TestRealmKeycloakTest {
         updatePasswordPage.changePassword("invalid", "invalid");
 
         assertEquals("Invalid password: minimum length 8.", resetPasswordPage.getErrorMessage());
+
+        events.expectRequiredAction(EventType.UPDATE_PASSWORD_ERROR).error(Errors.PASSWORD_REJECTED).user(userId).detail(Details.USERNAME, "login-test").assertEvent().getSessionId();
 
         updatePasswordPage.changePassword("resetPasswordWithPasswordPolicy", "resetPasswordWithPasswordPolicy");
 

@@ -21,6 +21,8 @@ import org.infinispan.configuration.cache.CacheMode;
 import org.infinispan.configuration.cache.Configuration;
 import org.infinispan.configuration.cache.ConfigurationBuilder;
 import org.infinispan.configuration.global.GlobalConfigurationBuilder;
+import org.infinispan.eviction.EvictionStrategy;
+import org.infinispan.eviction.EvictionType;
 import org.infinispan.manager.DefaultCacheManager;
 import org.infinispan.manager.EmbeddedCacheManager;
 import org.infinispan.transaction.LockingMode;
@@ -96,6 +98,17 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
             cacheManager = (EmbeddedCacheManager) new InitialContext().lookup(cacheContainerLookup);
             containerManaged = true;
 
+            cacheManager.defineConfiguration(InfinispanConnectionProvider.REALM_REVISIONS_CACHE_NAME, getRevisionCacheConfig(true, InfinispanConnectionProvider.REALM_REVISIONS_CACHE_DEFAULT_MAX));
+            cacheManager.getCache(InfinispanConnectionProvider.REALM_CACHE_NAME, true);
+
+            long maxEntries = cacheManager.getCache(InfinispanConnectionProvider.USER_CACHE_NAME).getCacheConfiguration().eviction().maxEntries();
+            if (maxEntries <= 0) {
+                maxEntries = InfinispanConnectionProvider.USER_REVISIONS_CACHE_DEFAULT_MAX;
+            }
+
+            cacheManager.defineConfiguration(InfinispanConnectionProvider.USER_REVISIONS_CACHE_NAME, getRevisionCacheConfig(true, maxEntries));
+            cacheManager.getCache(InfinispanConnectionProvider.USER_REVISIONS_CACHE_NAME, true);
+            cacheManager.getCache(InfinispanConnectionProvider.AUTHORIZATION_CACHE_NAME, true);
             logger.debugv("Using container managed Infinispan cache container, lookup={1}", cacheContainerLookup);
         } catch (Exception e) {
             throw new RuntimeException("Failed to retrieve cache container", e);
@@ -148,6 +161,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
         cacheManager.defineConfiguration(InfinispanConnectionProvider.SESSION_CACHE_NAME, sessionCacheConfiguration);
         cacheManager.defineConfiguration(InfinispanConnectionProvider.OFFLINE_SESSION_CACHE_NAME, sessionCacheConfiguration);
         cacheManager.defineConfiguration(InfinispanConnectionProvider.LOGIN_FAILURE_CACHE_NAME, sessionCacheConfiguration);
+        cacheManager.defineConfiguration(InfinispanConnectionProvider.AUTHORIZATION_CACHE_NAME, sessionCacheConfiguration);
 
         ConfigurationBuilder replicationConfigBuilder = new ConfigurationBuilder();
         if (clustered) {
@@ -161,9 +175,33 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
                 .transaction().transactionMode(TransactionMode.TRANSACTIONAL);
         counterConfigBuilder.transaction().transactionManagerLookup(new DummyTransactionManagerLookup());
         counterConfigBuilder.transaction().lockingMode(LockingMode.PESSIMISTIC);
-        Configuration counterCacheConfiguration = counterConfigBuilder.build();
 
-        cacheManager.defineConfiguration(InfinispanConnectionProvider.VERSION_CACHE_NAME, counterCacheConfiguration);
+        cacheManager.defineConfiguration(InfinispanConnectionProvider.REALM_REVISIONS_CACHE_NAME, getRevisionCacheConfig(false, InfinispanConnectionProvider.REALM_REVISIONS_CACHE_DEFAULT_MAX));
+        cacheManager.getCache(InfinispanConnectionProvider.REALM_CACHE_NAME, true);
+
+        long maxEntries = cacheManager.getCache(InfinispanConnectionProvider.USER_CACHE_NAME).getCacheConfiguration().eviction().maxEntries();
+        if (maxEntries <= 0) {
+            maxEntries = InfinispanConnectionProvider.USER_REVISIONS_CACHE_DEFAULT_MAX;
+        }
+
+        cacheManager.defineConfiguration(InfinispanConnectionProvider.USER_REVISIONS_CACHE_NAME, getRevisionCacheConfig(false, maxEntries));
+        cacheManager.getCache(InfinispanConnectionProvider.USER_REVISIONS_CACHE_NAME, true);
+    }
+
+    private Configuration getRevisionCacheConfig(boolean managed, long maxEntries) {
+        ConfigurationBuilder cb = new ConfigurationBuilder();
+        cb.invocationBatching().enable().transaction().transactionMode(TransactionMode.TRANSACTIONAL);
+
+        // Workaround: Use Dummy manager even in managed ( wildfly/eap ) environment. Without this workaround, there is an issue in EAP7 overlay.
+        // After start+end revisions batch is left the JTA transaction in committed state. This is incorrect and causes other issues afterwards.
+        // TODO: Investigate
+        // if (!managed)
+            cb.transaction().transactionManagerLookup(new DummyTransactionManagerLookup());
+
+        cb.transaction().lockingMode(LockingMode.PESSIMISTIC);
+
+        cb.eviction().strategy(EvictionStrategy.LRU).type(EvictionType.COUNT).size(maxEntries);
+        return cb.build();
     }
 
 }

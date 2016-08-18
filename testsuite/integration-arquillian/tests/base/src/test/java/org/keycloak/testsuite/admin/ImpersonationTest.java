@@ -21,6 +21,7 @@ import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.Config;
+import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.events.Details;
@@ -29,25 +30,20 @@ import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
 import org.keycloak.models.ImpersonationConstants;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
-import org.keycloak.services.resources.admin.AdminRoot;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
+import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.CredentialBuilder;
-import org.keycloak.testsuite.util.OAuthClient.AccessTokenResponse;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
 
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientRequestContext;
-import javax.ws.rs.client.ClientRequestFilter;
-import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriBuilder;
-import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -83,21 +79,6 @@ public class ImpersonationTest extends AbstractKeycloakTest {
         realm.user(UserBuilder.create().username("bad-impersonator").password("password").role(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.MANAGE_USERS));
 
         testRealms.add(realm.build());
-    }
-
-    private String createAdminToken(String username, String realm) {
-        try {
-            String password = username.equals("admin") ? "admin" : "password";
-            String clientId = realm.equals("master") ? Constants.ADMIN_CLI_CLIENT_ID : "myclient";
-            AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest(realm, username, password, null, clientId, null);
-            if (tokenResponse.getStatusCode() != 200) {
-                throw new RuntimeException("Failed to get token: " + tokenResponse.getErrorDescription());
-            }
-            events.clear();
-            return tokenResponse.getAccessToken();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
     }
 
     @Test
@@ -157,51 +138,65 @@ public class ImpersonationTest extends AbstractKeycloakTest {
     }
 
 
-
     protected void testSuccessfulImpersonation(String admin, String adminRealm) {
-        Client client = createClient(admin, adminRealm);
-        WebTarget impersonate = createImpersonateTarget(client);
-        Map data = impersonate.request().post(null, Map.class);
-        Assert.assertNotNull(data);
-        Assert.assertNotNull(data.get("redirect"));
 
-        // TODO Events not working
-        events.expect(EventType.IMPERSONATE)
-                .session(AssertEvents.isUUID())
-                .user(impersonatedUserId)
-                .detail(Details.IMPERSONATOR, admin)
-                .detail(Details.IMPERSONATOR_REALM, adminRealm)
-                .client((String) null).assertEvent();
+        Keycloak client = login(admin, adminRealm);
+        try {
+            Map data = client.realms().realm("test").users().get(impersonatedUserId).impersonate();
+            Assert.assertNotNull(data);
+            Assert.assertNotNull(data.get("redirect"));
 
-        client.close();
+            events.expect(EventType.IMPERSONATE)
+                    .session(AssertEvents.isUUID())
+                    .user(impersonatedUserId)
+                    .detail(Details.IMPERSONATOR, admin)
+                    .detail(Details.IMPERSONATOR_REALM, adminRealm)
+                    .client((String) null).assertEvent();
+        } finally {
+            client.close();
+        }
     }
 
     protected void testForbiddenImpersonation(String admin, String adminRealm) {
-        Client client = createClient(admin, adminRealm);
-        WebTarget impersonate = createImpersonateTarget(client);
-        Response response = impersonate.request().post(null);
-        response.close();
-        client.close();
+        Keycloak client = createAdminClient(adminRealm, establishClientId(adminRealm), admin);
+        try {
+            client.realms().realm("test").users().get(impersonatedUserId).impersonate();
+        } catch (ClientErrorException e) {
+            Assert.assertTrue(e.getMessage().indexOf("403 Forbidden") != -1);
+        } finally {
+            client.close();
+        }
     }
 
-
-    protected WebTarget createImpersonateTarget(Client client) {
-        UriBuilder authBase = UriBuilder.fromUri(getAuthServerRoot());
-        WebTarget adminRealms = client.target(AdminRoot.realmsUrl(authBase));
-        WebTarget realmTarget = adminRealms.path("test");
-        return realmTarget.path("users").path(impersonatedUserId).path("impersonation");
+    Keycloak createAdminClient(String realm, String clientId, String username) {
+        return createAdminClient(realm, clientId, username, null);
     }
 
-    protected Client createClient(String admin, String adminRealm) {
-        String token = createAdminToken(admin, adminRealm);
-        final String authHeader = "Bearer " + token;
-        ClientRequestFilter authFilter = new ClientRequestFilter() {
-            @Override
-            public void filter(ClientRequestContext requestContext) throws IOException {
-                requestContext.getHeaders().add(HttpHeaders.AUTHORIZATION, authHeader);
-            }
-        };
-        return javax.ws.rs.client.ClientBuilder.newBuilder().register(authFilter).build();
+    String establishClientId(String realm) {
+        return realm.equals("master") ? Constants.ADMIN_CLI_CLIENT_ID : "myclient";
     }
 
+    Keycloak createAdminClient(String realm, String clientId, String username, String password) {
+        if (password == null) {
+            password = username.equals("admin") ? "admin" : "password";
+        }
+        return Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth",
+                realm, username, password, clientId);
+    }
+
+    private Keycloak login(String username, String realm) {
+        String clientId = establishClientId(realm);
+        Keycloak client = createAdminClient(realm, clientId, username);
+
+        client.tokenManager().grantToken();
+        // only poll for LOGIN event if realm is not master
+        // - since for master testing event listener is not installed
+        if (!AuthRealm.MASTER.equals(realm)) {
+            EventRepresentation e = events.poll();
+            Assert.assertEquals("Event type", EventType.LOGIN.toString(), e.getType());
+            Assert.assertEquals("Client ID", clientId, e.getClientId());
+            Assert.assertEquals("Username", username, e.getDetails().get("username"));
+        }
+        return client;
+    }
 }

@@ -25,7 +25,7 @@
         var kc = this;
         var adapter;
         var refreshQueue = [];
-        var storage;
+        var callbackStorage;
 
         var loginIframe = {
             enable: true,
@@ -36,10 +36,10 @@
         kc.init = function (initOptions) {
             kc.authenticated = false;
 
-            storage = new PersistentStorage();
+            callbackStorage = createCallbackStorage();
 
             if (initOptions && initOptions.adapter === 'cordova') {
-               adapter = loadAdapter('cordova');
+                adapter = loadAdapter('cordova');
             } else if (initOptions && initOptions.adapter === 'default') {
                 adapter = loadAdapter();
             } else {
@@ -103,8 +103,8 @@
             initPromise.promise.success(function() {
                 kc.onReady && kc.onReady(kc.authenticated);
                 promise.setSuccess(kc.authenticated);
-            }).error(function() {
-                promise.setError();
+            }).error(function(errorData) {
+                promise.setError(errorData);
             });
 
             var configPromise = loadConfig(config);
@@ -201,12 +201,14 @@
                 redirectUri += (redirectUri.indexOf('?') == -1 ? '?' : '&') + 'prompt=' + options.prompt;
             }
 
-            storage.setItem('oauthState', JSON.stringify({ state: state, nonce: nonce, redirectUri: encodeURIComponent(redirectUri) }));
+            callbackStorage.add({ state: state, nonce: nonce, redirectUri: encodeURIComponent(redirectUri) });
 
             var action = 'auth';
             if (options && options.action == 'register') {
                 action = 'registrations';
             }
+
+            var scope = (options && options.scope) ? "openid " + options.scope : "openid";
 
             var url = getRealmUrl()
                 + '/protocol/openid-connect/' + action
@@ -215,10 +217,15 @@
                 + '&state=' + encodeURIComponent(state)
                 + '&nonce=' + encodeURIComponent(nonce)
                 + '&response_mode=' + encodeURIComponent(kc.responseMode)
-                + '&response_type=' + encodeURIComponent(kc.responseType);
+                + '&response_type=' + encodeURIComponent(kc.responseType)
+                + '&scope=' + encodeURIComponent(scope);
 
             if (options && options.prompt) {
                 url += '&prompt=' + encodeURIComponent(options.prompt);
+            }
+
+            if (options && options.maxAge) {
+                url += '&max_age=' + encodeURIComponent(options.maxAge);
             }
 
             if (options && options.loginHint) {
@@ -227,10 +234,6 @@
 
             if (options && options.idpHint) {
                 url += '&kc_idp_hint=' + encodeURIComponent(options.idpHint);
-            }
-
-            if (options && options.scope) {
-                url += '&scope=' + encodeURIComponent(options.scope);
             }
 
             if (options && options.locale) {
@@ -463,8 +466,9 @@
 
             if (error) {
                 if (prompt != 'none') {
-                    kc.onAuthError && kc.onAuthError();
-                    promise && promise.setError();
+                    var errorData = { error: error, error_description: oauth.error_description };
+                    kc.onAuthError && kc.onAuthError(errorData);
+                    promise && promise.setError(errorData);
                 } else {
                     promise && promise.setSuccess();
                 }
@@ -697,15 +701,11 @@
 
         function parseCallback(url) {
             var oauth = new CallbackParser(url, kc.responseMode).parseUri();
+            var oauthState = callbackStorage.get(oauth.state);
 
-            var oauthState = storage.getItem('oauthState');
-            var sessionState = oauthState && JSON.parse(oauthState);
-
-            if (sessionState && (oauth.code || oauth.error || oauth.access_token || oauth.id_token) && oauth.state && oauth.state == sessionState.state) {
-                storage.removeItem('oauthState');
-
-                oauth.redirectUri = sessionState.redirectUri;
-                oauth.storedNonce = sessionState.nonce;
+            if (oauthState && (oauth.code || oauth.error || oauth.access_token || oauth.id_token)) {
+                oauth.redirectUri = oauthState.redirectUri;
+                oauth.storedNonce = oauthState.nonce;
 
                 if (oauth.fragment) {
                     oauth.newUrl += '#' + oauth.fragment;
@@ -792,8 +792,22 @@
                 if (event.origin !== loginIframe.iframeOrigin) {
                     return;
                 }
-                var data = JSON.parse(event.data);
+
+                try {
+                    var data = JSON.parse(event.data);
+                } catch (err) {
+                    return;
+                }
+
+                if (!data.callbackId) {
+                    return;
+                }
+
                 var promise = loginIframe.callbackMap[data.callbackId];
+                if (!promise) {
+                    return;
+                }
+
                 delete loginIframe.callbackMap[data.callbackId];
 
                 if ((!kc.sessionId || kc.sessionId == data.session) && data.loggedIn) {
@@ -982,60 +996,93 @@
             throw 'invalid adapter type: ' + type;
         }
 
-
-        var PersistentStorage = function() {
-            if (!(this instanceof PersistentStorage)) {
-                return new PersistentStorage();
+        var LocalStorage = function() {
+            if (!(this instanceof LocalStorage)) {
+                return new LocalStorage();
             }
-            var ps = this;
-            var useCookieStorage = function () {
-                if (typeof localStorage === "undefined") {
-                    return true;
+
+            localStorage.setItem('kc-test', 'test');
+            localStorage.removeItem('kc-test');
+
+            var cs = this;
+
+            function clearExpired() {
+                var time = new Date().getTime();
+                for (var i = 1; i <= localStorage.length; i++)  {
+                    var key = localStorage.key(i);
+                    if (key && key.indexOf('kc-callback-') == 0) {
+                        var value = localStorage.getItem(key);
+                        if (value) {
+                            try {
+                                var expires = JSON.parse(value).expires;
+                                if (!expires || expires < time) {
+                                    localStorage.removeItem(key);
+                                }
+                            } catch (err) {
+                                localStorage.removeItem(key);
+                            }
+                        }
+                    }
                 }
-                try {
-                    var key = '@@keycloak-session-storage/test';
-                    localStorage.setItem(key, 'test');
+            }
+
+            cs.get = function(state) {
+                if (!state) {
+                    return;
+                }
+
+                var key = 'kc-callback-' + state;
+                var value = localStorage.getItem(key);
+                if (value) {
                     localStorage.removeItem(key);
-                    return false;
-                } catch (err) {
-                    // Probably in Safari "private mode" where localStorage
-                    // quota is 0, or quota exceeded. Switching to cookie
-                    // storage.
-                    return true;
+                    value = JSON.parse(value);
                 }
-            }
 
-            ps.setItem = function(key, value) {
-                if (useCookieStorage()) {
-                    setCookie(key, value, cookieExpiration(5));
-                } else {
-                    localStorage.setItem(key, value);
-                }
-            }
+                clearExpired();
+                return value;
+            };
 
-            ps.getItem = function(key) {
-                if (useCookieStorage()) {
-                    return getCookie(key);
-                }
-                return localStorage.getItem(key);
-            }
+            cs.add = function(state) {
+                clearExpired();
 
-            ps.removeItem = function(key) {
-                if (typeof localStorage !== "undefined") {
-                    try {
-                        // Always try to delete from localStorage.
-                        localStorage.removeItem(key);
-                    } catch (err) { }
+                var key = 'kc-callback-' + state.state;
+                state.expires = new Date().getTime() + (60 * 60 * 1000);
+                localStorage.setItem(key, JSON.stringify(state));
+            };
+        };
+
+        var CookieStorage = function() {
+            if (!(this instanceof CookieStorage)) {
+                return new CookieStorage();
+            }
+            
+            var cs = this;
+
+            cs.get = function(state) {
+                if (!state) {
+                    return;
                 }
-                // Always remove the cookie.
+
+                var value = getCookie('kc-callback-' + state);
+                setCookie('kc-callback-' + state, '', cookieExpiration(-100));
+                if (value) {
+                    return JSON.parse(value);
+                }
+            };
+
+            cs.add = function(state) {
+                setCookie('kc-callback-' + state.state, JSON.stringify(state), cookieExpiration(60));
+            };
+
+            cs.removeItem = function(key) {
                 setCookie(key, '', cookieExpiration(-100));
-            }
+            };
 
             var cookieExpiration = function (minutes) {
                 var exp = new Date();
                 exp.setTime(exp.getTime() + (minutes*60*1000));
                 return exp;
-            }
+            };
 
             var getCookie = function (key) {
                 var name = key + '=';
@@ -1050,13 +1097,22 @@
                     }
                 }
                 return '';
-            }
+            };
 
             var setCookie = function (key, value, expirationDate) {
                 var cookie = key + '=' + value + '; '
                     + 'expires=' + expirationDate.toUTCString() + '; ';
                 document.cookie = cookie;
             }
+        };
+
+        function createCallbackStorage() {
+            try {
+                return new LocalStorage();
+            } catch (err) {
+            }
+
+            return new CookieStorage();
         }
 
         var CallbackParser = function(uriToParse, responseMode) {
@@ -1103,7 +1159,7 @@
             }
 
             var handleQueryParam = function(paramName, paramValue, oauth) {
-                var supportedOAuthParams = [ 'code', 'error', 'state' ];
+                var supportedOAuthParams = [ 'code', 'state', 'error', 'error_description' ];
 
                 for (var i = 0 ; i< supportedOAuthParams.length ; i++) {
                     if (paramName === supportedOAuthParams[i]) {

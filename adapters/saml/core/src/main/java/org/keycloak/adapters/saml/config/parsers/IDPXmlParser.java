@@ -106,6 +106,7 @@ public class IDPXmlParser extends AbstractParser {
         StartElement element = StaxParserUtil.getNextStartElement(xmlEventReader);
         sso.setSignRequest(SPXmlParser.getBooleanAttributeValue(element, ConfigXmlConstants.SIGN_REQUEST_ATTR, signaturesRequired));
         sso.setValidateResponseSignature(SPXmlParser.getBooleanAttributeValue(element, ConfigXmlConstants.VALIDATE_RESPONSE_SIGNATURE_ATTR, signaturesRequired));
+        sso.setValidateAssertionSignature(SPXmlParser.getBooleanAttributeValue(element, ConfigXmlConstants.VALIDATE_ASSERTION_SIGNATURE_ATTR));
         sso.setRequestBinding(SPXmlParser.getAttributeValue(element, ConfigXmlConstants.REQUEST_BINDING_ATTR));
         sso.setResponseBinding(SPXmlParser.getAttributeValue(element, ConfigXmlConstants.RESPONSE_BINDING_ATTR));
         sso.setBindingUrl(SPXmlParser.getAttributeValue(element, ConfigXmlConstants.BINDING_URL_ATTR));

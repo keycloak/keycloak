@@ -21,10 +21,12 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jboss.logging.Logger;
 import org.keycloak.adapters.authentication.ClientCredentialsProviderUtils;
+import org.keycloak.adapters.authorization.PolicyEnforcer;
 import org.keycloak.common.enums.SslRequired;
+import org.keycloak.common.util.PemUtils;
 import org.keycloak.enums.TokenStore;
 import org.keycloak.representations.adapters.config.AdapterConfig;
-import org.keycloak.common.util.PemUtils;
+import org.keycloak.representations.adapters.config.PolicyEnforcerConfig;
 import org.keycloak.util.SystemPropertiesJsonParserFactory;
 
 import java.io.IOException;
@@ -94,6 +96,7 @@ public class KeycloakDeploymentBuilder {
         deployment.setAlwaysRefreshToken(adapterConfig.isAlwaysRefreshToken());
         deployment.setRegisterNodeAtStartup(adapterConfig.isRegisterNodeAtStartup());
         deployment.setRegisterNodePeriod(adapterConfig.getRegisterNodePeriod());
+        deployment.setTokenMinimumTimeToLive(adapterConfig.getTokenMinimumTimeToLive());
 
         if (realmKeyPem == null && adapterConfig.isBearerOnly() && adapterConfig.getAuthServerUrl() == null) {
             throw new IllegalArgumentException("For bearer auth, you must set the realm-public-key or auth-server-url");
@@ -107,6 +110,12 @@ public class KeycloakDeploymentBuilder {
         deployment.setAuthServerBaseUrl(adapterConfig);
         if (adapterConfig.getTurnOffChangeSessionIdOnLogin() != null) {
             deployment.setTurnOffChangeSessionIdOnLogin(adapterConfig.getTurnOffChangeSessionIdOnLogin());
+        }
+
+        PolicyEnforcerConfig policyEnforcerConfig = adapterConfig.getPolicyEnforcerConfig();
+
+        if (policyEnforcerConfig != null) {
+            deployment.setPolicyEnforcer(new PolicyEnforcer(deployment, adapterConfig));
         }
 
         log.debug("Use authServerUrl: " + deployment.getAuthServerBaseUrl() + ", tokenUrl: " + deployment.getTokenUrl() + ", relativeUrls: " + deployment.getRelativeUrls());

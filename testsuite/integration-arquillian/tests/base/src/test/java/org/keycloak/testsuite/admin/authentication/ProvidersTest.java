@@ -136,6 +136,7 @@ public class ProvidersTest extends AbstractAuthenticationTest {
                 "Validates a OTP on a separate OTP form. Only shown if required based on the configured conditions.");
         addProviderInfo(result, "auth-cookie", "Cookie", "Validates the SSO cookie set by the auth server.");
         addProviderInfo(result, "auth-otp-form", "OTP Form", "Validates a OTP on a separate OTP form.");
+        addProviderInfo(result, "auth-script-based", "Script-based Authentication", "Script based authentication.");
         addProviderInfo(result, "auth-spnego", "Kerberos", "Initiates the SPNEGO protocol.  Most often used with Kerberos.");
         addProviderInfo(result, "auth-username-password-form", "Username Password Form",
                 "Validates a username and password from login form.");
@@ -144,7 +145,7 @@ public class ProvidersTest extends AbstractAuthenticationTest {
                 "Validates the password supplied as a 'password' form parameter in direct grant request");
         addProviderInfo(result, "direct-grant-validate-username", "Username Validation",
                 "Validates the username supplied as a 'username' form parameter in direct grant request");
-        addProviderInfo(result, "http-basic-authenticator", null, null);
+        addProviderInfo(result, "http-basic-authenticator", "HTTP Basic Authentication", "Validates username and password from Authorization HTTP header");
         addProviderInfo(result, "idp-confirm-link", "Confirm link existing account", "Show the form where user confirms if he wants " +
                 "to link identity provider with existing account or rather edit user profile data retrieved from identity provider to avoid conflict");
         addProviderInfo(result, "idp-create-user-if-unique", "Create User If Unique", "Detect if there is existing Keycloak account " +

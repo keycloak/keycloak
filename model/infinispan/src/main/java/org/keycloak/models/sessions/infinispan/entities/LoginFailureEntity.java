@@ -24,19 +24,19 @@ import java.io.Serializable;
  */
 public class LoginFailureEntity implements Serializable {
 
-    private String username;
+    private String userId;
     private String realm;
     private int failedLoginNotBefore;
     private int numFailures;
     private long lastFailure;
     private String lastIPFailure;
 
-    public String getUsername() {
-        return username;
+    public String getUserId() {
+        return userId;
     }
 
-    public void setUsername(String username) {
-        this.username = username;
+    public void setUserId(String userId) {
+        this.userId = userId;
     }
 
     public String getRealm() {

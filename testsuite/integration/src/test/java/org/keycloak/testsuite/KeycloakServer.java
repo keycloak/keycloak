@@ -22,7 +22,9 @@ import io.undertow.servlet.Servlets;
 import io.undertow.servlet.api.DefaultServletConfig;
 import io.undertow.servlet.api.DeploymentInfo;
 import io.undertow.servlet.api.FilterInfo;
+import io.undertow.servlet.api.ServletInfo;
 import org.jboss.logging.Logger;
+import org.jboss.resteasy.plugins.server.servlet.HttpServlet30Dispatcher;
 import org.jboss.resteasy.plugins.server.undertow.UndertowJaxrsServer;
 import org.jboss.resteasy.spi.ResteasyDeployment;
 import org.keycloak.models.KeycloakSession;
@@ -246,7 +248,7 @@ public class KeycloakServer {
 
     public void importRealm(RealmRepresentation rep) {
         KeycloakSession session = sessionFactory.create();;
-        session.getTransaction().begin();
+        session.getTransactionManager().begin();
 
         try {
             RealmManager manager = new RealmManager(session);
@@ -265,7 +267,7 @@ public class KeycloakServer {
 
             info("Imported realm " + realm.getName());
 
-            session.getTransaction().commit();
+            session.getTransactionManager().commit();
         } finally {
             session.close();
         }
@@ -275,11 +277,11 @@ public class KeycloakServer {
         if (System.getProperty("keycloak.createAdminUser", "true").equals("true")) {
             KeycloakSession session = sessionFactory.create();
             try {
-                session.getTransaction().begin();
+                session.getTransactionManager().begin();
                 if (new ApplianceBootstrap(session).isNoMasterUser()) {
                     new ApplianceBootstrap(session).createMasterRealmUser("admin", "admin");
                 }
-                session.getTransaction().commit();
+                session.getTransactionManager().commit();
             } finally {
                 session.close();
             }
@@ -309,7 +311,17 @@ public class KeycloakServer {
 
             di.setDefaultServletConfig(new DefaultServletConfig(true));
 
+            ServletInfo restEasyDispatcher = Servlets.servlet("Keycloak REST Interface", HttpServlet30Dispatcher.class);
+
+            restEasyDispatcher.addInitParam("resteasy.servlet.mapping.prefix", "/");
+            restEasyDispatcher.setAsyncSupported(true);
+
+            di.addServlet(restEasyDispatcher);
+
             FilterInfo filter = Servlets.filter("SessionFilter", KeycloakSessionServletFilter.class);
+
+            filter.setAsyncSupported(true);
+
             di.addFilter(filter);
             di.addFilterUrlMapping("SessionFilter", "/*", DispatcherType.REQUEST);
 

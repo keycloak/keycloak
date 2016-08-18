@@ -28,6 +28,8 @@ import org.keycloak.wellknown.WellKnownProviderFactory;
  */
 public class OIDCWellKnownProviderFactory implements WellKnownProviderFactory {
 
+    public static final String PROVIDER_ID = "openid-configuration";
+
     @Override
     public WellKnownProvider create(KeycloakSession session) {
         return new OIDCWellKnownProvider(session);
@@ -47,7 +49,7 @@ public class OIDCWellKnownProviderFactory implements WellKnownProviderFactory {
 
     @Override
     public String getId() {
-        return "openid-configuration";
+        return PROVIDER_ID;
     }
 
 }

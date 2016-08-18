@@ -201,7 +201,7 @@ public abstract class AbstractSamlAuthenticationHandler implements SamlAuthentic
                         return AuthOutcome.FAILED;
                     }
                 }
-                return handleLoginResponse((ResponseType) statusResponse, onCreateSession);
+                return handleLoginResponse((ResponseType) statusResponse, postBinding, onCreateSession);
             } finally {
                 sessionStore.setCurrentAction(SamlSessionStore.CurrentAction.NONE);
             }
@@ -272,8 +272,7 @@ public abstract class AbstractSamlAuthenticationHandler implements SamlAuthentic
         return false;
     }
 
-    protected AuthOutcome handleLoginResponse(ResponseType responseType, OnSessionCreated onCreateSession) {
-
+    protected AuthOutcome handleLoginResponse(ResponseType responseType, boolean postBinding, OnSessionCreated onCreateSession) {
         AssertionType assertion = null;
         try {
             assertion = AssertionUtil.getAssertion(responseType, deployment.getDecryptionKey());
@@ -296,6 +295,32 @@ public abstract class AbstractSamlAuthenticationHandler implements SamlAuthentic
                     return 403;
                 }
             };
+        }
+
+        if (deployment.getIDP().getSingleSignOnService().validateAssertionSignature()) {
+            try {
+                validateSamlSignature(new SAMLDocumentHolder(AssertionUtil.asDocument(assertion)), postBinding, GeneralConstants.SAML_RESPONSE_KEY);
+            } catch (VerificationException e) {
+                log.error("Failed to verify saml assertion signature", e);
+
+                challenge = new AuthChallenge() {
+                    @Override
+                    public boolean challenge(HttpFacade exchange) {
+                        SamlAuthenticationError error = new SamlAuthenticationError(SamlAuthenticationError.Reason.INVALID_SIGNATURE);
+                        exchange.getRequest().setError(error);
+                        exchange.getResponse().sendError(403);
+                        return true;
+                    }
+
+                    @Override
+                    public int getResponseCode() {
+                        return 403;
+                    }
+                };
+                return AuthOutcome.FAILED;
+            } catch (ProcessingException e) {
+                e.printStackTrace();
+            }
         }
 
         SubjectType subject = assertion.getSubject();

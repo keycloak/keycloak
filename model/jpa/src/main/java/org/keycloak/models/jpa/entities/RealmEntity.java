@@ -136,13 +136,13 @@ public class RealmEntity {
     protected String emailTheme;
 
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
-    Collection<RealmAttributeEntity> attributes = new ArrayList<RealmAttributeEntity>();
+    Collection<RealmAttributeEntity> attributes = new ArrayList<>();
 
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
-    Collection<RequiredCredentialEntity> requiredCredentials = new ArrayList<RequiredCredentialEntity>();
+    Collection<RequiredCredentialEntity> requiredCredentials = new ArrayList<>();
 
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
-    List<UserFederationProviderEntity> userFederationProviders = new ArrayList<UserFederationProviderEntity>();
+    List<UserFederationProviderEntity> userFederationProviders = new ArrayList<>();
 
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
     Collection<UserFederationMapperEntity> userFederationMappers = new ArrayList<UserFederationMapperEntity>();

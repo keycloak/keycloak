@@ -67,6 +67,20 @@ public class ClientManager {
             clientResource.update(app);
         }
 
+        public ClientManagerBuilder standardFlow(Boolean enable) {
+            ClientRepresentation app = clientResource.toRepresentation();
+            app.setStandardFlowEnabled(enable);
+            clientResource.update(app);
+            return this;
+        }
+
+        public ClientManagerBuilder implicitFlow(Boolean enable) {
+            ClientRepresentation app = clientResource.toRepresentation();
+            app.setImplicitFlowEnabled(enable);
+            clientResource.update(app);
+            return this;
+        }
+
         public void fullScopeAllowed(boolean enable) {
             ClientRepresentation app = clientResource.toRepresentation();
             app.setFullScopeAllowed(enable);

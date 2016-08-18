@@ -129,10 +129,26 @@ public class MongoRealmProvider implements RealmProvider {
 
     @Override
     public boolean removeRealm(String id) {
-        RealmModel realm = getRealm(id);
+        final RealmModel realm = getRealm(id);
         if (realm == null) return false;
         session.users().preRemove(realm);
-        return getMongoStore().removeEntity(MongoRealmEntity.class, id, invocationContext);
+        boolean removed = getMongoStore().removeEntity(MongoRealmEntity.class, id, invocationContext);
+
+        if (removed) {
+            session.getKeycloakSessionFactory().publish(new RealmModel.RealmRemovedEvent() {
+                @Override
+                public RealmModel getRealm() {
+                    return realm;
+                }
+
+                @Override
+                public KeycloakSession getKeycloakSession() {
+                    return session;
+                }
+            });
+        }
+
+        return removed;
     }
 
     protected MongoStore getMongoStore() {
@@ -408,12 +424,27 @@ public class MongoRealmProvider implements RealmProvider {
     @Override
     public boolean removeClient(String id, RealmModel realm) {
         if (id == null) return false;
-        ClientModel client = getClientById(id, realm);
+        final ClientModel client = getClientById(id, realm);
         if (client == null) return false;
 
         session.users().preRemove(realm, client);
+        boolean removed = getMongoStore().removeEntity(MongoClientEntity.class, id, invocationContext);
 
-        return getMongoStore().removeEntity(MongoClientEntity.class, id, invocationContext);
+        if (removed) {
+            session.getKeycloakSessionFactory().publish(new RealmModel.ClientRemovedEvent() {
+                @Override
+                public ClientModel getClient() {
+                    return client;
+                }
+
+                @Override
+                public KeycloakSession getKeycloakSession() {
+                    return session;
+                }
+            });
+        }
+
+        return removed;
     }
 
     @Override

@@ -25,6 +25,7 @@ import org.junit.Test;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ProtocolMappersResource;
 import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.ApiUtil;
@@ -97,7 +98,7 @@ public class ClientProtocolMapperTest extends AbstractProtocolMapperTest {
         Response resp = samlMappersRsc.createMapper(rep);
         resp.close();
         String createdId = ApiUtil.getCreatedId(resp);
-        assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE, AdminEventPaths.clientProtocolMapperPath(samlClientId, createdId), rep);
+        assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE, AdminEventPaths.clientProtocolMapperPath(samlClientId, createdId), rep, ResourceType.PROTOCOL_MAPPER);
 
         assertEquals(totalMappers + 1, samlMappersRsc.getMappers().size());
         assertEquals(totalSamlMappers + 1, samlMappersRsc.getMappersPerProtocol("saml").size());
@@ -121,7 +122,7 @@ public class ClientProtocolMapperTest extends AbstractProtocolMapperTest {
         Response resp = oidcMappersRsc.createMapper(rep);
         resp.close();
         String createdId = ApiUtil.getCreatedId(resp);
-        assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE, AdminEventPaths.clientProtocolMapperPath(oidcClientId, createdId), rep);
+        assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE, AdminEventPaths.clientProtocolMapperPath(oidcClientId, createdId), rep, ResourceType.PROTOCOL_MAPPER);
 
         assertEquals(totalMappers + 1, oidcMappersRsc.getMappers().size());
         assertEquals(totalOidcMappers + 1, oidcMappersRsc.getMappersPerProtocol("openid-connect").size());
@@ -138,13 +139,13 @@ public class ClientProtocolMapperTest extends AbstractProtocolMapperTest {
         Response resp = samlMappersRsc.createMapper(rep);
         resp.close();
         String createdId = ApiUtil.getCreatedId(resp);
-        assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE, AdminEventPaths.clientProtocolMapperPath(samlClientId, createdId), rep);
+        assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE, AdminEventPaths.clientProtocolMapperPath(samlClientId, createdId), rep, ResourceType.PROTOCOL_MAPPER);
 
         rep.getConfig().put("role", "account.manage-account");
         rep.setId(createdId);
         rep.setConsentRequired(false);
         samlMappersRsc.update(createdId, rep);
-        assertAdminEvents.assertEvent(getRealmId(), OperationType.UPDATE, AdminEventPaths.clientProtocolMapperPath(samlClientId, createdId), rep);
+        assertAdminEvents.assertEvent(getRealmId(), OperationType.UPDATE, AdminEventPaths.clientProtocolMapperPath(samlClientId, createdId), rep, ResourceType.PROTOCOL_MAPPER);
 
         ProtocolMapperRepresentation updated = samlMappersRsc.getMapperById(createdId);
         assertEqualMappers(rep, updated);
@@ -157,13 +158,13 @@ public class ClientProtocolMapperTest extends AbstractProtocolMapperTest {
         Response resp = oidcMappersRsc.createMapper(rep);
         resp.close();
         String createdId = ApiUtil.getCreatedId(resp);
-        assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE, AdminEventPaths.clientProtocolMapperPath(oidcClientId, createdId), rep);
+        assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE, AdminEventPaths.clientProtocolMapperPath(oidcClientId, createdId), rep, ResourceType.PROTOCOL_MAPPER);
 
         rep.getConfig().put("role", "myotherrole");
         rep.setId(createdId);
         rep.setConsentRequired(false);
         oidcMappersRsc.update(createdId, rep);
-        assertAdminEvents.assertEvent(getRealmId(), OperationType.UPDATE, AdminEventPaths.clientProtocolMapperPath(oidcClientId, createdId), rep);
+        assertAdminEvents.assertEvent(getRealmId(), OperationType.UPDATE, AdminEventPaths.clientProtocolMapperPath(oidcClientId, createdId), rep, ResourceType.PROTOCOL_MAPPER);
 
         ProtocolMapperRepresentation updated = oidcMappersRsc.getMapperById(createdId);
         assertEqualMappers(rep, updated);
@@ -176,10 +177,10 @@ public class ClientProtocolMapperTest extends AbstractProtocolMapperTest {
         Response resp = samlMappersRsc.createMapper(rep);
         resp.close();
         String createdId = ApiUtil.getCreatedId(resp);
-        assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE, AdminEventPaths.clientProtocolMapperPath(samlClientId, createdId), rep);
+        assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE, AdminEventPaths.clientProtocolMapperPath(samlClientId, createdId), rep, ResourceType.PROTOCOL_MAPPER);
 
         samlMappersRsc.delete(createdId);
-        assertAdminEvents.assertEvent(getRealmId(), OperationType.DELETE, AdminEventPaths.clientProtocolMapperPath(samlClientId, createdId));
+        assertAdminEvents.assertEvent(getRealmId(), OperationType.DELETE, AdminEventPaths.clientProtocolMapperPath(samlClientId, createdId), ResourceType.PROTOCOL_MAPPER);
 
         try {
             samlMappersRsc.getMapperById(createdId);
@@ -196,10 +197,10 @@ public class ClientProtocolMapperTest extends AbstractProtocolMapperTest {
         Response resp = oidcMappersRsc.createMapper(rep);
         resp.close();
         String createdId = ApiUtil.getCreatedId(resp);
-        assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE, AdminEventPaths.clientProtocolMapperPath(oidcClientId, createdId), rep);
+        assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE, AdminEventPaths.clientProtocolMapperPath(oidcClientId, createdId), rep, ResourceType.PROTOCOL_MAPPER);
 
         oidcMappersRsc.delete(createdId);
-        assertAdminEvents.assertEvent(getRealmId(), OperationType.DELETE, AdminEventPaths.clientProtocolMapperPath(oidcClientId, createdId));
+        assertAdminEvents.assertEvent(getRealmId(), OperationType.DELETE, AdminEventPaths.clientProtocolMapperPath(oidcClientId, createdId), ResourceType.PROTOCOL_MAPPER);
 
         try {
             oidcMappersRsc.getMapperById(createdId);

@@ -17,38 +17,29 @@
 
 package org.keycloak.testsuite;
 
+import org.keycloak.OAuth2Constants;
+import org.keycloak.common.util.reflections.Reflections;
+import org.keycloak.events.Details;
+import org.keycloak.representations.IDToken;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 
+import java.lang.reflect.Field;
 import java.util.List;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testsuite.util.OAuthClient;
 
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 
 /**
  * This class provides loading of the testRealm called "test".  It also
- * provides an OAuthClient for the testRealm.
+ * provides a few utility methods for the testRealm.
  *
  * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
  */
 public abstract class TestRealmKeycloakTest extends AbstractKeycloakTest {
-
-    protected UserRepresentation findUserInRealmRep(RealmRepresentation testRealm, String userName) {
-        for (UserRepresentation user : testRealm.getUsers()) {
-            if (user.getUsername().equals(userName)) return user;
-        }
-
-        return null;
-    }
-
-    protected ClientRepresentation findClientInRealmRep(RealmRepresentation testRealm, String clientId) {
-        for (ClientRepresentation client : testRealm.getClients()) {
-            if (client.getClientId().equals(clientId)) return client;
-        }
-
-        return null;
-    }
 
     protected RealmResource testRealm() {
         return adminClient.realm("test");
@@ -89,5 +80,24 @@ public abstract class TestRealmKeycloakTest extends AbstractKeycloakTest {
      * @param testRealm The realm read from /testrealm.json.
      */
     public abstract void configureTestRealm(RealmRepresentation testRealm);
+
+
+    protected IDToken sendTokenRequestAndGetIDToken(EventRepresentation loginEvent) {
+        String sessionId = loginEvent.getSessionId();
+        String codeId = loginEvent.getDetails().get(Details.CODE_ID);
+
+        String code = new OAuthClient.AuthorizationEndpointResponse(oauth).getCode();
+        OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
+
+        Assert.assertEquals(200, response.getStatusCode());
+        IDToken idToken = oauth.verifyIDToken(response.getIdToken());
+
+        Field eventsField = Reflections.findDeclaredField(this.getClass(), "events");
+        if (eventsField != null) {
+            AssertEvents events = Reflections.getFieldValue(eventsField, this, AssertEvents.class);
+            events.expectCodeToToken(codeId, sessionId).assertEvent();
+        }
+        return idToken;
+    }
 
 }

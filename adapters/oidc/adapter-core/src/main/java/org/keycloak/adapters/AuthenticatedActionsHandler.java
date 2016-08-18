@@ -18,10 +18,12 @@
 package org.keycloak.adapters;
 
 import org.jboss.logging.Logger;
+import org.keycloak.AuthorizationContext;
 import org.keycloak.KeycloakSecurityContext;
+import org.keycloak.adapters.authorization.PolicyEnforcer;
+import org.keycloak.common.util.UriUtils;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.representations.AccessToken;
-import org.keycloak.common.util.UriUtils;
 
 import java.io.IOException;
 import java.util.Set;
@@ -53,6 +55,9 @@ public class AuthenticatedActionsHandler {
         String requestUri = facade.getRequest().getURI();
         if (requestUri.endsWith(AdapterConstants.K_QUERY_BEARER_TOKEN)) {
             queryBearerToken();
+            return true;
+        }
+        if (!isAuthorized()) {
             return true;
         }
         return false;
@@ -123,5 +128,25 @@ public class AuthenticatedActionsHandler {
             log.debugv("cors validation not needed as we're not a secure session or origin header was null: {0}", facade.getRequest().getURI());
         }
         return false;
+    }
+
+    private boolean isAuthorized() {
+        PolicyEnforcer policyEnforcer = this.deployment.getPolicyEnforcer();
+
+        if (policyEnforcer == null) {
+            log.debugv("Policy enforcement is disabled.");
+            return true;
+        }
+        try {
+            OIDCHttpFacade facade = (OIDCHttpFacade) this.facade;
+            AuthorizationContext authorizationContext = policyEnforcer.enforce(facade);
+            RefreshableKeycloakSecurityContext session = (RefreshableKeycloakSecurityContext) facade.getSecurityContext();
+
+            session.setAuthorizationContext(authorizationContext);
+
+            return  authorizationContext.isGranted();
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to enforce policy decisions.", e);
+        }
     }
 }

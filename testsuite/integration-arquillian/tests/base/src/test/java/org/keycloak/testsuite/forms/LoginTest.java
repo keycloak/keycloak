@@ -306,22 +306,25 @@ public class LoginTest extends TestRealmKeycloakTest {
     }
 
     @Test
-    public void loginPromptNone() {
-        driver.navigate().to(oauth.getLoginFormUrl().toString() + "&prompt=none");
-
-        assertFalse(loginPage.isCurrent());
-        assertTrue(appPage.isCurrent());
-
+    public void loginWithWhitespaceSuccess() {
         loginPage.open();
-        loginPage.login("login-test", "password");
+        loginPage.login(" login-test \t ", "password");
+
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
 
         events.expectLogin().user(userId).detail(Details.USERNAME, "login-test").assertEvent();
+    }
 
-        driver.navigate().to(oauth.getLoginFormUrl().toString() + "&prompt=none");
+    @Test
+    public void loginWithEmailWhitespaceSuccess() {
+        loginPage.open();
+        loginPage.login("    login@test.com    ", "password");
+
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
 
-        events.expectLogin().user(userId).removeDetail(Details.USERNAME).assertEvent();
+        events.expectLogin().user(userId).assertEvent();
     }
 
     private void setPasswordPolicy(String policy) {

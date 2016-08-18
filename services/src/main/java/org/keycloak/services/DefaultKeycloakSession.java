@@ -21,6 +21,9 @@ import org.keycloak.models.cache.CacheRealmProvider;
 import org.keycloak.models.cache.CacheUserProvider;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
+import org.keycloak.scripting.ScriptingProvider;
+import org.keycloak.storage.UserStorageManager;
+import org.keycloak.storage.federated.UserFederatedStorageProvider;
 
 import java.util.*;
 
@@ -33,10 +36,14 @@ public class DefaultKeycloakSession implements KeycloakSession {
     private final Map<Integer, Provider> providers = new HashMap<>();
     private final List<Provider> closable = new LinkedList<Provider>();
     private final DefaultKeycloakTransactionManager transactionManager;
+    private final Map<String, Object> attributes = new HashMap<>();
     private RealmProvider model;
     private UserProvider userModel;
+    private UserStorageManager userStorageManager;
+    private ScriptingProvider scriptingProvider;
     private UserSessionProvider sessionProvider;
     private UserFederationManager federationManager;
+    private UserFederatedStorageProvider userFederatedStorageProvider;
     private KeycloakContext context;
 
     public DefaultKeycloakSession(DefaultKeycloakSessionFactory factory) {
@@ -75,13 +82,47 @@ public class DefaultKeycloakSession implements KeycloakSession {
     }
 
     @Override
-    public KeycloakTransactionManager getTransaction() {
+    public Object getAttribute(String attribute) {
+        return attributes.get(attribute);
+    }
+
+    @Override
+    public Object removeAttribute(String attribute) {
+        return attributes.remove(attribute);
+    }
+
+    @Override
+    public void setAttribute(String name, Object value) {
+        attributes.put(name, value);
+    }
+
+    @Override
+    public KeycloakTransactionManager getTransactionManager() {
         return transactionManager;
     }
 
     @Override
     public KeycloakSessionFactory getKeycloakSessionFactory() {
         return factory;
+    }
+
+    @Override
+    public UserFederatedStorageProvider userFederatedStorage() {
+        if (userFederatedStorageProvider == null) {
+            userFederatedStorageProvider = getProvider(UserFederatedStorageProvider.class);
+        }
+        return userFederatedStorageProvider;
+    }
+
+    @Override
+    public UserProvider userLocalStorage() {
+        return getProvider(UserProvider.class);
+    }
+
+    @Override
+    public UserProvider userStorageManager() {
+        if (userStorageManager == null) userStorageManager = new UserStorageManager(this);
+        return userStorageManager;
     }
 
     @Override
@@ -168,4 +209,13 @@ public class DefaultKeycloakSession implements KeycloakSession {
         }
     }
 
+    @Override
+    public ScriptingProvider scripting() {
+
+        if (scriptingProvider == null) {
+            scriptingProvider = getProvider(ScriptingProvider.class);
+        }
+
+        return scriptingProvider;
+    }
 }

@@ -182,6 +182,15 @@ public class PermissionsTest extends AbstractKeycloakTest {
         Assert.assertNames(realms, REALM_NAME);
         assertNotNull(realms.get(0).getAccessTokenLifespan());
 
+        // Check the same when access with users from 'master' realm
+        realms = clients.get("master-" + AdminRoles.VIEW_USERS).realms().findAll();
+        Assert.assertNames(realms, REALM_NAME);
+        assertGettersEmpty(realms.get(0));
+
+        realms = clients.get("master-" + AdminRoles.VIEW_REALM).realms().findAll();
+        Assert.assertNames(realms, REALM_NAME);
+        assertNotNull(realms.get(0).getAccessTokenLifespan());
+
         // Create realm
         invoke(new Invocation() {
             public void invoke(RealmResource realm) {

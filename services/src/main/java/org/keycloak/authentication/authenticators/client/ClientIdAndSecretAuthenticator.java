@@ -19,9 +19,12 @@ package org.keycloak.authentication.authenticators.client;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
@@ -33,6 +36,7 @@ import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.ClientAuthenticationFlowContext;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.ServicesLogger;
@@ -86,7 +90,7 @@ public class ClientIdAndSecretAuthenticator extends AbstractClientAuthenticator 
 
         if (formData != null && client_id == null) {
             client_id = formData.getFirst(OAuth2Constants.CLIENT_ID);
-            clientSecret = formData.getFirst("client_secret");
+            clientSecret = formData.getFirst(OAuth2Constants.CLIENT_SECRET);
         }
 
         if (client_id == null) {
@@ -178,5 +182,17 @@ public class ClientIdAndSecretAuthenticator extends AbstractClientAuthenticator 
     @Override
     public String getId() {
         return PROVIDER_ID;
+    }
+
+    @Override
+    public Set<String> getProtocolAuthenticatorMethods(String loginProtocol) {
+        if (loginProtocol.equals(OIDCLoginProtocol.LOGIN_PROTOCOL)) {
+            Set<String> results = new LinkedHashSet<>();
+            results.add(OIDCLoginProtocol.CLIENT_SECRET_BASIC);
+            results.add(OIDCLoginProtocol.CLIENT_SECRET_POST);
+            return results;
+        } else {
+            return Collections.emptySet();
+        }
     }
 }

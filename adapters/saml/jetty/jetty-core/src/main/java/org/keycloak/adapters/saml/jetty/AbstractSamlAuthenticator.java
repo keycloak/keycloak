@@ -370,13 +370,13 @@ public abstract class AbstractSamlAuthenticator extends LoginAuthenticator {
         Authentication authentication = request.getAuthentication();
         if (!(authentication instanceof KeycloakAuthentication)) {
             UserIdentity userIdentity = createIdentity(samlSession);
-            authentication = createAuthentication(userIdentity);
+            authentication = createAuthentication(userIdentity, request);
             request.setAuthentication(authentication);
         }
         return authentication;
     }
 
-    public abstract Authentication createAuthentication(UserIdentity userIdentity);
+    public abstract Authentication createAuthentication(UserIdentity userIdentity, Request request);
 
     public static abstract class KeycloakAuthentication extends UserAuthentication {
         public KeycloakAuthentication(String method, UserIdentity userIdentity) {

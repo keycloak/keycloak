@@ -9,7 +9,7 @@ var auth = {};
 var resourceBundle;
 var locale = 'en';
 
-var module = angular.module('keycloak', [ 'keycloak.services', 'keycloak.loaders', 'ui.bootstrap', 'ui.select2', 'angularFileUpload', 'angularTreeview', 'pascalprecht.translate', 'ngCookies', 'ngSanitize']);
+var module = angular.module('keycloak', [ 'keycloak.services', 'keycloak.loaders', 'ui.bootstrap', 'ui.select2', 'angularFileUpload', 'angularTreeview', 'pascalprecht.translate', 'ngCookies', 'ngSanitize', 'ui.ace']);
 var resourceRequests = 0;
 var loadingTimer = -1;
 
@@ -208,6 +208,9 @@ module.config([ '$routeProvider', function($routeProvider) {
                 },
                 clientInitialAccess : function(ClientInitialAccessLoader) {
                     return ClientInitialAccessLoader();
+                },
+                clientRegTrustedHosts : function(ClientRegistrationTrustedHostListLoader) {
+                    return ClientRegistrationTrustedHostListLoader();
                 }
             },
             controller : 'ClientInitialAccessCtrl'
@@ -220,6 +223,30 @@ module.config([ '$routeProvider', function($routeProvider) {
                 }
             },
             controller : 'ClientInitialAccessCreateCtrl'
+        })
+        .when('/realms/:realm/client-reg-trusted-hosts/create', {
+            templateUrl : resourceUrl + '/partials/client-reg-trusted-host-create.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                clientRegTrustedHost : function() {
+                    return {};
+                }
+            },
+            controller : 'ClientRegistrationTrustedHostDetailCtrl'
+        })
+        .when('/realms/:realm/client-reg-trusted-hosts/:hostname', {
+            templateUrl : resourceUrl + '/partials/client-reg-trusted-host-detail.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                clientRegTrustedHost : function(ClientRegistrationTrustedHostLoader) {
+                    return ClientRegistrationTrustedHostLoader();
+                }
+            },
+            controller : 'ClientRegistrationTrustedHostDetailCtrl'
         })
         .when('/realms/:realm/keys-settings', {
             templateUrl : resourceUrl + '/partials/realm-keys.html',
@@ -1338,11 +1365,52 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'RealmSessionStatsCtrl'
         })
+        .when('/create/user-storage/:realm/providers/:provider', {
+            templateUrl : resourceUrl + '/partials/user-storage-generic.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                instance : function() {
+                    return {
+
+                    };
+                },
+                providerId : function($route) {
+                    return $route.current.params.provider;
+                },
+                serverInfo : function(ServerInfoLoader) {
+                    return ServerInfoLoader();
+                }
+            },
+            controller : 'GenericUserStorageCtrl'
+        })
+        .when('/realms/:realm/user-storage/providers/:provider/:componentId', {
+            templateUrl : resourceUrl + '/partials/user-storage-generic.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                instance : function(ComponentLoader) {
+                    return ComponentLoader();
+                },
+                providerId : function($route) {
+                    return $route.current.params.provider;
+                },
+                serverInfo : function(ServerInfoLoader) {
+                    return ServerInfoLoader();
+                }
+            },
+            controller : 'GenericUserStorageCtrl'
+        })
         .when('/realms/:realm/user-federation', {
             templateUrl : resourceUrl + '/partials/user-federation.html',
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
+                },
+                serverInfo : function(ServerInfoLoader) {
+                    return ServerInfoLoader();
                 }
             },
             controller : 'UserFederationCtrl'
@@ -1639,6 +1707,9 @@ module.config([ '$routeProvider', function($routeProvider) {
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
+                },
+                serverInfo : function(ServerInfoLoader) {
+                    return ServerInfoLoader();
                 }
             },
             controller : 'RealmPasswordPolicyCtrl'
@@ -2123,18 +2194,22 @@ module.directive('kcReadOnly', function() {
                 }
             }
 
+            var filterIgnored = function(i, e){
+                return !e.attributes['kc-read-only-ignore'];
+            }
+
             scope.$watch(attrs.kcReadOnly, function(readOnly) {
                 if (readOnly) {
-                    element.find('input').each(disable);
-                    element.find('button').each(disable);
-                    element.find('select').each(disable);
-                    element.find('textarea').each(disable);
+                    element.find('input').filter(filterIgnored).each(disable);
+                    element.find('button').filter(filterIgnored).each(disable);
+                    element.find('select').filter(filterIgnored).each(disable);
+                    element.find('textarea').filter(filterIgnored).each(disable);
                 } else {
-                    element.find('input').each(enable);
-                    element.find('input').each(enable);
-                    element.find('button').each(enable);
-                    element.find('select').each(enable);
-                    element.find('textarea').each(enable);
+                    element.find('input').filter(filterIgnored).each(enable);
+                    element.find('input').filter(filterIgnored).each(enable);
+                    element.find('button').filter(filterIgnored).each(enable);
+                    element.find('select').filter(filterIgnored).each(enable);
+                    element.find('textarea').filter(filterIgnored).each(enable);
                 }
             });
         }
@@ -2322,6 +2397,89 @@ module.directive('kcProviderConfig', function ($modal) {
         replace: true,
         controller: 'ProviderConfigCtrl',
         templateUrl: resourceUrl + '/templates/kc-provider-config.html'
+    }
+});
+
+module.controller('ComponentRoleSelectorModalCtrl', function($scope, realm, config, configName, RealmRoles, Client, ClientRole, $modalInstance) {
+    $scope.selectedRealmRole = {
+        role: undefined
+    };
+    $scope.selectedClientRole = {
+        role: undefined
+    };
+    $scope.client = {
+        selected: undefined
+    };
+
+    $scope.selectRealmRole = function() {
+        config[configName][0] = $scope.selectedRealmRole.role.name;
+        $modalInstance.close();
+    }
+
+    $scope.selectClientRole = function() {
+        config[configName][0] = $scope.client.selected.clientId + "." + $scope.selectedClientRole.role.name;
+        $modalInstance.close();
+    }
+
+    $scope.cancel = function() {
+        $modalInstance.dismiss();
+    }
+
+    $scope.changeClient = function() {
+        if ($scope.client.selected) {
+            ClientRole.query({realm: realm.realm, client: $scope.client.selected.id}, function (data) {
+                $scope.clientRoles = data;
+            });
+        } else {
+            console.log('selected client was null');
+            $scope.clientRoles = null;
+        }
+
+    }
+    RealmRoles.query({realm: realm.realm}, function(data) {
+        $scope.realmRoles = data;
+    })
+    Client.query({realm: realm.realm}, function(data) {
+        $scope.clients = data;
+        if (data.length > 0) {
+            $scope.client.selected = data[0];
+            $scope.changeClient();
+        }
+    })
+});
+
+module.controller('ComponentConfigCtrl', function ($modal, $scope) {
+    $scope.openRoleSelector = function (configName, config) {
+        $modal.open({
+            templateUrl: resourceUrl + '/partials/modal/component-role-selector.html',
+            controller: 'ComponentRoleSelectorModalCtrl',
+            resolve: {
+                realm: function () {
+                    return $scope.realm;
+                },
+                config: function () {
+                    return config;
+                },
+                configName: function () {
+                    return configName;
+                }
+            }
+        })
+    }
+});
+module.directive('kcComponentConfig', function ($modal) {
+    return {
+        scope: {
+            config: '=',
+            properties: '=',
+            realm: '=',
+            clients: '=',
+            configName: '='
+        },
+        restrict: 'E',
+        replace: true,
+        controller: 'ComponentConfigCtrl',
+        templateUrl: resourceUrl + '/templates/kc-component-config.html'
     }
 });
 

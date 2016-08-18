@@ -24,7 +24,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.services.ServicesLogger;
 
-import javax.mail.Message;
 import javax.mail.MessagingException;
 import javax.mail.Multipart;
 import javax.mail.Session;
@@ -108,10 +107,10 @@ public class DefaultEmailSenderProvider implements EmailSenderProvider {
                 multipart.addBodyPart(htmlPart);
             }
 
-            Message msg = new MimeMessage(session);
+            MimeMessage msg = new MimeMessage(session);
             msg.setFrom(new InternetAddress(from));
             msg.setHeader("To", address);
-            msg.setSubject(subject);
+            msg.setSubject(subject, "utf-8");
             msg.setContent(multipart);
             msg.saveChanges();
             msg.setSentDate(new Date());

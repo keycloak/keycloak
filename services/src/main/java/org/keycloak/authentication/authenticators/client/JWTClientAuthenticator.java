@@ -22,9 +22,11 @@ import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
@@ -32,16 +34,20 @@ import javax.ws.rs.core.Response;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.ClientAuthenticationFlowContext;
+import org.keycloak.common.util.Time;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.JsonWebToken;
+import org.keycloak.representations.idm.CertificateRepresentation;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.Urls;
+import org.keycloak.services.util.CertificateInfoHelper;
 
 /**
  * Client authentication based on JWT signed by client private key .
@@ -57,6 +63,7 @@ public class JWTClientAuthenticator extends AbstractClientAuthenticator {
     protected static ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
 
     public static final String PROVIDER_ID = "client-jwt";
+    public static final String ATTR_PREFIX = "jwt.credential";
     public static final String CERTIFICATE_ATTR = "jwt.credential.certificate";
 
     public static final AuthenticationExecutionModel.Requirement[] REQUIREMENT_CHOICES = {
@@ -115,15 +122,12 @@ public class JWTClientAuthenticator extends AbstractClientAuthenticator {
             }
 
             // Get client key and validate signature
-            String encodedCertificate = client.getAttribute(CERTIFICATE_ATTR);
-            if (encodedCertificate == null) {
-                Response challengeResponse = ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "unauthorized_client", "Client '" + clientId + "' doesn't have certificate configured");
-                context.failure(AuthenticationFlowError.CLIENT_CREDENTIALS_SETUP_REQUIRED, challengeResponse);
+            PublicKey clientPublicKey = getSignatureValidationKey(client, context);
+            if (clientPublicKey == null) {
+                // Error response already set to context
                 return;
             }
 
-            X509Certificate clientCert = KeycloakModelUtils.getCertificate(encodedCertificate);
-            PublicKey clientPublicKey = clientCert.getPublicKey();
             boolean signatureValid;
             try {
                 signatureValid = RSAProvider.verify(jws, clientPublicKey);
@@ -145,11 +149,43 @@ public class JWTClientAuthenticator extends AbstractClientAuthenticator {
                 throw new RuntimeException("Token is not active");
             }
 
+            // KEYCLOAK-2986
+            if (token.getExpiration() == 0 && token.getIssuedAt() + 10 < Time.currentTime()) {
+                throw new RuntimeException("Token is not active");
+            }
+
             context.success();
         } catch (Exception e) {
             logger.errorValidatingAssertion(e);
             Response challengeResponse = ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "unauthorized_client", "Client authentication with signed JWT failed: " + e.getMessage());
             context.failure(AuthenticationFlowError.INVALID_CLIENT_CREDENTIALS, challengeResponse);
+        }
+    }
+
+    protected PublicKey getSignatureValidationKey(ClientModel client, ClientAuthenticationFlowContext context) {
+        CertificateRepresentation certInfo = CertificateInfoHelper.getCertificateFromClient(client, ATTR_PREFIX);
+
+        String encodedCertificate = certInfo.getCertificate();
+        String encodedPublicKey = certInfo.getPublicKey();
+
+        if (encodedCertificate == null && encodedPublicKey == null) {
+            Response challengeResponse = ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "unauthorized_client", "Client '" + client.getClientId() + "' doesn't have certificate or publicKey configured");
+            context.failure(AuthenticationFlowError.CLIENT_CREDENTIALS_SETUP_REQUIRED, challengeResponse);
+            return null;
+        }
+
+        if (encodedCertificate != null && encodedPublicKey != null) {
+            Response challengeResponse = ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "unauthorized_client", "Client '" + client.getClientId() + "' has both publicKey and certificate configured");
+            context.failure(AuthenticationFlowError.CLIENT_CREDENTIALS_SETUP_REQUIRED, challengeResponse);
+            return null;
+        }
+
+        // TODO: Caching of publicKeys / certificates, so it doesn't need to be always computed from pem. For performance reasons...
+        if (encodedCertificate != null) {
+            X509Certificate clientCert = KeycloakModelUtils.getCertificate(encodedCertificate);
+            return clientCert.getPublicKey();
+        } else {
+            return KeycloakModelUtils.getPublicKey(encodedPublicKey);
         }
     }
 
@@ -202,5 +238,16 @@ public class JWTClientAuthenticator extends AbstractClientAuthenticator {
     @Override
     public String getId() {
         return PROVIDER_ID;
+    }
+
+    @Override
+    public Set<String> getProtocolAuthenticatorMethods(String loginProtocol) {
+        if (loginProtocol.equals(OIDCLoginProtocol.LOGIN_PROTOCOL)) {
+            Set<String> results = new HashSet<>();
+            results.add(OIDCLoginProtocol.PRIVATE_KEY_JWT);
+            return results;
+        } else {
+            return Collections.emptySet();
+        }
     }
 }

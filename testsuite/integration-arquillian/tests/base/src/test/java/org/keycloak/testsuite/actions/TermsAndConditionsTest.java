@@ -23,6 +23,8 @@ import org.keycloak.authentication.requiredactions.TermsAndConditions;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
+import org.keycloak.models.RequiredActionProviderModel;
+import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.pages.AppPage;
@@ -66,6 +68,10 @@ public class TermsAndConditionsTest extends TestRealmKeycloakTest {
         UserRepresentation user = ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost");
         UserBuilder.edit(user).requiredAction(TermsAndConditions.PROVIDER_ID);
         adminClient.realm("test").users().get(user.getId()).update(user);
+
+        RequiredActionProviderRepresentation rep = adminClient.realm("test").flows().getRequiredAction("terms_and_conditions");
+        rep.setEnabled(true);
+        adminClient.realm("test").flows().updateRequiredAction("terms_and_conditions", rep);
     }
 
     @Test
@@ -127,5 +133,22 @@ public class TermsAndConditionsTest extends TestRealmKeycloakTest {
         }
     }
 
+
+    @Test
+    // KEYCLOAK-3192
+    public void termsDisabled() {
+        RequiredActionProviderRepresentation rep = adminClient.realm("test").flows().getRequiredAction("terms_and_conditions");
+        rep.setEnabled(false);
+        adminClient.realm("test").flows().updateRequiredAction("terms_and_conditions", rep);
+
+        loginPage.open();
+
+        loginPage.login("test-user@localhost", "password");
+
+        assertTrue(appPage.isCurrent());
+
+        events.expectLogin().assertEvent();
+
+    }
 
 }

@@ -29,6 +29,8 @@ import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.RoleMappingResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
+import org.keycloak.models.Constants;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.ErrorRepresentation;
@@ -110,13 +112,13 @@ public class UserTest extends AbstractAdminTest {
         String createdId = ApiUtil.getCreatedId(response);
         response.close();
 
-        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.userResourcePath(createdId), userRep);
+        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.userResourcePath(createdId), userRep, ResourceType.USER);
         return createdId;
     }
 
     private void updateUser(UserResource user, UserRepresentation userRep) {
         user.update(userRep);
-        assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, AdminEventPaths.userResourcePath(userRep.getId()), userRep);
+        assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, AdminEventPaths.userResourcePath(userRep.getId()), userRep, ResourceType.USER);
     }
 
     @Test
@@ -276,7 +278,7 @@ public class UserTest extends AbstractAdminTest {
         Response response = realm.users().delete( userId );
         assertEquals(204, response.getStatus());
         response.close();
-        assertAdminEvents.assertEvent(realmId, OperationType.DELETE, AdminEventPaths.userResourcePath(userId));
+        assertAdminEvents.assertEvent(realmId, OperationType.DELETE, AdminEventPaths.userResourcePath(userId), ResourceType.USER);
     }
 
     @Test
@@ -325,7 +327,7 @@ public class UserTest extends AbstractAdminTest {
         link.setUserName("social-username");
         Response response = user.addFederatedIdentity("social-provider-id", link);
         assertEquals(204, response.getStatus());
-        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.userFederatedIdentityLink(id, "social-provider-id"), link);
+        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.userFederatedIdentityLink(id, "social-provider-id"), link, ResourceType.USER);
 
         // Verify social link is here
         user = realm.users().get(id);
@@ -338,7 +340,7 @@ public class UserTest extends AbstractAdminTest {
 
         // Remove social link now
         user.removeFederatedIdentity("social-provider-id");
-        assertAdminEvents.assertEvent(realmId, OperationType.DELETE, AdminEventPaths.userFederatedIdentityLink(id, "social-provider-id"));
+        assertAdminEvents.assertEvent(realmId, OperationType.DELETE, AdminEventPaths.userFederatedIdentityLink(id, "social-provider-id"), ResourceType.USER);
         assertEquals(0, user.getFederatedIdentity().size());
 
         removeSampleIdentityProvider();
@@ -353,14 +355,14 @@ public class UserTest extends AbstractAdminTest {
         rep.setProviderId("social-provider-type");
 
         realm.identityProviders().create(rep);
-        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.identityProviderPath(rep.getAlias()), rep);
+        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.identityProviderPath(rep.getAlias()), rep, ResourceType.IDENTITY_PROVIDER);
     }
 
     private void removeSampleIdentityProvider() {
         IdentityProviderResource resource = realm.identityProviders().get("social-provider-id");
         Assert.assertNotNull(resource);
         resource.remove();
-        assertAdminEvents.assertEvent(realmId, OperationType.DELETE, AdminEventPaths.identityProviderPath("social-provider-id"));
+        assertAdminEvents.assertEvent(realmId, OperationType.DELETE, AdminEventPaths.identityProviderPath("social-provider-id"), ResourceType.IDENTITY_PROVIDER);
     }
 
     @Test
@@ -518,7 +520,7 @@ public class UserTest extends AbstractAdminTest {
         List<String> actions = new LinkedList<>();
         actions.add(UserModel.RequiredAction.UPDATE_PASSWORD.name());
         user.executeActionsEmail("account", actions);
-        assertAdminEvents.assertEvent(realmId, OperationType.ACTION, AdminEventPaths.userResourcePath(id) + "/execute-actions-email");
+        assertAdminEvents.assertEvent(realmId, OperationType.ACTION, AdminEventPaths.userResourcePath(id) + "/execute-actions-email", ResourceType.USER);
 
         Assert.assertEquals(1, greenMail.getReceivedMessages().length);
 
@@ -586,7 +588,7 @@ public class UserTest extends AbstractAdminTest {
         }
 
         user.sendVerifyEmail();
-        assertAdminEvents.assertEvent(realmId, OperationType.ACTION, AdminEventPaths.userResourcePath(id) + "/send-verify-email");
+        assertAdminEvents.assertEvent(realmId, OperationType.ACTION, AdminEventPaths.userResourcePath(id) + "/send-verify-email", ResourceType.USER);
 
         Assert.assertEquals(1, greenMail.getReceivedMessages().length);
 
@@ -613,6 +615,8 @@ public class UserTest extends AbstractAdminTest {
 
     @Test
     public void updateUserWithoutUsername() {
+
+
         switchEditUsernameAllowedOn();
 
         String id = createUser();
@@ -623,13 +627,13 @@ public class UserTest extends AbstractAdminTest {
         rep.setFirstName("Firstname");
 
         user.update(rep);
-        assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, AdminEventPaths.userResourcePath(id), rep);
+        assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, AdminEventPaths.userResourcePath(id), rep, ResourceType.USER);
 
         rep = new UserRepresentation();
         rep.setLastName("Lastname");
 
         user.update(rep);
-        assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, AdminEventPaths.userResourcePath(id), rep);
+        assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, AdminEventPaths.userResourcePath(id), rep, ResourceType.USER);
 
         rep = realm.users().get(id).toRepresentation();
 
@@ -673,6 +677,7 @@ public class UserTest extends AbstractAdminTest {
     @Test
     public void updateUserWithExistingUsername() {
         switchEditUsernameAllowedOn();
+        enableBruteForce();
         createUser();
 
         UserRepresentation userRep = new UserRepresentation();
@@ -705,7 +710,7 @@ public class UserTest extends AbstractAdminTest {
         cred.setTemporary(false);
 
         realm.users().get(userId).resetPassword(cred);
-        assertAdminEvents.assertEvent(realmId, OperationType.ACTION, AdminEventPaths.userResetPasswordPath(userId));
+        assertAdminEvents.assertEvent(realmId, OperationType.ACTION, AdminEventPaths.userResetPasswordPath(userId), ResourceType.USER);
 
         String accountUrl = RealmsResource.accountUrl(UriBuilder.fromUri(getAuthServerRoot())).build(REALM_NAME).toString();
 
@@ -742,7 +747,7 @@ public class UserTest extends AbstractAdminTest {
         RequiredActionProviderRepresentation updatePasswordReqAction = realm.flows().getRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD.toString());
         updatePasswordReqAction.setDefaultAction(true);
         realm.flows().updateRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD.toString(), updatePasswordReqAction);
-        assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, AdminEventPaths.authRequiredActionPath(UserModel.RequiredAction.UPDATE_PASSWORD.toString()), updatePasswordReqAction);
+        assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, AdminEventPaths.authRequiredActionPath(UserModel.RequiredAction.UPDATE_PASSWORD.toString()), updatePasswordReqAction, ResourceType.REQUIRED_ACTION);
 
         // Create user
         String userId = createUser("user1", "user1@localhost");
@@ -755,7 +760,7 @@ public class UserTest extends AbstractAdminTest {
         updatePasswordReqAction = realm.flows().getRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD.toString());
         updatePasswordReqAction.setDefaultAction(true);
         realm.flows().updateRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD.toString(), updatePasswordReqAction);
-        assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, AdminEventPaths.authRequiredActionPath(UserModel.RequiredAction.UPDATE_PASSWORD.toString()), updatePasswordReqAction);
+        assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, AdminEventPaths.authRequiredActionPath(UserModel.RequiredAction.UPDATE_PASSWORD.toString()), updatePasswordReqAction, ResourceType.REQUIRED_ACTION);
     }
 
     @Test
@@ -789,28 +794,28 @@ public class UserTest extends AbstractAdminTest {
         assertAdminEvents.clear();
 
         RoleMappingResource roles = realm.users().get(userId).roles();
-        assertNames(roles.realmLevel().listAll(), "user", "offline_access");
+        assertNames(roles.realmLevel().listAll(), "user", "offline_access", Constants.AUTHZ_UMA_AUTHORIZATION);
 
         // Add realm roles
         List<RoleRepresentation> l = new LinkedList<>();
         l.add(realm.roles().get("realm-role").toRepresentation());
         l.add(realm.roles().get("realm-composite").toRepresentation());
         roles.realmLevel().add(l);
-        assertAdminEvents.assertEvent("test", OperationType.CREATE, AdminEventPaths.userRealmRoleMappingsPath(userId), l);
+        assertAdminEvents.assertEvent("test", OperationType.CREATE, AdminEventPaths.userRealmRoleMappingsPath(userId), l, ResourceType.REALM_ROLE_MAPPING);
 
         // Add client roles
         List<RoleRepresentation> list = Collections.singletonList(realm.clients().get(clientUuid).roles().get("client-role").toRepresentation());
         roles.clientLevel(clientUuid).add(list);
-        assertAdminEvents.assertEvent("test", OperationType.CREATE, AdminEventPaths.userClientRoleMappingsPath(userId, clientUuid), list);
+        assertAdminEvents.assertEvent("test", OperationType.CREATE, AdminEventPaths.userClientRoleMappingsPath(userId, clientUuid), list, ResourceType.CLIENT_ROLE_MAPPING);
 
         list = Collections.singletonList(realm.clients().get(clientUuid).roles().get("client-composite").toRepresentation());
         roles.clientLevel(clientUuid).add(list);
-        assertAdminEvents.assertEvent("test", OperationType.CREATE, AdminEventPaths.userClientRoleMappingsPath(userId, clientUuid), list);
+        assertAdminEvents.assertEvent("test", OperationType.CREATE, AdminEventPaths.userClientRoleMappingsPath(userId, clientUuid), ResourceType.CLIENT_ROLE_MAPPING);
 
         // List realm roles
-        assertNames(roles.realmLevel().listAll(), "realm-role", "realm-composite", "user", "offline_access");
-        assertNames(roles.realmLevel().listAvailable(), "admin");
-        assertNames(roles.realmLevel().listEffective(), "realm-role", "realm-composite", "realm-child", "user", "offline_access");
+        assertNames(roles.realmLevel().listAll(), "realm-role", "realm-composite", "user", "offline_access", Constants.AUTHZ_UMA_AUTHORIZATION);
+        assertNames(roles.realmLevel().listAvailable(), "admin", "customer-user-premium");
+        assertNames(roles.realmLevel().listEffective(), "realm-role", "realm-composite", "realm-child", "user", "offline_access", Constants.AUTHZ_UMA_AUTHORIZATION);
 
         // List client roles
         assertNames(roles.clientLevel(clientUuid).listAll(), "client-role", "client-composite");
@@ -819,7 +824,7 @@ public class UserTest extends AbstractAdminTest {
 
         // Get mapping representation
         MappingsRepresentation all = roles.getAll();
-        assertNames(all.getRealmMappings(), "realm-role", "realm-composite", "user", "offline_access");
+        assertNames(all.getRealmMappings(), "realm-role", "realm-composite", "user", "offline_access", Constants.AUTHZ_UMA_AUTHORIZATION);
         assertEquals(2, all.getClientMappings().size());
         assertNames(all.getClientMappings().get("myclient").getMappings(), "client-role", "client-composite");
         assertNames(all.getClientMappings().get("account").getMappings(), "manage-account", "view-profile");
@@ -827,14 +832,14 @@ public class UserTest extends AbstractAdminTest {
         // Remove realm role
         RoleRepresentation realmRoleRep = realm.roles().get("realm-role").toRepresentation();
         roles.realmLevel().remove(Collections.singletonList(realmRoleRep));
-        assertAdminEvents.assertEvent("test", OperationType.DELETE, AdminEventPaths.userRealmRoleMappingsPath(userId), Collections.singletonList(realmRoleRep));
+        assertAdminEvents.assertEvent("test", OperationType.DELETE, AdminEventPaths.userRealmRoleMappingsPath(userId), Collections.singletonList(realmRoleRep), ResourceType.REALM_ROLE_MAPPING);
 
-        assertNames(roles.realmLevel().listAll(), "realm-composite", "user", "offline_access");
+        assertNames(roles.realmLevel().listAll(), "realm-composite", "user", "offline_access", Constants.AUTHZ_UMA_AUTHORIZATION);
 
         // Remove client role
         RoleRepresentation clientRoleRep = realm.clients().get(clientUuid).roles().get("client-role").toRepresentation();
         roles.clientLevel(clientUuid).remove(Collections.singletonList(clientRoleRep));
-        assertAdminEvents.assertEvent("test", OperationType.DELETE, AdminEventPaths.userClientRoleMappingsPath(userId, clientUuid), Collections.singletonList(clientRoleRep));
+        assertAdminEvents.assertEvent("test", OperationType.DELETE, AdminEventPaths.userClientRoleMappingsPath(userId, clientUuid), Collections.singletonList(clientRoleRep), ResourceType.CLIENT_ROLE_MAPPING);
 
         assertNames(roles.clientLevel(clientUuid).listAll(), "client-composite");
     }
@@ -843,7 +848,14 @@ public class UserTest extends AbstractAdminTest {
         RealmRepresentation rep = realm.toRepresentation();
         rep.setEditUsernameAllowed(true);
         realm.update(rep);
-        assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, Matchers.nullValue(String.class), rep);
+        assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, Matchers.nullValue(String.class), rep, ResourceType.REALM);
+    }
+
+    private void enableBruteForce() {
+        RealmRepresentation rep = realm.toRepresentation();
+        rep.setBruteForceProtected(true);
+        realm.update(rep);
+        assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, Matchers.nullValue(String.class), rep, ResourceType.REALM);
     }
 
 }

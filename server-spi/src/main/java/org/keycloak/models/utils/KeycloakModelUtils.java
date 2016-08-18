@@ -281,7 +281,7 @@ public final class KeycloakModelUtils {
      */
     public static void runJobInTransaction(KeycloakSessionFactory factory, KeycloakSessionTask task) {
         KeycloakSession session = factory.create();
-        KeycloakTransaction tx = session.getTransaction();
+        KeycloakTransaction tx = session.getTransactionManager();
         try {
             tx.begin();
             task.run(session);
@@ -377,7 +377,6 @@ public final class KeycloakModelUtils {
         }
         return null;
     }
-
 
     public static UserFederationProviderModel findUserFederationProviderById(String fedProviderId, RealmModel realm) {
         for (UserFederationProviderModel fedProvider : realm.getUserFederationProviders()) {
@@ -642,5 +641,14 @@ public final class KeycloakModelUtils {
         return null;
     }
 
-
+    public static void setupAuthorizationServices(RealmModel realm) {
+        for (String roleName : Constants.AUTHZ_DEFAULT_AUTHORIZATION_ROLES) {
+            if (realm.getRole(roleName) == null) {
+                RoleModel role = realm.addRole(roleName);
+                role.setDescription("${role_" + roleName + "}");
+                role.setScopeParamRequired(false);
+                realm.addDefaultRole(roleName);
+            }
+        }
+    }
 }

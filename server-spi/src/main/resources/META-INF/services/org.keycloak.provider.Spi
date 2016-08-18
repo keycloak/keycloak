@@ -16,6 +16,8 @@
 #
 
 org.keycloak.models.UserFederationSpi
+org.keycloak.storage.UserStorageProviderSpi
+org.keycloak.storage.federated.UserFederatedStorageProviderSpi
 org.keycloak.mappers.UserFederationMapperSpi
 org.keycloak.models.RealmSpi
 org.keycloak.models.UserSessionSpi
@@ -29,6 +31,7 @@ org.keycloak.events.EventStoreSpi
 org.keycloak.exportimport.ExportSpi
 org.keycloak.exportimport.ImportSpi
 org.keycloak.timer.TimerSpi
+org.keycloak.scripting.ScriptingSpi
 org.keycloak.services.managers.BruteForceProtectorSpi
 org.keycloak.services.resource.RealmResourceSPI
 org.keycloak.protocol.ClientInstallationSpi
@@ -52,5 +55,10 @@ org.keycloak.authentication.RequiredActionSpi
 org.keycloak.authentication.FormAuthenticatorSpi
 org.keycloak.authentication.FormActionSpi
 org.keycloak.cluster.ClusterSpi
-
-
+org.keycloak.authorization.policy.provider.PolicySpi
+org.keycloak.authorization.store.StoreFactorySpi
+org.keycloak.authorization.AuthorizationSpi
+org.keycloak.models.cache.authorization.CachedStoreFactorySpi
+org.keycloak.protocol.oidc.TokenIntrospectionSpi
+org.keycloak.policy.PasswordPolicySpi
+org.keycloak.policy.PasswordPolicyManagerSpi

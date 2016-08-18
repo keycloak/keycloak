@@ -55,6 +55,7 @@ import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.AuthenticationManager.AuthResult;
+import org.keycloak.services.managers.BruteForceProtector;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.ErrorResponse;
@@ -338,8 +339,10 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
             return ErrorPage.error(session, Messages.ACCOUNT_DISABLED);
         }
         if (realm.isBruteForceProtected()) {
-            event.error(Errors.USER_TEMPORARILY_DISABLED);
-            return ErrorPage.error(session, Messages.ACCOUNT_DISABLED);
+            if (session.getProvider(BruteForceProtector.class).isTemporarilyDisabled(session, realm, user)) {
+                event.error(Errors.USER_TEMPORARILY_DISABLED);
+                return ErrorPage.error(session, Messages.ACCOUNT_DISABLED);
+            }
         }
         return null;
     }
@@ -832,17 +835,17 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
 
     private void fireErrorEvent(String message, Throwable throwable) {
         if (!this.event.getEvent().getType().toString().endsWith("_ERROR")) {
-            boolean newTransaction = !this.session.getTransaction().isActive();
+            boolean newTransaction = !this.session.getTransactionManager().isActive();
 
             try {
                 if (newTransaction) {
-                    this.session.getTransaction().begin();
+                    this.session.getTransactionManager().begin();
                 }
 
                 this.event.error(message);
 
                 if (newTransaction) {
-                    this.session.getTransaction().commit();
+                    this.session.getTransactionManager().commit();
                 }
             } catch (Exception e) {
                 logger.couldNotFireEvent(e);
@@ -866,8 +869,8 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
     }
 
     private void rollback() {
-        if (this.session.getTransaction().isActive()) {
-            this.session.getTransaction().rollback();
+        if (this.session.getTransactionManager().isActive()) {
+            this.session.getTransactionManager().rollback();
         }
     }
 

@@ -12,6 +12,7 @@ import org.keycloak.events.EventType;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.adapter.AbstractServletsAdapterTest;
+import org.keycloak.testsuite.adapter.filter.AdapterActionsFilter;
 import org.keycloak.testsuite.adapter.page.OfflineToken;
 import org.keycloak.testsuite.pages.AccountApplicationsPage;
 import org.keycloak.testsuite.pages.LoginPage;
@@ -48,7 +49,7 @@ public abstract class AbstractOfflineServletsAdapterTest extends AbstractServlet
 
     @Deployment(name = OfflineToken.DEPLOYMENT_NAME)
     protected static WebArchive offlineClient() {
-        return servletDeployment(OfflineToken.DEPLOYMENT_NAME, OfflineTokenServlet.class, ErrorServlet.class);
+        return servletDeployment(OfflineToken.DEPLOYMENT_NAME, AdapterActionsFilter.class, AbstractShowTokensServlet.class, OfflineTokenServlet.class, ErrorServlet.class);
     }
 
     @Override
@@ -186,14 +187,7 @@ public abstract class AbstractOfflineServletsAdapterTest extends AbstractServlet
     }
 
     private void setAdapterAndServerTimeOffset(int timeOffset) {
-        setTimeOffset(timeOffset);
-        String timeOffsetUri = UriBuilder.fromUri(offlineTokenPage.toString())
-                .queryParam("timeOffset", timeOffset)
-                .build().toString();
-
-        driver.navigate().to(timeOffsetUri);
-        waitUntilElement(By.tagName("body")).is().visible();
-
+        super.setAdapterAndServerTimeOffset(timeOffset, offlineTokenPage.toString());
     }
 
 }

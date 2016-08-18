@@ -8,17 +8,11 @@ import org.jboss.arquillian.core.api.annotation.Observes;
 import org.jboss.arquillian.test.spi.annotation.ClassScoped;
 import org.jboss.arquillian.test.spi.event.suite.BeforeClass;
 import org.jboss.logging.Logger;
-import org.keycloak.testsuite.arquillian.annotation.AdapterLibsLocationProperty;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
-import org.keycloak.testsuite.util.LogChecker;
-
-import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 
-import static org.keycloak.testsuite.util.IOUtil.execCommand;
-import static org.keycloak.testsuite.util.WaitUtils.pause;
 import static org.keycloak.testsuite.arquillian.AuthServerTestEnricher.getAuthServerContextRoot;
 
 /**
@@ -109,66 +103,6 @@ public class AppServerTestEnricher {
         }
     }
 
-//    public void installAdapterLibs(@Observes BeforeDeploy event) {
-//        log.debug("BEFORE DEPLOY - INSTALL ADAPTER LIBS");
-//        if (testContext.isAdapterTest()) {
-//            // install adapter libs on JBoss-based container via CLI
-//            if (testContext.getAppServerInfo().isJBossBased()) {
-//                try {
-//                    installAdapterLibsUsingJBossCLIClient(testContext.getAppServerInfo());
-//                } catch (InterruptedException | IOException ex) {
-//                    throw new RuntimeException("Failed to install adapter libs.", ex);
-//                }
-//            }
-//        }
-//    }
-    private void installAdapterLibsUsingJBossCLIClient(ContainerInfo appServerInfo) throws InterruptedException, IOException {
-        if (!appServerInfo.isAdapterLibsInstalled()) {
-
-            if (!appServerInfo.isJBossBased()) {
-                throw new IllegalArgumentException("App server must be JBoss-based to run jboss-cli-client.");
-            }
-
-            String jbossHomePath = appServerInfo.getProperties().get("jbossHome");
-
-            File bin = new File(jbossHomePath + "/bin");
-
-            File clientJar = new File(jbossHomePath + "/bin/client/jboss-cli-client.jar");
-            if (!clientJar.exists()) {
-                clientJar = new File(jbossHomePath + "/bin/client/jboss-client.jar"); // AS7
-            }
-            if (!clientJar.exists()) {
-                throw new IOException("JBoss CLI client JAR not found.");
-            }
-
-            String command = "java -jar " + clientJar.getAbsolutePath();
-            String adapterScript = "adapter-install.cli";
-            String samlAdapterScript = "adapter-install-saml.cli";
-            String managementPort = appServerInfo.getProperties().get("managementPort");
-
-            String controllerArg = " --controller=localhost:" + managementPort;
-            if (new File(bin, adapterScript).exists()) {
-                log.info("Installing adapter to app server via cli script");
-                execCommand(command + " --connect --file=" + adapterScript + controllerArg, bin);
-            }
-            if (new File(bin, samlAdapterScript).exists()) {
-                log.info("Installing saml adapter to app server via cli script");
-                execCommand(command + " --connect --file=" + samlAdapterScript + controllerArg, bin);
-            }
-            if (new File(bin, adapterScript).exists() || new File(bin, samlAdapterScript).exists()) {
-                log.info("Restarting container");
-                execCommand(command + " --connect --command=reload" + controllerArg, bin);
-                log.info("Container restarted");
-                pause(5000);
-                if (System.getProperty("app.server.log.check", "true").equals("true")) {
-                    LogChecker.checkJBossServerLog(jbossHomePath);
-                }
-            }
-
-            appServerInfo.setAdapterLibsInstalled(true);
-        }
-    }
-
     /**
      *
      * @param testClass
@@ -188,12 +122,6 @@ public class AppServerTestEnricher {
 
     public static boolean isRelative(Class testClass) {
         return getAppServerQualifier(testClass).equals(AuthServerTestEnricher.AUTH_SERVER_CONTAINER);
-    }
-
-    public static String getAdapterLibsLocationProperty(Class testClass) {
-        Class<? extends AuthServerTestEnricher> annotatedClass = getNearestSuperclassWithAnnotation(testClass, AdapterLibsLocationProperty.class);
-        return (annotatedClass == null ? "adapter.libs.home"
-                : annotatedClass.getAnnotation(AdapterLibsLocationProperty.class).value());
     }
 
     public static boolean isWildflyAppServer(Class testClass) {

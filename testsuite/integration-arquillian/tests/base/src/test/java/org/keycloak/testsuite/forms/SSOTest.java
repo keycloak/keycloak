@@ -23,6 +23,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.events.Details;
+import org.keycloak.representations.IDToken;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AssertEvents;
@@ -73,7 +74,11 @@ public class SSOTest extends TestRealmKeycloakTest {
         assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
 
-        String sessionId = events.expectLogin().assertEvent().getSessionId();
+        EventRepresentation loginEvent = events.expectLogin().assertEvent();
+        String sessionId = loginEvent.getSessionId();
+
+        IDToken idToken = sendTokenRequestAndGetIDToken(loginEvent);
+        Assert.assertEquals("1", idToken.getAcr());
 
         appPage.open();
 
@@ -81,13 +86,17 @@ public class SSOTest extends TestRealmKeycloakTest {
 
         assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        profilePage.open();
-
-        assertTrue(profilePage.isCurrent());
-
-        String sessionId2 = events.expectLogin().removeDetail(Details.USERNAME).client("test-app").assertEvent().getSessionId();
+        loginEvent = events.expectLogin().removeDetail(Details.USERNAME).client("test-app").assertEvent();
+        String sessionId2 = loginEvent.getSessionId();
 
         assertEquals(sessionId, sessionId2);
+
+        // acr is 0 as we authenticated through SSO cookie
+        idToken = sendTokenRequestAndGetIDToken(loginEvent);
+        Assert.assertEquals("0", idToken.getAcr());
+
+        profilePage.open();
+        assertTrue(profilePage.isCurrent());
 
         // Expire session
         testingClient.testing().removeUserSession("test", sessionId);

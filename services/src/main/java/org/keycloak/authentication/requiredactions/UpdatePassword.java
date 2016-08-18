@@ -21,6 +21,8 @@ import org.keycloak.Config;
 import org.keycloak.authentication.RequiredActionContext;
 import org.keycloak.authentication.RequiredActionFactory;
 import org.keycloak.authentication.RequiredActionProvider;
+import org.keycloak.events.Details;
+import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.models.KeycloakSession;
@@ -84,17 +86,23 @@ public class UpdatePassword implements RequiredActionProvider, RequiredActionFac
         String passwordNew = formData.getFirst("password-new");
         String passwordConfirm = formData.getFirst("password-confirm");
 
+        EventBuilder errorEvent = event.clone().event(EventType.UPDATE_PASSWORD_ERROR)
+                .client(context.getClientSession().getClient())
+                .user(context.getClientSession().getUserSession().getUser());
+
         if (Validation.isBlank(passwordNew)) {
             Response challenge = context.form()
                     .setError(Messages.MISSING_PASSWORD)
                     .createResponse(UserModel.RequiredAction.UPDATE_PASSWORD);
             context.challenge(challenge);
+            errorEvent.error(Errors.PASSWORD_MISSING);
             return;
         } else if (!passwordNew.equals(passwordConfirm)) {
             Response challenge = context.form()
                     .setError(Messages.NOTMATCH_PASSWORD)
                     .createResponse(UserModel.RequiredAction.UPDATE_PASSWORD);
             context.challenge(challenge);
+            errorEvent.error(Errors.PASSWORD_CONFIRM_ERROR);
             return;
         }
 
@@ -102,12 +110,14 @@ public class UpdatePassword implements RequiredActionProvider, RequiredActionFac
             context.getSession().users().updateCredential(context.getRealm(), context.getUser(), UserCredentialModel.password(passwordNew));
             context.success();
         } catch (ModelException me) {
+            errorEvent.detail(Details.REASON, me.getMessage()).error(Errors.PASSWORD_REJECTED);
             Response challenge = context.form()
                     .setError(me.getMessage(), me.getParameters())
                     .createResponse(UserModel.RequiredAction.UPDATE_PASSWORD);
             context.challenge(challenge);
             return;
         } catch (Exception ape) {
+            errorEvent.detail(Details.REASON, ape.getMessage()).error(Errors.PASSWORD_REJECTED);
             Response challenge = context.form()
                     .setError(ape.getMessage())
                     .createResponse(UserModel.RequiredAction.UPDATE_PASSWORD);

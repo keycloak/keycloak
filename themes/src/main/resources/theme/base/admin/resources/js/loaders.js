@@ -126,6 +126,15 @@ module.factory('UserLoader', function(Loader, User, $route, $q) {
     });
 });
 
+module.factory('ComponentLoader', function(Loader, Components, $route, $q) {
+    return Loader.get(Components, function() {
+        return {
+            realm : $route.current.params.realm,
+            componentId: $route.current.params.componentId
+        }
+    });
+});
+
 module.factory('UserFederationInstanceLoader', function(Loader, UserFederationInstances, $route, $q) {
     return Loader.get(UserFederationInstances, function() {
         return {
@@ -497,6 +506,23 @@ module.factory('ClientInitialAccessLoader', function(Loader, ClientInitialAccess
     return Loader.query(ClientInitialAccess, function() {
         return {
             realm: $route.current.params.realm
+        }
+    });
+});
+
+module.factory('ClientRegistrationTrustedHostListLoader', function(Loader, ClientRegistrationTrustedHost, $route) {
+    return Loader.query(ClientRegistrationTrustedHost, function() {
+        return {
+            realm: $route.current.params.realm
+        }
+    });
+});
+
+module.factory('ClientRegistrationTrustedHostLoader', function(Loader, ClientRegistrationTrustedHost, $route) {
+    return Loader.get(ClientRegistrationTrustedHost, function() {
+        return {
+            realm: $route.current.params.realm,
+            hostname : $route.current.params.hostname
         }
     });
 });

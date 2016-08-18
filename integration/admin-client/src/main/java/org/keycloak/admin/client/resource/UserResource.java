@@ -146,4 +146,8 @@ public interface UserResource {
     @Path("consents/{client}")
     public void revokeConsent(@PathParam("client") String clientId);
 
+    @POST
+    @Path("impersonation")
+    @Produces(MediaType.APPLICATION_JSON)
+    Map<String, Object> impersonate();
 }

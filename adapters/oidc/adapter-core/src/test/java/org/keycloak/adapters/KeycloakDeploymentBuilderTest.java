@@ -61,6 +61,7 @@ public class KeycloakDeploymentBuilderTest {
         assertEquals(1000, deployment.getRegisterNodePeriod());
         assertEquals(TokenStore.COOKIE, deployment.getTokenStore());
         assertEquals("email", deployment.getPrincipalAttribute());
+        assertEquals(10, deployment.getTokenMinimumTimeToLive());
     }
 
     @Test

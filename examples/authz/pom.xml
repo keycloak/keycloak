@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <artifactId>keycloak-examples-parent</artifactId>
+        <groupId>org.keycloak</groupId>
+        <version>2.2.0-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>keycloak-authz-example-parent</artifactId>
+    <packaging>pom</packaging>
+
+    <name>Keycloak Authz: Examples Parent</name>
+    <description/>
+
+    <properties>
+        <maven.compiler.target>1.8</maven.compiler.target>
+        <maven.compiler.source>1.8</maven.compiler.source>
+    </properties>
+
+    <modules>
+        <module>photoz</module>
+        <module>servlet-authz</module>
+        <module>hello-world</module>
+        <module>hello-world-authz-service</module>
+    </modules>
+</project>

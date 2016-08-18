@@ -50,6 +50,7 @@ public interface SamlDeployment {
         public interface SingleSignOnService {
             boolean signRequest();
             boolean validateResponseSignature();
+            boolean validateAssertionSignature();
             Binding getRequestBinding();
             Binding getResponseBinding();
             String getRequestBindingUrl();

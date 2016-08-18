@@ -18,6 +18,7 @@
 package org.keycloak.representations.idm;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import org.keycloak.common.util.MultivaluedHashMap;
 
 import java.util.*;
 
@@ -109,6 +110,7 @@ public class RealmRepresentation {
     private List<IdentityProviderRepresentation> identityProviders;
     private List<IdentityProviderMapperRepresentation> identityProviderMappers;
     private List<ProtocolMapperRepresentation> protocolMappers;
+    private MultivaluedHashMap<String, ComponentExportRepresentation> components;
     protected Boolean internationalizationEnabled;
     protected Set<String> supportedLocales;
     protected String defaultLocale;
@@ -847,6 +849,14 @@ public class RealmRepresentation {
 
     public void setClientTemplates(List<ClientTemplateRepresentation> clientTemplates) {
         this.clientTemplates = clientTemplates;
+    }
+
+    public MultivaluedHashMap<String, ComponentExportRepresentation> getComponents() {
+        return components;
+    }
+
+    public void setComponents(MultivaluedHashMap<String, ComponentExportRepresentation> components) {
+        this.components = components;
     }
 
     @JsonIgnore

@@ -364,8 +364,12 @@ module.controller('ClientCertificateImportCtrl', function($scope, $location, $ht
         "Certificate PEM"
     ];
 
+    if (callingContext == 'jwt-credentials') {
+        $scope.keyFormats.push('JSON Web Key Set (JWK)');
+    }
+
     $scope.hideKeystoreSettings = function() {
-        return $scope.uploadKeyFormat == 'Certificate PEM';
+        return $scope.uploadKeyFormat == 'Certificate PEM' || $scope.uploadKeyFormat == 'JSON Web Key Set (JWK)';
     }
 
     $scope.uploadKeyFormat = $scope.keyFormats[0];
@@ -970,8 +974,19 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, templates,
         return false;
     }
 
+    function configureAuthorizationServices() {
+        if ($scope.client.authorizationServicesEnabled) {
+            if ($scope.accessType == 'public') {
+                $scope.accessType = 'confidential';
+            }
+            $scope.client.publicClient = false;
+            $scope.client.serviceAccountsEnabled = true;
+        }
+    }
+
     $scope.$watch('client', function() {
         $scope.changed = isChanged();
+        configureAuthorizationServices();
     }, true);
 
     $scope.$watch('newRedirectUri', function() {
@@ -1067,9 +1082,7 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, templates,
                 realm : realm.realm,
                 client : client.id
             }, $scope.client, function() {
-                $scope.changed = false;
-                client = angular.copy($scope.client);
-                $location.url("/realms/" + realm.realm + "/clients/" + client.id);
+                $route.reload();
                 Notifications.success("Your changes have been saved to the client.");
             });
         }
@@ -1690,6 +1703,8 @@ module.controller('ClientProtocolMapperCreateCtrl', function($scope, realm, serv
         changed: false,
         mapperTypes: serverInfo.protocolMapperTypes[protocol]
     }
+    
+    $scope.model.mapperType = $scope.model.mapperTypes[0];
 
     $scope.$watch(function() {
         return $location.path();
@@ -1954,6 +1969,8 @@ module.controller('ClientTemplateProtocolMapperCreateCtrl', function($scope, rea
         changed: false,
         mapperTypes: serverInfo.protocolMapperTypes[protocol]
     }
+    
+    $scope.model.mapperType = $scope.model.mapperTypes[0];
 
     $scope.$watch(function() {
         return $location.path();

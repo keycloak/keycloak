@@ -27,7 +27,7 @@
             <module name="org.codehaus.jackson.jackson-mapper-asl" />
             <module name="org.bouncycastle" />
             <module name="org.jboss.xnio" />
-            
+
         </dependencies>
     </deployment>
 </jboss-deployment-structure>

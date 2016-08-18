@@ -519,7 +519,7 @@ public class DocumentUtil {
                 }
                 documentBuilderFactory = DocumentBuilderFactory.newInstance();
                 documentBuilderFactory.setNamespaceAware(true);
-                documentBuilderFactory.setXIncludeAware(true);
+                documentBuilderFactory.setXIncludeAware(false);
                 String feature = "";
                 try {
                     feature = feature_disallow_doctype_decl;

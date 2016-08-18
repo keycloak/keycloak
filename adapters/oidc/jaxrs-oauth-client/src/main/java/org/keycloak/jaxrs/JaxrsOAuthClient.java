@@ -20,6 +20,7 @@ package org.keycloak.jaxrs;
 import org.keycloak.AbstractOAuthClient;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.representations.AccessTokenResponse;
+import org.keycloak.util.TokenUtil;
 
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.InternalServerErrorException;
@@ -85,14 +86,13 @@ public class JaxrsOAuthClient extends AbstractOAuthClient {
     }
     public Response redirect(UriInfo uriInfo, String redirectUri) {
         String state = getStateCode();
+        String scopeParam = TokenUtil.attachOIDCScope(scope);
 
         UriBuilder uriBuilder = UriBuilder.fromUri(authUrl)
                 .queryParam(OAuth2Constants.CLIENT_ID, clientId)
                 .queryParam(OAuth2Constants.REDIRECT_URI, redirectUri)
-                .queryParam(OAuth2Constants.STATE, state);
-        if (scope != null) {
-            uriBuilder.queryParam(OAuth2Constants.SCOPE, scope);
-        }
+                .queryParam(OAuth2Constants.STATE, state)
+                .queryParam(OAuth2Constants.SCOPE, scopeParam);
 
         URI url = uriBuilder.build();
 

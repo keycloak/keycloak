@@ -47,7 +47,6 @@ import org.keycloak.representations.idm.OAuthClientRepresentation;
 import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
-import org.keycloak.timer.TimerProvider;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -120,6 +119,9 @@ public class RealmManager implements RealmImporter {
         setupAuthenticationFlows(realm);
         setupRequiredActions(realm);
         setupOfflineTokens(realm);
+        setupAuthorizationServices(realm);
+
+        fireRealmPostCreate(realm);
 
         return realm;
     }
@@ -220,7 +222,7 @@ public class RealmManager implements RealmImporter {
 
         realm.setEventsListeners(Collections.singleton("jboss-logging"));
 
-        realm.setPasswordPolicy(new PasswordPolicy("hashIterations(20000)"));
+        realm.setPasswordPolicy(PasswordPolicy.parse(session, "hashIterations(20000)"));
     }
 
     public boolean removeRealm(RealmModel realm) {
@@ -489,6 +491,10 @@ public class RealmManager implements RealmImporter {
         for (final UserFederationProviderModel fedProvider : federationProviders) {
             usersSyncManager.notifyToRefreshPeriodicSync(session, realm, fedProvider, false);
         }
+
+        setupAuthorizationServices(realm);
+        fireRealmPostCreate(realm);
+
         return realm;
     }
 
@@ -579,6 +585,24 @@ public class RealmManager implements RealmImporter {
             return Collections.emptyList();
         }
         return session.users().searchForUser(searchString.trim(), realmModel);
+    }
+
+    private void setupAuthorizationServices(RealmModel realm) {
+        KeycloakModelUtils.setupAuthorizationServices(realm);
+    }
+
+    private void fireRealmPostCreate(RealmModel realm) {
+        session.getKeycloakSessionFactory().publish(new RealmModel.RealmPostCreateEvent() {
+            @Override
+            public RealmModel getCreatedRealm() {
+                return realm;
+            }
+            @Override
+            public KeycloakSession getKeycloakSession() {
+                return session;
+            }
+        });
+
     }
 
 }

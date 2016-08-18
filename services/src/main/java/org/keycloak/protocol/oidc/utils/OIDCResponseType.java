@@ -78,7 +78,7 @@ public class OIDCResponseType {
             throw new IllegalStateException("No responseType provided");
         }
         if (responseTypes.contains(NONE) && responseTypes.size() > 1) {
-            throw new IllegalArgumentException("None not allowed with some other response_type");
+            throw new IllegalArgumentException("'None' not allowed with some other response_type");
         }
 
         // response_type value "token" alone is not mentioned in OIDC specification, however it is supported by OAuth2. We allow it just to be compatible with pure OAuth2 clients like swagger.ui

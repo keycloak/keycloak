@@ -19,7 +19,7 @@ import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 /**
  * @author <a href="mailto:bruno@abstractj.org">Bruno Oliveira</a>.
  */
-public class OfflineToken extends AbstractPageWithInjectedUrl {
+public class OfflineToken extends AbstractShowTokensPage {
 
     public static final String DEPLOYMENT_NAME = "offline-client";
 
@@ -30,35 +30,6 @@ public class OfflineToken extends AbstractPageWithInjectedUrl {
     @Override
     public URL getInjectedUrl() {
         return url;
-    }
-
-    @FindBy(id = "accessToken")
-    private WebElement accessToken;
-
-    @FindBy(id = "refreshToken")
-    private WebElement refreshToken;
-
-    @FindBy(id = "prettyToken")
-    private WebElement prettyToken;
-
-
-    public AccessToken getAccessToken() {
-        try {
-            return JsonSerialization.readValue(accessToken.getText(), AccessToken.class);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        return null;
-    }
-
-    public RefreshToken getRefreshToken() {
-        try {
-            return JsonSerialization.readValue(refreshToken.getText(), RefreshToken.class);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return null;
     }
 
     public void logout() {

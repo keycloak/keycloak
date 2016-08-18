@@ -17,6 +17,8 @@
 
 package org.keycloak.models;
 
+import org.keycloak.provider.ProviderEvent;
+
 import java.util.List;
 import java.util.Set;
 
@@ -25,6 +27,12 @@ import java.util.Set;
  * @version $Revision: 1 $
  */
 public interface RoleContainerModel {
+
+    interface RoleRemovedEvent extends ProviderEvent {
+        RoleModel getRole();
+        KeycloakSession getKeycloakSession();
+    }
+
     String getId();
 
     RoleModel getRole(String name);

@@ -18,6 +18,7 @@
 package org.keycloak.models.cache.infinispan.entities;
 
 import org.keycloak.common.enums.SslRequired;
+import org.keycloak.component.ComponentModel;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.AuthenticatorConfigModel;
@@ -29,19 +30,14 @@ import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.OTPPolicy;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.RequiredCredentialModel;
-import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserFederationMapperModel;
 import org.keycloak.models.UserFederationProviderModel;
-import org.keycloak.models.cache.infinispan.RealmCache;
 import org.keycloak.common.util.MultivaluedHashMap;
 
-import java.io.Serializable;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -93,6 +89,7 @@ public class CachedRealm extends AbstractRevisioned {
     protected PasswordPolicy passwordPolicy;
     protected OTPPolicy otpPolicy;
 
+    protected transient String keyId;
     protected transient PublicKey publicKey;
     protected String publicKeyPem;
     protected transient PrivateKey privateKey;
@@ -109,6 +106,9 @@ public class CachedRealm extends AbstractRevisioned {
 
     protected List<RequiredCredentialModel> requiredCredentials;
     protected List<UserFederationProviderModel> userFederationProviders;
+    protected MultivaluedHashMap<String, ComponentModel> componentsByParent = new MultivaluedHashMap<>();
+    protected MultivaluedHashMap<String, ComponentModel> componentsByParentAndType = new MultivaluedHashMap<>();
+    protected Map<String, ComponentModel> components = new HashMap<>();
     protected MultivaluedHashMap<String, UserFederationMapperModel> userFederationMappers = new MultivaluedHashMap<String, UserFederationMapperModel>();
     protected Set<UserFederationMapperModel> userFederationMapperSet;
     protected List<IdentityProviderModel> identityProviders;
@@ -189,6 +189,7 @@ public class CachedRealm extends AbstractRevisioned {
         passwordPolicy = model.getPasswordPolicy();
         otpPolicy = model.getOTPPolicy();
 
+        keyId = model.getKeyId();
         publicKeyPem = model.getPublicKeyPem();
         publicKey = model.getPublicKey();
         privateKeyPem = model.getPrivateKeyPem();
@@ -273,6 +274,16 @@ public class CachedRealm extends AbstractRevisioned {
         directGrantFlow = model.getDirectGrantFlow();
         resetCredentialsFlow = model.getResetCredentialsFlow();
         clientAuthenticationFlow = model.getClientAuthenticationFlow();
+
+        for (ComponentModel component : model.getComponents()) {
+            componentsByParentAndType.add(component.getParentId() + component.getProviderType(), component);
+        }
+        for (ComponentModel component : model.getComponents()) {
+            componentsByParent.add(component.getParentId(), component);
+        }
+        for (ComponentModel component : model.getComponents()) {
+            components.put(component.getId(), component);
+        }
 
     }
 
@@ -395,6 +406,10 @@ public class CachedRealm extends AbstractRevisioned {
     }
     public int getAccessCodeLifespanLogin() {
         return accessCodeLifespanLogin;
+    }
+
+    public String getKeyId() {
+        return keyId;
     }
 
     public String getPublicKeyPem() {
@@ -591,5 +606,17 @@ public class CachedRealm extends AbstractRevisioned {
 
     public List<RequiredActionProviderModel> getRequiredActionProviderList() {
         return requiredActionProviderList;
+    }
+
+    public MultivaluedHashMap<String, ComponentModel> getComponentsByParent() {
+        return componentsByParent;
+    }
+
+    public MultivaluedHashMap<String, ComponentModel> getComponentsByParentAndType() {
+        return componentsByParentAndType;
+    }
+
+    public Map<String, ComponentModel> getComponents() {
+        return components;
     }
 }

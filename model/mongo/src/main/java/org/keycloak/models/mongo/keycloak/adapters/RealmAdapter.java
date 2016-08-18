@@ -20,8 +20,12 @@ package org.keycloak.models.mongo.keycloak.adapters;
 import com.mongodb.DBObject;
 import com.mongodb.QueryBuilder;
 
+import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.common.util.StringPropertyReplacer;
+import org.keycloak.component.ComponentModel;
 import org.keycloak.connections.mongo.api.context.MongoStoreInvocationContext;
 import org.keycloak.common.enums.SslRequired;
+import org.keycloak.jose.jwk.JWKBuilder;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.AuthenticatorConfigModel;
@@ -46,6 +50,7 @@ import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.entities.AuthenticationExecutionEntity;
 import org.keycloak.models.entities.AuthenticationFlowEntity;
 import org.keycloak.models.entities.AuthenticatorConfigEntity;
+import org.keycloak.models.entities.ComponentEntity;
 import org.keycloak.models.entities.IdentityProviderEntity;
 import org.keycloak.models.entities.IdentityProviderMapperEntity;
 import org.keycloak.models.entities.RequiredActionProviderEntity;
@@ -54,7 +59,6 @@ import org.keycloak.models.entities.UserFederationMapperEntity;
 import org.keycloak.models.entities.UserFederationProviderEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoClientEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoClientTemplateEntity;
-import org.keycloak.models.mongo.keycloak.entities.MongoGroupEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoRealmEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoRoleEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -305,7 +309,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     @Override
     public PasswordPolicy getPasswordPolicy() {
         if (passwordPolicy == null) {
-            passwordPolicy = new PasswordPolicy(realm.getPasswordPolicy());
+            passwordPolicy = PasswordPolicy.parse(session, realm.getPasswordPolicy());
         }
         return passwordPolicy;
     }
@@ -451,6 +455,12 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     @Override
     public int getAccessCodeLifespanLogin() {
         return realm.getAccessCodeLifespanLogin();
+    }
+
+    @Override
+    public String getKeyId() {
+        PublicKey publicKey = getPublicKey();
+        return publicKey != null ? JWKBuilder.create().rs256(publicKey).getKeyId() : null;
     }
 
     @Override
@@ -984,6 +994,14 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         updateRealm();
     }
 
+
+    private void removeFederationMappersForProvider(String federationProviderId) {
+        Set<UserFederationMapperEntity> mappers = getUserFederationMapperEntitiesByFederationProvider(federationProviderId);
+        for (UserFederationMapperEntity mapper : mappers) {
+            getMongoEntity().getUserFederationMappers().remove(mapper);
+        }
+    }
+
     @Override
     public UserFederationProviderModel addUserFederationProvider(String providerName, Map<String, String> config, int priority, String displayName, int fullSyncPeriod, int changedSyncPeriod, int lastSync) {
         KeycloakModelUtils.ensureUniqueDisplayName(displayName, null, getUserFederationProviders());
@@ -1025,14 +1043,6 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         }
         updateRealm();
     }
-
-    private void removeFederationMappersForProvider(String federationProviderId) {
-        Set<UserFederationMapperEntity> mappers = getUserFederationMapperEntitiesByFederationProvider(federationProviderId);
-        for (UserFederationMapperEntity mapper : mappers) {
-            getMongoEntity().getUserFederationMappers().remove(mapper);
-        }
-    }
-
     @Override
     public void updateUserFederationProvider(UserFederationProviderModel model) {
         KeycloakModelUtils.ensureUniqueDisplayName(model.getDisplayName(), model, getUserFederationProviders());
@@ -1832,6 +1842,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         RequiredActionProviderEntity entity = getRequiredActionProviderEntity(model.getId());
         if (entity == null) return;
         entity.setAlias(model.getAlias());
+        entity.setName(model.getName());
         entity.setProviderId(model.getProviderId());
         entity.setEnabled(model.isEnabled());
         entity.setDefaultAction(model.isDefaultAction());
@@ -2048,5 +2059,126 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         return model.getClientTemplateById(id, this);
     }
 
+    @Override
+    public ComponentModel addComponentModel(ComponentModel model) {
+        ComponentEntity entity = new ComponentEntity();
+        if (model.getId() == null) {
+            entity.setId(KeycloakModelUtils.generateId());
+        } else {
+            entity.setId(model.getId());
+        }
+        entity.setConfig(model.getConfig());
+        entity.setParentId(model.getParentId());
+        entity.setProviderType(model.getProviderType());
+        entity.setProviderId(model.getProviderId());
+        entity.setName(model.getName());
+        model.setId(entity.getId());
+        realm.getComponentEntities().add(entity);
+        updateRealm();
 
+        return model;
+    }
+
+    @Override
+    public void updateComponent(ComponentModel model) {
+        for (ComponentEntity entity : realm.getComponentEntities()) {
+            if (entity.getId().equals(model.getId())) {
+                entity.setConfig(model.getConfig());
+                entity.setParentId(model.getParentId());
+                entity.setProviderType(model.getProviderType());
+                entity.setProviderId(model.getProviderId());
+                entity.setName(model.getName());
+
+            }
+        }
+        updateRealm();
+
+    }
+
+    @Override
+    public void removeComponent(ComponentModel component) {
+        Iterator<ComponentEntity> it = realm.getComponentEntities().iterator();
+        while(it.hasNext()) {
+            if (it.next().getId().equals(component.getId())) {
+                session.users().preRemove(this, component);
+                it.remove();
+                break;
+            }
+        }
+        updateRealm();
+
+    }
+
+    @Override
+    public void removeComponents(String parentId) {
+        Iterator<ComponentEntity> it = realm.getComponentEntities().iterator();
+        while(it.hasNext()) {
+            ComponentEntity next = it.next();
+            if (next.getParentId().equals(parentId)) {
+                session.users().preRemove(this, entityToModel(next));
+                it.remove();
+            }
+        }
+        updateRealm();
+
+    }
+
+    @Override
+    public List<ComponentModel> getComponents(String parentId, String providerType) {
+        List<ComponentModel> results = new LinkedList<>();
+        for (ComponentEntity entity : realm.getComponentEntities()) {
+            if (entity.getParentId().equals(parentId) && entity.getProviderType().equals(providerType)) {
+                ComponentModel model = entityToModel(entity);
+                results.add(model);
+            }
+
+        }
+        return results;
+    }
+
+    @Override
+    public List<ComponentModel> getComponents(String parentId) {
+        List<ComponentModel> results = new LinkedList<>();
+        for (ComponentEntity entity : realm.getComponentEntities()) {
+            if (entity.getParentId().equals(parentId)) {
+                ComponentModel model = entityToModel(entity);
+                results.add(model);
+            }
+
+        }
+        return results;
+    }
+
+    protected ComponentModel entityToModel(ComponentEntity entity) {
+        ComponentModel model = new ComponentModel();
+        model.setId(entity.getId());
+        model.setName(entity.getName());
+        model.setParentId(entity.getParentId());
+        model.setProviderId(entity.getProviderId());
+        model.setProviderType(entity.getProviderType());
+        MultivaluedHashMap<String, String> map = new MultivaluedHashMap<>();
+        map.putAll(entity.getConfig());
+        model.setConfig(map);
+        return model;
+    }
+
+    @Override
+    public List<ComponentModel> getComponents() {
+        List<ComponentModel> results = new LinkedList<>();
+        for (ComponentEntity entity : realm.getComponentEntities()) {
+            ComponentModel model = entityToModel(entity);
+            results.add(model);
+        }
+        return results;
+    }
+
+    @Override
+    public ComponentModel getComponent(String id) {
+        for (ComponentEntity entity : realm.getComponentEntities()) {
+            if (entity.getId() == entity.getId()) {
+                return entityToModel(entity);
+            }
+        }
+        return null;
+    }
 }

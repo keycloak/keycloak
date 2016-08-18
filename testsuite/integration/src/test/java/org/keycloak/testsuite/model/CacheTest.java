@@ -105,7 +105,7 @@ public class CacheTest {
 
             assertNotNull(user2.getLastName());
         } finally {
-            session.getTransaction().commit();
+            session.getTransactionManager().commit();
             session.close();
         }
     }
@@ -121,7 +121,7 @@ public class CacheTest {
             RoleModel fooRole = client.addRole("foo-role");
             user.grantRole(fooRole);
         } finally {
-            session.getTransaction().commit();
+            session.getTransactionManager().commit();
             session.close();
         }
 
@@ -136,7 +136,7 @@ public class CacheTest {
             ClientModel client = realm.getClientByClientId("foo");
             realm.removeClient(client.getId());
         } finally {
-            session.getTransaction().commit();
+            session.getTransactionManager().commit();
             session.close();
         }
 
@@ -152,7 +152,7 @@ public class CacheTest {
 
             Assert.assertEquals(roles.size(), grantedRolesCount - 1);
         } finally {
-            session.getTransaction().commit();
+            session.getTransactionManager().commit();
             session.close();
         }
     }

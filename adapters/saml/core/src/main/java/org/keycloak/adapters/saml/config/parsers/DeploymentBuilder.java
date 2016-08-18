@@ -149,6 +149,7 @@ public class DeploymentBuilder {
         }
         sso.setSignRequest(sp.getIdp().getSingleSignOnService().isSignRequest());
         sso.setValidateResponseSignature(sp.getIdp().getSingleSignOnService().isValidateResponseSignature());
+        sso.setValidateAssertionSignature(sp.getIdp().getSingleSignOnService().isValidateAssertionSignature());
 
         slo.setSignRequest(sp.getIdp().getSingleLogoutService().isSignRequest());
         slo.setSignResponse(sp.getIdp().getSingleLogoutService().isSignResponse());

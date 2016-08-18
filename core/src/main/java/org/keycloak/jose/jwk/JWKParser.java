@@ -21,6 +21,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.util.JsonSerialization;
 
+import java.io.InputStream;
 import java.math.BigInteger;
 import java.security.KeyFactory;
 import java.security.PublicKey;
@@ -66,7 +67,7 @@ public class JWKParser {
 
     public PublicKey toPublicKey() {
         String algorithm = jwk.getKeyType();
-        if (RSAPublicJWK.RSA.equals(algorithm)) {
+        if (isAlgorithmSupported(algorithm)) {
             BigInteger modulus = new BigInteger(1, Base64Url.decode(jwk.getOtherClaims().get(RSAPublicJWK.MODULUS).toString()));
             BigInteger publicExponent = new BigInteger(1, Base64Url.decode(jwk.getOtherClaims().get(RSAPublicJWK.PUBLIC_EXPONENT).toString()));
 
@@ -78,6 +79,10 @@ public class JWKParser {
         } else {
             throw new RuntimeException("Unsupported algorithm " + algorithm);
         }
+    }
+
+    public boolean isAlgorithmSupported(String algorithm) {
+        return RSAPublicJWK.RSA.equals(algorithm);
     }
 
 }
