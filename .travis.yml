@@ -1,5 +1,12 @@
 language: java
 
+cache:
+  directories:
+    - $HOME/.m2
+
+before_cache:
+  - rm -rf $HOME/.m2/repository/org/keycloak
+
 env:
   global:
     - MAVEN_SKIP_RC=true
@@ -12,7 +19,7 @@ before_script:
   - export MAVEN_SKIP_RC=true
 
 install: 
-  - ( mvn install -Pdistribution -DskipTests=true -B -V -q ) & ( MYPID=$!; while [  $(ps -ef | grep $MYPID | grep -v grep | wc -l) -gt 0 ]; do    sleep 10;     date; done; )
+  - travis_wait 30 mvn install -Pdistribution -DskipTests=true -B -V -q
 
 script:
   - mvn test -B
