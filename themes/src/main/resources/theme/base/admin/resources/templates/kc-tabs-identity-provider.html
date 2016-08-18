@@ -1,6 +1,6 @@
 <div data-ng-controller="IdentityProviderTabCtrl">
     <h1 data-ng-hide="path[0] == 'create'">
-        {{identityProvider.alias|capitalize}}
+        {{identityProvider.displayName}}
         <i class="pficon pficon-delete clickable" data-ng-hide="newIdentityProvider || changed" data-ng-click="removeIdentityProvider()"></i>
     </h1>
     <h1 data-ng-show="path[0] == 'create'">{{:: 'add-identity-provider' | translate}}</h1>

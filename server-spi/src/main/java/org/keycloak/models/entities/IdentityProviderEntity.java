@@ -26,6 +26,7 @@ public class IdentityProviderEntity {
 
     private String internalId;
     private String alias;
+    private String displayName;
     private String providerId;
     private String name;
     private boolean enabled;
@@ -132,6 +133,14 @@ public class IdentityProviderEntity {
 
     public void setTrustEmail(boolean trustEmail) {
         this.trustEmail = trustEmail;
+    }
+
+    public String getDisplayName() {
+        return displayName;
+    }
+
+    public void setDisplayName(String displayName) {
+        this.displayName = displayName;
     }
 
     @Override

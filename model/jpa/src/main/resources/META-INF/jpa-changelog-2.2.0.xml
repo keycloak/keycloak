@@ -24,6 +24,10 @@
             <column name="RESOURCE_TYPE" type="VARCHAR(64)"></column>
         </addColumn>
 
+        <addColumn tableName="IDENTITY_PROVIDER">
+            <column name="PROVIDER_DISPLAY_NAME" type="VARCHAR(36)"></column>
+        </addColumn>
+
         <createTable tableName="CREDENTIAL_ATTRIBUTE">
             <column name="ID" type="VARCHAR(36)">
                 <constraints nullable="false"/>
