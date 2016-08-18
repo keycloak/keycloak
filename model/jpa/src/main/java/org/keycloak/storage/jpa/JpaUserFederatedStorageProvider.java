@@ -18,6 +18,7 @@ package org.keycloak.storage.jpa;
 
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
+import org.keycloak.credential.CredentialModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.GroupModel;
@@ -607,6 +608,46 @@ public class JpaUserFederatedStorageProvider implements
     }
 
     @Override
+    public void updateCredential(RealmModel realm, UserModel user, CredentialModel cred) {
+
+    }
+
+    @Override
+    public CredentialModel createCredential(RealmModel realm, UserModel user, CredentialModel cred) {
+        return null;
+    }
+
+    @Override
+    public boolean removeCredential(RealmModel realm, String id) {
+        return false;
+    }
+
+    @Override
+    public CredentialModel getCredentialById(String id) {
+        return null;
+    }
+
+    @Override
+    public List<CredentialModel> getCredentials(RealmModel realm) {
+        return null;
+    }
+
+    @Override
+    public List<CredentialModel> getUserCredentials(RealmModel realm, UserModel user) {
+        return null;
+    }
+
+    @Override
+    public List<CredentialModel> getCredentialsByType(RealmModel realm, UserModel user, String type) {
+        return null;
+    }
+
+    @Override
+    public CredentialModel getCredentialByNameAndType(RealmModel realm, UserModel user, String name, String type) {
+        return null;
+    }
+
+    @Override
     public void preRemove(RealmModel realm) {
         int num = em.createNamedQuery("deleteFederatedUserConsentRolesByRealm")
                 .setParameter("realmId", realm.getId()).executeUpdate();
@@ -619,6 +660,8 @@ public class JpaUserFederatedStorageProvider implements
         num = em.createNamedQuery("deleteFederatedUserRequiredActionsByRealm")
                 .setParameter("realmId", realm.getId()).executeUpdate();
         num = em.createNamedQuery("deleteBrokerLinkByRealm")
+                .setParameter("realmId", realm.getId()).executeUpdate();
+        num = em.createNamedQuery("deleteFederatedCredentialAttributeByRealm")
                 .setParameter("realmId", realm.getId()).executeUpdate();
         num = em.createNamedQuery("deleteFederatedUserCredentialsByRealm")
                 .setParameter("realmId", realm.getId()).executeUpdate();
@@ -639,6 +682,10 @@ public class JpaUserFederatedStorageProvider implements
                 .setParameter("link", link.getId())
                 .executeUpdate();
         num = em.createNamedQuery("deleteBrokerLinkByRealmAndLink")
+                .setParameter("realmId", realm.getId())
+                .setParameter("link", link.getId())
+                .executeUpdate();
+        num = em.createNamedQuery("deleteFederatedCredentialAttributeByRealmAndLink")
                 .setParameter("realmId", realm.getId())
                 .setParameter("link", link.getId())
                 .executeUpdate();
@@ -699,6 +746,10 @@ public class JpaUserFederatedStorageProvider implements
                 .setParameter("userId", user.getId())
                 .setParameter("realmId", realm.getId())
                 .executeUpdate();
+        em.createNamedQuery("deleteFederatedCredentialAttributeByUser")
+                .setParameter("userId", user.getId())
+                .setParameter("realmId", realm.getId())
+                .executeUpdate();
         em.createNamedQuery("deleteFederatedUserCredentialByUser")
                 .setParameter("userId", user.getId())
                 .setParameter("realmId", realm.getId())
@@ -735,6 +786,9 @@ public class JpaUserFederatedStorageProvider implements
                 .setParameter("storageProviderId", model.getId())
                 .executeUpdate();
         em.createNamedQuery("deleteFederatedUserConsentsByStorageProvider")
+                .setParameter("storageProviderId", model.getId())
+                .executeUpdate();
+        em.createNamedQuery("deleteFederatedCredentialAttributeByStorageProvider")
                 .setParameter("storageProviderId", model.getId())
                 .executeUpdate();
         em.createNamedQuery("deleteFederatedUserCredentialsByStorageProvider")

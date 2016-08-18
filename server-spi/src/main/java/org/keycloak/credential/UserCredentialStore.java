@@ -14,13 +14,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.storage.federated;
+package org.keycloak.credential;
 
-import org.keycloak.credential.CredentialModel;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserCredentialModel;
-import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.provider.Provider;
 
 import java.util.List;
 
@@ -28,21 +26,13 @@ import java.util.List;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public interface UserCredentialsFederatedStorage {
-    // deprecated
-    void updateCredential(RealmModel realm, UserModel user, UserCredentialModel cred);
-    void updateCredential(RealmModel realm, UserModel user, UserCredentialValueModel cred);
-    void removeCredential(RealmModel realm, UserModel user, UserCredentialValueModel cred);
-    List<UserCredentialValueModel> getCredentials(RealmModel realm, UserModel user);
-
-    // new
+public interface UserCredentialStore extends Provider {
     void updateCredential(RealmModel realm, UserModel user, CredentialModel cred);
     CredentialModel createCredential(RealmModel realm, UserModel user, CredentialModel cred);
     boolean removeCredential(RealmModel realm, String id);
     CredentialModel getCredentialById(String id);
     List<CredentialModel> getCredentials(RealmModel realm);
-    List<CredentialModel> getUserCredentials(RealmModel realm, UserModel user);
+    List<CredentialModel> getCredentials(RealmModel realm, UserModel user);
     List<CredentialModel> getCredentialsByType(RealmModel realm, UserModel user, String type);
     CredentialModel getCredentialByNameAndType(RealmModel realm, UserModel user, String name, String type);
-
 }

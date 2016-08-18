@@ -18,6 +18,7 @@
 package org.keycloak.models.jpa;
 
 import org.keycloak.component.ComponentModel;
+import org.keycloak.credential.CredentialInput;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.CredentialValidationOutput;
 import org.keycloak.models.FederatedIdentityModel;
@@ -48,6 +49,7 @@ import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -367,6 +369,8 @@ public class JpaUserProvider implements UserProvider {
                 .setParameter("realmId", realm.getId()).executeUpdate();
         num = em.createNamedQuery("deleteFederatedIdentityByRealm")
                 .setParameter("realmId", realm.getId()).executeUpdate();
+        num = em.createNamedQuery("deleteCredentialAttributeByRealm")
+                .setParameter("realmId", realm.getId()).executeUpdate();
         num = em.createNamedQuery("deleteCredentialsByRealm")
                 .setParameter("realmId", realm.getId()).executeUpdate();
         num = em.createNamedQuery("deleteUserAttributesByRealm")
@@ -388,6 +392,10 @@ public class JpaUserProvider implements UserProvider {
                 .setParameter("link", link.getId())
                 .executeUpdate();
         num = em.createNamedQuery("deleteFederatedIdentityByRealmAndLink")
+                .setParameter("realmId", realm.getId())
+                .setParameter("link", link.getId())
+                .executeUpdate();
+        num = em.createNamedQuery("deleteCredentialAttributeByRealmAndLink")
                 .setParameter("realmId", realm.getId())
                 .setParameter("link", link.getId())
                 .executeUpdate();
@@ -716,4 +724,24 @@ public class JpaUserProvider implements UserProvider {
     public void preRemove(RealmModel realm, ComponentModel component) {
 
     }
+    @Override
+    public boolean isValid(RealmModel realm, UserModel user, List<CredentialInput> inputs) {
+        return false;
+    }
+
+    @Override
+    public void updateCredential(RealmModel realm, UserModel user, CredentialInput input) {
+
+    }
+
+    @Override
+    public boolean isConfiguredFor(RealmModel realm, UserModel user, String type) {
+        return false;
+    }
+
+    @Override
+    public Set<String> requiredActionsFor(RealmModel realm, UserModel user, String type) {
+        return Collections.EMPTY_SET;
+    }
+
 }

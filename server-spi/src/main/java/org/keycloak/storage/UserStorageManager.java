@@ -20,6 +20,12 @@ package org.keycloak.storage;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.reflections.Types;
 import org.keycloak.component.ComponentModel;
+import org.keycloak.component.PrioritizedComponentModel;
+import org.keycloak.credential.CredentialInput;
+import org.keycloak.credential.CredentialInputUpdater;
+import org.keycloak.credential.CredentialInputValidator;
+import org.keycloak.credential.CredentialProvider;
+import org.keycloak.credential.CredentialProviderFactory;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.CredentialValidationOutput;
 import org.keycloak.models.FederatedIdentityModel;
@@ -85,7 +91,7 @@ public class UserStorageManager implements UserProvider {
         return null;
     }
 
-    private UserStorageProvider getStorageProviderInstance(UserStorageProviderModel model, UserStorageProviderFactory factory) {
+    protected UserStorageProvider getStorageProviderInstance(UserStorageProviderModel model, UserStorageProviderFactory factory) {
         UserStorageProvider instance = (UserStorageProvider)session.getAttribute(model.getId());
         if (instance != null) return instance;
         instance = factory.create(session, model);
@@ -609,4 +615,151 @@ public class UserStorageManager implements UserProvider {
     @Override
     public void close() {
     }
+
+    @Override
+    public boolean isValid(RealmModel realm, UserModel user, List<CredentialInput> inputs) {
+
+        List<CredentialInput> toValidate = new LinkedList<>();
+        toValidate.addAll(inputs);
+        if (!StorageId.isLocalStorage(user)) {
+            String providerId = StorageId.resolveProviderId(user);
+            UserStorageProvider provider = getStorageProvider(realm, providerId);
+            if (provider instanceof CredentialInputValidator) {
+                Iterator<CredentialInput> it = toValidate.iterator();
+                while (it.hasNext()) {
+                    CredentialInput input = it.next();
+                    CredentialInputValidator validator = (CredentialInputValidator)provider;
+                    if (validator.supportsCredentialType(input.getType()) && validator.isValid(realm, user, input)) {
+                        it.remove();
+                    }
+                }
+            }
+        }
+
+        if (toValidate.isEmpty()) return true;
+
+        List<ComponentModel> components = getCredentialProviderComponents(realm);
+        for (ComponentModel component : components) {
+            CredentialProviderFactory factory = (CredentialProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(CredentialProvider.class, component.getProviderId());
+            if (!Types.supports(CredentialInputValidator.class, factory, CredentialProviderFactory.class)) continue;
+            Iterator<CredentialInput> it = toValidate.iterator();
+            while (it.hasNext()) {
+                CredentialInput input = it.next();
+                CredentialInputValidator validator = (CredentialInputValidator)session.getAttribute(component.getId());
+                if (validator == null) {
+                    validator = (CredentialInputValidator)factory.create(session, component);
+                    session.setAttribute(component.getId(), validator);
+                }
+                if (validator.supportsCredentialType(input.getType()) && validator.isValid(realm, user, input)) {
+                    it.remove();
+                }
+            }
+        }
+
+        return toValidate.isEmpty();
+    }
+
+    protected List<ComponentModel> getCredentialProviderComponents(RealmModel realm) {
+        List<ComponentModel> components = realm.getComponents(realm.getId(), CredentialProvider.class.getName());
+        Collections.sort(components, PrioritizedComponentModel.comparator);
+        return components;
+    }
+
+    @Override
+    public void updateCredential(RealmModel realm, UserModel user, CredentialInput input) {
+        if (!StorageId.isLocalStorage(user)) {
+            String providerId = StorageId.resolveProviderId(user);
+            UserStorageProvider provider = getStorageProvider(realm, providerId);
+            if (provider instanceof CredentialInputUpdater) {
+                CredentialInputUpdater updater = (CredentialInputUpdater)provider;
+                if (updater.supportsCredentialType(input.getType())) {
+                    updater.updateCredential(realm, user, input);
+                    return;
+                }
+            }
+        }
+
+        List<ComponentModel> components = getCredentialProviderComponents(realm);
+        for (ComponentModel component : components) {
+            CredentialProviderFactory factory = (CredentialProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(CredentialProvider.class, component.getProviderId());
+            if (!Types.supports(CredentialInputUpdater.class, factory, CredentialProviderFactory.class)) continue;
+            CredentialInputUpdater updater = (CredentialInputUpdater)session.getAttribute(component.getId());
+            if (updater == null) {
+                updater = (CredentialInputUpdater)factory.create(session, component);
+                session.setAttribute(component.getId(), updater);
+            }
+            if (!updater.supportsCredentialType(input.getType())) continue;
+            updater.updateCredential(realm, user, input);
+            return;
+        }
+
+    }
+    @Override
+    public boolean isConfiguredFor(RealmModel realm, UserModel user, String type) {
+        if (!StorageId.isLocalStorage(user)) {
+            String providerId = StorageId.resolveProviderId(user);
+            UserStorageProvider provider = getStorageProvider(realm, providerId);
+            if (provider instanceof CredentialInputValidator) {
+                CredentialInputValidator validator = (CredentialInputValidator)provider;
+                if (validator.supportsCredentialType(type) && validator.isConfiguredFor(realm, user, type)) {
+                    return true;
+                }
+            }
+        }
+
+        List<ComponentModel> components = getCredentialProviderComponents(realm);
+        for (ComponentModel component : components) {
+            CredentialProviderFactory factory = (CredentialProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(CredentialProvider.class, component.getProviderId());
+            if (!Types.supports(CredentialInputUpdater.class, factory, CredentialProviderFactory.class)) continue;
+            CredentialInputValidator validator = (CredentialInputValidator)session.getAttribute(component.getId());
+            if (validator == null) {
+                validator = (CredentialInputValidator)factory.create(session, component);
+                session.setAttribute(component.getId(), validator);
+            }
+            if (validator.supportsCredentialType(type) && validator.isConfiguredFor(realm, user, type)) {
+                return true;
+            }
+        }
+        return false;
+
+    }
+
+    @Override
+    public Set<String> requiredActionsFor(RealmModel realm, UserModel user, String type) {
+        Set<String> requiredActionsFor = Collections.EMPTY_SET;
+        if (!StorageId.isLocalStorage(user)) {
+            String providerId = StorageId.resolveProviderId(user);
+            UserStorageProvider provider = getStorageProvider(realm, providerId);
+            if (provider instanceof CredentialInputUpdater) {
+                CredentialInputUpdater updater = (CredentialInputUpdater)provider;
+                if (updater.supportsCredentialType(type)) {
+                    requiredActionsFor = updater.requiredActionsFor(realm, user, type);
+                    if (!requiredActionsFor.isEmpty()) {
+                        return requiredActionsFor;
+                    }
+                }
+            }
+        }
+
+        List<ComponentModel> components = getCredentialProviderComponents(realm);
+        for (ComponentModel component : components) {
+            CredentialProviderFactory factory = (CredentialProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(CredentialProvider.class, component.getProviderId());
+            if (!Types.supports(CredentialInputUpdater.class, factory, CredentialProviderFactory.class)) continue;
+            CredentialInputUpdater updater = (CredentialInputUpdater)session.getAttribute(component.getId());
+            if (updater == null) {
+                updater = (CredentialInputUpdater)factory.create(session, component);
+                session.setAttribute(component.getId(), updater);
+            }
+            if (updater.supportsCredentialType(type)) {
+                requiredActionsFor = updater.requiredActionsFor(realm, user, type);
+                if (!requiredActionsFor.isEmpty()) {
+                    return requiredActionsFor;
+                }
+            }
+        }
+        return requiredActionsFor;
+
+    }
+
+
 }

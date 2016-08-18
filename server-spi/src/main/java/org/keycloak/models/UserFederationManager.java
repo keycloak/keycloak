@@ -19,6 +19,7 @@ package org.keycloak.models;
 
 import org.jboss.logging.Logger;
 import org.keycloak.component.ComponentModel;
+import org.keycloak.credential.CredentialInput;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.policy.PasswordPolicyManagerProvider;
 import org.keycloak.policy.PolicyError;
@@ -442,6 +443,27 @@ public class UserFederationManager implements UserProvider {
     public void grantToAllUsers(RealmModel realm, RoleModel role) {
         // not federation-aware for now
         session.userStorage().grantToAllUsers(realm, role);
+    }
+
+    @Override
+    public boolean isValid(RealmModel realm, UserModel user, List<CredentialInput> inputs) {
+        return session.userStorage().isValid(realm, user, inputs);
+    }
+
+    @Override
+    public void updateCredential(RealmModel realm, UserModel user, CredentialInput input) {
+        session.userStorage().updateCredential(realm, user, input);
+
+    }
+
+    @Override
+    public boolean isConfiguredFor(RealmModel realm, UserModel user, String type) {
+        return session.userStorage().isConfiguredFor(realm, user, type);
+    }
+
+    @Override
+    public Set<String> requiredActionsFor(RealmModel realm, UserModel user, String type) {
+        return session.userStorage().requiredActionsFor(realm, user, type);
     }
 
     @Override

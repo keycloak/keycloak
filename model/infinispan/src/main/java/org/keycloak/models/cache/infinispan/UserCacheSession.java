@@ -20,6 +20,7 @@ package org.keycloak.models.cache.infinispan;
 import org.jboss.logging.Logger;
 import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.component.ComponentModel;
+import org.keycloak.credential.CredentialInput;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.CredentialValidationOutput;
 import org.keycloak.models.FederatedIdentityModel;
@@ -669,4 +670,25 @@ public class UserCacheSession implements CacheUserProvider {
         getDelegate().preRemove(realm, component);
 
     }
+
+    @Override
+    public boolean isValid(RealmModel realm, UserModel user, List<CredentialInput> inputs) {
+        return getDelegate().isValid(realm, user, inputs);
+    }
+
+    @Override
+    public void updateCredential(RealmModel realm, UserModel user, CredentialInput input) {
+        getDelegate().updateCredential(realm, user, input);
+    }
+
+    @Override
+    public boolean isConfiguredFor(RealmModel realm, UserModel user, String type) {
+        return getDelegate().isConfiguredFor(realm, user, type);
+    }
+
+    @Override
+    public Set<String> requiredActionsFor(RealmModel realm, UserModel user, String type) {
+        return getDelegate().requiredActionsFor(realm, user, type);
+    }
+
 }

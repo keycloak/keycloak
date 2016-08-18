@@ -17,13 +17,15 @@
 
 package org.keycloak.models;
 
+import org.keycloak.credential.CredentialInput;
+
 import java.util.UUID;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class UserCredentialModel {
+public class UserCredentialModel implements CredentialInput {
     public static final String PASSWORD = "password";
     public static final String PASSWORD_HISTORY = "password-history";
     public static final String PASSWORD_TOKEN = "password-token";

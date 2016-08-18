@@ -17,10 +17,12 @@
 
 package org.keycloak.storage.jpa.entity;
 
+import org.keycloak.models.jpa.entities.CredentialEntity;
 import org.keycloak.models.jpa.entities.UserEntity;
 
 import javax.persistence.Access;
 import javax.persistence.AccessType;
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
@@ -29,7 +31,10 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
+import javax.persistence.OneToMany;
 import javax.persistence.Table;
+import java.util.ArrayList;
+import java.util.Collection;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -87,6 +92,8 @@ public class FederatedUserCredentialEntity {
     protected int digits;
     @Column(name="PERIOD")
     protected int period;
+    @OneToMany(cascade = CascadeType.REMOVE, fetch = FetchType.EAGER, orphanRemoval = true, mappedBy="credential")
+    protected Collection<FederatedUserCredentialAttributeEntity> credentialAttributes = new ArrayList<>();
 
 
     public String getId() {
@@ -199,6 +206,14 @@ public class FederatedUserCredentialEntity {
 
     public void setPeriod(int period) {
         this.period = period;
+    }
+
+    public Collection<FederatedUserCredentialAttributeEntity> getCredentialAttributes() {
+        return credentialAttributes;
+    }
+
+    public void setCredentialAttributes(Collection<FederatedUserCredentialAttributeEntity> credentialAttributes) {
+        this.credentialAttributes = credentialAttributes;
     }
 
     @Override

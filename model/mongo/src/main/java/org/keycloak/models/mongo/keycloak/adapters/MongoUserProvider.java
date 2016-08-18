@@ -24,6 +24,7 @@ import com.mongodb.QueryBuilder;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.connections.mongo.api.MongoStore;
 import org.keycloak.connections.mongo.api.context.MongoStoreInvocationContext;
+import org.keycloak.credential.CredentialInput;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.CredentialValidationOutput;
 import org.keycloak.models.FederatedIdentityModel;
@@ -634,5 +635,25 @@ public class MongoUserProvider implements UserProvider {
     @Override
     public void preRemove(RealmModel realm, ComponentModel component) {
 
+    }
+
+    @Override
+    public boolean isValid(RealmModel realm, UserModel user, List<CredentialInput> inputs) {
+        return false;
+    }
+
+    @Override
+    public void updateCredential(RealmModel realm, UserModel user, CredentialInput input) {
+
+    }
+
+    @Override
+    public boolean isConfiguredFor(RealmModel realm, UserModel user, String type) {
+        return false;
+    }
+
+    @Override
+    public Set<String> requiredActionsFor(RealmModel realm, UserModel user, String type) {
+        return Collections.EMPTY_SET;
     }
 }

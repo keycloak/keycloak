@@ -19,6 +19,7 @@ package org.keycloak.models.jpa.entities;
 
 import javax.persistence.Access;
 import javax.persistence.AccessType;
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
@@ -27,7 +28,10 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
+import javax.persistence.OneToMany;
 import javax.persistence.Table;
+import java.util.ArrayList;
+import java.util.Collection;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -74,6 +78,8 @@ public class CredentialEntity {
     @Column(name="PERIOD")
     protected int period;
 
+    @OneToMany(cascade = CascadeType.REMOVE, fetch = FetchType.EAGER, orphanRemoval = true, mappedBy="credential")
+    protected Collection<CredentialAttributeEntity> credentialAttributes = new ArrayList<>();
 
     public String getId() {
         return id;
@@ -169,6 +175,14 @@ public class CredentialEntity {
 
     public void setPeriod(int period) {
         this.period = period;
+    }
+
+    public Collection<CredentialAttributeEntity> getCredentialAttributes() {
+        return credentialAttributes;
+    }
+
+    public void setCredentialAttributes(Collection<CredentialAttributeEntity> credentialAttributes) {
+        this.credentialAttributes = credentialAttributes;
     }
 
     @Override
