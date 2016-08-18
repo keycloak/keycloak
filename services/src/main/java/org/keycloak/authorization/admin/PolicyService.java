@@ -26,8 +26,10 @@ import org.keycloak.authorization.policy.provider.PolicyProviderAdminService;
 import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
 import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.authorization.store.StoreFactory;
+import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.authorization.PolicyProviderRepresentation;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
+import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.services.resources.admin.RealmAuth;
 
 import javax.ws.rs.Consumes;
@@ -41,6 +43,12 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import static org.keycloak.models.utils.ModelToRepresentation.toRepresentation;
@@ -188,11 +196,54 @@ public class PolicyService {
     @GET
     @Produces("application/json")
     @NoCache
-    public Response findAll() {
+    public Response findAll(@QueryParam("name") String name,
+                            @QueryParam("type") String type,
+                            @QueryParam("resource") String resource,
+                            @QueryParam("permission") Boolean permission,
+                            @QueryParam("first") Integer firstResult,
+                            @QueryParam("max") Integer maxResult) {
         this.auth.requireView();
+
+        Map<String, String[]> search = new HashMap<>();
+
+        if (name != null && !"".equals(name.trim())) {
+            search.put("name", new String[] {name});
+        }
+
+        if (type != null && !"".equals(type.trim())) {
+            search.put("type", new String[] {type});
+        }
+
         StoreFactory storeFactory = authorization.getStoreFactory();
+
+        if (resource != null && !"".equals(resource.trim())) {
+            List<Policy> policies = new ArrayList<>();
+            HashMap<String, String[]> resourceSearch = new HashMap<>();
+
+            resourceSearch.put("name", new String[] {resource});
+
+            storeFactory.getResourceStore().findByResourceServer(resourceSearch, resourceServer.getId(), -1, -1).forEach(resource1 -> {
+                ResourceRepresentation resourceRepresentation = ModelToRepresentation.toRepresentation(resource1, resourceServer, authorization);
+                resourceRepresentation.getPolicies().forEach(policyRepresentation -> {
+                    Policy associated = storeFactory.getPolicyStore().findById(policyRepresentation.getId());
+                    policies.add(associated);
+                    findAssociatedPolicies(associated, policies);
+                });
+            });
+
+            if (policies.isEmpty()) {
+                return Response.ok(Collections.emptyList()).build();
+            }
+
+            search.put("id", policies.stream().map(Policy::getId).toArray(String[]::new));
+        }
+
+        if (permission != null) {
+            search.put("permission", new String[] {permission.toString()});
+        }
+
         return Response.ok(
-                storeFactory.getPolicyStore().findByResourceServer(resourceServer.getId()).stream()
+                storeFactory.getPolicyStore().findByResourceServer(search, resourceServer.getId(), firstResult != null ? firstResult : -1, maxResult != null ? maxResult : -1).stream()
                         .map(policy -> toRepresentation(policy, authorization))
                         .collect(Collectors.toList()))
                 .build();
@@ -243,5 +294,12 @@ public class PolicyService {
         }
 
         return null;
+    }
+
+    private void findAssociatedPolicies(Policy policy, List<Policy> policies) {
+        policy.getAssociatedPolicies().forEach(associated -> {
+            policies.add(associated);
+            findAssociatedPolicies(associated, policies);
+        });
     }
 }

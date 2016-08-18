@@ -32,6 +32,8 @@ import org.keycloak.connections.mongo.api.context.MongoStoreInvocationContext;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 import java.util.List;
+import java.util.Map;
+import java.util.regex.Pattern;
 
 import static java.util.stream.Collectors.toList;
 
@@ -99,6 +101,31 @@ public class MongoPolicyStore implements PolicyStore {
         return getMongoStore().loadEntities(PolicyEntity.class, query, getInvocationContext()).stream()
                 .map(policyEntity -> findById(policyEntity.getId()))
                 .collect(toList());
+    }
+
+    @Override
+    public List<Policy> findByResourceServer(Map<String, String[]> attributes, String resourceServerId, int firstResult, int maxResult) {
+        QueryBuilder queryBuilder = new QueryBuilder()
+                .and("resourceServerId").is(resourceServerId);
+
+        attributes.forEach((name, value) -> {
+            if ("permission".equals(name)) {
+                if (Boolean.valueOf(value[0])) {
+                    queryBuilder.and("type").in(new String[] {"resource", "scope"});
+                } else {
+                    queryBuilder.and("type").notIn(new String[] {"resource", "scope"});
+                }
+            } else if ("id".equals(name)) {
+                queryBuilder.and("_id").in(value);
+            } else {
+                queryBuilder.and(name).regex(Pattern.compile(".*" + value[0] + ".*", Pattern.CASE_INSENSITIVE));
+            }
+        });
+
+        DBObject sort = new BasicDBObject("name", 1);
+
+        return getMongoStore().loadEntities(PolicyEntity.class, queryBuilder.get(), sort, firstResult, maxResult, invocationContext).stream()
+                .map(policy -> findById(policy.getId())).collect(toList());
     }
 
     @Override

@@ -10,22 +10,34 @@
                         {{:: 'filter' | translate}}:&nbsp;&nbsp;
                         <div class="form-group">
                             <div class="input-group">
-                                <input type="text" placeholder="{{:: 'name' | translate}}" data-ng-model="search.name" class="form-control search" onkeyup="if(event.keyCode == 13){$(this).next('I').click();}">
+                                <input type="text" placeholder="{{:: 'name' | translate}}" data-ng-model="query.name" class="form-control search" onkeydown="if (event.keyCode == 13) document.getElementById('resourceSearch').click()">
                                 <div class="input-group-addon">
-                                    <i class="fa fa-search" type="submit"></i>
+                                    <i class="fa fa-search" id="resourceSearch" type="submit" data-ng-click="firstPage()"></i>
                                 </div>
                             </div>
                             <div class="input-group">
-                                <input type="text" placeholder="{{:: 'authz-owner' | translate}}" data-ng-model="search.owner.name" class="form-control search" onkeyup="if(event.keyCode == 13){$(this).next('I').click();}">
+                                <input type="text" placeholder="{{:: 'type' | translate}}" data-ng-model="query.type" class="form-control search" onkeydown="if (event.keyCode == 13) document.getElementById('resourceSearch').click()">
                                 <div class="input-group-addon">
-                                    <i class="fa fa-search" type="submit"></i>
+                                    <i class="fa fa-search" type="submit" data-ng-click="firstPage()"></i>
                                 </div>
                             </div>
                             <div class="input-group">
-                                <select class="form-control search" data-ng-model="search.type"
-                                        ng-options="r.type as r.type for r in resources | unique : 'type'">
-                                    <option value="" selected ng-click="search.type = ''">{{:: 'type' | translate}}</option>
-                                </select>
+                                <input type="text" placeholder="{{:: 'authz-uri' | translate}}" data-ng-model="query.uri" class="form-control search" onkeydown="if (event.keyCode == 13) document.getElementById('resourceSearch').click()">
+                                <div class="input-group-addon">
+                                    <i class="fa fa-search" type="submit" data-ng-click="firstPage()"></i>
+                                </div>
+                            </div>
+                            <div class="input-group">
+                                <input type="text" placeholder="{{:: 'authz-owner' | translate}}" data-ng-model="query.owner" class="form-control search" onkeydown="if (event.keyCode == 13) document.getElementById('resourceSearch').click()">
+                                <div class="input-group-addon">
+                                    <i class="fa fa-search" type="submit" data-ng-click="firstPage()"></i>
+                                </div>
+                            </div>
+                            <div class="input-group">
+                                <input type="text" placeholder="{{:: 'authz-scope' | translate}}" data-ng-model="query.scope" class="form-control search" onkeydown="if (event.keyCode == 13) document.getElementById('resourceSearch').click()">
+                                <div class="input-group-addon">
+                                    <i class="fa fa-search" type="submit" data-ng-click="firstPage()"></i>
+                                </div>
                             </div>
                         </div>
 
@@ -45,6 +57,17 @@
                 <th>{{:: 'actions' | translate}}</th>
             </tr>
         </thead>
+        <tfoot data-ng-show="resources && (resources.length >= query.max || query.first > 0)">
+        <tr>
+            <td colspan="7">
+                <div class="table-nav">
+                    <button data-ng-click="firstPage()" class="first" ng-disabled="query.first == 0">{{:: 'first-page' | translate}}</button>
+                    <button data-ng-click="previousPage()" class="prev" ng-disabled="query.first == 0">{{:: 'previous-page' | translate}}</button>
+                    <button data-ng-click="nextPage()" class="next" ng-disabled="resources.length < query.max">{{:: 'next-page' | translate}}</button>
+                </div>
+            </td>
+        </tr>
+        </tfoot>
         <tbody>
             <tr ng-repeat="resource in resources | filter:search | orderBy:'name'">
                 <td><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server/resource/{{resource._id}}">{{resource.name}}</a></td>

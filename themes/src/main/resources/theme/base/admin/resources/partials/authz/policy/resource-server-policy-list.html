@@ -10,12 +10,21 @@
                         <div class="form-group">
                             {{:: 'filter' | translate}}:&nbsp;&nbsp;
                             <div class="input-group">
-                                <input type="text" placeholder="{{:: 'name' | translate}}" data-ng-model="search.name" class="form-control search" onkeyup="if(event.keyCode == 13){$(this).next('I').click();}">
+                                <input type="text" placeholder="{{:: 'name' | translate}}" data-ng-model="query.name" class="form-control search" onkeydown="if (event.keyCode == 13) document.getElementById('policySearch').click()">
+                                <div class="input-group-addon">
+                                    <i class="fa fa-search" id="policySearch" type="submit" data-ng-click="firstPage()"></i>
+                                </div>
                             </div>
                             <div class="input-group">
-                                <select class="form-control search" data-ng-model="search.type"
-                                        ng-options="p.type as p.name group by p.group for p in policyProviders track by p.type">
-                                    <option value="" selected ng-click="search.type = ''">{{:: 'authz-all-types' | translate}}</option>
+                                <input type="text" placeholder="{{:: 'authz-resource' | translate}}" data-ng-model="query.resource" class="form-control search" onkeydown="if (event.keyCode == 13) document.getElementById('policySearch').click()">
+                                <div class="input-group-addon">
+                                    <i class="fa fa-search" type="submit" data-ng-click="firstPage()"></i>
+                                </div>
+                            </div>
+                            <div class="input-group">
+                                <select class="form-control search" data-ng-model="query.type"
+                                        ng-options="p.type as p.name group by p.group for p in policyProviders track by p.type" data-ng-change="firstPage()">
+                                    <option value="" selected ng-click="query.type = ''">{{:: 'authz-all-types' | translate}}</option>
                                 </select>
                             </div>
                         </div>
@@ -35,6 +44,17 @@
                 <th>{{:: 'type' | translate}}</th>
             </tr>
         </thead>
+        <tfoot data-ng-show="policies && (policies.length >= query.max || query.first > 0)">
+        <tr>
+            <td colspan="7">
+                <div class="table-nav">
+                    <button data-ng-click="firstPage()" class="first" ng-disabled="query.first == 0">{{:: 'first-page' | translate}}</button>
+                    <button data-ng-click="previousPage()" class="prev" ng-disabled="query.first == 0">{{:: 'previous-page' | translate}}</button>
+                    <button data-ng-click="nextPage()" class="next" ng-disabled="policies.length < query.max">{{:: 'next-page' | translate}}</button>
+                </div>
+            </td>
+        </tr>
+        </tfoot>
         <tbody>
             <tr ng-repeat="policy in policies | filter: {name: search.name, type: search.type} | orderBy:'name'">
                 <td><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server/policy/{{policy.type}}/{{policy.id}}">{{policy.name}}</a></td>
