@@ -104,6 +104,11 @@ public class CachedPolicyStore implements PolicyStore {
     }
 
     @Override
+    public List<Policy> findByResourceServer(Map<String, String[]> attributes, String resourceServerId, int firstResult, int maxResult) {
+        return getDelegate().findByResourceServer(attributes, resourceServerId, firstResult, maxResult);
+    }
+
+    @Override
     public List<Policy> findByResource(String resourceId) {
         List<Policy> cache = new ArrayList<>();
 

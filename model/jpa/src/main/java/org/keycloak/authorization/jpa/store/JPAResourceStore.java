@@ -26,8 +26,14 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 
 import javax.persistence.EntityManager;
 import javax.persistence.Query;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Predicate;
+import javax.persistence.criteria.Root;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -92,6 +98,37 @@ public class JPAResourceStore implements ResourceStore {
         Query query = entityManager.createQuery("from ResourceEntity where resourceServer.id = :serverId");
 
         query.setParameter("serverId", resourceServerId);
+
+        return query.getResultList();
+    }
+
+    @Override
+    public List findByResourceServer(Map<String, String[]> attributes, String resourceServerId, int firstResult, int maxResult) {
+        CriteriaBuilder builder = entityManager.getCriteriaBuilder();
+        CriteriaQuery<ResourceEntity> querybuilder = builder.createQuery(ResourceEntity.class);
+        Root<ResourceEntity> root = querybuilder.from(ResourceEntity.class);
+        List<Predicate> predicates = new ArrayList();
+
+        predicates.add(builder.equal(root.get("resourceServer").get("id"), resourceServerId));
+
+        attributes.forEach((name, value) -> {
+            if ("scope".equals(name)) {
+                predicates.add(root.join("scopes").get("id").in(value));
+            } else {
+                predicates.add(builder.like(builder.lower(root.get(name)), "%" + value[0].toLowerCase() + "%"));
+            }
+        });
+
+        querybuilder.where(predicates.toArray(new Predicate[predicates.size()])).orderBy(builder.asc(root.get("name")));
+
+        Query query = entityManager.createQuery(querybuilder);
+
+        if (firstResult != -1) {
+            query.setFirstResult(firstResult);
+        }
+        if (maxResult != -1) {
+            query.setMaxResults(maxResult);
+        }
 
         return query.getResultList();
     }

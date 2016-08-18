@@ -19,10 +19,9 @@ package org.keycloak.authorization.store;
 
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
-import org.keycloak.authorization.model.Scope;
 
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
 
 /**
  * A {@link ResourceStore} is responsible to manage the persistence of {@link Resource} instances.
@@ -71,6 +70,15 @@ public interface ResourceStore {
      * @return a list with all resources associated with the given resource server
      */
     List<Resource> findByResourceServer(String resourceServerId);
+
+    /**
+     * Finds all {@link Resource} instances associated with a given resource server.
+     *
+     * @param attributes a map holding the attributes that will be used as a filter
+     * @param resourceServerId the identifier of the resource server
+     * @return a list with all resources associated with the given resource server
+     */
+    List<Resource> findByResourceServer(Map<String, String[]> attributes, String resourceServerId, int firstResult, int maxResult);
 
     /**
      * Finds all {@link Resource} associated with a given scope.
