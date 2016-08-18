@@ -19,6 +19,7 @@ package org.keycloak.models.jpa;
 
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.common.util.StringPropertyReplacer;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.jose.jwk.JWKBuilder;
@@ -2185,6 +2186,21 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
                 .setParameter("realm", realm)
                 .setParameter("parentId", parentId)
                 .setParameter("providerType", providerType);
+        List<ComponentEntity> results = query.getResultList();
+        List<ComponentModel> rtn = new LinkedList<>();
+        for (ComponentEntity c : results) {
+            ComponentModel model = entityToModel(c);
+            rtn.add(model);
+
+        }
+        return rtn;
+    }
+
+    @Override
+    public List<ComponentModel> getComponents(String parentId) {
+        TypedQuery<ComponentEntity> query = em.createNamedQuery("getComponentsByParent", ComponentEntity.class)
+                .setParameter("realm", realm)
+                .setParameter("parentId", parentId);
         List<ComponentEntity> results = query.getResultList();
         List<ComponentModel> rtn = new LinkedList<>();
         for (ComponentEntity c : results) {

@@ -148,6 +148,9 @@ public interface RealmResource {
     @Path("clients-initial-access")
     ClientInitialAccessResource clientInitialAccess();
 
+    @Path("clients-trusted-hosts")
+    public ClientRegistrationTrustedHostResource clientRegistrationTrustedHost();
+
     @Path("partialImport")
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
@@ -192,5 +195,8 @@ public interface RealmResource {
     @Path("sessions/{session}")
     @DELETE
     void deleteSession(@PathParam("session") String sessionId);
+
+    @Path("components")
+    ComponentsResource components();
 
 }

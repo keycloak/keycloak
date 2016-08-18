@@ -19,6 +19,7 @@ package org.keycloak.models.cache.infinispan;
 
 import org.keycloak.Config;
 import org.keycloak.common.enums.SslRequired;
+import org.keycloak.common.util.StringPropertyReplacer;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.*;
 import org.keycloak.models.cache.infinispan.entities.CachedRealm;
@@ -1438,7 +1439,15 @@ public class RealmAdapter implements RealmModel {
     @Override
     public List<ComponentModel> getComponents(String parentId, String providerType) {
         if (isUpdated()) return updated.getComponents(parentId, providerType);
-        List<ComponentModel> components = cached.getComponentsByParent().getList(parentId + providerType);
+        List<ComponentModel> components = cached.getComponentsByParentAndType().getList(parentId + providerType);
+        if (components == null) return Collections.EMPTY_LIST;
+        return Collections.unmodifiableList(components);
+    }
+
+    @Override
+    public List<ComponentModel> getComponents(String parentId) {
+        if (isUpdated()) return updated.getComponents(parentId);
+        List<ComponentModel> components = cached.getComponentsByParent().getList(parentId);
         if (components == null) return Collections.EMPTY_LIST;
         return Collections.unmodifiableList(components);
     }

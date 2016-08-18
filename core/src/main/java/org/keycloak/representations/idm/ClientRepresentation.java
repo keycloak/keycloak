@@ -17,6 +17,8 @@
 
 package org.keycloak.representations.idm;
 
+import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
+
 import java.util.List;
 import java.util.Map;
 
@@ -62,6 +64,7 @@ public class ClientRepresentation {
     private Boolean useTemplateConfig;
     private Boolean useTemplateScope;
     private Boolean useTemplateMappers;
+    private ResourceServerRepresentation authorizationSettings;
 
 
     public String getId() {
@@ -241,6 +244,9 @@ public class ClientRepresentation {
     }
 
     public Boolean getAuthorizationServicesEnabled() {
+        if (authorizationSettings != null) {
+            return true;
+        }
         return authorizationServicesEnabled;
     }
 
@@ -353,4 +359,11 @@ public class ClientRepresentation {
         this.useTemplateMappers = useTemplateMappers;
     }
 
+    public ResourceServerRepresentation getAuthorizationSettings() {
+        return authorizationSettings;
+    }
+
+    public void setAuthorizationSettings(ResourceServerRepresentation authorizationSettings) {
+        this.authorizationSettings = authorizationSettings;
+    }
 }

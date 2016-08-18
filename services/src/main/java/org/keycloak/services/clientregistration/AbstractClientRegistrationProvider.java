@@ -21,6 +21,7 @@ import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.models.ClientInitialAccessModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientRegistrationTrustedHostModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.utils.ModelToRepresentation;
@@ -54,13 +55,19 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
 
             client = ModelToRepresentation.toRepresentation(clientModel);
 
-            String registrationAccessToken = ClientRegistrationTokenUtils.updateRegistrationAccessToken(session, clientModel);
+            client.setSecret(clientModel.getSecret());
 
+            String registrationAccessToken = ClientRegistrationTokenUtils.updateRegistrationAccessToken(session, clientModel);
             client.setRegistrationAccessToken(registrationAccessToken);
 
             if (auth.isInitialAccessToken()) {
                 ClientInitialAccessModel initialAccessModel = auth.getInitialAccessModel();
                 initialAccessModel.decreaseRemainingCount();
+            }
+
+            if (auth.isRegistrationHostTrusted()) {
+                ClientRegistrationTrustedHostModel trustedHost = auth.getTrustedHostModel();
+                trustedHost.decreaseRemainingCount();
             }
 
             event.client(client.getClientId()).success();

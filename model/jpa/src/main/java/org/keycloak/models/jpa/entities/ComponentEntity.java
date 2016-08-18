@@ -44,6 +44,7 @@ import java.util.Map;
 @NamedQueries({
         @NamedQuery(name="getComponents", query="select attr from ComponentEntity attr where attr.realm = :realm"),
         @NamedQuery(name="getComponentsByParentAndType", query="select attr from ComponentEntity attr where attr.realm = :realm and attr.providerType = :providerType and attr.parentId = :parentId"),
+        @NamedQuery(name="getComponentByParent", query="select attr from ComponentEntity attr where attr.realm = :realm and attr.parentId = :parentId"),
         @NamedQuery(name="getComponentIdsByParent", query="select attr.id from ComponentEntity attr where attr.realm = :realm and attr.parentId = :parentId"),
         @NamedQuery(name="deleteComponentByRealm", query="delete from  ComponentEntity c where c.realm = :realm"),
         @NamedQuery(name="deleteComponentByParent", query="delete from  ComponentEntity c where c.parentId = :parentId")

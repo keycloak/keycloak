@@ -21,6 +21,7 @@ import com.mongodb.DBObject;
 import com.mongodb.QueryBuilder;
 
 import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.common.util.StringPropertyReplacer;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.connections.mongo.api.context.MongoStoreInvocationContext;
 import org.keycloak.common.enums.SslRequired;
@@ -2127,6 +2128,19 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         List<ComponentModel> results = new LinkedList<>();
         for (ComponentEntity entity : realm.getComponentEntities()) {
             if (entity.getParentId().equals(parentId) && entity.getProviderType().equals(providerType)) {
+                ComponentModel model = entityToModel(entity);
+                results.add(model);
+            }
+
+        }
+        return results;
+    }
+
+    @Override
+    public List<ComponentModel> getComponents(String parentId) {
+        List<ComponentModel> results = new LinkedList<>();
+        for (ComponentEntity entity : realm.getComponentEntities()) {
+            if (entity.getParentId().equals(parentId)) {
                 ComponentModel model = entityToModel(entity);
                 results.add(model);
             }

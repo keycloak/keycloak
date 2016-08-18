@@ -291,6 +291,9 @@ public interface RealmModel extends RoleContainerModel {
     void removeComponent(ComponentModel component);
     void removeComponents(String parentId);
     List<ComponentModel> getComponents(String parentId, String providerType);
+
+    List<ComponentModel> getComponents(String parentId);
+
     List<ComponentModel> getComponents();
     ComponentModel getComponent(String id);
 

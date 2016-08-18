@@ -89,6 +89,7 @@
                 <local-cache name="sessions"/>
                 <local-cache name="offlineSessions"/>
                 <local-cache name="loginFailures"/>
+                <local-cache name="authorization"/>
                 <local-cache name="work"/>
             </cache-container>
             <xsl:apply-templates select="node()|@*"/>

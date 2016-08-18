@@ -107,6 +107,7 @@ public class CachedRealm extends AbstractRevisioned {
     protected List<RequiredCredentialModel> requiredCredentials;
     protected List<UserFederationProviderModel> userFederationProviders;
     protected MultivaluedHashMap<String, ComponentModel> componentsByParent = new MultivaluedHashMap<>();
+    protected MultivaluedHashMap<String, ComponentModel> componentsByParentAndType = new MultivaluedHashMap<>();
     protected Map<String, ComponentModel> components = new HashMap<>();
     protected MultivaluedHashMap<String, UserFederationMapperModel> userFederationMappers = new MultivaluedHashMap<String, UserFederationMapperModel>();
     protected Set<UserFederationMapperModel> userFederationMapperSet;
@@ -275,7 +276,10 @@ public class CachedRealm extends AbstractRevisioned {
         clientAuthenticationFlow = model.getClientAuthenticationFlow();
 
         for (ComponentModel component : model.getComponents()) {
-            componentsByParent.add(component.getParentId() + component.getProviderType(), component);
+            componentsByParentAndType.add(component.getParentId() + component.getProviderType(), component);
+        }
+        for (ComponentModel component : model.getComponents()) {
+            componentsByParent.add(component.getParentId(), component);
         }
         for (ComponentModel component : model.getComponents()) {
             components.put(component.getId(), component);
@@ -606,6 +610,10 @@ public class CachedRealm extends AbstractRevisioned {
 
     public MultivaluedHashMap<String, ComponentModel> getComponentsByParent() {
         return componentsByParent;
+    }
+
+    public MultivaluedHashMap<String, ComponentModel> getComponentsByParentAndType() {
+        return componentsByParentAndType;
     }
 
     public Map<String, ComponentModel> getComponents() {

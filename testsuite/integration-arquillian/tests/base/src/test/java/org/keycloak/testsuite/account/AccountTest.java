@@ -733,7 +733,7 @@ public class AccountTest extends TestRealmKeycloakTest {
         Assert.assertTrue(applicationsPage.isCurrent());
 
         Map<String, AccountApplicationsPage.AppEntry> apps = applicationsPage.getApplications();
-        Assert.assertEquals(3, apps.size());
+        Assert.assertEquals(4, apps.size());
 
         AccountApplicationsPage.AppEntry accountEntry = apps.get("Account");
         Assert.assertEquals(2, accountEntry.getRolesAvailable().size());

@@ -24,6 +24,7 @@ import org.keycloak.authorization.policy.provider.PolicyProvider;
 import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
 import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 
@@ -64,17 +65,19 @@ public final class AuthorizationProvider implements Provider {
     private final StoreFactory storeFactory;
     private final List<PolicyProviderFactory> policyProviderFactories;
     private final KeycloakSession keycloakSession;
+    private final RealmModel realm;
 
-    public AuthorizationProvider(KeycloakSession session, StoreFactory storeFactory, Executor scheduller) {
+    public AuthorizationProvider(KeycloakSession session, RealmModel realm, StoreFactory storeFactory, Executor scheduller) {
         this.keycloakSession = session;
+        this.realm = realm;
         this.storeFactory = storeFactory;
         this.scheduller = scheduller;
         this.policyProviderFactories = configurePolicyProviderFactories(session);
         this.policyEvaluator = new DefaultPolicyEvaluator(this, this.policyProviderFactories);
     }
 
-    public AuthorizationProvider(KeycloakSession session, StoreFactory storeFactory) {
-        this(session, storeFactory, Runnable::run);
+    public AuthorizationProvider(KeycloakSession session, RealmModel realm, StoreFactory storeFactory) {
+        this(session, realm, storeFactory, Runnable::run);
     }
 
     /**
@@ -118,6 +121,10 @@ public final class AuthorizationProvider implements Provider {
 
     public KeycloakSession getKeycloakSession() {
         return this.keycloakSession;
+    }
+
+    public RealmModel getRealm() {
+        return realm;
     }
 
     private List<PolicyProviderFactory> configurePolicyProviderFactories(KeycloakSession session) {
