@@ -41,7 +41,9 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import static org.keycloak.models.utils.ModelToRepresentation.toRepresentation;
@@ -158,10 +160,19 @@ public class ScopeService {
 
     @GET
     @Produces("application/json")
-    public Response findAll() {
+    public Response findAll(@QueryParam("name") String name,
+                            @QueryParam("first") Integer firstResult,
+                            @QueryParam("max") Integer maxResult) {
         this.auth.requireView();
+
+        Map<String, String[]> search = new HashMap<>();
+
+        if (name != null && !"".equals(name.trim())) {
+            search.put("name", new String[] {name});
+        }
+
         return Response.ok(
-                this.authorization.getStoreFactory().getScopeStore().findByResourceServer(this.resourceServer.getId()).stream()
+                this.authorization.getStoreFactory().getScopeStore().findByResourceServer(search, this.resourceServer.getId(), firstResult != null ? firstResult : -1, maxResult != null ? maxResult : -1).stream()
                         .map(scope -> toRepresentation(scope, this.authorization))
                         .collect(Collectors.toList()))
                 .build();
