@@ -22,6 +22,7 @@ import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * A {@link ScopeStore} is responsible to manage the persistence of {@link Scope} instances.
@@ -75,4 +76,14 @@ public interface ScopeStore {
      * @return a list of scopes that belong to the given resource server
      */
     List<Scope> findByResourceServer(String id);
+
+    /**
+     * Returns a list of {@link Scope} associated with a {@link ResourceServer} with the given <code>resourceServerId</code>.
+     *
+     * @param attributes a map holding the attributes that will be used as a filter
+     * @param resourceServerId the identifier of a resource server
+     *
+     * @return a list of scopes that belong to the given resource server
+     */
+    List<Scope> findByResourceServer(Map<String, String[]> attributes, String resourceServerId, int firstResult, int maxResult);
 }

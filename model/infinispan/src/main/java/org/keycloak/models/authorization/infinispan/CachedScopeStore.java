@@ -30,6 +30,7 @@ import org.keycloak.models.authorization.infinispan.entities.CachedScope;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 
 /**
@@ -112,6 +113,11 @@ public class CachedScopeStore implements ScopeStore {
     @Override
     public List<Scope> findByResourceServer(String id) {
         return getDelegate().findByResourceServer(id);
+    }
+
+    @Override
+    public List<Scope> findByResourceServer(Map<String, String[]> attributes, String resourceServerId, int firstResult, int maxResult) {
+        return getDelegate().findByResourceServer(attributes, resourceServerId, firstResult, maxResult);
     }
 
     private String getCacheKeyForScope(String id) {

@@ -27,11 +27,15 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
 import javax.persistence.Query;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Predicate;
+import javax.persistence.criteria.Root;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -96,6 +100,43 @@ public class JPAPolicyStore implements PolicyStore {
         Query query = getEntityManager().createQuery("from PolicyEntity where resourceServer.id = :serverId");
 
         query.setParameter("serverId", resourceServerId);
+
+        return query.getResultList();
+    }
+
+    @Override
+    public List<Policy> findByResourceServer(Map<String, String[]> attributes, String resourceServerId, int firstResult, int maxResult) {
+        CriteriaBuilder builder = entityManager.getCriteriaBuilder();
+        CriteriaQuery<PolicyEntity> querybuilder = builder.createQuery(PolicyEntity.class);
+        Root<PolicyEntity> root = querybuilder.from(PolicyEntity.class);
+        List<Predicate> predicates = new ArrayList();
+
+        predicates.add(builder.equal(root.get("resourceServer").get("id"), resourceServerId));
+
+        attributes.forEach((name, value) -> {
+            if ("permission".equals(name)) {
+                if (Boolean.valueOf(value[0])) {
+                    predicates.add(root.get("type").in("resource", "scope"));
+                } else {
+                    predicates.add(builder.not(root.get("type").in("resource", "scope")));
+                }
+            } else if ("id".equals(name)) {
+                predicates.add(root.get(name).in(value));
+            } else {
+                predicates.add(builder.like(builder.lower(root.get(name)), "%" + value[0].toLowerCase() + "%"));
+            }
+        });
+
+        querybuilder.where(predicates.toArray(new Predicate[predicates.size()])).orderBy(builder.asc(root.get("name")));
+
+        Query query = entityManager.createQuery(querybuilder);
+
+        if (firstResult != -1) {
+            query.setFirstResult(firstResult);
+        }
+        if (maxResult != -1) {
+            query.setMaxResults(maxResult);
+        }
 
         return query.getResultList();
     }
