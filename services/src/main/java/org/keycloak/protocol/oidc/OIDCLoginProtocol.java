@@ -77,6 +77,12 @@ public class OIDCLoginProtocol implements LoginProtocol {
     public static final String PROMPT_VALUE_CONSENT = "consent";
     public static final String PROMPT_VALUE_SELECT_ACCOUNT = "select_account";
 
+    // Client authentication methods
+    public static final String CLIENT_SECRET_BASIC = "client_secret_basic";
+    public static final String CLIENT_SECRET_POST = "client_secret_post";
+    public static final String CLIENT_SECRET_JWT = "client_secret_jwt";
+    public static final String PRIVATE_KEY_JWT = "private_key_jwt";
+
     private static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
 
     protected KeycloakSession session;

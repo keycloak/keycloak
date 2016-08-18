@@ -18,12 +18,15 @@
 package org.keycloak.protocol.oidc;
 
 import org.keycloak.OAuth2Constants;
+import org.keycloak.authentication.ClientAuthenticator;
+import org.keycloak.authentication.ClientAuthenticatorFactory;
 import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.endpoints.TokenEndpoint;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
+import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.IDToken;
 import org.keycloak.services.clientregistration.ClientRegistrationService;
 import org.keycloak.services.clientregistration.oidc.OIDCClientRegistrationProviderFactory;
@@ -33,6 +36,8 @@ import org.keycloak.wellknown.WellKnownProvider;
 
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
+
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -50,9 +55,6 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
     public static final List<String> DEFAULT_SUBJECT_TYPES_SUPPORTED = list("public");
 
     public static final List<String> DEFAULT_RESPONSE_MODES_SUPPORTED = list("query", "fragment", "form_post");
-
-    // Should be rather retrieved dynamically based on available ClientAuthenticator providers?
-    public static final List<String> DEFAULT_CLIENT_AUTH_METHODS_SUPPORTED = list("client_secret_basic", "client_secret_post", "private_key_jwt");
 
     public static final List<String> DEFAULT_CLIENT_AUTH_SIGNING_ALG_VALUES_SUPPORTED = list(Algorithm.RS256.toString());
 
@@ -93,7 +95,7 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
         config.setResponseModesSupported(DEFAULT_RESPONSE_MODES_SUPPORTED);
         config.setGrantTypesSupported(DEFAULT_GRANT_TYPES_SUPPORTED);
 
-        config.setTokenEndpointAuthMethodsSupported(DEFAULT_CLIENT_AUTH_METHODS_SUPPORTED);
+        config.setTokenEndpointAuthMethodsSupported(getClientAuthMethodsSupported());
         config.setTokenEndpointAuthSigningAlgValuesSupported(DEFAULT_CLIENT_AUTH_SIGNING_ALG_VALUES_SUPPORTED);
 
         config.setClaimsSupported(DEFAULT_CLAIMS_SUPPORTED);
@@ -118,6 +120,18 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
             s.add(v);
         }
         return s;
+    }
+
+    private List<String> getClientAuthMethodsSupported() {
+        List<String> result = new ArrayList<>();
+
+        List<ProviderFactory> providerFactories = session.getKeycloakSessionFactory().getProviderFactories(ClientAuthenticator.class);
+        for (ProviderFactory factory : providerFactories) {
+            ClientAuthenticatorFactory clientAuthFactory = (ClientAuthenticatorFactory) factory;
+            result.addAll(clientAuthFactory.getProtocolAuthenticatorMethods(OIDCLoginProtocol.LOGIN_PROTOCOL));
+        }
+
+        return result;
     }
 
 }

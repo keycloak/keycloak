@@ -15,25 +15,22 @@
  * limitations under the License.
  */
 
-package org.keycloak.protocol.oidc.representations;
-
-import com.fasterxml.jackson.annotation.JsonProperty;
-import org.keycloak.jose.jwk.JWK;
+package org.keycloak.models;
 
 /**
- * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
+ * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class JSONWebKeySet {
+public interface ClientRegistrationTrustedHostModel {
 
-    @JsonProperty("keys")
-    private JWK[] keys;
+    RealmModel getRealm();
 
-    public JWK[] getKeys() {
-        return keys;
-    }
+    String getHostName();
 
-    public void setKeys(JWK[] keys) {
-        this.keys = keys;
-    }
+    int getCount();
+    void setCount(int count);
+
+    int getRemainingCount();
+    void setRemainingCount(int remainingCount);
+    void decreaseRemainingCount();
 
 }

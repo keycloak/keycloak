@@ -20,7 +20,6 @@ package org.keycloak.authorization.admin.representation;
 
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.Decision.Effect;
-import org.keycloak.authorization.admin.util.Models;
 import org.keycloak.authorization.common.KeycloakIdentity;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.ResourceServer;
@@ -28,6 +27,7 @@ import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.policy.evaluation.Result;
 import org.keycloak.authorization.policy.evaluation.Result.PolicyResult;
 import org.keycloak.authorization.util.Permissions;
+import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
@@ -56,7 +56,7 @@ public class PolicyEvaluationResponse {
 
     }
 
-    public static PolicyEvaluationResponse build(PolicyEvaluationRequest evaluationRequest, List<Result> results, ResourceServer resourceServer, AuthorizationProvider authorization, KeycloakIdentity identity) {
+    public static PolicyEvaluationResponse build(List<Result> results, ResourceServer resourceServer, AuthorizationProvider authorization, KeycloakIdentity identity) {
         PolicyEvaluationResponse response = new PolicyEvaluationResponse();
         List<EvaluationResultRepresentation> resultsRep = new ArrayList<>();
         AccessToken accessToken = identity.getAccessToken();
@@ -80,21 +80,16 @@ public class PolicyEvaluationResponse {
             resultsRep.add(rep);
 
             if (result.getPermission().getResource() != null) {
-                rep.setResource(Models.toRepresentation(result.getPermission().getResource(), resourceServer, authorization));
+                rep.setResource(ModelToRepresentation.toRepresentation(result.getPermission().getResource(), resourceServer, authorization));
             } else {
                 ResourceRepresentation resource = new ResourceRepresentation();
 
-                resource.setName("Any Resource with Scopes " + result.getPermission().getScopes().stream().map(new Function<Scope, String>() {
-                    @Override
-                    public String apply(Scope scope) {
-                        return scope.getName();
-                    }
-                }).collect(Collectors.toList()));
+                resource.setName("Any Resource with Scopes " + result.getPermission().getScopes().stream().map(Scope::getName).collect(Collectors.toList()));
 
                 rep.setResource(resource);
             }
 
-            rep.setScopes(result.getPermission().getScopes().stream().map(scope -> Models.toRepresentation(scope, authorization)).collect(Collectors.toList()));
+            rep.setScopes(result.getPermission().getScopes().stream().map(scope -> ModelToRepresentation.toRepresentation(scope, authorization)).collect(Collectors.toList()));
 
             List<PolicyResultRepresentation> policies = new ArrayList<>();
 
@@ -163,7 +158,7 @@ public class PolicyEvaluationResponse {
 
                 if (policy.getStatus().equals(Effect.DENY)) {
                     Policy policyModel = authorization.getStoreFactory().getPolicyStore().findById(policy.getPolicy().getId());
-                    for (ScopeRepresentation scope : policyModel.getScopes().stream().map(scope -> Models.toRepresentation(scope, authorization)).collect(Collectors.toList())) {
+                    for (ScopeRepresentation scope : policyModel.getScopes().stream().map(scopeModel -> ModelToRepresentation.toRepresentation(scopeModel, authorization)).collect(Collectors.toList())) {
                         if (!policy.getScopes().contains(scope)) {
                             policy.getScopes().add(scope);
                         }
@@ -185,7 +180,7 @@ public class PolicyEvaluationResponse {
     private static PolicyResultRepresentation toRepresentation(PolicyResult policy, AuthorizationProvider authorization) {
         PolicyResultRepresentation policyResultRep = new PolicyResultRepresentation();
 
-        policyResultRep.setPolicy(Models.toRepresentation(policy.getPolicy(), authorization));
+        policyResultRep.setPolicy(ModelToRepresentation.toRepresentation(policy.getPolicy(), authorization));
         policyResultRep.setStatus(policy.getStatus());
         policyResultRep.setAssociatedPolicies(policy.getAssociatedPolicies().stream().map(result -> toRepresentation(result, authorization)).collect(Collectors.toList()));
 

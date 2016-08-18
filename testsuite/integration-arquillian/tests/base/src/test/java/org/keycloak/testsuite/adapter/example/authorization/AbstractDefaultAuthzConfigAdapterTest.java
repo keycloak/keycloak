@@ -21,12 +21,16 @@ import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Test;
+import org.keycloak.admin.client.resource.AuthorizationResource;
+import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.testsuite.adapter.AbstractExampleAdapterTest;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -67,6 +71,21 @@ public abstract class AbstractDefaultAuthzConfigAdapterTest extends AbstractExam
 
             assertTrue(this.driver.getPageSource().contains("Your permissions are"));
             assertTrue(this.driver.getPageSource().contains("Default Resource"));
+
+            boolean hasDefaultPermission = false;
+            boolean hasDefaultPolicy = false;
+
+            for (PolicyRepresentation policy : getAuthorizationResource().policies().policies()) {
+                if ("Default Policy".equals(policy.getName())) {
+                    hasDefaultPolicy = true;
+                }
+                if ("Default Permission".equals(policy.getName())) {
+                    hasDefaultPermission = true;
+                }
+            }
+
+            assertTrue(hasDefaultPermission);
+            assertTrue(hasDefaultPolicy);
         } finally {
             this.deployer.undeploy(RESOURCE_SERVER_ID);
         }
@@ -94,5 +113,15 @@ public abstract class AbstractDefaultAuthzConfigAdapterTest extends AbstractExam
 
         // enable authorization services in order to generate the default config and continue with tests
         clients.get(client.getId()).update(client);
+    }
+
+    private AuthorizationResource getAuthorizationResource() throws FileNotFoundException {
+        return getClientResource(RESOURCE_SERVER_ID).authorization();
+    }
+
+    private ClientResource getClientResource(String clientId) {
+        ClientsResource clients = this.realmsResouce().realm(REALM_NAME).clients();
+        ClientRepresentation resourceServer = clients.findByClientId(clientId).get(0);
+        return clients.get(resourceServer.getId());
     }
 }

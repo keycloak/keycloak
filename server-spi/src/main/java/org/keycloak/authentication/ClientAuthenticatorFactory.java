@@ -19,6 +19,7 @@ package org.keycloak.authentication;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.keycloak.models.ClientModel;
 import org.keycloak.provider.ProviderConfigProperty;
@@ -59,5 +60,13 @@ public interface ClientAuthenticatorFactory extends ProviderFactory<ClientAuthen
      * @return
      */
     Map<String, Object> getAdapterConfiguration(ClientModel client);
+
+    /**
+     * Get authentication methods for the specified protocol
+     *
+     * @param loginProtocol corresponds to {@link org.keycloak.protocol.LoginProtocolFactory#getId}
+     * @return name of supported client authenticator methods in the protocol specific "language"
+     */
+    Set<String> getProtocolAuthenticatorMethods(String loginProtocol);
 
 }

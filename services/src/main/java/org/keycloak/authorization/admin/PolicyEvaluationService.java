@@ -90,15 +90,15 @@ public class PolicyEvaluationService {
     public void evaluate(PolicyEvaluationRequest evaluationRequest, @Suspended AsyncResponse asyncResponse) {
         KeycloakIdentity identity = createIdentity(evaluationRequest);
         EvaluationContext evaluationContext = createEvaluationContext(evaluationRequest, identity);
-        authorization.evaluators().from(createPermissions(evaluationRequest, evaluationContext, authorization), evaluationContext).evaluate(createDecisionCollector(evaluationRequest, authorization, identity, asyncResponse));
+        authorization.evaluators().from(createPermissions(evaluationRequest, evaluationContext, authorization), evaluationContext).evaluate(createDecisionCollector(authorization, identity, asyncResponse));
     }
 
-    private DecisionResultCollector createDecisionCollector(PolicyEvaluationRequest evaluationRequest, AuthorizationProvider authorization, KeycloakIdentity identity, AsyncResponse asyncResponse) {
+    private DecisionResultCollector createDecisionCollector(AuthorizationProvider authorization, KeycloakIdentity identity, AsyncResponse asyncResponse) {
         return new DecisionResultCollector() {
             @Override
             protected void onComplete(List<Result> results) {
                 try {
-                    asyncResponse.resume(Response.ok(PolicyEvaluationResponse.build(evaluationRequest,  results, resourceServer,  authorization, identity)).build());
+                    asyncResponse.resume(Response.ok(PolicyEvaluationResponse.build(results, resourceServer,  authorization, identity)).build());
                 } catch (Throwable cause) {
                     asyncResponse.resume(cause);
                 }

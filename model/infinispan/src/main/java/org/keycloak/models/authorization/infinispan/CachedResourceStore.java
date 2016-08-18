@@ -270,7 +270,7 @@ public class CachedResourceStore implements ResourceStore {
                 if (this.updated == null) {
                     this.updated = getDelegate().findById(getId());
                     if (this.updated == null) throw new IllegalStateException("Not found in database");
-                    transaction.whenCommit(() -> cache.evict(getCacheKeyForResource(getId())));
+                    transaction.whenCommit(() -> cache.remove(getCacheKeyForResource(getId())));
                 }
 
                 return this.updated;

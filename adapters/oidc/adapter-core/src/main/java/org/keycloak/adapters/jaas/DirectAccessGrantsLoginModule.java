@@ -43,6 +43,7 @@ import org.keycloak.common.VerificationException;
 import org.keycloak.adapters.authentication.ClientCredentialsProviderUtils;
 import org.keycloak.constants.ServiceUrlConstants;
 import org.keycloak.representations.AccessTokenResponse;
+import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.common.util.KeycloakUriBuilder;
 
@@ -102,9 +103,9 @@ public class DirectAccessGrantsLoginModule extends AbstractKeycloakLoginModule {
             StringBuilder errorBuilder = new StringBuilder("Login failed. Invalid status: " + status);
             if (entity != null) {
                 InputStream is = entity.getContent();
-                Map<String, String> errors = (Map<String, String>) JsonSerialization.readValue(is, Map.class);
-                errorBuilder.append(", OAuth2 error. Error: " + errors.get(OAuth2Constants.ERROR))
-                        .append(", Error description: " + errors.get(OAuth2Constants.ERROR_DESCRIPTION));
+                OAuth2ErrorRepresentation errorRep = JsonSerialization.readValue(is, OAuth2ErrorRepresentation.class);
+                errorBuilder.append(", OAuth2 error. Error: " + errorRep.getError())
+                        .append(", Error description: " + errorRep.getErrorDescription());
             }
             String error = errorBuilder.toString();
             log.warn(error);
@@ -161,9 +162,9 @@ public class DirectAccessGrantsLoginModule extends AbstractKeycloakLoginModule {
                     if (entity != null) {
                         InputStream is = entity.getContent();
                         if (status == 400) {
-                            Map<String, String> errors = (Map<String, String>) JsonSerialization.readValue(is, Map.class);
-                            errorBuilder.append(", OAuth2 error. Error: " + errors.get(OAuth2Constants.ERROR))
-                                    .append(", Error description: " + errors.get(OAuth2Constants.ERROR_DESCRIPTION));
+                            OAuth2ErrorRepresentation errorRep = JsonSerialization.readValue(is, OAuth2ErrorRepresentation.class);
+                            errorBuilder.append(", OAuth2 error. Error: " + errorRep.getError())
+                                    .append(", Error description: " + errorRep.getErrorDescription());
 
                         } else {
                             if (is != null) is.close();
