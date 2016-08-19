@@ -6,6 +6,7 @@ installed on your machine and available in your PATH before you can continue:
 
 * Java JDK 8
 * Apache Maven 3.1.1 or higher
+* Git
 
 You can obtain the code by cloning the repository at {{book.quickstartRepo}}. Follow these steps to download the code, build it,
 and deploy it. Make sure your {{book.appServer}} application server is started before you run these steps.
@@ -14,7 +15,7 @@ and deploy it. Make sure your {{book.appServer}} application server is started b
 [source, subs="attributes"]
 ----
 $ git clone {{book.quickstartRepo}}
-$ cd rh-sso-quickstarts/app-profile-jee-vanilla
+$ cd redhat-sso-quickstarts/app-profile-jee-vanilla
 $ mvn clean wildfly:deploy
 ----
 
