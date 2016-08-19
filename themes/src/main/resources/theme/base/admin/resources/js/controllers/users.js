@@ -596,6 +596,9 @@ module.controller('UserFederationCtrl', function($scope, $location, $route, real
     console.log('UserFederationCtrl ++++****');
     $scope.realm = realm;
     $scope.providers = serverInfo.componentTypes['org.keycloak.storage.UserStorageProvider'];
+
+    if (!$scope.providers) $scope.providers = [];
+    
     for (var i = 0; i < $scope.providers.length; i++) {
         $scope.providers[i].isUserFederationProvider = false;
     }

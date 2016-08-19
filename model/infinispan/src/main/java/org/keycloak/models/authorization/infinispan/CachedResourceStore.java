@@ -32,6 +32,7 @@ import org.keycloak.models.authorization.infinispan.entities.CachedResource;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -124,6 +125,11 @@ public class CachedResourceStore implements ResourceStore {
     @Override
     public List<Resource> findByResourceServer(String resourceServerId) {
         return getDelegate().findByResourceServer(resourceServerId).stream().map(resource -> findById(resource.getId())).collect(Collectors.toList());
+    }
+
+    @Override
+    public List<Resource> findByResourceServer(Map<String, String[]> attributes, String resourceServerId, int firstResult, int maxResult) {
+        return getDelegate().findByResourceServer(attributes, resourceServerId, firstResult, maxResult);
     }
 
     @Override
