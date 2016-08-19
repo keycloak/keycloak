@@ -247,7 +247,7 @@ By default message properties files should be encoded using ISO-8859-1. It's als
 
 [source]
 ----
-# encoding=UTF-8
+# encoding: UTF-8
 usernameOrEmail=....
 ----
 
