@@ -63,9 +63,9 @@
                     </div>
                     <div class="col-md-2 select-kc">
                         <select name="expirationUnit" data-ng-model="eventsConfig.expirationUnit" >
-                            <option>{{:: 'minutes' | translate}}</option>
-                            <option>{{:: 'hours' | translate}}</option>
-                            <option>{{:: 'days' | translate}}</option>
+                            <option value="Minutes">{{:: 'minutes' | translate}}</option>
+                            <option value="Hours">{{:: 'hours' | translate}}</option>
+                            <option value="Days">{{:: 'days' | translate}}</option>
                         </select>
                     <span tooltip-trigger="mouseover mouseout" tooltip-placement="right" tooltip="{{:: 'events.expiration.tooltip' | translate}}" class="fa fa-info-circle"></span>
                     </div>
