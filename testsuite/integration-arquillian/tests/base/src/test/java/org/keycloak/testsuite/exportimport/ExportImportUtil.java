@@ -82,6 +82,10 @@ public class ExportImportUtil {
         Assert.assertTrue(realm.isVerifyEmail());
         Assert.assertEquals((Integer)3600000, realm.getOfflineSessionIdleTimeout());
         Assert.assertEquals((Integer)1500, realm.getAccessTokenLifespanForImplicitFlow());
+        Assert.assertEquals((Integer)1800, realm.getSsoSessionIdleTimeout());
+        Assert.assertEquals((Integer)36000, realm.getSsoSessionMaxLifespan());
+        Assert.assertEquals((Integer)3600, realm.getSsoSessionIdleTimeoutRememberMe());
+        Assert.assertEquals((Integer)172800, realm.getSsoSessionMaxLifespanRememberMe());
 
         Set<String> creds = realm.getRequiredCredentials();
         Assert.assertEquals(1, creds.size());

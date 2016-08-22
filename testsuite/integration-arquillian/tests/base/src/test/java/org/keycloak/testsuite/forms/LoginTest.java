@@ -30,6 +30,7 @@ import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.BrowserSecurityHeaders;
 import org.keycloak.models.Constants;
+import org.keycloak.models.utils.SessionTimeoutHelper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
@@ -526,8 +527,14 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
     }
 
     private void setRememberMe(boolean enabled) {
+        this.setRememberMe(enabled, null, null);
+    }
+
+    private void setRememberMe(boolean enabled, Integer idleTimeout, Integer maxLifespan) {
         RealmRepresentation rep = adminClient.realm("test").toRepresentation();
         rep.setRememberMe(enabled);
+        rep.setSsoSessionIdleTimeoutRememberMe(idleTimeout);
+        rep.setSsoSessionMaxLifespanRememberMe(maxLifespan);
         adminClient.realm("test").update(rep);
     }
 
@@ -747,6 +754,64 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
         appPage.assertCurrent();
 
         events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
+    }
+
+    @Test
+    public void loginRememberMeExpiredIdle() throws Exception {
+        setRememberMe(true, 1, null);
+
+        try {
+            // login form shown after redirect from app
+            oauth.clientId("test-app");
+            oauth.redirectUri(OAuthClient.APP_ROOT + "/auth");
+            oauth.openLoginForm();
+
+            assertTrue(loginPage.isCurrent());
+            loginPage.setRememberMe(true);
+            loginPage.login("test-user@localhost", "password");
+
+            // sucessful login - app page should be on display.
+            events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
+            appPage.assertCurrent();
+
+            // expire idle timeout using the timeout window.
+            setTimeOffset(2 + SessionTimeoutHelper.IDLE_TIMEOUT_WINDOW_SECONDS);
+
+            // trying to open the account page with an expired idle timeout should redirect back to the login page.
+            appPage.openAccount();
+            loginPage.assertCurrent();
+        } finally {
+            setRememberMe(false);
+        }
+    }
+
+    @Test
+    public void loginRememberMeExpiredMaxLifespan() throws Exception {
+        setRememberMe(true, null, 1);
+
+        try {
+            // login form shown after redirect from app
+            oauth.clientId("test-app");
+            oauth.redirectUri(OAuthClient.APP_ROOT + "/auth");
+            oauth.openLoginForm();
+
+            assertTrue(loginPage.isCurrent());
+            loginPage.setRememberMe(true);
+            loginPage.login("test-user@localhost", "password");
+
+            // sucessful login - app page should be on display.
+            events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
+            appPage.assertCurrent();
+
+            // expire the max lifespan.
+            setTimeOffset(2);
+
+            // trying to open the account page with an expired lifespan should redirect back to the login page.
+            appPage.openAccount();
+            loginPage.assertCurrent();
+        } finally {
+            setRememberMe(false);
+        }
     }
 
 }

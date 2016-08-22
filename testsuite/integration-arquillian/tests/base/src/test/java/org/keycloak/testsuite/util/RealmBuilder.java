@@ -198,6 +198,16 @@ public class RealmBuilder {
         return this;
     }
 
+    public RealmBuilder ssoSessionIdleTimeoutRememberMe(int ssoSessionIdleTimeoutRememberMe){
+        rep.setSsoSessionIdleTimeoutRememberMe(ssoSessionIdleTimeoutRememberMe);
+        return this;
+    }
+
+    public RealmBuilder ssoSessionMaxLifespanRememberMe(int ssoSessionMaxLifespanRememberMe){
+        rep.setSsoSessionMaxLifespanRememberMe(ssoSessionMaxLifespanRememberMe);
+        return this;
+    }
+
     public RealmBuilder accessCodeLifespanUserAction(int accessCodeLifespanUserAction) {
         rep.setAccessCodeLifespanUserAction(accessCodeLifespanUserAction);
         return this;
