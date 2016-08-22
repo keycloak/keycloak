@@ -26,6 +26,9 @@ import org.keycloak.testsuite.console.page.AdminConsole;
 import org.keycloak.testsuite.console.page.AdminConsoleRealm;
 import org.keycloak.testsuite.console.page.AdminConsoleRealm.ConfigureMenu;
 import org.keycloak.testsuite.console.page.AdminConsoleRealm.ManageMenu;
+import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
+import org.keycloak.testsuite.auth.page.login.Login;
+import org.keycloak.testsuite.auth.page.login.LoginForm;
 import org.keycloak.testsuite.console.page.fragment.AdminConsoleAlert;
 import org.keycloak.testsuite.console.page.fragment.ModalDialog;
 import org.openqa.selenium.support.FindBy;
@@ -77,7 +80,11 @@ public abstract class AbstractConsoleTest extends AbstractAuthTest {
     }
 
     public void loginToMasterRealmAdminConsoleAs(UserRepresentation user) {
-        loginToAdminConsoleAs(adminConsolePage, loginPage, user);
+        loginToAdminConsoleAs(adminConsolePage, loginPage, user, false);
+    }
+
+    public void loginToMasterRealmAdminConsoleAs(UserRepresentation user, boolean rememberMe) {
+        loginToAdminConsoleAs(adminConsolePage, loginPage, user, rememberMe);
     }
 
     public void logoutFromMasterRealmConsole() {
@@ -85,17 +92,23 @@ public abstract class AbstractConsoleTest extends AbstractAuthTest {
     }
 
     public void loginToTestRealmConsoleAs(UserRepresentation user) {
-        loginToAdminConsoleAs(testRealmAdminConsolePage, testRealmLoginPage, user);
+        loginToAdminConsoleAs(user, testRealmLoginPage, user, false);
+    }
+
+    public void loginToTestRealmConsoleAs(UserRepresentation user, boolean rememberMe) {
+        loginToAdminConsoleAs(testRealmAdminConsolePage, testRealmLoginPage, user, rememberMe);
     }
 
     public void logoutFromTestRealmConsole() {
         logoutFromAdminConsole(testRealmAdminConsolePage);
     }
 
-    public void loginToAdminConsoleAs(AdminConsole adminConsole, Login login, UserRepresentation user) {
+    public void loginToAdminConsoleAs(AdminConsole adminConsole, Login login, UserRepresentation user, boolean rememberMe) {
         adminConsole.navigateTo();
         assertCurrentUrlStartsWithLoginUrlOf(adminConsole);
-        login.form().login(user);
+        LoginForm loginForm = login.form();
+        loginForm.rememberMe(rememberMe);
+        loginForm.login(user);
         assertCurrentUrlStartsWith(adminConsole);
     }
 

@@ -79,6 +79,7 @@ public class CachedRealm extends AbstractRevisioned {
     protected boolean revokeRefreshToken;
     protected int ssoSessionIdleTimeout;
     protected int ssoSessionMaxLifespan;
+    protected int ssoSessionMaxLifespanRememberMe;
     protected int offlineSessionIdleTimeout;
     protected int accessTokenLifespan;
     protected int accessTokenLifespanForImplicitFlow;
@@ -181,6 +182,7 @@ public class CachedRealm extends AbstractRevisioned {
         revokeRefreshToken = model.isRevokeRefreshToken();
         ssoSessionIdleTimeout = model.getSsoSessionIdleTimeout();
         ssoSessionMaxLifespan = model.getSsoSessionMaxLifespan();
+        ssoSessionMaxLifespanRememberMe = model.getSsoSessionMaxLifespanRememberMe();
         offlineSessionIdleTimeout = model.getOfflineSessionIdleTimeout();
         accessTokenLifespan = model.getAccessTokenLifespan();
         accessTokenLifespanForImplicitFlow = model.getAccessTokenLifespanForImplicitFlow();
@@ -390,6 +392,10 @@ public class CachedRealm extends AbstractRevisioned {
 
     public int getSsoSessionMaxLifespan() {
         return ssoSessionMaxLifespan;
+    }
+
+    public int getSsoSessionMaxLifespanRememberMe() {
+        return ssoSessionMaxLifespanRememberMe;
     }
 
     public int getOfflineSessionIdleTimeout() {

@@ -446,6 +446,16 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
     }
 
     @Override
+    public int getSsoSessionMaxLifespanRememberMe() {
+        return realm.getSsoSessionMaxLifespanRememberMe();
+    }
+
+    @Override
+    public void setSsoSessionMaxLifespanRememberMe(int seconds) {
+        realm.setSsoSessionMaxLifespanRememberMe(seconds);
+    }
+
+    @Override
     public int getOfflineSessionIdleTimeout() {
         return realm.getOfflineSessionIdleTimeout();
     }

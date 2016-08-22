@@ -121,6 +121,11 @@ public class Jetty9Test {
         testStrategy.testLoginSSOMax();
     }
 
+    @Test
+    public void testLoginSSOWithRememberMeMax() throws Exception {
+        testStrategy.testLoginSSOMaxWithRememberMe();
+    }
+
     /**
      * KEYCLOAK-518
      * @throws Exception

@@ -144,6 +144,17 @@ public class OAuthClient {
         return new AuthorizationEndpointResponse(this);
     }
 
+    public AuthorizationEndpointResponse doRememberMeLogin(String username, String password) {
+        openLoginForm();
+
+        driver.findElement(By.id("username")).sendKeys(username);
+        driver.findElement(By.id("password")).sendKeys(password);
+        driver.findElement(By.id("rememberMe")).click();
+        driver.findElement(By.name("login")).click();
+
+        return new AuthorizationEndpointResponse(this);
+    }
+
     public void doLoginGrant(String username, String password) {
         openLoginForm();
         String src = driver.getPageSource();
