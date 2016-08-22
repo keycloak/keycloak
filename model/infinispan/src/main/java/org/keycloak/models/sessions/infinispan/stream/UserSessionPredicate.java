@@ -47,6 +47,10 @@ public class UserSessionPredicate implements Predicate<Map.Entry<String, Session
 
     private Integer expiredRefresh;
 
+    private Integer expiredRememberMe;
+
+    private Integer expiredRefreshRememberMe;
+
     private String brokerSessionId;
     private String brokerUserId;
 
@@ -82,10 +86,17 @@ public class UserSessionPredicate implements Predicate<Map.Entry<String, Session
     }
 
     public UserSessionPredicate expired(Integer expired, Integer expiredRefresh) {
+        return this.expired(expired, expiredRefresh, null, null);
+    }
+
+    public UserSessionPredicate expired(Integer expired, Integer expiredRefresh, Integer expiredRememberMe, Integer expiredRefreshRememberMe) {
         this.expired = expired;
         this.expiredRefresh = expiredRefresh;
+        this.expiredRememberMe = expiredRememberMe;
+        this.expiredRefreshRememberMe = expiredRefreshRememberMe;
         return this;
     }
+
 
     public UserSessionPredicate brokerSessionId(String id) {
         this.brokerSessionId = id;
@@ -121,14 +132,20 @@ public class UserSessionPredicate implements Predicate<Map.Entry<String, Session
             return false;
         }
 
-        if (expired != null && expiredRefresh != null && entity.getStarted() > expired && entity.getLastSessionRefresh() > expiredRefresh) {
-            return false;
+        if (entity.isRememberMe()) {
+            if (expiredRememberMe != null && expiredRefreshRememberMe != null && entity.getStarted() > expiredRefreshRememberMe && entity.getLastSessionRefresh() > expiredRefreshRememberMe) {
+                return false;
+            }
+        }
+        else {
+            if (expired != null && expiredRefresh != null && entity.getStarted() > expired && entity.getLastSessionRefresh() > expiredRefresh) {
+                return false;
+            }
         }
 
         if (expired == null && expiredRefresh != null && entity.getLastSessionRefresh() > expiredRefresh) {
             return false;
         }
-
         return true;
     }
 

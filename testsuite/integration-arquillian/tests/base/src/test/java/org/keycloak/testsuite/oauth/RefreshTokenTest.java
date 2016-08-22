@@ -593,6 +593,64 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
     }
 
     @Test
+    public void testUserSessionRefreshAndIdleRememberMe() throws Exception {
+        RealmResource testRealm = adminClient.realm("test");
+        RealmRepresentation testRealmRep = testRealm.toRepresentation();
+        Boolean previousRememberMe = testRealmRep.isRememberMe();
+        int originalIdleRememberMe = testRealmRep.getSsoSessionIdleTimeoutRememberMe();
+
+        try {
+            testRealmRep.setRememberMe(true);
+            testRealm.update(testRealmRep);
+
+            oauth.doRememberMeLogin("test-user@localhost", "password");
+
+            EventRepresentation loginEvent = events.expectLogin().assertEvent();
+
+            String sessionId = loginEvent.getSessionId();
+
+            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+            OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+
+            events.poll();
+
+            String refreshId = oauth.parseRefreshToken(tokenResponse.getRefreshToken()).getId();
+            int last = testingClient.testing().getLastSessionRefresh("test", sessionId, false);
+
+            setTimeOffset(2);
+            tokenResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken(), "password");
+            oauth.verifyToken(tokenResponse.getAccessToken());
+            oauth.parseRefreshToken(tokenResponse.getRefreshToken());
+            assertEquals(200, tokenResponse.getStatusCode());
+
+            int next = testingClient.testing().getLastSessionRefresh("test", sessionId, false);
+            Assert.assertNotEquals(last, next);
+
+            testRealmRep.setSsoSessionIdleTimeoutRememberMe(1);
+            testRealm.update(testRealmRep);
+
+            events.clear();
+            // Needs to add some additional time due the tollerance allowed by IDLE_TIMEOUT_WINDOW_SECONDS
+            setTimeOffset(6 + SessionTimeoutHelper.IDLE_TIMEOUT_WINDOW_SECONDS);
+            tokenResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken(), "password");
+
+            // test idle remember me timeout
+            assertEquals(400, tokenResponse.getStatusCode());
+            assertNull(tokenResponse.getAccessToken());
+            assertNull(tokenResponse.getRefreshToken());
+
+            events.expectRefresh(refreshId, sessionId).error(Errors.INVALID_TOKEN);
+            events.clear();
+
+        } finally {
+            testRealmRep.setSsoSessionIdleTimeoutRememberMe(originalIdleRememberMe);
+            testRealmRep.setRememberMe(previousRememberMe);
+            testRealm.update(testRealmRep);
+            setTimeOffset(0);
+        }
+    }
+
+    @Test
     public void refreshTokenUserSessionMaxLifespan() throws Exception {
         oauth.doLogin("test-user@localhost", "password");
 
@@ -626,6 +684,57 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
         events.clear();
 
         setTimeOffset(0);
+    }
+
+    /**
+     * KEYCLOAK-1267
+     * @throws Exception
+     */
+    @Test
+    public void refreshTokenUserSessionMaxLifespanWithRememberMe() throws Exception {
+
+        RealmResource testRealm = adminClient.realm("test");
+        RealmRepresentation testRealmRep = testRealm.toRepresentation();
+        Boolean previousRememberMe = testRealmRep.isRememberMe();
+        int previousSsoMaxLifespanRememberMe = testRealmRep.getSsoSessionMaxLifespanRememberMe();
+
+        try {
+            testRealmRep.setRememberMe(true);
+            testRealm.update(testRealmRep);
+
+            oauth.doRememberMeLogin("test-user@localhost", "password");
+
+            EventRepresentation loginEvent = events.expectLogin().assertEvent();
+
+            String sessionId = loginEvent.getSessionId();
+
+            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+            OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+
+            events.poll();
+
+            String refreshId = oauth.parseRefreshToken(tokenResponse.getRefreshToken()).getId();
+
+            testRealmRep.setSsoSessionMaxLifespanRememberMe(1);
+            testRealm.update(testRealmRep);
+
+            setTimeOffset(2);
+
+            tokenResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken(), "password");
+
+            assertEquals(400, tokenResponse.getStatusCode());
+            assertNull(tokenResponse.getAccessToken());
+            assertNull(tokenResponse.getRefreshToken());
+
+            events.expectRefresh(refreshId, sessionId).error(Errors.INVALID_TOKEN);
+            events.clear();
+
+        } finally {
+            testRealmRep.setSsoSessionMaxLifespanRememberMe(previousSsoMaxLifespanRememberMe);
+            testRealmRep.setRememberMe(previousRememberMe);
+            testRealm.update(testRealmRep);
+            setTimeOffset(0);
+        }
     }
 
     @Test

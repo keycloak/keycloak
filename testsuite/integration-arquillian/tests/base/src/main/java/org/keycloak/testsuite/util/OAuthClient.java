@@ -227,12 +227,26 @@ public class OAuthClient {
         return doLogin(user.getUsername(), getPasswordOf(user));
     }
 
+    public AuthorizationEndpointResponse doRememberMeLogin(String username, String password) {
+        openLoginForm();
+        fillLoginForm(username, password, true);
+
+        return new AuthorizationEndpointResponse(this);
+    }
+
     public void fillLoginForm(String username, String password) {
+        this.fillLoginForm(username, password, false);
+    }
+
+    public void fillLoginForm(String username, String password, boolean rememberMe) {
         WaitUtils.waitForPageToLoad();
         String src = driver.getPageSource();
         try {
             driver.findElement(By.id("username")).sendKeys(username);
             driver.findElement(By.id("password")).sendKeys(password);
+            if (rememberMe) {
+                driver.findElement(By.id("rememberMe")).click();
+            }
             driver.findElement(By.name("login")).click();
         } catch (Throwable t) {
             System.err.println(src);
