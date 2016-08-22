@@ -470,6 +470,9 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
     private void removeExpiredUserSessions(RealmModel realm) {
         int expired = Time.currentTime() - realm.getSsoSessionMaxLifespan();
         int expiredRefresh = Time.currentTime() - realm.getSsoSessionIdleTimeout() - SessionTimeoutHelper.PERIODIC_CLEANER_IDLE_TIMEOUT_WINDOW_SECONDS;
+        int expiredRememberMe = Time.currentTime() - (realm.getSsoSessionMaxLifespanRememberMe() > 0 ? realm.getSsoSessionMaxLifespanRememberMe() : realm.getSsoSessionMaxLifespan());
+        int expiredRefreshRememberMe = Time.currentTime() - (realm.getSsoSessionIdleTimeoutRememberMe() > 0 ? realm.getSsoSessionIdleTimeoutRememberMe() : realm.getSsoSessionIdleTimeout()) -
+                SessionTimeoutHelper.PERIODIC_CLEANER_IDLE_TIMEOUT_WINDOW_SECONDS;
 
         FuturesHelper futures = new FuturesHelper();
 
@@ -484,7 +487,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         localCacheStoreIgnore
                 .entrySet()
                 .stream()
-                .filter(UserSessionPredicate.create(realm.getId()).expired(expired, expiredRefresh))
+                .filter(UserSessionPredicate.create(realm.getId()).expired(expired, expiredRefresh, expiredRememberMe, expiredRefreshRememberMe))
                 .map(Mappers.userSessionEntity())
                 .forEach(new Consumer<UserSessionEntity>() {
 

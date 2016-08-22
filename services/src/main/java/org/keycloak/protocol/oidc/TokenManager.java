@@ -656,13 +656,15 @@ public class TokenManager {
 
         int expiration;
         if (tokenLifespan == -1) {
-            expiration = userSession.getStarted() + realm.getSsoSessionMaxLifespan();
+            expiration = userSession.getStarted() + (userSession.isRememberMe() && realm.getSsoSessionMaxLifespanRememberMe() > 0 ?
+                    realm.getSsoSessionMaxLifespanRememberMe() : realm.getSsoSessionMaxLifespan());
         } else {
             expiration = Time.currentTime() + tokenLifespan;
         }
 
         if (!userSession.isOffline()) {
-            int sessionExpires = userSession.getStarted() + realm.getSsoSessionMaxLifespan();
+            int sessionExpires = userSession.getStarted() + (userSession.isRememberMe() && realm.getSsoSessionMaxLifespanRememberMe() > 0 ?
+                    realm.getSsoSessionMaxLifespanRememberMe() : realm.getSsoSessionMaxLifespan());
             expiration = expiration <= sessionExpires ? expiration : sessionExpires;
         }
 
@@ -756,8 +758,10 @@ public class TokenManager {
         }
 
         private int getRefreshExpiration() {
-            int sessionExpires = userSession.getStarted() + realm.getSsoSessionMaxLifespan();
-            int expiration = Time.currentTime() + realm.getSsoSessionIdleTimeout();
+            int sessionExpires = userSession.getStarted() + (userSession.isRememberMe() && realm.getSsoSessionMaxLifespanRememberMe() > 0 ?
+                    realm.getSsoSessionMaxLifespanRememberMe() : realm.getSsoSessionMaxLifespan());
+            int expiration = Time.currentTime() + (userSession.isRememberMe() && realm.getSsoSessionIdleTimeoutRememberMe() > 0 ?
+                    realm.getSsoSessionIdleTimeoutRememberMe() : realm.getSsoSessionIdleTimeout());
             return expiration <= sessionExpires ? expiration : sessionExpires;
         }
 
