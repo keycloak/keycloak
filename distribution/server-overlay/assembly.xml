@@ -94,6 +94,11 @@
             <outputDirectory>bin</outputDirectory>
             <destName>add-user-keycloak.bat</destName>
         </file>
+        <file>
+            <source>${project.build.directory}/cli/default-keycloak-subsys-config.cli</source>
+            <outputDirectory>bin</outputDirectory>
+            <destName>default-keycloak-subsys-config.cli</destName>
+        </file>
     </files>
 
 </assembly>

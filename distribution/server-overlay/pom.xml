@@ -46,6 +46,25 @@
                 <artifactId>maven-dependency-plugin</artifactId>
                 <executions>
                     <execution>
+                        <id>unpack</id>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>unpack</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>org.keycloak</groupId>
+                                    <artifactId>keycloak-wildfly-server-subsystem</artifactId>
+                                    <version>${project.version}</version>
+                                    <type>jar</type>
+                                    <includes>cli/*.cli</includes>
+                                    <outputDirectory>${project.build.directory}</outputDirectory>
+                                </artifactItem>
+                            </artifactItems>
+                        </configuration>
+                    </execution>
+                    <execution>
                         <id>unpack-server-dist</id>
                         <phase>prepare-package</phase>
                         <goals>
