@@ -12,10 +12,10 @@
 /subsystem=keycloak-server/spi=connectionsHttpClient/:add
 /subsystem=keycloak-server/spi=connectionsHttpClient/provider=default/:add(enabled=true)
 /subsystem=keycloak-server/spi=connectionsJpa/:add
-/subsystem=keycloak-server/spi=connectionsJpa/provider=default/:add(properties={dataSource => "java:jboss/datasources/KeycloakDS",databaseSchema => "update"},enabled=true)
+/subsystem=keycloak-server/spi=connectionsJpa/provider=default/:add(properties={dataSource => "java:jboss/datasources/KeycloakDS",initializeEmpty => "true",migrationStrategy => "update",migrationExport => "${jboss.home.dir}/keycloak-database-update.sql"},enabled=true)
 /subsystem=keycloak-server/spi=realmCache/:add
 /subsystem=keycloak-server/spi=realmCache/provider=default/:add(enabled=true)
 /subsystem=keycloak-server/spi=connectionsInfinispan/:add(default-provider=default)
 /subsystem=keycloak-server/spi=connectionsInfinispan/provider=default/:add(properties={cacheContainer => "java:comp/env/infinispan/Keycloak"},enabled=true)
-/subsystem=keycloak-server/spi=jta-lookup/:add
+/subsystem=keycloak-server/spi=jta-lookup/:add(default-provider=${keycloak.jta.lookup.provider:jboss})
 /subsystem=keycloak-server/spi=jta-lookup/provider=jboss/:add(enabled=true)
