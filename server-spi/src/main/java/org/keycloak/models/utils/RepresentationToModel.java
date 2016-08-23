@@ -943,7 +943,6 @@ public class RepresentationToModel {
         } else {
             client.setNodeReRegistrationTimeout(-1);
         }
-        client.updateClient();
 
         if (resourceRep.getNotBefore() != null) {
             client.setNotBefore(resourceRep.getNotBefore());
@@ -1043,6 +1042,8 @@ public class RepresentationToModel {
         if (resourceRep.isUseTemplateMappers() != null) client.setUseTemplateMappers(resourceRep.isUseTemplateMappers());
         else client.setUseTemplateMappers(resourceRep.getClientTemplate() != null);
 
+        client.updateClient();
+
         return client;
     }
 
@@ -1066,7 +1067,6 @@ public class RepresentationToModel {
         if (rep.isSurrogateAuthRequired() != null) resource.setSurrogateAuthRequired(rep.isSurrogateAuthRequired());
         if (rep.getNodeReRegistrationTimeout() != null) resource.setNodeReRegistrationTimeout(rep.getNodeReRegistrationTimeout());
         if (rep.getClientAuthenticatorType() != null) resource.setClientAuthenticatorType(rep.getClientAuthenticatorType());
-        resource.updateClient();
 
         if (rep.getProtocol() != null) resource.setProtocol(rep.getProtocol());
         if (rep.getAttributes() != null) {
@@ -1122,7 +1122,7 @@ public class RepresentationToModel {
             }
         }
 
-
+        resource.updateClient();
     }
 
     // CLIENT TEMPLATES
