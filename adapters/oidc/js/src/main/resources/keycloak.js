@@ -63,6 +63,10 @@
                     kc.loginRequired = true;
                 }
 
+                if (typeof initOptions.predefindUri !== 'undefined') {
+                    kc.predefindUri = initOptions.predefindUri;
+                }
+
                 if (initOptions.responseMode) {
                     if (initOptions.responseMode === 'query' || initOptions.responseMode === 'fragment') {
                         kc.responseMode = initOptions.responseMode;
@@ -145,7 +149,7 @@
             }
 
             function processInit() {
-                var callback = parseCallback(window.location.href);
+                var callback = parseCallback(kc.predefindUri || window.location.href);
 
                 if (callback) {
                     setupCheckLoginIframe();
