@@ -15,26 +15,34 @@
  * limitations under the License.
  */
 
-package org.keycloak.connections.jpa.updater;
-
-import org.keycloak.provider.Provider;
-
-import java.io.File;
-import java.sql.Connection;
+package org.keycloak;
 
 /**
+ * Non-recoverable error thrown during server startup
+ *
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public interface JpaUpdaterProvider extends Provider {
+public class ServerStartupError extends Error {
 
-    enum Status {
-        VALID, EMPTY, OUTDATED
+    private final boolean fillStackTrace;
+
+    public ServerStartupError(String message) {
+        super(message);
+        fillStackTrace = true;
     }
 
-    void update(Connection connection, String defaultSchema);
+    public ServerStartupError(String message, boolean fillStackTrace) {
+        super(message);
+        this.fillStackTrace = fillStackTrace;
+    }
 
-    Status validate(Connection connection, String defaultSchema);
-
-    void export(Connection connection, String defaultSchema, File file);
+    @Override
+    public synchronized Throwable fillInStackTrace() {
+        if (fillStackTrace) {
+            return super.fillInStackTrace();
+        } else {
+            return this;
+        }
+    }
 
 }

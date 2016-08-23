@@ -17,6 +17,7 @@
 
 package org.keycloak.connections.jpa;
 
+import java.io.File;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
@@ -42,6 +43,7 @@ import org.keycloak.models.dblock.DBLockProvider;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.provider.ServerInfoAwareProviderFactory;
 import org.keycloak.models.dblock.DBLockManager;
+import org.keycloak.ServerStartupError;
 import org.keycloak.timer.TimerProvider;
 
 /**
@@ -50,6 +52,10 @@ import org.keycloak.timer.TimerProvider;
 public class DefaultJpaConnectionProviderFactory implements JpaConnectionProviderFactory, ServerInfoAwareProviderFactory {
 
     private static final Logger logger = Logger.getLogger(DefaultJpaConnectionProviderFactory.class);
+
+    enum MigrationStrategy {
+        UPDATE, VALIDATE, MANUAL
+    }
 
     private volatile EntityManagerFactory emf;
 
@@ -125,22 +131,9 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
                         properties.put(JpaUtils.HIBERNATE_DEFAULT_SCHEMA, schema);
                     }
 
-
-                    String databaseSchema;
-                    String databaseSchemaConf = config.get("databaseSchema");
-                    if (databaseSchemaConf == null) {
-                        throw new RuntimeException("Property 'databaseSchema' needs to be specified in the configuration");
-                    }
-                    
-                    if (databaseSchemaConf.equals("development-update")) {
-                        properties.put("hibernate.hbm2ddl.auto", "update");
-                        databaseSchema = null;
-                    } else if (databaseSchemaConf.equals("development-validate")) {
-                        properties.put("hibernate.hbm2ddl.auto", "validate");
-                        databaseSchema = null;
-                    } else {
-                        databaseSchema = databaseSchemaConf;
-                    }
+                    MigrationStrategy migrationStrategy = getMigrationStrategy();
+                    boolean initializeEmpty = config.getBoolean("initializeEmpty", true);
+                    File databaseUpdateFile = getDatabaseUpdateFile();
 
                     properties.put("hibernate.show_sql", config.getBoolean("showSql", false));
                     properties.put("hibernate.format_sql", config.getBoolean("formatSql", true));
@@ -153,39 +146,8 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
                         if (driverDialect != null) {
                             properties.put("hibernate.dialect", driverDialect);
                         }
-	                    
-	                    if (databaseSchema != null) {
-	                        logger.trace("Updating database");
-	
-	                        JpaUpdaterProvider updater = session.getProvider(JpaUpdaterProvider.class);
-	                        if (updater == null) {
-	                            throw new RuntimeException("Can't update database: JPA updater provider not found");
-	                        }
 
-                            // Check if having DBLock before trying to initialize hibernate
-                            DBLockProvider dbLock = new DBLockManager(session).getDBLock();
-                            if (dbLock.hasLock()) {
-                                updateOrValidateDB(databaseSchema, connection, updater, schema);
-                            } else {
-                                logger.trace("Don't have DBLock retrieved before upgrade. Needs to acquire lock first in separate transaction");
-
-                                KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), new KeycloakSessionTask() {
-
-                                    @Override
-                                    public void run(KeycloakSession lockSession) {
-                                        DBLockManager dbLockManager = new DBLockManager(lockSession);
-                                        DBLockProvider dbLock2 = dbLockManager.getDBLock();
-                                        dbLock2.waitForLock();
-                                        try {
-                                            updateOrValidateDB(databaseSchema, connection, updater, schema);
-                                        } finally {
-                                            dbLock2.releaseLock();
-                                        }
-                                    }
-
-                                });
-                            }
-	                    }
+                        migration(migrationStrategy, initializeEmpty, schema, databaseUpdateFile, connection, session);
 
                         int globalStatsInterval = config.getInt("globalStatsInterval", -1);
                         if (globalStatsInterval != -1) {
@@ -199,18 +161,6 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
                         if (globalStatsInterval != -1) {
                             startGlobalStats(session, globalStatsInterval);
                         }
-
-                    } catch (Exception e) {
-                        // Safe rollback
-                        if (connection != null) {
-                            try {
-                                connection.rollback();
-                            } catch (SQLException e2) {
-                                logger.warn("Can't rollback connection", e2);
-                            }
-                        }
-
-                        throw e;
                     } finally {
 	                    // Close after creating EntityManagerFactory to prevent in-mem databases from closing
 	                    if (connection != null) {
@@ -224,6 +174,11 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
                 }
             }
         }
+    }
+
+    private File getDatabaseUpdateFile() {
+        String databaseUpdateFile = config.get("migrationExport", "keycloak-database-update.sql");
+        return new File(databaseUpdateFile);
     }
 
     protected void prepareOperationalInfo(Connection connection) {
@@ -282,20 +237,82 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
         timer.scheduleTask(new HibernateStatsReporter(emf), globalStatsIntervalSecs * 1000, "ReportHibernateGlobalStats");
     }
 
+    public void migration(MigrationStrategy strategy, boolean initializeEmpty, String schema, File databaseUpdateFile, Connection connection, KeycloakSession session) {
+        JpaUpdaterProvider updater = session.getProvider(JpaUpdaterProvider.class);
 
-    // Needs to be called with acquired DBLock
-    protected void updateOrValidateDB(String databaseSchema, Connection connection, JpaUpdaterProvider updater, String schema) {
-        if (databaseSchema.equals("update")) {
-            updater.update(connection, schema);
-            logger.trace("Database update completed");
-        } else if (databaseSchema.equals("validate")) {
-            updater.validate(connection, schema);
-            logger.trace("Database validation completed");
+        JpaUpdaterProvider.Status status = updater.validate(connection, schema);
+        if (status == JpaUpdaterProvider.Status.VALID) {
+            logger.debug("Database is up-to-date");
+        } else if (status == JpaUpdaterProvider.Status.EMPTY) {
+            if (initializeEmpty) {
+                update(connection, schema, session, updater);
+            } else {
+                switch (strategy) {
+                    case UPDATE:
+                        update(connection, schema, session, updater);
+                        break;
+                    case MANUAL:
+                        export(connection, schema, databaseUpdateFile, session, updater);
+                        throw new ServerStartupError("Database not initialized, please initialize database with " + databaseUpdateFile.getAbsolutePath(), false);
+                    case VALIDATE:
+                        throw new ServerStartupError("Database not initialized, please enable database initialization", false);
+                }
+            }
         } else {
-            throw new RuntimeException("Invalid value for databaseSchema: " + databaseSchema);
+            switch (strategy) {
+                case UPDATE:
+                    update(connection, schema, session, updater);
+                    break;
+                case MANUAL:
+                    export(connection, schema, databaseUpdateFile, session, updater);
+                    throw new ServerStartupError("Database not up-to-date, please migrate database with " + databaseUpdateFile.getAbsolutePath(), false);
+                case VALIDATE:
+                    throw new ServerStartupError("Database not up-to-date, please enable database migration", false);
+            }
         }
     }
 
+    protected void update(Connection connection, String schema, KeycloakSession session, JpaUpdaterProvider updater) {
+        DBLockProvider dbLock = new DBLockManager(session).getDBLock();
+        if (dbLock.hasLock()) {
+            updater.update(connection, schema);
+        } else {
+            KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), new KeycloakSessionTask() {
+                @Override
+                public void run(KeycloakSession lockSession) {
+                    DBLockManager dbLockManager = new DBLockManager(lockSession);
+                    DBLockProvider dbLock2 = dbLockManager.getDBLock();
+                    dbLock2.waitForLock();
+                    try {
+                        updater.update(connection, schema);
+                    } finally {
+                        dbLock2.releaseLock();
+                    }
+                }
+            });
+        }
+    }
+
+    protected void export(Connection connection, String schema, File databaseUpdateFile, KeycloakSession session, JpaUpdaterProvider updater) {
+        DBLockProvider dbLock = new DBLockManager(session).getDBLock();
+        if (dbLock.hasLock()) {
+            updater.export(connection, schema, databaseUpdateFile);
+        } else {
+            KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), new KeycloakSessionTask() {
+                @Override
+                public void run(KeycloakSession lockSession) {
+                    DBLockManager dbLockManager = new DBLockManager(lockSession);
+                    DBLockProvider dbLock2 = dbLockManager.getDBLock();
+                    dbLock2.waitForLock();
+                    try {
+                        updater.export(connection, schema, databaseUpdateFile);
+                    } finally {
+                        dbLock2.releaseLock();
+                    }
+                }
+            });
+        }
+    }
 
     @Override
     public Connection getConnection() {
@@ -322,5 +339,19 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
   	public Map<String,String> getOperationalInfo() {
   		return operationalInfo;
   	}
+
+    private MigrationStrategy getMigrationStrategy() {
+        String migrationStrategy = config.get("migrationStrategy");
+        if (migrationStrategy == null) {
+            // Support 'databaseSchema' for backwards compatibility
+            migrationStrategy = config.get("databaseSchema");
+        }
+
+        if (migrationStrategy != null) {
+            return MigrationStrategy.valueOf(migrationStrategy.toUpperCase());
+        } else {
+            return MigrationStrategy.UPDATE;
+        }
+    }
 
 }

@@ -60,7 +60,9 @@
     "connectionsJpa": {
         "default": {
             "dataSource": "java:jboss/datasources/KeycloakDS",
-            "databaseSchema": "update"
+            "initializeEmpty": true,
+            "migrationStrategy": "update",
+            "migrationExport": "${jboss.home.dir}/keycloak-database-update.sql"
         }
     },
 

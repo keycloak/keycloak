@@ -72,68 +72,72 @@ public class KeycloakApplication extends Application {
     protected String contextPath;
 
     public KeycloakApplication(@Context ServletContext context, @Context Dispatcher dispatcher) {
-        loadConfig();
+        try {
+            loadConfig();
 
-        this.contextPath = context.getContextPath();
-        this.sessionFactory = createSessionFactory();
+            this.contextPath = context.getContextPath();
+            this.sessionFactory = createSessionFactory();
 
-        dispatcher.getDefaultContextObjects().put(KeycloakApplication.class, this);
-        ResteasyProviderFactory.pushContext(KeycloakApplication.class, this); // for injection
-        context.setAttribute(KeycloakSessionFactory.class.getName(), this.sessionFactory);
+            dispatcher.getDefaultContextObjects().put(KeycloakApplication.class, this);
+            ResteasyProviderFactory.pushContext(KeycloakApplication.class, this); // for injection
+            context.setAttribute(KeycloakSessionFactory.class.getName(), this.sessionFactory);
 
-        singletons.add(new ServerVersionResource());
-        singletons.add(new RobotsResource());
-        singletons.add(new RealmsResource());
-        singletons.add(new AdminRoot());
-        classes.add(ThemeResource.class);
-        classes.add(JsResource.class);
+            singletons.add(new ServerVersionResource());
+            singletons.add(new RobotsResource());
+            singletons.add(new RealmsResource());
+            singletons.add(new AdminRoot());
+            classes.add(ThemeResource.class);
+            classes.add(JsResource.class);
 
-        classes.add(KeycloakTransactionCommitter.class);
+            classes.add(KeycloakTransactionCommitter.class);
 
-        singletons.add(new ObjectMapperResolver(Boolean.parseBoolean(System.getProperty("keycloak.jsonPrettyPrint", "false"))));
+            singletons.add(new ObjectMapperResolver(Boolean.parseBoolean(System.getProperty("keycloak.jsonPrettyPrint", "false"))));
 
-        ExportImportManager[] exportImportManager = new ExportImportManager[1];
+            ExportImportManager[] exportImportManager = new ExportImportManager[1];
 
-        KeycloakModelUtils.runJobInTransaction(sessionFactory, new KeycloakSessionTask() {
+            KeycloakModelUtils.runJobInTransaction(sessionFactory, new KeycloakSessionTask() {
 
-            @Override
-            public void run(KeycloakSession lockSession) {
-                DBLockManager dbLockManager = new DBLockManager(lockSession);
-                dbLockManager.checkForcedUnlock();
-                DBLockProvider dbLock = dbLockManager.getDBLock();
-                dbLock.waitForLock();
-                try {
-                    exportImportManager[0] = migrateAndBootstrap();
-                } finally {
-                    dbLock.releaseLock();
+                @Override
+                public void run(KeycloakSession lockSession) {
+                    DBLockManager dbLockManager = new DBLockManager(lockSession);
+                    dbLockManager.checkForcedUnlock();
+                    DBLockProvider dbLock = dbLockManager.getDBLock();
+                    dbLock.waitForLock();
+                    try {
+                        exportImportManager[0] = migrateAndBootstrap();
+                    } finally {
+                        dbLock.releaseLock();
+                    }
                 }
+
+            });
+
+
+            if (exportImportManager[0].isRunExport()) {
+                exportImportManager[0].runExport();
             }
 
-        });
+            boolean bootstrapAdminUser = false;
+            KeycloakSession session = sessionFactory.create();
+            try {
+                session.getTransactionManager().begin();
+                bootstrapAdminUser = new ApplianceBootstrap(session).isNoMasterUser();
 
+                session.getTransactionManager().commit();
+            } finally {
+                session.close();
+            }
 
-        if (exportImportManager[0].isRunExport()) {
-            exportImportManager[0].runExport();
+            sessionFactory.publish(new PostMigrationEvent());
+
+            singletons.add(new WelcomeResource(bootstrapAdminUser));
+
+            setupScheduledTasks(sessionFactory);
+        } catch (Throwable t) {
+            exit(1);
+            throw t;
         }
-
-        boolean bootstrapAdminUser = false;
-        KeycloakSession session = sessionFactory.create();
-        try {
-            session.getTransactionManager().begin();
-            bootstrapAdminUser = new ApplianceBootstrap(session).isNoMasterUser();
-
-            session.getTransactionManager().commit();
-        } finally {
-            session.close();
-        }
-
-        sessionFactory.publish(new PostMigrationEvent());
-
-        singletons.add(new WelcomeResource(bootstrapAdminUser));
-
-        setupScheduledTasks(sessionFactory);
     }
-
 
     // Migrate model, bootstrap master realm, import realms and create admin user. This is done with acquired dbLock
     protected ExportImportManager migrateAndBootstrap() {
@@ -185,7 +189,6 @@ public class KeycloakApplication extends Application {
             session.getTransactionManager().commit();
         } catch (Exception e) {
             session.getTransactionManager().rollback();
-            logger.migrationFailure(e);
             throw e;
         } finally {
             session.close();
@@ -384,6 +387,15 @@ public class KeycloakApplication extends Application {
         } catch (IOException e) {
             throw new RuntimeException("Failed to parse json", e);
         }
+    }
+
+    private void exit(int status) {
+        new Thread() {
+            @Override
+            public void run() {
+                System.exit(status);
+            }
+        }.start();
     }
 
 }
