@@ -46,6 +46,7 @@ public class ProviderResourceDefinition extends SimpleResourceDefinition {
     static final PropertiesAttributeDefinition PROPERTIES =
             new PropertiesAttributeDefinition.Builder("properties", true)
             .setRestartAllServices()
+            .setAllowExpression(true)
             .build();
     
     protected static final ReloadRequiredWriteAttributeHandler WRITE_ATTR_HANDLER = new ReloadRequiredWriteAttributeHandler(ENABLED);
