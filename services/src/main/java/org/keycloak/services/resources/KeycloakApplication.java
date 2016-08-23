@@ -134,6 +134,7 @@ public class KeycloakApplication extends Application {
 
             setupScheduledTasks(sessionFactory);
         } catch (Throwable t) {
+            logger.applicationInitializationFailed(t, t.getMessage());
             exit(1);
             throw t;
         }

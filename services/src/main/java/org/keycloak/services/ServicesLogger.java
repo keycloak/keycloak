@@ -430,4 +430,7 @@ public interface ServicesLogger extends BasicLogger {
     @Message(id=96, value="Not found JWK of supported keyType under jwks_uri for usage: %s")
     void supportedJwkNotFound(String usage);
 
+    @LogMessage(level = ERROR)
+    @Message(id=97, value="KeycloakApplication initialization failed: %s")
+    void applicationInitializationFailed(@Cause Throwable t, String usage);
 }
