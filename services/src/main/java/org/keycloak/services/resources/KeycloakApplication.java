@@ -233,6 +233,14 @@ public class KeycloakApplication extends Application {
                 }
             }
 
+            if (node == null) {
+                URL resource = Thread.currentThread().getContextClassLoader().getResource("META-INF/keycloak-server.json");
+                if (resource != null) {
+                    logger.loadingFrom(resource);
+                    node = new ObjectMapper().readTree(resource);
+                }
+            }
+
             if (node != null) {
                 Properties properties = new SystemEnvProperties();
                 Config.init(new JsonConfigProvider(node, properties));
