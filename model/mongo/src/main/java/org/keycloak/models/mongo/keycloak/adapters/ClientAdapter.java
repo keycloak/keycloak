@@ -17,8 +17,6 @@
 
 package org.keycloak.models.mongo.keycloak.adapters;
 
-import com.mongodb.DBObject;
-import com.mongodb.QueryBuilder;
 import org.keycloak.connections.mongo.api.context.MongoStoreInvocationContext;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientTemplateModel;
@@ -65,6 +63,19 @@ public class ClientAdapter extends AbstractMongoAdapter<MongoClientEntity> imple
     @Override
     public void updateClient() {
         updateMongoEntity();
+
+        session.getKeycloakSessionFactory().publish(new RealmModel.ClientUpdatedEvent() {
+
+            @Override
+            public ClientModel getUpdatedClient() {
+                return ClientAdapter.this;
+            }
+
+            @Override
+            public KeycloakSession getKeycloakSession() {
+                return session;
+            }
+        });
     }
 
 
