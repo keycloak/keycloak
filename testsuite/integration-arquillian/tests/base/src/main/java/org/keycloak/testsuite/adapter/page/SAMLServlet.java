@@ -40,8 +40,8 @@ public abstract class SAMLServlet extends AbstractPageWithInjectedUrl {
         }
     }
 
-    public void checkRolesEndPoint() {
-        driver.navigate().to(getUriBuilder().build().toASCIIString() + "/checkRoles");
+    public void checkRolesEndPoint(boolean value) {
+        driver.navigate().to(getUriBuilder().build().toASCIIString() + "/" + (value ? "" : "un") + "checkRoles");
         pause(300);
     }
 }

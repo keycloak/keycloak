@@ -19,6 +19,10 @@ package org.keycloak.testsuite.adapter.servlet;
 
 
 import org.jboss.resteasy.annotations.cache.NoCache;
+import org.keycloak.adapters.saml.SamlAuthenticationError;
+import org.keycloak.adapters.saml.SamlPrincipal;
+import org.keycloak.adapters.spi.AuthenticationError;
+import org.keycloak.saml.processing.core.saml.v2.constants.X500SAMLProfileConstants;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -28,6 +32,9 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.security.Principal;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -38,6 +45,9 @@ import java.security.Principal;
 public class SendUsernameServlet {
 
     private static boolean checkRoles = false;
+    private static SamlAuthenticationError authError;
+    private static Principal sentPrincipal;
+    private static List<String> checkRolesList = Collections.singletonList("manager");
 
     @Context
     private HttpServletRequest httpServletRequest;
@@ -62,7 +72,15 @@ public class SendUsernameServlet {
             throw new RuntimeException("User: " + httpServletRequest.getUserPrincipal() + " do not have required role");
         }
 
-        return Response.ok(getOutput(), MediaType.TEXT_PLAIN).build();
+        return Response.ok(getOutput(), MediaType.TEXT_HTML_TYPE).build();
+    }
+
+    @GET
+    @Path("getAttributes")
+    public Response getSentPrincipal() throws IOException {
+        System.out.println("In SendUsername Servlet getSentPrincipal()");
+
+        return Response.ok(getAttributes(), MediaType.TEXT_HTML_TYPE).build();
     }
 
     @GET
@@ -79,6 +97,23 @@ public class SendUsernameServlet {
         return doPost(checkRolesFlag);
     }
 
+    @POST
+    @Path("error.html")
+    public Response errorPagePost() {
+        authError = (SamlAuthenticationError) httpServletRequest.getAttribute(AuthenticationError.class.getName());
+        Integer statusCode = (Integer) httpServletRequest.getAttribute("javax.servlet.error.status_code");
+        System.out.println("In SendUsername Servlet errorPage() status code: " + statusCode);
+
+        return Response.ok(getErrorOutput(statusCode), MediaType.TEXT_HTML_TYPE).build();
+    }
+
+    @GET
+    @Path("error.html")
+    public Response errorPageGet() {
+        return errorPagePost();
+    }
+
+
     @GET
     @Path("checkRoles")
     public String checkRolesEndPoint() {
@@ -87,8 +122,35 @@ public class SendUsernameServlet {
         return "Roles will be checked";
     }
 
+    @GET
+    @Path("uncheckRoles")
+    public String uncheckRolesEndPoint() {
+        checkRoles = false;
+        System.out.println("Setting checkRoles to false");
+        checkRolesList = Collections.singletonList("manager");
+        return "Roles will not be checked";
+    }
+
+    @GET
+    @Path("setCheckRoles")
+    public String setCheckRoles(@QueryParam("roles") String roles) {
+        checkRolesList = Arrays.asList(roles.split(","));
+        checkRoles = true;
+        System.out.println("Setting checkRolesList to " + checkRolesList.toString());
+        return "These roles will be checked: " + checkRolesList.toString();
+    }
+
+
     private boolean checkRoles() {
-        return httpServletRequest.isUserInRole("manager");
+        for (String role : checkRolesList) {
+            System.out.println("In checkRoles() checking role " + role + " for user " + httpServletRequest.getUserPrincipal().getName());
+            if (!httpServletRequest.isUserInRole(role)) {
+                System.out.println("User is not in role " + role);
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private String getOutput() {
@@ -102,6 +164,31 @@ public class SendUsernameServlet {
             return output + "null";
         }
 
+        sentPrincipal = principal;
+
         return output + principal.getName();
+    }
+
+    private String getErrorOutput(Integer statusCode) {
+        String output = "<html><head><title>Error Page</title></head><body><h1>There was an error</h1>";
+        if (statusCode != null)
+            output += "<br/>HTTP status code: " + statusCode;
+        if (authError != null)
+            output += "<br/>Error info: " + authError.toString();
+        return output + "</body></html>";
+    }
+
+    private String getAttributes() {
+        SamlPrincipal principal = (SamlPrincipal) sentPrincipal;
+        String output = "attribute email: " + principal.getAttribute(X500SAMLProfileConstants.EMAIL.get());
+        output += "<br /> topAttribute: " + principal.getAttribute("topAttribute");
+        output += "<br /> level2Attribute: " + principal.getAttribute("level2Attribute");
+        output += "<br /> group: " + principal.getAttributes("group").toString();
+        output += "<br /> friendlyAttribute email: " + principal.getFriendlyAttribute("email");
+        output += "<br /> phone: " + principal.getAttribute("phone");
+        output += "<br /> friendlyAttribute phone: " + principal.getFriendlyAttribute("phone");
+        output += "<br /> hardcoded-attribute: " + principal.getAttribute("hardcoded-attribute");
+
+        return output;
     }
 }

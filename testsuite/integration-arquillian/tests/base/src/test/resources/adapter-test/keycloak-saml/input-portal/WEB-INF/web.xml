@@ -23,19 +23,20 @@
 
     <module-name>%CONTEXT_PATH%</module-name>
 
+    <servlet>
+        <servlet-name>Servlet</servlet-name>
+        <servlet-class>org.keycloak.testsuite.adapter.servlet.InputServlet</servlet-class>
+    </servlet>
+
     <servlet-mapping>
-        <servlet-name>javax.ws.rs.core.Application</servlet-name>
+        <servlet-name>Servlet</servlet-name>
         <url-pattern>/*</url-pattern>
     </servlet-mapping>
 
-    <error-page>
-        <location>/error.html</location>
-    </error-page>
-
     <security-constraint>
         <web-resource-collection>
-            <web-resource-name>Application</web-resource-name>
-            <url-pattern>/*</url-pattern>
+            <web-resource-name>Users</web-resource-name>
+            <url-pattern>/secured/*</url-pattern>
         </web-resource-collection>
         <auth-constraint>
             <role-name>manager</role-name>
