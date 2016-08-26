@@ -85,10 +85,6 @@
 
     <files>
         <file>
-            <source>${project.build.directory}/unpacked/keycloak-${project.version}/standalone/configuration/keycloak-server.json</source>
-            <outputDirectory>standalone/configuration</outputDirectory>
-        </file>
-        <file>
             <source>${project.build.directory}/unpacked/keycloak-${project.version}/bin/add-user-keycloak.sh</source>
             <outputDirectory>bin</outputDirectory>
             <destName>add-user-keycloak.sh</destName>
@@ -97,6 +93,11 @@
             <source>${project.build.directory}/unpacked/keycloak-${project.version}/bin/add-user-keycloak.bat</source>
             <outputDirectory>bin</outputDirectory>
             <destName>add-user-keycloak.bat</destName>
+        </file>
+        <file>
+            <source>${project.build.directory}/cli/default-keycloak-subsys-config.cli</source>
+            <outputDirectory>bin</outputDirectory>
+            <destName>default-keycloak-subsys-config.cli</destName>
         </file>
     </files>
 

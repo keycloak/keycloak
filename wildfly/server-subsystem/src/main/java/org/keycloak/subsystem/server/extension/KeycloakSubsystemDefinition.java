@@ -29,6 +29,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.jboss.as.controller.StringListAttributeDefinition;
+import org.keycloak.subsystem.server.attributes.ProvidersListAttributeBuilder;
 
 /**
  * Definition of subsystem=keycloak-server.
@@ -44,15 +46,34 @@ public class KeycloakSubsystemDefinition extends SimpleResourceDefinition {
             .setRestartAllServices()
             .build();
 
-    static final List<SimpleAttributeDefinition> ALL_ATTRIBUTES = new ArrayList<SimpleAttributeDefinition>();
+    static final StringListAttributeDefinition PROVIDERS = new ProvidersListAttributeBuilder().build();
+    
+    static final SimpleAttributeDefinition MASTER_REALM_NAME =
+        new SimpleAttributeDefinitionBuilder("master-realm-name", ModelType.STRING, true)
+            .setAllowExpression(true)
+            .setDefaultValue(new ModelNode("master"))
+            .setRestartAllServices()
+            .build();
+    
+    static final SimpleAttributeDefinition SCHEDULED_TASK_INTERVAL =
+        new SimpleAttributeDefinitionBuilder("scheduled-task-interval", ModelType.LONG, true)
+            .setAllowExpression(true)
+            .setDefaultValue(new ModelNode("900"))
+            .setRestartAllServices()
+            .build();
+    
+    static final List<AttributeDefinition> ALL_ATTRIBUTES = new ArrayList<AttributeDefinition>();
 
     static {
         ALL_ATTRIBUTES.add(WEB_CONTEXT);
+        ALL_ATTRIBUTES.add(PROVIDERS);
+        ALL_ATTRIBUTES.add(MASTER_REALM_NAME);
+        ALL_ATTRIBUTES.add(SCHEDULED_TASK_INTERVAL);
     }
 
-    private static final Map<String, SimpleAttributeDefinition> DEFINITION_LOOKUP = new HashMap<String, SimpleAttributeDefinition>();
+    private static final Map<String, AttributeDefinition> DEFINITION_LOOKUP = new HashMap<String, AttributeDefinition>();
     static {
-        for (SimpleAttributeDefinition def : ALL_ATTRIBUTES) {
+        for (AttributeDefinition def : ALL_ATTRIBUTES) {
             DEFINITION_LOOKUP.put(def.getXmlName(), def);
         }
     }
@@ -71,6 +92,7 @@ public class KeycloakSubsystemDefinition extends SimpleResourceDefinition {
     public void registerOperations(ManagementResourceRegistration resourceRegistration) {
         super.registerOperations(resourceRegistration);
         resourceRegistration.registerOperationHandler(GenericSubsystemDescribeHandler.DEFINITION, GenericSubsystemDescribeHandler.INSTANCE);
+        resourceRegistration.registerOperationHandler(MigrateJsonOperation.DEFINITION, new MigrateJsonOperation());
     }
 
     @Override
@@ -81,7 +103,7 @@ public class KeycloakSubsystemDefinition extends SimpleResourceDefinition {
         }
     }
 
-    public static SimpleAttributeDefinition lookup(String name) {
+    public static AttributeDefinition lookup(String name) {
         return DEFINITION_LOOKUP.get(name);
     }
 }

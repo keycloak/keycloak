@@ -172,6 +172,18 @@
                             </systemPropertyVariables>
                         </configuration>
                     </plugin>
+                    <plugin>
+                        <groupId>org.jboss.shrinkwrap.resolver</groupId>
+                        <artifactId>shrinkwrap-resolver-maven-plugin</artifactId>
+                        <version>${version.shrinkwrap.resolvers}</version>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>propagate-execution-context</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
                 </plugins>
             </build>
         </profile>
