@@ -12,16 +12,14 @@ However, keycloak.json is still required.
 Add Keycloak Spring Security adapter as a dependency to your Maven POM or Gradle build. 
 
 
-[source]
+[source,xml,subs="attributes+"]
 ----
-
-                
 <dependency>
     <groupId>org.keycloak</groupId>
     <artifactId>keycloak-spring-security-adapter</artifactId>
-    <version>&project.version;</version>
+    <version>{{book.project.versionMvn}}</version>
 </dependency>
-----        
+----
 
 ===== Spring Security Configuration
 

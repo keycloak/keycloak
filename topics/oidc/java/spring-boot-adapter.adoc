@@ -12,19 +12,19 @@ Depending on what container you are using with Spring Boot, you also need to add
 If you are using Maven, add the following to your pom.xml (using Tomcat as an example): 
 
 
-[source]
+[source,xml,subs="attributes+"]
 ----
 
 
 <dependency>
     <groupId>org.keycloak</groupId>
     <artifactId>keycloak-spring-boot-adapter</artifactId>
-    <version>&project.version;</version>
+    <version>{{book.project.versionMvn}}</version>
 </dependency>
 <dependency>
     <groupId>org.keycloak</groupId>
     <artifactId>keycloak-tomcat8-adapter</artifactId>
-    <version>&project.version;</version>
+    <version>{{book.project.versionMvn}}</version>
 </dependency>
 ----        
 
