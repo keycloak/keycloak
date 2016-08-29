@@ -2118,8 +2118,19 @@ module.controller('AuthenticationConfigCreateCtrl', function($scope, realm, flow
     $scope.realm = realm;
     $scope.flow = flow;
     $scope.create = true;
-    $scope.config = { config: {}};
     $scope.configType = configType;
+
+    var defaultConfig = {};
+    if (configType && Array.isArray(configType.properties)) {
+        for(var i = 0; i < configType.properties.length; i++) {
+            var property = configType.properties[i];
+            if (property && property.name) {
+                defaultConfig[property.name] = property.defaultValue;
+            }
+        }
+    }
+
+    $scope.config = { config: defaultConfig};
 
     $scope.$watch(function() {
         return $location.path();
@@ -2145,8 +2156,6 @@ module.controller('AuthenticationConfigCreateCtrl', function($scope, realm, flow
         //$location.url("/realms");
         window.history.back();
     };
-
-
 });
 
 module.controller('ClientInitialAccessCtrl', function($scope, realm, clientInitialAccess, clientRegTrustedHosts, ClientInitialAccess, ClientRegistrationTrustedHost, Dialog, Notifications, $route, $location) {
