@@ -16,9 +16,11 @@
  */
 package org.keycloak.testsuite.util;
 
+import org.jboss.logging.Logger;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.util.JsonSerialization;
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
@@ -33,7 +35,6 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import java.io.*;
 import java.util.concurrent.TimeUnit;
-import org.jboss.logging.Logger;
 
 /**
  *
@@ -93,16 +94,97 @@ public class IOUtil {
     public static void modifyDocElementAttribute(Document doc, String tagName, String attributeName, String regex, String replacement) {
         NodeList nodes = doc.getElementsByTagName(tagName);
         if (nodes.getLength() != 1) {
-            System.out.println("Not able to find element: " + tagName);
+            log.warn("Not able or ambiguous to find element: " + tagName);
             return;
         }
 
         Node node = nodes.item(0).getAttributes().getNamedItem(attributeName);
         if (node == null) {
-            System.out.println("Not able to find attribute " + attributeName + " within element: " + tagName);
+            log.warn("Not able to find attribute " + attributeName + " within element: " + tagName);
             return;
         }
         node.setTextContent(node.getTextContent().replace(regex, replacement));
+    }
+
+    public static void modifyDocElementValue(Document doc, String tagName, String regex, String replacement) {
+        NodeList nodes = doc.getElementsByTagName(tagName);
+        if (nodes.getLength() != 1) {
+            log.warn("Not able or ambiguous to find element: " + tagName);
+            return;
+        }
+
+        Node node = nodes.item(0);
+        if (node == null) {
+            log.warn("Not able to find element: " + tagName);
+            return;
+        }
+
+        node.setTextContent(node.getTextContent().replace(regex, replacement));
+    }
+
+    public static void removeElementFromDoc(Document doc, String parentTag, String removeNode) {
+        NodeList nodes = doc.getElementsByTagName(parentTag);
+        if (nodes.getLength() != 1) {
+            log.warn("Not able or ambiguous to find element: " + parentTag);
+            return;
+        }
+
+        Element parentElement = (Element) nodes.item(0);
+        if (parentElement == null) {
+            log.warn("Not able to find element: " + parentTag);
+            return;
+        }
+
+        NodeList removeNodes = parentElement.getElementsByTagName(removeNode);
+        if (removeNodes.getLength() != 1) {
+            log.warn("Not able or ambiguous to find element: " + removeNode + " within node " + parentTag);
+            return;
+        }
+
+        Element removeElement = (Element) removeNodes.item(0);
+        if (removeElement == null) {
+            log.warn("Not able to find element: " + removeNode + " within node " + parentTag);
+            return;
+        }
+
+        parentElement.removeChild(removeElement);
+    }
+
+    public static String getElementTextContent(Document doc, String path) {
+        String[] pathSegments = path.split("/");
+
+        Element currentElement = (Element) doc.getElementsByTagName(pathSegments[0]).item(0);
+        if (currentElement == null) {
+            log.warn("Not able to find element: " + pathSegments[0] + " in document");
+            return null;
+        }
+
+        for (int i = 1; i < pathSegments.length; i++) {
+            currentElement = (Element) currentElement.getElementsByTagName(pathSegments[i]).item(0);
+
+            if (currentElement == null) {
+                log.warn("Not able to find element: " + pathSegments[i] + " in " + pathSegments[i - 1]);
+                return null;
+            }
+        }
+
+        return currentElement.getTextContent();
+    }
+
+    public static void appendChildInDocument(Document doc, String parentTag, Element node) {
+        NodeList nodes = doc.getElementsByTagName(parentTag);
+        if (nodes.getLength() != 1) {
+            log.warn("Not able or ambiguous to find element: " + parentTag);
+            return;
+        }
+
+        Element parentElement = (Element) nodes.item(0);
+        if (parentElement == null) {
+            log.warn("Not able to find element: " + parentTag);
+            return;
+        }
+
+        parentElement.appendChild(node);
     }
 
     public static void execCommand(String command, File dir) throws IOException, InterruptedException {

@@ -18,6 +18,7 @@
 
 package org.keycloak.authorization.mongo.store;
 
+import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
 import com.mongodb.QueryBuilder;
 import org.keycloak.authorization.AuthorizationProvider;
@@ -31,6 +32,8 @@ import org.keycloak.connections.mongo.api.context.MongoStoreInvocationContext;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 import java.util.List;
+import java.util.Map;
+import java.util.regex.Pattern;
 
 import static java.util.stream.Collectors.toList;
 
@@ -96,6 +99,21 @@ public class MongoScopeStore implements ScopeStore {
         return getMongoStore().loadEntities(ScopeEntity.class, query, getInvocationContext()).stream()
                 .map(policyEntity -> findById(policyEntity.getId()))
                 .collect(toList());
+    }
+
+    @Override
+    public List<Scope> findByResourceServer(Map<String, String[]> attributes, String resourceServerId, int firstResult, int maxResult) {
+        QueryBuilder queryBuilder = new QueryBuilder()
+                .and("resourceServerId").is(resourceServerId);
+
+        attributes.forEach((name, value) -> {
+            queryBuilder.and(name).regex(Pattern.compile(".*" + value[0] + ".*", Pattern.CASE_INSENSITIVE));
+        });
+
+        DBObject sort = new BasicDBObject("name", 1);
+
+        return getMongoStore().loadEntities(ScopeEntity.class, queryBuilder.get(), sort, firstResult, maxResult, invocationContext).stream()
+                .map(scope -> findById(scope.getId())).collect(toList());
     }
 
     private MongoStoreInvocationContext getInvocationContext() {

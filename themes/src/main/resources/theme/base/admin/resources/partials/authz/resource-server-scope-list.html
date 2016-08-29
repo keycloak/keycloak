@@ -9,13 +9,12 @@
                     <div class="form-inline">
                         <div class="form-group">
                             <div class="input-group">
-                                <input type="text" placeholder="{{:: 'search.placeholder' | translate}}" data-ng-model="search.name" class="form-control search" onkeyup="if(event.keyCode == 13){$(this).next('I').click();}">
+                                <input type="text" placeholder="{{:: 'name' | translate}}" data-ng-model="query.name" class="form-control search" onkeydown="if (event.keyCode == 13) document.getElementById('scopeSearch').click()">
                                 <div class="input-group-addon">
-                                    <i class="fa fa-search" type="submit"></i>
+                                    <i class="fa fa-search" id="scopeSearch" type="submit" data-ng-click="firstPage()"></i>
                                 </div>
                             </div>
                         </div>
-
                         <div class="pull-right">
                             <a id="createScope" class="btn btn-default" href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server/scope/create">{{:: 'create' | translate}}</a>
                         </div>
@@ -29,6 +28,17 @@
                 <th>{{:: 'actions' | translate}}</th>
             </tr>
         </thead>
+        <tfoot data-ng-show="scopes && (scopes.length >= query.max || query.first > 0)">
+        <tr>
+            <td colspan="7">
+                <div class="table-nav">
+                    <button data-ng-click="firstPage()" class="first" ng-disabled="query.first == 0">{{:: 'first-page' | translate}}</button>
+                    <button data-ng-click="previousPage()" class="prev" ng-disabled="query.first == 0">{{:: 'previous-page' | translate}}</button>
+                    <button data-ng-click="nextPage()" class="next" ng-disabled="scopes.length < query.max">{{:: 'next-page' | translate}}</button>
+                </div>
+            </td>
+        </tr>
+        </tfoot>
         <tbody>
             <tr ng-repeat="scope in scopes | filter:search | orderBy:'name'">
                 <td><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server/scope/{{scope.id}}">{{scope.name}}</a></td>

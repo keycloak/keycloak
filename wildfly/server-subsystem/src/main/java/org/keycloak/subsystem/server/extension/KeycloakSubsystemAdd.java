@@ -62,9 +62,10 @@ class KeycloakSubsystemAdd extends AbstractBoottimeAddStepHandler {
         }, OperationContext.Stage.RUNTIME);
     }
 
-    protected void populateModel(final OperationContext context, final ModelNode operation, final Resource resource) throws  OperationFailedException {
+    @Override
+    protected void populateModel(final OperationContext context, final ModelNode operation, final Resource resource) throws OperationFailedException {
         ModelNode model = resource.getModel();
-
+        
         // set attribute values from parsed model
         for (AttributeDefinition attrDef : ALL_ATTRIBUTES) {
             attrDef.validateAndSet(operation, model);
@@ -89,5 +90,7 @@ class KeycloakSubsystemAdd extends AbstractBoottimeAddStepHandler {
         ServerUtil serverUtil = new ServerUtil(operation);
         serverUtil.addStepToUploadServerWar(context);
         KeycloakAdapterConfigService.INSTANCE.setWebContext(webContext);
+        
+        KeycloakAdapterConfigService.INSTANCE.updateConfig(operation, model);
     }
 }

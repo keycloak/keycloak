@@ -19,6 +19,7 @@ package org.keycloak.connections.jpa.updater;
 
 import org.keycloak.provider.Provider;
 
+import java.io.File;
 import java.sql.Connection;
 
 /**
@@ -26,10 +27,14 @@ import java.sql.Connection;
  */
 public interface JpaUpdaterProvider extends Provider {
 
-    public String FIRST_VERSION = "1.0.0.Final";
+    enum Status {
+        VALID, EMPTY, OUTDATED
+    }
 
-    public void update(Connection connection, String defaultSchema);
+    void update(Connection connection, String defaultSchema);
 
-    public void validate(Connection connection, String defaultSchema);
+    Status validate(Connection connection, String defaultSchema);
+
+    void export(Connection connection, String defaultSchema, File file);
 
 }

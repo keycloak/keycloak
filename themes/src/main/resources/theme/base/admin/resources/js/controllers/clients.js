@@ -365,11 +365,12 @@ module.controller('ClientCertificateImportCtrl', function($scope, $location, $ht
     ];
 
     if (callingContext == 'jwt-credentials') {
-        $scope.keyFormats.push('JSON Web Key Set (JWK)');
+        $scope.keyFormats.push('Public Key PEM');
+        $scope.keyFormats.push('JSON Web Key Set');
     }
 
     $scope.hideKeystoreSettings = function() {
-        return $scope.uploadKeyFormat == 'Certificate PEM' || $scope.uploadKeyFormat == 'JSON Web Key Set (JWK)';
+        return $scope.uploadKeyFormat == 'Certificate PEM' || $scope.uploadKeyFormat == 'Public Key PEM' || $scope.uploadKeyFormat == 'JSON Web Key Set';
     }
 
     $scope.uploadKeyFormat = $scope.keyFormats[0];
