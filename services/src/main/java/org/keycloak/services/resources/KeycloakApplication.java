@@ -70,6 +70,8 @@ public class KeycloakApplication extends Application {
 
     private static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
 
+    protected boolean embedded = false;
+
     protected Set<Object> singletons = new HashSet<Object>();
     protected Set<Class<?>> classes = new HashSet<Class<?>>();
 
@@ -78,6 +80,10 @@ public class KeycloakApplication extends Application {
 
     public KeycloakApplication(@Context ServletContext context, @Context Dispatcher dispatcher) {
         try {
+            if ("true".equals(context.getInitParameter("keycloak.embedded"))) {
+                embedded = true;
+            }
+
             loadConfig(context);
 
             this.contextPath = context.getContextPath();
@@ -139,7 +145,9 @@ public class KeycloakApplication extends Application {
 
             setupScheduledTasks(sessionFactory);
         } catch (Throwable t) {
-            exit(1);
+            if (!embedded) {
+                exit(1);
+            }
             throw t;
         }
     }
