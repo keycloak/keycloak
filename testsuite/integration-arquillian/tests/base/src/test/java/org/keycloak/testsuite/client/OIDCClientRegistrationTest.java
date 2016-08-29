@@ -37,8 +37,10 @@ import org.keycloak.constants.ServiceUrlConstants;
 import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.ClientInitialAccessCreatePresentation;
 import org.keycloak.representations.idm.ClientInitialAccessPresentation;
 import org.keycloak.representations.idm.ClientRegistrationTrustedHostRepresentation;
@@ -53,6 +55,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriBuilder;
 
 import static org.junit.Assert.*;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
@@ -260,7 +263,18 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
 
         PrivateKey privateKey = KeycloakModelUtils.getPrivateKey(PRIVATE_KEY);
 
-        JWTClientCredentialsProvider jwtProvider = new JWTClientCredentialsProvider();
+        // Use token-endpoint as audience as OIDC conformance testsuite is using it too.
+        JWTClientCredentialsProvider jwtProvider = new JWTClientCredentialsProvider() {
+
+            @Override
+            protected JsonWebToken createRequestToken(String clientId, String realmInfoUrl) {
+                JsonWebToken jwt = super.createRequestToken(clientId, realmInfoUrl);
+                String tokenEndpointUrl = OIDCLoginProtocolService.tokenUrl(UriBuilder.fromUri(getAuthServerRoot())).build(REALM_NAME).toString();
+                jwt.audience(tokenEndpointUrl);
+                return jwt;
+            }
+
+        };
         jwtProvider.setPrivateKey(privateKey);
         jwtProvider.setTokenTimeout(10);
         return jwtProvider.createSignedRequestToken(clientId, realmInfoUrl);

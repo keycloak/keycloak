@@ -55,7 +55,9 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.services.util.CertificateInfoHelper;
 import org.keycloak.testsuite.AbstractKeycloakTest;
+import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.auth.page.AuthRealm;
@@ -70,6 +72,7 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.security.KeyStore;
 import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.security.cert.X509Certificate;
 import java.util.*;
 
@@ -81,7 +84,6 @@ import static org.junit.Assert.assertNotEquals;
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
 public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
-    public static final String CERTIFICATE_PEM = "Certificate PEM";
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
@@ -349,8 +351,18 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
     }
 
     @Test
-    public void testUploadPEM() throws Exception {
-        testUploadKeystore(CERTIFICATE_PEM, "client-auth-test/certificate.pem", "undefined", "undefined");
+    public void testUploadCertificatePEM() throws Exception {
+        testUploadKeystore(org.keycloak.services.resources.admin.ClientAttributeCertificateResource.CERTIFICATE_PEM, "client-auth-test/certificate.pem", "undefined", "undefined");
+    }
+
+    @Test
+    public void testUploadPublicKeyPEM() throws Exception {
+        testUploadKeystore(org.keycloak.services.resources.admin.ClientAttributeCertificateResource.PUBLIC_KEY_PEM, "client-auth-test/publickey.pem", "undefined", "undefined");
+    }
+
+    @Test
+    public void testUploadJWKS() throws Exception {
+        testUploadKeystore(org.keycloak.services.resources.admin.ClientAttributeCertificateResource.JSON_WEB_KEY_SET, "clientreg-test/jwks.json", "undefined", "undefined");
     }
 
     // We need to test this as a genuine REST API HTTP request
@@ -395,20 +407,27 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
         assertEquals(200, httpResponse.getStatusLine().getStatusCode());
 
         client = getClient(testRealm.getRealm(), client.getId()).toRepresentation();
-        String pem;
 
         // Assert the uploaded certificate
-        if (!keystoreFormat.equals(CERTIFICATE_PEM)) {
+        if (keystoreFormat.equals(org.keycloak.services.resources.admin.ClientAttributeCertificateResource.PUBLIC_KEY_PEM)) {
+            String pem = new String(Files.readAllBytes(keystoreFile.toPath()));
+            final String publicKeyNew = client.getAttributes().get(JWTClientAuthenticator.ATTR_PREFIX + "." + CertificateInfoHelper.PUBLIC_KEY);
+            assertEquals("Certificates don't match", pem, publicKeyNew);
+        } else if (keystoreFormat.equals(org.keycloak.services.resources.admin.ClientAttributeCertificateResource.JSON_WEB_KEY_SET)) {
+            final String publicKeyNew = client.getAttributes().get(JWTClientAuthenticator.ATTR_PREFIX + "." + CertificateInfoHelper.PUBLIC_KEY);
+            // Just assert it's valid public key
+            PublicKey pk = KeycloakModelUtils.getPublicKey(publicKeyNew);
+            Assert.assertNotNull(pk);
+        } else if (keystoreFormat.equals(org.keycloak.services.resources.admin.ClientAttributeCertificateResource.CERTIFICATE_PEM)) {
+            String pem = new String(Files.readAllBytes(keystoreFile.toPath()));
+            assertCertificate(client, certOld, pem);
+        } else {
             InputStream keystoreIs = new FileInputStream(keystoreFile);
             KeyStore keyStore = getKeystore(keystoreIs, storePassword, keystoreFormat);
             keystoreIs.close();
-            pem = KeycloakModelUtils.getPemFromCertificate((X509Certificate) keyStore.getCertificate(keyAlias));
+            String pem = KeycloakModelUtils.getPemFromCertificate((X509Certificate) keyStore.getCertificate(keyAlias));
+            assertCertificate(client, certOld, pem);
         }
-        else {
-            pem = new String(Files.readAllBytes(keystoreFile.toPath()));
-        }
-
-        assertCertificate(client, certOld, pem);
     }
 
     // TEST ERRORS
