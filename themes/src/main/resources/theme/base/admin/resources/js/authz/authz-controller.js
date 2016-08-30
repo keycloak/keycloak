@@ -1090,7 +1090,36 @@ module.controller('ResourceServerPolicyTimeDetailCtrl', function($scope, $route,
         },
 
         onInitUpdate : function(policy) {
-
+            if (policy.config.dayMonth) {
+                policy.config.dayMonth = parseInt(policy.config.dayMonth);
+            }
+            if (policy.config.dayMonthEnd) {
+                policy.config.dayMonthEnd = parseInt(policy.config.dayMonthEnd);
+            }
+            if (policy.config.month) {
+                policy.config.month = parseInt(policy.config.month);
+            }
+            if (policy.config.monthEnd) {
+                policy.config.monthEnd = parseInt(policy.config.monthEnd);
+            }
+            if (policy.config.year) {
+                policy.config.year = parseInt(policy.config.year);
+            }
+            if (policy.config.yearEnd) {
+                policy.config.yearEnd = parseInt(policy.config.yearEnd);
+            }
+            if (policy.config.hour) {
+                policy.config.hour = parseInt(policy.config.hour);
+            }
+            if (policy.config.hourEnd) {
+                policy.config.hourEnd = parseInt(policy.config.hourEnd);
+            }
+            if (policy.config.minute) {
+                policy.config.minute = parseInt(policy.config.minute);
+            }
+            if (policy.config.minuteEnd) {
+                policy.config.minuteEnd = parseInt(policy.config.minuteEnd);
+            }
         },
 
         onUpdate : function() {
@@ -1106,6 +1135,19 @@ module.controller('ResourceServerPolicyTimeDetailCtrl', function($scope, $route,
 
         }
     }, realm, client, $scope);
+
+    $scope.isRequired = function () {
+        var policy = $scope.policy;
+        if (policy.config.noa || policy.config.nbf
+            || policy.config.dayMonth
+            || policy.config.month
+            || policy.config.year
+            || policy.config.hour
+            || policy.config.minute) {
+            return false;
+        }
+        return true;
+    }
 });
 
 module.controller('ResourceServerPolicyAggregateDetailCtrl', function($scope, $route, $location, realm, PolicyController, ResourceServerPolicy, client) {

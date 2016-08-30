@@ -22,7 +22,10 @@ import org.keycloak.authorization.policy.evaluation.Evaluation;
 import org.keycloak.authorization.policy.provider.PolicyProvider;
 
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
+
+import static com.sun.corba.se.spi.activation.IIOP_CLEAR_TEXT.value;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -45,9 +48,7 @@ public class TimePolicyProvider implements PolicyProvider {
     public void evaluate(Evaluation evaluation) {
         try {
             String notBefore = this.policy.getConfig().get("nbf");
-
             if (notBefore != null) {
-
                 if (this.currentDate.before(this.dateFormat.parse(format(notBefore)))) {
                     evaluation.deny();
                     return;
@@ -55,7 +56,6 @@ public class TimePolicyProvider implements PolicyProvider {
             }
 
             String notOnOrAfter = this.policy.getConfig().get("noa");
-
             if (notOnOrAfter != null) {
                 if (this.currentDate.after(this.dateFormat.parse(format(notOnOrAfter)))) {
                     evaluation.deny();
@@ -63,10 +63,46 @@ public class TimePolicyProvider implements PolicyProvider {
                 }
             }
 
+            if (isInvalid(Calendar.DAY_OF_MONTH, "dayMonth")
+                    || isInvalid(Calendar.MONTH, "month")
+                    || isInvalid(Calendar.YEAR, "year")
+                    || isInvalid(Calendar.HOUR_OF_DAY, "hour")
+                    || isInvalid(Calendar.MINUTE, "minute")) {
+                evaluation.deny();
+                return;
+            }
+
             evaluation.grant();
         } catch (Exception e) {
             throw new RuntimeException("Could not evaluate time-based policy [" + this.policy.getName() + "].", e);
         }
+    }
+
+    private boolean isInvalid(int timeConstant, String configName) {
+        Calendar calendar = Calendar.getInstance();
+
+        calendar.setTime(this.currentDate);
+
+        int dateField = calendar.get(timeConstant);
+
+        if (Calendar.MONTH == timeConstant) {
+            dateField++;
+        }
+
+        String start = this.policy.getConfig().get(configName);
+        if (start != null) {
+            String end = this.policy.getConfig().get(configName + "End");
+            if (end != null) {
+                if (dateField < Integer.parseInt(start)  || dateField > Integer.parseInt(end)) {
+                    return true;
+                }
+            } else {
+                if (dateField != Integer.parseInt(start)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     static String format(String notBefore) {
