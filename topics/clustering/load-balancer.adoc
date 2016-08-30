@@ -12,7 +12,7 @@ A few features in {{book.project.name}} rely on the fact that the remote
 address of the HTTP client connecting to the authentication server is the real IP address of the client machine.  This can
 be problematic when you have a reverse proxy or loadbalancer in front of your {{book.project.name}} authentication server.
 The usual setup is that you have a frontend proxy sitting on a public network that load balances and forwards requests
-to backend {{book.project.name}} server instances that sin on a private network.  There is some extra configuration you have to do in this scenario
+to backend {{book.project.name}} server instances located in a private network.  There is some extra configuration you have to do in this scenario
 so that the actual client IP address is forwarded to and processed by the {{book.project.name}} server instances.  Specifically:
 
 * Configure your reverse proxy (loadbalancer) to properly set `X-Forwarded-For` and `X-Forwarded-Proto` HTTP headers.
