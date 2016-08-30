@@ -58,4 +58,7 @@ public interface Details {
 
     String CLIENT_AUTH_METHOD = "client_auth_method";
 
+    String SIGNATURE_REQUIRED = "signature_required";
+    String SIGNATURE_ALGORITHM = "signature_algorithm";
+
 }
