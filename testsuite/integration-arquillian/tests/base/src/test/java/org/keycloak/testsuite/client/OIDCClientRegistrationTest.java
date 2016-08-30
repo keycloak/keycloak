@@ -35,7 +35,9 @@ import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.constants.ServiceUrlConstants;
 import org.keycloak.jose.jwk.JSONWebKeySet;
+import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
@@ -44,6 +46,7 @@ import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.ClientInitialAccessCreatePresentation;
 import org.keycloak.representations.idm.ClientInitialAccessPresentation;
 import org.keycloak.representations.idm.ClientRegistrationTrustedHostRepresentation;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.testsuite.Assert;
@@ -155,6 +158,7 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
         assertEquals(Arrays.asList("code", "none"), response.getResponseTypes());
         assertEquals(Arrays.asList(OAuth2Constants.AUTHORIZATION_CODE, OAuth2Constants.REFRESH_TOKEN), response.getGrantTypes());
         assertEquals(OIDCLoginProtocol.CLIENT_SECRET_BASIC, response.getTokenEndpointAuthMethod());
+        Assert.assertNull(response.getUserinfoSignedResponseAlg());
     }
 
     @Test
@@ -253,6 +257,21 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
         Assert.assertEquals(200, accessTokenResponse.getStatusCode());
         AccessToken accessToken = oauth.verifyToken(accessTokenResponse.getAccessToken());
         Assert.assertEquals(response.getClientId(), accessToken.getAudience()[0]);
+    }
+
+    @Test
+    public void testSignaturesRequired() throws Exception {
+        OIDCClientRepresentation clientRep = createRep();
+        clientRep.setUserinfoSignedResponseAlg(Algorithm.RS256.toString());
+
+        OIDCClientRepresentation response = reg.oidc().create(clientRep);
+        Assert.assertEquals(Algorithm.RS256.toString(), response.getUserinfoSignedResponseAlg());
+        Assert.assertNotNull(response.getClientSecret());
+
+        // Test Keycloak representation
+        ClientRepresentation kcClient = getClient(response.getClientId());
+        OIDCAdvancedConfigWrapper config = OIDCAdvancedConfigWrapper.fromClientRepresentation(kcClient);
+        Assert.assertEquals(config.getUserInfoSignedResponseAlg(), Algorithm.RS256);
     }
 
 

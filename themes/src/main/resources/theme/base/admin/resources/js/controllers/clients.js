@@ -792,6 +792,11 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, templates,
         {name: "INCLUSIVE_WITH_COMMENTS", value: "http://www.w3.org/TR/2001/REC-xml-c14n-20010315#WithComments"}
     ];
 
+    $scope.oidcSignatureAlgorithms = [
+        "unsigned",
+        "RS256"
+    ];
+
     $scope.realm = realm;
     $scope.samlAuthnStatement = false;
     $scope.samlMultiValuedRoles = false;
@@ -892,6 +897,8 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, templates,
                 $scope.samlForcePostBinding = false;
             }
         }
+
+        $scope.userInfoSignedResponseAlg = getSignatureAlgorithm('user.info.response');
     }
 
     if (!$scope.create) {
@@ -955,6 +962,25 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, templates,
     $scope.changeNameIdFormat = function() {
         $scope.client.attributes['saml_name_id_format'] = $scope.nameIdFormat;
     };
+
+    $scope.changeUserInfoSignedResponseAlg = function() {
+        changeSignatureAlgorithm('user.info.response', $scope.userInfoSignedResponseAlg);
+    };
+
+    function changeSignatureAlgorithm(attrPrefix, attrValue) {
+        var attrName = attrPrefix + '.signature.alg';
+        if (attrValue === 'unsigned') {
+            $scope.client.attributes[attrName] = null;
+        } else {
+            $scope.client.attributes[attrName] = attrValue;
+        }
+    }
+
+    function getSignatureAlgorithm(attrPrefix) {
+        var attrName = attrPrefix + '.signature.alg';
+        var attrVal = $scope.client.attributes[attrName];
+        return attrVal==null ? 'unsigned' : attrVal;
+    }
 
     $scope.$watch(function() {
         return $location.path();
