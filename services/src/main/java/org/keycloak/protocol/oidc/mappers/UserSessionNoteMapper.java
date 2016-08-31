@@ -79,27 +79,12 @@ public class UserSessionNoteMapper extends AbstractOIDCProtocolMapper implements
         return "Map a custom user session note to a token claim.";
     }
 
-    @Override
-    public AccessToken transformAccessToken(AccessToken token, ProtocolMapperModel mappingModel, KeycloakSession session,
-                                            UserSessionModel userSession, ClientSessionModel clientSession) {
-        if (!OIDCAttributeMapperHelper.includeInAccessToken(mappingModel)) return token;
-
-        setClaim(token, mappingModel, userSession);
-        return token;
-    }
-
     protected void setClaim(IDToken token, ProtocolMapperModel mappingModel, UserSessionModel userSession) {
+
         String noteName = mappingModel.getConfig().get(ProtocolMapperUtils.USER_SESSION_NOTE);
         String noteValue = userSession.getNote(noteName);
         if (noteValue == null) return;
         OIDCAttributeMapperHelper.mapClaim(token, mappingModel, noteValue);
-    }
-
-    @Override
-    public IDToken transformIDToken(IDToken token, ProtocolMapperModel mappingModel, KeycloakSession session, UserSessionModel userSession, ClientSessionModel clientSession) {
-        if (!OIDCAttributeMapperHelper.includeInIDToken(mappingModel)) return token;
-        setClaim(token, mappingModel, userSession);
-        return token;
     }
 
     public static ProtocolMapperModel createClaimMapper(String name,

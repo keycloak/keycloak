@@ -35,33 +35,7 @@ import java.util.Set;
  *
  * @author <a href="mailto:thomas.darimont@gmail.com">Thomas Darimont</a>
  */
-abstract class AbstractUserRoleMappingMapper extends AbstractOIDCProtocolMapper implements OIDCAccessTokenMapper, OIDCIDTokenMapper {
-
-    @Override
-    public AccessToken transformAccessToken(AccessToken token, ProtocolMapperModel mappingModel, KeycloakSession session,
-                                            UserSessionModel userSession, ClientSessionModel clientSession) {
-
-        if (!OIDCAttributeMapperHelper.includeInAccessToken(mappingModel)) {
-            return token;
-        }
-
-        setClaim(token, mappingModel, userSession);
-        return token;
-    }
-
-    @Override
-    public IDToken transformIDToken(IDToken token, ProtocolMapperModel mappingModel, KeycloakSession session, UserSessionModel userSession, ClientSessionModel clientSession) {
-
-        if (!OIDCAttributeMapperHelper.includeInIDToken(mappingModel)) {
-            return token;
-        }
-
-        setClaim(token, mappingModel, userSession);
-        return token;
-    }
-
-
-    protected abstract void setClaim(IDToken token, ProtocolMapperModel mappingModel, UserSessionModel userSession);
+abstract class AbstractUserRoleMappingMapper extends AbstractOIDCProtocolMapper {
 
     /**
      * Returns the role names extracted from the given {@code roleModels} while recursively traversing "Composite Roles".

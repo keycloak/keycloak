@@ -37,7 +37,7 @@ import java.util.Map;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class HardcodedClaim extends AbstractOIDCProtocolMapper implements OIDCAccessTokenMapper, OIDCIDTokenMapper {
+public class HardcodedClaim extends AbstractOIDCProtocolMapper implements OIDCAccessTokenMapper, OIDCIDTokenMapper, UserInfoTokenMapper {
 
     private static final List<ProviderConfigProperty> configProperties = new ArrayList<ProviderConfigProperty>();
 
@@ -113,26 +113,11 @@ public class HardcodedClaim extends AbstractOIDCProtocolMapper implements OIDCAc
         return "Hardcode a claim into the token.";
     }
 
-    @Override
-    public AccessToken transformAccessToken(AccessToken token, ProtocolMapperModel mappingModel, KeycloakSession session,
-                                            UserSessionModel userSession, ClientSessionModel clientSession) {
-        if (!OIDCAttributeMapperHelper.includeInAccessToken(mappingModel)) return token;
-
-        setClaim(token, mappingModel, userSession);
-        return token;
-    }
-
     protected void setClaim(IDToken token, ProtocolMapperModel mappingModel, UserSessionModel userSession) {
+
         String attributeValue = mappingModel.getConfig().get(CLAIM_VALUE);
         if (attributeValue == null) return;
         OIDCAttributeMapperHelper.mapClaim(token, mappingModel, attributeValue);
-    }
-
-    @Override
-    public IDToken transformIDToken(IDToken token, ProtocolMapperModel mappingModel, KeycloakSession session, UserSessionModel userSession, ClientSessionModel clientSession) {
-        if (!OIDCAttributeMapperHelper.includeInIDToken(mappingModel)) return token;
-        setClaim(token, mappingModel, userSession);
-        return token;
     }
 
     public static ProtocolMapperModel create(String name,

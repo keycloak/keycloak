@@ -124,7 +124,7 @@ public class OIDCAttributeMapperHelper {
                                                         boolean consentRequired, String consentText,
                                                         boolean accessToken, boolean idToken,
                                                         String mapperId) {
-        return createClaimMapper(name, userAttribute,tokenClaimName, claimType, consentRequired, consentText, accessToken, idToken, false, mapperId);
+        return createClaimMapper(name, userAttribute,tokenClaimName, claimType, consentRequired, consentText, accessToken, idToken, true, mapperId);
     }
 
     public static ProtocolMapperModel createClaimMapper(String name,
@@ -167,6 +167,7 @@ public class OIDCAttributeMapperHelper {
     }
 
     public static void addAttributeConfig(List<ProviderConfigProperty> configProperties) {
+
         ProviderConfigProperty property;
         property = new ProviderConfigProperty();
         property.setName(TOKEN_CLAIM_NAME);
@@ -174,6 +175,7 @@ public class OIDCAttributeMapperHelper {
         property.setType(ProviderConfigProperty.STRING_TYPE);
         property.setHelpText(TOKEN_CLAIM_NAME_TOOLTIP);
         configProperties.add(property);
+
         property = new ProviderConfigProperty();
         property.setName(JSON_TYPE);
         property.setLabel(JSON_TYPE);
@@ -186,6 +188,7 @@ public class OIDCAttributeMapperHelper {
         property.setDefaultValue(types);
         property.setHelpText(JSON_TYPE_TOOLTIP);
         configProperties.add(property);
+
         property = new ProviderConfigProperty();
         property.setName(INCLUDE_IN_ID_TOKEN);
         property.setLabel(INCLUDE_IN_ID_TOKEN_LABEL);
@@ -193,6 +196,7 @@ public class OIDCAttributeMapperHelper {
         property.setDefaultValue("true");
         property.setHelpText(INCLUDE_IN_ID_TOKEN_HELP_TEXT);
         configProperties.add(property);
+
         property = new ProviderConfigProperty();
         property.setName(INCLUDE_IN_ACCESS_TOKEN);
         property.setLabel(INCLUDE_IN_ACCESS_TOKEN_LABEL);
@@ -200,11 +204,12 @@ public class OIDCAttributeMapperHelper {
         property.setDefaultValue("true");
         property.setHelpText(INCLUDE_IN_ACCESS_TOKEN_HELP_TEXT);
         configProperties.add(property);
+
         property = new ProviderConfigProperty();
         property.setName(INCLUDE_IN_USERINFO);
         property.setLabel(INCLUDE_IN_USERINFO_LABEL);
         property.setType(ProviderConfigProperty.BOOLEAN_TYPE);
-        property.setDefaultValue("false");
+        property.setDefaultValue("true");
         property.setHelpText(INCLUDE_IN_USERINFO_HELP_TEXT);
         configProperties.add(property);
     }

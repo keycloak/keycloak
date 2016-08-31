@@ -89,39 +89,13 @@ public class UserAttributeMapper extends AbstractOIDCProtocolMapper implements O
         return "Map a custom user attribute to a token claim.";
     }
 
-    @Override
-    public AccessToken transformAccessToken(AccessToken token, ProtocolMapperModel mappingModel, KeycloakSession session,
-                                            UserSessionModel userSession, ClientSessionModel clientSession) {
-        if (!OIDCAttributeMapperHelper.includeInAccessToken(mappingModel)) return token;
-
-        setClaim(token, mappingModel, userSession);
-        return token;
-    }
-
     protected void setClaim(IDToken token, ProtocolMapperModel mappingModel, UserSessionModel userSession) {
+
         UserModel user = userSession.getUser();
         String attributeName = mappingModel.getConfig().get(ProtocolMapperUtils.USER_ATTRIBUTE);
         List<String> attributeValue = KeycloakModelUtils.resolveAttribute(user, attributeName);
         if (attributeValue == null) return;
         OIDCAttributeMapperHelper.mapClaim(token, mappingModel, attributeValue);
-    }
-
-    @Override
-    public IDToken transformIDToken(IDToken token, ProtocolMapperModel mappingModel, KeycloakSession session, UserSessionModel userSession, ClientSessionModel clientSession) {
-        if (!OIDCAttributeMapperHelper.includeInIDToken(mappingModel)) return token;
-        setClaim(token, mappingModel, userSession);
-        return token;
-    }
-
-    @Override
-    public AccessToken transformUserInfoToken(AccessToken token, ProtocolMapperModel mappingModel, KeycloakSession session, UserSessionModel userSession, ClientSessionModel clientSession) {
-
-        if (!OIDCAttributeMapperHelper.includeInUserInfo(mappingModel)) {
-            return token;
-        }
-
-        setClaim(token, mappingModel, userSession);
-        return token;
     }
 
     public static ProtocolMapperModel createClaimMapper(String name,

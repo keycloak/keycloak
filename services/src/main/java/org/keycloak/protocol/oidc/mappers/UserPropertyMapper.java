@@ -79,24 +79,8 @@ public class UserPropertyMapper extends AbstractOIDCProtocolMapper implements OI
         return "Map a built in user property (email, firstName, lastName) to a token claim.";
     }
 
-    @Override
-    public AccessToken transformAccessToken(AccessToken token, ProtocolMapperModel mappingModel, KeycloakSession session,
-                                            UserSessionModel userSession, ClientSessionModel clientSession) {
-        if (!OIDCAttributeMapperHelper.includeInAccessToken(mappingModel)) return token;
-        setClaim(token, mappingModel, userSession);
-
-        return token;
-    }
-
-    @Override
-    public IDToken transformIDToken(IDToken token, ProtocolMapperModel mappingModel, KeycloakSession session, UserSessionModel userSession, ClientSessionModel clientSession) {
-        if (!OIDCAttributeMapperHelper.includeInIDToken(mappingModel)) return token;
-        setClaim(token, mappingModel, userSession);
-
-        return token;
-    }
-
     protected void setClaim(IDToken token, ProtocolMapperModel mappingModel, UserSessionModel userSession) {
+
         UserModel user = userSession.getUser();
         String propertyName = mappingModel.getConfig().get(ProtocolMapperUtils.USER_ATTRIBUTE);
         String propertyValue = ProtocolMapperUtils.getUserModelValue(user, propertyName);
@@ -114,6 +98,4 @@ public class UserPropertyMapper extends AbstractOIDCProtocolMapper implements OI
                 accessToken, idToken,
                 PROVIDER_ID);
     }
-
-
 }
