@@ -102,6 +102,23 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
         return response;
     }
 
+    private void assertCreateFail(OIDCClientRepresentation client, int expectedStatusCode) {
+        assertCreateFail(client, expectedStatusCode, null);
+    }
+
+    private void assertCreateFail(OIDCClientRepresentation client, int expectedStatusCode, String expectedErrorContains) {
+        try {
+            reg.oidc().create(client);
+            Assert.fail("Not expected to successfuly register client");
+        } catch (ClientRegistrationException expected) {
+            HttpErrorException httpEx = (HttpErrorException) expected.getCause();
+            Assert.assertEquals(expectedStatusCode, httpEx.getStatusLine().getStatusCode());
+            if (expectedErrorContains != null) {
+                assertTrue("Error response doesn't contain expected text", httpEx.getErrorResponse().contains(expectedErrorContains));
+            }
+        }
+    }
+
     @Test
     public void testCreateWithTrustedHost() throws Exception {
         reg.auth(null);
@@ -109,17 +126,10 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
         OIDCClientRepresentation client = createRep();
 
         // Failed to create client
-        try {
-            reg.oidc().create(client);
-            Assert.fail("Not expected to successfuly register client");
-        } catch (ClientRegistrationException expected) {
-            HttpErrorException httpEx = (HttpErrorException) expected.getCause();
-            Assert.assertEquals(401, httpEx.getStatusLine().getStatusCode());
-        }
+        assertCreateFail(client, 401);
 
         // Create trusted host entry
-        Response response = adminClient.realm(REALM_NAME).clientRegistrationTrustedHost().create(ClientRegistrationTrustedHostRepresentation.create("localhost", 2, 2));
-        Assert.assertEquals(201, response.getStatus());
+        createTrustedHost("localhost", 2);
 
         // Successfully register client
         reg.oidc().create(client);
@@ -132,13 +142,20 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
         reg.oidc().create(client);
 
         // Failed to create 3rd client
-        try {
-            reg.oidc().create(client);
-            Assert.fail("Not expected to successfuly register client");
-        } catch (ClientRegistrationException expected) {
-            HttpErrorException httpEx = (HttpErrorException) expected.getCause();
-            Assert.assertEquals(401, httpEx.getStatusLine().getStatusCode());
-        }
+        assertCreateFail(client, 401);
+    }
+
+    // KEYCLOAK-3421
+    @Test
+    public void createClientWithUriFragment() {
+        reg.auth(null);
+
+        createTrustedHost("localhost", 1);
+
+        OIDCClientRepresentation client = createRep();
+        client.setRedirectUris(Arrays.asList("http://localhost/auth", "http://localhost/auth#fragment", "http://localhost/auth*"));
+
+        assertCreateFail(client, 400, "URI fragment");
     }
 
     @Test
@@ -321,6 +338,11 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
         } finally {
             oauth.closeClient(client);
         }
+    }
+
+    private void createTrustedHost(String name, int count) {
+        Response response = adminClient.realm(REALM_NAME).clientRegistrationTrustedHost().create(ClientRegistrationTrustedHostRepresentation.create(name, count, count));
+        Assert.assertEquals(201, response.getStatus());
     }
 
 }
