@@ -1,41 +1,70 @@
 == Migration from older versions
 
-To upgrade to a new version of Keycloak first download and install the new version of Keycloak.
-You then have to migrate the database, keycloak-server.json, providers, themes and applications from the old version. 
+To upgrade to a new version of Keycloak first download and install the new version of Keycloak. Once the new version
+is installed migrate the database, keycloak-server.json, providers, themes and applications to the new applications.
+
+This chapter contains some general migration details which are applicable to all versions. There are instructions for
+migration that is only applicable to a specific release. If you are upgrading from a very old version you need to go
+through all intermediate version specific migration.
+
+It's highly recommended that you backup your database prior to upgrading Keycloak.
+
+Migration from a candidate release (CR) to a Final release is not supported. We do however recommend that you test
+migration for a CR so we can resolve any potential issues before the Final is released.
 
 === Migrate database
 
-Keycloak provides automatic migration of the database.
-It's highly recommended that you backup your database prior to upgrading Keycloak. Migrating from a release candidate to
-a final release is not supported. For reason for release candidates we recommend that you create a copy of your production
-database to test release candidates.
+Keycloak can automatically migration the database schema, or you can choose to do it manually.
 
-To enable automatic upgrading of the database if you're using a relational database make sure `databaseSchema` is set to `update` for `connectionsJpa`: 
+==== Relational database
 
-[source]
-----
-"connectionsJpa": {
-    "default": {
-        ...
-        "databaseSchema": "update"
-    }
-}
-----        
-
-For MongoDB do the same, but for `connectionsMongo`: 
+To enable automatic upgrading of the database schema set the `migrationStrategy` property to `update` for
+the default `connectionsJpa` provider:
 
 [source]
 ----
-
-"connectionsMongo": {
-    "default": {
-        ...
-        "databaseSchema": "update"
-    }
-}
+<spi name="connectionsJpa">
+    <provider name="default" enabled="true">
+        <properties>
+            ...
+            <property name="migrationStrategy" value="update"/>
+        </properties>
+    </provider>
+</spi>
 ----        
 
-When you start the server with this setting your database will automatically be migrated if the database schema has changed in the new version. 
+When you start the server with this setting your database will automatically be migrated if the database schema has
+changed in the new version.
+
+To manually migrate the database set the `migrationStrategy` to `manual`. When you start the server with this
+configuration it will check if the database needs migration. If changes are needed the required changes are written
+to an SQL file that you can review and manually run against the database.
+
+There's also the option to disable migration by setting the `migrationStrategy` to `validate`. With this configuration
+the database will be checked at startup and if it is not migrated the server will exit.
+
+====
+
+Mongo doesn't have a schema, but there may still be things like collections and indexes that are added to new releases.
+To enable automatic creation of these set the `migrationStrategy` property to `update` for the default `connectionsMongo`
+provider:
+
+[source]
+----
+<spi name="connectionsMongo">
+    <provider name="default" enabled="true">
+        <properties>
+            ...
+            <property name="migrationStrategy" value="update"/>
+        </properties>
+    </provider>
+</spi>
+----
+
+The Mongo provider does not have the option to manually apply the required changes.
+
+There's also the option to disable migration by setting the `migrationStrategy` to `validate`. With this configuration
+the database will be checked at startup and if it is not migrated the server will exit.
 
 === Migrate keycloak-server.json
 
@@ -61,6 +90,15 @@ For any applications including those not deployed directly to the Keycloak serve
 The version specific section below will mention if any changes are required to applications. 
 
 === Version specific migration
+
+==== Migrating to 2.2.0
+
+====== `databaseSchema` property deprecated
+
+The `databaseSchema` property for both JPA and Mongo is now deprecated and has been replaced by `initializeEmpty`
+and `migrationStrategy`. `initializeEmpty` can bet set to `true` or `false` and controls if an empty database should
+be initialized. `migrationStrategy` can be set to `update`, `validate` and `manual`. `manual` is only supported for
+relational databases and will write an SQL file with the required changes to the database schema.
 
 ==== Migrating to 2.0.0
 
