@@ -1,19 +1,23 @@
 
 === Database Configuration
 
-The configuration for this component lies in the _keycloak-server.json_ file.  If you are running in standalone mode, this file is in the _.../standalone/configuration_ directory.  If you are running in domain mode this file will live in the _.../domain/servers/{server name}/configuration_ directory.
+The configuration for this component lies in the `standalone.xml`, `standalone-ha.xml`, or `domain.xml` file 
+in your distribution.  The location of this file 
+depends on your <<fake/../../operating-mode.adoc#_operating-mode, operating mode>>. 
 
 .Database Config
-[source,json]
+[source,xml]
 ----
-"connectionsJpa": {
-    "default": {
-        "dataSource": "java:jboss/datasources/KeycloakDS",
-        "initializeEmpty": false,
-        "migrationStrategy": "manual",
-        "migrationExport": "${jboss.home.dir}/keycloak-database-update.sql"
-    }
-},
+<spi name="connectionsJpa">
+    <provider name="default" enabled="true">
+        <properties>
+            <property name="dataSource" value="java:jboss/datasources/KeycloakDS"/>
+            <property name="initializeEmpty" value="false"/>
+            <property name="migrationStrategy" value="manual"/>
+            <property name="migrationExport" value="${jboss.home.dir}/keycloak-database-update.sql"/>
+        </properties>
+    </provider>
+</spi>
 ----
 
 Possible configuration options are:

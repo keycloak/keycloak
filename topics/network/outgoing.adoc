@@ -2,16 +2,20 @@
 === Outgoing HTTP Requests
 
 The {{book.project.name}} server often needs to make non-browser HTTP requests to the applications and services it secures.
-The auth server manages these outgoing connections by maintaining an HTTP client connection pool.  There are some thing
-you'll need to configure in the _keycloak-server.json_.  Where this file lives depends on your <<fake/../../operating-mode.adoc#_operating-mode, operating mode>>
+The auth server manages these outgoing connections by maintaining an HTTP client connection pool.  There are some things
+you'll need to configure in `standalone.xml`, `standalone-ha.xml`, or `domain.xml`.  The location of this file 
+depends on your <<fake/../../operating-mode.adoc#_operating-mode, operating mode>>. 
 
-
-.keycloak-server.json HTTP client Config
-[source,json]
+.HTTP client Config example
+[source,xml]
 ----
-"connectionsHttpClient": {
-    "default": {}
-},
+<spi name="connectionsHttpClient">
+    <provider name="default" enabled="true">
+        <properties>
+            <property name="connection-pool-size" value="256"/>
+        </properties>
+    </provider>
+</spi>
 ----
 Possible configuration options are:
 
@@ -72,20 +76,24 @@ You can use _keytool_ to create a new truststore file or add trusted host certif
 $ keytool -import -alias HOSTDOMAIN -keystore truststore.jks -file host-certificate.cer
 ----
 
-The truststore is configured within the _keycloak-server.json_ file.  The location of this file depends on your <<fake/../../operating-mode.adoc#_operating-mode, operating mode>>.
+The truststore is configured within the `standalone.xml`, 
+`standalone-ha.xml`, or `domain.xml` file in your distribution.  The location of this file 
+depends on your <<fake/../../operating-mode.adoc#_operating-mode, operating mode>>. 
 You can add your truststore configuration by using the following template:
 
-[source]
+[source,xml]
 ----
+<spi name="truststore">
+    <provider name="file" enabled="true">
+        <properties>
+            <property name="file" value="path to your .jks file containing public certificates"/>
+            <property name="password" value="password"/>
+            <property name="hostname-verification-policy" value="WILDCARD"/>
+            <property name="disabled" value="false"/>
+        </properties>
+    </provider>
+</spi>
 
-"truststore": {
-    "file": {
-        "file": "path to your .jks file containing public certificates",
-        "password": "password",
-        "hostname-verification-policy": "WILDCARD",
-        "disabled": false
-    }
-}
 ----
 
 Possible configuration options for this setting are:

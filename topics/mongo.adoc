@@ -5,82 +5,78 @@
 
 You are not stuck with using a RDBMS for persisting data.  {{book.project.name}}
 provides a http://www.mongodb.com[MongoDB] based model implementation.
-To configure {{book.project.name}} to use Mongo, you need to edit the _keycloak-server.json_ file.  If you are running
-in standalone mode, this file is in the _.../standalone/configuration_ directory.  If you are running in domain mode
-this file will live in the _.../domain/servers/{server name}/configuration_ directory.
+To configure {{book.project.name}} to use Mongo, you need to edit the `standalone.xml`, 
+`standalone-ha.xml`, or `domain.xml` file in your distribution.  The location of this file 
+depends on your <<fake/../../operating-mode.adoc#_operating-mode, operating mode>>. 
 
-Open the _keycloak-server.json_ file.  Look for the following JSON snippets and replace all the _jpa_ providers with _mongo_ .   This is the area you will be modifying
+Open the `standalone.xml`, `standalone-ha.xml`, or `domain.xml` file.  Look for the following XML snippets and replace all the _jpa_ providers with _mongo_ .   This is the area you will be modifying
 to use Mongo.
 
-[source,json]
+[source,xml]
+----
+<spi name="eventsStore">
+    <default-provider>jpa</default-provider>
+    <provider name="jpa" enabled="true">
+        <properties>
+            <property name="exclude-events" value="[&quot;REFRESH_TOKEN&quot;]"/>
+        </properties>
+    </provider>
+</spi>
+<spi name="realm">
+    <default-provider>jpa</default-provider>
+</spi>
+<spi name="user">
+    <default-provider>jpa</default-provider>
+</spi>
+<spi name="userSessionPersister">
+    <default-provider>jpa</default-provider>
+</spi>
+<spi name="authorizationPersister">
+    <default-provider>jpa</default-provider>
+</spi>
+
 ----
 
-"eventsStore": {
-    "provider": "jpa",
-    "jpa": {
-        "exclude-events": [ "REFRESH_TOKEN" ]
-    }
-},
+Change that XML snippet to use Mongo:
 
-"realm": {
-    "provider": "jpa"
-},
-
-"user": {
-    "provider": "jpa"
-},
-
-"userSessionPersister": {
-    "provider": "jpa"
-},
-
-"authorizationPersister": {
-    "provider": "jpa"
-},
+[source,xml]
 ----
-
-Change that JSON snippet to use Mongo:
-
-[source,json]
+<spi name="eventsStore">
+    <default-provider>mongo</default-provider>
+    <provider name="mongo" enabled="true">
+        <properties>
+            <property name="exclude-events" value="[&quot;REFRESH_TOKEN&quot;]"/>
+        </properties>
+    </provider>
+</spi>
+<spi name="realm">
+    <default-provider>mongo</default-provider>
+</spi>
+<spi name="user">
+    <default-provider>mongo</default-provider>
+</spi>
+<spi name="userSessionPersister">
+    <default-provider>mongo</default-provider>
+</spi>
+<spi name="authorizationPersister">
+    <default-provider>mongo</default-provider>
+</spi>
 ----
+After that, add the snippet like this where you can configure details about your Mongo database:
 
-"eventsStore": {
-    "provider": "mongo",
-    "mongo": {
-        "exclude-events": [ "REFRESH_TOKEN" ]
-    }
-},
-
-"realm": {
-    "provider": "mongo"
-},
-
-"user": {
-    "provider": "mongo"
-},
-
-"userSessionPersister": {
-    "provider": "mongo"
-},
-
-"authorizationPersister": {
-    "provider": "mongo"
-},
+[source,xml]
 ----
-And at the end of the file add the snippet like this where you can configure details about your Mongo database:
-
-[source,json]
-----
-
-"connectionsMongo": {
-    "default": {
-        "host": "127.0.0.1",
-        "port": "27017",
-        "db": "keycloak",
-        "connectionsPerHost": 100,
-        "databaseSchema": "update"
-    }
-}
+<spi name="connectionsMongo">
+    <provider name="default" enabled="true">
+        <properties>
+            <property name="host" value="127.0.0.1"/>
+            <property name="port" value="27017"/>
+            <property name="db" value="keycloak"/>
+            <property name="connectionsPerHost" value="100"/>
+            <property name="databaseSchema" value="update"/>
+        </properties>
+    </provider>
+</spi>
 ----
 All configuration options are optional.
 Default values for host and port are localhost and 27017.
@@ -99,15 +95,16 @@ Please note that the database specified within the URI is only used for authenti
 To change the database used by {{book.project.name}} you have to set `db` property as before.
 Therefore, a configuration like the following
 
-[source]
+[source,xml]
 ----
-
-"connectionsMongo": {
-    "default": {
-        "uri": "mongodb://user:password@127.0.0.1/authentication",
-        "db": "keycloak"
-    }
-}
+<spi name="connectionsMongo">
+    <provider name="default" enabled="true">
+        <properties>
+            <property name="uri" value="mongodb://user:password@127.0.0.1/authentication"/>
+            <property name="db" value="keycloak"/>
+        </properties>
+    </provider>
+</spi>
 ----
 will authenticate the user against the authentication database, but store all {{book.project.name}} related data in the keycloak database.
 

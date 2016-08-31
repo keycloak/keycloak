@@ -45,14 +45,3 @@ $ .../bin/standalone.sh --server-config=standalone-ha.xml
 ----
 > ...\bin\standalone.bat --server-config=standalone-ha.xml
 ----
-
-==== Standalone Clustered {{book.project.name}} JSON Configuration
-
-The {{book.project.name}} specific json configure file resides in the same place as in standalone mode: _.../standalone/configuration/keycloak.json_.
-Like _standalone-ha.xml_ you have to modify this file in each distribution in your cluster when you want to make a change here.
-
-WARNING: Any changes you make to this file while the server is running will not take effect.  You'll need to reboot the
-      server.
-
-
-
