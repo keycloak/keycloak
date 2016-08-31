@@ -43,7 +43,7 @@ to an SQL file that you can review and manually run against the database.
 There's also the option to disable migration by setting the `migrationStrategy` to `validate`. With this configuration
 the database will be checked at startup and if it is not migrated the server will exit.
 
-====
+==== Mongo
 
 Mongo doesn't have a schema, but there may still be things like collections and indexes that are added to new releases.
 To enable automatic creation of these set the `migrationStrategy` property to `update` for the default `connectionsMongo`
