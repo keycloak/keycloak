@@ -40,7 +40,7 @@ import java.util.Map;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class GroupMembershipMapper extends AbstractOIDCProtocolMapper implements OIDCAccessTokenMapper, OIDCIDTokenMapper {
+public class GroupMembershipMapper extends AbstractOIDCProtocolMapper implements OIDCAccessTokenMapper, OIDCIDTokenMapper, UserInfoTokenMapper {
 
     private static final List<ProviderConfigProperty> configProperties = new ArrayList<ProviderConfigProperty>();
 
@@ -113,15 +113,14 @@ public class GroupMembershipMapper extends AbstractOIDCProtocolMapper implements
     }
 
 
-    @Override
-    public AccessToken transformAccessToken(AccessToken token, ProtocolMapperModel mappingModel, KeycloakSession session,
-                                            UserSessionModel userSession, ClientSessionModel clientSession) {
-        if (!OIDCAttributeMapperHelper.includeInAccessToken(mappingModel)) return token;
-        buildMembership(token, mappingModel, userSession);
-        return token;
-    }
+    /**
+     * Adds the group membership information to the {@link IDToken#otherClaims}.
+     * @param token
+     * @param mappingModel
+     * @param userSession
+     */
+    protected void setClaim(IDToken token, ProtocolMapperModel mappingModel, UserSessionModel userSession) {
 
-    public void buildMembership(IDToken token, ProtocolMapperModel mappingModel, UserSessionModel userSession) {
         List<String> membership = new LinkedList<>();
         boolean fullPath = useFullPath(mappingModel);
         for (GroupModel group : userSession.getUser().getGroups()) {
@@ -134,13 +133,6 @@ public class GroupMembershipMapper extends AbstractOIDCProtocolMapper implements
         String protocolClaim = mappingModel.getConfig().get(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME);
 
         token.getOtherClaims().put(protocolClaim, membership);
-    }
-
-    @Override
-    public IDToken transformIDToken(IDToken token, ProtocolMapperModel mappingModel, KeycloakSession session, UserSessionModel userSession, ClientSessionModel clientSession) {
-        if (!OIDCAttributeMapperHelper.includeInIDToken(mappingModel)) return token;
-        buildMembership(token, mappingModel, userSession);
-        return token;
     }
 
     public static ProtocolMapperModel create(String name,
