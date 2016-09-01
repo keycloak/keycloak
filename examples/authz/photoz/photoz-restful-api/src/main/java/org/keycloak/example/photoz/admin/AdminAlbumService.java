@@ -19,9 +19,8 @@ package org.keycloak.example.photoz.admin;
 
 import org.keycloak.example.photoz.entity.Album;
 
-import javax.ejb.Stateless;
+import javax.inject.Inject;
 import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -36,12 +35,11 @@ import java.util.List;
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 @Path("/admin/album")
-@Stateless
 public class AdminAlbumService {
 
     public static final String SCOPE_ADMIN_ALBUM_MANAGE = "urn:photoz.com:scopes:album:admin:manage";
 
-    @PersistenceContext
+    @Inject
     private EntityManager entityManager;
 
     @Context
