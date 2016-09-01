@@ -161,6 +161,14 @@ and `migrationStrategy`. `initializeEmpty` can bet set to `true` or `false` and 
 be initialized. `migrationStrategy` can be set to `update`, `validate` and `manual`. `manual` is only supported for
 relational databases and will write an SQL file with the required changes to the database schema.
 
+====== Changes in Client's Valid Redirect URIs
+The following scenarious are affected:
+
+* When a Valid Redirect URI with query component is saved in a Client (e.g. `http://localhost/auth?foo=bar`), `redirect_uri` in authorization request must exactly match this URI (or other registered URI in this Client).
+* When a Valid Redirect URI without a query component is saved in a Client, `redirect_uri` must exactly match as well.
+* Wildcards in registered Valid Redirect URIs are no longer supported when query component is present in this URI, so the `redirect_uri` needs to exactly match this saved URI as well.
+* Fragments in registered Valid Redirect URIs (like `http://localhost/auth#fragment`) are no longer allowed.
+
 ==== Migrating to 2.0.0
 
 ====== Upgrading from 1.0.0.Final no longer supported
