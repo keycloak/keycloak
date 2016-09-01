@@ -416,7 +416,7 @@ public class AuthenticationManager {
         // refresh the cookies!
         createLoginCookie(session, realm, userSession.getUser(), userSession, uriInfo, clientConnection);
         if (userSession.getState() != UserSessionModel.State.LOGGED_IN) userSession.setState(UserSessionModel.State.LOGGED_IN);
-        if (userSession.isRememberMe()) createRememberMeCookie(realm, userSession.getUser().getUsername(), uriInfo, clientConnection);
+        if (userSession.isRememberMe()) createRememberMeCookie(realm, userSession.getLoginUsername(), uriInfo, clientConnection);
         return protocol.authenticated(userSession, new ClientSessionCode(realm, clientSession));
 
     }
