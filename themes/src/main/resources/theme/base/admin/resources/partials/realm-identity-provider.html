@@ -10,13 +10,17 @@
     <p class="">
         Through Identity Brokering it's easy to allow users to authenticate to Keycloak using external Identity Providers or Social Networks.<br> We have built-in support for OpenID Connect and SAML 2.0 as well as a number of social networks such as Google, GitHub, Facebook and Twitter.
     </p>
-    <div class="dropdown" data-ng-show="access.manageIdentityProviders">
-        <select class="form-control" ng-model="provider"
-        ng-options="p.name group by p.groupName for p in allProviders track by p.id"
-        data-ng-change="addProvider(provider); provider = null">
-            <option value="" disabled selected>{{:: 'add-provider.placeholder' | translate}}</option>
-        </select>
-    </div>
+    <div class="row" data-ng-show="access.manageIdentityProviders">
+      <div class="col-sm-4 col-sm-offset-4">
+        <div class="form-group">
+          <select class="selectpicker form-control" ng-model="provider"
+          ng-options="p.name group by p.groupName for p in allProviders track by p.id"
+          data-ng-change="addProvider(provider); provider = null">
+          <option value="" disabled selected>{{:: 'add-provider.placeholder' | translate}}</option>
+      </select>
+  </div>
+</div>
+</div>
 </div>
     <form name="realmForm" novalidate class="form-horizontal" ng-show="configuredProviders.length > 0">
         <fieldset>
