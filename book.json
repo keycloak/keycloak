@@ -25,6 +25,10 @@
       "link": "https://keycloak.gitbooks.io/securing-client-applications-guide/content/"
 
     },
+    "installguide": {
+      "name": "Server Installation and Configuration Guide",
+      "link": "https://keycloak.gitbooks.io/server-installation-and-configuration/content/"
+    },
     "apidocs": {
       "name": "API Documentation",
       "link": "http://keycloak.org/docs"

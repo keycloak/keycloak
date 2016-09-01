@@ -87,16 +87,22 @@ Example service configuration file (`META-INF/services/org.keycloak.events.Event
 org.acme.provider.MyEventListenerProviderFactory
 ----
 
-You can configure your provider through `keycloak-server.json`. For example by adding the following to `keycloak-server.json`:
+You can configure your provider through `standalone.xml`, `standalone-ha.xml`, or `domain.xml`.  
+See the link:{{book.installguide.link}}[{{book.installguide.name}}] for more details on 
+where the `standalone.xml`, `standalone-ha.xml`, or `domain.xml` file lives.
 
-[source]
+For example by adding the following to `standalone.xml`:
+
+[source,xml]
 ----
-"eventsListener": {
-  "my-event-listener" {
-     "aNumber": 10,
-     "aString": "Foo"
-  }
-}
+<spi name="eventsListener">
+    <provider name="my-event-listener" enabled="true">
+        <properties>
+            <property name="aNumber" value="10"/>
+            <property name="aString" value="Foo"/>
+        </properties>
+    </provider>
+</spi>
 ----
 
 Then you can retrieve the config in the `ProviderFactory` init method:
@@ -202,16 +208,17 @@ Then copy `event-listener-sysout-example.jar` to this folder and create `module.
 ----            
 
 Once you've created the module you need to register this module with Keycloak.
-This is done by editing keycloak-server.json and adding it to the providers: 
+This is done by editing the keycloak-server subsystem section of 
+`standalone.xml`, `standalone-ha.xml`, or `domain.xml`, and adding it to the providers: 
 
-[source]
+[source,xml]
 ----
-{
-    "providers": [
-        ...
-        "module:org.keycloak.examples.event-sysout"
-    ]
-}
+<subsystem xmlns="urn:jboss:domain:keycloak-server:1.1">
+    <web-context>auth</web-context>
+    <providers>
+        <provider>module:org.keycloak.examples.event-sysout</provider>
+    </providers>
+    ...
 ----            
 
 ==== Register a provider using file-system
@@ -219,62 +226,55 @@ This is done by editing keycloak-server.json and adding it to the providers:
 To register your provider simply copy the JAR including the ProviderFactory and Provider classes and the provider configuration file to server's root `providers` directory. 
 
 You can also define multiple provider class-path if you want to create isolated class-loaders.
-To do this edit keycloak-server.json and add more classpath entries to the providers array.
+To do this edit `standalone.xml`, `standalone-ha.xml`, or `domain.xml` and add more classpath entries to the providers element.
 For example: 
 
-[source]
+[source,xml]
 ----
-{
-    "providers": [
-        "classpath:provider1.jar;lib-v1.jar",
-        "classpath:provider2.jar;lib-v2.jar"
-    ]
-}
+<providers>
+    <provider>classpath:provider1.jar;lib-v1.jar</provider>
+    <provider>classpath:provider2.jar;lib-v2.jar</provider>
+</providers>
 ----
 
 The above example will create two separate class-loaders for providers.
 The classpath entries follow the same syntax as Java classpath, with ';' separating multiple-entries.
 Wildcard is also supported allowing loading all jars (files with .jar or .JAR extension) in a folder, for example: 
 
-[source]
+[source,xml]
 ----
-{
-    "providers": [
-        "classpath:/home/user/providers/*"
-    ]
-}
+<providers>
+    <provider>classpath:/home/user/providers/*</provider>
+</providers>
 ----            
 
 ==== Configuring a provider
 
-You can pass configuration options to your provider by setting them in `keycloak-server.json`.
+You can pass configuration options to your provider by setting them in `standalone.xml`, `standalone-ha.xml`, or `domain.xml`.
 For example to set the max value for `my-event-listener` add: 
 
-[source]
+[source.xml]
 ----
-{
-    "eventsListener": {
-        "my-event-listener": {
-            "max": 100
-        }
-    }
-}
+<spi name="eventsListener">
+    <provider name="my-event-listener" enabled="true">
+        <properties>
+            <property name="max" value="100"/>
+        </properties>
+    </provider>
+</spi>
 ----            
 
 ==== Disabling a provider
 
-You can disable a provider by setting the enabled field for the provider to false in `keycloak-server.json`.
+You can disable a provider by setting the enabled attribute for the provider to false 
+in `standalone.xml`, `standalone-ha.xml`, or `domain.xml`.
 For example to disable the Infinispan user cache provider add: 
 
-[source]
+[source,xml]
 ----
-{
-"userCache": {
-    "infinispan" : {
-        "enabled": false
-    }
-}
-}
+<spi name="userCache">
+    <provider name="infinispan" enabled="false"/>
+</spi>
 ----            
 
 === Available SPIs
@@ -286,9 +286,9 @@ If you want to see list of all available SPIs at runtime, you can check `Server 
 |===
 |SPI|Description
 
-|Connections Infinispan|Loads and configures Infinispan connections. The default implementation can load connections from the Infinispan subsystem, or alternatively can be manually configured in keycloak-server.json
-|Connections Jpa|Loads and configures Jpa connections. The default implementation can load datasources from WildFly/EAP, or alternatively can be manually configured in keycloak-server.json
-|Connections Mongo|Loads and configures MongoDB connections. The default implementation is configured in keycloak-server.json
+|Connections Infinispan|Loads and configures Infinispan connections. The default implementation can load connections from the Infinispan subsystem, or alternatively can be manually configured in standalone.xml
+|Connections Jpa|Loads and configures Jpa connections. The default implementation can load datasources from WildFly/EAP, or alternatively can be manually configured in standalone.xml
+|Connections Mongo|Loads and configures MongoDB connections. The default implementation is configured in standalone.xml
 |Email Sender|Sends email. The default implementation uses JavaMail
 |Email Template|Format email and uses Email Sender to send the email. The default implementation uses FreeMarker templates
 |Events Listener|Listen to user related events for example user login success and failures. Keycloak provides two implementations out of box. One that logs events to the server log and another that can send email notifications to users on certain events

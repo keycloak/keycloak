@@ -24,15 +24,19 @@ your realm from the drop-down box in the top left corner. Under `Realm Settings`
 NOTE: To set the theme for the `master` admin console you need to set the admin console theme for the `master` realm. To see the changes to the admin console
 refresh the page.
 
-To change the welcome theme you need to edit `keycloak-server.json` (in `standalone/configuration` or `domain/servers/{server name}/configuration`) and add `welcomeTheme` to the theme element, for example: 
+To change the welcome theme you need to edit `standalone.xml`, `standalone-ha.xml`, or `domain.xml`.  
+See the link:{{book.installguide.link}}[{{book.installguide.name}}] for more details on 
+where the `standalone.xml`, `standalone-ha.xml`, or `domain.xml` file lives.
 
-[source,json]
+Add `welcomeTheme` to the theme element, for example: 
+
+[source,xml]
 ----
-"theme": {
+<theme>
     ...
-    "welcomeTheme": "custom-theme",
+    <welcomeTheme>custom-theme</welcomeTheme>
     ...
-}
+</theme>
 ----
 
 If the server is running you need to restart the server for the changes to the welcome theme to take effect.
@@ -61,18 +65,17 @@ When extending a theme you can override individual resources (templates, stylesh
 need to update your custom template when upgrading to a new release.
 
 While creating a theme it's a good idea to disable caching as this makes it possible to edit theme resources directly from the `themes` directory without
-restarting {{book.project.name}}. To do this edit `standalone/configuration/keycloak-server.json` for `theme` set `staticMaxAge` to `-1` and both
+restarting {{book.project.name}}. To do this edit `standalone.xml`. For `theme` set `staticMaxAge` to `-1` and both
 `cacheTemplates` and `cacheThemes` to `false`:
 
-[source,json]
+[source,xml]
 ----
-"theme": {
+<theme>
+    <staticMaxAge>-1</staticMaxAge>
+    <cacheThemes>false</cacheThemes>
+    <cacheTemplates>false</cacheTemplates>
     ...
-    "staticMaxAge": -1,
-    "cacheTemplates": false,
-    "cacheThemes": false,
-    ...
-}
+</theme>
 ----
 
 Remember to re-enable caching in production as it will significantly impact performance. 
@@ -352,21 +355,23 @@ To manually create the module create the directory `modules/org/keycloak/example
 </module>
 ----
 
-You also need to register the module with {{book.project.name}}. This is done by editing `keycloak-server.json` (in `standalone/configuration` or `domain/servers/{server name}/configuration`) and adding the module
-to `theme/module/modules`. For example:
+You also need to register the module with {{book.project.name}}. This is done by editing `standalone.xml`, `standalone-ha.xml`, or `domain.xml`.  
+See the link:{{book.installguide.link}}[{{book.installguide.name}}] for more details on 
+where the `standalone.xml`, `standalone-ha.xml`, or `domain.xml` file lives.
 
-[source]
+Then and add the module to `theme/module/modules`. For example:
+
+[source,xml]
 ----
-[
-"theme": {
+<theme>
     ...
-    "module": {
-        "modules": [ "org.example.mytheme" ]
-    }
-}
+    <modules>
+        <module>org.example.mytheme</module>
+    </modules>
+</theme>
 ----     
 
-If the server is running you need to restart the server after changing `keycloak-server.json`.
+If the server is running you need to restart the server after changing `standalone.xml`, `standalone-ha.xml`, or `domain.xml`.
 
 [NOTE]
 ====

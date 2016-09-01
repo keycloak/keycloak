@@ -25,6 +25,10 @@
       "link": "https://access.redhat.com/documentation/en/red-hat-single-sign-on/7.0/securing-applications-and-services-guide/"
 
     },
+    "installguide": {
+      "name": "Server Installation and Configuration Guide",
+      "link": "https://keycloak.gitbooks.io/server-installation-and-configuration/content/"
+    },
     "apidocs": {
       "name": "API Documentation",
       "link": "https://access.redhat.com/documentation/en/red-hat-single-sign-on/7.0/api-documentation/"
