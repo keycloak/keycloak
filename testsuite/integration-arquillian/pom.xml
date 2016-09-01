@@ -119,6 +119,7 @@
     
     <modules>
         <module>test-apps</module>
+        <module>test-utils</module>
         <module>servers</module>
         <module>tests</module>
     </modules>
