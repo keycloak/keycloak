@@ -20,6 +20,7 @@
     <deployment>
         <dependencies>
             <module name="org.keycloak.keycloak-authz-client" services="import"/>
+            <module name="com.h2database.h2" services="import"/>
         </dependencies>
     </deployment>
 </jboss-deployment-structure>
