@@ -24,8 +24,10 @@ import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthen
 import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
 import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.jose.jwk.JWK;
+import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
 import org.keycloak.protocol.oidc.utils.JWKSUtils;
@@ -102,6 +104,13 @@ public class DescriptionConverter {
             CertificateInfoHelper.updateClientRepresentationCertificateInfo(client, rep, JWTClientAuthenticator.ATTR_PREFIX);
         }
 
+        if (clientOIDC.getUserinfoSignedResponseAlg() != null) {
+            String userInfoSignedResponseAlg = clientOIDC.getUserinfoSignedResponseAlg();
+            Algorithm algorithm = Enum.valueOf(Algorithm.class, userInfoSignedResponseAlg);
+
+            OIDCAdvancedConfigWrapper.fromClientRepresentation(client).setUserInfoSignedResponseAlg(algorithm);
+        }
+
         return client;
     }
 
@@ -152,6 +161,12 @@ public class DescriptionConverter {
         response.setRegistrationClientUri(uri.toString());
         response.setResponseTypes(getOIDCResponseTypes(client));
         response.setGrantTypes(getOIDCGrantTypes(client));
+
+        OIDCAdvancedConfigWrapper config = OIDCAdvancedConfigWrapper.fromClientRepresentation(client);
+        if (config.isUserInfoSignatureRequired()) {
+            response.setUserinfoSignedResponseAlg(config.getUserInfoSignedResponseAlg().toString());
+        }
+
         return response;
     }
 

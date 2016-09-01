@@ -86,6 +86,7 @@ public class OIDCWellKnownProviderTest extends AbstractKeycloakTest {
 
             Assert.assertNames(oidcConfig.getSubjectTypesSupported(), "public");
             Assert.assertNames(oidcConfig.getIdTokenSigningAlgValuesSupported(), Algorithm.RS256.toString());
+            Assert.assertNames(oidcConfig.getUserInfoSigningAlgValuesSupported(), Algorithm.RS256.toString());
 
             // Client authentication
             Assert.assertNames(oidcConfig.getTokenEndpointAuthMethodsSupported(), "client_secret_basic", "client_secret_post", "private_key_jwt");

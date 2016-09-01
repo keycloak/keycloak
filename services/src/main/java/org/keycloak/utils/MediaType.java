@@ -31,4 +31,7 @@ public class MediaType {
     public static final String APPLICATION_FORM_URLENCODED = javax.ws.rs.core.MediaType.APPLICATION_FORM_URLENCODED;
     public static final javax.ws.rs.core.MediaType APPLICATION_FORM_URLENCODED_TYPE = javax.ws.rs.core.MediaType.APPLICATION_FORM_URLENCODED_TYPE;
 
+    public static final String APPLICATION_JWT = "application/jwt";
+    public static final javax.ws.rs.core.MediaType APPLICATION_JWT_TYPE = new javax.ws.rs.core.MediaType("application", "jwt");
+
 }

@@ -66,6 +66,10 @@ import java.util.Map;
  */
 public class ClientAttributeCertificateResource {
 
+    public static final String CERTIFICATE_PEM = "Certificate PEM";
+    public static final String PUBLIC_KEY_PEM = "Public Key PEM";
+    public static final String JSON_WEB_KEY_SET = "JSON Web Key Set";
+
     protected RealmModel realm;
     private RealmAuth auth;
     protected ClientModel client;
@@ -195,12 +199,23 @@ public class ClientAttributeCertificateResource {
         Map<String, List<InputPart>> uploadForm = input.getFormDataMap();
         String keystoreFormat = uploadForm.get("keystoreFormat").get(0).getBodyAsString();
         List<InputPart> inputParts = uploadForm.get("file");
-        if (keystoreFormat.equals("Certificate PEM")) {
+        if (keystoreFormat.equals(CERTIFICATE_PEM)) {
             String pem = StreamUtil.readString(inputParts.get(0).getBody(InputStream.class, null));
+
+            // Validate format
+            KeycloakModelUtils.getCertificate(pem);
+
             info.setCertificate(pem);
             return info;
+        } else if (keystoreFormat.equals(PUBLIC_KEY_PEM)) {
+            String pem = StreamUtil.readString(inputParts.get(0).getBody(InputStream.class, null));
 
-        } else if (keystoreFormat.equals("JSON Web Key Set (JWK)")) {
+            // Validate format
+            KeycloakModelUtils.getPublicKey(pem);
+
+            info.setPublicKey(pem);
+            return info;
+        } else if (keystoreFormat.equals(JSON_WEB_KEY_SET)) {
             InputStream stream = inputParts.get(0).getBody(InputStream.class, null);
             JSONWebKeySet keySet = JsonSerialization.readValue(stream, JSONWebKeySet.class);
             PublicKey publicKey = JWKSUtils.getKeyForUse(keySet, JWK.Use.SIG);
