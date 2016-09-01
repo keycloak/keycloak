@@ -23,15 +23,20 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import org.infinispan.Cache;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.events.Event;
 import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.events.admin.ResourceType;
+import org.keycloak.jose.jws.Algorithm;
+import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequest;
 import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.services.managers.ClientSessionCode;
@@ -632,14 +637,14 @@ public class TestingResourceProvider implements RealmResourceProvider {
         return ModelToRepresentation.toRepresentation(user);
     }
 
-    private RealmModel getRealmByName(String realmName) {
-        RealmProvider realmProvider = session.getProvider(RealmProvider.class);
-        return realmProvider.getRealmByName(realmName);
-    }
-
     @Path("/export-import")
     public TestingExportImportResource getExportImportResource() {
         return new TestingExportImportResource(session);
+    }
+
+    private RealmModel getRealmByName(String realmName) {
+        RealmProvider realmProvider = session.getProvider(RealmProvider.class);
+        return realmProvider.getRealmByName(realmName);
     }
 
 }

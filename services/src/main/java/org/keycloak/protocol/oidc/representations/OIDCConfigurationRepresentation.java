@@ -67,6 +67,9 @@ public class OIDCConfigurationRepresentation {
     @JsonProperty("userinfo_signing_alg_values_supported")
     private List<String> userInfoSigningAlgValuesSupported;
 
+    @JsonProperty("request_object_signing_alg_values_supported")
+    private List<String> requestObjectSigningAlgValuesSupported;
+
     @JsonProperty("response_modes_supported")
     private List<String> responseModesSupported;
 
@@ -193,6 +196,14 @@ public class OIDCConfigurationRepresentation {
 
     public void setUserInfoSigningAlgValuesSupported(List<String> userInfoSigningAlgValuesSupported) {
         this.userInfoSigningAlgValuesSupported = userInfoSigningAlgValuesSupported;
+    }
+
+    public List<String> getRequestObjectSigningAlgValuesSupported() {
+        return requestObjectSigningAlgValuesSupported;
+    }
+
+    public void setRequestObjectSigningAlgValuesSupported(List<String> requestObjectSigningAlgValuesSupported) {
+        this.requestObjectSigningAlgValuesSupported = requestObjectSigningAlgValuesSupported;
     }
 
     public List<String> getResponseModesSupported() {
