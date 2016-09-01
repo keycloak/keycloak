@@ -33,7 +33,8 @@ $ .../bin/standalone.sh
 
 The bulk of this guide walks you through how to configure infrastructure level aspects of {{book.project.name}}.  These
 aspects are configured in a configuration file that is specific to the application server that {{book.project.name}} is a
-derivative of.  In the standalone operation mode, this file lives in _.../standalone/configuration/standalone.xml_.
+derivative of.  In the standalone operation mode, this file lives in _.../standalone/configuration/standalone.xml_.  This file
+is also used to configure non-infrastructure level things that are specific to {{book.project.name}} components.
 
 .Standalone Config File
 image:../../{{book.images}}/standalone-config-file.png[]
@@ -41,23 +42,3 @@ image:../../{{book.images}}/standalone-config-file.png[]
 WARNING: Any changes you make to this file while the server is running will not take effect and may even be overwritten
       by the server.  Instead use the the command line scripting or the web console of {{book.appserver.name}}.  See
       the link:{{book.appserver.admindoc.link}}[{{book.appserver.admindoc.name}}] for more information.
-
-
-==== Standalone {{book.project.name}} JSON Configuration
-
-{{book.project.name}} has a json configuration file that is specific to {{book.project.name}} components.  This configuration is located within
-the file.../standalone/configuration/keycloak-server.json.  This file is used to configure non-infrastructure level things that are
-only applicable to {{book.project.name}}
-
-.Standalone {{book.project.name}} Config File
-image:../../{{book.images}}/standalone-json-config-file.png[]
-
-WARNING: Any changes you make to this file while the server is running will not take effect.  You'll need to reboot the
-      server.
-
-
-
-
-
-
-
