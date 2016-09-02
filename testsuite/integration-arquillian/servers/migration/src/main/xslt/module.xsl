@@ -17,9 +17,8 @@
 
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
                 xmlns:xalan="http://xml.apache.org/xalan"
-                xmlns:m="urn:jboss:module:1.3"
                 version="2.0"
-                exclude-result-prefixes="xalan m">
+                exclude-result-prefixes="xalan">
 
     <xsl:output method="xml" version="1.0" encoding="UTF-8" indent="yes" xalan:indent-amount="4" />
     

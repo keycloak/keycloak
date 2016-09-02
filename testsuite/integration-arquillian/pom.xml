@@ -113,6 +113,10 @@
                     <artifactId>xml-maven-plugin</artifactId>
                     <version>1.0.1</version>
                 </plugin>
+                <plugin>
+                    <artifactId>maven-resources-plugin</artifactId>
+                    <version>3.0.0</version>
+                </plugin>
             </plugins>
         </pluginManagement>
     </build>
