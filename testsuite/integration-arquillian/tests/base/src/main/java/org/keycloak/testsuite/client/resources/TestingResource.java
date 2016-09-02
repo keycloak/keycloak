@@ -17,8 +17,8 @@
 
 package org.keycloak.testsuite.client.resources;
 
-import java.util.Date;
 import java.util.List;
+
 import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
@@ -37,7 +37,6 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.util.Map;
 import org.jboss.resteasy.annotations.cache.NoCache;
-import org.keycloak.exportimport.ExportImportManager;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
@@ -205,16 +204,6 @@ public interface TestingResource {
     @Path("/update-pass-through-auth-state")
     @Produces(MediaType.APPLICATION_JSON)
     AuthenticatorState updateAuthenticator(AuthenticatorState state);
-
-    @GET
-    @Path("/run-import")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response runImport();
-
-    @GET
-    @Path("/run-export")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response runExport();
     
     @GET
     @Path("/valid-credentials")
@@ -250,53 +239,7 @@ public interface TestingResource {
     @Produces(MediaType.APPLICATION_JSON)
     public UserRepresentation getUserByServiceAccountClient(@QueryParam("realmName") String realmName, @QueryParam("clientId") String clientId);
 
+    @Path("export-import")
+    TestingExportImportResource exportImport();
 
-    @GET
-    @Path("/get-users-per-file")
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces(MediaType.APPLICATION_JSON)
-    public Integer getUsersPerFile();
-
-    @PUT
-    @Path("/set-users-per-file")
-    @Consumes(MediaType.APPLICATION_JSON)
-    public void setUsersPerFile(@QueryParam("usersPerFile") Integer usersPerFile);
-
-    @GET
-    @Path("/get-dir")
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces(MediaType.APPLICATION_JSON)
-    public String getDir();
-
-    @PUT
-    @Path("/set-dir")
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces(MediaType.APPLICATION_JSON)
-    public String setDir(@QueryParam("dir") String dir);
-
-    @PUT
-    @Path("/export-import-provider")
-    @Consumes(MediaType.APPLICATION_JSON)
-    public void setProvider(@QueryParam("exportImportProvider") String exportImportProvider);
-
-    @PUT
-    @Path("/export-import-file")
-    @Consumes(MediaType.APPLICATION_JSON)
-    public void setFile(@QueryParam("file") String file);
-
-    @PUT
-    @Path("/export-import-action")
-    @Consumes(MediaType.APPLICATION_JSON)
-    public void setAction(@QueryParam("exportImportAction") String exportImportAction);
-
-    @PUT
-    @Path("/set-realm-name")
-    @Consumes(MediaType.APPLICATION_JSON)
-    public void setRealmName(@QueryParam("realmName") String realmName);
-
-    @GET
-    @Path("/get-test-dir")
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces(MediaType.APPLICATION_JSON)
-    public String getExportImportTestDirectory();
 }
