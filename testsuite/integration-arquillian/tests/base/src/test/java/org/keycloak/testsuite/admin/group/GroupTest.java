@@ -382,6 +382,7 @@ public class GroupTest extends AbstractGroupTest {
         rep.setDefaultGroups(Collections.singletonList("/default1"));
 
         adminClient.realms().create(rep);
+        adminClient.tokenManager().grantToken();
 
         adminClient.realm(rep.getRealm()).remove();
     }

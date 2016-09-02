@@ -57,16 +57,13 @@ public class AdminAuth {
         return token;
     }
 
-
     public boolean hasRealmRole(String role) {
-        if (client instanceof ClientModel) {
-            RoleModel roleModel = realm.getRole(role);
-            if (roleModel == null) return false;
-            return user.hasRole(roleModel) && client.hasScope(roleModel);
-        } else {
-            AccessToken.Access access = token.getRealmAccess();
-            return access != null && access.isUserInRole(role);
+        AccessToken.Access access = token.getRealmAccess();
+        if (!(access != null && access.isUserInRole(role))) {
+            return false;
         }
+
+        return access != null && access.isUserInRole(role);
     }
 
     public boolean hasOneOfRealmRole(String... roles) {
@@ -79,14 +76,12 @@ public class AdminAuth {
     }
 
     public boolean hasAppRole(ClientModel app, String role) {
-        if (client instanceof ClientModel) {
-            RoleModel roleModel = app.getRole(role);
-            if (roleModel == null) return false;
-            return user.hasRole(roleModel) && client.hasScope(roleModel);
-        } else {
-            AccessToken.Access access = token.getResourceAccess(app.getClientId());
-            return access != null && access.isUserInRole(role);
+        AccessToken.Access access = token.getResourceAccess(app.getClientId());
+        if (!(access != null && access.isUserInRole(role))) {
+            return false;
         }
+
+        return access != null && access.isUserInRole(role);
     }
 
     public boolean hasOneOfAppRole(ClientModel app, String... roles) {

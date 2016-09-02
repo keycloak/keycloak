@@ -147,6 +147,7 @@ public abstract class AbstractKeycloakTest {
         }
 
         importTestRealms();
+        adminClient.tokenManager().grantToken();
 
         oauth.init(adminClient, driver);
     }

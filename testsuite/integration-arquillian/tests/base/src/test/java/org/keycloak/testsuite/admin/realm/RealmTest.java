@@ -80,6 +80,7 @@ public class RealmTest extends AbstractAdminTest {
 
     @Test
     public void getRealms() {
+        adminClient.tokenManager().grantToken();
         List<RealmRepresentation> realms = adminClient.realms().findAll();
         Assert.assertNames(realms, "master", AuthRealm.TEST, REALM_NAME);
 
@@ -99,9 +100,11 @@ public class RealmTest extends AbstractAdminTest {
 
         try {
             adminClient.realms().create(rep);
+            adminClient.tokenManager().grantToken();
 
             rep.setRealm("new");
             adminClient.realm("old").update(rep);
+            adminClient.tokenManager().grantToken();
 
             // Check client in master realm renamed
             Assert.assertEquals(0, adminClient.realm("master").clients().findByClientId("old-realm").size());
@@ -125,6 +128,7 @@ public class RealmTest extends AbstractAdminTest {
         rep.setRealm("new-realm");
 
         adminClient.realms().create(rep);
+        adminClient.tokenManager().grantToken();
 
         Assert.assertNames(adminClient.realms().findAll(), "master", AuthRealm.TEST, REALM_NAME, "new-realm");
 
@@ -139,6 +143,7 @@ public class RealmTest extends AbstractAdminTest {
         rep.setRealm("new-realm");
 
         adminClient.realms().create(rep);
+        adminClient.tokenManager().grantToken();
 
         assertEquals("hashIterations(20000)", adminClient.realm("new-realm").toRepresentation().getPasswordPolicy());
 
@@ -147,6 +152,7 @@ public class RealmTest extends AbstractAdminTest {
         rep.setPasswordPolicy("length(8)");
 
         adminClient.realms().create(rep);
+        adminClient.tokenManager().grantToken();
 
         assertEquals("length(8)", adminClient.realm("new-realm").toRepresentation().getPasswordPolicy());
 
@@ -157,6 +163,7 @@ public class RealmTest extends AbstractAdminTest {
     public void createRealmFromJson() {
         RealmRepresentation rep = loadJson(getClass().getResourceAsStream("/admin-test/testrealm.json"), RealmRepresentation.class);
         adminClient.realms().create(rep);
+        adminClient.tokenManager().grantToken();
 
         RealmRepresentation created = adminClient.realms().realm("admin-test-1").toRepresentation();
         assertRealm(rep, created);
@@ -188,14 +195,18 @@ public class RealmTest extends AbstractAdminTest {
         RealmRepresentation realm1 = new RealmRepresentation();
         realm1.setRealm("test-immutable");
         adminClient.realms().create(realm1);
+        adminClient.tokenManager().grantToken();
+
         realm1 = adminClient.realms().realm("test-immutable").toRepresentation();
         realm1.setRealm("test-immutable-old");
         adminClient.realms().realm("test-immutable").update(realm1);
+        adminClient.tokenManager().grantToken();
         realm1 = adminClient.realms().realm("test-immutable-old").toRepresentation();
 
         RealmRepresentation realm2 = new RealmRepresentation();
         realm2.setRealm("test-immutable");
         adminClient.realms().create(realm2);
+        adminClient.tokenManager().grantToken();
         realm2 = adminClient.realms().realm("test-immutable").toRepresentation();
 
         adminClient.realms().realm("test-immutable-old").remove();
