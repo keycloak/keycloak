@@ -7,7 +7,6 @@ var configUrl = consoleBaseUrl + "/config";
 
 var auth = {};
 var resourceBundle;
-var locale = 'en';
 
 var module = angular.module('keycloak', [ 'keycloak.services', 'keycloak.loaders', 'ui.bootstrap', 'ui.select2', 'angularFileUpload', 'angularTreeview', 'pascalprecht.translate', 'ngCookies', 'ngSanitize', 'ui.ace']);
 var resourceRequests = 0;
@@ -16,29 +15,9 @@ var loadingTimer = -1;
 angular.element(document).ready(function () {
     var keycloakAuth = new Keycloak(configUrl);
 
-    function whoAmI(success, error) {
-        var req = new XMLHttpRequest();
-        req.open('GET', consoleBaseUrl + "/whoami", true);
-        req.setRequestHeader('Accept', 'application/json');
-        req.setRequestHeader('Authorization', 'bearer ' + keycloakAuth.token);
-
-        req.onreadystatechange = function () {
-            if (req.readyState == 4) {
-                if (req.status == 200) {
-                    var data = JSON.parse(req.responseText);
-                    success(data);
-                } else {
-                    error();
-                }
-            }
-        }
-
-        req.send();
-    }
-
     function loadResourceBundle(success, error) {
         var req = new XMLHttpRequest();
-        req.open('GET', consoleBaseUrl + '/messages.json?lang=' + locale, true);
+        req.open('GET', consoleBaseUrl + '/messages.json?lang=' + auth.user.locale, true);
         req.setRequestHeader('Accept', 'application/json');
 
         req.onreadystatechange = function () {
@@ -55,10 +34,6 @@ angular.element(document).ready(function () {
         req.send();
     }
 
-    function hasAnyAccess(user) {
-        return user && user['realm_access'];
-    }
-
     keycloakAuth.onAuthLogout = function() {
         location.reload();
     }
@@ -66,34 +41,49 @@ angular.element(document).ready(function () {
     keycloakAuth.init({ onLoad: 'login-required' }).success(function () {
         auth.authz = keycloakAuth;
 
-        if (auth.authz.idTokenParsed.locale) {
-            locale = auth.authz.idTokenParsed.locale;
+        var token = auth.authz.tokenParsed;
+
+        auth.user = {
+            userId: token.sub
+        };
+
+        auth.user.realm_access = {};
+
+        if (token.iss.endsWith('/realms/' + masterRealm)) {
+            auth.user.masterRealm = true;
+            auth.user.createRealm = token.realm_access && token.realm_access.roles.indexOf('create-realm') != -1;
+            for (var k in token.resource_access) {
+                if (k.endsWith('-realm')) {
+                    auth.user.realm_access[k.substring(0, k.length - 6)] = token.resource_access[k].roles;
+                }
+            }
+        } else {
+            auth.user.masterRealm = false;
+            auth.user.realm_access[token.iss.substring(token.iss.lastIndexOf('/') + 1)] = token.resource_access['realm-management'] && token.resource_access['realm-management'].roles;
         }
 
-        auth.refreshPermissions = function(success, error) {
-            whoAmI(function(data) {
-                auth.user = data;
-                auth.loggedIn = true;
-                auth.hasAnyAccess = hasAnyAccess(data);
+        if (token.given_name && token.family_name) {
+            auth.user.displayName = token.given_name + ' ' + token.family_name;
+        } else if (token.given_name) {
+            auth.user.displayName = token.given_name;
+        } else if (token.family_name) {
+            auth.user.displayName = token.family_name;
+        } else {
+            auth.user.displayName = token.preferred_username;
+        }
 
-                success();
-            }, function() {
-                error();
-            });
-        };
+        auth.user.locale = auth.authz.idTokenParsed.locale || 'en';
 
         loadResourceBundle(function(data) {
             resourceBundle = data;
 
-            auth.refreshPermissions(function () {
-                module.factory('Auth', function () {
-                    return auth;
-                });
-                var injector = angular.bootstrap(document, ["keycloak"]);
+            module.factory('Auth', function () {
+                return auth;
+            });
+            var injector = angular.bootstrap(document, ["keycloak"]);
 
-                injector.get('$translate')('consoleTitle').then(function (consoleTitle) {
-                    document.title = consoleTitle;
-                });
+            injector.get('$translate')('consoleTitle').then(function (consoleTitle) {
+                document.title = consoleTitle;
             });
         });
     }).error(function () {
@@ -106,7 +96,9 @@ module.factory('authInterceptor', function($q, Auth) {
         request: function (config) {
             if (!config.url.match(/.html$/)) {
                 var deferred = $q.defer();
-                if (Auth.authz.token) {
+                if (Auth.authz.reAuth) {
+                    location.reload();
+                } else if (Auth.authz.token) {
                     Auth.authz.updateToken(5).success(function () {
                         config.headers = config.headers || {};
                         config.headers.Authorization = 'Bearer ' + Auth.authz.token;
@@ -126,8 +118,8 @@ module.factory('authInterceptor', function($q, Auth) {
 
 module.config(['$translateProvider', function($translateProvider) {
     $translateProvider.useSanitizeValueStrategy('sanitizeParameters');
-    $translateProvider.preferredLanguage(locale);
-    $translateProvider.translations(locale, resourceBundle);
+    $translateProvider.preferredLanguage(auth.user.locale);
+    $translateProvider.translations(auth.user.locale, resourceBundle);
 }]);
 
 module.config([ '$routeProvider', function($routeProvider) {

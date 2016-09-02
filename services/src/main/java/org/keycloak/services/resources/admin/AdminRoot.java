@@ -243,7 +243,6 @@ public class AdminRoot {
     }
 
     protected boolean isAdmin(AdminAuth auth) {
-
         RealmManager realmManager = new RealmManager(session);
         if (auth.getRealm().equals(realmManager.getKeycloakAdminstrationRealm())) {
             if (auth.hasOneOfRealmRole(AdminRoles.ADMIN, AdminRoles.CREATE_REALM)) {

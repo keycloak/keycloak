@@ -18,6 +18,7 @@
     <script type="text/javascript">
         var authUrl = '${authUrl}';
         var resourceUrl = '${resourceUrl}';
+        var masterRealm = '${masterRealm}';
     </script>
 
     <script src="${resourceUrl}/lib/jquery/jquery-1.10.2.js" type="text/javascript"></script>
