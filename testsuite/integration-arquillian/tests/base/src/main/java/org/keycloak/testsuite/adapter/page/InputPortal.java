@@ -17,18 +17,18 @@
 
 package org.keycloak.testsuite.adapter.page;
 
-import java.net.URL;
 import org.jboss.arquillian.container.test.api.OperateOnDeployment;
 import org.jboss.arquillian.test.api.ArquillianResource;
-import org.keycloak.testsuite.page.AbstractPageWithInjectedUrl;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
+
+import java.net.URL;
 
 /**
  *
  * @author tkyjovsk
  */
-public class InputPortal extends AbstractPageWithInjectedUrl {
+public class InputPortal extends SAMLServlet {
 
     public static final String DEPLOYMENT_NAME = "input-portal";
 

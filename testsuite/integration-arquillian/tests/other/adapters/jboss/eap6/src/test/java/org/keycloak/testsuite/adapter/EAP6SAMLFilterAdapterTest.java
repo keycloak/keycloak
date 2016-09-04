@@ -8,5 +8,5 @@ import org.keycloak.testsuite.arquillian.annotation.UseServletFilter;
  * @author mhajas
  */
 @AppServerContainer("app-server-eap6")
-public class EAPSAMLFilterAdapterTest extends AbstractSAMLFilterServletAdapterTest {
+public class EAP6SAMLFilterAdapterTest extends AbstractSAMLFilterServletAdapterTest {
 }

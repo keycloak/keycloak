@@ -24,8 +24,10 @@ import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthen
 import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
 import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.jose.jwk.JWK;
+import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
 import org.keycloak.protocol.oidc.utils.JWKSUtils;
@@ -87,14 +89,12 @@ public class DescriptionConverter {
         }
         client.setClientAuthenticatorType(clientAuthFactory.getId());
 
-        // Externalize to ClientAuthenticator itself?
-        if (authMethod != null && authMethod.equals(OIDCLoginProtocol.PRIVATE_KEY_JWT)) {
+        PublicKey publicKey = retrievePublicKey(session, clientOIDC);
+        if (authMethod != null && authMethod.equals(OIDCLoginProtocol.PRIVATE_KEY_JWT) && publicKey == null) {
+            throw new ClientRegistrationException("Didn't find key of supported keyType for use " + JWK.Use.SIG.asString());
+        }
 
-            PublicKey publicKey = retrievePublicKey(clientOIDC);
-            if (publicKey == null) {
-                throw new ClientRegistrationException("Didn't find key of supported keyType for use " + JWK.Use.SIG.asString());
-            }
-
+        if (publicKey != null) {
             String publicKeyPem = KeycloakModelUtils.getPemFromKey(publicKey);
 
             CertificateRepresentation rep = new CertificateRepresentation();
@@ -102,13 +102,24 @@ public class DescriptionConverter {
             CertificateInfoHelper.updateClientRepresentationCertificateInfo(client, rep, JWTClientAuthenticator.ATTR_PREFIX);
         }
 
+        OIDCAdvancedConfigWrapper configWrapper = OIDCAdvancedConfigWrapper.fromClientRepresentation(client);
+        if (clientOIDC.getUserinfoSignedResponseAlg() != null) {
+            Algorithm algorithm = Enum.valueOf(Algorithm.class, clientOIDC.getUserinfoSignedResponseAlg());
+            configWrapper.setUserInfoSignedResponseAlg(algorithm);
+        }
+
+        if (clientOIDC.getRequestObjectSigningAlg() != null) {
+            Algorithm algorithm = Enum.valueOf(Algorithm.class, clientOIDC.getRequestObjectSigningAlg());
+            configWrapper.setRequestObjectSignatureAlg(algorithm);
+        }
+
         return client;
     }
 
 
-    private static PublicKey retrievePublicKey(OIDCClientRepresentation clientOIDC) {
+    private static PublicKey retrievePublicKey(KeycloakSession session, OIDCClientRepresentation clientOIDC) {
         if (clientOIDC.getJwksUri() == null && clientOIDC.getJwks() == null) {
-            throw new ClientRegistrationException("Requested client authentication method '%s' but jwks_uri nor jwks were available in config");
+            return null;
         }
 
         if (clientOIDC.getJwksUri() != null && clientOIDC.getJwks() != null) {
@@ -120,7 +131,7 @@ public class DescriptionConverter {
             keySet = clientOIDC.getJwks();
         } else {
             try {
-                keySet = JWKSUtils.sendJwksRequest(clientOIDC.getJwksUri());
+                keySet = JWKSUtils.sendJwksRequest(session, clientOIDC.getJwksUri());
             } catch (IOException ioe) {
                 throw new ClientRegistrationException("Failed to send JWKS request to specified jwks_uri", ioe);
             }
@@ -152,6 +163,15 @@ public class DescriptionConverter {
         response.setRegistrationClientUri(uri.toString());
         response.setResponseTypes(getOIDCResponseTypes(client));
         response.setGrantTypes(getOIDCGrantTypes(client));
+
+        OIDCAdvancedConfigWrapper config = OIDCAdvancedConfigWrapper.fromClientRepresentation(client);
+        if (config.isUserInfoSignatureRequired()) {
+            response.setUserinfoSignedResponseAlg(config.getUserInfoSignedResponseAlg().toString());
+        }
+        if (config.getRequestObjectSignatureAlg() != null) {
+            response.setRequestObjectSigningAlg(config.getRequestObjectSignatureAlg().toString());
+        }
+
         return response;
     }
 

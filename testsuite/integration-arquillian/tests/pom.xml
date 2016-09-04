@@ -74,7 +74,7 @@
         <frontend.console.output>true</frontend.console.output>
         <backends.console.output>true</backends.console.output>
 
-        <testsuite.constants>test-constants.properties</testsuite.constants>
+        <testsuite.constants>${project.build.directory}/dependency/test-constants.properties</testsuite.constants>
 
     </properties>
 
@@ -779,6 +779,14 @@
                 <dependency>
                     <groupId>org.keycloak</groupId>
                     <artifactId>keycloak-adapter-spi</artifactId>
+                </dependency>
+                <dependency>
+                    <groupId>org.keycloak</groupId>
+                    <artifactId>keycloak-saml-adapter-api-public</artifactId>
+                </dependency>
+                <dependency>
+                    <groupId>org.keycloak</groupId>
+                    <artifactId>keycloak-authz-client</artifactId>
                 </dependency>
 
                 <!--UNDERTOW-->

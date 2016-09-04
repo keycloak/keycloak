@@ -333,6 +333,36 @@
             </div>
         </fieldset>
 
+        <fieldset data-ng-show="protocol == 'openid-connect'">
+            <legend collapsed><span class="text">{{:: 'fine-oidc-endpoint-conf' | translate}}</span>  <kc-tooltip>{{:: 'fine-oidc-endpoint-conf.tooltip' | translate}}</kc-tooltip></legend>
+            <div class="form-group clearfix block" data-ng-show="protocol == 'openid-connect'">
+                <label class="col-md-2 control-label" for="userInfoSignedResponseAlg">{{:: 'user-info-signed-response-alg' | translate}}</label>
+                <div class="col-sm-6">
+                    <div>
+                        <select class="form-control" id="userInfoSignedResponseAlg"
+                                ng-change="changeUserInfoSignedResponseAlg()"
+                                ng-model="userInfoSignedResponseAlg"
+                                ng-options="sig for sig in oidcSignatureAlgorithms">
+                        </select>
+                    </div>
+                </div>
+                <kc-tooltip>{{:: 'user-info-signed-response-alg.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group clearfix block" data-ng-show="protocol == 'openid-connect'">
+                <label class="col-md-2 control-label" for="requestObjectSignatureAlg">{{:: 'request-object-signature-alg' | translate}}</label>
+                <div class="col-sm-6">
+                    <div>
+                        <select class="form-control" id="requestObjectSignatureAlg"
+                                ng-change="changeRequestObjectSignatureAlg()"
+                                ng-model="requestObjectSignatureAlg"
+                                ng-options="sig for sig in requestObjectSignatureAlgorithms">
+                        </select>
+                    </div>
+                </div>
+                <kc-tooltip>{{:: 'request-object-signature-alg.tooltip' | translate}}</kc-tooltip>
+            </div>
+        </fieldset>
+
         <div class="form-group">
             <div class="col-md-10 col-md-offset-2" data-ng-show="access.manageClients">
                 <button kc-save  data-ng-disabled="!changed">{{:: 'save' | translate}}</button>

@@ -33,8 +33,12 @@ import org.keycloak.representations.adapters.config.PolicyEnforcerConfig.PathCon
 import org.keycloak.representations.idm.authorization.Permission;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -95,8 +99,8 @@ public class PolicyEnforcer {
         return authzClient;
     }
 
-    List<PathConfig> getPaths() {
-        return paths;
+    public List<PathConfig> getPaths() {
+        return Collections.unmodifiableList(paths);
     }
 
     KeycloakDeployment getDeployment() {
@@ -154,13 +158,27 @@ public class PolicyEnforcer {
 
                     pathConfig.setId(registrationResponse.getId());
                 } else {
-                    throw new RuntimeException("Could not find matching resource on server with uri [" + path + "] or name [" + resourceName + ". Make sure you have created a resource on the server that matches with the path configuration.");
+                    throw new RuntimeException("Could not find matching resource on server with uri [" + path + "] or name [" + resourceName + "]. Make sure you have created a resource on the server that matches with the path configuration.");
                 }
             } else {
                 pathConfig.setId(search.iterator().next());
             }
 
-            paths.add(pathConfig);
+            PathConfig existingPath = null;
+
+            for (PathConfig current : paths) {
+                if (current.getId().equals(pathConfig.getId()) && current.getPath().equals(pathConfig.getPath())) {
+                    existingPath = current;
+                    break;
+                }
+            }
+
+            if (existingPath == null) {
+                paths.add(pathConfig);
+            } else {
+                existingPath.getMethods().addAll(pathConfig.getMethods());
+                existingPath.getScopes().addAll(pathConfig.getScopes());
+            }
         }
 
         return paths;

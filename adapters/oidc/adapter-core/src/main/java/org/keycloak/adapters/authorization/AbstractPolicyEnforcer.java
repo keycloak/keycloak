@@ -32,6 +32,7 @@ import org.keycloak.representations.adapters.config.PolicyEnforcerConfig.PathCon
 import org.keycloak.representations.idm.authorization.Permission;
 
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -55,7 +56,7 @@ public abstract class AbstractPolicyEnforcer {
         this.enforcerConfig = policyEnforcer.getEnforcerConfig();
         this.authzClient = policyEnforcer.getClient();
         this.pathMatcher = new PathMatcher();
-        this.paths = policyEnforcer.getPaths();
+        this.paths = new ArrayList<>(policyEnforcer.getPaths());
     }
 
     public AuthorizationContext authorize(OIDCHttpFacade httpFacade) {

@@ -4,6 +4,7 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.console.page.fragment.Dropdown;
 import org.keycloak.testsuite.console.page.realm.ThemeSettings;
@@ -17,6 +18,13 @@ import static org.keycloak.testsuite.util.URLAssert.*;
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
 public class InternationalizationTest extends AbstractRealmTest {
+    private static final String THEME_NAME = "internat-test";
+    private static final String LOCALE_CS_NAME = "Čeština";
+
+    private static final String LABEL_CS_PASSWORD = "Heslo";
+    private static final String LABEL_CS_REALM_SETTINGS = "Nastavení Realmu";
+    private static final String LABEL_CS_EDIT_ACCOUNT = "Upravit účet";
+
     @Page
     private ThemeSettings themeSettingsPage;
 
@@ -25,6 +33,13 @@ public class InternationalizationTest extends AbstractRealmTest {
 
     @Before
     public void beforeInternationalizationTest() {
+        RealmRepresentation realmRepresentation = testRealmResource().toRepresentation();
+        realmRepresentation.setAccountTheme(THEME_NAME);
+        realmRepresentation.setAdminTheme(THEME_NAME);
+        realmRepresentation.setEmailTheme(THEME_NAME);
+        realmRepresentation.setLoginTheme(THEME_NAME);
+        testRealmResource().update(realmRepresentation);
+
         realmSettingsPage.navigateTo();
         tabs().themes();
         themeSettingsPage.setInternatEnabled(true);
@@ -47,14 +62,14 @@ public class InternationalizationTest extends AbstractRealmTest {
     public void loginInternationalization() {
         testRealmAdminConsolePage.navigateTo();
 
-        localeDropdown.selectByText("Español");
-        assertLocale(".//label[@for='password']", "Contraseña"); // Password
+        localeDropdown.selectByText(LOCALE_CS_NAME);
+        assertLocale(".//label[@for='password']", LABEL_CS_PASSWORD);
 
         loginToTestRealmConsoleAs(testUser);
-        assertConsoleLocale("Temas");
+        assertConsoleLocale(LABEL_CS_REALM_SETTINGS);
 
         testRealmAccountPage.navigateTo();
-        assertAccountLocale("Cuenta");
+        assertAccountLocale(LABEL_CS_EDIT_ACCOUNT);
     }
 
     /**
@@ -65,24 +80,24 @@ public class InternationalizationTest extends AbstractRealmTest {
         testRealmAccountPage.navigateTo();
         loginPage.form().login(testUser);
 
-        localeDropdown.selectByText("Français");
+        localeDropdown.selectByText(LOCALE_CS_NAME);
         testRealmAccountPage.navigateTo();
-        assertAccountLocale("Compte");
+        assertAccountLocale(LABEL_CS_EDIT_ACCOUNT);
 
         deleteAllCookiesForTestRealm();
 
         loginToTestRealmConsoleAs(testUser);
-        assertConsoleLocale("Thèmes");
+        assertConsoleLocale(LABEL_CS_REALM_SETTINGS);
     }
 
     private void assertConsoleLocale(String expected) {
         assertCurrentUrlEquals(realmSettingsPage);
-        assertLocale(".//a[contains(@href,'/theme-settings')]", expected); // Themes
+        assertLocale(".//div[@class='nav-category'][1]/ul/li[1]//a", expected); // Realm Settings
     }
 
     private void assertAccountLocale(String expected) {
         assertCurrentUrlEquals(testRealmAccountPage);
-        assertLocale(".//div[contains(@class,'bs-sidebar')]/ul/li", expected); // Account
+        assertLocale(".//div[contains(@class,'content-area')]/div[@class='row']/div/h2", expected); // Edit Account
     }
 
     private void assertLocale(String xpathSelector, String expected) {

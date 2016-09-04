@@ -1,0 +1,21 @@
+/subsystem=keycloak-server:add(web-context=auth,master-realm-name=master,scheduled-task-interval=900,providers=[classpath:${jboss.home.dir}/providers/*])
+/subsystem=keycloak-server/theme=defaults/:add(dir=${jboss.home.dir}/themes,staticMaxAge=2592000,cacheTemplates=true,cacheThemes=true)
+/subsystem=keycloak-server/spi=eventsStore/:add(default-provider=jpa)
+/subsystem=keycloak-server/spi=eventsStore/provider=jpa/:add(properties={exclude-events => "[\"REFRESH_TOKEN\"]"},enabled=true)
+/subsystem=keycloak-server/spi=realm/:add(default-provider=jpa)
+/subsystem=keycloak-server/spi=user/:add(default-provider=jpa)
+/subsystem=keycloak-server/spi=userCache/:add
+/subsystem=keycloak-server/spi=userCache/provider=default/:add(enabled=true)
+/subsystem=keycloak-server/spi=userSessionPersister/:add(default-provider=jpa)
+/subsystem=keycloak-server/spi=authorizationPersister/:add(default-provider=jpa)
+/subsystem=keycloak-server/spi=timer/:add(default-provider=basic)
+/subsystem=keycloak-server/spi=connectionsHttpClient/:add
+/subsystem=keycloak-server/spi=connectionsHttpClient/provider=default/:add(enabled=true)
+/subsystem=keycloak-server/spi=connectionsJpa/:add
+/subsystem=keycloak-server/spi=connectionsJpa/provider=default/:add(properties={dataSource => "java:jboss/datasources/KeycloakDS",initializeEmpty => "true",migrationStrategy => "update",migrationExport => "${jboss.home.dir}/keycloak-database-update.sql"},enabled=true)
+/subsystem=keycloak-server/spi=realmCache/:add
+/subsystem=keycloak-server/spi=realmCache/provider=default/:add(enabled=true)
+/subsystem=keycloak-server/spi=connectionsInfinispan/:add(default-provider=default)
+/subsystem=keycloak-server/spi=connectionsInfinispan/provider=default/:add(properties={cacheContainer => "java:comp/env/infinispan/Keycloak"},enabled=true)
+/subsystem=keycloak-server/spi=jta-lookup/:add(default-provider=${keycloak.jta.lookup.provider:jboss})
+/subsystem=keycloak-server/spi=jta-lookup/provider=jboss/:add(enabled=true)
