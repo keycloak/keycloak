@@ -27,7 +27,7 @@
 {% if book.community %}
 ===== Node.js
 * https://github.com/keycloak/keycloak-nodejs-connect[{{book.project.name}} Connect] (community)
-* https://github.com/keycloak/keycloak-nodejs-connect[{{book.project.name}} Auth Utils] (community)
+* https://github.com/keycloak/keycloak-nodejs-auth-utils[{{book.project.name}} Auth Utils] (community)
 {% endif %}
 
 {% if book.community %}
