@@ -15,7 +15,7 @@
                 {{auth.user.displayName|capitalize}} <b class="caret"></b>
             </a>
             <ul class="dropdown-menu">
-                <li><a href="{{authUrl}}/realms/{{auth.user.realm}}/account?referrer=security-admin-console">{{:: 'manage-account' | translate}}</a></li>
+                <li><a data-ng-click="auth.authz.accountManagement()" href="">{{:: 'manage-account' | translate}}</a></li>
                 <li><a href="#/server-info">{{:: 'server-info' | translate}}</a></li>
                 <li class="divider"></li>
                 <li><a href="" ng-click="auth.authz.logout()">{{:: 'sign-out' | translate}}</a></li>
