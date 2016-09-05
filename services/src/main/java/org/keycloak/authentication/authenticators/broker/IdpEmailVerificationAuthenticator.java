@@ -132,6 +132,9 @@ public class IdpEmailVerificationAuthenticator extends AbstractIdpAuthenticator 
                     clientSession.setNote(IS_DIFFERENT_BROWSER, "true");
                 }
 
+                // User successfully confirmed linking by email verification. His email was defacto verified
+                existingUser.setEmailVerified(true);
+
                 context.setUser(existingUser);
                 context.success();
             } else {
