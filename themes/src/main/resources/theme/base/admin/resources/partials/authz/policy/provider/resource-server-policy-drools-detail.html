@@ -88,10 +88,10 @@
                     <select class="form-control" name="policy.config.scannerPeriodUnit"
                             data-ng-model="policy.config.scannerPeriodUnit"
                             ng-disabled="!policy.config.sessionName">
-                        <option>{{:: 'seconds' | translate}}</option>
-                        <option>{{:: 'minutes' | translate}}</option>
-                        <option>{{:: 'hours' | translate}}</option>
-                        <option>{{:: 'days' | translate}}</option>
+                        <option value="Seconds">{{:: 'seconds' | translate}}</option>
+                        <option value="Minutes">{{:: 'minutes' | translate}}</option>
+                        <option value="Hours">{{:: 'hours' | translate}}</option>
+                        <option value="Days">{{:: 'days' | translate}}</option>
                     </select>
                 </div>
                 <kc-tooltip>{{:: 'authz-policy-drools-update-period.tooltip' | translate}}</kc-tooltip>

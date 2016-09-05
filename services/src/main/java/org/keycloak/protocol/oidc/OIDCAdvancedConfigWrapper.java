@@ -30,6 +30,8 @@ public class OIDCAdvancedConfigWrapper {
 
     private static final String USER_INFO_RESPONSE_SIGNATURE_ALG = "user.info.response.signature.alg";
 
+    private static final String REQUEST_OBJECT_SIGNATURE_ALG = "request.object.signature.alg";
+
     private final ClientModel clientModel;
     private final ClientRepresentation clientRep;
 
@@ -60,6 +62,16 @@ public class OIDCAdvancedConfigWrapper {
 
     public boolean isUserInfoSignatureRequired() {
         return getUserInfoSignedResponseAlg() != null;
+    }
+
+    public Algorithm getRequestObjectSignatureAlg() {
+        String alg = getAttribute(REQUEST_OBJECT_SIGNATURE_ALG);
+        return alg==null ? null : Enum.valueOf(Algorithm.class, alg);
+    }
+
+    public void setRequestObjectSignatureAlg(Algorithm alg) {
+        String algStr = alg==null ? null : alg.toString();
+        setAttribute(REQUEST_OBJECT_SIGNATURE_ALG, algStr);
     }
 
 

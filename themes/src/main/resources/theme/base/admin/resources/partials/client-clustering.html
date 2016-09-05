@@ -19,10 +19,10 @@
                                    max="31536000" data-ng-model="client.nodeReRegistrationTimeout"
                                    id="nodeReRegistrationTimeout" name="nodeReRegistrationTimeout"/>
                             <select class="form-control" name="nodeReRegistrationTimeoutUnit" data-ng-model="client.nodeReRegistrationTimeoutUnit" >
-                                <option data-ng-selected="!client.nodeReRegistrationTimeoutUnit">{{:: 'seconds' | translate}}</option>
-                                <option>{{:: 'minutes' | translate}}</option>
-                                <option>{{:: 'hours' | translate}}</option>
-                                <option>{{:: 'days' | translate}}</option>
+                                <option data-ng-selected="!client.nodeReRegistrationTimeoutUnit" value="Seconds">{{:: 'seconds' | translate}}</option>
+                                <option value="Minutes">{{:: 'minutes' | translate}}</option>
+                                <option value="Hours">{{:: 'hours' | translate}}</option>
+                                <option value="Days">{{:: 'days' | translate}}</option>
                             </select>
                         </div>
                     </div>

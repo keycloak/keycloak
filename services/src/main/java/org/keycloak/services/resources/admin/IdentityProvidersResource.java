@@ -116,7 +116,7 @@ public class IdentityProvidersResource {
         InputPart file = formDataMap.get("file").get(0);
         InputStream inputStream = file.getBody(InputStream.class, null);
         IdentityProviderFactory providerFactory = getProviderFactorytById(providerId);
-        Map<String, String> config = providerFactory.parseConfig(inputStream);
+        Map<String, String> config = providerFactory.parseConfig(session, inputStream);
         return config;
     }
 
@@ -143,7 +143,7 @@ public class IdentityProvidersResource {
         try {
             IdentityProviderFactory providerFactory = getProviderFactorytById(providerId);
             Map<String, String> config;
-            config = providerFactory.parseConfig(inputStream);
+            config = providerFactory.parseConfig(session, inputStream);
             return config;
         } finally {
             try {

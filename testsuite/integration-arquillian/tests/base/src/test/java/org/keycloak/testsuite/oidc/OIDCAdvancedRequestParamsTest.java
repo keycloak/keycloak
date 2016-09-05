@@ -19,30 +19,42 @@ package org.keycloak.testsuite.oidc;
 
 import java.util.List;
 
-
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuthErrorException;
+import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
+import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.models.Constants;
+import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.IDToken;
+import org.keycloak.representations.idm.CertificateRepresentation;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.services.util.CertificateInfoHelper;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.TestRealmKeycloakTest;
 import org.keycloak.testsuite.admin.AbstractAdminTest;
+import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
+import org.keycloak.testsuite.client.resources.TestOIDCEndpointsApplicationResource;
 import org.keycloak.testsuite.pages.AccountUpdateProfilePage;
 import org.keycloak.testsuite.pages.AppPage;
+import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
+import org.keycloak.testsuite.rest.resource.TestingOIDCEndpointsApplicationResource;
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.OAuthClient;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -67,6 +79,9 @@ public class OIDCAdvancedRequestParamsTest extends TestRealmKeycloakTest {
 
     @Page
     protected OAuthGrantPage grantPage;
+
+    @Page
+    protected ErrorPage errorPage;
 
 
     @Override
@@ -308,29 +323,98 @@ public class OIDCAdvancedRequestParamsTest extends TestRealmKeycloakTest {
     // REQUEST & REQUEST_URI
 
     @Test
-    public void requestParam() {
-        driver.navigate().to(oauth.getLoginFormUrl() + "&request=abc");
+    public void requestParamUnsigned() throws Exception {
+        String validRedirectUri = oauth.getRedirectUri();
+        TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
 
-        assertFalse(loginPage.isCurrent());
+        // Send request object with invalid redirect uri.
+        oidcClientEndpointsResource.setOIDCRequest("test", "test-app", "http://invalid", null, Algorithm.none.toString());
+        String requestStr = oidcClientEndpointsResource.getOIDCRequest();
+
+        oauth.request(requestStr);
+        oauth.openLoginForm();
+        Assert.assertTrue(errorPage.isCurrent());
+        assertEquals("Invalid parameter: redirect_uri", errorPage.getError());
+
+        // Assert the value from request object has bigger priority then from the query parameter.
+        oauth.redirectUri("http://invalid");
+        oidcClientEndpointsResource.setOIDCRequest("test", "test-app", validRedirectUri, "10", Algorithm.none.toString());
+        requestStr = oidcClientEndpointsResource.getOIDCRequest();
+
+        oauth.request(requestStr);
+        OAuthClient.AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
+        Assert.assertNotNull(response.getCode());
+        Assert.assertEquals("mystate", response.getState());
         assertTrue(appPage.isCurrent());
-
-        // Assert error response was sent because not logged in
-        OAuthClient.AuthorizationEndpointResponse resp = new OAuthClient.AuthorizationEndpointResponse(oauth);
-        Assert.assertNull(resp.getCode());
-        Assert.assertEquals(OAuthErrorException.REQUEST_NOT_SUPPORTED, resp.getError());
     }
 
     @Test
-    public void requestUriParam() {
-        driver.navigate().to(oauth.getLoginFormUrl() + "&request_uri=https%3A%2F%2Flocalhost%3A60784%2Fexport%2FqzHTG11W48.jwt");
+    public void requestUriParamUnsigned() throws Exception {
+        String validRedirectUri = oauth.getRedirectUri();
+        TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
 
-        assertFalse(loginPage.isCurrent());
+        // Send request object with invalid redirect uri.
+        oidcClientEndpointsResource.setOIDCRequest("test", "test-app", "http://invalid", null, Algorithm.none.toString());
+
+        oauth.requestUri(TestApplicationResourceUrls.clientRequestUri());
+        oauth.openLoginForm();
+        Assert.assertTrue(errorPage.isCurrent());
+        assertEquals("Invalid parameter: redirect_uri", errorPage.getError());
+
+        // Assert the value from request object has bigger priority then from the query parameter.
+        oauth.redirectUri("http://invalid");
+        oidcClientEndpointsResource.setOIDCRequest("test", "test-app", validRedirectUri, "10", Algorithm.none.toString());
+
+        OAuthClient.AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
+        Assert.assertNotNull(response.getCode());
+        Assert.assertEquals("mystate", response.getState());
+        assertTrue(appPage.isCurrent());
+    }
+
+    @Test
+    public void requestUriParamSigned() throws Exception {
+        String validRedirectUri = oauth.getRedirectUri();
+        TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
+
+        // Set required signature for request_uri
+        ClientResource clientResource = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
+        ClientRepresentation clientRep = clientResource.toRepresentation();
+        OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setRequestObjectSignatureAlg(Algorithm.RS256);
+        clientResource.update(clientRep);
+
+        // Verify unsigned request_uri will fail
+        oidcClientEndpointsResource.setOIDCRequest("test", "test-app", validRedirectUri, "10", Algorithm.none.toString());
+        oauth.requestUri(TestApplicationResourceUrls.clientRequestUri());
+        oauth.openLoginForm();
+        Assert.assertTrue(errorPage.isCurrent());
+        assertEquals("Invalid Request", errorPage.getError());
+
+        // Generate keypair for client
+        String clientPublicKeyPem = oidcClientEndpointsResource.generateKeys().get(TestingOIDCEndpointsApplicationResource.PUBLIC_KEY);
+
+        // Verify signed request_uri will fail due to failed signature validation
+        oidcClientEndpointsResource.setOIDCRequest("test", "test-app", validRedirectUri, "10", Algorithm.RS256.toString());
+        oauth.openLoginForm();
+        Assert.assertTrue(errorPage.isCurrent());
+        assertEquals("Invalid Request", errorPage.getError());
+
+
+        // Update clientModel with publicKey for signing
+        clientRep = clientResource.toRepresentation();
+        CertificateRepresentation cert = new CertificateRepresentation();
+        cert.setPublicKey(clientPublicKeyPem);
+        CertificateInfoHelper.updateClientRepresentationCertificateInfo(clientRep, cert, JWTClientAuthenticator.ATTR_PREFIX);
+        clientResource.update(clientRep);
+
+        // Check signed request_uri will pass
+        OAuthClient.AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
+        Assert.assertNotNull(response.getCode());
+        Assert.assertEquals("mystate", response.getState());
         assertTrue(appPage.isCurrent());
 
-        // Assert error response was sent because not logged in
-        OAuthClient.AuthorizationEndpointResponse resp = new OAuthClient.AuthorizationEndpointResponse(oauth);
-        Assert.assertNull(resp.getCode());
-        Assert.assertEquals(OAuthErrorException.REQUEST_URI_NOT_SUPPORTED, resp.getError());
+        // Revert requiring signature for client
+        OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setRequestObjectSignatureAlg(null);
+        clientResource.update(clientRep);
     }
 
     // LOGIN_HINT

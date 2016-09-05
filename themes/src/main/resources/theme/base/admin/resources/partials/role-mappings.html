@@ -84,7 +84,8 @@
                             </button>
                         </div>
                         <div class="col-md-3">
-                            <label class="control-label" for="client-composite">{{:: 'effective-roles' | translate}} <span tooltip-placement="right" tooltip-trigger="mouseover mouseout" tooltip="{{:: 'user.effective-roles-client.tooltip' | translate}}" class="fa fa-info-circle"></span></label>
+                            <label class="control-label" for="client-composite">{{:: 'effective-roles' | translate}}</label>
+                            <kc-tooltip>{{:: 'user.effective-roles-client.tooltip' | translate}}</kc-tooltip>
                             <select id="client-composite" class="form-control" multiple size=5
                                     disabled="true"
                                     ng-model="dummymodel"

@@ -797,6 +797,12 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, templates,
         "RS256"
     ];
 
+    $scope.requestObjectSignatureAlgorithms = [
+        "any",
+        "none",
+        "RS256"
+    ];
+
     $scope.realm = realm;
     $scope.samlAuthnStatement = false;
     $scope.samlMultiValuedRoles = false;
@@ -898,7 +904,11 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, templates,
             }
         }
 
-        $scope.userInfoSignedResponseAlg = getSignatureAlgorithm('user.info.response');
+        var attrVal1 = $scope.client.attributes['user.info.response.signature.alg'];
+        $scope.userInfoSignedResponseAlg = attrVal1==null ? 'unsigned' : attrVal1;
+
+        var attrVal2 = $scope.client.attributes['request.object.signature.alg'];
+         $scope.requestObjectSignatureAlg = attrVal2==null ? 'any' : attrVal2;
     }
 
     if (!$scope.create) {
@@ -964,23 +974,20 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, templates,
     };
 
     $scope.changeUserInfoSignedResponseAlg = function() {
-        changeSignatureAlgorithm('user.info.response', $scope.userInfoSignedResponseAlg);
+        if ($scope.userInfoSignedResponseAlg === 'unsigned') {
+            $scope.client.attributes['user.info.response.signature.alg'] = null;
+        } else {
+            $scope.client.attributes['user.info.response.signature.alg'] = $scope.userInfoSignedResponseAlg;
+        }
     };
 
-    function changeSignatureAlgorithm(attrPrefix, attrValue) {
-        var attrName = attrPrefix + '.signature.alg';
-        if (attrValue === 'unsigned') {
-            $scope.client.attributes[attrName] = null;
+    $scope.changeRequestObjectSignatureAlg = function() {
+        if ($scope.requestObjectSignatureAlg === 'any') {
+            $scope.client.attributes['request.object.signature.alg'] = null;
         } else {
-            $scope.client.attributes[attrName] = attrValue;
+            $scope.client.attributes['request.object.signature.alg'] = $scope.requestObjectSignatureAlg;
         }
-    }
-
-    function getSignatureAlgorithm(attrPrefix) {
-        var attrName = attrPrefix + '.signature.alg';
-        var attrVal = $scope.client.attributes[attrName];
-        return attrVal==null ? 'unsigned' : attrVal;
-    }
+    };
 
     $scope.$watch(function() {
         return $location.path();

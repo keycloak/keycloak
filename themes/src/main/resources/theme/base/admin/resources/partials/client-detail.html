@@ -348,6 +348,19 @@
                 </div>
                 <kc-tooltip>{{:: 'user-info-signed-response-alg.tooltip' | translate}}</kc-tooltip>
             </div>
+            <div class="form-group clearfix block" data-ng-show="protocol == 'openid-connect'">
+                <label class="col-md-2 control-label" for="requestObjectSignatureAlg">{{:: 'request-object-signature-alg' | translate}}</label>
+                <div class="col-sm-6">
+                    <div>
+                        <select class="form-control" id="requestObjectSignatureAlg"
+                                ng-change="changeRequestObjectSignatureAlg()"
+                                ng-model="requestObjectSignatureAlg"
+                                ng-options="sig for sig in requestObjectSignatureAlgorithms">
+                        </select>
+                    </div>
+                </div>
+                <kc-tooltip>{{:: 'request-object-signature-alg.tooltip' | translate}}</kc-tooltip>
+            </div>
         </fieldset>
 
         <div class="form-group">

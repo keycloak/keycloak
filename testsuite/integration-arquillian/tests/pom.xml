@@ -37,7 +37,7 @@
         <module>base</module>
         <module>other</module>
     </modules>
-    
+
     <properties>
         <auth.server>undertow</auth.server>
         <auth.server.undertow>true</auth.server.undertow>
@@ -178,7 +178,7 @@
                         <properties>
                             <property>
                                 <name>listener</name>
-                                <value>org.keycloak.testsuite.util.TestEventsLogger</value>
+                                <value>org.keycloak.testsuite.util.TestEventsLogger,org.keycloak.testsuite.util.junit.AggregateResultsReporter</value>
                             </property>
                         </properties>
                     </configuration>
@@ -645,6 +645,13 @@
                 </file>
             </activation>
             <dependencies>
+
+                <dependency>
+                    <groupId>org.keycloak.testsuite</groupId>
+                    <artifactId>integration-arquillian-test-utils</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+
                 <!-- TEST DEPENDENCIES -->
                 <dependency>
                     <groupId>junit</groupId>
@@ -783,6 +790,10 @@
                 <dependency>
                     <groupId>org.keycloak</groupId>
                     <artifactId>keycloak-saml-adapter-api-public</artifactId>
+                </dependency>
+                <dependency>
+                    <groupId>org.keycloak</groupId>
+                    <artifactId>keycloak-authz-client</artifactId>
                 </dependency>
 
                 <!--UNDERTOW-->
