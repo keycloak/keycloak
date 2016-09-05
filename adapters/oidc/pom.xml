@@ -40,10 +40,23 @@
         <module>osgi-adapter</module>
         <module>servlet-filter</module>
         <module>servlet-oauth-client</module>
-        <module>spring-boot</module>
-        <module>spring-security</module>
         <module>tomcat</module>
         <module>undertow</module>
         <module>wildfly</module>
     </modules>
+
+    <profiles>
+        <profile>
+            <id>community</id>
+            <activation>
+                <property>
+                    <name>!productProfile</name>
+                </property>
+            </activation>
+            <modules>
+                <module>spring-boot</module>
+                <module>spring-security</module>
+            </modules>
+        </profile>
+    </profiles>
 </project>

@@ -31,7 +31,20 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>adapter-feature-pack</module>
         <module>server-feature-pack</module>
     </modules>
+
+    <profiles>
+        <profile>
+            <id>community</id>
+            <activation>
+                <property>
+                    <name>!productProfile</name>
+                </property>
+            </activation>
+            <modules>
+                <module>adapter-feature-pack</module>
+            </modules>
+        </profile>
+    </profiles>
 </project>
