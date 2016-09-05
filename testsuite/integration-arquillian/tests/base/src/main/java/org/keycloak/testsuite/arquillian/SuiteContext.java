@@ -98,6 +98,9 @@ public final class SuiteContext {
         for (ContainerInfo bInfo : getAuthServerBackendsInfo()) {
             containers += "Backend: " + bInfo + "\n";
         }
+        if (isAuthServerMigrationEnabled()) {
+            containers += "Migrated from: " + System.getProperty("migrated.auth.server.version") + "\n";
+        }
         return "SUITE CONTEXT:\n"
                 + containers;
     }
