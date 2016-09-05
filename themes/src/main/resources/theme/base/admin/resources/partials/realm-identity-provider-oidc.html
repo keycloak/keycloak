@@ -118,13 +118,13 @@
                 </div>
                 <kc-tooltip>{{:: 'identity-provider.logout-url.tooltip' | translate}}</kc-tooltip>
             </div>
-                    <div class="form-group">
-                        <label class="col-sm-2 control-label" for="backchannelSupported">{{:: 'backchannel-logout' | translate}}</label>
-                        <div class="col-sm-4">
-                            <input ng-model="identityProvider.config.backchannelSupported" id="backchannelSupported" onoffswitchvalue on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
-                        </div>
-                        <span tooltip-trigger="mouseover mouseout" tooltip-placement="right" tooltip="{{:: 'backchannel-logout.tooltip' | translate}}" class="fa fa-info-circle"></span>
-                    </div>
+            <div class="form-group">
+                <label class="col-sm-2 control-label" for="backchannelSupported">{{:: 'backchannel-logout' | translate}}</label>
+                <div class="col-sm-4">
+                    <input ng-model="identityProvider.config.backchannelSupported" id="backchannelSupported" onoffswitchvalue on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
+                </div>
+                <kc-tooltip>{{:: 'backchannel-logout.tooltip' | translate}}</kc-tooltip>
+            </div>
             <div class="form-group clearfix">
                 <label class="col-md-2 control-label" for="userInfoUrl">{{:: 'user-info-url' | translate}}</label>
                 <div class="col-md-6">
