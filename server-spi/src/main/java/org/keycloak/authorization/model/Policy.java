@@ -18,6 +18,9 @@
 
 package org.keycloak.authorization.model;
 
+import org.keycloak.representations.idm.authorization.DecisionStrategy;
+import org.keycloak.representations.idm.authorization.Logic;
+
 import java.util.Map;
 import java.util.Set;
 
@@ -152,42 +155,4 @@ public interface Policy {
     void addResource(Resource resource);
 
     void removeResource(Resource resource);
-
-    /**
-     * The decision strategy dictates how the policies associated with a given policy are evaluated and how a final decision
-     * is obtained.
-     */
-    enum DecisionStrategy {
-        /**
-         * Defines that at least one policy must evaluate to a positive decision in order to the overall decision be also positive.
-         */
-        AFFIRMATIVE,
-
-        /**
-         * Defines that all policies must evaluate to a positive decision in order to the overall decision be also positive.
-         */
-        UNANIMOUS,
-
-        /**
-         * Defines that the number of positive decisions must be greater than the number of negative decisions. If the number of positive and negative is the same,
-         * the final decision will be negative.
-         */
-        CONSENSUS
-    }
-
-    /**
-     * The decision strategy dictates how the policies associated with a given policy are evaluated and how a final decision
-     * is obtained.
-     */
-    enum Logic {
-        /**
-         * Defines that this policy follows a positive logic. In other words, the final decision is the policy outcome.
-         */
-        POSITIVE,
-
-        /**
-         * Defines that this policy uses a logical negation. In other words, the final decision would be a negative of the policy outcome.
-         */
-        NEGATIVE,
-    }
 }

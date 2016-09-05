@@ -6,7 +6,7 @@ module.controller('ResourceServerCtrl', function($scope, realm, ResourceServer) 
     });
 });
 
-module.controller('ResourceServerDetailCtrl', function($scope, $http, $route, $location, $upload, realm, ResourceServer, client, AuthzDialog, Notifications) {
+module.controller('ResourceServerDetailCtrl', function($scope, $http, $route, $location, $upload, $modal, realm, ResourceServer, client, AuthzDialog, Notifications) {
     $scope.realm = realm;
     $scope.client = client;
 
@@ -31,8 +31,7 @@ module.controller('ResourceServerDetailCtrl', function($scope, $http, $route, $l
         }
 
         $scope.reset = function() {
-            $scope.server = angular.copy(data);
-            $scope.changed = false;
+            $route.reload();
         }
 
         $scope.export = function() {
@@ -54,38 +53,29 @@ module.controller('ResourceServerDetailCtrl', function($scope, $http, $route, $l
             delete $scope.settings
         }
 
-        $scope.onFileSelect = function($files) {
-            $scope.files = $files;
+        $scope.onFileSelect = function($fileContent) {
+            $scope.server = angular.copy(JSON.parse($fileContent));
+            $scope.importing = true;
         };
 
-        $scope.clearFileSelect = function() {
-            $scope.files = null;
+        $scope.viewImportDetails = function() {
+            $modal.open({
+                templateUrl: resourceUrl + '/partials/modal/view-object.html',
+                controller: 'ObjectModalCtrl',
+                resolve: {
+                    object: function () {
+                        return $scope.server;
+                    }
+                }
+            })
+        };
+
+        $scope.import = function () {
+            ResourceServer.import({realm : realm.realm, client : client.id}, $scope.server, function() {
+                $route.reload();
+                Notifications.success("The resource server has been updated.");
+            });
         }
-
-        $scope.uploadFile = function() {
-            //$files: an array of files selected, each file has name, size, and type.
-            for (var i = 0; i < $scope.files.length; i++) {
-                var $file = $scope.files[i];
-                $scope.upload = $upload.upload({
-                    url: authUrl + '/admin/realms/' + $route.current.params.realm  + '/clients/' + client.id + '/authz/resource-server', //upload.php script, node.js route, or servlet url
-                    // method: POST or PUT,
-                    // headers: {'headerKey': 'headerValue'}, withCredential: true,
-                    data: {myObj: ""},
-                    file: $file
-                    /* set file formData name for 'Content-Desposition' header. Default: 'file' */
-                    //fileFormDataName: myFile,
-                    /* customize how data is added to formData. See #40#issuecomment-28612000 for example */
-                    //formDataAppender: function(formData, key, val){}
-                }).progress(function(evt) {
-                    console.log('percent: ' + parseInt(100.0 * evt.loaded / evt.total));
-                }).success(function(data, status, headers) {
-                    $route.reload();
-                    Notifications.success("The resource server has been updated.");
-                }).error(function() {
-                    Notifications.error("The resource server can not be uploaded. Please verify the file.");
-                });
-            }
-        };
     });
 });
 

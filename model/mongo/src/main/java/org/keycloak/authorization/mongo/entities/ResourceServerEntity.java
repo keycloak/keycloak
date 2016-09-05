@@ -18,11 +18,11 @@
 
 package org.keycloak.authorization.mongo.entities;
 
-import org.keycloak.authorization.model.ResourceServer.PolicyEnforcementMode;
 import org.keycloak.connections.mongo.api.MongoCollection;
 import org.keycloak.connections.mongo.api.MongoIdentifiableEntity;
 import org.keycloak.connections.mongo.api.context.MongoStoreInvocationContext;
 import org.keycloak.models.entities.AbstractIdentifiableEntity;
+import org.keycloak.representations.idm.authorization.PolicyEnforcementMode;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>

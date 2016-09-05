@@ -19,7 +19,7 @@ package org.keycloak.representations;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.keycloak.representations.authorization.Permission;
+import org.keycloak.representations.idm.authorization.Permission;
 
 import java.io.Serializable;
 import java.util.HashMap;

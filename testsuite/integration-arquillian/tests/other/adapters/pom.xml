@@ -284,6 +284,24 @@
                                                 <version>${project.version}</version>
                                                 <type>war</type>
                                             </artifactItem>
+                                            <artifactItem>
+                                                <groupId>org.keycloak.testsuite</groupId>
+                                                <artifactId>hello-world-authz-service</artifactId>
+                                                <version>${project.version}</version>
+                                                <type>war</type>
+                                            </artifactItem>
+                                            <artifactItem>
+                                                <groupId>org.keycloak.testsuite</groupId>
+                                                <artifactId>photoz-html5-client</artifactId>
+                                                <version>${project.version}</version>
+                                                <type>war</type>
+                                            </artifactItem>
+                                            <artifactItem>
+                                                <groupId>org.keycloak.testsuite</groupId>
+                                                <artifactId>photoz-restful-api</artifactId>
+                                                <version>${project.version}</version>
+                                                <type>war</type>
+                                            </artifactItem>
                                         </artifactItems>
                                         <outputDirectory>${examples.home}</outputDirectory>
                                         <overWriteIfNewer>true</overWriteIfNewer>
@@ -309,7 +327,7 @@
                                                 <artifactId>integration-arquillian-test-apps-dist</artifactId>
                                                 <version>${project.version}</version>
                                                 <type>zip</type>
-                                                <includes>**/*realm.json,**/testsaml.json</includes>
+                                                <includes>**/*realm.json,**/*authz-service.json,**/testsaml.json</includes>
                                             </artifactItem>
                                         </artifactItems>
                                         <outputDirectory>${examples.home}</outputDirectory>

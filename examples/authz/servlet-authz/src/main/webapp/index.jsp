@@ -1,6 +1,6 @@
 <%@page import="org.keycloak.AuthorizationContext" %>
 <%@ page import="org.keycloak.KeycloakSecurityContext" %>
-<%@ page import="org.keycloak.representations.authorization.Permission" %>
+<%@ page import="org.keycloak.representations.idm.authorization.Permission" %>
 
 <%
     KeycloakSecurityContext keycloakSecurityContext = (KeycloakSecurityContext) request.getAttribute(KeycloakSecurityContext.class.getName());

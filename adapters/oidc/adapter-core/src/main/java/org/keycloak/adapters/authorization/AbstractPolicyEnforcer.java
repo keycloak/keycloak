@@ -29,7 +29,7 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.adapters.config.PolicyEnforcerConfig;
 import org.keycloak.representations.adapters.config.PolicyEnforcerConfig.EnforcementMode;
 import org.keycloak.representations.adapters.config.PolicyEnforcerConfig.PathConfig;
-import org.keycloak.representations.authorization.Permission;
+import org.keycloak.representations.idm.authorization.Permission;
 
 import java.net.URI;
 import java.util.Collections;

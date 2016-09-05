@@ -34,7 +34,6 @@
     <name>Keycloak Authz: Hello World Example</name>
 
     <build>
-        <finalName>${project.artifactId}</finalName>
         <plugins>
             <plugin>
                 <groupId>org.jboss.as.plugins</groupId>

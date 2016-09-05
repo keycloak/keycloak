@@ -18,27 +18,15 @@
 package org.keycloak.authorization.protection.permission;
 
 import org.keycloak.authorization.AuthorizationProvider;
-import org.keycloak.authorization.admin.representation.ResourceRepresentation;
-import org.keycloak.authorization.admin.representation.ScopeRepresentation;
 import org.keycloak.authorization.common.KeycloakIdentity;
-import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
-import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.protection.permission.representation.PermissionRequest;
-import org.keycloak.authorization.protection.permission.representation.PermissionResponse;
-import org.keycloak.authorization.store.StoreFactory;
-import org.keycloak.jose.jws.JWSBuilder;
-import org.keycloak.services.ErrorResponseException;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
 import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
