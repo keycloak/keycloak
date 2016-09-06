@@ -17,7 +17,7 @@
 
 <assembly>
     
-    <id>auth-server-jboss-kc15</id>
+    <id>auth-server-jboss-${migrated.auth.server.version}</id>
 
     <formats>
         <format>zip</format>
@@ -28,14 +28,14 @@
     <fileSets>
         <fileSet>
             <directory>${keycloak.server.home}</directory>
-            <outputDirectory>keycloak-1.5.1.Final</outputDirectory>
+            <outputDirectory>keycloak-${migrated.auth.server.version}</outputDirectory>
             <excludes>
                 <exclude>**/*.sh</exclude>
             </excludes>
         </fileSet>
         <fileSet>
             <directory>${keycloak.server.home}</directory>
-            <outputDirectory>keycloak-1.5.1.Final</outputDirectory>
+            <outputDirectory>keycloak-${migrated.auth.server.version}</outputDirectory>
             <includes>
                 <include>**/*.sh</include>
             </includes>

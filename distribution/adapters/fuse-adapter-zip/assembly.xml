@@ -16,31 +16,21 @@
   -->
 
 <assembly>
-    
-    <id>auth-server-jboss-kc16</id>
+    <id>fuse-adapter-dist</id>
 
     <formats>
         <format>zip</format>
+        <format>tar.gz</format>
     </formats>
-
     <includeBaseDirectory>false</includeBaseDirectory>
 
     <fileSets>
         <fileSet>
-            <directory>${keycloak.server.home}</directory>
-            <outputDirectory>keycloak-1.6.1.Final</outputDirectory>
-            <excludes>
-                <exclude>**/*.sh</exclude>
-            </excludes>
-        </fileSet>
-        <fileSet>
-            <directory>${keycloak.server.home}</directory>
-            <outputDirectory>keycloak-1.6.1.Final</outputDirectory>
+            <directory>${project.build.directory}/system</directory>
             <includes>
-                <include>**/*.sh</include>
+                <include>*/**</include>
             </includes>
-            <fileMode>0755</fileMode>
+            <outputDirectory>system</outputDirectory>
         </fileSet>
     </fileSets>
-
 </assembly>

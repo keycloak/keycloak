@@ -17,69 +17,52 @@
 package org.keycloak.testsuite.migration;
 
 import java.util.List;
-import static org.junit.Assert.*;
-import org.junit.Ignore;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
-import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.RealmResource;
-import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
+import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.arquillian.migration.Migration;
 
 /**
  * @author <a href="mailto:vramik@redhat.com">Vlastislav Ramik</a>
  */
 public class MigrationTest extends AbstractKeycloakTest {
-    
+
+    private RealmResource realmResource;
+    private RealmRepresentation realmRep;
+        
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         log.info("Adding no test realms for migration test. Test realm should be migrated from previous vesrion.");
     }
     
-    @Test
-    @Migration(versionFrom = "1.6.1.Final")
-    public void migration16Test() {
-        RealmResource realmResource = adminClient.realms().realm("Migration");
-        RealmRepresentation realmRep = realmResource.toRepresentation();
-        assertEquals("Migration", realmRep.getRealm());
-        
-        List<RoleRepresentation> realmRoles = realmResource.roles().list();
-        assertEquals(1, realmRoles.size());
-        assertEquals("offline_access", realmRoles.get(0).getName());
-        
-        for (ClientRepresentation client : realmResource.clients().findAll()) {
-            final String clientId = client.getClientId();
-            switch (clientId) {
-                case "realm-management":
-                    assertEquals(13, realmResource.clients().get(client.getId()).roles().list().size());
-                    break;
-                case "security-admin-console":
-                    assertEquals(0, realmResource.clients().get(client.getId()).roles().list().size());
-                    break;
-                case "broker":
-                    assertEquals(1, realmResource.clients().get(client.getId()).roles().list().size());
-                    break;
-                case "account":
-                    assertEquals(2, realmResource.clients().get(client.getId()).roles().list().size());
-                    break;
-                default:
-                    fail("Migrated realm contains unexpected client " + clientId);
-                    break;
-            }
-        }
+    @Before
+    public void beforeMigrationTest() {
+        realmResource = adminClient.realms().realm("Migration");
+        realmRep = realmResource.toRepresentation();
     }
     
     @Test
-    @Migration(versionFrom = "1.5.1.Final")
-    @Ignore
-    public void migration15Test() {
-        for (RealmRepresentation realm : adminClient.realms().findAll()) {
-            System.out.println(realm.getRealm());
-        }
+    @Migration(versionFrom = "1.9.8.Final")
+    public void migration198Test() {
+        Assert.assertNames(realmResource.roles().list(), "offline_access", "uma_authorization");
+        Assert.assertNames(realmResource.clients().findAll(), "admin-cli", "realm-management", "security-admin-console", "broker", "account");
         
         //TODO
     }
-
+    
+    /**
+     * Assumed that there is only one migration test for each version and *remove*
+     * 'Migration' realm from Keycloak after test to be able to run the rest 
+     * of the testsuite isolated afterward.
+     */
+    @After
+    public void afterMigrationTest() {
+        log.info("removing '" + realmRep.getRealm() + "' realm");
+        removeRealm(realmRep);
+    }
+    
 }

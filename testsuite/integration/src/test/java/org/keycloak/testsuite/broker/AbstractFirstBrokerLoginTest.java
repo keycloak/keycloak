@@ -287,6 +287,10 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractIdentityProvi
 
         // authenticated and redirected to app. User is linked with identity provider
         assertFederatedUser("pedroigor", "psilva@redhat.com", "pedroigor");
+
+        // Assert user's email is verified now
+        UserModel user = getFederatedUser();
+        Assert.assertTrue(user.isEmailVerified());
     }
 
 
