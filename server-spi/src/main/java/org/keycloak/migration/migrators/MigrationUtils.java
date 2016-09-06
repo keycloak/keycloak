@@ -49,8 +49,8 @@ public class MigrationUtils {
 
     public static void updateOTPRequiredAction(RequiredActionProviderModel otpAction) {
         if (otpAction == null) return;
-        if (!otpAction.getProviderId().equals(UserModel.RequiredAction.CONFIGURE_TOTP.name())) return;
-        if (!otpAction.getName().equals("Configure Totp")) return;
+        if (!UserModel.RequiredAction.CONFIGURE_TOTP.name().equals(otpAction.getProviderId())) return;
+        if (!"Configure Totp".equals(otpAction.getName())) return;
 
         otpAction.setName("Configure OTP");
     }

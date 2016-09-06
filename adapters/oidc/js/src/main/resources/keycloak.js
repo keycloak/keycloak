@@ -160,15 +160,25 @@
                         if (loginIframe.enable) {
                             setupCheckLoginIframe().success(function() {
                                 checkLoginIframe().success(function () {
+                                    kc.onAuthSuccess && kc.onAuthSuccess();
                                     initPromise.setSuccess();
                                 }).error(function () {
+                                    kc.onAuthError && kc.onAuthError();
                                     if (initOptions.onLoad) {
                                         onLoad();
                                     }
                                 });
                             });
                         } else {
-                            initPromise.setSuccess();
+                            kc.updateToken(-1).success(function() {
+                                kc.onAuthSuccess && kc.onAuthSuccess();
+                                initPromise.setSuccess();
+                            }).error(function() {
+                                kc.onAuthError && kc.onAuthError();
+                                if (initOptions.onLoad) {
+                                    onLoad();
+                                }
+                            });
                         }
                     } else if (initOptions.onLoad) {
                         onLoad();
@@ -368,7 +378,7 @@
             minValidity = minValidity || 5;
 
             var exec = function() {
-                if (!kc.isTokenExpired(minValidity)) {
+                if (minValidity >= 0 && !kc.isTokenExpired(minValidity)) {
                     promise.setSuccess(false);
                 } else {
                     var params = 'grant_type=refresh_token&' + 'refresh_token=' + kc.refreshToken;
@@ -380,6 +390,7 @@
                         var req = new XMLHttpRequest();
                         req.open('POST', url, true);
                         req.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+                        req.withCredentials = true;
 
                         if (kc.clientId && kc.clientSecret) {
                             req.setRequestHeader('Authorization', 'Basic ' + btoa(kc.clientId + ':' + kc.clientSecret));
@@ -1055,7 +1066,7 @@
             if (!(this instanceof CookieStorage)) {
                 return new CookieStorage();
             }
-            
+
             var cs = this;
 
             cs.get = function(state) {

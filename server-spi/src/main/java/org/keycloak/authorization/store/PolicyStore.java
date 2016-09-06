@@ -19,11 +19,10 @@ package org.keycloak.authorization.store;
 
 
 import org.keycloak.authorization.model.Policy;
-import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
-import org.keycloak.authorization.model.Scope;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * A {@link PolicyStore} is responsible to manage the persistence of {@link Policy} instances.
@@ -74,6 +73,15 @@ public interface PolicyStore {
      * @return a list of policies that belong to the given resource server
      */
     List<Policy> findByResourceServer(String resourceServerId);
+
+    /**
+     * Returns a list of {@link Policy} associated with a {@link ResourceServer} with the given <code>resourceServerId</code>.
+     *
+     * @param attributes a map holding the attributes that will be used as a filter
+     * @param resourceServerId the identifier of a resource server
+     * @return a list of policies that belong to the given resource server
+     */
+    List<Policy> findByResourceServer(Map<String, String[]> attributes, String resourceServerId, int firstResult, int maxResult);
 
     /**
      * Returns a list of {@link Policy} associated with a {@link org.keycloak.authorization.core.model.Resource} with the given <code>resourceId</code>.

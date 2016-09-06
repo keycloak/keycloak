@@ -17,6 +17,7 @@
 package org.keycloak.broker.provider;
 
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.provider.ProviderFactory;
 
 import java.io.InputStream;
@@ -47,8 +48,9 @@ public interface IdentityProviderFactory<T extends IdentityProvider> extends Pro
      * <p>Creates an {@link IdentityProvider} based on the configuration from
      * <code>inputStream</code>.</p>
      *
+     * @param session
      * @param inputStream The input stream from where configuration will be loaded from..
      * @return
      */
-    Map<String, String> parseConfig(InputStream inputStream);
+    Map<String, String> parseConfig(KeycloakSession session, InputStream inputStream);
 }

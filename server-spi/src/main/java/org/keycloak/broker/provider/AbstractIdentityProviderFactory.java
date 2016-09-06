@@ -50,7 +50,7 @@ public abstract class AbstractIdentityProviderFactory<T extends IdentityProvider
     }
 
     @Override
-    public Map<String, String> parseConfig(InputStream inputStream) {
+    public Map<String, String> parseConfig(KeycloakSession session, InputStream inputStream) {
         return new HashMap<String, String>();
     }
 }

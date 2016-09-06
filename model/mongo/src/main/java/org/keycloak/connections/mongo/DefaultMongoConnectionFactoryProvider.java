@@ -51,6 +51,10 @@ import com.mongodb.ServerAddress;
  */
 public class DefaultMongoConnectionFactoryProvider implements MongoConnectionProviderFactory, ServerInfoAwareProviderFactory {
 
+    enum MigrationStrategy {
+        UPDATE, VALIDATE
+    }
+
     // TODO Make it dynamic
     private String[] entities = new String[]{
             "org.keycloak.models.mongo.keycloak.entities.MongoRealmEntity",
@@ -165,46 +169,34 @@ public class DefaultMongoConnectionFactoryProvider implements MongoConnectionPro
     }
 
     private void update(KeycloakSession session) {
-        String databaseSchema = config.get("databaseSchema");
+        MigrationStrategy strategy = getMigrationStrategy();
 
-        if (databaseSchema == null) {
-            throw new RuntimeException("Property 'databaseSchema' needs to be specified in the configuration of mongo connections");
+        MongoUpdaterProvider mongoUpdater = session.getProvider(MongoUpdaterProvider.class);
+        if (mongoUpdater == null) {
+            throw new RuntimeException("Can't update database: Mongo updater provider not found");
+        }
+
+        DBLockProvider dbLock = new DBLockManager(session).getDBLock();
+        if (dbLock.hasLock()) {
+            updateOrValidateDB(strategy, session, mongoUpdater);
         } else {
-            MongoUpdaterProvider mongoUpdater = session.getProvider(MongoUpdaterProvider.class);
-            if (mongoUpdater == null) {
-                throw new RuntimeException("Can't update database: Mongo updater provider not found");
-            }
+            logger.trace("Don't have DBLock retrieved before upgrade. Needs to acquire lock first in separate transaction");
 
-            DBLockProvider dbLock = new DBLockManager(session).getDBLock();
-            if (dbLock.hasLock()) {
-                updateOrValidateDB(databaseSchema, session, mongoUpdater);
-            } else {
-                logger.trace("Don't have DBLock retrieved before upgrade. Needs to acquire lock first in separate transaction");
+            KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), new KeycloakSessionTask() {
 
-                KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), new KeycloakSessionTask() {
-
-                    @Override
-                    public void run(KeycloakSession lockSession) {
-                        DBLockManager dbLockManager = new DBLockManager(lockSession);
-                        DBLockProvider dbLock2 = dbLockManager.getDBLock();
-                        dbLock2.waitForLock();
-                        try {
-                            updateOrValidateDB(databaseSchema, session, mongoUpdater);
-                        } finally {
-                            dbLock2.releaseLock();
-                        }
+                @Override
+                public void run(KeycloakSession lockSession) {
+                    DBLockManager dbLockManager = new DBLockManager(lockSession);
+                    DBLockProvider dbLock2 = dbLockManager.getDBLock();
+                    dbLock2.waitForLock();
+                    try {
+                        updateOrValidateDB(strategy, session, mongoUpdater);
+                    } finally {
+                        dbLock2.releaseLock();
                     }
+                }
 
-                });
-            }
-
-            if (databaseSchema.equals("update")) {
-                mongoUpdater.update(session, db);
-            } else if (databaseSchema.equals("validate")) {
-                mongoUpdater.validate(session, db);
-            } else {
-                throw new RuntimeException("Invalid value for databaseSchema: " + databaseSchema);
-            }
+            });
         }
     }
 
@@ -217,13 +209,14 @@ public class DefaultMongoConnectionFactoryProvider implements MongoConnectionPro
         return entityClasses;
     }
 
-    protected void updateOrValidateDB(String databaseSchema, KeycloakSession session, MongoUpdaterProvider mongoUpdater) {
-        if (databaseSchema.equals("update")) {
-            mongoUpdater.update(session, db);
-        } else if (databaseSchema.equals("validate")) {
-            mongoUpdater.validate(session, db);
-        } else {
-            throw new RuntimeException("Invalid value for databaseSchema: " + databaseSchema);
+    protected void updateOrValidateDB(MigrationStrategy strategy, KeycloakSession session, MongoUpdaterProvider mongoUpdater) {
+        switch (strategy) {
+            case UPDATE:
+                mongoUpdater.update(session, db);
+                break;
+            case VALIDATE:
+                mongoUpdater.validate(session, db);
+                break;
         }
     }
 
@@ -344,5 +337,19 @@ public class DefaultMongoConnectionFactoryProvider implements MongoConnectionPro
   	public Map<String,String> getOperationalInfo() {
   		return operationalInfo;
   	}
+
+    private MigrationStrategy getMigrationStrategy() {
+        String migrationStrategy = config.get("migrationStrategy");
+        if (migrationStrategy == null) {
+            // Support 'databaseSchema' for backwards compatibility
+            migrationStrategy = config.get("databaseSchema");
+        }
+
+        if (migrationStrategy != null) {
+            return MigrationStrategy.valueOf(migrationStrategy.toUpperCase());
+        } else {
+            return MigrationStrategy.UPDATE;
+        }
+    }
 
 }

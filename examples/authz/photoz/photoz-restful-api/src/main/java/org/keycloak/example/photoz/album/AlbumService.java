@@ -7,10 +7,12 @@ import org.keycloak.authorization.client.representation.ScopeRepresentation;
 import org.keycloak.authorization.client.resource.ProtectionResource;
 import org.keycloak.example.photoz.ErrorResponse;
 import org.keycloak.example.photoz.entity.Album;
+import org.keycloak.example.photoz.util.Transaction;
 import org.keycloak.representations.adapters.config.AdapterConfig;
 import org.keycloak.util.JsonSerialization;
 
 import javax.ejb.Stateless;
+import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
@@ -31,14 +33,14 @@ import java.util.List;
 import java.util.Set;
 
 @Path("/album")
-@Stateless
+@Transaction
 public class AlbumService {
 
     public static final String SCOPE_ALBUM_VIEW = "urn:photoz.com:scopes:album:view";
     public static final String SCOPE_ALBUM_CREATE = "urn:photoz.com:scopes:album:create";
     public static final String SCOPE_ALBUM_DELETE = "urn:photoz.com:scopes:album:delete";
 
-    @PersistenceContext
+    @Inject
     private EntityManager entityManager;
 
     @Context

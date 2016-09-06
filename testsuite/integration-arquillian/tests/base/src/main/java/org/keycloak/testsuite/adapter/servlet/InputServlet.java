@@ -17,6 +17,8 @@
 
 package org.keycloak.testsuite.adapter.servlet;
 
+import org.junit.Assert;
+
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
@@ -31,6 +33,8 @@ import java.io.PrintWriter;
 @WebServlet("/input-portal")
 public class InputServlet extends HttpServlet {
 
+    private static final String FORM_URLENCODED = "application/x-www-form-urlencoded";
+
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         String appBase;
@@ -41,6 +45,16 @@ public class InputServlet extends HttpServlet {
         }
         String actionUrl = appBase + "/input-portal/secured/post";
 
+        if (req.getRequestURI().endsWith("insecure")) {
+            if (System.getProperty("insecure.user.principal.unsupported") == null) Assert.assertNotNull(req.getUserPrincipal());
+            resp.setContentType("text/html");
+            PrintWriter pw = resp.getWriter();
+            pw.printf("<html><head><title>Input Servlet</title></head><body>%s\n", "Insecure Page");
+            if (req.getUserPrincipal() != null) pw.printf("UserPrincipal: " + req.getUserPrincipal().getName());
+            pw.print("</body></html>");
+            pw.flush();
+            return;
+        }
 
         resp.setContentType("text/html");
         PrintWriter pw = resp.getWriter();
@@ -56,6 +70,16 @@ public class InputServlet extends HttpServlet {
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        if (!FORM_URLENCODED.equals(req.getContentType())) {
+            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            PrintWriter pw = resp.getWriter();
+            resp.setContentType("text/plain");
+            pw.printf("Expecting content type " + FORM_URLENCODED +
+                    ", received " + req.getContentType() + " instead");
+            pw.flush();
+            return;
+        }
+
         resp.setContentType("text/plain");
         PrintWriter pw = resp.getWriter();
         pw.printf("parameter="+req.getParameter("parameter"));

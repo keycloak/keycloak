@@ -30,6 +30,7 @@ import java.util.Set;
 
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriBuilder;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.AuthenticationFlowError;
@@ -39,9 +40,11 @@ import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.CertificateRepresentation;
@@ -139,10 +142,11 @@ public class JWTClientAuthenticator extends AbstractClientAuthenticator {
                 throw new RuntimeException("Signature on JWT token failed validation");
             }
 
-            // Validate other things
-            String expectedAudience = Urls.realmIssuer(context.getUriInfo().getBaseUri(), realm.getName());
-            if (!token.hasAudience(expectedAudience)) {
-                throw new RuntimeException("Token audience doesn't match domain. Realm audience is '" + expectedAudience + "' but audience from token is '" + Arrays.asList(token.getAudience()).toString() + "'");
+            // Allow both "issuer" or "token-endpoint" as audience
+            String issuerUrl = Urls.realmIssuer(context.getUriInfo().getBaseUri(), realm.getName());
+            String tokenUrl = OIDCLoginProtocolService.tokenUrl(context.getUriInfo().getBaseUriBuilder()).build(realm.getName()).toString();
+            if (!token.hasAudience(issuerUrl) && !token.hasAudience(tokenUrl)) {
+                throw new RuntimeException("Token audience doesn't match domain. Realm issuer is '" + issuerUrl + "' but audience from token is '" + Arrays.asList(token.getAudience()).toString() + "'");
             }
 
             if (!token.isActive()) {
@@ -163,29 +167,12 @@ public class JWTClientAuthenticator extends AbstractClientAuthenticator {
     }
 
     protected PublicKey getSignatureValidationKey(ClientModel client, ClientAuthenticationFlowContext context) {
-        CertificateRepresentation certInfo = CertificateInfoHelper.getCertificateFromClient(client, ATTR_PREFIX);
-
-        String encodedCertificate = certInfo.getCertificate();
-        String encodedPublicKey = certInfo.getPublicKey();
-
-        if (encodedCertificate == null && encodedPublicKey == null) {
-            Response challengeResponse = ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "unauthorized_client", "Client '" + client.getClientId() + "' doesn't have certificate or publicKey configured");
+        try {
+            return CertificateInfoHelper.getSignatureValidationKey(client, ATTR_PREFIX);
+        } catch (ModelException me) {
+            Response challengeResponse = ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "unauthorized_client", me.getMessage());
             context.failure(AuthenticationFlowError.CLIENT_CREDENTIALS_SETUP_REQUIRED, challengeResponse);
             return null;
-        }
-
-        if (encodedCertificate != null && encodedPublicKey != null) {
-            Response challengeResponse = ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "unauthorized_client", "Client '" + client.getClientId() + "' has both publicKey and certificate configured");
-            context.failure(AuthenticationFlowError.CLIENT_CREDENTIALS_SETUP_REQUIRED, challengeResponse);
-            return null;
-        }
-
-        // TODO: Caching of publicKeys / certificates, so it doesn't need to be always computed from pem. For performance reasons...
-        if (encodedCertificate != null) {
-            X509Certificate clientCert = KeycloakModelUtils.getCertificate(encodedCertificate);
-            return clientCert.getPublicKey();
-        } else {
-            return KeycloakModelUtils.getPublicKey(encodedPublicKey);
         }
     }
 

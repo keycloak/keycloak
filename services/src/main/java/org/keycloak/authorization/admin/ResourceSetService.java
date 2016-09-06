@@ -22,9 +22,13 @@ import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
+import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.authorization.store.StoreFactory;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.resources.admin.RealmAuth;
@@ -40,7 +44,10 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import static org.keycloak.models.utils.ModelToRepresentation.toRepresentation;
@@ -170,12 +177,63 @@ public class ResourceSetService {
     @GET
     @NoCache
     @Produces("application/json")
-    public Response findAll() {
+    public Response findAll(@QueryParam("name") String name,
+                            @QueryParam("uri") String uri,
+                            @QueryParam("owner") String owner,
+                            @QueryParam("type") String type,
+                            @QueryParam("scope") String scope,
+                            @QueryParam("first") Integer firstResult,
+                            @QueryParam("max") Integer maxResult) {
         requireView();
         StoreFactory storeFactory = authorization.getStoreFactory();
 
+        Map<String, String[]> search = new HashMap<>();
+
+        if (name != null && !"".equals(name.trim())) {
+            search.put("name", new String[] {name});
+        }
+
+        if (uri != null && !"".equals(uri.trim())) {
+            search.put("uri", new String[] {uri});
+        }
+
+        if (owner != null && !"".equals(owner.trim())) {
+            RealmModel realm = authorization.getKeycloakSession().getContext().getRealm();
+            ClientModel clientModel = realm.getClientByClientId(owner);
+
+            if (clientModel != null) {
+                owner = clientModel.getId();
+            } else {
+                UserModel user = authorization.getKeycloakSession().users().getUserByUsername(owner, realm);
+
+                if (user != null) {
+                    owner = user.getId();
+                }
+            }
+
+            search.put("owner", new String[] {owner});
+        }
+
+        if (type != null && !"".equals(type.trim())) {
+            search.put("type", new String[] {type});
+        }
+
+        if (scope != null && !"".equals(scope.trim())) {
+            HashMap<String, String[]> scopeFilter = new HashMap<>();
+
+            scopeFilter.put("name", new String[] {scope});
+
+            List<Scope> scopes = authorization.getStoreFactory().getScopeStore().findByResourceServer(scopeFilter, resourceServer.getId(), -1, -1);
+
+            if (scopes.isEmpty()) {
+                return Response.ok(Collections.emptyList()).build();
+            }
+
+            search.put("scope", scopes.stream().map(Scope::getId).toArray(String[]::new));
+        }
+
         return Response.ok(
-                storeFactory.getResourceStore().findByResourceServer(this.resourceServer.getId()).stream()
+                storeFactory.getResourceStore().findByResourceServer(search, this.resourceServer.getId(), firstResult != null ? firstResult : -1, maxResult != null ? maxResult : -1).stream()
                         .map(resource -> toRepresentation(resource, this.resourceServer, authorization))
                         .collect(Collectors.toList()))
                 .build();

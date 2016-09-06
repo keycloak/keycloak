@@ -430,4 +430,8 @@ public interface ServicesLogger extends BasicLogger {
     @Message(id=96, value="Not found JWK of supported keyType under jwks_uri for usage: %s")
     void supportedJwkNotFound(String usage);
 
+    @LogMessage(level = WARN)
+    @Message(id=97, value="Invalid request")
+    void invalidRequest(@Cause Throwable t);
+
 }

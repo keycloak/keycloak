@@ -65,7 +65,8 @@
             "driverDialect": "${keycloak.connectionsJpa.driverDialect:}",
             "user": "${keycloak.connectionsJpa.user:sa}",
             "password": "${keycloak.connectionsJpa.password:}",
-            "databaseSchema": "${keycloak.connectionsJpa.databaseSchema:update}",
+            "initializeEmpty": true,
+            "migrationStrategy": "update",
             "showSql": "${keycloak.connectionsJpa.showSql:false}",
             "formatSql": "${keycloak.connectionsJpa.formatSql:true}",
             "globalStatsInterval": "${keycloak.connectionsJpa.globalStatsInterval:-1}"

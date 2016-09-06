@@ -28,6 +28,7 @@ import org.keycloak.representations.adapters.action.TestAvailabilityAction;
 import org.keycloak.services.resource.RealmResourceProvider;
 import org.keycloak.services.resource.RealmResourceProviderFactory;
 
+import java.security.KeyPair;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingDeque;
 
@@ -40,9 +41,11 @@ public class TestApplicationResourceProviderFactory implements RealmResourceProv
     private BlockingQueue<PushNotBeforeAction> pushNotBeforeActions = new LinkedBlockingDeque<>();
     private BlockingQueue<TestAvailabilityAction> testAvailabilityActions = new LinkedBlockingDeque<>();
 
+    private final OIDCClientData oidcClientData = new OIDCClientData();
+
     @Override
     public RealmResourceProvider create(KeycloakSession session) {
-        return new TestApplicationResourceProvider(session, adminLogoutActions, pushNotBeforeActions, testAvailabilityActions);
+        return new TestApplicationResourceProvider(session, adminLogoutActions, pushNotBeforeActions, testAvailabilityActions, oidcClientData);
     }
 
     @Override
@@ -62,4 +65,26 @@ public class TestApplicationResourceProviderFactory implements RealmResourceProv
         return "app";
     }
 
+
+    public static class OIDCClientData {
+
+        private KeyPair signingKeyPair;
+        private String oidcRequest;
+
+        public KeyPair getSigningKeyPair() {
+            return signingKeyPair;
+        }
+
+        public void setSigningKeyPair(KeyPair signingKeyPair) {
+            this.signingKeyPair = signingKeyPair;
+        }
+
+        public String getOidcRequest() {
+            return oidcRequest;
+        }
+
+        public void setOidcRequest(String oidcRequest) {
+            this.oidcRequest = oidcRequest;
+        }
+    }
 }

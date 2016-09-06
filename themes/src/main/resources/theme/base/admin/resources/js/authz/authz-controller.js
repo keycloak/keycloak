@@ -83,6 +83,13 @@ module.controller('ResourceServerResourceCtrl', function($scope, $http, $route, 
     $scope.realm = realm;
     $scope.client = client;
 
+    $scope.query = {
+        realm: realm.realm,
+        client : client.id,
+        max : 20,
+        first : 0
+    };
+
     ResourceServer.get({
         realm : $route.current.params.realm,
         client : client.id
@@ -93,10 +100,35 @@ module.controller('ResourceServerResourceCtrl', function($scope, $http, $route, 
             $location.path('/realms/' + $route.current.params.realm + '/clients/' + client.id + '/authz/resource-server/permission/resource/create').search({rsrid: resource._id});
         }
 
-        ResourceServerResource.query({realm : realm.realm, client : client.id}, function (data) {
-            $scope.resources = data;
-        });
+        $scope.searchQuery();
     });
+
+    $scope.firstPage = function() {
+        $scope.query.first = 0;
+        $scope.searchQuery();
+    }
+
+    $scope.previousPage = function() {
+        $scope.query.first -= parseInt($scope.query.max);
+        if ($scope.query.first < 0) {
+            $scope.query.first = 0;
+        }
+        $scope.searchQuery();
+    }
+
+    $scope.nextPage = function() {
+        $scope.query.first += parseInt($scope.query.max);
+        $scope.searchQuery();
+    }
+
+    $scope.searchQuery = function() {
+        $scope.searchLoaded = false;
+
+        $scope.resources = ResourceServerResource.query($scope.query, function() {
+            $scope.searchLoaded = true;
+            $scope.lastSearch = $scope.query.search;
+        });
+    };
 });
 
 module.controller('ResourceServerResourceDetailCtrl', function($scope, $http, $route, $location, realm, ResourceServer, client, ResourceServerResource, ResourceServerScope, AuthzDialog, Notifications) {
@@ -234,20 +266,52 @@ module.controller('ResourceServerScopeCtrl', function($scope, $http, $route, $lo
     $scope.realm = realm;
     $scope.client = client;
 
+    $scope.query = {
+        realm: realm.realm,
+        client : client.id,
+        max : 20,
+        first : 0
+    };
+
     ResourceServer.get({
         realm : $route.current.params.realm,
         client : client.id
     }, function(data) {
         $scope.server = data;
 
-        ResourceServerScope.query({realm : realm.realm, client : client.id}, function (data) {
-            $scope.scopes = data;
-        });
-
         $scope.createPolicy = function(scope) {
             $location.path('/realms/' + $route.current.params.realm + '/clients/' + client.id + '/authz/resource-server/permission/scope/create').search({scpid: scope.id});
         }
+
+        $scope.searchQuery();
     });
+
+    $scope.firstPage = function() {
+        $scope.query.first = 0;
+        $scope.searchQuery();
+    }
+
+    $scope.previousPage = function() {
+        $scope.query.first -= parseInt($scope.query.max);
+        if ($scope.query.first < 0) {
+            $scope.query.first = 0;
+        }
+        $scope.searchQuery();
+    }
+
+    $scope.nextPage = function() {
+        $scope.query.first += parseInt($scope.query.max);
+        $scope.searchQuery();
+    }
+
+    $scope.searchQuery = function() {
+        $scope.searchLoaded = false;
+
+        $scope.scopes = ResourceServerScope.query($scope.query, function() {
+            $scope.searchLoaded = true;
+            $scope.lastSearch = $scope.query.search;
+        });
+    };
 });
 
 module.controller('ResourceServerScopeDetailCtrl', function($scope, $http, $route, $location, realm, ResourceServer, client, ResourceServerScope, AuthzDialog, Notifications) {
@@ -364,6 +428,14 @@ module.controller('ResourceServerPolicyCtrl', function($scope, $http, $route, $l
     $scope.client = client;
     $scope.policyProviders = [];
 
+    $scope.query = {
+        realm: realm.realm,
+        client : client.id,
+        permission: false,
+        max : 20,
+        first : 0
+    };
+
     PolicyProvider.query({
         realm : $route.current.params.realm,
         client : client.id
@@ -380,8 +452,35 @@ module.controller('ResourceServerPolicyCtrl', function($scope, $http, $route, $l
         client : client.id
     }, function(data) {
         $scope.server = data;
+        $scope.searchQuery();
+    });
 
-        ResourceServerPolicy.query({realm : realm.realm, client : client.id}, function (data) {
+    $scope.addPolicy = function(policyType) {
+        $location.url("/realms/" + realm.realm + "/clients/" + client.id + "/authz/resource-server/policy/" + policyType.type + "/create");
+    }
+
+    $scope.firstPage = function() {
+        $scope.query.first = 0;
+        $scope.searchQuery();
+    }
+
+    $scope.previousPage = function() {
+        $scope.query.first -= parseInt($scope.query.max);
+        if ($scope.query.first < 0) {
+            $scope.query.first = 0;
+        }
+        $scope.searchQuery();
+    }
+
+    $scope.nextPage = function() {
+        $scope.query.first += parseInt($scope.query.max);
+        $scope.searchQuery();
+    }
+
+    $scope.searchQuery = function() {
+        $scope.searchLoaded = false;
+
+        ResourceServerPolicy.query($scope.query, function(data) {
             $scope.policies = [];
 
             for (i = 0; i < data.length; i++) {
@@ -389,18 +488,25 @@ module.controller('ResourceServerPolicyCtrl', function($scope, $http, $route, $l
                     $scope.policies.push(data[i]);
                 }
             }
-        });
-    });
 
-    $scope.addPolicy = function(policyType) {
-        $location.url("/realms/" + realm.realm + "/clients/" + client.id + "/authz/resource-server/policy/" + policyType.type + "/create");
-    }
+            $scope.searchLoaded = true;
+            $scope.lastSearch = $scope.query.search;
+        });
+    };
 });
 
 module.controller('ResourceServerPermissionCtrl', function($scope, $http, $route, $location, realm, ResourceServer, ResourceServerPolicy, PolicyProvider, client) {
     $scope.realm = realm;
     $scope.client = client;
     $scope.policyProviders = [];
+
+    $scope.query = {
+        realm: realm.realm,
+        client : client.id,
+        permission: true,
+        max : 20,
+        first : 0
+    };
 
     PolicyProvider.query({
         realm : $route.current.params.realm,
@@ -418,8 +524,35 @@ module.controller('ResourceServerPermissionCtrl', function($scope, $http, $route
         client : client.id
     }, function(data) {
         $scope.server = data;
+        $scope.searchQuery();
+    });
 
-        ResourceServerPolicy.query({realm : realm.realm, client : client.id}, function (data) {
+    $scope.addPolicy = function(policyType) {
+        $location.url("/realms/" + realm.realm + "/clients/" + client.id + "/authz/resource-server/permission/" + policyType.type + "/create");
+    }
+
+    $scope.firstPage = function() {
+        $scope.query.first = 0;
+        $scope.searchQuery();
+    }
+
+    $scope.previousPage = function() {
+        $scope.query.first -= parseInt($scope.query.max);
+        if ($scope.query.first < 0) {
+            $scope.query.first = 0;
+        }
+        $scope.searchQuery();
+    }
+
+    $scope.nextPage = function() {
+        $scope.query.first += parseInt($scope.query.max);
+        $scope.searchQuery();
+    }
+
+    $scope.searchQuery = function() {
+        $scope.searchLoaded = false;
+
+        ResourceServerPolicy.query($scope.query, function(data) {
             $scope.policies = [];
 
             for (i = 0; i < data.length; i++) {
@@ -427,12 +560,11 @@ module.controller('ResourceServerPermissionCtrl', function($scope, $http, $route
                     $scope.policies.push(data[i]);
                 }
             }
-        });
-    });
 
-    $scope.addPolicy = function(policyType) {
-        $location.url("/realms/" + realm.realm + "/clients/" + client.id + "/authz/resource-server/permission/" + policyType.type + "/create");
-    }
+            $scope.searchLoaded = true;
+            $scope.lastSearch = $scope.query.search;
+        });
+    };
 });
 
 module.controller('ResourceServerPolicyDroolsDetailCtrl', function($scope, $http, $route, realm, client, PolicyController) {
@@ -958,7 +1090,36 @@ module.controller('ResourceServerPolicyTimeDetailCtrl', function($scope, $route,
         },
 
         onInitUpdate : function(policy) {
-
+            if (policy.config.dayMonth) {
+                policy.config.dayMonth = parseInt(policy.config.dayMonth);
+            }
+            if (policy.config.dayMonthEnd) {
+                policy.config.dayMonthEnd = parseInt(policy.config.dayMonthEnd);
+            }
+            if (policy.config.month) {
+                policy.config.month = parseInt(policy.config.month);
+            }
+            if (policy.config.monthEnd) {
+                policy.config.monthEnd = parseInt(policy.config.monthEnd);
+            }
+            if (policy.config.year) {
+                policy.config.year = parseInt(policy.config.year);
+            }
+            if (policy.config.yearEnd) {
+                policy.config.yearEnd = parseInt(policy.config.yearEnd);
+            }
+            if (policy.config.hour) {
+                policy.config.hour = parseInt(policy.config.hour);
+            }
+            if (policy.config.hourEnd) {
+                policy.config.hourEnd = parseInt(policy.config.hourEnd);
+            }
+            if (policy.config.minute) {
+                policy.config.minute = parseInt(policy.config.minute);
+            }
+            if (policy.config.minuteEnd) {
+                policy.config.minuteEnd = parseInt(policy.config.minuteEnd);
+            }
         },
 
         onUpdate : function() {
@@ -974,6 +1135,19 @@ module.controller('ResourceServerPolicyTimeDetailCtrl', function($scope, $route,
 
         }
     }, realm, client, $scope);
+
+    $scope.isRequired = function () {
+        var policy = $scope.policy;
+        if (policy.config.noa || policy.config.nbf
+            || policy.config.dayMonth
+            || policy.config.month
+            || policy.config.year
+            || policy.config.hour
+            || policy.config.minute) {
+            return false;
+        }
+        return true;
+    }
 });
 
 module.controller('ResourceServerPolicyAggregateDetailCtrl', function($scope, $route, $location, realm, PolicyController, ResourceServerPolicy, client) {

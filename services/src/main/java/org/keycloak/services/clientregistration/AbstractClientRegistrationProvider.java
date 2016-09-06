@@ -29,8 +29,12 @@ import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.ForbiddenException;
+import org.keycloak.services.resources.admin.AdminRoot;
+import org.keycloak.services.validation.ClientValidator;
+import org.keycloak.services.validation.ValidationMessages;
 
 import javax.ws.rs.core.Response;
+import java.util.Properties;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -49,6 +53,16 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
         event.event(EventType.CLIENT_REGISTER);
 
         auth.requireCreate();
+
+        ValidationMessages validationMessages = new ValidationMessages();
+        if (!ClientValidator.validate(client, validationMessages)) {
+            String errorCode = validationMessages.fieldHasError("redirectUris") ? ErrorCodes.INVALID_REDIRECT_URI : ErrorCodes.INVALID_CLIENT_METADATA;
+            throw new ErrorResponseException(
+                    errorCode,
+                    validationMessages.getStringMessages(),
+                    Response.Status.BAD_REQUEST
+            );
+        }
 
         try {
             ClientModel clientModel = RepresentationToModel.createClient(session, session.getContext().getRealm(), client, true);
@@ -102,6 +116,16 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
 
         if (!client.getClientId().equals(rep.getClientId())) {
             throw new ErrorResponseException(ErrorCodes.INVALID_CLIENT_METADATA, "Client Identifier modified", Response.Status.BAD_REQUEST);
+        }
+
+        ValidationMessages validationMessages = new ValidationMessages();
+        if (!ClientValidator.validate(rep, validationMessages)) {
+            String errorCode = validationMessages.fieldHasError("redirectUris") ? ErrorCodes.INVALID_REDIRECT_URI : ErrorCodes.INVALID_CLIENT_METADATA;
+            throw new ErrorResponseException(
+                    errorCode,
+                    validationMessages.getStringMessages(),
+                    Response.Status.BAD_REQUEST
+            );
         }
 
         RepresentationToModel.updateClient(rep, client);

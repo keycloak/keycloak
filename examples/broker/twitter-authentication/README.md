@@ -3,7 +3,7 @@
 What is it?
 -----------
 
-This example demonstrates how to use Social Ientity Providers with Keycloak to authenticate users. In this case,
+This example demonstrates how to use Social Identity Providers with Keycloak to authenticate users. In this case,
 users are authenticated with Twitter using Keycloak Identity Broker capabilities using the oAuth 2 protocol.
 
 From this example, you'll learn how to:

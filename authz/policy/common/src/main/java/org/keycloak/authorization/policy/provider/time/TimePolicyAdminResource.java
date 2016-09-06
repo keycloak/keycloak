@@ -37,12 +37,10 @@ public class TimePolicyAdminResource implements PolicyProviderAdminService {
         String nbf = policy.getConfig().get("nbf");
         String noa = policy.getConfig().get("noa");
 
-        if (nbf == null && noa == null) {
-            throw new RuntimeException("You must provide NotBefore, NotOnOrAfter or both.");
+        if (nbf != null && noa != null) {
+            validateFormat(nbf);
+            validateFormat(noa);
         }
-
-        validateFormat(nbf);
-        validateFormat(noa);
     }
 
     @Override

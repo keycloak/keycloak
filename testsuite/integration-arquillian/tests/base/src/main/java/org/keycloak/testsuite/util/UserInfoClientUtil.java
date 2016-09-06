@@ -28,6 +28,7 @@ import javax.ws.rs.core.UriBuilder;
 import org.junit.Assert;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.representations.UserInfo;
+import org.keycloak.utils.MediaType;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -51,6 +52,7 @@ public class UserInfoClientUtil {
 
     public static void testSuccessfulUserInfoResponse(Response response, String expectedUsername, String expectedEmail) {
         Assert.assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+        Assert.assertEquals(response.getHeaderString(HttpHeaders.CONTENT_TYPE), MediaType.APPLICATION_JSON);
 
         UserInfo userInfo = response.readEntity(UserInfo.class);
 

@@ -27,6 +27,8 @@ import org.keycloak.representations.adapters.action.PushNotBeforeAction;
 import org.keycloak.representations.adapters.action.TestAvailabilityAction;
 import org.keycloak.services.resource.RealmResourceProvider;
 import org.keycloak.services.resources.RealmsResource;
+import org.keycloak.testsuite.rest.resource.TestingExportImportResource;
+import org.keycloak.testsuite.rest.resource.TestingOIDCEndpointsApplicationResource;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -53,14 +55,16 @@ public class TestApplicationResourceProvider implements RealmResourceProvider {
     private final BlockingQueue<LogoutAction> adminLogoutActions;
     private final BlockingQueue<PushNotBeforeAction> adminPushNotBeforeActions;
     private final BlockingQueue<TestAvailabilityAction> adminTestAvailabilityAction;
+    private final TestApplicationResourceProviderFactory.OIDCClientData oidcClientData;
 
     public TestApplicationResourceProvider(KeycloakSession session, BlockingQueue<LogoutAction> adminLogoutActions,
             BlockingQueue<PushNotBeforeAction> adminPushNotBeforeActions,
-            BlockingQueue<TestAvailabilityAction> adminTestAvailabilityAction) {
+            BlockingQueue<TestAvailabilityAction> adminTestAvailabilityAction, TestApplicationResourceProviderFactory.OIDCClientData oidcClientData) {
         this.session = session;
         this.adminLogoutActions = adminLogoutActions;
         this.adminPushNotBeforeActions = adminPushNotBeforeActions;
         this.adminTestAvailabilityAction = adminTestAvailabilityAction;
+        this.oidcClientData = oidcClientData;
     }
 
     @POST
@@ -162,6 +166,11 @@ public class TestApplicationResourceProvider implements RealmResourceProvider {
 
         sb.append("</body></html>");
         return sb.toString();
+    }
+
+    @Path("/oidc-client-endpoints")
+    public TestingOIDCEndpointsApplicationResource getTestingOIDCClientEndpoints() {
+        return new TestingOIDCEndpointsApplicationResource(oidcClientData);
     }
 
     @Override

@@ -28,6 +28,10 @@
         <url-pattern>/*</url-pattern>
     </servlet-mapping>
 
+    <error-page>
+        <location>/error.html</location>
+    </error-page>
+
     <security-constraint>
         <web-resource-collection>
             <web-resource-name>Application</web-resource-name>
