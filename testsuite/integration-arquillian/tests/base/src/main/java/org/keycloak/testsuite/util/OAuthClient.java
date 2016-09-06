@@ -105,6 +105,10 @@ public class OAuthClient {
 
     private String nonce;
 
+    private String request;
+
+    private String requestUri;
+
     private Map<String, PublicKey> publicKeys = new HashMap<>();
 
     public void init(Keycloak adminClient, WebDriver driver) {
@@ -121,6 +125,9 @@ public class OAuthClient {
         clientSessionState = null;
         clientSessionHost = null;
         maxAge = null;
+        nonce = null;
+        request = null;
+        requestUri = null;
     }
 
     public AuthorizationEndpointResponse doLogin(String username, String password) {
@@ -536,6 +543,12 @@ public class OAuthClient {
         if (maxAge != null) {
             b.queryParam(OIDCLoginProtocol.MAX_AGE_PARAM, maxAge);
         }
+        if (request != null) {
+            b.queryParam(OIDCLoginProtocol.REQUEST_PARAM, request);
+        }
+        if (requestUri != null) {
+            b.queryParam(OIDCLoginProtocol.REQUEST_URI_PARAM, requestUri);
+        }
         return b.build(realm).toString();
     }
 
@@ -641,6 +654,16 @@ public class OAuthClient {
 
     public OAuthClient nonce(String nonce) {
         this.nonce = nonce;
+        return this;
+    }
+
+    public OAuthClient request(String request) {
+        this.request = request;
+        return this;
+    }
+
+    public OAuthClient requestUri(String requestUri) {
+        this.requestUri = requestUri;
         return this;
     }
 

@@ -154,21 +154,31 @@
                     return;
                 } else if (initOptions) {
                     if (initOptions.token || initOptions.refreshToken) {
-                        setToken(initOptions.token, initOptions.refreshToken, initOptions.idToken, false);
+                        setToken(initOptions.token, initOptions.refreshToken, initOptions.idToken);
                         kc.timeSkew = initOptions.timeSkew || 0;
 
                         if (loginIframe.enable) {
                             setupCheckLoginIframe().success(function() {
                                 checkLoginIframe().success(function () {
+                                    kc.onAuthSuccess && kc.onAuthSuccess();
                                     initPromise.setSuccess();
                                 }).error(function () {
+                                    kc.onAuthError && kc.onAuthError();
                                     if (initOptions.onLoad) {
                                         onLoad();
                                     }
                                 });
                             });
                         } else {
-                            initPromise.setSuccess();
+                            kc.updateToken(-1).success(function() {
+                                kc.onAuthSuccess && kc.onAuthSuccess();
+                                initPromise.setSuccess();
+                            }).error(function() {
+                                kc.onAuthError && kc.onAuthError();
+                                if (initOptions.onLoad) {
+                                    onLoad();
+                                }
+                            });
                         }
                     } else if (initOptions.onLoad) {
                         onLoad();
@@ -368,7 +378,7 @@
             minValidity = minValidity || 5;
 
             var exec = function() {
-                if (!kc.isTokenExpired(minValidity)) {
+                if (minValidity >= 0 && !kc.isTokenExpired(minValidity)) {
                     promise.setSuccess(false);
                 } else {
                     var params = 'grant_type=refresh_token&' + 'refresh_token=' + kc.refreshToken;
@@ -380,6 +390,7 @@
                         var req = new XMLHttpRequest();
                         req.open('POST', url, true);
                         req.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+                        req.withCredentials = true;
 
                         if (kc.clientId && kc.clientSecret) {
                             req.setRequestHeader('Authorization', 'Basic ' + btoa(kc.clientId + ':' + kc.clientSecret));
@@ -395,9 +406,9 @@
                                     timeLocal = (timeLocal + new Date().getTime()) / 2;
 
                                     var tokenResponse = JSON.parse(req.responseText);
-                                    setToken(tokenResponse['access_token'], tokenResponse['refresh_token'], tokenResponse['id_token'], true);
-
                                     kc.timeSkew = Math.floor(timeLocal / 1000) - kc.tokenParsed.iat;
+
+                                    setToken(tokenResponse['access_token'], tokenResponse['refresh_token'], tokenResponse['id_token']);
 
                                     kc.onAuthRefreshSuccess && kc.onAuthRefreshSuccess();
                                     for (var p = refreshQueue.pop(); p != null; p = refreshQueue.pop()) {
@@ -433,7 +444,7 @@
 
         kc.clearToken = function() {
             if (kc.token) {
-                setToken(null, null, null, true);
+                setToken(null, null, null);
                 kc.onAuthLogout && kc.onAuthLogout();
                 if (kc.loginRequired) {
                     kc.login();
@@ -514,7 +525,7 @@
             function authSuccess(accessToken, refreshToken, idToken, fulfillPromise) {
                 timeLocal = (timeLocal + new Date().getTime()) / 2;
 
-                setToken(accessToken, refreshToken, idToken, true);
+                setToken(accessToken, refreshToken, idToken);
 
                 if ((kc.tokenParsed && kc.tokenParsed.nonce != oauth.storedNonce) ||
                     (kc.refreshTokenParsed && kc.refreshTokenParsed.nonce != oauth.storedNonce) ||
@@ -598,7 +609,7 @@
             return promise.promise;
         }
 
-        function setToken(token, refreshToken, idToken, useTokenTime) {
+        function setToken(token, refreshToken, idToken) {
             if (kc.tokenTimeoutHandle) {
                 clearTimeout(kc.tokenTimeoutHandle);
                 kc.tokenTimeoutHandle = null;
@@ -618,9 +629,12 @@
                 kc.resourceAccess = kc.tokenParsed.resource_access;
 
                 if (kc.onTokenExpired) {
-                    var start = useTokenTime ? kc.tokenParsed.iat : (new Date().getTime() / 1000);
-                    var expiresIn = kc.tokenParsed.exp - start;
-                    kc.tokenTimeoutHandle = setTimeout(kc.onTokenExpired, expiresIn * 1000);
+                    var expiresIn = (kc.tokenParsed['exp'] - (new Date().getTime() / 1000) + kc.timeSkew) * 1000;
+                    if (expiresIn <= 0) {
+                        kc.onTokenExpired();
+                    } else {
+                        kc.tokenTimeoutHandle = setTimeout(kc.onTokenExpired, expiresIn);
+                    }
                 }
 
             } else {
@@ -1055,7 +1069,7 @@
             if (!(this instanceof CookieStorage)) {
                 return new CookieStorage();
             }
-            
+
             var cs = this;
 
             cs.get = function(state) {

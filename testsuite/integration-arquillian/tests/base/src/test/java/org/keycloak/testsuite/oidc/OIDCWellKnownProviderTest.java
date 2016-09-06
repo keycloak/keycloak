@@ -86,6 +86,8 @@ public class OIDCWellKnownProviderTest extends AbstractKeycloakTest {
 
             Assert.assertNames(oidcConfig.getSubjectTypesSupported(), "public");
             Assert.assertNames(oidcConfig.getIdTokenSigningAlgValuesSupported(), Algorithm.RS256.toString());
+            Assert.assertNames(oidcConfig.getUserInfoSigningAlgValuesSupported(), Algorithm.RS256.toString());
+            Assert.assertNames(oidcConfig.getRequestObjectSigningAlgValuesSupported(), Algorithm.none.toString(), Algorithm.RS256.toString());
 
             // Client authentication
             Assert.assertNames(oidcConfig.getTokenEndpointAuthMethodsSupported(), "client_secret_basic", "client_secret_post", "private_key_jwt");
@@ -100,8 +102,8 @@ public class OIDCWellKnownProviderTest extends AbstractKeycloakTest {
             Assert.assertNames(oidcConfig.getScopesSupported(), OAuth2Constants.SCOPE_OPENID, OAuth2Constants.OFFLINE_ACCESS);
 
             // Request and Request_Uri
-            Assert.assertFalse(oidcConfig.getRequestParameterSupported());
-            Assert.assertFalse(oidcConfig.getRequestUriParameterSupported());
+            Assert.assertTrue(oidcConfig.getRequestParameterSupported());
+            Assert.assertTrue(oidcConfig.getRequestUriParameterSupported());
         } finally {
             client.close();
         }

@@ -792,6 +792,17 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, templates,
         {name: "INCLUSIVE_WITH_COMMENTS", value: "http://www.w3.org/TR/2001/REC-xml-c14n-20010315#WithComments"}
     ];
 
+    $scope.oidcSignatureAlgorithms = [
+        "unsigned",
+        "RS256"
+    ];
+
+    $scope.requestObjectSignatureAlgorithms = [
+        "any",
+        "none",
+        "RS256"
+    ];
+
     $scope.realm = realm;
     $scope.samlAuthnStatement = false;
     $scope.samlMultiValuedRoles = false;
@@ -892,6 +903,12 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, templates,
                 $scope.samlForcePostBinding = false;
             }
         }
+
+        var attrVal1 = $scope.client.attributes['user.info.response.signature.alg'];
+        $scope.userInfoSignedResponseAlg = attrVal1==null ? 'unsigned' : attrVal1;
+
+        var attrVal2 = $scope.client.attributes['request.object.signature.alg'];
+         $scope.requestObjectSignatureAlg = attrVal2==null ? 'any' : attrVal2;
     }
 
     if (!$scope.create) {
@@ -954,6 +971,22 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, templates,
 
     $scope.changeNameIdFormat = function() {
         $scope.client.attributes['saml_name_id_format'] = $scope.nameIdFormat;
+    };
+
+    $scope.changeUserInfoSignedResponseAlg = function() {
+        if ($scope.userInfoSignedResponseAlg === 'unsigned') {
+            $scope.client.attributes['user.info.response.signature.alg'] = null;
+        } else {
+            $scope.client.attributes['user.info.response.signature.alg'] = $scope.userInfoSignedResponseAlg;
+        }
+    };
+
+    $scope.changeRequestObjectSignatureAlg = function() {
+        if ($scope.requestObjectSignatureAlg === 'any') {
+            $scope.client.attributes['request.object.signature.alg'] = null;
+        } else {
+            $scope.client.attributes['request.object.signature.alg'] = $scope.requestObjectSignatureAlg;
+        }
     };
 
     $scope.$watch(function() {
@@ -1085,6 +1118,12 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, templates,
             }, $scope.client, function() {
                 $route.reload();
                 Notifications.success("Your changes have been saved to the client.");
+            }, function(error) {
+                if (error.status == 400 && error.data.error_description) {
+                    Notifications.error(error.data.error_description);
+                } else {
+                    Notifications.error('Unexpected error when updating client');
+                }
             });
         }
     };
@@ -1199,6 +1238,12 @@ module.controller('CreateClientCtrl', function($scope, realm, client, templates,
             var id = l.substring(l.lastIndexOf("/") + 1);
             $location.url("/realms/" + realm.realm + "/clients/" + id);
             Notifications.success("The client has been created.");
+        }, function(error) {
+            if (error.status == 400 && error.data.error_description) {
+                Notifications.error(error.data.error_description);
+            } else {
+                Notifications.error('Unexpected error when creating client');
+            }
         });
     };
 

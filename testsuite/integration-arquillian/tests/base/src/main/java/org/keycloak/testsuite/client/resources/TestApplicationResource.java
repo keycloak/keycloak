@@ -20,7 +20,9 @@ package org.keycloak.testsuite.client.resources;
 import org.keycloak.representations.adapters.action.LogoutAction;
 import org.keycloak.representations.adapters.action.PushNotBeforeAction;
 import org.keycloak.representations.adapters.action.TestAvailabilityAction;
+import org.keycloak.testsuite.rest.resource.TestingOIDCEndpointsApplicationResource;
 
+import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -53,4 +55,6 @@ public interface TestApplicationResource {
     @Path("/clear-admin-actions")
     Response clearAdminActions();
 
+    @Path("/oidc-client-endpoints")
+    TestOIDCEndpointsApplicationResource oidcClientEndpoints();
 }

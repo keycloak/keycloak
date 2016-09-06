@@ -33,16 +33,14 @@ import org.keycloak.representations.adapters.action.PushNotBeforeAction;
 import org.keycloak.representations.adapters.action.TestAvailabilityAction;
 import org.keycloak.representations.idm.*;
 
+import javax.ws.rs.BadRequestException;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
 
 import java.io.IOException;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
+import org.keycloak.services.ErrorResponseException;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.util.AdminEventPaths;
 import org.keycloak.testsuite.util.ClientBuilder;
@@ -210,6 +208,52 @@ public class ClientTest extends AbstractAdminTest {
         String id = ApiUtil.getCreatedId(response);
         UserRepresentation userRep = realm.clients().get(id).getServiceAccountUser();
         assertEquals("service-account-serviceclient", userRep.getUsername());
+    }
+
+    // KEYCLOAK-3421
+    @Test
+    public void createClientWithFragments() {
+        ClientRepresentation client = ClientBuilder.create()
+                .clientId("client-with-fragment")
+                .rootUrl("http://localhost/base#someFragment")
+                .redirectUris("http://localhost/auth", "http://localhost/auth#fragment", "http://localhost/auth*", "/relative")
+                .build();
+
+        Response response = realm.clients().create(client);
+        assertUriFragmentError(response);
+    }
+
+    // KEYCLOAK-3421
+    @Test
+    public void updateClientWithFragments() {
+        ClientRepresentation client = ClientBuilder.create()
+                .clientId("client-with-fragment")
+                .redirectUris("http://localhost/auth", "http://localhost/auth*")
+                .build();
+        Response response = realm.clients().create(client);
+        ClientResource clientResource = realm.clients().get(ApiUtil.getCreatedId(response));
+
+        client = clientResource.toRepresentation();
+        client.setRootUrl("http://localhost/base#someFragment");
+        List<String> redirectUris = client.getRedirectUris();
+        redirectUris.add("http://localhost/auth#fragment");
+        redirectUris.add("/relative");
+        client.setRedirectUris(redirectUris);
+
+        try {
+            clientResource.update(client);
+            fail("Should fail");
+        }
+        catch (BadRequestException e) {
+            assertUriFragmentError(e.getResponse());
+        }
+    }
+
+    private void assertUriFragmentError(Response response) {
+        assertEquals(response.getStatus(), 400);
+        String error = response.readEntity(OAuth2ErrorRepresentation.class).getError();
+        assertTrue("Error response doesn't mention Redirect URIs fragments", error.contains("Redirect URIs must not contain an URI fragment"));
+        assertTrue("Error response doesn't mention Root URL fragments", error.contains("Root URL must not contain an URL fragment"));
     }
 
     @Test

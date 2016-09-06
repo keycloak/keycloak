@@ -40,6 +40,7 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
+import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.clientregistration.ClientRegistrationTokenUtils;
 import org.keycloak.services.managers.ClientManager;
@@ -48,6 +49,8 @@ import org.keycloak.services.managers.ResourceAdminManager;
 import org.keycloak.services.resources.KeycloakApplication;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.common.util.Time;
+import org.keycloak.services.validation.ClientValidator;
+import org.keycloak.services.validation.ValidationMessages;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -63,10 +66,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static java.lang.Boolean.TRUE;
 
@@ -107,7 +107,7 @@ public class ClientResource {
 
     @Path("protocol-mappers")
     public ProtocolMappersResource getProtocolMappers() {
-        ProtocolMappersResource mappers = new ProtocolMappersResource(client, auth, adminEvent);
+        ProtocolMappersResource mappers = new ProtocolMappersResource(realm, client, auth, adminEvent);
         ResteasyProviderFactory.getInstance().injectProperties(mappers);
         return mappers;
     }
@@ -124,6 +124,16 @@ public class ClientResource {
 
         if (client == null) {
             throw new NotFoundException("Could not find client");
+        }
+
+        ValidationMessages validationMessages = new ValidationMessages();
+        if (!ClientValidator.validate(rep, validationMessages)) {
+            Properties messages = AdminRoot.getMessages(session, realm, auth.getAuth().getToken().getLocale());
+            throw new ErrorResponseException(
+                    validationMessages.getStringMessages(),
+                    validationMessages.getStringMessages(messages),
+                    Response.Status.BAD_REQUEST
+            );
         }
 
         try {
