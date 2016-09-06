@@ -17,10 +17,12 @@
 
 package org.keycloak.testsuite.admin;
 
+import org.apache.bcel.generic.RETURN;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataOutput;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.admin.client.Keycloak;
+import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
@@ -45,6 +47,10 @@ import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserFederationMapperRepresentation;
 import org.keycloak.representations.idm.UserFederationProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.idm.authorization.PolicyRepresentation;
+import org.keycloak.representations.idm.authorization.ResourceRepresentation;
+import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
+import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.services.resources.admin.RealmAuth.Resource;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
@@ -68,6 +74,8 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.Assert.*;
+import static org.keycloak.services.resources.admin.RealmAuth.Resource.AUTHORIZATION;
+import static org.keycloak.services.resources.admin.RealmAuth.Resource.CLIENT;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -768,6 +776,123 @@ public class PermissionsTest extends AbstractKeycloakTest {
                 realm.clientInitialAccess().delete("nosuch");
             }
         }, Resource.CLIENT, true);
+    }
+
+    @Test
+    public void clientAuthorization() {
+        invoke(new InvocationWithResponse() {
+            public void invoke(RealmResource realm, AtomicReference<Response> response) {
+                realm.clients().create(ClientBuilder.create().clientId("foo-authz").build());
+                org.keycloak.representations.idm.ClientRepresentation foo = realm.clients().findByClientId("foo-authz").get(0);
+                foo.setServiceAccountsEnabled(true);
+                foo.setAuthorizationServicesEnabled(true);
+                realm.clients().get(foo.getId()).update(foo);
+            }
+        }, CLIENT, true);
+        invoke(new Invocation() {
+            public void invoke(RealmResource realm) {
+                org.keycloak.representations.idm.ClientRepresentation foo = realm.clients().findByClientId("foo-authz").get(0);
+                realm.clients().get(foo.getId()).authorization().getSettings();
+            }
+        }, AUTHORIZATION, false);
+        invoke(new Invocation() {
+            public void invoke(RealmResource realm) {
+                org.keycloak.representations.idm.ClientRepresentation foo = realm.clients().findByClientId("foo-authz").get(0);
+                AuthorizationResource authorization = realm.clients().get(foo.getId()).authorization();
+                ResourceServerRepresentation settings = authorization.getSettings();
+                authorization.update(settings);
+            }
+        }, AUTHORIZATION, true);
+        invoke(new Invocation() {
+            public void invoke(RealmResource realm) {
+                org.keycloak.representations.idm.ClientRepresentation foo = realm.clients().findByClientId("foo-authz").get(0);
+                AuthorizationResource authorization = realm.clients().get(foo.getId()).authorization();
+                authorization.resources().resources();
+            }
+        }, AUTHORIZATION, false);
+        invoke(new Invocation() {
+            public void invoke(RealmResource realm) {
+                org.keycloak.representations.idm.ClientRepresentation foo = realm.clients().findByClientId("foo-authz").get(0);
+                AuthorizationResource authorization = realm.clients().get(foo.getId()).authorization();
+                authorization.scopes().scopes();
+            }
+        }, AUTHORIZATION, false);
+        invoke(new Invocation() {
+            public void invoke(RealmResource realm) {
+                org.keycloak.representations.idm.ClientRepresentation foo = realm.clients().findByClientId("foo-authz").get(0);
+                AuthorizationResource authorization = realm.clients().get(foo.getId()).authorization();
+                authorization.policies().policies();
+            }
+        }, AUTHORIZATION, false);
+        invoke(new InvocationWithResponse() {
+            public void invoke(RealmResource realm, AtomicReference<Response> response) {
+                org.keycloak.representations.idm.ClientRepresentation foo = realm.clients().findByClientId("foo-authz").get(0);
+                AuthorizationResource authorization = realm.clients().get(foo.getId()).authorization();
+                response.set(authorization.resources().create(new ResourceRepresentation("Test", Collections.emptySet())));
+            }
+        }, AUTHORIZATION, true);
+        invoke(new InvocationWithResponse() {
+            public void invoke(RealmResource realm, AtomicReference<Response> response) {
+                org.keycloak.representations.idm.ClientRepresentation foo = realm.clients().findByClientId("foo-authz").get(0);
+                AuthorizationResource authorization = realm.clients().get(foo.getId()).authorization();
+                response.set(authorization.scopes().create(new ScopeRepresentation("Test")));
+            }
+        }, AUTHORIZATION, true);
+        invoke(new InvocationWithResponse() {
+            public void invoke(RealmResource realm, AtomicReference<Response> response) {
+                org.keycloak.representations.idm.ClientRepresentation foo = realm.clients().findByClientId("foo-authz").get(0);
+                AuthorizationResource authorization = realm.clients().get(foo.getId()).authorization();
+                PolicyRepresentation representation = new PolicyRepresentation();
+                representation.setName("Test PermissionsTest");
+                representation.setType("js");
+                HashMap<String, String> config = new HashMap<>();
+                config.put("code", "");
+                representation.setConfig(config);
+                response.set(authorization.policies().create(representation));
+            }
+        }, AUTHORIZATION, true);
+        invoke(new Invocation() {
+            public void invoke(RealmResource realm) {
+                org.keycloak.representations.idm.ClientRepresentation foo = realm.clients().findByClientId("foo-authz").get(0);
+                AuthorizationResource authorization = realm.clients().get(foo.getId()).authorization();
+                authorization.resources().resource("nosuch").update(new ResourceRepresentation());
+            }
+        }, AUTHORIZATION, true);
+        invoke(new Invocation() {
+            public void invoke(RealmResource realm) {
+                org.keycloak.representations.idm.ClientRepresentation foo = realm.clients().findByClientId("foo-authz").get(0);
+                AuthorizationResource authorization = realm.clients().get(foo.getId()).authorization();
+                authorization.scopes().scope("nosuch").update(new ScopeRepresentation());
+            }
+        }, AUTHORIZATION, true);
+        invoke(new Invocation() {
+            public void invoke(RealmResource realm) {
+                org.keycloak.representations.idm.ClientRepresentation foo = realm.clients().findByClientId("foo-authz").get(0);
+                AuthorizationResource authorization = realm.clients().get(foo.getId()).authorization();
+                authorization.policies().policy("nosuch").update(new PolicyRepresentation());
+            }
+        }, AUTHORIZATION, true);
+        invoke(new Invocation() {
+            public void invoke(RealmResource realm) {
+                org.keycloak.representations.idm.ClientRepresentation foo = realm.clients().findByClientId("foo-authz").get(0);
+                AuthorizationResource authorization = realm.clients().get(foo.getId()).authorization();
+                authorization.resources().resource("nosuch").remove();
+            }
+        }, AUTHORIZATION, true);
+        invoke(new Invocation() {
+            public void invoke(RealmResource realm) {
+                org.keycloak.representations.idm.ClientRepresentation foo = realm.clients().findByClientId("foo-authz").get(0);
+                AuthorizationResource authorization = realm.clients().get(foo.getId()).authorization();
+                authorization.scopes().scope("nosuch").remove();
+            }
+        }, AUTHORIZATION, true);
+        invoke(new Invocation() {
+            public void invoke(RealmResource realm) {
+                org.keycloak.representations.idm.ClientRepresentation foo = realm.clients().findByClientId("foo-authz").get(0);
+                AuthorizationResource authorization = realm.clients().get(foo.getId()).authorization();
+                authorization.policies().policy("nosuch").remove();
+            }
+        }, AUTHORIZATION, true);
     }
 
     @Test
@@ -1543,6 +1668,8 @@ public class PermissionsTest extends AbstractKeycloakTest {
                 return AdminRoles.VIEW_EVENTS;
             case IDENTITY_PROVIDER:
                 return AdminRoles.VIEW_IDENTITY_PROVIDERS;
+            case AUTHORIZATION:
+                return AdminRoles.VIEW_AUTHORIZATION;
             default:
                 throw new RuntimeException("Unexpected resouce");
         }
@@ -1560,6 +1687,8 @@ public class PermissionsTest extends AbstractKeycloakTest {
                 return AdminRoles.MANAGE_EVENTS;
             case IDENTITY_PROVIDER:
                 return AdminRoles.MANAGE_IDENTITY_PROVIDERS;
+            case AUTHORIZATION:
+                return AdminRoles.MANAGE_AUTHORIZATION;
             default:
                 throw new RuntimeException("Unexpected resouce");
         }
@@ -1577,6 +1706,8 @@ public class PermissionsTest extends AbstractKeycloakTest {
                 return AdminRoles.VIEW_IDENTITY_PROVIDERS;
             case IDENTITY_PROVIDER:
                 return AdminRoles.VIEW_REALM;
+            case AUTHORIZATION:
+                return AdminRoles.VIEW_IDENTITY_PROVIDERS;
             default:
                 throw new RuntimeException("Unexpected resouce");
         }
@@ -1594,6 +1725,8 @@ public class PermissionsTest extends AbstractKeycloakTest {
                 return AdminRoles.MANAGE_IDENTITY_PROVIDERS;
             case IDENTITY_PROVIDER:
                 return AdminRoles.MANAGE_REALM;
+            case AUTHORIZATION:
+                return AdminRoles.MANAGE_IDENTITY_PROVIDERS;
             default:
                 throw new RuntimeException("Unexpected resouce");
         }

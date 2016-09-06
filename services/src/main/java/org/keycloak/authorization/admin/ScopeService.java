@@ -107,6 +107,11 @@ public class ScopeService {
         }
 
         Scope scope = storeFactory.getScopeStore().findById(id);
+
+        if (scope == null) {
+            return Response.status(Status.NOT_FOUND).build();
+        }
+
         PolicyStore policyStore = storeFactory.getPolicyStore();
         List<Policy> policies = policyStore.findByScopeIds(Arrays.asList(scope.getId()), resourceServer.getId());
 
