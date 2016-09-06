@@ -38,7 +38,9 @@ import java.util.Collection;
  * @version $Revision: 1 $
  */
 @NamedQueries({
+        @NamedQuery(name="credentialByUser", query="select cred from CredentialEntity cred where cred.user = :user"),
         @NamedQuery(name="credentialByUserAndType", query="select cred from CredentialEntity cred where cred.user = :user and cred.type = :type"),
+        @NamedQuery(name="credentialByNameAndType", query="select cred from CredentialEntity cred where cred.user = :user and cred.type = :type and cred.device = :device"),
         @NamedQuery(name="deleteCredentialsByRealm", query="delete from CredentialEntity cred where cred.user IN (select u from UserEntity u where u.realmId=:realmId)"),
         @NamedQuery(name="deleteCredentialsByRealmAndLink", query="delete from CredentialEntity cred where cred.user IN (select u from UserEntity u where u.realmId=:realmId and u.federationLink=:link)")
 

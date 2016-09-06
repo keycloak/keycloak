@@ -14,19 +14,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.credential;
 
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserModel;
+package org.keycloak.models.cache;
 
-import java.util.Set;
+import org.keycloak.provider.ProviderFactory;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public interface CredentialInputUpdater {
-    boolean supportsCredentialType(String credentialType);
-    boolean updateCredential(RealmModel realm, UserModel user, CredentialInput input);
-    void disableCredentialType(RealmModel realm, UserModel user, String credentialType);
+public interface UserCacheProviderFactory extends ProviderFactory<UserCache> {
+
 }

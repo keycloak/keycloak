@@ -87,11 +87,4 @@ public interface UserProvider extends Provider,
 
     void preRemove(RealmModel realm, ComponentModel component);
 
-    boolean isValid(RealmModel realm, UserModel user, List<CredentialInput> inputs);
-
-    void updateCredential(RealmModel realm, UserModel user, CredentialInput input);
-
-    boolean isConfiguredFor(RealmModel realm, UserModel user, String type);
-
-    Set<String> requiredActionsFor(RealmModel realm, UserModel user, String type);
 }

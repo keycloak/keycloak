@@ -15,4 +15,4 @@
 # limitations under the License.
 #
 
-org.keycloak.models.cache.infinispan.InfinispanCacheUserProviderFactory
+org.keycloak.models.cache.infinispan.InfinispanUserCacheProviderFactory

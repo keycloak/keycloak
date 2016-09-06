@@ -29,10 +29,9 @@ import java.util.List;
 public interface UserCredentialStore extends Provider {
     void updateCredential(RealmModel realm, UserModel user, CredentialModel cred);
     CredentialModel createCredential(RealmModel realm, UserModel user, CredentialModel cred);
-    boolean removeCredential(RealmModel realm, String id);
-    CredentialModel getCredentialById(String id);
-    List<CredentialModel> getCredentials(RealmModel realm);
-    List<CredentialModel> getCredentials(RealmModel realm, UserModel user);
-    List<CredentialModel> getCredentialsByType(RealmModel realm, UserModel user, String type);
-    CredentialModel getCredentialByNameAndType(RealmModel realm, UserModel user, String name, String type);
+    boolean removeStoredCredential(RealmModel realm, UserModel user, String id);
+    CredentialModel getStoredCredentialById(RealmModel realm, UserModel user, String id);
+    List<CredentialModel> getStoredCredentials(RealmModel realm, UserModel user);
+    List<CredentialModel> getStoredCredentialsByType(RealmModel realm, UserModel user, String type);
+    CredentialModel getStoredCredentialByNameAndType(RealmModel realm, UserModel user, String name, String type);
 }

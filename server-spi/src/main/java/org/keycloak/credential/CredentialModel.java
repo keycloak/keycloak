@@ -29,6 +29,20 @@ import java.util.Map;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class CredentialModel implements Serializable {
+    public static final String PASSWORD = "password";
+    public static final String PASSWORD_HISTORY = "password-history";
+    public static final String PASSWORD_TOKEN = "password-token";
+
+    // Secret is same as password but it is not hashed
+    public static final String SECRET = "secret";
+    public static final String TOTP = "totp";
+    public static final String HOTP = "hotp";
+    public static final String CLIENT_CERT = "cert";
+    public static final String KERBEROS = "kerberos";
+    public static final String OTP = "otp";
+
+
+
     private String id;
     private String type;
     private String value;

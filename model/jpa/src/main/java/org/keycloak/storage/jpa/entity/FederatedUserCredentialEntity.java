@@ -43,6 +43,7 @@ import java.util.Collection;
 @NamedQueries({
         @NamedQuery(name="federatedUserCredentialByUser", query="select cred from FederatedUserCredentialEntity cred where cred.userId = :userId"),
         @NamedQuery(name="federatedUserCredentialByUserAndType", query="select cred from FederatedUserCredentialEntity cred where cred.userId = :userId and cred.type = :type"),
+        @NamedQuery(name="federatedUserCredentialByNameAndType", query="select cred from FederatedUserCredentialEntity cred where cred.userId = :userId and cred.type = :type and cred.device = :device"),
         @NamedQuery(name="deleteFederatedUserCredentialByUser", query="delete from FederatedUserCredentialEntity cred where cred.userId = :userId and cred.realmId = :realmId"),
         @NamedQuery(name="deleteFederatedUserCredentialByUserAndType", query="delete from FederatedUserCredentialEntity cred where cred.userId = :userId and cred.type = :type"),
         @NamedQuery(name="deleteFederatedUserCredentialByUserAndTypeAndDevice", query="delete from FederatedUserCredentialEntity cred where cred.userId = :userId and cred.type = :type and cred.device = :device"),

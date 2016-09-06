@@ -637,23 +637,4 @@ public class MongoUserProvider implements UserProvider {
 
     }
 
-    @Override
-    public boolean isValid(RealmModel realm, UserModel user, List<CredentialInput> inputs) {
-        return false;
-    }
-
-    @Override
-    public void updateCredential(RealmModel realm, UserModel user, CredentialInput input) {
-
-    }
-
-    @Override
-    public boolean isConfiguredFor(RealmModel realm, UserModel user, String type) {
-        return false;
-    }
-
-    @Override
-    public Set<String> requiredActionsFor(RealmModel realm, UserModel user, String type) {
-        return Collections.EMPTY_SET;
-    }
 }

@@ -446,27 +446,6 @@ public class UserFederationManager implements UserProvider {
     }
 
     @Override
-    public boolean isValid(RealmModel realm, UserModel user, List<CredentialInput> inputs) {
-        return session.userStorage().isValid(realm, user, inputs);
-    }
-
-    @Override
-    public void updateCredential(RealmModel realm, UserModel user, CredentialInput input) {
-        session.userStorage().updateCredential(realm, user, input);
-
-    }
-
-    @Override
-    public boolean isConfiguredFor(RealmModel realm, UserModel user, String type) {
-        return session.userStorage().isConfiguredFor(realm, user, type);
-    }
-
-    @Override
-    public Set<String> requiredActionsFor(RealmModel realm, UserModel user, String type) {
-        return session.userStorage().requiredActionsFor(realm, user, type);
-    }
-
-    @Override
     public void preRemove(RealmModel realm) {
         for (UserFederationProviderModel federation : realm.getUserFederationProviders()) {
             UserFederationProvider fed = getFederationProvider(federation);
