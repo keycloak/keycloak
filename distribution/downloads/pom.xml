@@ -262,6 +262,17 @@
                                     <artifactId>keycloak-wildfly-adapter-dist</artifactId>
                                     <type>tar.gz</type>
                                 </artifactItem>
+
+                                <artifactItem>
+                                    <groupId>org.keycloak</groupId>
+                                    <artifactId>keycloak-fuse-adapter-dist</artifactId>
+                                    <type>zip</type>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>org.keycloak</groupId>
+                                    <artifactId>keycloak-fuse-adapter-dist</artifactId>
+                                    <type>tar.gz</type>
+                                </artifactItem>
                             </artifactItems>
                             <outputDirectory>target/${project.version}/adapters/keycloak-oidc</outputDirectory>
                         </configuration>
