@@ -36,8 +36,6 @@
         <exclude.console>-</exclude.console>
         <exclude.account>-</exclude.account>
         <exclude.client>-</exclude.client>
-        <!--exclude migration tests by default, enabled by 'migration' profile in tests/pom.xml-->
-        <exclude.migration>**/migration/**/*Test.java</exclude.migration>
         <!--exclude cluster tests by default, enabled by 'auth-server-*-cluster' profiles in tests/pom.xml-->
         <exclude.cluster>**/cluster/**/*Test.java</exclude.cluster>
     </properties>
@@ -102,7 +100,6 @@
                         <exclude>${exclude.console}</exclude>
                         <exclude>${exclude.account}</exclude>
                         <exclude>${exclude.client}</exclude>
-                        <exclude>${exclude.migration}</exclude>
                         <exclude>${exclude.cluster}</exclude>
                     </excludes>
                 </configuration>
@@ -137,6 +134,7 @@
                             <goal>copy-resources</goal>
                         </goals>
                         <configuration>
+                            <skip>${skip.add.user.json}</skip>
                             <outputDirectory>${auth.server.config.dir}</outputDirectory>
                             <resources>
                                 <resource>

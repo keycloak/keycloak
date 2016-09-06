@@ -107,7 +107,7 @@ public class ClientResource {
 
     @Path("protocol-mappers")
     public ProtocolMappersResource getProtocolMappers() {
-        ProtocolMappersResource mappers = new ProtocolMappersResource(client, auth, adminEvent);
+        ProtocolMappersResource mappers = new ProtocolMappersResource(realm, client, auth, adminEvent);
         ResteasyProviderFactory.getInstance().injectProperties(mappers);
         return mappers;
     }
