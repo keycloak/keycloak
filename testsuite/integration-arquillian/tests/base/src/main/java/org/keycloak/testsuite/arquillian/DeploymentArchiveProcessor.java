@@ -49,8 +49,6 @@ import static org.keycloak.testsuite.util.IOUtil.*;
  */
 public class DeploymentArchiveProcessor implements ApplicationArchiveProcessor {
 
-    public static final String REALM_KEY = "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCrVrCuTtArbgaZzL1hvh0xtL5mc7o0NqPVnYXkLvgcwiC3BjLGw1tGEGoJaXDuSaRllobm53JBhjx33UNv+5z/UMG4kytBWxheNVKnL6GgqlNabMaFfPLPCF8kAgKnsi79NMo+n6KnSY8YeUmec/p2vjO2NjsSAVcWEQMVhJ31LwIDAQAB";
-
     protected final Logger log = org.jboss.logging.Logger.getLogger(this.getClass());
 
     private final boolean authServerSslRequired = Boolean.parseBoolean(System.getProperty("auth.server.ssl.required"));
@@ -129,7 +127,6 @@ public class DeploymentArchiveProcessor implements ApplicationArchiveProcessor {
 //                ac.setRealmKey(null); // TODO verify if realm key is required for relative scneario
                     } else {
                         adapterConfig.setAuthServerUrl(getAuthServerContextRoot() + "/auth");
-                        adapterConfig.setRealmKey(REALM_KEY);
                     }
 
                     if ("true".equals(System.getProperty("app.server.ssl.required"))) {

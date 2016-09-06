@@ -36,7 +36,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
         "client-keystore", "client-keystore-password", "client-key-password",
         "always-refresh-token",
         "register-node-at-startup", "register-node-period", "token-store", "principal-attribute",
-        "proxy-url", "turn-off-change-session-id-on-login", "token-minimum-time-to-live",
+        "proxy-url", "turn-off-change-session-id-on-login", "token-minimum-time-to-live", "min-time-between-jwks-requests",
         "policy-enforcer"
 })
 public class AdapterConfig extends BaseAdapterConfig {
@@ -71,6 +71,8 @@ public class AdapterConfig extends BaseAdapterConfig {
     protected Boolean turnOffChangeSessionIdOnLogin;
     @JsonProperty("token-minimum-time-to-live")
     protected int tokenMinimumTimeToLive = 0;
+    @JsonProperty("min-time-between-jwks-requests")
+    protected int minTimeBetweenJwksRequests = 10;
     @JsonProperty("policy-enforcer")
     protected PolicyEnforcerConfig policyEnforcerConfig;
 
@@ -216,4 +218,11 @@ public class AdapterConfig extends BaseAdapterConfig {
         this.tokenMinimumTimeToLive = tokenMinimumTimeToLive;
     }
 
+    public int getMinTimeBetweenJwksRequests() {
+        return minTimeBetweenJwksRequests;
+    }
+
+    public void setMinTimeBetweenJwksRequests(int minTimeBetweenJwksRequests) {
+        this.minTimeBetweenJwksRequests = minTimeBetweenJwksRequests;
+    }
 }

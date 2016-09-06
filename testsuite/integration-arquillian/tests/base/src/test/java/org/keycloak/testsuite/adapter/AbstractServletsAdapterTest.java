@@ -22,6 +22,7 @@ import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testsuite.adapter.filter.AdapterActionsFilter;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.openqa.selenium.By;
 
@@ -113,7 +114,7 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
     protected void setAdapterAndServerTimeOffset(int timeOffset, String servletUri) {
         setTimeOffset(timeOffset);
         String timeOffsetUri = UriBuilder.fromUri(servletUri)
-                .queryParam("timeOffset", timeOffset)
+                .queryParam(AdapterActionsFilter.TIME_OFFSET_PARAM, timeOffset)
                 .build().toString();
 
         driver.navigate().to(timeOffsetUri);
