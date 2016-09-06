@@ -23,6 +23,7 @@ What is supported for Fuse is:
 
 ===== How to secure your web applications inside Fuse
 
+The first thing to do is usually installing of {{book.project.name}} Karaf feature. Then do the steps according to what type of application you want to secure.
 Basically all mentioned web applications require to inject {{book.project.name}} Jetty authenticator into underlying Jetty server . The steps to achieve it are bit different
 according to application type. The details are described in individual sub-chapters.
 

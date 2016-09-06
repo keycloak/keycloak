@@ -1,0 +1,68 @@
+
+[[_fuse_install_feature]]
+===== Install Feature
+
+First thing to be done is to install the feature `keycloak` into the JBoss Fuse environment. This will install the Fuse adapter
+together with all needed 3rd party dependencies. There are 2 possibilities to install it.
+
+
+====== Install from Maven Repository
+
+You need to be online and have access to the maven repository.
+
+{% if book.community %}
+For community it's sufficient to be online as all the artifacts and 3rd party dependencies should be available in maven central repository.
+{% endif %}
+
+You need to start JBoss Fuse and then in the Karaf terminal you type this:
+
+[source]
+----
+features:addurl mvn:org.keycloak/keycloak-osgi-features/{{book.project.versionMvn}}/xml/features
+features:install keycloak
+----
+
+Then in JBoss Fuse 6.2 you may need to install Jetty 8 feature:
+
+[source]
+----
+features:install keycloak-jetty8-adapter
+----
+
+Or in JBoss Fuse 6.3 you may need to install Jetty 9 feature:
+
+[source]
+----
+features:install keycloak-jetty9-adapter
+----
+
+Then you can check that requested features were installed:
+
+[source]
+----
+features:list | grep keycloak
+----
+
+====== Install from ZIP bundle
+
+This is useful if you are offline and/or don't want to use maven for download jar files and other artifacts. Once you download ZIP bundle of {{book.project.name}} Fuse adapter,
+you will need to unzip it into the root directory of JBoss Fuse. This should install the dependencies under the `system` directory. For example see this for Fuse 6.2.1 :
+
+[source]
+----
+cd /path-to-fuse/jboss-fuse-6.2.1.redhat-084
+unzip -q /path-to-adapter-zip/keycloak-fuse-adapter-dist-{{book.project.versionMvn}}.zip
+----
+
+Feel free to overwrite all already existing jars. Once you unzip archive, you can start the Fuse and again run commands in fuse/karaf terminal
+
+[source]
+----
+features:addurl mvn:org.keycloak/keycloak-osgi-features/{{book.project.versionMvn}}/xml/features
+features:install keycloak
+----
+
+And also install the corresponding Jetty adapter. The difference from the previous part is, that nothing will be downloaded from maven repository as the artifacts were
+available directly in JBoss Fuse `system` directory.
+
+

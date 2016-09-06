@@ -11,6 +11,7 @@
       ... link:topics/oidc/java/java-adapter-config.adoc[Java Adapters Config]
       ... link:topics/oidc/java/jboss-adapter.adoc[JBoss EAP/Wildfly Adapter]
       ... link:topics/oidc/java/fuse-adapter.adoc[JBoss Fuse Adapter]
+      .... link:topics/oidc/java/fuse/install-feature.adoc[Install Feature]
       .... link:topics/oidc/java/fuse/classic-war.adoc[Classic WAR application]
       .... link:topics/oidc/java/fuse/servlet-whiteboard.adoc[Servlet Deployed as OSGI Service]
       .... link:topics/oidc/java/fuse/camel.adoc[Apache Camel]
