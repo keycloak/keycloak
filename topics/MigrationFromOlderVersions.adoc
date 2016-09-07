@@ -169,6 +169,10 @@ The following scenarios are affected:
 * Wildcards in registered Valid Redirect URIs are no longer supported when query component is present in this URI, so the `redirect_uri` needs to exactly match this saved URI as well.
 * Fragments in registered Valid Redirect URIs (like `\http://localhost/auth#fragment`) are no longer allowed.
 
+====== Authenticate by default removed from Identity Providers
+
+Identity providers no longer has an option to set it as a default authenticaton provider. Instead go to Authentication, select the `Browser` flow and configure the `Identity Provider Redirector`. It has an option to set the default identity provider.
+
 ==== Migrating to 2.0.0
 
 ====== Upgrading from 1.0.0.Final no longer supported
