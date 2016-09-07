@@ -690,9 +690,19 @@ module.controller('ClientImportCtrl', function($scope, $location, $upload, realm
 });
 
 
-module.controller('ClientListCtrl', function($scope, realm, clients, Client, serverInfo, $route, Dialog, Notifications) {
+module.controller('ClientListCtrl', function($scope, realm, clients, Client, serverInfo, $route, Dialog, Notifications, filterFilter) {
     $scope.realm = realm;
     $scope.clients = clients;
+    $scope.currentPage = 1;
+    $scope.pageSize = 20;
+    $scope.numberOfPages = Math.ceil($scope.clients.length/$scope.pageSize);
+
+    $scope.$watch('search', function (newVal, oldVal) {
+        $scope.filtered = filterFilter($scope.clients, newVal);
+        $scope.totalItems = $scope.filtered.length;
+        $scope.numberOfPages = Math.ceil($scope.totalItems/$scope.pageSize);
+        $scope.currentPage = 1;
+  }, true);
 
     $scope.removeClient = function(client) {
         Dialog.confirmDelete(client.clientId, 'client', function() {

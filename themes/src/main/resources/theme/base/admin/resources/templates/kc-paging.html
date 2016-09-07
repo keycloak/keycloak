@@ -1,0 +1,19 @@
+<div class="pull-right">
+    <ul class="pagination">
+        <li ng-class="{disabled: currentPage === 1}" ng-click="currentPage=1">
+            <span class="i fa fa-angle-double-left"></span>
+        </li>
+        <li ng-class="{disabled: currentPage === 1}" ng-click="isFirstPage() || (currentPage=currentPage-1)">
+            <span class="i fa fa-angle-left"></span>
+        </li>
+        <li>
+            <span style="padding: 1px 15px 0;"><input ng-model="currentPage" ng-max="numberOfPages" class="kc-pagination"> of&nbsp;&nbsp;{{numberOfPages}}</span>
+            </li>
+            <li ng-class="{disabled: currentPage === numberOfPages}" ng-click="isLastPage() || (currentPage=currentPage+1)">
+                <span class="i fa fa-angle-right" ></span>
+            </li>
+            <li ng-class="{disabled: currentPage === numberOfPages}" ng-click="currentPage=numberOfPages">
+                <span class="i fa fa-angle-double-right"></span>
+            </li>
+        </ul>
+    </div>
