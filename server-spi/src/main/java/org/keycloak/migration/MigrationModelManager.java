@@ -18,6 +18,7 @@
 package org.keycloak.migration;
 
 import org.jboss.logging.Logger;
+import org.keycloak.migration.migrators.MigrateTo1_2_0;
 import org.keycloak.migration.migrators.MigrateTo1_3_0;
 import org.keycloak.migration.migrators.MigrateTo1_4_0;
 import org.keycloak.migration.migrators.MigrateTo1_5_0;
@@ -28,7 +29,8 @@ import org.keycloak.migration.migrators.MigrateTo1_9_0;
 import org.keycloak.migration.migrators.MigrateTo1_9_2;
 import org.keycloak.migration.migrators.MigrateTo2_0_0;
 import org.keycloak.migration.migrators.MigrateTo2_1_0;
-import org.keycloak.migration.migrators.MigrationTo1_2_0_CR1;
+import org.keycloak.migration.migrators.MigrateTo2_2_0;
+import org.keycloak.migration.migrators.Migration;
 import org.keycloak.models.KeycloakSession;
 
 /**
@@ -38,82 +40,41 @@ import org.keycloak.models.KeycloakSession;
 public class MigrationModelManager {
     private static Logger logger = Logger.getLogger(MigrationModelManager.class);
 
+    private static final Migration[] migrations = {
+        new MigrateTo1_2_0(),
+        new MigrateTo1_3_0(),
+        new MigrateTo1_4_0(),
+        new MigrateTo1_5_0(),
+        new MigrateTo1_6_0(),
+        new MigrateTo1_7_0(),
+        new MigrateTo1_8_0(),
+        new MigrateTo1_9_0(),
+        new MigrateTo1_9_2(),
+        new MigrateTo2_0_0(),
+        new MigrateTo2_1_0(),
+        new MigrateTo2_2_0(),
+    };
+
     public static void migrate(KeycloakSession session) {
+        ModelVersion latest = migrations[migrations.length-1].getVersion();
         MigrationModel model = session.realms().getMigrationModel();
-        String storedVersion = model.getStoredVersion();
-        if (MigrationModel.LATEST_VERSION.equals(storedVersion)) return;
         ModelVersion stored = null;
-        if (storedVersion != null) {
-            stored = new ModelVersion(storedVersion);
+        if (model.getStoredVersion() != null) {
+            stored = new ModelVersion(model.getStoredVersion());
+            if (latest.equals(stored)) {
+                return;
+            }
         }
 
-        if (stored == null || stored.lessThan(MigrationTo1_2_0_CR1.VERSION)) {
-            if (stored != null) {
-                logger.debug("Migrating older model to 1.2.0.CR1 updates");
+        for (Migration m : migrations) {
+            if (stored == null || stored.lessThan(m.getVersion())) {
+                if (stored != null) {
+                    logger.debugf("Migrating older model to %s", m.getVersion());
+                }
+                m.migrate(session);
             }
-            new MigrationTo1_2_0_CR1().migrate(session);
-        }
-        if (stored == null || stored.lessThan(MigrateTo1_3_0.VERSION)) {
-            if (stored != null) {
-                logger.debug("Migrating older model to 1.3.0 updates");
-            }
-            new MigrateTo1_3_0().migrate(session);
-        }
-        if (stored == null || stored.lessThan(MigrateTo1_4_0.VERSION)) {
-            if (stored != null) {
-                logger.debug("Migrating older model to 1.4.0 updates");
-            }
-            new MigrateTo1_4_0().migrate(session);
-        }
-        if (stored == null || stored.lessThan(MigrateTo1_5_0.VERSION)) {
-            if (stored != null) {
-                logger.debug("Migrating older model to 1.5.0 updates");
-            }
-            new MigrateTo1_5_0().migrate(session);
-        }
-        if (stored == null || stored.lessThan(MigrateTo1_6_0.VERSION)) {
-            if (stored != null) {
-                logger.debug("Migrating older model to 1.6.0 updates");
-            }
-            new MigrateTo1_6_0().migrate(session);
-        }
-        if (stored == null || stored.lessThan(MigrateTo1_7_0.VERSION)) {
-            if (stored != null) {
-                logger.debug("Migrating older model to 1.7.0 updates");
-            }
-            new MigrateTo1_7_0().migrate(session);
-        }
-        if (stored == null || stored.lessThan(MigrateTo1_8_0.VERSION)) {
-            if (stored != null) {
-                logger.debug("Migrating older model to 1.8.0 updates");
-            }
-            new MigrateTo1_8_0().migrate(session);
-        }
-        if (stored == null || stored.lessThan(MigrateTo1_9_0.VERSION)) {
-            if (stored != null) {
-                logger.debug("Migrating older model to 1.9.0 updates");
-            }
-            new MigrateTo1_9_0().migrate(session);
-        }
-        if (stored == null || stored.lessThan(MigrateTo1_9_2.VERSION)) {
-            if (stored != null) {
-                logger.debug("Migrating older model to 1.9.2 updates");
-            }
-            new MigrateTo1_9_2().migrate(session);
-        }
-        if (stored == null || stored.lessThan(MigrateTo2_0_0.VERSION)) {
-            if (stored != null) {
-                logger.debug("Migrating older model to 2.0.0 updates");
-            }
-            new MigrateTo2_0_0().migrate(session);
-        }
-        if (stored == null || stored.lessThan(MigrateTo2_1_0.VERSION)) {
-            if (stored != null) {
-                logger.debug("Migrating older model to 2.1.0 updates");
-            }
-            new MigrateTo2_1_0().migrate(session);
         }
 
-        model.setStoredVersion(MigrationModel.LATEST_VERSION);
+        model.setStoredVersion(latest.toString());
     }
 }

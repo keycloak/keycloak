@@ -556,6 +556,19 @@ public class RepresentationToModel {
         if (newRealm.getFlowByAlias(DefaultAuthenticationFlows.FIRST_BROKER_LOGIN_FLOW) == null) {
             DefaultAuthenticationFlows.firstBrokerLoginFlow(newRealm, true);
         }
+
+        // Added in 2.2
+        String defaultProvider = null;
+        if (rep.getIdentityProviders() != null) {
+            for (IdentityProviderRepresentation i : rep.getIdentityProviders()) {
+                if (i.isEnabled() && i.isAuthenticateByDefault()) {
+                    defaultProvider = i.getProviderId();
+                    break;
+                }
+            }
+        }
+
+        DefaultAuthenticationFlows.addIdentityProviderAuthenticator(newRealm, defaultProvider);
     }
 
     private static void convertDeprecatedSocialProviders(RealmRepresentation rep) {

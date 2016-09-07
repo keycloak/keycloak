@@ -19,30 +19,14 @@ package org.keycloak.migration.migrators;
 
 import org.keycloak.migration.ModelVersion;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+/**
+ * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
+ */
+public interface Migration {
 
-public class MigrateTo1_9_2 implements Migration {
+    void migrate(KeycloakSession session);
 
-    public static final ModelVersion VERSION = new ModelVersion("1.9.2");
-
-    public ModelVersion getVersion() {
-        return VERSION;
-    }
-
-    public void migrate(KeycloakSession session) {
-        for (RealmModel realm : session.realms().getRealms()) {
-            if (realm.getBrowserSecurityHeaders() != null) {
-
-                Map<String, String> browserSecurityHeaders = new HashMap<>(realm.getBrowserSecurityHeaders());
-                browserSecurityHeaders.put("xContentTypeOptions", "nosniff");
-
-                realm.setBrowserSecurityHeaders(Collections.unmodifiableMap(browserSecurityHeaders));
-            }
-        }
-    }
+    ModelVersion getVersion();
 
 }

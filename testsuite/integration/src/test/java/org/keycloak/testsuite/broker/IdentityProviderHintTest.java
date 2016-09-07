@@ -20,19 +20,19 @@ package org.keycloak.testsuite.broker;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
 import org.keycloak.services.managers.RealmManager;
+import org.keycloak.testsuite.KeycloakServer;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
 import org.keycloak.testsuite.rule.AbstractKeycloakRule;
 import org.keycloak.testsuite.rule.WebResource;
 import org.keycloak.testsuite.rule.WebRule;
-import org.keycloak.testsuite.KeycloakServer;
-import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -94,6 +94,16 @@ public class IdentityProviderHintTest {
 
         assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8081/auth/realms/realm-with-broker/protocol/openid-connect/auth"));
 
-        assertEquals("Could not find an identity provider with the identifier.", this.driver.findElement(By.className("instruction")).getText());
+        System.out.println(driver.getPageSource());
+        assertTrue(driver.getTitle().equals("Log in to realm-with-broker"));
+    }
+
+    private AuthenticationExecutionInfoRepresentation findExecution(RealmResource realm) {
+            for (AuthenticationExecutionInfoRepresentation e : realm.flows().getExecutions("browser")) {
+                if (e.getProviderId().equals("identity-provider-redirector")) {
+                    return e;
+                }
+            }
+        return null;
     }
 }
