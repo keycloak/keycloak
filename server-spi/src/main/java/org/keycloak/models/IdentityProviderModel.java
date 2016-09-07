@@ -120,10 +120,12 @@ public class IdentityProviderModel implements Serializable {
         this.storeToken = storeToken;
     }
 
+    @Deprecated
     public boolean isAuthenticateByDefault() {
         return authenticateByDefault;
     }
 
+    @Deprecated
     public void setAuthenticateByDefault(boolean authenticateByDefault) {
         this.authenticateByDefault = authenticateByDefault;
     }

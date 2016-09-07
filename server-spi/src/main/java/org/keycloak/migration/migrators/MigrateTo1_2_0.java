@@ -32,8 +32,13 @@ import java.util.Map;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class MigrationTo1_2_0_CR1 {
-    public static final ModelVersion VERSION = new ModelVersion("1.2.0.CR1");
+public class MigrateTo1_2_0 implements Migration {
+    public static final ModelVersion VERSION = new ModelVersion("1.2.0");
+
+    @Override
+    public ModelVersion getVersion() {
+        return VERSION;
+    }
 
     public void setupBrokerService(RealmModel realm) {
         ClientModel client = realm.getClientByClientId(Constants.BROKER_SERVICE_CLIENT_ID);

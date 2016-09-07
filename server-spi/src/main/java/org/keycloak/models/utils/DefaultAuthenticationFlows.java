@@ -276,6 +276,13 @@ public class DefaultAuthenticationFlows {
         execution.setAuthenticatorFlow(false);
         realm.addAuthenticatorExecution(execution);
 
+        execution = new AuthenticationExecutionModel();
+        execution.setParentFlow(browser.getId());
+        execution.setRequirement(AuthenticationExecutionModel.Requirement.ALTERNATIVE);
+        execution.setAuthenticator("identity-provider-redirector");
+        execution.setPriority(25);
+        execution.setAuthenticatorFlow(false);
+        realm.addAuthenticatorExecution(execution);
 
         AuthenticationFlowModel forms = new AuthenticationFlowModel();
         forms.setTopLevel(false);

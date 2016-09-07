@@ -38,8 +38,12 @@ import java.util.stream.Collectors;
  *
  * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
  */
-public class MigrateTo2_1_0 {
+public class MigrateTo2_1_0 implements Migration {
     public static final ModelVersion VERSION = new ModelVersion("2.1.0");
+
+    public ModelVersion getVersion() {
+        return VERSION;
+    }
 
     public void migrate(KeycloakSession session) {
         for (RealmModel realm : session.realms().getRealms()) {
