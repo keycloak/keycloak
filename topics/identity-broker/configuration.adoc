@@ -63,10 +63,6 @@ Regardless the identity provider you are creating, you'll see the following conf
 |If the identity provider supplies an email address this email address will be trusted.  If the realm required email validation,
  users that log in from this IDP will not have to go through the email verification process.
 
-|Authenticate By Default
-|If checked, the {{book.project.name}} login screen will be completely bypassed and the browser will be redirected directly
- to the IDP.
-
 |GUI order
 |The order number that sorts how the available IDPs are listed on the {{book.project.name}} login page.
 
