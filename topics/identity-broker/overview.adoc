@@ -5,7 +5,7 @@
 When using {{book.project.name}} as an identity broker, users are not forced to provide their credentials in order to authenticate in a specific realm.
 Instead, they are presented with a list of identity providers from which they can authenticate.
 
-You can also configure a default broker. This is done by configuring a default provider for the identity provider authenticator. In this case the user will not be given a choice, but instead be redirected directly to the parent broker.
+You can also configure a default broker. In this case the user will not be given a choice, but instead be redirected directly to the parent broker.
 
 The following diagram demonstrates the steps involved when using {{book.project.name}} to broker an external identity provider:
 
