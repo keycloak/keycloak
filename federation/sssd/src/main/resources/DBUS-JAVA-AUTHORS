@@ -1,0 +1,37 @@
+The D-Bus Java implementation was written by:
+
+Matthew Johnson <dbus -at matthew -dot- ath -dot- cx>
+
+Bug fixes/reports and other suggestions from:
+
+Remi Emonet <remi.emonet -at- inrialpes -dot- fr>
+Simon McVittie <simon -dot- mcvittie -at- collabora -dot- co -dot- uk>
+Dick Hollenbeck <dick -at- softplc -dot- com> 
+Joshua Nichols <nichoj -at- gentoo -dot- org>
+Ralf Kistner <ralf.kistner -at- gmail -dot- com>
+Henrik Petander <henrik -dot- petander -at- iki -dot- fi>
+Luigi Paioro <luigi -at- lambrate -dot- it>
+Roberto Francisco Arroyo Moreno <robfram -at- ugr -dot- es>
+Steve Crane <Steve -dot Crane -at- rococosoft -dot- com>
+Philippe Marschall <philippe -dot- marschall -at- gmail -dot- com>
+Daniel Machado <cdanielmachado -at- gmail -dot- com>
+Anibal Sanchez <anibal -dot- sanchez -at- sunya -dot- com -dot- ar>
+Jan Kümmel <freedesktop -at- snorc -dot- org>
+Johannes Felten <johannesfelten -at- googlemail -dot- com>
+Tom Walsh <walshtc -at- gmail -dot- com>
+Ed Wei <Edward.Wei.03 -at- alum -dot- dartmouth -dot- org>
+Sveinung Kvilhaugsvik <sveinung84 -at- users -dot- sourceforge -dot- net>
+Hugues Moreau <hmoreau -at- gmail -dot- com>
+Viktar Vauchkevich <vctr -at- yandex -dot- ru>
+Serkan Kaba <serkan_kaba -at- yahoo -dot- com>
+Adam Bennett <cruxic -at- gmail -dot- com>
+Frank Benoit <benoit -at- tionex -dot- de>
+Gunnar Aastrand Grimnes <gunnar -dot- grimnes -at- dfki -dot- de>
+
+The included Viewer application was originally written by:
+
+Peter Cox <petercox -at- gawab -dot- com>
+
+with patches from:
+
+Zsombor Gegesy <gzsombor -at- gmail -dot- com>
