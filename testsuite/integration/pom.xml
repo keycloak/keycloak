@@ -166,6 +166,14 @@
             <groupId>org.keycloak</groupId>
             <artifactId>federation-properties-example</artifactId>
         </dependency>
+
+        <!-- Dependency on services from integration-arquillian -->
+        <dependency>
+            <groupId>org.keycloak.testsuite</groupId>
+            <artifactId>integration-arquillian-testsuite-providers</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
         <dependency>
             <groupId>org.jboss.logging</groupId>
             <artifactId>jboss-logging</artifactId>
