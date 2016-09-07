@@ -33,8 +33,15 @@
             <th colspan="2">{{:: 'actions' | translate}}</th>
         </tr>
         </thead>
+        <tfoot data-ng-hide="(roles | filter:{name: searchQuery}).length == 0">
+            <tr>
+                <td class="kc-action-cell" colspan="6">
+                    <div kc-paging current-page='currentPage' number-of-pages='numberOfPages'></div>
+                </td>
+            </tr>
+        </tfoot>
         <tbody>
-        <tr ng-repeat="role in roles | orderBy:'name' | filter:{name: searchQuery}">
+        <tr ng-repeat="role in roles | filter:{name: searchQuery} | orderBy:'name'| startFrom:(currentPage-1)*pageSize | limitTo:pageSize">
             <td><a href="#/realms/{{realm.realm}}/roles/{{role.id}}">{{role.name}}</a></td>
             <td translate="{{role.composite}}"></td>
             <td>{{role.description}}</td>
@@ -42,8 +49,8 @@
             <td class="kc-action-cell" data-ng-click="removeRole(role)">{{:: 'delete' | translate}}</td>
         </tr>
         <tr data-ng-show="(roles | filter:{name: searchQuery}).length == 0">
-            <td class="text-muted" colspan="3" data-ng-show="searchQuery">{{:: 'no-results' | translate}}</td>
-            <td class="text-muted" colspan="3" data-ng-hide="searchQuery">{{:: 'no-realm-roles-available' | translate}}</td>
+            <td class="text-muted" colspan="4" data-ng-show="searchQuery">{{:: 'no-results' | translate}}</td>
+            <td class="text-muted" colspan="4" data-ng-hide="searchQuery">{{:: 'no-realm-roles-available' | translate}}</td>
         </tr>
         </tbody>
     </table>

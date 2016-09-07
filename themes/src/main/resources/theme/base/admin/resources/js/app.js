@@ -2678,3 +2678,44 @@ module.directive('kcOnReadFile', function ($parse) {
         }
     };
 });
+
+module.controller('PagingCtrl', function ($scope) {
+    $scope.isLastPage = function()
+    {
+        if ($scope.currentPage === $scope.numberOfPages) {
+            return true;
+        }
+        return false;
+    };
+
+    $scope.isFirstPage = function()
+    {
+        if ($scope.currentPage === 1) {
+            return true;
+        }
+        return false;
+    };
+});
+
+module.directive('kcPaging', function () {
+    return {
+        scope: {
+            currentPage: '=',
+            numberOfPages: '='
+        },
+        restrict: 'A',
+        replace: true,
+        controller: 'PagingCtrl',
+        templateUrl: resourceUrl + '/templates/kc-paging.html'
+    }
+});
+
+module.filter('startFrom', function () {
+    return function (input, start) {
+        if (input) {
+            start = +start;
+            return input.slice(start);
+        }
+        return [];
+    };
+});
