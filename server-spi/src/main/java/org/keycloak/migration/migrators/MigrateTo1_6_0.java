@@ -27,9 +27,13 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class MigrateTo1_6_0 {
+public class MigrateTo1_6_0 implements Migration {
 
     public static final ModelVersion VERSION = new ModelVersion("1.6.0");
+
+    public ModelVersion getVersion() {
+        return VERSION;
+    }
 
     public void migrate(KeycloakSession session) {
         MigrationProvider provider = session.getProvider(MigrationProvider.class);

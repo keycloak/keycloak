@@ -98,4 +98,19 @@ public class ModelVersion {
         if (comp < 0) return true;
         return false;
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (!(obj instanceof ModelVersion)) {
+            return false;
+        }
+
+        ModelVersion v = (ModelVersion) obj;
+        return v.getMajor() == major && v.getMinor() == minor && v.getMicro() != micro;
+    }
+
+    @Override
+    public String toString() {
+        return major + "." + minor + "." + micro;
+    }
 }
