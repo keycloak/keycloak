@@ -61,7 +61,7 @@
 .. link:topics/admin-console-permissions/per-realm.adoc[Dedicated Realm Admin Consoles]
 . link:topics/identity-broker.adoc[Identity Brokering]
 .. link:topics/identity-broker/overview.adoc[Brokering Overview]
-.. link:topics/identity-broker/default-privder.adoc[Default Provider]
+.. link:topics/identity-broker/default-provider.adoc[Default Provider]
 .. link:topics/identity-broker/configuration.adoc[General Configuration]
 .. link:topics/identity-broker/social-login.adoc[Social Login]
 ... link:topics/identity-broker/social/google.adoc[Google]
