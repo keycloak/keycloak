@@ -27,6 +27,28 @@ Defines the time before which the policy MUST NOT be granted. Only granted if cu
 +
 Defines the time after which the policy MUST NOT be granted. Only granted if current date/time is before or equal to this value
 +
+* *Day of Month*
++
+Defines the day of month which policy MUST be granted. You can also provide a range by filling the second field with the day of month before/equal which the policy MUST be granted. In this case, the policy would be granted if current day of month is between or equal to the two values you provided.
++
+* *Month*
++
+Defines the month which policy MUST be granted. You can also provide a range by filling the second field with the month before/equal which the policy MUST be granted. In this case, the policy would be granted if current month is between or equal to the two values you provided.
++
+* *Year*
++
+Defines the year which policy MUST be granted. You can also provide a range by filling the second field with the year before/equal which the policy MUST be granted. In this case, the policy would be granted if current year is between or equal to the two values you provided.
++
+* *Hour*
++
+Defines the hour which policy MUST be granted. You can also provide a range by filling the second field with the hour before/equal which the policy MUST be granted. In this case, the policy would be granted if current hour is between or equal to the two values you provided.
++
+* *Minute*
++
+Defines the minute which policy MUST be granted. You can also provide a range by filling the second field with the minute before/equal which the policy MUST be granted. In this case, the policy would be granted if current minute is between or equal to the two values you provided.
++
 * *Logic*
 +
 The link:logic.html[logic] of this policy
+
+In order to the policy evaluate to a _GRANT_, all conditions that you defined must be true. Keycloak will perform an _AND_ with the outcome from each one of the conditions you have defined.

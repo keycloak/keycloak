@@ -27,16 +27,10 @@ But you may also have a _Alice Banking Account_, which represents a single resou
 A bounded extent of access that is possible to perform on a resource. In authorization policy
 terminology, a scope is one of the potentially many _verbs_ that can logically apply to a resource.
 
-Usually, a scope is defined as a URN that indicates what can be done with a given resource. Example of scopes are _urn:domain:resource:scope:view_,
-_urn:domain:scopes:admin:manage_, etc.
-
-Scopes have a small set of information as follows:
-
-* *Name*
-+
-A human-readable and unique string describing the scope.
-
-A single scope may be associated with zero or more resources.
+It usually indicates what can be done with a given resource. Example of scopes are _view_,
+_edit_, _delete_, etc. However, it may also be related with some information provided by a resource. In this case, you
+may have a _Project_ resource and a _cost_ scope, where _cost_ scope may be used to define specific policies
+and permissions for those trying to access project's cost.
 
 ==== Permission
 
