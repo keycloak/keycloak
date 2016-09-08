@@ -108,6 +108,26 @@ Therefore, a configuration like the following
 ----
 will authenticate the user against the authentication database, but store all {{book.project.name}} related data in the keycloak database.
 
+Finally, there's some ongoing incomplete refactoring work that needs to be disabled as there isn't a Mongo implementation for it.  Replace the following XML
+
+[source,xml]
+----
+<spi name="userFederatedStorage">
+    <default-provider>jpa</default-provider>
+</spi>
+----
+
+with
+
+[source,xml]
+----
+<spi name="userFederatedStorage">
+    <provider name="jpa" enabled="false"/>
+</spi>
+----
+
+
+
 === MongoDB Replica Sets
 
 In order to use a mongo replica set for {{book.project.name}}, one has to use URI based configuration, which supports the definition of replica sets out of the box: `mongodb://host1:27017,host2:27017,host3:27017/`.
