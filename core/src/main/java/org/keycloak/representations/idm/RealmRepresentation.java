@@ -123,6 +123,8 @@ public class RealmRepresentation {
     protected String resetCredentialsFlow;
     protected String clientAuthenticationFlow;
 
+    protected Map<String, String> attributes;
+
     protected String keycloakVersion;
 
     @Deprecated
@@ -862,6 +864,14 @@ public class RealmRepresentation {
     @JsonIgnore
     public boolean isIdentityFederationEnabled() {
         return identityProviders != null && !identityProviders.isEmpty();
+    }
+
+    public void setAttributes(Map<String, String> attributes) {
+        this.attributes = attributes;
+    }
+
+    public Map<String, String> getAttributes() {
+        return attributes;
     }
 
 }

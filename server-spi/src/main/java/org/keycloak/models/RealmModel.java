@@ -110,6 +110,17 @@ public interface RealmModel extends RoleContainerModel {
 
     void setEditUsernameAllowed(boolean editUsernameAllowed);
 
+    void setAttribute(String name, String value);
+    void setAttribute(String name, Boolean value);
+    void setAttribute(String name, Integer value);
+    void setAttribute(String name, Long value);
+    void removeAttribute(String name);
+    String getAttribute(String name);
+    Integer getAttribute(String name, Integer defaultValue);
+    Long getAttribute(String name, Long defaultValue);
+    Boolean getAttribute(String name, Boolean defaultValue);
+    Map<String, String> getAttributes();
+
     //--- brute force settings
     boolean isBruteForceProtected();
     void setBruteForceProtected(boolean value);

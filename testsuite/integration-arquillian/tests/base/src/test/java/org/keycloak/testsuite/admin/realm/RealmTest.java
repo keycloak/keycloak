@@ -57,6 +57,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.HashSet;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
@@ -237,6 +238,16 @@ public class RealmTest extends AbstractAdminTest {
         assertEquals(Boolean.FALSE, rep.isRegistrationAllowed());
         assertEquals(Boolean.FALSE, rep.isRegistrationEmailAsUsername());
         assertEquals(Boolean.FALSE, rep.isEditUsernameAllowed());
+
+        // attributes
+        rep.getAttributes().put("foo", "bar");
+
+        realm.update(rep);
+        assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, Matchers.nullValue(String.class), rep, ResourceType.REALM);
+
+        rep = realm.toRepresentation();
+        assertEquals("bar", rep.getAttributes().get("foo"));
+
     }
 
     @Test
@@ -391,6 +402,13 @@ public class RealmTest extends AbstractAdminTest {
 
         if (realm.getBrowserSecurityHeaders() != null) {
             assertEquals(realm.getBrowserSecurityHeaders(), storedRealm.getBrowserSecurityHeaders());
+        }
+
+        if (realm.getAttributes() != null) {
+            HashMap<String, String> attributes = new HashMap<>();
+            attributes.putAll(storedRealm.getAttributes());
+            attributes.entrySet().retainAll(realm.getAttributes().entrySet());
+            assertEquals(realm.getAttributes(), attributes);
         }
 
     }

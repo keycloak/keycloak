@@ -390,6 +390,10 @@ public class ModelToRepresentation {
             exportRequiredActions(realm, rep);
             exportGroups(realm, rep);
         }
+
+        Map<String, String> attributes = realm.getAttributes();
+        rep.setAttributes(attributes);
+
         return rep;
     }
 
