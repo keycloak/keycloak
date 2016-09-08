@@ -47,6 +47,7 @@ import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.protocol.oidc.mappers.OIDCAccessTokenMapper;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.services.Urls;
+import org.keycloak.services.resources.admin.RealmAuth;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
@@ -74,20 +75,23 @@ import static java.util.Arrays.asList;
 public class PolicyEvaluationService {
 
     private final AuthorizationProvider authorization;
+    private final RealmAuth auth;
     @Context
     private HttpRequest httpRequest;
 
     private final ResourceServer resourceServer;
 
-    PolicyEvaluationService(ResourceServer resourceServer, AuthorizationProvider authorization) {
+    PolicyEvaluationService(ResourceServer resourceServer, AuthorizationProvider authorization, RealmAuth auth) {
         this.resourceServer = resourceServer;
         this.authorization = authorization;
+        this.auth = auth;
     }
 
     @POST
     @Consumes("application/json")
     @Produces("application/json")
     public void evaluate(PolicyEvaluationRequest evaluationRequest, @Suspended AsyncResponse asyncResponse) {
+        this.auth.requireView();
         KeycloakIdentity identity = createIdentity(evaluationRequest);
         EvaluationContext evaluationContext = createEvaluationContext(evaluationRequest, identity);
         authorization.evaluators().from(createPermissions(evaluationRequest, evaluationContext, authorization), evaluationContext).evaluate(createDecisionCollector(authorization, identity, asyncResponse));
