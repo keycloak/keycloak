@@ -28,7 +28,6 @@ import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.cache.CachedUserModel;
 import org.keycloak.models.cache.infinispan.entities.CachedUser;
 import org.keycloak.models.cache.infinispan.entities.CachedUserConsent;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -40,13 +39,12 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class UserAdapter implements CachedUserModel {
+public class UserAdapter implements UserModel {
     protected UserModel updated;
     protected CachedUser cached;
     protected UserCacheSession userProviderCache;
@@ -67,22 +65,6 @@ public class UserAdapter implements CachedUserModel {
             if (updated == null) throw new IllegalStateException("Not found in database");
         }
     }
-
-    @Override
-    public void invalidate() {
-        getDelegateForUpdate();
-    }
-
-    @Override
-    public long getCacheTimestamp() {
-        return cached.getCacheTimestamp();
-    }
-
-    @Override
-    public ConcurrentHashMap getCachedWith() {
-        return cached.getCachedWith();
-    }
-
     @Override
     public String getId() {
         if (updated != null) return updated.getId();

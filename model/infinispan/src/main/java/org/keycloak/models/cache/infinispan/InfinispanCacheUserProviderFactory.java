@@ -18,28 +18,34 @@
 package org.keycloak.models.cache.infinispan;
 
 import org.infinispan.Cache;
+import org.infinispan.notifications.Listener;
+import org.infinispan.notifications.cachelistener.annotation.*;
+import org.infinispan.notifications.cachelistener.event.*;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.cache.UserCache;
-import org.keycloak.models.cache.UserCacheProviderFactory;
+import org.keycloak.models.cache.CacheUserProvider;
+import org.keycloak.models.cache.CacheUserProviderFactory;
+import org.keycloak.models.cache.infinispan.entities.CachedUser;
 import org.keycloak.models.cache.infinispan.entities.Revisioned;
+
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class InfinispanUserCacheProviderFactory implements UserCacheProviderFactory {
+public class InfinispanCacheUserProviderFactory implements CacheUserProviderFactory {
 
-    private static final Logger log = Logger.getLogger(InfinispanUserCacheProviderFactory.class);
+    private static final Logger log = Logger.getLogger(InfinispanCacheUserProviderFactory.class);
 
     protected volatile UserCacheManager userCache;
 
 
 
     @Override
-    public UserCache create(KeycloakSession session) {
+    public CacheUserProvider create(KeycloakSession session) {
         lazyInit(session);
         return new UserCacheSession(userCache, session);
     }

@@ -18,4 +18,5 @@
 org.keycloak.exportimport.ClientDescriptionConverterSpi
 org.keycloak.wellknown.WellKnownSpi
 org.keycloak.services.clientregistration.ClientRegistrationSpi
+org.keycloak.transaction.TransactionManagerLookupSpi
 

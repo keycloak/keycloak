@@ -19,7 +19,6 @@ package org.keycloak.models.jpa.entities;
 
 import javax.persistence.Access;
 import javax.persistence.AccessType;
-import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
@@ -28,19 +27,14 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
-import javax.persistence.OneToMany;
 import javax.persistence.Table;
-import java.util.ArrayList;
-import java.util.Collection;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
 @NamedQueries({
-        @NamedQuery(name="credentialByUser", query="select cred from CredentialEntity cred where cred.user = :user"),
         @NamedQuery(name="credentialByUserAndType", query="select cred from CredentialEntity cred where cred.user = :user and cred.type = :type"),
-        @NamedQuery(name="credentialByNameAndType", query="select cred from CredentialEntity cred where cred.user = :user and cred.type = :type and cred.device = :device"),
         @NamedQuery(name="deleteCredentialsByRealm", query="delete from CredentialEntity cred where cred.user IN (select u from UserEntity u where u.realmId=:realmId)"),
         @NamedQuery(name="deleteCredentialsByRealmAndLink", query="delete from CredentialEntity cred where cred.user IN (select u from UserEntity u where u.realmId=:realmId and u.federationLink=:link)")
 
@@ -80,8 +74,6 @@ public class CredentialEntity {
     @Column(name="PERIOD")
     protected int period;
 
-    @OneToMany(cascade = CascadeType.REMOVE, fetch = FetchType.EAGER, orphanRemoval = true, mappedBy="credential")
-    protected Collection<CredentialAttributeEntity> credentialAttributes = new ArrayList<>();
 
     public String getId() {
         return id;
@@ -177,14 +169,6 @@ public class CredentialEntity {
 
     public void setPeriod(int period) {
         this.period = period;
-    }
-
-    public Collection<CredentialAttributeEntity> getCredentialAttributes() {
-        return credentialAttributes;
-    }
-
-    public void setCredentialAttributes(Collection<CredentialAttributeEntity> credentialAttributes) {
-        this.credentialAttributes = credentialAttributes;
     }
 
     @Override
