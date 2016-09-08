@@ -29,7 +29,7 @@ import java.io.File;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class PlainTextPasswordProviderFactory implements PasswordHashProviderFactory, EnvironmentDependentProviderFactory {
+public class PlainTextPasswordProviderFactory implements PasswordHashProviderFactory {
     @Override
     public PasswordHashProvider create(KeycloakSession session) {
         return new PlainTextPasswordProvider();
@@ -53,11 +53,5 @@ public class PlainTextPasswordProviderFactory implements PasswordHashProviderFac
     @Override
     public String getId() {
         return "text";
-    }
-
-    // TODO REMOVE THIS
-    @Override
-    public boolean isSupported() {
-        return !new File("/tmp/disable-text-hash").exists();
     }
 }
