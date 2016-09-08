@@ -124,4 +124,4 @@ The name of the HTTP method.
 **** *scopes*
 +
 An array of strings with the scopes associated with the method. When you associate scopes with a specific method, the client trying to access a protected resource (or path) must provide
-a RPT that grants permission to all scopes here specified.
+a RPT that grants permission to all scopes here specified. For instance, if you define a method _POST_ with a scope _create_, the RPT must contain a permission granting access to the _create_ scope when performing a POST to the path.
