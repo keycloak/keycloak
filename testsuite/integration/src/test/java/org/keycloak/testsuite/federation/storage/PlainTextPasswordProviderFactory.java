@@ -21,6 +21,9 @@ import org.keycloak.hash.PasswordHashProvider;
 import org.keycloak.hash.PasswordHashProviderFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.provider.EnvironmentDependentProviderFactory;
+
+import java.io.File;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

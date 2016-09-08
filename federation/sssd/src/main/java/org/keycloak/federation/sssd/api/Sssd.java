@@ -17,6 +17,7 @@
 
 package org.keycloak.federation.sssd.api;
 
+import org.freedesktop.DBus;
 import org.freedesktop.dbus.DBusConnection;
 import org.freedesktop.dbus.Variant;
 import org.freedesktop.dbus.exceptions.DBusException;
@@ -34,8 +35,6 @@ import java.util.Vector;
  * @version $Revision: 1 $
  */
 public class Sssd {
-
-    public static final String BUSNAME = "org.freedesktop.sssd.infopipe";
 
     public static User user() {
         return SingletonHolder.USER_OBJECT;
@@ -67,8 +66,8 @@ public class Sssd {
         static {
             try {
                 DBUS_CONNECTION = DBusConnection.getConnection(DBusConnection.SYSTEM);
-                INFOPIPE_OBJECT = DBUS_CONNECTION.getRemoteObject(BUSNAME, InfoPipe.OBJECTPATH, InfoPipe.class);
-                USER_OBJECT = DBUS_CONNECTION.getRemoteObject(BUSNAME, User.OBJECTPATH, User.class);
+                INFOPIPE_OBJECT = DBUS_CONNECTION.getRemoteObject(InfoPipe.BUSNAME, InfoPipe.OBJECTPATH, InfoPipe.class);
+                USER_OBJECT = DBUS_CONNECTION.getRemoteObject(InfoPipe.BUSNAME, User.OBJECTPATH, User.class);
             } catch (DBusException e) {
                 e.printStackTrace();
             }
@@ -107,5 +106,18 @@ public class Sssd {
             logger.error("Failed to retrieve user's groups from SSSD", e);
         }
         return userGroups;
+    }
+
+    public static boolean isAvailable(){
+        try {
+            DBus dbus = SingletonHolder.DBUS_CONNECTION.getRemoteObject(DBus.BUSNAME, DBus.OBJECTPATH, DBus.class);
+            return Arrays.asList(dbus.ListNames()).contains(InfoPipe.BUSNAME);
+        } catch (DBusException e) {
+            logger.error("Failed to check if SSSD exists", e);
+            e.printStackTrace();
+        } finally {
+            SingletonHolder.DBUS_CONNECTION.disconnect();
+        }
+        return false;
     }
 }
