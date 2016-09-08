@@ -18,6 +18,7 @@
 package org.keycloak.models;
 
 import org.keycloak.component.ComponentModel;
+import org.keycloak.credential.CredentialInput;
 import org.keycloak.provider.Provider;
 import org.keycloak.storage.user.UserCredentialValidatorProvider;
 import org.keycloak.storage.user.UserLookupProvider;
@@ -85,4 +86,5 @@ public interface UserProvider extends Provider,
     void close();
 
     void preRemove(RealmModel realm, ComponentModel component);
+
 }

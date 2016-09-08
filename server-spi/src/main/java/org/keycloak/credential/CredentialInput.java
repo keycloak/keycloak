@@ -14,26 +14,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package org.keycloak.storage;
-
-import org.keycloak.component.ComponentModel;
-import org.keycloak.component.PrioritizedComponentModel;
+package org.keycloak.credential;
 
 /**
- * Stored configuration of a User Storage provider instance.
- *
- * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
- * @author <a href="mailto:bburke@redhat.com">Bill Burke</a>
+ * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
+ * @version $Revision: 1 $
  */
-public class UserStorageProviderModel extends PrioritizedComponentModel {
-
-    public UserStorageProviderModel() {
-        setProviderType(UserStorageProvider.class.getName());
-    }
-
-    public UserStorageProviderModel(ComponentModel copy) {
-        super(copy);
-    }
-
+public interface CredentialInput {
+    String getType();
 }

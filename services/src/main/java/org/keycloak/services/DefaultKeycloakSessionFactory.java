@@ -49,7 +49,6 @@ public class DefaultKeycloakSessionFactory implements KeycloakSessionFactory, Pr
     private Map<Class<? extends Provider>, String> provider = new HashMap<>();
     private volatile Map<Class<? extends Provider>, Map<String, ProviderFactory>> factoriesMap = new HashMap<>();
     protected CopyOnWriteArrayList<ProviderEventListener> listeners = new CopyOnWriteArrayList<>();
-    private TransactionManager tm;
 
     // TODO: Likely should be changed to int and use Time.currentTime() to be compatible with all our "time" reps
     protected long serverStartupTimestamp;
@@ -97,8 +96,6 @@ public class DefaultKeycloakSessionFactory implements KeycloakSessionFactory, Pr
         // make the session factory ready for hot deployment
         ProviderManagerRegistry.SINGLETON.setDeployer(this);
 
-        JtaTransactionManagerLookup lookup = (JtaTransactionManagerLookup)getProviderFactory(JtaTransactionManagerLookup.class);
-        if (lookup != null) tm = lookup.getTransactionManager();
     }
     protected Map<Class<? extends Provider>, Map<String, ProviderFactory>> getFactoriesCopy() {
         Map<Class<? extends Provider>, Map<String, ProviderFactory>> copy = new HashMap<>();
@@ -282,9 +279,6 @@ public class DefaultKeycloakSessionFactory implements KeycloakSessionFactory, Pr
 
     public KeycloakSession create() {
         KeycloakSession session =  new DefaultKeycloakSession(this);
-        if (tm != null) {
-            session.getTransactionManager().enlist(new JtaTransactionWrapper(tm));
-        }
         return session;
     }
 

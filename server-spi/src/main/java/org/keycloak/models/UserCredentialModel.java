@@ -17,23 +17,26 @@
 
 package org.keycloak.models;
 
+import org.keycloak.credential.CredentialInput;
+import org.keycloak.credential.CredentialModel;
+
 import java.util.UUID;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class UserCredentialModel {
-    public static final String PASSWORD = "password";
-    public static final String PASSWORD_HISTORY = "password-history";
-    public static final String PASSWORD_TOKEN = "password-token";
+public class UserCredentialModel implements CredentialInput {
+    public static final String PASSWORD = CredentialModel.PASSWORD;
+    public static final String PASSWORD_HISTORY = CredentialModel.PASSWORD_HISTORY;
+    public static final String PASSWORD_TOKEN = CredentialModel.PASSWORD_TOKEN;
 
     // Secret is same as password but it is not hashed
-    public static final String SECRET = "secret";
-    public static final String TOTP = "totp";
-    public static final String HOTP = "hotp";
-    public static final String CLIENT_CERT = "cert";
-    public static final String KERBEROS = "kerberos";
+    public static final String SECRET = CredentialModel.SECRET;
+    public static final String TOTP = CredentialModel.TOTP;
+    public static final String HOTP = CredentialModel.HOTP;
+    public static final String CLIENT_CERT = CredentialModel.CLIENT_CERT;
+    public static final String KERBEROS = CredentialModel.KERBEROS;
 
     protected String type;
     protected String value;

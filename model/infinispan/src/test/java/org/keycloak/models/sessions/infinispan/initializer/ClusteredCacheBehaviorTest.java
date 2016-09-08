@@ -101,14 +101,19 @@ public class ClusteredCacheBehaviorTest {
 
         System.out.println("node1 create entry");
         node1Cache.put("key", "node1");
+
         System.out.println("node1 create entry");
         node1Cache.put("key", "node111");
+
         System.out.println("node2 create entry");
         node2Cache.put("key", "node2");
+
         System.out.println("node1 remove entry");
         node1Cache.remove("key");
+
         System.out.println("node2 remove entry");
         node2Cache.remove("key");
+
         System.out.println("node2 put entry");
         node2Cache.put("key", "node2");
         System.out.println("node2 evict entry");
@@ -118,6 +123,28 @@ public class ClusteredCacheBehaviorTest {
         node2Cache.putForExternalRead("key", "common");
         System.out.println("node2 remove entry");
         node2Cache.remove("key");
+        System.out.println("node1 remove entry");
+        node1Cache.remove("key");
+
+        // test remove non-existing node 2, existing node 1
+        System.out.println("Test non existent remove");
+        System.out.println("node1 create entry");
+        node1Cache.put("key", "value");
+        System.out.println("node2 remove non-existent entry");
+        System.out.println("exists?: " + node2Cache.containsKey("key"));
+        node2Cache.remove("key");
+
+        // test clear
+        System.out.println("Test clear cache");
+        System.out.println("add key to node 1, key2 to node2");
+        node1Cache.putForExternalRead("key", "value");
+        node2Cache.putForExternalRead("key", "value");
+        node2Cache.putForExternalRead("key2", "value");
+        System.out.println("Clear from node1");
+        node1Cache.clear();
+        System.out.println("node 2 exists key2?: " + node2Cache.containsKey("key2"));
+        System.out.println("node 2 exists key?: " + node2Cache.containsKey("key"));
+
 
 
     }
