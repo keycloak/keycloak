@@ -30,6 +30,8 @@ import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserConsentModel;
+import org.keycloak.models.cache.CachedUserModel;
+import org.keycloak.models.cache.OnUserCache;
 import org.keycloak.storage.user.UserCredentialAuthenticationProvider;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.storage.user.UserCredentialValidatorProvider;
@@ -56,7 +58,7 @@ import java.util.Set;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class UserStorageManager implements UserProvider {
+public class UserStorageManager implements UserProvider, OnUserCache {
 
     private static final Logger logger = Logger.getLogger(UserStorageManager.class);
 
@@ -70,22 +72,22 @@ public class UserStorageManager implements UserProvider {
         return session.userLocalStorage();
     }
 
-    protected List<UserStorageProviderModel> getStorageProviders(RealmModel realm) {
+    public static List<UserStorageProviderModel> getStorageProviders(RealmModel realm) {
         return realm.getUserStorageProviders();
     }
 
-    protected <T> T getFirstStorageProvider(RealmModel realm, Class<T> type) {
+    public static <T> T getFirstStorageProvider(KeycloakSession session, RealmModel realm, Class<T> type) {
         for (UserStorageProviderModel model : getStorageProviders(realm)) {
             UserStorageProviderFactory factory = (UserStorageProviderFactory)session.getKeycloakSessionFactory().getProviderFactory(UserStorageProvider.class, model.getProviderId());
 
             if (Types.supports(type, factory, UserStorageProviderFactory.class)) {
-                return type.cast(getStorageProviderInstance(model, factory));
+                return type.cast(getStorageProviderInstance(session, model, factory));
             }
         }
         return null;
     }
 
-    private UserStorageProvider getStorageProviderInstance(UserStorageProviderModel model, UserStorageProviderFactory factory) {
+    public static UserStorageProvider getStorageProviderInstance(KeycloakSession session, UserStorageProviderModel model, UserStorageProviderFactory factory) {
         UserStorageProvider instance = (UserStorageProvider)session.getAttribute(model.getId());
         if (instance != null) return instance;
         instance = factory.create(session, model);
@@ -95,12 +97,12 @@ public class UserStorageManager implements UserProvider {
     }
 
 
-    protected <T> List<T> getStorageProviders(RealmModel realm, Class<T> type) {
+    public static <T> List<T> getStorageProviders(KeycloakSession session, RealmModel realm, Class<T> type) {
         List<T> list = new LinkedList<>();
         for (UserStorageProviderModel model : getStorageProviders(realm)) {
             UserStorageProviderFactory factory = (UserStorageProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(UserStorageProvider.class, model.getProviderId());
             if (Types.supports(type, factory, UserStorageProviderFactory.class)) {
-                list.add(type.cast(getStorageProviderInstance(model, factory)));
+                list.add(type.cast(getStorageProviderInstance(session, model, factory)));
             }
 
 
@@ -116,21 +118,21 @@ public class UserStorageManager implements UserProvider {
 
     @Override
     public UserModel addUser(RealmModel realm, String username) {
-        UserRegistrationProvider registry = getFirstStorageProvider(realm, UserRegistrationProvider.class);
+        UserRegistrationProvider registry = getFirstStorageProvider(session, realm, UserRegistrationProvider.class);
         if (registry != null) {
             return registry.addUser(realm, username);
         }
         return localStorage().addUser(realm, username.toLowerCase());
     }
 
-    public UserStorageProvider getStorageProvider(RealmModel realm, String componentId) {
+    public static UserStorageProvider getStorageProvider(KeycloakSession session, RealmModel realm, String componentId) {
         ComponentModel model = realm.getComponent(componentId);
         if (model == null) return null;
         UserStorageProviderFactory factory = (UserStorageProviderFactory)session.getKeycloakSessionFactory().getProviderFactory(UserStorageProvider.class, model.getProviderId());
         if (factory == null) {
             throw new ModelException("Could not find UserStorageProviderFactory for: " + model.getProviderId());
         }
-        return getStorageProviderInstance(new UserStorageProviderModel(model), factory);
+        return getStorageProviderInstance(session, new UserStorageProviderModel(model), factory);
     }
 
     @Override
@@ -140,7 +142,7 @@ public class UserStorageManager implements UserProvider {
         if (storageId.getProviderId() == null) {
             return localStorage().removeUser(realm, user);
         }
-        UserRegistrationProvider registry = (UserRegistrationProvider)getStorageProvider(realm, storageId.getProviderId());
+        UserRegistrationProvider registry = (UserRegistrationProvider)getStorageProvider(session, realm, storageId.getProviderId());
         if (registry == null) {
             throw new ModelException("Could not resolve StorageProvider: " + storageId.getProviderId());
         }
@@ -233,7 +235,7 @@ public class UserStorageManager implements UserProvider {
         if (storageId.getProviderId() == null) {
             return localStorage().getUserById(id, realm);
         }
-        UserLookupProvider provider = (UserLookupProvider)getStorageProvider(realm, storageId.getProviderId());
+        UserLookupProvider provider = (UserLookupProvider)getStorageProvider(session, realm, storageId.getProviderId());
         return provider.getUserById(id, realm);
     }
 
@@ -246,7 +248,7 @@ public class UserStorageManager implements UserProvider {
     public UserModel getUserByUsername(String username, RealmModel realm) {
         UserModel user = localStorage().getUserByUsername(username, realm);
         if (user != null) return user;
-        for (UserLookupProvider provider : getStorageProviders(realm, UserLookupProvider.class)) {
+        for (UserLookupProvider provider : getStorageProviders(session, realm, UserLookupProvider.class)) {
             user = provider.getUserByUsername(username, realm);
             if (user != null) return user;
         }
@@ -257,7 +259,7 @@ public class UserStorageManager implements UserProvider {
     public UserModel getUserByEmail(String email, RealmModel realm) {
         UserModel user = localStorage().getUserByEmail(email, realm);
         if (user != null) return user;
-        for (UserLookupProvider provider : getStorageProviders(realm, UserLookupProvider.class)) {
+        for (UserLookupProvider provider : getStorageProviders(session, realm, UserLookupProvider.class)) {
             user = provider.getUserByEmail(email, realm);
             if (user != null) return user;
         }
@@ -299,7 +301,7 @@ public class UserStorageManager implements UserProvider {
     @Override
     public int getUsersCount(RealmModel realm) {
         int size = localStorage().getUsersCount(realm);
-        for (UserQueryProvider provider : getStorageProviders(realm, UserQueryProvider.class)) {
+        for (UserQueryProvider provider : getStorageProviders(session, realm, UserQueryProvider.class)) {
             size += provider.getUsersCount(realm);
         }
         return size;
@@ -315,7 +317,7 @@ public class UserStorageManager implements UserProvider {
 
 
 
-        List<UserQueryProvider> storageProviders = getStorageProviders(realm, UserQueryProvider.class);
+        List<UserQueryProvider> storageProviders = getStorageProviders(session, realm, UserQueryProvider.class);
         // we can skip rest of method if there are no storage providers
         if (storageProviders.isEmpty()) {
             return pagedQuery.query(localStorage(), firstResult, maxResults);
@@ -447,7 +449,7 @@ public class UserStorageManager implements UserProvider {
     @Override
     public void grantToAllUsers(RealmModel realm, RoleModel role) {
         // not federation-aware for now
-        List<UserRegistrationProvider> storageProviders = getStorageProviders(realm, UserRegistrationProvider.class);
+        List<UserRegistrationProvider> storageProviders = getStorageProviders(session, realm, UserRegistrationProvider.class);
         LinkedList<UserRegistrationProvider> providers = new LinkedList<>();
         providers.add(localStorage());
         providers.addAll(storageProviders);
@@ -482,7 +484,7 @@ public class UserStorageManager implements UserProvider {
     public void preRemove(RealmModel realm) {
         localStorage().preRemove(realm);
         getFederatedStorage().preRemove(realm);
-        for (UserStorageProvider provider : getStorageProviders(realm, UserStorageProvider.class)) {
+        for (UserStorageProvider provider : getStorageProviders(session, realm, UserStorageProvider.class)) {
             provider.preRemove(realm);
         }
     }
@@ -497,7 +499,7 @@ public class UserStorageManager implements UserProvider {
     public void preRemove(RealmModel realm, GroupModel group) {
         localStorage().preRemove(realm, group);
         getFederatedStorage().preRemove(realm, group);
-        for (UserStorageProvider provider : getStorageProviders(realm, UserStorageProvider.class)) {
+        for (UserStorageProvider provider : getStorageProviders(session, realm, UserStorageProvider.class)) {
             provider.preRemove(realm, group);
         }
     }
@@ -506,7 +508,7 @@ public class UserStorageManager implements UserProvider {
     public void preRemove(RealmModel realm, RoleModel role) {
         localStorage().preRemove(realm, role);
         getFederatedStorage().preRemove(realm, role);
-        for (UserStorageProvider provider : getStorageProviders(realm, UserStorageProvider.class)) {
+        for (UserStorageProvider provider : getStorageProviders(session, realm, UserStorageProvider.class)) {
             provider.preRemove(realm, role);
         }
     }
@@ -558,7 +560,7 @@ public class UserStorageManager implements UserProvider {
 
         if (toValidate.isEmpty()) return true;
 
-        UserStorageProvider provider = getStorageProvider(realm, StorageId.resolveProviderId(user));
+        UserStorageProvider provider = getStorageProvider(session, realm, StorageId.resolveProviderId(user));
         if (!(provider instanceof UserCredentialValidatorProvider)) {
             return false;
         }
@@ -572,7 +574,7 @@ public class UserStorageManager implements UserProvider {
 
     @Override
     public CredentialValidationOutput validCredentials(KeycloakSession session, RealmModel realm, UserCredentialModel... input) {
-        List<UserCredentialAuthenticationProvider> providers = getStorageProviders(realm, UserCredentialAuthenticationProvider.class);
+        List<UserCredentialAuthenticationProvider> providers = getStorageProviders(session, realm, UserCredentialAuthenticationProvider.class);
         if (providers.isEmpty()) return CredentialValidationOutput.failed();
 
         CredentialValidationOutput result = null;
@@ -607,6 +609,22 @@ public class UserStorageManager implements UserProvider {
     }
 
     @Override
+    public void onCache(RealmModel realm, CachedUserModel user) {
+        if (StorageId.isLocalStorage(user)) {
+            if (session.userLocalStorage() instanceof OnUserCache) {
+                ((OnUserCache)session.userLocalStorage()).onCache(realm, user);
+            }
+        } else {
+            Object provider = getStorageProvider(session, realm, StorageId.resolveProviderId(user));
+            if (provider != null && provider instanceof OnUserCache) {
+                ((OnUserCache)provider).onCache(realm, user);
+            }
+        }
+    }
+
+    @Override
     public void close() {
     }
+
+
 }

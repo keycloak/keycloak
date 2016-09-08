@@ -16,9 +16,13 @@
  */
 package org.keycloak.services;
 
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakTransaction;
 import org.keycloak.models.KeycloakTransactionManager;
+import org.keycloak.transaction.JtaTransactionManagerLookup;
+import org.keycloak.transaction.JtaTransactionWrapper;
 
+import javax.transaction.TransactionManager;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -34,6 +38,12 @@ public class DefaultKeycloakTransactionManager implements KeycloakTransactionMan
     private List<KeycloakTransaction> afterCompletion = new LinkedList<KeycloakTransaction>();
     private boolean active;
     private boolean rollback;
+    private KeycloakSession session;
+    private JTAPolicy jtaPolicy = JTAPolicy.REQUIRES_NEW;
+
+    public DefaultKeycloakTransactionManager(KeycloakSession session) {
+        this.session = session;
+    }
 
     @Override
     public void enlist(KeycloakTransaction transaction) {
@@ -63,9 +73,28 @@ public class DefaultKeycloakTransactionManager implements KeycloakTransactionMan
     }
 
     @Override
+    public JTAPolicy getJTAPolicy() {
+        return jtaPolicy;
+    }
+
+    @Override
+    public void setJTAPolicy(JTAPolicy policy) {
+        jtaPolicy = policy;
+
+    }
+
+    @Override
     public void begin() {
         if (active) {
              throw new IllegalStateException("Transaction already active");
+        }
+
+        if (jtaPolicy == JTAPolicy.REQUIRES_NEW) {
+            JtaTransactionManagerLookup jtaLookup = session.getProvider(JtaTransactionManagerLookup.class);
+            TransactionManager tm = jtaLookup.getTransactionManager();
+            if (tm != null) {
+                enlist(new JtaTransactionWrapper(tm));
+            }
         }
 
         for (KeycloakTransaction tx : transactions) {

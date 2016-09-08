@@ -14,26 +14,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.keycloak.models.cache;
 
-package org.keycloak.storage;
+import org.keycloak.models.UserModel;
 
-import org.keycloak.component.ComponentModel;
-import org.keycloak.component.PrioritizedComponentModel;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Stored configuration of a User Storage provider instance.
- *
- * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
- * @author <a href="mailto:bburke@redhat.com">Bill Burke</a>
+ * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
+ * @version $Revision: 1 $
  */
-public class UserStorageProviderModel extends PrioritizedComponentModel {
+public interface CachedUserModel extends UserModel {
+    void invalidate();
 
-    public UserStorageProviderModel() {
-        setProviderType(UserStorageProvider.class.getName());
-    }
+    /**
+     * When was the user loaded from database.
+     *
+     * @return
+     */
+    long getCacheTimestamp();
 
-    public UserStorageProviderModel(ComponentModel copy) {
-        super(copy);
-    }
-
+    /**
+     * Returns a map that contains custom things that are cached along with the user.  You can write to this map.
+     *
+     * @return
+     */
+    ConcurrentHashMap getCachedWith();
 }

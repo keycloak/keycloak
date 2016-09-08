@@ -14,26 +14,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.keycloak.models.cache.infinispan.entities;
 
-package org.keycloak.storage;
-
-import org.keycloak.component.ComponentModel;
-import org.keycloak.component.PrioritizedComponentModel;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Stored configuration of a User Storage provider instance.
- *
- * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
- * @author <a href="mailto:bburke@redhat.com">Bill Burke</a>
+ * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
+ * @version $Revision: 1 $
  */
-public class UserStorageProviderModel extends PrioritizedComponentModel {
+public abstract class AbstractExtendableRevisioned extends AbstractRevisioned {
+    protected ConcurrentHashMap cachedWith = new ConcurrentHashMap();
 
-    public UserStorageProviderModel() {
-        setProviderType(UserStorageProvider.class.getName());
+    public AbstractExtendableRevisioned(Long revision, String id) {
+        super(revision, id);
     }
 
-    public UserStorageProviderModel(ComponentModel copy) {
-        super(copy);
+    /**
+     * Cache things along with this cachable object
+     *
+     * @return
+     */
+    public ConcurrentHashMap getCachedWith() {
+        return cachedWith;
     }
-
 }

@@ -17,6 +17,8 @@
 
 package org.keycloak.connections.jpa;
 
+import org.jboss.logging.Logger;
+
 import javax.persistence.EntityManager;
 
 /**
@@ -24,6 +26,7 @@ import javax.persistence.EntityManager;
  */
 public class DefaultJpaConnectionProvider implements JpaConnectionProvider {
 
+    private static final Logger logger = Logger.getLogger(DefaultJpaConnectionProvider.class);
     private final EntityManager em;
 
     public DefaultJpaConnectionProvider(EntityManager em) {
@@ -37,6 +40,7 @@ public class DefaultJpaConnectionProvider implements JpaConnectionProvider {
 
     @Override
     public void close() {
+        logger.trace("DefaultJpaConnectionProvider close()");
         em.close();
     }
 
