@@ -39,11 +39,11 @@ public class CacheUserProviderSpi implements Spi {
 
     @Override
     public Class<? extends Provider> getProviderClass() {
-        return UserCache.class;
+        return CacheUserProvider.class;
     }
 
     @Override
     public Class<? extends ProviderFactory> getProviderFactoryClass() {
-        return UserCacheProviderFactory.class;
+        return CacheUserProviderFactory.class;
     }
 }

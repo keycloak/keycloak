@@ -33,6 +33,5 @@
         <module name="javax.ws.rs.api"/>
         <module name="org.apache.httpcomponents"/>
         <module name="org.jboss.resteasy.resteasy-jaxrs"/>
-        <module name="javax.transaction.api"/>
     </dependencies>
 </module>
