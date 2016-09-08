@@ -327,8 +327,7 @@ public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAd
 
         salesPostPassiveServletPage.navigateTo();
         if (forbiddenIfNotAuthenticated) {
-            waitUntilElement(By.xpath("//body")).text().not().contains("principal=");
-            assertTrue(driver.getPageSource().contains("Forbidden") || driver.getPageSource().contains(FORBIDDEN_TEXT));
+            assertOnForbiddenPage();
         } else {
             waitUntilElement(By.xpath("//body")).text().contains("principal=null");
         }
@@ -407,9 +406,7 @@ public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAd
         salesPostPassiveServletPage.navigateTo();
 
         if (forbiddenIfNotAuthenticated) {
-            waitUntilElement(By.xpath("//body")).text().not().contains("principal=");
-            //Different 403 status page on EAP and Wildfly
-            assertTrue(driver.getPageSource().contains("Forbidden") || driver.getPageSource().contains(FORBIDDEN_TEXT));
+            assertOnForbiddenPage();
         } else {
             waitUntilElement(By.xpath("//body")).text().contains("principal=null");
         }
@@ -422,9 +419,7 @@ public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAd
         salesPostPassiveServletPage.navigateTo();
 
         if (forbiddenIfNotAuthenticated) {
-            waitUntilElement(By.xpath("//body")).text().not().contains("principal=");
-            //Different 403 status page on EAP and Wildfly
-            assertTrue(driver.getPageSource().contains("Forbidden") || driver.getPageSource().contains(FORBIDDEN_TEXT));
+            assertOnForbiddenPage();
         } else {
             waitUntilElement(By.xpath("//body")).text().contains("principal=null");
         }
@@ -723,5 +718,17 @@ public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAd
         testRealmSAMLPostLoginPage.form().login(bburkeUser);
         driver.navigate().to(employee2ServletPage.toString() + "/setCheckRoles?roles=" + roles);
         employee2ServletPage.logout();
+    }
+
+    private void assertOnForbiddenPage() {
+        switch (System.getProperty("app.server")) {
+            case "eap6":
+                waitUntilElement(By.xpath("//body")).text().not().contains("principal=");
+                String source = driver.getPageSource();
+                assertTrue(source.isEmpty() || source.contains("<body></body>"));
+                break;
+            default:
+                waitUntilElement(By.xpath("//body")).text().contains(FORBIDDEN_TEXT);
+        }
     }
 }
