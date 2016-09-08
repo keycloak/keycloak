@@ -45,8 +45,8 @@ import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.services.Urls;
-import org.keycloak.testsuite.DummyUserFederationProviderFactory;
 import org.keycloak.testsuite.broker.util.UserSessionStatusServlet;
+import org.keycloak.testsuite.federation.DummyUserFederationProviderFactory;
 import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
 
