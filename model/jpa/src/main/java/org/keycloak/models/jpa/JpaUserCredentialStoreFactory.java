@@ -15,35 +15,45 @@
  * limitations under the License.
  */
 
-package org.keycloak.models.cache;
+package org.keycloak.models.jpa;
 
-import org.keycloak.provider.Provider;
+import org.keycloak.Config;
+import org.keycloak.connections.jpa.JpaConnectionProvider;
+import org.keycloak.credential.UserCredentialStore;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderFactory;
-import org.keycloak.provider.Spi;
+
+import javax.persistence.EntityManager;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class CacheUserProviderSpi implements Spi {
+public class JpaUserCredentialStoreFactory implements ProviderFactory<UserCredentialStore> {
 
     @Override
-    public boolean isInternal() {
-        return true;
+    public void init(Config.Scope config) {
     }
 
     @Override
-    public String getName() {
-        return "userCache";
+    public void postInit(KeycloakSessionFactory factory) {
+
     }
 
     @Override
-    public Class<? extends Provider> getProviderClass() {
-        return UserCache.class;
+    public String getId() {
+        return "jpa";
     }
 
     @Override
-    public Class<? extends ProviderFactory> getProviderFactoryClass() {
-        return UserCacheProviderFactory.class;
+    public UserCredentialStore create(KeycloakSession session) {
+        EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
+        return new JpaUserCredentialStore(session, em);
     }
+
+    @Override
+    public void close() {
+    }
+
 }

@@ -36,7 +36,7 @@ import java.util.Set;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class CachedUser extends AbstractRevisioned implements InRealm  {
+public class CachedUser extends AbstractExtendableRevisioned implements InRealm  {
     private String realm;
     private String username;
     private Long createdTimestamp;
