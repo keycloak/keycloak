@@ -17,8 +17,6 @@
 
 package org.keycloak.protocol;
 
-import java.util.List;
-
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
@@ -31,14 +29,11 @@ import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientSessionModel;
-import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.LoginProtocol.Error;
 import org.keycloak.services.ServicesLogger;
-import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AuthenticationManager;
-import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.resources.LoginActionsService;
 
 /**
@@ -95,15 +90,6 @@ public abstract class AuthorizationEndpointBase {
      * @return response to be returned to the browser
      */
     protected Response handleBrowserAuthenticationRequest(ClientSessionModel clientSession, LoginProtocol protocol, boolean isPassive, boolean redirectToAuthentication) {
-
-        List<IdentityProviderModel> identityProviders = realm.getIdentityProviders();
-        for (IdentityProviderModel identityProvider : identityProviders) {
-            if (identityProvider.isEnabled() && identityProvider.isAuthenticateByDefault()) {
-                // TODO if we are isPassive we should propagate this flag to default identity provider also if possible
-                return buildRedirectToIdentityProvider(identityProvider.getAlias(), new ClientSessionCode(realm, clientSession).getCode());
-            }
-        }
-
         AuthenticationFlowModel flow = getAuthenticationFlow();
         String flowId = flow.getId();
         AuthenticationProcessor processor = createProcessor(clientSession, flowId, LoginActionsService.AUTHENTICATE_PATH);
@@ -145,13 +131,6 @@ public abstract class AuthorizationEndpointBase {
 
     protected AuthenticationFlowModel getAuthenticationFlow() {
         return realm.getBrowserFlow();
-    }
-
-    protected Response buildRedirectToIdentityProvider(String providerId, String accessCode) {
-        logger.debug("Automatically redirect to identity provider: " + providerId);
-        return Response.temporaryRedirect(
-                Urls.identityProviderAuthnRequest(this.uriInfo.getBaseUri(), providerId, this.realm.getName(), accessCode))
-                .build();
     }
 
 }

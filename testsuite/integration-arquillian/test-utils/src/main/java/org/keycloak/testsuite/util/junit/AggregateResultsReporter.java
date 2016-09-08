@@ -86,13 +86,24 @@ public class AggregateResultsReporter extends RunListener {
     }
 
     private File createReportFile() throws Exception {
-        PropertiesConfiguration config = new PropertiesConfiguration(System.getProperty("testsuite.constants"));
-        config.setThrowExceptionOnMissing(true);
+        String logDirPath = null;
 
-        final File logDir = new File(config.getString("log-dir"));
+        try {
+            PropertiesConfiguration config = new PropertiesConfiguration(System.getProperty("testsuite.constants"));
+            config.setThrowExceptionOnMissing(true);
+            logDirPath = config.getString("log-dir");
+        } catch (Exception e) {
+            logDirPath = System.getProperty("project.build.directory");
+            if (logDirPath == null) {
+                throw new RuntimeException("Could not determine the path to the log directory.");
+            }
+            logDirPath += File.separator + "surefire-reports";
+        }
+
+        final File logDir = new File(logDirPath);
         logDir.mkdirs();
 
-        final File reportFile = new File(logDir, "junit-report.xml").getAbsoluteFile();
+        final File reportFile = new File(logDir, "junit-single-report.xml").getAbsoluteFile();
         reportFile.createNewFile();
 
         return reportFile;

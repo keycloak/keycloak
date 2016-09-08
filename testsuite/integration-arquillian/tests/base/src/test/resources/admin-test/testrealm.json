@@ -95,5 +95,11 @@
                 "roles": ["customer-user"]
             }
         ]
+    },
+    "attributes": {
+        "string-attr": "foo",
+        "int-attr": "123",
+        "long-attr": "1234567890123456",
+        "bool-attr": "true"
     }
 }

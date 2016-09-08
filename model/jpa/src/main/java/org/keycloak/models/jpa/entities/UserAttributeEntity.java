@@ -43,6 +43,7 @@ import java.util.Set;
         @NamedQuery(name="getAttributesByNameAndValue", query="select attr from UserAttributeEntity attr where attr.name = :name and attr.value = :value"),
         @NamedQuery(name="deleteUserAttributesByRealm", query="delete from  UserAttributeEntity attr where attr.user IN (select u from UserEntity u where u.realmId=:realmId)"),
         @NamedQuery(name="deleteUserAttributesByNameAndUser", query="delete from  UserAttributeEntity attr where attr.user.id = :userId and attr.name = :name"),
+        @NamedQuery(name="deleteUserAttributesOtherThan", query="delete from  UserAttributeEntity attr where attr.user.id = :userId and attr.id <> :attrId"),
         @NamedQuery(name="deleteUserAttributesByRealmAndLink", query="delete from  UserAttributeEntity attr where attr.user IN (select u from UserEntity u where u.realmId=:realmId and u.federationLink=:link)")
 })
 @Table(name="USER_ATTRIBUTE")

@@ -51,7 +51,7 @@ public class UserFederationTest extends AbstractAdminTest {
     @Test
     public void testProviderFactories() {
         List<UserFederationProviderFactoryRepresentation> providerFactories = userFederation().getProviderFactories();
-        Assert.assertNames(providerFactories, "ldap", "kerberos", "dummy", "dummy-configurable");
+        Assert.assertNames(providerFactories, "ldap", "kerberos", "dummy", "dummy-configurable", "sssd");
 
         // Builtin provider without properties
         UserFederationProviderFactoryRepresentation ldapProvider = userFederation().getProviderFactory("ldap");

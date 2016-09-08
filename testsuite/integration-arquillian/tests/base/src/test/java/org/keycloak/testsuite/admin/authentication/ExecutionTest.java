@@ -94,7 +94,7 @@ public class ExecutionTest extends AbstractAuthenticationTest {
         // we'll need auth-cookie later
         AuthenticationExecutionInfoRepresentation authCookieExec = findExecutionByProvider("auth-cookie", executionReps);
 
-        compareExecution(newExecInfo("Review Profile", "idp-review-profile", true, 0, 3, DISABLED, null, new String[]{REQUIRED, DISABLED}), exec);
+        compareExecution(newExecInfo("Review Profile", "idp-review-profile", true, 0, 4, DISABLED, null, new String[]{REQUIRED, DISABLED}), exec);
 
         // remove execution
         authMgmtResource.removeExecution(exec.getId());
@@ -164,7 +164,7 @@ public class ExecutionTest extends AbstractAuthenticationTest {
 
         // Note: there is no checking in addExecution if requirement is one of requirementChoices
         // Thus we can have OPTIONAL which is neither ALTERNATIVE, nor DISABLED
-        compareExecution(newExecInfo("Cookie", "auth-cookie", false, 0, 2, OPTIONAL, null, new String[]{ALTERNATIVE, DISABLED}), exec);
+        compareExecution(newExecInfo("Cookie", "auth-cookie", false, 0, 3, OPTIONAL, null, new String[]{ALTERNATIVE, DISABLED}), exec);
     }
 
     @Test

@@ -125,29 +125,32 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
 
     @Override
     public void setSingleAttribute(String name, String value) {
-        boolean found = false;
+        String firstExistingAttrId = null;
         List<UserAttributeEntity> toRemove = new ArrayList<>();
         for (UserAttributeEntity attr : user.getAttributes()) {
             if (attr.getName().equals(name)) {
-                if (!found) {
+                if (firstExistingAttrId == null) {
                     attr.setValue(value);
-                    found = true;
+                    firstExistingAttrId = attr.getId();
                 } else {
                     toRemove.add(attr);
                 }
             }
         }
 
-        for (UserAttributeEntity attr : toRemove) {
-            em.remove(attr);
-            user.getAttributes().remove(attr);
-        }
+        if (firstExistingAttrId != null) {
+            // Remove attributes through HQL to avoid StaleUpdateException
+            Query query = em.createNamedQuery("deleteUserAttributesOtherThan");
+            query.setParameter("attrId", firstExistingAttrId);
+            query.setParameter("userId", user.getId());
+            int numUpdated = query.executeUpdate();
 
-        if (found) {
-            return;
-        }
+            // Remove attribute from local entity
+            user.getAttributes().removeAll(toRemove);
+        } else {
 
-        persistAttributeValue(name, value);
+            persistAttributeValue(name, value);
+        }
     }
 
     @Override
@@ -178,6 +181,15 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
         query.setParameter("name", name);
         query.setParameter("userId", user.getId());
         int numUpdated = query.executeUpdate();
+
+        // KEYCLOAK-3494 : Also remove attributes from local user entity
+        List<UserAttributeEntity> toRemove = new ArrayList<>();
+        for (UserAttributeEntity attr : user.getAttributes()) {
+            if (attr.getName().equals(name)) {
+                toRemove.add(attr);
+            }
+        }
+        user.getAttributes().removeAll(toRemove);
     }
 
     @Override

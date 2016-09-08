@@ -25,6 +25,7 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.util.List;
@@ -41,6 +42,17 @@ public interface ResourcesResource {
 
     @Path("{id}")
     ResourceResource resource(@PathParam("id") String id);
+
+    @GET
+    @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
+    List<ResourceRepresentation> find(@QueryParam("name") String name,
+                  @QueryParam("uri") String uri,
+                  @QueryParam("owner") String owner,
+                  @QueryParam("type") String type,
+                  @QueryParam("scope") String scope,
+                  @QueryParam("first") Integer firstResult,
+                  @QueryParam("max") Integer maxResult);
 
     @GET
     @NoCache

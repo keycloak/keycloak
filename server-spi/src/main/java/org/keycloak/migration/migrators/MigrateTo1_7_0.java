@@ -31,9 +31,13 @@ import org.keycloak.models.utils.DefaultAuthenticationFlows;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class MigrateTo1_7_0 {
+public class MigrateTo1_7_0 implements Migration {
 
     public static final ModelVersion VERSION = new ModelVersion("1.7.0");
+
+    public ModelVersion getVersion() {
+        return VERSION;
+    }
 
     public void migrate(KeycloakSession session) {
         List<RealmModel> realms = session.realms().getRealms();

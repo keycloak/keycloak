@@ -36,7 +36,7 @@ import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserFederationSyncResult;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.UsersSyncManager;
-import org.keycloak.testsuite.DummyUserFederationProviderFactory;
+import org.keycloak.testsuite.federation.DummyUserFederationProviderFactory;
 import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.timer.TimerProvider;
 

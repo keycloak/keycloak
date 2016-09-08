@@ -123,10 +123,15 @@ public class IdentityProviderRepresentation {
         this.updateProfileFirstLoginMode = updateProfileFirstLoginMode;
     }
 
+    /**
+     * @deprecated Replaced by configuration option in identity provider authenticator
+     */
+    @Deprecated
     public boolean isAuthenticateByDefault() {
         return authenticateByDefault;
     }
 
+    @Deprecated
     public void setAuthenticateByDefault(boolean authenticateByDefault) {
         this.authenticateByDefault = authenticateByDefault;
     }

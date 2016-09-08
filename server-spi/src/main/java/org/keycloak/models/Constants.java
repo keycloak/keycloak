@@ -50,5 +50,5 @@ public interface Constants {
     String KEY = "key";
 
     // Prefix for user attributes used in various "context"data maps
-    public static final String USER_ATTRIBUTES_PREFIX = "user.attributes.";
+    String USER_ATTRIBUTES_PREFIX = "user.attributes.";
 }

@@ -109,7 +109,7 @@ public class ResourceService {
     }
 
     private Set<String> findAll() {
-        Response response = this.resourceManager.findAll(null, null, null, null, null, -1, -1);
+        Response response = this.resourceManager.find(null, null, null, null, null, -1, -1);
         List<ResourceRepresentation> resources = (List<ResourceRepresentation>) response.getEntity();
         return resources.stream().map(ResourceRepresentation::getId).collect(Collectors.toSet());
     }

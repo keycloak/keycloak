@@ -32,7 +32,7 @@ import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserFederationSyncResult;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.testsuite.DummyUserFederationProviderFactory;
+import org.keycloak.testsuite.federation.DummyUserFederationProviderFactory;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
