@@ -1,0 +1,101 @@
+[[_sssd]]
+
+=== SSSD and FreeIPA/IdM integration
+
+{{book.project.name}} also comes with a built-in https://fedorahosted.org/sssd/wiki[SSSD] (_System Security
+Services Daemon_)
+plugin. SSSD is part of the latest Fedora or Red Hat Enterprise Linux and provides access to multiple identity and authentication providers. Plus, some benefits like failover, offline support, and more. https://fedorahosted.org/sssd/wiki/Documentation[Have a look at the docs] for
+all the configuration options and more detailed explanation.
+
+Besides all the features mentioned, SSSD also has a very smooth integration with http://www.freeipa.org/page/Main_Page[FreeIPA/IdM] server providing authentication and
+access control. On {{book.project.name}}, we benefit from this integration authenticating against http://tldp.org/HOWTO/User-Authentication-HOWTO/x115.html[PAM] services and retrieving user's data from SSSD.
+
+image:../../{{book.images}}/keycloak-sssd-freeipa-integration-overview.png[]
+
+Most of the communication between {{book.project.name}} and SSSD happens through read-only D-Bus interfaces. For this reason, the only way to provision and update users is changing it at FreeIPA/IdM admin's interface. By default, it is set up only to import username, e-mail, first name, and last name — just like the LDAP federation provider.
+
+Because it's easy to forget some configuration detail, let's go through some steps, to make sure that everything is alright.
+
+==== FreeIPA/IdM server
+
+As a matter of simplicity, in this guide a https://www.freeipa.org/page/Docker[FreeIPA Docker image] already available will be used. If you would like to setup a server by your own, please https://www.freeipa.org/page/Quick_Start_Guide[refer to the docs].
+
+Running a FreeIPA server with Docker takes a single command:
+
+ docker run --name freeipa-server-container -it \
+ -h server.freeipa.local -e PASSWORD=YOUR_PASSWORD \
+ -v /sys/fs/cgroup:/sys/fs/cgroup:ro \
+ -v /var/lib/ipa-data:/data:Z adelton/freeipa-server
+
+The parameter `-h` with `server.freeipa.local` represents the FreeIPA/IdM server hostname. Please, make sure to change `YOUR_PASSWORD` to one of your choice.
+
+After container startup, change `/etc/hosts` with:
+
+  x.x.x.x     server.freeipa.local
+
+This is more convenient, otherwise would be necessary to setup a DNS server.
+
+In order to have the SSSD federation provider up and running on {{book.project.name}} we have to enroll our Linux machine into the IPA domain.
+
+  ipa-client-install --mkhomedir -p admin -w password
+
+To make sure that everything is working like expected, on the client machine, try to run:
+
+  kinit admin
+
+You should be prompted for the password. After that, you may be able to add users to the IPA server:
+
+  $ ipa user-add john --first=John --last=Smith --email=john@smith.com --phone=042424242 --street="Testing street" \      --city="Testing city" --state="Testing State" --postalcode=0000000000
+
+==== SSSD and D-Bus
+
+As mentioned before, the federation provider gets the data from SSSD via D-BUS and authentication happens using http://tldp.org/HOWTO/User-Authentication-HOWTO/x115.html[PAM]. All you have to is to run the provisioning script available at {{book.project.name}} distribution.
+
+  $ bin/federation-sssd-setup.sh
+
+This script do the proper changes to `/etc/sssd/sssd.conf`:
+
+  [domain/your-hostname.local]
+  ...
+  ldap_user_extra_attrs = mail:mail, sn:sn, givenname:givenname, telephoneNumber:telephoneNumber
+  ...
+  [sssd]
+  services = nss, sudo, pam, ssh, ifp
+  ...
+  [ifp]
+  allowed_uids = root, yourOSUsername
+  user_attributes = +mail, +telephoneNumber, +givenname, +sn
+
+Also, a `keycloak` file will be included under `/etc/pam.d/`:
+
+  auth    required   pam_sss.so
+  account required   pam_sss.so
+
+
+Check if everything is working as expected by running `dbus-send`:
+
+  sudo dbus-send --print-reply --system --dest=org.freedesktop.sssd.infopipe /org/freedesktop/sssd/infopipe org.freedesktop.sssd.infopipe.GetUserGroups string:john
+
+You should be able to see user's group. If this command returned a timeout or an error, it means that the federation provider also won't be able to retrieve anything on {{book.project.name}}.
+
+Most of the time it happens because the machine was not enrolled to FreeIPA/IdM server or you are not allowed to access SSSD service.
+
+If you don't have permission, please make sure that the user running {{book.project.name}}, was included at `/etc/sssd/sssd.conf` section:
+
+  [ifp]
+  allowed_uids = root, your_username
+
+==== Enabling SSSD Federation Provider
+
+{{book.project.name}} uses DBus-Java under the covers to communicate at a low level with D-Bus which depends on  http://www.matthew.ath.cx/projects/java/[Unix Sockets Library]. There's a RPM for this library https://github.com/keycloak/libunix-dbus-java/releases[here]. Before installing it, make sure to check the RPM signature:
+
+  $ rpm -K libunix-dbus-java-0.8.0-1.fc24.x86_64.rpm
+  libunix-dbus-java-0.8.0-1.fc24.x86_64.rpm:
+    Header V4 RSA/SHA256 Signature, key ID 84dc9914: OK
+    Header SHA1 digest: OK (d17bb7ebaa7a5304c1856ee4357c8ba4ec9c0b89)
+    V4 RSA/SHA256 Signature, key ID 84dc9914: OK
+    MD5 digest: OK (770c2e68d052cb4a4473e1e9fd8818cf)
+
+After the installation, all you have to do is to configure a federated SSSD store, go to the Admin Console. Click on the User Federation left menu option. When you get to this page there is an Add Provider select box. You should see `sssd` within this list. Selecting `sssd` will bring you to the `sssd` configuration page and save it.
+
+Now you should be able to authenticate against  {{book.project.name}} using FreeIPA/IdM credentials.
