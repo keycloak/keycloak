@@ -205,6 +205,7 @@ public class DefaultKeycloakSessionFactory implements KeycloakSessionFactory, Pr
 
                     logger.debugv("Loaded SPI {0} (provider = {1})", spi.getName(), provider);
                 }
+
             } else {
                 for (ProviderFactory factory : pm.load(spi)) {
                     Config.Scope scope = Config.scope(spi.getName(), factory.getId());

@@ -30,18 +30,22 @@ import java.util.List;
 import java.util.Map;
 
 public interface DBus extends DBusInterface {
-    public static final int DBUS_NAME_FLAG_ALLOW_REPLACEMENT = 0x01;
-    public static final int DBUS_NAME_FLAG_REPLACE_EXISTING = 0x02;
-    public static final int DBUS_NAME_FLAG_DO_NOT_QUEUE = 0x04;
-    public static final int DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER = 1;
-    public static final int DBUS_REQUEST_NAME_REPLY_IN_QUEUE = 2;
-    public static final int DBUS_REQUEST_NAME_REPLY_EXISTS = 3;
-    public static final int DBUS_REQUEST_NAME_REPLY_ALREADY_OWNER = 4;
-    public static final int DBUS_RELEASE_NAME_REPLY_RELEASED = 1;
-    public static final int DBUS_RELEASE_NAME_REPLY_NON_EXISTANT = 2;
-    public static final int DBUS_RELEASE_NAME_REPLY_NOT_OWNER = 3;
-    public static final int DBUS_START_REPLY_SUCCESS = 1;
-    public static final int DBUS_START_REPLY_ALREADY_RUNNING = 2;
+
+    String BUSNAME = "org.freedesktop.DBus";
+    String OBJECTPATH = "/org/freedesktop/DBus";
+
+    int DBUS_NAME_FLAG_ALLOW_REPLACEMENT = 0x01;
+    int DBUS_NAME_FLAG_REPLACE_EXISTING = 0x02;
+    int DBUS_NAME_FLAG_DO_NOT_QUEUE = 0x04;
+    int DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER = 1;
+    int DBUS_REQUEST_NAME_REPLY_IN_QUEUE = 2;
+    int DBUS_REQUEST_NAME_REPLY_EXISTS = 3;
+    int DBUS_REQUEST_NAME_REPLY_ALREADY_OWNER = 4;
+    int DBUS_RELEASEME_REPLY_RELEASED = 1;
+    int DBUS_RELEASE_NAME_REPLY_NON_EXISTANT = 2;
+    int DBUS_RELEASE_NAME_REPLY_NOT_OWNER = 3;
+    int DBUS_START_REPLY_SUCCESS = 1;
+    int DBUS_START_REPLY_ALREADY_RUNNING = 2;
 
     /**
      * All DBus Applications should respond to the Ping method on this interface
