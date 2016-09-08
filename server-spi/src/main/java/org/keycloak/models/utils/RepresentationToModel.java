@@ -741,6 +741,21 @@ public class RepresentationToModel {
         if (rep.getRealm() != null) {
             renameRealm(realm, rep.getRealm());
         }
+
+        // Import attributes first, so the stuff saved directly on representation (displayName, bruteForce etc) has bigger priority
+        if (rep.getAttributes() != null) {
+            Set<String> attrsToRemove = new HashSet<>(realm.getAttributes().keySet());
+            attrsToRemove.removeAll(rep.getAttributes().keySet());
+
+            for (Map.Entry<String, String> entry : rep.getAttributes().entrySet()) {
+                realm.setAttribute(entry.getKey(), entry.getValue());
+            }
+
+            for (String attr : attrsToRemove) {
+                realm.removeAttribute(attr);
+            }
+        }
+
         if (rep.getDisplayName() != null) realm.setDisplayName(rep.getDisplayName());
         if (rep.getDisplayNameHtml() != null) realm.setDisplayNameHtml(rep.getDisplayNameHtml());
         if (rep.isEnabled() != null) realm.setEnabled(rep.isEnabled());
@@ -843,13 +858,6 @@ public class RepresentationToModel {
         if (rep.getClientAuthenticationFlow() != null) {
             realm.setClientAuthenticationFlow(realm.getFlowByAlias(rep.getClientAuthenticationFlow()));
         }
-
-        if (rep.getAttributes() != null) {
-            for (Map.Entry<String, String> entry : rep.getAttributes().entrySet()) {
-                realm.setAttribute(entry.getKey(), entry.getValue());
-            }
-        }
-
     }
 
     // Basic realm stuff

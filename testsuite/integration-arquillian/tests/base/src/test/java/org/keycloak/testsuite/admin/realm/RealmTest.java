@@ -239,15 +239,6 @@ public class RealmTest extends AbstractAdminTest {
         assertEquals(Boolean.FALSE, rep.isRegistrationEmailAsUsername());
         assertEquals(Boolean.FALSE, rep.isEditUsernameAllowed());
 
-        // attributes
-        rep.getAttributes().put("foo", "bar");
-
-        realm.update(rep);
-        assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, Matchers.nullValue(String.class), rep, ResourceType.REALM);
-
-        rep = realm.toRepresentation();
-        assertEquals("bar", rep.getAttributes().get("foo"));
-
     }
 
     @Test
@@ -275,6 +266,45 @@ public class RealmTest extends AbstractAdminTest {
         rep = realm.toRepresentation();
         assertEquals(Boolean.FALSE, rep.isEditUsernameAllowed());
         assertEquals(2, rep.getSupportedLocales().size());
+    }
+
+    @Test
+    public void updateRealmAttributes() {
+        // first change
+        RealmRepresentation rep = new RealmRepresentation();
+        rep.setAttributes(new HashMap<>());
+        rep.getAttributes().put("foo1", "bar1");
+        rep.getAttributes().put("foo2", "bar2");
+
+        rep.setBruteForceProtected(true);
+        rep.setDisplayName("dn1");
+
+        realm.update(rep);
+        assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, Matchers.nullValue(String.class), rep, ResourceType.REALM);
+
+        rep = realm.toRepresentation();
+
+        assertEquals("bar1", rep.getAttributes().get("foo1"));
+        assertEquals("bar2", rep.getAttributes().get("foo2"));
+        assertTrue(rep.isBruteForceProtected());
+        assertEquals("dn1", rep.getDisplayName());
+
+        // second change
+        rep.setBruteForceProtected(false);
+        rep.setDisplayName("dn2");
+        rep.getAttributes().put("foo1", "bar11");
+        rep.getAttributes().remove("foo2");
+
+        realm.update(rep);
+        assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, Matchers.nullValue(String.class), rep, ResourceType.REALM);
+
+        rep = realm.toRepresentation();
+
+        assertFalse(rep.isBruteForceProtected());
+        assertEquals("dn2", rep.getDisplayName());
+
+        assertEquals("bar11", rep.getAttributes().get("foo1"));
+        assertFalse(rep.getAttributes().containsKey("foo2"));
     }
 
     @Test
