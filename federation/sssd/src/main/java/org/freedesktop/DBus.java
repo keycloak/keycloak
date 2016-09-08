@@ -32,6 +32,8 @@ import java.util.Map;
 public interface DBus extends DBusInterface {
 
     String BUSNAME = "org.freedesktop.DBus";
+    String OBJECTPATH = "org/freedesktop/DBus";
+
     int DBUS_NAME_FLAG_ALLOW_REPLACEMENT = 0x01;
     int DBUS_NAME_FLAG_REPLACE_EXISTING = 0x02;
     int DBUS_NAME_FLAG_DO_NOT_QUEUE = 0x04;

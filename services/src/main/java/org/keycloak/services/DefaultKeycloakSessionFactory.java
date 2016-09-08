@@ -204,6 +204,9 @@ public class DefaultKeycloakSessionFactory implements KeycloakSessionFactory, Pr
                     factories.put(factory.getId(), factory);
 
                     logger.debugv("Loaded SPI {0} (provider = {1})", spi.getName(), provider);
+                } else {
+                    logger.debugv("SPI {0} (provider = {1}) is disabled because it's not available into your system",
+                            spi.getName(), provider);
                 }
             } else {
                 for (ProviderFactory factory : pm.load(spi)) {

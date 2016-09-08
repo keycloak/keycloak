@@ -110,7 +110,7 @@ public class Sssd {
 
     public static boolean isAvailable(){
         try {
-            DBus dbus = SingletonHolder.DBUS_CONNECTION.getRemoteObject(DBus.BUSNAME, "/org/freedesktop/DBus", DBus.class);
+            DBus dbus = SingletonHolder.DBUS_CONNECTION.getRemoteObject(DBus.BUSNAME, DBus.OBJECTPATH, DBus.class);
             return Arrays.asList(dbus.ListNames()).contains(InfoPipe.BUSNAME);
         } catch (DBusException e) {
             logger.error("Failed to check if SSSD exists", e);
