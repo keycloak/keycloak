@@ -69,5 +69,6 @@ public class HttpSessionManager implements HttpSessionListener, UserSessionManag
                 session.invalidate();
             }
         }
+        sessions.clear();
     }
 }
