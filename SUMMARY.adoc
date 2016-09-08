@@ -85,6 +85,7 @@
 .. link:topics/sessions/offline.adoc[Offline Access]
 . link:topics/user-federation.adoc[User Storage Federation]
 .. link:topics/user-federation/ldap.adoc[LDAP/AD Integration]
+.. link:topics/user-federation/sssd.adoc[SSSD and FreeIPA/IdM Integration]
 .. link:topics/user-federation/custom.adoc[Custom Providers]
 . link:topics/events.adoc[Auditing and Events]
 .. link:topics/events/login.adoc[Login Events]
