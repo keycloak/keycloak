@@ -21,12 +21,15 @@ import org.keycloak.hash.PasswordHashProvider;
 import org.keycloak.hash.PasswordHashProviderFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.provider.EnvironmentDependentProviderFactory;
+
+import java.io.File;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class PlainTextPasswordProviderFactory implements PasswordHashProviderFactory {
+public class PlainTextPasswordProviderFactory implements PasswordHashProviderFactory, EnvironmentDependentProviderFactory {
     @Override
     public PasswordHashProvider create(KeycloakSession session) {
         return new PlainTextPasswordProvider();
@@ -50,5 +53,11 @@ public class PlainTextPasswordProviderFactory implements PasswordHashProviderFac
     @Override
     public String getId() {
         return "text";
+    }
+
+    // TODO REMOVE THIS
+    @Override
+    public boolean isSupported() {
+        return !new File("/tmp/disable-text-hash").exists();
     }
 }
