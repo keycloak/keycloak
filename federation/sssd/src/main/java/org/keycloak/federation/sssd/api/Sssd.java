@@ -17,6 +17,7 @@
 
 package org.keycloak.federation.sssd.api;
 
+import cx.ath.matthew.LibraryLoader;
 import org.freedesktop.DBus;
 import org.freedesktop.dbus.DBusConnection;
 import org.freedesktop.dbus.Variant;
@@ -112,15 +113,17 @@ public class Sssd {
     public static boolean isAvailable(){
         boolean sssdAvailable = false;
         try {
-            DBusConnection connection = DBusConnection.getConnection(DBusConnection.SYSTEM);
-            DBus dbus = connection.getRemoteObject(DBus.BUSNAME, DBus.OBJECTPATH, DBus.class);
-            sssdAvailable = Arrays.asList(dbus.ListNames()).contains(InfoPipe.BUSNAME);
-            if (!sssdAvailable) {
-                logger.debugv("SSSD is not available in your system. Federation provider will be disabled.");
-            } else {
-               sssdAvailable = true;
+            if (LibraryLoader.isLoadSucceeded()) {
+                DBusConnection connection = DBusConnection.getConnection(DBusConnection.SYSTEM);
+                DBus dbus = connection.getRemoteObject(DBus.BUSNAME, DBus.OBJECTPATH, DBus.class);
+                sssdAvailable = Arrays.asList(dbus.ListNames()).contains(InfoPipe.BUSNAME);
+                if (!sssdAvailable) {
+                    logger.debugv("SSSD is not available in your system. Federation provider will be disabled.");
+                } else {
+                    sssdAvailable = true;
+                }
+                connection.disconnect();
             }
-            connection.disconnect();
         } catch (DBusException e) {
             logger.error("Failed to check the status of SSSD", e);
         }

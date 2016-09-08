@@ -46,4 +46,8 @@ public class LibraryLoader {
         if (!loadSucceeded) LOGGER.log(Level.WARNING, "libunix_dbus_java not found\n" +
                 "Please, make sure you have the package libunix-dbus-java installed.");
     }
+
+    public static boolean isLoadSucceeded() {
+        return loadSucceeded;
+    }
 }
