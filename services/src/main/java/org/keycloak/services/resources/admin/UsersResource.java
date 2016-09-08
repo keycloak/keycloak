@@ -184,6 +184,8 @@ public class UsersResource {
             return ErrorResponse.exists("User is read only!");
         } catch (ModelException me) {
             return ErrorResponse.exists("Could not update user!");
+        } catch (Exception me) { // JPA may be committed by JTA which can't 
+            return ErrorResponse.exists("Could not update user!");
         }
     }
 

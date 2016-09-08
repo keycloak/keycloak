@@ -45,10 +45,13 @@ import org.keycloak.services.scheduled.ClusterAwareScheduledTaskRunner;
 import org.keycloak.services.util.JsonConfigProvider;
 import org.keycloak.services.util.ObjectMapperResolver;
 import org.keycloak.timer.TimerProvider;
+import org.keycloak.transaction.JtaTransactionManagerLookup;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.common.util.SystemEnvProperties;
 
 import javax.servlet.ServletContext;
+import javax.transaction.SystemException;
+import javax.transaction.Transaction;
 import javax.ws.rs.core.Application;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.UriInfo;
@@ -155,11 +158,28 @@ public class KeycloakApplication extends Application {
     // Migrate model, bootstrap master realm, import realms and create admin user. This is done with acquired dbLock
     protected ExportImportManager migrateAndBootstrap() {
         ExportImportManager exportImportManager;
+        logger.debug("Calling migrateModel");
         migrateModel();
 
+        logger.debug("bootstrap");
         KeycloakSession session = sessionFactory.create();
         try {
             session.getTransactionManager().begin();
+            JtaTransactionManagerLookup lookup = (JtaTransactionManagerLookup) sessionFactory.getProviderFactory(JtaTransactionManagerLookup.class);
+            if (lookup != null) {
+                if (lookup.getTransactionManager() != null) {
+                    try {
+                        Transaction transaction = lookup.getTransactionManager().getTransaction();
+                        logger.debugv("bootstrap current transaction? {0}", transaction != null);
+                        if (transaction != null) {
+                            logger.debugv("bootstrap current transaction status? {0}", transaction.getStatus());
+                        }
+                    } catch (SystemException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            }
+
 
             ApplianceBootstrap applianceBootstrap = new ApplianceBootstrap(session);
             exportImportManager = new ExportImportManager(session);

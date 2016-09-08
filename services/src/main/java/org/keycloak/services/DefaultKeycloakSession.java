@@ -27,6 +27,7 @@ import org.keycloak.scripting.ScriptingProvider;
 import org.keycloak.storage.UserStorageManager;
 import org.keycloak.storage.federated.UserFederatedStorageProvider;
 
+import javax.transaction.TransactionManager;
 import java.util.*;
 
 /**
@@ -51,7 +52,7 @@ public class DefaultKeycloakSession implements KeycloakSession {
 
     public DefaultKeycloakSession(DefaultKeycloakSessionFactory factory) {
         this.factory = factory;
-        this.transactionManager = new DefaultKeycloakTransactionManager();
+        this.transactionManager = new DefaultKeycloakTransactionManager(this);
         federationManager = new UserFederationManager(this);
         context = new DefaultKeycloakContext(this);
     }
