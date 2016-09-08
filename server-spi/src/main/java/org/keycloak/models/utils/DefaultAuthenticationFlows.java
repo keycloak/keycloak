@@ -276,6 +276,7 @@ public class DefaultAuthenticationFlows {
         execution.setAuthenticatorFlow(false);
         realm.addAuthenticatorExecution(execution);
 
+        addIdentityProviderAuthenticator(realm, null);
 
         AuthenticationFlowModel forms = new AuthenticationFlowModel();
         forms.setTopLevel(false);
@@ -315,6 +316,45 @@ public class DefaultAuthenticationFlows {
         execution.setPriority(20);
         execution.setAuthenticatorFlow(false);
         realm.addAuthenticatorExecution(execution);
+    }
+
+    public static void addIdentityProviderAuthenticator(RealmModel realm, String defaultProvider) {
+        String browserFlowId = null;
+        for (AuthenticationFlowModel f : realm.getAuthenticationFlows()) {
+            if (f.getAlias().equals(DefaultAuthenticationFlows.BROWSER_FLOW)) {
+                browserFlowId = f.getId();
+                break;
+            }
+        }
+
+        if (browserFlowId != null) {
+            for (AuthenticationExecutionModel e : realm.getAuthenticationExecutions(browserFlowId)) {
+                if ("identity-provider-redirector".equals(e.getAuthenticator())) {
+                    return;
+                }
+            }
+
+            AuthenticationExecutionModel execution;
+            execution = new AuthenticationExecutionModel();
+            execution.setParentFlow(browserFlowId);
+            execution.setRequirement(AuthenticationExecutionModel.Requirement.ALTERNATIVE);
+            execution.setAuthenticator("identity-provider-redirector");
+            execution.setPriority(25);
+            execution.setAuthenticatorFlow(false);
+
+            if (defaultProvider != null) {
+                AuthenticatorConfigModel configModel = new AuthenticatorConfigModel();
+
+                Map<String, String> config = new HashMap<>();
+                config.put("defaultProvider", defaultProvider);
+                configModel.setConfig(config);
+                configModel = realm.addAuthenticatorConfig(configModel);
+
+                execution.setAuthenticatorConfig(configModel.getId());
+            }
+
+            realm.addAuthenticatorExecution(execution);
+        }
     }
 
     public static void clientAuthFlow(RealmModel realm) {

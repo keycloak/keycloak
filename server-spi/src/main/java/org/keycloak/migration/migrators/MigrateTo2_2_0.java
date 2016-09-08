@@ -17,17 +17,22 @@
 
 package org.keycloak.migration.migrators;
 
+import org.jboss.logging.Logger;
 import org.keycloak.migration.ModelVersion;
+import org.keycloak.models.AuthenticationExecutionModel;
+import org.keycloak.models.AuthenticatorConfigModel;
+import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.utils.DefaultAuthenticationFlows;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-public class MigrateTo1_9_2 implements Migration {
+public class MigrateTo2_2_0 implements Migration {
+    public static final ModelVersion VERSION = new ModelVersion("2.2.0");
 
-    public static final ModelVersion VERSION = new ModelVersion("1.9.2");
+    private static final Logger LOG = Logger.getLogger(MigrateTo2_2_0.class);
 
     public ModelVersion getVersion() {
         return VERSION;
@@ -35,14 +40,20 @@ public class MigrateTo1_9_2 implements Migration {
 
     public void migrate(KeycloakSession session) {
         for (RealmModel realm : session.realms().getRealms()) {
-            if (realm.getBrowserSecurityHeaders() != null) {
+            addIdentityProviderAuthenticator(realm);
+        }
+    }
 
-                Map<String, String> browserSecurityHeaders = new HashMap<>(realm.getBrowserSecurityHeaders());
-                browserSecurityHeaders.put("xContentTypeOptions", "nosniff");
-
-                realm.setBrowserSecurityHeaders(Collections.unmodifiableMap(browserSecurityHeaders));
+    private void addIdentityProviderAuthenticator(RealmModel realm) {
+        String defaultProvider = null;
+        for (IdentityProviderModel provider : realm.getIdentityProviders()) {
+            if (provider.isEnabled() && provider.isAuthenticateByDefault()) {
+                defaultProvider = provider.getAlias();
+                break;
             }
         }
+
+        DefaultAuthenticationFlows.addIdentityProviderAuthenticator(realm, defaultProvider);
     }
 
 }

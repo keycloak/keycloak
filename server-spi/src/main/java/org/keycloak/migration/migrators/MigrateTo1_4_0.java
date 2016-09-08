@@ -34,8 +34,12 @@ import java.util.List;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class MigrateTo1_4_0 {
+public class MigrateTo1_4_0 implements Migration {
     public static final ModelVersion VERSION = new ModelVersion("1.4.0");
+
+    public ModelVersion getVersion() {
+        return VERSION;
+    }
 
     public void migrate(KeycloakSession session) {
         List<RealmModel> realms = session.realms().getRealms();
