@@ -377,12 +377,15 @@ public class AccountTest extends TestRealmKeycloakTest {
     }
 
     @Test
-    public void changeProfile() {
+    public void changeProfile() throws Exception {
+        setEditUsernameAllowed(false);
+
         profilePage.open();
         loginPage.login("test-user@localhost", "password");
 
         events.expectLogin().client("account").detail(Details.REDIRECT_URI, ACCOUNT_REDIRECT).assertEvent();
 
+        Assert.assertEquals("test-user@localhost", profilePage.getUsername());
         Assert.assertEquals("Tom", profilePage.getFirstName());
         Assert.assertEquals("Brady", profilePage.getLastName());
         Assert.assertEquals("test-user@localhost", profilePage.getEmail());
@@ -391,6 +394,7 @@ public class AccountTest extends TestRealmKeycloakTest {
         profilePage.updateProfile("", "New last", "new@email.com");
 
         Assert.assertEquals("Please specify first name.", profilePage.getError());
+        Assert.assertEquals("test-user@localhost", profilePage.getUsername());
         Assert.assertEquals("", profilePage.getFirstName());
         Assert.assertEquals("New last", profilePage.getLastName());
         Assert.assertEquals("new@email.com", profilePage.getEmail());
@@ -417,6 +421,7 @@ public class AccountTest extends TestRealmKeycloakTest {
 
         profilePage.clickCancel();
 
+        Assert.assertEquals("test-user@localhost", profilePage.getUsername());
         Assert.assertEquals("Tom", profilePage.getFirstName());
         Assert.assertEquals("Brady", profilePage.getLastName());
         Assert.assertEquals("test-user@localhost", profilePage.getEmail());
@@ -426,6 +431,7 @@ public class AccountTest extends TestRealmKeycloakTest {
         profilePage.updateProfile("New first", "New last", "new@email.com");
 
         Assert.assertEquals("Your account has been updated.", profilePage.getSuccess());
+        Assert.assertEquals("test-user@localhost", profilePage.getUsername());
         Assert.assertEquals("New first", profilePage.getFirstName());
         Assert.assertEquals("New last", profilePage.getLastName());
         Assert.assertEquals("new@email.com", profilePage.getEmail());
@@ -436,18 +442,21 @@ public class AccountTest extends TestRealmKeycloakTest {
         // reset user for other tests
         profilePage.updateProfile("Tom", "Brady", "test-user@localhost");
         events.clear();
+
+        // Revert
+        setEditUsernameAllowed(true);
     }
 
-    private void setEditUsernameAllowed() {
+    private void setEditUsernameAllowed(boolean allowed) {
         RealmRepresentation testRealm = testRealm().toRepresentation();
-        testRealm.setEditUsernameAllowed(true);
+        testRealm.setEditUsernameAllowed(allowed);
         testRealm().update(testRealm);
     }
 
     @Test
     public void changeUsername() {
         // allow to edit the username in realm
-        setEditUsernameAllowed();
+        setEditUsernameAllowed(true);
 
         profilePage.open();
         loginPage.login("test-user@localhost", "password");
@@ -504,7 +513,7 @@ public class AccountTest extends TestRealmKeycloakTest {
     @Test
     public void changeUsernameLoginWithOldUsername() {
         addUser("change-username", "change-username@localhost");
-        setEditUsernameAllowed();
+        setEditUsernameAllowed(true);
 
         profilePage.open();
         loginPage.login("change-username", "password");
@@ -530,7 +539,7 @@ public class AccountTest extends TestRealmKeycloakTest {
     @Test
     public void changeEmailLoginWithOldEmail() {
         addUser("change-email", "change-username@localhost");
-        setEditUsernameAllowed();
+        setEditUsernameAllowed(true);
 
         profilePage.open();
         loginPage.login("change-username@localhost", "password");
