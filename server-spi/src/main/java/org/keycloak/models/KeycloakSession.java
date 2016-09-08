@@ -17,7 +17,6 @@
 
 package org.keycloak.models;
 
-import org.keycloak.models.cache.UserCache;
 import org.keycloak.provider.Provider;
 import org.keycloak.scripting.ScriptingProvider;
 import org.keycloak.storage.federated.UserFederatedStorageProvider;
@@ -75,7 +74,6 @@ public interface KeycloakSession {
     Object removeAttribute(String attribute);
     void setAttribute(String name, Object value);
 
-
     void enlistForClose(Provider provider);
 
     KeycloakSessionFactory getKeycloakSessionFactory();
@@ -103,14 +101,7 @@ public interface KeycloakSession {
     void close();
 
     /**
-     * The user cache
-     *
-     * @return may be null if cache is disabled
-     */
-    UserCache getUserCache();
-
-    /**
-     * A possibly cached view of all users in system.
+     * A cached view of all users in system.
      *
      * @return
      */
@@ -124,10 +115,8 @@ public interface KeycloakSession {
      */
     UserProvider userStorageManager();
 
-    UserCredentialManager userCredentialManager();
-
     /**
-     *  A possibly cached view of all users in system that does NOT include users available from the deprecated UserFederationProvider SPI.
+     *  A cached view of all users in system that does NOT include users available from the deprecated UserFederationProvider SPI.
      */
     UserProvider userStorage();
 
@@ -140,7 +129,6 @@ public interface KeycloakSession {
 
     /**
      * Hybrid storage for UserStorageProviders that can't store a specific piece of keycloak data in their external storage.
-     * No cache in front.
      *
      * @return
      */
