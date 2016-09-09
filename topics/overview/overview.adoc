@@ -10,6 +10,7 @@ mechanisms such as:
 * **Rule-based Access Control**
     ** Using Javascript
     ** Using JBoss Drools
+* **Time-based Access Control**
 * **Support for custom ACMs through a Policy Provider SPI**
 
 {{book.project.name}} is based on a set of administrative UIs and a RESTful API, and provides the necessary means to create permissions
