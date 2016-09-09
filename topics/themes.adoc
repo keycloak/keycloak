@@ -359,7 +359,7 @@ You also need to register the module with {{book.project.name}}. This is done by
 See the link:{{book.installguide.link}}[{{book.installguide.name}}] for more details on 
 where the `standalone.xml`, `standalone-ha.xml`, or `domain.xml` file lives.
 
-Then and add the module to `theme/module/modules`. For example:
+Then find the `theme` tag under `keycloak-server` subsystem and add the module to `theme/modules/module`. For example:
 
 [source,xml]
 ----
