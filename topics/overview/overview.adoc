@@ -28,7 +28,7 @@ checked against the roles mapped to these same resources. While roles are very u
 * Depending on your application size, role management may become difficult and error-prone
 * It is not the most flexible access control mechanism. Roles do not represent who you are and lack context information. If you have a role, you can do something.
 
-Considering that today we need to consider a heterogeneous environments, where users are distributed across different regions, with different local policies,
+Considering that today we need to consider heterogeneous environments where users are distributed across different regions, with different local policies,
 using different devices, and with a high demand for information sharing, {{book.project.name}} Authorization Services can help you improve the authorization capabilities of your applications and services by providing:
 
 * Resource protection using fine-grained authorization policies and different access control mechanisms
