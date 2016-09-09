@@ -32,6 +32,8 @@ import java.util.Map;
 public interface InfoPipe extends DBusInterface {
 
     String OBJECTPATH = "/org/freedesktop/sssd/infopipe";
+    String BUSNAME = "org.freedesktop.sssd.infopipe";
+
 
     @DBusMemberName("GetUserAttr")
     Map<String, Variant> getUserAttributes(String user, List<String> attr);

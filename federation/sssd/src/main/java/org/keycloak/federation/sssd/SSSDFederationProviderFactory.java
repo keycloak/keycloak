@@ -19,6 +19,7 @@ package org.keycloak.federation.sssd;
 
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
+import org.keycloak.federation.sssd.api.Sssd;
 import org.keycloak.federation.sssd.impl.PAMAuthenticator;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -26,6 +27,7 @@ import org.keycloak.models.UserFederationProvider;
 import org.keycloak.models.UserFederationProviderFactory;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserFederationSyncResult;
+import org.keycloak.provider.EnvironmentDependentProviderFactory;
 
 import java.util.Date;
 import java.util.HashSet;
@@ -35,7 +37,7 @@ import java.util.Set;
  * @author <a href="mailto:bruno@abstractj.org">Bruno Oliveira</a>
  * @version $Revision: 1 $
  */
-public class SSSDFederationProviderFactory implements UserFederationProviderFactory {
+public class SSSDFederationProviderFactory implements UserFederationProviderFactory, EnvironmentDependentProviderFactory {
 
     private static final String PROVIDER_NAME = "sssd";
     private static final Logger logger = Logger.getLogger(SSSDFederationProvider.class);
@@ -99,4 +101,8 @@ public class SSSDFederationProviderFactory implements UserFederationProviderFact
         return new PAMAuthenticator(username, factors);
     }
 
+    @Override
+    public boolean isSupported() {
+        return Sssd.isAvailable();
+    }
 }

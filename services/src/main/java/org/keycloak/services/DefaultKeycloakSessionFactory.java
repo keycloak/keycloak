@@ -20,6 +20,7 @@ import org.keycloak.Config;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderEvent;
 import org.keycloak.provider.ProviderEventListener;
@@ -190,8 +191,7 @@ public class DefaultKeycloakSessionFactory implements KeycloakSessionFactory, Pr
                 }
 
                 Config.Scope scope = Config.scope(spi.getName(), provider);
-                if (scope.getBoolean("enabled", true)) {
-
+                if (isEnabled(factory, scope)) {
                     factory.init(scope);
 
                     if (spi.isInternal() && !isInternal(factory)) {
@@ -202,10 +202,11 @@ public class DefaultKeycloakSessionFactory implements KeycloakSessionFactory, Pr
 
                     logger.debugv("Loaded SPI {0} (provider = {1})", spi.getName(), provider);
                 }
+
             } else {
                 for (ProviderFactory factory : pm.load(spi)) {
                     Config.Scope scope = Config.scope(spi.getName(), factory.getId());
-                    if (scope.getBoolean("enabled", true)) {
+                    if (isEnabled(factory, scope)) {
                         factory.init(scope);
 
                         if (spi.isInternal() && !isInternal(factory)) {
@@ -220,7 +221,16 @@ public class DefaultKeycloakSessionFactory implements KeycloakSessionFactory, Pr
             }
         }
         return factoryMap;
+    }
 
+    private boolean isEnabled(ProviderFactory factory, Config.Scope scope) {
+        if (!scope.getBoolean("enabled", true)) {
+            return false;
+        }
+        if (factory instanceof EnvironmentDependentProviderFactory) {
+            return ((EnvironmentDependentProviderFactory) factory).isSupported();
+        }
+        return true;
     }
 
     protected void loadSPIs(ProviderManager pm, List<Spi> spiList) {
