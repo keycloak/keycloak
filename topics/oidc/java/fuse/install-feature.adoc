@@ -13,6 +13,21 @@ You need to be online and have access to the maven repository.
 {% if book.community %}
 For community it's sufficient to be online as all the artifacts and 3rd party dependencies should be available in maven central repository.
 {% endif %}
+{% if book.product %}
+For {{book.project.name}} you first need to configure proper maven repository, so you can install the artifacts. You can find on
+https://access.redhat.com/maven-repository[Maven Repository] page what's the proper maven repository containing the bits.
+
+Assuming it's https://maven.repository.redhat.com/ga/ you will need to add this to the file `$FUSE_HOME/etc/org.ops4j.pax.url.mvn.cfg`
+and add the repository to the list of supported repositories. For example it may look like this:
+
+[source]
+----
+org.ops4j.pax.url.mvn.repositories= \
+    https://maven.repository.redhat.com/ga@id=redhat.product.repo
+    http://repo1.maven.org/maven2@id=maven.central.repo, \
+    ...
+----
+{% endif %}
 
 You need to start JBoss Fuse and then in the Karaf terminal you type this:
 
