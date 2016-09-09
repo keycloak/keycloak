@@ -19,7 +19,7 @@
             <a href="#/realms/{{realm.realm}}/clients/{{client.id}}/scope-mappings">{{:: 'scope' | translate}}</a>
             <kc-tooltip>{{:: 'scope.tooltip' | translate}}</kc-tooltip>
         </li>
-        <li ng-class="{active: path[4] == 'authz'}" data-ng-show="client.authorizationServicesEnabled"><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server">{{:: 'authz-authorization' | translate}}</a></li>
+        <li ng-class="{active: path[4] == 'authz'}" data-ng-show="showAuthorizationTab"><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server">{{:: 'authz-authorization' | translate}}</a></li>
         <li ng-class="{active: path[4] == 'revocation'}"><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/revocation">{{:: 'revocation' | translate}}</a></li>
     <!--    <li ng-class="{active: path[4] == 'identity-provider'}" data-ng-show="realm.identityFederationEnabled"><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/identity-provider">Identity Provider</a></li> -->
         <li ng-class="{active: path[4] == 'sessions'}" data-ng-show="!client.bearerOnly">
