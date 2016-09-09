@@ -171,6 +171,13 @@ public class PolicyEvaluationService {
                     collect.addAll(storeFactory.getResourceStore().findByScope(scope.getId()).stream().map(resource12 -> new ResourcePermission(resource12, asList(scope), resourceServer)).collect(Collectors.toList()));
                 }
 
+                collect.addAll(storeFactory.getResourceStore().findByResourceServer(resourceServer.getId()).stream().map(new Function<Resource, ResourcePermission>() {
+                    @Override
+                    public ResourcePermission apply(Resource resource) {
+                        return new ResourcePermission(resource, resource.getScopes(), resourceServer);
+                    }
+                }).collect(Collectors.toList()));
+
                 return collect.stream();
             }
         }).collect(Collectors.toList());

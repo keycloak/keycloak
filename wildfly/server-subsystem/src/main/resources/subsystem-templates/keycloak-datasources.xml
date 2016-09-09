@@ -29,7 +29,7 @@
                     <password>sa</password>
                 </security>
             </datasource>
-            <datasource jndi-name="java:jboss/datasources/KeycloakDS" jta="false" pool-name="KeycloakDS" enabled="true" use-java-context="true">
+            <datasource jndi-name="java:jboss/datasources/KeycloakDS" pool-name="KeycloakDS" enabled="true" use-java-context="true">
                 <?KEYCLOAK_DS_CONNECTION_URL?>
                 <driver>h2</driver>
                 <security>

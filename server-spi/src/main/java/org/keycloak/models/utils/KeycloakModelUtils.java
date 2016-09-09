@@ -44,8 +44,14 @@ import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.CertificateRepresentation;
 import org.keycloak.common.util.CertificateUtils;
 import org.keycloak.common.util.PemUtils;
+import org.keycloak.transaction.JtaTransactionManagerLookup;
 
 import javax.crypto.spec.SecretKeySpec;
+import javax.naming.InitialContext;
+import javax.sql.DataSource;
+import javax.transaction.InvalidTransactionException;
+import javax.transaction.SystemException;
+import javax.transaction.Transaction;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.security.Key;
@@ -56,6 +62,7 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
+import java.sql.DriverManager;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -63,6 +70,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Function;
 
 /**
  * Set of helper methods, which are useful in various model implementations.
@@ -302,6 +310,7 @@ public final class KeycloakModelUtils {
             session.close();
         }
     }
+
 
     public static String getMasterRealmAdminApplicationClientId(String realmName) {
         return realmName + "-realm";
@@ -650,5 +659,34 @@ public final class KeycloakModelUtils {
                 realm.addDefaultRole(roleName);
             }
         }
+    }
+
+    public static void suspendJtaTransaction(KeycloakSessionFactory factory, Runnable runnable) {
+        JtaTransactionManagerLookup lookup = (JtaTransactionManagerLookup)factory.getProviderFactory(JtaTransactionManagerLookup.class);
+        Transaction suspended = null;
+        try {
+            if (lookup != null) {
+                if (lookup.getTransactionManager() != null) {
+                    try {
+                        suspended = lookup.getTransactionManager().suspend();
+                    } catch (SystemException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            }
+            runnable.run();
+        } finally {
+            if (suspended != null) {
+                try {
+                    lookup.getTransactionManager().resume(suspended);
+                } catch (InvalidTransactionException e) {
+                    throw new RuntimeException(e);
+                } catch (SystemException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+
+        }
+
     }
 }

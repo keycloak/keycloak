@@ -73,7 +73,11 @@ public class AccountBean {
     }
 
     public String getUsername() {
-        return profileFormData != null ? profileFormData.getFirst("username") : user.getUsername();
+        if (profileFormData != null && profileFormData.containsKey("username")) {
+            return profileFormData.getFirst("username");
+        } else {
+            return user.getUsername();
+        }
     }
 
     public String getEmail() {

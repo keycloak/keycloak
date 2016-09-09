@@ -16,7 +16,9 @@
  */
 package org.keycloak.transaction;
 
+import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakTransaction;
+import org.keycloak.storage.UserStorageManager;
 
 import javax.transaction.InvalidTransactionException;
 import javax.transaction.NotSupportedException;
@@ -31,16 +33,22 @@ import javax.transaction.UserTransaction;
  * @version $Revision: 1 $
  */
 public class JtaTransactionWrapper implements KeycloakTransaction {
+    private static final Logger logger = Logger.getLogger(JtaTransactionWrapper.class);
     protected TransactionManager tm;
     protected Transaction ut;
     protected Transaction suspended;
+    protected Exception ended;
 
     public JtaTransactionWrapper(TransactionManager tm) {
         this.tm = tm;
         try {
+
             suspended = tm.suspend();
+            logger.debug("new JtaTransactionWrapper");
+            logger.debugv("was existing? {0}", suspended != null);
             tm.begin();
             ut = tm.getTransaction();
+            //ended = new Exception();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -53,16 +61,20 @@ public class JtaTransactionWrapper implements KeycloakTransaction {
     @Override
     public void commit() {
         try {
-            ut.commit();
+            logger.debug("JtaTransactionWrapper  commit");
+            tm.commit();
         } catch (Exception e) {
             throw new RuntimeException(e);
+        } finally {
+            end();
         }
     }
 
     @Override
     public void rollback() {
         try {
-            ut.rollback();
+            logger.debug("JtaTransactionWrapper rollback");
+            tm.rollback();
         } catch (Exception e) {
             throw new RuntimeException(e);
         } finally {
@@ -74,7 +86,7 @@ public class JtaTransactionWrapper implements KeycloakTransaction {
     @Override
     public void setRollbackOnly() {
         try {
-            ut.setRollbackOnly();
+            tm.setRollbackOnly();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -83,7 +95,7 @@ public class JtaTransactionWrapper implements KeycloakTransaction {
     @Override
     public boolean getRollbackOnly() {
         try {
-            return ut.getStatus() == Status.STATUS_MARKED_ROLLBACK;
+            return tm.getStatus() == Status.STATUS_MARKED_ROLLBACK;
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -92,15 +104,28 @@ public class JtaTransactionWrapper implements KeycloakTransaction {
     @Override
     public boolean isActive() {
         try {
-            return ut.getStatus() == Status.STATUS_ACTIVE;
+            return tm.getStatus() == Status.STATUS_ACTIVE;
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
+    /*
+
+    @Override
+    protected void finalize() throws Throwable {
+        if (ended != null) {
+            logger.error("TX didn't close at position", ended);
+        }
+
+    }
+    */
 
     protected void end() {
+        ended = null;
+        logger.debug("JtaTransactionWrapper end");
         if (suspended != null) {
             try {
+                logger.debug("JtaTransactionWrapper resuming suspended");
                 tm.resume(suspended);
             } catch (Exception e) {
                 throw new RuntimeException(e);

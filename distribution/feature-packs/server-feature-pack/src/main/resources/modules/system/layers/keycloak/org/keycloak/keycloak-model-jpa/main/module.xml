@@ -25,6 +25,7 @@
     </resources>
 
     <dependencies>
+        <module name="javax.transaction.api"/>
         <module name="org.keycloak.keycloak-common"/>
         <module name="org.keycloak.keycloak-core"/>
         <module name="org.keycloak.keycloak-server-spi"/>

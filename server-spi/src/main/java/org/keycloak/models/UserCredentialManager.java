@@ -14,15 +14,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.keycloak.models;
 
-package org.keycloak.models.cache;
+import org.keycloak.credential.CredentialInput;
+import org.keycloak.credential.UserCredentialStore;
 
-import org.keycloak.provider.ProviderFactory;
+import java.util.List;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public interface CacheUserProviderFactory extends ProviderFactory<CacheUserProvider> {
+public interface UserCredentialManager extends UserCredentialStore {
+    boolean isValid(RealmModel realm, UserModel user, List<CredentialInput> inputs);
+
+    void updateCredential(RealmModel realm, UserModel user, CredentialInput input);
+    void disableCredential(RealmModel realm, UserModel user, String credentialType);
+
+    boolean isConfiguredFor(RealmModel realm, UserModel user, String type);
 
 }
