@@ -123,6 +123,8 @@ public class Sssd {
                     sssdAvailable = true;
                 }
                 connection.disconnect();
+            } else {
+                logger.debugv("libunix_dbus_java not found. Federation provider will be disabled.");
             }
         } catch (DBusException e) {
             logger.error("Failed to check the status of SSSD", e);
