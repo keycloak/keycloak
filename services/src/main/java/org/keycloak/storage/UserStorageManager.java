@@ -137,7 +137,7 @@ public class UserStorageManager implements UserProvider, OnUserCache {
 
     @Override
     public boolean removeUser(RealmModel realm, UserModel user) {
-        getFederatedStorage().preRemove(realm, user);
+        if (getFederatedStorage() != null) getFederatedStorage().preRemove(realm, user);
         StorageId storageId = new StorageId(user.getId());
         if (storageId.getProviderId() == null) {
             return localStorage().removeUser(realm, user);
@@ -272,6 +272,7 @@ public class UserStorageManager implements UserProvider, OnUserCache {
         if (user != null) {
             return user;
         }
+        if (getFederatedStorage() == null) return null;
         String id = getFederatedStorage().getUserByFederatedIdentity(socialLink, realm);
         if (id != null) return getUserById(id, realm);
         return null;
@@ -315,8 +316,6 @@ public class UserStorageManager implements UserProvider, OnUserCache {
     protected List<UserModel> query(PaginatedQuery pagedQuery, RealmModel realm, int firstResult, int maxResults) {
         if (maxResults == 0) return Collections.EMPTY_LIST;
 
-
-
         List<UserQueryProvider> storageProviders = getStorageProviders(session, realm, UserQueryProvider.class);
         // we can skip rest of method if there are no storage providers
         if (storageProviders.isEmpty()) {
@@ -326,7 +325,7 @@ public class UserStorageManager implements UserProvider, OnUserCache {
         List<UserModel> results = new LinkedList<UserModel>();
         providers.add(localStorage());
         providers.addAll(storageProviders);
-        providers.add(getFederatedStorage());
+        if (getFederatedStorage() != null) providers.add(getFederatedStorage());
 
         int leftToRead = maxResults;
         int leftToFirstResult = firstResult;
@@ -432,7 +431,7 @@ public class UserStorageManager implements UserProvider, OnUserCache {
         if (StorageId.isLocalStorage(user)) {
             set.addAll(localStorage().getFederatedIdentities(user, realm));
         }
-        set.addAll(getFederatedStorage().getFederatedIdentities(user, realm));
+        if (getFederatedStorage() != null) set.addAll(getFederatedStorage().getFederatedIdentities(user, realm));
         return set;
     }
 
@@ -443,7 +442,8 @@ public class UserStorageManager implements UserProvider, OnUserCache {
             FederatedIdentityModel model = localStorage().getFederatedIdentity(user, socialProvider, realm);
             if (model != null) return model;
         }
-        return getFederatedStorage().getFederatedIdentity(user, socialProvider, realm);
+        if (getFederatedStorage() != null) return getFederatedStorage().getFederatedIdentity(user, socialProvider, realm);
+        else return null;
     }
 
     @Override
@@ -483,47 +483,53 @@ public class UserStorageManager implements UserProvider, OnUserCache {
     @Override
     public void preRemove(RealmModel realm) {
         localStorage().preRemove(realm);
-        getFederatedStorage().preRemove(realm);
-        for (UserStorageProvider provider : getStorageProviders(session, realm, UserStorageProvider.class)) {
-            provider.preRemove(realm);
+        if (getFederatedStorage() != null) {
+            getFederatedStorage().preRemove(realm);
+            for (UserStorageProvider provider : getStorageProviders(session, realm, UserStorageProvider.class)) {
+                provider.preRemove(realm);
+            }
         }
     }
 
     @Override
     public void preRemove(RealmModel realm, UserFederationProviderModel model) {
-        getFederatedStorage().preRemove(realm, model);
+        if (getFederatedStorage() != null) getFederatedStorage().preRemove(realm, model);
         localStorage().preRemove(realm, model);
     }
 
     @Override
     public void preRemove(RealmModel realm, GroupModel group) {
         localStorage().preRemove(realm, group);
-        getFederatedStorage().preRemove(realm, group);
-        for (UserStorageProvider provider : getStorageProviders(session, realm, UserStorageProvider.class)) {
-            provider.preRemove(realm, group);
+        if (getFederatedStorage() != null) {
+            getFederatedStorage().preRemove(realm, group);
+            for (UserStorageProvider provider : getStorageProviders(session, realm, UserStorageProvider.class)) {
+                provider.preRemove(realm, group);
+            }
         }
     }
 
     @Override
     public void preRemove(RealmModel realm, RoleModel role) {
         localStorage().preRemove(realm, role);
-        getFederatedStorage().preRemove(realm, role);
-        for (UserStorageProvider provider : getStorageProviders(session, realm, UserStorageProvider.class)) {
-            provider.preRemove(realm, role);
+        if (getFederatedStorage() != null) {
+            getFederatedStorage().preRemove(realm, role);
+            for (UserStorageProvider provider : getStorageProviders(session, realm, UserStorageProvider.class)) {
+                provider.preRemove(realm, role);
+            }
         }
     }
 
     @Override
     public void preRemove(RealmModel realm, ClientModel client) {
         localStorage().preRemove(realm, client);
-        getFederatedStorage().preRemove(realm, client);
+        if (getFederatedStorage() != null) getFederatedStorage().preRemove(realm, client);
 
     }
 
     @Override
     public void preRemove(ProtocolMapperModel protocolMapper) {
         localStorage().preRemove(protocolMapper);
-        getFederatedStorage().preRemove(protocolMapper);
+        if (getFederatedStorage() != null) getFederatedStorage().preRemove(protocolMapper);
     }
 
     @Override
