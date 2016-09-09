@@ -4,7 +4,7 @@ A Scope-based permission defines a set of one or more scopes to protect using a 
 allows you to create permissions not only for a resource, but also for the scopes associated with it, providing more granularity when defining the permissions that govern your resources and the
 actions that can be performed on them.
 
-To create a new permission select the option *Scope-based* in the dropdown located in the right upper corner of the permission listing.
+To create a new Scope-based permission, select the option *Scope-based* in the dropdown located in the right upper corner of the permission listing.
 
 .Add Scope-Based Permission
 image:../../images/permission/create-scope.png[alt="Add Scope-Based Permission"]
@@ -14,24 +14,24 @@ image:../../images/permission/create-scope.png[alt="Add Scope-Based Permission"]
 * *Name*
 +
 A human-readable and unique string describing the permission. We strongly suggest you to use names that are closely related with your business and security requirements, so you
-can identify them more easily and also know what they actually mean
+can identify them more easily and also know what they actually mean.
 +
 * *Description*
 +
-A string with more details about this permission
+A string with more details about this permission.
 +
 * *Resource*
 +
-Restrict the scopes to those associated with the selected resource. If not selected all scopes would be available
+Restrict the scopes to those associated with the selected resource. If not selected all scopes would be available.
 +
 * *Scopes*
 +
-Defines a set of one or more scopes to protect
+Defines a set of one or more scopes to protect.
 
 * *Apply Policy*
 +
-Defines a set of one or more policies to associate with a permission
+Defines a set of one or more policies to associate with a permission.
 
 * *Decision Strategy*
 +
-The link:decision-strategy.html[Decision Strategy] for this permission
+The link:decision-strategy.html[Decision Strategy] for this permission.

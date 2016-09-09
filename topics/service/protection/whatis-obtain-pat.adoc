@@ -1,12 +1,12 @@
-== What is a PAT and How to Obtain it ?
+== What is a PAT and How to Obtain It?
 
-A PAT is a special OAuth2 Access Token with the scope *uma_protection*. When you create a resource server, {{book.project.name}} automatically
-creates a role _uma_protection_ for the corresponding client application and associated it with the client's service account.
+A *Protection API Token* (PAT) is a special OAuth2 Access Token with a scope defined as  *uma_protection*. When you create a resource server, {{book.project.name}} automatically
+creates a role _uma_protection_ for the corresponding client application and associates it with the client's service account.
 
-.Service Account granted with uma_protection role
+.Service Account granted with *uma_protection* role
 image:../../../images/service/rs-uma-protection-role.png[alt="Service Account granted with uma_protection role"]
 
-Resource servers can obtain a PAT from {{book.project.name}} just like any other OAuth2 Access Token.
+Resource servers can obtain a PAT from {{book.project.name}} just like any other OAuth2 Access Token. For example, using curl:
 
 ```bash
 curl -X POST \
@@ -16,11 +16,11 @@ curl -X POST \
     "http://localhost:8080/auth/realms/${realm_name}/protocol/openid-connect/token"
 ```
 
-In the example above, we are using the *client_credentials* grant type to obtain a PAT from the server. As a result, the server would return a response as follows:
+The example above is using the *client_credentials* grant type to obtain a PAT from the server. As a result, the server would return a response similar to the following:
 
 [NOTE]
-{{book.project.name}} can authenticate your client application in different ways. We are using *client_credentials* grant type for the sake of
- simplicity, which basically requires a _client_id_ and a _client_secret_. You can choose any other supported authentication method.
+{{book.project.name}} can authenticate your client application in different ways. We are using *client_credentials* grant type for the sake of simplicity,
+which basically requires a _client_id_ and a _client_secret_. You can choose any other supported authentication method.
 
 ```bash
 {

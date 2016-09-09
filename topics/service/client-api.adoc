@@ -1,6 +1,6 @@
 == Authorization Client API
 
-If you are using Java you can access all {{book.project.name}} {{book.project.module}} using a client API.
+If you are using Java, you can access all {{book.project.name}} {{book.project.module}} using a Client API.
 
 === Maven Dependency
 
@@ -46,18 +46,21 @@ Specify the credentials of the application. This is an object notation where the
 
 === Obtaining User Entitlements
 
-Here is an example about how to obtain user entitlements:
+Here is an example illustrating how to obtain user entitlements:
 
 ```java
-// create a new instance based on the configuration define at keycloak-authz.json
+// create a new instance based on the configuration defined in keycloak-authz.json
 AuthzClient authzClient = AuthzClient.create();
 
-// obtian a Entitlement API Token in order to get access to the Entitlement API.
-// this token is just an access token issued to a client on behalf of an user with a scope kc_entitlement
+// obtain an Entitlement API Token in order to get access to the Entitlement API.
+// this token is just an access token issued to a client on behalf of an user
+// with a scope = kc_entitlement
 String eat = getEntitlementAPIToken(authzClient);
 
-// send the entitlement request to the server in order to obtain a RPT with all permissions granted to the user
-EntitlementResponse response = authzClient.entitlement(eat).getAll("hello-world-authz-service");
+// send the entitlement request to the server in order to
+// obtain an RPT with all permissions granted to the user
+EntitlementResponse response = authzClient.entitlement(eat)
+    .getAll("hello-world-authz-service");
 String rpt = response.getRpt();
 
 System.out.println("You got a RPT: " + rpt);
@@ -65,14 +68,15 @@ System.out.println("You got a RPT: " + rpt);
 // now you can use the RPT to access protected resources on the resource server
 ```
 
-Here is an example about how to obtain user entitlements given a set of one or more resource:
+Here is an example illustrating how to obtain user entitlements for a set of one or more resources:
 
 ```java
-// create a new instance based on the configuration define at keycloak-authz.json
+// create a new instance based on the configuration defined in keycloak-authz.json
 AuthzClient authzClient = AuthzClient.create();
 
-// obtian a Entitlement API Token in order to get access to the Entitlement API.
-// this token is just an access token issued to a client on behalf of an user with a scope kc_entitlement
+// obtain an Entitlement API Token in order to get access to the Entitlement API.
+// this token is just an access token issued to a client on behalf of an user
+// with a scope = kc_entitlement
 String eat = getEntitlementAPIToken(authzClient);
 
 // create an entitlement request
@@ -83,8 +87,10 @@ permission.setResourceSetName("Hello World Resource");
 
 request.addPermission(permission);
 
-// send the entitlement request to the server in order to obtain a RPT with all permissions granted to the user
-EntitlementResponse response = authzClient.entitlement(eat).get("hello-world-authz-service", request);
+// send the entitlement request to the server in order to obtain a RPT
+// with all permissions granted to the user
+EntitlementResponse response = authzClient.entitlement(eat)
+    .get("hello-world-authz-service", request);
 String rpt = response.getRpt();
 
 System.out.println("You got a RPT: " + rpt);
@@ -93,7 +99,7 @@ System.out.println("You got a RPT: " + rpt);
 === Creating a Resource Using the Protection API
 
 ```java
-// create a new instance based on the configuration define at keycloak-authz.json
+// create a new instance based on the configuration defined in keycloak-authz.json
 AuthzClient authzClient = AuthzClient.create();
 
 // create a new resource representation with the information we want
@@ -105,7 +111,8 @@ newResource.setType("urn:hello-world-authz:resources:example");
 newResource.addScope(new ScopeRepresentation("urn:hello-world-authz:scopes:view"));
 
 ProtectedResource resourceClient = authzClient.protection().resource();
-Set<String> existingResource = resourceClient.findByFilter("name=" + newResource.getName());
+Set<String> existingResource = resourceClient
+    .findByFilter("name=" + newResource.getName());
 
 if (!existingResource.isEmpty()) {
     resourceClient.delete(existingResource.iterator().next());

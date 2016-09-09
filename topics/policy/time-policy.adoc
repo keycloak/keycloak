@@ -2,7 +2,7 @@
 
 This type of policy allows you to define time conditions for your permissions.
 
-To create a new policy select the option *Time* in the dropdown located in the right upper corner of the permission listing.
+To create a new Time-based policy, select the option *Time* in the dropdown located in the right upper corner of the permission listing.
 
 .Add Time Policy
 image:../../images/policy/create-time.png[alt="Add Time Policy"]
@@ -11,44 +11,44 @@ image:../../images/policy/create-time.png[alt="Add Time Policy"]
 
 * *Name*
 +
-A human-readable and unique string describing the policy. We strongly suggest you to use names that are closely related with your business and security requirements, so you
-can identify them more easily and also know what they actually mean
+A human-readable and unique string describing the policy. We strongly suggest that you use names that are closely related with your business and security requirements, so you
+can identify them more easily and also know what they actually mean.
 +
 * *Description*
 +
-A string with more details about this policy
+A string with more details about this policy.
 +
 * *Not Before*
 +
-Defines the time before which the policy MUST NOT be granted. Only granted if current date/time is after or equal to this value
+Defines the time before which the policy MUST NOT be granted. Permission is granted only if the current date/time is after or equal to this value.
 +
 +
 * *Not On or After*
 +
-Defines the time after which the policy MUST NOT be granted. Only granted if current date/time is before or equal to this value
+Defines the time after which the policy MUST NOT be granted. Permission is granted only if the current date/time is before or equal to this value.
 +
 * *Day of Month*
 +
-Defines the day of month which policy MUST be granted. You can also provide a range by filling the second field with the day of month before/equal which the policy MUST be granted. In this case, the policy would be granted if current day of month is between or equal to the two values you provided.
+Defines the day of month which the policy MUST be granted. You can also provide a range by filling the second field. In this case, permission is granted only if current day of month is between or equal to the two values you provided.
 +
 * *Month*
 +
-Defines the month which policy MUST be granted. You can also provide a range by filling the second field with the month before/equal which the policy MUST be granted. In this case, the policy would be granted if current month is between or equal to the two values you provided.
+Defines the month which the policy MUST be granted. You can also provide a range by filling the second field. In this case, permission is granted only if current month is between or equal to the two values you provided.
 +
 * *Year*
 +
-Defines the year which policy MUST be granted. You can also provide a range by filling the second field with the year before/equal which the policy MUST be granted. In this case, the policy would be granted if current year is between or equal to the two values you provided.
+Defines the year which the policy MUST be granted. You can also provide a range by filling the second field. In this case, permission is granted only if current year is between or equal to the two values you provided.
 +
 * *Hour*
 +
-Defines the hour which policy MUST be granted. You can also provide a range by filling the second field with the hour before/equal which the policy MUST be granted. In this case, the policy would be granted if current hour is between or equal to the two values you provided.
+Defines the hour which the policy MUST be granted. You can also provide a range by filling the second field. In this case, permission is granted only if current hour is between or equal to the two values you provided.
 +
 * *Minute*
 +
-Defines the minute which policy MUST be granted. You can also provide a range by filling the second field with the minute before/equal which the policy MUST be granted. In this case, the policy would be granted if current minute is between or equal to the two values you provided.
+Defines the minute which the policy MUST be granted. You can also provide a range by filling the second field. In this case, permission is granted only if current minute is between or equal to the two values you provided.
 +
 * *Logic*
 +
-The link:logic.html[logic] of this policy
+The link:logic.html[Logic] of this policy to apply after the other conditions have been evaluated.
 
-In order to the policy evaluate to a _GRANT_, all conditions that you defined must be true. Keycloak will perform an _AND_ with the outcome from each one of the conditions you have defined.
+Permissions are only granted if all conditions are satisfied. {{book.project.name}} will perform an _AND_ based on the outcome of each condition.

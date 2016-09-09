@@ -1,44 +1,44 @@
 == Aggregated Policies
 
-As mentioned before, Keycloak allows you to build a policy of policies, a concept that we call *Aggregated Policies*. Policy aggregation allows you to reuse existing policies to build more complex ones and keep your permissions even more decoupled from the
+As mentioned earlier, Keycloak allows you to build a policy of policies, a concept that we call *Aggregated Policies*. Policy aggregation allows you to reuse existing policies to build more complex ones and keep your permissions even more decoupled from the
 policies that are actually evaluated during the processing of authorization requests.
 
-To create a new policy select the option *Aggregated* in the dropdown located in the right upper corner of the permission listing.
+To create a new Aggregated policy, select the option *Aggregated* in the dropdown located in the right upper corner of the permission listing.
 
 .Add Aggregated Policy
 image:../../images/policy/create-aggregated.png[alt="Add Aggregated Policy"]
 
-Let's suppose you have a resource called _Confidential Resource_ that can be accessed only by users from the _keycloak.org_ domain and within a IP address.
-You may want to create a single policy with both conditions. However, you may want to reuse the domain part of this policy to apply to permissions despite the network.
+Let's suppose you have a resource called _Confidential Resource_ that can be accessed only by users from the _keycloak.org_ domain and from a certain range of IP addresses.
+You may want to create a single policy with both conditions. However, you may want to reuse the domain part of this policy to apply to permissions that operates regardless of originating network.
 
-In this case, Keycloak allows you to create separated policies for both domain and network conditions and create another one based on
-them. You can easily achieve that by using an *Aggregated Policy* that combines other policies and then apply this aggregated policy to any permission you want.
+Keycloak allows you to create separate policies for both domain and network conditions and create a third policy based on
+the combination of these two policies. With an *Aggregated Policy*, you can freely combine other policies and then apply the new  aggregated policy to any permission you want.
 
 [NOTE]
-When creating aggregated policies, make sure you don't introduce a circular reference/dependency between policies. If you do so, Keycloak will not let you create or update the policy.
+When creating aggregated policies, be mindful that you are not introducing a circular reference/dependency between policies. If a circular dependency is detected, Keycloak will not let you create or update the policy.
 
 === Configuration
 
 * *Name*
 +
-A human-readable and unique string describing the policy. We strongly suggest you to use names that are closely related with your business and security requirements, so you
-can identify them more easily and also know what they actually mean
+A human-readable and unique string describing the policy. We strongly suggest that you use names that are closely related with your business and security requirements, so you
+can identify them more easily and also know what they actually mean.
 +
 * *Description*
 +
-A string with more details about this policy
+A string with more details about this policy.
 +
 * *Apply Policy*
 +
-Defines a set of one or more policies to associate with a policy
+Defines a set of one or more policies to associate with a policy.
 +
 * *Decision Strategy*
 +
-The decision strategy for this permission
+The decision strategy for this permission.
 +
 * *Logic*
 +
-The link:logic.html[logic] of this policy
+The link:logic.html[Logic] of this policy to apply after the other conditions have been evaluated.
 
 === Decision Strategy for Aggregated Policies
 
@@ -46,11 +46,11 @@ When creating aggregated policies, you can also define the decision strategy tha
 
 * *Unanimous*
 +
-This is the default strategy if none is provided. In this case, _all_ policies must evaluate to a positive decision in order to the final decision be also positive.
+This is the default strategy if none is provided. In this case, _all_ policies must evaluate to a positive decision in order for the final decision to be also positive.
 +
 * *Affirmative*
 +
-In this case, _at least one_ policy must evaluate to a positive decision in order to the final decision be also positive.
+In this case, _at least one_ policy must evaluate to a positive decision in order for the final decision to be also positive.
 +
 * *Consensus*
 +

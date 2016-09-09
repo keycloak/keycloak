@@ -1,7 +1,6 @@
 == Build, Deploy and Test
 
-Now that the *hello-world-authz-service* is properly configured and authorization services are enabled, we can deploy it to
-the server and see the results.
+Now that the *hello-world-authz-service* resource server (client) is properly configured and authorization services are enabled, we can deploy it to the server and see the results.
 
 === Generating the Adapter Configuration
 
@@ -11,7 +10,7 @@ click on the *hello-world-authz-service* client application. This will bring you
 .Client Details
 image:../../../images/getting-started/hello-world/enable-authz.png[alt="Client Details"]
 
-Click on the `Installation Tab`. In this tab select `Keycloak OIDC JSON` as the format option. This will bring you the adapter config using a JSON format.
+Click on the `Installation Tab`. From the `Format Option` dropdown, select `Keycloak OIDC JSON`. This will display the adapter configuration in JSON format. Copy the contents to the clipboard and create a file or use the `Download` button.
 
 .Adapter Configuration
 image:../../../images/getting-started/hello-world/adapter-config.png[alt="Adapter Configuration"]
@@ -20,7 +19,7 @@ Now, go to the *${KEYCLOAK_DEMO_SERVER_DIR}/examples/authz/hello-world-authz-ser
 you just obtained from the {{book.project.name}} Administration Console.
 
 By default, the policy enforcer responds with a `403` status code when the user lacks permissions to access protected resources on the resource server. However, you can also provide a
-URL to where you want redirect your users to. For that, change the *keycloak.json* file you just updated and replace the `policy-enforcer` configuration with the following:
+redirection URL for unauthorized users. To customize this, change the *keycloak.json* file you just updated and replace the `policy-enforcer` configuration with the following:
 
 ```json
 "policy-enforcer": {
@@ -28,11 +27,11 @@ URL to where you want redirect your users to. For that, change the *keycloak.jso
   }
 ```
 
-That last configuration tells the policy enforcer to redirect users to a `/hello-world-authz-service/error.jsp` page in case they dom't have the necessary permissions to access a protected resource.
+That last configuration tells the policy enforcer to redirect users to a `/hello-world-authz-service/error.jsp` page if they don't have the necessary permissions to access a protected resource, rather than an unhelpful `403 Unauthrorized` message.
 
 === Build and Deploy the Application
 
-For last, got to the *${KEYCLOAK_DEMO_SERVER_DIR}/examples/authz/hello-world-authz-service/* and execute the following command:
+Lastly, go to the *${KEYCLOAK_DEMO_SERVER_DIR}/examples/authz/hello-world-authz-service/* and execute the following command:
 
 ```bash
 mvn clean package wildfly:deploy
@@ -47,37 +46,38 @@ The first page you should see is the {{book.project.name}} Login Page.
 .Login Page
 image:../../../images/getting-started/hello-world/login-page.png[alt="Login Page"]
 
-Try to login as *alice*. After the authentication you should see a page as follows:
+Try to login as *alice* using the password you set up for that user. After authenticating, you should see a page as follows:
 
 .Hello World Authz Main Page
 image:../../../images/getting-started/hello-world/main-page.png[alt="Hello World Authz Main Page"]
 
-The link:../../resource-server/default-config.html[Default Settings] defined by {{book.project.name}} when you enable authorization services to a client application provides a simple
-policy that only grants access to users belonging to the realm of the client.
+The link:../../resource-server/default-config.html[Default Settings] defined by {{book.project.name}} when you enable authorization services for a client application provide a simple
+policy that always grant access to the resources protected by this policy.
 
-You can start playing around by changing the default permissions and policies and check how your application will behave. Or even create new policies using the different
+You can start playing around by changing the default permissions and policies and check how your application will behave, or even create new policies using the different
 link:../../policy/overview.html[Policy Types] provided by {{book.project.name}}.
 
-There are a plenty of things you can do now to test this application. For instance, try to change the `Default Policy` as follows:
+There are a plenty of things you can do now to test this application. For instance, you can change the default policy by clicking on the `Authorization` tab for the client, then `Policies` tab, then click on `Default Policy` in the list to allow you to change it as follows:
 
 ```js
-// let's see what happens when we call $evaluation.deny()
-$evaluation.grant();
+// The default value is $evaluation.grant(),
+// let's see what happens when we change it to $evaluation.deny()
+$evaluation.deny();
 
 ```
 
-Now, try to logout from the application and log in again. You should no longer be able to access the application.
+Now, logout from the demo application and log in again. You should no longer be able to access the application.
 
 image:../../../images/getting-started/hello-world/access-denied-page.png[alt="Access Denied Page"]
 
-Let's fix that now, but instead of changing the `Default Policy` code we are just going to change the `Logic` to `Negative`. That should bring back access to the application
-as we are just negating the result of that policy, which is by default denying all requests for access. Again, before testing this change, please logout and log in again.
+Let's fix that now, but instead of changing the `Default Policy` code we are just going to change the `Logic` to `Negative` using the dropdown control below the policy code text area.
+That should re-enable access to the application as we are just negating the result of that policy, which is by default denying all requests for access. Again, before testing this change, be sure to logout and log in again.
 
 === Next Steps
 
 There are a lot of other things you can do from now on, such as:
 
-* Create a scope, define a policy and permission for it and check on the application side if the user is allowed to perform some action (or anything else represented by the scope you created)
-* Create different types of policies such as link:../../policy/role-policy.adoc[Role-Based], link:../../policy/user-policy.adoc[User-Based], link:../../policy/time-policy.adoc[Time-Based], link:../../policy/aggregated-policy.adoc[Aggregated Policies], link:../../policy/drools-policy.adoc[Drools-Based]. And associate these policies with the `Default Permission`
+* Create a scope, define a policy and permission for it, and check on the application side if the user is allowed to perform some action (or anything else represented by the scope you created)
+* Create different types of policies such as link:../../policy/role-policy.adoc[Role-Based], link:../../policy/user-policy.adoc[User-Based], link:../../policy/time-policy.adoc[Time-Based], link:../../policy/aggregated-policy.adoc[Aggregated Policies], link:../../policy/drools-policy.adoc[Drools-Based], and associate these policies with the `Default Permission`
 * Apply multiple policies to the `Default Permission` and check behavior. For instance, try to mix multiple policies and change the `Decision Strategy` accordingly
-* Checkout the link:../../enforcer/authorization-context.adoc[Obtaining the Authorization Context] topic for more details about how to check for permissions inside your application
+* Check out the link:../../enforcer/authorization-context.adoc[Obtaining the Authorization Context] topic for more details about how to check for permissions inside your application

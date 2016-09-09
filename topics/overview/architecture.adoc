@@ -2,11 +2,11 @@
 
 image:../../images/authz-arch-overview.png[alt="Keycloak AuthZ Architecture Overview"]
 
-From a design perspective, the {{book.project.module}} are based on a well defined set of authorization patterns providing a:
+From a design perspective, the {{book.project.module}} are based on a well-defined set of authorization patterns providing these capabilities:
 
 * **Policy Administration Point (PAP)**
 +
-Provides a set of UIs based on {{book.project.name}} Administration Console to manage resource servers, resources, scopes, permissions and policies.
+Provides a set of UIs based on {{book.project.name}} Administration Console to manage resource servers, resources, scopes, permissions, and policies.
 Part of this also accomplished remotely through the use of the link:../service/protection/protection-api.adoc[Protection API].
 +
 

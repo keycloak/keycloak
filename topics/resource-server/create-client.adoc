@@ -10,16 +10,16 @@ In this page, click on the `Create` button on the right.
 .Create Client
 image:../../images/resource-server/client-create.png[alt="Create Client"]
 
-In this page, fill in the fields as follows:
+Fill in the fields as follows:
 
-* Enter in the `Client ID` of the client. For insance, _my-resource-server_.
-* Enter in the `Root URL` for your application. For instance:
+* Enter the `Client ID` of the client. For example, _my-resource-server_.
+* Enter the `Root URL` for your application. For instance:
 +
 ```bash
 http://${host}:${port}/my-resource-server
 ```
 
-Finally, click `Save`. This will create the client and bring you to the client `Settings` tab.
+Finally, click `Save`. This will create the client and bring you to the client `Settings` tab. You should see a page similar to this:
 
 .Client Settings
 image:../../images/resource-server/client-enable-authz.png[alt="Client Settings"]
