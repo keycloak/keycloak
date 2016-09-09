@@ -6,8 +6,11 @@ This class provides several methods from where you can use to obtain permissions
 Obtaining the Authorization Context in a Servlet Container
 ```java
     HttpServletRequest request = ... // obtain javax.servlet.http.HttpServletRequest
-    KeycloakSecurityContext keycloakSecurityContext = (KeycloakSecurityContext) request.getAttribute(KeycloakSecurityContext.class.getName());
-    AuthorizationContext authzContext = keycloakSecurityContext.getAuthorizationContext();
+    KeycloakSecurityContext keycloakSecurityContext =
+        (KeycloakSecurityContext) request
+            .getAttribute(KeycloakSecurityContext.class.getName());
+    AuthorizationContext authzContext =
+        keycloakSecurityContext.getAuthorizationContext();
 ```
 
 [NOTE]
