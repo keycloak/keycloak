@@ -6,7 +6,7 @@ Resource servers can manage their resources remotely using a UMA-compliant endpo
 http://${host}:${port}/auth/realms/${realm_name}/authz/protection/resource_set
 ```
 
-This endpoint provides some registration operations as follows:
+This endpoint provides registration operations outlined as follows (entire path omitted for clarity):
 
 * Create resource set description: POST /resource_set
 * Read resource set description: GET /resource_set/{_id}
@@ -15,4 +15,4 @@ This endpoint provides some registration operations as follows:
 * List resource set descriptions: GET /resource_set
 * List resource set descriptions using a filter: GET /resource_set?filter=${filter}
 
-For more details about the contract for each of these operations, please take a look at https://docs.kantarainitiative.org/uma/rec-oauth-resource-reg-v1_0_1.html[UMA Resource Set Registration].
+For more details about the contract for each of these operations, please refer to  https://docs.kantarainitiative.org/uma/rec-oauth-resource-reg-v1_0_1.html[UMA Resource Set Registration].

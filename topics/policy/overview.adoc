@@ -1,12 +1,12 @@
 == Managing Policies
 
-As mentioned before, policies define the conditions that must satisfied before granting access to an object.
+As mentioned earlier, policies define the conditions that must be satisfied before granting access to an object.
 
 You can view all policies associated with a resource server by clicking on the *Policy* tab when editing a resource server.
 
 .Policies
 image:../../images/policy/view.png[alt="Policies"]
 
-On this tab, you'll find the list of policies and options to create and edit a policy.
+On this tab, you'll find the list of policies as well as options to create and edit a policy.
 
-To create a new policy, select a policy type in the dropdown `Create policy` located in the right upper corner of the policy listing.
+To create a new policy, select a policy type in the dropdown `Create policy` located in the right upper corner of the policy listing. Details about each policy type are described in this section.

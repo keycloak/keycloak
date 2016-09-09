@@ -1,12 +1,12 @@
 == Enabling Authorization Services
 
-To turn your client application into a resource server and enable fine-grained authorization, click on the `Authorization Services Enable` switch and turn it `ON`.
+To turn your OIDC Client Application into a resource server and enable fine-grained authorization, click on the `Authorization Enabled` switch and turn it `ON`.
 
 .Enabling Authorization Services
 image:../../images/resource-server/client-enable-authz.png[alt="Enabling Authorization Services"]
 
-Finally, click `Save`. When you do that,
-a new `Authorization` tab will show up. Click on this tab and you should see a page like that.
+Finally, click `Save`. When the save is complete,
+a new `Authorization` tab will show up in the tab set for this client. Click on this tab and you should see a page similar to the following:
 
 .Resource Server Settings
 image:../../images/resource-server/authz-settings.png[alt="Resource Server Settings"]
@@ -53,16 +53,16 @@ This is the default mode. Requests are denied by default even when there is no p
 ** *Permissive*
 +
 Requests are allowed even when there is no policy associated with a given resource.
++
 ** *Disabled*
 +
-Completely disables the evaluation of policies and allow access to any resource.
+Completely disables the evaluation of policies and allows access to any resource.
 +
 * *Allow Remote Resource Management*
 +
-Should resources be managed remotely by the resource server? If false, resources can only be managed from this admin console.
+Should resources be managed remotely by the resource server? If false, resources can be managed only from this admin console.
 
 +
 * *Export Settings*
 +
-In this section you can export all settings to a JSON file. It provides a single `Export` button that you can click to
-download a JSON file containing every single configuration defined for a resource server: protected resources, scopes, permissions and policies.
+In this section you can export the authorization configuration settings to a JSON file. Click the `Export` button to display the complete JSON configuration for you to download. The configuration contains everything defined for a resource server:  protected resources, scopes, permissions and policies.

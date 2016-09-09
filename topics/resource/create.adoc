@@ -1,9 +1,9 @@
 == Creating Resources
 
-Create a resource is pretty straight forward and generic. The main thing you should care about is the granularity of the resources you create. In other words, resources can
+Creating a resource is straightforward and generic. Your main concern is the granularity of the resources you create. In other words, resources can
 be created to represent a set of one or more resources and the way you define them is crucial to start managing permissions.
 
-To create a new resource click on the *Create* button in the right upper corner of the resource listing.
+To create a new resource, click on the `Create` button in the right upper corner of the resource listing.
 
 .Add Resource
 image:../../images/resource/create.png[alt="Add Resource"]
@@ -12,13 +12,13 @@ In {{book.project.name}}, a resource defines a small set of information that is 
 
 * *Name*
 +
-A human-readable and unique string describing a set of one or more resources.
+A human-readable and unique string describing this resource.
 
 [[_type]]
 * *Type*
 +
-A string uniquely identifying the type of a set of one or more resources. Usually, the type is a URN that can be used to
-group different resource instances.
+A string uniquely identifying the type of a set of one or more resources. The type is a _string_ used to group different resource instances.
+For example, the default type for the default resource that is automatically created is `urn:resource-server-name:resources:default`
 
 [[_uri]]
 * *URI*
@@ -37,7 +37,7 @@ The type field of a resource may be used to group different resources together, 
 === Resource Owners
 Resources also have an owner. By default, resources are owned by the resource server.
 
-However, resources can also be associated with your users, so you can create permissions based on the resource owner. For instance, only the resource owner is allowed to delete or update a given resource.
+However, resources can also be associated with your users, so you can create permissions based on the resource owner. For example, only the resource owner is allowed to delete or update a given resource.
 
 === Managing Resources Remotely
 
@@ -47,5 +47,5 @@ When using the Protection API, resource servers can be implemented to manage res
 specify the user identifier to configure a resource as belonging to a specific user.
 
 [NOTE]
-{{book.project.name}} provides to resource servers completely control over its resources. In the future, we should be able to
-allow users to control their own resources as well, approve authorization requests and manage permissions. Specially when using the UMA protocol.
+{{book.project.name}} provides resource servers complete control over their resources. In the future, we should be able to
+allow users to control their own resources as well, approve authorization requests and manage permissions, especially when using the UMA protocol.

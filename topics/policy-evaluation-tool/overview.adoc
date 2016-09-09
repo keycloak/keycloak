@@ -1,6 +1,6 @@
 == Policy Evaluation Tool
 
-When designing your policies, you can use an UI to simulate authorization requests and check how your policies are being evaluated.
+When designing your policies, you can simulate authorization requests to check how your policies are being evaluated.
 
 The *Policy Evaluation Tool* can be accessed by clicking the `Evaluate` tab when editing a resource server. There you may provide different inputs to simulate real authorization requests and check the effect of your policies.
 
@@ -14,10 +14,12 @@ You can also click *Entitlement* button to obtain all permissions for the user y
 
 === Providing Contextual Information
 
-The *Contextual Information* filters can be used to define additional attributes to the evaluation context, from where policies can
-obtain these same attributes.
+The *Contextual Information* filters can be used to define additional attributes to the evaluation context, so that policies can obtain these same attributes.
 
 === Providing the Permissions
 
-The *Permissions* filters can be used to build an authorization request. There you can ask for permissions for a set of one or
-more resources and scopes.
+The *Permissions* filters can be used to build an authorization request. There you can ask for permissions for a set of one or more resources and scopes. In case you want
+to simulate authorization requests based on all protected resources and scopes, click on the `Add` button without provide any `Resources` and `Scopes`.
+
+
+When you've filled in the necessary values, click the `Evaluate` button to yield a result.

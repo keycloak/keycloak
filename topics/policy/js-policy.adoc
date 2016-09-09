@@ -1,9 +1,9 @@
 == JavaScript-Based Policy
 
 This type of policy allows you to define conditions for your permissions using JavaScript. It is one of the _Rule-Based_ policy types
-supported by {{book.project.name}}, providing lot of flexibility to write any policy based on the link:evaluation-api.adoc[Evaluation API].
+supported by {{book.project.name}}, and provides flexibility to write any policy based on the link:evaluation-api.adoc[Evaluation API].
 
-To create a new policy select the option *JavaScript* in the dropdown located in the right upper corner of the permission listing.
+To create a new JavaScript-based policy, select the option *JavaScript* in the dropdown located in the right upper corner of the permission listing.
 
 .Add JavaScript Policy
 image:../../images/policy/create-js.png[alt="Add JavaScript Policy"]
@@ -12,20 +12,20 @@ image:../../images/policy/create-js.png[alt="Add JavaScript Policy"]
 
 * *Name*
 +
-A human-readable and unique string describing the policy. We strongly suggest you to use names that are closely related with your business and security requirements, so you
-can identify them more easily and also know what they actually mean
+A human-readable and unique string describing the policy. We strongly suggest that you use names that are closely related with your business and security requirements, so you
+can identify them more easily and also know what they actually mean.
 +
 * *Description*
 +
-A string with more details about this policy
+A string with more details about this policy.
 +
 * *Code*
 +
-The JavaScript code providing the conditions for this policy
+The JavaScript code providing the conditions for this policy.
 +
 * *Logic*
 +
-The link:logic.html[logic] of this policy
+The link:logic.html[Logic] of this policy to apply after the other conditions have been evaluated.
 
 === Examples
 
@@ -41,7 +41,7 @@ if (contextAttributes.containsValue('kc.client.network.ip_address', '127.0.0.1')
 }
 ```
 
-You can even use RBAC if you want to:
+You can also use RBAC:
 
 ```javascript
 var identity = $evaluation.getIdentity();
@@ -65,4 +65,4 @@ if (identity.hasRole('admin') || email.endsWith('@keycloak.org')) {
 ```
 
 When writing your own rules, keep in mind that the *$evaluation* object is just a object implementing *org.keycloak.authorization.policy.evaluation.Evaluation*. For more details about what you can access from this interface,
-please take a look at link:evaluation-api.adoc[Evaluation API].
+see link:evaluation-api.adoc[Evaluation API].

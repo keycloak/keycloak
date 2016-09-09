@@ -11,7 +11,7 @@ Authorization: Bearer ${RPT}
 ...
 ```
 
-Where you should have a *keycloak.json* file in your application similar to the following:
+In this example, you would have a *keycloak.json* file in your application similar to the following:
 
 .Example of WEB-INF/keycloak.json with the bearer-only configuration option
 ```json
@@ -40,7 +40,7 @@ HTTP/1.1 401 Unauthorized
 WWW-Authenticate: KC_ETT realm="photoz-restful-api",as_uri="http://localhost:8080/auth/realms/photoz/authz/entitlement"
 ```
 
-Once the a client receives a response from the server, it should check the status code and `WWW-Authenticate` header in order to obtain
+Once  a client receives a response from the server, it should check the status code and `WWW-Authenticate` header in order to obtain
 a RPT from a {{book.project.name}} Server.
 
 

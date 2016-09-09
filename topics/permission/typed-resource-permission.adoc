@@ -1,18 +1,18 @@
 == Typed Resource Permission
 
-Resource permissions can also be used to define policies that must be applied to all resources with a given link:../resource/create.adoc#_type[Type]. This form of resource-based permission can be very handy when you have resources sharing very common access requirements and constraints.
+Resource permissions can also be used to define policies that are to be applied to all resources with a given link:../resource/create.adoc#_type[Type]. This form of resource-based permission can be very handy when you have resources sharing very common access requirements and constraints.
 
-Usually, resources within an application can be categorized (or typed) based on the data they encapsulate or the functionality they provide. For instance, a financial application manages different
-banking accounts where each one belongs to a specific customer. Although they are different banking account, they usually share some very common security requirements and constraints, where those are globaly
-defined by the banking organization. With typed resource permissions you may want to define some very common policies to all banking accounts:
+Frequently, resources within an application can be categorized (or typed) based on the data they encapsulate or the functionality they provide. For instance, a financial application might manage different
+banking accounts where each one belongs to a specific customer. Although they are different banking accounts, they share some common security requirements and constraints which are globally
+defined by the banking organization. With typed resource permissions, you may want to define some common policies to apply to all banking accounts:
 
 * Only the owner can manage his account
 * Only allow access from the owner's country and/or region
 * Enforce a specific authentication method
 * And so forth ...
 
-To create a typed resource permission, just click on link:./create-resource.adoc#_apply_resource_type[Apply to Resource Type] when creating a new resource permissions. Once you do that,
-you should be able to specify the type that you want to protect as well the policies that must be applied in order to govern access to all resources with type you have provided.
+To create a typed resource permission, click on link:./create-resource.adoc#_apply_resource_type[Apply to Resource Type] when creating a new resource-based permission. With `Apply to Resource Type` set to `On`,
+you can specify the type that you want to protect as well the policies that are to be applied to govern access to all resources with type you have provided.
 
 .Example of a Typed Resource Permission
 image:../../images/typed-resource-perm-example.png[alt="Example of a Typed Resource Permission"]

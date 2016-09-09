@@ -3,7 +3,7 @@
 This type of policy allows you to define conditions for your permissions where only a set of one or more users is allowed
 to access an object.
 
-To create a new policy select the option *User-Based* in the dropdown located in the right upper corner of the permission listing.
+To create a new User-based policy, select the option *User-Based* in the dropdown located in the right upper corner of the permission listing.
 
 .Add User-Based Policy
 image:../../images/policy/create-user.png[alt="Add User-Based Policy"]
@@ -12,17 +12,17 @@ image:../../images/policy/create-user.png[alt="Add User-Based Policy"]
 
 * *Name*
 +
-A human-readable and unique string describing the policy. We strongly suggest you to use names that are closely related with your business and security requirements, so you
-can identify them more easily and also know what they actually mean
+A human-readable and unique string describing the policy. We strongly suggest that you  use names that are closely related with your business and security requirements, so you
+can identify them more easily and also know what they actually mean.
 +
 * *Description*
 +
-A string with more details about this policy
+A string with more details about this policy.
 +
 * *Users*
 +
-Specifies which user(s) are allowed by this policy
+Specifies which user(s) are allowed by this policy.
 +
 * *Logic*
 +
-The link:logic.html[logic] of this policy
+The link:logic.html[Logic] of this policy to apply after the other conditions have been evaluated.

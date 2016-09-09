@@ -1,11 +1,11 @@
 == Default Configuration
 
-When you create a resource server, {{book.project.name}} creates a default configuration to your newly created resource server.
+When you create a resource server, {{book.project.name}} creates a default configuration for your newly created resource server.
 
 The default configuration consists of:
 
 * A default protected resource representing all resources in your application.
-* A policy that grants access only for users within the same _realm_ as the resource server.
+* A policy that always grants access to the resources protected by this policy.
 * A permission that governs access to all resources based on the default policy.
 
 The default protected resource is called *Default Resource* and you can see it if you click on the `Resources` tab.
@@ -13,12 +13,12 @@ The default protected resource is called *Default Resource* and you can see it i
 .Default Resource
 image:../../images/resource-server/default-resource.png[alt="Default Resource"]
 
-This resource defines a `Type` `urn:my-resource-server:resources:default` and an `URI` `/*`. Here, the `URI` field defines a
+This resource defines a `Type` namely `urn:my-resource-server:resources:default` and a `URI` `/*`. Here, the `URI` field defines a
 wildcard pattern that tells {{book.project.name}} that this resource represents all the paths in your application. In other words,
-when enabling link:../enforcer/overview.html[Policy Enforcement] to your application, all the permissions associated with the resource
+when enabling link:../enforcer/overview.html[Policy Enforcement] for your application, all the permissions associated with the resource
 will be checked before granting access.
 
-The `Type` aforementioned defines a value that can be used to create link:../permission/typed-resource-permission.adoc[Typed Resource Permissions] that must be applied
+The `Type` mentioned earlier defines a value that can be used to create link:../permission/typed-resource-permission.adoc[Typed Resource Permissions] that must be applied
 to the default resource or any other resource you create using the same type.
 
 The default policy is called *Only From Realm Policy* and you can see it if you click on the `Policies` tab.
@@ -26,14 +26,14 @@ The default policy is called *Only From Realm Policy* and you can see it if you 
 .Default Policy
 image:../../images/resource-server/default-policy.png[alt="Default Policy"]
 
-This policy is a link:../policy/js-policy.html[JavaScript-Based Policy] defining a condition that always grant access to the resources protected by this policy. If you click on this policy you'll see that it defines a rule as follows:
+This policy is a link:../policy/js-policy.html[JavaScript-Based Policy] defining a condition that always grants access to the resources protected by this policy. If you click on this policy you'll see that it defines a rule as follows:
 
 ```js
 // by default, grants any permission associated with this policy
 $evaluation.grant();
 ```
 
-For last, the default permission is called *Default Permission* and you can see it if you click on the `Permissions` tab.
+Lastly, the default permission is called *Default Permission* and you can see it if you click on the `Permissions` tab.
 
 .Default Permission
 image:../../images/resource-server/default-permission.png[alt="Default Permission"]
@@ -43,4 +43,4 @@ This permission is a link:../permission/overview.html[Resource-Based Permission]
 
 == Post-Configuration Instructions
 
-You are not forced to keep the default configuration if you don't want to. You can remove the default resource, policy and permission any time you want.
+You are not forced to keep the default configuration if you don't want to. You can remove the default resource, policy, and permission definitions and introduce your own.

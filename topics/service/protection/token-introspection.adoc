@@ -5,12 +5,12 @@ to enforce authorization decisions at the resource server side.
 
 There are two main use cases where token introspection may help you:
 
-* When clients applications need to check the token validity in order to obtain a new one with the same or even additional permissions
-* When enforcing authorization decisions at the resource server side, specially when none of the built-in link:../../enforcer/overview.html[Policy Enforcers] fits to your application
+* When client applications need to check the token validity in order to obtain a new one with the same or even additional permissions
+* When enforcing authorization decisions at the resource server side, especially when none of the built-in link:../../enforcer/overview.html[Policy Enforcers] fits your application
 
-=== Obtaining information about a RPT
+=== Obtaining Information about a RPT
 
-The token introspection is basically a https://tools.ietf.org/html/rfc7662[OAuth2 Token Introspection] compliant endpoint from where you can obtain information about a RPT.
+The token introspection is essentially a https://tools.ietf.org/html/rfc7662[OAuth2 Token Introspection]-compliant endpoint from which you can obtain information about a RPT.
 
 ```bash
 http://${host}:${port}/auth/realms/${realm_name}/protocol/openid-connect/token/introspect
@@ -34,11 +34,11 @@ The introspection endpoint expects two parameters:
 
 * *token_type_hint*
 +
-Use *requesting_party_token* as the value for this parameter. It indicates that you want to introspect a RPT
+Use *requesting_party_token* as the value for this parameter. It indicates that you want to introspect a RPT.
 +
 * *token*
 +
-Use the token string, just like it was returned by the server during the authorization process, as the value for this parameter
+Use the token string, just as it was returned by the server during the authorization process, as the value for this parameter.
 
 As a result, the server should respond as follows:
 
@@ -58,7 +58,7 @@ As a result, the server should respond as follows:
 }
 ```
 
-In case the RPT is not active, you should get this response instead:
+If the RPT is not active, you will get this response instead:
 
 ```json
 {
@@ -66,15 +66,15 @@ In case the RPT is not active, you should get this response instead:
 }
 ```
 
-=== Do I Need to Invoke the Server Every Time I want to Introspect a RPT ?
+=== Do I Need to Invoke the Server Every Time I want to Introspect a RPT?
 
 Not really. Both link:../../service/authorization/authorization-api.html[Authorization] and link:../../service/entitlement/entitlement-api.html[Entitlement] APIs use the
  https://tools.ietf.org/html/rfc7519[JSON Web Token (JWT)] specification as the default format for RPTs.
 
-In case you want to validate these tokens without a remote call to the introspection endpoint you can decode the RPT and check for its validity locally. Once you decode the token,
+If you want to validate these tokens without a call to the remote introspection endpoint, you can decode the RPT and check for its validity locally. Once you decode the token,
 you can also use the permissions within the token to enforce authorization decisions.
 
-This is pretty much what the link:../../enforcer/overview.html[Policy Enforcers] do, just make sure to:
+This is essentially what the link:../../enforcer/overview.html[Policy Enforcers] do, just be sure to:
 
 * Validate RPT's signature (based on realm's public key)
 * Check for token validity based on its _exp_, _iat_ and _aud_ claims
