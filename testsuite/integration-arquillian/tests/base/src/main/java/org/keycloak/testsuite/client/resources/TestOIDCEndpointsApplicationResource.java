@@ -17,15 +17,15 @@
 
 package org.keycloak.testsuite.client.resources;
 
-import java.util.Map;
+import org.keycloak.jose.jwk.JSONWebKeySet;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
-
-import org.keycloak.jose.jwk.JSONWebKeySet;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -55,4 +55,15 @@ public interface TestOIDCEndpointsApplicationResource {
     @Path("/get-oidc-request")
     @Produces(org.keycloak.utils.MediaType.APPLICATION_JWT)
     String getOIDCRequest();
+
+    @GET
+    @Path("/set-sector-identifier-redirect-uris")
+    @Produces(MediaType.APPLICATION_JSON)
+    void setSectorIdentifierRedirectUris(@QueryParam("redirectUris") List<String> redirectUris);
+
+    @GET
+    @Path("/get-sector-identifier-redirect-uris")
+    @Produces(MediaType.APPLICATION_JSON)
+    List<String> getSectorIdentifierRedirectUris();
+
 }
