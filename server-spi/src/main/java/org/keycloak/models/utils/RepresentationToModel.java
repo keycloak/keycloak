@@ -1041,6 +1041,8 @@ public class RepresentationToModel {
             client.updateDefaultRoles(resourceRep.getDefaultRoles());
         }
 
+
+
         if (resourceRep.getProtocolMappers() != null) {
             // first, remove all default/built in mappers
             Set<ProtocolMapperModel> mappers = client.getProtocolMappers();
@@ -1049,6 +1051,9 @@ public class RepresentationToModel {
             for (ProtocolMapperRepresentation mapper : resourceRep.getProtocolMappers()) {
                 client.addProtocolMapper(toModel(mapper));
             }
+
+
+
         }
 
         if (resourceRep.getClientTemplate() != null) {
