@@ -265,7 +265,6 @@ public class ClientManager {
         InstallationAdapterConfig rep = new InstallationAdapterConfig();
         rep.setAuthServerUrl(baseUri.toString());
         rep.setRealm(realmModel.getName());
-        rep.setRealmKey(realmModel.getPublicKeyPem());
         rep.setSslRequired(realmModel.getSslRequired().name().toLowerCase());
 
         if (clientModel.isPublicClient() && !clientModel.isBearerOnly()) rep.setPublicClient(true);
@@ -286,7 +285,6 @@ public class ClientManager {
         StringBuffer buffer = new StringBuffer();
         buffer.append("<secure-deployment name=\"WAR MODULE NAME.war\">\n");
         buffer.append("    <realm>").append(realmModel.getName()).append("</realm>\n");
-        buffer.append("    <realm-public-key>").append(realmModel.getPublicKeyPem()).append("</realm-public-key>\n");
         buffer.append("    <auth-server-url>").append(baseUri.toString()).append("</auth-server-url>\n");
         if (clientModel.isBearerOnly()){
             buffer.append("    <bearer-only>true</bearer-only>\n");

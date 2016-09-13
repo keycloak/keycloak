@@ -820,7 +820,7 @@ public class RepresentationToModel {
             realm.setUserFederationProviders(providerModels);
         }
 
-        if ("GENERATE".equals(rep.getPublicKey())) {
+        if (Constants.GENERATE.equals(rep.getPublicKey())) {
             KeycloakModelUtils.generateRealmKeys(realm);
         } else {
             if (rep.getPrivateKey() != null && rep.getPublicKey() != null) {

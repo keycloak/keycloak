@@ -21,11 +21,11 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.ClientResource;
-import org.keycloak.events.admin.OperationType;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertFalse;
 
 /**
  * Test getting the installation/configuration files for OIDC and SAML.
@@ -81,7 +81,7 @@ public class InstallationTest extends AbstractClientTest {
     private void assertOidcInstallationConfig(String config) {
         RealmRepresentation realmRep = realmRep();
         assertTrue(config.contains(realmRep.getId()));
-        assertTrue(config.contains(realmRep.getPublicKey()));
+        assertFalse(config.contains(realmRep.getPublicKey()));
         assertTrue(config.contains(authServerUrl()));
     }
 

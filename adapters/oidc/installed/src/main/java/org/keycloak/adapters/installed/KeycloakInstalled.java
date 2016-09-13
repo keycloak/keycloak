@@ -20,6 +20,7 @@ package org.keycloak.adapters.installed;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.RSATokenVerifier;
+import org.keycloak.adapters.rotation.AdapterRSATokenVerifier;
 import org.keycloak.common.VerificationException;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.KeycloakDeploymentBuilder;
@@ -213,7 +214,7 @@ public class KeycloakInstalled {
         refreshToken = tokenResponse.getRefreshToken();
         idTokenString = tokenResponse.getIdToken();
 
-        token = RSATokenVerifier.verifyToken(tokenString, deployment.getRealmKey(), deployment.getRealmInfoUrl());
+        token = AdapterRSATokenVerifier.verifyToken(tokenString, deployment);
         if (idTokenString != null) {
             try {
                 JWSInput input = new JWSInput(idTokenString);

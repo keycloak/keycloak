@@ -28,6 +28,7 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.common.Version;
 import org.keycloak.common.util.Time;
 import org.keycloak.constants.AdapterConstants;
+import org.keycloak.models.Constants;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.representations.AccessToken;
@@ -36,8 +37,11 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.adapter.AbstractServletsAdapterTest;
 import org.keycloak.testsuite.adapter.filter.AdapterActionsFilter;
 import org.keycloak.testsuite.adapter.page.*;
+import org.keycloak.testsuite.util.URLAssert;
 import org.keycloak.testsuite.util.URLUtils;
+import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.util.BasicAuthHelper;
+import org.openqa.selenium.By;
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
@@ -46,6 +50,8 @@ import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Form;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriBuilder;
+
 import java.net.URI;
 import java.util.List;
 import java.util.Map;
@@ -164,6 +170,59 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
         String text = client.target(inputPortal + "/unsecured").request().post(Entity.form(form), String.class);
         assertTrue(text.contains("parameter=hello"));
         client.close();
+    }
+
+    @Test
+    public void testRealmKeyRotationWithNewKeyDownload() throws Exception {
+        // Login success first
+        tokenMinTTLPage.navigateTo();
+        testRealmLoginPage.form().waitForUsernameInputPresent();
+        assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
+        testRealmLoginPage.form().login("bburke@redhat.com", "password");
+        assertCurrentUrlEquals(tokenMinTTLPage);
+
+        AccessToken token = tokenMinTTLPage.getAccessToken();
+        Assert.assertEquals("bburke@redhat.com", token.getPreferredUsername());
+
+        // Logout
+        String logoutUri = OIDCLoginProtocolService.logoutUrl(authServerPage.createUriBuilder())
+                .queryParam(OAuth2Constants.REDIRECT_URI, tokenMinTTLPage.toString())
+                .build("demo").toString();
+        driver.navigate().to(logoutUri);
+
+        // Generate new realm key
+        RealmRepresentation realmRep = testRealmResource().toRepresentation();
+        String oldPublicKey = realmRep.getPublicKey();
+        String oldPrivateKey = realmRep.getPrivateKey();
+        realmRep.setPublicKey(Constants.GENERATE);
+        testRealmResource().update(realmRep);
+
+        // Try to login again. It should fail now
+        tokenMinTTLPage.navigateTo();
+        testRealmLoginPage.form().waitForUsernameInputPresent();
+        assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
+        testRealmLoginPage.form().login("bburke@redhat.com", "password");
+        URLAssert.assertCurrentUrlStartsWith(driver, tokenMinTTLPage.getInjectedUrl().toString());
+        assertNull(tokenMinTTLPage.getAccessToken());
+
+        String adapterActionsUrl = tokenMinTTLPage.toString() + "/unsecured/foo";
+        setAdapterAndServerTimeOffset(300, adapterActionsUrl);
+
+        // Try to login. Should work now due to realm key change
+        tokenMinTTLPage.navigateTo();
+        assertCurrentUrlEquals(tokenMinTTLPage);
+        token = tokenMinTTLPage.getAccessToken();
+        Assert.assertEquals("bburke@redhat.com", token.getPreferredUsername());
+        driver.navigate().to(logoutUri);
+
+        // Revert public keys change
+        String timeOffsetUri = UriBuilder.fromUri(adapterActionsUrl)
+                .queryParam(AdapterActionsFilter.RESET_PUBLIC_KEY_PARAM, "true")
+                .build().toString();
+        driver.navigate().to(timeOffsetUri);
+        WaitUtils.waitUntilElement(By.tagName("body")).is().visible();
+
+        setAdapterAndServerTimeOffset(0, adapterActionsUrl);
     }
 
     @Test
@@ -444,6 +503,7 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
 
         // Sets 5 minutes offset and assert access token will be still the same
         setAdapterAndServerTimeOffset(300, tokenMinTTLPage.toString());
+        tokenMinTTLPage.navigateTo();
         token = tokenMinTTLPage.getAccessToken();
         int tokenIssued2 = token.getIssuedAt();
         Assert.assertEquals(tokenIssued1, tokenIssued2);
@@ -451,6 +511,7 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
 
         // Sets 9 minutes offset and assert access token will be refreshed (accessTokenTimeout is 10 minutes, token-min-ttl is 2 minutes. Hence 8 minutes or more should be sufficient)
         setAdapterAndServerTimeOffset(540, tokenMinTTLPage.toString());
+        tokenMinTTLPage.navigateTo();
         token = tokenMinTTLPage.getAccessToken();
         int tokenIssued3 = token.getIssuedAt();
         Assert.assertTrue(tokenIssued3 > tokenIssued1);
