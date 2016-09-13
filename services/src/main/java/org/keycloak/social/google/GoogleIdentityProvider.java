@@ -55,7 +55,7 @@ public class GoogleIdentityProvider extends OIDCIdentityProvider implements Soci
             }
 
         }
-        logger.info("GOOGLE userInfoUrl: " + uri);
+        logger.debugv("GOOGLE userInfoUrl: {0}", uri);
         return uri;
     }
 }
