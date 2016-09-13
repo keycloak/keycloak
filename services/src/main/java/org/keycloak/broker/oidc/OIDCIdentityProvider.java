@@ -260,16 +260,19 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
             String preferredUsername = (String)idToken.getOtherClaims().get(IDToken.PREFERRED_USERNAME);
             String email = (String)idToken.getOtherClaims().get(IDToken.EMAIL);
 
-            if (getConfig().getUserInfoUrl() != null && (id == null || name == null || preferredUsername == null || email == null) ) {
-                SimpleHttp request = JsonSimpleHttp.doGet(getConfig().getUserInfoUrl())
-                        .header("Authorization", "Bearer " + accessToken);
-                JsonNode userInfo = JsonSimpleHttp.asJson(request);
+            if (!getConfig().isDisableUserInfoService()) {
+                String userInfoUrl = getUserInfoUrl();
+                if (userInfoUrl != null && (id == null || name == null || preferredUsername == null || email == null)) {
+                    SimpleHttp request = JsonSimpleHttp.doGet(userInfoUrl)
+                            .header("Authorization", "Bearer " + accessToken);
+                    JsonNode userInfo = JsonSimpleHttp.asJson(request);
 
-                id = getJsonProperty(userInfo, "sub");
-                name = getJsonProperty(userInfo, "name");
-                preferredUsername = getJsonProperty(userInfo, "preferred_username");
-                email = getJsonProperty(userInfo, "email");
-                AbstractJsonUserAttributeMapper.storeUserProfileForMapper(identity, userInfo, getConfig().getAlias());
+                    id = getJsonProperty(userInfo, "sub");
+                    name = getJsonProperty(userInfo, "name");
+                    preferredUsername = getJsonProperty(userInfo, "preferred_username");
+                    email = getJsonProperty(userInfo, "email");
+                    AbstractJsonUserAttributeMapper.storeUserProfileForMapper(identity, userInfo, getConfig().getAlias());
+                }
             }
             identity.getContextData().put(FEDERATED_ACCESS_TOKEN_RESPONSE, tokenResponse);
             identity.getContextData().put(VALIDATED_ID_TOKEN, idToken);
@@ -302,6 +305,10 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         } catch (Exception e) {
             throw new IdentityBrokerException("Could not fetch attributes from userinfo endpoint.", e);
         }
+    }
+
+    protected String getUserInfoUrl() {
+        return getConfig().getUserInfoUrl();
     }
 
     private String verifyAccessToken(PublicKey key, AccessTokenResponse tokenResponse) {

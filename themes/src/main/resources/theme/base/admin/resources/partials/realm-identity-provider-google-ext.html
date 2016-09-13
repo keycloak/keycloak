@@ -1,0 +1,7 @@
+<div class="form-group">
+    <label class="col-md-2 control-label" for="userIp">{{:: 'userIp' | translate}}</label>
+    <div class="col-md-6">
+        <input ng-model="identityProvider.config.userIp" id="userIp" onoffswitchvalue on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
+    </div>
+    <kc-tooltip>{{:: 'identity-provider.google-userIp.tooltip' | translate}}</kc-tooltip>
+</div>
