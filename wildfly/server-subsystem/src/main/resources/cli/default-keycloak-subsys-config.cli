@@ -19,3 +19,5 @@
 /subsystem=keycloak-server/spi=connectionsInfinispan/provider=default/:add(properties={cacheContainer => "java:comp/env/infinispan/Keycloak"},enabled=true)
 /subsystem=keycloak-server/spi=jta-lookup/:add(default-provider=${keycloak.jta.lookup.provider:jboss})
 /subsystem=keycloak-server/spi=jta-lookup/provider=jboss/:add(enabled=true)
+/subsystem=keycloak-server/spi=keyStorage/:add
+/subsystem=keycloak-server/spi=keyStorage/provider=infinispan/:add(properties={minTimeBetweenRequests => "10"},enabled=true)

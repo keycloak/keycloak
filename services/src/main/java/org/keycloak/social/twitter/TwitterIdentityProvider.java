@@ -57,8 +57,8 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
         SocialIdentityProvider<OAuth2IdentityProviderConfig> {
 
     protected static final Logger logger = Logger.getLogger(TwitterIdentityProvider.class);
-    public TwitterIdentityProvider(OAuth2IdentityProviderConfig config) {
-        super(config);
+    public TwitterIdentityProvider(KeycloakSession session, OAuth2IdentityProviderConfig config) {
+        super(session, config);
     }
 
     @Override

@@ -10,5 +10,8 @@ embed-server --server-config=standalone.xml
 /subsystem=infinispan/cache-container=keycloak/local-cache=work:add()
 /subsystem=infinispan/cache-container=keycloak/local-cache=authorization:add()
 /subsystem=infinispan/cache-container=keycloak/local-cache=authorization/eviction=EVICTION:add(max-entries=100,strategy=LRU)
+/subsystem=infinispan/cache-container=keycloak/local-cache=keys:add()
+/subsystem=infinispan/cache-container=keycloak/local-cache=keys/eviction=EVICTION:add(max-entries=1000,strategy=LRU)
+/subsystem=infinispan/cache-container=keycloak/local-cache=keys/expiration=EXPIRATION:add(max-idle=3600000)
 /extension=org.keycloak.keycloak-server-subsystem/:add(module=org.keycloak.keycloak-server-subsystem)
 run-batch --file=default-keycloak-subsys-config.cli

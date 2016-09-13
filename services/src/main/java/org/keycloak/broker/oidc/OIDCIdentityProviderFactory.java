@@ -18,13 +18,15 @@ package org.keycloak.broker.oidc;
 
 import org.keycloak.broker.provider.AbstractIdentityProviderFactory;
 import org.keycloak.jose.jwk.JWK;
+import org.keycloak.jose.jwk.JWKParser;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
-import org.keycloak.protocol.oidc.utils.JWKSUtils;
+import org.keycloak.protocol.oidc.utils.JWKSHttpUtils;
 import org.keycloak.services.ServicesLogger;
+import org.keycloak.util.JWKSUtils;
 import org.keycloak.util.JsonSerialization;
 
 import java.io.IOException;
@@ -47,8 +49,8 @@ public class OIDCIdentityProviderFactory extends AbstractIdentityProviderFactory
     }
 
     @Override
-    public OIDCIdentityProvider create(IdentityProviderModel model) {
-        return new OIDCIdentityProvider(new OIDCIdentityProviderConfig(model));
+    public OIDCIdentityProvider create(KeycloakSession session, IdentityProviderModel model) {
+        return new OIDCIdentityProvider(session, new OIDCIdentityProviderConfig(model));
     }
 
     @Override
@@ -75,24 +77,11 @@ public class OIDCIdentityProviderFactory extends AbstractIdentityProviderFactory
         config.setTokenUrl(rep.getTokenEndpoint());
         config.setUserInfoUrl(rep.getUserinfoEndpoint());
         if (rep.getJwksUri() != null) {
-            sendJwksRequest(session, rep, config);
+            config.setValidateSignature(true);
+            config.setUseJwksUrl(true);
+            config.setJwksUrl(rep.getJwksUri());
         }
         return config.getConfig();
-    }
-
-    protected static void sendJwksRequest(KeycloakSession session, OIDCConfigurationRepresentation rep, OIDCIdentityProviderConfig config) {
-        try {
-            JSONWebKeySet keySet = JWKSUtils.sendJwksRequest(session, rep.getJwksUri());
-            PublicKey key = JWKSUtils.getKeyForUse(keySet, JWK.Use.SIG);
-            if (key == null) {
-                logger.supportedJwkNotFound(JWK.Use.SIG.asString());
-            } else {
-                config.setPublicKeySignatureVerifier(KeycloakModelUtils.getPemFromKey(key));
-                config.setValidateSignature(true);
-            }
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to query JWKSet from: " + rep.getJwksUri(), e);
-        }
     }
 
 }

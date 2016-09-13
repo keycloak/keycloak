@@ -180,4 +180,5 @@ public class OIDCKeyCloakServerBrokerBasicTest extends AbstractKeycloakIdentityP
     public void testAccountManagementLinkedIdentityAlreadyExists() {
         super.testAccountManagementLinkedIdentityAlreadyExists();
     }
+
 }

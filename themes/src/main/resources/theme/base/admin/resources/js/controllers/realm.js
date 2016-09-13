@@ -784,6 +784,7 @@ module.controller('RealmIdentityProviderCtrl', function($scope, $filter, $upload
         $scope.identityProvider.enabled = true;
         $scope.identityProvider.authenticateByDefault = false;
         $scope.identityProvider.firstBrokerLoginFlowAlias = 'first broker login';
+        $scope.identityProvider.config.useJwksUrl = 'true';
         $scope.newIdentityProvider = true;
     }
 

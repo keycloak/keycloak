@@ -20,8 +20,10 @@ package org.keycloak.common.util;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
+import java.security.KeyPair;
 import java.security.KeyStore;
 import java.security.PrivateKey;
+import java.security.PublicKey;
 
 import org.keycloak.common.constants.GenericConstants;
 
@@ -49,7 +51,7 @@ public class KeystoreUtil {
         return trustStore;
     }
 
-    public static PrivateKey loadPrivateKeyFromKeystore(String keystoreFile, String storePassword, String keyPassword, String keyAlias, KeystoreFormat format) {
+    public static KeyPair loadKeyPairFromKeystore(String keystoreFile, String storePassword, String keyPassword, String keyAlias, KeystoreFormat format) {
         InputStream stream = FindFile.findFile(keystoreFile);
 
         try {
@@ -61,11 +63,12 @@ public class KeystoreUtil {
             }
 
             keyStore.load(stream, storePassword.toCharArray());
-            PrivateKey key = (PrivateKey) keyStore.getKey(keyAlias, keyPassword.toCharArray());
-            if (key == null) {
+            PrivateKey privateKey = (PrivateKey) keyStore.getKey(keyAlias, keyPassword.toCharArray());
+            if (privateKey == null) {
                 throw new RuntimeException("Couldn't load key with alias '" + keyAlias + "' from keystore");
             }
-            return key;
+            PublicKey publicKey = keyStore.getCertificate(keyAlias).getPublicKey();
+            return new KeyPair(publicKey, privateKey);
         } catch (Exception e) {
             throw new RuntimeException("Failed to load private key: " + e.getMessage(), e);
         }
