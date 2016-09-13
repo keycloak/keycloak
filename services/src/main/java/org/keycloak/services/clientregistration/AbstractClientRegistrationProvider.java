@@ -19,22 +19,22 @@ package org.keycloak.services.clientregistration;
 
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
-import org.keycloak.models.ClientInitialAccessModel;
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientRegistrationTrustedHostModel;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.ModelDuplicateException;
+import org.keycloak.models.*;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
+import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
+import org.keycloak.protocol.oidc.mappers.AbstractPairwiseSubMapper;
+import org.keycloak.protocol.oidc.mappers.PairwiseSubMapperHelper;
+import org.keycloak.protocol.oidc.mappers.SHA265PairwiseSubMapper;
+import org.keycloak.protocol.oidc.utils.SubjectType;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.ForbiddenException;
-import org.keycloak.services.resources.admin.AdminRoot;
 import org.keycloak.services.validation.ClientValidator;
+import org.keycloak.services.validation.PairwiseClientValidator;
 import org.keycloak.services.validation.ValidationMessages;
 
 import javax.ws.rs.core.Response;
-import java.util.Properties;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -55,7 +55,7 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
         auth.requireCreate();
 
         ValidationMessages validationMessages = new ValidationMessages();
-        if (!ClientValidator.validate(client, validationMessages)) {
+        if (!ClientValidator.validate(client, validationMessages) || !PairwiseClientValidator.validate(session, client, validationMessages)) {
             String errorCode = validationMessages.fieldHasError("redirectUris") ? ErrorCodes.INVALID_REDIRECT_URI : ErrorCodes.INVALID_CLIENT_METADATA;
             throw new ErrorResponseException(
                     errorCode,
@@ -66,6 +66,10 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
 
         try {
             ClientModel clientModel = RepresentationToModel.createClient(session, session.getContext().getRealm(), client, true);
+            OIDCAdvancedConfigWrapper configWrapper = OIDCAdvancedConfigWrapper.fromClientRepresentation(client);
+            if (configWrapper.getSubjectType().equals(SubjectType.PAIRWISE)) {
+                addPairwiseSubMapper(clientModel, configWrapper.getSectorIdentifierUri());
+            }
 
             client = ModelToRepresentation.toRepresentation(clientModel);
 
@@ -119,7 +123,7 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
         }
 
         ValidationMessages validationMessages = new ValidationMessages();
-        if (!ClientValidator.validate(rep, validationMessages)) {
+        if (!ClientValidator.validate(rep, validationMessages) || !PairwiseClientValidator.validate(session, rep, validationMessages)) {
             String errorCode = validationMessages.fieldHasError("redirectUris") ? ErrorCodes.INVALID_REDIRECT_URI : ErrorCodes.INVALID_CLIENT_METADATA;
             throw new ErrorResponseException(
                     errorCode,
@@ -128,6 +132,7 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
             );
         }
 
+        updateSubjectType(rep, client);
         RepresentationToModel.updateClient(rep, client);
         rep = ModelToRepresentation.toRepresentation(client);
 
@@ -138,6 +143,43 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
 
         event.client(client.getClientId()).success();
         return rep;
+    }
+
+    private void updateSubjectType(ClientRepresentation rep, ClientModel client) {
+        OIDCAdvancedConfigWrapper repConfigWrapper = OIDCAdvancedConfigWrapper.fromClientRepresentation(rep);
+        SubjectType repSubjectType = repConfigWrapper.getSubjectType();
+        OIDCAdvancedConfigWrapper clientConfigWrapper = OIDCAdvancedConfigWrapper.fromClientModel(client);
+        SubjectType clientSubjectType = clientConfigWrapper.getSubjectType();
+
+        if (repSubjectType.equals(SubjectType.PAIRWISE) && clientSubjectType.equals(SubjectType.PAIRWISE)) {
+            updateSectorIdentifier(client, repConfigWrapper.getSectorIdentifierUri());
+        }
+
+        if (repSubjectType.equals(SubjectType.PAIRWISE) && clientSubjectType.equals(SubjectType.PUBLIC)) {
+            addPairwiseSubMapper(client, repConfigWrapper.getSectorIdentifierUri());
+        }
+
+        if (repSubjectType.equals(SubjectType.PUBLIC) && clientSubjectType.equals(SubjectType.PAIRWISE)) {
+            removePairwiseSubMapper(client);
+        }
+    }
+
+    private void updateSectorIdentifier(ClientModel client, String sectorIdentifierUri) {
+        client.getProtocolMappers().stream().filter(mapping -> mapping.getProtocolMapper().endsWith(AbstractPairwiseSubMapper.PROVIDER_ID_SUFFIX)).forEach(mapping -> {
+            mapping.getConfig().put(PairwiseSubMapperHelper.SECTOR_IDENTIFIER_URI, sectorIdentifierUri);
+        });
+    }
+
+    private void addPairwiseSubMapper(ClientModel client, String sectorIdentifierUri) {
+        client.addProtocolMapper(SHA265PairwiseSubMapper.createPairwiseMapper(sectorIdentifierUri));
+    }
+
+    private void removePairwiseSubMapper(ClientModel client) {
+        for (ProtocolMapperModel mapping : client.getProtocolMappers()) {
+            if (mapping.getProtocolMapper().endsWith(AbstractPairwiseSubMapper.PROVIDER_ID_SUFFIX)) {
+                client.removeProtocolMapper(mapping);
+            }
+        }
     }
 
     public void delete(String clientId) {

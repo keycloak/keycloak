@@ -17,9 +17,9 @@
 
 package org.keycloak.testsuite.client.resources;
 
-import javax.ws.rs.core.UriBuilder;
-
 import org.keycloak.testsuite.util.OAuthClient;
+
+import javax.ws.rs.core.UriBuilder;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -43,6 +43,12 @@ public class TestApplicationResourceUrls {
         UriBuilder builder = oidcClientEndpoints()
                 .path(TestOIDCEndpointsApplicationResource.class, "getJwks");
 
+        return builder.build().toString();
+    }
+
+    public static String pairwiseSectorIdentifierUri() {
+        UriBuilder builder = oidcClientEndpoints()
+                .path(TestOIDCEndpointsApplicationResource.class, "getSectorIdentifierRedirectUris");
         return builder.build().toString();
     }
 }

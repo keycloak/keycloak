@@ -50,6 +50,7 @@ import org.keycloak.services.resources.KeycloakApplication;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.common.util.Time;
 import org.keycloak.services.validation.ClientValidator;
+import org.keycloak.services.validation.PairwiseClientValidator;
 import org.keycloak.services.validation.ValidationMessages;
 
 import javax.ws.rs.Consumes;
@@ -127,7 +128,7 @@ public class ClientResource {
         }
 
         ValidationMessages validationMessages = new ValidationMessages();
-        if (!ClientValidator.validate(rep, validationMessages)) {
+        if (!ClientValidator.validate(rep, validationMessages) || !PairwiseClientValidator.validate(session, rep, validationMessages)) {
             Properties messages = AdminRoot.getMessages(session, realm, auth.getAuth().getToken().getLocale());
             throw new ErrorResponseException(
                     validationMessages.getStringMessages(),

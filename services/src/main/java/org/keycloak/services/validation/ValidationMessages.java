@@ -57,8 +57,11 @@ public class ValidationMessages {
     }
 
     public boolean fieldHasError(String fieldId) {
+        if (fieldId == null) {
+            return false;
+        }
         for (ValidationMessage message : messages) {
-            if (message.getFieldId().equals(fieldId)) {
+            if (fieldId.equals(message.getFieldId())) {
                 return true;
             }
         }
