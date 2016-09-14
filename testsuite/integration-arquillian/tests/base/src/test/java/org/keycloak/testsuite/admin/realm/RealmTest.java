@@ -60,12 +60,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -561,6 +556,26 @@ public class RealmTest extends AbstractAdminTest {
         }
 
         assertEquals(certificate, realm.toRepresentation().getCertificate());
+    }
+
+    @Test
+    public void rotateRealmKeys() {
+        RealmRepresentation realmRep = realm.toRepresentation();
+        String publicKey = realmRep.getPublicKey();
+        String cert = realmRep.getCertificate();
+        assertNotNull(publicKey);
+        assertNotNull(cert);
+
+        RealmRepresentation newRealmRep = new RealmRepresentation();
+        newRealmRep.setRealm(REALM_NAME);
+        newRealmRep.setPublicKey("GENERATE");
+        realm.update(newRealmRep);
+
+        realmRep = realm.toRepresentation();
+        assertNotNull(realmRep.getPublicKey());
+        assertNotNull(realmRep.getCertificate());
+        assertNotEquals(publicKey, realmRep.getPublicKey());
+        assertNotEquals(cert, realmRep.getCertificate());
     }
 
     @Test

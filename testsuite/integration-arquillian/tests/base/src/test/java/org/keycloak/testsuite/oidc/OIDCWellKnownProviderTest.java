@@ -36,6 +36,8 @@ import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentatio
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.services.clientregistration.ClientRegistrationService;
+import org.keycloak.services.clientregistration.oidc.OIDCClientRegistrationProviderFactory;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
@@ -78,6 +80,15 @@ public class OIDCWellKnownProviderTest extends AbstractKeycloakTest {
             Assert.assertEquals(oidcConfig.getTokenEndpoint(), oauth.getAccessTokenUrl());
             Assert.assertEquals(oidcConfig.getUserinfoEndpoint(), OIDCLoginProtocolService.userInfoUrl(UriBuilder.fromUri(OAuthClient.AUTH_SERVER_ROOT)).build("test").toString());
             Assert.assertEquals(oidcConfig.getJwksUri(), oauth.getCertsUrl("test"));
+
+            String registrationUri = UriBuilder
+                    .fromUri(OAuthClient.AUTH_SERVER_ROOT)
+                    .path(RealmsResource.class)
+                    .path(RealmsResource.class, "getClientsService")
+                    .path(ClientRegistrationService.class, "provider")
+                    .build("test", OIDCClientRegistrationProviderFactory.ID)
+                    .toString();
+            Assert.assertEquals(oidcConfig.getRegistrationEndpoint(), registrationUri);
 
             // Support standard + implicit + hybrid flow
             assertContains(oidcConfig.getResponseTypesSupported(), OAuth2Constants.CODE, OIDCResponseType.ID_TOKEN, "id_token token", "code id_token", "code token", "code id_token token");
