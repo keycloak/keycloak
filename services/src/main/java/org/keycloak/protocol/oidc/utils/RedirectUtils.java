@@ -20,8 +20,8 @@ package org.keycloak.protocol.oidc.utils;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.RealmModel;
-import org.keycloak.services.Urls;
 import org.keycloak.services.ServicesLogger;
+import org.keycloak.services.Urls;
 
 import javax.ws.rs.core.UriInfo;
 import java.net.URI;
@@ -35,19 +35,19 @@ public class RedirectUtils {
 
     private static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
 
-    public static String verifyRealmRedirectUri(UriInfo uriInfo, String redirectUri, RealmModel realm) {
-        Set<String> validRedirects = getValidateRedirectUris(uriInfo, realm);
+    public static String verifyRealmRedirectUri(final UriInfo uriInfo, final String redirectUri, final RealmModel realm) {
+        final Set<String> validRedirects = getValidateRedirectUris(uriInfo, realm);
         return verifyRedirectUri(uriInfo, null, redirectUri, realm, validRedirects);
     }
 
-    public static String verifyRedirectUri(UriInfo uriInfo, String redirectUri, RealmModel realm, ClientModel client) {
-        Set<String> validRedirects = client.getRedirectUris();
+    public static String verifyRedirectUri(final UriInfo uriInfo, final String redirectUri, final RealmModel realm, final ClientModel client) {
+        final Set<String> validRedirects = client.getRedirectUris();
         return verifyRedirectUri(uriInfo, client.getRootUrl(), redirectUri, realm, validRedirects);
     }
 
-    public static Set<String> resolveValidRedirects(UriInfo uriInfo, String rootUrl, Set<String> validRedirects) {
+    public static Set<String> resolveValidRedirects(final UriInfo uriInfo, final String rootUrl, final Set<String> validRedirects) {
         // If the valid redirect URI is relative (no scheme, host, port) then use the request's scheme, host, and port
-        Set<String> resolveValidRedirects = new HashSet<String>();
+        final Set<String> resolveValidRedirects = new HashSet<>();
         for (String validRedirect : validRedirects) {
             resolveValidRedirects.add(validRedirect); // add even relative urls.
             if (validRedirect.startsWith("/")) {
@@ -59,15 +59,15 @@ public class RedirectUtils {
         return resolveValidRedirects;
     }
 
-    private static Set<String> getValidateRedirectUris(UriInfo uriInfo, RealmModel realm) {
-        Set<String> redirects = new HashSet<>();
-        for (ClientModel client : realm.getClients()) {
+    private static Set<String> getValidateRedirectUris(final UriInfo uriInfo, final RealmModel realm) {
+        final Set<String> redirects = new HashSet<>();
+        for (final ClientModel client : realm.getClients()) {
             redirects.addAll(resolveValidRedirects(uriInfo, client.getRootUrl(), client.getRedirectUris()));
         }
         return redirects;
     }
 
-    private static String verifyRedirectUri(UriInfo uriInfo, String rootUrl, String redirectUri, RealmModel realm, Set<String> validRedirects) {
+    private static String verifyRedirectUri(final UriInfo uriInfo, final String rootUrl, String redirectUri, final RealmModel realm, final Set<String> validRedirects) {
         if (redirectUri == null) {
             logger.debug("No Redirect URI parameter specified");
             return null;
@@ -78,14 +78,14 @@ public class RedirectUtils {
             redirectUri = lowerCaseHostname(redirectUri);
 
             String r = redirectUri;
-            Set<String> resolveValidRedirects = resolveValidRedirects(uriInfo, rootUrl, validRedirects);
+            final Set<String> resolveValidRedirects = resolveValidRedirects(uriInfo, rootUrl, validRedirects);
 
             boolean valid = matchesRedirects(resolveValidRedirects, r);
 
             if (!valid && r.startsWith(Constants.INSTALLED_APP_URL) && r.indexOf(':', Constants.INSTALLED_APP_URL.length()) >= 0) {
                 int i = r.indexOf(':', Constants.INSTALLED_APP_URL.length());
 
-                StringBuilder sb = new StringBuilder();
+                final StringBuilder sb = new StringBuilder();
                 sb.append(r.substring(0, i));
 
                 i = r.indexOf('/', i);
@@ -110,8 +110,8 @@ public class RedirectUtils {
         }
     }
 
-    private static String lowerCaseHostname(String redirectUri) {
-        int n = redirectUri.indexOf('/', 7);
+    private static String lowerCaseHostname(final String redirectUri) {
+        final int n = redirectUri.indexOf('/', 7);
         if (n == -1) {
             return redirectUri.toLowerCase();
         } else {
@@ -119,9 +119,9 @@ public class RedirectUtils {
         }
     }
 
-    private static String relativeToAbsoluteURI(UriInfo uriInfo, String rootUrl, String relative) {
+    private static String relativeToAbsoluteURI(final UriInfo uriInfo, String rootUrl, String relative) {
         if (rootUrl == null || rootUrl.isEmpty()) {
-            URI baseUri = uriInfo.getBaseUri();
+            final URI baseUri = uriInfo.getBaseUri();
             String uri = baseUri.getScheme() + "://" + baseUri.getHost();
             if (baseUri.getPort() != -1) {
                 uri += ":" + baseUri.getPort();
@@ -132,11 +132,11 @@ public class RedirectUtils {
         return relative;
     }
 
-    private static boolean matchesRedirects(Set<String> validRedirects, String redirect) {
+    private static boolean matchesRedirects(final Set<String> validRedirects, final String redirect) {
         for (String validRedirect : validRedirects) {
             if (validRedirect.endsWith("*") && !validRedirect.contains("?")) {
                 // strip off the query component - we don't check them when wildcards are effective
-                String r = redirect.contains("?") ? redirect.substring(0, redirect.indexOf("?")) : redirect;
+                final String r = redirect.contains("?") ? redirect.substring(0, redirect.indexOf("?")) : redirect;
                 // strip off *
                 int length = validRedirect.length() - 1;
                 validRedirect = validRedirect.substring(0, length);
