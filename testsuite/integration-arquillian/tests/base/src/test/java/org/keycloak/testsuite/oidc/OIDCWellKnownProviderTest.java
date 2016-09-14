@@ -95,7 +95,7 @@ public class OIDCWellKnownProviderTest extends AbstractKeycloakTest {
             assertContains(oidcConfig.getGrantTypesSupported(), OAuth2Constants.AUTHORIZATION_CODE, OAuth2Constants.IMPLICIT);
             assertContains(oidcConfig.getResponseModesSupported(), "query", "fragment");
 
-            Assert.assertNames(oidcConfig.getSubjectTypesSupported(), "public");
+            Assert.assertNames(oidcConfig.getSubjectTypesSupported(), "pairwise", "public");
             Assert.assertNames(oidcConfig.getIdTokenSigningAlgValuesSupported(), Algorithm.RS256.toString());
             Assert.assertNames(oidcConfig.getUserInfoSigningAlgValuesSupported(), Algorithm.RS256.toString());
             Assert.assertNames(oidcConfig.getRequestObjectSigningAlgValuesSupported(), Algorithm.none.toString(), Algorithm.RS256.toString());

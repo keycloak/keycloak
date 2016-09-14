@@ -22,19 +22,40 @@ package org.keycloak.protocol;
  */
 public class ProtocolMapperConfigException extends Exception {
 
+    private String messageKey;
     private Object[] parameters;
 
     public ProtocolMapperConfigException(String message) {
         super(message);
     }
 
+    public ProtocolMapperConfigException(String message, String messageKey) {
+        super(message);
+        this.messageKey = messageKey;
+    }
+
     public ProtocolMapperConfigException(String message, Throwable cause) {
         super(message, cause);
+    }
+
+    public ProtocolMapperConfigException(String message, String messageKey, Throwable cause) {
+        super(message, cause);
+        this.messageKey = messageKey;
     }
 
     public ProtocolMapperConfigException(String message, Object ... parameters) {
         super(message);
         this.parameters = parameters;
+    }
+
+    public ProtocolMapperConfigException(String messageKey, String message, Object ... parameters) {
+        super(message);
+        this.messageKey = messageKey;
+        this.parameters = parameters;
+    }
+
+    public String getMessageKey() {
+        return messageKey;
     }
 
     public Object[] getParameters() {
