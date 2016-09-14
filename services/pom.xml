@@ -182,6 +182,11 @@
             <groupId>com.openshift</groupId>
             <artifactId>openshift-restclient-java</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
     <build>
         <plugins>

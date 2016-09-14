@@ -22,11 +22,15 @@ import org.keycloak.common.util.UriUtils;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.RealmModel;
+import org.keycloak.protocol.oidc.utils.url.WildcardStringMatches;
+import org.keycloak.protocol.oidc.utils.url.WildcardUrlMatches;
 import org.keycloak.services.Urls;
 
 import javax.ws.rs.core.UriInfo;
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
@@ -57,10 +61,11 @@ public class RedirectUtils {
         // If the valid redirect URI is relative (no scheme, host, port) then use the request's scheme, host, and port
         Set<String> resolveValidRedirects = new HashSet<>();
         for (String validRedirect : validRedirects) {
-            resolveValidRedirects.add(validRedirect); // add even relative urls.
             if (validRedirect.startsWith("/")) {
                 validRedirect = relativeToAbsoluteURI(uriInfo, rootUrl, validRedirect);
                 logger.debugv("replacing relative valid redirect with: {0}", validRedirect);
+                resolveValidRedirects.add(validRedirect);
+            } else { // already full url
                 resolveValidRedirects.add(validRedirect);
             }
         }
@@ -96,6 +101,9 @@ public class RedirectUtils {
             redirectUri = null;
         } else {
             redirectUri = lowerCaseHostname(redirectUri);
+            if (redirectUri.startsWith("/")) {
+                redirectUri = relativeToAbsoluteURI(uriInfo, rootUrl, redirectUri);
+            }
 
             String r = redirectUri;
             Set<String> resolveValidRedirects = resolveValidRedirects(uriInfo, rootUrl, validRedirects);
@@ -116,9 +124,6 @@ public class RedirectUtils {
                 r = sb.toString();
 
                 valid = matchesRedirects(resolveValidRedirects, r);
-            }
-            if (valid && redirectUri.startsWith("/")) {
-                redirectUri = relativeToAbsoluteURI(uriInfo, rootUrl, redirectUri);
             }
             redirectUri = valid ? redirectUri : null;
         }
@@ -149,20 +154,15 @@ public class RedirectUtils {
         return sb.toString();
     }
 
-    private static boolean matchesRedirects(Set<String> validRedirects, String redirect) {
-        for (String validRedirect : validRedirects) {
-            if (validRedirect.endsWith("*") && !validRedirect.contains("?")) {
-                // strip off the query component - we don't check them when wildcards are effective
-                String r = redirect.contains("?") ? redirect.substring(0, redirect.indexOf("?")) : redirect;
-                // strip off *
-                int length = validRedirect.length() - 1;
-                validRedirect = validRedirect.substring(0, length);
-                if (r.startsWith(validRedirect)) return true;
-                // strip off trailing '/'
-                if (length - 1 > 0 && validRedirect.charAt(length - 1) == '/') length--;
-                validRedirect = validRedirect.substring(0, length);
-                if (validRedirect.equals(r)) return true;
-            } else if (validRedirect.equals(redirect)) return true;
+    private static boolean matchesRedirects(final Set<String> validRedirects, final String requestedRedirect) {
+        for (final String validRedirect : validRedirects) {
+            if (validRedirect.equals(requestedRedirect)) {
+                return true;
+            } else {
+                if (new WildcardStringMatches(validRedirect).test(requestedRedirect)) {
+                    return true;
+                }
+            }
         }
         return false;
     }
