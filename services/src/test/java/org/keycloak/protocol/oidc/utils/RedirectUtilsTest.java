@@ -34,7 +34,8 @@ public class RedirectUtilsTest {
     public void setUp() throws Exception {
         initMocks(this);
 
-        validRedirects = new HashSet<>(Arrays.asList("http://example.com", "http://with-dash.example.com/*", "http://sub.domain.example.com/foo", "http://localhost:8180/*"));
+        validRedirects = new HashSet<>(Arrays.asList("http://example.com", "http://with-dash.example.com/*",
+                "http://sub.domain.example.com/foo", "http://localhost:8180/*", "http://*.subwildcard.example.com"));
         uriInfo = new ResteasyUriInfo(new URI("http://localhost:8080/auth/realms/test/protocol/openid-connect/auth"));
 
         when(realm.getName()).thenReturn("test-realm");
@@ -89,6 +90,11 @@ public class RedirectUtilsTest {
         checkRedirectUri("http://wItH-DaSh.example.com", equalTo("http://with-dash.example.com"));
         checkRedirectUri("hTTP://wItH-DaSh.example.com", equalTo("http://with-dash.example.com"));
         checkRedirectUri("httP://sub.dOMAIn.example.com/foo", equalTo("http://sub.domain.example.com/foo"));
+    }
+
+    @Test
+    public void testWildcardSubdomain() throws Exception {
+        checkRedirectUri("http://dev1.subwildcard.example.com");
     }
 
     private void checkRedirectUri(final String redirect) {

@@ -132,20 +132,13 @@ public class RedirectUtils {
         return relative;
     }
 
-    private static boolean matchesRedirects(final Set<String> validRedirects, final String redirect) {
-        for (String validRedirect : validRedirects) {
-            if (validRedirect.endsWith("*") && !validRedirect.contains("?")) {
-                // strip off the query component - we don't check them when wildcards are effective
-                final String r = redirect.contains("?") ? redirect.substring(0, redirect.indexOf("?")) : redirect;
-                // strip off *
-                int length = validRedirect.length() - 1;
-                validRedirect = validRedirect.substring(0, length);
-                if (r.startsWith(validRedirect)) return true;
-                // strip off trailing '/'
-                if (length - 1 > 0 && validRedirect.charAt(length - 1) == '/') length--;
-                validRedirect = validRedirect.substring(0, length);
-                if (validRedirect.equals(r)) return true;
-            } else if (validRedirect.equals(redirect)) return true;
+    private static boolean matchesRedirects(final Set<String> validRedirects, final String requestedRedirect) {
+        for (final String validRedirect : validRedirects) {
+            if (validRedirect.equals(requestedRedirect)) {
+                return true;
+            } else if (validRedirect.contains("*") && new WildcardUrlStringMatches(validRedirect).test(requestedRedirect)) {
+                return true;
+            }
         }
         return false;
     }
