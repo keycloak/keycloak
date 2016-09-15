@@ -73,7 +73,7 @@ After that, add the snippet like this where you can configure details about your
             <property name="port" value="27017"/>
             <property name="db" value="keycloak"/>
             <property name="connectionsPerHost" value="100"/>
-            <property name="databaseSchema" value="update"/>
+            <property name="migrationStrategy" value="update"/>
         </properties>
     </provider>
 </spi>
