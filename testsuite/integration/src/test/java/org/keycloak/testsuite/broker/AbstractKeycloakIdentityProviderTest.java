@@ -329,7 +329,6 @@ public abstract class AbstractKeycloakIdentityProviderTest extends AbstractIdent
         Assert.assertEquals("A00", user.getFirstAttribute("tenantid"));
     }
 
-
     @Test
     public void testSuccessfulAuthenticationWithoutUpdateProfile_newUser_emailAsUsername() {
         RealmModel realm = getRealm();

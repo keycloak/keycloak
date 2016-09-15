@@ -110,7 +110,6 @@ public class OIDCBrokerUserPropertyTest extends AbstractKeycloakIdentityProvider
         verifyAttributeMapperHandlesUserInfoClaims();
     }
 
-
     @Override
     @Test
     public void testSuccessfulAuthenticationWithoutUpdateProfile() {

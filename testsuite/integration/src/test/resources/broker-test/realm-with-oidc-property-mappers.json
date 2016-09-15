@@ -42,6 +42,7 @@
             "Claim JSON Type": "String",
             "access.token.claim": "true",
             "id.token.claim": "true"
+
           }
         },
         {
