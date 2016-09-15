@@ -41,12 +41,6 @@ migrationStrategy::
 migrationExport::
   Path for where to write manual database initialization/migration file.
 
-databaseSchema::
-  Specify if schema should be updated or validated.
-  Valid values are `update` (default) and `validate`.  The `update` value will set up or update
-  the table definitions that {{book.project.name}} needs.  `validate` just makes sure that the database has
-  the appropriate table definitions set up.
-
 showSql::
   Specify whether Hibernate should show all SQL commands in the console (false by default).  This is very verbose!
 
