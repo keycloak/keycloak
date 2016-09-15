@@ -52,7 +52,7 @@ To stop the server press `Ctrl + C`.
 
 Help and Documentation
 ----------------------
-* [Documentation](http://keycloak.jboss.org/docs) - User Guide, Admin REST API and Javadocs
+* [Documentation](http://www.keycloak.org/documentation.html) - User Guide, Admin REST API and Javadocs
 * [User Mailing List](https://lists.jboss.org/mailman/listinfo/keycloak-user) - Mailing list to ask for help and general questions about Keycloak
 * [JIRA](https://issues.jboss.org/projects/KEYCLOAK) - Issue tracker for bugs and feature requests
 
