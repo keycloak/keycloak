@@ -1,62 +1,61 @@
 package org.keycloak.protocol.oidc.mappers;
 
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ProtocolMapperContainerModel;
 import org.keycloak.models.ProtocolMapperModel;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.protocol.ProtocolMapperConfigException;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.services.ServicesLogger;
 
 import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
 import java.util.*;
 
-public class SHA265PairwiseSubMapper extends AbstractPairwiseSubMapper {
+public class SHA256PairwiseSubMapper extends AbstractPairwiseSubMapper {
     public static final String PROVIDER_ID = "sha256";
     private static final String HASH_ALGORITHM = "SHA-256";
-    private static final String ALPHA_NUMERIC = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
     private static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
     private final Charset charset;
 
-    public SHA265PairwiseSubMapper() throws NoSuchAlgorithmException {
+    public SHA256PairwiseSubMapper() throws NoSuchAlgorithmException {
         charset = Charset.forName("UTF-8");
-        MessageDigest.getInstance(HASH_ALGORITHM);
     }
 
-    public static ProtocolMapperModel createPairwiseMapper() {
-        return createPairwiseMapper(null);
-    }
-
-    public static ProtocolMapperModel createPairwiseMapper(String sectorIdentifierUri) {
+    public static ProtocolMapperRepresentation createPairwiseMapper(String sectorIdentifierUri, String salt) {
         Map<String, String> config;
-        ProtocolMapperModel pairwise = new ProtocolMapperModel();
+        ProtocolMapperRepresentation pairwise = new ProtocolMapperRepresentation();
         pairwise.setName("pairwise subject identifier");
         pairwise.setProtocolMapper(AbstractPairwiseSubMapper.getId(PROVIDER_ID));
         pairwise.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
         pairwise.setConsentRequired(false);
         config = new HashMap<>();
         config.put(PairwiseSubMapperHelper.SECTOR_IDENTIFIER_URI, sectorIdentifierUri);
-        pairwise.setConfig(config);
-        return pairwise;
-    }
-
-    public static ProtocolMapperModel createPairwiseMapper(String sectorIdentifierUri, String salt) {
-        Map<String, String> config;
-        ProtocolMapperModel pairwise = new ProtocolMapperModel();
-        pairwise.setName("pairwise subject identifier");
-        pairwise.setProtocolMapper(AbstractPairwiseSubMapper.getId(PROVIDER_ID));
-        pairwise.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-        pairwise.setConsentRequired(false);
-        config = new HashMap<>();
-        config.put(PairwiseSubMapperHelper.SECTOR_IDENTIFIER_URI, sectorIdentifierUri);
+        if (salt == null) {
+            salt = KeycloakModelUtils.generateId();
+        }
         config.put(PairwiseSubMapperHelper.PAIRWISE_SUB_ALGORITHM_SALT, salt);
         pairwise.setConfig(config);
         return pairwise;
     }
 
     @Override
+    public void validateAdditionalConfig(KeycloakSession session, RealmModel realm, ProtocolMapperContainerModel mapperContainer, ProtocolMapperModel mapperModel) throws ProtocolMapperConfigException {
+        // Generate random salt if needed
+        String salt = PairwiseSubMapperHelper.getSalt(mapperModel);
+        if (salt == null || salt.trim().isEmpty()) {
+            salt = generateSalt();
+            PairwiseSubMapperHelper.setSalt(mapperModel, salt);
+        }
+    }
+
+    @Override
     public String getHelpText() {
-        return "Calculates a pairwise subject identifier using a salted sha-256 hash.";
+        return "Calculates a pairwise subject identifier using a salted sha-256 hash. See OpenID Connect specification for more info about pairwise subject identifiers.";
     }
 
     @Override
@@ -68,7 +67,10 @@ public class SHA265PairwiseSubMapper extends AbstractPairwiseSubMapper {
 
     @Override
     public String generateSub(ProtocolMapperModel mappingModel, String sectorIdentifier, String localSub) {
-        String saltStr = getSalt(mappingModel);
+        String saltStr = PairwiseSubMapperHelper.getSalt(mappingModel);
+        if (saltStr == null) {
+            throw new IllegalStateException("Salt not available on mappingModel. Please update protocol mapper");
+        }
 
         Charset charset = Charset.forName("UTF-8");
         byte[] salt = saltStr.getBytes(charset);
@@ -90,21 +92,8 @@ public class SHA265PairwiseSubMapper extends AbstractPairwiseSubMapper {
         return UUID.nameUUIDFromBytes(hash).toString();
     }
 
-    private String getSalt(ProtocolMapperModel mappingModel) {
-        String salt = PairwiseSubMapperHelper.getSalt(mappingModel);
-        if (salt == null || salt.trim().isEmpty()) {
-            salt = createSalt(32);
-            PairwiseSubMapperHelper.setSalt(mappingModel, salt);
-        }
-        return salt;
-    }
-
-    private String createSalt(int len) {
-        Random rnd = new SecureRandom();
-        StringBuilder sb = new StringBuilder(len);
-        for (int i = 0; i < len; i++)
-            sb.append(ALPHA_NUMERIC.charAt(rnd.nextInt(ALPHA_NUMERIC.length())));
-        return sb.toString();
+    private static String generateSalt() {
+        return KeycloakModelUtils.generateId();
     }
 
     @Override

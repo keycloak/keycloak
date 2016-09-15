@@ -1774,6 +1774,12 @@ module.controller('ClientProtocolMapperCreateCtrl', function($scope, realm, serv
             var id = l.substring(l.lastIndexOf("/") + 1);
             $location.url("/realms/" + realm.realm + '/clients/' + client.id + "/mappers/" + id);
             Notifications.success("Mapper has been created.");
+        }, function(error) {
+            if (error.status == 400 && error.data.error_description) {
+                Notifications.error(error.data.error_description);
+            } else {
+                Notifications.error('Unexpected error when updating protocol mapper');
+            }
         });
     };
 

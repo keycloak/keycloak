@@ -130,9 +130,6 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
         ProtocolMapperModel address = AddressMapper.createAddressMapper();
         builtins.add(address);
 
-        ProtocolMapperModel pairwise = SHA265PairwiseSubMapper.createPairwiseMapper();
-        builtins.add(pairwise);
-
         model = UserSessionNoteMapper.createClaimMapper(KerberosConstants.GSS_DELEGATION_CREDENTIAL_DISPLAY_NAME,
                 KerberosConstants.GSS_DELEGATION_CREDENTIAL,
                 KerberosConstants.GSS_DELEGATION_CREDENTIAL, "String",
