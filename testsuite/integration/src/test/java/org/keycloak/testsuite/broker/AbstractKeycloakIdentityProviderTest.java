@@ -316,6 +316,20 @@ public abstract class AbstractKeycloakIdentityProviderTest extends AbstractIdent
         }
     }
 
+    /**
+     * Test for KEYCLOAK-3505 - Verify the claims from the claim set returned by the OIDC UserInfo are correctly mapped
+     *  by the user attribute mapper
+     *
+     */
+    protected void verifyAttributeMapperHandlesUserInfoClaims() {
+        IdentityProviderModel identityProviderModel = getIdentityProviderModel();
+        setUpdateProfileFirstLogin(IdentityProviderRepresentation.UPFLM_ON);
+
+        UserModel user = assertSuccessfulAuthentication(identityProviderModel, "test-user", "new@email.com", true);
+        Assert.assertEquals("A00", user.getFirstAttribute("tenantid"));
+    }
+
+
     @Test
     public void testSuccessfulAuthenticationWithoutUpdateProfile_newUser_emailAsUsername() {
         RealmModel realm = getRealm();

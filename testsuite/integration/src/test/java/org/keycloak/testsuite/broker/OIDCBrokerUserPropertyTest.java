@@ -100,6 +100,17 @@ public class OIDCBrokerUserPropertyTest extends AbstractKeycloakIdentityProvider
         }
     }
 
+    /**
+     * Test for KEYCLOAK-3505 - Verify the claims from the claim set returned by the OIDC UserInfo are correctly mapped
+     *  by the user attribute mapper
+     *
+     */
+    @Test
+    public void testSuccessfulAuthentication_verifyAttributeMapperHandlesUserInfoClaims() {
+        verifyAttributeMapperHandlesUserInfoClaims();
+    }
+
+
     @Override
     @Test
     public void testSuccessfulAuthenticationWithoutUpdateProfile() {

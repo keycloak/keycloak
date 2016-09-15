@@ -18,6 +18,20 @@
       ],
       "protocolMappers": [
         {
+          "name": "tenantid",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "tenantid",
+            "claim.name": "tenantid",
+            "Claim JSON Type": "String",
+            "access.token.claim": "false",
+            "id.token.claim": "false",
+            "userinfo.token.claim": "true"
+          }
+        },
+        {
           "name": "mobile",
           "protocol": "openid-connect",
           "protocolMapper": "oidc-usermodel-attribute-mapper",
@@ -28,7 +42,6 @@
             "Claim JSON Type": "String",
             "access.token.claim": "true",
             "id.token.claim": "true"
-
           }
         },
         {
@@ -109,7 +122,8 @@
         ],
         "realmRoles": ["manager"],
           "attributes": {
-              "mobile": "617-666-7777"
+              "mobile": "617-666-7777",
+              "tenantid": "A00"
           }
       },
       {

@@ -126,7 +126,7 @@ public class UserAttributeMapper extends AbstractClaimMapper {
 
     @Override
     public String getHelpText() {
-        return "Import declared claim if it exists in ID or access token into the specified user property or attribute.";
+        return "Import declared claim if it exists in ID, access token or the claim set returned by the user profile endpoint into the specified user property or attribute.";
     }
 
 }
