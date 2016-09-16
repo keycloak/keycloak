@@ -2,6 +2,7 @@ package org.keycloak.testsuite.sssd;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -9,6 +10,9 @@ import org.keycloak.representations.idm.UserFederationProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
+import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.pages.AccountPasswordPage;
+import org.keycloak.testsuite.pages.AccountUpdateProfilePage;
 import org.keycloak.testsuite.pages.LoginPage;
 
 import java.util.HashMap;
@@ -23,13 +27,25 @@ public class SSSDTest extends AbstractKeycloakTest {
 
     private static final String USERNAME = "emily";
     private static final String PASSWORD = "emily123";
+    private static final String DISABLED_USER = "david";
+    private static final String DISABLED_USER_PASSWORD = "emily123";
+
     private static final String DEFINITELY_NOT_PASSWORD = "not" + PASSWORD;
 
     private static final String ADMIN_USERNAME = "admin";
     private static final String ADMIN_PASSWORD = "password";
 
     @Page
-    private LoginPage accountLoginPage;
+    protected LoginPage accountLoginPage;
+
+    @Page
+    protected AccountPasswordPage changePasswordPage;
+
+    @Page
+    protected AccountUpdateProfilePage profilePage;
+
+    @Rule
+    public AssertEvents events = new AssertEvents(this);
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
@@ -67,6 +83,17 @@ public class SSSDTest extends AbstractKeycloakTest {
     }
 
     @Test
+    public void testDisabledUser() {
+        log.debug("Testing disabled user " + USERNAME);
+
+        driver.navigate().to(getAccountUrl());
+        Assert.assertEquals("Browser should be on login page now", "Log in to " + REALM_NAME, driver.getTitle());
+        accountLoginPage.login(DISABLED_USER, DISABLED_USER_PASSWORD);
+
+        Assert.assertEquals("Invalid username or password.", accountLoginPage.getError());
+    }
+
+    @Test
     public void testAdmin() {
         log.debug("Testing wrong password for user " + ADMIN_USERNAME);
 
@@ -88,6 +115,32 @@ public class SSSDTest extends AbstractKeycloakTest {
 
         testUserGroups();
     }
+
+    @Test
+    public void changeReadOnlyProfile() throws Exception {
+
+        profilePage.open();
+        accountLoginPage.login(USERNAME, PASSWORD);
+
+        Assert.assertEquals("emily", profilePage.getUsername());
+        Assert.assertEquals("Emily", profilePage.getFirstName());
+        Assert.assertEquals("Jones", profilePage.getLastName());
+        Assert.assertEquals("emily@jones.com", profilePage.getEmail());
+
+        profilePage.updateProfile("New first", "New last", "new@email.com");
+
+        Assert.assertEquals("You can't update your account as it is read only.", profilePage.getError());
+    }
+
+    @Test
+    public void changeReadOnlyPassword() {
+        changePasswordPage.open();
+        accountLoginPage.login(USERNAME, PASSWORD);
+
+        changePasswordPage.changePassword(PASSWORD, "new-password", "new-password");
+        Assert.assertEquals("You can't update your password as your account is read only.", profilePage.getError());
+    }
+
 
     private void testUserGroups() {
         log.debug("Testing user groups");
