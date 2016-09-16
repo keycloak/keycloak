@@ -42,8 +42,8 @@
         </modules>
     </xsl:variable>
     
-    <!--inject provider-->
-    <xsl:template match="//*[local-name()='providers']/*[local-name()='provider']">
+    <!--inject provider; note: due to ibmjdk issues it tries to find out provider which has no attributes-->
+    <xsl:template match="//*[local-name()='subsystem' and starts-with(namespace-uri(), $nsKS)]//*[local-name()='provider' and not(@*)]">
         <xsl:copy>
             <xsl:apply-templates select="@*|node()" />
         </xsl:copy>
