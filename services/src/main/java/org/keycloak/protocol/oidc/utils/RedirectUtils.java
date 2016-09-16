@@ -49,10 +49,11 @@ public class RedirectUtils {
         // If the valid redirect URI is relative (no scheme, host, port) then use the request's scheme, host, and port
         final Set<String> resolveValidRedirects = new HashSet<>();
         for (String validRedirect : validRedirects) {
-            resolveValidRedirects.add(validRedirect); // add even relative urls.
             if (validRedirect.startsWith("/")) {
                 validRedirect = relativeToAbsoluteURI(uriInfo, rootUrl, validRedirect);
                 logger.debugv("replacing relative valid redirect with: {0}", validRedirect);
+                resolveValidRedirects.add(validRedirect);
+            } else { // already full url
                 resolveValidRedirects.add(validRedirect);
             }
         }
@@ -76,6 +77,9 @@ public class RedirectUtils {
             redirectUri = null;
         } else {
             redirectUri = lowerCaseHostname(redirectUri);
+            if (redirectUri.startsWith("/")) {
+                redirectUri = relativeToAbsoluteURI(uriInfo, rootUrl, redirectUri);
+            }
 
             String r = redirectUri;
             final Set<String> resolveValidRedirects = resolveValidRedirects(uriInfo, rootUrl, validRedirects);
@@ -96,9 +100,6 @@ public class RedirectUtils {
                 r = sb.toString();
 
                 valid = matchesRedirects(resolveValidRedirects, r);
-            }
-            if (valid && redirectUri.startsWith("/")) {
-                redirectUri = relativeToAbsoluteURI(uriInfo, rootUrl, redirectUri);
             }
             redirectUri = valid ? redirectUri : null;
         }
