@@ -35,6 +35,7 @@ import org.keycloak.events.admin.ResourceType;
 import org.keycloak.exportimport.ClientDescriptionConverter;
 import org.keycloak.exportimport.ClientDescriptionConverterFactory;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.Constants;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
@@ -281,7 +282,7 @@ public class RealmAdminResource {
 
         logger.debug("updating realm: " + realm.getName());
         try {
-            if (!"GENERATE".equals(rep.getPublicKey()) && (rep.getPrivateKey() != null && rep.getPublicKey() != null)) {
+            if (!Constants.GENERATE.equals(rep.getPublicKey()) && (rep.getPrivateKey() != null && rep.getPublicKey() != null)) {
                 try {
                     KeyPairVerifier.verify(rep.getPrivateKey(), rep.getPublicKey());
                 } catch (VerificationException e) {
@@ -289,7 +290,7 @@ public class RealmAdminResource {
                 }
             }
 
-            if (!"GENERATE".equals(rep.getPublicKey()) && (rep.getCertificate() != null)) {
+            if (!Constants.GENERATE.equals(rep.getPublicKey()) && (rep.getCertificate() != null)) {
                 try {
                     X509Certificate cert = PemUtils.decodeCertificate(rep.getCertificate());
                     if (cert == null) {

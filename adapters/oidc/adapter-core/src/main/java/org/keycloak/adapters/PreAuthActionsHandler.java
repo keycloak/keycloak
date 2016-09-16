@@ -17,7 +17,10 @@
 
 package org.keycloak.adapters;
 
+import java.security.PublicKey;
+
 import org.jboss.logging.Logger;
+import org.keycloak.adapters.rotation.AdapterRSATokenVerifier;
 import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.adapters.spi.UserSessionManagement;
 import org.keycloak.jose.jws.JWSInputException;
@@ -198,7 +201,8 @@ public class PreAuthActionsHandler {
 
         try {
             JWSInput input = new JWSInput(token);
-            if (RSAProvider.verify(input, deployment.getRealmKey())) {
+            PublicKey publicKey = AdapterRSATokenVerifier.getPublicKey(input, deployment);
+            if (RSAProvider.verify(input, publicKey)) {
                 return input;
             }
         } catch (JWSInputException ignore) {

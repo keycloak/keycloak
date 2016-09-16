@@ -1075,6 +1075,18 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-fuse-adapter-dist</artifactId>
+                <version>${project.version}</version>
+                <type>zip</type>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-fuse-adapter-dist</artifactId>
+                <version>${project.version}</version>
+                <type>tar.gz</type>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-wildfly-adapter-dist</artifactId>
                 <version>${project.version}</version>
                 <type>zip</type>

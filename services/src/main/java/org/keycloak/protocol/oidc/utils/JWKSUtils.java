@@ -30,6 +30,8 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.util.JsonSerialization;
 
 /**
+ * TODO: Merge with JWKSUtils from keycloak-core?
+ *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class JWKSUtils {
@@ -44,7 +46,7 @@ public class JWKSUtils {
     public static PublicKey getKeyForUse(JSONWebKeySet keySet, JWK.Use requestedUse) {
         for (JWK jwk : keySet.getKeys()) {
             JWKParser parser = JWKParser.create(jwk);
-            if (parser.getJwk().getPublicKeyUse().equals(requestedUse.asString()) && parser.isAlgorithmSupported(jwk.getKeyType())) {
+            if (parser.getJwk().getPublicKeyUse().equals(requestedUse.asString()) && parser.isKeyTypeSupported(jwk.getKeyType())) {
                 return parser.toPublicKey();
             }
         }

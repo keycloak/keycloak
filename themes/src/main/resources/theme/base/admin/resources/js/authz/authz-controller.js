@@ -9,7 +9,6 @@ module.controller('ResourceServerCtrl', function($scope, realm, ResourceServer) 
 module.controller('ResourceServerDetailCtrl', function($scope, $http, $route, $location, $upload, $modal, realm, ResourceServer, client, AuthzDialog, Notifications) {
     $scope.realm = realm;
     $scope.client = client;
-    $scope.showAuthorizationTab = client.authorizationServicesEnabled;
 
     ResourceServer.get({
         realm : $route.current.params.realm,
@@ -83,7 +82,6 @@ module.controller('ResourceServerDetailCtrl', function($scope, $http, $route, $l
 module.controller('ResourceServerResourceCtrl', function($scope, $http, $route, $location, realm, ResourceServer, ResourceServerResource, client) {
     $scope.realm = realm;
     $scope.client = client;
-    $scope.showAuthorizationTab = client.authorizationServicesEnabled;
 
     $scope.query = {
         realm: realm.realm,
@@ -136,7 +134,6 @@ module.controller('ResourceServerResourceCtrl', function($scope, $http, $route, 
 module.controller('ResourceServerResourceDetailCtrl', function($scope, $http, $route, $location, realm, ResourceServer, client, ResourceServerResource, ResourceServerScope, AuthzDialog, Notifications) {
     $scope.realm = realm;
     $scope.client = client;
-    $scope.showAuthorizationTab = client.authorizationServicesEnabled;
 
     ResourceServerScope.query({realm : realm.realm, client : client.id}, function (data) {
         $scope.scopes = data;
@@ -268,7 +265,6 @@ module.controller('ResourceServerResourceDetailCtrl', function($scope, $http, $r
 module.controller('ResourceServerScopeCtrl', function($scope, $http, $route, $location, realm, ResourceServer, ResourceServerScope, client) {
     $scope.realm = realm;
     $scope.client = client;
-    $scope.showAuthorizationTab = client.authorizationServicesEnabled;
 
     $scope.query = {
         realm: realm.realm,
@@ -321,7 +317,6 @@ module.controller('ResourceServerScopeCtrl', function($scope, $http, $route, $lo
 module.controller('ResourceServerScopeDetailCtrl', function($scope, $http, $route, $location, realm, ResourceServer, client, ResourceServerScope, AuthzDialog, Notifications) {
     $scope.realm = realm;
     $scope.client = client;
-    $scope.showAuthorizationTab = client.authorizationServicesEnabled;
 
     var $instance = this;
 
@@ -431,7 +426,6 @@ module.controller('ResourceServerScopeDetailCtrl', function($scope, $http, $rout
 module.controller('ResourceServerPolicyCtrl', function($scope, $http, $route, $location, realm, ResourceServer, ResourceServerPolicy, PolicyProvider, client) {
     $scope.realm = realm;
     $scope.client = client;
-    $scope.showAuthorizationTab = client.authorizationServicesEnabled;
     $scope.policyProviders = [];
 
     $scope.query = {
@@ -504,7 +498,6 @@ module.controller('ResourceServerPolicyCtrl', function($scope, $http, $route, $l
 module.controller('ResourceServerPermissionCtrl', function($scope, $http, $route, $location, realm, ResourceServer, ResourceServerPolicy, PolicyProvider, client) {
     $scope.realm = realm;
     $scope.client = client;
-    $scope.showAuthorizationTab = client.authorizationServicesEnabled;
     $scope.policyProviders = [];
 
     $scope.query = {
@@ -1207,7 +1200,6 @@ module.service("PolicyController", function($http, $route, $location, ResourceSe
 
         $scope.realm = realm;
         $scope.client = client;
-        $scope.showAuthorizationTab = client.authorizationServicesEnabled;
 
         $scope.decisionStrategies = ['AFFIRMATIVE', 'UNANIMOUS', 'CONSENSUS'];
         $scope.logics = ['POSITIVE', 'NEGATIVE'];
@@ -1373,7 +1365,6 @@ module.service("PolicyController", function($http, $route, $location, ResourceSe
 module.controller('PolicyEvaluateCtrl', function($scope, $http, $route, $location, realm, clients, roles, ResourceServer, client, ResourceServerResource, ResourceServerScope, User, Notifications) {
     $scope.realm = realm;
     $scope.client = client;
-    $scope.showAuthorizationTab = client.authorizationServicesEnabled;
     $scope.clients = clients;
     $scope.roles = roles;
     $scope.authzRequest = {};

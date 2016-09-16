@@ -17,17 +17,17 @@
 
 package org.keycloak.testsuite.adapter;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.URL;
-import java.nio.file.Paths;
-
 import org.apache.commons.io.IOUtils;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Assert;
+
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
+import java.nio.file.Paths;
 
 /**
  *
@@ -50,11 +50,11 @@ public abstract class AbstractExampleAdapterTest extends AbstractAdapterTest {
         Assert.assertNotNull("Property ${examples.version.suffix} must bet set.", EXAMPLES_VERSION_SUFFIX);
         System.out.println(EXAMPLES_VERSION_SUFFIX);
 
+        EXAMPLES_HOME_DIR = EXAMPLES_HOME + "/example-realms";
+
         if (!System.getProperty("unpacked.container.folder.name","").isEmpty()) {
-            EXAMPLES_HOME_DIR = EXAMPLES_HOME + "/" + System.getProperty("unpacked.container.folder.name","") + "-examples";
             TEST_APPS_HOME_DIR = EXAMPLES_HOME + "/" + System.getProperty("unpacked.container.folder.name","") + "-test-apps";
         } else {
-            EXAMPLES_HOME_DIR = EXAMPLES_HOME + "/keycloak-examples-" + EXAMPLES_VERSION_SUFFIX;
             TEST_APPS_HOME_DIR = EXAMPLES_HOME + "/Keycloak-" + EXAMPLES_VERSION_SUFFIX + "-test-apps";
         }
 

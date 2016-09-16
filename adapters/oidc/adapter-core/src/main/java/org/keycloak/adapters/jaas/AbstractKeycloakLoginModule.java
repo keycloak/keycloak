@@ -43,6 +43,7 @@ import org.keycloak.adapters.AdapterUtils;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.KeycloakDeploymentBuilder;
 import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
+import org.keycloak.adapters.rotation.AdapterRSATokenVerifier;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.FindFile;
 import org.keycloak.representations.AccessToken;
@@ -88,9 +89,6 @@ public abstract class AbstractKeycloakLoginModule implements LoginModule {
         try {
             InputStream is = FindFile.findFile(keycloakConfigFile);
             KeycloakDeployment kd = KeycloakDeploymentBuilder.build(is);
-            if (kd.getRealmKey() == null) {
-                new AdapterDeploymentContext().resolveRealmKey(kd);
-            }
             return kd;
         } catch (RuntimeException e) {
             getLogger().debug("Unable to find or parse file " + keycloakConfigFile + " due to " + e.getMessage(), e);
@@ -190,7 +188,7 @@ public abstract class AbstractKeycloakLoginModule implements LoginModule {
 
 
     protected Auth bearerAuth(String tokenString) throws VerificationException {
-        AccessToken token = RSATokenVerifier.verifyToken(tokenString, deployment.getRealmKey(), deployment.getRealmInfoUrl());
+        AccessToken token = AdapterRSATokenVerifier.verifyToken(tokenString, deployment);
 
         boolean verifyCaller;
         if (deployment.isUseResourceRoleMappings()) {

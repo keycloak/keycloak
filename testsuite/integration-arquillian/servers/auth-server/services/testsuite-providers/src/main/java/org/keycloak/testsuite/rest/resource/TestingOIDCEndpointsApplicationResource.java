@@ -17,19 +17,6 @@
 
 package org.keycloak.testsuite.rest.resource;
 
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
-import java.util.HashMap;
-import java.util.Map;
-
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.MediaType;
-
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.BadRequestException;
 import org.keycloak.OAuth2Constants;
@@ -41,6 +28,19 @@ import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.testsuite.rest.TestApplicationResourceProviderFactory;
+
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.MediaType;
+import java.security.KeyPairGenerator;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -133,5 +133,20 @@ public class TestingOIDCEndpointsApplicationResource {
     @NoCache
     public String getOIDCRequest() {
         return clientData.getOidcRequest();
+    }
+
+    @GET
+    @Path("/set-sector-identifier-redirect-uris")
+    @Produces(MediaType.APPLICATION_JSON)
+    public void setSectorIdentifierRedirectUris(@QueryParam("redirectUris") List<String> redirectUris) {
+        clientData.setSectorIdentifierRedirectUris(new ArrayList<>());
+        clientData.getSectorIdentifierRedirectUris().addAll(redirectUris);
+    }
+
+    @GET
+    @Path("/get-sector-identifier-redirect-uris")
+    @Produces(MediaType.APPLICATION_JSON)
+    public List<String> getSectorIdentifierRedirectUris() {
+        return clientData.getSectorIdentifierRedirectUris();
     }
 }

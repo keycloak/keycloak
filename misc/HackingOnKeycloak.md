@@ -59,5 +59,6 @@ Here's a quick check list for a good pull request (PR):
 * A JIRA associated with your PR (include the JIRA issue number in commit comment)
 * All tests in testsuite pass
 * Do a rebase on upstream master
+* We only accept contributions to the master branch. The exception to this is if the fix is for the latest CR release and Final has not yet been released, in which case you can send the PR to both the corresponding branch and the master branch.
 
-Once you're happy with your changes go to GitHub and create a PR.
+Once you're happy with your changes go to GitHub and create a PR to the master branch.
