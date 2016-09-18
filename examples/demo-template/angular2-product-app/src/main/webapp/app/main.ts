@@ -1,14 +1,11 @@
-import 'rxjs/Rx';
-import {bootstrap}    from 'angular2/platform/browser';
-import {HTTP_BINDINGS} from 'angular2/http';
-import {KeycloakService} from './keycloak';
-import {AppComponent} from './app';
+import { platformBrowserDynamic } from '@angular/platform-browser-dynamic';
+import { AppModule } from './app.module';
 
-KeycloakService.init().then(
-    o=>{
-        bootstrap(AppComponent,[HTTP_BINDINGS, KeycloakService]);
-    },
-    x=>{
-        window.location.reload();
-    }
-);
+import {KeycloakService} from './keycloak.service';
+
+KeycloakService.init()
+  .then(() => {
+    const platform = platformBrowserDynamic();
+    platform.bootstrapModule(AppModule);
+  })
+  .catch(() => window.location.reload());
