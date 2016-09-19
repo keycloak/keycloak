@@ -633,6 +633,10 @@ public class TokenManager {
             token.setAuthTime(Integer.parseInt(authTime));
         }
 
+        String authMethods = session.getNote(AuthenticationManager.AUTH_METHODS);
+        if (authMethods != null){
+            token.setAmr(Collections.unmodifiableList(Arrays.asList(authMethods.trim().split(" "))));
+        }
 
         token.setSessionState(session.getId());
         token.expiration(getTokenExpiration(realm, session, clientSession));
@@ -801,6 +805,7 @@ public class TokenManager {
             idToken.setSessionState(accessToken.getSessionState());
             idToken.expiration(accessToken.getExpiration());
             idToken.setAcr(accessToken.getAcr());
+            idToken.setAmr(accessToken.getAmr());
             transformIDToken(session, idToken, realm, client, userSession.getUser(), userSession, clientSession);
             return this;
         }
