@@ -38,8 +38,9 @@
 
     <modules>
         <module>adapters</module>
+        <module>sssd</module>
     </modules>
-    
+
     <build>
         <pluginManagement>
             <plugins>
@@ -65,7 +66,7 @@
                             </configuration>
                         </execution>
                     </executions>
-                </plugin> 
+                </plugin>
                 <plugin>
                     <artifactId>maven-resources-plugin</artifactId>
                     <executions>

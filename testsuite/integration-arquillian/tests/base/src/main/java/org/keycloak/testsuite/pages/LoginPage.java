@@ -71,6 +71,9 @@ public class LoginPage extends AbstractPage {
     @FindBy(className = "alert-info")
     private WebElement loginInfoMessage;
 
+    @FindBy(className = "instruction")
+    private WebElement instruction;
+
 
     @FindBy(id = "kc-current-locale-link")
     private WebElement languageText;
@@ -126,6 +129,10 @@ public class LoginPage extends AbstractPage {
 
     public String getError() {
         return loginErrorMessage != null ? loginErrorMessage.getText() : null;
+    }
+
+    public String getInstruction() {
+        return instruction != null ? instruction.getText() : null;
     }
 
     public String getSuccessMessage() {
