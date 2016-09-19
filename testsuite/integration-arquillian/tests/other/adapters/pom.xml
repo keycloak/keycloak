@@ -352,7 +352,6 @@
                         </plugin>
                         <plugin>
                             <artifactId>maven-resources-plugin</artifactId>
-                            <version>3.0.1</version>
                             <executions>
                                 <execution>
                                     <id>example-realms</id>
@@ -367,7 +366,10 @@
                                             <resource>
                                                 <directory>${examples.basedir}</directory>
                                                 <filtering>true</filtering>
-                                                <includes>**/*realm.json,**/testsaml.json</includes>
+                                                <includes>
+                                                    <include>**/*realm.json</include>
+                                                    <include>**/testsaml.json</include>
+                                                </includes>
                                             </resource>
                                         </resources>
                                     </configuration>
