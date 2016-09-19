@@ -658,4 +658,18 @@ public class AccountTest extends TestRealmKeycloakTest {
         events.clear();
     }
 
+    @Test
+    public void testInvalidReferrer() {
+        driver.navigate().to(profilePage.getPath() + "?referrer=test-app");
+        loginPage.login("test-user@localhost", "password");
+        Assert.assertTrue(profilePage.isCurrent());
+        profilePage.backToApplication();
+
+        Assert.assertTrue(appPage.isCurrent());
+
+        driver.navigate().to(profilePage.getPath() + "?referrer=test-invalid&referrer_uri=http://localhost:8180/auth/realms/master/app/auth?test");
+        Assert.assertTrue(profilePage.isCurrent());
+
+        events.clear();
+    }
 }

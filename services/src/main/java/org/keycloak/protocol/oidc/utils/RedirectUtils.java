@@ -41,8 +41,9 @@ public class RedirectUtils {
     }
 
     public static String verifyRedirectUri(UriInfo uriInfo, String redirectUri, RealmModel realm, ClientModel client) {
-        Set<String> validRedirects = client.getRedirectUris();
-        return verifyRedirectUri(uriInfo, client.getRootUrl(), redirectUri, realm, validRedirects);
+        if (client != null)
+            return verifyRedirectUri(uriInfo, client.getRootUrl(), redirectUri, realm, client.getRedirectUris());
+        return null;
     }
 
     public static Set<String> resolveValidRedirects(UriInfo uriInfo, String rootUrl, Set<String> validRedirects) {
