@@ -112,12 +112,6 @@
                                     <type>zip</type>
                                     <destFileName>keycloak-examples-${project.version}.zip</destFileName>
                                 </artifactItem>
-                                <artifactItem>
-                                    <groupId>org.keycloak</groupId>
-                                    <artifactId>keycloak-src-dist</artifactId>
-                                    <type>zip</type>
-                                    <destFileName>keycloak-src-${project.version}.zip</destFileName>
-                                </artifactItem>
                             </artifactItems>
                             <outputDirectory>target/${project.version}</outputDirectory>
                         </configuration>
