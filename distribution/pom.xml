@@ -40,7 +40,6 @@
         <module>proxy-dist</module>
         <module>server-dist</module>
         <module>server-overlay</module>
-        <module>src-dist</module>
         <module>feature-packs</module>
     </modules>
 
