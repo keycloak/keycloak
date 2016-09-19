@@ -50,7 +50,7 @@
         "mavenArtifactVersion": "2.1.0-SNAPSHOT",
         "mavenArtifactId": "photoz-authz-policy",
         "sessionName": "MainOwnerSession",
-        "mavenArtifactGroupId": "org.keycloak",
+        "mavenArtifactGroupId": "org.keycloak.testsuite",
         "moduleName": "PhotozAuthzOwnerPolicy",
         "applyPolicies": "[]",
         "scannerPeriod": "1",
