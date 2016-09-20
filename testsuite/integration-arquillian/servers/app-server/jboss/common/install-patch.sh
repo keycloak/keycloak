@@ -9,7 +9,7 @@ fi
 cd $JBOSS_HOME/bin
 
 RESULT=0
-patches=$(echo $AUTH_PATCH_ZIPS | tr "," "\n")
+patches=$(echo $APP_PATCH_ZIPS | tr "," "\n")
 for patch in $patches
 do
     ./jboss-cli.sh --command="patch apply $patch"

@@ -279,9 +279,9 @@
             </activation>
             <properties>
                 <!--override default unpacked artifact with server-overlay-->
-                <unpacked.artifact.groupId>${auth.server.overlay.groupId}</unpacked.artifact.groupId>
-                <unpacked.artifact.artifactId>${auth.server.overlay.artifactId}</unpacked.artifact.artifactId>
-                <unpacked.artifact.version>${auth.server.overlay.version}</unpacked.artifact.version>
+                <unpacked.artifact.groupId>${overlaid.container.groupId}</unpacked.artifact.groupId>
+                <unpacked.artifact.artifactId>${overlaid.container.artifactId}</unpacked.artifact.artifactId>
+                <unpacked.artifact.version>${overlaid.container.version}</unpacked.artifact.version>
                 <auth.server.home>${project.build.directory}/unpacked/${overlaid.container.unpacked.folder.name}</auth.server.home>
             </properties>
             <build>
@@ -299,11 +299,11 @@
                                     <configuration>
                                         <artifactItems>
                                             <artifactItem>
-                                                <groupId>${overlaid.container.groupId}</groupId>
-                                                <artifactId>${overlaid.container.artifactId}</artifactId>
-                                                <version>${overlaid.container.version}</version>
+                                                <groupId>${auth.server.overlay.groupId}</groupId>
+                                                <artifactId>${auth.server.overlay.artifactId}</artifactId>
+                                                <version>${auth.server.overlay.version}</version>
                                                 <type>zip</type>
-                                                <outputDirectory>${auth.server.home}</outputDirectory>
+                                                <outputDirectory>${project.build.directory}/unpacked/${overlaid.container.unpacked.folder.name}</outputDirectory>
                                             </artifactItem>
                                         </artifactItems>
                                     </configuration>
@@ -311,23 +311,25 @@
                             </executions>
                         </plugin>
                         <plugin>
-                            <artifactId>maven-antrun-plugin</artifactId>
-                            <version>1.8</version>
+                            <groupId>org.codehaus.mojo</groupId>
+                            <artifactId>exec-maven-plugin</artifactId>
                             <executions>
                                 <execution>
-                                    <id>move-standalone-keycloak-xml</id>
-                                    <phase>process-resources</phase>
+                                    <id>install-server-overlay</id>
+                                    <phase>generate-resources</phase>
                                     <goals>
-                                        <goal>run</goal>
+                                        <goal>exec</goal>
                                     </goals>
-                                    <configuration>
-                                        <tasks>
-                                            <move file="${auth.server.home}/standalone/configuration/standalone-keycloak.xml"
-                                                  tofile="${auth.server.home}/standalone/configuration/standalone.xml"/>
-                                        </tasks>
-                                    </configuration>
                                 </execution>
                             </executions>
+                            <configuration>
+                                <executable>${common.resources}/install-keycloak.${script.suffix}</executable>
+                                <workingDirectory>${auth.server.home}/bin</workingDirectory>
+                                <environmentVariables>
+                                    <JAVA_HOME>${auth.server.java.home}</JAVA_HOME>
+                                    <JBOSS_HOME>${auth.server.home}</JBOSS_HOME>
+                                </environmentVariables>
+                            </configuration>
                         </plugin>
                     </plugins>
                 </pluginManagement>
@@ -545,7 +547,7 @@
             <id>auth-server-apply-patch</id>
             <activation>
                 <property>
-                    <name>auth.server.patch.zip</name>
+                    <name>auth.server.patch.zips</name>
                 </property>
             </activation>
             <build>
@@ -569,7 +571,7 @@
                                 <environmentVariables>
                                     <JAVA_HOME>${auth.server.java.home}</JAVA_HOME>
                                     <JBOSS_HOME>${auth.server.home}</JBOSS_HOME>
-                                    <PATCH_ZIP>${auth.server.patch.zip}</PATCH_ZIP>
+                                    <AUTH_PATCH_ZIPS>${auth.server.patch.zips}</AUTH_PATCH_ZIPS>
                                 </environmentVariables>
                             </configuration>
                         </plugin>
