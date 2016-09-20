@@ -97,7 +97,7 @@ public class DeploymentBuilder {
                             log.debugf("Try to load key [%s]", key.getKeystore().getCertificateAlias());
                             cert = keyStore.getCertificate(key.getKeystore().getCertificateAlias());
                             if(cert == null) {
-                                log.errorf("key alias %s is not found into keystore", key.getKeystore().getCertificateAlias());
+                                log.errorf("Key alias %s is not found into keystore", key.getKeystore().getCertificateAlias());
                             }
                             privateKey = (PrivateKey) keyStore.getKey(key.getKeystore().getPrivateKeyAlias(), key.getKeystore().getPrivateKeyPassword().toCharArray());
                             publicKey = cert.getPublicKey();
