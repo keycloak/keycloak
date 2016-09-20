@@ -166,6 +166,8 @@
                                     kc.onAuthError && kc.onAuthError();
                                     if (initOptions.onLoad) {
                                         onLoad();
+                                    } else {
+                                        initPromise.setError();
                                     }
                                 });
                             });
@@ -177,6 +179,8 @@
                                 kc.onAuthError && kc.onAuthError();
                                 if (initOptions.onLoad) {
                                     onLoad();
+                                } else {
+                                    initPromise.setError();
                                 }
                             });
                         }
