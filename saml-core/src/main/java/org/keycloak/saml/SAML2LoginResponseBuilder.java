@@ -55,6 +55,7 @@ public class SAML2LoginResponseBuilder {
     protected String issuer;
     protected int subjectExpiration;
     protected int assertionExpiration;
+    protected int sessionExpiration;
     protected String nameId;
     protected String nameIdFormat;
     protected boolean multiValuedRoles;
@@ -101,6 +102,18 @@ public class SAML2LoginResponseBuilder {
      */
     public SAML2LoginResponseBuilder assertionExpiration(int assertionExpiration) {
         this.assertionExpiration = assertionExpiration;
+        return this;
+    }
+
+    /**
+     * Length of time in seconds the client session can be valid for
+     * See SAML core specification 2.7.2 SessionNotOnOrAfter
+     *
+     * @param assertionExpiration Number of seconds the assertion should be valid
+     * @return
+     */
+    public SAML2LoginResponseBuilder sessionExpiration(int sessionExpiration) {
+        this.sessionExpiration = sessionExpiration;
         return this;
     }
 
@@ -202,6 +215,10 @@ public class SAML2LoginResponseBuilder {
                     authContextRef);
             if (sessionIndex != null) authnStatement.setSessionIndex(sessionIndex);
             else authnStatement.setSessionIndex(assertion.getID());
+
+            if (sessionExpiration > 0) {
+                authnStatement.setSessionNotOnOrAfter(XMLTimeUtil.add(XMLTimeUtil.getIssueInstant(), sessionExpiration * 1000));
+            }
 
             assertion.addStatement(authnStatement);
         }

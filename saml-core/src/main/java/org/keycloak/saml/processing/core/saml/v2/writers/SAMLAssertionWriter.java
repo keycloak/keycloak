@@ -205,6 +205,12 @@ public class SAMLAssertionWriter extends BaseWriter {
             StaxUtil.writeAttribute(writer, JBossSAMLConstants.SESSION_INDEX.get(), sessionIndex);
         }
 
+        XMLGregorianCalendar sessionNotOnOrAfter = authnStatement.getSessionNotOnOrAfter();
+
+        if (sessionNotOnOrAfter != null) {
+            StaxUtil.writeAttribute(writer, JBossSAMLConstants.SESSION_NOT_ON_OR_AFTER.get(), sessionNotOnOrAfter.toString());
+        }
+
         AuthnContextType authnContext = authnStatement.getAuthnContext();
         if (authnContext != null)
             write(authnContext);
