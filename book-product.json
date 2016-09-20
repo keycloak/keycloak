@@ -10,12 +10,12 @@
   ],
   "variables": {
     "title": "Authorization Services Guide",
-    "community": true,
-    "product": false,
-    "images": "keycloak-images",
+    "community": false,
+    "product": true,
+    "images": "rhsso-images",
     "project": {
-      "name": "Keycloak",
-      "version": "SNAPSHOT",
+      "name": "Red Hat Single Sign-On",
+      "version": "7.0.0",
       "module": "Authorization Services"
     }
   }

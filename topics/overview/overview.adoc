@@ -1,5 +1,12 @@
 == Overview
 
+{% if book.product %}
+{{book.project.module}} is a Technology Preview feature and is not fully supported. The feature is disabled by default.
+
+To enable {{book.project.module}} edit `standalone/configuration/profile.properties` (or `domain/configuration/profile.properties`)
+and set `profile=preview` to enable preview features.
+{% endif %}
+
 {{book.project.name}} supports fine-grained authorization policies and is able to mix and match different access control
 mechanisms such as:
 

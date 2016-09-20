@@ -2,7 +2,7 @@
 
 Before going further, it is important to understand some terms and concepts introduced by {{book.project.name}} {{book.project.module}}.
 
-==== Resource Server
+=== Resource Server
 
 Per OAuth2 terminology, a Resource Server is the server hosting the protected resources and capable of accepting and responding to protected resource requests.
 
@@ -13,7 +13,7 @@ authenticate their users usually store that information in the user's session an
 In Keycloak, any *confidential* client application may act as a resource server. This client's resources and their respective scopes are
 protected and ruled by a set of authorization policies.
 
-==== Resource
+=== Resource
 
 A resource is part of the assets of an application and the organization. It can be a set of one or more endpoints, a classic web resource such as an HTML page, and so on.
 In authorization policy terminology, a resource is the _object_ being protected.
@@ -21,7 +21,7 @@ In authorization policy terminology, a resource is the _object_ being protected.
 Every single resource has a unique identifier which may represent a single resource or a set of resources. For instance, you may want to manage a _Banking Account Resource_ that represents and defines a set of authorization policies for all banking accounts.
 But you may also have a different resource named _Alice's Banking Account_, which represents a single resource owned by a single customer, which may have its own set of authorization policies.
 
-==== Scope
+=== Scope
 
 A resource's scope is a bounded extent of access that is possible to perform on a resource. In authorization policy
 terminology, a scope is one of the potentially many _verbs_ that can logically apply to a resource.
@@ -31,7 +31,7 @@ _edit_, _delete_, etc. However, it may also be related with some information pro
 may have a _Project_ resource and a _cost_ scope, where _cost_ scope may be used to define specific policies
 and permissions for those trying to access project's cost.
 
-==== Permission
+=== Permission
 
 Consider this simple and very common permission:
 
@@ -49,7 +49,7 @@ A permission associates the object being protected with the policies that must b
 * Support a more flexible security model, helping you to easily adapt to changes in your security requirements
 * Make changes at runtime -- applications only care about the resources and scopes being protected and not how they are actually protected
 
-==== Policy
+=== Policy
 
 A policy defines the conditions that must be satisfied to grant access to an object. Different than permissions, you don't specify the object being protected
 but the conditions that must be satisfied to get access to a given object (e.g., resource, scope, or both).
@@ -60,7 +60,7 @@ Keycloak leverages the concept of policies and how you define them by providing 
 Instead of writing a single and huge policy with all conditions that must be satisfied to get access to a given resource, the policies implementation in {{book.project.name}} {{book.project.module}} follows the *divide-and-conquer* technique.
 That is, you can create individual policies, reuse them on different permissions, and build more complex policies by combining individual policies.
 
-==== Policy Provider
+=== Policy Provider
 
 Policy providers are implementations of specific policy types. {{book.project.name}} provides some built-in policies, backed by their corresponding
 policy providers, and you are free to create your own policy types to support your specific requirements.
@@ -68,7 +68,7 @@ policy providers, and you are free to create your own policy types to support yo
 {{book.project.name}} provides a *SPI* (Service Provider Interface) that you can use to plug in your own policy provider implementations.
 
 [[_permission_ticket]]
-==== Permission Ticket
+=== Permission Ticket
 
 A Permission Ticket is a special type of token defined by the  https://docs.kantarainitiative.org/uma/rec-uma-core.html[OAuth2's User-Managed Access (UMA) Profile] specification that provides an opaque structure whose form is determined by the authorization server. This
 structure represents the resources and/or scopes being requested by a client as well a the policies that must be applied to a request for authorization data (requesting party token or RPT).
