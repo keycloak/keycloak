@@ -45,3 +45,52 @@ This is better described in an example.  Let's walk through the `browser` authen
 . The next execution is the OTP Form.
   This is marked as _optional_.  If the user has OTP set up, then this authentication type must run and be successful.  If the user doesn't
   have OTP set up, this authentication type is ignored.
+
+=== Executions
+
+Executions can be used 
+
+.Script Authenticator
+A _script_ authenticator allows to define custom authentication logic via JavaScript.
+Custom authenticators. Authentication scripts must at least provide one of the following functions:
+`authenticate(..)` which is called from `Authenticator#authenticate(AuthenticationFlowContext)`
+`action(..)` which is called from `Authenticator#action(AuthenticationFlowContext)`
+
+Custom `Authenticator`'s should at least provide the `authenticate(..)` function.
+The following script `javax.script.Bindings` are available for convenient use within script code.
+
+`script`::
+  the `ScriptModel` to access script metadata
+`realm`::
+  the `RealmModel`
+`user`::
+  the current `UserModel`
+`session`::
+  the active `KeycloakSession`
+`httpRequest`::
+  the current `org.jboss.resteasy.spi.HttpRequest`
+`LOG`::
+a `org.jboss.logging.Logger` scoped to `ScriptBasedAuthenticator`
+
+Note that additional context information can be extracted from the `context` argument passed 
+to the `authenticate(context)` `action(context)` function.
+
+[source]
+----
+AuthenticationFlowError = Java.type("org.keycloak.authentication.AuthenticationFlowError");
+
+function authenticate(context) {
+
+  LOG.info(script.name + " --> trace auth for: " + user.username);
+
+  if (   user.username === "tester"
+      && user.getAttribute("someAttribute")
+      && user.getAttribute("someAttribute").contains("someValue")) {
+
+      context.failure(AuthenticationFlowError.INVALID_USER);
+      return;
+  }
+
+  context.success();
+}
+----                        
