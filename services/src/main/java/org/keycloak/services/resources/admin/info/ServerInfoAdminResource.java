@@ -43,6 +43,7 @@ import org.keycloak.policy.PasswordPolicyProviderFactory;
 import org.keycloak.provider.*;
 import org.keycloak.representations.idm.ComponentTypeRepresentation;
 import org.keycloak.representations.idm.PasswordPolicyTypeRepresentation;
+import org.keycloak.representations.info.ProfileInfoRepresentation;
 import org.keycloak.theme.Theme;
 import org.keycloak.theme.ThemeProvider;
 import org.keycloak.models.KeycloakSession;
@@ -84,6 +85,7 @@ public class ServerInfoAdminResource {
         ServerInfoRepresentation info = new ServerInfoRepresentation();
         info.setSystemInfo(SystemInfoRepresentation.create(session.getKeycloakSessionFactory().getServerStartupTimestamp()));
         info.setMemoryInfo(MemoryInfoRepresentation.create());
+        info.setProfileInfo(ProfileInfoRepresentation.create());
 
         setSocialProviders(info);
         setIdentityProviders(info);
