@@ -155,7 +155,6 @@
                 } else if (initOptions) {
                     if (initOptions.token || initOptions.refreshToken) {
                         setToken(initOptions.token, initOptions.refreshToken, initOptions.idToken);
-                        kc.timeSkew = initOptions.timeSkew || 0;
 
                         if (loginIframe.enable) {
                             setupCheckLoginIframe().success(function() {
@@ -359,11 +358,10 @@
                 throw 'Not authenticated';
             }
 
-            var expiresIn = kc.tokenParsed['exp'] - (new Date().getTime() / 1000) + kc.timeSkew;
+            var expiresIn = kc.tokenParsed['exp'] - Math.ceil(new Date().getTime() / 1000) + kc.timeSkew;
             if (minValidity) {
                 expiresIn -= minValidity;
             }
-
             return expiresIn < 0;
         }
 
@@ -378,7 +376,20 @@
             minValidity = minValidity || 5;
 
             var exec = function() {
-                if (minValidity >= 0 && !kc.isTokenExpired(minValidity)) {
+                var refreshToken = false;
+                if (kc.timeSkew == -1) {
+                    console.info('Skew ' + kc.timeSkew);
+                    refreshToken = true;
+                    console.info('[KEYCLOAK] Refreshing token: time skew not set');
+                } else if (minValidity == -1) {
+                    refreshToken = true;
+                    console.info('[KEYCLOAK] Refreshing token: forced refresh');
+                } else if (kc.isTokenExpired(minValidity)) {
+                    refreshToken = true;
+                    console.info('[KEYCLOAK] Refreshing token: token expired');
+                }
+
+                if (!refreshToken) {
                     promise.setSuccess(false);
                 } else {
                     var params = 'grant_type=refresh_token&' + 'refresh_token=' + kc.refreshToken;
@@ -403,18 +414,21 @@
                         req.onreadystatechange = function () {
                             if (req.readyState == 4) {
                                 if (req.status == 200) {
+                                    console.info('[KEYCLOAK] Token refreshed');
+
                                     timeLocal = (timeLocal + new Date().getTime()) / 2;
 
                                     var tokenResponse = JSON.parse(req.responseText);
-                                    kc.timeSkew = Math.floor(timeLocal / 1000) - kc.tokenParsed.iat;
 
-                                    setToken(tokenResponse['access_token'], tokenResponse['refresh_token'], tokenResponse['id_token']);
+                                    setToken(tokenResponse['access_token'], tokenResponse['refresh_token'], tokenResponse['id_token'], timeLocal);
 
                                     kc.onAuthRefreshSuccess && kc.onAuthRefreshSuccess();
                                     for (var p = refreshQueue.pop(); p != null; p = refreshQueue.pop()) {
                                         p.setSuccess(true);
                                     }
                                 } else {
+                                    console.warn('[KEYCLOAK] Failed to refresh token');
+
                                     kc.onAuthRefreshError && kc.onAuthRefreshError();
                                     for (var p = refreshQueue.pop(); p != null; p = refreshQueue.pop()) {
                                         p.setError(true);
@@ -525,18 +539,16 @@
             function authSuccess(accessToken, refreshToken, idToken, fulfillPromise) {
                 timeLocal = (timeLocal + new Date().getTime()) / 2;
 
-                setToken(accessToken, refreshToken, idToken);
+                setToken(accessToken, refreshToken, idToken, timeLocal);
 
                 if ((kc.tokenParsed && kc.tokenParsed.nonce != oauth.storedNonce) ||
                     (kc.refreshTokenParsed && kc.refreshTokenParsed.nonce != oauth.storedNonce) ||
                     (kc.idTokenParsed && kc.idTokenParsed.nonce != oauth.storedNonce)) {
 
-                    console.log('invalid nonce!');
+                    console.info('[KEYCLOAK] Invalid nonce, clearing token');
                     kc.clearToken();
                     promise && promise.setError();
                 } else {
-                    kc.timeSkew = Math.floor(timeLocal / 1000) - kc.tokenParsed.iat;
-
                     if (fulfillPromise) {
                         kc.onAuthSuccess && kc.onAuthSuccess();
                         promise && promise.setSuccess();
@@ -609,7 +621,7 @@
             return promise.promise;
         }
 
-        function setToken(token, refreshToken, idToken) {
+        function setToken(token, refreshToken, idToken, timeLocal) {
             if (kc.tokenTimeoutHandle) {
                 clearTimeout(kc.tokenTimeoutHandle);
                 kc.tokenTimeoutHandle = null;
@@ -628,12 +640,23 @@
                 kc.realmAccess = kc.tokenParsed.realm_access;
                 kc.resourceAccess = kc.tokenParsed.resource_access;
 
+                if (timeLocal) {
+                    kc.timeSkew = Math.floor(timeLocal / 1000) - kc.tokenParsed.iat;
+                    console.info('[KEYCLOAK] Estimated time difference between browser and server is ' + kc.timeSkew + ' seconds');
+                } else {
+                    kc.timeSkew = -1;
+                }
+
                 if (kc.onTokenExpired) {
-                    var expiresIn = (kc.tokenParsed['exp'] - (new Date().getTime() / 1000) + kc.timeSkew) * 1000;
-                    if (expiresIn <= 0) {
+                    if (kc.timeSkew == -1) {
                         kc.onTokenExpired();
                     } else {
-                        kc.tokenTimeoutHandle = setTimeout(kc.onTokenExpired, expiresIn);
+                        var expiresIn = (kc.tokenParsed['exp'] - (new Date().getTime() / 1000) + kc.timeSkew) * 1000;
+                        if (expiresIn <= 0) {
+                            kc.onTokenExpired();
+                        } else {
+                            kc.tokenTimeoutHandle = setTimeout(kc.onTokenExpired, expiresIn);
+                        }
                     }
                 }
 
