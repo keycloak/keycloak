@@ -17,41 +17,25 @@
 
 package org.keycloak.testsuite.adapter.servlet;
 
-import java.io.IOException;
-import java.io.PrintWriter;
-
 import javax.servlet.ServletException;
-import javax.servlet.annotation.WebServlet;
-import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
+import java.io.IOException;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-@WebServlet("/SessionServlet")
-public class SessionServlet extends HttpServlet {
+public class TokenMinTTLServlet extends AbstractShowTokensServlet {
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        String counter = increaseAndGetCounter(req);
+        StringBuilder response = new StringBuilder("<html><head><title>Token Min TTL Servlet</title></head><body><pre>");
 
-        resp.setContentType("text/html");
-        PrintWriter pw = resp.getWriter();
-        pw.printf("<html><head><title>%s</title></head><body>", "Session Test");
-        pw.printf("Counter=%s", counter);
-        pw.print("</body></html>");
-        pw.flush();
+        String tokens = renderTokens(req);
+        response = response.append(tokens);
 
-
+        response.append("</pre></body></html>");
+        resp.getWriter().println(response.toString());
     }
 
-    private String increaseAndGetCounter(HttpServletRequest req) {
-        HttpSession session = req.getSession();
-        Integer counter = (Integer)session.getAttribute("counter");
-        counter = (counter == null) ? 1 : counter + 1;
-        session.setAttribute("counter", counter);
-        return String.valueOf(counter);
-    }
 }

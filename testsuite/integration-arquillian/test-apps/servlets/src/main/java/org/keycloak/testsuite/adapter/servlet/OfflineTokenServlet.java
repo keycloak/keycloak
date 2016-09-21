@@ -1,12 +1,6 @@
 package org.keycloak.testsuite.adapter.servlet;
 
-import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
-import org.keycloak.jose.jws.JWSInput;
-import org.keycloak.jose.jws.JWSInputException;
-import org.keycloak.representations.RefreshToken;
-import org.keycloak.util.JsonSerialization;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;

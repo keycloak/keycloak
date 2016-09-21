@@ -21,5 +21,18 @@
         <module>photoz</module>
         <module>hello-world-authz-service</module>
         <module>servlet-authz</module>
+        <module>servlets</module>
     </modules>
+
+    <build>
+        <plugins>
+            <plugin>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>1.7</source>
+                    <target>1.7</target>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 </project>

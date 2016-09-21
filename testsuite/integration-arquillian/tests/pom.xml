@@ -532,6 +532,12 @@
                     <version>1.0.13</version>
                 </dependency>
 
+                <dependency>
+                    <groupId>org.keycloak.testsuite</groupId>
+                    <artifactId>integration-arquillian-test-apps-servlets</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+
                 <!--                <dependency>
                     <groupId>org.arquillian.extension</groupId>
                     <artifactId>arquillian-recorder-reporter-impl</artifactId>
@@ -549,12 +555,6 @@
                 <dependency>
                     <groupId>org.slf4j</groupId>
                     <artifactId>slf4j-log4j12</artifactId>
-                </dependency>
-
-                <dependency>
-                    <groupId>javax.servlet</groupId>
-                    <artifactId>javax.servlet-api</artifactId>
-                    <version>3.1.0</version>
                 </dependency>
 
                 <dependency>
@@ -602,10 +602,6 @@
 
                 <dependency>
                     <groupId>org.keycloak</groupId>
-                    <artifactId>keycloak-core</artifactId>
-                </dependency>
-                <dependency>
-                    <groupId>org.keycloak</groupId>
                     <artifactId>keycloak-admin-client</artifactId>
                 </dependency>
                 <dependency>
@@ -615,18 +611,6 @@
                 <dependency>
                     <groupId>org.keycloak</groupId>
                     <artifactId>keycloak-services</artifactId>
-                </dependency>
-                <dependency>
-                    <groupId>org.keycloak</groupId>
-                    <artifactId>keycloak-adapter-core</artifactId>
-                </dependency>
-                <dependency>
-                    <groupId>org.keycloak</groupId>
-                    <artifactId>keycloak-adapter-spi</artifactId>
-                </dependency>
-                <dependency>
-                    <groupId>org.keycloak</groupId>
-                    <artifactId>keycloak-saml-adapter-api-public</artifactId>
                 </dependency>
                 <dependency>
                     <groupId>org.keycloak</groupId>
@@ -648,30 +632,8 @@
                 </dependency>
 
                 <dependency>
-                    <groupId>org.jboss.spec.javax.ws.rs</groupId>
-                    <artifactId>jboss-jaxrs-api_2.0_spec</artifactId>
-                </dependency>
-                <dependency>
                     <groupId>org.jboss.resteasy</groupId>
                     <artifactId>async-http-servlet-3.0</artifactId>
-                </dependency>
-                <dependency>
-                    <groupId>org.jboss.resteasy</groupId>
-                    <artifactId>resteasy-jaxrs</artifactId>
-                    <exclusions>
-                        <exclusion>
-                            <groupId>log4j</groupId>
-                            <artifactId>log4j</artifactId>
-                        </exclusion>
-                        <exclusion>
-                            <groupId>org.slf4j</groupId>
-                            <artifactId>slf4j-api</artifactId>
-                        </exclusion>
-                        <exclusion>
-                            <groupId>org.slf4j</groupId>
-                            <artifactId>slf4j-simple</artifactId>
-                        </exclusion>
-                    </exclusions>
                 </dependency>
                 <dependency>
                     <groupId>org.jboss.resteasy</groupId>
