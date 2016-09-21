@@ -22,6 +22,7 @@ import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.events.Details;
+import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientModel;
@@ -29,9 +30,11 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.LoginProtocol.Error;
+import org.keycloak.services.ErrorPageException;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.managers.ClientSessionCode;
+import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.services.util.CacheControlUtil;
 import org.keycloak.services.util.AuthenticationFlowURLHelper;
@@ -62,7 +65,7 @@ public abstract class AuthorizationEndpointBase {
     @Context
     protected HttpHeaders headers;
     @Context
-    protected HttpRequest request;
+    protected HttpRequest httpRequest;
     @Context
     protected KeycloakSession session;
     @Context
@@ -84,7 +87,7 @@ public abstract class AuthorizationEndpointBase {
                 .setRealm(realm)
                 .setSession(session)
                 .setUriInfo(uriInfo)
-                .setRequest(request);
+                .setRequest(httpRequest);
 
         authSession.setAuthNote(AuthenticationProcessor.CURRENT_FLOW_PATH, flowPath);
 
@@ -147,6 +150,19 @@ public abstract class AuthorizationEndpointBase {
         return realm.getBrowserFlow();
     }
 
+    protected void checkSsl() {
+        if (!uriInfo.getBaseUri().getScheme().equals("https") && realm.getSslRequired().isRequired(clientConnection)) {
+            event.error(Errors.SSL_REQUIRED);
+            throw new ErrorPageException(session, Messages.HTTPS_REQUIRED);
+        }
+    }
+
+    protected void checkRealm() {
+        if (!realm.isEnabled()) {
+            event.error(Errors.REALM_DISABLED);
+            throw new ErrorPageException(session, Messages.REALM_NOT_ENABLED);
+        }
+    }
 
     protected AuthorizationEndpointChecks getOrCreateAuthenticationSession(ClientModel client, String requestState) {
         AuthenticationSessionManager manager = new AuthenticationSessionManager(session);

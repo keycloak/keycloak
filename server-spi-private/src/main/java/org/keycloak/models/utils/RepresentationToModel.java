@@ -614,6 +614,18 @@ public class RepresentationToModel {
             }
         }
 
+        // Added in 3.2
+        if (rep.getDockerAuthenticationFlow() == null) {
+            AuthenticationFlowModel dockerAuthenticationFlow = newRealm.getFlowByAlias(DefaultAuthenticationFlows.DOCKER_AUTH);
+            if (dockerAuthenticationFlow == null) {
+                DefaultAuthenticationFlows.dockerAuthenticationFlow(newRealm);
+            } else {
+                newRealm.setDockerAuthenticationFlow(dockerAuthenticationFlow);
+            }
+        } else {
+            newRealm.setDockerAuthenticationFlow(newRealm.getFlowByAlias(rep.getDockerAuthenticationFlow()));
+        }
+
         DefaultAuthenticationFlows.addIdentityProviderAuthenticator(newRealm, defaultProvider);
     }
 
@@ -897,6 +909,9 @@ public class RepresentationToModel {
         }
         if (rep.getClientAuthenticationFlow() != null) {
             realm.setClientAuthenticationFlow(realm.getFlowByAlias(rep.getClientAuthenticationFlow()));
+        }
+        if (rep.getDockerAuthenticationFlow() != null) {
+            realm.setDockerAuthenticationFlow(realm.getFlowByAlias(rep.getDockerAuthenticationFlow()));
         }
     }
 
