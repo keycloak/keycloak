@@ -25,6 +25,8 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.util.TokenUtil;
 
 import java.security.PublicKey;
+import java.net.URL;
+import java.net.MalformedURLException;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -51,10 +53,16 @@ public class RSATokenVerifier {
         if (realmUrl == null) {
             throw new VerificationException("Realm URL is null. Make sure to add auth-server-url to the configuration of your adapter!");
         }
-        if (!realmUrl.equals(token.getIssuer())) {
-            throw new VerificationException("Token audience doesn't match domain. Token issuer is " + token.getIssuer() + ", but URL from configuration is " + realmUrl);
+	try {
+		URL realm = new URL(realmUrl);
+		URL issuer = new URL(token.getIssuer());
 
-        }
+                if (!realm.equals(issuer)) {
+                        throw new VerificationException("Token audience doesn't match domain. Token issuer is " + token.getIssuer() + ", but URL from configuration is " + realmUrl);
+                }
+	} catch (MalformedURLException ex) {
+		throw new VerificationException("Unable to parse token issuer: " + ex.getMessage());
+	}
 
         if (checkTokenType) {
             String type = token.getType();
