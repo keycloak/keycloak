@@ -21,7 +21,17 @@ import java.util.Map;
 
 public class ProviderRepresentation {
 
+    private int order;
+
     private Map<String, String> operationalInfo;
+
+    public int getOrder() {
+        return order;
+    }
+
+    public void setOrder(int priorityUI) {
+        this.order = priorityUI;
+    }
 
     public Map<String, String> getOperationalInfo() {
         return operationalInfo;

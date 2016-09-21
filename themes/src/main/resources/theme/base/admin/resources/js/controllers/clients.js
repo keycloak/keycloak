@@ -814,7 +814,7 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, templates,
         "bearer-only"
     ];
 
-    $scope.protocols = Object.keys(serverInfo.providers['login-protocol'].providers).sort();
+    $scope.protocols = serverInfo.listProviderIds('login-protocol');
 
     $scope.templates = [ {name:'NONE'}];
     for (var i = 0; i < templates.length; i++) {
@@ -1240,7 +1240,7 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, templates,
 });
 
 module.controller('CreateClientCtrl', function($scope, realm, client, templates, $route, serverInfo, Client, ClientDescriptionConverter, $location, $modal, Dialog, Notifications) {
-    $scope.protocols = Object.keys(serverInfo.providers['login-protocol'].providers).sort();
+    $scope.protocols = serverInfo.listProviderIds('login-protocol');
     $scope.create = true;
     $scope.templates = [ {name:'NONE'}];
     var templateNameMap = new Object();
@@ -1915,7 +1915,7 @@ module.controller('ClientTemplateListCtrl', function($scope, realm, templates, C
 });
 
 module.controller('ClientTemplateDetailCtrl', function($scope, realm, template, $route, serverInfo, ClientTemplate, $location, $modal, Dialog, Notifications) {
-    $scope.protocols = Object.keys(serverInfo.providers['login-protocol'].providers).sort();
+    $scope.protocols = serverInfo.listProviderIds('login-protocol');
 
     $scope.realm = realm;
     $scope.create = !template.name;
