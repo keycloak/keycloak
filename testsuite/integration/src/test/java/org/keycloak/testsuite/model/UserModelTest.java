@@ -17,6 +17,7 @@
 
 package org.keycloak.testsuite.model;
 
+import com.google.common.collect.ImmutableMap;
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.models.ClientModel;
@@ -216,8 +217,8 @@ public class UserModelTest extends AbstractModelTest {
     public void testUpdateUserAttribute() throws Exception {
         RealmModel realm = realmManager.createRealm("original");
         UserModel user = session.users().addUser(realm, "user");
-
-        user.setSingleAttribute("key1", "value1");
+        
+        user.setSingleAttribute("key1", "value1");        
 
         commit();
 
@@ -234,6 +235,30 @@ public class UserModelTest extends AbstractModelTest {
         Assert.assertEquals(allAttrVals.get("key1"), Arrays.asList("val2"));
 
         commit();
+    }
+    
+    // KEYCLOAK-3608
+    @Test
+    public void testUpdateUserSingleAttribute() {
+        Map<String, List<String>> expected = ImmutableMap.of(
+                "key1", Arrays.asList("value3"), 
+                "key2", Arrays.asList("value2"));
+        
+        RealmModel realm = realmManager.createRealm("original");
+        UserModel user = session.users().addUser(realm, "user");
+        
+        user.setSingleAttribute("key1", "value1");
+        user.setSingleAttribute("key2", "value2");
+        
+        // Overwrite the first attribute
+        user.setSingleAttribute("key1", "value3");
+        
+        Assert.assertEquals(expected, user.getAttributes());
+        
+        commit();
+        
+        realm = session.realms().getRealmByName("original");        
+        Assert.assertEquals(expected, session.users().getUserByUsername("user", realm).getAttributes());        
     }
 
     @Test
