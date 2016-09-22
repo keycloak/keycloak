@@ -18,6 +18,8 @@
 package org.keycloak.models.utils;
 
 import org.bouncycastle.openssl.PEMWriter;
+import org.keycloak.broker.provider.IdentityProvider;
+import org.keycloak.broker.provider.IdentityProviderFactory;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
@@ -47,8 +49,6 @@ import org.keycloak.common.util.PemUtils;
 import org.keycloak.transaction.JtaTransactionManagerLookup;
 
 import javax.crypto.spec.SecretKeySpec;
-import javax.naming.InitialContext;
-import javax.sql.DataSource;
 import javax.transaction.InvalidTransactionException;
 import javax.transaction.SystemException;
 import javax.transaction.Transaction;
@@ -62,7 +62,6 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
-import java.sql.DriverManager;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -70,7 +69,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import java.util.function.Function;
 
 /**
  * Set of helper methods, which are useful in various model implementations.
@@ -689,4 +687,29 @@ public final class KeycloakModelUtils {
         }
 
     }
+
+    /**
+     * Retrieve display name based on identity provider type
+     * @param session
+     * @param displayName
+     * @param alias
+     * @return
+     */
+
+
+    public static String getIdentityProviderDisplayName(KeycloakSession session, String displayName, String alias) {
+
+        IdentityProviderFactory providerFactory = (IdentityProviderFactory) session.getKeycloakSessionFactory()
+                .getProviderFactory(IdentityProvider.class, alias);
+
+        if ((displayName == null || displayName.isEmpty()) && (alias.contains("saml") || alias.contains("oidc"))) {
+            return alias;
+        } else if (providerFactory != null && (displayName == null || displayName.isEmpty())) {
+            return providerFactory.getName();
+        } else {
+            return displayName;
+        }
+    }
+
+
 }

@@ -18,6 +18,7 @@
         {
             "providerId" : "google",
             "alias" : "google1",
+            "displayName": "Google",
             "enabled": true,
             "config": {
                 "clientId": "googleId",

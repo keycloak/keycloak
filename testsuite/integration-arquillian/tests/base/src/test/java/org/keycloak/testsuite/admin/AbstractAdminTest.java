@@ -20,9 +20,6 @@ package org.keycloak.testsuite.admin;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,15 +28,11 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.events.log.JBossLoggingEventListenerProviderFactory;
-import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.TestRealmKeycloakTest;
 import org.keycloak.testsuite.events.EventsListenerProviderFactory;
 import org.keycloak.testsuite.util.AssertAdminEvents;
 import org.keycloak.util.JsonSerialization;
-
-import static org.junit.Assert.assertArrayEquals;
 
 /**
  * This class adapts the functionality from the old testsuite to make tests
