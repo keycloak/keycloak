@@ -54,8 +54,6 @@ public interface UserModel extends RoleMapperModel {
 
     boolean isEnabled();
 
-    boolean isOtpEnabled();
-
     void setEnabled(boolean enabled);
 
     /**
@@ -109,8 +107,6 @@ public interface UserModel extends RoleMapperModel {
     boolean isEmailVerified();
 
     void setEmailVerified(boolean verified);
-
-    void setOtpEnabled(boolean totp);
 
     Set<GroupModel> getGroups();
     void joinGroup(GroupModel group);

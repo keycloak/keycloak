@@ -114,11 +114,6 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
     }
 
     @Override
-    public boolean isOtpEnabled() {
-        return user.isTotp();
-    }
-
-    @Override
     public void setEnabled(boolean enabled) {
         user.setEnabled(enabled);
     }
@@ -308,11 +303,6 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
     @Override
     public void setEmailVerified(boolean verified) {
         user.setEmailVerified(verified);
-    }
-
-    @Override
-    public void setOtpEnabled(boolean totp) {
-        user.setTotp(totp);
     }
 
     @Override

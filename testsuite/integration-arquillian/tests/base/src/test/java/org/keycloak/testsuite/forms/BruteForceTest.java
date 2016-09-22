@@ -16,6 +16,8 @@
  */
 package org.keycloak.testsuite.forms;
 
+import com.fasterxml.jackson.jaxrs.json.annotation.JSONP;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
@@ -25,6 +27,7 @@ import org.keycloak.events.Errors;
 import org.keycloak.models.Constants;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.services.managers.DefaultBruteForceProtector;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.AssertEvents.ExpectedEvent;
 import org.keycloak.testsuite.pages.AppPage;
@@ -68,6 +71,12 @@ public class BruteForceTest extends TestRealmKeycloakTest {
 
     @Before
     public void config() {
+
+    }
+
+    @After
+    public void slowItDown() throws Exception {
+        Thread.sleep(100);
 
     }
 
@@ -164,6 +173,7 @@ public class BruteForceTest extends TestRealmKeycloakTest {
 
     @Test
     public void testGrantInvalidOtp() throws Exception {
+        clearVariables();
         {
             String totpSecret = totp.generateTOTP("totpSecret");
             OAuthClient.AccessTokenResponse response = getTestToken("password", totpSecret);
@@ -188,7 +198,7 @@ public class BruteForceTest extends TestRealmKeycloakTest {
         {
             String totpSecret = totp.generateTOTP("totpSecret");
             OAuthClient.AccessTokenResponse response = getTestToken("password", totpSecret);
-            Assert.assertNull(response.getAccessToken());
+            assertTokenNull(response);
             Assert.assertNotNull(response.getError());
             Assert.assertEquals(response.getError(), "invalid_grant");
             Assert.assertEquals(response.getErrorDescription(), "Account temporarily disabled");
@@ -205,8 +215,40 @@ public class BruteForceTest extends TestRealmKeycloakTest {
 
     }
 
+    public void clearVariables() {
+        DefaultBruteForceProtector.testCount = 0;
+        DefaultBruteForceProtector.markNotBefore = -1;
+        DefaultBruteForceProtector.markCheck = -1;
+        DefaultBruteForceProtector.testCount = 0;
+        DefaultBruteForceProtector.clearCount = 0;
+        DefaultBruteForceProtector.logFailure = 0;
+        DefaultBruteForceProtector.logFailureCalled = 0;
+        DefaultBruteForceProtector.didntWait = 0;
+        DefaultBruteForceProtector.nullFailureCount = 0;
+        DefaultBruteForceProtector.notFoundUserId = null;
+    }
+
+    public void assertTokenNull(OAuthClient.AccessTokenResponse response) {
+        if (response.getAccessToken() != null) {
+            if (DefaultBruteForceProtector.exceptionObject != null) {
+                DefaultBruteForceProtector.exceptionObject.printStackTrace();
+            }
+        }
+        Assert.assertNull("was mark set: " + DefaultBruteForceProtector.markNotBefore + " time test: " + DefaultBruteForceProtector.markCheck
+                        + " test count " + DefaultBruteForceProtector.testCount
+                        + " nullFailure: " + DefaultBruteForceProtector.nullFailureCount
+                        + " logFailureCalled: " + DefaultBruteForceProtector.logFailureCalled
+                        + " logFailure: " + DefaultBruteForceProtector.logFailure
+                        + " notFoundUserId: " + DefaultBruteForceProtector.notFoundUserId
+                        + " exception: " + DefaultBruteForceProtector.exception
+                , response.getAccessToken());
+    }
+
+
+
     @Test
     public void testGrantMissingOtp() throws Exception {
+        clearVariables();
         {
             String totpSecret = totp.generateTOTP("totpSecret");
             OAuthClient.AccessTokenResponse response = getTestToken("password", totpSecret);
@@ -231,7 +273,7 @@ public class BruteForceTest extends TestRealmKeycloakTest {
         {
             String totpSecret = totp.generateTOTP("totpSecret");
             OAuthClient.AccessTokenResponse response = getTestToken("password", totpSecret);
-            Assert.assertNull(response.getAccessToken());
+            assertTokenNull(response);
             Assert.assertNotNull(response.getError());
             Assert.assertEquals(response.getError(), "invalid_grant");
             Assert.assertEquals(response.getErrorDescription(), "Account temporarily disabled");

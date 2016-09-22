@@ -17,6 +17,8 @@
 
 package org.keycloak.federation.sssd.api;
 
+import cx.ath.matthew.LibraryLoader;
+import org.freedesktop.DBus;
 import org.freedesktop.dbus.DBusConnection;
 import org.freedesktop.dbus.Variant;
 import org.freedesktop.dbus.exceptions.DBusException;
@@ -35,8 +37,6 @@ import java.util.Vector;
  */
 public class Sssd {
 
-    public static final String BUSNAME = "org.freedesktop.sssd.infopipe";
-
     public static User user() {
         return SingletonHolder.USER_OBJECT;
     }
@@ -44,6 +44,7 @@ public class Sssd {
     public static InfoPipe infopipe() {
         return SingletonHolder.INFOPIPE_OBJECT;
     }
+
 
     public static void disconnect() {
         SingletonHolder.DBUS_CONNECTION.disconnect();
@@ -67,10 +68,10 @@ public class Sssd {
         static {
             try {
                 DBUS_CONNECTION = DBusConnection.getConnection(DBusConnection.SYSTEM);
-                INFOPIPE_OBJECT = DBUS_CONNECTION.getRemoteObject(BUSNAME, InfoPipe.OBJECTPATH, InfoPipe.class);
-                USER_OBJECT = DBUS_CONNECTION.getRemoteObject(BUSNAME, User.OBJECTPATH, User.class);
+                INFOPIPE_OBJECT = DBUS_CONNECTION.getRemoteObject(InfoPipe.BUSNAME, InfoPipe.OBJECTPATH, InfoPipe.class);
+                USER_OBJECT = DBUS_CONNECTION.getRemoteObject(InfoPipe.BUSNAME, User.OBJECTPATH, User.class);
             } catch (DBusException e) {
-                e.printStackTrace();
+                logger.error("Failed to obtain D-Bus connection", e);
             }
         }
     }
@@ -107,5 +108,27 @@ public class Sssd {
             logger.error("Failed to retrieve user's groups from SSSD", e);
         }
         return userGroups;
+    }
+
+    public static boolean isAvailable(){
+        boolean sssdAvailable = false;
+        try {
+            if (LibraryLoader.load().succeed()) {
+                DBusConnection connection = DBusConnection.getConnection(DBusConnection.SYSTEM);
+                DBus dbus = connection.getRemoteObject(DBus.BUSNAME, DBus.OBJECTPATH, DBus.class);
+                sssdAvailable = Arrays.asList(dbus.ListNames()).contains(InfoPipe.BUSNAME);
+                if (!sssdAvailable) {
+                    logger.debugv("SSSD is not available in your system. Federation provider will be disabled.");
+                } else {
+                    sssdAvailable = true;
+                }
+                connection.disconnect();
+            } else {
+                logger.debugv("libunix_dbus_java not found. Federation provider will be disabled.");
+            }
+        } catch (DBusException e) {
+            logger.error("Failed to check the status of SSSD", e);
+        }
+        return sssdAvailable;
     }
 }

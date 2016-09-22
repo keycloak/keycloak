@@ -70,7 +70,7 @@ public class SecretQuestionCredentialProvider implements CredentialProvider, Cre
             CredentialModel secret = new CredentialModel();
             secret.setType(SECRET_QUESTION);
             secret.setValue(credInput.getValue());
-            secret.setCreatedDate(Time.toMillis(Time.currentTime()));
+            secret.setCreatedDate(Time.currentTimeMillis());
             session.userCredentialManager().createCredential(realm ,user, secret);
         } else {
             creds.get(0).setValue(credInput.getValue());

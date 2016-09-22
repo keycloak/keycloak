@@ -223,17 +223,6 @@ public abstract class AbstractUserAdapter implements UserModel {
         throw new ReadOnlyException("user is read only for this update");
     }
 
-    @Override
-    public boolean isOtpEnabled() {
-        return false;
-    }
-
-    @Override
-    public void setOtpEnabled(boolean totp) {
-        throw new ReadOnlyException("user is read only for this update");
-
-    }
-
     /**
      * This method should not be overriden
      *

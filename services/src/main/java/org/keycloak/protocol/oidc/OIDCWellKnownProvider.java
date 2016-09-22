@@ -56,7 +56,7 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
 
     public static final List<String> DEFAULT_RESPONSE_TYPES_SUPPORTED = list(OAuth2Constants.CODE, OIDCResponseType.NONE, OIDCResponseType.ID_TOKEN, OIDCResponseType.TOKEN, "id_token token", "code id_token", "code token", "code id_token token");
 
-    public static final List<String> DEFAULT_SUBJECT_TYPES_SUPPORTED = list("public");
+    public static final List<String> DEFAULT_SUBJECT_TYPES_SUPPORTED = list("public", "pairwise");
 
     public static final List<String> DEFAULT_RESPONSE_MODES_SUPPORTED = list("query", "fragment", "form_post");
 

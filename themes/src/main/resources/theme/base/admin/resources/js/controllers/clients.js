@@ -812,6 +812,7 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, templates,
     $scope.samlEncrypt = false;
     $scope.samlForcePostBinding = false;
     $scope.samlForceNameIdFormat = false;
+    $scope.disableAuthorizationTab = !client.authorizationServicesEnabled;
 
     function updateProperties() {
         if (!$scope.client.attributes) {
@@ -1702,6 +1703,12 @@ module.controller('ClientProtocolMapperCtrl', function($scope, realm, serverInfo
             mapper = angular.copy($scope.mapper);
             $location.url("/realms/" + realm.realm + '/clients/' + client.id + "/mappers/" + $scope.model.mapper.id);
             Notifications.success("Your changes have been saved.");
+        }, function(error) {
+            if (error.status == 400 && error.data.error_description) {
+                Notifications.error(error.data.error_description);
+            } else {
+                Notifications.error('Unexpected error when updating protocol mapper');
+            }
         });
     };
 

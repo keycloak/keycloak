@@ -33,9 +33,13 @@ import java.util.Map;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class MigrateTo1_9_0 {
+public class MigrateTo1_9_0 implements Migration {
 
     public static final ModelVersion VERSION = new ModelVersion("1.9.0");
+
+    public ModelVersion getVersion() {
+        return VERSION;
+    }
 
     public void migrate(KeycloakSession session) {
         RealmModel realm = session.realms().getRealm(Config.getAdminRealm());

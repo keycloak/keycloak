@@ -246,7 +246,6 @@ public class UsersResource {
         if (rep.getLastName() != null) user.setLastName(rep.getLastName());
 
         if (rep.isEnabled() != null) user.setEnabled(rep.isEnabled());
-        if (rep.isTotp() != null) user.setOtpEnabled(rep.isTotp());
         if (rep.isEmailVerified() != null) user.setEmailVerified(rep.isEmailVerified());
 
         List<String> reqActions = rep.getRequiredActions();
@@ -294,7 +293,7 @@ public class UsersResource {
             throw new NotFoundException("User not found");
         }
 
-        UserRepresentation rep = ModelToRepresentation.toRepresentation(user);
+        UserRepresentation rep = ModelToRepresentation.toRepresentation(session, realm, user);
 
         if (realm.isIdentityFederationEnabled()) {
             List<FederatedIdentityRepresentation> reps = getFederatedIdentities(user);
@@ -693,7 +692,7 @@ public class UsersResource {
         }
 
         for (UserModel user : userModels) {
-            results.add(ModelToRepresentation.toRepresentation(user));
+            results.add(ModelToRepresentation.toRepresentation(session, realm, user));
         }
         return results;
     }

@@ -43,7 +43,7 @@ public class AuthorizationClientExample {
     }
 
     private static void introspectRequestingPartyToken() {
-        // create a new instance based on the configuration define at keycloak-authz.json
+        // create a new instance based on the configuration defined in keycloak-authz.json
         AuthzClient authzClient = AuthzClient.create();
 
         // query the server for a resource with a given name
@@ -51,8 +51,9 @@ public class AuthorizationClientExample {
                 .resource()
                 .findByFilter("name=Default Resource");
 
-        // obtian a Entitlement API Token in order to get access to the Entitlement API.
-        // this token is just an access token issued to a client on behalf of an user with a scope kc_entitlement
+        // obtain an Entitlement API Token in order to get access to the Entitlement API.
+        // this token is just an access token issued to a client on behalf of an user
+        // with a scope = kc_entitlement
         String eat = getEntitlementAPIToken(authzClient);
 
         // create an entitlement request
@@ -63,7 +64,8 @@ public class AuthorizationClientExample {
 
         request.addPermission(permission);
 
-        // send the entitlement request to the server in order to obtain a RPT with all permissions granted to the user
+        // send the entitlement request to the server in order to
+        // obtain an RPT with all permissions granted to the user
         EntitlementResponse response = authzClient.entitlement(eat).get("hello-world-authz-service", request);
         String rpt = response.getRpt();
 
@@ -79,7 +81,7 @@ public class AuthorizationClientExample {
     }
 
     private static void createResource() {
-        // create a new instance based on the configuration define at keycloak-authz.json
+        // create a new instance based on the configuration defined in keycloak-authz.json
         AuthzClient authzClient = AuthzClient.create();
 
         // create a new resource representation with the information we want
@@ -111,8 +113,9 @@ public class AuthorizationClientExample {
         // create a new instance based on the configuration define at keycloak-authz.json
         AuthzClient authzClient = AuthzClient.create();
 
-        // obtian a Entitlement API Token in order to get access to the Entitlement API.
-        // this token is just an access token issued to a client on behalf of an user with a scope kc_entitlement
+        // obtain an Entitlement API Token in order to get access to the Entitlement API.
+        // this token is just an access token issued to a client on behalf of an user
+        // with a scope = kc_entitlement
         String eat = getEntitlementAPIToken(authzClient);
 
         // create an entitlement request
@@ -123,7 +126,8 @@ public class AuthorizationClientExample {
 
         request.addPermission(permission);
 
-        // send the entitlement request to the server in order to obtain a RPT with all permissions granted to the user
+        // send the entitlement request to the server in order to obtain a RPT
+        // with all permissions granted to the user
         EntitlementResponse response = authzClient.entitlement(eat).get("hello-world-authz-service", request);
         String rpt = response.getRpt();
 
@@ -133,7 +137,7 @@ public class AuthorizationClientExample {
     }
 
     private static void obtainAllEntitlements() {
-        // create a new instance based on the configuration define at keycloak-authz.json
+        // create a new instance based on the configuration defined in keycloak-authz.json
         AuthzClient authzClient = AuthzClient.create();
 
         // obtian a Entitlement API Token in order to get access to the Entitlement API.

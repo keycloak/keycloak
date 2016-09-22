@@ -26,6 +26,7 @@ import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.component.ComponentModel;
+import org.keycloak.credential.CredentialModel;
 import org.keycloak.events.Event;
 import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.events.admin.AuthDetails;
@@ -174,7 +175,7 @@ public class ModelToRepresentation {
     }
 
 
-    public static UserRepresentation toRepresentation(UserModel user) {
+    public static UserRepresentation toRepresentation(KeycloakSession session, RealmModel realm, UserModel user) {
         UserRepresentation rep = new UserRepresentation();
         rep.setId(user.getId());
         rep.setUsername(user.getUsername());
@@ -184,7 +185,7 @@ public class ModelToRepresentation {
         rep.setEmail(user.getEmail());
         rep.setEnabled(user.isEnabled());
         rep.setEmailVerified(user.isEmailVerified());
-        rep.setTotp(user.isOtpEnabled());
+        rep.setTotp(session.userCredentialManager().isConfiguredFor(realm, user, CredentialModel.OTP));
         rep.setFederationLink(user.getFederationLink());
 
         List<String> reqActions = new ArrayList<String>();
@@ -390,6 +391,10 @@ public class ModelToRepresentation {
             exportRequiredActions(realm, rep);
             exportGroups(realm, rep);
         }
+
+        Map<String, String> attributes = realm.getAttributes();
+        rep.setAttributes(attributes);
+
         return rep;
     }
 

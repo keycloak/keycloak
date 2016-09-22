@@ -93,7 +93,7 @@ public class OTPCredentialProvider implements CredentialProvider, CredentialInpu
         model.setValue(inputModel.getValue());
         model.setDevice(inputModel.getDevice());
         model.setPeriod(policy.getPeriod());
-        model.setCreatedDate(Time.toMillis(Time.currentTime()));
+        model.setCreatedDate(Time.currentTimeMillis());
         if (model.getId() == null) {
             getCredentialStore().createCredential(realm, user, model);
         } else {
@@ -196,6 +196,10 @@ public class OTPCredentialProvider implements CredentialProvider, CredentialInpu
 
         }
         String token = ((UserCredentialModel)input).getValue();
+        if (token == null) {
+            return false;
+        }
+
         OTPPolicy policy = realm.getOTPPolicy();
         if (realm.getOTPPolicy().getType().equals(CredentialModel.HOTP)) {
             HmacOTP validator = new HmacOTP(policy.getDigits(), policy.getAlgorithm(), policy.getLookAheadWindow());

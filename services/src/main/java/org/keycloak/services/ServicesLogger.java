@@ -434,4 +434,8 @@ public interface ServicesLogger extends BasicLogger {
     @Message(id=97, value="Invalid request")
     void invalidRequest(@Cause Throwable t);
 
+    @LogMessage(level = ERROR)
+    @Message(id=98, value="Failed to get redirect uris from sector identifier URI: %s")
+    void failedToGetRedirectUrisFromSectorIdentifierUri(@Cause Throwable t, String sectorIdentifierUri);
+
 }

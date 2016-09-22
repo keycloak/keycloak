@@ -35,6 +35,7 @@ import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resource.RealmResourceProvider;
 import org.keycloak.services.util.CacheControlUtil;
 import org.keycloak.services.util.ResolveRelative;
+import org.keycloak.utils.ProfileHelper;
 import org.keycloak.wellknown.WellKnownProvider;
 
 import javax.ws.rs.GET;
@@ -254,6 +255,8 @@ public class RealmsResource {
 
     @Path("{realm}/authz")
     public Object getAuthorizationService(@PathParam("realm") String name) {
+        ProfileHelper.requirePreview();
+
         init(name);
         AuthorizationProvider authorization = this.session.getProvider(AuthorizationProvider.class);
         AuthorizationService service = new AuthorizationService(authorization);

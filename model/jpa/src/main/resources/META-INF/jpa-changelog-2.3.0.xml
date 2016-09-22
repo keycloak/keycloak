@@ -31,9 +31,11 @@
         </createTable>
          <addPrimaryKey columnNames="ID" constraintName="CONSTR_FEDERATED_USER" tableName="FEDERATED_USER"/>
 
+         <dropColumn tableName="USER_ENTITY" columnName="TOTP" />
 
 
-    </changeSet>
+
+     </changeSet>
 
 
 </databaseChangeLog>

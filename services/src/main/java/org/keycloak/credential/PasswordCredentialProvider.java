@@ -93,7 +93,7 @@ public class PasswordCredentialProvider implements CredentialProvider, Credentia
         expirePassword(realm, user, policy);
         CredentialModel newPassword = new CredentialModel();
         newPassword.setType(CredentialModel.PASSWORD);
-        long createdDate = Time.toMillis(Time.currentTime());
+        long createdDate = Time.currentTimeMillis();
         newPassword.setCreatedDate(createdDate);
         hash.encode(cred.getValue(), policy, newPassword);
         getCredentialStore().createCredential(realm, user, newPassword);

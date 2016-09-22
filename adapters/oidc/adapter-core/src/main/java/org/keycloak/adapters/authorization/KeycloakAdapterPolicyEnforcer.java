@@ -21,6 +21,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.RSATokenVerifier;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.OIDCHttpFacade;
+import org.keycloak.adapters.rotation.AdapterRSATokenVerifier;
 import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.authorization.client.AuthorizationDeniedException;
 import org.keycloak.authorization.client.AuthzClient;
@@ -120,7 +121,7 @@ public class KeycloakAdapterPolicyEnforcer extends AbstractPolicyEnforcer {
                 AuthorizationResponse authzResponse = authzClient.authorization(accessToken).authorize(authzRequest);
 
                 if (authzResponse != null) {
-                    return RSATokenVerifier.verifyToken(authzResponse.getRpt(), deployment.getRealmKey(), deployment.getRealmInfoUrl());
+                    return AdapterRSATokenVerifier.verifyToken(authzResponse.getRpt(), deployment);
                 }
 
                 return null;
@@ -130,7 +131,7 @@ public class KeycloakAdapterPolicyEnforcer extends AbstractPolicyEnforcer {
 
                 if (token.getAuthorization() == null) {
                     EntitlementResponse authzResponse = authzClient.entitlement(accessToken).getAll(authzClient.getConfiguration().getClientId());
-                    return RSATokenVerifier.verifyToken(authzResponse.getRpt(), deployment.getRealmKey(), deployment.getRealmInfoUrl());
+                    return AdapterRSATokenVerifier.verifyToken(authzResponse.getRpt(), deployment);
                 } else {
                     EntitlementRequest request = new EntitlementRequest();
                     PermissionRequest permissionRequest = new PermissionRequest();
@@ -139,7 +140,7 @@ public class KeycloakAdapterPolicyEnforcer extends AbstractPolicyEnforcer {
                     permissionRequest.setScopes(new HashSet<>(pathConfig.getScopes()));
                     request.addPermission(permissionRequest);
                     EntitlementResponse authzResponse = authzClient.entitlement(accessToken).get(authzClient.getConfiguration().getClientId(), request);
-                    return RSATokenVerifier.verifyToken(authzResponse.getRpt(), deployment.getRealmKey(), deployment.getRealmInfoUrl());
+                    return AdapterRSATokenVerifier.verifyToken(authzResponse.getRpt(), deployment);
                 }
             }
         } catch (AuthorizationDeniedException e) {

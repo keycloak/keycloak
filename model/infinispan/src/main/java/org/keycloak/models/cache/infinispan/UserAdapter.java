@@ -120,12 +120,6 @@ public class UserAdapter implements CachedUserModel {
     }
 
     @Override
-    public boolean isOtpEnabled() {
-        if (updated != null) return updated.isOtpEnabled();
-        return cached.isTotp();
-    }
-
-    @Override
     public void setEnabled(boolean enabled) {
         getDelegateForUpdate();
         updated.setEnabled(enabled);
@@ -245,12 +239,6 @@ public class UserAdapter implements CachedUserModel {
     public void setEmailVerified(boolean verified) {
         getDelegateForUpdate();
         updated.setEmailVerified(verified);
-    }
-
-    @Override
-    public void setOtpEnabled(boolean totp) {
-        getDelegateForUpdate();
-        updated.setOtpEnabled(totp);
     }
 
     @Override

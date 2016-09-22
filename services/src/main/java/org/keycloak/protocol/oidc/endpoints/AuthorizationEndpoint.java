@@ -29,11 +29,9 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
-import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
-import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.AuthorizationEndpointBase;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -46,7 +44,6 @@ import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.services.ErrorPageException;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.Urls;
-import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.services.util.CacheControlUtil;
@@ -313,19 +310,6 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
     }
 
     private Response buildAuthorizationCodeAuthorizationResponse() {
-        String idpHint = request.getIdpHint();
-
-        if (idpHint != null && !"".equals(idpHint)) {
-            IdentityProviderModel identityProviderModel = realm.getIdentityProviderByAlias(idpHint);
-
-            if (identityProviderModel == null) {
-                return session.getProvider(LoginFormsProvider.class)
-                        .setError(Messages.IDENTITY_PROVIDER_NOT_FOUND, idpHint)
-                        .createErrorPage();
-            }
-            return buildRedirectToIdentityProvider(idpHint, new ClientSessionCode(realm, clientSession).getCode());
-        }
-
         this.event.event(EventType.LOGIN);
         clientSession.setNote(Details.AUTH_TYPE, CODE_AUTH_TYPE);
 

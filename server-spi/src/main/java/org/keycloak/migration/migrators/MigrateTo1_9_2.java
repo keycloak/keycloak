@@ -25,9 +25,13 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-public class MigrateTo1_9_2 {
+public class MigrateTo1_9_2 implements Migration {
 
     public static final ModelVersion VERSION = new ModelVersion("1.9.2");
+
+    public ModelVersion getVersion() {
+        return VERSION;
+    }
 
     public void migrate(KeycloakSession session) {
         for (RealmModel realm : session.realms().getRealms()) {

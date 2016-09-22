@@ -459,7 +459,7 @@ public class ExportUtils {
      * @return fully exported user representation
      */
     public static UserRepresentation exportUser(KeycloakSession session, RealmModel realm, UserModel user) {
-        UserRepresentation userRep = ModelToRepresentation.toRepresentation(user);
+        UserRepresentation userRep = ModelToRepresentation.toRepresentation(session, realm, user);
 
         // Social links
         Set<FederatedIdentityModel> socialLinks = session.users().getFederatedIdentities(user, realm);

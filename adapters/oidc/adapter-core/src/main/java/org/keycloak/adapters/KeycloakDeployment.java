@@ -21,6 +21,7 @@ import org.apache.http.client.HttpClient;
 import org.jboss.logging.Logger;
 import org.keycloak.adapters.authentication.ClientCredentialsProvider;
 import org.keycloak.adapters.authorization.PolicyEnforcer;
+import org.keycloak.adapters.rotation.PublicKeyLocator;
 import org.keycloak.constants.ServiceUrlConstants;
 import org.keycloak.common.enums.RelativeUrlsUsed;
 import org.keycloak.common.enums.SslRequired;
@@ -29,7 +30,6 @@ import org.keycloak.representations.adapters.config.AdapterConfig;
 import org.keycloak.common.util.KeycloakUriBuilder;
 
 import java.net.URI;
-import java.security.PublicKey;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -43,7 +43,7 @@ public class KeycloakDeployment {
 
     protected RelativeUrlsUsed relativeUrls;
     protected String realm;
-    protected volatile PublicKey realmKey;
+    protected PublicKeyLocator publicKeyLocator;
     protected String authServerBaseUrl;
     protected String realmInfoUrl;
     protected KeycloakUriBuilder authUrl;
@@ -52,6 +52,7 @@ public class KeycloakDeployment {
     protected String accountUrl;
     protected String registerNodeUrl;
     protected String unregisterNodeUrl;
+    protected String jwksUrl;
     protected String principalAttribute = "sub";
 
     protected String resourceName;
@@ -79,13 +80,14 @@ public class KeycloakDeployment {
 
     protected volatile int notBefore;
     protected int tokenMinimumTimeToLive;
+    protected int minTimeBetweenJwksRequests;
     private PolicyEnforcer policyEnforcer;
 
     public KeycloakDeployment() {
     }
 
     public boolean isConfigured() {
-        return getRealm() != null && getRealmKey() != null && (isBearerOnly() || getAuthServerBaseUrl() != null);
+        return getRealm() != null && getPublicKeyLocator() != null && (isBearerOnly() || getAuthServerBaseUrl() != null);
     }
 
     public String getResourceName() {
@@ -100,12 +102,12 @@ public class KeycloakDeployment {
         this.realm = realm;
     }
 
-    public PublicKey getRealmKey() {
-        return realmKey;
+    public PublicKeyLocator getPublicKeyLocator() {
+        return publicKeyLocator;
     }
 
-    public void setRealmKey(PublicKey realmKey) {
-        this.realmKey = realmKey;
+    public void setPublicKeyLocator(PublicKeyLocator publicKeyLocator) {
+        this.publicKeyLocator = publicKeyLocator;
     }
 
     public String getAuthServerBaseUrl() {
@@ -147,6 +149,7 @@ public class KeycloakDeployment {
         accountUrl = authUrlBuilder.clone().path(ServiceUrlConstants.ACCOUNT_SERVICE_PATH).build(getRealm()).toString();
         registerNodeUrl = authUrlBuilder.clone().path(ServiceUrlConstants.CLIENTS_MANAGEMENT_REGISTER_NODE_PATH).build(getRealm()).toString();
         unregisterNodeUrl = authUrlBuilder.clone().path(ServiceUrlConstants.CLIENTS_MANAGEMENT_UNREGISTER_NODE_PATH).build(getRealm()).toString();
+        jwksUrl = authUrlBuilder.clone().path(ServiceUrlConstants.JWKS_URL).build(getRealm()).toString();
     }
 
     public RelativeUrlsUsed getRelativeUrls() {
@@ -179,6 +182,10 @@ public class KeycloakDeployment {
 
     public String getUnregisterNodeUrl() {
         return unregisterNodeUrl;
+    }
+
+    public String getJwksUrl() {
+        return jwksUrl;
     }
 
     public void setResourceName(String resourceName) {
@@ -367,6 +374,14 @@ public class KeycloakDeployment {
 
     public void setTokenMinimumTimeToLive(final int tokenMinimumTimeToLive) {
         this.tokenMinimumTimeToLive = tokenMinimumTimeToLive;
+    }
+
+    public int getMinTimeBetweenJwksRequests() {
+        return minTimeBetweenJwksRequests;
+    }
+
+    public void setMinTimeBetweenJwksRequests(int minTimeBetweenJwksRequests) {
+        this.minTimeBetweenJwksRequests = minTimeBetweenJwksRequests;
     }
 
     public void setPolicyEnforcer(PolicyEnforcer policyEnforcer) {

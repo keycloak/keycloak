@@ -274,7 +274,7 @@ module.service('ServerInfo', function($resource, $q, $http) {
     var delay = $q.defer();
 
     $http.get(authUrl + '/admin/serverinfo').success(function(data) {
-        info = data;
+        angular.copy(data, info);
         delay.resolve(info);
     });
 

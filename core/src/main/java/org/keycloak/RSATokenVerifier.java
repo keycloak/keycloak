@@ -38,6 +38,12 @@ public class RSATokenVerifier {
     public static AccessToken verifyToken(String tokenString, PublicKey realmKey, String realmUrl, boolean checkActive, boolean checkTokenType) throws VerificationException {
         AccessToken token = toAccessToken(tokenString, realmKey);
 
+        tokenVerifications(token, realmUrl, checkActive, checkTokenType);
+
+        return token;
+    }
+
+    private static void tokenVerifications(AccessToken token, String realmUrl, boolean checkActive, boolean checkTokenType) throws VerificationException {
         String user = token.getSubject();
         if (user == null) {
             throw new VerificationException("Token user was null.");
@@ -60,8 +66,8 @@ public class RSATokenVerifier {
             throw new VerificationException("Token is not active.");
         }
 
-        return token;
     }
+
 
     public static AccessToken toAccessToken(String tokenString, PublicKey realmKey) throws VerificationException {
         JWSInput input;
@@ -80,6 +86,23 @@ public class RSATokenVerifier {
         }
         return token;
     }
+
+
+    public static AccessToken verifyToken(JWSInput input, PublicKey realmKey, String realmUrl, boolean checkActive, boolean checkTokenType) throws VerificationException {
+        if (!isPublicKeyValid(input, realmKey)) throw new VerificationException("Invalid token signature.");
+
+        AccessToken token;
+        try {
+            token = input.readJsonContent(AccessToken.class);
+        } catch (JWSInputException e) {
+            throw new VerificationException("Couldn't parse token signature", e);
+        }
+
+        tokenVerifications(token, realmUrl, checkActive, checkTokenType);
+
+        return token;
+    }
+
 
     private static boolean isPublicKeyValid(JWSInput input, PublicKey realmKey) throws VerificationException {
         try {

@@ -6,13 +6,12 @@ of Keycloak.   To deploy, build this directory then take the jar and copy it to 
 
     KEYCLOAK_HOME/bin/jboss-cli.sh --command="module add --name=org.keycloak.examples.secret-question --resources=target/authenticator-required-action-example.jar --dependencies=org.keycloak.keycloak-core,org.keycloak.keycloak-server-spi,org.keycloak.keycloak-services,org.jboss.resteasy.resteasy-jaxrs,javax.ws.rs.api"
 
-Then registering the provider by editing keycloak-server.json and adding the module to the providers field:
+Then registering the provider by editing `standalone/configuration/standalone.xml` and adding the module to the providers element:
 
-    "providers": [
-        ....
-        "module:org.keycloak.examples.secret-question"
-    ],
-
+    <providers>
+        ...
+        <provider>module:org.keycloak.examples.secret-question</provider>
+    </providers>
 
 You then have to copy the secret-question.ftl and secret-question-config.ftl files to the themes/base/login directory.
 

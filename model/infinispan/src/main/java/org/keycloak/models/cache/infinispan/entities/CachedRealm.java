@@ -152,6 +152,8 @@ public class CachedRealm extends AbstractRevisioned {
     protected MultivaluedHashMap<String, IdentityProviderMapperModel> identityProviderMappers = new MultivaluedHashMap<>();
     protected Set<IdentityProviderMapperModel> identityProviderMapperSet;
 
+    protected Map<String, String> attributes;
+
     public CachedRealm(Long revision, RealmModel model) {
         super(revision, model.getId());
         name = model.getName();
@@ -231,10 +233,10 @@ public class CachedRealm extends AbstractRevisioned {
         eventsExpiration = model.getEventsExpiration();
         eventsListeners = model.getEventsListeners();
         enabledEventTypes = model.getEnabledEventTypes();
-        
+
         adminEventsEnabled = model.isAdminEventsEnabled();
         adminEventsDetailsEnabled = model.isAdminEventsDetailsEnabled();
-        
+
         defaultRoles = model.getDefaultRoles();
         ClientModel masterAdminClient = model.getMasterAdminClient();
         this.masterAdminClient = (masterAdminClient != null) ? masterAdminClient.getId() : null;
@@ -283,6 +285,11 @@ public class CachedRealm extends AbstractRevisioned {
         }
         for (ComponentModel component : model.getComponents()) {
             components.put(component.getId(), component);
+        }
+
+        try {
+            attributes = model.getAttributes();
+        } catch (UnsupportedOperationException ex) {
         }
 
     }
@@ -475,7 +482,7 @@ public class CachedRealm extends AbstractRevisioned {
     public Set<String> getEventsListeners() {
         return eventsListeners;
     }
-    
+
     public Set<String> getEnabledEventTypes() {
         return enabledEventTypes;
     }
@@ -619,4 +626,28 @@ public class CachedRealm extends AbstractRevisioned {
     public Map<String, ComponentModel> getComponents() {
         return components;
     }
+
+    public String getAttribute(String name) {
+        return attributes != null ? attributes.get(name) : null;
+    }
+
+    public Integer getAttribute(String name, Integer defaultValue) {
+        String v = getAttribute(name);
+        return v != null ? Integer.parseInt(v) : defaultValue;
+    }
+
+    public Long getAttribute(String name, Long defaultValue) {
+        String v = getAttribute(name);
+        return v != null ? Long.parseLong(v) : defaultValue;
+    }
+
+    public Boolean getAttribute(String name, Boolean defaultValue) {
+        String v = getAttribute(name);
+        return v != null ? Boolean.parseBoolean(v) : defaultValue;
+    }
+
+    public Map<String, String> getAttributes() {
+        return attributes;
+    }
+
 }

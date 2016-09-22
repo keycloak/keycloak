@@ -273,7 +273,7 @@ public class AccountService extends AbstractSecuredLocalService {
         } else if (types.contains(MediaType.APPLICATION_JSON_TYPE)) {
             requireOneOf(AccountRoles.MANAGE_ACCOUNT, AccountRoles.VIEW_PROFILE);
 
-            UserRepresentation rep = ModelToRepresentation.toRepresentation(auth.getUser());
+            UserRepresentation rep = ModelToRepresentation.toRepresentation(session, realm, auth.getUser());
             if (rep.getAttributes() != null) {
                 Iterator<String> itr = rep.getAttributes().keySet().iterator();
                 while (itr.hasNext()) {
@@ -568,8 +568,6 @@ public class AccountService extends AbstractSecuredLocalService {
         credentials.setType(realm.getOTPPolicy().getType());
         credentials.setValue(totpSecret);
         session.userCredentialManager().updateCredential(realm, user, credentials);
-
-        user.setOtpEnabled(true);
 
         // to update counter
         UserCredentialModel cred = new UserCredentialModel();

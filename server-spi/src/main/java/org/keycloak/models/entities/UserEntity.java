@@ -32,7 +32,6 @@ public class UserEntity extends AbstractIdentifiableEntity {
     private String lastName;
     private String email;
     private boolean emailVerified;
-    private boolean totp;
     private boolean enabled;
 
     private String realmId;
@@ -94,14 +93,6 @@ public class UserEntity extends AbstractIdentifiableEntity {
 
     public void setEmailVerified(boolean emailVerified) {
         this.emailVerified = emailVerified;
-    }
-
-    public boolean isTotp() {
-        return totp;
-    }
-
-    public void setTotp(boolean totp) {
-        this.totp = totp;
     }
 
     public boolean isEnabled() {

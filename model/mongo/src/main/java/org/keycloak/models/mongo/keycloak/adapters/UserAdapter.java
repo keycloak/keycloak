@@ -243,17 +243,6 @@ public class UserAdapter extends AbstractMongoAdapter<MongoUserEntity> implement
         getMongoStore().pullItemFromList(user, "requiredActions", actionName, invocationContext);
     }
 
-    @Override
-    public boolean isOtpEnabled() {
-        return user.isTotp();
-    }
-
-    @Override
-    public void setOtpEnabled(boolean totp) {
-        user.setTotp(totp);
-        updateUser();
-    }
-
     protected void updateUser() {
         super.updateMongoEntity();
     }

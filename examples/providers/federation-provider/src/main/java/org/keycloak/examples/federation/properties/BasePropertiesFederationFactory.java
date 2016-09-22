@@ -96,7 +96,7 @@ public abstract class BasePropertiesFederationFactory implements UserFederationP
     }
 
     /**
-     * You can import additional plugin configuration from keycloak-server.json here.
+     * You can import additional plugin configuration from standalone.xml here.
      *
      * @param config
      */

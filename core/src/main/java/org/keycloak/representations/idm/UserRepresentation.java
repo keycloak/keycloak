@@ -123,10 +123,12 @@ public class UserRepresentation {
         this.enabled = enabled;
     }
 
+    @Deprecated
     public Boolean isTotp() {
         return totp;
     }
 
+    @Deprecated
     public void setTotp(Boolean totp) {
         this.totp = totp;
     }

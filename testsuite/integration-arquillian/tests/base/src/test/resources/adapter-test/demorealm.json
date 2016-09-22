@@ -226,6 +226,15 @@
                 "/oauth-client-cdi/*"
             ],
             "secret": "password"
+        },
+        {
+            "clientId": "basic-auth-service",
+            "standardFlowEnabled": false,
+            "directAccessGrantsEnabled": true,
+            "enabled": true,
+            "adminUrl": "/basic-auth",
+            "baseUrl": "/basic-auth",
+            "secret": "password"
         }
     ]
 }

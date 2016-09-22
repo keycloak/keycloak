@@ -41,6 +41,7 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.RSATokenVerifier;
+import org.keycloak.adapters.rotation.AdapterRSATokenVerifier;
 import org.keycloak.common.VerificationException;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.KeycloakDeploymentBuilder;
@@ -163,7 +164,7 @@ public abstract class ProductServiceAccountServlet extends HttpServlet {
     private void setTokens(HttpServletRequest req, KeycloakDeployment deployment, AccessTokenResponse tokenResponse) throws IOException, VerificationException {
         String token = tokenResponse.getToken();
         String refreshToken = tokenResponse.getRefreshToken();
-        AccessToken tokenParsed = RSATokenVerifier.verifyToken(token, deployment.getRealmKey(), deployment.getRealmInfoUrl());
+        AccessToken tokenParsed = AdapterRSATokenVerifier.verifyToken(token, deployment);
         req.getSession().setAttribute(TOKEN, token);
         req.getSession().setAttribute(REFRESH_TOKEN, refreshToken);
         req.getSession().setAttribute(TOKEN_PARSED, tokenParsed);

@@ -32,6 +32,7 @@ public class ServerInfoRepresentation {
 
     private SystemInfoRepresentation systemInfo;
     private MemoryInfoRepresentation memoryInfo;
+    private ProfileInfoRepresentation profileInfo;
 
     private Map<String, List<ThemeInfoRepresentation>> themes;
 
@@ -64,6 +65,14 @@ public class ServerInfoRepresentation {
 
     public void setMemoryInfo(MemoryInfoRepresentation memoryInfo) {
         this.memoryInfo = memoryInfo;
+    }
+
+    public ProfileInfoRepresentation getProfileInfo() {
+        return profileInfo;
+    }
+
+    public void setProfileInfo(ProfileInfoRepresentation profileInfo) {
+        this.profileInfo = profileInfo;
     }
 
     public Map<String, List<ThemeInfoRepresentation>> getThemes() {

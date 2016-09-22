@@ -54,7 +54,6 @@ public abstract class AbstractUserAdapterFederatedStorage implements UserModel {
     public static String EMAIL_VERIFIED_ATTRIBUTE = "EMAIL_VERIFIED";
     public static String CREATED_TIMESTAMP_ATTRIBUTE = "CREATED_TIMESTAMP";
     public static String ENABLED_ATTRIBUTE = "ENABLED";
-    public static String OTP_ENABLED_ATTRIBUTE = "OTP_ENABLED";
 
 
     protected KeycloakSession session;
@@ -233,19 +232,6 @@ public abstract class AbstractUserAdapterFederatedStorage implements UserModel {
     @Override
     public void setEnabled(boolean enabled) {
        setSingleAttribute(ENABLED_ATTRIBUTE, Boolean.toString(enabled));
-    }
-
-    @Override
-    public boolean isOtpEnabled() {
-        String val = getFirstAttribute(OTP_ENABLED_ATTRIBUTE);
-        if (val == null) return false;
-        else return Boolean.valueOf(val);
-    }
-
-    @Override
-    public void setOtpEnabled(boolean totp) {
-        setSingleAttribute(OTP_ENABLED_ATTRIBUTE, Boolean.toString(totp));
-
     }
 
     /**
