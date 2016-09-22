@@ -53,7 +53,10 @@
         <app.server.memory.settings>-Xms64m -Xmx512m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m</app.server.memory.settings>
         
         <app.server.ssl.required>false</app.server.ssl.required>
-        
+
+        <settings.path></settings.path>
+        <repo.url></repo.url>
+
         <adapter.test.props>
             -Dapp.server.base.url=http://localhost:${app.server.http.port}
             -Dauth.server.base.url=http://localhost:${auth.server.http.port}
@@ -63,6 +66,8 @@
             -Dauth.server.ssl.required=${auth.server.ssl.required}
             -Dmy.host.name=localhost
             -Djava.security.krb5.conf=${project.build.directory}/dependency/kerberos/test-krb5.conf
+            -Dkie.maven.settings.custom=${settings.path}
+            -Drepo.url=${repo.url}
         </adapter.test.props>
         
         <app.server.home>${containers.home}/app-server-${app.server}</app.server.home>
@@ -352,7 +357,6 @@
                         </plugin>
                         <plugin>
                             <artifactId>maven-resources-plugin</artifactId>
-                            <version>3.0.1</version>
                             <executions>
                                 <execution>
                                     <id>example-realms</id>
@@ -367,7 +371,10 @@
                                             <resource>
                                                 <directory>${examples.basedir}</directory>
                                                 <filtering>true</filtering>
-                                                <includes>**/*realm.json,**/testsaml.json</includes>
+                                                <includes>
+                                                    <include>**/*realm.json</include>
+                                                    <include>**/testsaml.json</include>
+                                                </includes>
                                             </resource>
                                         </resources>
                                     </configuration>

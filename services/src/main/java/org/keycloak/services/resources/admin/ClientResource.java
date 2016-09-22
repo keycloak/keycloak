@@ -18,9 +18,9 @@ package org.keycloak.services.resources.admin;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.BadRequestException;
-import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.authorization.admin.AuthorizationService;
+import org.keycloak.common.Profile;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.ClientModel;
@@ -52,10 +52,12 @@ import org.keycloak.common.util.Time;
 import org.keycloak.services.validation.ClientValidator;
 import org.keycloak.services.validation.PairwiseClientValidator;
 import org.keycloak.services.validation.ValidationMessages;
+import org.keycloak.utils.ProfileHelper;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
+import javax.ws.rs.NotFoundException;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
@@ -153,10 +155,12 @@ public class ClientResource {
 
         RepresentationToModel.updateClient(rep, client);
 
-        if (TRUE.equals(rep.getAuthorizationServicesEnabled())) {
-            authorization().enable();
-        } else {
-            authorization().disable();
+        if (Profile.isPreviewEnabled()) {
+            if (TRUE.equals(rep.getAuthorizationServicesEnabled())) {
+                authorization().enable();
+            } else {
+                authorization().disable();
+            }
         }
     }
 
@@ -177,7 +181,9 @@ public class ClientResource {
 
         ClientRepresentation representation = ModelToRepresentation.toRepresentation(client);
 
-        representation.setAuthorizationServicesEnabled(authorization().isEnabled());
+        if (Profile.isPreviewEnabled()) {
+            representation.setAuthorizationServicesEnabled(authorization().isEnabled());
+        }
 
         return representation;
     }
@@ -562,6 +568,8 @@ public class ClientResource {
 
     @Path("/authz")
     public AuthorizationService authorization() {
+        ProfileHelper.requirePreview();
+
         AuthorizationService resource = new AuthorizationService(this.session, this.client, this.auth);
 
         ResteasyProviderFactory.getInstance().injectProperties(resource);
