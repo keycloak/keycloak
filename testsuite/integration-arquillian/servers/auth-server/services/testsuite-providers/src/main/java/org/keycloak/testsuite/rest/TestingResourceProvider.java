@@ -578,7 +578,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
         if (realm == null) return false;
         UserProvider userProvider = session.getProvider(UserProvider.class);
         UserModel user = userProvider.getUserByUsername(userName, realm);
-        return userProvider.validCredentials(session, realm, user, UserCredentialModel.password(password));
+        return session.userCredentialManager().isValid(realm, user, UserCredentialModel.password(password));
     }
 
     @GET

@@ -17,6 +17,7 @@
 package org.keycloak.credential;
 
 import org.jboss.logging.Logger;
+import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OTPPolicy;
 import org.keycloak.models.RealmModel;
@@ -34,15 +35,15 @@ import java.util.List;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class LocalOTPCredentialManager implements CredentialInputValidator, CredentialInputUpdater, OnUserCache {
-    private static final Logger logger = Logger.getLogger(LocalOTPCredentialManager.class);
+public class OTPCredentialProvider implements CredentialProvider, CredentialInputValidator, CredentialInputUpdater, OnUserCache {
+    private static final Logger logger = Logger.getLogger(OTPCredentialProvider.class);
 
     protected KeycloakSession session;
 
     protected List<CredentialModel> getCachedCredentials(UserModel user, String type) {
         if (!(user instanceof CachedUserModel)) return Collections.EMPTY_LIST;
         CachedUserModel cached = (CachedUserModel)user;
-        List<CredentialModel> rtn = (List<CredentialModel>)cached.getCachedWith().get(LocalOTPCredentialManager.class.getName() + "." + type);
+        List<CredentialModel> rtn = (List<CredentialModel>)cached.getCachedWith().get(OTPCredentialProvider.class.getName() + "." + type);
         if (rtn == null) return Collections.EMPTY_LIST;
         return rtn;
     }
@@ -54,11 +55,11 @@ public class LocalOTPCredentialManager implements CredentialInputValidator, Cred
     @Override
     public void onCache(RealmModel realm, CachedUserModel user) {
         List<CredentialModel> creds = getCredentialStore().getStoredCredentialsByType(realm, user, CredentialModel.TOTP);
-        user.getCachedWith().put(LocalOTPCredentialManager.class.getName() + "." + CredentialModel.TOTP, creds);
+        user.getCachedWith().put(OTPCredentialProvider.class.getName() + "." + CredentialModel.TOTP, creds);
 
     }
 
-    public LocalOTPCredentialManager(KeycloakSession session) {
+    public OTPCredentialProvider(KeycloakSession session) {
         this.session = session;
     }
 
@@ -88,10 +89,11 @@ public class LocalOTPCredentialManager implements CredentialInputValidator, Cred
         model.setDigits(policy.getDigits());
         model.setCounter(policy.getInitialCounter());
         model.setAlgorithm(policy.getAlgorithm());
-        model.setType(policy.getType());
+        model.setType(input.getType());
         model.setValue(inputModel.getValue());
         model.setDevice(inputModel.getDevice());
         model.setPeriod(policy.getPeriod());
+        model.setCreatedDate(Time.toMillis(Time.currentTime()));
         if (model.getId() == null) {
             getCredentialStore().createCredential(realm, user, model);
         } else {

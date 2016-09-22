@@ -34,15 +34,12 @@ import org.keycloak.models.cache.CachedUserModel;
 import org.keycloak.models.cache.OnUserCache;
 import org.keycloak.storage.user.UserCredentialAuthenticationProvider;
 import org.keycloak.models.UserCredentialModel;
-import org.keycloak.storage.user.UserCredentialValidatorProvider;
-import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.storage.user.UserLookupProvider;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
 import org.keycloak.storage.user.UserQueryProvider;
 import org.keycloak.storage.user.UserRegistrationProvider;
-import org.keycloak.models.utils.CredentialValidation;
 import org.keycloak.storage.federated.UserFederatedStorageProvider;
 
 import java.util.Arrays;
@@ -530,52 +527,6 @@ public class UserStorageManager implements UserProvider, OnUserCache {
     public void preRemove(ProtocolMapperModel protocolMapper) {
         localStorage().preRemove(protocolMapper);
         if (getFederatedStorage() != null) getFederatedStorage().preRemove(protocolMapper);
-    }
-
-    @Override
-    public boolean validCredentials(KeycloakSession session, RealmModel realm, UserModel user, List<UserCredentialModel> input) {
-        if (StorageId.isLocalStorage(user)) {
-            return localStorage().validCredentials(session, realm, user, input);
-        }
-        // make sure we hit the cache here!
-        List<UserCredentialValueModel> userCreds = user.getCredentialsDirectly();
-
-        LinkedList<UserCredentialModel> toValidate = new LinkedList<>();
-        toValidate.addAll(input);
-        Iterator<UserCredentialModel> it = toValidate.iterator();
-        boolean failedStoredCredential = false;
-        // we allow for multiple credentials of same type, i.e. multiple OTP devices
-        while (it.hasNext()) {
-            UserCredentialModel cred = it.next();
-            boolean credValidated = false;
-            for (UserCredentialValueModel userCred : userCreds) {
-                if (!userCred.getType().equals(cred.getType())) continue;
-                if (CredentialValidation.validCredential(session, realm, user, cred)) {
-                    credValidated = true;
-                    break;
-                } else {
-                    failedStoredCredential = true;
-                }
-            }
-            if (credValidated) {
-                it.remove();
-            } else if (failedStoredCredential) {
-                return false;
-            }
-        }
-
-        if (toValidate.isEmpty()) return true;
-
-        UserStorageProvider provider = getStorageProvider(session, realm, StorageId.resolveProviderId(user));
-        if (!(provider instanceof UserCredentialValidatorProvider)) {
-            return false;
-        }
-        return ((UserCredentialValidatorProvider)provider).validCredentials(session, realm, user, toValidate);
-    }
-
-    @Override
-    public boolean validCredentials(KeycloakSession session, RealmModel realm, UserModel user, UserCredentialModel... input) {
-        return validCredentials(session, realm, user, Arrays.asList(input));
     }
 
     @Override

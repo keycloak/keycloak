@@ -103,7 +103,7 @@ public class UserCommands {
                 user.setEnabled(true);
                 user.setEmail(username + "@keycloak.org");
                 UserCredentialModel passwordCred = UserCredentialModel.password(password);
-                user.updateCredential(passwordCred);
+                session.userCredentialManager().updateCredential(realm, user, passwordCred);
 
                 for (RoleModel role : roles) {
                     user.grantRole(role);

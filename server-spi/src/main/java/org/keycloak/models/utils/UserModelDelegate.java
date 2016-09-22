@@ -171,21 +171,6 @@ public class UserModelDelegate implements UserModel {
     }
 
     @Override
-    public void updateCredential(UserCredentialModel cred) {
-        delegate.updateCredential(cred);
-    }
-
-    @Override
-    public List<UserCredentialValueModel> getCredentialsDirectly() {
-        return delegate.getCredentialsDirectly();
-    }
-
-    @Override
-    public void updateCredentialDirectly(UserCredentialValueModel cred) {
-        delegate.updateCredentialDirectly(cred);
-    }
-
-    @Override
     public Set<RoleModel> getRealmRoleMappings() {
         return delegate.getRealmRoleMappings();
     }

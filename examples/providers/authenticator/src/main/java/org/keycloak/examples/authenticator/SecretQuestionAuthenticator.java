@@ -23,6 +23,7 @@ import org.keycloak.authentication.Authenticator;
 import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.services.util.CookieHelper;
@@ -96,15 +97,10 @@ public class SecretQuestionAuthenticator implements Authenticator {
     protected boolean validateAnswer(AuthenticationFlowContext context) {
         MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
         String secret = formData.getFirst("secret_answer");
-        UserCredentialValueModel cred = null;
-        for (UserCredentialValueModel model : context.getUser().getCredentialsDirectly()) {
-            if (model.getType().equals(CREDENTIAL_TYPE)) {
-                cred = model;
-                break;
-            }
-        }
-
-        return cred.getValue().equals(secret);
+        UserCredentialModel input = new UserCredentialModel();
+        input.setType(SecretQuestionCredentialProvider.SECRET_QUESTION);
+        input.setValue(secret);
+        return context.getSession().userCredentialManager().isValid(context.getRealm(), context.getUser(), input);
     }
 
     @Override
@@ -114,7 +110,7 @@ public class SecretQuestionAuthenticator implements Authenticator {
 
     @Override
     public boolean configuredFor(KeycloakSession session, RealmModel realm, UserModel user) {
-        return session.users().configuredForCredentialType(CREDENTIAL_TYPE, realm, user);
+        return session.userCredentialManager().isConfiguredFor(realm, user, SecretQuestionCredentialProvider.SECRET_QUESTION);
     }
 
     @Override

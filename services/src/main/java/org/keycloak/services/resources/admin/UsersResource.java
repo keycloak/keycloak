@@ -22,6 +22,7 @@ import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.authentication.RequiredActionProvider;
+import org.keycloak.credential.CredentialModel;
 import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailTemplateProvider;
 import org.keycloak.events.Details;
@@ -746,7 +747,7 @@ public class UsersResource {
 
         UserCredentialModel cred = RepresentationToModel.convertCredential(pass);
         try {
-            session.users().updateCredential(realm, user, cred);
+            session.userCredentialManager().updateCredential(realm, user, cred);
         } catch (IllegalStateException ise) {
             throw new BadRequestException("Resetting to N old passwords is not allowed.");
         } catch (ModelReadOnlyException mre) {
@@ -777,7 +778,7 @@ public class UsersResource {
             throw new NotFoundException("User not found");
         }
 
-        user.setOtpEnabled(false);
+        session.userCredentialManager().disableCredential(realm, user, CredentialModel.OTP);
         adminEvent.operation(OperationType.ACTION).resourcePath(uriInfo).success();
     }
 

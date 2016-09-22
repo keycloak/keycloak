@@ -41,7 +41,7 @@ public class TotpBean {
     private final boolean enabled;
 
     public TotpBean(KeycloakSession session, RealmModel realm, UserModel user) {
-        this.enabled = session.users().configuredForCredentialType(realm.getOTPPolicy().getType(), realm, user);
+        this.enabled = session.userCredentialManager().isConfiguredFor(realm, user, realm.getOTPPolicy().getType());
 
         this.totpSecret = HmacOTP.generateSecret(20);
         this.totpSecretEncoded = TotpUtils.encode(totpSecret);

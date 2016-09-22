@@ -35,7 +35,6 @@ import java.util.Set;
 public interface UserProvider extends Provider,
         UserLookupProvider,
         UserQueryProvider,
-        UserCredentialValidatorProvider,
         UserRegistrationProvider {
     // Note: The reason there are so many query methods here is for layering a cache on top of an persistent KeycloakSession
 
@@ -79,7 +78,6 @@ public interface UserProvider extends Provider,
     void preRemove(ProtocolMapperModel protocolMapper);
 
 
-    boolean validCredentials(KeycloakSession session, RealmModel realm, UserModel user, UserCredentialModel... input);
     CredentialValidationOutput validCredentials(KeycloakSession session, RealmModel realm, UserCredentialModel... input);
 
 

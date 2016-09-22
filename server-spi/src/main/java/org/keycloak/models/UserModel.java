@@ -112,12 +112,6 @@ public interface UserModel extends RoleMapperModel {
 
     void setOtpEnabled(boolean totp);
 
-    void updateCredential(UserCredentialModel cred);
-
-    List<UserCredentialValueModel> getCredentialsDirectly();
-
-    void updateCredentialDirectly(UserCredentialValueModel cred);
-
     Set<GroupModel> getGroups();
     void joinGroup(GroupModel group);
     void leaveGroup(GroupModel group);

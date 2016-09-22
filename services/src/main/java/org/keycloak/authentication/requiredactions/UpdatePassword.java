@@ -21,6 +21,10 @@ import org.keycloak.Config;
 import org.keycloak.authentication.RequiredActionContext;
 import org.keycloak.authentication.RequiredActionFactory;
 import org.keycloak.authentication.RequiredActionProvider;
+import org.keycloak.credential.CredentialModel;
+import org.keycloak.credential.CredentialProvider;
+import org.keycloak.credential.PasswordCredentialProvider;
+import org.keycloak.credential.PasswordCredentialProviderFactory;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
@@ -50,22 +54,20 @@ public class UpdatePassword implements RequiredActionProvider, RequiredActionFac
     public void evaluateTriggers(RequiredActionContext context) {
         int daysToExpirePassword = context.getRealm().getPasswordPolicy().getDaysToExpirePassword();
         if(daysToExpirePassword != -1) {
-            for (UserCredentialValueModel entity : context.getUser().getCredentialsDirectly()) {
-                if (entity.getType().equals(UserCredentialModel.PASSWORD)) {
+            PasswordCredentialProvider passwordProvider = (PasswordCredentialProvider)context.getSession().getProvider(CredentialProvider.class, PasswordCredentialProviderFactory.PROVIDER_ID);
+            CredentialModel password = passwordProvider.getPassword(context.getRealm(), context.getUser());
+            if (password != null) {
+                if(password.getCreatedDate() == null) {
+                    context.getUser().addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
+                    logger.debug("User is required to update password");
+                } else {
+                    long timeElapsed = Time.toMillis(Time.currentTime()) - password.getCreatedDate();
+                    long timeToExpire = TimeUnit.DAYS.toMillis(daysToExpirePassword);
 
-                    if(entity.getCreatedDate() == null) {
+                    if(timeElapsed > timeToExpire) {
                         context.getUser().addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
                         logger.debug("User is required to update password");
-                    } else {
-                        long timeElapsed = Time.toMillis(Time.currentTime()) - entity.getCreatedDate();
-                        long timeToExpire = TimeUnit.DAYS.toMillis(daysToExpirePassword);
-
-                        if(timeElapsed > timeToExpire) {
-                            context.getUser().addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
-                            logger.debug("User is required to update password");
-                        }
                     }
-                    break;
                 }
             }
         }
@@ -107,7 +109,7 @@ public class UpdatePassword implements RequiredActionProvider, RequiredActionFac
         }
 
         try {
-            context.getSession().users().updateCredential(context.getRealm(), context.getUser(), UserCredentialModel.password(passwordNew));
+            context.getSession().userCredentialManager().updateCredential(context.getRealm(), context.getUser(), UserCredentialModel.password(passwordNew));
             context.success();
         } catch (ModelException me) {
             errorEvent.detail(Details.REASON, me.getMessage()).error(Errors.PASSWORD_REJECTED);

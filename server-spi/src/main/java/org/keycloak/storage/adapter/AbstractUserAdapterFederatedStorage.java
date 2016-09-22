@@ -400,23 +400,6 @@ public abstract class AbstractUserAdapterFederatedStorage implements UserModel {
     }
 
     @Override
-    public void updateCredential(UserCredentialModel cred) {
-        getFederatedStorage().updateCredential(realm, this, cred);
-
-    }
-
-    @Override
-    public List<UserCredentialValueModel> getCredentialsDirectly() {
-        return getFederatedStorage().getCredentials(realm, this);
-    }
-
-    @Override
-    public void updateCredentialDirectly(UserCredentialValueModel cred) {
-        getFederatedStorage().updateCredential(realm, this, cred);
-
-    }
-
-    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || !(o instanceof UserModel)) return false;

@@ -30,6 +30,8 @@ import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginTotpPage;
 
 import java.net.MalformedURLException;
+import java.util.List;
+
 import org.jboss.arquillian.graphene.page.Page;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -49,6 +51,9 @@ public class LoginHotpTest extends TestRealmKeycloakTest {
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
+        testRealm.setOtpPolicyType(UserCredentialModel.HOTP);
+        testRealm.setOtpPolicyAlgorithm(HmacOTP.DEFAULT_ALGORITHM);
+        testRealm.setOtpPolicyLookAheadWindow(2);
         UserRepresentation user = RealmRepUtil.findUser(testRealm, "test-user@localhost");
         UserBuilder.edit(user)
                    .hotpSecret("hotpSecret")
@@ -79,9 +84,6 @@ public class LoginHotpTest extends TestRealmKeycloakTest {
     @Before
     public void before() throws MalformedURLException {
         RealmRepresentation testRealm = testRealm().toRepresentation();
-        testRealm.setOtpPolicyType(UserCredentialModel.HOTP);
-        testRealm.setOtpPolicyLookAheadWindow(2);
-        testRealm().update(testRealm);
 
         policy = new OTPPolicy();
         policy.setAlgorithm(testRealm.getOtpPolicyAlgorithm());
@@ -137,7 +139,7 @@ public class LoginHotpTest extends TestRealmKeycloakTest {
         loginPage.open();
         loginPage.login("test-user@localhost", "password");
 
-        Assert.assertTrue(loginTotpPage.isCurrent());
+        Assert.assertTrue("expecting totpPage got: " + driver.getCurrentUrl(), loginTotpPage.isCurrent());
 
         loginTotpPage.login(otp.generateHOTP("hotpSecret", counter++));
 

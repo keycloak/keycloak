@@ -387,23 +387,6 @@ public abstract class AbstractUserAdapter implements UserModel {
     }
 
     @Override
-    public void updateCredential(UserCredentialModel cred) {
-        throw new ReadOnlyException("user is read only for this update");
-
-    }
-
-    @Override
-    public List<UserCredentialValueModel> getCredentialsDirectly() {
-        return Collections.EMPTY_LIST;
-    }
-
-    @Override
-    public void updateCredentialDirectly(UserCredentialValueModel cred) {
-        throw new ReadOnlyException("user is read only for this update");
-
-    }
-
-    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || !(o instanceof UserModel)) return false;

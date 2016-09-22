@@ -17,6 +17,10 @@
 package org.keycloak.testsuite.federation.storage;
 
 import org.keycloak.component.ComponentModel;
+import org.keycloak.credential.CredentialInput;
+import org.keycloak.credential.CredentialInputUpdater;
+import org.keycloak.credential.CredentialInputValidator;
+import org.keycloak.credential.CredentialModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -40,7 +44,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class UserMapStorage implements UserLookupProvider, UserStorageProvider, UserRegistrationProvider {
+public class UserMapStorage implements UserLookupProvider, UserStorageProvider, UserRegistrationProvider, CredentialInputUpdater, CredentialInputValidator {
 
     protected Map<String, String> userPasswords;
     protected ComponentModel model;
@@ -78,37 +82,45 @@ public class UserMapStorage implements UserLookupProvider, UserStorageProvider, 
                 throw new RuntimeException("Unsupported");
             }
 
-            @Override
-            public void updateCredential(UserCredentialModel cred) {
-                if (cred.getType().equals(UserCredentialModel.PASSWORD)) {
-                    userPasswords.put(getUsername(), cred.getValue());
-                } else {
-                    super.updateCredential(cred);
-                }
-            }
-
-            @Override
-            public List<UserCredentialValueModel> getCredentialsDirectly() {
-                UserCredentialValueModel pw = new UserCredentialValueModel();
-                pw.setId(getId());
-                pw.setType(UserCredentialModel.PASSWORD);
-                pw.setAlgorithm("text");
-                pw.setValue(userPasswords.get(getUsername()));
-                List<UserCredentialValueModel> creds = new LinkedList<>();
-                creds.addAll(super.getCredentialsDirectly());
-                creds.add(pw);
-                return creds;
-            }
-
-            @Override
-            public void updateCredentialDirectly(UserCredentialValueModel cred) {
-                if (cred.getType().equals(UserCredentialModel.PASSWORD)) {
-                    //userPasswords.put(getUsername(), cred.getValue());
-                } else {
-                    super.updateCredentialDirectly(cred);
-                }
-            }
         };
+    }
+
+    @Override
+    public boolean supportsCredentialType(String credentialType) {
+        return CredentialModel.PASSWORD.equals(credentialType);
+    }
+
+    @Override
+    public boolean updateCredential(RealmModel realm, UserModel user, CredentialInput input) {
+        if (!(input instanceof UserCredentialModel)) return false;
+        if (input.getType().equals(UserCredentialModel.PASSWORD)) {
+            userPasswords.put(user.getUsername(), ((UserCredentialModel)input).getValue());
+            return true;
+
+        } else {
+            return false;
+        }
+    }
+
+    @Override
+    public void disableCredentialType(RealmModel realm, UserModel user, String credentialType) {
+
+    }
+
+    @Override
+    public boolean isConfiguredFor(RealmModel realm, UserModel user, String credentialType) {
+        return CredentialModel.PASSWORD.equals(credentialType);
+    }
+
+    @Override
+    public boolean isValid(RealmModel realm, UserModel user, CredentialInput input) {
+        if (!(input instanceof UserCredentialModel)) return false;
+        if (input.getType().equals(UserCredentialModel.PASSWORD)) {
+            String pw = userPasswords.get(user.getUsername());
+            return pw != null && pw.equals( ((UserCredentialModel)input).getValue());
+        } else {
+            return false;
+        }
     }
 
     @Override

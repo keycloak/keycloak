@@ -159,7 +159,7 @@ public class UserStorageTest {
         System.out.println("num groups " + groups.size());
         Assert.assertTrue(thor.getRequiredActions().iterator().next().equals("POOP"));
         thor.removeRequiredAction("POOP");
-        thor.updateCredential(UserCredentialModel.password("lightning"));
+        session.userCredentialManager().updateCredential(realm, thor, UserCredentialModel.password("lightning"));
         keycloakRule.stopSession(session, true);
         loginSuccessAndLogout("thor", "lightning");
     }
@@ -254,7 +254,7 @@ public class UserStorageTest {
         KeycloakSession session = keycloakRule.startSession();
         RealmModel realm = session.realms().getRealmByName("test");
         UserModel user = session.users().addUser(realm, "memuser");
-        user.updateCredential(UserCredentialModel.password("password"));
+        session.userCredentialManager().updateCredential(realm, user, UserCredentialModel.password("password"));
         keycloakRule.stopSession(session, true);
         loginSuccessAndLogout("memuser", "password");
         loginSuccessAndLogout("memuser", "password");
@@ -264,7 +264,6 @@ public class UserStorageTest {
         realm = session.realms().getRealmByName("test");
         user = session.users().getUserByUsername("memuser", realm);
         Assert.assertEquals(memoryProvider.getId(), StorageId.resolveProviderId(user));
-        Assert.assertEquals(1, user.getCredentialsDirectly().size());
         session.users().removeUser(realm, user);
         Assert.assertNull(session.users().getUserByUsername("memuser", realm));
         keycloakRule.stopSession(session, true);

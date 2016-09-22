@@ -39,19 +39,4 @@ public class ReadonlyUserModelProxy extends UserModelDelegate {
         throw new IllegalStateException("Username is readonly");
     }
 
-    @Override
-    public void updateCredentialDirectly(UserCredentialValueModel cred) {
-        if (cred.getType().equals(UserCredentialModel.PASSWORD)) {
-            throw new IllegalStateException("Passwords are readonly");
-        }
-        super.updateCredentialDirectly(cred);
-    }
-
-    @Override
-    public void updateCredential(UserCredentialModel cred) {
-        if (cred.getType().equals(UserCredentialModel.PASSWORD)) {
-            throw new IllegalStateException("Passwords are readonly");
-        }
-        super.updateCredential(cred);
-    }
 }

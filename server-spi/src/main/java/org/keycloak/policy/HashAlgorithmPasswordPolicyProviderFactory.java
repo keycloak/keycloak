@@ -20,6 +20,7 @@ package org.keycloak.policy;
 import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 
 /**
@@ -54,7 +55,7 @@ public class HashAlgorithmPasswordPolicyProviderFactory implements PasswordPolic
     }
 
     @Override
-    public PolicyError validate(UserModel user, String password) {
+    public PolicyError validate(RealmModel realm, UserModel user, String password) {
         return null;
     }
 

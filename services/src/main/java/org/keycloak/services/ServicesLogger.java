@@ -97,7 +97,7 @@ public interface ServicesLogger extends BasicLogger {
     @Message(id=12, value="Failed to delete '%s'")
     void failedToDeleteFile(String fileName);
 
-    @LogMessage(level = DEBUG)
+    @LogMessage(level = WARN)
     @Message(id=13, value="Failed authentication")
     void failedAuthentication(@Cause Throwable t);
 

@@ -34,12 +34,4 @@ public class ReadOnlyKerberosUserModelDelegate extends UserModelDelegate {
         this.provider = provider;
     }
 
-    @Override
-    public void updateCredential(UserCredentialModel cred) {
-        if (provider.getSupportedCredentialTypes(delegate).contains(cred.getType())) {
-            throw new ModelReadOnlyException("Can't change password in Keycloak database. Change password with your Kerberos server");
-        }
-
-        delegate.updateCredential(cred);
-    }
 }

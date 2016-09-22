@@ -711,16 +711,6 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
     }
 
     @Override
-    public boolean validCredentials(KeycloakSession session, RealmModel realm, UserModel user, List<UserCredentialModel> input) {
-        return CredentialValidation.validCredentials(session, realm, user, input);
-    }
-
-    @Override
-    public boolean validCredentials(KeycloakSession session, RealmModel realm, UserModel user, UserCredentialModel... input) {
-        return CredentialValidation.validCredentials(session, realm, user, input);
-    }
-
-    @Override
     public CredentialValidationOutput validCredentials(KeycloakSession session, RealmModel realm, UserCredentialModel... input) {
         // Not supported yet
         return null;
@@ -803,7 +793,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
         entity.setUser(userRef);
         em.persist(entity);
         MultivaluedHashMap<String, String> config = cred.getConfig();
-        if (config != null || !config.isEmpty()) {
+        if (config != null && !config.isEmpty()) {
 
             for (String key : config.keySet()) {
                 List<String> values = config.getList(key);
@@ -850,6 +840,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
         model.setCreatedDate(entity.getCreatedDate());
         model.setDevice(entity.getDevice());
         model.setDigits(entity.getDigits());
+        model.setHashIterations(entity.getHashIterations());
         MultivaluedHashMap<String, String> config = new MultivaluedHashMap<>();
         model.setConfig(config);
         for (CredentialAttributeEntity attr : entity.getCredentialAttributes()) {

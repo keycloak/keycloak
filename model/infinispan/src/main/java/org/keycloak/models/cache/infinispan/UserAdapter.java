@@ -254,24 +254,6 @@ public class UserAdapter implements CachedUserModel {
     }
 
     @Override
-    public void updateCredential(UserCredentialModel cred) {
-        getDelegateForUpdate();
-        updated.updateCredential(cred);
-    }
-
-    @Override
-    public List<UserCredentialValueModel> getCredentialsDirectly() {
-        if (updated != null) return updated.getCredentialsDirectly();
-        return cached.getCredentials();
-    }
-
-    @Override
-    public void updateCredentialDirectly(UserCredentialValueModel cred) {
-        getDelegateForUpdate();
-        updated.updateCredentialDirectly(cred);
-    }
-
-    @Override
     public String getFederationLink() {
         if (updated != null) return updated.getFederationLink();
         return cached.getFederationLink();

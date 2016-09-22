@@ -71,15 +71,6 @@ public class UserAdapter extends AbstractUserAdapterFederatedStorage {
     }
 
     @Override
-    public void updateCredential(UserCredentialModel cred) {
-        if (cred.getType().equals(UserCredentialModel.PASSWORD)) {
-            entity.setPassword(cred.getValue());
-        } else {
-            super.updateCredential(cred);
-        }
-    }
-
-    @Override
     public void setSingleAttribute(String name, String value) {
         if (name.equals("phone")) {
             entity.setPhone(value);

@@ -18,6 +18,7 @@
 package org.keycloak.policy;
 
 import org.keycloak.models.KeycloakContext;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 
 /**
@@ -40,7 +41,7 @@ public class LengthPasswordPolicyProvider implements PasswordPolicyProvider {
     }
 
     @Override
-    public PolicyError validate(UserModel user, String password) {
+    public PolicyError validate(RealmModel realm, UserModel user, String password) {
         return validate(user.getUsername(), password);
     }
 

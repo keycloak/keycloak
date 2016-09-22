@@ -17,6 +17,8 @@
 
 package org.keycloak.models;
 
+import org.keycloak.credential.CredentialInputUpdater;
+import org.keycloak.credential.CredentialInputValidator;
 import org.keycloak.provider.Provider;
 
 import java.util.List;
@@ -30,7 +32,8 @@ import java.util.Set;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public interface UserFederationProvider extends Provider {
+@Deprecated
+public interface UserFederationProvider extends Provider, CredentialInputValidator, CredentialInputUpdater {
 
     public static final String USERNAME = UserModel.USERNAME;
     public static final String EMAIL = UserModel.EMAIL;
@@ -167,32 +170,12 @@ public interface UserFederationProvider extends Provider {
     boolean isValid(RealmModel realm, UserModel local);
 
     /**
-     * What UserCredentialModel types should be handled by this provider for this user?  Keycloak will only call
-     * validCredentials() with the credential types specified in this method.
-     *
-     * @return
-     */
-    Set<String> getSupportedCredentialTypes(UserModel user);
-
-    /**
      * What UserCredentialModel types should be handled by this provider? This is called in scenarios when we don't know user,
      * who is going to authenticate (For example Kerberos authentication).
      *
      * @return
      */
     Set<String> getSupportedCredentialTypes();
-
-    /**
-     * Validate credentials for this user.  This method will only be called with credential parameters supported
-     * by this provider
-     *
-     * @param realm
-     * @param user
-     * @param input
-     * @return
-     */
-    boolean validCredentials(RealmModel realm, UserModel user, List<UserCredentialModel> input);
-    boolean validCredentials(RealmModel realm, UserModel user, UserCredentialModel... input);
 
     /**
      * Validate credentials of unknown user. The authenticated user is recognized based on provided credentials and returned back in CredentialValidationOutput
