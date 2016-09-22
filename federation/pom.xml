@@ -35,6 +35,7 @@
     <modules>
         <module>ldap</module>
         <module>kerberos</module>
+        <module>sssd</module>
     </modules>
 
 </project>

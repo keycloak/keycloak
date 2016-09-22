@@ -6,13 +6,12 @@ key pairs.  To deploy, build this directory then take the jar and copy it to pro
 
     KEYCLOAK_HOME/bin/jboss-cli.sh --command="module add --name=org.keycloak.examples.userprops --resources=target/federation-properties-example.jar --dependencies=org.keycloak.keycloak-core,org.keycloak.keycloak-server-spi"
 
-Then registering the provider by editing keycloak-server.json and adding the module to the providers field:
+Then registering the provider by editing `standalone/configuration/standalone.xml` and adding the module to the providers element:
 
-    "providers": [
-        ....
-        "module:org.keycloak.examples.userprops"
-    ],
-
+    <providers>
+        ...
+        <provider>module:org.keycloak.examples.userprops</provider>
+    </providers>
   
 You will then have to restart the authentication server.
 

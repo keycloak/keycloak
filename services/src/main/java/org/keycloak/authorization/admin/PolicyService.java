@@ -273,7 +273,7 @@ public class PolicyService {
     @Path("evaluate")
     public PolicyEvaluationService getPolicyEvaluateResource() {
         this.auth.requireView();
-        PolicyEvaluationService resource = new PolicyEvaluationService(this.resourceServer, this.authorization);
+        PolicyEvaluationService resource = new PolicyEvaluationService(this.resourceServer, this.authorization, this.auth);
 
         ResteasyProviderFactory.getInstance().injectProperties(resource);
 

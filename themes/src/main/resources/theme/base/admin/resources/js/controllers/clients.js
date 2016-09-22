@@ -797,6 +797,12 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, templates,
         "RS256"
     ];
 
+    $scope.requestObjectSignatureAlgorithms = [
+        "any",
+        "none",
+        "RS256"
+    ];
+
     $scope.realm = realm;
     $scope.samlAuthnStatement = false;
     $scope.samlMultiValuedRoles = false;
@@ -806,6 +812,7 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, templates,
     $scope.samlEncrypt = false;
     $scope.samlForcePostBinding = false;
     $scope.samlForceNameIdFormat = false;
+    $scope.disableAuthorizationTab = !client.authorizationServicesEnabled;
 
     function updateProperties() {
         if (!$scope.client.attributes) {
@@ -898,7 +905,11 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, templates,
             }
         }
 
-        $scope.userInfoSignedResponseAlg = getSignatureAlgorithm('user.info.response');
+        var attrVal1 = $scope.client.attributes['user.info.response.signature.alg'];
+        $scope.userInfoSignedResponseAlg = attrVal1==null ? 'unsigned' : attrVal1;
+
+        var attrVal2 = $scope.client.attributes['request.object.signature.alg'];
+         $scope.requestObjectSignatureAlg = attrVal2==null ? 'any' : attrVal2;
     }
 
     if (!$scope.create) {
@@ -964,23 +975,20 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, templates,
     };
 
     $scope.changeUserInfoSignedResponseAlg = function() {
-        changeSignatureAlgorithm('user.info.response', $scope.userInfoSignedResponseAlg);
+        if ($scope.userInfoSignedResponseAlg === 'unsigned') {
+            $scope.client.attributes['user.info.response.signature.alg'] = null;
+        } else {
+            $scope.client.attributes['user.info.response.signature.alg'] = $scope.userInfoSignedResponseAlg;
+        }
     };
 
-    function changeSignatureAlgorithm(attrPrefix, attrValue) {
-        var attrName = attrPrefix + '.signature.alg';
-        if (attrValue === 'unsigned') {
-            $scope.client.attributes[attrName] = null;
+    $scope.changeRequestObjectSignatureAlg = function() {
+        if ($scope.requestObjectSignatureAlg === 'any') {
+            $scope.client.attributes['request.object.signature.alg'] = null;
         } else {
-            $scope.client.attributes[attrName] = attrValue;
+            $scope.client.attributes['request.object.signature.alg'] = $scope.requestObjectSignatureAlg;
         }
-    }
-
-    function getSignatureAlgorithm(attrPrefix) {
-        var attrName = attrPrefix + '.signature.alg';
-        var attrVal = $scope.client.attributes[attrName];
-        return attrVal==null ? 'unsigned' : attrVal;
-    }
+    };
 
     $scope.$watch(function() {
         return $location.path();
@@ -1695,6 +1703,12 @@ module.controller('ClientProtocolMapperCtrl', function($scope, realm, serverInfo
             mapper = angular.copy($scope.mapper);
             $location.url("/realms/" + realm.realm + '/clients/' + client.id + "/mappers/" + $scope.model.mapper.id);
             Notifications.success("Your changes have been saved.");
+        }, function(error) {
+            if (error.status == 400 && error.data.error_description) {
+                Notifications.error(error.data.error_description);
+            } else {
+                Notifications.error('Unexpected error when updating protocol mapper');
+            }
         });
     };
 

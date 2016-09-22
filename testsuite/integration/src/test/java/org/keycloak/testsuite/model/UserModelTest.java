@@ -211,6 +211,31 @@ public class UserModelTest extends AbstractModelTest {
         Assert.assertEquals("val23", attrVals.get(0));
     }
 
+    // KEYCLOAK-3494
+    @Test
+    public void testUpdateUserAttribute() throws Exception {
+        RealmModel realm = realmManager.createRealm("original");
+        UserModel user = session.users().addUser(realm, "user");
+
+        user.setSingleAttribute("key1", "value1");
+
+        commit();
+
+        realm = realmManager.getRealmByName("original");
+        user = session.users().getUserByUsername("user", realm);
+
+        // Update attribute
+        List<String> attrVals = new ArrayList<>(Arrays.asList( "val2" ));
+        user.setAttribute("key1", attrVals);
+        Map<String, List<String>> allAttrVals = user.getAttributes();
+
+        // Ensure same transaction is able to see updated value
+        Assert.assertEquals(1, allAttrVals.size());
+        Assert.assertEquals(allAttrVals.get("key1"), Arrays.asList("val2"));
+
+        commit();
+    }
+
     @Test
     public void testSearchByString() {
         RealmModel realm = realmManager.createRealm("original");

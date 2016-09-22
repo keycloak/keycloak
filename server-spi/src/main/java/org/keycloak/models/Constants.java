@@ -50,5 +50,8 @@ public interface Constants {
     String KEY = "key";
 
     // Prefix for user attributes used in various "context"data maps
-    public static final String USER_ATTRIBUTES_PREFIX = "user.attributes.";
+    String USER_ATTRIBUTES_PREFIX = "user.attributes.";
+
+    // Indication to admin-rest-endpoint that realm keys should be re-generated
+    String GENERATE = "GENERATE";
 }

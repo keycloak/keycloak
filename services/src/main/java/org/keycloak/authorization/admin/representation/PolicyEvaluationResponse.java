@@ -132,7 +132,10 @@ public class PolicyEvaluationResponse {
                         scopes.add(scope);
                     }
                     if (evaluationResultRepresentation.getStatus().equals(Effect.PERMIT)) {
-                        result.getAllowedScopes().add(scope);
+                        List<ScopeRepresentation> allowedScopes = result.getAllowedScopes();
+                        if (!allowedScopes.contains(scope)) {
+                            allowedScopes.add(scope);
+                        }
                     }
                 }
             }

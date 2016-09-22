@@ -20,32 +20,26 @@ import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.ModelDuplicateException;
-import org.keycloak.models.ProtocolMapperContainerModel;
-import org.keycloak.models.ProtocolMapperModel;
+import org.keycloak.models.*;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
+import org.keycloak.protocol.ProtocolMapper;
+import org.keycloak.protocol.ProtocolMapperConfigException;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.services.ErrorResponse;
+import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.resources.admin.RealmAuth.Resource;
 
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
+import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
-
+import java.text.MessageFormat;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Properties;
 
 /**
  * Base resource for managing users
@@ -55,6 +49,8 @@ import java.util.List;
  */
 public class ProtocolMappersResource {
     protected static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+
+    protected RealmModel realm;
 
     protected ProtocolMapperContainerModel client;
 
@@ -68,7 +64,8 @@ public class ProtocolMappersResource {
     @Context
     protected KeycloakSession session;
 
-    public ProtocolMappersResource(ProtocolMapperContainerModel client, RealmAuth auth, AdminEventBuilder adminEvent) {
+    public ProtocolMappersResource(RealmModel realm, ProtocolMapperContainerModel client, RealmAuth auth, AdminEventBuilder adminEvent) {
+        this.realm = realm;
         this.auth = auth;
         this.client = client;
         this.adminEvent = adminEvent.resource(ResourceType.PROTOCOL_MAPPER);
@@ -119,6 +116,7 @@ public class ProtocolMappersResource {
         ProtocolMapperModel model = null;
         try {
             model = RepresentationToModel.toModel(rep);
+            validateModel(model);
             model = client.addProtocolMapper(model);
             adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo, model.getId()).representation(rep).success();
 
@@ -146,6 +144,7 @@ public class ProtocolMappersResource {
         ProtocolMapperModel model = null;
         for (ProtocolMapperRepresentation rep : reps) {
             model = RepresentationToModel.toModel(rep);
+            validateModel(model);
             model = client.addProtocolMapper(model);
         }
         adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo).representation(reps).success();
@@ -216,6 +215,9 @@ public class ProtocolMappersResource {
         ProtocolMapperModel model = client.getProtocolMapperById(id);
         if (model == null) throw new NotFoundException("Model not found");
         model = RepresentationToModel.toModel(rep);
+
+        validateModel(model);
+
         client.updateProtocolMapper(model);
         adminEvent.operation(OperationType.UPDATE).resourcePath(uriInfo).representation(rep).success();
     }
@@ -240,6 +242,20 @@ public class ProtocolMappersResource {
         client.removeProtocolMapper(model);
         adminEvent.operation(OperationType.DELETE).resourcePath(uriInfo).success();
 
+    }
+
+    private void validateModel(ProtocolMapperModel model) {
+        try {
+            ProtocolMapper mapper = (ProtocolMapper)session.getKeycloakSessionFactory().getProviderFactory(ProtocolMapper.class, model.getProtocolMapper());
+            if (mapper != null) {
+                mapper.validateConfig(session, realm, client, model);
+            }
+        } catch (ProtocolMapperConfigException ex) {
+            logger.error(ex.getMessage());
+            Properties messages = AdminRoot.getMessages(session, realm, auth.getAuth().getToken().getLocale());
+            throw new ErrorResponseException(ex.getMessage(), MessageFormat.format(messages.getProperty(ex.getMessageKey(), ex.getMessage()), ex.getParameters()),
+                    Response.Status.BAD_REQUEST);
+        }
     }
 
 }

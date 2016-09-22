@@ -23,9 +23,13 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
-public class MigrateTo2_0_0 {
+public class MigrateTo2_0_0 implements Migration {
 
     public static final ModelVersion VERSION = new ModelVersion("2.0.0");
+
+    public ModelVersion getVersion() {
+        return VERSION;
+    }
 
     public void migrate(KeycloakSession session) {
         for (RealmModel realm : session.realms().getRealms()) {

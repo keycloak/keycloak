@@ -32,6 +32,7 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
 import org.keycloak.protocol.oidc.utils.JWKSUtils;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
+import org.keycloak.protocol.oidc.utils.SubjectType;
 import org.keycloak.representations.idm.CertificateRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
@@ -53,6 +54,7 @@ public class DescriptionConverter {
 
     public static ClientRepresentation toInternal(KeycloakSession session, OIDCClientRepresentation clientOIDC) throws ClientRegistrationException {
         ClientRepresentation client = new ClientRepresentation();
+
         client.setClientId(clientOIDC.getClientId());
         client.setName(clientOIDC.getClientName());
         client.setRedirectUris(clientOIDC.getRedirectUris());
@@ -89,14 +91,12 @@ public class DescriptionConverter {
         }
         client.setClientAuthenticatorType(clientAuthFactory.getId());
 
-        // Externalize to ClientAuthenticator itself?
-        if (authMethod != null && authMethod.equals(OIDCLoginProtocol.PRIVATE_KEY_JWT)) {
+        PublicKey publicKey = retrievePublicKey(session, clientOIDC);
+        if (authMethod != null && authMethod.equals(OIDCLoginProtocol.PRIVATE_KEY_JWT) && publicKey == null) {
+            throw new ClientRegistrationException("Didn't find key of supported keyType for use " + JWK.Use.SIG.asString());
+        }
 
-            PublicKey publicKey = retrievePublicKey(clientOIDC);
-            if (publicKey == null) {
-                throw new ClientRegistrationException("Didn't find key of supported keyType for use " + JWK.Use.SIG.asString());
-            }
-
+        if (publicKey != null) {
             String publicKeyPem = KeycloakModelUtils.getPemFromKey(publicKey);
 
             CertificateRepresentation rep = new CertificateRepresentation();
@@ -104,20 +104,30 @@ public class DescriptionConverter {
             CertificateInfoHelper.updateClientRepresentationCertificateInfo(client, rep, JWTClientAuthenticator.ATTR_PREFIX);
         }
 
+        OIDCAdvancedConfigWrapper configWrapper = OIDCAdvancedConfigWrapper.fromClientRepresentation(client);
         if (clientOIDC.getUserinfoSignedResponseAlg() != null) {
-            String userInfoSignedResponseAlg = clientOIDC.getUserinfoSignedResponseAlg();
-            Algorithm algorithm = Enum.valueOf(Algorithm.class, userInfoSignedResponseAlg);
+            Algorithm algorithm = Enum.valueOf(Algorithm.class, clientOIDC.getUserinfoSignedResponseAlg());
+            configWrapper.setUserInfoSignedResponseAlg(algorithm);
+        }
 
-            OIDCAdvancedConfigWrapper.fromClientRepresentation(client).setUserInfoSignedResponseAlg(algorithm);
+        if (clientOIDC.getRequestObjectSigningAlg() != null) {
+            Algorithm algorithm = Enum.valueOf(Algorithm.class, clientOIDC.getRequestObjectSigningAlg());
+            configWrapper.setRequestObjectSignatureAlg(algorithm);
+        }
+
+        SubjectType subjectType = SubjectType.parse(clientOIDC.getSubjectType());
+        configWrapper.setSubjectType(subjectType);
+        if (subjectType.equals(SubjectType.PAIRWISE)) {
+            configWrapper.setSectorIdentifierUri(clientOIDC.getSectorIdentifierUri());
         }
 
         return client;
     }
 
 
-    private static PublicKey retrievePublicKey(OIDCClientRepresentation clientOIDC) {
+    private static PublicKey retrievePublicKey(KeycloakSession session, OIDCClientRepresentation clientOIDC) {
         if (clientOIDC.getJwksUri() == null && clientOIDC.getJwks() == null) {
-            throw new ClientRegistrationException("Requested client authentication method '%s' but jwks_uri nor jwks were available in config");
+            return null;
         }
 
         if (clientOIDC.getJwksUri() != null && clientOIDC.getJwks() != null) {
@@ -129,7 +139,7 @@ public class DescriptionConverter {
             keySet = clientOIDC.getJwks();
         } else {
             try {
-                keySet = JWKSUtils.sendJwksRequest(clientOIDC.getJwksUri());
+                keySet = JWKSUtils.sendJwksRequest(session, clientOIDC.getJwksUri());
             } catch (IOException ioe) {
                 throw new ClientRegistrationException("Failed to send JWKS request to specified jwks_uri", ioe);
             }
@@ -165,6 +175,14 @@ public class DescriptionConverter {
         OIDCAdvancedConfigWrapper config = OIDCAdvancedConfigWrapper.fromClientRepresentation(client);
         if (config.isUserInfoSignatureRequired()) {
             response.setUserinfoSignedResponseAlg(config.getUserInfoSignedResponseAlg().toString());
+        }
+        if (config.getRequestObjectSignatureAlg() != null) {
+            response.setRequestObjectSigningAlg(config.getRequestObjectSignatureAlg().toString());
+        }
+
+        response.setSubjectType(config.getSubjectType().toString().toLowerCase());
+        if (config.getSubjectType().equals(SubjectType.PAIRWISE)) {
+            response.setSectorIdentifierUri(config.getSectorIdentifierUri());
         }
 
         return response;

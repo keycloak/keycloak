@@ -17,11 +17,12 @@
 
 package org.keycloak.protocol.oidc;
 
-import java.util.HashMap;
-
 import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.models.ClientModel;
+import org.keycloak.protocol.oidc.utils.SubjectType;
 import org.keycloak.representations.idm.ClientRepresentation;
+
+import java.util.HashMap;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -29,6 +30,13 @@ import org.keycloak.representations.idm.ClientRepresentation;
 public class OIDCAdvancedConfigWrapper {
 
     private static final String USER_INFO_RESPONSE_SIGNATURE_ALG = "user.info.response.signature.alg";
+
+    private static final String REQUEST_OBJECT_SIGNATURE_ALG = "request.object.signature.alg";
+
+    private static final String SUBJECT_TYPE = "oidc.subject_type";
+    private static final String SECTOR_IDENTIFIER_URI = "oidc.sector_identifier_uri";
+    private static final String PUBLIC = "public";
+    private static final String PAIRWISE = "pairwise";
 
     private final ClientModel clientModel;
     private final ClientRepresentation clientRep;
@@ -60,6 +68,37 @@ public class OIDCAdvancedConfigWrapper {
 
     public boolean isUserInfoSignatureRequired() {
         return getUserInfoSignedResponseAlg() != null;
+    }
+
+    public Algorithm getRequestObjectSignatureAlg() {
+        String alg = getAttribute(REQUEST_OBJECT_SIGNATURE_ALG);
+        return alg==null ? null : Enum.valueOf(Algorithm.class, alg);
+    }
+
+    public void setRequestObjectSignatureAlg(Algorithm alg) {
+        String algStr = alg==null ? null : alg.toString();
+        setAttribute(REQUEST_OBJECT_SIGNATURE_ALG, algStr);
+    }
+
+    public void setSubjectType(SubjectType subjectType) {
+        if (subjectType == null) {
+            setAttribute(SUBJECT_TYPE, SubjectType.PUBLIC.toString());
+            return;
+        }
+        setAttribute(SUBJECT_TYPE, subjectType.toString());
+    }
+
+    public SubjectType getSubjectType() {
+        String subjectType = getAttribute(SUBJECT_TYPE);
+        return subjectType == null ? SubjectType.PUBLIC : Enum.valueOf(SubjectType.class, subjectType);
+    }
+
+    public void setSectorIdentifierUri(String sectorIdentifierUri) {
+        setAttribute(SECTOR_IDENTIFIER_URI, sectorIdentifierUri);
+    }
+
+    public String getSectorIdentifierUri() {
+        return getAttribute(SECTOR_IDENTIFIER_URI);
     }
 
 

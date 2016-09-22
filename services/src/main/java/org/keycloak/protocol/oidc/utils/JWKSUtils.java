@@ -18,21 +18,27 @@
 package org.keycloak.protocol.oidc.utils;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.security.PublicKey;
 
-import org.keycloak.broker.provider.util.SimpleHttp;
+import org.keycloak.common.util.StreamUtil;
+import org.keycloak.connections.httpclient.HttpClientProvider;
 import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKParser;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.util.JsonSerialization;
 
 /**
+ * TODO: Merge with JWKSUtils from keycloak-core?
+ *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class JWKSUtils {
 
-    public static JSONWebKeySet sendJwksRequest(String jwksURI) throws IOException {
-        String keySetString = SimpleHttp.doGet(jwksURI).asString();
+    public static JSONWebKeySet sendJwksRequest(KeycloakSession session, String jwksURI) throws IOException {
+        InputStream is = session.getProvider(HttpClientProvider.class).get(jwksURI);
+        String keySetString = StreamUtil.readString(is);
         return JsonSerialization.readValue(keySetString, JSONWebKeySet.class);
     }
 
@@ -40,7 +46,7 @@ public class JWKSUtils {
     public static PublicKey getKeyForUse(JSONWebKeySet keySet, JWK.Use requestedUse) {
         for (JWK jwk : keySet.getKeys()) {
             JWKParser parser = JWKParser.create(jwk);
-            if (parser.getJwk().getPublicKeyUse().equals(requestedUse.asString()) && parser.isAlgorithmSupported(jwk.getKeyType())) {
+            if (parser.getJwk().getPublicKeyUse().equals(requestedUse.asString()) && parser.isKeyTypeSupported(jwk.getKeyType())) {
                 return parser.toPublicKey();
             }
         }

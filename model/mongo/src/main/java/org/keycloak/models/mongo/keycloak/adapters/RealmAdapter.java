@@ -1230,7 +1230,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         }
         updateRealm();
     }
-    
+
     @Override
     public boolean isAdminEventsEnabled() {
         return realm.isAdminEventsEnabled();
@@ -1240,7 +1240,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     public void setAdminEventsEnabled(boolean enabled) {
         realm.setAdminEventsEnabled(enabled);
         updateRealm();
-        
+
     }
 
     @Override
@@ -1253,7 +1253,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         realm.setAdminEventsDetailsEnabled(enabled);
         updateRealm();
     }
-    
+
     @Override
     public ClientModel getMasterAdminClient() {
         MongoClientEntity appData = getMongoStore().loadEntity(MongoClientEntity.class, realm.getMasterAdminClient(), invocationContext);
@@ -2181,4 +2181,62 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         }
         return null;
     }
+
+    @Override
+    public void setAttribute(String name, String value) {
+        realm.getAttributes().put(name, value);
+        updateRealm();
+    }
+
+    @Override
+    public void setAttribute(String name, Boolean value) {
+        setAttribute(name, value.toString());
+    }
+
+    @Override
+    public void setAttribute(String name, Integer value) {
+        setAttribute(name, value.toString());
+    }
+
+    @Override
+    public void setAttribute(String name, Long value) {
+        setAttribute(name, value.toString());
+    }
+
+    @Override
+    public void removeAttribute(String name) {
+        realm.getAttributes().remove(name);
+        updateRealm();
+    }
+
+    @Override
+    public String getAttribute(String name) {
+        return realm.getAttributes().get(name);
+    }
+
+    @Override
+    public Integer getAttribute(String name, Integer defaultValue) {
+        String v = getAttribute(name);
+        return v != null ? Integer.parseInt(v) : defaultValue;
+    }
+
+    @Override
+    public Long getAttribute(String name, Long defaultValue) {
+        String v = getAttribute(name);
+        return v != null ? Long.parseLong(v) : defaultValue;
+    }
+
+    @Override
+    public Boolean getAttribute(String name, Boolean defaultValue) {
+        String v = getAttribute(name);
+        return v != null ? Boolean.parseBoolean(v) : defaultValue;
+    }
+
+    @Override
+    public Map<String, String> getAttributes() {
+        Map<String, String> attributes = new HashMap<>();
+        attributes.putAll(realm.getAttributes());
+        return attributes;
+    }
+
 }

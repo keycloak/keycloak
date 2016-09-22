@@ -51,7 +51,6 @@ public class KeycloakOIDCClientInstallation implements ClientInstallationProvide
         ClientManager.InstallationAdapterConfig rep = new ClientManager.InstallationAdapterConfig();
         rep.setAuthServerUrl(baseUri.toString());
         rep.setRealm(realm.getName());
-        rep.setRealmKey(realm.getPublicKeyPem());
         rep.setSslRequired(realm.getSslRequired().name().toLowerCase());
 
         if (client.isPublicClient() && !client.isBearerOnly()) rep.setPublicClient(true);

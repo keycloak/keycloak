@@ -1465,4 +1465,64 @@ public class RealmAdapter implements RealmModel {
         if (isUpdated()) return updated.getComponent(id);
         return cached.getComponents().get(id);
     }
+
+    public void setAttribute(String name, String value) {
+        getDelegateForUpdate();
+        updated.setAttribute(name, value);
+    }
+
+    @Override
+    public void setAttribute(String name, Boolean value) {
+        getDelegateForUpdate();
+        updated.setAttribute(name, value);
+    }
+
+    @Override
+    public void setAttribute(String name, Integer value) {
+        getDelegateForUpdate();
+        updated.setAttribute(name, value);
+    }
+
+    @Override
+    public void setAttribute(String name, Long value) {
+        getDelegateForUpdate();
+        updated.setAttribute(name, value);
+    }
+
+    @Override
+    public void removeAttribute(String name) {
+        getDelegateForUpdate();
+        updated.removeAttribute(name);
+    }
+
+    @Override
+    public String getAttribute(String name) {
+        if (isUpdated()) return updated.getAttribute(name);
+        return cached.getAttribute(name);
+    }
+
+    @Override
+    public Integer getAttribute(String name, Integer defaultValue) {
+        if (isUpdated()) return updated.getAttribute(name, defaultValue);
+        return cached.getAttribute(name, defaultValue);
+    }
+
+    @Override
+    public Long getAttribute(String name, Long defaultValue) {
+        if (isUpdated()) return updated.getAttribute(name, defaultValue);
+        return cached.getAttribute(name, defaultValue);
+    }
+
+    @Override
+    public Boolean getAttribute(String name, Boolean defaultValue) {
+        if (isUpdated()) return updated.getAttribute(name, defaultValue);
+        return cached.getAttribute(name, defaultValue);
+    }
+
+    @Override
+    public Map<String, String> getAttributes() {
+        if (isUpdated()) return updated.getAttributes();
+        return cached.getAttributes();
+    }
+
 }

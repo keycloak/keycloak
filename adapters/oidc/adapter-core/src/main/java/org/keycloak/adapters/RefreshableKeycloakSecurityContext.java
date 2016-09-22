@@ -21,6 +21,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.AuthorizationContext;
 import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.RSATokenVerifier;
+import org.keycloak.adapters.rotation.AdapterRSATokenVerifier;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.Time;
 import org.keycloak.representations.AccessToken;
@@ -130,7 +131,7 @@ public class RefreshableKeycloakSecurityContext extends KeycloakSecurityContext 
         String tokenString = response.getToken();
         AccessToken token = null;
         try {
-            token = RSATokenVerifier.verifyToken(tokenString, deployment.getRealmKey(), deployment.getRealmInfoUrl());
+            token = AdapterRSATokenVerifier.verifyToken(tokenString, deployment);
             log.debug("Token Verification succeeded!");
         } catch (VerificationException e) {
             log.error("failed verification of token");

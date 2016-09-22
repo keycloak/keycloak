@@ -9,6 +9,7 @@ import java.io.Serializable;
 public class AbstractRevisioned implements Revisioned, Serializable {
     private String id;
     private Long revision;
+    private final long cacheTimestamp = System.currentTimeMillis();
 
     public AbstractRevisioned(Long revision, String id) {
         this.revision = revision;
@@ -30,4 +31,12 @@ public class AbstractRevisioned implements Revisioned, Serializable {
         this.revision = revision;
     }
 
+    /**
+     * When was this cached
+     *
+     * @return
+     */
+    public long getCacheTimestamp() {
+        return cacheTimestamp;
+    }
 }

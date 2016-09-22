@@ -17,6 +17,7 @@
 
 package org.keycloak.testsuite.model;
 
+import java.util.Arrays;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -151,14 +152,17 @@ public class ConcurrentTransactionsTest extends AbstractModelTest {
     }
 
 
-    // KEYCLOAK-3296
+    // KEYCLOAK-3296 , KEYCLOAK-3494
     @Test
     public void removeUserAttribute() throws Exception {
         RealmModel realm = realmManager.createRealm("original");
         KeycloakSession session = realmManager.getSession();
 
-        UserModel user = session.users().addUser(realm, "john");
-        user.setSingleAttribute("foo", "val1");
+        UserModel john = session.users().addUser(realm, "john");
+        john.setSingleAttribute("foo", "val1");
+
+        UserModel john2 = session.users().addUser(realm, "john2");
+        john2.setAttribute("foo", Arrays.asList("val1", "val2"));
 
         final KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
         commit();
@@ -182,12 +186,18 @@ public class ConcurrentTransactionsTest extends AbstractModelTest {
                                 UserModel john = session.users().getUserByUsername("john", realm);
                                 String attrVal = john.getFirstAttribute("foo");
 
+                                UserModel john2 = session.users().getUserByUsername("john2", realm);
+                                String attrVal2 = john2.getFirstAttribute("foo");
+
                                 // Wait until it's read in both threads
                                 readAttrLatch.countDown();
                                 readAttrLatch.await();
 
-                                // Remove user attribute in both threads
+                                // KEYCLOAK-3296 : Remove user attribute in both threads
                                 john.removeAttribute("foo");
+
+                                // KEYCLOAK-3494 : Set single attribute in both threads
+                                john2.setSingleAttribute("foo", "bar");
                             } catch (Exception e) {
                                 throw new RuntimeException(e);
                             }

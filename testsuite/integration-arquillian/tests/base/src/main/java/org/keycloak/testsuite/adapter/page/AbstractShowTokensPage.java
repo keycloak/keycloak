@@ -23,6 +23,7 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.testsuite.page.AbstractPageWithInjectedUrl;
 import org.keycloak.util.JsonSerialization;
+import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -43,6 +44,8 @@ public abstract class AbstractShowTokensPage extends AbstractPageWithInjectedUrl
             return JsonSerialization.readValue(accessToken.getText(), AccessToken.class);
         } catch (IOException e) {
             e.printStackTrace();
+        } catch (NoSuchElementException nsee) {
+            log.warn("No accessToken element found on the page");
         }
 
         return null;
@@ -53,7 +56,10 @@ public abstract class AbstractShowTokensPage extends AbstractPageWithInjectedUrl
             return JsonSerialization.readValue(refreshToken.getText(), RefreshToken.class);
         } catch (IOException e) {
             e.printStackTrace();
+        } catch (NoSuchElementException nsee) {
+            log.warn("No idToken element found on the page");
         }
+
         return null;
     }
 }

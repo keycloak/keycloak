@@ -50,12 +50,12 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.testsuite.Assert;
+import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
+import org.keycloak.testsuite.client.resources.TestOIDCEndpointsApplicationResource;
+import org.keycloak.testsuite.rest.resource.TestingOIDCEndpointsApplicationResource;
 import org.keycloak.testsuite.util.OAuthClient;
 import java.security.PrivateKey;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
@@ -236,8 +236,11 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
         clientRep.setGrantTypes(Collections.singletonList(OAuth2Constants.CLIENT_CREDENTIALS));
         clientRep.setTokenEndpointAuthMethod(OIDCLoginProtocol.PRIVATE_KEY_JWT);
 
-        // Corresponds to PRIVATE_KEY
-        JSONWebKeySet keySet = loadJson(getClass().getResourceAsStream("/clientreg-test/jwks.json"), JSONWebKeySet.class);
+        // Generate keys for client
+        TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
+        Map<String, String> generatedKeys = oidcClientEndpointsResource.generateKeys();
+
+        JSONWebKeySet keySet = oidcClientEndpointsResource.getJwks();
         clientRep.setJwks(keySet);
 
         OIDCClientRepresentation response = reg.oidc().create(clientRep);
@@ -246,7 +249,7 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
         Assert.assertNull(response.getClientSecretExpiresAt());
 
         // Tries to authenticate client with privateKey JWT
-        String signedJwt = getClientSignedJWT(response.getClientId());
+        String signedJwt = getClientSignedJWT(response.getClientId(), generatedKeys.get(TestingOIDCEndpointsApplicationResource.PRIVATE_KEY));
         OAuthClient.AccessTokenResponse accessTokenResponse = doClientCredentialsGrantRequest(signedJwt);
         Assert.assertEquals(200, accessTokenResponse.getStatusCode());
         AccessToken accessToken = oauth.verifyToken(accessTokenResponse.getAccessToken());
@@ -260,8 +263,11 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
         clientRep.setGrantTypes(Collections.singletonList(OAuth2Constants.CLIENT_CREDENTIALS));
         clientRep.setTokenEndpointAuthMethod(OIDCLoginProtocol.PRIVATE_KEY_JWT);
 
-        // Use the realmKey for client authentication too
-        clientRep.setJwksUri(oauth.getCertsUrl(REALM_NAME));
+        // Generate keys for client
+        TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
+        Map<String, String> generatedKeys = oidcClientEndpointsResource.generateKeys();
+
+        clientRep.setJwksUri(TestApplicationResourceUrls.clientJwksUri());
 
         OIDCClientRepresentation response = reg.oidc().create(clientRep);
         Assert.assertEquals(OIDCLoginProtocol.PRIVATE_KEY_JWT, response.getTokenEndpointAuthMethod());
@@ -269,7 +275,7 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
         Assert.assertNull(response.getClientSecretExpiresAt());
 
         // Tries to authenticate client with privateKey JWT
-        String signedJwt = getClientSignedJWT(response.getClientId());
+        String signedJwt = getClientSignedJWT(response.getClientId(), generatedKeys.get(TestingOIDCEndpointsApplicationResource.PRIVATE_KEY));
         OAuthClient.AccessTokenResponse accessTokenResponse = doClientCredentialsGrantRequest(signedJwt);
         Assert.assertEquals(200, accessTokenResponse.getStatusCode());
         AccessToken accessToken = oauth.verifyToken(accessTokenResponse.getAccessToken());
@@ -277,27 +283,161 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
     }
 
     @Test
+    public void createPairwiseClient() throws Exception {
+        OIDCClientRepresentation clientRep = createRep();
+        clientRep.setSubjectType("pairwise");
+
+        OIDCClientRepresentation response = reg.oidc().create(clientRep);
+        Assert.assertEquals("pairwise", response.getSubjectType());
+    }
+
+    @Test
+    public void updateClientToPairwise() throws Exception {
+        OIDCClientRepresentation response = create();
+        Assert.assertEquals("public", response.getSubjectType());
+
+        reg.auth(Auth.token(response));
+        response.setSubjectType("pairwise");
+        OIDCClientRepresentation updated = reg.oidc().update(response);
+
+        Assert.assertEquals("pairwise", updated.getSubjectType());
+    }
+
+    @Test
+    public void updateSectorIdentifierUri() throws Exception {
+        OIDCClientRepresentation clientRep = createRep();
+        clientRep.setSubjectType("pairwise");
+        OIDCClientRepresentation response = reg.oidc().create(clientRep);
+        Assert.assertEquals("pairwise", response.getSubjectType());
+        Assert.assertNull(response.getSectorIdentifierUri());
+
+        reg.auth(Auth.token(response));
+
+        // Push redirect uris to the sector identifier URI
+        List<String> sectorRedirects = new ArrayList<>();
+        sectorRedirects.addAll(response.getRedirectUris());
+        TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
+        oidcClientEndpointsResource.setSectorIdentifierRedirectUris(sectorRedirects);
+
+        response.setSectorIdentifierUri(TestApplicationResourceUrls.pairwiseSectorIdentifierUri());
+
+        OIDCClientRepresentation updated = reg.oidc().update(response);
+
+        Assert.assertEquals("pairwise", updated.getSubjectType());
+        Assert.assertEquals(TestApplicationResourceUrls.pairwiseSectorIdentifierUri(), updated.getSectorIdentifierUri());
+
+    }
+
+    @Test
+    public void createPairwiseClientWithSectorIdentifierURI() throws Exception {
+        OIDCClientRepresentation clientRep = createRep();
+
+        // Push redirect uris to the sector identifier URI
+        List<String> sectorRedirects = new ArrayList<>();
+        sectorRedirects.addAll(clientRep.getRedirectUris());
+        TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
+        oidcClientEndpointsResource.setSectorIdentifierRedirectUris(sectorRedirects);
+
+        clientRep.setSubjectType("pairwise");
+        clientRep.setSectorIdentifierUri(TestApplicationResourceUrls.pairwiseSectorIdentifierUri());
+
+        OIDCClientRepresentation response = reg.oidc().create(clientRep);
+        Assert.assertEquals("pairwise", response.getSubjectType());
+        Assert.assertEquals(TestApplicationResourceUrls.pairwiseSectorIdentifierUri(), response.getSectorIdentifierUri());
+    }
+
+    @Test
+    public void createPairwiseClientWithRedirectsToMultipleHostsWithoutSectorIdentifierURI() throws Exception {
+        OIDCClientRepresentation clientRep = createRep();
+
+        List<String> redirects = new ArrayList<>();
+        redirects.add("http://redirect1");
+        redirects.add("http://redirect2");
+
+        clientRep.setSubjectType("pairwise");
+        clientRep.setRedirectUris(redirects);
+
+        assertCreateFail(clientRep, 400, "Without a configured Sector Identifier URI, client redirect URIs must not contain multiple host components.");
+    }
+
+    @Test
+    public void createPairwiseClientWithRedirectsToMultipleHosts() throws Exception {
+        OIDCClientRepresentation clientRep = createRep();
+
+        // Push redirect URIs to the sector identifier URI
+        List<String> redirects = new ArrayList<>();
+        redirects.add("http://redirect1");
+        redirects.add("http://redirect2");
+        TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
+        oidcClientEndpointsResource.setSectorIdentifierRedirectUris(redirects);
+
+        clientRep.setSubjectType("pairwise");
+        clientRep.setSectorIdentifierUri(TestApplicationResourceUrls.pairwiseSectorIdentifierUri());
+        clientRep.setRedirectUris(redirects);
+
+        OIDCClientRepresentation response = reg.oidc().create(clientRep);
+        Assert.assertEquals("pairwise", response.getSubjectType());
+        Assert.assertEquals(TestApplicationResourceUrls.pairwiseSectorIdentifierUri(), response.getSectorIdentifierUri());
+        Assert.assertNames(response.getRedirectUris(), "http://redirect1", "http://redirect2");
+    }
+
+    @Test
+    public void createPairwiseClientWithSectorIdentifierURIContainingMismatchedRedirects() throws Exception {
+        OIDCClientRepresentation clientRep = createRep();
+
+        // Push redirect uris to the sector identifier URI
+        List<String> sectorRedirects = new ArrayList<>();
+        sectorRedirects.add("http://someotherredirect");
+        TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
+        oidcClientEndpointsResource.setSectorIdentifierRedirectUris(sectorRedirects);
+
+        clientRep.setSubjectType("pairwise");
+        clientRep.setSectorIdentifierUri(TestApplicationResourceUrls.pairwiseSectorIdentifierUri());
+
+        assertCreateFail(clientRep, 400, "Client redirect URIs does not match redirect URIs fetched from the Sector Identifier URI.");
+    }
+
+    @Test
+    public void createPairwiseClientWithInvalidSectorIdentifierURI() throws Exception {
+        OIDCClientRepresentation clientRep = createRep();
+        clientRep.setSubjectType("pairwise");
+        clientRep.setSectorIdentifierUri("malformed");
+        assertCreateFail(clientRep, 400, "Invalid Sector Identifier URI.");
+    }
+
+    @Test
+    public void createPairwiseClientWithUnreachableSectorIdentifierURI() throws Exception {
+        OIDCClientRepresentation clientRep = createRep();
+        clientRep.setSubjectType("pairwise");
+        clientRep.setSectorIdentifierUri("http://localhost/dummy");
+        assertCreateFail(clientRep, 400, "Failed to get redirect URIs from the Sector Identifier URI.");
+    }
+
+    @Test
     public void testSignaturesRequired() throws Exception {
         OIDCClientRepresentation clientRep = createRep();
         clientRep.setUserinfoSignedResponseAlg(Algorithm.RS256.toString());
+        clientRep.setRequestObjectSigningAlg(Algorithm.RS256.toString());
 
         OIDCClientRepresentation response = reg.oidc().create(clientRep);
         Assert.assertEquals(Algorithm.RS256.toString(), response.getUserinfoSignedResponseAlg());
+        Assert.assertEquals(Algorithm.RS256.toString(), response.getRequestObjectSigningAlg());
         Assert.assertNotNull(response.getClientSecret());
 
         // Test Keycloak representation
         ClientRepresentation kcClient = getClient(response.getClientId());
         OIDCAdvancedConfigWrapper config = OIDCAdvancedConfigWrapper.fromClientRepresentation(kcClient);
         Assert.assertEquals(config.getUserInfoSignedResponseAlg(), Algorithm.RS256);
+        Assert.assertEquals(config.getRequestObjectSignatureAlg(), Algorithm.RS256);
     }
 
 
     // Client auth with signedJWT - helper methods
 
-    private String getClientSignedJWT(String clientId) {
+    private String getClientSignedJWT(String clientId, String privateKeyPem) {
         String realmInfoUrl = KeycloakUriBuilder.fromUri(getAuthServerRoot()).path(ServiceUrlConstants.REALM_INFO_PATH).build(REALM_NAME).toString();
 
-        PrivateKey privateKey = KeycloakModelUtils.getPrivateKey(PRIVATE_KEY);
+        PrivateKey privateKey = KeycloakModelUtils.getPrivateKey(privateKeyPem);
 
         // Use token-endpoint as audience as OIDC conformance testsuite is using it too.
         JWTClientCredentialsProvider jwtProvider = new JWTClientCredentialsProvider() {

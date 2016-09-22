@@ -94,6 +94,8 @@ public class RealmEntity extends AbstractIdentifiableEntity {
     private Map<String, String> smtpConfig = new HashMap<String, String>();
     private Map<String, String> socialConfig = new HashMap<String, String>();
 
+    private Map<String, String> attributes = new HashMap<>();
+
     private boolean eventsEnabled;
     private long eventsExpiration;
     private List<String> eventsListeners = new ArrayList<String>();
@@ -692,6 +694,13 @@ public class RealmEntity extends AbstractIdentifiableEntity {
     public void setComponentEntities(List<ComponentEntity> componentEntities) {
         this.componentEntities = componentEntities;
     }
+
+    public Map<String, String> getAttributes() {
+        return attributes;
+    }
+
+    public void setAttributes(Map<String, String> attributes) {
+        this.attributes = attributes;
+    }
+
 }
-
-

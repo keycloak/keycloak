@@ -17,14 +17,8 @@
 
 package org.keycloak.storage;
 
-import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
-import org.keycloak.models.RealmModel;
-
-import java.io.Serializable;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.Map;
+import org.keycloak.component.PrioritizedComponentModel;
 
 /**
  * Stored configuration of a User Storage provider instance.
@@ -32,14 +26,7 @@ import java.util.Map;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  * @author <a href="mailto:bburke@redhat.com">Bill Burke</a>
  */
-public class UserStorageProviderModel extends ComponentModel {
-
-    public static Comparator<UserStorageProviderModel> comparator = new Comparator<UserStorageProviderModel>() {
-        @Override
-        public int compare(UserStorageProviderModel o1, UserStorageProviderModel o2) {
-            return o1.getPriority() - o2.getPriority();
-        }
-    };
+public class UserStorageProviderModel extends PrioritizedComponentModel {
 
     public UserStorageProviderModel() {
         setProviderType(UserStorageProvider.class.getName());
@@ -49,14 +36,4 @@ public class UserStorageProviderModel extends ComponentModel {
         super(copy);
     }
 
-    public int getPriority() {
-        String priority = getConfig().getFirst("priority");
-        if (priority == null) return 0;
-        return Integer.valueOf(priority);
-
-    }
-
-    public void setPriority(int priority) {
-        getConfig().putSingle("priority", Integer.toString(priority));
-    }
 }

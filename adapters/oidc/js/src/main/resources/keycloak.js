@@ -154,21 +154,34 @@
                     return;
                 } else if (initOptions) {
                     if (initOptions.token || initOptions.refreshToken) {
-                        setToken(initOptions.token, initOptions.refreshToken, initOptions.idToken, false);
-                        kc.timeSkew = initOptions.timeSkew || 0;
+                        setToken(initOptions.token, initOptions.refreshToken, initOptions.idToken);
 
                         if (loginIframe.enable) {
                             setupCheckLoginIframe().success(function() {
                                 checkLoginIframe().success(function () {
+                                    kc.onAuthSuccess && kc.onAuthSuccess();
                                     initPromise.setSuccess();
                                 }).error(function () {
+                                    kc.onAuthError && kc.onAuthError();
                                     if (initOptions.onLoad) {
                                         onLoad();
+                                    } else {
+                                        initPromise.setError();
                                     }
                                 });
                             });
                         } else {
-                            initPromise.setSuccess();
+                            kc.updateToken(-1).success(function() {
+                                kc.onAuthSuccess && kc.onAuthSuccess();
+                                initPromise.setSuccess();
+                            }).error(function() {
+                                kc.onAuthError && kc.onAuthError();
+                                if (initOptions.onLoad) {
+                                    onLoad();
+                                } else {
+                                    initPromise.setError();
+                                }
+                            });
                         }
                     } else if (initOptions.onLoad) {
                         onLoad();
@@ -349,11 +362,10 @@
                 throw 'Not authenticated';
             }
 
-            var expiresIn = kc.tokenParsed['exp'] - (new Date().getTime() / 1000) + kc.timeSkew;
+            var expiresIn = kc.tokenParsed['exp'] - Math.ceil(new Date().getTime() / 1000) + kc.timeSkew;
             if (minValidity) {
                 expiresIn -= minValidity;
             }
-
             return expiresIn < 0;
         }
 
@@ -368,7 +380,20 @@
             minValidity = minValidity || 5;
 
             var exec = function() {
-                if (!kc.isTokenExpired(minValidity)) {
+                var refreshToken = false;
+                if (kc.timeSkew == -1) {
+                    console.info('Skew ' + kc.timeSkew);
+                    refreshToken = true;
+                    console.info('[KEYCLOAK] Refreshing token: time skew not set');
+                } else if (minValidity == -1) {
+                    refreshToken = true;
+                    console.info('[KEYCLOAK] Refreshing token: forced refresh');
+                } else if (kc.isTokenExpired(minValidity)) {
+                    refreshToken = true;
+                    console.info('[KEYCLOAK] Refreshing token: token expired');
+                }
+
+                if (!refreshToken) {
                     promise.setSuccess(false);
                 } else {
                     var params = 'grant_type=refresh_token&' + 'refresh_token=' + kc.refreshToken;
@@ -380,6 +405,7 @@
                         var req = new XMLHttpRequest();
                         req.open('POST', url, true);
                         req.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+                        req.withCredentials = true;
 
                         if (kc.clientId && kc.clientSecret) {
                             req.setRequestHeader('Authorization', 'Basic ' + btoa(kc.clientId + ':' + kc.clientSecret));
@@ -392,18 +418,21 @@
                         req.onreadystatechange = function () {
                             if (req.readyState == 4) {
                                 if (req.status == 200) {
+                                    console.info('[KEYCLOAK] Token refreshed');
+
                                     timeLocal = (timeLocal + new Date().getTime()) / 2;
 
                                     var tokenResponse = JSON.parse(req.responseText);
-                                    setToken(tokenResponse['access_token'], tokenResponse['refresh_token'], tokenResponse['id_token'], true);
 
-                                    kc.timeSkew = Math.floor(timeLocal / 1000) - kc.tokenParsed.iat;
+                                    setToken(tokenResponse['access_token'], tokenResponse['refresh_token'], tokenResponse['id_token'], timeLocal);
 
                                     kc.onAuthRefreshSuccess && kc.onAuthRefreshSuccess();
                                     for (var p = refreshQueue.pop(); p != null; p = refreshQueue.pop()) {
                                         p.setSuccess(true);
                                     }
                                 } else {
+                                    console.warn('[KEYCLOAK] Failed to refresh token');
+
                                     kc.onAuthRefreshError && kc.onAuthRefreshError();
                                     for (var p = refreshQueue.pop(); p != null; p = refreshQueue.pop()) {
                                         p.setError(true);
@@ -433,7 +462,7 @@
 
         kc.clearToken = function() {
             if (kc.token) {
-                setToken(null, null, null, true);
+                setToken(null, null, null);
                 kc.onAuthLogout && kc.onAuthLogout();
                 if (kc.loginRequired) {
                     kc.login();
@@ -514,18 +543,16 @@
             function authSuccess(accessToken, refreshToken, idToken, fulfillPromise) {
                 timeLocal = (timeLocal + new Date().getTime()) / 2;
 
-                setToken(accessToken, refreshToken, idToken, true);
+                setToken(accessToken, refreshToken, idToken, timeLocal);
 
                 if ((kc.tokenParsed && kc.tokenParsed.nonce != oauth.storedNonce) ||
                     (kc.refreshTokenParsed && kc.refreshTokenParsed.nonce != oauth.storedNonce) ||
                     (kc.idTokenParsed && kc.idTokenParsed.nonce != oauth.storedNonce)) {
 
-                    console.log('invalid nonce!');
+                    console.info('[KEYCLOAK] Invalid nonce, clearing token');
                     kc.clearToken();
                     promise && promise.setError();
                 } else {
-                    kc.timeSkew = Math.floor(timeLocal / 1000) - kc.tokenParsed.iat;
-
                     if (fulfillPromise) {
                         kc.onAuthSuccess && kc.onAuthSuccess();
                         promise && promise.setSuccess();
@@ -598,7 +625,7 @@
             return promise.promise;
         }
 
-        function setToken(token, refreshToken, idToken, useTokenTime) {
+        function setToken(token, refreshToken, idToken, timeLocal) {
             if (kc.tokenTimeoutHandle) {
                 clearTimeout(kc.tokenTimeoutHandle);
                 kc.tokenTimeoutHandle = null;
@@ -617,10 +644,24 @@
                 kc.realmAccess = kc.tokenParsed.realm_access;
                 kc.resourceAccess = kc.tokenParsed.resource_access;
 
+                if (timeLocal) {
+                    kc.timeSkew = Math.floor(timeLocal / 1000) - kc.tokenParsed.iat;
+                    console.info('[KEYCLOAK] Estimated time difference between browser and server is ' + kc.timeSkew + ' seconds');
+                } else {
+                    kc.timeSkew = -1;
+                }
+
                 if (kc.onTokenExpired) {
-                    var start = useTokenTime ? kc.tokenParsed.iat : (new Date().getTime() / 1000);
-                    var expiresIn = kc.tokenParsed.exp - start;
-                    kc.tokenTimeoutHandle = setTimeout(kc.onTokenExpired, expiresIn * 1000);
+                    if (kc.timeSkew == -1) {
+                        kc.onTokenExpired();
+                    } else {
+                        var expiresIn = (kc.tokenParsed['exp'] - (new Date().getTime() / 1000) + kc.timeSkew) * 1000;
+                        if (expiresIn <= 0) {
+                            kc.onTokenExpired();
+                        } else {
+                            kc.tokenTimeoutHandle = setTimeout(kc.onTokenExpired, expiresIn);
+                        }
+                    }
                 }
 
             } else {
@@ -1055,7 +1096,7 @@
             if (!(this instanceof CookieStorage)) {
                 return new CookieStorage();
             }
-            
+
             var cs = this;
 
             cs.get = function(state) {

@@ -23,13 +23,7 @@ import org.jboss.arquillian.test.api.ArquillianResource;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Before;
 import org.junit.Test;
-import org.keycloak.admin.client.resource.AuthorizationResource;
-import org.keycloak.admin.client.resource.ClientResource;
-import org.keycloak.admin.client.resource.ClientsResource;
-import org.keycloak.admin.client.resource.ResourcesResource;
-import org.keycloak.admin.client.resource.RoleResource;
-import org.keycloak.admin.client.resource.UserResource;
-import org.keycloak.admin.client.resource.UsersResource;
+import org.keycloak.admin.client.resource.*;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
@@ -45,11 +39,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -80,8 +70,15 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
     }
 
     @Before
-    public void beforePhotozExampleAdapterTest() {
+    public void beforePhotozExampleAdapterTest() throws FileNotFoundException {
         deleteAllCookiesForClientPage();
+
+        for (PolicyRepresentation policy : getAuthorizationResource().policies().policies()) {
+            if ("Only Owner Policy".equals(policy.getName())) {
+                policy.getConfig().put("mavenArtifactVersion", System.getProperty("project.version"));
+                getAuthorizationResource().policies().policy(policy.getId()).update(policy);
+            }
+        }
     }
 
     @Override

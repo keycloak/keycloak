@@ -23,15 +23,20 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import org.infinispan.Cache;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.events.Event;
 import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.events.admin.ResourceType;
+import org.keycloak.jose.jws.Algorithm;
+import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequest;
 import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.services.managers.ClientSessionCode;
@@ -76,6 +81,7 @@ import org.keycloak.models.UserProvider;
 import org.keycloak.representations.idm.AuthDetailsRepresentation;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testsuite.rest.resource.TestingExportImportResource;
 
 import static org.keycloak.exportimport.ExportImportConfig.*;
 
@@ -565,22 +571,6 @@ public class TestingResourceProvider implements RealmResourceProvider {
     }
 
     @GET
-    @Path("/run-import")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response runImport() {
-        new ExportImportManager(session).runImport();
-        return Response.ok().build();
-    }
-
-    @GET
-    @Path("/run-export")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response runExport() {
-        new ExportImportManager(session).runExport();
-        return Response.ok().build();
-    }
-
-    @GET
     @Path("/valid-credentials")
     @Produces(MediaType.APPLICATION_JSON)
     public boolean validCredentials(@QueryParam("realmName") String realmName, @QueryParam("userName") String userName, @QueryParam("password") String password) {
@@ -647,83 +637,14 @@ public class TestingResourceProvider implements RealmResourceProvider {
         return ModelToRepresentation.toRepresentation(user);
     }
 
+    @Path("/export-import")
+    public TestingExportImportResource getExportImportResource() {
+        return new TestingExportImportResource(session);
+    }
+
     private RealmModel getRealmByName(String realmName) {
         RealmProvider realmProvider = session.getProvider(RealmProvider.class);
         return realmProvider.getRealmByName(realmName);
-    }
-
-    @GET
-    @Path("/get-users-per-file")
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces(MediaType.APPLICATION_JSON)
-    public Integer getUsersPerFile() {
-        String usersPerFile = System.getProperty(USERS_PER_FILE, String.valueOf(DEFAULT_USERS_PER_FILE));
-        return Integer.parseInt(usersPerFile.trim());
-    }
-
-    @PUT
-    @Path("/set-users-per-file")
-    @Consumes(MediaType.APPLICATION_JSON)
-    public void setUsersPerFile(@QueryParam("usersPerFile") Integer usersPerFile) {
-        System.setProperty(USERS_PER_FILE, String.valueOf(usersPerFile));
-    }
-
-    @GET
-    @Path("/get-dir")
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces(MediaType.APPLICATION_JSON)
-    public String getDir() {
-        return System.getProperty(DIR);
-    }
-
-    @PUT
-    @Path("/set-dir")
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces(MediaType.APPLICATION_JSON)
-    public String setDir(@QueryParam("dir") String dir) {
-        return System.setProperty(DIR, dir);
-    }
-
-    @PUT
-    @Path("/export-import-provider")
-    @Consumes(MediaType.APPLICATION_JSON)
-    public void setProvider(@QueryParam("exportImportProvider") String exportImportProvider) {
-        System.setProperty(PROVIDER, exportImportProvider);
-    }
-
-    @PUT
-    @Path("/export-import-file")
-    @Consumes(MediaType.APPLICATION_JSON)
-    public void setFile(@QueryParam("file") String file) {
-        System.setProperty(FILE, file);
-    }
-
-    @PUT
-    @Path("/export-import-action")
-    @Consumes(MediaType.APPLICATION_JSON)
-    public void setAction(@QueryParam("exportImportAction") String exportImportAction) {
-        System.setProperty(ACTION, exportImportAction);
-    }
-
-    @PUT
-    @Path("/set-realm-name")
-    @Consumes(MediaType.APPLICATION_JSON)
-    public void setRealmName(@QueryParam("realmName") String realmName) {
-        if (realmName != null && !realmName.isEmpty()) {
-            System.setProperty(REALM_NAME, realmName);
-        } else {
-            System.getProperties().remove(REALM_NAME);
-        }
-    }
-
-    @GET
-    @Path("/get-test-dir")
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces(MediaType.APPLICATION_JSON)
-    public String getExportImportTestDirectory() {
-        System.setProperty("project.build.directory", "target");
-        String absolutePath = new File(System.getProperty("project.build.directory", "target")).getAbsolutePath();
-        return absolutePath;
     }
 
 }

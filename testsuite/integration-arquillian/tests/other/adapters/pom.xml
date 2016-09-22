@@ -53,7 +53,10 @@
         <app.server.memory.settings>-Xms64m -Xmx512m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m</app.server.memory.settings>
         
         <app.server.ssl.required>false</app.server.ssl.required>
-        
+
+        <settings.path></settings.path>
+        <repo.url></repo.url>
+
         <adapter.test.props>
             -Dapp.server.base.url=http://localhost:${app.server.http.port}
             -Dauth.server.base.url=http://localhost:${auth.server.http.port}
@@ -63,11 +66,14 @@
             -Dauth.server.ssl.required=${auth.server.ssl.required}
             -Dmy.host.name=localhost
             -Djava.security.krb5.conf=${project.build.directory}/dependency/kerberos/test-krb5.conf
+            -Dkie.maven.settings.custom=${settings.path}
+            -Drepo.url=${repo.url}
         </adapter.test.props>
         
         <app.server.home>${containers.home}/app-server-${app.server}</app.server.home>
         <adapter.config.bundled>true</adapter.config.bundled>
-        
+        <examples.basedir>${main.basedir}/examples</examples.basedir>
+
     </properties>
         
     <modules>
@@ -87,6 +93,23 @@
             </activation>
             <build>
                 <plugins>
+                    <plugin>
+                        <groupId>org.commonjava.maven.plugins</groupId>
+                        <artifactId>directory-maven-plugin</artifactId>
+                        <version>0.1</version>
+                        <executions>
+                            <execution>
+                                <id>directories</id>
+                                <goals>
+                                    <goal>highest-basedir</goal>
+                                </goals>
+                                <phase>initialize</phase>
+                                <configuration>
+                                    <property>main.basedir</property>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
                     <plugin>
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>xml-maven-plugin</artifactId>
@@ -311,20 +334,13 @@
                                     </configuration>
                                 </execution>                            
                                 <execution>
-                                    <id>example-realms</id>
+                                    <id>test-apps-realms</id>
                                     <phase>generate-test-resources</phase>
                                     <goals>
                                         <goal>unpack</goal>
                                     </goals>
                                     <configuration>
                                         <artifactItems>
-                                            <artifactItem>
-                                                <groupId>org.keycloak</groupId>
-                                                <artifactId>keycloak-examples-dist</artifactId>
-                                                <version>${project.version}</version>
-                                                <type>zip</type>
-                                                <includes>**/*realm.json,**/testsaml.json</includes>
-                                            </artifactItem>
                                             <artifactItem>
                                                 <groupId>org.keycloak.testsuite</groupId>
                                                 <artifactId>integration-arquillian-test-apps-dist</artifactId>
@@ -336,9 +352,35 @@
                                         <outputDirectory>${examples.home}</outputDirectory>
                                         <overWriteIfNewer>true</overWriteIfNewer>
                                     </configuration>
-                                </execution>                            
+                                </execution>
                             </executions>
-                        </plugin>            
+                        </plugin>
+                        <plugin>
+                            <artifactId>maven-resources-plugin</artifactId>
+                            <executions>
+                                <execution>
+                                    <id>example-realms</id>
+                                    <phase>generate-test-resources</phase>
+                                    <goals>
+                                        <goal>copy-resources</goal>
+                                    </goals>
+                                    <configuration>
+                                        <outputDirectory>${examples.home}/example-realms</outputDirectory>
+                                        <overWriteIfNewer>true</overWriteIfNewer>
+                                        <resources>
+                                            <resource>
+                                                <directory>${examples.basedir}</directory>
+                                                <filtering>true</filtering>
+                                                <includes>
+                                                    <include>**/*realm.json</include>
+                                                    <include>**/testsaml.json</include>
+                                                </includes>
+                                            </resource>
+                                        </resources>
+                                    </configuration>
+                                </execution>
+                            </executions>
+                        </plugin>
                         <plugin>
                             <artifactId>maven-surefire-plugin</artifactId>
                             <configuration>

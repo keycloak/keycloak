@@ -85,7 +85,7 @@ public abstract class AbstractOfflineServletsAdapterTest extends AbstractServlet
         String refreshTokenId = offlineTokenPage.getRefreshToken().getId();
 
         setAdapterAndServerTimeOffset(9999);
-
+        offlineTokenPage.navigateTo();
         assertCurrentUrlStartsWith(offlineTokenPage);
         Assert.assertNotEquals(offlineTokenPage.getRefreshToken().getId(), refreshTokenId);
         Assert.assertNotEquals(offlineTokenPage.getAccessToken().getId(), accessTokenId);

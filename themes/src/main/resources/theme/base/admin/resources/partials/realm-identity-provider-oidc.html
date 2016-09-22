@@ -35,13 +35,6 @@
                 <kc-tooltip>{{:: 'identity-provider.enabled.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group">
-                <label class="col-md-2 control-label" for="authenticateByDefault">{{:: 'authenticate-by-default' | translate}}</label>
-                <div class="col-md-6">
-                    <input ng-model="identityProvider.authenticateByDefault" name="identityProvider.authenticateByDefault" id="authenticateByDefault" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
-                </div>
-                <kc-tooltip>{{:: 'identity-provider.authenticate-by-default.tooltip' | translate}}</kc-tooltip>
-            </div>
-            <div class="form-group">
                 <label class="col-md-2 control-label" for="storeToken">{{:: 'store-tokens' | translate}}</label>
                 <div class="col-md-6">
                     <input ng-model="identityProvider.storeToken" id="storeToken" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
@@ -118,13 +111,13 @@
                 </div>
                 <kc-tooltip>{{:: 'identity-provider.logout-url.tooltip' | translate}}</kc-tooltip>
             </div>
-                    <div class="form-group">
-                        <label class="col-sm-2 control-label" for="backchannelSupported">{{:: 'backchannel-logout' | translate}}</label>
-                        <div class="col-sm-4">
-                            <input ng-model="identityProvider.config.backchannelSupported" id="backchannelSupported" onoffswitchvalue on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
-                        </div>
-                        <span tooltip-trigger="mouseover mouseout" tooltip-placement="right" tooltip="{{:: 'backchannel-logout.tooltip' | translate}}" class="fa fa-info-circle"></span>
-                    </div>
+            <div class="form-group">
+                <label class="col-sm-2 control-label" for="backchannelSupported">{{:: 'backchannel-logout' | translate}}</label>
+                <div class="col-sm-4">
+                    <input ng-model="identityProvider.config.backchannelSupported" id="backchannelSupported" onoffswitchvalue on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
+                </div>
+                <kc-tooltip>{{:: 'backchannel-logout.tooltip' | translate}}</kc-tooltip>
+            </div>
             <div class="form-group clearfix">
                 <label class="col-md-2 control-label" for="userInfoUrl">{{:: 'user-info-url' | translate}}</label>
                 <div class="col-md-6">
@@ -167,9 +160,9 @@
                         <select class="form-control" id="prompt" ng-model="identityProvider.config.prompt">
                             <option value="">{{:: 'unspecified.option' | translate}}</option>
                             <option value="none">{{:: 'none.option' | translate}}</option>
-                            <option>{{:: 'consent.option' | translate}}</option>
-                            <option>{{:: 'login.option' | translate}}</option>
-                            <option>{{:: 'select-account.option' | translate}}</option>
+                            <option value="consent">{{:: 'consent.option' | translate}}</option>
+                            <option value="login">{{:: 'login.option' | translate}}</option>
+                            <option value="select_account">{{:: 'select-account.option' | translate}}</option>
                         </select>
                     </div>
                 </div>

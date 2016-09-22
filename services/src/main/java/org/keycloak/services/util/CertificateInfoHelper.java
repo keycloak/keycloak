@@ -17,9 +17,18 @@
 
 package org.keycloak.services.util;
 
+import java.security.PublicKey;
+import java.security.cert.X509Certificate;
 import java.util.HashMap;
 
+import javax.ws.rs.core.Response;
+
+import org.keycloak.authentication.AuthenticationFlowError;
+import org.keycloak.authentication.ClientAuthenticationFlowContext;
+import org.keycloak.authentication.authenticators.client.ClientAuthUtil;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ModelException;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.CertificateRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 
@@ -33,6 +42,8 @@ public class CertificateInfoHelper {
     public static final String X509CERTIFICATE = "certificate";
     public static final String PUBLIC_KEY = "public.key";
 
+
+    // CLIENT MODEL METHODS
 
     public static CertificateRepresentation getCertificateFromClient(ClientModel client, String attributePrefix) {
         String privateKeyAttribute = attributePrefix + "." + PRIVATE_KEY;
@@ -74,6 +85,32 @@ public class CertificateInfoHelper {
         }
     }
 
+
+    public static PublicKey getSignatureValidationKey(ClientModel client, String attributePrefix) throws ModelException {
+        CertificateRepresentation certInfo = getCertificateFromClient(client, attributePrefix);
+
+        String encodedCertificate = certInfo.getCertificate();
+        String encodedPublicKey = certInfo.getPublicKey();
+
+        if (encodedCertificate == null && encodedPublicKey == null) {
+            throw new ModelException("Client doesn't have certificate or publicKey configured");
+        }
+
+        if (encodedCertificate != null && encodedPublicKey != null) {
+            throw new ModelException("Client has both publicKey and certificate configured");
+        }
+
+        // TODO: Caching of publicKeys / certificates, so it doesn't need to be always computed from pem. For performance reasons...
+        if (encodedCertificate != null) {
+            X509Certificate clientCert = KeycloakModelUtils.getCertificate(encodedCertificate);
+            return clientCert.getPublicKey();
+        } else {
+            return KeycloakModelUtils.getPublicKey(encodedPublicKey);
+        }
+    }
+
+
+    // CLIENT REPRESENTATION METHODS
 
     public static void updateClientRepresentationCertificateInfo(ClientRepresentation client, CertificateRepresentation rep, String attributePrefix) {
         String privateKeyAttribute = attributePrefix + "." + PRIVATE_KEY;

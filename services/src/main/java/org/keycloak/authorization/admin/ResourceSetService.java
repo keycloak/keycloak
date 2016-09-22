@@ -177,7 +177,7 @@ public class ResourceSetService {
     @GET
     @NoCache
     @Produces("application/json")
-    public Response findAll(@QueryParam("name") String name,
+    public Response find(@QueryParam("name") String name,
                             @QueryParam("uri") String uri,
                             @QueryParam("owner") String owner,
                             @QueryParam("type") String type,

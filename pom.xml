@@ -13,6 +13,7 @@
 ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 ~ See the License for the specific language governing permissions and
 ~ limitations under the License.
+
 -->
 
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -39,6 +40,7 @@
         <product.name-html>\u003Cdiv class="kc-logo-text"\u003E\u003Cspan\u003EKeycloak\u003C\u002Fspan\u003E\u003C\u002Fdiv\u003E</product.name-html>
         <product.version>${project.version}</product.version>
         <product.build-time>${timestamp}</product.build-time>
+        <product.default-profile>community</product.default-profile>
 
         <!-- WildFly -->
         <eap.version>7.0.0.Beta</eap.version>
@@ -94,6 +96,7 @@
         <mariadb.version>1.3.7</mariadb.version>
         <servlet.api.30.version>1.0.2.Final</servlet.api.30.version>
         <twitter4j.version>4.0.4</twitter4j.version>
+        <jna.version>4.1.0</jna.version>
 
         <!-- Test -->
         <greenmail.version>1.3.1b</greenmail.version>
@@ -685,6 +688,17 @@
                 <artifactId>keycloak-kerberos-federation</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <!-- Dependencies for RHEL IdM -->
+            <dependency>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-sssd-federation</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>net.java.dev.jna</groupId>
+                <artifactId>jna</artifactId>
+                <version>${jna.version}</version>
+            </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-ldap-federation</artifactId>
@@ -1062,6 +1076,18 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-fuse-adapter-dist</artifactId>
+                <version>${project.version}</version>
+                <type>zip</type>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-fuse-adapter-dist</artifactId>
+                <version>${project.version}</version>
+                <type>tar.gz</type>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-wildfly-adapter-dist</artifactId>
                 <version>${project.version}</version>
                 <type>zip</type>
@@ -1098,12 +1124,6 @@
             <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-api-docs-dist</artifactId>
-                <version>${project.version}</version>
-                <type>zip</type>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-src-dist</artifactId>
                 <version>${project.version}</version>
                 <type>zip</type>
             </dependency>

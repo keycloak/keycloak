@@ -19,6 +19,7 @@ package org.keycloak.broker.oidc;
 import org.keycloak.broker.provider.AbstractIdentityProviderFactory;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
@@ -56,11 +57,11 @@ public class OIDCIdentityProviderFactory extends AbstractIdentityProviderFactory
     }
 
     @Override
-    public Map<String, String> parseConfig(InputStream inputStream) {
-        return parseOIDCConfig(inputStream);
+    public Map<String, String> parseConfig(KeycloakSession session, InputStream inputStream) {
+        return parseOIDCConfig(session, inputStream);
     }
 
-    protected static Map<String, String> parseOIDCConfig(InputStream inputStream) {
+    protected static Map<String, String> parseOIDCConfig(KeycloakSession session, InputStream inputStream) {
         OIDCConfigurationRepresentation rep;
         try {
             rep = JsonSerialization.readValue(inputStream, OIDCConfigurationRepresentation.class);
@@ -74,14 +75,14 @@ public class OIDCIdentityProviderFactory extends AbstractIdentityProviderFactory
         config.setTokenUrl(rep.getTokenEndpoint());
         config.setUserInfoUrl(rep.getUserinfoEndpoint());
         if (rep.getJwksUri() != null) {
-            sendJwksRequest(rep, config);
+            sendJwksRequest(session, rep, config);
         }
         return config.getConfig();
     }
 
-    protected static void sendJwksRequest(OIDCConfigurationRepresentation rep, OIDCIdentityProviderConfig config) {
+    protected static void sendJwksRequest(KeycloakSession session, OIDCConfigurationRepresentation rep, OIDCIdentityProviderConfig config) {
         try {
-            JSONWebKeySet keySet = JWKSUtils.sendJwksRequest(rep.getJwksUri());
+            JSONWebKeySet keySet = JWKSUtils.sendJwksRequest(session, rep.getJwksUri());
             PublicKey key = JWKSUtils.getKeyForUse(keySet, JWK.Use.SIG);
             if (key == null) {
                 logger.supportedJwkNotFound(JWK.Use.SIG.asString());

@@ -46,10 +46,10 @@
                         </div>
                         <div class="form-group">
                             <label class="col-sm-2 control-label" for="resource">{{:: 'resource-path' | translate}}</label>
+                            <kc-tooltip>{{:: 'resource-path.tooltip' | translate}}</kc-tooltip>
                             <div class="col-sm-4">
                                 <input class="form-control" type="text" id="resource" name="resource" data-ng-model="query.resourcePath">
                             </div>
-                            <span tooltip-trigger="mouseover mouseout" tooltip-placement="right" tooltip="{{:: 'resource-path.tooltip' | translate}}" class="fa fa-info-circle"></span>
                         </div>
                         <div class="form-group">
                             <label class="col-sm-2 control-label" for="dateFrom">{{:: 'date-(from)' | translate}}</label>
