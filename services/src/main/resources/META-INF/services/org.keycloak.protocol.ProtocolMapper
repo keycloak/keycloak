@@ -34,5 +34,5 @@ org.keycloak.protocol.saml.mappers.UserSessionNoteStatementMapper
 org.keycloak.protocol.saml.mappers.GroupMembershipMapper
 org.keycloak.protocol.oidc.mappers.UserClientRoleMappingMapper
 org.keycloak.protocol.oidc.mappers.UserRealmRoleMappingMapper
-org.keycloak.protocol.oidc.mappers.SHA265PairwiseSubMapper
+org.keycloak.protocol.oidc.mappers.SHA256PairwiseSubMapper
 

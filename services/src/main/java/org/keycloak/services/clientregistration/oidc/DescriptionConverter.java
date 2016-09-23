@@ -29,12 +29,15 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.mappers.PairwiseSubMapperHelper;
 import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
 import org.keycloak.protocol.oidc.utils.JWKSUtils;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
+import org.keycloak.protocol.oidc.utils.PairwiseSubMapperUtils;
 import org.keycloak.protocol.oidc.utils.SubjectType;
 import org.keycloak.representations.idm.CertificateRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.services.clientregistration.ClientRegistrationException;
 import org.keycloak.services.util.CertificateInfoHelper;
@@ -115,12 +118,6 @@ public class DescriptionConverter {
             configWrapper.setRequestObjectSignatureAlg(algorithm);
         }
 
-        SubjectType subjectType = SubjectType.parse(clientOIDC.getSubjectType());
-        configWrapper.setSubjectType(subjectType);
-        if (subjectType.equals(SubjectType.PAIRWISE)) {
-            configWrapper.setSectorIdentifierUri(clientOIDC.getSectorIdentifierUri());
-        }
-
         return client;
     }
 
@@ -180,9 +177,13 @@ public class DescriptionConverter {
             response.setRequestObjectSigningAlg(config.getRequestObjectSignatureAlg().toString());
         }
 
-        response.setSubjectType(config.getSubjectType().toString().toLowerCase());
-        if (config.getSubjectType().equals(SubjectType.PAIRWISE)) {
-            response.setSectorIdentifierUri(config.getSectorIdentifierUri());
+        List<ProtocolMapperRepresentation> foundPairwiseMappers = PairwiseSubMapperUtils.getPairwiseSubMappers(client);
+        SubjectType subjectType = foundPairwiseMappers.isEmpty() ? SubjectType.PUBLIC : SubjectType.PAIRWISE;
+        response.setSubjectType(subjectType.toString().toLowerCase());
+        if (subjectType.equals(SubjectType.PAIRWISE)) {
+            // Get sectorIdentifier from 1st found
+            String sectorIdentifierUri = PairwiseSubMapperHelper.getSectorIdentifierUri(foundPairwiseMappers.get(0));
+            response.setSectorIdentifierUri(sectorIdentifierUri);
         }
 
         return response;

@@ -89,6 +89,14 @@ public abstract class AbstractClientRegistrationTest extends AbstractKeycloakTes
 
         rep.getUsers().add(user3);
 
+        UserRepresentation appUser = new UserRepresentation();
+        appUser.setEnabled(true);
+        appUser.setUsername("test-user");
+        appUser.setEmail("test-user@localhost");
+        appUser.setCredentials(credentials);
+
+        rep.getUsers().add(appUser);
+
         testRealms.add(rep);
     }
 

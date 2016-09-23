@@ -1,5 +1,7 @@
 package org.keycloak.protocol.oidc.utils;
 
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.protocol.oidc.mappers.AbstractPairwiseSubMapper;
 import org.keycloak.protocol.oidc.mappers.PairwiseSubMapperHelper;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -9,6 +11,7 @@ import org.keycloak.services.ServicesLogger;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -142,18 +145,18 @@ public class PairwiseSubMapperUtils {
         return relative;
     }
 
-    public static ProtocolMapperRepresentation getPairwiseSubMapperRepresentation(ClientRepresentation client) {
+    public static List<ProtocolMapperRepresentation> getPairwiseSubMappers(ClientRepresentation client) {
+        List<ProtocolMapperRepresentation> pairwiseMappers = new LinkedList<>();
         List<ProtocolMapperRepresentation> mappers = client.getProtocolMappers();
-        if (mappers == null) {
-            return null;
-        }
-        for (ProtocolMapperRepresentation mapper : mappers) {
-            if (mapper.getProtocolMapper().endsWith(AbstractPairwiseSubMapper.PROVIDER_ID_SUFFIX)) return mapper;
-        }
-        return null;
-    }
 
-    public static String getSubjectIdentifierUri(ProtocolMapperRepresentation pairwiseMapper) {
-        return pairwiseMapper.getConfig().get(PairwiseSubMapperHelper.SECTOR_IDENTIFIER_URI);
+        if (mappers != null) {
+            client.getProtocolMappers().stream().filter((ProtocolMapperRepresentation mapping) -> {
+                return mapping.getProtocolMapper().endsWith(AbstractPairwiseSubMapper.PROVIDER_ID_SUFFIX);
+            }).forEach((ProtocolMapperRepresentation mapping) -> {
+                pairwiseMappers.add(mapping);
+            });
+        }
+
+        return pairwiseMappers;
     }
 }
