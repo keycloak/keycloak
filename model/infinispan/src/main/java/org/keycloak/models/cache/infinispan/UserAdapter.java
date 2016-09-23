@@ -60,12 +60,14 @@ public class UserAdapter implements CachedUserModel {
         this.realm = realm;
     }
 
-    protected void getDelegateForUpdate() {
+    @Override
+    public UserModel getDelegateForUpdate() {
         if (updated == null) {
             userProviderCache.registerUserInvalidation(realm, cached);
             updated = userProviderCache.getDelegate().getUserById(getId(), realm);
             if (updated == null) throw new IllegalStateException("Not found in database");
         }
+        return updated;
     }
 
     @Override

@@ -21,10 +21,24 @@ import org.keycloak.models.UserModel;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
+ * Cached users will implement this interface
+ *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
 public interface CachedUserModel extends UserModel {
+
+    /**
+     * Invalidates the cache for this user and returns a delegate that represents the actual data provider
+     *
+     * @return
+     */
+    UserModel getDelegateForUpdate();
+
+    /**
+     * Invalidate the cache for this user
+     *
+     */
     void invalidate();
 
     /**

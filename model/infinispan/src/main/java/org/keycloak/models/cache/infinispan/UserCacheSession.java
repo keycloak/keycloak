@@ -168,21 +168,22 @@ public class UserCacheSession implements UserCache {
         }
 
         CachedUser cached = cache.get(id, CachedUser.class);
+        UserModel delegate = null;
         boolean wasCached = cached != null;
         if (cached == null) {
             logger.trace("not cached");
             Long loaded = cache.getCurrentRevision(id);
-            UserModel model = getDelegate().getUserById(id, realm);
-            if (model == null) {
+            delegate = getDelegate().getUserById(id, realm);
+            if (delegate == null) {
                 logger.trace("delegate returning null");
                 return null;
             }
-            cached = new CachedUser(loaded, realm, model);
+            cached = new CachedUser(loaded, realm, delegate);
             cache.addRevisioned(cached, startupRevision);
         }
         logger.trace("returning new cache adapter");
         UserAdapter adapter = new UserAdapter(cached, this, session, realm);
-        if (!wasCached) onCache(realm, adapter);
+        if (!wasCached) onCache(realm, adapter, delegate);
         managedUsers.put(id, adapter);
         return adapter;
     }
@@ -251,24 +252,24 @@ public class UserCacheSession implements UserCache {
         }
     }
 
-    protected UserAdapter getUserAdapter(RealmModel realm, String userId, Long loaded, UserModel model) {
+    protected UserAdapter getUserAdapter(RealmModel realm, String userId, Long loaded, UserModel delegate) {
         CachedUser cached = cache.get(userId, CachedUser.class);
         boolean wasCached = cached != null;
         if (cached == null) {
-            cached = new CachedUser(loaded, realm, model);
+            cached = new CachedUser(loaded, realm, delegate);
             cache.addRevisioned(cached, startupRevision);
         }
         UserAdapter adapter = new UserAdapter(cached, this, session, realm);
         if (!wasCached) {
-            onCache(realm, adapter);
+            onCache(realm, adapter, delegate);
         }
         return adapter;
 
     }
 
-    private void onCache(RealmModel realm, UserAdapter adapter) {
-        ((OnUserCache)getDelegate()).onCache(realm, adapter);
-        ((OnUserCache)session.userCredentialManager()).onCache(realm, adapter);
+    private void onCache(RealmModel realm, UserAdapter adapter, UserModel delegate) {
+        ((OnUserCache)getDelegate()).onCache(realm, adapter, delegate);
+        ((OnUserCache)session.userCredentialManager()).onCache(realm, adapter, delegate);
     }
 
     @Override

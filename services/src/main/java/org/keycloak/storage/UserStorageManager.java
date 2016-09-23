@@ -566,15 +566,15 @@ public class UserStorageManager implements UserProvider, OnUserCache {
     }
 
     @Override
-    public void onCache(RealmModel realm, CachedUserModel user) {
+    public void onCache(RealmModel realm, CachedUserModel user, UserModel delegate) {
         if (StorageId.isLocalStorage(user)) {
             if (session.userLocalStorage() instanceof OnUserCache) {
-                ((OnUserCache)session.userLocalStorage()).onCache(realm, user);
+                ((OnUserCache)session.userLocalStorage()).onCache(realm, user, delegate);
             }
         } else {
             Object provider = getStorageProvider(session, realm, StorageId.resolveProviderId(user));
             if (provider != null && provider instanceof OnUserCache) {
-                ((OnUserCache)provider).onCache(realm, user);
+                ((OnUserCache)provider).onCache(realm, user, delegate);
             }
         }
     }

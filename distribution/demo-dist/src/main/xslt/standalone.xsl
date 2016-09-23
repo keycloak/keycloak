@@ -43,7 +43,7 @@
         <xsl:copy>
             <xsl:apply-templates select="node()[name(.)='datasource']"/>
             <datasource jndi-name="java:jboss/datasources/KeycloakDS" pool-name="KeycloakDS" use-java-context="true">
-                <connection-url>jdbc:h2:${jboss.server.data.dir}/keycloak;AUTO_SERVER=TRUE</connection-url>
+                <xa-datasource-property name="URL">jdbc:h2:${jboss.server.data.dir}/keycloak;AUTO_SERVER=TRUE</xa-datasource-property>
                 <driver>h2</driver>
                 <security>
                     <user-name>sa</user-name>

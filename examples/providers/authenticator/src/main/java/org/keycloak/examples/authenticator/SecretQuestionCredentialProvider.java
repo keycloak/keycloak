@@ -110,7 +110,7 @@ public class SecretQuestionCredentialProvider implements CredentialProvider, Cre
     }
 
     @Override
-    public void onCache(RealmModel realm, CachedUserModel user) {
+    public void onCache(RealmModel realm, CachedUserModel user, UserModel delegate) {
         List<CredentialModel> creds = session.userCredentialManager().getStoredCredentialsByType(realm, user, SECRET_QUESTION);
         if (!creds.isEmpty()) user.getCachedWith().put(CACHE_KEY, creds.get(0));
     }

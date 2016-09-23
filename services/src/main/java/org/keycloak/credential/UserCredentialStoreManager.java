@@ -254,10 +254,10 @@ public class UserCredentialStoreManager implements UserCredentialManager, OnUser
     }
 
     @Override
-    public void onCache(RealmModel realm, CachedUserModel user) {
+    public void onCache(RealmModel realm, CachedUserModel user, UserModel delegate) {
         List<OnUserCache> credentialProviders = getCredentialProviders(realm, OnUserCache.class);
         for (OnUserCache validator : credentialProviders) {
-            validator.onCache(realm, user);
+            validator.onCache(realm, user, delegate);
         }
     }
 

@@ -53,7 +53,7 @@ public class OTPCredentialProvider implements CredentialProvider, CredentialInpu
     }
 
     @Override
-    public void onCache(RealmModel realm, CachedUserModel user) {
+    public void onCache(RealmModel realm, CachedUserModel user, UserModel delegate) {
         List<CredentialModel> creds = getCredentialStore().getStoredCredentialsByType(realm, user, CredentialModel.TOTP);
         user.getCachedWith().put(OTPCredentialProvider.class.getName() + "." + CredentialModel.TOTP, creds);
 

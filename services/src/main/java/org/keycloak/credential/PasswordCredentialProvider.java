@@ -206,7 +206,7 @@ public class PasswordCredentialProvider implements CredentialProvider, Credentia
     }
 
     @Override
-    public void onCache(RealmModel realm, CachedUserModel user) {
+    public void onCache(RealmModel realm, CachedUserModel user, UserModel delegate) {
         List<CredentialModel> passwords = getCredentialStore().getStoredCredentialsByType(realm, user, CredentialModel.PASSWORD);
         if (passwords != null) {
             user.getCachedWith().put(PASSWORD_CACHE_KEY, passwords);
