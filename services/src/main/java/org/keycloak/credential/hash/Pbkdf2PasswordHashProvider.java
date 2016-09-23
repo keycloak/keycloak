@@ -64,7 +64,7 @@ public class Pbkdf2PasswordHashProvider implements PasswordHashProviderFactory, 
 
     @Override
     public boolean policyCheck(PasswordPolicy policy, CredentialModel credential) {
-        return credential.getHashIterations() == policy.getHashIterations() && PBKDF2_ALGORITHM.equals(credential.getAlgorithm());
+        return credential.getHashIterations() == policy.getHashIterations() && ID.equals(credential.getAlgorithm());
     }
 
     @Override

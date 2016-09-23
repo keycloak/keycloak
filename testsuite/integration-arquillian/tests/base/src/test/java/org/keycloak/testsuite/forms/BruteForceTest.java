@@ -173,7 +173,6 @@ public class BruteForceTest extends TestRealmKeycloakTest {
 
     @Test
     public void testGrantInvalidOtp() throws Exception {
-        clearVariables();
         {
             String totpSecret = totp.generateTOTP("totpSecret");
             OAuthClient.AccessTokenResponse response = getTestToken("password", totpSecret);
@@ -215,40 +214,14 @@ public class BruteForceTest extends TestRealmKeycloakTest {
 
     }
 
-    public void clearVariables() {
-        DefaultBruteForceProtector.testCount = 0;
-        DefaultBruteForceProtector.markNotBefore = -1;
-        DefaultBruteForceProtector.markCheck = -1;
-        DefaultBruteForceProtector.testCount = 0;
-        DefaultBruteForceProtector.clearCount = 0;
-        DefaultBruteForceProtector.logFailure = 0;
-        DefaultBruteForceProtector.logFailureCalled = 0;
-        DefaultBruteForceProtector.didntWait = 0;
-        DefaultBruteForceProtector.nullFailureCount = 0;
-        DefaultBruteForceProtector.notFoundUserId = null;
-    }
-
     public void assertTokenNull(OAuthClient.AccessTokenResponse response) {
-        if (response.getAccessToken() != null) {
-            if (DefaultBruteForceProtector.exceptionObject != null) {
-                DefaultBruteForceProtector.exceptionObject.printStackTrace();
-            }
-        }
-        Assert.assertNull("was mark set: " + DefaultBruteForceProtector.markNotBefore + " time test: " + DefaultBruteForceProtector.markCheck
-                        + " test count " + DefaultBruteForceProtector.testCount
-                        + " nullFailure: " + DefaultBruteForceProtector.nullFailureCount
-                        + " logFailureCalled: " + DefaultBruteForceProtector.logFailureCalled
-                        + " logFailure: " + DefaultBruteForceProtector.logFailure
-                        + " notFoundUserId: " + DefaultBruteForceProtector.notFoundUserId
-                        + " exception: " + DefaultBruteForceProtector.exception
-                , response.getAccessToken());
+        Assert.assertNull(response.getAccessToken());
     }
 
 
 
     @Test
     public void testGrantMissingOtp() throws Exception {
-        clearVariables();
         {
             String totpSecret = totp.generateTOTP("totpSecret");
             OAuthClient.AccessTokenResponse response = getTestToken("password", totpSecret);

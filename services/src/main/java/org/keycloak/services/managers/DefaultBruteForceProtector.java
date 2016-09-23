@@ -53,19 +53,6 @@ public class DefaultBruteForceProtector implements Runnable, BruteForceProtector
     protected LinkedBlockingQueue<LoginEvent> queue = new LinkedBlockingQueue<LoginEvent>();
     public static final int TRANSACTION_SIZE = 20;
 
-    public static volatile int markNotBefore = -1;
-    public static volatile int markCheck = -1;
-    public static volatile int testCount = 0;
-    public static volatile int clearCount = 0;
-    public static volatile int nullFailureCount = 0;
-    public static volatile int logFailureCalled = 0;
-    public static volatile int logFailure = 0;
-    public static volatile int didntWait = 0;
-    public static volatile int exception = 0;
-    public static volatile Exception exceptionObject = null;
-    public static volatile String notFoundUserId = null;
-
-
     protected abstract class LoginEvent implements Comparable<LoginEvent> {
         protected final String realmId;
         protected final String userId;
@@ -103,7 +90,6 @@ public class DefaultBruteForceProtector implements Runnable, BruteForceProtector
 
     public void failure(KeycloakSession session, LoginEvent event) {
         logger.debug("failure");
-        logFailureCalled++;
         RealmModel realm = getRealmModel(session, event);
         logFailure(event);
 
@@ -111,7 +97,6 @@ public class DefaultBruteForceProtector implements Runnable, BruteForceProtector
         UserModel user = session.users().getUserById(userId, realm);
         UserLoginFailureModel userLoginFailure = getUserModel(session, event);
         if (user != null) {
-            logFailure++;
             if (userLoginFailure == null) {
                 userLoginFailure = session.sessions().addUserLoginFailure(realm, userId);
             }
@@ -126,7 +111,6 @@ public class DefaultBruteForceProtector implements Runnable, BruteForceProtector
             if (deltaTime > 0) {
                 // if last failure was more than MAX_DELTA clear failures
                 if (deltaTime > (long) realm.getMaxDeltaTimeSeconds() * 1000L) {
-                    clearCount++;
                     userLoginFailure.clearFailures();
                 }
             }
@@ -147,12 +131,8 @@ public class DefaultBruteForceProtector implements Runnable, BruteForceProtector
                 waitSeconds = Math.min(realm.getMaxFailureWaitSeconds(), waitSeconds);
                 int notBefore = (int) (currentTime / 1000) + waitSeconds;
                 logger.debugv("set notBefore: {0}", notBefore);
-                markNotBefore = notBefore;
                 userLoginFailure.setFailedLoginNotBefore(notBefore);
             }
-        } else {
-            notFoundUserId = event.userId;
-
         }
     }
 
@@ -210,8 +190,6 @@ public class DefaultBruteForceProtector implements Runnable, BruteForceProtector
                             }
                             session.getTransactionManager().commit();
                         } catch (Exception e) {
-                            exception++;
-                            exceptionObject = e;
                             session.getTransactionManager().rollback();
                             throw e;
                         } finally {
@@ -258,13 +236,8 @@ public class DefaultBruteForceProtector implements Runnable, BruteForceProtector
             // wait a minimum of seconds for type to process so that a hacker
             // cannot flood with failed logins and overwhelm the queue and not have notBefore updated to block next requests
             // todo failure HTTP responses should be queued via async HTTP
-            boolean awaited =
-                    event.latch.await(5, TimeUnit.SECONDS);
-            if (!awaited) {
-                    didntWait++;
-            }
+            event.latch.await(5, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
-            didntWait++;
         }
         logger.trace("sent failure event");
     }
@@ -274,19 +247,12 @@ public class DefaultBruteForceProtector implements Runnable, BruteForceProtector
         UserLoginFailureModel failure = session.sessions().getUserLoginFailure(realm, user.getId());
 
         if (failure != null) {
-            int currTime = markCheck = (int) (Time.currentTimeMillis() / 1000);
+            int currTime = (int) (Time.currentTimeMillis() / 1000);
             int failedLoginNotBefore = failure.getFailedLoginNotBefore();
-            testCount++;
             if (currTime < failedLoginNotBefore) {
                 logger.debugv("Current: {0} notBefore: {1}", currTime, failedLoginNotBefore);
                 return true;
-            } else if (failedLoginNotBefore > 0){
-                logger.debugv("failedLoginNotBefore > 0 Current: {0} notBefore: {1}", currTime, failedLoginNotBefore);
             }
-        } else {
-            logger.debugv("failure was null");
-            nullFailureCount++;
-
         }
 
 
