@@ -2,6 +2,7 @@ package org.keycloak.protocol.oidc.mappers;
 
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.services.ServicesLogger;
 
 public class PairwiseSubMapperHelper {
@@ -14,6 +15,14 @@ public class PairwiseSubMapperHelper {
     public static final String PAIRWISE_SUB_ALGORITHM_SALT = "pairwiseSubAlgorithmSalt";
     public static final String PAIRWISE_SUB_ALGORITHM_SALT_LABEL = "pairwiseSubAlgorithmSalt.label";
     public static final String PAIRWISE_SUB_ALGORITHM_SALT_HELP_TEXT = "pairwiseSubAlgorithmSalt.tooltip";
+
+    public static String getSectorIdentifierUri(ProtocolMapperRepresentation mappingModel) {
+        return mappingModel.getConfig().get(SECTOR_IDENTIFIER_URI);
+    }
+
+    public static void setSectorIdentifierUri(ProtocolMapperModel mappingModel, String sectorIdentifierUri) {
+        mappingModel.getConfig().put(SECTOR_IDENTIFIER_URI, sectorIdentifierUri);
+    }
 
     public static String getSectorIdentifierUri(ProtocolMapperModel mappingModel) {
         return mappingModel.getConfig().get(SECTOR_IDENTIFIER_URI);

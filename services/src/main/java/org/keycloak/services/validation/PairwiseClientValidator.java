@@ -2,12 +2,14 @@ package org.keycloak.services.validation;
 
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.ProtocolMapperConfigException;
-import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
+import org.keycloak.protocol.oidc.mappers.PairwiseSubMapperHelper;
+import org.keycloak.protocol.oidc.utils.PairwiseSubMapperUtils;
 import org.keycloak.protocol.oidc.utils.PairwiseSubMapperValidator;
-import org.keycloak.protocol.oidc.utils.SubjectType;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 
@@ -17,14 +19,18 @@ import java.util.Set;
 public class PairwiseClientValidator {
 
     public static boolean validate(KeycloakSession session, ClientRepresentation client, ValidationMessages messages) {
-        OIDCAdvancedConfigWrapper configWrapper = OIDCAdvancedConfigWrapper.fromClientRepresentation(client);
-        if (configWrapper.getSubjectType().equals(SubjectType.PAIRWISE)) {
-            String sectorIdentifierUri = configWrapper.getSectorIdentifierUri();
-            String rootUrl = client.getRootUrl();
-            Set<String> redirectUris = new HashSet<>();
+        String rootUrl = client.getRootUrl();
+        Set<String> redirectUris = new HashSet<>();
+        boolean valid = true;
+
+        List<ProtocolMapperRepresentation> foundPairwiseMappers = PairwiseSubMapperUtils.getPairwiseSubMappers(client);
+
+        for (ProtocolMapperRepresentation foundPairwise : foundPairwiseMappers) {
+            String sectorIdentifierUri = PairwiseSubMapperHelper.getSectorIdentifierUri(foundPairwise);
             if (client.getRedirectUris() != null) redirectUris.addAll(client.getRedirectUris());
-            return validate(session, rootUrl, redirectUris, sectorIdentifierUri, messages);
+            valid = valid && validate(session, rootUrl, redirectUris, sectorIdentifierUri, messages);
         }
+
         return true;
     }
 
