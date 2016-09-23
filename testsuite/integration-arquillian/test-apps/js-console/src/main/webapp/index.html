@@ -29,6 +29,7 @@
     <button onclick="keycloak.register()">Register</button>
     <button onclick="refreshToken(9999)">Refresh Token</button>
     <button onclick="refreshToken(30)">Refresh Token (if <30s validity)</button>
+    <button onclick="refreshToken(5)">Refresh Token (if <5s validity)</button>
     <button onclick="showError()">Show Error Response</button>
     <button onclick="loadProfile()">Get Profile</button>
     <button onclick="loadUserInfo()">Get User Info</button>
@@ -41,6 +42,12 @@
     <button onclick="output(keycloak.createLogoutUrl())">Show Logout URL</button>
     <button onclick="output(keycloak.createRegisterUrl())">Show Register URL</button>
     <button onclick="createBearerRequest()">Create Bearer Request</button>
+    <button onclick="output(showTime())">Show current time</button>
+    <input id="timeSkewInput"/>
+    <button onclick="addToTimeSkew()">timeSkew offset</button>
+    <button onclick="sendBearerToKeycloak()">Bearer to keycloak</button>
+
+
     <select id="flowSelect">
         <option value="standard">standard</option>
         <option value="implicit">implicit</option>
@@ -61,6 +68,9 @@
 
 <h2>Events</h2>
 <pre style="background-color: #ddd; border: 1px solid #ccc; padding: 10px;" id="events"></pre>
+
+<h2>Info</h2>
+TimeSkew: <div id="timeSkew"></div>
 
 
 <script>
@@ -135,6 +145,12 @@
         document.getElementById('events').innerHTML = new Date().toLocaleString() + "\t" + event + "\n" + e;
     }
 
+    function addToTimeSkew() {
+        var offset = document.getElementById("timeSkewInput").value;
+        keycloak.timeSkew += parseInt(offset);
+        document.getElementById("timeSkew").innerHTML = keycloak.timeSkew;
+    }
+
     function createBearerRequest() {
 
         var url = 'http://localhost:8280/js-database/customers';
@@ -167,6 +183,33 @@
         req.send();
     }
 
+    function sendBearerToKeycloak() {
+        var url = 'http://localhost:8180/auth/admin/realms/example/roles';
+        if (window.location.href.indexOf("8543") > -1) {
+            url = url.replace("8180","8543");
+            url = url.replace("http","https");
+        }
+
+        var req = new XMLHttpRequest();
+        req.open('GET', url, true);
+        req.setRequestHeader('Accept', 'application/json');
+        req.setRequestHeader('Authorization', 'Bearer ' + keycloak.token);
+
+        req.onreadystatechange = function () {
+            if (req.readyState == 4) {
+                if (req.status == 200) {
+                    output('Success');
+                } else if (req.status == 403) {
+                    output('Forbidden');
+                } else if (req.status == 401) {
+                    output('Unauthorized');
+                }
+            }
+        };
+
+        req.send();
+    }
+
     var keycloak;
 
     function keycloakInit() {
@@ -182,6 +225,7 @@
 
         keycloak.onAuthRefreshSuccess = function () {
             event('Auth Refresh Success');
+            document.getElementById("timeSkew").innerHTML = keycloak.timeSkew;
         };
 
         keycloak.onAuthRefreshError = function () {

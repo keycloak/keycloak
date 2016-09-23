@@ -351,6 +351,23 @@ public abstract class AbstractJSConsoleExampleAdapterTest extends AbstractExampl
         waitUntilElement(jsConsoleTestAppPage.getOutputElement()).text().contains("Init Success (Authenticated)");
     }
 
+    @Test
+    public void testUpdateToken() {
+        logInAndInit("standard");
+
+        jsConsoleTestAppPage.setTimeSkewOffset(-33);
+        setTimeOffset(33);
+
+        jsConsoleTestAppPage.refreshTokenIfUnder5s();
+
+        jsConsoleTestAppPage.setTimeSkewOffset(-34);
+        setTimeOffset(67);
+
+        jsConsoleTestAppPage.refreshTokenIfUnder5s();
+        jsConsoleTestAppPage.createBearerRequestToKeycloak();
+        waitUntilElement(jsConsoleTestAppPage.getOutputElement()).text().contains("Success");
+    }
+
     private void setImplicitFlowForClient() {
         ClientResource clientResource = ApiUtil.findClientResourceByClientId(testRealmResource(), "js-console");
         ClientRepresentation client = clientResource.toRepresentation();
