@@ -56,6 +56,8 @@ public class JSConsoleTestApp extends AbstractPageWithInjectedUrl {
     private WebElement refreshTokenButton;
     @FindBy(xpath = "//button[contains(text(),'Refresh Token (if <30s')]")
     private WebElement refreshTokenIfUnder30sButton;
+    @FindBy(xpath = "//button[contains(text(),'Refresh Token (if <5s')]")
+    private WebElement refreshTokenIfUnder5sButton;
     @FindBy(xpath = "//button[text() = 'Get Profile']")
     private WebElement getProfileButton;
 
@@ -73,6 +75,17 @@ public class JSConsoleTestApp extends AbstractPageWithInjectedUrl {
     private WebElement showDetailsButton;
     @FindBy(xpath = "//button[text() = 'Create Bearer Request']")
     private WebElement createBearerRequest;
+    @FindBy(xpath = "//button[text() = 'Bearer to keycloak']")
+    private WebElement createBearerRequestToKeycloakButton;
+    @FindBy(xpath = "//button[text() = 'refresh timeSkew']")
+    private WebElement refreshTimeSkewButton;
+
+    @FindBy(id = "timeSkew")
+    private WebElement timeSkewValue;
+    @FindBy(id = "timeSkewInput")
+    private WebElement timeSkewInput;
+    @FindBy(xpath = "//button[text() = 'timeSkew offset']")
+    private WebElement timeSkewButton;
 
     @FindBy(id = "flowSelect")
     private Select flowSelect;
@@ -104,6 +117,10 @@ public class JSConsoleTestApp extends AbstractPageWithInjectedUrl {
         refreshTokenIfUnder30sButton.click();
     }
 
+    public void refreshTokenIfUnder5s() {
+        refreshTokenIfUnder5sButton.click();
+    }
+
     public void getProfile() {
         getProfileButton.click();
     }
@@ -124,6 +141,10 @@ public class JSConsoleTestApp extends AbstractPageWithInjectedUrl {
         createBearerRequest.click();
     }
 
+    public void createBearerRequestToKeycloak() {
+        createBearerRequestToKeycloakButton.click();
+    }
+
     public void setResponseMode(String value) {
         responseModeSelect.selectByValue(value);
     }
@@ -142,5 +163,19 @@ public class JSConsoleTestApp extends AbstractPageWithInjectedUrl {
 
     public void showErrorResponse() {
         showErrorButton.click();
+    }
+
+    public WebElement getTimeSkewValue() {
+        return timeSkewValue;
+    }
+
+    public void setTimeSkewOffset(int value) {
+        timeSkewInput.clear();
+        timeSkewInput.sendKeys(Integer.toString(value));
+        timeSkewButton.click();
+    }
+
+    public void refreshTimeSkew() {
+        refreshTimeSkewButton.click();
     }
 }
