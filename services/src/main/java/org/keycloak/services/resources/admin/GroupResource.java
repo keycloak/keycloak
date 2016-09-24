@@ -218,7 +218,7 @@ public class GroupResource {
         List<UserModel> userModels = session.users().getGroupMembers(realm, group, firstResult, maxResults);
 
         for (UserModel user : userModels) {
-            results.add(ModelToRepresentation.toRepresentation(user));
+            results.add(ModelToRepresentation.toRepresentation(session, realm, user));
         }
         return results;
     }

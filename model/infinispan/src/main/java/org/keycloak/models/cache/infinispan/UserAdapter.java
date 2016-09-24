@@ -60,12 +60,14 @@ public class UserAdapter implements CachedUserModel {
         this.realm = realm;
     }
 
-    protected void getDelegateForUpdate() {
+    @Override
+    public UserModel getDelegateForUpdate() {
         if (updated == null) {
             userProviderCache.registerUserInvalidation(realm, cached);
             updated = userProviderCache.getDelegate().getUserById(getId(), realm);
             if (updated == null) throw new IllegalStateException("Not found in database");
         }
+        return updated;
     }
 
     @Override
@@ -117,12 +119,6 @@ public class UserAdapter implements CachedUserModel {
     public boolean isEnabled() {
         if (updated != null) return updated.isEnabled();
         return cached.isEnabled();
-    }
-
-    @Override
-    public boolean isOtpEnabled() {
-        if (updated != null) return updated.isOtpEnabled();
-        return cached.isTotp();
     }
 
     @Override
@@ -245,30 +241,6 @@ public class UserAdapter implements CachedUserModel {
     public void setEmailVerified(boolean verified) {
         getDelegateForUpdate();
         updated.setEmailVerified(verified);
-    }
-
-    @Override
-    public void setOtpEnabled(boolean totp) {
-        getDelegateForUpdate();
-        updated.setOtpEnabled(totp);
-    }
-
-    @Override
-    public void updateCredential(UserCredentialModel cred) {
-        getDelegateForUpdate();
-        updated.updateCredential(cred);
-    }
-
-    @Override
-    public List<UserCredentialValueModel> getCredentialsDirectly() {
-        if (updated != null) return updated.getCredentialsDirectly();
-        return cached.getCredentials();
-    }
-
-    @Override
-    public void updateCredentialDirectly(UserCredentialValueModel cred) {
-        getDelegateForUpdate();
-        updated.updateCredentialDirectly(cred);
     }
 
     @Override

@@ -47,6 +47,7 @@ import org.keycloak.storage.federated.UserGroupMembershipFederatedStorage;
 import org.keycloak.storage.federated.UserRequiredActionsFederatedStorage;
 import org.keycloak.storage.federated.UserRoleMappingsFederatedStorage;
 import org.keycloak.storage.jpa.entity.BrokerLinkEntity;
+import org.keycloak.storage.jpa.entity.FederatedUser;
 import org.keycloak.storage.jpa.entity.FederatedUserAttributeEntity;
 import org.keycloak.storage.jpa.entity.FederatedUserConsentEntity;
 import org.keycloak.storage.jpa.entity.FederatedUserConsentProtocolMapperEntity;
@@ -95,9 +96,24 @@ public class JpaUserFederatedStorageProvider implements
 
     }
 
+    /**
+     * We create an entry so that its easy to iterate over all things in the database.  Specifically useful for export
+     *
+     */
+    protected void createIndex(RealmModel realm, UserModel user) {
+        if (em.find(FederatedUser.class, user.getId()) == null) {
+            FederatedUser fedUser = new FederatedUser();
+            fedUser.setId(user.getId());
+            fedUser.setRealmId(realm.getId());
+            fedUser.setStorageProviderId(StorageId.resolveProviderId(user));
+            em.persist(fedUser);
+        }
+    }
+
 
     @Override
     public void setAttribute(RealmModel realm, UserModel user, String name, List<String> values) {
+        createIndex(realm, user);
         deleteAttribute(realm, user, name);
         em.flush();
         for (String value : values) {
@@ -126,6 +142,7 @@ public class JpaUserFederatedStorageProvider implements
 
     @Override
     public void setSingleAttribute(RealmModel realm, UserModel user, String name, String value) {
+        createIndex(realm, user);
         deleteAttribute(realm, user, name);
         em.flush();
         persistAttributeValue(realm, user, name, value);
@@ -133,6 +150,7 @@ public class JpaUserFederatedStorageProvider implements
 
     @Override
     public void removeAttribute(RealmModel realm, UserModel user, String name) {
+        //         createIndex(realm, user); don't need to create an index for removal
         deleteAttribute(realm, user, name);
         em.flush();
     }
@@ -180,6 +198,7 @@ public class JpaUserFederatedStorageProvider implements
 
     @Override
     public void addFederatedIdentity(RealmModel realm, UserModel user, FederatedIdentityModel link) {
+        createIndex(realm, user);
         BrokerLinkEntity entity = new BrokerLinkEntity();
         entity.setRealmId(realm.getId());
         entity.setUserId(user.getId());
@@ -211,6 +230,7 @@ public class JpaUserFederatedStorageProvider implements
 
     @Override
     public void updateFederatedIdentity(RealmModel realm, UserModel user, FederatedIdentityModel model) {
+        createIndex(realm, user);
         BrokerLinkEntity entity = getBrokerLinkEntity(realm, user, model.getIdentityProvider());
         if (entity == null) return;
         entity.setBrokerUserName(model.getUserName());
@@ -243,6 +263,7 @@ public class JpaUserFederatedStorageProvider implements
 
     @Override
     public void addConsent(RealmModel realm, UserModel user, UserConsentModel consent) {
+        createIndex(realm, user);
         String clientId = consent.getClient().getId();
 
         FederatedUserConsentEntity consentEntity = getGrantedConsentEntity(user, clientId);
@@ -285,6 +306,7 @@ public class JpaUserFederatedStorageProvider implements
 
     @Override
     public void updateConsent(RealmModel realm, UserModel user, UserConsentModel consent) {
+        createIndex(realm, user);
         String clientId = consent.getClient().getId();
 
         FederatedUserConsentEntity consentEntity = getGrantedConsentEntity(user, clientId);
@@ -432,12 +454,14 @@ public class JpaUserFederatedStorageProvider implements
 
     @Override
     public void updateCredential(RealmModel realm, UserModel user, UserCredentialModel cred) {
+        createIndex(realm, user);
         FederatedCredentials.updateCredential(session, this, realm, user, cred);
 
     }
 
     @Override
     public void updateCredential(RealmModel realm, UserModel user, UserCredentialValueModel cred) {
+        createIndex(realm, user);
         FederatedUserCredentialEntity entity = null;
         if (cred.getId() != null) entity = em.find(FederatedUserCredentialEntity.class, cred.getId());
         boolean newEntity = false;
@@ -490,6 +514,7 @@ public class JpaUserFederatedStorageProvider implements
     @Override
     public void joinGroup(RealmModel realm, UserModel user, GroupModel group) {
         if (isMemberOf(realm, user, group)) return;
+        createIndex(realm, user);
         FederatedUserGroupMembershipEntity entity = new FederatedUserGroupMembershipEntity();
         entity.setUserId(user.getId());
         entity.setStorageProviderId(StorageId.resolveProviderId(user));
@@ -553,6 +578,7 @@ public class JpaUserFederatedStorageProvider implements
 
     @Override
     public void addRequiredAction(RealmModel realm, UserModel user, String action) {
+        createIndex(realm, user);
         if (user.getRequiredActions().contains(action)) return;
         FederatedUserRequiredActionEntity entity = new FederatedUserRequiredActionEntity();
         entity.setUserId(user.getId());
@@ -576,6 +602,7 @@ public class JpaUserFederatedStorageProvider implements
     @Override
     public void grantRole(RealmModel realm, UserModel user, RoleModel role) {
         if (user.hasRole(role)) return;
+        createIndex(realm, user);
         FederatedUserRoleMappingEntity entity = new FederatedUserRoleMappingEntity();
         entity.setUserId(user.getId());
         entity.setStorageProviderId(StorageId.resolveProviderId(user));
@@ -645,6 +672,7 @@ public class JpaUserFederatedStorageProvider implements
     public void updateCredential(RealmModel realm, UserModel user, CredentialModel cred) {
         FederatedUserCredentialEntity entity = em.find(FederatedUserCredentialEntity.class, cred.getId());
         if (entity == null) return;
+        createIndex(realm, user);
         entity.setAlgorithm(cred.getAlgorithm());
         entity.setCounter(cred.getCounter());
         entity.setCreatedDate(cred.getCreatedDate());
@@ -696,6 +724,7 @@ public class JpaUserFederatedStorageProvider implements
 
     @Override
     public CredentialModel createCredential(RealmModel realm, UserModel user, CredentialModel cred) {
+        createIndex(realm, user);
         FederatedUserCredentialEntity entity = new FederatedUserCredentialEntity();
         String id = cred.getId() == null ? KeycloakModelUtils.generateId() : cred.getId();
         entity.setId(id);
@@ -714,7 +743,7 @@ public class JpaUserFederatedStorageProvider implements
         entity.setStorageProviderId(StorageId.resolveProviderId(user));
         em.persist(entity);
         MultivaluedHashMap<String, String> config = cred.getConfig();
-        if (config != null || !config.isEmpty()) {
+        if (config != null && !config.isEmpty()) {
 
             for (String key : config.keySet()) {
                 List<String> values = config.getList(key);
@@ -761,6 +790,7 @@ public class JpaUserFederatedStorageProvider implements
         model.setCreatedDate(entity.getCreatedDate());
         model.setDevice(entity.getDevice());
         model.setDigits(entity.getDigits());
+        model.setHashIterations(entity.getHashIterations());
         MultivaluedHashMap<String, String> config = new MultivaluedHashMap<>();
         model.setConfig(config);
         for (FederatedUserCredentialAttributeEntity attr : entity.getCredentialAttributes()) {
@@ -806,6 +836,15 @@ public class JpaUserFederatedStorageProvider implements
     }
 
     @Override
+    public List<String> getStoredUsers(RealmModel realm, int first, int max) {
+        TypedQuery<String> query = em.createNamedQuery("getFederatedUserIds", String.class)
+                .setParameter("realmId", realm.getId())
+                .setFirstResult(first)
+                .setMaxResults(max);
+        return query.getResultList();
+    }
+
+    @Override
     public void preRemove(RealmModel realm) {
         int num = em.createNamedQuery("deleteFederatedUserConsentRolesByRealm")
                 .setParameter("realmId", realm.getId()).executeUpdate();
@@ -826,6 +865,8 @@ public class JpaUserFederatedStorageProvider implements
         num = em.createNamedQuery("deleteUserFederatedAttributesByRealm")
                 .setParameter("realmId", realm.getId()).executeUpdate();
         num = em.createNamedQuery("deleteFederatedUserGroupMembershipByRealm")
+                .setParameter("realmId", realm.getId()).executeUpdate();
+        num = em.createNamedQuery("deleteFederatedUsersByRealm")
                 .setParameter("realmId", realm.getId()).executeUpdate();
     }
 
@@ -852,6 +893,10 @@ public class JpaUserFederatedStorageProvider implements
                 .setParameter("link", link.getId())
                 .executeUpdate();
         num = em.createNamedQuery("deleteUserFederatedAttributesByRealmAndLink")
+                .setParameter("realmId", realm.getId())
+                .setParameter("link", link.getId())
+                .executeUpdate();
+        num = em.createNamedQuery("deleteFederatedUsersByRealmAndLink")
                 .setParameter("realmId", realm.getId())
                 .setParameter("link", link.getId())
                 .executeUpdate();
@@ -924,6 +969,10 @@ public class JpaUserFederatedStorageProvider implements
                 .setParameter("userId", user.getId())
                 .setParameter("realmId", realm.getId())
                 .executeUpdate();
+        em.createNamedQuery("deleteFederatedUserByUser")
+                .setParameter("userId", user.getId())
+                .setParameter("realmId", realm.getId())
+                .executeUpdate();
 
     }
 
@@ -959,6 +1008,9 @@ public class JpaUserFederatedStorageProvider implements
                 .setParameter("storageProviderId", model.getId())
                 .executeUpdate();
         em.createNamedQuery("deleteFederatedUserRoleMappingsByStorageProvider")
+                .setParameter("storageProviderId", model.getId())
+                .executeUpdate();
+        em.createNamedQuery("deleteFederatedUsersByStorageProvider")
                 .setParameter("storageProviderId", model.getId())
                 .executeUpdate();
 

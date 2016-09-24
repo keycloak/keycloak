@@ -21,22 +21,22 @@
     <extension-module>org.jboss.as.connector</extension-module>
     <subsystem xmlns="urn:jboss:domain:datasources:4.0">
         <datasources>
-            <datasource jndi-name="java:jboss/datasources/ExampleDS" pool-name="ExampleDS" enabled="true" use-java-context="true">
-                <connection-url>jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE</connection-url>
+            <xa-datasource jndi-name="java:jboss/datasources/ExampleDS" pool-name="ExampleDS" enabled="true" use-java-context="true">
+                <xa-datasource-property name="URL">jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE</xa-datasource-property>
                 <driver>h2</driver>
                 <security>
                     <user-name>sa</user-name>
                     <password>sa</password>
                 </security>
-            </datasource>
-            <datasource jndi-name="java:jboss/datasources/KeycloakDS" pool-name="KeycloakDS" enabled="true" use-java-context="true">
-                <?KEYCLOAK_DS_CONNECTION_URL?>
+            </xa-datasource>
+            <xa-datasource jndi-name="java:jboss/datasources/KeycloakDS" pool-name="KeycloakDS" enabled="true" use-java-context="true">
+                <xa-datasource-property name="URL"><?KEYCLOAK_DS_CONNECTION_URL?></xa-datasource-property>
                 <driver>h2</driver>
                 <security>
                     <user-name>sa</user-name>
                     <password>sa</password>
                 </security>
-            </datasource>
+            </xa-datasource>
             <drivers>
                 <driver name="h2" module="com.h2database.h2">
                     <xa-datasource-class>org.h2.jdbcx.JdbcDataSource</xa-datasource-class>
@@ -46,12 +46,12 @@
     </subsystem>
     <supplement name="default">
         <replacement placeholder="KEYCLOAK_DS_CONNECTION_URL">
-            <connection-url>jdbc:h2:${jboss.server.data.dir}/keycloak;AUTO_SERVER=TRUE</connection-url>
+            jdbc:h2:${jboss.server.data.dir}/keycloak;AUTO_SERVER=TRUE
         </replacement>
     </supplement>
     <supplement name="domain">
         <replacement placeholder="KEYCLOAK_DS_CONNECTION_URL">
-            <connection-url>jdbc:h2:${jboss.server.data.dir}/../../shared-database/keycloak;AUTO_SERVER=TRUE</connection-url>
+            jdbc:h2:${jboss.server.data.dir}/../../shared-database/keycloak;AUTO_SERVER=TRUE
         </replacement>
     </supplement>
 </config>

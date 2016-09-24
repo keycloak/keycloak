@@ -70,6 +70,7 @@
 
         <!-- User Federation Storage -->
         <class>org.keycloak.storage.jpa.entity.BrokerLinkEntity</class>
+        <class>org.keycloak.storage.jpa.entity.FederatedUser</class>
         <class>org.keycloak.storage.jpa.entity.FederatedUserAttributeEntity</class>
         <class>org.keycloak.storage.jpa.entity.FederatedUserConsentEntity</class>
         <class>org.keycloak.storage.jpa.entity.FederatedUserConsentRoleEntity</class>

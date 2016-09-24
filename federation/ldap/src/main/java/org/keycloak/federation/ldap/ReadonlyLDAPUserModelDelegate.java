@@ -51,14 +51,6 @@ public class ReadonlyLDAPUserModelDelegate extends UserModelDelegate implements 
     }
 
     @Override
-    public void updateCredential(UserCredentialModel cred) {
-        if (provider.getSupportedCredentialTypes(delegate).contains(cred.getType())) {
-            throw new ModelReadOnlyException("Federated storage is not writable");
-        }
-        delegate.updateCredential(cred);
-    }
-
-    @Override
     public void setEmail(String email) {
         throw new ModelReadOnlyException("Federated storage is not writable");
     }

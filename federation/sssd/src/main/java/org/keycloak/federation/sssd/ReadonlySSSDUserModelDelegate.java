@@ -55,22 +55,6 @@ public class ReadonlySSSDUserModelDelegate extends UserModelDelegate implements 
     }
 
     @Override
-    public void updateCredentialDirectly(UserCredentialValueModel cred) {
-        if (cred.getType().equals(UserCredentialModel.PASSWORD)) {
-            throw new IllegalStateException("Federated storage is not writable");
-        }
-        super.updateCredentialDirectly(cred);
-    }
-
-    @Override
-    public void updateCredential(UserCredentialModel cred) {
-        if (provider.getSupportedCredentialTypes(delegate).contains(cred.getType())) {
-            throw new ModelReadOnlyException("Federated storage is not writable");
-        }
-        delegate.updateCredential(cred);
-    }
-
-    @Override
     public void setEmail(String email) {
         throw new ModelReadOnlyException("Federated storage is not writable");
     }

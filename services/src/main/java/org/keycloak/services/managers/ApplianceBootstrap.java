@@ -96,7 +96,7 @@ public class ApplianceBootstrap {
         UserCredentialModel usrCredModel = new UserCredentialModel();
         usrCredModel.setType(UserCredentialModel.PASSWORD);
         usrCredModel.setValue(password);
-        session.users().updateCredential(realm, adminUser, usrCredModel);
+        session.userCredentialManager().updateCredential(realm, adminUser, usrCredModel);
 
         RoleModel adminRole = realm.getRole(AdminRoles.ADMIN);
         adminUser.grantRole(adminRole);

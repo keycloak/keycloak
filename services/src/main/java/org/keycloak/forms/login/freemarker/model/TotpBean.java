@@ -16,6 +16,8 @@
  */
 package org.keycloak.forms.login.freemarker.model;
 
+import org.keycloak.credential.CredentialModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.Base32;
@@ -36,9 +38,8 @@ public class TotpBean {
     private final String totpSecretQrCode;
     private final boolean enabled;
 
-    public TotpBean(RealmModel realm, UserModel user) {
-        this.enabled = user.isOtpEnabled();
-
+    public TotpBean(KeycloakSession session, RealmModel realm, UserModel user) {
+        this.enabled = session.userCredentialManager().isConfiguredFor(realm, user, CredentialModel.OTP);
         this.totpSecret = HmacOTP.generateSecret(20);
         this.totpSecretEncoded = TotpUtils.encode(totpSecret);
         this.totpSecretQrCode = TotpUtils.qrCode(totpSecret, realm, user);

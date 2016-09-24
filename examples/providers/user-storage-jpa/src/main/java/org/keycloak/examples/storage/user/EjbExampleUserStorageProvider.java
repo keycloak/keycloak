@@ -18,16 +18,21 @@ package org.keycloak.examples.storage.user;
 
 import org.jboss.logging.Logger;
 import org.keycloak.component.ComponentModel;
+import org.keycloak.credential.CredentialInput;
+import org.keycloak.credential.CredentialInputUpdater;
+import org.keycloak.credential.CredentialInputValidator;
+import org.keycloak.credential.CredentialModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.cache.CachedUserModel;
+import org.keycloak.models.cache.OnUserCache;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageProvider;
-import org.keycloak.storage.user.UserCredentialValidatorProvider;
 import org.keycloak.storage.user.UserLookupProvider;
 import org.keycloak.storage.user.UserQueryProvider;
 import org.keycloak.storage.user.UserRegistrationProvider;
@@ -52,9 +57,13 @@ import java.util.Map;
 public class EjbExampleUserStorageProvider implements UserStorageProvider,
         UserLookupProvider,
         UserRegistrationProvider,
-        UserCredentialValidatorProvider,
-        UserQueryProvider {
+        UserQueryProvider,
+        CredentialInputUpdater,
+        CredentialInputValidator,
+        OnUserCache
+{
     private static final Logger logger = Logger.getLogger(EjbExampleUserStorageProvider.class);
+    public static final String PASSWORD_CACHE_KEY = UserAdapter.class.getName() + ".password";
 
     @PersistenceContext
     protected EntityManager em;
@@ -150,16 +159,67 @@ public class EjbExampleUserStorageProvider implements UserStorageProvider,
     }
 
     @Override
-    public boolean validCredentials(KeycloakSession session, RealmModel realm, UserModel user, List<UserCredentialModel> input) {
-        // having a "password" attribute is a workaround so that passwords can be cached.  All done for performance reasons...
-        // If we override getCredentialsDirectly/updateCredentialsDirectly
-        // then the realm passsword policy will/may try and overwrite the plain text password with a hash.
-        // If you don't like this workaround, you can query the database every time to validate the password
-        for (UserCredentialModel cred : input) {
-            if (!UserCredentialModel.PASSWORD.equals(cred.getType())) return false;
-            if (!cred.getValue().equals(user.getFirstAttribute("password"))) return false;
+    public void onCache(RealmModel realm, CachedUserModel user, UserModel delegate) {
+        String password = ((UserAdapter)delegate).getPassword();
+        if (password != null) {
+            user.getCachedWith().put(PASSWORD_CACHE_KEY, password);
         }
+    }
+
+    @Override
+    public boolean supportsCredentialType(String credentialType) {
+        return CredentialModel.PASSWORD.equals(credentialType);
+    }
+
+    @Override
+    public boolean updateCredential(RealmModel realm, UserModel user, CredentialInput input) {
+        if (!supportsCredentialType(input.getType()) || !(input instanceof UserCredentialModel)) return false;
+        UserCredentialModel cred = (UserCredentialModel)input;
+        UserAdapter adapter = getUserAdapter(user);
+        adapter.setPassword(cred.getValue());
+
         return true;
+    }
+
+    public UserAdapter getUserAdapter(UserModel user) {
+        UserAdapter adapter = null;
+        if (user instanceof CachedUserModel) {
+            adapter = (UserAdapter)((CachedUserModel)user).getDelegateForUpdate();
+        } else {
+            adapter = (UserAdapter)user;
+        }
+        return adapter;
+    }
+
+    @Override
+    public void disableCredentialType(RealmModel realm, UserModel user, String credentialType) {
+        if (!supportsCredentialType(credentialType)) return;
+
+        getUserAdapter(user).setPassword(null);
+
+    }
+
+    @Override
+    public boolean isConfiguredFor(RealmModel realm, UserModel user, String credentialType) {
+        return supportsCredentialType(credentialType) && getPassword(user) != null;
+    }
+
+    @Override
+    public boolean isValid(RealmModel realm, UserModel user, CredentialInput input) {
+        if (!supportsCredentialType(input.getType()) || !(input instanceof UserCredentialModel)) return false;
+        UserCredentialModel cred = (UserCredentialModel)input;
+        String password = getPassword(user);
+        return password != null && password.equals(cred.getValue());
+    }
+
+    public String getPassword(UserModel user) {
+        String password = null;
+        if (user instanceof CachedUserModel) {
+            password = (String)((CachedUserModel)user).getCachedWith().get(PASSWORD_CACHE_KEY);
+        } else if (user instanceof UserAdapter) {
+            password = ((UserAdapter)user).getPassword();
+        }
+        return password;
     }
 
     @Override

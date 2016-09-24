@@ -34,6 +34,7 @@ import org.keycloak.common.Version;
 import org.keycloak.common.util.Base64;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
+import org.keycloak.credential.CredentialModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientTemplateModel;
 import org.keycloak.models.FederatedIdentityModel;
@@ -458,7 +459,7 @@ public class ExportUtils {
      * @return fully exported user representation
      */
     public static UserRepresentation exportUser(KeycloakSession session, RealmModel realm, UserModel user) {
-        UserRepresentation userRep = ModelToRepresentation.toRepresentation(user);
+        UserRepresentation userRep = ModelToRepresentation.toRepresentation(session, realm, user);
 
         // Social links
         Set<FederatedIdentityModel> socialLinks = session.users().getFederatedIdentities(user, realm);
@@ -499,9 +500,9 @@ public class ExportUtils {
         }
 
         // Credentials
-        List<UserCredentialValueModel> creds = user.getCredentialsDirectly();
+        List<CredentialModel> creds = session.userCredentialManager().getStoredCredentials(realm, user);
         List<CredentialRepresentation> credReps = new ArrayList<CredentialRepresentation>();
-        for (UserCredentialValueModel cred : creds) {
+        for (CredentialModel cred : creds) {
             CredentialRepresentation credRep = exportCredential(cred);
             credReps.add(credRep);
         }
@@ -545,7 +546,7 @@ public class ExportUtils {
         return socialLinkRep;
     }
 
-    public static CredentialRepresentation exportCredential(UserCredentialValueModel userCred) {
+    public static CredentialRepresentation exportCredential(CredentialModel userCred) {
         CredentialRepresentation credRep = new CredentialRepresentation();
         credRep.setType(userCred.getType());
         credRep.setDevice(userCred.getDevice());
@@ -556,6 +557,7 @@ public class ExportUtils {
         credRep.setAlgorithm(userCred.getAlgorithm());
         credRep.setDigits(userCred.getDigits());
         credRep.setCreatedDate(userCred.getCreatedDate());
+        credRep.setConfig(userCred.getConfig());
         return credRep;
     }
 

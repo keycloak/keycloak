@@ -14,20 +14,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.storage.user;
+package org.keycloak.federation.ldap.mappers;
 
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserCredentialModel;
+import org.keycloak.credential.CredentialInput;
+import org.keycloak.federation.ldap.idm.model.LDAPObject;
 import org.keycloak.models.UserModel;
-
-import java.util.List;
-import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public interface UserCredentialValidatorProvider {
-    boolean validCredentials(KeycloakSession session, RealmModel realm, UserModel user, List<UserCredentialModel> input);
+public interface PasswordUpdated {
+    void passwordUpdated(UserModel user, LDAPObject ldapUser, CredentialInput input);
 }

@@ -570,6 +570,10 @@ public class AuthenticationManager {
                                                Set<String> requiredActions) {
         for (String action : requiredActions) {
             RequiredActionProviderModel model = realm.getRequiredActionProviderByAlias(action);
+            if (model == null) {
+                logger.warnv("Could not find configuration for Required Action {0}, did you forget to register it?", action);
+                continue;
+            }
             if (!model.isEnabled()) {
                 continue;
             }

@@ -40,20 +40,4 @@ public class WritableLDAPUserModelDelegate extends UserModelDelegate implements 
         this.ldapObject = ldapObject;
     }
 
-    @Override
-    public void updateCredential(UserCredentialModel cred) {
-        if (!provider.getSupportedCredentialTypes(delegate).contains(cred.getType())) {
-            delegate.updateCredential(cred);
-            return;
-        }
-
-        if (cred.getType().equals(UserCredentialModel.PASSWORD)) {
-            LDAPIdentityStore ldapIdentityStore = provider.getLdapIdentityStore();
-            String password = cred.getValue();
-            ldapIdentityStore.updatePassword(ldapObject, password);
-        } else {
-            logger.warnf("Don't know how to update credential of type [%s] for user [%s]", cred.getType(), delegate.getUsername());
-        }
-    }
-
 }

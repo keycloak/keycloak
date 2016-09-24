@@ -34,7 +34,7 @@ import java.util.Map;
  * @version $Revision: 1 $
  */
 public class UserAdapter extends AbstractUserAdapterFederatedStorage {
-    private static final Logger logger = Logger.getLogger(EjbExampleUserStorageProvider.class);
+    private static final Logger logger = Logger.getLogger(UserAdapter.class);
     protected UserEntity entity;
     protected String keycloakId;
 
@@ -42,6 +42,14 @@ public class UserAdapter extends AbstractUserAdapterFederatedStorage {
         super(session, realm, model);
         this.entity = entity;
         keycloakId = StorageId.keycloakId(model, entity.getId());
+    }
+
+    public String getPassword() {
+        return entity.getPassword();
+    }
+
+    public void setPassword(String password) {
+        entity.setPassword(password);
     }
 
     @Override
@@ -71,25 +79,9 @@ public class UserAdapter extends AbstractUserAdapterFederatedStorage {
     }
 
     @Override
-    public void updateCredential(UserCredentialModel cred) {
-        if (cred.getType().equals(UserCredentialModel.PASSWORD)) {
-            entity.setPassword(cred.getValue());
-        } else {
-            super.updateCredential(cred);
-        }
-    }
-
-    @Override
     public void setSingleAttribute(String name, String value) {
         if (name.equals("phone")) {
             entity.setPhone(value);
-        } else if (name.equals("password")) {
-            // ignore
-
-            // having a "password" attribute is a workaround so that passwords can be cached.  All done for performance reasons...
-            // If we override getCredentialsDirectly/updateCredentialsDirectly
-            // then the realm passsword policy will/may try and overwrite the plain text password with a hash.
-            // If you don't like this workaround, you can query the database every time to validate the password
         } else {
             super.setSingleAttribute(name, value);
         }
@@ -99,13 +91,6 @@ public class UserAdapter extends AbstractUserAdapterFederatedStorage {
     public void removeAttribute(String name) {
         if (name.equals("phone")) {
             entity.setPhone(null);
-        } else if (name.equals("password")) {
-            // ignore
-
-            // having a "password" attribute is a workaround so that passwords can be cached.  All done for performance reasons...
-            // If we override getCredentialsDirectly/updateCredentialsDirectly
-            // then the realm passsword policy will/may try and overwrite the plain text password with a hash.
-            // If you don't like this workaround, you can query the database every time to validate the password
         } else {
             super.removeAttribute(name);
         }
@@ -115,13 +100,6 @@ public class UserAdapter extends AbstractUserAdapterFederatedStorage {
     public void setAttribute(String name, List<String> values) {
         if (name.equals("phone")) {
             entity.setPhone(values.get(0));
-        } else if (name.equals("password")) {
-            // ignore
-
-            // having a "password" attribute is a workaround so that passwords can be cached.  All done for performance reasons...
-            // If we override getCredentialsDirectly/updateCredentialsDirectly
-            // then the realm passsword policy will/may try and overwrite the plain text password with a hash.
-            // If you don't like this workaround, you can query the database every time to validate the password
         } else {
             super.setAttribute(name, values);
         }
@@ -131,12 +109,6 @@ public class UserAdapter extends AbstractUserAdapterFederatedStorage {
     public String getFirstAttribute(String name) {
         if (name.equals("phone")) {
             return entity.getPhone();
-        } else if (name.equals("password")) {
-            // having a "password" attribute is a workaround so that passwords can be cached.  All done for performance reasons...
-            // If we override getCredentialsDirectly/updateCredentialsDirectly
-            // then the realm passsword policy will/may try and overwrite the plain text password with a hash.
-            // If you don't like this workaround, you can query the database every time to validate the password
-            return entity.getPassword();
         } else {
             return super.getFirstAttribute(name);
         }
@@ -148,12 +120,6 @@ public class UserAdapter extends AbstractUserAdapterFederatedStorage {
         MultivaluedHashMap<String, String> all = new MultivaluedHashMap<>();
         all.putAll(attrs);
         all.add("phone", entity.getPhone());
-
-        // having a "password" attribute is a workaround so that passwords can be cached.  All done for performance reasons...
-        // If we override getCredentialsDirectly/updateCredentialsDirectly
-        // then the realm passsword policy will/may try and overwrite the plain text password with a hash.
-        // If you don't like this workaround, you can query the database every time to validate the password
-        all.add("password", entity.getPassword());
         return all;
     }
 
