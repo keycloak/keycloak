@@ -217,10 +217,11 @@ module.controller('ObjectModalCtrl', function($scope, object) {
     $scope.object = object;
 });
 
-module.controller('RealmDetailCtrl', function($scope, Current, Realm, realm, serverInfo, $http, $location, Dialog, Notifications, Auth) {
+module.controller('RealmDetailCtrl', function($scope, Current, Realm, realm, serverInfo, $http, $location, $window, Dialog, Notifications, Auth) {
     $scope.createRealm = !realm.realm;
     $scope.serverInfo = serverInfo;
     $scope.realmName = realm.realm;
+    $scope.disableRename = realm.realm == masterRealm;
 
     if (Current.realm == null || Current.realm.realm != realm.realm) {
         for (var i = 0; i < Current.realms.length; i++) {
@@ -257,6 +258,7 @@ module.controller('RealmDetailCtrl', function($scope, Current, Realm, realm, ser
         realmCopy.realm = $scope.realmName;
         $scope.changed = false;
         var nameChanged = !angular.equals($scope.realmName, oldCopy.realm);
+        var oldName = oldCopy.realm;
         Realm.update({ id : oldCopy.realm}, realmCopy, function () {
             var data = Realm.query(function () {
                 Current.realms = data;
@@ -269,14 +271,26 @@ module.controller('RealmDetailCtrl', function($scope, Current, Realm, realm, ser
             });
 
             if (nameChanged) {
-                Auth.refreshPermissions(function() {
-                    Auth.refreshPermissions(function() {
-                        Notifications.success("Your changes have been saved to the realm.");
-                        $scope.$apply(function() {
-                            $location.url("/realms/" + realmCopy.realm);
+                console.debug(Auth);
+                console.debug(Auth.authz.tokenParsed.iss);
+
+                if (Auth.authz.tokenParsed.iss.endsWith(masterRealm)) {
+                    Auth.refreshPermissions(function () {
+                        Auth.refreshPermissions(function () {
+                            Notifications.success("Your changes have been saved to the realm.");
+                            $scope.$apply(function () {
+                                $location.url("/realms/" + realmCopy.realm);
+                            });
                         });
                     });
-                });
+                } else {
+                    delete Auth.authz.token;
+                    delete Auth.authz.refreshToken;
+
+                    var newLocation = $window.location.href.replace('/' + oldName + '/', '/' + realmCopy.realm + '/')
+                        .replace('/realms/' + oldName, '/realms/' + realmCopy.realm);
+                    window.location.replace(newLocation);
+                }
             } else {
                 $location.url("/realms/" + realmCopy.realm);
                 Notifications.success("Your changes have been saved to the realm.");
