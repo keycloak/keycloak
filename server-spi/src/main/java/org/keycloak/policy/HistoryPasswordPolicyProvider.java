@@ -17,9 +17,13 @@
 
 package org.keycloak.policy;
 
+import org.jboss.logging.Logger;
+import org.keycloak.credential.CredentialModel;
+import org.keycloak.credential.hash.PasswordHashProvider;
 import org.keycloak.hash.PasswordHashManager;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.PasswordPolicy;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserModel;
@@ -34,6 +38,7 @@ import java.util.List;
  */
 public class HistoryPasswordPolicyProvider implements PasswordPolicyProvider {
 
+    private static final Logger logger = Logger.getLogger(HistoryPasswordPolicyProvider.class);
     private static final String ERROR_MESSAGE = "invalidPasswordHistoryMessage";
 
     private KeycloakSession session;
@@ -48,61 +53,28 @@ public class HistoryPasswordPolicyProvider implements PasswordPolicyProvider {
     }
 
     @Override
-    public PolicyError validate(UserModel user, String password) {
+    public PolicyError validate(RealmModel realm, UserModel user, String password) {
         PasswordPolicy policy = session.getContext().getRealm().getPasswordPolicy();
         int passwordHistoryPolicyValue = policy.getPolicyConfig(HistoryPasswordPolicyProviderFactory.ID);
         if (passwordHistoryPolicyValue != -1) {
-            UserCredentialValueModel cred = getCredentialValueModel(user, UserCredentialModel.PASSWORD);
-            if (cred != null) {
-                if(PasswordHashManager.verify(session, policy, password, cred)) {
+            List<CredentialModel> storedPasswords = session.userCredentialManager().getStoredCredentialsByType(realm, user, CredentialModel.PASSWORD);
+            for (CredentialModel cred : storedPasswords) {
+                PasswordHashProvider hash = session.getProvider(PasswordHashProvider.class, cred.getAlgorithm());
+                if (hash == null) continue;
+                if (hash.verify(password, cred)) {
                     return new PolicyError(ERROR_MESSAGE, passwordHistoryPolicyValue);
                 }
             }
-
-            List<UserCredentialValueModel> passwordExpiredCredentials = getCredentialValueModels(user, passwordHistoryPolicyValue - 1,
-                    UserCredentialModel.PASSWORD_HISTORY);
-            for (UserCredentialValueModel credential : passwordExpiredCredentials) {
-                if (PasswordHashManager.verify(session, policy, password, credential)) {
+            List<CredentialModel> passwordHistory = session.userCredentialManager().getStoredCredentialsByType(realm, user, CredentialModel.PASSWORD_HISTORY);
+            for (CredentialModel cred : passwordHistory) {
+                PasswordHashProvider hash = session.getProvider(PasswordHashProvider.class, cred.getAlgorithm());
+                if (hash.verify(password, cred)) {
                     return new PolicyError(ERROR_MESSAGE, passwordHistoryPolicyValue);
                 }
+
             }
         }
         return null;
-    }
-
-    private UserCredentialValueModel getCredentialValueModel(UserModel user, String credType) {
-        for (UserCredentialValueModel model : user.getCredentialsDirectly()) {
-            if (model.getType().equals(credType)) {
-                return model;
-            }
-        }
-        return null;
-    }
-
-    private List<UserCredentialValueModel> getCredentialValueModels(UserModel user, int expiredPasswordsPolicyValue, String credType) {
-        List<UserCredentialValueModel> credentialModels = new ArrayList<UserCredentialValueModel>();
-        for (UserCredentialValueModel model : user.getCredentialsDirectly()) {
-            if (model.getType().equals(credType)) {
-                credentialModels.add(model);
-            }
-        }
-
-        Collections.sort(credentialModels, new Comparator<UserCredentialValueModel>() {
-            public int compare(UserCredentialValueModel credFirst, UserCredentialValueModel credSecond) {
-                if (credFirst.getCreatedDate() > credSecond.getCreatedDate()) {
-                    return -1;
-                } else if (credFirst.getCreatedDate() < credSecond.getCreatedDate()) {
-                    return 1;
-                } else {
-                    return 0;
-                }
-            }
-        });
-
-        if (credentialModels.size() > expiredPasswordsPolicyValue) {
-            return credentialModels.subList(0, expiredPasswordsPolicyValue);
-        }
-        return credentialModels;
     }
 
     @Override

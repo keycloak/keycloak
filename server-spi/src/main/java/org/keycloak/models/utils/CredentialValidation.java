@@ -38,45 +38,6 @@ import java.util.List;
  */
 public class CredentialValidation {
 
-   /**
-     * Will update password if hash iteration policy has changed
-     *
-     * @param realm
-     * @param user
-     * @param password
-     * @return
-     */
-    public static boolean validPassword(KeycloakSession session, RealmModel realm, UserModel user, String password) {
-        UserCredentialValueModel passwordCred = null;
-        for (UserCredentialValueModel cred : user.getCredentialsDirectly()) {
-            if (cred.getType().equals(UserCredentialModel.PASSWORD)) {
-                passwordCred = cred;
-            }
-        }
-        if (passwordCred == null) return false;
-
-        return validateHashedCredential(session, realm, user, password, passwordCred);
-
-    }
-
-
-    public static boolean validateHashedCredential(KeycloakSession session, RealmModel realm, UserModel user, String unhashedCredValue, UserCredentialValueModel credential) {
-        if (unhashedCredValue == null || unhashedCredValue.isEmpty()) {
-            return false;
-        }
-
-        boolean validated = PasswordHashManager.verify(session, realm, unhashedCredValue, credential);
-
-        if (validated) {
-            if (realm.getPasswordPolicy().getHashIterations() != credential.getHashIterations()) {
-
-                UserCredentialValueModel newCred = PasswordHashManager.encode(session, realm, unhashedCredValue);
-                user.updateCredentialDirectly(newCred);
-            }
-
-        }
-        return validated;
-    }
 
     public static boolean validPasswordToken(RealmModel realm, UserModel user, String encodedPasswordToken) {
         try {
@@ -100,23 +61,6 @@ public class CredentialValidation {
         }
     }
 
-    public static boolean validHOTP(RealmModel realm, UserModel user, String otp) {
-        UserCredentialValueModel passwordCred = null;
-        OTPPolicy policy = realm.getOTPPolicy();
-        HmacOTP validator = new HmacOTP(policy.getDigits(), policy.getAlgorithm(), policy.getLookAheadWindow());
-        for (UserCredentialValueModel cred : user.getCredentialsDirectly()) {
-            if (cred.getType().equals(UserCredentialModel.HOTP)) {
-                int counter = validator.validateHOTP(otp, cred.getValue(), cred.getCounter());
-                if (counter < 0) return false;
-                cred.setCounter(counter);
-                user.updateCredentialDirectly(cred);
-                return true;
-            }
-        }
-        return false;
-
-    }
-
     public static boolean validOTP(RealmModel realm, String token, String secret) {
         OTPPolicy policy = realm.getOTPPolicy();
         if (policy.getType().equals(UserCredentialModel.TOTP)) {
@@ -130,84 +74,5 @@ public class CredentialValidation {
 
     }
 
-    public static boolean validTOTP(RealmModel realm, UserModel user, String otp) {
-        UserCredentialValueModel passwordCred = null;
-        OTPPolicy policy = realm.getOTPPolicy();
-        TimeBasedOTP validator = new TimeBasedOTP(policy.getAlgorithm(), policy.getDigits(), policy.getPeriod(), policy.getLookAheadWindow());
-        for (UserCredentialValueModel cred : user.getCredentialsDirectly()) {
-            if (cred.getType().equals(UserCredentialModel.TOTP)) {
-                if (validator.validateTOTP(otp, cred.getValue().getBytes())) {
-                    return true;
-                }
-            }
-        }
-        return false;
 
-    }
-    public static boolean validSecret(RealmModel realm, UserModel user, String secret) {
-        for (UserCredentialValueModel cred : user.getCredentialsDirectly()) {
-            if (cred.getType().equals(UserCredentialModel.SECRET)) {
-                if (cred.getValue().equals(secret)) return true;
-            }
-        }
-        return false;
-
-    }
-
-    /**
-     * Must validate all credentials.  FYI, password hashes may be rehashed and updated based on realm hash password policies.
-     *
-     * @param realm
-     * @param user
-     * @param credentials
-     * @return
-     */
-    public static boolean validCredentials(KeycloakSession session, RealmModel realm, UserModel user, List<UserCredentialModel> credentials) {
-        for (UserCredentialModel credential : credentials) {
-            if (!validCredential(session, realm, user, credential)) return false;
-        }
-        return true;
-    }
-
-    /**
-     * Must validate all credentials.  FYI, password hashes may be rehashed and updated based on realm hash password policies.
-     *
-     * @param realm
-     * @param user
-     * @param credentials
-     * @return
-     */
-    public static boolean validCredentials(KeycloakSession session, RealmModel realm, UserModel user, UserCredentialModel... credentials) {
-        for (UserCredentialModel credential : credentials) {
-            if (!validCredential(session, realm, user, credential)) return false;
-        }
-        return true;
-    }
-
-    public static boolean validCredential(KeycloakSession session, RealmModel realm, UserModel user, UserCredentialModel credential) {
-        if (credential.getType().equals(UserCredentialModel.PASSWORD)) {
-            if (!validPassword(session, realm, user, credential.getValue())) {
-                return false;
-            }
-        } else if (credential.getType().equals(UserCredentialModel.PASSWORD_TOKEN)) {
-            if (!validPasswordToken(realm, user, credential.getValue())) {
-                return false;
-            }
-        } else if (credential.getType().equals(UserCredentialModel.TOTP)) {
-            if (!validTOTP(realm, user, credential.getValue())) {
-                return false;
-            }
-        } else if (credential.getType().equals(UserCredentialModel.HOTP)) {
-            if (!validHOTP(realm, user, credential.getValue())) {
-                return false;
-            }
-        } else if (credential.getType().equals(UserCredentialModel.SECRET)) {
-            if (!validSecret(realm, user, credential.getValue())) {
-                return false;
-            }
-        } else {
-            return false;
-        }
-        return true;
-    }
 }

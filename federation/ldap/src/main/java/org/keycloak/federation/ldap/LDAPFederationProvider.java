@@ -18,6 +18,9 @@
 package org.keycloak.federation.ldap;
 
 import org.jboss.logging.Logger;
+import org.keycloak.credential.CredentialInput;
+import org.keycloak.credential.CredentialInputUpdater;
+import org.keycloak.credential.CredentialModel;
 import org.keycloak.federation.kerberos.impl.KerberosUsernamePasswordAuthenticator;
 import org.keycloak.federation.kerberos.impl.SPNEGOAuthenticator;
 import org.keycloak.federation.ldap.idm.model.LDAPObject;
@@ -28,12 +31,14 @@ import org.keycloak.federation.ldap.idm.store.ldap.LDAPIdentityStore;
 import org.keycloak.federation.ldap.kerberos.LDAPProviderKerberosConfig;
 import org.keycloak.federation.ldap.mappers.LDAPFederationMapper;
 import org.keycloak.federation.ldap.mappers.LDAPMappersComparator;
+import org.keycloak.federation.ldap.mappers.PasswordUpdated;
 import org.keycloak.models.CredentialValidationOutput;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
+import org.keycloak.models.ModelReadOnlyException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
@@ -73,6 +78,7 @@ public class LDAPFederationProvider implements UserFederationProvider {
     protected LDAPIdentityStore ldapIdentityStore;
     protected EditMode editMode;
     protected LDAPProviderKerberosConfig kerberosConfig;
+    protected PasswordUpdated updater;
 
     protected final Set<String> supportedCredentialTypes = new HashSet<>();
 
@@ -88,6 +94,10 @@ public class LDAPFederationProvider implements UserFederationProvider {
         if (kerberosConfig.isAllowKerberosAuthentication()) {
             supportedCredentialTypes.add(UserCredentialModel.KERBEROS);
         }
+    }
+
+    public void setUpdater(PasswordUpdated updater) {
+        this.updater = updater;
     }
 
     public KeycloakSession getSession() {
@@ -137,20 +147,6 @@ public class LDAPFederationProvider implements UserFederationProvider {
         }
 
         return proxied;
-    }
-
-    @Override
-    public Set<String> getSupportedCredentialTypes(UserModel local) {
-        Set<String> supportedCredentialTypes = new HashSet<String>(this.supportedCredentialTypes);
-        if (editMode == EditMode.UNSYNCED ) {
-            for (UserCredentialValueModel cred : local.getCredentialsDirectly()) {
-                if (cred.getType().equals(UserCredentialModel.PASSWORD)) {
-                    // User has changed password in KC local database. Use KC password instead of LDAP password
-                    supportedCredentialTypes.remove(UserCredentialModel.PASSWORD);
-                }
-            }
-        }
-        return supportedCredentialTypes;
     }
 
     @Override
@@ -409,20 +405,47 @@ public class LDAPFederationProvider implements UserFederationProvider {
 
 
     @Override
-    public boolean validCredentials(RealmModel realm, UserModel user, List<UserCredentialModel> input) {
-        for (UserCredentialModel cred : input) {
-            if (cred.getType().equals(UserCredentialModel.PASSWORD)) {
-                return validPassword(realm, user, cred.getValue());
-            } else {
-                return false; // invalid cred type
-            }
+    public boolean updateCredential(RealmModel realm, UserModel user, CredentialInput input) {
+        if (!CredentialModel.PASSWORD.equals(input.getType()) || ! (input instanceof UserCredentialModel)) return false;
+        if (editMode == EditMode.READ_ONLY) {
+            throw new ModelReadOnlyException("Federated storage is not writable");
+
+        } else if (editMode == EditMode.WRITABLE) {
+            LDAPIdentityStore ldapIdentityStore = getLdapIdentityStore();
+            UserCredentialModel cred = (UserCredentialModel)input;
+            String password = cred.getValue();
+            LDAPObject ldapUser = loadAndValidateUser(realm, user);
+            ldapIdentityStore.updatePassword(ldapUser, password);
+            if (updater != null) updater.passwordUpdated(user, ldapUser, input);
+            return true;
+        } else {
+            return false;
         }
-        return true;
     }
 
     @Override
-    public boolean validCredentials(RealmModel realm, UserModel user, UserCredentialModel... input) {
-        return validCredentials(realm, user, Arrays.asList(input));
+    public void disableCredentialType(RealmModel realm, UserModel user, String credentialType) {
+
+    }
+
+    @Override
+    public boolean supportsCredentialType(String credentialType) {
+        return getSupportedCredentialTypes().contains(credentialType);
+    }
+
+    @Override
+    public boolean isConfiguredFor(RealmModel realm, UserModel user, String credentialType) {
+        return getSupportedCredentialTypes().contains(credentialType);
+    }
+
+    @Override
+    public boolean isValid(RealmModel realm, UserModel user, CredentialInput input) {
+        if (!(input instanceof UserCredentialModel)) return false;
+        if (input.getType().equals(UserCredentialModel.PASSWORD) && !session.userCredentialManager().isConfiguredLocally(realm, user, UserCredentialModel.PASSWORD)) {
+            return validPassword(realm, user, ((UserCredentialModel)input).getValue());
+        } else {
+            return false; // invalid cred type
+        }
     }
 
     @Override

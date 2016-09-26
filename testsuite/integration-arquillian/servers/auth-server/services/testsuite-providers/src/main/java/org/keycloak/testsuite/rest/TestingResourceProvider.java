@@ -578,7 +578,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
         if (realm == null) return false;
         UserProvider userProvider = session.getProvider(UserProvider.class);
         UserModel user = userProvider.getUserByUsername(userName, realm);
-        return userProvider.validCredentials(session, realm, user, UserCredentialModel.password(password));
+        return session.userCredentialManager().isValid(realm, user, UserCredentialModel.password(password));
     }
 
     @GET
@@ -591,7 +591,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
         RealmModel realm = getRealmByName(realmName);
         UserModel foundFederatedUser = session.users().getUserByFederatedIdentity(new FederatedIdentityModel(identityProvider, userId, userName), realm);
         if (foundFederatedUser == null) return null;
-        return ModelToRepresentation.toRepresentation(foundFederatedUser);
+        return ModelToRepresentation.toRepresentation(session, realm, foundFederatedUser);
     }
 
     @GET
@@ -603,7 +603,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
         UserFederationProviderFactory factory = (UserFederationProviderFactory)session.getKeycloakSessionFactory().getProviderFactory(UserFederationProvider.class, "dummy");
         UserModel user = factory.getInstance(session, null).getUserByUsername(realm, userName);
         if (user == null) return null;
-        return ModelToRepresentation.toRepresentation(user);
+        return ModelToRepresentation.toRepresentation(session, realm, user);
     }
 
     @GET
@@ -634,7 +634,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
         ClientModel client =  realm.getClientByClientId(clientId);
         UserModel user = session.users().getServiceAccount(client);
         if (user == null) return null;
-        return ModelToRepresentation.toRepresentation(user);
+        return ModelToRepresentation.toRepresentation(session, realm, user);
     }
 
     @Path("/export-import")

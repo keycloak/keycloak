@@ -65,8 +65,7 @@ public class ValidateOTP extends AbstractDirectGrantAuthenticator {
             context.failure(AuthenticationFlowError.INVALID_USER, challengeResponse);
             return;
         }
-        credentials.add(UserCredentialModel.otp(context.getRealm().getOTPPolicy().getType(), otp));
-        boolean valid = context.getSession().users().validCredentials(context.getSession(), context.getRealm(), context.getUser(), credentials);
+        boolean valid = context.getSession().userCredentialManager().isValid(context.getRealm(), context.getUser(), UserCredentialModel.otp(context.getRealm().getOTPPolicy().getType(), otp));
         if (!valid) {
             context.getEvent().user(context.getUser());
             context.getEvent().error(Errors.INVALID_USER_CREDENTIALS);
@@ -89,7 +88,7 @@ public class ValidateOTP extends AbstractDirectGrantAuthenticator {
     }
 
     private boolean isConfigured(KeycloakSession session, RealmModel realm, UserModel user) {
-        return session.users().configuredForCredentialType(realm.getOTPPolicy().getType(), realm, user);
+        return session.userCredentialManager().isConfiguredFor(realm, user, realm.getOTPPolicy().getType());
     }
 
     @Override

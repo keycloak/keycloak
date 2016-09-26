@@ -24,6 +24,7 @@ import org.keycloak.component.ComponentValidationException;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.provider.ProviderFactory;
 import org.keycloak.storage.UserStorageProvider;
 
 import java.util.Collections;
@@ -34,16 +35,7 @@ import java.util.Set;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public interface CredentialProviderFactory<T extends CredentialProvider> extends ComponentFactory<T, CredentialProvider> {
-    /**
-     * called per Keycloak transaction.
-     *
-     * @param session
-     * @param model
-     * @return
-     */
-    T create(KeycloakSession session, ComponentModel model);
-
+public interface CredentialProviderFactory<T extends CredentialProvider> extends ProviderFactory<CredentialProvider> {
     /**
      * This is the name of the provider and will be showed in the admin console as an option.
      *
@@ -64,21 +56,6 @@ public interface CredentialProviderFactory<T extends CredentialProvider> extends
 
     @Override
     default void close() {
-
-    }
-
-    @Override
-    default String getHelpText() {
-        return "";
-    }
-
-    @Override
-    default List<ProviderConfigProperty> getConfigProperties() {
-        return Collections.EMPTY_LIST;
-    }
-
-    @Override
-    default void validateConfiguration(KeycloakSession session, ComponentModel config) throws ComponentValidationException {
 
     }
 

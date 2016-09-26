@@ -27,11 +27,68 @@ import java.util.Set;
  * @version $Revision: 1 $
  */
 public interface UserCredentialManager extends UserCredentialStore {
+
+    /**
+     * Validates list of credentials.  Will call UserStorageProvider and UserFederationProviders first, then loop through
+     * each CredentialProvider.
+     *
+     * @param realm
+     * @param user
+     * @param inputs
+     * @return
+     */
     boolean isValid(RealmModel realm, UserModel user, List<CredentialInput> inputs);
 
+    /**
+     * Validates list of credentials.  Will call UserStorageProvider and UserFederationProviders first, then loop through
+     * each CredentialProvider.
+     *
+     * @param realm
+     * @param user
+     * @param inputs
+     * @return
+     */
+    boolean isValid(RealmModel realm, UserModel user, CredentialInput... inputs);
+
+    /**
+     * Updates a credential.  Will call UserStorageProvider and UserFederationProviders first, then loop through
+     * each CredentialProvider.  Update is finished whenever any one provider returns true.
+     *
+     * @param realm
+     * @param user
+     * @return
+     */
     void updateCredential(RealmModel realm, UserModel user, CredentialInput input);
+
+    /**
+     * Calls disableCredential on UserStorageProvider and UserFederationProviders first, then loop through
+     * each CredentialProvider.
+     *
+     * @param realm
+     * @param user
+     * @param credentialType
+     */
     void disableCredential(RealmModel realm, UserModel user, String credentialType);
 
+    /**
+     * Checks to see if user has credential type configured.  Looks in UserStorageProvider or UserFederationProvider first,
+     * then loops through each CredentialProvider.
+     *
+     * @param realm
+     * @param user
+     * @param type
+     * @return
+     */
     boolean isConfiguredFor(RealmModel realm, UserModel user, String type);
 
+    /**
+     * Only loops through each CredentialProvider to see if credential type is configured for the user.
+     * This allows UserStorageProvider and UserFederationProvider to look to abort isValid
+     *
+     * @param realm
+     * @param user
+     * @param type
+     * @return
+     */
+    boolean isConfiguredLocally(RealmModel realm, UserModel user, String type);
 }

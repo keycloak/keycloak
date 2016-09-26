@@ -16,6 +16,8 @@
  */
 package org.keycloak.testsuite.forms;
 
+import com.fasterxml.jackson.jaxrs.json.annotation.JSONP;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
@@ -25,6 +27,7 @@ import org.keycloak.events.Errors;
 import org.keycloak.models.Constants;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.services.managers.DefaultBruteForceProtector;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.AssertEvents.ExpectedEvent;
 import org.keycloak.testsuite.pages.AppPage;
@@ -34,6 +37,7 @@ import org.keycloak.testsuite.pages.LoginTotpPage;
 import org.keycloak.testsuite.pages.RegisterPage;
 
 import java.net.MalformedURLException;
+
 import org.jboss.arquillian.graphene.page.Page;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -67,6 +71,12 @@ public class BruteForceTest extends TestRealmKeycloakTest {
 
     @Before
     public void config() {
+
+    }
+
+    @After
+    public void slowItDown() throws Exception {
+        Thread.sleep(100);
 
     }
 
@@ -187,7 +197,7 @@ public class BruteForceTest extends TestRealmKeycloakTest {
         {
             String totpSecret = totp.generateTOTP("totpSecret");
             OAuthClient.AccessTokenResponse response = getTestToken("password", totpSecret);
-            Assert.assertNull(response.getAccessToken());
+            assertTokenNull(response);
             Assert.assertNotNull(response.getError());
             Assert.assertEquals(response.getError(), "invalid_grant");
             Assert.assertEquals(response.getErrorDescription(), "Account temporarily disabled");
@@ -202,8 +212,16 @@ public class BruteForceTest extends TestRealmKeycloakTest {
             events.clear();
         }
 
-    }   @Test
-        public void testGrantMissingOtp() throws Exception {
+    }
+
+    public void assertTokenNull(OAuthClient.AccessTokenResponse response) {
+        Assert.assertNull(response.getAccessToken());
+    }
+
+
+
+    @Test
+    public void testGrantMissingOtp() throws Exception {
         {
             String totpSecret = totp.generateTOTP("totpSecret");
             OAuthClient.AccessTokenResponse response = getTestToken("password", totpSecret);
@@ -228,7 +246,7 @@ public class BruteForceTest extends TestRealmKeycloakTest {
         {
             String totpSecret = totp.generateTOTP("totpSecret");
             OAuthClient.AccessTokenResponse response = getTestToken("password", totpSecret);
-            Assert.assertNull(response.getAccessToken());
+            assertTokenNull(response);
             Assert.assertNotNull(response.getError());
             Assert.assertEquals(response.getError(), "invalid_grant");
             Assert.assertEquals(response.getErrorDescription(), "Account temporarily disabled");
@@ -337,7 +355,7 @@ public class BruteForceTest extends TestRealmKeycloakTest {
                 .error(Errors.USER_TEMPORARILY_DISABLED)
                 .detail(Details.USERNAME, username)
                 .removeDetail(Details.CONSENT);
-        if(userId != null) {
+        if (userId != null) {
             event.user(userId);
         }
         event.assertEvent();
@@ -416,12 +434,12 @@ public class BruteForceTest extends TestRealmKeycloakTest {
         events.clear();
     }
 
-    public void registerUser(String username){
+    public void registerUser(String username) {
         loginPage.open();
         loginPage.clickRegister();
         registerPage.assertCurrent();
 
-        registerPage.register("user", "name",  username + "@localhost", username, "password", "password");
+        registerPage.register("user", "name", username + "@localhost", username, "password", "password");
 
         Assert.assertNull(registerPage.getInstruction());
 

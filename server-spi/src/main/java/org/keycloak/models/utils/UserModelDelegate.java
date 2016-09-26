@@ -61,11 +61,6 @@ public class UserModelDelegate implements UserModel {
     }
 
     @Override
-    public boolean isOtpEnabled() {
-        return delegate.isOtpEnabled();
-    }
-
-    @Override
     public void setEnabled(boolean enabled) {
         delegate.setEnabled(enabled);
     }
@@ -163,26 +158,6 @@ public class UserModelDelegate implements UserModel {
     @Override
     public void setEmailVerified(boolean verified) {
         delegate.setEmailVerified(verified);
-    }
-
-    @Override
-    public void setOtpEnabled(boolean totp) {
-        delegate.setOtpEnabled(totp);
-    }
-
-    @Override
-    public void updateCredential(UserCredentialModel cred) {
-        delegate.updateCredential(cred);
-    }
-
-    @Override
-    public List<UserCredentialValueModel> getCredentialsDirectly() {
-        return delegate.getCredentialsDirectly();
-    }
-
-    @Override
-    public void updateCredentialDirectly(UserCredentialValueModel cred) {
-        delegate.updateCredentialDirectly(cred);
     }
 
     @Override

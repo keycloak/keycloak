@@ -20,6 +20,8 @@ package org.keycloak.services.clientregistration;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.services.validation.PairwiseClientValidator;
+import org.keycloak.services.validation.ValidationMessages;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
@@ -39,7 +41,8 @@ public class DefaultClientRegistrationProvider extends AbstractClientRegistratio
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response createDefault(ClientRepresentation client) {
-        client = create(client);
+        ClientRegistrationContext context = new ClientRegistrationContext(client);
+        client = create(context);
         URI uri = session.getContext().getUri().getAbsolutePathBuilder().path(client.getClientId()).build();
         return Response.created(uri).entity(client).build();
     }
@@ -56,7 +59,8 @@ public class DefaultClientRegistrationProvider extends AbstractClientRegistratio
     @Path("{clientId}")
     @Consumes(MediaType.APPLICATION_JSON)
     public Response updateDefault(@PathParam("clientId") String clientId, ClientRepresentation client) {
-        client = update(clientId, client);
+        ClientRegistrationContext context = new ClientRegistrationContext(client);
+        client = update(clientId, context);
         return Response.ok(client).build();
     }
 
@@ -80,4 +84,9 @@ public class DefaultClientRegistrationProvider extends AbstractClientRegistratio
     public void close() {
     }
 
+    @Override
+    protected boolean validateClient(ClientRegistrationContext context, ValidationMessages validationMessages) {
+        ClientRepresentation client = context.getClient();
+        return super.validateClient(context, validationMessages) && PairwiseClientValidator.validate(session, client, validationMessages);
+    }
 }

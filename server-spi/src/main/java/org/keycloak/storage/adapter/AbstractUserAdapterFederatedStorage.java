@@ -54,7 +54,6 @@ public abstract class AbstractUserAdapterFederatedStorage implements UserModel {
     public static String EMAIL_VERIFIED_ATTRIBUTE = "EMAIL_VERIFIED";
     public static String CREATED_TIMESTAMP_ATTRIBUTE = "CREATED_TIMESTAMP";
     public static String ENABLED_ATTRIBUTE = "ENABLED";
-    public static String OTP_ENABLED_ATTRIBUTE = "OTP_ENABLED";
 
 
     protected KeycloakSession session;
@@ -235,19 +234,6 @@ public abstract class AbstractUserAdapterFederatedStorage implements UserModel {
        setSingleAttribute(ENABLED_ATTRIBUTE, Boolean.toString(enabled));
     }
 
-    @Override
-    public boolean isOtpEnabled() {
-        String val = getFirstAttribute(OTP_ENABLED_ATTRIBUTE);
-        if (val == null) return false;
-        else return Boolean.valueOf(val);
-    }
-
-    @Override
-    public void setOtpEnabled(boolean totp) {
-        setSingleAttribute(OTP_ENABLED_ATTRIBUTE, Boolean.toString(totp));
-
-    }
-
     /**
      * This method should not be overriden
      *
@@ -396,23 +382,6 @@ public abstract class AbstractUserAdapterFederatedStorage implements UserModel {
     @Override
     public void setEmailVerified(boolean verified) {
         setSingleAttribute(EMAIL_VERIFIED_ATTRIBUTE, Boolean.toString(verified));
-
-    }
-
-    @Override
-    public void updateCredential(UserCredentialModel cred) {
-        getFederatedStorage().updateCredential(realm, this, cred);
-
-    }
-
-    @Override
-    public List<UserCredentialValueModel> getCredentialsDirectly() {
-        return getFederatedStorage().getCredentials(realm, this);
-    }
-
-    @Override
-    public void updateCredentialDirectly(UserCredentialValueModel cred) {
-        getFederatedStorage().updateCredential(realm, this, cred);
 
     }
 

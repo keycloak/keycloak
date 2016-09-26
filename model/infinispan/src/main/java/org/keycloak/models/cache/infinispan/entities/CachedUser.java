@@ -44,9 +44,7 @@ public class CachedUser extends AbstractExtendableRevisioned implements InRealm 
     private String lastName;
     private String email;
     private boolean emailVerified;
-    private List<UserCredentialValueModel> credentials = new LinkedList<>();
     private boolean enabled;
-    private boolean totp;
     private String federationLink;
     private String serviceAccountClientLink;
     private MultivaluedHashMap<String, String> attributes = new MultivaluedHashMap<>();
@@ -66,9 +64,7 @@ public class CachedUser extends AbstractExtendableRevisioned implements InRealm 
         this.attributes.putAll(user.getAttributes());
         this.email = user.getEmail();
         this.emailVerified = user.isEmailVerified();
-        this.credentials.addAll(user.getCredentialsDirectly());
         this.enabled = user.isEnabled();
-        this.totp = user.isOtpEnabled();
         this.federationLink = user.getFederationLink();
         this.serviceAccountClientLink = user.getServiceAccountClientLink();
         this.requiredActions.addAll(user.getRequiredActions());
@@ -111,16 +107,8 @@ public class CachedUser extends AbstractExtendableRevisioned implements InRealm 
         return emailVerified;
     }
 
-    public List<UserCredentialValueModel> getCredentials() {
-        return credentials;
-    }
-
     public boolean isEnabled() {
         return enabled;
-    }
-
-    public boolean isTotp() {
-        return totp;
     }
 
     public MultivaluedHashMap<String, String> getAttributes() {

@@ -17,11 +17,12 @@
 package org.keycloak.models.cache;
 
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
 public interface OnUserCache {
-    void onCache(RealmModel realm, CachedUserModel user);
+    void onCache(RealmModel realm, CachedUserModel user, UserModel delegate);
 }

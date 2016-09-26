@@ -343,7 +343,7 @@ public class ClientResource {
             }
         }
 
-        return ModelToRepresentation.toRepresentation(user);
+        return ModelToRepresentation.toRepresentation(session, realm, user);
     }
 
     /**

@@ -26,11 +26,14 @@ import java.util.Map;
 import java.util.Set;
 
 import org.jboss.logging.Logger;
+import org.keycloak.credential.CredentialInput;
+import org.keycloak.credential.CredentialModel;
 import org.keycloak.federation.kerberos.impl.KerberosUsernamePasswordAuthenticator;
 import org.keycloak.federation.kerberos.impl.SPNEGOAuthenticator;
 import org.keycloak.models.CredentialValidationOutput;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelReadOnlyException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
@@ -40,6 +43,7 @@ import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.common.constants.KerberosConstants;
 import org.keycloak.services.managers.UserManager;
+import org.keycloak.storage.adapter.AbstractUserAdapter;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -143,31 +147,6 @@ public class KerberosFederationProvider implements UserFederationProvider {
     }
 
     @Override
-    public Set<String> getSupportedCredentialTypes(UserModel local) {
-        Set<String> supportedCredTypes = new HashSet<String>();
-        supportedCredTypes.add(UserCredentialModel.KERBEROS);
-
-        if (kerberosConfig.isAllowPasswordAuthentication()) {
-            boolean passwordSupported = true;
-            if (kerberosConfig.getEditMode() == EditMode.UNSYNCED ) {
-
-                // Password from KC database has preference over kerberos password
-                for (UserCredentialValueModel cred : local.getCredentialsDirectly()) {
-                    if (cred.getType().equals(UserCredentialModel.PASSWORD)) {
-                        passwordSupported = false;
-                    }
-                }
-            }
-
-            if (passwordSupported) {
-                supportedCredTypes.add(UserCredentialModel.PASSWORD);
-            }
-        }
-
-        return supportedCredTypes;
-    }
-
-    @Override
     public Set<String> getSupportedCredentialTypes() {
         Set<String> supportedCredTypes = new HashSet<String>();
         supportedCredTypes.add(UserCredentialModel.KERBEROS);
@@ -175,15 +154,37 @@ public class KerberosFederationProvider implements UserFederationProvider {
     }
 
     @Override
-    public boolean validCredentials(RealmModel realm, UserModel user, List<UserCredentialModel> input) {
-        for (UserCredentialModel cred : input) {
-            if (cred.getType().equals(UserCredentialModel.PASSWORD)) {
-                return validPassword(user.getUsername(), cred.getValue());
-            } else {
-                return false; // invalid cred type
-            }
+    public boolean updateCredential(RealmModel realm, UserModel user, CredentialInput input) {
+        if (!(input instanceof UserCredentialModel) || !CredentialModel.PASSWORD.equals(input.getType())) return false;
+        if (kerberosConfig.getEditMode() == EditMode.READ_ONLY) {
+            throw new ModelReadOnlyException("Can't change password in Keycloak database. Change password with your Kerberos server");
         }
-        return true;
+        return false;
+    }
+
+    @Override
+    public void disableCredentialType(RealmModel realm, UserModel user, String credentialType) {
+
+    }
+
+    @Override
+    public boolean supportsCredentialType(String credentialType) {
+        return credentialType.equals(CredentialModel.KERBEROS) || (kerberosConfig.isAllowPasswordAuthentication() && credentialType.equals(CredentialModel.PASSWORD));
+    }
+
+    @Override
+    public boolean isConfiguredFor(RealmModel realm, UserModel user, String credentialType) {
+        return supportsCredentialType(credentialType);
+    }
+
+    @Override
+    public boolean isValid(RealmModel realm, UserModel user, CredentialInput input) {
+        if (!(input instanceof UserCredentialModel)) return false;
+        if (input.getType().equals(UserCredentialModel.PASSWORD) && !session.userCredentialManager().isConfiguredLocally(realm, user, UserCredentialModel.PASSWORD)) {
+            return validPassword(user.getUsername(), ((UserCredentialModel)input).getValue());
+        } else {
+            return false; // invalid cred type
+        }
     }
 
     protected boolean validPassword(String username, String password) {
@@ -193,11 +194,6 @@ public class KerberosFederationProvider implements UserFederationProvider {
         } else {
             return false;
         }
-    }
-
-    @Override
-    public boolean validCredentials(RealmModel realm, UserModel user, UserCredentialModel... input) {
-        return validCredentials(realm, user, Arrays.asList(input));
     }
 
     @Override

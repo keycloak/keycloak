@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-servers-app-server</artifactId>
-        <version>2.2.0-SNAPSHOT</version>
+        <version>2.3.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -193,17 +193,17 @@
                                 <goals>
                                     <goal>exec</goal>
                                 </goals>
+                                <configuration>
+                                    <executable>${common.resources}/install-adapters.${script.suffix}</executable>
+                                    <workingDirectory>${app.server.jboss.home}/bin</workingDirectory>
+                                    <environmentVariables>
+                                        <JAVA_HOME>${app.server.java.home}</JAVA_HOME>
+                                        <JBOSS_HOME>${app.server.jboss.home}</JBOSS_HOME>
+                                        <SAML_SUPPORTED>${app.server.saml.adapter.supported}</SAML_SUPPORTED>
+                                    </environmentVariables>
+                                </configuration>
                             </execution>
                         </executions>
-                        <configuration>
-                            <executable>${common.resources}/install-adapters.${script.suffix}</executable>
-                            <workingDirectory>${app.server.jboss.home}/bin</workingDirectory>
-                            <environmentVariables>
-                                <JAVA_HOME>${app.server.java.home}</JAVA_HOME>
-                                <JBOSS_HOME>${app.server.jboss.home}</JBOSS_HOME>
-                                <SAML_SUPPORTED>${app.server.saml.adapter.supported}</SAML_SUPPORTED>
-                            </environmentVariables>
-                        </configuration>
                     </plugin>
 
                     <plugin>
@@ -284,7 +284,42 @@
                 </plugins>
             </build>
         </profile>
-        
+        <profile>
+            <id>app-server-apply-patches</id>
+            <activation>
+                <property>
+                    <name>app.server.patch.zips</name>
+                </property>
+            </activation>
+            <build>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <groupId>org.codehaus.mojo</groupId>
+                            <artifactId>exec-maven-plugin</artifactId>
+                            <executions>
+                                <execution>
+                                    <id>install-patches</id>
+                                    <phase>process-resources</phase>
+                                    <goals>
+                                        <goal>exec</goal>
+                                    </goals>
+                                    <configuration>
+                                        <executable>${common.resources}/install-patch.${script.suffix}</executable>
+                                        <workingDirectory>${app.server.home}/bin</workingDirectory>
+                                        <environmentVariables>
+                                            <JAVA_HOME>${app.server.java.home}</JAVA_HOME>
+                                            <JBOSS_HOME>${app.server.jboss.home}</JBOSS_HOME>
+                                            <APP_PATCH_ZIPS>${app.server.patch.zips}</APP_PATCH_ZIPS>
+                                        </environmentVariables>
+                                    </configuration>
+                                </execution>
+                            </executions>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
+            </build>
+        </profile>
         <profile>
             <id>ssl</id>
             <activation>

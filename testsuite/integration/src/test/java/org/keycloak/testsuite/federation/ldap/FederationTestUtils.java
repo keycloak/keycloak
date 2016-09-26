@@ -68,7 +68,7 @@ public class FederationTestUtils {
         creds.setType(CredentialRepresentation.PASSWORD);
         creds.setValue(password);
 
-        user.updateCredential(creds);
+        session.userCredentialManager().updateCredential(realm, user, creds);
         return user;
     }
 

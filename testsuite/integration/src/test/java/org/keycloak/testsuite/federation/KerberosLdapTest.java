@@ -114,6 +114,11 @@ public class KerberosLdapTest extends AbstractKerberosTest {
         assertUser("hnelson", "hnelson@keycloak.org", "Horatio", "Nelson", false);
     }
 
+    @Test
+    @Override
+    public void usernamePasswordLoginTest() throws Exception {
+        super.usernamePasswordLoginTest();
+    }
 
     @Test
     public void writableEditModeTest() throws Exception {

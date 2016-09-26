@@ -17,6 +17,8 @@
 
 package org.keycloak.testsuite.federation;
 
+import org.keycloak.credential.CredentialInput;
+import org.keycloak.credential.CredentialModel;
 import org.keycloak.models.CredentialValidationOutput;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.RealmModel;
@@ -106,35 +108,47 @@ public class DummyUserFederationProvider implements UserFederationProvider {
     }
 
     @Override
-    public Set<String> getSupportedCredentialTypes(UserModel user) {
-        // Just user "test-user" is able to validate password with this federationProvider
-        if (user.getUsername().equals("test-user")) {
-            return Collections.singleton(UserCredentialModel.PASSWORD);
-        } else {
-            return Collections.emptySet();
-        }
-    }
-
-    @Override
     public Set<String> getSupportedCredentialTypes() {
         return Collections.singleton(UserCredentialModel.PASSWORD);
     }
 
     @Override
-    public boolean validCredentials(RealmModel realm, UserModel user, List<UserCredentialModel> input) {
-        if (user.getUsername().equals("test-user") && input.size() == 1) {
-            UserCredentialModel password = input.get(0);
-            if (password.getType().equals(UserCredentialModel.PASSWORD)) {
-                return "secret".equals(password.getValue());
-            }
-        }
+    public boolean updateCredential(RealmModel realm, UserModel user, CredentialInput input) {
+        if (!(input instanceof UserCredentialModel) || !CredentialModel.PASSWORD.equals(input.getType())) return false;
+
         return false;
     }
 
     @Override
-    public boolean validCredentials(RealmModel realm, UserModel user, UserCredentialModel... input) {
-        return validCredentials(realm, user, Arrays.asList(input));
+    public void disableCredentialType(RealmModel realm, UserModel user, String credentialType) {
+
     }
+
+    @Override
+    public boolean supportsCredentialType(String credentialType) {
+        return getSupportedCredentialTypes().contains(credentialType);
+    }
+
+    @Override
+    public boolean isConfiguredFor(RealmModel realm, UserModel user, String credentialType) {
+        if (!CredentialModel.PASSWORD.equals(credentialType)) return false;
+
+        if (user.getUsername().equals("test-user")) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    @Override
+    public boolean isValid(RealmModel realm, UserModel user, CredentialInput input) {
+        if (user.getUsername().equals("test-user")) {
+            UserCredentialModel password = (UserCredentialModel)input;
+            if (password.getType().equals(UserCredentialModel.PASSWORD)) {
+                return "secret".equals(password.getValue());
+            }
+        }
+        return false;    }
 
     @Override
     public CredentialValidationOutput validCredentials(RealmModel realm, UserCredentialModel credential) {

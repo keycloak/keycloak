@@ -244,6 +244,15 @@
             }
         },
         {
+            "name": "kc-tenantid-mapper",
+            "identityProviderAlias": "kc-oidc-idp-property-mappers",
+            "identityProviderMapper": "oidc-user-attribute-idp-mapper",
+            "config": {
+                "user.attribute": "tenantid",
+                "claim": "tenantid"
+            }
+        },
+        {
             "name": "manager-mapper",
             "identityProviderAlias": "kc-oidc-idp",
             "identityProviderMapper": "oidc-role-idp-mapper",

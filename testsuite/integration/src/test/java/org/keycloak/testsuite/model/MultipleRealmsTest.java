@@ -53,13 +53,13 @@ public class MultipleRealmsTest extends AbstractModelTest {
         Assert.assertNotEquals(r1user1.getId(), r2user1.getId());
 
         // Test password
-        r1user1.updateCredential(UserCredentialModel.password("pass1"));
-        r2user1.updateCredential(UserCredentialModel.password("pass2"));
+        session.userCredentialManager().updateCredential(realm1, r1user1, UserCredentialModel.password("pass1"));
+        session.userCredentialManager().updateCredential(realm2, r2user1, UserCredentialModel.password("pass2"));
 
-        Assert.assertTrue(session.users().validCredentials(session, realm1, r1user1, UserCredentialModel.password("pass1")));
-        Assert.assertFalse(session.users().validCredentials(session, realm1, r1user1, UserCredentialModel.password("pass2")));
-        Assert.assertFalse(session.users().validCredentials(session, realm2, r2user1, UserCredentialModel.password("pass1")));
-        Assert.assertTrue(session.users().validCredentials(session, realm2, r2user1, UserCredentialModel.password("pass2")));
+        Assert.assertTrue(session.userCredentialManager().isValid(realm1, r1user1, UserCredentialModel.password("pass1")));
+        Assert.assertFalse(session.userCredentialManager().isValid(realm1, r1user1, UserCredentialModel.password("pass2")));
+        Assert.assertFalse(session.userCredentialManager().isValid(realm2, r2user1, UserCredentialModel.password("pass1")));
+        Assert.assertTrue(session.userCredentialManager().isValid(realm2, r2user1, UserCredentialModel.password("pass2")));
 
         // Test searching
         Assert.assertEquals(2, session.users().searchForUser("user", realm1).size());

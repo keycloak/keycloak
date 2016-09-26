@@ -136,6 +136,7 @@ public class DefaultKeycloakSessionFactory implements KeycloakSessionFactory, Pr
 
     @Override
     public void undeploy(ProviderManager pm) {
+        logger.debug("undeploy");
         // we make a copy to avoid concurrent access exceptions
         Map<Class<? extends Provider>, Map<String, ProviderFactory>> copy = getFactoriesCopy();
         MultivaluedHashMap<Class<? extends Provider>, ProviderFactory> factories = pm.getLoadedFactories();
@@ -144,6 +145,7 @@ public class DefaultKeycloakSessionFactory implements KeycloakSessionFactory, Pr
             Map<String, ProviderFactory> registered = copy.get(entry.getKey());
             for (ProviderFactory factory : entry.getValue()) {
                 undeployed.add(factory);
+                logger.debugv("undeploying {0} of id {1}", factory.getClass().getName(), factory.getId());
                 if (registered != null) {
                     registered.remove(factory.getId());
                 }

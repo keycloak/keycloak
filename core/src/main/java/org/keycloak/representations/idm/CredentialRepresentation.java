@@ -17,6 +17,10 @@
 
 package org.keycloak.representations.idm;
 
+import org.keycloak.common.util.MultivaluedHashMap;
+
+import java.util.Map;
+
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
@@ -45,6 +49,7 @@ public class CredentialRepresentation {
     private Integer digits;
     private Integer period;
     private Long createdDate;
+    private MultivaluedHashMap<String, String> config;
 
     // only used when updating a credential.  Might set required action
     protected Boolean temporary;
@@ -143,5 +148,13 @@ public class CredentialRepresentation {
 
     public void setCreatedDate(Long createdDate) {
         this.createdDate = createdDate;
+    }
+
+    public MultivaluedHashMap<String, String> getConfig() {
+        return config;
+    }
+
+    public void setConfig(MultivaluedHashMap<String, String> config) {
+        this.config = config;
     }
 }

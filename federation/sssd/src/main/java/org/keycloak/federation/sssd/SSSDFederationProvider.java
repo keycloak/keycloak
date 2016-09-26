@@ -19,11 +19,14 @@ package org.keycloak.federation.sssd;
 
 import org.freedesktop.dbus.Variant;
 import org.jboss.logging.Logger;
+import org.keycloak.credential.CredentialInput;
+import org.keycloak.credential.CredentialModel;
 import org.keycloak.federation.sssd.api.Sssd;
 import org.keycloak.federation.sssd.impl.PAMAuthenticator;
 import org.keycloak.models.CredentialValidationOutput;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelReadOnlyException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
@@ -163,29 +166,38 @@ public class SSSDFederationProvider implements UserFederationProvider {
     }
 
     @Override
-    public Set<String> getSupportedCredentialTypes(UserModel user) {
-        return supportedCredentialTypes;
-    }
-
-    @Override
     public Set<String> getSupportedCredentialTypes() {
         return supportedCredentialTypes;
     }
 
     @Override
-    public boolean validCredentials(RealmModel realm, UserModel user, List<UserCredentialModel> input) {
-        for (UserCredentialModel cred : input) {
-            if (cred.getType().equals(UserCredentialModel.PASSWORD)) {
-                PAMAuthenticator pam = factory.createPAMAuthenticator(user.getUsername(), cred.getValue());
-                return (pam.authenticate() != null);
-            }
-        }
-        return false;
+    public boolean updateCredential(RealmModel realm, UserModel user, CredentialInput input) {
+        if (!(input instanceof UserCredentialModel) || !CredentialModel.PASSWORD.equals(input.getType())) return false;
+        throw new ModelReadOnlyException("Federated storage is not writable");
     }
 
     @Override
-    public boolean validCredentials(RealmModel realm, UserModel user, UserCredentialModel... input) {
-        return validCredentials(realm, user, Arrays.asList(input));
+    public void disableCredentialType(RealmModel realm, UserModel user, String credentialType) {
+
+    }
+
+    @Override
+    public boolean supportsCredentialType(String credentialType) {
+        return CredentialModel.PASSWORD.equals(credentialType);
+    }
+
+    @Override
+    public boolean isConfiguredFor(RealmModel realm, UserModel user, String credentialType) {
+        return CredentialModel.PASSWORD.equals(credentialType);
+    }
+
+    @Override
+    public boolean isValid(RealmModel realm, UserModel user, CredentialInput input) {
+        if (!supportsCredentialType(input.getType()) || !(input instanceof UserCredentialModel)) return false;
+
+        UserCredentialModel cred = (UserCredentialModel)input;
+        PAMAuthenticator pam = factory.createPAMAuthenticator(user.getUsername(), cred.getValue());
+        return (pam.authenticate() != null);
     }
 
     @Override

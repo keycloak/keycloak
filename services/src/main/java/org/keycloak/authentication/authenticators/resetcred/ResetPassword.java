@@ -40,7 +40,7 @@ public class ResetPassword extends AbstractSetRequiredActionAuthenticator {
     }
 
     protected boolean configuredFor(AuthenticationFlowContext context) {
-        return context.getSession().users().configuredForCredentialType(UserCredentialModel.PASSWORD, context.getRealm(), context.getUser());
+        return context.getSession().userCredentialManager().isConfiguredFor(context.getRealm(), context.getUser(), UserCredentialModel.PASSWORD);
     }
 
     @Override

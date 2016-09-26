@@ -30,6 +30,7 @@ import org.keycloak.authorization.store.ScopeStore;
 import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
+import org.keycloak.credential.CredentialModel;
 import org.keycloak.hash.Pbkdf2PasswordHashProvider;
 import org.keycloak.migration.migrators.MigrationUtils;
 import org.keycloak.models.ClientTemplateModel;
@@ -1348,7 +1349,6 @@ public class RepresentationToModel {
         user.setFirstName(userRep.getFirstName());
         user.setLastName(userRep.getLastName());
         user.setFederationLink(userRep.getFederationLink());
-        if (userRep.isTotp() != null) user.setOtpEnabled(userRep.isTotp());
         if (userRep.getAttributes() != null) {
             for (Map.Entry<String, Object> entry : userRep.getAttributes().entrySet()) {
                 Object value = entry.getValue();
@@ -1368,7 +1368,7 @@ public class RepresentationToModel {
                 user.addRequiredAction(UserModel.RequiredAction.valueOf(requiredAction));
             }
         }
-        createCredentials(userRep, user);
+        createCredentials(userRep, session, newRealm, user);
         if (userRep.getFederatedIdentities() != null) {
             for (FederatedIdentityRepresentation identity : userRep.getFederatedIdentities()) {
                 FederatedIdentityModel mappingModel = new FederatedIdentityModel(identity.getIdentityProvider(), identity.getUserId(), identity.getUserName());
@@ -1403,21 +1403,21 @@ public class RepresentationToModel {
         return user;
     }
 
-    public static void createCredentials(UserRepresentation userRep, UserModel user) {
+    public static void createCredentials(UserRepresentation userRep, KeycloakSession session, RealmModel realm,UserModel user) {
         if (userRep.getCredentials() != null) {
             for (CredentialRepresentation cred : userRep.getCredentials()) {
-                updateCredential(user, cred);
+                updateCredential(session, realm, user, cred);
             }
         }
     }
 
     // Detect if it is "plain-text" or "hashed" representation and update model according to it
-    private static void updateCredential(UserModel user, CredentialRepresentation cred) {
+    private static void updateCredential(KeycloakSession session, RealmModel realm, UserModel user, CredentialRepresentation cred) {
         if (cred.getValue() != null) {
             UserCredentialModel plainTextCred = convertCredential(cred);
-            user.updateCredential(plainTextCred);
+            session.userCredentialManager().updateCredential(realm, user, plainTextCred);
         } else {
-            UserCredentialValueModel hashedCred = new UserCredentialValueModel();
+            CredentialModel hashedCred = new CredentialModel();
             hashedCred.setType(cred.getType());
             hashedCred.setDevice(cred.getDevice());
             if (cred.getHashIterations() != null) hashedCred.setHashIterations(cred.getHashIterations());
@@ -1456,7 +1456,7 @@ public class RepresentationToModel {
                 hashedCred.setPeriod(30);
             }
             hashedCred.setCreatedDate(cred.getCreatedDate());
-            user.updateCredentialDirectly(hashedCred);
+            session.userCredentialManager().createCredential(realm, user, hashedCred);
         }
     }
 

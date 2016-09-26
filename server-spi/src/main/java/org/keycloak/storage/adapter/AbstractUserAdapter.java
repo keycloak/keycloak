@@ -223,17 +223,6 @@ public abstract class AbstractUserAdapter implements UserModel {
         throw new ReadOnlyException("user is read only for this update");
     }
 
-    @Override
-    public boolean isOtpEnabled() {
-        return false;
-    }
-
-    @Override
-    public void setOtpEnabled(boolean totp) {
-        throw new ReadOnlyException("user is read only for this update");
-
-    }
-
     /**
      * This method should not be overriden
      *
@@ -382,23 +371,6 @@ public abstract class AbstractUserAdapter implements UserModel {
 
     @Override
     public void setEmailVerified(boolean verified) {
-        throw new ReadOnlyException("user is read only for this update");
-
-    }
-
-    @Override
-    public void updateCredential(UserCredentialModel cred) {
-        throw new ReadOnlyException("user is read only for this update");
-
-    }
-
-    @Override
-    public List<UserCredentialValueModel> getCredentialsDirectly() {
-        return Collections.EMPTY_LIST;
-    }
-
-    @Override
-    public void updateCredentialDirectly(UserCredentialValueModel cred) {
         throw new ReadOnlyException("user is read only for this update");
 
     }

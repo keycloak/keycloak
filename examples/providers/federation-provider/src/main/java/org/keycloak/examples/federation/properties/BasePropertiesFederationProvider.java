@@ -17,6 +17,7 @@
 
 package org.keycloak.examples.federation.properties;
 
+import org.keycloak.credential.CredentialInput;
 import org.keycloak.models.CredentialValidationOutput;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
@@ -146,48 +147,29 @@ public abstract class BasePropertiesFederationProvider implements UserFederation
         return properties.containsKey(local.getUsername());
     }
 
-    /**
-     * hardcoded to only return PASSWORD
-     *
-     * @param user
-     * @return
-     */
-    @Override
-    public Set<String> getSupportedCredentialTypes(UserModel user) {
-        return supportedCredentialTypes;
-    }
-
     @Override
     public Set<String> getSupportedCredentialTypes() {
         return supportedCredentialTypes;
     }
 
     @Override
-    public boolean validCredentials(RealmModel realm, UserModel user, List<UserCredentialModel> input) {
-        for (UserCredentialModel cred : input) {
-            if (cred.getType().equals(UserCredentialModel.PASSWORD)) {
-                String password = properties.getProperty(user.getUsername());
-                if (password == null) return false;
-                return password.equals(cred.getValue());
-            } else {
-                return false; // invalid cred type
-            }
-        }
-        return false;
+    public boolean isValid(RealmModel realm, UserModel user, CredentialInput input) {
+        if (!supportsCredentialType(input.getType()) || !(input instanceof UserCredentialModel)) return false;
+
+        UserCredentialModel cred = (UserCredentialModel)input;
+        String password = properties.getProperty(user.getUsername());
+        if (password == null) return false;
+        return password.equals(cred.getValue());
     }
 
     @Override
-    public boolean validCredentials(RealmModel realm, UserModel user, UserCredentialModel... input) {
-        for (UserCredentialModel cred : input) {
-            if (cred.getType().equals(UserCredentialModel.PASSWORD)) {
-                String password = properties.getProperty(user.getUsername());
-                if (password == null) return false;
-                return password.equals(cred.getValue());
-            } else {
-                return false; // invalid cred type
-            }
-        }
-        return true;
+    public boolean isConfiguredFor(RealmModel realm, UserModel user, String credentialType) {
+        return getSupportedCredentialTypes().contains(credentialType);
+    }
+
+    @Override
+    public boolean supportsCredentialType(String credentialType) {
+        return getSupportedCredentialTypes().contains(credentialType);
     }
 
     @Override

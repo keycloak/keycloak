@@ -22,17 +22,24 @@ import org.keycloak.component.PrioritizedComponentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialManager;
+import org.keycloak.models.UserCredentialModel;
+import org.keycloak.models.UserFederationProvider;
+import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.cache.CachedUserModel;
 import org.keycloak.models.cache.OnUserCache;
+import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.provider.ProviderFactory;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageManager;
 import org.keycloak.storage.UserStorageProvider;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -89,6 +96,10 @@ public class UserCredentialStoreManager implements UserCredentialManager, OnUser
         return getStoreForUser(user).getStoredCredentialByNameAndType(realm, user, name, type);
     }
 
+    @Override
+    public boolean isValid(RealmModel realm, UserModel user, CredentialInput... inputs) {
+        return isValid(realm, user, Arrays.asList(inputs));
+    }
 
     @Override
     public boolean isValid(RealmModel realm, UserModel user, List<CredentialInput> inputs) {
@@ -108,38 +119,47 @@ public class UserCredentialStoreManager implements UserCredentialManager, OnUser
                     }
                 }
             }
+        } else {
+            // <deprecate>
+            UserFederationProvider link = session.users().getFederationLink(realm, user);
+            if (link != null) {
+                session.users().validateUser(realm, user);
+                Iterator<CredentialInput> it = toValidate.iterator();
+                while (it.hasNext()) {
+                    CredentialInput input = it.next();
+                    if (link.supportsCredentialType(input.getType())
+                            && link.isValid(realm, user, input)) {
+                        it.remove();
+                    }
+                }
+            }
+            // </deprecate>
         }
 
         if (toValidate.isEmpty()) return true;
 
-        List<ComponentModel> components = getCredentialProviderComponents(realm);
-        for (ComponentModel component : components) {
-            CredentialProviderFactory factory = (CredentialProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(CredentialProvider.class, component.getProviderId());
-            if (!Types.supports(CredentialInputValidator.class, factory, CredentialProviderFactory.class)) continue;
+        List<CredentialInputValidator> credentialProviders = getCredentialProviders(realm, CredentialInputValidator.class);
+        for (CredentialInputValidator validator : credentialProviders) {
             Iterator<CredentialInput> it = toValidate.iterator();
             while (it.hasNext()) {
                 CredentialInput input = it.next();
-                CredentialInputValidator validator = (CredentialInputValidator)session.getAttribute(component.getId());
-                if (validator == null) {
-                    validator = (CredentialInputValidator)factory.create(session, component);
-                    session.setAttribute(component.getId(), validator);
-                }
                 if (validator.supportsCredentialType(input.getType()) && validator.isValid(realm, user, input)) {
                     it.remove();
                 }
             }
-        }
 
+        }
         return toValidate.isEmpty();
     }
 
-    protected List<ComponentModel> getCredentialProviderComponents(RealmModel realm) {
-        List<ComponentModel> components = realm.getComponents(realm.getId(), CredentialProvider.class.getName());
-        if (components.isEmpty()) return components;
-        List<ComponentModel> copy = new LinkedList<>();
-        copy.addAll(components);
-        Collections.sort(copy, PrioritizedComponentModel.comparator);
-        return copy;
+    protected <T> List<T> getCredentialProviders(RealmModel realm, Class<T> type) {
+        List<T> list = new LinkedList<T>();
+        for (ProviderFactory f : session.getKeycloakSessionFactory().getProviderFactories(CredentialProvider.class)) {
+            if (!Types.supports(CredentialInputUpdater.class, f, CredentialProviderFactory.class)) continue;
+            list.add((T)session.getProvider(CredentialProvider.class, f.getId()));
+        }
+        return list;
+
     }
 
     @Override
@@ -153,21 +173,21 @@ public class UserCredentialStoreManager implements UserCredentialManager, OnUser
                     if (updater.updateCredential(realm, user, input)) return;
                 }
             }
+        } else {
+            // <deprecated>
+            UserFederationProvider link = session.users().getFederationLink(realm, user);
+            if (link != null) {
+                if (link.updateCredential(realm, user, input)) return;
+            }
+            // </deprecated>
         }
 
-        List<ComponentModel> components = getCredentialProviderComponents(realm);
-        for (ComponentModel component : components) {
-            CredentialProviderFactory factory = (CredentialProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(CredentialProvider.class, component.getProviderId());
-            if (!Types.supports(CredentialInputUpdater.class, factory, CredentialProviderFactory.class)) continue;
-            CredentialInputUpdater updater = (CredentialInputUpdater)session.getAttribute(component.getId());
-            if (updater == null) {
-                updater = (CredentialInputUpdater)factory.create(session, component);
-                session.setAttribute(component.getId(), updater);
-            }
+        List<CredentialInputUpdater> credentialProviders = getCredentialProviders(realm, CredentialInputUpdater.class);
+        for (CredentialInputUpdater updater : credentialProviders) {
             if (!updater.supportsCredentialType(input.getType())) continue;
             if (updater.updateCredential(realm, user, input)) return;
-        }
 
+        }
     }
     @Override
     public void disableCredential(RealmModel realm, UserModel user, String credentialType) {
@@ -180,20 +200,21 @@ public class UserCredentialStoreManager implements UserCredentialManager, OnUser
                     updater.disableCredentialType(realm, user, credentialType);
                 }
             }
+        } else {
+            UserFederationProvider link = session.users().getFederationLink(realm, user);
+            if (link != null && link.getSupportedCredentialTypes().contains(credentialType)) {
+                link.disableCredentialType(realm, user, credentialType);
+            }
+
         }
 
-        List<ComponentModel> components = getCredentialProviderComponents(realm);
-        for (ComponentModel component : components) {
-            CredentialProviderFactory factory = (CredentialProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(CredentialProvider.class, component.getProviderId());
-            if (!Types.supports(CredentialInputUpdater.class, factory, CredentialProviderFactory.class)) continue;
-            CredentialInputUpdater updater = (CredentialInputUpdater)session.getAttribute(component.getId());
-            if (updater == null) {
-                updater = (CredentialInputUpdater)factory.create(session, component);
-                session.setAttribute(component.getId(), updater);
-            }
+        List<CredentialInputUpdater> credentialProviders = getCredentialProviders(realm, CredentialInputUpdater.class);
+        for (CredentialInputUpdater updater : credentialProviders) {
             if (!updater.supportsCredentialType(credentialType)) continue;
             updater.disableCredentialType(realm, user, credentialType);
+
         }
+
 
     }
     @Override
@@ -207,39 +228,37 @@ public class UserCredentialStoreManager implements UserCredentialManager, OnUser
                     return true;
                 }
             }
+        } else {
+            // <deprecate>
+            UserFederationProvider link = session.users().getFederationLink(realm, user);
+            if (link != null) {
+                if (link.isConfiguredFor(realm, user, type)) return true;
+            }
+            // </deprecate>
+
         }
 
-        List<ComponentModel> components = getCredentialProviderComponents(realm);
-        for (ComponentModel component : components) {
-            CredentialProviderFactory factory = (CredentialProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(CredentialProvider.class, component.getProviderId());
-            if (!Types.supports(CredentialInputUpdater.class, factory, CredentialProviderFactory.class)) continue;
-            CredentialInputValidator validator = (CredentialInputValidator)session.getAttribute(component.getId());
-            if (validator == null) {
-                validator = (CredentialInputValidator)factory.create(session, component);
-                session.setAttribute(component.getId(), validator);
-            }
-            if (validator.supportsCredentialType(type) && validator.isConfiguredFor(realm, user, type)) {
-                return true;
-            }
-        }
-        return false;
-
+        return isConfiguredLocally(realm, user, type);
     }
 
     @Override
-    public void onCache(RealmModel realm, CachedUserModel user) {
-        List<ComponentModel> components = getCredentialProviderComponents(realm);
-        for (ComponentModel component : components) {
-            CredentialProviderFactory factory = (CredentialProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(CredentialProvider.class, component.getProviderId());
-            if (!Types.supports(OnUserCache.class, factory, CredentialProviderFactory.class)) continue;
-            OnUserCache validator = (OnUserCache)session.getAttribute(component.getId());
-            if (validator == null) {
-                validator = (OnUserCache)factory.create(session, component);
-                session.setAttribute(component.getId(), validator);
+    public boolean isConfiguredLocally(RealmModel realm, UserModel user, String type) {
+        List<CredentialInputValidator> credentialProviders = getCredentialProviders(realm, CredentialInputValidator.class);
+        for (CredentialInputValidator validator : credentialProviders) {
+            if (validator.supportsCredentialType(type) && validator.isConfiguredFor(realm, user, type)) {
+                return true;
             }
-            validator.onCache(realm, user);
-        }
 
+        }
+        return false;
+    }
+
+    @Override
+    public void onCache(RealmModel realm, CachedUserModel user, UserModel delegate) {
+        List<OnUserCache> credentialProviders = getCredentialProviders(realm, OnUserCache.class);
+        for (OnUserCache validator : credentialProviders) {
+            validator.onCache(realm, user, delegate);
+        }
     }
 
     @Override

@@ -21,6 +21,7 @@ import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.HttpResponse;
 import org.jboss.resteasy.spi.NotFoundException;
+import org.keycloak.Config;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Version;
 import org.keycloak.theme.BrowserSecurityHeaderSetup;
@@ -290,6 +291,7 @@ public class AdminConsole {
 
             map.put("authUrl", authUrl);
             map.put("resourceUrl", Urls.themeRoot(baseUri) + "/admin/" + theme.getName());
+            map.put("masterRealm", Config.getAdminRealm());
             map.put("resourceVersion", Version.RESOURCES_VERSION);
             map.put("properties", theme.getProperties());
 

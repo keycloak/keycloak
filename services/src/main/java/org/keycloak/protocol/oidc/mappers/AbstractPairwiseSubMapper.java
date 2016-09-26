@@ -108,12 +108,6 @@ public abstract class AbstractPairwiseSubMapper extends AbstractOIDCProtocolMapp
             PairwiseSubMapperValidator.validate(session, client, mapperModel);
         }
         validateAdditionalConfig(session, realm, mapperContainer, mapperModel);
-
-        if (client != null) {
-            // Propagate changes to the sector identifier uri
-            OIDCAdvancedConfigWrapper configWrapper = OIDCAdvancedConfigWrapper.fromClientModel(client);
-            configWrapper.setSectorIdentifierUri(PairwiseSubMapperHelper.getSectorIdentifierUri(mapperModel));
-        }
     }
 
     @Override

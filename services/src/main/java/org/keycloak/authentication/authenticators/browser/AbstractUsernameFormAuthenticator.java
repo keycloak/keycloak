@@ -20,6 +20,7 @@ package org.keycloak.authentication.authenticators.browser;
 import org.keycloak.authentication.AbstractFormAuthenticator;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.AuthenticationFlowContext;
+import org.keycloak.credential.CredentialInput;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.models.ModelDuplicateException;
@@ -167,10 +168,10 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
     }
 
     public boolean validatePassword(AuthenticationFlowContext context, UserModel user, MultivaluedMap<String, String> inputData) {
-        List<UserCredentialModel> credentials = new LinkedList<>();
+        List<CredentialInput> credentials = new LinkedList<>();
         String password = inputData.getFirst(CredentialRepresentation.PASSWORD);
         credentials.add(UserCredentialModel.password(password));
-        boolean valid = context.getSession().users().validCredentials(context.getSession(), context.getRealm(), user, credentials);
+        boolean valid = context.getSession().userCredentialManager().isValid(context.getRealm(), user, credentials);
         if (!valid) {
             context.getEvent().user(user);
             context.getEvent().error(Errors.INVALID_USER_CREDENTIALS);

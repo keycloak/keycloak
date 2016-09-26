@@ -63,3 +63,5 @@ org.keycloak.protocol.oidc.TokenIntrospectionSpi
 org.keycloak.policy.PasswordPolicySpi
 org.keycloak.policy.PasswordPolicyManagerSpi
 org.keycloak.transaction.TransactionManagerLookupSpi
+org.keycloak.credential.hash.PasswordHashSpi
+org.keycloak.credential.CredentialSpi

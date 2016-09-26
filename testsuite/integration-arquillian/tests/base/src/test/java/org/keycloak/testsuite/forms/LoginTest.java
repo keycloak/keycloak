@@ -354,7 +354,9 @@ public class LoginTest extends TestRealmKeycloakTest {
 
             events.expectRequiredAction(EventType.UPDATE_PASSWORD).user(userId).detail(Details.USERNAME, "login-test").assertEvent();
 
-            assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+            String currentUrl = driver.getCurrentUrl();
+            String pageSource = driver.getPageSource();
+            assertEquals("bad expectation, on page: " + currentUrl, RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
             events.expectLogin().user(userId).detail(Details.USERNAME, "login-test").assertEvent();
 

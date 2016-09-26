@@ -1,31 +1,23 @@
 Example Custom Authenticator
 ===================================================
 
-This is an example of defining a custom Authenticator and Required action.  This example is explained in the user documentation
-of Keycloak.   To deploy, build this directory then take the jar and copy it to providers directory. Alternatively you can deploy as a module by running:
+1. First, Keycloak must be running.
 
-    KEYCLOAK_HOME/bin/jboss-cli.sh --command="module add --name=org.keycloak.examples.secret-question --resources=target/authenticator-required-action-example.jar --dependencies=org.keycloak.keycloak-core,org.keycloak.keycloak-server-spi,org.keycloak.keycloak-services,org.jboss.resteasy.resteasy-jaxrs,javax.ws.rs.api"
+2. Execute the follow.  This will build the example and deploy it
 
-Then registering the provider by editing `standalone/configuration/standalone.xml` and adding the module to the providers element:
+   $ mvn clean install wildfly:deploy
 
-    <providers>
-        ...
-        <provider>module:org.keycloak.examples.secret-question</provider>
-    </providers>
+3. Copy the secret-question.ftl and secret-question-config.ftl files to the themes/base/login directory.
 
-You then have to copy the secret-question.ftl and secret-question-config.ftl files to the themes/base/login directory.
+4. Login to admin console.  Hit browser refresh if you are already logged in so that the new providers show up.
 
-After you do all this, you then have to reboot keycloak.  When reboot is complete, you will need to log into
-the admin console to create a new flow with your new authenticator.
+5. Go to the Authentication menu item and go to the Flow tab, you will be able to view the currently
+   defined flows.  You cannot modify an built in flows, so, to add the Authenticator you
+   have to copy an existing flow or create your own.  Copy the "Browser" flow.
 
-If you go to the Authentication menu item and go to the Flow tab, you will be able to view the currently
-defined flows.  You cannot modify an built in flows, so, to add the Authenticator you
-have to copy an existing flow or create your own.
+6. In your copy, click the "Actions" menu item and "Add Execution".  Pick Secret Question
 
-Next you have to register your required action.
-Click on the Required Actions tab.  Click on the Register button and choose your new Required Action.
-Your new required action should now be displayed and enabled in the required actions list.
+7. Next you have to register the required action that you created. Click on the Required Actions tab in the Authenticaiton menu.
+   Click on the Register button and choose your new Required Action.
+   Your new required action should now be displayed and enabled in the required actions list.
 
-I'm hoping the UI is intuitive enough so that you
-can figure out for yourself how to create a flow and add the Authenticator and Required Action.  We're looking to add a screencast
-to show this in action.

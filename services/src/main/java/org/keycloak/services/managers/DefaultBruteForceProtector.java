@@ -18,6 +18,7 @@ package org.keycloak.services.managers;
 
 
 import org.keycloak.common.ClientConnection;
+import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
@@ -51,7 +52,6 @@ public class DefaultBruteForceProtector implements Runnable, BruteForceProtector
 
     protected LinkedBlockingQueue<LoginEvent> queue = new LinkedBlockingQueue<LoginEvent>();
     public static final int TRANSACTION_SIZE = 20;
-
 
     protected abstract class LoginEvent implements Comparable<LoginEvent> {
         protected final String realmId;
@@ -92,14 +92,16 @@ public class DefaultBruteForceProtector implements Runnable, BruteForceProtector
         logger.debug("failure");
         RealmModel realm = getRealmModel(session, event);
         logFailure(event);
-        UserModel user = session.users().getUserById(event.userId, realm);
+
+        String userId = event.userId;
+        UserModel user = session.users().getUserById(userId, realm);
         UserLoginFailureModel userLoginFailure = getUserModel(session, event);
         if (user != null) {
             if (userLoginFailure == null) {
-                userLoginFailure = session.sessions().addUserLoginFailure(realm, event.userId);
+                userLoginFailure = session.sessions().addUserLoginFailure(realm, userId);
             }
             userLoginFailure.setLastIPFailure(event.ip);
-            long currentTime = System.currentTimeMillis();
+            long currentTime = Time.currentTimeMillis();
             long last = userLoginFailure.getLastFailure();
             long deltaTime = 0;
             if (last > 0) {
@@ -115,7 +117,7 @@ public class DefaultBruteForceProtector implements Runnable, BruteForceProtector
             userLoginFailure.incrementFailures();
             logger.debugv("new num failures: {0}", userLoginFailure.getNumFailures());
 
-            int waitSeconds = realm.getWaitIncrementSeconds() * (userLoginFailure.getNumFailures() / realm.getFailureFactor());
+            int waitSeconds = realm.getWaitIncrementSeconds() *  (userLoginFailure.getNumFailures() / realm.getFailureFactor());
             logger.debugv("waitSeconds: {0}", waitSeconds);
             logger.debugv("deltaTime: {0}", deltaTime);
 
@@ -216,7 +218,7 @@ public class DefaultBruteForceProtector implements Runnable, BruteForceProtector
         failures++;
         long delta = 0;
         if (lastFailure > 0) {
-            delta = System.currentTimeMillis() - lastFailure;
+            delta = Time.currentTimeMillis() - lastFailure;
             if (delta > (long)maxDeltaTimeSeconds * 1000L) {
                 totalTime = 0;
 
@@ -235,9 +237,9 @@ public class DefaultBruteForceProtector implements Runnable, BruteForceProtector
             // cannot flood with failed logins and overwhelm the queue and not have notBefore updated to block next requests
             // todo failure HTTP responses should be queued via async HTTP
             event.latch.await(5, TimeUnit.SECONDS);
-
         } catch (InterruptedException e) {
         }
+        logger.trace("sent failure event");
     }
 
     @Override
@@ -245,16 +247,17 @@ public class DefaultBruteForceProtector implements Runnable, BruteForceProtector
         UserLoginFailureModel failure = session.sessions().getUserLoginFailure(realm, user.getId());
 
         if (failure != null) {
-            int currTime = (int) (System.currentTimeMillis() / 1000);
-            if (currTime < failure.getFailedLoginNotBefore()) {
-                logger.debugv("Current: {0} notBefore: {1}", currTime, failure.getFailedLoginNotBefore());
+            int currTime = (int) (Time.currentTimeMillis() / 1000);
+            int failedLoginNotBefore = failure.getFailedLoginNotBefore();
+            if (currTime < failedLoginNotBefore) {
+                logger.debugv("Current: {0} notBefore: {1}", currTime, failedLoginNotBefore);
                 return true;
             }
         }
 
+
         return false;
     }
-
     @Override
     public void close() {
 
