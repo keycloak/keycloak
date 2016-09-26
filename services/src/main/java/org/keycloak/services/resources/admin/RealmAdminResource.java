@@ -20,6 +20,7 @@ import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.BadRequestException;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
+import org.keycloak.Config;
 import org.keycloak.KeyPairVerifier;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.VerificationException;
@@ -281,6 +282,11 @@ public class RealmAdminResource {
         auth.requireManage();
 
         logger.debug("updating realm: " + realm.getName());
+
+        if (Config.getAdminRealm().equals(realm.getName()) && (rep.getRealm() != null && !rep.getRealm().equals(Config.getAdminRealm()))) {
+            return ErrorResponse.error("Can't rename master realm", Status.BAD_REQUEST);
+        }
+
         try {
             if (!Constants.GENERATE.equals(rep.getPublicKey()) && (rep.getPrivateKey() != null && rep.getPublicKey() != null)) {
                 try {
