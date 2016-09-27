@@ -17,7 +17,6 @@
 package org.keycloak.testsuite.migration;
 
 import java.util.List;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
@@ -31,8 +30,7 @@ import org.keycloak.testsuite.arquillian.migration.Migration;
  */
 public class MigrationTest extends AbstractKeycloakTest {
 
-    private RealmResource realmResource;
-    private RealmRepresentation realmRep;
+    private final String migrationRealmName = "Migration";
         
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
@@ -41,28 +39,31 @@ public class MigrationTest extends AbstractKeycloakTest {
     
     @Before
     public void beforeMigrationTest() {
-        realmResource = adminClient.realms().realm("Migration");
-        realmRep = realmResource.toRepresentation();
+        
     }
     
     @Test
     @Migration(versionFrom = "1.9.8.Final")
     public void migration198Test() {
+        //test migrated data
+        test198();
+        
+        //import realm from previous version and test imported data
+        MigrationUtil.executeImport(testingClient);
+        test198();
+    }
+    
+    private void test198() {
+        RealmResource realmResource = adminClient.realms().realm(migrationRealmName);
+        
         Assert.assertNames(realmResource.roles().list(), "offline_access", "uma_authorization");
         Assert.assertNames(realmResource.clients().findAll(), "admin-cli", "realm-management", "security-admin-console", "broker", "account");
         
-        //TODO
-    }
-    
-    /**
-     * Assumed that there is only one migration test for each version and *remove*
-     * 'Migration' realm from Keycloak after test to be able to run the rest 
-     * of the testsuite isolated afterward.
-     */
-    @After
-    public void afterMigrationTest() {
+        //TODO - add more asserts
+        
+        //cleanup
+        RealmRepresentation realmRep = realmResource.toRepresentation();
         log.info("removing '" + realmRep.getRealm() + "' realm");
         removeRealm(realmRep);
     }
-    
 }

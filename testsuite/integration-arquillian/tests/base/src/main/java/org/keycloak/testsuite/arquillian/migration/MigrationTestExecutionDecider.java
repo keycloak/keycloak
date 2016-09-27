@@ -38,7 +38,7 @@ public class MigrationTestExecutionDecider implements TestExecutionDecider {
         if (migrationTest && migrationAnnotation != null) {
             String versionFrom = migrationAnnotation.versionFrom();
 
-            if (versionFrom.equals(migratedAuthServerVersion)) {
+            if (migratedAuthServerVersion.contains(versionFrom)) {
                 return ExecutionDecision.execute();
             } else {
                 return ExecutionDecision.dontExecute(method.getName() + "doesn't fit with migration version.");
