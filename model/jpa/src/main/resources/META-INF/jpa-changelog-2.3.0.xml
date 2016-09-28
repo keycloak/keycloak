@@ -33,8 +33,9 @@
 
          <dropColumn tableName="USER_ENTITY" columnName="TOTP" />
 
-
-
+         <addColumn tableName="IDENTITY_PROVIDER">
+             <column name="PROVIDER_DISPLAY_NAME" type="VARCHAR(255)"></column>
+         </addColumn>
      </changeSet>
 
 

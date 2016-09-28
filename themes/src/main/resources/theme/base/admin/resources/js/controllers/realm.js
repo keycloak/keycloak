@@ -689,14 +689,6 @@ module.controller('RealmDefaultRolesCtrl', function ($scope, Realm, realm, clien
 
 
 module.controller('IdentityProviderTabCtrl', function(Dialog, $scope, Current, Notifications, $location) {
-    for (var i in $scope.allProviders) {
-        var provider = $scope.allProviders[i];
-        if (provider.groupName == 'Social' && (provider.id == $scope.identityProvider.alias)) {
-            $scope.identityProvider.displayName = provider.name;
-        } else if (!$scope.identityProvider.displayName) {
-            $scope.identityProvider.displayName = provider.id;
-        }
-    }
     $scope.removeIdentityProvider = function() {
         Dialog.confirmDelete($scope.identityProvider.alias, 'provider', function() {
             $scope.identityProvider.$remove({
@@ -776,12 +768,18 @@ module.controller('RealmIdentityProviderCtrl', function($scope, $filter, $upload
     if (instance && instance.alias) {
         $scope.identityProvider = angular.copy(instance);
         $scope.newIdentityProvider = false;
+        for (var i in serverInfo.identityProviders) {
+            var provider = serverInfo.identityProviders[i];
+
+            if (provider.id == instance.providerId) {
+                $scope.provider = provider;
+            }
+        }
     } else {
         $scope.identityProvider = {};
         $scope.identityProvider.config = {};
         $scope.identityProvider.alias = providerFactory.id;
         $scope.identityProvider.providerId = providerFactory.id;
-        $scope.identityProvider.displayName = providerFactory.displayName;
 
         $scope.identityProvider.enabled = true;
         $scope.identityProvider.authenticateByDefault = false;
@@ -915,14 +913,8 @@ module.controller('RealmIdentityProviderCtrl', function($scope, $filter, $upload
 
                 for (var i in $scope.allProviders) {
                     var provider = $scope.allProviders[i];
-
-                    if (provider.groupName == 'Social' && (provider.id == configProvidedId)) {
-                        $scope.allProviders.splice(i, 1);
-                        configuredProviders[j].displayName = provider.name;
-                        break;
-                    } else if (!configuredProviders[j].displayName) {
-                        configuredProviders[j].displayName = configProvidedId;
-                        break;
+                    if (provider.id == configProvidedId) {
+                        configuredProviders[j].provider = provider;
                     }
                 }
             }

@@ -71,8 +71,7 @@ public class AccountFederatedIdentityBean {
                         .queryParam("stateChecker", stateChecker)
                         .build().toString();
 
-                String displayName = KeycloakModelUtils.getIdentityProviderDisplayName(session,
-                        provider.getDisplayName(), provider.getProviderId());
+                String displayName = KeycloakModelUtils.getIdentityProviderDisplayName(session, provider);
                 FederatedIdentityEntry entry = new FederatedIdentityEntry(identity, displayName, provider.getAlias(), provider.getAlias(), actionUrl,
                 		  															provider.getConfig() != null ? provider.getConfig().get("guiOrder") : null);
                 orderedSet.add(entry);

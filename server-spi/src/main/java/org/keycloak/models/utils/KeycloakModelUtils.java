@@ -688,24 +688,18 @@ public final class KeycloakModelUtils {
 
     }
 
-    /**
-     * Retrieve display name based on identity provider type
-     * @param session
-     * @param displayName
-     * @param providerId
-     * @return
-     */
-    public static String getIdentityProviderDisplayName(KeycloakSession session, String displayName, String providerId) {
+    public static String getIdentityProviderDisplayName(KeycloakSession session, IdentityProviderModel provider) {
+        String displayName = provider.getDisplayName();
+        if (displayName != null && !displayName.isEmpty()) {
+            return displayName;
+        }
 
         SocialIdentityProviderFactory providerFactory = (SocialIdentityProviderFactory) session.getKeycloakSessionFactory()
-                .getProviderFactory(SocialIdentityProvider.class, providerId);
-
-        if ((displayName == null || displayName.isEmpty()) && (providerId.contains("saml") || providerId.contains("oidc"))) {
-            return providerId;
-        } else if (providerFactory != null && (displayName == null || displayName.isEmpty())) {
+                .getProviderFactory(SocialIdentityProvider.class, provider.getProviderId());
+        if (providerFactory != null) {
             return providerFactory.getName();
         } else {
-            return displayName;
+            return provider.getAlias();
         }
     }
 

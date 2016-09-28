@@ -82,11 +82,11 @@ public class AccountTest extends TestRealmKeycloakTest {
                                               .build());
         testRealm.addIdentityProvider(IdentityProviderBuilder.create()
                                               .providerId("saml")
-                                              .alias("saml")
+                                              .alias("mysaml")
                                               .build());
         testRealm.addIdentityProvider(IdentityProviderBuilder.create()
                                               .providerId("oidc")
-                                              .alias("oidc")
+                                              .alias("myoidc")
                                               .displayName("MyOIDC")
                                               .build());
 
@@ -809,8 +809,8 @@ public class AccountTest extends TestRealmKeycloakTest {
     public void testIdentityProviderCapitalization(){
         loginPage.open();
         Assert.assertEquals("GitHub", loginPage.findSocialButton("github").getText());
-        Assert.assertEquals("saml", loginPage.findSocialButton("saml").getText());
-        Assert.assertEquals("MyOIDC", loginPage.findSocialButton("oidc").getText());
+        Assert.assertEquals("mysaml", loginPage.findSocialButton("mysaml").getText());
+        Assert.assertEquals("MyOIDC", loginPage.findSocialButton("myoidc").getText());
 
     }
 

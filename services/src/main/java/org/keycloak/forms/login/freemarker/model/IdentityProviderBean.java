@@ -62,8 +62,7 @@ public class IdentityProviderBean {
 
     private void addIdentityProvider(Set<IdentityProvider> orderedSet, RealmModel realm, URI baseURI, IdentityProviderModel identityProvider) {
         String loginUrl = Urls.identityProviderAuthnRequest(baseURI, identityProvider.getAlias(), realm.getName()).toString();
-        String displayName = KeycloakModelUtils.getIdentityProviderDisplayName(session,
-                identityProvider.getDisplayName(), identityProvider.getProviderId());
+        String displayName = KeycloakModelUtils.getIdentityProviderDisplayName(session, identityProvider);
 
         orderedSet.add(new IdentityProvider(identityProvider.getAlias(),
                 displayName, identityProvider.getProviderId(), loginUrl,
