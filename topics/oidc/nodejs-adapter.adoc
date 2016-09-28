@@ -1,7 +1,9 @@
 [[_nodejs_adapter]]
 === Node.js Adapter
 
-{{book.project.name}} provides a Node.js adapter to protect JavaScript apps on the server side. The library can be downloaded directly from https://www.npmjs.com/package/keycloak-connect[ {{book.project.name}} organization] and the source is available at
+{{book.project.name}} provides a Node.js adapter built on top of https://github.com/senchalabs/connect[Connect] to protect server side JavaScript apps — the goal was to be flexible enough to integrate with frameworks like https://expressjs.com/[Express.js].
+
+The library can be downloaded directly from https://www.npmjs.com/package/keycloak-connect[ {{book.project.name}} organization] and the source is available at
 https://github.com/keycloak/keycloak-nodejs-connect[GitHub].
 
 To use the Node.js adapter you must first create a client for your application in the {{book.project.name}} Administration Console. The adapter supports public, confidential and bearer-only access type. Which one to choose depends on the use-case scenario.
@@ -82,7 +84,7 @@ Once instantiated, install the middleware into your connect-capable app:
 
 Simple authentication::
 
-To enforce that a user must be authenticated before accessing a resource,
+To enforce that an user must be authenticated before accessing a resource,
 simply use a no-argument version of `keycloak.protect()`:
 
     app.get( '/complain', keycloak.protect(), complaintHandler );
