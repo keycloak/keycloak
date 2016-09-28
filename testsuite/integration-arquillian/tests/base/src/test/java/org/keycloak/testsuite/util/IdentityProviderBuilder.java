@@ -44,6 +44,11 @@ public class IdentityProviderBuilder {
         return this;
     }
 
+    public IdentityProviderBuilder displayName(String displayName) {
+        rep.setDisplayName(displayName);
+        return this;
+    }
+
     public IdentityProviderRepresentation build() {
         return rep;
     }

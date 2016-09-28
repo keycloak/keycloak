@@ -57,6 +57,8 @@ public class IdentityProviderModel implements Serializable {
 
     private String postBrokerLoginFlowId;
 
+    private String displayName;
+
     /**
      * <p>A map containing the configuration and properties for a specific identity provider instance and implementation. The items
      * in the map are understood by the identity provider implementation.</p>
@@ -70,6 +72,7 @@ public class IdentityProviderModel implements Serializable {
         this.internalId = model.getInternalId();
         this.providerId = model.getProviderId();
         this.alias = model.getAlias();
+        this.displayName = model.getDisplayName();
         this.config = new HashMap<String, String>(model.getConfig());
         this.enabled = model.isEnabled();
         this.trustEmail = model.isTrustEmail();
@@ -168,6 +171,14 @@ public class IdentityProviderModel implements Serializable {
 
     public void setTrustEmail(boolean trustEmail) {
         this.trustEmail = trustEmail;
+    }
+
+    public String getDisplayName() {
+        return displayName;
+    }
+
+    public void setDisplayName(String displayName) {
+        this.displayName = displayName;
     }
     
 }
