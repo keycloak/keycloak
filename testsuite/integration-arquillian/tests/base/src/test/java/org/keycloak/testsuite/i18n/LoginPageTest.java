@@ -23,10 +23,12 @@ import org.jboss.resteasy.client.jaxrs.engines.ApacheHttpClient4Engine;
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.adapters.HttpClientBuilder;
+import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.pages.LoginPage;
 
 import javax.ws.rs.core.Response;
 import org.jboss.arquillian.graphene.page.Page;
+import org.keycloak.testsuite.util.IdentityProviderBuilder;
 
 /**
  * @author <a href="mailto:gerbermichi@me.com">Michael Gerber</a>
@@ -36,6 +38,24 @@ public class LoginPageTest extends AbstractI18NTest {
 
     @Page
     protected LoginPage loginPage;
+
+    @Override
+    public void configureTestRealm(RealmRepresentation testRealm) {
+        testRealm.addIdentityProvider(IdentityProviderBuilder.create()
+                .providerId("github")
+                .alias("github")
+                .build());
+        testRealm.addIdentityProvider(IdentityProviderBuilder.create()
+                .providerId("saml")
+                .alias("mysaml")
+                .build());
+        testRealm.addIdentityProvider(IdentityProviderBuilder.create()
+                .providerId("oidc")
+                .alias("myoidc")
+                .displayName("MyOIDC")
+                .build());
+
+    }
 
     @Test
     public void languageDropdown() {
@@ -86,5 +106,14 @@ public class LoginPageTest extends AbstractI18NTest {
 
         response = client.target(driver.getCurrentUrl()).request().acceptLanguage("en").get();
         Assert.assertTrue(response.readEntity(String.class).contains("Log in to test"));
+    }
+
+    @Test
+    public void testIdentityProviderCapitalization(){
+        loginPage.open();
+        Assert.assertEquals("GitHub", loginPage.findSocialButton("github").getText());
+        Assert.assertEquals("mysaml", loginPage.findSocialButton("mysaml").getText());
+        Assert.assertEquals("MyOIDC", loginPage.findSocialButton("myoidc").getText());
+
     }
 }

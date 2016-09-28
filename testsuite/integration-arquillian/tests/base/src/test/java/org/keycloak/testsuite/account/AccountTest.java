@@ -38,6 +38,7 @@ import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.RegisterPage;
+import org.keycloak.testsuite.util.IdentityProviderBuilder;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 
@@ -74,6 +75,20 @@ public class AccountTest extends TestRealmKeycloakTest {
                                               .email("test-user-no-access@localhost")
                                               .password("password")
                                               .build();
+
+        testRealm.addIdentityProvider(IdentityProviderBuilder.create()
+                                              .providerId("github")
+                                              .alias("github")
+                                              .build());
+        testRealm.addIdentityProvider(IdentityProviderBuilder.create()
+                                              .providerId("saml")
+                                              .alias("mysaml")
+                                              .build());
+        testRealm.addIdentityProvider(IdentityProviderBuilder.create()
+                                              .providerId("oidc")
+                                              .alias("myoidc")
+                                              .displayName("MyOIDC")
+                                              .build());
 
         RealmBuilder.edit(testRealm)
                     .user(user2);
@@ -788,6 +803,15 @@ public class AccountTest extends TestRealmKeycloakTest {
         Assert.assertTrue(changePasswordPage.isCurrent());
 
         events.clear();
+    }
+
+    @Test
+    public void testIdentityProviderCapitalization(){
+        loginPage.open();
+        Assert.assertEquals("GitHub", loginPage.findSocialButton("github").getText());
+        Assert.assertEquals("mysaml", loginPage.findSocialButton("mysaml").getText());
+        Assert.assertEquals("MyOIDC", loginPage.findSocialButton("myoidc").getText());
+
     }
 
 }

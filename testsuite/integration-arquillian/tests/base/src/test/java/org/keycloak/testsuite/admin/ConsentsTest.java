@@ -205,6 +205,7 @@ public class ConsentsTest extends AbstractKeycloakTest {
         IdentityProviderRepresentation identityProviderRepresentation = new IdentityProviderRepresentation();
 
         identityProviderRepresentation.setAlias(alias);
+        identityProviderRepresentation.setDisplayName(providerId);
         identityProviderRepresentation.setProviderId(providerId);
         identityProviderRepresentation.setEnabled(true);
 

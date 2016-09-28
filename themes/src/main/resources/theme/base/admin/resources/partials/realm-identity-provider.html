@@ -54,7 +54,11 @@
                     <tbody>
                     <tr ng-repeat="identityProvider in configuredProviders">
                         <td>
-                            <a href="#/realms/{{realm.realm}}/identity-provider-settings/provider/{{identityProvider.providerId}}/{{identityProvider.alias}}">{{identityProvider.alias}}</a>
+                            <a href="#/realms/{{realm.realm}}/identity-provider-settings/provider/{{identityProvider.providerId}}/{{identityProvider.alias}}">
+                                <span data-ng-show="identityProvider.displayName">{{identityProvider.displayName}}</span>
+                                <span data-ng-show="!identityProvider.displayName && identityProvider.provider.groupName == 'Social'">{{identityProvider.provider.name}}</span>
+                                <span data-ng-show="!identityProvider.displayName && identityProvider.provider.groupName != 'Social'">{{identityProvider.alias}}</span>
+                            </a>
                         </td>
                         <td>{{identityProvider.providerId}}</td>
                         <td translate="{{identityProvider.enabled}}"></td>

@@ -11,7 +11,7 @@
         <#list federatedIdentity.identities as identity>
             <div class="form-group">
                 <div class="col-sm-2 col-md-2">
-                    <label for="${identity.providerId!}" class="control-label">${identity.providerName!}</label>
+                    <label for="${identity.providerId!}" class="control-label">${identity.displayName!}</label>
                 </div>
                 <div class="col-sm-5 col-md-5">
                     <input disabled="true" class="form-control" value="${identity.userName!}">
