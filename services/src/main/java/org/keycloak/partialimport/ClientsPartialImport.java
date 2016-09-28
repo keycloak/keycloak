@@ -17,7 +17,6 @@
 
 package org.keycloak.partialimport;
 
-import java.util.List;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -26,6 +25,8 @@ import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.PartialImportRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
+
+import java.util.List;
 
 /**
  * PartialImport handler for Clients.

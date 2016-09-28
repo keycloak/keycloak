@@ -17,11 +17,6 @@
 
 package org.keycloak.protocol;
 
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriInfo;
-
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.common.ClientConnection;
@@ -35,6 +30,11 @@ import org.keycloak.protocol.LoginProtocol.Error;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.resources.LoginActionsService;
+
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriInfo;
 
 /**
  * Common base class for Authorization REST endpoints implementation, which have to be implemented by each protocol.

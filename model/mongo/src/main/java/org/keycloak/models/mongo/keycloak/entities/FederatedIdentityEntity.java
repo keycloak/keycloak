@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.models.entities;
+package org.keycloak.models.mongo.keycloak.entities;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

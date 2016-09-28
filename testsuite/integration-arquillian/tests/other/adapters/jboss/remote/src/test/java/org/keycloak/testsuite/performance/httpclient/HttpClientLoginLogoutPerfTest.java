@@ -1,15 +1,5 @@
 package org.keycloak.testsuite.performance.httpclient;
 
-import java.io.File;
-import java.io.IOException;
-import static java.net.HttpURLConnection.HTTP_OK;
-import java.net.SocketException;
-import java.net.SocketTimeoutException;
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import org.apache.http.Header;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
@@ -26,19 +16,31 @@ import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Before;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
-import org.keycloak.testsuite.performance.page.AppProfileJEE;
-import static org.keycloak.testsuite.performance.LoginLogoutTestParameters.ACCESS_REQUEST_TIME;
-import static org.keycloak.testsuite.performance.LoginLogoutTestParameters.LOGIN_VERIFY_REQUEST_TIME;
-import static org.keycloak.testsuite.performance.LoginLogoutTestParameters.LOGOUT_VERIFY_REQUEST_TIME;
-import org.keycloak.testsuite.performance.PerformanceTest;
-import org.keycloak.testsuite.performance.OperationTimeoutException;
-import static org.keycloak.testsuite.performance.LoginLogoutTestParameters.LOGIN_REQUEST_TIME;
-import static org.keycloak.testsuite.performance.LoginLogoutTestParameters.LOGOUT_REQUEST_TIME;
-import org.keycloak.testsuite.performance.PerformanceMeasurement;
 import org.keycloak.testsuite.performance.LoginLogoutTestParameters;
+import org.keycloak.testsuite.performance.OperationTimeoutException;
+import org.keycloak.testsuite.performance.PerformanceMeasurement;
+import org.keycloak.testsuite.performance.PerformanceTest;
+import org.keycloak.testsuite.performance.page.AppProfileJEE;
+
+import java.io.File;
+import java.io.IOException;
+import java.net.SocketException;
+import java.net.SocketTimeoutException;
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import static java.net.HttpURLConnection.HTTP_OK;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.keycloak.testsuite.performance.LoginLogoutTestParameters.ACCESS_REQUEST_TIME;
+import static org.keycloak.testsuite.performance.LoginLogoutTestParameters.LOGIN_REQUEST_TIME;
+import static org.keycloak.testsuite.performance.LoginLogoutTestParameters.LOGIN_VERIFY_REQUEST_TIME;
+import static org.keycloak.testsuite.performance.LoginLogoutTestParameters.LOGOUT_REQUEST_TIME;
+import static org.keycloak.testsuite.performance.LoginLogoutTestParameters.LOGOUT_VERIFY_REQUEST_TIME;
 import static org.keycloak.testsuite.performance.LoginLogoutTestParameters.PASSWORD_HASH_ITERATIONS;
 import static org.keycloak.testsuite.util.IOUtil.loadRealm;
 

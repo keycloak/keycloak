@@ -17,8 +17,6 @@
 
 package org.keycloak.examples.federation.properties;
 
-import org.keycloak.models.UserCredentialModel;
-import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.UserModelDelegate;
 

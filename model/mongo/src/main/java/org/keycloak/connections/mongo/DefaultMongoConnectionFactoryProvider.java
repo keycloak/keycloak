@@ -17,14 +17,12 @@
 
 package org.keycloak.connections.mongo;
 
-import java.lang.reflect.Method;
-import java.net.UnknownHostException;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.Map;
-
-import javax.net.ssl.SSLSocketFactory;
-
+import com.mongodb.DB;
+import com.mongodb.MongoClient;
+import com.mongodb.MongoClientOptions;
+import com.mongodb.MongoClientURI;
+import com.mongodb.MongoCredential;
+import com.mongodb.ServerAddress;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.connections.mongo.api.MongoStore;
@@ -39,12 +37,12 @@ import org.keycloak.models.dblock.DBLockProvider;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.provider.ServerInfoAwareProviderFactory;
 
-import com.mongodb.DB;
-import com.mongodb.MongoClient;
-import com.mongodb.MongoClientOptions;
-import com.mongodb.MongoClientURI;
-import com.mongodb.MongoCredential;
-import com.mongodb.ServerAddress;
+import javax.net.ssl.SSLSocketFactory;
+import java.lang.reflect.Method;
+import java.net.UnknownHostException;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

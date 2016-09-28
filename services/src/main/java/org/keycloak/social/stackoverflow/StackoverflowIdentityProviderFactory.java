@@ -17,8 +17,8 @@
 package org.keycloak.social.stackoverflow;
 
 import org.keycloak.broker.provider.AbstractIdentityProviderFactory;
-import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.broker.social.SocialIdentityProviderFactory;
+import org.keycloak.models.IdentityProviderModel;
 
 /**
  * @author Vlastimil Elias (velias at redhat dot com)

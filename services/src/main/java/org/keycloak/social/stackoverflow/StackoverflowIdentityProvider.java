@@ -16,12 +16,6 @@
  */
 package org.keycloak.social.stackoverflow;
 
-import java.io.StringWriter;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLDecoder;
-import java.util.HashMap;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import org.jboss.logging.Logger;
 import org.keycloak.broker.oidc.AbstractOAuth2IdentityProvider;
@@ -31,6 +25,12 @@ import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.broker.social.SocialIdentityProvider;
+
+import java.io.StringWriter;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLDecoder;
+import java.util.HashMap;
 
 /**
  * Stackoverflow social provider. See https://api.stackexchange.com/docs/authentication

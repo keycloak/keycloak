@@ -17,11 +17,6 @@
 
 package org.keycloak.federation.ldap.mappers;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import org.keycloak.federation.ldap.LDAPConfig;
 import org.keycloak.federation.ldap.LDAPFederationProvider;
 import org.keycloak.mappers.FederationConfigValidationException;
@@ -31,6 +26,11 @@ import org.keycloak.models.UserFederationMapperModel;
 import org.keycloak.models.UserFederationProvider;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.provider.ProviderConfigProperty;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

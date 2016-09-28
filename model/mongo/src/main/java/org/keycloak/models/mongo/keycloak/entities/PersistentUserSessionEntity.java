@@ -15,20 +15,28 @@
  * limitations under the License.
  */
 
-package org.keycloak.models.entities;
+package org.keycloak.models.mongo.keycloak.entities;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class UserConsentEntity extends AbstractIdentifiableEntity {
+public class PersistentUserSessionEntity extends AbstractIdentifiableEntity {
 
+    private String realmId;
     private String userId;
-    private String clientId;
-    private List<String> grantedRoles = new ArrayList<String>();
-    private List<String> grantedProtocolMappers = new ArrayList<String>();
+    private int lastSessionRefresh;
+    private String data;
+    private List<PersistentClientSessionEntity> clientSessions;
+
+    public String getRealmId() {
+        return realmId;
+    }
+
+    public void setRealmId(String realmId) {
+        this.realmId = realmId;
+    }
 
     public String getUserId() {
         return userId;
@@ -38,27 +46,27 @@ public class UserConsentEntity extends AbstractIdentifiableEntity {
         this.userId = userId;
     }
 
-    public String getClientId() {
-        return clientId;
+    public int getLastSessionRefresh() {
+        return lastSessionRefresh;
     }
 
-    public void setClientId(String clientId) {
-        this.clientId = clientId;
+    public void setLastSessionRefresh(int lastSessionRefresh) {
+        this.lastSessionRefresh = lastSessionRefresh;
     }
 
-    public List<String> getGrantedRoles() {
-        return grantedRoles;
+    public String getData() {
+        return data;
     }
 
-    public void setGrantedRoles(List<String> grantedRoles) {
-        this.grantedRoles = grantedRoles;
+    public void setData(String data) {
+        this.data = data;
     }
 
-    public List<String> getGrantedProtocolMappers() {
-        return grantedProtocolMappers;
+    public List<PersistentClientSessionEntity> getClientSessions() {
+        return clientSessions;
     }
 
-    public void setGrantedProtocolMappers(List<String> grantedProtocolMappers) {
-        this.grantedProtocolMappers = grantedProtocolMappers;
+    public void setClientSessions(List<PersistentClientSessionEntity> clientSessions) {
+        this.clientSessions = clientSessions;
     }
 }

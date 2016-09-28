@@ -15,23 +15,29 @@
  * limitations under the License.
  */
 
-package org.keycloak.models.entities;
+package org.keycloak.models.mongo.keycloak.entities;
 
-import org.keycloak.common.util.MultivaluedHashMap;
-
-import java.util.List;
 import java.util.Map;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class ComponentEntity extends AbstractIdentifiableEntity {
+public class RequiredActionProviderEntity extends AbstractIdentifiableEntity {
+    protected String alias;
     protected String name;
-    protected String providerType;
     protected String providerId;
-    protected String parentId;
-    protected Map<String, List<String>> config = new MultivaluedHashMap<>();
+    protected boolean enabled;
+    protected boolean defaultAction;
+    private Map<String, String> config;
+
+    public String getAlias() {
+        return alias;
+    }
+
+    public void setAlias(String alias) {
+        this.alias = alias;
+    }
 
     public String getName() {
         return name;
@@ -41,12 +47,20 @@ public class ComponentEntity extends AbstractIdentifiableEntity {
         this.name = name;
     }
 
-    public String getProviderType() {
-        return providerType;
+    public boolean isEnabled() {
+        return enabled;
     }
 
-    public void setProviderType(String providerType) {
-        this.providerType = providerType;
+    public boolean isDefaultAction() {
+        return defaultAction;
+    }
+
+    public void setDefaultAction(boolean defaultAction) {
+        this.defaultAction = defaultAction;
+    }
+
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
     }
 
     public String getProviderId() {
@@ -57,19 +71,11 @@ public class ComponentEntity extends AbstractIdentifiableEntity {
         this.providerId = providerId;
     }
 
-    public String getParentId() {
-        return parentId;
-    }
-
-    public void setParentId(String parentId) {
-        this.parentId = parentId;
-    }
-
-    public Map<String, List<String>> getConfig() {
+    public Map<String, String> getConfig() {
         return config;
     }
 
-    public void setConfig(Map<String, List<String>> config) {
+    public void setConfig(Map<String, String> config) {
         this.config = config;
     }
 }

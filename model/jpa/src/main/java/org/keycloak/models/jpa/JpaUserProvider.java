@@ -19,7 +19,6 @@ package org.keycloak.models.jpa;
 
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
-import org.keycloak.credential.CredentialInput;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.credential.UserCredentialStore;
 import org.keycloak.models.ClientModel;
@@ -46,7 +45,6 @@ import org.keycloak.models.jpa.entities.UserConsentEntity;
 import org.keycloak.models.jpa.entities.UserConsentProtocolMapperEntity;
 import org.keycloak.models.jpa.entities.UserConsentRoleEntity;
 import org.keycloak.models.jpa.entities.UserEntity;
-import org.keycloak.models.utils.CredentialValidation;
 import org.keycloak.models.utils.DefaultRoles;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
@@ -54,7 +52,6 @@ import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;

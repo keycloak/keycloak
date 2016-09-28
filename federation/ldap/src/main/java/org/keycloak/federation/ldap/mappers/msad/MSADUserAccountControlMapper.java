@@ -17,13 +17,6 @@
 
 package org.keycloak.federation.ldap.mappers.msad;
 
-import java.util.HashSet;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import javax.naming.AuthenticationException;
-
 import org.jboss.logging.Logger;
 import org.keycloak.credential.CredentialInput;
 import org.keycloak.federation.ldap.LDAPFederationProvider;
@@ -34,11 +27,16 @@ import org.keycloak.federation.ldap.mappers.PasswordUpdated;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserFederationMapperModel;
 import org.keycloak.models.UserFederationProvider;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.UserModelDelegate;
+
+import javax.naming.AuthenticationException;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Mapper specific to MSAD. It's able to read the userAccountControl and pwdLastSet attributes and set actions in Keycloak based on that.

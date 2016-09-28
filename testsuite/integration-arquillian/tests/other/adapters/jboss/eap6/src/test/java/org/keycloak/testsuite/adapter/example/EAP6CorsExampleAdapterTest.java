@@ -1,7 +1,7 @@
 package org.keycloak.testsuite.adapter.example;
 
-import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 import org.junit.Ignore;
+import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 
 /**
  * @author fkiss

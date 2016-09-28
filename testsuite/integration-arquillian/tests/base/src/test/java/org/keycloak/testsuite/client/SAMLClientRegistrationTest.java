@@ -25,12 +25,11 @@ import org.keycloak.client.registration.ClientRegistrationException;
 import org.keycloak.representations.idm.ClientInitialAccessCreatePresentation;
 import org.keycloak.representations.idm.ClientInitialAccessPresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.representations.oidc.OIDCClientRepresentation;
 
 import java.io.IOException;
-import java.util.Collections;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

@@ -17,8 +17,7 @@
 
 package org.keycloak.social.microsoft;
 
-import java.net.URLEncoder;
-
+import com.fasterxml.jackson.databind.JsonNode;
 import org.jboss.logging.Logger;
 import org.keycloak.broker.oidc.AbstractOAuth2IdentityProvider;
 import org.keycloak.broker.oidc.OAuth2IdentityProviderConfig;
@@ -29,7 +28,7 @@ import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.broker.social.SocialIdentityProvider;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import java.net.URLEncoder;
 
 /**
  * 

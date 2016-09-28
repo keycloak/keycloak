@@ -24,21 +24,20 @@ import org.keycloak.admin.client.resource.RoleResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
+import javax.ws.rs.core.Response.StatusType;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import javax.ws.rs.core.Response.Status;
-import javax.ws.rs.core.Response.StatusType;
 
 import static org.keycloak.representations.idm.CredentialRepresentation.PASSWORD;
-
-import org.keycloak.representations.idm.GroupRepresentation;
 
 /**
  * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.

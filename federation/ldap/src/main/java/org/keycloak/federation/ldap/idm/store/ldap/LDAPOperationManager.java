@@ -17,17 +17,11 @@
 
 package org.keycloak.federation.ldap.idm.store.ldap;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Hashtable;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
+import org.jboss.logging.Logger;
+import org.keycloak.federation.ldap.LDAPConfig;
+import org.keycloak.federation.ldap.idm.query.internal.LDAPQuery;
+import org.keycloak.models.LDAPConstants;
+import org.keycloak.models.ModelException;
 
 import javax.naming.AuthenticationException;
 import javax.naming.Binding;
@@ -46,12 +40,17 @@ import javax.naming.ldap.InitialLdapContext;
 import javax.naming.ldap.LdapContext;
 import javax.naming.ldap.PagedResultsControl;
 import javax.naming.ldap.PagedResultsResponseControl;
-
-import org.jboss.logging.Logger;
-import org.keycloak.federation.ldap.LDAPConfig;
-import org.keycloak.federation.ldap.idm.query.internal.LDAPQuery;
-import org.keycloak.models.LDAPConstants;
-import org.keycloak.models.ModelException;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Hashtable;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
 
 /**
  * <p>This class provides a set of operations to manage LDAP trees.</p>

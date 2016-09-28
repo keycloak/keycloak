@@ -17,11 +17,6 @@
 
 package org.keycloak.protocol.oidc.endpoints.request;
 
-import java.security.PublicKey;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-
 import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
 import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.jose.jws.JWSHeader;
@@ -31,6 +26,11 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.services.util.CertificateInfoHelper;
 import org.keycloak.util.JsonSerialization;
+
+import java.security.PublicKey;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Parse the parameters from OIDC "request" object

@@ -1,6 +1,5 @@
 package org.keycloak.authorization.entitlement.representation;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import org.keycloak.authorization.protection.permission.representation.PermissionRequest;
 
 import java.util.ArrayList;

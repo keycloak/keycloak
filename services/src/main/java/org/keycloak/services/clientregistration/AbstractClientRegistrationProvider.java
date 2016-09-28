@@ -19,7 +19,11 @@ package org.keycloak.services.clientregistration;
 
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
-import org.keycloak.models.*;
+import org.keycloak.models.ClientInitialAccessModel;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientRegistrationTrustedHostModel;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.idm.ClientRepresentation;

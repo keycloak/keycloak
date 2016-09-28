@@ -38,9 +38,18 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.keycloak.testsuite.arquillian.AppServerTestEnricher.*;
+import static org.keycloak.testsuite.arquillian.AppServerTestEnricher.hasAppServerContainerAnnotation;
+import static org.keycloak.testsuite.arquillian.AppServerTestEnricher.isRelative;
+import static org.keycloak.testsuite.arquillian.AppServerTestEnricher.isTomcatAppServer;
 import static org.keycloak.testsuite.arquillian.AuthServerTestEnricher.getAuthServerContextRoot;
-import static org.keycloak.testsuite.util.IOUtil.*;
+import static org.keycloak.testsuite.util.IOUtil.appendChildInDocument;
+import static org.keycloak.testsuite.util.IOUtil.documentToString;
+import static org.keycloak.testsuite.util.IOUtil.getElementTextContent;
+import static org.keycloak.testsuite.util.IOUtil.loadJson;
+import static org.keycloak.testsuite.util.IOUtil.loadXML;
+import static org.keycloak.testsuite.util.IOUtil.modifyDocElementAttribute;
+import static org.keycloak.testsuite.util.IOUtil.modifyDocElementValue;
+import static org.keycloak.testsuite.util.IOUtil.removeElementFromDoc;
 
 ;
 

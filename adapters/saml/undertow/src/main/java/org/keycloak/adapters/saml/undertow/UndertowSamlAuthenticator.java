@@ -19,14 +19,13 @@ package org.keycloak.adapters.saml.undertow;
 
 import io.undertow.security.api.SecurityContext;
 import io.undertow.security.idm.Account;
-import org.keycloak.adapters.saml.profile.SamlAuthenticationHandler;
-import org.keycloak.adapters.saml.profile.webbrowsersso.BrowserHandler;
-import org.keycloak.adapters.saml.profile.webbrowsersso.SamlEndpoint;
-import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.adapters.saml.SamlAuthenticator;
 import org.keycloak.adapters.saml.SamlDeployment;
 import org.keycloak.adapters.saml.SamlSession;
 import org.keycloak.adapters.saml.SamlSessionStore;
+import org.keycloak.adapters.saml.profile.SamlAuthenticationHandler;
+import org.keycloak.adapters.saml.profile.webbrowsersso.BrowserHandler;
+import org.keycloak.adapters.spi.HttpFacade;
 
 import java.security.Principal;
 import java.util.Set;

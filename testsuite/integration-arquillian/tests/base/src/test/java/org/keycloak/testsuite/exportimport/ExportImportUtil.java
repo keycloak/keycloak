@@ -17,15 +17,6 @@
 
 package org.keycloak.testsuite.exportimport;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.function.Predicate;
-
 import org.junit.Assert;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.AuthorizationResource;
@@ -61,6 +52,15 @@ import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.util.RealmRepUtil;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Predicate;
 
 /**
  *

@@ -22,6 +22,7 @@ import org.jboss.resteasy.plugins.providers.multipart.InputPart;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 import org.jboss.resteasy.spi.NotAcceptableException;
 import org.jboss.resteasy.spi.NotFoundException;
+import org.keycloak.common.util.PemUtils;
 import org.keycloak.common.util.StreamUtil;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
@@ -35,7 +36,6 @@ import org.keycloak.protocol.oidc.utils.JWKSUtils;
 import org.keycloak.representations.KeyStoreConfig;
 import org.keycloak.representations.idm.CertificateRepresentation;
 import org.keycloak.services.ErrorResponseException;
-import org.keycloak.common.util.PemUtils;
 import org.keycloak.services.util.CertificateInfoHelper;
 import org.keycloak.util.JsonSerialization;
 
@@ -48,7 +48,6 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
-
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;

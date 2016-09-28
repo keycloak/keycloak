@@ -17,13 +17,6 @@
 
 package org.keycloak.federation.ldap.mappers.membership;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
-
 import org.keycloak.federation.ldap.LDAPConfig;
 import org.keycloak.federation.ldap.LDAPFederationProvider;
 import org.keycloak.federation.ldap.LDAPUtils;
@@ -35,6 +28,13 @@ import org.keycloak.federation.ldap.idm.query.internal.LDAPQueryConditionsBuilde
 import org.keycloak.federation.ldap.mappers.membership.group.GroupLDAPFederationMapper;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

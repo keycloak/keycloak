@@ -18,9 +18,9 @@
 package org.keycloak.jose.jws.crypto;
 
 
+import org.keycloak.common.util.Base64Url;
 import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.jose.jws.JWSInput;
-import org.keycloak.common.util.Base64Url;
 
 import javax.crypto.Mac;
 import javax.crypto.SecretKey;

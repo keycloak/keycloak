@@ -18,8 +18,8 @@ package org.keycloak.social.linkedin;
 
 import org.keycloak.broker.oidc.OAuth2IdentityProviderConfig;
 import org.keycloak.broker.provider.AbstractIdentityProviderFactory;
-import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.broker.social.SocialIdentityProviderFactory;
+import org.keycloak.models.IdentityProviderModel;
 
 /**
  * @author Vlastimil Elias (velias at redhat dot com)

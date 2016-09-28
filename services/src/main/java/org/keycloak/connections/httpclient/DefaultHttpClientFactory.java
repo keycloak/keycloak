@@ -27,11 +27,11 @@ import org.apache.http.entity.ContentType;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
-import org.keycloak.truststore.TruststoreProvider;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.common.util.EnvUtil;
 import org.keycloak.common.util.KeystoreUtil;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.truststore.TruststoreProvider;
 
 import java.io.IOException;
 import java.io.InputStream;

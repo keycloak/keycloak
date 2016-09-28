@@ -20,8 +20,6 @@ package org.keycloak.models.cache.infinispan;
 import org.infinispan.Cache;
 import org.infinispan.notifications.Listener;
 import org.jboss.logging.Logger;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.cache.infinispan.entities.CachedUser;
 import org.keycloak.models.cache.infinispan.entities.Revisioned;
 import org.keycloak.models.cache.infinispan.stream.InRealmPredicate;
 

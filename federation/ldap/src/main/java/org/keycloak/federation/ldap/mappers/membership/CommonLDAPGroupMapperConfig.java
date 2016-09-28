@@ -17,12 +17,12 @@
 
 package org.keycloak.federation.ldap.mappers.membership;
 
-import java.util.HashSet;
-import java.util.Set;
-
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.UserFederationMapperModel;
+
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

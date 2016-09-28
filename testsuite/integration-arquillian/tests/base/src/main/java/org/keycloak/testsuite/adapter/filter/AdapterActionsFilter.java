@@ -18,8 +18,11 @@
 package org.keycloak.testsuite.adapter.filter;
 
 
-import java.io.IOException;
-import java.io.PrintWriter;
+import org.jboss.logging.Logger;
+import org.keycloak.adapters.AdapterDeploymentContext;
+import org.keycloak.adapters.KeycloakDeployment;
+import org.keycloak.adapters.rotation.JWKPublicKeyLocator;
+import org.keycloak.common.util.Time;
 
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
@@ -29,12 +32,8 @@ import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
-import org.jboss.logging.Logger;
-import org.keycloak.adapters.AdapterDeploymentContext;
-import org.keycloak.adapters.KeycloakDeployment;
-import org.keycloak.adapters.rotation.JWKPublicKeyLocator;
-import org.keycloak.common.util.Time;
+import java.io.IOException;
+import java.io.PrintWriter;
 
 /**
  * Filter to handle "special" requests to perform actions on adapter side (for example setting time offset )

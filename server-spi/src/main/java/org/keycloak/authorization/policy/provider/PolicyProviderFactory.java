@@ -21,7 +21,6 @@ package org.keycloak.authorization.policy.provider;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.ResourceServer;
-import org.keycloak.provider.ProviderEvent;
 import org.keycloak.provider.ProviderFactory;
 
 /**

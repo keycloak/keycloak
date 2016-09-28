@@ -21,21 +21,22 @@
  */
 package org.keycloak.testsuite.console.clients;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Test;
-
-import static org.junit.Assert.*;
 import org.junit.Before;
+import org.junit.Test;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
-import static org.keycloak.testsuite.auth.page.login.Login.OIDC;
-import static org.keycloak.testsuite.console.clients.AbstractClientTest.createClientRep;
 import org.keycloak.testsuite.console.page.clients.mappers.ClientMapper;
 import org.keycloak.testsuite.console.page.clients.mappers.ClientMappers;
 import org.keycloak.testsuite.console.page.clients.mappers.CreateClientMappers;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import static org.junit.Assert.*;
+import static org.keycloak.testsuite.auth.page.login.Login.OIDC;
+import static org.keycloak.testsuite.console.clients.AbstractClientTest.createClientRep;
 import static org.keycloak.testsuite.console.page.clients.mappers.CreateClientMappersForm.*;
 
 /**

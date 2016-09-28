@@ -18,6 +18,7 @@
 package org.keycloak.saml;
 
 import org.jboss.logging.Logger;
+import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.saml.common.constants.GeneralConstants;
 import org.keycloak.saml.common.constants.JBossSAMLConstants;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
@@ -28,7 +29,6 @@ import org.keycloak.saml.processing.core.saml.v2.util.DocumentUtil;
 import org.keycloak.saml.processing.core.util.XMLEncryptionUtil;
 import org.keycloak.saml.processing.web.util.PostBindingUtil;
 import org.keycloak.saml.processing.web.util.RedirectBindingUtil;
-import org.keycloak.common.util.KeycloakUriBuilder;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -45,8 +45,8 @@ import java.security.PublicKey;
 import java.security.Signature;
 import java.security.cert.X509Certificate;
 
-import static org.keycloak.saml.common.util.StringUtil.isNotNull;
 import static org.keycloak.common.util.HtmlUtils.escapeAttribute;
+import static org.keycloak.saml.common.util.StringUtil.isNotNull;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

@@ -16,34 +16,43 @@
  */
 package org.keycloak.testsuite.forms;
 
-import org.junit.*;
+import org.jboss.arquillian.graphene.page.Page;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
+import org.keycloak.representations.idm.EventRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AssertEvents;
-//import org.keycloak.testsuite.Constants;
-import org.keycloak.testsuite.util.MailUtils;
-import org.keycloak.testsuite.pages.*;
+import org.keycloak.testsuite.TestRealmKeycloakTest;
+import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
+import org.keycloak.testsuite.pages.ErrorPage;
+import org.keycloak.testsuite.pages.InfoPage;
+import org.keycloak.testsuite.pages.LoginPage;
+import org.keycloak.testsuite.pages.LoginPasswordResetPage;
+import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
+import org.keycloak.testsuite.pages.VerifyEmailPage;
+import org.keycloak.testsuite.util.GreenMailRule;
+import org.keycloak.testsuite.util.MailUtils;
+import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.UserBuilder;
 
 import javax.mail.MessagingException;
 import javax.mail.Multipart;
 import javax.mail.internet.MimeMessage;
-
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.jboss.arquillian.graphene.page.Page;
-import org.keycloak.representations.idm.EventRepresentation;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.TestRealmKeycloakTest;
-import org.keycloak.testsuite.util.GreenMailRule;
-import org.keycloak.testsuite.util.OAuthClient;
-import org.keycloak.testsuite.util.UserBuilder;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
+//import org.keycloak.testsuite.Constants;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

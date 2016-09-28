@@ -17,13 +17,13 @@
 
 package org.keycloak.connections.mongo.impl.types;
 
-import java.util.HashSet;
-import java.util.Set;
-
 import com.mongodb.BasicDBList;
 import org.keycloak.connections.mongo.api.types.Mapper;
 import org.keycloak.connections.mongo.api.types.MapperContext;
 import org.keycloak.connections.mongo.api.types.MapperRegistry;
+
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

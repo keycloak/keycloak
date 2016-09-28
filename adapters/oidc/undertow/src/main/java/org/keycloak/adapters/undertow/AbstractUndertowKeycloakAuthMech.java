@@ -27,12 +27,12 @@ import io.undertow.util.StatusCodes;
 import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.adapters.AdapterDeploymentContext;
 import org.keycloak.adapters.AdapterTokenStore;
-import org.keycloak.adapters.spi.AuthChallenge;
-import org.keycloak.adapters.spi.AuthOutcome;
-import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
 import org.keycloak.adapters.RequestAuthenticator;
+import org.keycloak.adapters.spi.AuthChallenge;
+import org.keycloak.adapters.spi.AuthOutcome;
+import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.enums.TokenStore;
 
 /**

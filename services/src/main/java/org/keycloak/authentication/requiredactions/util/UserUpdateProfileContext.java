@@ -17,11 +17,11 @@
 
 package org.keycloak.authentication.requiredactions.util;
 
-import java.util.List;
-import java.util.Map;
-
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

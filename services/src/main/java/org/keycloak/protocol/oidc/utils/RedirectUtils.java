@@ -20,8 +20,8 @@ package org.keycloak.protocol.oidc.utils;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.RealmModel;
-import org.keycloak.services.Urls;
 import org.keycloak.services.ServicesLogger;
+import org.keycloak.services.Urls;
 
 import javax.ws.rs.core.UriInfo;
 import java.net.URI;

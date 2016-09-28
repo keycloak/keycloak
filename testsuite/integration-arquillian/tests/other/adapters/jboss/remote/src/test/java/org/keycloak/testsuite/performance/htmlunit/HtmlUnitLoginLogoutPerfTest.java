@@ -1,8 +1,5 @@
 package org.keycloak.testsuite.performance.htmlunit;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.List;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.logging.Logger;
@@ -11,19 +8,24 @@ import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Before;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
+import org.keycloak.testsuite.performance.LoginLogoutTestParameters;
+import org.keycloak.testsuite.performance.OperationTimeoutException;
+import org.keycloak.testsuite.performance.PerformanceMeasurement;
+import org.keycloak.testsuite.performance.PerformanceTest;
 import org.keycloak.testsuite.performance.page.AppProfileJEE;
 import org.openqa.selenium.By;
-import static org.keycloak.testsuite.performance.LoginLogoutTestParameters.LOGIN_REQUEST_TIME;
-import static org.keycloak.testsuite.performance.LoginLogoutTestParameters.LOGOUT_REQUEST_TIME;
-import static org.keycloak.testsuite.performance.LoginLogoutTestParameters.ACCESS_REQUEST_TIME;
-import static org.keycloak.testsuite.performance.LoginLogoutTestParameters.LOGIN_VERIFY_REQUEST_TIME;
-import static org.keycloak.testsuite.performance.LoginLogoutTestParameters.LOGOUT_VERIFY_REQUEST_TIME;
-import org.keycloak.testsuite.performance.PerformanceTest;
-import org.keycloak.testsuite.performance.OperationTimeoutException;
 import org.openqa.selenium.TimeoutException;
-import org.keycloak.testsuite.performance.PerformanceMeasurement;
-import org.keycloak.testsuite.performance.LoginLogoutTestParameters;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.List;
+
 import static org.junit.Assert.assertTrue;
+import static org.keycloak.testsuite.performance.LoginLogoutTestParameters.ACCESS_REQUEST_TIME;
+import static org.keycloak.testsuite.performance.LoginLogoutTestParameters.LOGIN_REQUEST_TIME;
+import static org.keycloak.testsuite.performance.LoginLogoutTestParameters.LOGIN_VERIFY_REQUEST_TIME;
+import static org.keycloak.testsuite.performance.LoginLogoutTestParameters.LOGOUT_REQUEST_TIME;
+import static org.keycloak.testsuite.performance.LoginLogoutTestParameters.LOGOUT_VERIFY_REQUEST_TIME;
 import static org.keycloak.testsuite.performance.LoginLogoutTestParameters.PASSWORD_HASH_ITERATIONS;
 import static org.keycloak.testsuite.util.IOUtil.loadRealm;
 

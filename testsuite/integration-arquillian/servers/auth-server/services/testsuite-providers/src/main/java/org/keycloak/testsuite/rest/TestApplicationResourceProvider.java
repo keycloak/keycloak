@@ -27,7 +27,6 @@ import org.keycloak.representations.adapters.action.PushNotBeforeAction;
 import org.keycloak.representations.adapters.action.TestAvailabilityAction;
 import org.keycloak.services.resource.RealmResourceProvider;
 import org.keycloak.services.resources.RealmsResource;
-import org.keycloak.testsuite.rest.resource.TestingExportImportResource;
 import org.keycloak.testsuite.rest.resource.TestingOIDCEndpointsApplicationResource;
 
 import javax.ws.rs.Consumes;
@@ -40,7 +39,6 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
-
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 

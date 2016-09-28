@@ -21,13 +21,13 @@ import org.eclipse.jetty.server.Request;
 import org.jboss.logging.Logger;
 import org.keycloak.KeycloakPrincipal;
 import org.keycloak.KeycloakSecurityContext;
-import org.keycloak.adapters.spi.AdapterSessionStore;
 import org.keycloak.adapters.AdapterTokenStore;
 import org.keycloak.adapters.AdapterUtils;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.OidcKeycloakAccount;
 import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
 import org.keycloak.adapters.RequestAuthenticator;
+import org.keycloak.adapters.spi.AdapterSessionStore;
 
 import javax.servlet.http.HttpSession;
 

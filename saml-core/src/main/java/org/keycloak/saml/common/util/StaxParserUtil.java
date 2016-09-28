@@ -16,6 +16,7 @@
  */
 package org.keycloak.saml.common.util;
 
+import org.keycloak.saml.common.ErrorCodes;
 import org.keycloak.saml.common.PicketLinkLogger;
 import org.keycloak.saml.common.PicketLinkLoggerFactory;
 import org.keycloak.saml.common.constants.GeneralConstants;
@@ -23,7 +24,6 @@ import org.keycloak.saml.common.constants.JBossSAMLConstants;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.common.exceptions.ConfigurationException;
 import org.keycloak.saml.common.exceptions.ParsingException;
-import org.keycloak.saml.common.ErrorCodes;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 

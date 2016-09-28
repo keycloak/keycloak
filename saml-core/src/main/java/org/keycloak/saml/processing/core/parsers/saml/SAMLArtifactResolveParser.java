@@ -16,13 +16,13 @@
  */
 package org.keycloak.saml.processing.core.parsers.saml;
 
+import org.keycloak.dom.saml.v2.protocol.ArtifactResolveType;
 import org.keycloak.saml.common.ErrorCodes;
 import org.keycloak.saml.common.constants.JBossSAMLConstants;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.saml.common.parsers.ParserNamespaceSupport;
 import org.keycloak.saml.common.util.StaxParserUtil;
-import org.keycloak.dom.saml.v2.protocol.ArtifactResolveType;
 
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLEventReader;

@@ -16,16 +16,6 @@
  */
 package org.keycloak.saml.processing.core.parsers.util;
 
-import org.keycloak.saml.common.PicketLinkLogger;
-import org.keycloak.saml.common.PicketLinkLoggerFactory;
-import org.keycloak.saml.common.constants.JBossSAMLConstants;
-import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
-import org.keycloak.saml.common.constants.WSTrustConstants;
-import org.keycloak.saml.common.exceptions.ParsingException;
-import org.keycloak.saml.common.util.StaxParserUtil;
-import org.keycloak.saml.common.util.StringUtil;
-import org.keycloak.saml.processing.core.saml.v2.util.SignatureUtil;
-import org.keycloak.saml.processing.core.saml.v2.util.XMLTimeUtil;
 import org.keycloak.dom.saml.v2.assertion.AttributeStatementType;
 import org.keycloak.dom.saml.v2.assertion.AttributeStatementType.ASTChoiceType;
 import org.keycloak.dom.saml.v2.assertion.AttributeType;
@@ -42,12 +32,17 @@ import org.keycloak.dom.xmlsec.w3.xmldsig.KeyValueType;
 import org.keycloak.dom.xmlsec.w3.xmldsig.RSAKeyValueType;
 import org.keycloak.dom.xmlsec.w3.xmldsig.X509CertificateType;
 import org.keycloak.dom.xmlsec.w3.xmldsig.X509DataType;
+import org.keycloak.saml.common.PicketLinkLogger;
+import org.keycloak.saml.common.PicketLinkLoggerFactory;
+import org.keycloak.saml.common.constants.JBossSAMLConstants;
+import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
+import org.keycloak.saml.common.constants.WSTrustConstants;
+import org.keycloak.saml.common.exceptions.ParsingException;
+import org.keycloak.saml.common.util.StaxParserUtil;
+import org.keycloak.saml.common.util.StringUtil;
+import org.keycloak.saml.processing.core.saml.v2.util.SignatureUtil;
+import org.keycloak.saml.processing.core.saml.v2.util.XMLTimeUtil;
 import org.w3c.dom.Element;
-
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.StringTokenizer;
 
 import javax.xml.datatype.XMLGregorianCalendar;
 import javax.xml.namespace.QName;
@@ -56,6 +51,10 @@ import javax.xml.stream.events.Attribute;
 import javax.xml.stream.events.EndElement;
 import javax.xml.stream.events.StartElement;
 import javax.xml.stream.events.XMLEvent;
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.StringTokenizer;
 
 /**
  * Utility methods for SAML Parser

@@ -17,7 +17,6 @@
 
 package org.keycloak.partialimport;
 
-import java.util.List;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -25,6 +24,8 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.PartialImportRepresentation;
+
+import java.util.List;
 
 /**
  * PartialImport handler for Identitiy Providers.

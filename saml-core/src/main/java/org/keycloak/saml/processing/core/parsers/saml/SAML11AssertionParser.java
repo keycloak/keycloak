@@ -16,6 +16,13 @@
  */
 package org.keycloak.saml.processing.core.parsers.saml;
 
+import org.keycloak.dom.saml.v1.assertion.SAML11AssertionType;
+import org.keycloak.dom.saml.v1.assertion.SAML11AttributeStatementType;
+import org.keycloak.dom.saml.v1.assertion.SAML11AuthenticationStatementType;
+import org.keycloak.dom.saml.v1.assertion.SAML11AuthorizationDecisionStatementType;
+import org.keycloak.dom.saml.v1.assertion.SAML11ConditionsType;
+import org.keycloak.dom.saml.v1.assertion.SAML11SubjectStatementType;
+import org.keycloak.dom.saml.v1.assertion.SAML11SubjectType;
 import org.keycloak.saml.common.PicketLinkLogger;
 import org.keycloak.saml.common.PicketLinkLoggerFactory;
 import org.keycloak.saml.common.constants.JBossSAMLConstants;
@@ -30,13 +37,6 @@ import org.keycloak.saml.common.util.StringUtil;
 import org.keycloak.saml.processing.core.parsers.util.SAML11ParserUtil;
 import org.keycloak.saml.processing.core.saml.v1.SAML11Constants;
 import org.keycloak.saml.processing.core.saml.v2.util.XMLTimeUtil;
-import org.keycloak.dom.saml.v1.assertion.SAML11AssertionType;
-import org.keycloak.dom.saml.v1.assertion.SAML11AttributeStatementType;
-import org.keycloak.dom.saml.v1.assertion.SAML11AuthenticationStatementType;
-import org.keycloak.dom.saml.v1.assertion.SAML11AuthorizationDecisionStatementType;
-import org.keycloak.dom.saml.v1.assertion.SAML11ConditionsType;
-import org.keycloak.dom.saml.v1.assertion.SAML11SubjectStatementType;
-import org.keycloak.dom.saml.v1.assertion.SAML11SubjectType;
 import org.w3c.dom.Element;
 
 import javax.xml.datatype.XMLGregorianCalendar;

@@ -11,7 +11,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.keycloak.testsuite.broker.BrokerTestConstants.*;
+import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_SAML_ALIAS;
+import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_SAML_PROVIDER_ID;
+import static org.keycloak.testsuite.broker.BrokerTestConstants.REALM_CONS_NAME;
+import static org.keycloak.testsuite.broker.BrokerTestConstants.REALM_PROV_NAME;
+import static org.keycloak.testsuite.broker.BrokerTestConstants.USER_EMAIL;
+import static org.keycloak.testsuite.broker.BrokerTestConstants.USER_LOGIN;
+import static org.keycloak.testsuite.broker.BrokerTestConstants.USER_PASSWORD;
 
 @Ignore
 public class KcSamlBrokerTest extends AbstractBrokerTest {

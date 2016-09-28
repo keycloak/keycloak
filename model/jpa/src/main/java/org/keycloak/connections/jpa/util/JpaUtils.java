@@ -21,8 +21,6 @@ import org.hibernate.boot.registry.classloading.internal.ClassLoaderServiceImpl;
 import org.hibernate.jpa.boot.internal.ParsedPersistenceXmlDescriptor;
 import org.hibernate.jpa.boot.internal.PersistenceXmlParser;
 import org.hibernate.jpa.boot.spi.Bootstrap;
-import org.jboss.logging.Logger;
-import org.keycloak.connections.jpa.DefaultJpaConnectionProviderFactory;
 import org.keycloak.connections.jpa.entityprovider.JpaEntityProvider;
 import org.keycloak.connections.jpa.entityprovider.ProxyClassLoader;
 import org.keycloak.models.KeycloakSession;
@@ -30,7 +28,6 @@ import org.keycloak.models.KeycloakSession;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.spi.PersistenceUnitTransactionType;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;

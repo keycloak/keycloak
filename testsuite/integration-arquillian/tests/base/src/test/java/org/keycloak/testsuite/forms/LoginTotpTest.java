@@ -16,26 +16,26 @@
  */
 package org.keycloak.testsuite.forms;
 
+import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.events.Details;
 import org.keycloak.models.utils.TimeBasedOTP;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.TestRealmKeycloakTest;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginTotpPage;
-
-import java.net.MalformedURLException;
-import org.jboss.arquillian.graphene.page.Page;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.TestRealmKeycloakTest;
 import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.RealmRepUtil;
 import org.keycloak.testsuite.util.UserBuilder;
+
+import java.net.MalformedURLException;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

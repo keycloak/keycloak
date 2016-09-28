@@ -23,11 +23,11 @@ import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ReloadRequiredRemoveStepHandler;
 import org.jboss.as.controller.operations.common.Util;
+import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.dmr.ModelNode;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEPLOYMENT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REMOVE;
-import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 
 /**
  * Remove an auth-server from a realm.

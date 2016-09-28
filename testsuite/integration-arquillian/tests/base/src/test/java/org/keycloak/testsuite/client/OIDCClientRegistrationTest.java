@@ -54,13 +54,21 @@ import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
 import org.keycloak.testsuite.client.resources.TestOIDCEndpointsApplicationResource;
 import org.keycloak.testsuite.rest.resource.TestingOIDCEndpointsApplicationResource;
 import org.keycloak.testsuite.util.OAuthClient;
-import java.security.PrivateKey;
-import java.util.*;
 
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
+import java.security.PrivateKey;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

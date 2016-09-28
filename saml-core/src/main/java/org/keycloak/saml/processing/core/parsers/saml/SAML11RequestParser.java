@@ -16,6 +16,10 @@
  */
 package org.keycloak.saml.processing.core.parsers.saml;
 
+import org.keycloak.dom.saml.v1.protocol.SAML11AttributeQueryType;
+import org.keycloak.dom.saml.v1.protocol.SAML11AuthenticationQueryType;
+import org.keycloak.dom.saml.v1.protocol.SAML11AuthorizationDecisionQueryType;
+import org.keycloak.dom.saml.v1.protocol.SAML11RequestType;
 import org.keycloak.saml.common.PicketLinkLogger;
 import org.keycloak.saml.common.PicketLinkLoggerFactory;
 import org.keycloak.saml.common.constants.JBossSAMLConstants;
@@ -26,10 +30,6 @@ import org.keycloak.saml.common.util.StaxParserUtil;
 import org.keycloak.saml.processing.core.parsers.util.SAML11ParserUtil;
 import org.keycloak.saml.processing.core.saml.v1.SAML11Constants;
 import org.keycloak.saml.processing.core.saml.v2.util.XMLTimeUtil;
-import org.keycloak.dom.saml.v1.protocol.SAML11AttributeQueryType;
-import org.keycloak.dom.saml.v1.protocol.SAML11AuthenticationQueryType;
-import org.keycloak.dom.saml.v1.protocol.SAML11AuthorizationDecisionQueryType;
-import org.keycloak.dom.saml.v1.protocol.SAML11RequestType;
 
 import javax.xml.datatype.XMLGregorianCalendar;
 import javax.xml.namespace.QName;

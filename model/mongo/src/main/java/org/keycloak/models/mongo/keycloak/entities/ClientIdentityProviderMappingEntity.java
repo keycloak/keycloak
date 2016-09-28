@@ -14,32 +14,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package org.keycloak.models.entities;
-
-import java.util.Map;
+package org.keycloak.models.mongo.keycloak.entities;
 
 /**
- * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
- * @version $Revision: 1 $
+ * @author pedroigor
  */
-public class AuthenticatorConfigEntity extends AbstractIdentifiableEntity{
-    protected String alias;
-    protected Map<String, String> config;
+public class ClientIdentityProviderMappingEntity extends AbstractIdentifiableEntity {
 
-    public String getAlias() {
-        return alias;
+    protected boolean retrieveToken;
+
+    public boolean isRetrieveToken() {
+        return this.retrieveToken;
     }
 
-    public void setAlias(String alias) {
-        this.alias = alias;
+    public void setRetrieveToken(boolean retrieveToken) {
+        this.retrieveToken = retrieveToken;
     }
 
-    public Map<String, String> getConfig() {
-        return config;
-    }
-
-    public void setConfig(Map<String, String> config) {
-        this.config = config;
-    }
 }

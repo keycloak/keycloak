@@ -16,14 +16,11 @@
  */
 package org.keycloak.subsystem.adapter.saml.extension;
 
-import org.jboss.as.controller.*;
+import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.ReloadRequiredRemoveStepHandler;
+import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.operations.common.GenericSubsystemDescribeHandler;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
-
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
 
 /**
  * Defines attributes and operations for a secure-deployment.

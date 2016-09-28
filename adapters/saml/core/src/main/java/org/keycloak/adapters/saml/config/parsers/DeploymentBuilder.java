@@ -23,9 +23,9 @@ import org.keycloak.adapters.saml.config.Key;
 import org.keycloak.adapters.saml.config.KeycloakSamlAdapter;
 import org.keycloak.adapters.saml.config.SP;
 import org.keycloak.common.enums.SslRequired;
+import org.keycloak.common.util.PemUtils;
 import org.keycloak.saml.SignatureAlgorithm;
 import org.keycloak.saml.common.exceptions.ParsingException;
-import org.keycloak.common.util.PemUtils;
 
 import java.io.File;
 import java.io.FileInputStream;

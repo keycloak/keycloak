@@ -17,6 +17,30 @@
 
 package org.keycloak.connections.jpa;
 
+import org.hibernate.ejb.AvailableSettings;
+import org.hibernate.engine.transaction.jta.platform.internal.AbstractJtaPlatform;
+import org.jboss.logging.Logger;
+import org.keycloak.Config;
+import org.keycloak.ServerStartupError;
+import org.keycloak.connections.jpa.updater.JpaUpdaterProvider;
+import org.keycloak.connections.jpa.util.JpaUtils;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.KeycloakSessionTask;
+import org.keycloak.models.dblock.DBLockManager;
+import org.keycloak.models.dblock.DBLockProvider;
+import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.provider.ServerInfoAwareProviderFactory;
+import org.keycloak.timer.TimerProvider;
+import org.keycloak.transaction.JtaTransactionManagerLookup;
+
+import javax.naming.InitialContext;
+import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
+import javax.persistence.SynchronizationType;
+import javax.sql.DataSource;
+import javax.transaction.TransactionManager;
+import javax.transaction.UserTransaction;
 import java.io.File;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -25,37 +49,6 @@ import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
-
-import javax.naming.InitialContext;
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.SynchronizationType;
-import javax.sql.DataSource;
-import javax.transaction.InvalidTransactionException;
-import javax.transaction.Synchronization;
-import javax.transaction.SystemException;
-import javax.transaction.Transaction;
-import javax.transaction.TransactionManager;
-import javax.transaction.UserTransaction;
-
-import org.hibernate.ejb.AvailableSettings;
-import org.hibernate.engine.transaction.jta.platform.internal.AbstractJtaPlatform;
-import org.hibernate.engine.transaction.jta.platform.spi.JtaPlatform;
-import org.jboss.logging.Logger;
-import org.keycloak.Config;
-import org.keycloak.connections.jpa.updater.JpaUpdaterProvider;
-import org.keycloak.connections.jpa.updater.liquibase.conn.LiquibaseConnectionProvider;
-import org.keycloak.connections.jpa.util.JpaUtils;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.KeycloakSessionTask;
-import org.keycloak.models.dblock.DBLockProvider;
-import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.provider.ServerInfoAwareProviderFactory;
-import org.keycloak.models.dblock.DBLockManager;
-import org.keycloak.ServerStartupError;
-import org.keycloak.timer.TimerProvider;
-import org.keycloak.transaction.JtaTransactionManagerLookup;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

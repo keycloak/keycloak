@@ -17,12 +17,12 @@
 
 package org.keycloak.federation.ldap.idm.model;
 
-import java.util.Arrays;
-import java.util.List;
-
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.federation.ldap.mappers.membership.group.GroupTreeResolver;
+
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

@@ -16,12 +16,13 @@
  */
 package org.keycloak.testsuite.auth.page.account;
 
-import java.util.LinkedList;
-import java.util.List;
-import javax.ws.rs.core.UriBuilder;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
+
+import javax.ws.rs.core.UriBuilder;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  *

@@ -17,18 +17,17 @@
 
 package org.keycloak.jaxrs;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
-import java.util.logging.Logger;
+import org.keycloak.adapters.KeycloakConfigResolver;
+import org.keycloak.common.constants.GenericConstants;
+import org.osgi.framework.BundleContext;
 
 import javax.annotation.Priority;
 import javax.ws.rs.Priorities;
 import javax.ws.rs.container.PreMatching;
-
-import org.keycloak.adapters.KeycloakConfigResolver;
-import org.keycloak.common.constants.GenericConstants;
-import org.osgi.framework.BundleContext;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.util.logging.Logger;
 
 /**
  * Variant of JaxrsBearerTokenFilter, which can be used to properly use resources from current osgi bundle

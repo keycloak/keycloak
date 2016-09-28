@@ -22,17 +22,16 @@ import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.ClientAttributeCertificateResource;
 import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.KeyStoreConfig;
-import org.keycloak.events.admin.OperationType;
 import org.keycloak.representations.idm.CertificateRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.testsuite.util.AdminEventPaths;
 
 import javax.ws.rs.core.MediaType;
-
 import java.io.ByteArrayInputStream;
 import java.net.URL;
 import java.nio.charset.Charset;
@@ -44,8 +43,8 @@ import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 

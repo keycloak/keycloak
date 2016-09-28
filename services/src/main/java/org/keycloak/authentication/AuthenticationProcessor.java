@@ -17,12 +17,12 @@
 
 package org.keycloak.authentication;
 
-import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.HttpRequest;
-import org.keycloak.common.ClientConnection;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAuthenticator;
 import org.keycloak.authentication.authenticators.client.ClientAuthUtil;
+import org.keycloak.common.ClientConnection;
+import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
@@ -48,7 +48,6 @@ import org.keycloak.services.managers.BruteForceProtector;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.LoginActionsService;
-import org.keycloak.common.util.Time;
 import org.keycloak.services.util.CacheControlUtil;
 
 import javax.ws.rs.core.Response;

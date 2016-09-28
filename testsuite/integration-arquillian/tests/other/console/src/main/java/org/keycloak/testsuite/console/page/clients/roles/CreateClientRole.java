@@ -1,7 +1,8 @@
 package org.keycloak.testsuite.console.page.clients.roles;
 
-import static org.keycloak.testsuite.console.page.clients.Client.ID;
 import org.keycloak.testsuite.console.page.roles.CreateRole;
+
+import static org.keycloak.testsuite.console.page.clients.Client.ID;
 
 /**
  *

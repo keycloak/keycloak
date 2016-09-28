@@ -17,6 +17,7 @@
 package org.keycloak.testsuite.i18n;
 
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.resteasy.client.jaxrs.ResteasyClient;
 import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
 import org.jboss.resteasy.client.jaxrs.engines.ApacheHttpClient4Engine;
@@ -26,7 +27,6 @@ import org.keycloak.adapters.HttpClientBuilder;
 import org.keycloak.testsuite.pages.LoginPage;
 
 import javax.ws.rs.core.Response;
-import org.jboss.arquillian.graphene.page.Page;
 
 /**
  * @author <a href="mailto:gerbermichi@me.com">Michael Gerber</a>

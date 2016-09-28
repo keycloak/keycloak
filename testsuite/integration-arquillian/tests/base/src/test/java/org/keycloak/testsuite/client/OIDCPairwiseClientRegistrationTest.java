@@ -18,12 +18,6 @@
 package org.keycloak.testsuite.client;
 
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-
-import javax.ws.rs.core.Response;
-
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.ClientResource;
@@ -44,6 +38,11 @@ import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
 import org.keycloak.testsuite.client.resources.TestOIDCEndpointsApplicationResource;
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.OAuthClient;
+
+import javax.ws.rs.core.Response;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 import static org.junit.Assert.assertTrue;
 

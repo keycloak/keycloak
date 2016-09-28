@@ -17,20 +17,15 @@
 
 package org.keycloak.services.util;
 
-import java.security.PublicKey;
-import java.security.cert.X509Certificate;
-import java.util.HashMap;
-
-import javax.ws.rs.core.Response;
-
-import org.keycloak.authentication.AuthenticationFlowError;
-import org.keycloak.authentication.ClientAuthenticationFlowContext;
-import org.keycloak.authentication.authenticators.client.ClientAuthUtil;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.CertificateRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
+
+import java.security.PublicKey;
+import java.security.cert.X509Certificate;
+import java.util.HashMap;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

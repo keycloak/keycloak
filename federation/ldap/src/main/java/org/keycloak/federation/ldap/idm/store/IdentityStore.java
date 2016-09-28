@@ -17,13 +17,12 @@
 
 package org.keycloak.federation.ldap.idm.store;
 
-import java.util.List;
-
-import javax.naming.AuthenticationException;
-
 import org.keycloak.federation.ldap.LDAPConfig;
 import org.keycloak.federation.ldap.idm.model.LDAPObject;
 import org.keycloak.federation.ldap.idm.query.internal.LDAPQuery;
+
+import javax.naming.AuthenticationException;
+import java.util.List;
 
 /**
  * IdentityStore representation providing minimal SPI

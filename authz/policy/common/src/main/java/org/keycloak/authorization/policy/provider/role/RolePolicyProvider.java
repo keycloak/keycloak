@@ -21,7 +21,6 @@ import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.identity.Identity;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.policy.evaluation.Evaluation;
-import org.keycloak.authorization.policy.evaluation.EvaluationContext;
 import org.keycloak.authorization.policy.provider.PolicyProvider;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;

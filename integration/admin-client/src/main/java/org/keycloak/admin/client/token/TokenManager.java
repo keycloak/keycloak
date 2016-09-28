@@ -27,7 +27,11 @@ import org.keycloak.representations.AccessTokenResponse;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.core.Form;
 
-import static org.keycloak.OAuth2Constants.*;
+import static org.keycloak.OAuth2Constants.CLIENT_CREDENTIALS;
+import static org.keycloak.OAuth2Constants.CLIENT_ID;
+import static org.keycloak.OAuth2Constants.GRANT_TYPE;
+import static org.keycloak.OAuth2Constants.PASSWORD;
+import static org.keycloak.OAuth2Constants.REFRESH_TOKEN;
 
 /**
  * @author rodrigo.sasaki@icarros.com.br

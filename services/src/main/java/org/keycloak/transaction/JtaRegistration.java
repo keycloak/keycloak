@@ -17,10 +17,7 @@
 package org.keycloak.transaction;
 
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.services.ServicesLogger;
 
-import javax.naming.InitialContext;
-import javax.naming.NamingException;
 import javax.transaction.TransactionManager;
 
 /**

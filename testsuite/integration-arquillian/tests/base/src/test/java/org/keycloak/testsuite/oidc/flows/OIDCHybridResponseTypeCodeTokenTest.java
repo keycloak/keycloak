@@ -17,9 +17,6 @@
 
 package org.keycloak.testsuite.oidc.flows;
 
-import java.util.Collections;
-import java.util.List;
-
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.events.Details;
@@ -28,6 +25,9 @@ import org.keycloak.representations.IDToken;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.util.OAuthClient;
+
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Tests with response_type=code token

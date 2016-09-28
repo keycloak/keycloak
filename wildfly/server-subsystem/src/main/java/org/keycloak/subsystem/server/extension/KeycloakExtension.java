@@ -24,9 +24,9 @@ import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.SubsystemRegistration;
 import org.jboss.as.controller.descriptions.StandardResourceDescriptionResolver;
 import org.jboss.as.controller.parsing.ExtensionParsingContext;
+import org.jboss.as.controller.registry.ManagementResourceRegistration;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
-import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import static org.keycloak.subsystem.server.logging.KeycloakLogger.ROOT_LOGGER;
 
 

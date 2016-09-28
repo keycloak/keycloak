@@ -16,6 +16,10 @@
  */
 package org.keycloak.saml.processing.core.parsers.saml;
 
+import org.keycloak.dom.saml.v1.assertion.SAML11NameIdentifierType;
+import org.keycloak.dom.saml.v1.assertion.SAML11SubjectConfirmationType;
+import org.keycloak.dom.saml.v1.assertion.SAML11SubjectType;
+import org.keycloak.dom.saml.v1.assertion.SAML11SubjectType.SAML11SubjectTypeChoice;
 import org.keycloak.saml.common.PicketLinkLogger;
 import org.keycloak.saml.common.PicketLinkLoggerFactory;
 import org.keycloak.saml.common.constants.JBossSAMLConstants;
@@ -25,10 +29,6 @@ import org.keycloak.saml.common.parsers.ParserNamespaceSupport;
 import org.keycloak.saml.common.util.StaxParserUtil;
 import org.keycloak.saml.processing.core.parsers.util.SAML11ParserUtil;
 import org.keycloak.saml.processing.core.saml.v1.SAML11Constants;
-import org.keycloak.dom.saml.v1.assertion.SAML11NameIdentifierType;
-import org.keycloak.dom.saml.v1.assertion.SAML11SubjectConfirmationType;
-import org.keycloak.dom.saml.v1.assertion.SAML11SubjectType;
-import org.keycloak.dom.saml.v1.assertion.SAML11SubjectType.SAML11SubjectTypeChoice;
 
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLEventReader;

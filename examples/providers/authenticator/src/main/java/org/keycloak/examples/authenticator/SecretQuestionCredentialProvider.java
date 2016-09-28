@@ -22,7 +22,6 @@ import org.keycloak.credential.CredentialInputUpdater;
 import org.keycloak.credential.CredentialInputValidator;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.credential.CredentialProvider;
-import org.keycloak.credential.PasswordCredentialProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;

@@ -17,18 +17,18 @@
 
 package org.keycloak.authentication.authenticators.broker;
 
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
-
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.AuthenticationFlowException;
-import org.keycloak.authentication.authenticators.browser.UsernamePasswordForm;
 import org.keycloak.authentication.authenticators.broker.util.SerializedBrokeredIdentityContext;
+import org.keycloak.authentication.authenticators.browser.UsernamePasswordForm;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.UserModel;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.messages.Messages;
+
+import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.Response;
 
 /**
  * Same like classic username+password form, but username is "known" and user can't change it

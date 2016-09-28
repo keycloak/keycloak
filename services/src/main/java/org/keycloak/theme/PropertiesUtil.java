@@ -17,6 +17,8 @@
 
 package org.keycloak.theme;
 
+import org.jboss.logging.Logger;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -24,8 +26,6 @@ import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:wadahiro@gmail.com">Hiroyuki Wada</a>

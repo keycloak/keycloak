@@ -19,8 +19,8 @@ package org.keycloak.adapters.springsecurity.authentication;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.keycloak.adapters.spi.KeycloakAccount;
 import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
+import org.keycloak.adapters.spi.KeycloakAccount;
 import org.keycloak.adapters.springsecurity.account.SimpleKeycloakAccount;
 import org.keycloak.adapters.springsecurity.token.KeycloakAuthenticationToken;
 import org.mockito.internal.util.collections.Sets;
@@ -32,8 +32,11 @@ import org.springframework.security.web.authentication.preauth.PreAuthenticatedA
 import java.security.Principal;
 import java.util.Set;
 
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
 
 /**
  * Keycloak authentication provider tests.

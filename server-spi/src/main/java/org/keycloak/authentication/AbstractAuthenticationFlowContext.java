@@ -17,9 +17,6 @@
 
 package org.keycloak.authentication;
 
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriInfo;
-
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.events.EventBuilder;
@@ -29,6 +26,9 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.FormMessage;
 import org.keycloak.services.managers.BruteForceProtector;
+
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriInfo;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

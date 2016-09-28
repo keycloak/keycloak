@@ -17,7 +17,6 @@
 package org.keycloak.admin.client.resource;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
-import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 
 import javax.ws.rs.Consumes;

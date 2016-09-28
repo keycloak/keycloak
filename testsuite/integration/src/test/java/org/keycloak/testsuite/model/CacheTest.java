@@ -17,16 +17,21 @@
 
 package org.keycloak.testsuite.model;
 
-import java.util.List;
-import java.util.Set;
-
 import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Test;
-import org.keycloak.models.*;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.cache.infinispan.ClientAdapter;
 import org.keycloak.models.cache.infinispan.RealmAdapter;
 import org.keycloak.testsuite.rule.KeycloakRule;
+
+import java.util.List;
+import java.util.Set;
 
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;

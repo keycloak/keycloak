@@ -25,7 +25,9 @@ import org.keycloak.common.enums.SslRequired;
 import org.keycloak.representations.adapters.config.AdapterConfig;
 import org.keycloak.representations.idm.ClientRepresentation;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

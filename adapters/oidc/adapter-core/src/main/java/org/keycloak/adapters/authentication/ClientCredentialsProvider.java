@@ -17,9 +17,9 @@
 
 package org.keycloak.adapters.authentication;
 
-import java.util.Map;
-
 import org.keycloak.adapters.KeycloakDeployment;
+
+import java.util.Map;
 
 /**
  * The simple SPI for authenticating clients/applications . It's used by adapter during all OIDC backchannel requests to Keycloak server

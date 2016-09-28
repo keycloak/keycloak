@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.models.entities;
+package org.keycloak.models.mongo.keycloak.entities;
 
 import java.util.HashMap;
 import java.util.Map;

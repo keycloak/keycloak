@@ -17,8 +17,6 @@
 
 package org.keycloak.federation.ldap.mappers;
 
-import java.util.Set;
-
 import org.jboss.logging.Logger;
 import org.keycloak.federation.ldap.LDAPFederationProvider;
 import org.keycloak.federation.ldap.idm.model.LDAPObject;
@@ -31,6 +29,8 @@ import org.keycloak.models.UserFederationMapperModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.UserModelDelegate;
+
+import java.util.Set;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

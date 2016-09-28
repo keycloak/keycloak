@@ -17,12 +17,12 @@
 
 package org.keycloak.email;
 
-import org.keycloak.truststore.HostnameVerificationPolicy;
-import org.keycloak.truststore.JSSETruststoreConfigurator;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.services.ServicesLogger;
+import org.keycloak.truststore.HostnameVerificationPolicy;
+import org.keycloak.truststore.JSSETruststoreConfigurator;
 
 import javax.mail.MessagingException;
 import javax.mail.Multipart;

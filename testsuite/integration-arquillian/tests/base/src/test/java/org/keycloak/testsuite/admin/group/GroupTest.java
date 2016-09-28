@@ -17,7 +17,6 @@
 
 package org.keycloak.testsuite.admin.group;
 
-import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
@@ -25,7 +24,6 @@ import org.keycloak.admin.client.resource.RoleMappingResource;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.Constants;
-import org.keycloak.models.RoleModel;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;

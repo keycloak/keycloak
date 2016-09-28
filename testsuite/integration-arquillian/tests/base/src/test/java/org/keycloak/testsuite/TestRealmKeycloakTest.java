@@ -17,19 +17,18 @@
 
 package org.keycloak.testsuite;
 
-import org.keycloak.OAuth2Constants;
+import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.common.util.reflections.Reflections;
 import org.keycloak.events.Details;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testsuite.util.OAuthClient;
 
 import java.lang.reflect.Field;
 import java.util.List;
-import org.keycloak.admin.client.resource.RealmResource;
-import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.util.OAuthClient;
 
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 

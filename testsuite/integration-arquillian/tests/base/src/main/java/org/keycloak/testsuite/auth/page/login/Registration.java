@@ -16,15 +16,15 @@
  */
 package org.keycloak.testsuite.auth.page.login;
 
-import org.keycloak.testsuite.auth.page.account.AccountFields;
-
-import javax.ws.rs.core.UriBuilder;
 import org.jboss.arquillian.graphene.page.Page;
 import org.keycloak.representations.idm.UserRepresentation;
-
-import static org.keycloak.testsuite.admin.Users.getPasswordOf;
+import org.keycloak.testsuite.auth.page.account.AccountFields;
 import org.keycloak.testsuite.auth.page.account.ContactInfoFields;
 import org.keycloak.testsuite.auth.page.account.PasswordFields;
+
+import javax.ws.rs.core.UriBuilder;
+
+import static org.keycloak.testsuite.admin.Users.getPasswordOf;
 
 /**
  *

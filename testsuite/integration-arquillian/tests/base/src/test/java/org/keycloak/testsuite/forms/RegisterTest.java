@@ -17,7 +17,9 @@
 package org.keycloak.testsuite.forms;
 
 import org.jboss.arquillian.graphene.page.Page;
-import org.junit.*;
+import org.junit.Assert;
+import org.junit.Rule;
+import org.junit.Test;
 import org.keycloak.events.Details;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;

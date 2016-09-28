@@ -18,15 +18,10 @@ package org.keycloak.transaction;
 
 import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakTransaction;
-import org.keycloak.storage.UserStorageManager;
 
-import javax.transaction.InvalidTransactionException;
-import javax.transaction.NotSupportedException;
 import javax.transaction.Status;
-import javax.transaction.SystemException;
 import javax.transaction.Transaction;
 import javax.transaction.TransactionManager;
-import javax.transaction.UserTransaction;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

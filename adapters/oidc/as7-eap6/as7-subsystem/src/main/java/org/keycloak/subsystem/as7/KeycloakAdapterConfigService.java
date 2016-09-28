@@ -17,17 +17,17 @@
 
 package org.keycloak.subsystem.as7;
 
+import org.jboss.as.server.deployment.DeploymentUnit;
+import org.jboss.as.web.deployment.WarMetaData;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
 import org.jboss.logging.Logger;
+import org.jboss.metadata.web.jboss.JBossWebMetaData;
 
 import java.util.HashMap;
 import java.util.Map;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADDRESS;
-import org.jboss.as.server.deployment.DeploymentUnit;
-import org.jboss.as.web.deployment.WarMetaData;
-import org.jboss.metadata.web.jboss.JBossWebMetaData;
 
 /**
  * This service keeps track of the entire Keycloak management model so as to provide

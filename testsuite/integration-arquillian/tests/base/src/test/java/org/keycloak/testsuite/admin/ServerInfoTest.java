@@ -25,7 +25,8 @@ import org.keycloak.testsuite.AbstractKeycloakTest;
 
 import java.util.List;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

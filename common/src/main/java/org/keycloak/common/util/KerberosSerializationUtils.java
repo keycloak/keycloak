@@ -17,6 +17,9 @@
 
 package org.keycloak.common.util;
 
+import org.ietf.jgss.GSSCredential;
+
+import javax.security.auth.kerberos.KerberosTicket;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -25,13 +28,6 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
-import java.util.Iterator;
-import java.util.Set;
-
-import javax.security.auth.Subject;
-import javax.security.auth.kerberos.KerberosTicket;
-
-import org.ietf.jgss.GSSCredential;
 
 /**
  * Provides serialization/deserialization of kerberos {@link org.ietf.jgss.GSSCredential}, so it can be transmitted from auth-server to the application

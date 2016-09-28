@@ -19,7 +19,10 @@
 
 package org.keycloak.services.validation;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.Properties;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 

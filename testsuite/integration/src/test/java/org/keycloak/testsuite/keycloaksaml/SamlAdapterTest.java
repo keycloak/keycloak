@@ -30,8 +30,6 @@ import org.openqa.selenium.WebDriver;
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.client.Entity;
-import javax.ws.rs.core.Form;
 
 import static org.junit.Assert.assertEquals;
 

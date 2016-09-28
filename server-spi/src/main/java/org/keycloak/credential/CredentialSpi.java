@@ -17,8 +17,6 @@
 
 package org.keycloak.credential;
 
-import org.keycloak.credential.hash.PasswordHashProvider;
-import org.keycloak.credential.hash.PasswordHashProviderFactory;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.Spi;

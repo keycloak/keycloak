@@ -17,19 +17,18 @@
 
 package org.keycloak.events.mongo;
 
+import com.mongodb.BasicDBObject;
+import com.mongodb.DBCollection;
+import com.mongodb.DBCursor;
+import org.keycloak.events.admin.AdminEvent;
+import org.keycloak.events.admin.AdminEventQuery;
+import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
+
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.regex.Pattern;
-
-import org.keycloak.events.admin.AdminEvent;
-import org.keycloak.events.admin.AdminEventQuery;
-import org.keycloak.events.admin.OperationType;
-
-import com.mongodb.BasicDBObject;
-import com.mongodb.DBCollection;
-import com.mongodb.DBCursor;
-import org.keycloak.events.admin.ResourceType;
 
 public class MongoAdminEventQuery implements AdminEventQuery{
     

@@ -17,8 +17,6 @@
 
 package org.keycloak.storage.jpa.entity;
 
-import org.keycloak.models.jpa.entities.CredentialEntity;
-
 import javax.persistence.Access;
 import javax.persistence.AccessType;
 import javax.persistence.Column;

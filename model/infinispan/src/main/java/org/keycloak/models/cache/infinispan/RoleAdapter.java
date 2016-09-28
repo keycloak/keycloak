@@ -20,7 +20,6 @@ package org.keycloak.models.cache.infinispan;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.cache.CacheRealmProvider;
 import org.keycloak.models.cache.infinispan.entities.CachedClientRole;
 import org.keycloak.models.cache.infinispan.entities.CachedRealmRole;
 import org.keycloak.models.cache.infinispan.entities.CachedRole;

@@ -17,17 +17,18 @@
  */
 package org.keycloak.testsuite.console.page.idp;
 
-import java.util.ArrayList;
-import java.util.List;
 import org.jboss.arquillian.graphene.findby.FindByJQuery;
-import org.keycloak.admin.client.resource.IdentityProvidersResource;
+import org.keycloak.testsuite.console.page.AdminConsoleRealm;
 import org.keycloak.testsuite.model.Provider;
 import org.keycloak.testsuite.model.SocialProvider;
-import org.keycloak.testsuite.console.page.AdminConsoleRealm;
-import static org.openqa.selenium.By.tagName;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.ui.Select;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.openqa.selenium.By.tagName;
 
 /**
  *

@@ -18,16 +18,15 @@
 package org.keycloak.events.log;
 
 import org.jboss.logging.Logger;
-import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventListenerProvider;
+import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 
 import javax.ws.rs.core.Cookie;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.UriInfo;
-
 import java.util.Map;
 
 /**

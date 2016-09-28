@@ -17,12 +17,12 @@
 
 package org.keycloak.models.sessions.infinispan.stream;
 
+import org.keycloak.models.sessions.infinispan.entities.ClientRegistrationTrustedHostEntity;
+import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
+
 import java.io.Serializable;
 import java.util.Map;
 import java.util.function.Predicate;
-
-import org.keycloak.models.sessions.infinispan.entities.ClientRegistrationTrustedHostEntity;
-import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

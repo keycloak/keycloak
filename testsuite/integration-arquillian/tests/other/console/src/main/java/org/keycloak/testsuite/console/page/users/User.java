@@ -1,10 +1,10 @@
 package org.keycloak.testsuite.console.page.users;
 
 import org.keycloak.testsuite.console.page.fragment.Breadcrumb;
-import static org.keycloak.testsuite.console.page.fragment.Breadcrumb.BREADCRUMB_XPATH;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
+import static org.keycloak.testsuite.console.page.fragment.Breadcrumb.BREADCRUMB_XPATH;
 import static org.keycloak.testsuite.util.WaitUtils.*;
 
 /**

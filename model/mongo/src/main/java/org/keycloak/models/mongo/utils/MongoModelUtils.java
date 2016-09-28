@@ -25,11 +25,11 @@ import org.keycloak.models.ClientTemplateModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.entities.ClientEntity;
-import org.keycloak.models.entities.ClientTemplateEntity;
 import org.keycloak.models.mongo.keycloak.adapters.ClientAdapter;
 import org.keycloak.models.mongo.keycloak.adapters.ClientTemplateAdapter;
 import org.keycloak.models.mongo.keycloak.adapters.UserAdapter;
+import org.keycloak.models.mongo.keycloak.entities.ClientEntity;
+import org.keycloak.models.mongo.keycloak.entities.ClientTemplateEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoRoleEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoUserEntity;
 

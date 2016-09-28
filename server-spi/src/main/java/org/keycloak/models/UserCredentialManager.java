@@ -20,7 +20,6 @@ import org.keycloak.credential.CredentialInput;
 import org.keycloak.credential.UserCredentialStore;
 
 import java.util.List;
-import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

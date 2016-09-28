@@ -20,7 +20,12 @@ package org.keycloak.representations.idm;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.keycloak.common.util.MultivaluedHashMap;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

@@ -1,5 +1,23 @@
 package org.keycloak.testsuite.user;
 
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.admin.client.resource.UsersResource;
+import org.keycloak.models.UserModel;
+import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.representations.idm.FederatedIdentityRepresentation;
+import org.keycloak.representations.idm.GroupRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.util.Timer;
+import org.keycloak.util.JsonSerialization;
+
+import javax.ws.rs.core.Response;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -11,28 +29,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import javax.ws.rs.core.Response;
-
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.keycloak.admin.client.resource.UsersResource;
-import org.keycloak.authentication.requiredactions.UpdatePassword;
-import org.keycloak.models.UserCredentialModel;
-import org.keycloak.models.UserModel;
-import org.keycloak.representations.idm.CredentialRepresentation;
-import org.keycloak.representations.idm.FederatedIdentityRepresentation;
-import org.keycloak.representations.idm.GroupRepresentation;
-import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.util.Timer;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.util.JsonSerialization;
-import org.keycloak.admin.client.resource.RealmResource;
-import static org.keycloak.testsuite.util.IOUtil.PROJECT_BUILD_DIRECTORY;
 import static org.junit.Assert.fail;
+import static org.keycloak.testsuite.util.IOUtil.PROJECT_BUILD_DIRECTORY;
 
 /**
  *

@@ -16,6 +16,8 @@
  */
 package org.keycloak.saml.processing.web.util;
 
+import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
+import org.keycloak.dom.saml.v2.protocol.ResponseType;
 import org.keycloak.saml.common.PicketLinkLogger;
 import org.keycloak.saml.common.PicketLinkLoggerFactory;
 import org.keycloak.saml.common.constants.GeneralConstants;
@@ -26,8 +28,6 @@ import org.keycloak.saml.common.util.DocumentUtil;
 import org.keycloak.saml.processing.api.saml.v2.request.SAML2Request;
 import org.keycloak.saml.processing.api.saml.v2.response.SAML2Response;
 import org.keycloak.saml.processing.core.saml.v2.util.SignatureUtil;
-import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
-import org.keycloak.dom.saml.v2.protocol.ResponseType;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 

@@ -19,10 +19,10 @@ package org.keycloak.adapters.springsecurity.filter;
 
 import org.keycloak.adapters.AdapterDeploymentContext;
 import org.keycloak.adapters.AdapterTokenStore;
-import org.keycloak.adapters.spi.AuthChallenge;
-import org.keycloak.adapters.spi.AuthOutcome;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.RequestAuthenticator;
+import org.keycloak.adapters.spi.AuthChallenge;
+import org.keycloak.adapters.spi.AuthOutcome;
 import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.adapters.springsecurity.KeycloakAuthenticationException;
 import org.keycloak.adapters.springsecurity.authentication.KeycloakAuthenticationEntryPoint;

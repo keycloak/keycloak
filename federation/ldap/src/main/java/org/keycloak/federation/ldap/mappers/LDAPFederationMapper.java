@@ -17,15 +17,15 @@
 
 package org.keycloak.federation.ldap.mappers;
 
-import javax.naming.AuthenticationException;
-
 import org.keycloak.federation.ldap.LDAPFederationProvider;
 import org.keycloak.federation.ldap.idm.model.LDAPObject;
 import org.keycloak.federation.ldap.idm.query.internal.LDAPQuery;
-import org.keycloak.models.RealmModel;
 import org.keycloak.mappers.UserFederationMapper;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserFederationMapperModel;
 import org.keycloak.models.UserModel;
+
+import javax.naming.AuthenticationException;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

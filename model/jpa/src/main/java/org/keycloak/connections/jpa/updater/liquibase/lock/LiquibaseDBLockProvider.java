@@ -17,9 +17,6 @@
 
 package org.keycloak.connections.jpa.updater.liquibase.lock;
 
-import java.sql.Connection;
-import java.sql.SQLException;
-
 import liquibase.Liquibase;
 import liquibase.exception.DatabaseException;
 import liquibase.exception.LiquibaseException;
@@ -30,6 +27,9 @@ import org.keycloak.connections.jpa.updater.liquibase.conn.LiquibaseConnectionPr
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.dblock.DBLockProvider;
 import org.keycloak.models.utils.KeycloakModelUtils;
+
+import java.sql.Connection;
+import java.sql.SQLException;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

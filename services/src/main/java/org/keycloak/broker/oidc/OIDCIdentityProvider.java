@@ -20,10 +20,11 @@ import com.fasterxml.jackson.databind.JsonNode;
 import org.jboss.logging.Logger;
 import org.keycloak.broker.oidc.mappers.AbstractJsonUserAttributeMapper;
 import org.keycloak.broker.oidc.util.JsonSimpleHttp;
-import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.broker.provider.AuthenticationRequest;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.IdentityBrokerException;
+import org.keycloak.broker.provider.util.SimpleHttp;
+import org.keycloak.common.util.PemUtils;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
@@ -45,7 +46,6 @@ import org.keycloak.services.resources.IdentityBrokerService;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.truststore.JSSETruststoreConfigurator;
 import org.keycloak.util.JsonSerialization;
-import org.keycloak.common.util.PemUtils;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -54,7 +54,6 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
-
 import java.io.IOException;
 import java.security.PublicKey;
 

@@ -17,9 +17,6 @@
 
 package org.keycloak.testsuite.admin.client;
 
-import java.util.List;
-import javax.ws.rs.core.Response;
-
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -35,6 +32,9 @@ import org.keycloak.testsuite.events.EventsListenerProviderFactory;
 import org.keycloak.testsuite.util.AdminEventPaths;
 import org.keycloak.testsuite.util.AssertAdminEvents;
 import org.keycloak.testsuite.util.RealmBuilder;
+
+import javax.ws.rs.core.Response;
+import java.util.List;
 
 /**
  *

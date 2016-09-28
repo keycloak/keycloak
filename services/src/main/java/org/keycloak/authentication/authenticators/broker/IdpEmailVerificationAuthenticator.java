@@ -17,16 +17,10 @@
 
 package org.keycloak.authentication.authenticators.broker;
 
-import java.util.concurrent.TimeUnit;
-
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriBuilder;
-
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;
-import org.keycloak.authentication.requiredactions.VerifyEmail;
 import org.keycloak.authentication.authenticators.broker.util.SerializedBrokeredIdentityContext;
+import org.keycloak.authentication.requiredactions.VerifyEmail;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailTemplateProvider;
@@ -43,6 +37,11 @@ import org.keycloak.models.UserModel;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.LoginActionsService;
+
+import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriBuilder;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

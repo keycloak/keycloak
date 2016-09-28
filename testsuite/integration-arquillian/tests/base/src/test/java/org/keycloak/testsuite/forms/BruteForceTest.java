@@ -16,7 +16,7 @@
  */
 package org.keycloak.testsuite.forms;
 
-import com.fasterxml.jackson.jaxrs.json.annotation.JSONP;
+import org.jboss.arquillian.graphene.page.Page;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -27,25 +27,22 @@ import org.keycloak.events.Errors;
 import org.keycloak.models.Constants;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.representations.idm.CredentialRepresentation;
-import org.keycloak.services.managers.DefaultBruteForceProtector;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.AssertEvents.ExpectedEvent;
+import org.keycloak.testsuite.TestRealmKeycloakTest;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginTotpPage;
 import org.keycloak.testsuite.pages.RegisterPage;
-
-import java.net.MalformedURLException;
-
-import org.jboss.arquillian.graphene.page.Page;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.TestRealmKeycloakTest;
 import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.OAuthClient;
-import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.RealmRepUtil;
+import org.keycloak.testsuite.util.UserBuilder;
+
+import java.net.MalformedURLException;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

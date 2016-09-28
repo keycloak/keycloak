@@ -16,8 +16,6 @@
  */
 package org.keycloak.subsystem.server.extension;
 
-import java.util.ArrayList;
-import java.util.List;
 import org.jboss.as.ee.component.EEModuleDescription;
 import org.jboss.as.server.deployment.DeploymentPhaseContext;
 import org.jboss.as.server.deployment.DeploymentUnit;
@@ -28,6 +26,9 @@ import org.jboss.metadata.javaee.spec.ParamValueMetaData;
 import org.jboss.metadata.web.jboss.JBossWebMetaData;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * DUP responsible for setting the web context of a Keycloak auth server and

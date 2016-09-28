@@ -5,11 +5,7 @@ import org.jboss.aesh.cl.Option;
 import org.jboss.aesh.console.command.Command;
 import org.jboss.aesh.console.command.CommandResult;
 import org.jboss.aesh.console.command.invocation.CommandInvocation;
-import org.jboss.aesh.io.Resource;
-import org.keycloak.client.registration.ClientRegistrationException;
 import org.keycloak.client.registration.cli.Context;
-import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.util.JsonSerialization;
 
 import java.io.IOException;
 

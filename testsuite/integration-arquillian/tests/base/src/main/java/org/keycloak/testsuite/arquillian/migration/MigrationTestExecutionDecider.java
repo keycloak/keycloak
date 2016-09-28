@@ -16,9 +16,10 @@
  */
 package org.keycloak.testsuite.arquillian.migration;
 
-import java.lang.reflect.Method;
 import org.jboss.arquillian.test.spi.execution.ExecutionDecision;
 import org.jboss.arquillian.test.spi.execution.TestExecutionDecider;
+
+import java.lang.reflect.Method;
 
 /**
  * @author <a href="mailto:vramik@redhat.com">Vlastislav Ramik</a>

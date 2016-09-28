@@ -17,11 +17,6 @@
 
 package org.keycloak.connections.jpa.updater.liquibase.custom;
 
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.util.ArrayList;
-import java.util.List;
-
 import liquibase.change.custom.CustomSqlChange;
 import liquibase.database.Database;
 import liquibase.database.jvm.JdbcConnection;
@@ -37,6 +32,11 @@ import org.keycloak.connections.jpa.updater.liquibase.LiquibaseJpaUpdaterProvide
 import org.keycloak.connections.jpa.updater.liquibase.ThreadLocalSessionContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.services.DefaultKeycloakSessionFactory;
+
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

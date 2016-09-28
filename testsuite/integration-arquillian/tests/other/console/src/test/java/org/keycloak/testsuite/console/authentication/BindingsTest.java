@@ -22,7 +22,6 @@
 package org.keycloak.testsuite.console.authentication;
 
 import org.jboss.arquillian.graphene.page.Page;
-import static org.junit.Assert.assertEquals;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -30,6 +29,8 @@ import org.keycloak.testsuite.console.AbstractConsoleTest;
 import org.keycloak.testsuite.console.page.authentication.bindings.Bindings;
 import org.keycloak.testsuite.console.page.authentication.bindings.BindingsForm.BindingsOption;
 import org.keycloak.testsuite.console.page.authentication.bindings.BindingsForm.BindingsSelect;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  *

@@ -20,12 +20,10 @@ package org.keycloak.adapters.undertow;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.servlet.handlers.ServletRequestContext;
 import org.keycloak.adapters.spi.AuthenticationError;
-import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.adapters.spi.LogoutError;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

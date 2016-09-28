@@ -17,16 +17,16 @@
 
 package org.keycloak.subsystem.wf8.extension;
 
+import org.jboss.as.server.deployment.DeploymentUnit;
+import org.jboss.as.web.common.WarMetaData;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
+import org.jboss.metadata.web.jboss.JBossWebMetaData;
 
 import java.util.HashMap;
 import java.util.Map;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADDRESS;
-import org.jboss.as.server.deployment.DeploymentUnit;
-import org.jboss.as.web.common.WarMetaData;
-import org.jboss.metadata.web.jboss.JBossWebMetaData;
 
 /**
  * This service keeps track of the entire Keycloak management model so as to provide

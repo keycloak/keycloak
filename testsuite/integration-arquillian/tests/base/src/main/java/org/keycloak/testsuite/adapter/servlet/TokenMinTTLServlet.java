@@ -17,11 +17,10 @@
 
 package org.keycloak.testsuite.adapter.servlet;
 
-import java.io.IOException;
-
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

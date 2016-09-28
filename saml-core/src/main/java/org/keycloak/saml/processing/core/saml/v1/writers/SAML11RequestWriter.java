@@ -16,10 +16,6 @@
  */
 package org.keycloak.saml.processing.core.saml.v1.writers;
 
-import org.keycloak.saml.common.constants.JBossSAMLConstants;
-import org.keycloak.saml.common.exceptions.ProcessingException;
-import org.keycloak.saml.common.util.StaxUtil;
-import org.keycloak.saml.processing.core.saml.v1.SAML11Constants;
 import org.keycloak.dom.saml.v1.assertion.SAML11ActionType;
 import org.keycloak.dom.saml.v1.assertion.SAML11AttributeDesignatorType;
 import org.keycloak.dom.saml.v1.assertion.SAML11AttributeType;
@@ -30,6 +26,10 @@ import org.keycloak.dom.saml.v1.protocol.SAML11AuthenticationQueryType;
 import org.keycloak.dom.saml.v1.protocol.SAML11AuthorizationDecisionQueryType;
 import org.keycloak.dom.saml.v1.protocol.SAML11QueryAbstractType;
 import org.keycloak.dom.saml.v1.protocol.SAML11RequestType;
+import org.keycloak.saml.common.constants.JBossSAMLConstants;
+import org.keycloak.saml.common.exceptions.ProcessingException;
+import org.keycloak.saml.common.util.StaxUtil;
+import org.keycloak.saml.processing.core.saml.v1.SAML11Constants;
 
 import javax.xml.stream.XMLStreamWriter;
 import java.net.URI;

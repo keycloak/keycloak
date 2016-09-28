@@ -16,15 +16,6 @@
  */
 package org.keycloak.saml.processing.core.parsers.saml.metadata;
 
-import org.keycloak.saml.common.PicketLinkLogger;
-import org.keycloak.saml.common.PicketLinkLoggerFactory;
-import org.keycloak.saml.common.constants.JBossSAMLConstants;
-import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
-import org.keycloak.saml.common.exceptions.ParsingException;
-import org.keycloak.saml.common.parsers.ParserNamespaceSupport;
-import org.keycloak.saml.common.util.StaxParserUtil;
-import org.keycloak.saml.processing.core.parsers.util.SAMLParserUtil;
-import org.keycloak.saml.processing.core.saml.v2.util.XMLTimeUtil;
 import org.keycloak.dom.saml.v2.assertion.AttributeType;
 import org.keycloak.dom.saml.v2.metadata.AttributeAuthorityDescriptorType;
 import org.keycloak.dom.saml.v2.metadata.AttributeConsumingServiceType;
@@ -44,6 +35,15 @@ import org.keycloak.dom.saml.v2.metadata.RequestedAttributeType;
 import org.keycloak.dom.saml.v2.metadata.RoleDescriptorType;
 import org.keycloak.dom.saml.v2.metadata.SPSSODescriptorType;
 import org.keycloak.dom.xmlsec.w3.xmlenc.EncryptionMethodType;
+import org.keycloak.saml.common.PicketLinkLogger;
+import org.keycloak.saml.common.PicketLinkLoggerFactory;
+import org.keycloak.saml.common.constants.JBossSAMLConstants;
+import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
+import org.keycloak.saml.common.exceptions.ParsingException;
+import org.keycloak.saml.common.parsers.ParserNamespaceSupport;
+import org.keycloak.saml.common.util.StaxParserUtil;
+import org.keycloak.saml.processing.core.parsers.util.SAMLParserUtil;
+import org.keycloak.saml.processing.core.saml.v2.util.XMLTimeUtil;
 import org.w3c.dom.Element;
 
 import javax.xml.namespace.QName;

@@ -27,11 +27,10 @@ import org.keycloak.models.UserFederationProvider;
 import org.keycloak.models.UserFederationProviderFactory;
 import org.keycloak.models.UserFederationProviderModel;
 
+import javax.naming.directory.SearchControls;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import javax.naming.directory.SearchControls;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

@@ -17,8 +17,6 @@
 
 package org.keycloak.adapters.saml.config;
 
-import org.keycloak.adapters.saml.SamlDeployment;
-
 import java.io.Serializable;
 import java.util.List;
 

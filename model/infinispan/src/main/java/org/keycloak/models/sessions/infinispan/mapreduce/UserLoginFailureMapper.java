@@ -21,7 +21,6 @@ import org.infinispan.distexec.mapreduce.Collector;
 import org.infinispan.distexec.mapreduce.Mapper;
 import org.keycloak.models.sessions.infinispan.entities.LoginFailureEntity;
 import org.keycloak.models.sessions.infinispan.entities.LoginFailureKey;
-import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
 
 import java.io.Serializable;
 

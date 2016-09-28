@@ -17,8 +17,6 @@
 
 package org.keycloak.services.managers;
 
-import org.keycloak.models.UserFederationProvider;
-import org.keycloak.models.UserFederationProviderFactory;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.Spi;

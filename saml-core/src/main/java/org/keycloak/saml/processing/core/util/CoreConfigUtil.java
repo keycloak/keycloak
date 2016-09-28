@@ -16,8 +16,6 @@
  */
 package org.keycloak.saml.processing.core.util;
 
-import org.keycloak.saml.common.PicketLinkLogger;
-import org.keycloak.saml.common.PicketLinkLoggerFactory;
 import org.keycloak.dom.saml.v2.metadata.EndpointType;
 import org.keycloak.dom.saml.v2.metadata.EntitiesDescriptorType;
 import org.keycloak.dom.saml.v2.metadata.EntityDescriptorType;
@@ -26,6 +24,9 @@ import org.keycloak.dom.saml.v2.metadata.EntityDescriptorType.EDTDescriptorChoic
 import org.keycloak.dom.saml.v2.metadata.IDPSSODescriptorType;
 import org.keycloak.dom.saml.v2.metadata.IndexedEndpointType;
 import org.keycloak.dom.saml.v2.metadata.SPSSODescriptorType;
+import org.keycloak.saml.common.PicketLinkLogger;
+import org.keycloak.saml.common.PicketLinkLoggerFactory;
+
 import java.util.List;
 
 /**

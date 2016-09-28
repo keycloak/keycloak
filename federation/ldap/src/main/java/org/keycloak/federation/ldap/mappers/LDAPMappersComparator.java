@@ -17,15 +17,15 @@
 
 package org.keycloak.federation.ldap.mappers;
 
+import org.keycloak.federation.ldap.LDAPConfig;
+import org.keycloak.models.UserFederationMapperModel;
+import org.keycloak.models.UserModel;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-
-import org.keycloak.federation.ldap.LDAPConfig;
-import org.keycloak.models.UserFederationMapperModel;
-import org.keycloak.models.UserModel;
 
 /**
  * TODO: Possibly add "priority" to UserFederationMapper instead of hardcoding behaviour

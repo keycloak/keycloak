@@ -16,13 +16,13 @@
  */
 package org.keycloak.services.managers;
 
+import org.keycloak.models.LDAPConstants;
+import org.keycloak.services.ServicesLogger;
+
 import javax.naming.Context;
 import javax.naming.NamingException;
 import javax.naming.ldap.InitialLdapContext;
 import java.util.Hashtable;
-
-import org.keycloak.models.LDAPConstants;
-import org.keycloak.services.ServicesLogger;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

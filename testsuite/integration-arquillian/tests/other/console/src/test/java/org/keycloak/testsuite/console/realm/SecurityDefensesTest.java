@@ -26,12 +26,13 @@ import org.keycloak.testsuite.console.page.users.UserAttributes;
 import org.keycloak.testsuite.console.page.users.Users;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
+
+import static org.junit.Assert.*;
 import static org.keycloak.representations.idm.CredentialRepresentation.PASSWORD;
 import static org.keycloak.testsuite.admin.Users.setPasswordFor;
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
 import static org.keycloak.testsuite.util.WaitUtils.*;
-import static org.junit.Assert.*;
 
 /**
  * @author Filip Kiss

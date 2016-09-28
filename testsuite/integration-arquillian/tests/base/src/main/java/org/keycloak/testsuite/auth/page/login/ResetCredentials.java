@@ -16,13 +16,15 @@
  */
 package org.keycloak.testsuite.auth.page.login;
 
-import javax.ws.rs.core.UriBuilder;
 import org.jboss.arquillian.graphene.page.Page;
 import org.keycloak.testsuite.auth.page.account.AccountFields;
 import org.keycloak.testsuite.auth.page.account.PasswordFields;
-import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
+
+import javax.ws.rs.core.UriBuilder;
+
+import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 
 
 /**

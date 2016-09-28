@@ -17,11 +17,6 @@
 
 package org.keycloak.authentication.authenticators.broker;
 
-import java.util.List;
-import java.util.Map;
-
-import javax.ws.rs.core.Response;
-
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.authenticators.broker.util.ExistingUserInfo;
 import org.keycloak.authentication.authenticators.broker.util.SerializedBrokeredIdentityContext;
@@ -34,6 +29,10 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.messages.Messages;
+
+import javax.ws.rs.core.Response;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

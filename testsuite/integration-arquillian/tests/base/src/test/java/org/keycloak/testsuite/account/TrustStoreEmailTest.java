@@ -21,14 +21,14 @@ import org.junit.After;
 import org.junit.Test;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-
 import org.keycloak.testsuite.TestRealmKeycloakTest;
 import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.auth.page.account.AccountManagement;
 import org.keycloak.testsuite.auth.page.login.OIDCLogin;
 import org.keycloak.testsuite.auth.page.login.VerifyEmail;
-import org.keycloak.testsuite.util.*;
-
+import org.keycloak.testsuite.util.MailServerConfiguration;
+import org.keycloak.testsuite.util.RealmRepUtil;
+import org.keycloak.testsuite.util.SslMailServer;
 
 import static org.junit.Assert.assertEquals;
 import static org.keycloak.testsuite.util.MailAssert.assertEmailAndGetUrl;

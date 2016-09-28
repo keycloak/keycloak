@@ -17,11 +17,6 @@
 
 package org.keycloak.services.migration;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import org.keycloak.migration.MigrationProvider;
 import org.keycloak.models.ClaimMask;
 import org.keycloak.models.KeycloakSession;
@@ -34,6 +29,11 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.services.managers.RealmManager;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Various common utils needed for migration from older version to newer

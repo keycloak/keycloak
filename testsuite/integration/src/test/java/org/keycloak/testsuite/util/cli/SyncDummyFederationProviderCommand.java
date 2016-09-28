@@ -17,16 +17,15 @@
 
 package org.keycloak.testsuite.util.cli;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.services.managers.UsersSyncManager;
 import org.keycloak.testsuite.federation.sync.SyncDummyUserFederationProviderFactory;
-import org.keycloak.timer.TimerProvider;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

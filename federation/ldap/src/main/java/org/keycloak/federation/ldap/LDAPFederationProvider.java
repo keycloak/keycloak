@@ -18,8 +18,8 @@
 package org.keycloak.federation.ldap;
 
 import org.jboss.logging.Logger;
+import org.keycloak.common.constants.KerberosConstants;
 import org.keycloak.credential.CredentialInput;
-import org.keycloak.credential.CredentialInputUpdater;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.federation.kerberos.impl.KerberosUsernamePasswordAuthenticator;
 import org.keycloak.federation.kerberos.impl.SPNEGOAuthenticator;
@@ -32,6 +32,7 @@ import org.keycloak.federation.ldap.kerberos.LDAPProviderKerberosConfig;
 import org.keycloak.federation.ldap.mappers.LDAPFederationMapper;
 import org.keycloak.federation.ldap.mappers.LDAPMappersComparator;
 import org.keycloak.federation.ldap.mappers.PasswordUpdated;
+import org.keycloak.mappers.UserFederationMapper;
 import org.keycloak.models.CredentialValidationOutput;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
@@ -42,17 +43,14 @@ import org.keycloak.models.ModelReadOnlyException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
-import org.keycloak.models.UserCredentialValueModel;
-import org.keycloak.mappers.UserFederationMapper;
 import org.keycloak.models.UserFederationMapperModel;
 import org.keycloak.models.UserFederationProvider;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.common.constants.KerberosConstants;
 import org.keycloak.services.managers.UserManager;
 
+import javax.naming.AuthenticationException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -61,8 +59,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import javax.naming.AuthenticationException;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

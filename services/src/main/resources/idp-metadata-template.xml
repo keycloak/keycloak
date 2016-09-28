@@ -17,8 +17,8 @@
   -->
 
 <EntitiesDescriptor Name="urn:keycloak"
-	xmlns="urn:oasis:names:tc:SAML:2.0:metadata"
-	xmlns:dsig="http://www.w3.org/2000/09/xmldsig#" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+					xmlns="urn:oasis:names:tc:SAML:2.0:metadata"
+					xmlns:dsig="http://www.w3.org/2000/09/xmldsig#">
 	<EntityDescriptor entityID="${idp.entityID}">
 		<IDPSSODescriptor WantAuthnRequestsSigned="true"
 			protocolSupportEnumeration="urn:oasis:names:tc:SAML:2.0:protocol">

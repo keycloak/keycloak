@@ -17,7 +17,6 @@
 
 package org.keycloak.testsuite.admin.client;
 
-import java.util.List;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Test;
@@ -28,6 +27,8 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
 import org.keycloak.testsuite.auth.page.account.AccountManagement;
 import org.keycloak.testsuite.util.AdminEventPaths;
+
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;

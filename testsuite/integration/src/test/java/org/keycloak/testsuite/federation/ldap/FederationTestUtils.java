@@ -17,13 +17,6 @@
 
 package org.keycloak.testsuite.federation.ldap;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import org.junit.Assert;
 import org.keycloak.federation.ldap.LDAPFederationProvider;
 import org.keycloak.federation.ldap.LDAPFederationProviderFactory;
@@ -31,14 +24,14 @@ import org.keycloak.federation.ldap.LDAPUtils;
 import org.keycloak.federation.ldap.idm.model.LDAPObject;
 import org.keycloak.federation.ldap.idm.query.internal.LDAPQuery;
 import org.keycloak.federation.ldap.idm.store.ldap.LDAPIdentityStore;
+import org.keycloak.federation.ldap.mappers.UserAttributeLDAPFederationMapper;
+import org.keycloak.federation.ldap.mappers.UserAttributeLDAPFederationMapperFactory;
 import org.keycloak.federation.ldap.mappers.membership.LDAPGroupMapperMode;
+import org.keycloak.federation.ldap.mappers.membership.group.GroupLDAPFederationMapper;
 import org.keycloak.federation.ldap.mappers.membership.group.GroupLDAPFederationMapperFactory;
 import org.keycloak.federation.ldap.mappers.membership.group.GroupMapperConfig;
 import org.keycloak.federation.ldap.mappers.membership.role.RoleLDAPFederationMapper;
 import org.keycloak.federation.ldap.mappers.membership.role.RoleLDAPFederationMapperFactory;
-import org.keycloak.federation.ldap.mappers.UserAttributeLDAPFederationMapper;
-import org.keycloak.federation.ldap.mappers.UserAttributeLDAPFederationMapperFactory;
-import org.keycloak.federation.ldap.mappers.membership.group.GroupLDAPFederationMapper;
 import org.keycloak.federation.ldap.mappers.membership.role.RoleMapperConfig;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
@@ -53,6 +46,13 @@ import org.keycloak.models.UserProvider;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.UserModelDelegate;
 import org.keycloak.representations.idm.CredentialRepresentation;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

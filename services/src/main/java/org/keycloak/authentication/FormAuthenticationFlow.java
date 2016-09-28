@@ -18,8 +18,8 @@
 package org.keycloak.authentication;
 
 import org.jboss.resteasy.spi.HttpRequest;
-import org.keycloak.common.ClientConnection;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.common.ClientConnection;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.AuthenticationExecutionModel;
@@ -35,7 +35,12 @@ import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.net.URI;
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
 * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

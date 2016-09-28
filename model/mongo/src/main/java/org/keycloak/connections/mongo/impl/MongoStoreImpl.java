@@ -17,7 +17,15 @@
 
 package org.keycloak.connections.mongo.impl;
 
-import com.mongodb.*;
+import com.mongodb.BasicDBList;
+import com.mongodb.BasicDBObject;
+import com.mongodb.DB;
+import com.mongodb.DBCollection;
+import com.mongodb.DBCursor;
+import com.mongodb.DBObject;
+import com.mongodb.DuplicateKeyException;
+import com.mongodb.MongoException;
+import com.mongodb.WriteResult;
 import org.jboss.logging.Logger;
 import org.keycloak.connections.mongo.api.MongoCollection;
 import org.keycloak.connections.mongo.api.MongoEntity;

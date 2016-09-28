@@ -17,8 +17,6 @@
 
 package org.keycloak.connections.mongo.lock;
 
-import java.util.concurrent.atomic.AtomicBoolean;
-
 import com.mongodb.DB;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
@@ -28,6 +26,8 @@ import org.keycloak.connections.mongo.MongoConnectionProviderFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.dblock.DBLockProviderFactory;
+
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

@@ -16,6 +16,10 @@
  */
 package org.keycloak.saml.processing.core.util;
 
+import org.keycloak.dom.xmlsec.w3.xmldsig.DSAKeyValueType;
+import org.keycloak.dom.xmlsec.w3.xmldsig.KeyValueType;
+import org.keycloak.dom.xmlsec.w3.xmldsig.RSAKeyValueType;
+import org.keycloak.dom.xmlsec.w3.xmldsig.SignatureType;
 import org.keycloak.saml.common.PicketLinkLogger;
 import org.keycloak.saml.common.PicketLinkLoggerFactory;
 import org.keycloak.saml.common.constants.JBossSAMLConstants;
@@ -27,10 +31,6 @@ import org.keycloak.saml.common.util.DocumentUtil;
 import org.keycloak.saml.common.util.StringUtil;
 import org.keycloak.saml.common.util.SystemPropertiesUtil;
 import org.keycloak.saml.common.util.TransformerUtil;
-import org.keycloak.dom.xmlsec.w3.xmldsig.DSAKeyValueType;
-import org.keycloak.dom.xmlsec.w3.xmldsig.KeyValueType;
-import org.keycloak.dom.xmlsec.w3.xmldsig.RSAKeyValueType;
-import org.keycloak.dom.xmlsec.w3.xmldsig.SignatureType;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;

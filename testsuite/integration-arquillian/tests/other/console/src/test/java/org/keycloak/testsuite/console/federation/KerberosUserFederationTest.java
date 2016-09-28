@@ -1,13 +1,13 @@
 package org.keycloak.testsuite.console.federation;
 
-import static org.junit.Assert.assertEquals;
-
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Test;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserFederationProviderRepresentation;
 import org.keycloak.testsuite.console.AbstractConsoleTest;
 import org.keycloak.testsuite.console.page.federation.CreateKerberosUserProvider;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author pdrozd

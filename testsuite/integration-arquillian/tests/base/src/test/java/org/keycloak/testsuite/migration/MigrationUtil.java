@@ -16,11 +16,13 @@
  */
 package org.keycloak.testsuite.migration;
 
-import java.io.File;
 import org.keycloak.exportimport.ExportImportConfig;
 import org.keycloak.exportimport.singlefile.SingleFileExportProviderFactory;
-import static org.keycloak.testsuite.arquillian.migration.MigrationTestExecutionDecider.MIGRATED_AUTH_SERVER_VERSION_PROPERTY;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
+
+import java.io.File;
+
+import static org.keycloak.testsuite.arquillian.migration.MigrationTestExecutionDecider.MIGRATED_AUTH_SERVER_VERSION_PROPERTY;
 
 /**
  * @author <a href="mailto:vramik@redhat.com">Vlastislav Ramik</a>

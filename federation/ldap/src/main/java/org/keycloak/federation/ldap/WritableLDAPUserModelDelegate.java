@@ -19,8 +19,6 @@ package org.keycloak.federation.ldap;
 
 import org.jboss.logging.Logger;
 import org.keycloak.federation.ldap.idm.model.LDAPObject;
-import org.keycloak.federation.ldap.idm.store.ldap.LDAPIdentityStore;
-import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.UserModelDelegate;
 

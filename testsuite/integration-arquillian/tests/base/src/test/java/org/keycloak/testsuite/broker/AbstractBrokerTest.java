@@ -1,13 +1,5 @@
 package org.keycloak.testsuite.broker;
 
-import static org.junit.Assert.assertEquals;
-import static org.keycloak.testsuite.admin.ApiUtil.createUserWithAdminClient;
-import static org.keycloak.testsuite.admin.ApiUtil.resetUserPassword;
-
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
-import java.util.List;
-
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Test;
@@ -30,6 +22,14 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedCondition;
 import org.openqa.selenium.support.ui.WebDriverWait;
+
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.util.List;
+
+import static org.junit.Assert.assertEquals;
+import static org.keycloak.testsuite.admin.ApiUtil.createUserWithAdminClient;
+import static org.keycloak.testsuite.admin.ApiUtil.resetUserPassword;
 
 public abstract class AbstractBrokerTest extends AbstractKeycloakTest {
 

@@ -19,13 +19,14 @@ package org.keycloak.adapters;
 
 import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.RSATokenVerifier;
 import org.keycloak.adapters.rotation.AdapterRSATokenVerifier;
 import org.keycloak.adapters.spi.AdapterSessionStore;
 import org.keycloak.adapters.spi.AuthChallenge;
 import org.keycloak.adapters.spi.AuthOutcome;
 import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.common.VerificationException;
+import org.keycloak.common.util.KeycloakUriBuilder;
+import org.keycloak.common.util.UriUtils;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.enums.TokenStore;
 import org.keycloak.jose.jws.JWSInput;
@@ -33,8 +34,6 @@ import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.IDToken;
-import org.keycloak.common.util.KeycloakUriBuilder;
-import org.keycloak.common.util.UriUtils;
 import org.keycloak.util.TokenUtil;
 
 import java.io.IOException;

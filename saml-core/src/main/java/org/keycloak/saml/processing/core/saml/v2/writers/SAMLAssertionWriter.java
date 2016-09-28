@@ -16,9 +16,6 @@
  */
 package org.keycloak.saml.processing.core.saml.v2.writers;
 
-import org.keycloak.saml.common.constants.JBossSAMLConstants;
-import org.keycloak.saml.common.exceptions.ProcessingException;
-import org.keycloak.saml.common.util.StaxUtil;
 import org.keycloak.dom.saml.v2.assertion.AdviceType;
 import org.keycloak.dom.saml.v2.assertion.AssertionType;
 import org.keycloak.dom.saml.v2.assertion.AttributeStatementType;
@@ -37,6 +34,9 @@ import org.keycloak.dom.saml.v2.assertion.NameIDType;
 import org.keycloak.dom.saml.v2.assertion.StatementAbstractType;
 import org.keycloak.dom.saml.v2.assertion.SubjectType;
 import org.keycloak.dom.saml.v2.assertion.URIType;
+import org.keycloak.saml.common.constants.JBossSAMLConstants;
+import org.keycloak.saml.common.exceptions.ProcessingException;
+import org.keycloak.saml.common.util.StaxUtil;
 import org.w3c.dom.Element;
 
 import javax.xml.datatype.XMLGregorianCalendar;

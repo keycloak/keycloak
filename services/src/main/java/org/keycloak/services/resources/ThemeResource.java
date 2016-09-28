@@ -17,12 +17,12 @@
 package org.keycloak.services.resources;
 
 import org.keycloak.common.Version;
-import org.keycloak.theme.Theme;
-import org.keycloak.theme.ThemeProvider;
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.common.util.MimeTypeUtil;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.util.CacheControlUtil;
+import org.keycloak.theme.Theme;
+import org.keycloak.theme.ThemeProvider;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;

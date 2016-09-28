@@ -18,21 +18,22 @@
 package org.keycloak.testsuite.console;
 
 import org.jboss.arquillian.graphene.page.Page;
-import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractAuthTest;
+import org.keycloak.testsuite.auth.page.login.Login;
 import org.keycloak.testsuite.console.page.AdminConsole;
 import org.keycloak.testsuite.console.page.AdminConsoleRealm;
 import org.keycloak.testsuite.console.page.AdminConsoleRealm.ConfigureMenu;
 import org.keycloak.testsuite.console.page.AdminConsoleRealm.ManageMenu;
-import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
-import org.keycloak.testsuite.auth.page.login.Login;
 import org.keycloak.testsuite.console.page.fragment.AdminConsoleAlert;
 import org.keycloak.testsuite.console.page.fragment.ModalDialog;
-import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWithLoginUrlOf;
-import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
 import org.openqa.selenium.support.FindBy;
+
+import static org.junit.Assert.assertTrue;
+import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
+import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
+import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWithLoginUrlOf;
 
 /**
  *

@@ -16,11 +16,8 @@
  */
 package org.keycloak.services.resources.admin;
 
-import java.io.IOException;
-import java.util.LinkedList;
-import java.util.List;
-
 import org.keycloak.common.ClientConnection;
+import org.keycloak.common.util.Time;
 import org.keycloak.events.EventListenerProvider;
 import org.keycloak.events.EventStoreProvider;
 import org.keycloak.events.admin.AdminEvent;
@@ -33,9 +30,11 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.util.JsonSerialization;
-import org.keycloak.common.util.Time;
 
 import javax.ws.rs.core.UriInfo;
+import java.io.IOException;
+import java.util.LinkedList;
+import java.util.List;
 
 public class AdminEventBuilder {
 

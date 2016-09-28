@@ -17,14 +17,11 @@
 
 package org.keycloak.services;
 
-import org.keycloak.OAuth2Constants;
 import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

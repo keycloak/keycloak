@@ -17,11 +17,11 @@
 
 package org.keycloak.models.sessions.infinispan.initializer;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.jboss.logging.Logger;
 import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

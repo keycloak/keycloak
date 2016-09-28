@@ -19,14 +19,10 @@ package org.keycloak.models;
 
 import org.jboss.logging.Logger;
 import org.keycloak.component.ComponentModel;
-import org.keycloak.credential.CredentialInput;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.policy.PasswordPolicyManagerProvider;
-import org.keycloak.policy.PolicyError;
 import org.keycloak.services.managers.UserManager;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashSet;

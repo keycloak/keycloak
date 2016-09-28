@@ -48,6 +48,7 @@ import org.keycloak.models.cache.UserCache;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
+import org.keycloak.partialimport.PartialImportManager;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.adapters.action.GlobalRequestResult;
@@ -58,13 +59,13 @@ import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.PartialImportRepresentation;
 import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.services.ErrorResponse;
+import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.LDAPConnectionTestManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.ResourceAdminManager;
-import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.UsersSyncManager;
-import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.resources.admin.RealmAuth.Resource;
 
 import javax.ws.rs.Consumes;
@@ -82,7 +83,6 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriInfo;
-
 import java.security.cert.X509Certificate;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -93,7 +93,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.PatternSyntaxException;
-import org.keycloak.partialimport.PartialImportManager;
 
 /**
  * Base resource class for the admin REST api of one realm

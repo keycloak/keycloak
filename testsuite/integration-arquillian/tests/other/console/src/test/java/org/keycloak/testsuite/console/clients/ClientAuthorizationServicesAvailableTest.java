@@ -18,7 +18,6 @@ package org.keycloak.testsuite.console.clients;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Test;
-import org.keycloak.common.Profile;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.console.page.clients.settings.ClientSettings;

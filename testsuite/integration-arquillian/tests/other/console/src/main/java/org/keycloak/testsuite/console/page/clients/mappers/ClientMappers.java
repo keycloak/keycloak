@@ -1,6 +1,7 @@
 package org.keycloak.testsuite.console.page.clients.mappers;
 
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
+import org.keycloak.testsuite.console.page.clients.Client;
 import org.keycloak.testsuite.console.page.fragment.DataTable;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
@@ -8,7 +9,6 @@ import org.openqa.selenium.support.FindBy;
 
 import java.util.ArrayList;
 import java.util.List;
-import org.keycloak.testsuite.console.page.clients.Client;
 
 /**
  *

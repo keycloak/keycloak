@@ -1,12 +1,14 @@
 package org.keycloak.testsuite.cluster;
 
-import javax.ws.rs.NotFoundException;
 import org.apache.commons.lang.RandomStringUtils;
-import static org.junit.Assert.assertNull;
 import org.keycloak.admin.client.resource.RoleResource;
 import org.keycloak.admin.client.resource.RolesResource;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.testsuite.arquillian.ContainerInfo;
+
+import javax.ws.rs.NotFoundException;
+
+import static org.junit.Assert.assertNull;
 
 /**
  *

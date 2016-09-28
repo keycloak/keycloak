@@ -17,16 +17,6 @@
 
 package org.keycloak.federation.ldap.mappers;
 
-import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import org.jboss.logging.Logger;
 import org.keycloak.federation.ldap.LDAPFederationProvider;
 import org.keycloak.federation.ldap.idm.model.LDAPObject;
@@ -44,6 +34,16 @@ import org.keycloak.models.utils.UserModelDelegate;
 import org.keycloak.models.utils.reflection.Property;
 import org.keycloak.models.utils.reflection.PropertyCriteria;
 import org.keycloak.models.utils.reflection.PropertyQueries;
+
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

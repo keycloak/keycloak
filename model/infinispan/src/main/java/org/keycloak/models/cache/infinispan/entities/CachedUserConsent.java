@@ -17,12 +17,12 @@
 
 package org.keycloak.models.cache.infinispan.entities;
 
-import java.util.HashSet;
-import java.util.Set;
-
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserConsentModel;
+
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

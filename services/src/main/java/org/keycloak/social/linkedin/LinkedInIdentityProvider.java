@@ -16,10 +16,6 @@
  */
 package org.keycloak.social.linkedin;
 
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLDecoder;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import org.jboss.logging.Logger;
 import org.keycloak.broker.oidc.AbstractOAuth2IdentityProvider;
@@ -30,6 +26,10 @@ import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.broker.social.SocialIdentityProvider;
+
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLDecoder;
 
 /**
  * LinkedIn social provider. See https://developer.linkedin.com/docs/oauth2

@@ -17,12 +17,6 @@
 
 package org.keycloak.authentication;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
-import javax.ws.rs.core.Response;
-
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.models.AuthenticationExecutionModel;
@@ -30,6 +24,11 @@ import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.services.ServicesLogger;
+
+import javax.ws.rs.core.Response;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

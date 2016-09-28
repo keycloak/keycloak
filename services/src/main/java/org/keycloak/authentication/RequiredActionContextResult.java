@@ -18,8 +18,9 @@
 package org.keycloak.authentication;
 
 import org.jboss.resteasy.spi.HttpRequest;
-import org.keycloak.common.ClientConnection;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.common.ClientConnection;
+import org.keycloak.common.util.Time;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.ClientSessionModel;
@@ -29,7 +30,6 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.resources.LoginActionsService;
-import org.keycloak.common.util.Time;
 
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;

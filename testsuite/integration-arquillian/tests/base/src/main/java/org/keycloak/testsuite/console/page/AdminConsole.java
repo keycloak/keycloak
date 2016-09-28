@@ -16,18 +16,20 @@
  */
 package org.keycloak.testsuite.console.page;
 
-import java.net.URI;
-import org.keycloak.testsuite.auth.page.AuthServer;
-import javax.ws.rs.core.UriBuilder;
 import org.jboss.arquillian.graphene.page.Page;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
-import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
+import org.keycloak.testsuite.auth.page.AuthServer;
 import org.keycloak.testsuite.auth.page.login.PageWithLoginUrl;
 import org.keycloak.testsuite.console.page.fragment.Menu;
 import org.keycloak.testsuite.console.page.fragment.ModalDialog;
 import org.keycloak.testsuite.page.PageWithLogOutAction;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
+
+import javax.ws.rs.core.UriBuilder;
+import java.net.URI;
+
+import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
 
 /**
  *

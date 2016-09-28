@@ -18,7 +18,6 @@
 package org.keycloak.adapters.authorization;
 
 import org.jboss.logging.Logger;
-import org.keycloak.RSATokenVerifier;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.OIDCHttpFacade;
 import org.keycloak.adapters.rotation.AdapterRSATokenVerifier;
@@ -34,7 +33,6 @@ import org.keycloak.authorization.client.representation.PermissionResponse;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.adapters.config.PolicyEnforcerConfig.PathConfig;
 import org.keycloak.representations.idm.authorization.Permission;
-import org.keycloak.util.JsonSerialization;
 
 import java.util.ArrayList;
 import java.util.HashSet;

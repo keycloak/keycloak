@@ -16,13 +16,14 @@
  */
 package org.keycloak.testsuite.account.custom;
 
-import java.util.Arrays;
-import static org.junit.Assert.assertEquals;
-import org.junit.Test;
-
 import org.junit.Before;
+import org.junit.Test;
 import org.keycloak.models.AuthenticationExecutionModel.Requirement;
 import org.keycloak.representations.idm.ClientRepresentation;
+
+import java.util.Arrays;
+
+import static org.junit.Assert.assertEquals;
 import static org.keycloak.testsuite.util.OAuthClient.APP_ROOT;
 
 /**

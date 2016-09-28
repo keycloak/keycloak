@@ -17,8 +17,11 @@
 
 package org.keycloak.testsuite.exportimport;
 
+import org.jboss.arquillian.container.spi.client.container.LifecycleException;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
+import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.exportimport.ExportImportConfig;
 import org.keycloak.exportimport.dir.DirExportProvider;
@@ -26,16 +29,12 @@ import org.keycloak.exportimport.dir.DirExportProviderFactory;
 import org.keycloak.exportimport.singlefile.SingleFileExportProviderFactory;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testsuite.util.UserBuilder;
 
 import java.io.File;
 import java.net.URL;
 import java.util.List;
-import java.util.regex.Matcher;
-import org.jboss.arquillian.container.spi.client.container.LifecycleException;
-import org.junit.After;
-import org.keycloak.admin.client.resource.RealmResource;
-import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.util.UserBuilder;
 
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 

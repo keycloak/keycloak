@@ -16,10 +16,6 @@
  */
 package org.keycloak.saml.processing.core.saml.v2.writers;
 
-import org.keycloak.saml.common.constants.JBossSAMLConstants;
-import org.keycloak.saml.common.exceptions.ProcessingException;
-import org.keycloak.saml.common.util.StaxUtil;
-import org.keycloak.saml.common.util.StringUtil;
 import org.keycloak.dom.saml.v2.assertion.AssertionType;
 import org.keycloak.dom.saml.v2.assertion.EncryptedAssertionType;
 import org.keycloak.dom.saml.v2.assertion.NameIDType;
@@ -30,7 +26,11 @@ import org.keycloak.dom.saml.v2.protocol.StatusCodeType;
 import org.keycloak.dom.saml.v2.protocol.StatusDetailType;
 import org.keycloak.dom.saml.v2.protocol.StatusResponseType;
 import org.keycloak.dom.saml.v2.protocol.StatusType;
+import org.keycloak.saml.common.constants.JBossSAMLConstants;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
+import org.keycloak.saml.common.exceptions.ProcessingException;
+import org.keycloak.saml.common.util.StaxUtil;
+import org.keycloak.saml.common.util.StringUtil;
 import org.w3c.dom.Element;
 
 import javax.xml.namespace.QName;

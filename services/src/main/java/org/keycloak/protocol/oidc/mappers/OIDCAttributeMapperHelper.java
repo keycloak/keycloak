@@ -18,7 +18,6 @@
 package org.keycloak.protocol.oidc.mappers;
 
 import org.keycloak.models.ProtocolMapperModel;
-import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.provider.ProviderConfigProperty;

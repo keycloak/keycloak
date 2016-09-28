@@ -25,7 +25,6 @@ import org.keycloak.connections.mongo.api.MongoField;
 import org.keycloak.connections.mongo.api.MongoIdentifiableEntity;
 import org.keycloak.connections.mongo.api.MongoStore;
 import org.keycloak.connections.mongo.api.context.MongoStoreInvocationContext;
-import org.keycloak.models.entities.RoleEntity;
 
 import java.util.List;
 

@@ -16,11 +16,17 @@
  */
 package org.keycloak.subsystem.server.extension;
 
+import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.PropertiesAttributeDefinition;
+import org.jboss.as.controller.SimpleAttributeDefinition;
+import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.parsing.ParseUtils;
 import org.jboss.as.controller.persistence.SubsystemMarshallingContext;
 import org.jboss.dmr.ModelNode;
+import org.jboss.dmr.Property;
 import org.jboss.staxmapper.XMLElementReader;
 import org.jboss.staxmapper.XMLElementWriter;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
@@ -29,26 +35,16 @@ import org.jboss.staxmapper.XMLExtendedStreamWriter;
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
 import java.util.List;
-import static javax.xml.stream.XMLStreamConstants.END_ELEMENT;
-import org.jboss.as.controller.AttributeDefinition;
-import org.jboss.as.controller.PathElement;
-import org.jboss.as.controller.PropertiesAttributeDefinition;
-import org.jboss.as.controller.SimpleAttributeDefinition;
-import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
-import org.jboss.dmr.Property;
 
 import static org.keycloak.subsystem.server.extension.KeycloakExtension.PATH_SUBSYSTEM;
-import static org.keycloak.subsystem.server.extension.KeycloakSubsystemDefinition.WEB_CONTEXT;
-import static org.keycloak.subsystem.server.extension.KeycloakSubsystemDefinition.PROVIDERS;
 import static org.keycloak.subsystem.server.extension.KeycloakSubsystemDefinition.MASTER_REALM_NAME;
+import static org.keycloak.subsystem.server.extension.KeycloakSubsystemDefinition.PROVIDERS;
 import static org.keycloak.subsystem.server.extension.KeycloakSubsystemDefinition.SCHEDULED_TASK_INTERVAL;
-
-import static org.keycloak.subsystem.server.extension.ThemeResourceDefinition.MODULES;
-
-import static org.keycloak.subsystem.server.extension.SpiResourceDefinition.DEFAULT_PROVIDER;
-
+import static org.keycloak.subsystem.server.extension.KeycloakSubsystemDefinition.WEB_CONTEXT;
 import static org.keycloak.subsystem.server.extension.ProviderResourceDefinition.ENABLED;
 import static org.keycloak.subsystem.server.extension.ProviderResourceDefinition.PROPERTIES;
+import static org.keycloak.subsystem.server.extension.SpiResourceDefinition.DEFAULT_PROVIDER;
+import static org.keycloak.subsystem.server.extension.ThemeResourceDefinition.MODULES;
 
 /**
  * The subsystem parser, which uses stax to read and write to and from xml

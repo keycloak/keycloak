@@ -19,16 +19,16 @@ package org.keycloak.testsuite.broker;
 
 import org.junit.ClassRule;
 import org.junit.Test;
+import org.keycloak.dom.saml.v2.protocol.ResponseType;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.services.managers.RealmManager;
-import org.keycloak.testsuite.rule.AbstractKeycloakRule;
-import org.keycloak.testsuite.KeycloakServer;
 import org.keycloak.saml.processing.api.saml.v2.request.SAML2Request;
-import org.keycloak.dom.saml.v2.protocol.ResponseType;
 import org.keycloak.saml.processing.web.util.PostBindingUtil;
+import org.keycloak.services.managers.RealmManager;
+import org.keycloak.testsuite.KeycloakServer;
+import org.keycloak.testsuite.rule.AbstractKeycloakRule;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
