@@ -17,6 +17,11 @@
 
 package org.keycloak.models.entities;
 
+import org.keycloak.common.util.MultivaluedHashMap;
+
+import java.util.List;
+import java.util.Map;
+
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
@@ -33,6 +38,7 @@ public class CredentialEntity extends AbstractIdentifiableEntity {
     protected String algorithm;
     protected int digits;
     protected int period;
+    protected Map<String, List<String>> config = new MultivaluedHashMap<>();
 
 
     public String getType() {
@@ -121,5 +127,13 @@ public class CredentialEntity extends AbstractIdentifiableEntity {
 
     public void setPeriod(int period) {
         this.period = period;
+    }
+
+    public Map<String, List<String>> getConfig() {
+        return config;
+    }
+
+    public void setConfig(Map<String, List<String>> config) {
+        this.config = config;
     }
 }

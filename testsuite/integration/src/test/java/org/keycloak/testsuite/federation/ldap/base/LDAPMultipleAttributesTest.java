@@ -20,6 +20,7 @@ package org.keycloak.testsuite.federation.ldap.base;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -149,7 +150,9 @@ public class LDAPMultipleAttributesTest {
             // Actually there are 2 postalCodes
             List<String> postalCodes = user.getAttribute("postal_code");
             assertPostalCodes(postalCodes, "88441", "77332");
-
+            List<String> tmp = new LinkedList<>();
+            tmp.addAll(postalCodes);
+            postalCodes = tmp;
             postalCodes.remove("77332");
             user.setAttribute("postal_code", postalCodes);
 
@@ -163,7 +166,9 @@ public class LDAPMultipleAttributesTest {
             UserModel user = session.users().getUserByUsername("bwilson", appRealm);
             List<String> postalCodes = user.getAttribute("postal_code");
             assertPostalCodes(postalCodes, "88441");
-
+            List<String> tmp = new LinkedList<>();
+            tmp.addAll(postalCodes);
+            postalCodes = tmp;
             postalCodes.add("77332");
             user.setAttribute("postal_code", postalCodes);
         } finally {
