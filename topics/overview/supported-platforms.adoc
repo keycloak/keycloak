@@ -21,6 +21,9 @@
 ===== JavaScript (client-side)
 * <<fake/../../oidc/javascript-adapter.adoc#_javascript_adapter,JavaScript>>
 
+===== Node.js (server-side)
+* <<fake/../../oidc/nodejs-adapter.adoc#_nodejs_adapter,Node.js>>
+
 ===== Apache Cordova
 * <<fake/../../oidc/javascript-adapter.adoc#_javascript_adapter,JavaScript>>
 
