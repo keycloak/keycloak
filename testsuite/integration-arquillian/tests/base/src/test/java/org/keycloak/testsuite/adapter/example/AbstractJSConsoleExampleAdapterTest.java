@@ -66,6 +66,8 @@ public abstract class AbstractJSConsoleExampleAdapterTest extends AbstractExampl
     @Page
     private Applications applicationsPage;
 
+    private static int TIME_SKEW_TOLERANCE = 3;
+
     public static int TOKEN_LIFESPAN_LEEWAY = 3; // seconds
 
     @Deployment(name = JSConsoleTestApp.DEPLOYMENT_NAME)
@@ -349,6 +351,42 @@ public abstract class AbstractJSConsoleExampleAdapterTest extends AbstractExampl
         waitUntilElement(jsConsoleTestAppPage.getInitButtonElement()).is().present();
         jsConsoleTestAppPage.init();
         waitUntilElement(jsConsoleTestAppPage.getOutputElement()).text().contains("Init Success (Authenticated)");
+    }
+
+    @Test
+    public void testUpdateToken() {
+        logInAndInit("standard");
+
+        jsConsoleTestAppPage.setTimeSkewOffset(-33);
+        setTimeOffset(33);
+
+        jsConsoleTestAppPage.refreshTokenIfUnder5s();
+
+        jsConsoleTestAppPage.setTimeSkewOffset(-34);
+        setTimeOffset(67);
+
+        jsConsoleTestAppPage.refreshTokenIfUnder5s();
+        jsConsoleTestAppPage.createBearerRequestToKeycloak();
+        waitUntilElement(jsConsoleTestAppPage.getOutputElement()).text().contains("Success");
+    }
+
+    @Test
+    public void timeSkewTest() {
+        logInAndInit("standard");
+
+        jsConsoleTestAppPage.refreshTimeSkew();
+
+        int timeSkew = Integer.parseInt(jsConsoleTestAppPage.getTimeSkewValue().getText());
+        assertTrue("TimeSkew was: " + timeSkew + ", but should be ~0", timeSkew >= 0 - TIME_SKEW_TOLERANCE);
+        assertTrue("TimeSkew was: " + timeSkew + ", but should be ~0", timeSkew  <= TIME_SKEW_TOLERANCE);
+
+        setTimeOffset(40);
+        jsConsoleTestAppPage.refreshToken();
+        jsConsoleTestAppPage.refreshTimeSkew();
+
+        timeSkew = Integer.parseInt(jsConsoleTestAppPage.getTimeSkewValue().getText());
+        assertTrue("TimeSkew was: " + timeSkew + ", but should be ~-40", timeSkew + 40 >= 0 - TIME_SKEW_TOLERANCE);
+        assertTrue("TimeSkew was: " + timeSkew + ", but should be ~-40", timeSkew + 40  <= TIME_SKEW_TOLERANCE);
     }
 
     private void setImplicitFlowForClient() {
