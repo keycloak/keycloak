@@ -16,11 +16,12 @@
  */
 package org.keycloak.testsuite.adapter.servlet;
 
-import java.io.InputStream;
 import org.keycloak.adapters.KeycloakConfigResolver;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.KeycloakDeploymentBuilder;
 import org.keycloak.adapters.spi.HttpFacade;
+
+import java.io.InputStream;
 
 /**
  *
