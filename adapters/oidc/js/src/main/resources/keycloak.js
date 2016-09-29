@@ -910,22 +910,31 @@
                     },
 
                     redirectUri: function(options, encodeHash) {
+                        var redirectUri;
+                        var requestedUri;
+
                         if (arguments.length == 1) {
                             encodeHash = true;
                         }
 
                         if (options && options.redirectUri) {
-                            return options.redirectUri;
+                            requestedUri = options.redirectUri;
                         } else if (kc.redirectUri) {
-                            return kc.redirectUri;
+                            requestedUri = kc.redirectUri;
                         } else {
-                            var redirectUri = location.href;
-                            if (location.hash && encodeHash) {
-                                redirectUri = redirectUri.substring(0, location.href.indexOf('#'));
-                                redirectUri += (redirectUri.indexOf('?') == -1 ? '?' : '&') + 'redirect_fragment=' + encodeURIComponent(location.hash.substring(1));
-                            }
-                            return redirectUri;
+                            requestedUri = location.href;
                         }
+
+                        var baseUri = requestedUri.slice(0, requestedUri.indexOf('#'));
+                        var hashValue = requestedUri.slice(baseUri.length + 1);
+
+                        if (hashValue && encodeHash) {
+                            redirectUri = baseUri + (baseUri.indexOf('?') == -1 ? '?' : '&') + 'redirect_fragment=' + encodeURIComponent(hashValue);
+                        } else {
+                            redirectUri = requestedUri;
+                        }
+
+                        return redirectUri;
                     }
                 };
             }
