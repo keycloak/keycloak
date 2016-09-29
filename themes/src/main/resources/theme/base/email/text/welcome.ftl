@@ -1,0 +1,1 @@
+${msg("welcomeBodyHtml",link, realmName, user.username)}
