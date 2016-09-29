@@ -6,6 +6,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.UserFederationProviderFactoryRepresentation;
 import org.keycloak.representations.idm.UserFederationProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
@@ -69,6 +70,12 @@ public class SSSDTest extends AbstractKeycloakTest {
         userFederation.setProviderName(PROVIDER_NAME);
 
         adminClient.realm(REALM_NAME).userFederation().create(userFederation);
+    }
+
+    @Test
+    public void testProviderFactories() {
+        List<UserFederationProviderFactoryRepresentation> providerFactories = adminClient.realm(REALM_NAME).userFederation().getProviderFactories();
+        Assert.assertNames(providerFactories, "ldap", "kerberos", "dummy", "dummy-configurable", "sssd");
     }
 
     @Test
