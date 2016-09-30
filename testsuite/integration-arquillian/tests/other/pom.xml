@@ -142,6 +142,12 @@
                 <module>jpa-performance</module>
             </modules>
         </profile>
+        <profile>
+            <id>nodejs-adapter-tests</id>
+            <modules>
+                <module>nodejs_adapter</module>
+            </modules>
+        </profile>
     </profiles>
 
 </project>

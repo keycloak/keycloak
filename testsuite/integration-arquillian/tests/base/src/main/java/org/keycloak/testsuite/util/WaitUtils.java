@@ -71,6 +71,7 @@ public final class WaitUtils {
     }
 
     public static void pause(long millis) {
+        log.info("Wait: " + millis + "ms");
         try {
             Thread.sleep(millis);
         } catch (InterruptedException ex) {
