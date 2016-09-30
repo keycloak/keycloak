@@ -19,6 +19,7 @@ package org.keycloak.social.stackoverflow;
 import org.keycloak.broker.provider.AbstractIdentityProviderFactory;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.broker.social.SocialIdentityProviderFactory;
+import org.keycloak.models.KeycloakSession;
 
 /**
  * @author Vlastimil Elias (velias at redhat dot com)
@@ -35,8 +36,8 @@ public class StackoverflowIdentityProviderFactory extends
 	}
 
 	@Override
-	public StackoverflowIdentityProvider create(IdentityProviderModel model) {
-		return new StackoverflowIdentityProvider(new StackOverflowIdentityProviderConfig(model));
+	public StackoverflowIdentityProvider create(KeycloakSession session, IdentityProviderModel model) {
+		return new StackoverflowIdentityProvider(session, new StackOverflowIdentityProviderConfig(model));
 	}
 
 	@Override

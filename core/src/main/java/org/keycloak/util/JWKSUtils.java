@@ -42,4 +42,15 @@ public class JWKSUtils {
 
         return result;
     }
+
+    public static JWK getKeyForUse(JSONWebKeySet keySet, JWK.Use requestedUse) {
+        for (JWK jwk : keySet.getKeys()) {
+            JWKParser parser = JWKParser.create(jwk);
+            if (parser.getJwk().getPublicKeyUse().equals(requestedUse.asString()) && parser.isKeyTypeSupported(jwk.getKeyType())) {
+                return jwk;
+            }
+        }
+
+        return null;
+    }
 }

@@ -31,6 +31,7 @@ import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.broker.social.SocialIdentityProvider;
+import org.keycloak.models.KeycloakSession;
 
 /**
  * Stackoverflow social provider. See https://api.stackexchange.com/docs/authentication
@@ -46,8 +47,8 @@ public class StackoverflowIdentityProvider extends AbstractOAuth2IdentityProvide
 	public static final String PROFILE_URL = "https://api.stackexchange.com/2.2/me?order=desc&sort=name&site=stackoverflow";
 	public static final String DEFAULT_SCOPE = "";
 
-	public StackoverflowIdentityProvider(StackOverflowIdentityProviderConfig config) {
-		super(config);
+	public StackoverflowIdentityProvider(KeycloakSession session, StackOverflowIdentityProviderConfig config) {
+		super(session, config);
 		config.setAuthorizationUrl(AUTH_URL);
 		config.setTokenUrl(TOKEN_URL);
 		config.setUserInfoUrl(PROFILE_URL);

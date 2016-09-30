@@ -30,6 +30,7 @@ import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.broker.social.SocialIdentityProvider;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import org.keycloak.models.KeycloakSession;
 
 /**
  * 
@@ -46,8 +47,8 @@ public class MicrosoftIdentityProvider extends AbstractOAuth2IdentityProvider im
     public static final String PROFILE_URL = "https://apis.live.net/v5.0/me";
     public static final String DEFAULT_SCOPE = "wl.basic,wl.emails";
 
-    public MicrosoftIdentityProvider(OAuth2IdentityProviderConfig config) {
-        super(config);
+    public MicrosoftIdentityProvider(KeycloakSession session, OAuth2IdentityProviderConfig config) {
+        super(session, config);
         config.setAuthorizationUrl(AUTH_URL);
         config.setTokenUrl(TOKEN_URL);
         config.setUserInfoUrl(PROFILE_URL);

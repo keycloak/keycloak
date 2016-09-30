@@ -24,6 +24,7 @@ import org.keycloak.broker.oidc.OAuth2IdentityProviderConfig;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.KeycloakSession;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -129,7 +130,7 @@ public class AbstractOAuth2IdentityProviderTest {
 	private static class TestProvider extends AbstractOAuth2IdentityProvider<OAuth2IdentityProviderConfig> {
 
 		public TestProvider(OAuth2IdentityProviderConfig config) {
-			super(config);
+			super(null, config);
 		}
 
 		@Override

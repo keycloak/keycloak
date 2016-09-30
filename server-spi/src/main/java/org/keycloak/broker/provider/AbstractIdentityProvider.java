@@ -32,9 +32,11 @@ import javax.ws.rs.core.UriInfo;
  */
 public abstract class AbstractIdentityProvider<C extends IdentityProviderModel> implements IdentityProvider<C> {
 
+    protected final KeycloakSession session;
     private final C config;
 
-    public AbstractIdentityProvider(C config) {
+    public AbstractIdentityProvider(KeycloakSession session, C config) {
+        this.session = session;
         this.config = config;
     }
 

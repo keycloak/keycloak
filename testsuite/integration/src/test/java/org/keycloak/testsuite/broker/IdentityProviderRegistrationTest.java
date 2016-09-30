@@ -64,7 +64,7 @@ public class IdentityProviderRegistrationTest extends AbstractIdentityProviderMo
 
         identityProviderModel.setAlias("custom-provider");
 
-        CustomSocialProvider customSocialProvider = providerFactory.create(identityProviderModel);
+        CustomSocialProvider customSocialProvider = providerFactory.create(this.session, identityProviderModel);
 
         assertNotNull(customSocialProvider);
         IdentityProviderModel config = customSocialProvider.getConfig();
@@ -87,7 +87,7 @@ public class IdentityProviderRegistrationTest extends AbstractIdentityProviderMo
 
         identityProviderModel.setAlias("custom-provider");
 
-        CustomIdentityProvider provider = providerFactory.create(identityProviderModel);
+        CustomIdentityProvider provider = providerFactory.create(this.session, identityProviderModel);
 
         assertNotNull(provider);
         IdentityProviderModel config = provider.getConfig();

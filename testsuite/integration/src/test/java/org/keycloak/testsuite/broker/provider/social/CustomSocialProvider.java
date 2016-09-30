@@ -30,8 +30,8 @@ import javax.ws.rs.core.Response;
  */
 public class CustomSocialProvider extends AbstractIdentityProvider<IdentityProviderModel> implements SocialIdentityProvider<IdentityProviderModel> {
 
-    public CustomSocialProvider(IdentityProviderModel config) {
-        super(config);
+    public CustomSocialProvider(KeycloakSession session, IdentityProviderModel config) {
+        super(session, config);
     }
 
     @Override

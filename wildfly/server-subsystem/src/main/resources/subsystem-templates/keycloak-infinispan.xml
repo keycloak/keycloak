@@ -36,6 +36,10 @@
                 <local-cache name="authorization">
                     <eviction max-entries="100" strategy="LRU"/>
                 </local-cache>
+                <local-cache name="keys">
+                    <eviction max-entries="1000" strategy="LRU"/>
+                    <expiration max-idle="3600000" />
+                </local-cache>
             </cache-container>
             <cache-container name="server" default-cache="default" module="org.wildfly.clustering.server">
                 <local-cache name="default">
@@ -97,6 +101,10 @@
                 <distributed-cache name="loginFailures" mode="SYNC" owners="1"/>
                 <distributed-cache name="authorization" mode="SYNC" owners="1"/>
                 <replicated-cache name="work" mode="SYNC" />
+                <local-cache name="keys">
+                    <eviction max-entries="1000" strategy="LRU"/>
+                    <expiration max-idle="3600000" />
+                </local-cache>
             </cache-container>
             <cache-container name="server" aliases="singleton cluster" default-cache="default" module="org.wildfly.clustering.server">
                 <transport lock-timeout="60000"/>

@@ -406,6 +406,9 @@ public class OIDCAdvancedRequestParamsTest extends TestRealmKeycloakTest {
         CertificateInfoHelper.updateClientRepresentationCertificateInfo(clientRep, cert, JWTClientAuthenticator.ATTR_PREFIX);
         clientResource.update(clientRep);
 
+        // set time offset, so that new keys are downloaded
+        setTimeOffset(20);
+
         // Check signed request_uri will pass
         OAuthClient.AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
         Assert.assertNotNull(response.getCode());
