@@ -45,3 +45,6 @@ catalog.xml
 #########
 target
 
+# Maven shade
+#############
+*dependency-reduced-pom.xml
