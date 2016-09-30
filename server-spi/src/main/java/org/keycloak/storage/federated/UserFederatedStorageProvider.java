@@ -37,7 +37,6 @@ public interface UserFederatedStorageProvider extends Provider,
         UserAttributeFederatedStorage,
         UserBrokerLinkFederatedStorage,
         UserConsentFederatedStorage,
-        UserCredentialsFederatedStorage,
         UserGroupMembershipFederatedStorage,
         UserRequiredActionsFederatedStorage,
         UserRoleMappingsFederatedStorage {
