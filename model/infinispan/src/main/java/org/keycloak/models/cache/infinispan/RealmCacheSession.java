@@ -18,6 +18,7 @@
 package org.keycloak.models.cache.infinispan;
 
 import org.jboss.logging.Logger;
+import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.migration.MigrationModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientTemplateModel;
@@ -147,6 +148,8 @@ public class RealmCacheSession implements CacheRealmProvider {
     @Override
     public void clear() {
         cache.clear();
+        ClusterProvider cluster = session.getProvider(ClusterProvider.class);
+        cluster.notify(InfinispanCacheRealmProviderFactory.REALM_CLEAR_CACHE_EVENTS, new ClearCacheEvent());
     }
 
     @Override

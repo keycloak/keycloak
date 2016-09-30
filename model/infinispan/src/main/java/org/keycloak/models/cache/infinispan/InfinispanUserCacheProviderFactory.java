@@ -20,6 +20,9 @@ package org.keycloak.models.cache.infinispan;
 import org.infinispan.Cache;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
+import org.keycloak.cluster.ClusterEvent;
+import org.keycloak.cluster.ClusterListener;
+import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -33,6 +36,7 @@ import org.keycloak.models.cache.infinispan.entities.Revisioned;
 public class InfinispanUserCacheProviderFactory implements UserCacheProviderFactory {
 
     private static final Logger log = Logger.getLogger(InfinispanUserCacheProviderFactory.class);
+    public static final String USER_CLEAR_CACHE_EVENTS = "USER_CLEAR_CACHE_EVENTS";
 
     protected volatile UserCacheManager userCache;
 
@@ -51,6 +55,13 @@ public class InfinispanUserCacheProviderFactory implements UserCacheProviderFact
                     Cache<String, Revisioned> cache = session.getProvider(InfinispanConnectionProvider.class).getCache(InfinispanConnectionProvider.USER_CACHE_NAME);
                     Cache<String, Long> revisions = session.getProvider(InfinispanConnectionProvider.class).getCache(InfinispanConnectionProvider.USER_REVISIONS_CACHE_NAME);
                     userCache = new UserCacheManager(cache, revisions);
+                    ClusterProvider cluster = session.getProvider(ClusterProvider.class);
+                    cluster.registerListener(USER_CLEAR_CACHE_EVENTS, new ClusterListener() {
+                        @Override
+                        public void run(ClusterEvent event) {
+                            userCache.clear();
+                        }
+                    });
                 }
             }
         }

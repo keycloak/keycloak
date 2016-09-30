@@ -561,6 +561,9 @@ public class UserStorageManager implements UserProvider, OnUserCache {
 
     @Override
     public void preRemove(RealmModel realm, ComponentModel component) {
+        if (!component.getProviderType().equals(UserStorageProvider.class.getName())) return;
+        localStorage().preRemove(realm, component);
+        if (getFederatedStorage() != null) getFederatedStorage().preRemove(realm, component);
 
     }
 

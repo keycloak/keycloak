@@ -37,8 +37,10 @@ import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.mongo.keycloak.entities.CredentialEntity;
 import org.keycloak.models.mongo.keycloak.entities.FederatedIdentityEntity;
+import org.keycloak.models.mongo.keycloak.entities.MongoUserEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.storage.StorageId;
+import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.federated.UserAttributeFederatedStorage;
 import org.keycloak.storage.federated.UserBrokerLinkFederatedStorage;
 import org.keycloak.storage.federated.UserConsentFederatedStorage;
@@ -218,7 +220,10 @@ public class MongoUserFederatedStorageProvider implements
 
     @Override
     public void preRemove(RealmModel realm) {
-
+        DBObject query = new QueryBuilder()
+                .and("realmId").is(realm.getId())
+                .get();
+        getMongoStore().removeEntities(FederatedUser.class, query, true, invocationContext);
     }
 
     @Override
@@ -228,11 +233,23 @@ public class MongoUserFederatedStorageProvider implements
 
     @Override
     public void preRemove(RealmModel realm, GroupModel group) {
+        DBObject query = new QueryBuilder()
+                .and("groupIds").is(group.getId())
+                .get();
+
+        DBObject pull = new BasicDBObject("$pull", query);
+        getMongoStore().updateEntities(FederatedUser.class, query, pull, invocationContext);
 
     }
 
     @Override
     public void preRemove(RealmModel realm, RoleModel role) {
+        DBObject query = new QueryBuilder()
+                .and("roleIds").is(role.getId())
+                .get();
+
+        DBObject pull = new BasicDBObject("$pull", query);
+        getMongoStore().updateEntities(FederatedUser.class, query, pull, invocationContext);
 
     }
 
@@ -248,11 +265,17 @@ public class MongoUserFederatedStorageProvider implements
 
     @Override
     public void preRemove(RealmModel realm, UserModel user) {
+        getMongoStore().removeEntity(FederatedUser.class, user.getId(), invocationContext);
 
     }
 
     @Override
     public void preRemove(RealmModel realm, ComponentModel model) {
+        if (!model.getProviderType().equals(UserStorageProvider.class.getName())) return;
+        DBObject query = new QueryBuilder()
+                .and("storageId").is(model.getId())
+                .get();
+        getMongoStore().removeEntities(FederatedUser.class, query, true, invocationContext);
 
     }
 

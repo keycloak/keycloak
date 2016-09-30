@@ -520,6 +520,7 @@ public class UserFederationManager implements UserProvider {
 
     @Override
     public void preRemove(RealmModel realm, ComponentModel component) {
+        session.userStorage().preRemove(realm, component);
 
     }
 
