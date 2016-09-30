@@ -30,27 +30,14 @@ import java.io.InputStream;
 import java.security.PublicKey;
 
 /**
- * TODO: Merge with JWKSUtils from keycloak-core?
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class JWKSUtils {
+public class JWKSHttpUtils {
 
     public static JSONWebKeySet sendJwksRequest(KeycloakSession session, String jwksURI) throws IOException {
         InputStream is = session.getProvider(HttpClientProvider.class).get(jwksURI);
         String keySetString = StreamUtil.readString(is);
         return JsonSerialization.readValue(keySetString, JSONWebKeySet.class);
-    }
-
-
-    public static PublicKey getKeyForUse(JSONWebKeySet keySet, JWK.Use requestedUse) {
-        for (JWK jwk : keySet.getKeys()) {
-            JWKParser parser = JWKParser.create(jwk);
-            if (parser.getJwk().getPublicKeyUse().equals(requestedUse.asString()) && parser.isKeyTypeSupported(jwk.getKeyType())) {
-                return parser.toPublicKey();
-            }
-        }
-
-        return null;
     }
 }

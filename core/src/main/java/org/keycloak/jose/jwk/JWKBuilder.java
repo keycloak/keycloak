@@ -34,6 +34,7 @@ public class JWKBuilder {
     public static final String DEFAULT_PUBLIC_KEY_USE = "sig";
     public static final String DEFAULT_MESSAGE_DIGEST = "SHA-256";
 
+    private String kid;
 
     private JWKBuilder() {
     }
@@ -42,11 +43,18 @@ public class JWKBuilder {
         return new JWKBuilder();
     }
 
+    public JWKBuilder kid(String kid) {
+        this.kid = kid;
+        return this;
+    }
+
     public JWK rs256(PublicKey key) {
         RSAPublicKey rsaKey = (RSAPublicKey) key;
 
         RSAPublicJWK k = new RSAPublicJWK();
-        k.setKeyId(createKeyId(key));
+
+        String kid = this.kid != null ? this.kid : createKeyId(key);
+        k.setKeyId(kid);
         k.setKeyType(RSAPublicJWK.RSA);
         k.setAlgorithm(RSAPublicJWK.RS256);
         k.setPublicKeyUse(DEFAULT_PUBLIC_KEY_USE);
@@ -56,7 +64,7 @@ public class JWKBuilder {
         return k;
     }
 
-    private String createKeyId(Key key) {
+    public static String createKeyId(Key key) {
         try {
             return Base64Url.encode(MessageDigest.getInstance(DEFAULT_MESSAGE_DIGEST).digest(key.getEncoded()));
         } catch (NoSuchAlgorithmException e) {

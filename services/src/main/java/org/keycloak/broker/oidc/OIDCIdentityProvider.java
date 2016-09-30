@@ -32,6 +32,7 @@ import org.keycloak.events.EventType;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.jose.jws.crypto.RSAProvider;
+import org.keycloak.keys.loader.KeyStorageManager;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -70,8 +71,8 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
     public static final String FEDERATED_ACCESS_TOKEN_RESPONSE = "FEDERATED_ACCESS_TOKEN_RESPONSE";
     public static final String VALIDATED_ID_TOKEN = "VALIDATED_ID_TOKEN";
 
-    public OIDCIdentityProvider(OIDCIdentityProviderConfig config) {
-        super(config);
+    public OIDCIdentityProvider(KeycloakSession session, OIDCIdentityProviderConfig config) {
+        super(session, config);
 
         String defaultScope = config.getDefaultScope();
 
@@ -83,21 +84,6 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
     @Override
     public Object callback(RealmModel realm, AuthenticationCallback callback, EventBuilder event) {
         return new OIDCEndpoint(callback, realm, event);
-    }
-
-    protected PublicKey getExternalIdpKey() {
-        String signingCert = getConfig().getCertificateSignatureVerifier();
-        try {
-            if (signingCert != null && !signingCert.trim().equals("")) {
-                return PemUtils.decodeCertificate(signingCert).getPublicKey();
-            } else if (getConfig().getPublicKeySignatureVerifier() != null && !getConfig().getPublicKeySignatureVerifier().trim().equals("")) {
-                return PemUtils.decodePublicKey(getConfig().getPublicKeySignatureVerifier());
-            }
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-        return null;
-
     }
 
     protected class OIDCEndpoint extends Endpoint {
@@ -232,7 +218,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         return authorizationUrl;
     }
 
-    protected void processAccessTokenResponse(BrokeredIdentityContext context, PublicKey idpKey, AccessTokenResponse response) {
+    protected void processAccessTokenResponse(BrokeredIdentityContext context, AccessTokenResponse response) {
 
     }
 
@@ -244,14 +230,11 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         } catch (IOException e) {
             throw new IdentityBrokerException("Could not decode access token response.", e);
         }
-        PublicKey key = getExternalIdpKey();
-        String accessToken = verifyAccessToken(key, tokenResponse);
+        String accessToken = verifyAccessToken(tokenResponse);
 
         String encodedIdToken = tokenResponse.getIdToken();
 
-
-
-        JsonWebToken idToken = validateToken(key, encodedIdToken);
+        JsonWebToken idToken = validateToken(encodedIdToken);
 
         try {
             String id = idToken.getSubject();
@@ -273,7 +256,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
             }
             identity.getContextData().put(FEDERATED_ACCESS_TOKEN_RESPONSE, tokenResponse);
             identity.getContextData().put(VALIDATED_ID_TOKEN, idToken);
-            processAccessTokenResponse(identity, key, tokenResponse);
+            processAccessTokenResponse(identity, tokenResponse);
 
             identity.setId(id);
             identity.setName(name);
@@ -304,7 +287,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         }
     }
 
-    private String verifyAccessToken(PublicKey key, AccessTokenResponse tokenResponse) {
+    private String verifyAccessToken(AccessTokenResponse tokenResponse) {
         String accessToken = tokenResponse.getToken();
 
         if (accessToken == null) {
@@ -313,14 +296,15 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         return accessToken;
     }
 
-    protected boolean verify(JWSInput jws, PublicKey key) {
-        if (key == null) return true;
+    protected boolean verify(JWSInput jws) {
         if (!getConfig().isValidateSignature()) return true;
-        return RSAProvider.verify(jws, key);
 
+        PublicKey publicKey = KeyStorageManager.getIdentityProviderPublicKey(session, session.getContext().getRealm(), getConfig(), jws);
+
+        return publicKey != null && RSAProvider.verify(jws, publicKey);
     }
 
-    protected JsonWebToken validateToken(PublicKey key, String encodedToken) {
+    protected JsonWebToken validateToken(String encodedToken) {
         if (encodedToken == null) {
             throw new IdentityBrokerException("No token from server.");
         }
@@ -328,7 +312,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         JsonWebToken token;
         try {
             JWSInput jws = new JWSInput(encodedToken);
-            if (!verify(jws, key)) {
+            if (!verify(jws)) {
                 throw new IdentityBrokerException("token signature validation failed");
             }
             token = jws.readJsonContent(JsonWebToken.class);

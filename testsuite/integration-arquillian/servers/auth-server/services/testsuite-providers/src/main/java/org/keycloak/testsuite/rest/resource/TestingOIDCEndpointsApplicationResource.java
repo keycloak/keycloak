@@ -120,7 +120,8 @@ public class TestingOIDCEndpointsApplicationResource {
             }
 
             PrivateKey privateKey = clientData.getSigningKeyPair().getPrivate();
-            clientData.setOidcRequest(new JWSBuilder().jsonContent(oidcRequest).rsa256(privateKey));
+            String kid = JWKBuilder.createKeyId(clientData.getSigningKeyPair().getPublic());
+            clientData.setOidcRequest(new JWSBuilder().kid(kid).jsonContent(oidcRequest).rsa256(privateKey));
         } else {
             throw new BadRequestException("Unknown argument: " + jwaAlgorithm);
         }

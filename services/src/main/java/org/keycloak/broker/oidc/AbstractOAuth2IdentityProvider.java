@@ -73,8 +73,8 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
     public static final String OAUTH2_PARAMETER_GRANT_TYPE = "grant_type";
 
 
-    public AbstractOAuth2IdentityProvider(C config) {
-        super(config);
+    public AbstractOAuth2IdentityProvider(KeycloakSession session, C config) {
+        super(session, config);
 
         if (config.getDefaultScope() == null || config.getDefaultScope().isEmpty()) {
             config.setDefaultScope(getDefaultScopes());

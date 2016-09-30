@@ -37,6 +37,8 @@ public class CertificateInfoHelper {
     public static final String X509CERTIFICATE = "certificate";
     public static final String PUBLIC_KEY = "public.key";
 
+    public static final String KID = "kid";
+
 
     // CLIENT MODEL METHODS
 
@@ -44,11 +46,13 @@ public class CertificateInfoHelper {
         String privateKeyAttribute = attributePrefix + "." + PRIVATE_KEY;
         String certificateAttribute = attributePrefix + "." + X509CERTIFICATE;
         String publicKeyAttribute = attributePrefix + "." + PUBLIC_KEY;
+        String kidAttribute = attributePrefix + "." + KID;
 
         CertificateRepresentation rep = new CertificateRepresentation();
         rep.setCertificate(client.getAttribute(certificateAttribute));
         rep.setPublicKey(client.getAttribute(publicKeyAttribute));
         rep.setPrivateKey(client.getAttribute(privateKeyAttribute));
+        rep.setKid(client.getAttribute(kidAttribute));
 
         return rep;
     }
@@ -58,6 +62,7 @@ public class CertificateInfoHelper {
         String privateKeyAttribute = attributePrefix + "." + PRIVATE_KEY;
         String certificateAttribute = attributePrefix + "." + X509CERTIFICATE;
         String publicKeyAttribute = attributePrefix + "." + PUBLIC_KEY;
+        String kidAttribute = attributePrefix + "." + KID;
 
         if (rep.getPublicKey() == null && rep.getCertificate() == null) {
             throw new IllegalStateException("Both certificate and publicKey are null!");
@@ -70,6 +75,7 @@ public class CertificateInfoHelper {
         setOrRemoveAttr(client, privateKeyAttribute, rep.getPrivateKey());
         setOrRemoveAttr(client, publicKeyAttribute, rep.getPublicKey());
         setOrRemoveAttr(client, certificateAttribute, rep.getCertificate());
+        setOrRemoveAttr(client, kidAttribute, rep.getKid());
     }
 
     private static void setOrRemoveAttr(ClientModel client, String attrName, String attrValue) {
@@ -81,36 +87,13 @@ public class CertificateInfoHelper {
     }
 
 
-    public static PublicKey getSignatureValidationKey(ClientModel client, String attributePrefix) throws ModelException {
-        CertificateRepresentation certInfo = getCertificateFromClient(client, attributePrefix);
-
-        String encodedCertificate = certInfo.getCertificate();
-        String encodedPublicKey = certInfo.getPublicKey();
-
-        if (encodedCertificate == null && encodedPublicKey == null) {
-            throw new ModelException("Client doesn't have certificate or publicKey configured");
-        }
-
-        if (encodedCertificate != null && encodedPublicKey != null) {
-            throw new ModelException("Client has both publicKey and certificate configured");
-        }
-
-        // TODO: Caching of publicKeys / certificates, so it doesn't need to be always computed from pem. For performance reasons...
-        if (encodedCertificate != null) {
-            X509Certificate clientCert = KeycloakModelUtils.getCertificate(encodedCertificate);
-            return clientCert.getPublicKey();
-        } else {
-            return KeycloakModelUtils.getPublicKey(encodedPublicKey);
-        }
-    }
-
-
     // CLIENT REPRESENTATION METHODS
 
     public static void updateClientRepresentationCertificateInfo(ClientRepresentation client, CertificateRepresentation rep, String attributePrefix) {
         String privateKeyAttribute = attributePrefix + "." + PRIVATE_KEY;
         String certificateAttribute = attributePrefix + "." + X509CERTIFICATE;
         String publicKeyAttribute = attributePrefix + "." + PUBLIC_KEY;
+        String kidAttribute = attributePrefix + "." + KID;
 
         if (rep.getPublicKey() == null && rep.getCertificate() == null) {
             throw new IllegalStateException("Both certificate and publicKey are null!");
@@ -123,6 +106,7 @@ public class CertificateInfoHelper {
         setOrRemoveAttr(client, privateKeyAttribute, rep.getPrivateKey());
         setOrRemoveAttr(client, publicKeyAttribute, rep.getPublicKey());
         setOrRemoveAttr(client, certificateAttribute, rep.getCertificate());
+        setOrRemoveAttr(client, kidAttribute, rep.getKid());
     }
 
     private static void setOrRemoveAttr(ClientRepresentation client, String attrName, String attrValue) {

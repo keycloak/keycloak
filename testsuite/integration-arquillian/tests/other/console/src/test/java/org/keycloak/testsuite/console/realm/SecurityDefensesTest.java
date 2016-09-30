@@ -200,7 +200,6 @@ public class SecurityDefensesTest extends AbstractRealmTest {
 
         wait *= 1000;
 
-        log.info("Wait: " + wait);
         pause(wait);
 
         if (finalLogin) {

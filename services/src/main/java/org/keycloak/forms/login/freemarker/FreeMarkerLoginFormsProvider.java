@@ -250,7 +250,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
 
             List<IdentityProviderModel> identityProviders = realm.getIdentityProviders();
             identityProviders = LoginFormsUtil.filterIdentityProviders(identityProviders, session, realm, attributes, formData);
-            attributes.put("social", new IdentityProviderBean(realm, identityProviders, baseUri, uriInfo));
+            attributes.put("social", new IdentityProviderBean(realm, session, identityProviders, baseUri, uriInfo));
 
             attributes.put("url", new UrlBean(realm, theme, baseUri, this.actionUri));
 
@@ -398,7 +398,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
 
             List<IdentityProviderModel> identityProviders = realm.getIdentityProviders();
             identityProviders = LoginFormsUtil.filterIdentityProviders(identityProviders, session, realm, attributes, formData);
-            attributes.put("social", new IdentityProviderBean(realm, identityProviders, baseUri, uriInfo));
+            attributes.put("social", new IdentityProviderBean(realm, session, identityProviders, baseUri, uriInfo));
 
             attributes.put("url", new UrlBean(realm, theme, baseUri, this.actionUri));
             attributes.put("requiredActionUrl", new RequiredActionUrlFormatterMethod(realm, baseUri));
@@ -424,7 +424,6 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
             return Response.serverError().build();
         }
     }
-
 
     @Override
     public Response createLogin() {

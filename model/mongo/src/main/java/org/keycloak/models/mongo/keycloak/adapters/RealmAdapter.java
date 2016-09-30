@@ -912,6 +912,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
 
             identityProviderModel.setProviderId(entity.getProviderId());
             identityProviderModel.setAlias(entity.getAlias());
+            identityProviderModel.setDisplayName(entity.getDisplayName());
             identityProviderModel.setInternalId(entity.getInternalId());
             Map<String, String> config = entity.getConfig();
             Map<String, String> copy = new HashMap<>();
@@ -948,6 +949,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
 
         entity.setInternalId(KeycloakModelUtils.generateId());
         entity.setAlias(identityProvider.getAlias());
+        entity.setDisplayName(identityProvider.getDisplayName());
         entity.setProviderId(identityProvider.getProviderId());
         entity.setEnabled(identityProvider.isEnabled());
         entity.setTrustEmail(identityProvider.isTrustEmail());
@@ -978,6 +980,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         for (IdentityProviderEntity entity : this.realm.getIdentityProviders()) {
             if (entity.getInternalId().equals(identityProvider.getInternalId())) {
                 entity.setAlias(identityProvider.getAlias());
+                entity.setDisplayName(identityProvider.getDisplayName());
                 entity.setEnabled(identityProvider.isEnabled());
                 entity.setTrustEmail(identityProvider.isTrustEmail());
                 entity.setAuthenticateByDefault(identityProvider.isAuthenticateByDefault());

@@ -18,6 +18,8 @@
 package org.keycloak.models.utils;
 
 import org.bouncycastle.openssl.PEMWriter;
+import org.keycloak.broker.social.SocialIdentityProvider;
+import org.keycloak.broker.social.SocialIdentityProviderFactory;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.CertificateUtils;
 import org.keycloak.common.util.PemUtils;
@@ -685,4 +687,21 @@ public final class KeycloakModelUtils {
         }
 
     }
+
+    public static String getIdentityProviderDisplayName(KeycloakSession session, IdentityProviderModel provider) {
+        String displayName = provider.getDisplayName();
+        if (displayName != null && !displayName.isEmpty()) {
+            return displayName;
+        }
+
+        SocialIdentityProviderFactory providerFactory = (SocialIdentityProviderFactory) session.getKeycloakSessionFactory()
+                .getProviderFactory(SocialIdentityProvider.class, provider.getProviderId());
+        if (providerFactory != null) {
+            return providerFactory.getName();
+        } else {
+            return provider.getAlias();
+        }
+    }
+
+
 }

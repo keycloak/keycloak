@@ -32,6 +32,10 @@ public class OIDCAdvancedConfigWrapper {
 
     private static final String REQUEST_OBJECT_SIGNATURE_ALG = "request.object.signature.alg";
 
+    private static final String JWKS_URL = "jwks.url";
+
+    private static final String USE_JWKS_URL = "use.jwks.url";
+
     private final ClientModel clientModel;
     private final ClientRepresentation clientRep;
 
@@ -74,6 +78,23 @@ public class OIDCAdvancedConfigWrapper {
         setAttribute(REQUEST_OBJECT_SIGNATURE_ALG, algStr);
     }
 
+    public boolean isUseJwksUrl() {
+        String useJwksUrl = getAttribute(USE_JWKS_URL);
+        return Boolean.parseBoolean(useJwksUrl);
+    }
+
+    public void setUseJwksUrl(boolean useJwksUrl) {
+        String val = String.valueOf(useJwksUrl);
+        setAttribute(USE_JWKS_URL, val);
+    }
+
+    public String getJwksUrl() {
+        return getAttribute(JWKS_URL);
+    }
+
+    public void setJwksUrl(String jwksUrl) {
+        setAttribute(JWKS_URL, jwksUrl);
+    }
 
     private String getAttribute(String attrKey) {
         if (clientModel != null) {

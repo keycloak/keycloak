@@ -27,7 +27,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
@@ -52,7 +52,12 @@ public class AdminAlbumService {
         List<Album> result = this.entityManager.createQuery("from Album").getResultList();
 
         for (Album album : result) {
-            albums.computeIfAbsent(album.getUserId(), key -> new ArrayList<>()).add(album);
+            //We need to compile this under JDK7 so we can't use lambdas
+            //albums.computeIfAbsent(album.getUserId(), key -> new ArrayList<>()).add(album);
+
+            if (!albums.containsKey(album.getUserId())) {
+                albums.put(album.getUserId(), Collections.singletonList(album));
+            }
         }
 
         return Response.ok(albums).build();

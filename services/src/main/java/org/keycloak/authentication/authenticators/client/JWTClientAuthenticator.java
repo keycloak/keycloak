@@ -23,6 +23,7 @@ import org.keycloak.authentication.ClientAuthenticationFlowContext;
 import org.keycloak.common.util.Time;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.crypto.RSAProvider;
+import org.keycloak.keys.loader.KeyStorageManager;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ModelException;
@@ -120,7 +121,7 @@ public class JWTClientAuthenticator extends AbstractClientAuthenticator {
             }
 
             // Get client key and validate signature
-            PublicKey clientPublicKey = getSignatureValidationKey(client, context);
+            PublicKey clientPublicKey = getSignatureValidationKey(client, context, jws);
             if (clientPublicKey == null) {
                 // Error response already set to context
                 return;
@@ -161,13 +162,14 @@ public class JWTClientAuthenticator extends AbstractClientAuthenticator {
         }
     }
 
-    protected PublicKey getSignatureValidationKey(ClientModel client, ClientAuthenticationFlowContext context) {
-        try {
-            return CertificateInfoHelper.getSignatureValidationKey(client, ATTR_PREFIX);
-        } catch (ModelException me) {
-            Response challengeResponse = ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "unauthorized_client", me.getMessage());
+    protected PublicKey getSignatureValidationKey(ClientModel client, ClientAuthenticationFlowContext context, JWSInput jws) {
+        PublicKey publicKey = KeyStorageManager.getClientPublicKey(context.getSession(), client, jws);
+        if (publicKey == null) {
+            Response challengeResponse = ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "unauthorized_client", "Unable to load public key");
             context.failure(AuthenticationFlowError.CLIENT_CREDENTIALS_SETUP_REQUIRED, challengeResponse);
             return null;
+        } else {
+            return publicKey;
         }
     }
 

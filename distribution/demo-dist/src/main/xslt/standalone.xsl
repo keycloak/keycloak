@@ -89,6 +89,10 @@
                 <local-cache name="loginFailures"/>
                 <local-cache name="authorization"/>
                 <local-cache name="work"/>
+                <local-cache name="keys">
+                    <eviction max-entries="1000" strategy="LRU"/>
+                    <expiration max-idle="3600000" />
+                </local-cache>
             </cache-container>
             <xsl:apply-templates select="node()|@*"/>
         </xsl:copy>

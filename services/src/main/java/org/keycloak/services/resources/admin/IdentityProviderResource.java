@@ -228,7 +228,7 @@ public class IdentityProviderResource {
 
         try {
             IdentityProviderFactory factory = getIdentityProviderFactory();
-            return factory.create(identityProviderModel).export(uriInfo, realm, format);
+            return factory.create(session, identityProviderModel).export(uriInfo, realm, format);
         } catch (Exception e) {
             return ErrorResponse.error("Could not export public broker configuration for identity provider [" + identityProviderModel.getProviderId() + "].", Response.Status.NOT_FOUND);
         }

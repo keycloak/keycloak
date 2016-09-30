@@ -26,6 +26,7 @@ import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.broker.social.SocialIdentityProvider;
+import org.keycloak.models.KeycloakSession;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -45,8 +46,8 @@ public class LinkedInIdentityProvider extends AbstractOAuth2IdentityProvider imp
 	public static final String PROFILE_URL = "https://api.linkedin.com/v1/people/~:(id,formatted-name,email-address,public-profile-url)?format=json";
 	public static final String DEFAULT_SCOPE = "r_basicprofile r_emailaddress";
 
-	public LinkedInIdentityProvider(OAuth2IdentityProviderConfig config) {
-		super(config);
+	public LinkedInIdentityProvider(KeycloakSession session, OAuth2IdentityProviderConfig config) {
+		super(session, config);
 		config.setAuthorizationUrl(AUTH_URL);
 		config.setTokenUrl(TOKEN_URL);
 		config.setUserInfoUrl(PROFILE_URL);

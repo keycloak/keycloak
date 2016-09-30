@@ -56,8 +56,8 @@ import java.security.PublicKey;
  */
 public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityProviderConfig> {
     protected static final Logger logger = Logger.getLogger(SAMLIdentityProvider.class);
-    public SAMLIdentityProvider(SAMLIdentityProviderConfig config) {
-        super(config);
+    public SAMLIdentityProvider(KeycloakSession session, SAMLIdentityProviderConfig config) {
+        super(session, config);
     }
 
     @Override

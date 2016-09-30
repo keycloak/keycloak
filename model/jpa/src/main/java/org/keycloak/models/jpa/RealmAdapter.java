@@ -1270,9 +1270,10 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
 
         for (IdentityProviderEntity entity: entities) {
             IdentityProviderModel identityProviderModel = new IdentityProviderModel();
-
             identityProviderModel.setProviderId(entity.getProviderId());
             identityProviderModel.setAlias(entity.getAlias());
+            identityProviderModel.setDisplayName(entity.getDisplayName());
+
             identityProviderModel.setInternalId(entity.getInternalId());
             Map<String, String> config = entity.getConfig();
             Map<String, String> copy = new HashMap<>();
@@ -1309,6 +1310,7 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
 
         entity.setInternalId(KeycloakModelUtils.generateId());
         entity.setAlias(identityProvider.getAlias());
+        entity.setDisplayName(identityProvider.getDisplayName());
         entity.setProviderId(identityProvider.getProviderId());
         entity.setEnabled(identityProvider.isEnabled());
         entity.setStoreToken(identityProvider.isStoreToken());
@@ -1342,6 +1344,7 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
         for (IdentityProviderEntity entity : this.realm.getIdentityProviders()) {
             if (entity.getInternalId().equals(identityProvider.getInternalId())) {
                 entity.setAlias(identityProvider.getAlias());
+                entity.setDisplayName(identityProvider.getDisplayName());
                 entity.setEnabled(identityProvider.isEnabled());
                 entity.setTrustEmail(identityProvider.isTrustEmail());
                 entity.setAuthenticateByDefault(identityProvider.isAuthenticateByDefault());

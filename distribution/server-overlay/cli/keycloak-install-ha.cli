@@ -10,5 +10,8 @@ embed-server --server-config=standalone-ha.xml
 /subsystem=infinispan/cache-container=keycloak/distributed-cache=loginFailures:add(mode="SYNC",owners="1")
 /subsystem=infinispan/cache-container=keycloak/distributed-cache=authorization:add(mode="SYNC",owners="1")
 /subsystem=infinispan/cache-container=keycloak/replicated-cache=work:add(mode="SYNC")
+/subsystem=infinispan/cache-container=keycloak/local-cache=keys:add()
+/subsystem=infinispan/cache-container=keycloak/local-cache=keys/eviction=EVICTION:add(max-entries=1000,strategy=LRU)
+/subsystem=infinispan/cache-container=keycloak/local-cache=keys/expiration=EXPIRATION:add(max-idle=3600000)
 /extension=org.keycloak.keycloak-server-subsystem/:add(module=org.keycloak.keycloak-server-subsystem)
 run-batch --file=default-keycloak-subsys-config.cli

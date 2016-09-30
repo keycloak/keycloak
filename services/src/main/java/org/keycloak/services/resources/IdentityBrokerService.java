@@ -805,7 +805,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
                 throw new IdentityBrokerException("Could not find factory for identity provider [" + alias + "].");
             }
 
-            return providerFactory.create(identityProviderModel);
+            return providerFactory.create(session, identityProviderModel);
         }
 
         throw new IdentityBrokerException("Identity Provider [" + alias + "] not found.");

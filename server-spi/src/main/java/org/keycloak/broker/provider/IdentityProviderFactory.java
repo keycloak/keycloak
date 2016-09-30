@@ -39,10 +39,11 @@ public interface IdentityProviderFactory<T extends IdentityProvider> extends Pro
      * <p>Creates an {@link IdentityProvider} based on the configuration contained in
      * <code>model</code>.</p>
      *
+     * @param session
      * @param model The configuration to be used to create the identity provider.
      * @return
      */
-    T create(IdentityProviderModel model);
+    T create(KeycloakSession session, IdentityProviderModel model);
 
     /**
      * <p>Creates an {@link IdentityProvider} based on the configuration from

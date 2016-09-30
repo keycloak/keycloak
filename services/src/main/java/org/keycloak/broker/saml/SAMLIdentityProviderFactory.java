@@ -50,8 +50,8 @@ public class SAMLIdentityProviderFactory extends AbstractIdentityProviderFactory
     }
 
     @Override
-    public SAMLIdentityProvider create(IdentityProviderModel model) {
-        return new SAMLIdentityProvider(new SAMLIdentityProviderConfig(model));
+    public SAMLIdentityProvider create(KeycloakSession session, IdentityProviderModel model) {
+        return new SAMLIdentityProvider(session, new SAMLIdentityProviderConfig(model));
     }
 
     @Override

@@ -124,12 +124,53 @@ module.controller('ClientSecretCtrl', function($scope, $location, ClientSecret, 
     };
 });
 
-module.controller('ClientSignedJWTCtrl', function($scope, $location, ClientCertificate) {
+module.controller('ClientSignedJWTCtrl', function($scope, $location, Client, ClientCertificate, Notifications, $route) {
     var signingKeyInfo = ClientCertificate.get({ realm : $scope.realm.realm, client : $scope.client.id, attribute: 'jwt.credential' },
         function() {
             $scope.signingKeyInfo = signingKeyInfo;
         }
     );
+
+    console.log('ClientSignedJWTCtrl invoked');
+
+    $scope.clientCopy = angular.copy($scope.client);
+    $scope.changed = false;
+
+    $scope.$watch('client', function() {
+        if (!angular.equals($scope.client, $scope.clientCopy)) {
+            $scope.changed = true;
+        }
+    }, true);
+
+    if ($scope.client.attributes["use.jwks.url"]) {
+        if ($scope.client.attributes["use.jwks.url"] == "true") {
+            $scope.useJwksUrl = true;
+        } else {
+            $scope.useJwksUrl = false;
+        }
+    }
+
+    $scope.switchChange = function() {
+        $scope.changed = true;
+    }
+
+    $scope.save = function() {
+
+        if ($scope.useJwksUrl == true) {
+            $scope.client.attributes["use.jwks.url"] = "true";
+        } else {
+            $scope.client.attributes["use.jwks.url"] = "false";
+        }
+
+        Client.update({
+            realm : $scope.realm.realm,
+            client : $scope.client.id
+        }, $scope.client, function() {
+            $scope.changed = false;
+            $scope.clientCopy = angular.copy($scope.client);
+            Notifications.success("Client authentication configuration has been saved to the client.");
+        });
+    };
 
     $scope.importCertificate = function() {
         $location.url("/realms/" + $scope.realm.realm + "/clients/" + $scope.client.id + "/credentials/client-jwt/Signing/import/jwt.credential");
@@ -139,8 +180,8 @@ module.controller('ClientSignedJWTCtrl', function($scope, $location, ClientCerti
         $location.url("/realms/" + $scope.realm.realm + "/clients/" + $scope.client.id + "/credentials/client-jwt/Signing/export/jwt.credential");
     };
 
-    $scope.cancel = function() {
-        $location.url("/realms/" + $scope.realm.realm + "/clients/" + $scope.client.id + "/credentials");
+    $scope.reset = function() {
+        $route.reload();
     };
 });
 

@@ -126,6 +126,7 @@ public abstract class AbstractBrokerTest extends AbstractKeycloakTest {
         IdentityProviderRepresentation identityProviderRepresentation = new IdentityProviderRepresentation();
 
         identityProviderRepresentation.setAlias(alias);
+        identityProviderRepresentation.setDisplayName(providerId);
         identityProviderRepresentation.setProviderId(providerId);
         identityProviderRepresentation.setEnabled(true);
 
