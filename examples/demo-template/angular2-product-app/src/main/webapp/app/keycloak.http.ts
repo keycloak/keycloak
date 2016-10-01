@@ -2,7 +2,7 @@ import {Injectable} from "@angular/core";
 import {Http, Request, ConnectionBackend, RequestOptions, RequestOptionsArgs, Response} from "@angular/http";
 
 import {KeycloakService} from "./keycloak.service";
-import {Observable} from 'rxjs/Observable';
+import {Observable} from 'rxjs/Rx';
 
 /**
  * This provides a wrapper over the ng2 Http class that insures tokens are refreshed on each request.
