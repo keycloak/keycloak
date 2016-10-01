@@ -17,15 +17,6 @@
 
 package org.keycloak.testsuite.admin;
 
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-
-import javax.ws.rs.BadRequestException;
-import javax.ws.rs.NotFoundException;
-import javax.ws.rs.core.Response;
-
 import org.junit.Test;
 import org.keycloak.admin.client.resource.UserFederationProvidersResource;
 import org.keycloak.common.constants.KerberosConstants;
@@ -42,6 +33,14 @@ import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.authentication.AbstractAuthenticationTest;
 import org.keycloak.testsuite.util.AdminEventPaths;
 import org.keycloak.testsuite.util.UserFederationProviderBuilder;
+
+import javax.ws.rs.BadRequestException;
+import javax.ws.rs.NotFoundException;
+import javax.ws.rs.core.Response;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

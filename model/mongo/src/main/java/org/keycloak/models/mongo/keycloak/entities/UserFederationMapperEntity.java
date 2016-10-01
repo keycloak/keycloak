@@ -15,18 +15,18 @@
  * limitations under the License.
  */
 
-package org.keycloak.models.entities;
+package org.keycloak.models.mongo.keycloak.entities;
 
 import java.util.Map;
 
 /**
- * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
- * @version $Revision: 1 $
+ * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class IdentityProviderMapperEntity extends AbstractIdentifiableEntity {
+public class UserFederationMapperEntity extends AbstractIdentifiableEntity {
+
     protected String name;
-    protected String identityProviderAlias;
-    protected String identityProviderMapper;
+    protected String federationProviderId;
+    protected String federationMapperType;
     protected Map<String, String> config;
 
     public String getName() {
@@ -37,27 +37,27 @@ public class IdentityProviderMapperEntity extends AbstractIdentifiableEntity {
         this.name = name;
     }
 
+    public String getFederationProviderId() {
+        return federationProviderId;
+    }
+
+    public void setFederationProviderId(String federationProviderId) {
+        this.federationProviderId = federationProviderId;
+    }
+
+    public String getFederationMapperType() {
+        return federationMapperType;
+    }
+
+    public void setFederationMapperType(String federationMapperType) {
+        this.federationMapperType = federationMapperType;
+    }
+
     public Map<String, String> getConfig() {
         return config;
     }
 
     public void setConfig(Map<String, String> config) {
         this.config = config;
-    }
-
-    public String getIdentityProviderAlias() {
-        return identityProviderAlias;
-    }
-
-    public void setIdentityProviderAlias(String identityProviderAlias) {
-        this.identityProviderAlias = identityProviderAlias;
-    }
-
-    public String getIdentityProviderMapper() {
-        return identityProviderMapper;
-    }
-
-    public void setIdentityProviderMapper(String identityProviderMapper) {
-        this.identityProviderMapper = identityProviderMapper;
     }
 }

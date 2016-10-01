@@ -19,16 +19,18 @@ package org.keycloak.testsuite.util;
 
 import com.icegreen.greenmail.util.GreenMail;
 import com.icegreen.greenmail.util.ServerSetup;
-import java.io.IOException;
-import java.lang.Thread.UncaughtExceptionHandler;
-import java.net.SocketException;
-import javax.mail.MessagingException;
+import org.jboss.logging.Logger;
 
+import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMessage.RecipientType;
 import javax.mail.internet.MimeMultipart;
-import org.jboss.logging.Logger;
-import static org.keycloak.testsuite.util.MailServerConfiguration.*;
+import java.io.IOException;
+import java.lang.Thread.UncaughtExceptionHandler;
+import java.net.SocketException;
+
+import static org.keycloak.testsuite.util.MailServerConfiguration.HOST;
+import static org.keycloak.testsuite.util.MailServerConfiguration.PORT;
 
 public class MailServer {
 

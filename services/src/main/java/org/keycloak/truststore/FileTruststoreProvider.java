@@ -17,9 +17,6 @@
 
 package org.keycloak.truststore;
 
-import org.keycloak.truststore.HostnameVerificationPolicy;
-import org.keycloak.truststore.TruststoreProvider;
-
 import java.security.KeyStore;
 
 /**

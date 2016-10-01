@@ -17,6 +17,8 @@
 
 package org.keycloak.common.util;
 
+import org.keycloak.common.constants.GenericConstants;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
@@ -24,8 +26,6 @@ import java.security.KeyPair;
 import java.security.KeyStore;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-
-import org.keycloak.common.constants.GenericConstants;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

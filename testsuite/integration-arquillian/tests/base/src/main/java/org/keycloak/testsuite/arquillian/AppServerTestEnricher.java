@@ -9,6 +9,7 @@ import org.jboss.arquillian.test.spi.annotation.ClassScoped;
 import org.jboss.arquillian.test.spi.event.suite.BeforeClass;
 import org.jboss.logging.Logger;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
+
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;

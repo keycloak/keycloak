@@ -16,10 +16,10 @@
  */
 package org.keycloak.subsystem.server.extension;
 
+import org.jboss.as.subsystem.test.AbstractSubsystemBaseTest;
+
 import java.io.IOException;
 import java.util.Properties;
-
-import org.jboss.as.subsystem.test.AbstractSubsystemBaseTest;
 
 /**
  * Tests all management expects for subsystem, parsing, marshaling, model definition and other

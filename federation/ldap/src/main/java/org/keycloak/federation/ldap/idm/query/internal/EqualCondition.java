@@ -17,10 +17,10 @@
 
 package org.keycloak.federation.ldap.idm.query.internal;
 
-import java.util.Date;
-
 import org.keycloak.federation.ldap.idm.store.ldap.LDAPUtil;
 import org.keycloak.models.LDAPConstants;
+
+import java.util.Date;
 
 /**
  * @author Pedro Igor

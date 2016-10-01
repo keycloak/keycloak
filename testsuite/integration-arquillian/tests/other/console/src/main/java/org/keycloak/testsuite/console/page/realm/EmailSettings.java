@@ -1,12 +1,13 @@
 package org.keycloak.testsuite.console.page.realm;
 
-import java.util.Map;
 import org.jboss.arquillian.graphene.findby.FindByJQuery;
 import org.jboss.arquillian.graphene.page.Page;
 import org.keycloak.testsuite.console.page.fragment.OnOffSwitch;
 import org.keycloak.testsuite.page.Form;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
+
+import java.util.Map;
 
 /**
  * Created by mhajas on 8/25/15.

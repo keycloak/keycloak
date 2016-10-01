@@ -16,7 +16,6 @@
  */
 package org.keycloak.testsuite.adapter.example.authorization;
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.KeycloakDeploymentBuilder;

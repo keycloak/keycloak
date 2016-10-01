@@ -18,11 +18,9 @@
 
 package org.keycloak.authorization.store;
 
-import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.authorization.store.syncronization.ClientApplicationSynchronizer;
 import org.keycloak.authorization.store.syncronization.RealmSynchronizer;
 import org.keycloak.authorization.store.syncronization.Synchronizer;
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel.ClientRemovedEvent;
 import org.keycloak.models.RealmModel.RealmRemovedEvent;

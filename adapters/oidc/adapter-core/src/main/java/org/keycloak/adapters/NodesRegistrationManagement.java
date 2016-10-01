@@ -17,16 +17,16 @@
 
 package org.keycloak.adapters;
 
+import org.jboss.logging.Logger;
+import org.keycloak.common.util.HostUtils;
+import org.keycloak.common.util.Time;
+
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
-
-import org.jboss.logging.Logger;
-import org.keycloak.common.util.HostUtils;
-import org.keycloak.common.util.Time;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

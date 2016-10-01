@@ -25,8 +25,8 @@ import org.keycloak.adapters.rotation.HardcodedPublicKeyLocator;
 import org.keycloak.adapters.rotation.JWKPublicKeyLocator;
 import org.keycloak.common.enums.RelativeUrlsUsed;
 import org.keycloak.common.enums.SslRequired;
-import org.keycloak.enums.TokenStore;
 import org.keycloak.common.util.PemUtils;
+import org.keycloak.enums.TokenStore;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;

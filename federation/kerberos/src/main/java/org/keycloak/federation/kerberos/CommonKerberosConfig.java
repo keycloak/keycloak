@@ -17,10 +17,10 @@
 
 package org.keycloak.federation.kerberos;
 
-import java.util.Map;
-
-import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.common.constants.KerberosConstants;
+import org.keycloak.models.UserFederationProviderModel;
+
+import java.util.Map;
 
 /**
  * Common configuration useful for all providers

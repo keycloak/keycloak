@@ -18,17 +18,17 @@
 package org.keycloak.testsuite.events;
 
 import org.apache.commons.lang3.StringUtils;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.events.EventType;
+import org.keycloak.representations.idm.EventRepresentation;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
-import org.junit.After;
-import org.keycloak.representations.idm.EventRepresentation;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

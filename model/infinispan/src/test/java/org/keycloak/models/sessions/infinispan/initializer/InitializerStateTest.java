@@ -17,10 +17,10 @@
 
 package org.keycloak.models.sessions.infinispan.initializer;
 
-import java.util.List;
-
 import org.junit.Assert;
 import org.junit.Test;
+
+import java.util.List;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

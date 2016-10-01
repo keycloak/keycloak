@@ -17,11 +17,11 @@
 
 package org.keycloak.servlet;
 
-import java.util.Map;
-
 import org.keycloak.AbstractOAuthClient;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.common.enums.RelativeUrlsUsed;
+
+import java.util.Map;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

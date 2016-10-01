@@ -17,9 +17,6 @@
 
 package org.keycloak.models.jpa.entities;
 
-import java.util.ArrayList;
-import java.util.Collection;
-
 import javax.persistence.Access;
 import javax.persistence.AccessType;
 import javax.persistence.CascadeType;
@@ -34,6 +31,8 @@ import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
+import java.util.ArrayList;
+import java.util.Collection;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

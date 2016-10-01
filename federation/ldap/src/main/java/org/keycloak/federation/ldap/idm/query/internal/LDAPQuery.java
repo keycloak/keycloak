@@ -17,15 +17,6 @@
 
 package org.keycloak.federation.ldap.idm.query.internal;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Set;
-
-import javax.naming.directory.SearchControls;
-
 import org.keycloak.federation.ldap.LDAPFederationProvider;
 import org.keycloak.federation.ldap.idm.model.LDAPObject;
 import org.keycloak.federation.ldap.idm.query.Condition;
@@ -34,6 +25,14 @@ import org.keycloak.federation.ldap.mappers.LDAPFederationMapper;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.UserFederationMapperModel;
+
+import javax.naming.directory.SearchControls;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
 
 import static java.util.Collections.unmodifiableSet;
 

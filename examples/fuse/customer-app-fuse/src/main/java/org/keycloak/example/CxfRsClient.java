@@ -17,22 +17,21 @@
 
 package org.keycloak.example;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.List;
-
-import javax.servlet.http.HttpServletRequest;
-
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.adapters.HttpClientBuilder;
+import org.keycloak.common.util.UriUtils;
 import org.keycloak.representations.IDToken;
 import org.keycloak.util.JsonSerialization;
-import org.keycloak.common.util.UriUtils;
+
+import javax.servlet.http.HttpServletRequest;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

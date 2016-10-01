@@ -1,9 +1,6 @@
 package org.keycloak.protocol.oidc.utils;
 
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.protocol.oidc.mappers.AbstractPairwiseSubMapper;
-import org.keycloak.protocol.oidc.mappers.PairwiseSubMapperHelper;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.services.ServicesLogger;

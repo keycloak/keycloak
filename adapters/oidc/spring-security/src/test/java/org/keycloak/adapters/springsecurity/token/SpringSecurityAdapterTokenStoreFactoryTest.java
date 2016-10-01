@@ -19,14 +19,15 @@ package org.keycloak.adapters.springsecurity.token;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.keycloak.adapters.spi.AdapterSessionStore;
 import org.keycloak.adapters.KeycloakDeployment;
+import org.keycloak.adapters.spi.AdapterSessionStore;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import javax.servlet.http.HttpServletRequest;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Spring Security adapter token store factory tests.

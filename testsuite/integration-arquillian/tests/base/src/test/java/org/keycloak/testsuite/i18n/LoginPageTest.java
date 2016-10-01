@@ -17,6 +17,7 @@
 package org.keycloak.testsuite.i18n;
 
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.resteasy.client.jaxrs.ResteasyClient;
 import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
 import org.jboss.resteasy.client.jaxrs.engines.ApacheHttpClient4Engine;

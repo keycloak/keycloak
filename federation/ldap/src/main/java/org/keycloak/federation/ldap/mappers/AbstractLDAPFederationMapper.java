@@ -17,14 +17,10 @@
 
 package org.keycloak.federation.ldap.mappers;
 
-import java.util.Collections;
-import java.util.List;
-
-import javax.naming.AuthenticationException;
-
 import org.keycloak.federation.ldap.LDAPFederationProvider;
 import org.keycloak.federation.ldap.idm.model.LDAPObject;
 import org.keycloak.federation.ldap.idm.query.internal.LDAPQuery;
+import org.keycloak.mappers.UserFederationMapper;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -32,7 +28,10 @@ import org.keycloak.models.UserFederationMapperModel;
 import org.keycloak.models.UserFederationProvider;
 import org.keycloak.models.UserFederationSyncResult;
 import org.keycloak.models.UserModel;
-import org.keycloak.mappers.UserFederationMapper;
+
+import javax.naming.AuthenticationException;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Stateful per-request object

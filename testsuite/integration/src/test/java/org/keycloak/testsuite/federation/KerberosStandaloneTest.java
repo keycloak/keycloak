@@ -17,21 +17,16 @@
 
 package org.keycloak.testsuite.federation;
 
-import java.net.URL;
-import java.util.Map;
-
-import javax.ws.rs.core.Response;
-
 import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.RuleChain;
 import org.junit.rules.TestRule;
+import org.keycloak.common.constants.KerberosConstants;
 import org.keycloak.federation.kerberos.CommonKerberosConfig;
 import org.keycloak.federation.kerberos.KerberosConfig;
 import org.keycloak.federation.kerberos.KerberosFederationProviderFactory;
-import org.keycloak.common.constants.KerberosConstants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserFederationProviderModel;
@@ -42,6 +37,10 @@ import org.keycloak.testsuite.rule.KerberosRule;
 import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.testsuite.rule.WebRule;
 import org.keycloak.utils.CredentialHelper;
+
+import javax.ws.rs.core.Response;
+import java.net.URL;
+import java.util.Map;
 
 /**
  * Test of KerberosFederationProvider (Kerberos not backed by LDAP)

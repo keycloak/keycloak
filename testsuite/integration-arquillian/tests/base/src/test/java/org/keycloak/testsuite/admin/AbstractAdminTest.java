@@ -17,12 +17,6 @@
 
 package org.keycloak.testsuite.admin;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -33,6 +27,13 @@ import org.keycloak.testsuite.TestRealmKeycloakTest;
 import org.keycloak.testsuite.events.EventsListenerProviderFactory;
 import org.keycloak.testsuite.util.AssertAdminEvents;
 import org.keycloak.util.JsonSerialization;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * This class adapts the functionality from the old testsuite to make tests

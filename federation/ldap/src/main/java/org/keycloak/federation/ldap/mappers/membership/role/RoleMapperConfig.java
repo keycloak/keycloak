@@ -17,13 +17,13 @@
 
 package org.keycloak.federation.ldap.mappers.membership.role;
 
-import java.util.Collection;
-
 import org.keycloak.federation.ldap.LDAPFederationProvider;
 import org.keycloak.federation.ldap.mappers.membership.CommonLDAPGroupMapperConfig;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.UserFederationMapperModel;
+
+import java.util.Collection;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

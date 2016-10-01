@@ -2,12 +2,13 @@ package org.keycloak.testsuite.console.page.clients;
 
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.testsuite.page.Form;
-import static org.keycloak.testsuite.page.Form.getInputValue;
-import static org.keycloak.testsuite.util.WaitUtils.*;
 import org.keycloak.testsuite.util.Timer;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.ui.Select;
+
+import static org.keycloak.testsuite.page.Form.getInputValue;
+import static org.keycloak.testsuite.util.WaitUtils.*;
 
 /**
  *

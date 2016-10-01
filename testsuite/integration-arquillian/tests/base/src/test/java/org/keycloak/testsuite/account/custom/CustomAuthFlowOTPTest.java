@@ -16,17 +16,26 @@
  */
 package org.keycloak.testsuite.account.custom;
 
+import org.jboss.arquillian.graphene.page.Page;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.keycloak.models.AuthenticationExecutionModel.Requirement;
+import org.keycloak.models.utils.TimeBasedOTP;
+import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
+import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.testsuite.admin.Users;
+import org.keycloak.testsuite.auth.page.login.OneTimeCode;
+
+import javax.ws.rs.core.Response;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import javax.ws.rs.core.Response;
-import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Assert;
-import static org.junit.Assert.assertTrue;
-import org.junit.Test;
 
-import org.junit.Before;
+import static org.junit.Assert.assertTrue;
 import static org.keycloak.authentication.authenticators.browser.ConditionalOtpFormAuthenticator.DEFAULT_OTP_OUTCOME;
 import static org.keycloak.authentication.authenticators.browser.ConditionalOtpFormAuthenticator.FORCE;
 import static org.keycloak.authentication.authenticators.browser.ConditionalOtpFormAuthenticator.FORCE_OTP_FOR_HTTP_HEADER;
@@ -35,16 +44,8 @@ import static org.keycloak.authentication.authenticators.browser.ConditionalOtpF
 import static org.keycloak.authentication.authenticators.browser.ConditionalOtpFormAuthenticator.SKIP;
 import static org.keycloak.authentication.authenticators.browser.ConditionalOtpFormAuthenticator.SKIP_OTP_FOR_HTTP_HEADER;
 import static org.keycloak.authentication.authenticators.browser.ConditionalOtpFormAuthenticator.SKIP_OTP_ROLE;
-import org.keycloak.models.AuthenticationExecutionModel.Requirement;
 import static org.keycloak.models.UserModel.RequiredAction.CONFIGURE_TOTP;
-import org.keycloak.models.utils.TimeBasedOTP;
-import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
-import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
 import static org.keycloak.representations.idm.CredentialRepresentation.PASSWORD;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.representations.idm.RoleRepresentation;
-import org.keycloak.testsuite.admin.Users;
-import org.keycloak.testsuite.auth.page.login.OneTimeCode;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
 
 /**

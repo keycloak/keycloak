@@ -17,11 +17,12 @@
 
 package org.keycloak.testsuite.admin.event;
 
-import java.util.Collections;
 import org.junit.Before;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 import org.keycloak.testsuite.AbstractAuthTest;
+
+import java.util.Collections;
 
 /**
  *

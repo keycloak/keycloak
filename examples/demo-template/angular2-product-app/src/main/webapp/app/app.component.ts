@@ -1,10 +1,8 @@
-import { Component } from '@angular/core';
-import { Http, Headers, RequestOptions, Response } from '@angular/http';
-
-import { Observable } from 'rxjs/Observable';
-import 'rxjs/add/operator/map';
-
-import { KeycloakService } from './keycloak.service';
+import {Component} from "@angular/core";
+import {Http, Headers, RequestOptions, Response} from "@angular/http";
+import {Observable} from "rxjs/Observable";
+import "rxjs/add/operator/map";
+import {KeycloakService} from "./keycloak.service";
 
 @Component({
   selector: 'my-app',

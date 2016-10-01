@@ -22,9 +22,7 @@
 package org.keycloak.testsuite.console.authentication;
 
 import org.jboss.arquillian.graphene.page.Page;
-import static org.junit.Assert.*;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.console.AbstractConsoleTest;
@@ -33,6 +31,8 @@ import org.keycloak.testsuite.console.page.authentication.otppolicy.OTPPolicyFor
 import org.keycloak.testsuite.console.page.authentication.otppolicy.OTPPolicyForm.OTPHashAlg;
 import org.keycloak.testsuite.console.page.authentication.otppolicy.OTPPolicyForm.OTPType;
 import org.keycloak.testsuite.util.WaitUtils;
+
+import static org.junit.Assert.*;
 
 /**
  *

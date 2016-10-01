@@ -17,15 +17,14 @@
 
 package org.keycloak.protocol.oidc.utils;
 
-import java.net.URI;
-import java.util.HashMap;
-import java.util.Map;
+import org.keycloak.common.util.Encode;
+import org.keycloak.common.util.KeycloakUriBuilder;
 
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-
-import org.keycloak.common.util.Encode;
-import org.keycloak.common.util.KeycloakUriBuilder;
+import java.net.URI;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

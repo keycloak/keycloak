@@ -41,7 +41,15 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.adapter.AbstractServletsAdapterTest;
 import org.keycloak.testsuite.adapter.filter.AdapterActionsFilter;
-import org.keycloak.testsuite.adapter.page.*;
+import org.keycloak.testsuite.adapter.page.BasicAuth;
+import org.keycloak.testsuite.adapter.page.CustomerDb;
+import org.keycloak.testsuite.adapter.page.CustomerDbErrorPage;
+import org.keycloak.testsuite.adapter.page.CustomerPortal;
+import org.keycloak.testsuite.adapter.page.CustomerPortalSubsystem;
+import org.keycloak.testsuite.adapter.page.InputPortal;
+import org.keycloak.testsuite.adapter.page.ProductPortal;
+import org.keycloak.testsuite.adapter.page.SecurePortal;
+import org.keycloak.testsuite.adapter.page.TokenMinTTLPage;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.auth.page.account.Applications;
 import org.keycloak.testsuite.auth.page.login.OAuthGrant;
@@ -71,7 +79,12 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.auth.page.AuthRealm.DEMO;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlEquals;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
@@ -589,7 +602,7 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
         token = tokenMinTTLPage.getAccessToken();
         int tokenIssued2 = token.getIssuedAt();
         Assert.assertEquals(tokenIssued1, tokenIssued2);
-        Assert.assertFalse(token.isExpired());
+        assertFalse(token.isExpired());
 
         // Sets 9 minutes offset and assert access token will be refreshed (accessTokenTimeout is 10 minutes, token-min-ttl is 2 minutes. Hence 8 minutes or more should be sufficient)
         setAdapterAndServerTimeOffset(540, tokenMinTTLPage.toString());

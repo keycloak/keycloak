@@ -17,13 +17,13 @@
 
 package org.keycloak.adapters.saml;
 
+import org.keycloak.common.enums.SslRequired;
+import org.keycloak.saml.SignatureAlgorithm;
+
 import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.Set;
-
-import org.keycloak.common.enums.SslRequired;
-import org.keycloak.saml.SignatureAlgorithm;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

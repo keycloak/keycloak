@@ -22,9 +22,9 @@ import org.keycloak.broker.saml.SAMLIdentityProviderFactory;
 import org.keycloak.social.facebook.FacebookIdentityProviderFactory;
 import org.keycloak.social.github.GitHubIdentityProviderFactory;
 import org.keycloak.social.google.GoogleIdentityProviderFactory;
-import org.keycloak.social.twitter.TwitterIdentityProviderFactory;
 import org.keycloak.social.linkedin.LinkedInIdentityProviderFactory;
 import org.keycloak.social.stackoverflow.StackoverflowIdentityProviderFactory;
+import org.keycloak.social.twitter.TwitterIdentityProviderFactory;
 import org.keycloak.testsuite.model.AbstractModelTest;
 
 import java.util.Collections;

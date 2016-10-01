@@ -1,16 +1,17 @@
 package org.keycloak.testsuite.console.roles;
 
 import org.jboss.arquillian.graphene.page.Page;
-import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.RolesResource;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import static org.keycloak.testsuite.admin.ApiUtil.createUserWithAdminClient;
 import org.keycloak.testsuite.console.page.roles.DefaultRoles;
 import org.keycloak.testsuite.console.page.users.UserRoleMappings;
 import org.keycloak.testsuite.console.page.users.Users;
+
+import static org.junit.Assert.assertTrue;
+import static org.keycloak.testsuite.admin.ApiUtil.createUserWithAdminClient;
 
 /**
  * Created by fkiss.

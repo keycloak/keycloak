@@ -17,13 +17,13 @@
 
 package org.keycloak.util;
 
-import java.security.PublicKey;
-import java.util.HashMap;
-import java.util.Map;
-
 import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKParser;
+
+import java.security.PublicKey;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

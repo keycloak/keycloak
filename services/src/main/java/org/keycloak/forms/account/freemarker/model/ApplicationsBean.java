@@ -17,21 +17,21 @@
 
 package org.keycloak.forms.account.freemarker.model;
 
+import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ProtocolMapperModel;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
+import org.keycloak.models.UserConsentModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.protocol.oidc.TokenManager;
+import org.keycloak.services.managers.UserSessionManager;
+
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
-
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.UserConsentModel;
-import org.keycloak.models.ProtocolMapperModel;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.RoleModel;
-import org.keycloak.models.UserModel;
-import org.keycloak.protocol.oidc.TokenManager;
-import org.keycloak.services.managers.UserSessionManager;
-import org.keycloak.common.util.MultivaluedHashMap;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

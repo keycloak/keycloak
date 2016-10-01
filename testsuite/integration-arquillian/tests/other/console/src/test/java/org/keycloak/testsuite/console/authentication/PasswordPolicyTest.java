@@ -26,7 +26,6 @@ import org.keycloak.testsuite.console.page.authentication.PasswordPolicy;
 import org.keycloak.testsuite.console.page.users.UserCredentials;
 
 import static org.keycloak.testsuite.console.page.authentication.PasswordPolicy.Type.DIGITS;
-import static org.keycloak.testsuite.console.page.authentication.PasswordPolicy.Type.HASH_ITERATIONS;
 import static org.keycloak.testsuite.console.page.authentication.PasswordPolicy.Type.REGEX_PATTERN;
 
 /**

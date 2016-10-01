@@ -17,14 +17,14 @@
 
 package org.keycloak.mappers;
 
-import java.util.Map;
-
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserFederationMapperModel;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.provider.ConfiguredProvider;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.idm.UserFederationMapperSyncConfigRepresentation;
+
+import java.util.Map;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

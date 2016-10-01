@@ -17,10 +17,6 @@
 
 package org.keycloak.federation.kerberos;
 
-import java.util.Collections;
-import java.util.Date;
-import java.util.Set;
-
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.federation.kerberos.impl.KerberosServerSubjectAuthenticator;
@@ -32,6 +28,10 @@ import org.keycloak.models.UserFederationProvider;
 import org.keycloak.models.UserFederationProviderFactory;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserFederationSyncResult;
+
+import java.util.Collections;
+import java.util.Date;
+import java.util.Set;
 
 /**
  * Factory for standalone Kerberos federation provider. Standalone means that it's not backed by LDAP. For Kerberos backed by LDAP (like MS AD or ApacheDS environment)

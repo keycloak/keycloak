@@ -17,16 +17,15 @@
 
 package org.keycloak.federation.ldap;
 
+import org.keycloak.models.LDAPConstants;
+import org.keycloak.models.UserFederationProvider;
+
+import javax.naming.directory.SearchControls;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
-
-import javax.naming.directory.SearchControls;
-
-import org.keycloak.models.LDAPConstants;
-import org.keycloak.models.UserFederationProvider;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

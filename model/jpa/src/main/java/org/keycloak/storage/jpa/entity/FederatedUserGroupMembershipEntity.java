@@ -17,8 +17,6 @@
 
 package org.keycloak.storage.jpa.entity;
 
-import org.keycloak.models.jpa.entities.UserEntity;
-
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;

@@ -17,11 +17,11 @@
 
 package org.keycloak.federation.ldap.idm.store.ldap;
 
+import org.keycloak.models.ModelException;
+
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.TimeZone;
-
-import org.keycloak.models.ModelException;
 
 /**
  * <p>Utility class for working with LDAP.</p>

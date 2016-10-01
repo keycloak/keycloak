@@ -17,15 +17,15 @@
 
 package org.keycloak.testsuite.page;
 
+import org.jboss.arquillian.drone.api.annotation.Drone;
+import org.jboss.logging.Logger;
+import org.keycloak.testsuite.util.URLUtils;
+import org.openqa.selenium.WebDriver;
+
+import javax.ws.rs.core.UriBuilder;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
-import javax.ws.rs.core.UriBuilder;
-import org.jboss.arquillian.drone.api.annotation.Drone;
-import org.jboss.logging.Logger;
-
-import org.keycloak.testsuite.util.URLUtils;
-import org.openqa.selenium.WebDriver;
 
 /**
  *

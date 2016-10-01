@@ -17,21 +17,19 @@
 
 package org.keycloak.adapters.springsecurity;
 
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.util.Objects;
-
 import org.keycloak.adapters.AdapterDeploymentContext;
 import org.keycloak.adapters.KeycloakConfigResolver;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.KeycloakDeploymentBuilder;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.core.io.Resource;
+
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.util.Objects;
 
 /**
  * {@link FactoryBean} that creates an {@link AdapterDeploymentContext} given a {@link Resource} defining the Keycloak

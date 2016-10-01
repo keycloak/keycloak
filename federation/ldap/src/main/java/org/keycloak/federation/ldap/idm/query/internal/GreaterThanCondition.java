@@ -17,10 +17,9 @@
 
 package org.keycloak.federation.ldap.idm.query.internal;
 
-import java.util.Date;
-
-import org.keycloak.federation.ldap.idm.query.Condition;
 import org.keycloak.federation.ldap.idm.store.ldap.LDAPUtil;
+
+import java.util.Date;
 
 /**
  * @author Pedro Igor

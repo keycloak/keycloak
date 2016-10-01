@@ -17,9 +17,6 @@
 
 package org.keycloak.federation.ldap.mappers;
 
-import java.util.HashSet;
-import java.util.Set;
-
 import org.keycloak.federation.ldap.LDAPFederationProvider;
 import org.keycloak.federation.ldap.idm.model.LDAPObject;
 import org.keycloak.federation.ldap.idm.query.Condition;
@@ -30,6 +27,9 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserFederationMapperModel;
 import org.keycloak.models.UserFederationProvider;
 import org.keycloak.models.UserModel;
+
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Mapper useful for the LDAP deployments when some attribute (usually CN) is mapped to full name of user

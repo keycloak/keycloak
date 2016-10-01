@@ -17,13 +17,13 @@
 
 package org.keycloak.testsuite.admin;
 
-import javax.ws.rs.core.Response;
-
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.keycloak.services.managers.LDAPConnectionTestManager;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.util.LDAPRule;
+
+import javax.ws.rs.core.Response;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

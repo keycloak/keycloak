@@ -17,11 +17,11 @@
 
 package org.keycloak.models.cache.infinispan.entities;
 
-import java.util.HashSet;
-import java.util.Set;
-
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.RealmModel;
+
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * The cache entry, which contains list of all identityProvider links for particular user. It needs to be updated every time when any

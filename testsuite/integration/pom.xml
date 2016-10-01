@@ -459,6 +459,7 @@
                                     <systemPropertyVariables>
                                         <keycloak.realm.provider>mongo</keycloak.realm.provider>
                                         <keycloak.user.provider>mongo</keycloak.user.provider>
+                                        <keycloak.userFederatedStorage.provider>mongo</keycloak.userFederatedStorage.provider>
                                         <keycloak.userSessionPersister.provider>mongo</keycloak.userSessionPersister.provider>
                                         <keycloak.eventsStore.provider>mongo</keycloak.eventsStore.provider>
                                         <keycloak.authorization.provider>mongo</keycloak.authorization.provider>

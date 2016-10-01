@@ -17,6 +17,12 @@
 
 package org.keycloak.saml;
 
+import org.keycloak.dom.saml.v2.assertion.AssertionType;
+import org.keycloak.dom.saml.v2.assertion.AudienceRestrictionType;
+import org.keycloak.dom.saml.v2.assertion.AuthnStatementType;
+import org.keycloak.dom.saml.v2.assertion.ConditionsType;
+import org.keycloak.dom.saml.v2.assertion.SubjectConfirmationDataType;
+import org.keycloak.dom.saml.v2.protocol.ResponseType;
 import org.keycloak.saml.common.PicketLinkLogger;
 import org.keycloak.saml.common.PicketLinkLoggerFactory;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
@@ -30,13 +36,8 @@ import org.keycloak.saml.processing.core.saml.v2.holders.IssuerInfoHolder;
 import org.keycloak.saml.processing.core.saml.v2.holders.SPInfoHolder;
 import org.keycloak.saml.processing.core.saml.v2.util.StatementUtil;
 import org.keycloak.saml.processing.core.saml.v2.util.XMLTimeUtil;
-import org.keycloak.dom.saml.v2.assertion.AssertionType;
-import org.keycloak.dom.saml.v2.assertion.AuthnStatementType;
-import org.keycloak.dom.saml.v2.assertion.ConditionsType;
-import org.keycloak.dom.saml.v2.assertion.SubjectConfirmationDataType;
-import org.keycloak.dom.saml.v2.assertion.AudienceRestrictionType;
-import org.keycloak.dom.saml.v2.protocol.ResponseType;
 import org.w3c.dom.Document;
+
 import java.net.URI;
 
 import static org.keycloak.saml.common.util.StringUtil.isNotNull;

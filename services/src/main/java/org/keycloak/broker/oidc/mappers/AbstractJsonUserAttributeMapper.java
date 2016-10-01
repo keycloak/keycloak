@@ -17,9 +17,6 @@
 
 package org.keycloak.broker.oidc.mappers;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import org.jboss.logging.Logger;
 import org.keycloak.broker.oidc.OIDCIdentityProvider;
@@ -30,6 +27,9 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.provider.ProviderConfigProperty;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Abstract class for Social Provider mappers which allow mapping of JSON user profile field into Keycloak user

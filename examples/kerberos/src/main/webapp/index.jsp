@@ -1,9 +1,8 @@
 <%@ page language="java" contentType="text/html; charset=ISO-8859-1"
          pageEncoding="ISO-8859-1" %>
-<%@ page import="org.keycloak.constants.ServiceUrlConstants" %>
 <%@ page import="org.keycloak.common.util.KeycloakUriBuilder" %>
+<%@ page import="org.keycloak.constants.ServiceUrlConstants" %>
 <%@ page import="org.keycloak.example.kerberos.GSSCredentialsClient" %>
-<%@ page import="org.keycloak.example.kerberos.GSSCredentialsClient.LDAPUser" %>
 <%@ page session="false" %>
 
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"

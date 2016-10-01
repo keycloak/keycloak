@@ -17,10 +17,6 @@
 
 package org.keycloak.testsuite.admin;
 
-import java.util.List;
-
-import javax.ws.rs.core.Response;
-
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.ClientRegistrationTrustedHostResource;
@@ -29,6 +25,9 @@ import org.keycloak.events.admin.ResourceType;
 import org.keycloak.representations.idm.ClientRegistrationTrustedHostRepresentation;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.util.AdminEventPaths;
+
+import javax.ws.rs.core.Response;
+import java.util.List;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.models.entities;
+package org.keycloak.models.mongo.keycloak.entities;
 
 import java.util.ArrayList;
 import java.util.HashMap;

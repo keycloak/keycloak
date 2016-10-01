@@ -19,7 +19,6 @@ package org.keycloak.credential.hash;
 
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.models.PasswordPolicy;
-import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.provider.Provider;
 
 /**

@@ -2,10 +2,8 @@ package org.keycloak.models.cache.infinispan;
 
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.cache.infinispan.entities.AbstractRevisioned;
-import org.keycloak.models.cache.infinispan.entities.ClientQuery;
 import org.keycloak.models.cache.infinispan.entities.GroupQuery;
 
-import java.util.HashSet;
 import java.util.Set;
 
 /**

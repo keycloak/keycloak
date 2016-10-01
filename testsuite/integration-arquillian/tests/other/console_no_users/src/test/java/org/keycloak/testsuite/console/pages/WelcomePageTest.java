@@ -1,18 +1,18 @@
 package org.keycloak.testsuite.console.pages;
 
+import org.jboss.arquillian.graphene.page.Page;
+import org.junit.runners.MethodSorters;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testsuite.AbstractKeycloakTest;
+import org.keycloak.testsuite.auth.page.WelcomePage;
+import org.keycloak.testsuite.auth.page.login.OIDCLogin;
+
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.URL;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
-import org.jboss.arquillian.graphene.page.Page;
-import org.junit.*;
-import org.junit.runners.MethodSorters;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.AbstractKeycloakTest;
-import org.keycloak.testsuite.auth.page.WelcomePage;
-import org.keycloak.testsuite.auth.page.login.OIDCLogin;
 
 /**
  *

@@ -17,8 +17,10 @@
 
 package org.keycloak.admin.client.resource;
 
-import java.util.List;
-import java.util.Map;
+import org.keycloak.representations.idm.UserFederationMapperRepresentation;
+import org.keycloak.representations.idm.UserFederationMapperTypeRepresentation;
+import org.keycloak.representations.idm.UserFederationProviderRepresentation;
+import org.keycloak.representations.idm.UserFederationSyncResultRepresentation;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -31,11 +33,8 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-
-import org.keycloak.representations.idm.UserFederationMapperRepresentation;
-import org.keycloak.representations.idm.UserFederationMapperTypeRepresentation;
-import org.keycloak.representations.idm.UserFederationProviderRepresentation;
-import org.keycloak.representations.idm.UserFederationSyncResultRepresentation;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

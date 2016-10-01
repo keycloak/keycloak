@@ -22,8 +22,8 @@ import org.keycloak.representations.idm.ConfigPropertyRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserFederationProviderFactoryRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 
 import java.util.Arrays;
 import java.util.LinkedList;

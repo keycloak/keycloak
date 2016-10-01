@@ -1,8 +1,8 @@
-import { NgModule } from '@angular/core';
-import { BrowserModule } from '@angular/platform-browser';
-import { HttpModule } from '@angular/http';
-import { KeycloakService } from './keycloak.service';
-import { AppComponent } from './app.component';
+import {NgModule} from "@angular/core";
+import {BrowserModule} from "@angular/platform-browser";
+import {HttpModule} from "@angular/http";
+import {KeycloakService} from "./keycloak.service";
+import {AppComponent} from "./app.component";
 
 @NgModule({
   imports: [

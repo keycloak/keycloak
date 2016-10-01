@@ -20,8 +20,6 @@ package org.keycloak.credential;
 import org.keycloak.common.util.MultivaluedHashMap;
 
 import java.io.Serializable;
-import java.util.List;
-import java.util.Map;
 
 /**
  * Used just in cases when we want to "directly" update or retrieve the hash or salt of user credential (For example during export/import)

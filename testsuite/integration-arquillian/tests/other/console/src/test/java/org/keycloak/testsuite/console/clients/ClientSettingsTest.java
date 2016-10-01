@@ -17,25 +17,23 @@
  */
 package org.keycloak.testsuite.console.clients;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import javax.ws.rs.core.Response;
 import org.jboss.arquillian.graphene.page.Page;
-import static org.junit.Assert.*;
 import org.junit.Test;
-
 import org.keycloak.representations.idm.ClientRepresentation;
-import static org.keycloak.testsuite.admin.ApiUtil.getCreatedId;
+import org.keycloak.testsuite.console.page.clients.settings.ClientSettings;
+import org.keycloak.testsuite.util.Timer;
+
+import javax.ws.rs.core.Response;
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.junit.Assert.*;
 import static org.keycloak.testsuite.auth.page.login.Login.OIDC;
 import static org.keycloak.testsuite.auth.page.login.Login.SAML;
-import org.keycloak.testsuite.console.page.clients.settings.ClientSettings;
 import static org.keycloak.testsuite.console.page.clients.settings.ClientSettingsForm.OidcAccessType.BEARER_ONLY;
 import static org.keycloak.testsuite.console.page.clients.settings.ClientSettingsForm.OidcAccessType.CONFIDENTIAL;
 import static org.keycloak.testsuite.console.page.clients.settings.ClientSettingsForm.SAMLClientSettingsForm.*;
 import static org.keycloak.testsuite.util.WaitUtils.pause;
-import org.keycloak.testsuite.util.Timer;
 
 /**
  *

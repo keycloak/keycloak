@@ -17,12 +17,6 @@
 
 package org.keycloak.testsuite.federation;
 
-import java.security.Principal;
-import java.util.List;
-
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.Response;
-
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.Credentials;
 import org.apache.http.client.params.AuthPolicy;
@@ -36,9 +30,9 @@ import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.adapters.HttpClientBuilder;
 import org.keycloak.authentication.authenticators.browser.SpnegoAuthenticator;
+import org.keycloak.common.constants.KerberosConstants;
 import org.keycloak.events.Details;
 import org.keycloak.federation.kerberos.CommonKerberosConfig;
-import org.keycloak.common.constants.KerberosConstants;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
@@ -58,6 +52,11 @@ import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.testsuite.rule.WebResource;
 import org.openqa.selenium.WebDriver;
+
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.Response;
+import java.security.Principal;
+import java.util.List;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

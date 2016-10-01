@@ -17,9 +17,9 @@
 
 package org.keycloak.representations.idm;
 
-import org.bouncycastle.openssl.PEMWriter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.bouncycastle.openssl.PEMWriter;
 import org.keycloak.common.util.PemUtils;
 
 import java.io.IOException;

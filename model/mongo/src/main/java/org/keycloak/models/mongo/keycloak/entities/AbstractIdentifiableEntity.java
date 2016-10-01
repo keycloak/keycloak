@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.models.entities;
+package org.keycloak.models.mongo.keycloak.entities;
 
 /**
  * Base for the identifiable entity

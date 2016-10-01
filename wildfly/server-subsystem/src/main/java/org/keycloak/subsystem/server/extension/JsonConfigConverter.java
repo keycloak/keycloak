@@ -18,19 +18,19 @@ package org.keycloak.subsystem.server.extension;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.operations.common.Util;
+import org.jboss.dmr.ModelNode;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
-import org.jboss.as.controller.PathAddress;
-import org.jboss.as.controller.operations.common.Util;
-import org.jboss.dmr.ModelNode;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WRITE_ATTRIBUTE_OPERATION;
-
-import static org.keycloak.subsystem.server.extension.KeycloakSubsystemDefinition.PROVIDERS;
 import static org.keycloak.subsystem.server.extension.KeycloakSubsystemDefinition.MASTER_REALM_NAME;
+import static org.keycloak.subsystem.server.extension.KeycloakSubsystemDefinition.PROVIDERS;
 import static org.keycloak.subsystem.server.extension.KeycloakSubsystemDefinition.SCHEDULED_TASK_INTERVAL;
 import static org.keycloak.subsystem.server.extension.ThemeResourceDefinition.CACHE_TEMPLATES;
 import static org.keycloak.subsystem.server.extension.ThemeResourceDefinition.CACHE_THEMES;

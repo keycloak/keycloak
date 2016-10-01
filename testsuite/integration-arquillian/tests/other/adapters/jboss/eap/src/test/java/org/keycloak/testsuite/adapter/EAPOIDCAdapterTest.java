@@ -1,7 +1,7 @@
 package org.keycloak.testsuite.adapter;
 
-import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 import org.keycloak.testsuite.adapter.servlet.AbstractDemoServletsAdapterTest;
+import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 
 /**
  *

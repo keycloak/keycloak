@@ -17,8 +17,6 @@
 
 package org.keycloak.testsuite.broker;
 
-import java.util.Set;
-
 import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -35,6 +33,8 @@ import org.keycloak.testsuite.KeycloakServer;
 import org.keycloak.testsuite.rule.AbstractKeycloakRule;
 import org.keycloak.testsuite.rule.KeycloakRule;
 import org.openqa.selenium.NoSuchElementException;
+
+import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;

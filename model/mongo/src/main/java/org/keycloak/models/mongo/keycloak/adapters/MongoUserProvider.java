@@ -20,12 +20,10 @@ package org.keycloak.models.mongo.keycloak.adapters;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
 import com.mongodb.QueryBuilder;
-
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.connections.mongo.api.MongoStore;
 import org.keycloak.connections.mongo.api.context.MongoStoreInvocationContext;
-import org.keycloak.credential.CredentialInput;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.credential.UserCredentialStore;
 import org.keycloak.models.ClientModel;
@@ -45,12 +43,11 @@ import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
 import org.keycloak.models.cache.CachedUserModel;
-import org.keycloak.models.entities.CredentialEntity;
-import org.keycloak.models.entities.FederatedIdentityEntity;
-import org.keycloak.models.entities.UserConsentEntity;
+import org.keycloak.models.mongo.keycloak.entities.CredentialEntity;
+import org.keycloak.models.mongo.keycloak.entities.FederatedIdentityEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoUserConsentEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoUserEntity;
-import org.keycloak.models.utils.CredentialValidation;
+import org.keycloak.models.mongo.keycloak.entities.UserConsentEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 import java.util.ArrayList;

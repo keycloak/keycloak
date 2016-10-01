@@ -21,6 +21,8 @@ import org.bouncycastle.openssl.PEMWriter;
 import org.keycloak.broker.social.SocialIdentityProvider;
 import org.keycloak.broker.social.SocialIdentityProviderFactory;
 import org.keycloak.common.util.Base64Url;
+import org.keycloak.common.util.CertificateUtils;
+import org.keycloak.common.util.PemUtils;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientModel;
@@ -44,8 +46,6 @@ import org.keycloak.models.UserFederationProviderFactory;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.CertificateRepresentation;
-import org.keycloak.common.util.CertificateUtils;
-import org.keycloak.common.util.PemUtils;
 import org.keycloak.transaction.JtaTransactionManagerLookup;
 
 import javax.crypto.spec.SecretKeySpec;

@@ -18,8 +18,8 @@
 package org.keycloak.authentication.authenticators.browser;
 
 import org.keycloak.authentication.AbstractFormAuthenticator;
-import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.AuthenticationFlowContext;
+import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.credential.CredentialInput;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;

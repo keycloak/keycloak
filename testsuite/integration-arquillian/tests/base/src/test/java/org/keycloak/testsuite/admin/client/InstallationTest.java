@@ -24,8 +24,8 @@ import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Test getting the installation/configuration files for OIDC and SAML.

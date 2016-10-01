@@ -27,7 +27,6 @@ import org.keycloak.services.resources.AccountService;
 import org.keycloak.services.Urls;
 
 import javax.ws.rs.core.UriBuilder;
-
 import java.net.URI;
 import java.util.Comparator;
 import java.util.LinkedList;

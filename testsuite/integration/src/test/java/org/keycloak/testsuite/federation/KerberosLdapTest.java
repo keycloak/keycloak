@@ -17,11 +17,6 @@
 
 package org.keycloak.testsuite.federation;
 
-import java.net.URL;
-import java.util.Map;
-
-import javax.ws.rs.core.Response;
-
 import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Rule;
@@ -42,6 +37,10 @@ import org.keycloak.testsuite.rule.KerberosRule;
 import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.testsuite.rule.WebRule;
 import org.keycloak.utils.CredentialHelper;
+
+import javax.ws.rs.core.Response;
+import java.net.URL;
+import java.util.Map;
 
 /**
  * Test of LDAPFederationProvider (Kerberos backed by LDAP)

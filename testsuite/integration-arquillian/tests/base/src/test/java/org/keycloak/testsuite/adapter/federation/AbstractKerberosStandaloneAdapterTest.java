@@ -17,11 +17,6 @@
 
 package org.keycloak.testsuite.adapter.federation;
 
-import java.util.Arrays;
-import java.util.Map;
-
-import javax.ws.rs.core.Response;
-
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -32,8 +27,10 @@ import org.keycloak.federation.kerberos.KerberosFederationProviderFactory;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserFederationProviderRepresentation;
-import org.openqa.selenium.firefox.FirefoxDriver;
-import org.openqa.selenium.firefox.FirefoxProfile;
+
+import javax.ws.rs.core.Response;
+import java.util.Arrays;
+import java.util.Map;
 
 /**
  * Test of KerberosFederationProvider (Kerberos not backed by LDAP)

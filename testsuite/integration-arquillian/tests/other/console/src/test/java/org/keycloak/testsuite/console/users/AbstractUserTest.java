@@ -8,6 +8,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.console.AbstractConsoleTest;
 import org.keycloak.testsuite.console.page.users.CreateUser;
 import org.keycloak.testsuite.console.page.users.Users;
+
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlEquals;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
 

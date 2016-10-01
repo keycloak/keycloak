@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<kmodule xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xmlns="http://jboss.org/kie/6.0.0/kmodule">
+<kmodule
+        xmlns="http://jboss.org/kie/6.0.0/kmodule">
 
     <kbase name="PhotozAuthzAdminPolicy" packages="com.photoz.authz.policy.admin">
         <ksession name="MainAdminSession" default="true"/>

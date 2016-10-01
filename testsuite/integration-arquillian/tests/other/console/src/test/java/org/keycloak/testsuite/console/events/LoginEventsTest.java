@@ -15,7 +15,6 @@ import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
-import org.junit.Ignore;
 import static org.keycloak.representations.idm.CredentialRepresentation.PASSWORD;
 
 /**

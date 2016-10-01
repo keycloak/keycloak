@@ -28,7 +28,6 @@ import org.keycloak.models.UserModel;
 import org.keycloak.provider.Provider;
 
 import java.util.List;
-import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -38,7 +37,6 @@ public interface UserFederatedStorageProvider extends Provider,
         UserAttributeFederatedStorage,
         UserBrokerLinkFederatedStorage,
         UserConsentFederatedStorage,
-        UserCredentialsFederatedStorage,
         UserGroupMembershipFederatedStorage,
         UserRequiredActionsFederatedStorage,
         UserRoleMappingsFederatedStorage {

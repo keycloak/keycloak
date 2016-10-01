@@ -22,6 +22,10 @@
         "provider": "${keycloak.user.provider:jpa}"
     },
 
+    "userFederatedStorage": {
+        "provider": "${keycloak.userFederatedStorage.provider:jpa}"
+    },
+
     "userSessionPersister": {
         "provider": "${keycloak.userSessionPersister.provider:jpa}"
     },

@@ -28,7 +28,6 @@ import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.messages.Messages;
 
 import javax.ws.rs.core.MultivaluedMap;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;

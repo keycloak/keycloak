@@ -26,9 +26,9 @@ import org.keycloak.adapters.rotation.PublicKeyLocator;
 import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.common.enums.RelativeUrlsUsed;
 import org.keycloak.common.enums.SslRequired;
+import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.enums.TokenStore;
 import org.keycloak.representations.adapters.config.AdapterConfig;
-import org.keycloak.common.util.KeycloakUriBuilder;
 
 import java.io.IOException;
 import java.net.URI;

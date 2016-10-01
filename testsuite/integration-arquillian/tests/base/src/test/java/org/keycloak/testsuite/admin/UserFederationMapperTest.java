@@ -17,17 +17,6 @@
 
 package org.keycloak.testsuite.admin;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import javax.ws.rs.BadRequestException;
-import javax.ws.rs.NotFoundException;
-import javax.ws.rs.core.Response;
-
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -47,6 +36,16 @@ import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.federation.DummyUserFederationMapper;
 import org.keycloak.testsuite.util.AdminEventPaths;
 import org.keycloak.testsuite.util.UserFederationProviderBuilder;
+
+import javax.ws.rs.BadRequestException;
+import javax.ws.rs.NotFoundException;
+import javax.ws.rs.core.Response;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

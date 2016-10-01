@@ -19,12 +19,7 @@ package org.keycloak.component;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.provider.ConfiguredProvider;
 import org.keycloak.provider.Provider;
-import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderFactory;
-import org.keycloak.storage.UserStorageProviderModel;
-
-import java.util.Collections;
-import java.util.List;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

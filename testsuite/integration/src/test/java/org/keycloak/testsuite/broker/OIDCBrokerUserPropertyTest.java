@@ -34,7 +34,10 @@ import org.keycloak.testsuite.rule.AbstractKeycloakRule;
 import javax.mail.MessagingException;
 import java.io.IOException;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 
 /**
  * Test that the broker AttributeMapper maps user properties like email, firstName, and lastName

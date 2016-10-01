@@ -17,22 +17,33 @@
 
 package org.keycloak.testsuite.util;
 
+import org.jboss.logging.Logger;
+import org.subethamail.smtp.server.SMTPServer;
+
+import javax.mail.internet.MimeMessage;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocket;
+import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.TrustManagerFactory;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.*;
-import java.security.*;
+import java.net.InetSocketAddress;
+import java.net.Socket;
+import java.net.SocketException;
+import java.security.KeyManagementException;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.mail.internet.MimeMessage;
-import javax.net.ssl.*;
-
-import org.jboss.logging.Logger;
-import org.subethamail.smtp.server.SMTPServer;
-
-import static org.keycloak.testsuite.util.MailServerConfiguration.*;
+import static org.keycloak.testsuite.util.MailServerConfiguration.FROM;
+import static org.keycloak.testsuite.util.MailServerConfiguration.HOST;
+import static org.keycloak.testsuite.util.MailServerConfiguration.PORT;
 import static org.keycloak.testsuite.util.MailServerConfiguration.PORT_SSL;
 import static org.keycloak.testsuite.util.MailServerConfiguration.STARTTLS;
 

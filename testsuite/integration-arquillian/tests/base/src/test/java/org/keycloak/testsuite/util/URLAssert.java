@@ -24,12 +24,9 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.junit.Assert;
-import org.keycloak.testsuite.page.AbstractPage;
-import static org.junit.Assert.assertTrue;
 import org.keycloak.testsuite.auth.page.login.PageWithLoginUrl;
+import org.keycloak.testsuite.page.AbstractPage;
 import org.openqa.selenium.WebDriver;
-
-import static org.keycloak.testsuite.util.URLUtils.*;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -37,6 +34,11 @@ import java.io.Reader;
 import java.io.StringWriter;
 import java.net.URI;
 import java.nio.charset.Charset;
+
+import static org.junit.Assert.assertTrue;
+import static org.keycloak.testsuite.util.URLUtils.currentUrlDoesntStartWith;
+import static org.keycloak.testsuite.util.URLUtils.currentUrlEqual;
+import static org.keycloak.testsuite.util.URLUtils.currentUrlStartWith;
 
 /**
  *

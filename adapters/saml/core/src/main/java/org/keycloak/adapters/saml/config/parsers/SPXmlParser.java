@@ -17,16 +17,6 @@
 
 package org.keycloak.adapters.saml.config.parsers;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
-import javax.xml.namespace.QName;
-import javax.xml.stream.XMLEventReader;
-import javax.xml.stream.events.EndElement;
-import javax.xml.stream.events.StartElement;
-import javax.xml.stream.events.XMLEvent;
-
 import org.keycloak.adapters.saml.config.IDP;
 import org.keycloak.adapters.saml.config.Key;
 import org.keycloak.adapters.saml.config.SP;
@@ -34,6 +24,15 @@ import org.keycloak.common.util.StringPropertyReplacer;
 import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.saml.common.parsers.AbstractParser;
 import org.keycloak.saml.common.util.StaxParserUtil;
+
+import javax.xml.namespace.QName;
+import javax.xml.stream.XMLEventReader;
+import javax.xml.stream.events.EndElement;
+import javax.xml.stream.events.StartElement;
+import javax.xml.stream.events.XMLEvent;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

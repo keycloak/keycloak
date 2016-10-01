@@ -20,14 +20,8 @@ package org.keycloak.forms.account.freemarker.model;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.utils.Base32;
 import org.keycloak.models.utils.HmacOTP;
 import org.keycloak.utils.TotpUtils;
-
-import java.io.UnsupportedEncodingException;
-import java.net.URI;
-import java.net.URLEncoder;
-import java.security.SecureRandom;
 
 
 /**

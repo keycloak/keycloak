@@ -21,7 +21,6 @@ package org.keycloak.authorization.jpa.entities;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.Scope;
-import org.keycloak.models.entities.AbstractIdentifiableEntity;
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.Logic;
 

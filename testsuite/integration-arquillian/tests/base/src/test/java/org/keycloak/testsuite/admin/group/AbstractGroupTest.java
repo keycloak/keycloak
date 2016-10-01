@@ -17,7 +17,6 @@
 
 package org.keycloak.testsuite.admin.group;
 
-import org.junit.Before;
 import org.junit.Rule;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.RSATokenVerifier;

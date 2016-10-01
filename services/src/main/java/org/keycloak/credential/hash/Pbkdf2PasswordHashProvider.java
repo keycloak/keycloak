@@ -20,8 +20,6 @@ package org.keycloak.credential.hash;
 import org.keycloak.Config;
 import org.keycloak.common.util.Base64;
 import org.keycloak.credential.CredentialModel;
-import org.keycloak.credential.hash.PasswordHashProvider;
-import org.keycloak.credential.hash.PasswordHashProviderFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.PasswordPolicy;

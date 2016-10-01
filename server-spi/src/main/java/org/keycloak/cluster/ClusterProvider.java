@@ -18,9 +18,9 @@
 package org.keycloak.cluster;
 
 
-import java.util.concurrent.Callable;
-
 import org.keycloak.provider.Provider;
+
+import java.util.concurrent.Callable;
 
 /**
  * Various utils related to clustering and concurrent tasks on cluster nodes

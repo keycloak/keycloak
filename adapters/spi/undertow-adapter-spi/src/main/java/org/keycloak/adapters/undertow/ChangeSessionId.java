@@ -19,8 +19,6 @@ package org.keycloak.adapters.undertow;
 
 import io.undertow.server.HttpServerExchange;
 import io.undertow.server.session.Session;
-import io.undertow.server.session.SessionConfig;
-import io.undertow.server.session.SessionManager;
 import io.undertow.servlet.api.DeploymentInfo;
 import io.undertow.servlet.handlers.ServletRequestContext;
 import io.undertow.servlet.spec.HttpSessionImpl;

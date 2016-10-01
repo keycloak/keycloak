@@ -1,13 +1,10 @@
 package org.keycloak.testsuite.console.page.authentication;
 
-import org.jboss.arquillian.graphene.findby.ByJQuery;
 import org.keycloak.testsuite.page.Form;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.ui.Select;
-
-import java.util.List;
 
 import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 

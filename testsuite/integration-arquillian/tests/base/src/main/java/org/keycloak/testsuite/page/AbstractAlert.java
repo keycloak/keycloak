@@ -20,7 +20,6 @@ package org.keycloak.testsuite.page;
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.fragment.Root;
 import org.jboss.logging.Logger;
-
 import org.keycloak.testsuite.util.WaitUtils;
 import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebDriver;

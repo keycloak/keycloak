@@ -17,14 +17,12 @@
 
 package org.keycloak.connections.mongo;
 
-import java.lang.reflect.Method;
-import java.net.UnknownHostException;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.Map;
-
-import javax.net.ssl.SSLSocketFactory;
-
+import com.mongodb.DB;
+import com.mongodb.MongoClient;
+import com.mongodb.MongoClientOptions;
+import com.mongodb.MongoClientURI;
+import com.mongodb.MongoCredential;
+import com.mongodb.ServerAddress;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.connections.mongo.api.MongoStore;
@@ -39,12 +37,12 @@ import org.keycloak.models.dblock.DBLockProvider;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.provider.ServerInfoAwareProviderFactory;
 
-import com.mongodb.DB;
-import com.mongodb.MongoClient;
-import com.mongodb.MongoClientOptions;
-import com.mongodb.MongoClientURI;
-import com.mongodb.MongoCredential;
-import com.mongodb.ServerAddress;
+import javax.net.ssl.SSLSocketFactory;
+import java.lang.reflect.Method;
+import java.net.UnknownHostException;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -67,22 +65,23 @@ public class DefaultMongoConnectionFactoryProvider implements MongoConnectionPro
             "org.keycloak.models.mongo.keycloak.entities.MongoMigrationModelEntity",
             "org.keycloak.models.mongo.keycloak.entities.MongoOnlineUserSessionEntity",
             "org.keycloak.models.mongo.keycloak.entities.MongoOfflineUserSessionEntity",
-            "org.keycloak.models.entities.IdentityProviderEntity",
-            "org.keycloak.models.entities.ClientIdentityProviderMappingEntity",
-            "org.keycloak.models.entities.RequiredCredentialEntity",
-            "org.keycloak.models.entities.CredentialEntity",
-            "org.keycloak.models.entities.FederatedIdentityEntity",
-            "org.keycloak.models.entities.UserFederationProviderEntity",
-            "org.keycloak.models.entities.UserFederationMapperEntity",
-            "org.keycloak.models.entities.ProtocolMapperEntity",
-            "org.keycloak.models.entities.IdentityProviderMapperEntity",
-            "org.keycloak.models.entities.AuthenticationExecutionEntity",
-            "org.keycloak.models.entities.AuthenticationFlowEntity",
-            "org.keycloak.models.entities.AuthenticatorConfigEntity",
-            "org.keycloak.models.entities.RequiredActionProviderEntity",
-            "org.keycloak.models.entities.PersistentUserSessionEntity",
-            "org.keycloak.models.entities.PersistentClientSessionEntity",
-            "org.keycloak.models.entities.ComponentEntity",
+            "org.keycloak.models.mongo.keycloak.entities.IdentityProviderEntity",
+            "org.keycloak.models.mongo.keycloak.entities.ClientIdentityProviderMappingEntity",
+            "org.keycloak.models.mongo.keycloak.entities.RequiredCredentialEntity",
+            "org.keycloak.models.mongo.keycloak.entities.CredentialEntity",
+            "org.keycloak.models.mongo.keycloak.entities.FederatedIdentityEntity",
+            "org.keycloak.models.mongo.keycloak.entities.UserFederationProviderEntity",
+            "org.keycloak.models.mongo.keycloak.entities.UserFederationMapperEntity",
+            "org.keycloak.models.mongo.keycloak.entities.ProtocolMapperEntity",
+            "org.keycloak.models.mongo.keycloak.entities.IdentityProviderMapperEntity",
+            "org.keycloak.models.mongo.keycloak.entities.AuthenticationExecutionEntity",
+            "org.keycloak.models.mongo.keycloak.entities.AuthenticationFlowEntity",
+            "org.keycloak.models.mongo.keycloak.entities.AuthenticatorConfigEntity",
+            "org.keycloak.models.mongo.keycloak.entities.RequiredActionProviderEntity",
+            "org.keycloak.models.mongo.keycloak.entities.PersistentUserSessionEntity",
+            "org.keycloak.models.mongo.keycloak.entities.PersistentClientSessionEntity",
+            "org.keycloak.models.mongo.keycloak.entities.ComponentEntity",
+            "org.keycloak.storage.mongo.entity.FederatedUser",
             "org.keycloak.authorization.mongo.entities.PolicyEntity",
             "org.keycloak.authorization.mongo.entities.ResourceEntity",
             "org.keycloak.authorization.mongo.entities.ResourceServerEntity",

@@ -17,12 +17,12 @@
 
 package org.keycloak.example;
 
-import javax.servlet.http.HttpServletRequest;
-
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
 import org.keycloak.KeycloakPrincipal;
 import org.keycloak.representations.AccessToken;
+
+import javax.servlet.http.HttpServletRequest;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

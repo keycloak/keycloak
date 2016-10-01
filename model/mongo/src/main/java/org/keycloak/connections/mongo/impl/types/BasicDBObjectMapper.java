@@ -19,6 +19,7 @@ package org.keycloak.connections.mongo.impl.types;
 
 import com.mongodb.BasicDBObject;
 import org.jboss.logging.Logger;
+import org.keycloak.common.util.reflections.Types;
 import org.keycloak.connections.mongo.api.MongoIdentifiableEntity;
 import org.keycloak.connections.mongo.api.types.Mapper;
 import org.keycloak.connections.mongo.api.types.MapperContext;
@@ -26,7 +27,6 @@ import org.keycloak.connections.mongo.api.types.MapperRegistry;
 import org.keycloak.connections.mongo.impl.EntityInfo;
 import org.keycloak.connections.mongo.impl.MongoStoreImpl;
 import org.keycloak.models.utils.reflection.Property;
-import org.keycloak.common.util.reflections.Types;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;

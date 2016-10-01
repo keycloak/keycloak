@@ -17,10 +17,6 @@
 
 package org.keycloak.adapters.rotation;
 
-import java.security.PublicKey;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
 import org.apache.http.client.methods.HttpGet;
 import org.jboss.logging.Logger;
 import org.keycloak.adapters.HttpAdapterUtils;
@@ -31,6 +27,10 @@ import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.util.JWKSUtils;
+
+import java.security.PublicKey;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * When needed, publicKeys are downloaded by sending request to realm's jwks_url

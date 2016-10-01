@@ -17,11 +17,11 @@
 
 package org.keycloak.testsuite.federation;
 
-import java.util.Arrays;
-import java.util.List;
-
 import org.keycloak.provider.ConfiguredProvider;
 import org.keycloak.provider.ProviderConfigProperty;
+
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

@@ -25,11 +25,11 @@ import org.keycloak.adapters.OIDCHttpFacade;
 import org.keycloak.adapters.ServerRequest;
 import org.keycloak.adapters.spi.AuthenticationError;
 import org.keycloak.adapters.spi.LogoutError;
+import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.IDToken;
-import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.util.TokenUtil;
 
 import javax.security.cert.X509Certificate;

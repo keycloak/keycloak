@@ -63,6 +63,9 @@ public class StorageId implements Serializable {
     public static String externalId(String keycloakId) {
         return new StorageId(keycloakId).getExternalId();
     }
+    public static String providerId(String keycloakId) {
+        return new StorageId(keycloakId).getProviderId();
+    }
 
 
 

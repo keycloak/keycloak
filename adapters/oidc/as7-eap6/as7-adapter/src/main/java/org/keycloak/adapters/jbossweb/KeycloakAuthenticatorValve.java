@@ -22,15 +22,11 @@ import org.apache.catalina.connector.Request;
 import org.apache.catalina.connector.Response;
 import org.apache.catalina.core.StandardContext;
 import org.apache.catalina.deploy.LoginConfig;
-import org.apache.catalina.realm.GenericPrincipal;
 import org.keycloak.adapters.tomcat.AbstractKeycloakAuthenticatorValve;
 import org.keycloak.adapters.tomcat.GenericPrincipalFactory;
 
-import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.security.Principal;
-import java.util.List;
 
 /**
  * Keycloak authentication valve

@@ -17,12 +17,12 @@
 package org.keycloak.broker.oidc;
 
 import org.keycloak.broker.provider.AbstractIdentityProviderFactory;
+import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKParser;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.protocol.oidc.utils.JWKSHttpUtils;
 import org.keycloak.services.ServicesLogger;

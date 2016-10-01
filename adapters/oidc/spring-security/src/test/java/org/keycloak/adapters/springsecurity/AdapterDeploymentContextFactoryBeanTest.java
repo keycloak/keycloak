@@ -17,18 +17,16 @@
 
 package org.keycloak.adapters.springsecurity;
 
-import java.io.FileNotFoundException;
-
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
-
 import org.keycloak.adapters.KeycloakConfigResolver;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.spi.HttpFacade;
-
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
+
+import java.io.FileNotFoundException;
 
 import static org.junit.Assert.assertNotNull;
 

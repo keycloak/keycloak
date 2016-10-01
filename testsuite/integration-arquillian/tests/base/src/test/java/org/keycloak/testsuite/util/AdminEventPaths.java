@@ -17,10 +17,6 @@
 
 package org.keycloak.testsuite.util;
 
-import java.net.URI;
-
-import javax.ws.rs.core.UriBuilder;
-
 import org.keycloak.admin.client.resource.AttackDetectionResource;
 import org.keycloak.admin.client.resource.AuthenticationManagementResource;
 import org.keycloak.admin.client.resource.ClientAttributeCertificateResource;
@@ -43,6 +39,9 @@ import org.keycloak.admin.client.resource.UserFederationProviderResource;
 import org.keycloak.admin.client.resource.UserFederationProvidersResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.admin.client.resource.UsersResource;
+
+import javax.ws.rs.core.UriBuilder;
+import java.net.URI;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

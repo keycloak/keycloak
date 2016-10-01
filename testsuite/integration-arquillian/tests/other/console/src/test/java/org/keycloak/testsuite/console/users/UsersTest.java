@@ -1,13 +1,15 @@
 package org.keycloak.testsuite.console.users;
 
-import javax.ws.rs.core.Response;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testsuite.util.Timer;
+
+import javax.ws.rs.core.Response;
+
 import static org.keycloak.testsuite.admin.ApiUtil.getCreatedId;
 import static org.keycloak.testsuite.util.WaitUtils.pause;
-import org.keycloak.testsuite.util.Timer;
 
 /**
  *

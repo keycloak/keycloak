@@ -16,10 +16,6 @@
  */
 package org.keycloak.testsuite.util;
 
-import java.util.Collections;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import static org.jboss.arquillian.graphene.Graphene.waitGui;
 import org.jboss.arquillian.graphene.wait.ElementBuilder;
 import org.openqa.selenium.By;
 import org.openqa.selenium.TimeoutException;
@@ -27,8 +23,15 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
-import static org.jboss.arquillian.graphene.Graphene.waitModel;
-import static org.openqa.selenium.support.ui.ExpectedConditions.*;
+import java.util.Collections;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import static org.jboss.arquillian.graphene.Graphene.waitGui;
+import static org.openqa.selenium.support.ui.ExpectedConditions.invisibilityOfAllElements;
+import static org.openqa.selenium.support.ui.ExpectedConditions.javaScriptThrowsNoExceptions;
+import static org.openqa.selenium.support.ui.ExpectedConditions.not;
+import static org.openqa.selenium.support.ui.ExpectedConditions.urlContains;
 
 /**
  *
