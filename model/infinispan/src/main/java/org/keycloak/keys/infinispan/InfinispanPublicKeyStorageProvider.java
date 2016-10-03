@@ -28,16 +28,16 @@ import java.util.concurrent.FutureTask;
 import org.infinispan.Cache;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.Time;
-import org.keycloak.keys.KeyLoader;
-import org.keycloak.keys.KeyStorageProvider;
+import org.keycloak.keys.PublicKeyLoader;
+import org.keycloak.keys.PublicKeyStorageProvider;
 
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class InfinispanKeyStorageProvider implements KeyStorageProvider {
+public class InfinispanPublicKeyStorageProvider implements PublicKeyStorageProvider {
 
-    private static final Logger log = Logger.getLogger(InfinispanKeyStorageProvider.class);
+    private static final Logger log = Logger.getLogger(InfinispanPublicKeyStorageProvider.class);
 
     private final Cache<String, PublicKeysEntry> keys;
 
@@ -45,7 +45,7 @@ public class InfinispanKeyStorageProvider implements KeyStorageProvider {
 
     private final int minTimeBetweenRequests ;
 
-    public InfinispanKeyStorageProvider(Cache<String, PublicKeysEntry> keys,  Map<String, FutureTask<PublicKeysEntry>> tasksInProgress, int minTimeBetweenRequests) {
+    public InfinispanPublicKeyStorageProvider(Cache<String, PublicKeysEntry> keys, Map<String, FutureTask<PublicKeysEntry>> tasksInProgress, int minTimeBetweenRequests) {
         this.keys = keys;
         this.tasksInProgress = tasksInProgress;
         this.minTimeBetweenRequests = minTimeBetweenRequests;
@@ -53,7 +53,7 @@ public class InfinispanKeyStorageProvider implements KeyStorageProvider {
 
 
     @Override
-    public PublicKey getPublicKey(String modelKey, String kid, KeyLoader loader) {
+    public PublicKey getPublicKey(String modelKey, String kid, PublicKeyLoader loader) {
         // Check if key is in cache
         PublicKeysEntry entry = keys.get(modelKey);
         if (entry != null) {
@@ -127,9 +127,9 @@ public class InfinispanKeyStorageProvider implements KeyStorageProvider {
     private class WrapperCallable implements Callable<PublicKeysEntry> {
 
         private final String modelKey;
-        private final KeyLoader delegate;
+        private final PublicKeyLoader delegate;
 
-        public WrapperCallable(String modelKey, KeyLoader delegate) {
+        public WrapperCallable(String modelKey, PublicKeyLoader delegate) {
             this.modelKey = modelKey;
             this.delegate = delegate;
         }

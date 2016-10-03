@@ -17,23 +17,20 @@
 
 package org.keycloak.protocol.oidc.endpoints.request;
 
-import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
-import org.keycloak.jose.jws.Algorithm;
-import org.keycloak.jose.jws.JWSHeader;
-import org.keycloak.jose.jws.JWSInput;
-import org.keycloak.jose.jws.crypto.RSAProvider;
-import org.keycloak.keys.KeyStorageProvider;
-import org.keycloak.keys.loader.KeyStorageManager;
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
-import org.keycloak.services.util.CertificateInfoHelper;
-import org.keycloak.util.JsonSerialization;
-
 import java.security.PublicKey;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+
+import org.keycloak.jose.jws.Algorithm;
+import org.keycloak.jose.jws.JWSHeader;
+import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.jose.jws.crypto.RSAProvider;
+import org.keycloak.keys.loader.PublicKeyStorageManager;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
+import org.keycloak.util.JsonSerialization;
 
 /**
  * Parse the parameters from OIDC "request" object
@@ -57,7 +54,7 @@ class AuthzEndpointRequestObjectParser extends AuthzEndpointRequestParser {
         if (header.getAlgorithm() == Algorithm.none) {
             this.requestParams = JsonSerialization.readValue(input.getContent(), TypedHashMap.class);
         } else if (header.getAlgorithm() == Algorithm.RS256) {
-            PublicKey clientPublicKey = KeyStorageManager.getClientPublicKey(session, client, input);
+            PublicKey clientPublicKey = PublicKeyStorageManager.getClientPublicKey(session, client, input);
             if (clientPublicKey == null) {
                 throw new RuntimeException("Client public key not found");
             }

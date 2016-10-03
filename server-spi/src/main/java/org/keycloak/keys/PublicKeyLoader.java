@@ -23,7 +23,7 @@ import java.util.Map;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public interface KeyLoader {
+public interface PublicKeyLoader {
 
     Map<String, PublicKey> loadKeys() throws Exception;
 
