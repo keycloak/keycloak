@@ -1,5 +1,5 @@
 import {Injectable} from "@angular/core";
-import {Http, Request, ConnectionBackend, RequestOptions, RequestOptionsArgs, Response} from "@angular/http";
+import {Http, Request, ConnectionBackend, RequestOptions, RequestOptionsArgs, Response, Headers} from "@angular/http";
 
 import {KeycloakService} from "./keycloak.service";
 import {Observable} from 'rxjs/Rx';
@@ -14,6 +14,7 @@ export class KeycloakHttp extends Http {
     }
 
     private setToken(options: RequestOptionsArgs) {
+
         if (options == null || KeycloakService.auth == null || KeycloakService.auth.authz == null || KeycloakService.auth.authz.token == null) {
             console.log("Need a token, but no token is available, not setting bearer token.");
             return;
@@ -26,6 +27,11 @@ export class KeycloakHttp extends Http {
         let tokenPromise:Promise<string> = this._keycloakService.getToken();
         let tokenObservable:Observable<string> = Observable.fromPromise(tokenPromise);
         let tokenUpdateObservable:Observable<any> = Observable.create((observer) => {
+            if (options == null) {
+                let headers = new Headers();
+                options = new RequestOptions({ headers: headers });
+            }
+
             this.setToken(options);
             observer.next();
             observer.complete();
