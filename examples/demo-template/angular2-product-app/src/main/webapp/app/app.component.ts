@@ -39,8 +39,6 @@ export class AppComponent {
   }
 
   reloadData() {
-    //angular don't have http interceptor yet
-
     this.http.get('/database/products')
       .map(res => res.json())
       .subscribe(prods => this.products = prods,
