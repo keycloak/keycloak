@@ -1015,6 +1015,7 @@ module.controller('RealmTokenDetailCtrl', function($scope, Realm, realm, $http, 
     $scope.realm.accessTokenLifespanForImplicitFlow = TimeUnit2.asUnit(realm.accessTokenLifespanForImplicitFlow);
     $scope.realm.ssoSessionIdleTimeout = TimeUnit2.asUnit(realm.ssoSessionIdleTimeout);
     $scope.realm.ssoSessionMaxLifespan = TimeUnit2.asUnit(realm.ssoSessionMaxLifespan);
+    $scope.realm.ssoSessionIdleTimeoutRememberMe = TimeUnit2.asUnit(realm.ssoSessionIdleTimeoutRememberMe);
     $scope.realm.ssoSessionMaxLifespanRememberMe = TimeUnit2.asUnit(realm.ssoSessionMaxLifespanRememberMe);
     $scope.realm.offlineSessionIdleTimeout = TimeUnit2.asUnit(realm.offlineSessionIdleTimeout);
     $scope.realm.accessCodeLifespan = TimeUnit2.asUnit(realm.accessCodeLifespan);
@@ -1035,6 +1036,7 @@ module.controller('RealmTokenDetailCtrl', function($scope, Realm, realm, $http, 
         $scope.realm.accessTokenLifespanForImplicitFlow = $scope.realm.accessTokenLifespanForImplicitFlow.toSeconds();
         $scope.realm.ssoSessionIdleTimeout = $scope.realm.ssoSessionIdleTimeout.toSeconds();
         $scope.realm.ssoSessionMaxLifespan = $scope.realm.ssoSessionMaxLifespan.toSeconds();
+        $scope.realm.ssoSessionIdleTimeoutRememberMe = $scope.realm.ssoSessionIdleTimeoutRememberMe.toSeconds();
         $scope.realm.ssoSessionMaxLifespanRememberMe = $scope.realm.ssoSessionMaxLifespanRememberMe.toSeconds();
         $scope.realm.offlineSessionIdleTimeout = $scope.realm.offlineSessionIdleTimeout.toSeconds();
         $scope.realm.accessCodeLifespan = $scope.realm.accessCodeLifespan.toSeconds();

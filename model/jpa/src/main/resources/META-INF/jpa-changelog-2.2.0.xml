@@ -57,13 +57,4 @@
 
     </changeSet>
 
-    <changeSet author="keycloak" id="2.2.0.1">
-        <addColumn tableName="REALM">
-            <column name="SSO_MAX_LIFESPAN_REMEMBER_ME" type="INT" defaultValueNumeric="3600"/>
-        </addColumn>
-
-        <!-- intialize the SSO_MAX_LIFESPAN_REMEMBER_ME = SSO_MAX_LIFESPAN for all pre-existing realms -->
-        <sql>update REALM set SSO_MAX_LIFESPAN_REMEMBER_ME = SSO_MAX_LIFESPAN where SSO_MAX_LIFESPAN is not null</sql>
-    </changeSet>
-
 </databaseChangeLog>

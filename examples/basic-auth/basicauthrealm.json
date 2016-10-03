@@ -6,6 +6,7 @@
     "accessCodeLifespanUserAction": 300,
     "ssoSessionIdleTimeout": 600,
     "ssoSessionMaxLifespan": 36000,
+    "ssoSessionIdleTimeoutRememberMe": 36000,
     "ssoSessionMaxLifespanRememberMe": 36000,
     "sslRequired": "external",
     "registrationAllowed": false,

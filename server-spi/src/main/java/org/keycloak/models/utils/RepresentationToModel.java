@@ -163,6 +163,8 @@ public class RepresentationToModel {
         if (rep.getSsoSessionMaxLifespan() != null) newRealm.setSsoSessionMaxLifespan(rep.getSsoSessionMaxLifespan());
         else newRealm.setSsoSessionMaxLifespan(36000);
 
+        if (rep.getSsoSessionIdleTimeoutRememberMe() != null) newRealm.setSsoSessionIdleTimeoutRememberMe(rep.getSsoSessionIdleTimeoutRememberMe());
+        else newRealm.setSsoSessionIdleTimeoutRememberMe(36000);
         if (rep.getSsoSessionMaxLifespanRememberMe() != null) newRealm.setSsoSessionMaxLifespanRememberMe(rep.getSsoSessionMaxLifespanRememberMe());
         else newRealm.setSsoSessionMaxLifespanRememberMe(36000);
 
@@ -786,6 +788,7 @@ public class RepresentationToModel {
         if (rep.getAccessTokenLifespanForImplicitFlow() != null) realm.setAccessTokenLifespanForImplicitFlow(rep.getAccessTokenLifespanForImplicitFlow());
         if (rep.getSsoSessionIdleTimeout() != null) realm.setSsoSessionIdleTimeout(rep.getSsoSessionIdleTimeout());
         if (rep.getSsoSessionMaxLifespan() != null) realm.setSsoSessionMaxLifespan(rep.getSsoSessionMaxLifespan());
+        if (rep.getSsoSessionIdleTimeoutRememberMe() != null) realm.setSsoSessionIdleTimeoutRememberMe(rep.getSsoSessionIdleTimeoutRememberMe());
         if (rep.getSsoSessionMaxLifespanRememberMe() != null) realm.setSsoSessionMaxLifespanRememberMe(rep.getSsoSessionMaxLifespanRememberMe());
         if (rep.getOfflineSessionIdleTimeout() != null) realm.setOfflineSessionIdleTimeout(rep.getOfflineSessionIdleTimeout());
         if (rep.getRequiredCredentials() != null) {

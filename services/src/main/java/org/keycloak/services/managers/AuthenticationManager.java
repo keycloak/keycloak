@@ -98,7 +98,9 @@ public class AuthenticationManager {
         }
         int currentTime = Time.currentTime();
         boolean sessionMaxOk = (userSession.getStarted() + (userSession.isRememberMe() ? realm.getSsoSessionMaxLifespanRememberMe() : realm.getSsoSessionMaxLifespan())) > currentTime;
-        boolean sessionIdleOk = userSession.isRememberMe() || (userSession.getLastSessionRefresh() + realm.getSsoSessionIdleTimeout()) > currentTime;
+        int maxRememberMeIdleSessionAge = userSession.getLastSessionRefresh() + realm.getSsoSessionIdleTimeoutRememberMe();
+        int maxSsoSessionAge = userSession.getLastSessionRefresh() + realm.getSsoSessionIdleTimeout();
+        boolean sessionIdleOk = (userSession.isRememberMe() && maxRememberMeIdleSessionAge > currentTime) || maxSsoSessionAge > currentTime;
         return sessionIdleOk && sessionMaxOk;
     }
 
