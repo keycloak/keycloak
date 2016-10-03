@@ -68,8 +68,9 @@ public class KeycloakAdapterConfigDeploymentProcessor implements DeploymentUnitP
 
         boolean hasSubsystemConfig = service.isSecureDeployment(deploymentUnit);
         boolean webRequiresKC = loginConfig != null && "KEYCLOAK".equalsIgnoreCase(loginConfig.getAuthMethod());
+        boolean isConfigured = service.isDeploymentConfigured(deploymentUnit);
 
-        if (hasSubsystemConfig || webRequiresKC) {
+        if ((hasSubsystemConfig || webRequiresKC) && isConfigured) {
             log.debug("Setting up KEYCLOAK auth method for WAR: " + deploymentUnit.getName());
 
             // if secure-deployment configuration exists for web app, we force KEYCLOAK auth method on it

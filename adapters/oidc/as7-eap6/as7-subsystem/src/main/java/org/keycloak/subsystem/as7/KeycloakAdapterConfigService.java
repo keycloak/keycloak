@@ -158,15 +158,19 @@ public final class KeycloakAdapterConfigService {
     }
 
     public String getRealmName(DeploymentUnit deploymentUnit) {
-        String deploymentName = preferredDeploymentName(deploymentUnit);
-        ModelNode deployment = this.secureDeployments.get(deploymentName);
+        ModelNode deployment = getSecureDeployment(deploymentUnit);
         return deployment.get(RealmDefinition.TAG_NAME).asString();
 
     }
 
+    protected boolean isDeploymentConfigured(DeploymentUnit deploymentUnit) {
+        ModelNode deployment = getSecureDeployment(deploymentUnit);
+        ModelNode resource = deployment.get(SecureDeploymentDefinition.RESOURCE.getName());
+        return resource.isDefined();
+    }
+
     public String getJSON(DeploymentUnit deploymentUnit) {
-        String deploymentName = preferredDeploymentName(deploymentUnit);
-        ModelNode deployment = this.secureDeployments.get(deploymentName);
+        ModelNode deployment = getSecureDeployment(deploymentUnit);
         String realmName = deployment.get(RealmDefinition.TAG_NAME).asString();
         ModelNode realm = this.realms.get(realmName);
 
@@ -194,6 +198,11 @@ public final class KeycloakAdapterConfigService {
 
         String deploymentName = preferredDeploymentName(deploymentUnit);
         return this.secureDeployments.containsKey(deploymentName);
+    }
+
+    private ModelNode getSecureDeployment(DeploymentUnit deploymentUnit) {
+        String deploymentName = preferredDeploymentName(deploymentUnit);
+        return this.secureDeployments.get(deploymentName);
     }
     
     // KEYCLOAK-3273: prefer module name if available
