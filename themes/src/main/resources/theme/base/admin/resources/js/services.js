@@ -346,6 +346,13 @@ module.factory('User', function($resource) {
     });
 });
 
+module.service('UserSearchState', function() {
+    this.query = {
+        max : 20,
+        first : 0
+    };
+});
+
 module.factory('UserFederationInstances', function($resource) {
     return $resource(authUrl + '/admin/realms/:realm/user-federation/instances/:instance', {
         realm : '@realm',

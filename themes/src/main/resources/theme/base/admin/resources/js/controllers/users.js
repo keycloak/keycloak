@@ -240,16 +240,17 @@ module.controller('UserOfflineSessionsCtrl', function($scope, $location, realm, 
 });
 
 
-module.controller('UserListCtrl', function($scope, realm, User, UserImpersonation, BruteForce, Notifications, $route, Dialog) {
-    $scope.realm = realm;
-    $scope.page = 0;
-
-    $scope.query = {
-        realm: realm.realm,
-        max : 20,
-        first : 0
+module.controller('UserListCtrl', function($scope, realm, User, UserSearchState, UserImpersonation, BruteForce, Notifications, $route, Dialog) {
+    
+    $scope.init = function() {
+        $scope.realm = realm;
+        
+        UserSearchState.query.realm = realm.realm;
+        $scope.query = UserSearchState.query;
+        
+        $scope.searchQuery();
     };
-
+    
     $scope.impersonate = function(userId) {
         UserImpersonation.save({realm : realm.realm, user: userId}, function (data) {
             if (data.sameRealm) {
@@ -302,6 +303,11 @@ module.controller('UserListCtrl', function($scope, realm, User, UserImpersonatio
                 userId : user.id
             }, function() {
                 $route.reload();
+                
+                if ($scope.users.length === 1 && $scope.query.first > 0) {
+                    $scope.previousPage();
+                } 
+                
                 Notifications.success("The user has been deleted.");
             }, function() {
                 Notifications.error("User couldn't be deleted");
