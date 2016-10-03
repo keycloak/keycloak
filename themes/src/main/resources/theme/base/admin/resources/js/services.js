@@ -347,6 +347,7 @@ module.factory('User', function($resource) {
 });
 
 module.service('UserSearchState', function() {
+    this.isFirstSearch = true;
     this.query = {
         max : 20,
         first : 0

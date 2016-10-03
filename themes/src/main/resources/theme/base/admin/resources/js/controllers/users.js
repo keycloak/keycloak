@@ -248,7 +248,7 @@ module.controller('UserListCtrl', function($scope, realm, User, UserSearchState,
         UserSearchState.query.realm = realm.realm;
         $scope.query = UserSearchState.query;
         
-        $scope.searchQuery();
+        if (!UserSearchState.isFirstSearch) $scope.searchQuery();
     };
     
     $scope.impersonate = function(userId) {
@@ -293,6 +293,7 @@ module.controller('UserListCtrl', function($scope, realm, User, UserSearchState,
         $scope.users = User.query($scope.query, function() {
             $scope.searchLoaded = true;
             $scope.lastSearch = $scope.query.search;
+            UserSearchState.isFirstSearch = false;
         });
     };
 
