@@ -26,7 +26,7 @@ import org.keycloak.common.util.PemUtils;
 import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKBuilder;
-import org.keycloak.keys.KeyLoader;
+import org.keycloak.keys.PublicKeyLoader;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.utils.JWKSHttpUtils;
 import org.keycloak.services.ServicesLogger;
@@ -35,14 +35,14 @@ import org.keycloak.util.JWKSUtils;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class OIDCIdentityProviderLoader implements KeyLoader {
+public class OIDCIdentityProviderPublicKeyLoader implements PublicKeyLoader {
 
     protected static ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
 
     private final KeycloakSession session;
     private final OIDCIdentityProviderConfig config;
 
-    public OIDCIdentityProviderLoader(KeycloakSession session, OIDCIdentityProviderConfig config) {
+    public OIDCIdentityProviderPublicKeyLoader(KeycloakSession session, OIDCIdentityProviderConfig config) {
         this.session = session;
         this.config = config;
     }

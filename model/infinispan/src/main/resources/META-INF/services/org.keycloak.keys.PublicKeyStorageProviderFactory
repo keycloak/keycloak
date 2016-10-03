@@ -15,4 +15,4 @@
 # limitations under the License.
 #
 
-org.keycloak.keys.infinispan.InfinispanKeyStorageProviderFactory
+org.keycloak.keys.infinispan.InfinispanPublicKeyStorageProviderFactory

@@ -24,7 +24,7 @@ import org.keycloak.provider.Spi;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class KeyStorageSpi implements Spi {
+public class PublicKeyStorageSpi implements Spi {
 
     @Override
     public boolean isInternal() {
@@ -33,16 +33,16 @@ public class KeyStorageSpi implements Spi {
 
     @Override
     public String getName() {
-        return "keyStorage";
+        return "publicKeyStorage";
     }
 
     @Override
     public Class<? extends Provider> getProviderClass() {
-        return KeyStorageProvider.class;
+        return PublicKeyStorageProvider.class;
     }
 
     @Override
     public Class<? extends ProviderFactory> getProviderFactoryClass() {
-        return KeyStorageProviderFactory.class;
+        return PublicKeyStorageProviderFactory.class;
     }
 }

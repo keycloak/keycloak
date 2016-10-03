@@ -25,17 +25,18 @@ import org.infinispan.Cache;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
-import org.keycloak.keys.KeyStorageProvider;
-import org.keycloak.keys.KeyStorageProviderFactory;
+import org.keycloak.keys.PublicKeyStorageProvider;
+import org.keycloak.keys.PublicKeyStorageSpi;
+import org.keycloak.keys.PublicKeyStorageProviderFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class InfinispanKeyStorageProviderFactory implements KeyStorageProviderFactory {
+public class InfinispanPublicKeyStorageProviderFactory implements PublicKeyStorageProviderFactory {
 
-    private static final Logger log = Logger.getLogger(InfinispanKeyStorageProviderFactory.class);
+    private static final Logger log = Logger.getLogger(InfinispanPublicKeyStorageProviderFactory.class);
 
     public static final String PROVIDER_ID = "infinispan";
 
@@ -46,9 +47,9 @@ public class InfinispanKeyStorageProviderFactory implements KeyStorageProviderFa
     private int minTimeBetweenRequests;
 
     @Override
-    public KeyStorageProvider create(KeycloakSession session) {
+    public PublicKeyStorageProvider create(KeycloakSession session) {
         lazyInit(session);
-        return new InfinispanKeyStorageProvider(keysCache, tasksInProgress, minTimeBetweenRequests);
+        return new InfinispanPublicKeyStorageProvider(keysCache, tasksInProgress, minTimeBetweenRequests);
     }
 
     private void lazyInit(KeycloakSession session) {
