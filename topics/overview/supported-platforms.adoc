@@ -18,8 +18,10 @@
   * <<fake/../../oidc/java/spring-boot-adapter.adoc#_spring_boot_adapter,Spring Boot>> (community)
 {% endif %}
 
+{% if book.community %}
 ===== JavaScript (client-side)
 * <<fake/../../oidc/javascript-adapter.adoc#_javascript_adapter,JavaScript>>
+{% endif %}
 
 ===== Apache Cordova
 * <<fake/../../oidc/javascript-adapter.adoc#_javascript_adapter,JavaScript>>
@@ -71,5 +73,3 @@
 ===== Apache HTTP Server
 
 * https://github.com/UNINETT/mod_auth_mellon[mod_auth_mellon]
-
-
