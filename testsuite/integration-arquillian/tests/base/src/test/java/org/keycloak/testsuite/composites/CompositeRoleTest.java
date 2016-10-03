@@ -56,6 +56,8 @@ public class CompositeRoleTest extends AbstractCompositeKeycloakTest {
                 .ssoSessionIdleTimeout(3000)
                 .accessTokenLifespan(10000)
                 .ssoSessionMaxLifespan(10000)
+                .ssoSessionMaxLifespanRememberMe(10000)
+                .ssoSessionMaxLifespanRememberMe(10000)
                 .accessCodeLifespanUserAction(1000)
                 .accessCodeLifespan(1000)
                 .sslRequired(SslRequired.EXTERNAL.toString());

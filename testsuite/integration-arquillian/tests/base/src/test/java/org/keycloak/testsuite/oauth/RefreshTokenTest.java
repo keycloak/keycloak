@@ -23,6 +23,7 @@ import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.common.enums.SslRequired;
+import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
@@ -461,6 +462,57 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
         events.clear();
 
         setTimeOffset(0);
+    }
+
+    /**
+     * KEYCLOAK-1267
+     * @throws Exception
+     */
+    @Test
+    public void refreshTokenUserSessionMaxLifespanWithRememberMe() throws Exception {
+
+        RealmResource testRealm = adminClient.realm("test");
+        RealmRepresentation testRealmRep = testRealm.toRepresentation();
+        Boolean previousRememberMe = testRealmRep.isRememberMe();
+        testRealmRep.setRememberMe(true);
+        testRealm.update(testRealmRep);
+
+        oauth.doRememberMeLogin("test-user@localhost", "password");
+
+        EventRepresentation loginEvent = events.expectLogin().assertEvent();
+
+        String sessionId = loginEvent.getSessionId();
+
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+
+        events.poll();
+
+        String refreshId = oauth.verifyRefreshToken(tokenResponse.getRefreshToken()).getId();
+
+        int previousSsoMaxLifespanRememberMe = testRealmRep.getSsoSessionMaxLifespanRememberMe();
+        testRealmRep.setSsoSessionMaxLifespanRememberMe(1);
+        testRealm.update(testRealmRep);
+
+        Time.setOffset(1);
+
+        tokenResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken(), "password");
+
+        assertEquals(400, tokenResponse.getStatusCode());
+        assertNull(tokenResponse.getAccessToken());
+        assertNull(tokenResponse.getRefreshToken());
+
+        testRealmRep.setSsoSessionMaxLifespanRememberMe(previousSsoMaxLifespanRememberMe);
+        testRealm.update(testRealmRep);
+
+        events.expectRefresh(refreshId, sessionId).error(Errors.INVALID_TOKEN);
+
+        events.clear();
+
+        testRealmRep.setRememberMe(previousRememberMe);
+        testRealm.update(testRealmRep);
+
+        Time.setOffset(0);
     }
 
     @Test

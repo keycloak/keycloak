@@ -125,6 +125,11 @@ public class FilterAdapterTest {
         testStrategy.testLoginSSOMax();
     }
 
+    @Test
+    public void testLoginSSOMaxWithRememberMe() throws Exception {
+        testStrategy.testLoginSSOMaxWithRememberMe();
+    }
+
     /**
      * KEYCLOAK-518
      * @throws Exception

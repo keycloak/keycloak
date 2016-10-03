@@ -36,6 +36,16 @@
          <addColumn tableName="IDENTITY_PROVIDER">
              <column name="PROVIDER_DISPLAY_NAME" type="VARCHAR(255)"></column>
          </addColumn>
+
+         <addColumn tableName="REALM">
+             <column name="SSO_MAX_LIFESPAN_REMEMBER_ME" type="INT" defaultValueNumeric="36000"/>
+             <column name="SSO_IDLE_TIMEOUT_REMEMBER_ME" type="INT" defaultValueNumeric="36000"/>
+         </addColumn>
+
+         <!-- intialize the SSO_MAX_LIFESPAN_REMEMBER_ME = SSO_MAX_LIFESPAN for all pre-existing realms -->
+         <sql>update REALM set SSO_MAX_LIFESPAN_REMEMBER_ME = SSO_MAX_LIFESPAN where SSO_MAX_LIFESPAN is not null</sql>
+         <sql>update REALM set SSO_IDLE_TIMEOUT_REMEMBER_ME = SSO_MAX_LIFESPAN where SSO_MAX_LIFESPAN is not null</sql>
+
      </changeSet>
 
 

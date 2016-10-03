@@ -125,6 +125,11 @@ public class TomcatTest {
         testStrategy.testNullBearerTokenCustomErrorPage();
     }
 
+    @Test
+    public void testLoginSSOWithRememberMeMax() throws Exception {
+        testStrategy.testLoginSSOMaxWithRememberMe();
+    }
+
     /**
      * KEYCLOAK-518
      * @throws Exception

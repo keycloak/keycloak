@@ -42,6 +42,8 @@ public class RealmRepresentation {
     protected Integer accessTokenLifespanForImplicitFlow;
     protected Integer ssoSessionIdleTimeout;
     protected Integer ssoSessionMaxLifespan;
+    protected Integer ssoSessionIdleTimeoutRememberMe;
+    protected Integer ssoSessionMaxLifespanRememberMe;
     protected Integer offlineSessionIdleTimeout;
     protected Integer accessCodeLifespan;
     protected Integer accessCodeLifespanUserAction;
@@ -259,6 +261,22 @@ public class RealmRepresentation {
 
     public void setSsoSessionMaxLifespan(Integer ssoSessionMaxLifespan) {
         this.ssoSessionMaxLifespan = ssoSessionMaxLifespan;
+    }
+
+    public Integer getSsoSessionMaxLifespanRememberMe() {
+        return ssoSessionMaxLifespanRememberMe;
+    }
+
+    public void setSsoSessionMaxLifespanRememberMe(Integer ssoSessionMaxLifespanRememberMe) {
+        this.ssoSessionMaxLifespanRememberMe = ssoSessionMaxLifespanRememberMe;
+    }
+
+    public Integer getSsoSessionIdleTimeoutRememberMe() {
+        return ssoSessionIdleTimeoutRememberMe;
+    }
+
+    public void setSsoSessionIdleTimeoutRememberMe(Integer ssoSessionIdleTimeoutRememberMe) {
+        this.ssoSessionIdleTimeoutRememberMe = ssoSessionIdleTimeoutRememberMe;
     }
 
     public Integer getOfflineSessionIdleTimeout() {
