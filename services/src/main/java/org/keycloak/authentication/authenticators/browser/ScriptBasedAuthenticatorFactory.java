@@ -16,11 +16,11 @@
  */
 package org.keycloak.authentication.authenticators.browser;
 
-import org.apache.commons.io.IOUtils;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.authentication.Authenticator;
 import org.keycloak.authentication.AuthenticatorFactory;
+import org.keycloak.common.util.StreamUtil;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -138,7 +138,7 @@ public class ScriptBasedAuthenticatorFactory implements AuthenticatorFactory {
 
         String scriptTemplate = "//enter your script code here";
         try {
-            scriptTemplate = IOUtils.toString(getClass().getResource("/scripts/authenticator-template.js"));
+            scriptTemplate = StreamUtil.readString(getClass().getResourceAsStream("/scripts/authenticator-template.js"));
         } catch (IOException ioe) {
             LOGGER.warn(ioe);
         }
