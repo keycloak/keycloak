@@ -29,8 +29,17 @@ import org.keycloak.provider.ProviderConfigProperty;
 import java.util.List;
 
 import static java.util.Arrays.asList;
-import static org.keycloak.authentication.authenticators.browser.ConditionalOtpFormAuthenticator.*;
-import static org.keycloak.provider.ProviderConfigProperty.*;
+import static org.keycloak.authentication.authenticators.browser.ConditionalOtpFormAuthenticator.DEFAULT_OTP_OUTCOME;
+import static org.keycloak.authentication.authenticators.browser.ConditionalOtpFormAuthenticator.FORCE;
+import static org.keycloak.authentication.authenticators.browser.ConditionalOtpFormAuthenticator.FORCE_OTP_FOR_HTTP_HEADER;
+import static org.keycloak.authentication.authenticators.browser.ConditionalOtpFormAuthenticator.FORCE_OTP_ROLE;
+import static org.keycloak.authentication.authenticators.browser.ConditionalOtpFormAuthenticator.OTP_CONTROL_USER_ATTRIBUTE;
+import static org.keycloak.authentication.authenticators.browser.ConditionalOtpFormAuthenticator.SKIP;
+import static org.keycloak.authentication.authenticators.browser.ConditionalOtpFormAuthenticator.SKIP_OTP_FOR_HTTP_HEADER;
+import static org.keycloak.authentication.authenticators.browser.ConditionalOtpFormAuthenticator.SKIP_OTP_ROLE;
+import static org.keycloak.provider.ProviderConfigProperty.LIST_TYPE;
+import static org.keycloak.provider.ProviderConfigProperty.ROLE_TYPE;
+import static org.keycloak.provider.ProviderConfigProperty.STRING_TYPE;
 
 /**
  * An {@link AuthenticatorFactory} for {@link ConditionalOtpFormAuthenticator}s.

@@ -31,7 +31,6 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.events.Characters;
 import javax.xml.stream.events.XMLEvent;
 import javax.xml.stream.util.EventReaderDelegate;
-
 import java.io.InputStream;
 import java.security.AccessController;
 import java.security.PrivilegedAction;

@@ -19,10 +19,6 @@ package org.keycloak.authorization.identity;
 
 import org.keycloak.authorization.attribute.Attributes;
 
-import java.util.Collection;
-import java.util.Map;
-import java.util.function.Predicate;
-
 /**
  * <p>Represents a security identity, which can be a person or non-person entity that was previously authenticated.
  *

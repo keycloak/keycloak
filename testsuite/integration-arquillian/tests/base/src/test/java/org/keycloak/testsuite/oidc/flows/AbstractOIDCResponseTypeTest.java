@@ -17,12 +17,6 @@
 
 package org.keycloak.testsuite.oidc.flows;
 
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.util.List;
-
-import javax.ws.rs.core.UriBuilder;
-
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Rule;
 import org.junit.Test;
@@ -41,6 +35,10 @@ import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.OAuthClient;
+
+import javax.ws.rs.core.UriBuilder;
+import java.io.IOException;
+import java.util.List;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;

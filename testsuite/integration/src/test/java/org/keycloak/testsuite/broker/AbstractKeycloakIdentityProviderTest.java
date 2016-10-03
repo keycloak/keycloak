@@ -17,21 +17,6 @@
 
 package org.keycloak.testsuite.broker;
 
-import java.io.IOException;
-import java.net.URI;
-import java.util.HashMap;
-import java.util.Set;
-
-import javax.mail.MessagingException;
-import javax.mail.internet.MimeMessage;
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.client.ClientRequestContext;
-import javax.ws.rs.client.ClientRequestFilter;
-import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.Response;
-
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.models.ClientModel;
@@ -49,6 +34,20 @@ import org.keycloak.testsuite.broker.util.UserSessionStatusServlet;
 import org.keycloak.testsuite.federation.DummyUserFederationProviderFactory;
 import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
+
+import javax.mail.MessagingException;
+import javax.mail.internet.MimeMessage;
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.client.ClientRequestContext;
+import javax.ws.rs.client.ClientRequestFilter;
+import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.Response;
+import java.io.IOException;
+import java.net.URI;
+import java.util.HashMap;
+import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;

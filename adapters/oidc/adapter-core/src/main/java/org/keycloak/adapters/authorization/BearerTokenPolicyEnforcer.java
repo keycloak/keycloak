@@ -26,7 +26,6 @@ import org.keycloak.authorization.client.resource.PermissionResource;
 import org.keycloak.authorization.client.resource.ProtectionResource;
 import org.keycloak.representations.adapters.config.PolicyEnforcerConfig.PathConfig;
 
-import java.util.List;
 import java.util.Set;
 
 /**

@@ -26,7 +26,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import static org.keycloak.authentication.authenticators.browser.ConditionalOtpFormAuthenticator.OtpDecision.*;
+import static org.keycloak.authentication.authenticators.browser.ConditionalOtpFormAuthenticator.OtpDecision.ABSTAIN;
+import static org.keycloak.authentication.authenticators.browser.ConditionalOtpFormAuthenticator.OtpDecision.SHOW_OTP;
+import static org.keycloak.authentication.authenticators.browser.ConditionalOtpFormAuthenticator.OtpDecision.SKIP_OTP;
 import static org.keycloak.models.utils.KeycloakModelUtils.getRoleFromString;
 import static org.keycloak.models.utils.KeycloakModelUtils.hasRole;
 

@@ -67,7 +67,7 @@
                                     <property>jdbc.mvn.version</property>
                                 </requireProperty>
                                 <requireProperty>
-                                    <property>keycloak.connectionsJpa.url</property>
+                                    <property>datasource.class.xa</property>
                                 </requireProperty>
                                 <requireProperty>
                                     <property>keycloak.connectionsJpa.user</property>
@@ -164,8 +164,24 @@
                                     <outputDir>${keycloak.server.home}/standalone/configuration</outputDir>
                                     <parameters>
                                         <parameter>
-                                            <name>jdbc.url</name>
+                                            <name>db.jdbc_url</name>
                                             <value>${keycloak.connectionsJpa.url}</value>
+                                        </parameter>
+                                        <parameter>
+                                            <name>db.hostname</name>
+                                            <value>${db.hostname}</value>
+                                        </parameter>
+                                        <parameter>
+                                            <name>db.port</name>
+                                            <value>${db.port}</value>
+                                        </parameter>
+                                        <parameter>
+                                            <name>db.name</name>
+                                            <value>${db.name}</value>
+                                        </parameter>
+                                        <parameter>
+                                            <name>datasource.class.xa</name>
+                                            <value>${datasource.class.xa}</value>
                                         </parameter>
                                         <parameter>
                                             <name>driver</name>

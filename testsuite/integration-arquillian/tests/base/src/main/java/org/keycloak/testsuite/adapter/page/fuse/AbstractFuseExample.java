@@ -17,9 +17,10 @@
 
 package org.keycloak.testsuite.adapter.page.fuse;
 
+import org.keycloak.testsuite.adapter.page.AppServerContextRoot;
+
 import java.net.MalformedURLException;
 import java.net.URL;
-import org.keycloak.testsuite.adapter.page.AppServerContextRoot;
 
 /**
  *

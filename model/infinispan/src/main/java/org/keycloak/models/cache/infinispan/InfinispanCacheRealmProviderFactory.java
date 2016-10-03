@@ -20,6 +20,9 @@ package org.keycloak.models.cache.infinispan;
 import org.infinispan.Cache;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
+import org.keycloak.cluster.ClusterEvent;
+import org.keycloak.cluster.ClusterListener;
+import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -34,6 +37,7 @@ import org.keycloak.models.cache.infinispan.entities.Revisioned;
 public class InfinispanCacheRealmProviderFactory implements CacheRealmProviderFactory {
 
     private static final Logger log = Logger.getLogger(InfinispanCacheRealmProviderFactory.class);
+    public static final String REALM_CLEAR_CACHE_EVENTS = "REALM_CLEAR_CACHE_EVENTS";
 
     protected volatile RealmCacheManager realmCache;
 
@@ -50,6 +54,14 @@ public class InfinispanCacheRealmProviderFactory implements CacheRealmProviderFa
                     Cache<String, Revisioned> cache = session.getProvider(InfinispanConnectionProvider.class).getCache(InfinispanConnectionProvider.REALM_CACHE_NAME);
                     Cache<String, Long> revisions = session.getProvider(InfinispanConnectionProvider.class).getCache(InfinispanConnectionProvider.REALM_REVISIONS_CACHE_NAME);
                     realmCache = new RealmCacheManager(cache, revisions);
+                    ClusterProvider cluster = session.getProvider(ClusterProvider.class);
+                    cluster.registerListener(REALM_CLEAR_CACHE_EVENTS, new ClusterListener() {
+                        @Override
+                        public void run(ClusterEvent event) {
+                            realmCache.clear();
+                        }
+                    });
+
                 }
             }
         }

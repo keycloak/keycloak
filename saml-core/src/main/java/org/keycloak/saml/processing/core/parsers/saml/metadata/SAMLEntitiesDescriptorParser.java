@@ -16,6 +16,8 @@
  */
 package org.keycloak.saml.processing.core.parsers.saml.metadata;
 
+import org.keycloak.dom.saml.v2.metadata.EntitiesDescriptorType;
+import org.keycloak.dom.saml.v2.metadata.ExtensionsType;
 import org.keycloak.saml.common.PicketLinkLogger;
 import org.keycloak.saml.common.PicketLinkLoggerFactory;
 import org.keycloak.saml.common.constants.JBossSAMLConstants;
@@ -24,8 +26,6 @@ import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.saml.common.parsers.ParserNamespaceSupport;
 import org.keycloak.saml.common.util.StaxParserUtil;
 import org.keycloak.saml.processing.core.saml.v2.util.XMLTimeUtil;
-import org.keycloak.dom.saml.v2.metadata.EntitiesDescriptorType;
-import org.keycloak.dom.saml.v2.metadata.ExtensionsType;
 import org.w3c.dom.Element;
 
 import javax.xml.namespace.QName;

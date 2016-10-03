@@ -3,6 +3,7 @@ package org.keycloak.testsuite.console.page.authentication;
 import org.keycloak.testsuite.console.page.AdminConsoleRealm;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
+
 import static org.keycloak.testsuite.util.WaitUtils.*;
 
 /**

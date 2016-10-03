@@ -17,10 +17,6 @@
 
 package org.keycloak.testsuite.federation.ldap.base;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.ClassRule;
@@ -35,9 +31,9 @@ import org.keycloak.federation.ldap.LDAPUtils;
 import org.keycloak.federation.ldap.idm.model.LDAPObject;
 import org.keycloak.federation.ldap.mappers.membership.LDAPGroupMapperMode;
 import org.keycloak.federation.ldap.mappers.membership.MembershipType;
-import org.keycloak.federation.ldap.mappers.membership.group.GroupMapperConfig;
 import org.keycloak.federation.ldap.mappers.membership.group.GroupLDAPFederationMapper;
 import org.keycloak.federation.ldap.mappers.membership.group.GroupLDAPFederationMapperFactory;
+import org.keycloak.federation.ldap.mappers.membership.group.GroupMapperConfig;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
@@ -53,6 +49,10 @@ import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.federation.ldap.FederationTestUtils;
 import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.testsuite.rule.LDAPRule;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

@@ -17,29 +17,22 @@
 package org.keycloak.credential;
 
 import org.keycloak.common.util.reflections.Types;
-import org.keycloak.component.ComponentModel;
-import org.keycloak.component.PrioritizedComponentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialManager;
-import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserFederationProvider;
-import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.cache.CachedUserModel;
 import org.keycloak.models.cache.OnUserCache;
-import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageManager;
 import org.keycloak.storage.UserStorageProvider;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

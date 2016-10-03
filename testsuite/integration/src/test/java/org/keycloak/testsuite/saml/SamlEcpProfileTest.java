@@ -59,7 +59,10 @@ import java.util.Iterator;
 import java.util.Map;
 
 import static javax.ws.rs.core.Response.Status.OK;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

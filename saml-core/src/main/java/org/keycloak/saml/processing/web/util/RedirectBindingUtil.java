@@ -17,8 +17,8 @@
 package org.keycloak.saml.processing.web.util;
 
 import org.keycloak.saml.common.util.Base64;
-import org.keycloak.saml.processing.api.util.DeflateUtil;
 import org.keycloak.saml.common.util.StringUtil;
+import org.keycloak.saml.processing.api.util.DeflateUtil;
 
 import java.io.IOException;
 import java.io.InputStream;

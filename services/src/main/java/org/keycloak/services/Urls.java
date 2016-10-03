@@ -27,8 +27,6 @@ import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.services.resources.ThemeResource;
 
 import javax.ws.rs.core.UriBuilder;
-import javax.ws.rs.core.UriInfo;
-
 import java.net.URI;
 
 /**

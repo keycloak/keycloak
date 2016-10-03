@@ -17,7 +17,11 @@
 
 package org.keycloak.example.kerberos;
 
-import java.util.Hashtable;
+import org.ietf.jgss.GSSCredential;
+import org.keycloak.KeycloakPrincipal;
+import org.keycloak.common.constants.KerberosConstants;
+import org.keycloak.common.util.KerberosSerializationUtils;
+import org.keycloak.representations.AccessToken;
 
 import javax.naming.Context;
 import javax.naming.NamingException;
@@ -26,12 +30,7 @@ import javax.naming.directory.DirContext;
 import javax.naming.directory.InitialDirContext;
 import javax.security.sasl.Sasl;
 import javax.servlet.http.HttpServletRequest;
-
-import org.ietf.jgss.GSSCredential;
-import org.keycloak.KeycloakPrincipal;
-import org.keycloak.common.constants.KerberosConstants;
-import org.keycloak.representations.AccessToken;
-import org.keycloak.common.util.KerberosSerializationUtils;
+import java.util.Hashtable;
 
 /**
  * Sample client able to authenticate against ApacheDS LDAP server with Krb5 GSS Credential.

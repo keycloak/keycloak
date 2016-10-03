@@ -1,19 +1,21 @@
 package org.keycloak.testsuite.cluster;
 
-import java.util.List;
+import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.representations.idm.RealmRepresentation;
-import static org.keycloak.testsuite.auth.page.AuthRealm.ADMIN;
-import static org.keycloak.testsuite.util.WaitUtils.pause;
-import org.openqa.selenium.Cookie;
 import org.keycloak.testsuite.page.AbstractPage;
 import org.keycloak.testsuite.page.PageWithLogOutAction;
-import org.junit.Before;
+import org.openqa.selenium.Cookie;
+
+import java.util.List;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.keycloak.testsuite.auth.page.AuthRealm.ADMIN;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
+import static org.keycloak.testsuite.util.WaitUtils.pause;
 
 /**
  *

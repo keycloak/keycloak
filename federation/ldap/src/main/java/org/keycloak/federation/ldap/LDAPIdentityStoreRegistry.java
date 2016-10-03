@@ -17,14 +17,14 @@
 
 package org.keycloak.federation.ldap;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
 import org.jboss.logging.Logger;
 import org.keycloak.federation.ldap.idm.store.ldap.LDAPIdentityStore;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.UserFederationProviderModel;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

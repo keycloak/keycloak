@@ -24,15 +24,12 @@ import org.keycloak.testsuite.page.AbstractPageWithInjectedUrl;
 import org.keycloak.testsuite.page.Form;
 import org.keycloak.testsuite.pages.ConsentPage;
 import org.keycloak.testsuite.util.URLUtils;
-import org.keycloak.testsuite.util.WaitUtils;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
 import java.net.URL;
-import java.util.List;
 
-import static org.keycloak.testsuite.util.WaitUtils.IMPLICIT_ELEMENT_WAIT_MILLIS;
 import static org.keycloak.testsuite.util.WaitUtils.pause;
 import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 

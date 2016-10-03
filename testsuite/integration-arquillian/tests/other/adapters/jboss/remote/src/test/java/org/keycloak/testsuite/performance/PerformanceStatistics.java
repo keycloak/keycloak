@@ -1,11 +1,12 @@
 package org.keycloak.testsuite.performance;
 
-import java.util.concurrent.ConcurrentHashMap;
 import org.keycloak.testsuite.performance.statistics.DataHoldingUpdatableStatistic;
 import org.keycloak.testsuite.performance.statistics.MovingUpdatableStatistic;
 import org.keycloak.testsuite.performance.statistics.SimpleStatistics;
-import org.keycloak.testsuite.performance.statistics.UpdatableStatistics;
 import org.keycloak.testsuite.performance.statistics.UpdatableStatistic;
+import org.keycloak.testsuite.performance.statistics.UpdatableStatistics;
+
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * PerformanceStatistics. Concurrent hash map of UpdatableStatistic objects, 

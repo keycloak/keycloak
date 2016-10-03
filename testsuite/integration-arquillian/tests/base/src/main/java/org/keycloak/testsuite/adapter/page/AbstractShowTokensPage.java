@@ -17,8 +17,6 @@
 
 package org.keycloak.testsuite.adapter.page;
 
-import java.io.IOException;
-
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.testsuite.page.AbstractPageWithInjectedUrl;
@@ -26,6 +24,8 @@ import org.keycloak.util.JsonSerialization;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
+
+import java.io.IOException;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

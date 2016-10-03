@@ -1,6 +1,9 @@
 package org.keycloak.examples.domainextension.rest;
 
-import java.util.List;
+import org.jboss.resteasy.annotations.cache.NoCache;
+import org.keycloak.examples.domainextension.CompanyRepresentation;
+import org.keycloak.examples.domainextension.spi.ExampleService;
+import org.keycloak.models.KeycloakSession;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -10,11 +13,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-
-import org.jboss.resteasy.annotations.cache.NoCache;
-import org.keycloak.examples.domainextension.CompanyRepresentation;
-import org.keycloak.examples.domainextension.spi.ExampleService;
-import org.keycloak.models.KeycloakSession;
+import java.util.List;
 
 public class CompanyResource {
 

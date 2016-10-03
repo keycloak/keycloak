@@ -24,7 +24,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
-import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.services.ServicesLogger;
 

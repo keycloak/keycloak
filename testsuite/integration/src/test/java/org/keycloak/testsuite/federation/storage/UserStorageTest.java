@@ -50,6 +50,7 @@ import java.util.Set;
  */
 public class UserStorageTest {
     public static ComponentModel memoryProvider = null;
+    public static ComponentModel writableProvider = null;
     @ClassRule
     public static KeycloakRule keycloakRule = new KeycloakRule(new KeycloakRule.KeycloakSetup() {
 
@@ -69,16 +70,22 @@ public class UserStorageTest {
             model.setParentId(appRealm.getId());
             model.getConfig().putSingle("propertyFile", "/storage-test/read-only-user-password.properties");
             appRealm.addComponentModel(model);
-            model = new UserStorageProviderModel();
-            model.setName("user-props");
-            model.setPriority(2);
-            model.setParentId(appRealm.getId());
-            model.setProviderId(UserPropertyFileStorageFactory.PROVIDER_ID);
-            model.getConfig().putSingle("propertyFile", "/storage-test/user-password.properties");
-            model.getConfig().putSingle("federatedStorage", "true");
-            appRealm.addComponentModel(model);
+            createUserPropModel(appRealm);
         }
     });
+
+    private static void createUserPropModel(RealmModel appRealm) {
+        UserStorageProviderModel model;
+        model = new UserStorageProviderModel();
+        model.setName("user-props");
+        model.setPriority(2);
+        model.setParentId(appRealm.getId());
+        model.setProviderId(UserPropertyFileStorageFactory.PROVIDER_ID);
+        model.getConfig().putSingle("propertyFile", "/storage-test/user-password.properties");
+        model.getConfig().putSingle("federatedStorage", "true");
+        writableProvider = appRealm.addComponentModel(model);
+    }
+
     @Rule
     public WebRule webRule = new WebRule(this);
 
@@ -162,6 +169,40 @@ public class UserStorageTest {
         session.userCredentialManager().updateCredential(realm, thor, UserCredentialModel.password("lightning"));
         keycloakRule.stopSession(session, true);
         loginSuccessAndLogout("thor", "lightning");
+
+        // test removal of provider
+        session = keycloakRule.startSession();
+        realm = session.realms().getRealmByName("test");
+        realm.removeComponent(writableProvider);
+        keycloakRule.stopSession(session, true);
+        session = keycloakRule.startSession();
+        realm = session.realms().getRealmByName("test");
+        createUserPropModel(realm);
+        keycloakRule.stopSession(session, true);
+
+        loginSuccessAndLogout("thor", "hammer");
+
+        session = keycloakRule.startSession();
+        realm = session.realms().getRealmByName("test");
+
+        thor = session.users().getUserByUsername("thor", realm);
+        Assert.assertNull(thor.getFirstName());
+        Assert.assertNull(thor.getLastName());
+        Assert.assertNull(thor.getEmail());
+        Assert.assertNull(thor.getFirstAttribute("test-attribute"));
+        Assert.assertFalse(thor.isEmailVerified());
+        role = realm.getRole("foo-role");
+        Assert.assertFalse(thor.hasRole(role));
+
+        groups = thor.getGroups();
+        foundGroup = false;
+        for (GroupModel g : groups) {
+            if (g.getName().equals("my-group")) foundGroup = true;
+
+        }
+        Assert.assertFalse(foundGroup);
+
+
     }
 
     @Test

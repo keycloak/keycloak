@@ -16,9 +16,9 @@
   ~
   --%>
 <%@page import="org.keycloak.AuthorizationContext" %>
+<%@ page import="org.keycloak.KeycloakSecurityContext" %>
 <%@ page import="org.keycloak.common.util.KeycloakUriBuilder" %>
 <%@ page import="org.keycloak.constants.ServiceUrlConstants" %>
-<%@ page import="org.keycloak.KeycloakSecurityContext" %>
 <%@ page import="org.keycloak.representations.idm.authorization.Permission" %>
 
 <%

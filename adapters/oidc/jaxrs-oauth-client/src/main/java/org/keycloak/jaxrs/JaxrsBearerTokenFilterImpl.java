@@ -20,8 +20,6 @@ package org.keycloak.jaxrs;
 import org.keycloak.KeycloakPrincipal;
 import org.keycloak.adapters.AdapterDeploymentContext;
 import org.keycloak.adapters.AdapterUtils;
-import org.keycloak.adapters.spi.AuthChallenge;
-import org.keycloak.adapters.spi.AuthOutcome;
 import org.keycloak.adapters.AuthenticatedActionsHandler;
 import org.keycloak.adapters.BasicAuthRequestAuthenticator;
 import org.keycloak.adapters.BearerTokenRequestAuthenticator;
@@ -31,6 +29,8 @@ import org.keycloak.adapters.KeycloakDeploymentBuilder;
 import org.keycloak.adapters.NodesRegistrationManagement;
 import org.keycloak.adapters.PreAuthActionsHandler;
 import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
+import org.keycloak.adapters.spi.AuthChallenge;
+import org.keycloak.adapters.spi.AuthOutcome;
 import org.keycloak.adapters.spi.UserSessionManagement;
 import org.keycloak.common.constants.GenericConstants;
 
@@ -40,7 +40,6 @@ import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.PreMatching;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
-
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;

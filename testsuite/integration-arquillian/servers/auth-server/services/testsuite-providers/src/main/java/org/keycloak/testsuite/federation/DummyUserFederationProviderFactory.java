@@ -26,10 +26,12 @@ import org.keycloak.models.UserFederationProviderFactory;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserFederationSyncResult;
 import org.keycloak.models.UserModel;
-import org.keycloak.provider.ConfiguredProvider;
-import org.keycloak.provider.ProviderConfigProperty;
 
-import java.util.*;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**

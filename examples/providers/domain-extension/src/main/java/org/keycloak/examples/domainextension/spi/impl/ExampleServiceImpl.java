@@ -17,18 +17,17 @@
 
 package org.keycloak.examples.domainextension.spi.impl;
 
-import java.util.LinkedList;
-import java.util.List;
-
-import javax.persistence.EntityManager;
-
 import org.keycloak.connections.jpa.JpaConnectionProvider;
-import org.keycloak.examples.domainextension.jpa.Company;
 import org.keycloak.examples.domainextension.CompanyRepresentation;
+import org.keycloak.examples.domainextension.jpa.Company;
 import org.keycloak.examples.domainextension.spi.ExampleService;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
+
+import javax.persistence.EntityManager;
+import java.util.LinkedList;
+import java.util.List;
 
 public class ExampleServiceImpl implements ExampleService {
 

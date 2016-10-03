@@ -20,10 +20,6 @@ package org.keycloak.component;
 import org.keycloak.common.util.MultivaluedHashMap;
 
 import java.io.Serializable;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 /**
  * Stored configuration of a User Storage provider instance.

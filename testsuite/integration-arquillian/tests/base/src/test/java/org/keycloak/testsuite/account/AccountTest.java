@@ -16,6 +16,8 @@
  */
 package org.keycloak.testsuite.account;
 
+import org.jboss.arquillian.drone.api.annotation.Drone;
+import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
@@ -24,9 +26,15 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.models.utils.TimeBasedOTP;
+import org.keycloak.representations.idm.EventRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.resources.AccountService;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.TestRealmKeycloakTest;
+import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.drone.Different;
 import org.keycloak.testsuite.pages.AccountApplicationsPage;
 import org.keycloak.testsuite.pages.AccountLogPage;
 import org.keycloak.testsuite.pages.AccountPasswordPage;
@@ -38,6 +46,10 @@ import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.RegisterPage;
+import org.keycloak.testsuite.util.IdentityProviderBuilder;
+import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.RealmBuilder;
+import org.keycloak.testsuite.util.UserBuilder;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 
@@ -45,18 +57,6 @@ import javax.ws.rs.core.UriBuilder;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-
-import org.jboss.arquillian.drone.api.annotation.Drone;
-import org.jboss.arquillian.graphene.page.Page;
-import org.keycloak.representations.idm.EventRepresentation;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.TestRealmKeycloakTest;
-import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.drone.Different;
-import org.keycloak.testsuite.util.OAuthClient;
-import org.keycloak.testsuite.util.RealmBuilder;
-import org.keycloak.testsuite.util.UserBuilder;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -74,6 +74,20 @@ public class AccountTest extends TestRealmKeycloakTest {
                                               .email("test-user-no-access@localhost")
                                               .password("password")
                                               .build();
+
+        testRealm.addIdentityProvider(IdentityProviderBuilder.create()
+                                              .providerId("github")
+                                              .alias("github")
+                                              .build());
+        testRealm.addIdentityProvider(IdentityProviderBuilder.create()
+                                              .providerId("saml")
+                                              .alias("mysaml")
+                                              .build());
+        testRealm.addIdentityProvider(IdentityProviderBuilder.create()
+                                              .providerId("oidc")
+                                              .alias("myoidc")
+                                              .displayName("MyOIDC")
+                                              .build());
 
         RealmBuilder.edit(testRealm)
                     .user(user2);
@@ -788,6 +802,15 @@ public class AccountTest extends TestRealmKeycloakTest {
         Assert.assertTrue(changePasswordPage.isCurrent());
 
         events.clear();
+    }
+
+    @Test
+    public void testIdentityProviderCapitalization(){
+        loginPage.open();
+        Assert.assertEquals("GitHub", loginPage.findSocialButton("github").getText());
+        Assert.assertEquals("mysaml", loginPage.findSocialButton("mysaml").getText());
+        Assert.assertEquals("MyOIDC", loginPage.findSocialButton("myoidc").getText());
+
     }
 
 }

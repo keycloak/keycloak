@@ -1,9 +1,10 @@
 package org.keycloak.testsuite.arquillian;
 
+import org.jboss.arquillian.container.spi.Container;
+
 import java.net.URL;
 import java.util.Map;
 import java.util.Objects;
-import org.jboss.arquillian.container.spi.Container;
 
 /**
  *

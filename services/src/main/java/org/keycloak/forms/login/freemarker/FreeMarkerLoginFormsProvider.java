@@ -25,22 +25,10 @@ import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailTemplateProvider;
-import org.keycloak.forms.login.freemarker.model.CodeBean;
-import org.keycloak.forms.login.freemarker.model.UrlBean;
-import org.keycloak.theme.BrowserSecurityHeaderSetup;
-import org.keycloak.theme.FreeMarkerException;
-import org.keycloak.theme.FreeMarkerUtil;
-import org.keycloak.theme.Theme;
-import org.keycloak.theme.ThemeProvider;
-import org.keycloak.theme.beans.AdvancedMessageFormatterMethod;
-import org.keycloak.theme.beans.LocaleBean;
-import org.keycloak.theme.beans.MessageBean;
-import org.keycloak.theme.beans.MessageFormatterMethod;
-import org.keycloak.theme.beans.MessageType;
-import org.keycloak.theme.beans.MessagesPerFieldBean;
 import org.keycloak.forms.login.LoginFormsPages;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.forms.login.freemarker.model.ClientBean;
+import org.keycloak.forms.login.freemarker.model.CodeBean;
 import org.keycloak.forms.login.freemarker.model.IdentityProviderBean;
 import org.keycloak.forms.login.freemarker.model.LoginBean;
 import org.keycloak.forms.login.freemarker.model.OAuthGrantBean;
@@ -49,6 +37,7 @@ import org.keycloak.forms.login.freemarker.model.RealmBean;
 import org.keycloak.forms.login.freemarker.model.RegisterBean;
 import org.keycloak.forms.login.freemarker.model.RequiredActionUrlFormatterMethod;
 import org.keycloak.forms.login.freemarker.model.TotpBean;
+import org.keycloak.forms.login.freemarker.model.UrlBean;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.Constants;
@@ -61,6 +50,17 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.FormMessage;
 import org.keycloak.services.Urls;
 import org.keycloak.services.messages.Messages;
+import org.keycloak.theme.BrowserSecurityHeaderSetup;
+import org.keycloak.theme.FreeMarkerException;
+import org.keycloak.theme.FreeMarkerUtil;
+import org.keycloak.theme.Theme;
+import org.keycloak.theme.ThemeProvider;
+import org.keycloak.theme.beans.AdvancedMessageFormatterMethod;
+import org.keycloak.theme.beans.LocaleBean;
+import org.keycloak.theme.beans.MessageBean;
+import org.keycloak.theme.beans.MessageFormatterMethod;
+import org.keycloak.theme.beans.MessageType;
+import org.keycloak.theme.beans.MessagesPerFieldBean;
 import org.keycloak.utils.MediaType;
 
 import javax.ws.rs.core.MultivaluedMap;
@@ -250,7 +250,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
 
             List<IdentityProviderModel> identityProviders = realm.getIdentityProviders();
             identityProviders = LoginFormsUtil.filterIdentityProviders(identityProviders, session, realm, attributes, formData);
-            attributes.put("social", new IdentityProviderBean(realm, identityProviders, baseUri, uriInfo));
+            attributes.put("social", new IdentityProviderBean(realm, session, identityProviders, baseUri, uriInfo));
 
             attributes.put("url", new UrlBean(realm, theme, baseUri, this.actionUri));
 
@@ -398,7 +398,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
 
             List<IdentityProviderModel> identityProviders = realm.getIdentityProviders();
             identityProviders = LoginFormsUtil.filterIdentityProviders(identityProviders, session, realm, attributes, formData);
-            attributes.put("social", new IdentityProviderBean(realm, identityProviders, baseUri, uriInfo));
+            attributes.put("social", new IdentityProviderBean(realm, session, identityProviders, baseUri, uriInfo));
 
             attributes.put("url", new UrlBean(realm, theme, baseUri, this.actionUri));
             attributes.put("requiredActionUrl", new RequiredActionUrlFormatterMethod(realm, baseUri));
@@ -424,7 +424,6 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
             return Response.serverError().build();
         }
     }
-
 
     @Override
     public Response createLogin() {

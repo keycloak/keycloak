@@ -17,10 +17,6 @@
 
 package org.keycloak.adapters.saml.profile;
 
-import org.keycloak.adapters.saml.SamlDeployment;
-import org.keycloak.adapters.saml.SamlSessionStore;
-import org.keycloak.adapters.spi.HttpFacade;
-
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */

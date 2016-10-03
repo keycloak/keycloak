@@ -24,8 +24,6 @@ import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentatio
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
 
-import javax.ws.rs.core.GenericType;
-import javax.ws.rs.core.Response;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;

@@ -17,14 +17,14 @@
 
 package org.keycloak.adapters.rotation;
 
-import java.security.PublicKey;
-
 import org.jboss.logging.Logger;
 import org.keycloak.RSATokenVerifier;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.common.VerificationException;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.representations.AccessToken;
+
+import java.security.PublicKey;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

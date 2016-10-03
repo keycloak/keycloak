@@ -1,15 +1,12 @@
 package org.keycloak.testsuite.util.junit;
 
 import org.apache.commons.configuration.PropertiesConfiguration;
-
 import org.jboss.logging.Logger;
-
 import org.junit.Ignore;
 import org.junit.runner.Description;
 import org.junit.runner.Result;
 import org.junit.runner.notification.Failure;
 import org.junit.runner.notification.RunListener;
-
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 

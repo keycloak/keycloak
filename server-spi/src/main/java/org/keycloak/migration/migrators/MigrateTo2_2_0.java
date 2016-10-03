@@ -19,15 +19,10 @@ package org.keycloak.migration.migrators;
 
 import org.jboss.logging.Logger;
 import org.keycloak.migration.ModelVersion;
-import org.keycloak.models.AuthenticationExecutionModel;
-import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
-
-import java.util.HashMap;
-import java.util.Map;
 
 public class MigrateTo2_2_0 implements Migration {
     public static final ModelVersion VERSION = new ModelVersion("2.2.0");

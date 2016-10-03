@@ -17,18 +17,18 @@
 
 package org.keycloak.adapters.authentication;
 
+import org.apache.http.NameValuePair;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.message.BasicNameValuePair;
+import org.jboss.logging.Logger;
+import org.keycloak.adapters.KeycloakDeployment;
+
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
-
-import org.apache.http.NameValuePair;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.message.BasicNameValuePair;
-import org.jboss.logging.Logger;
-import org.keycloak.adapters.KeycloakDeployment;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

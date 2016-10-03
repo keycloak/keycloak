@@ -16,22 +16,22 @@
  */
 package org.keycloak.testsuite.i18n;
 
+import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.models.UserModel;
+import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginPasswordResetPage;
+import org.keycloak.testsuite.util.GreenMailRule;
 
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
-import org.jboss.arquillian.graphene.page.Page;
-import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.util.GreenMailRule;
 
 import static org.junit.Assert.assertEquals;
 

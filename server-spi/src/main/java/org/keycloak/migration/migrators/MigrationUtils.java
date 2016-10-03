@@ -18,7 +18,13 @@
 package org.keycloak.migration.migrators;
 
 import org.keycloak.Config;
-import org.keycloak.models.*;
+import org.keycloak.models.AdminRoles;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.Constants;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RequiredActionProviderModel;
+import org.keycloak.models.RoleModel;
+import org.keycloak.models.UserModel;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

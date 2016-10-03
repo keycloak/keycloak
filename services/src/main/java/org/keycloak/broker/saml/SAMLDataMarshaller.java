@@ -17,12 +17,6 @@
 
 package org.keycloak.broker.saml;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
-
-import javax.xml.stream.XMLEventReader;
-
 import org.keycloak.broker.provider.DefaultDataMarshaller;
 import org.keycloak.dom.saml.v2.assertion.AssertionType;
 import org.keycloak.dom.saml.v2.assertion.AuthnStatementType;
@@ -34,6 +28,11 @@ import org.keycloak.saml.processing.core.parsers.saml.SAMLParser;
 import org.keycloak.saml.processing.core.parsers.util.SAMLParserUtil;
 import org.keycloak.saml.processing.core.saml.v2.writers.SAMLAssertionWriter;
 import org.keycloak.saml.processing.core.saml.v2.writers.SAMLResponseWriter;
+
+import javax.xml.stream.XMLEventReader;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

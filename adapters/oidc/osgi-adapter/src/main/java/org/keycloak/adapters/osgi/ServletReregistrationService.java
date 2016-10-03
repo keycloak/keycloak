@@ -17,15 +17,6 @@
 
 package org.keycloak.adapters.osgi;
 
-import java.util.Arrays;
-import java.util.Dictionary;
-import java.util.Enumeration;
-import java.util.Hashtable;
-import java.util.List;
-import java.util.Properties;
-
-import javax.servlet.Servlet;
-
 import org.apache.cxf.transport.http.DestinationRegistry;
 import org.apache.cxf.transport.servlet.CXFNonSpringServlet;
 import org.jboss.logging.Logger;
@@ -37,6 +28,14 @@ import org.osgi.service.cm.ConfigurationAdmin;
 import org.osgi.service.http.HttpContext;
 import org.osgi.util.tracker.ServiceTracker;
 import org.osgi.util.tracker.ServiceTrackerCustomizer;
+
+import javax.servlet.Servlet;
+import java.util.Arrays;
+import java.util.Dictionary;
+import java.util.Enumeration;
+import java.util.Hashtable;
+import java.util.List;
+import java.util.Properties;
 
 /**
  * Service, which allows to remove previously registered servlets in karaf/fuse environment. It assumes that particular servlet was previously

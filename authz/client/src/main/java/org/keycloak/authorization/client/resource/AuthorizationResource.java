@@ -25,8 +25,6 @@ import org.keycloak.authorization.client.util.Http;
 import org.keycloak.authorization.client.util.HttpResponseException;
 import org.keycloak.util.JsonSerialization;
 
-import java.io.IOException;
-
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */

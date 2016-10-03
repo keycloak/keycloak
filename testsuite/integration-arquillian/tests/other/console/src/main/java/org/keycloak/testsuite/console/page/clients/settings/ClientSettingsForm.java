@@ -1,18 +1,18 @@
 package org.keycloak.testsuite.console.page.clients.settings;
 
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.testsuite.console.page.clients.CreateClientForm;
 import org.keycloak.testsuite.console.page.fragment.OnOffSwitch;
+import org.keycloak.testsuite.page.Form;
 import org.keycloak.testsuite.util.Timer;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
+import org.openqa.selenium.support.ui.Select;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import org.keycloak.testsuite.console.page.clients.CreateClientForm;
-import org.openqa.selenium.support.ui.Select;
 
-import org.keycloak.testsuite.page.Form;
 import static org.keycloak.testsuite.util.WaitUtils.pause;
 import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 

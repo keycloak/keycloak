@@ -3,7 +3,6 @@ package org.keycloak.testsuite.console.page.clients.mappers;
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.keycloak.testsuite.console.page.fragment.OnOffSwitch;
 import org.keycloak.testsuite.page.Form;
-
 import org.keycloak.testsuite.util.WaitUtils;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;

@@ -1,21 +1,19 @@
 package org.keycloak.testsuite.console.federation;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-
-import java.util.List;
-import java.util.Properties;
-
 import org.apache.commons.configuration.ConfigurationException;
 import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserFederationProviderRepresentation;
 import org.keycloak.testsuite.console.AbstractConsoleTest;
 import org.keycloak.testsuite.console.page.federation.CreateLdapUserProvider;
 import org.keycloak.util.ldap.LDAPEmbeddedServer;
-import org.openqa.selenium.WebElement;
+
+import java.util.List;
+import java.util.Properties;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author fkiss, pdrozd

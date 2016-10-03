@@ -21,7 +21,6 @@ import org.keycloak.models.cache.UserCache;
 import org.keycloak.provider.Provider;
 import org.keycloak.scripting.ScriptingProvider;
 import org.keycloak.storage.federated.UserFederatedStorageProvider;
-import org.keycloak.storage.federated.UserFederatedStorageProviderFactory;
 
 import java.util.Set;
 

@@ -27,8 +27,6 @@ import org.keycloak.adapters.saml.config.parsers.KeycloakSamlAdapterXMLParser;
 import org.keycloak.saml.common.util.StaxParserUtil;
 
 import javax.xml.XMLConstants;
-import javax.xml.stream.XMLEventReader;
-import javax.xml.transform.stax.StAXSource;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;

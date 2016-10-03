@@ -29,11 +29,7 @@ import org.keycloak.provider.ProviderManager;
 import org.keycloak.provider.ProviderManagerDeployer;
 import org.keycloak.provider.ProviderManagerRegistry;
 import org.keycloak.provider.Spi;
-import org.keycloak.transaction.JtaRegistration;
-import org.keycloak.transaction.JtaTransactionManagerLookup;
-import org.keycloak.transaction.JtaTransactionWrapper;
 
-import javax.transaction.TransactionManager;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;

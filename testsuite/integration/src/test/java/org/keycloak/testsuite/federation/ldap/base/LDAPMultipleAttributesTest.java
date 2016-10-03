@@ -17,14 +17,6 @@
 
 package org.keycloak.testsuite.federation.ldap.base;
 
-import java.net.URL;
-import java.util.Arrays;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-
-import javax.ws.rs.core.UriBuilder;
-
 import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.FixMethodOrder;
@@ -57,6 +49,14 @@ import org.keycloak.testsuite.rule.LDAPRule;
 import org.keycloak.testsuite.rule.WebResource;
 import org.keycloak.testsuite.rule.WebRule;
 import org.openqa.selenium.WebDriver;
+
+import javax.ws.rs.core.UriBuilder;
+import java.net.URL;
+import java.util.Arrays;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -149,7 +149,9 @@ public class LDAPMultipleAttributesTest {
             // Actually there are 2 postalCodes
             List<String> postalCodes = user.getAttribute("postal_code");
             assertPostalCodes(postalCodes, "88441", "77332");
-
+            List<String> tmp = new LinkedList<>();
+            tmp.addAll(postalCodes);
+            postalCodes = tmp;
             postalCodes.remove("77332");
             user.setAttribute("postal_code", postalCodes);
 
@@ -163,7 +165,9 @@ public class LDAPMultipleAttributesTest {
             UserModel user = session.users().getUserByUsername("bwilson", appRealm);
             List<String> postalCodes = user.getAttribute("postal_code");
             assertPostalCodes(postalCodes, "88441");
-
+            List<String> tmp = new LinkedList<>();
+            tmp.addAll(postalCodes);
+            postalCodes = tmp;
             postalCodes.add("77332");
             user.setAttribute("postal_code", postalCodes);
         } finally {

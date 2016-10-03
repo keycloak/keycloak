@@ -20,7 +20,6 @@ package org.keycloak.examples.authenticator;
 import org.keycloak.authentication.RequiredActionContext;
 import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.models.UserCredentialModel;
-import org.keycloak.models.UserCredentialValueModel;
 
 import javax.ws.rs.core.Response;
 

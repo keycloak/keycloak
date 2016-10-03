@@ -57,8 +57,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static org.jboss.aesh.terminal.Key.e;
-
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */

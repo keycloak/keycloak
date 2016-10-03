@@ -22,8 +22,8 @@ import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserModel;
 import org.keycloak.models.UserLoginFailureModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.services.ServicesLogger;
 
 import java.util.ArrayList;

@@ -768,14 +768,23 @@ module.controller('RealmIdentityProviderCtrl', function($scope, $filter, $upload
     if (instance && instance.alias) {
         $scope.identityProvider = angular.copy(instance);
         $scope.newIdentityProvider = false;
+        for (var i in serverInfo.identityProviders) {
+            var provider = serverInfo.identityProviders[i];
+
+            if (provider.id == instance.providerId) {
+                $scope.provider = provider;
+            }
+        }
     } else {
         $scope.identityProvider = {};
         $scope.identityProvider.config = {};
         $scope.identityProvider.alias = providerFactory.id;
         $scope.identityProvider.providerId = providerFactory.id;
+
         $scope.identityProvider.enabled = true;
         $scope.identityProvider.authenticateByDefault = false;
         $scope.identityProvider.firstBrokerLoginFlowAlias = 'first broker login';
+        $scope.identityProvider.config.useJwksUrl = 'true';
         $scope.newIdentityProvider = true;
     }
 
@@ -835,7 +844,6 @@ module.controller('RealmIdentityProviderCtrl', function($scope, $filter, $upload
             $scope.identityProvider.config[key] = data[key];
         }
     }
-
 
     $scope.uploadFile = function() {
         if (!$scope.identityProvider.alias) {
@@ -906,13 +914,12 @@ module.controller('RealmIdentityProviderCtrl', function($scope, $filter, $upload
 
                 for (var i in $scope.allProviders) {
                     var provider = $scope.allProviders[i];
-
-                    if (provider.groupName == 'Social' && (provider.id == configProvidedId)) {
-                        $scope.allProviders.splice(i, 1);
-                        break;
+                    if (provider.id == configProvidedId) {
+                        configuredProviders[j].provider = provider;
                     }
                 }
             }
+            $scope.configuredProviders = angular.copy(configuredProviders);
         }
     }, true);
 
@@ -2132,8 +2139,19 @@ module.controller('AuthenticationConfigCreateCtrl', function($scope, realm, flow
     $scope.realm = realm;
     $scope.flow = flow;
     $scope.create = true;
-    $scope.config = { config: {}};
     $scope.configType = configType;
+
+    var defaultConfig = {};
+    if (configType && Array.isArray(configType.properties)) {
+        for(var i = 0; i < configType.properties.length; i++) {
+            var property = configType.properties[i];
+            if (property && property.name) {
+                defaultConfig[property.name] = property.defaultValue;
+            }
+        }
+    }
+
+    $scope.config = { config: defaultConfig};
 
     $scope.$watch(function() {
         return $location.path();
@@ -2159,8 +2177,6 @@ module.controller('AuthenticationConfigCreateCtrl', function($scope, realm, flow
         //$location.url("/realms");
         window.history.back();
     };
-
-
 });
 
 module.controller('ClientInitialAccessCtrl', function($scope, realm, clientInitialAccess, clientRegTrustedHosts, ClientInitialAccess, ClientRegistrationTrustedHost, Dialog, Notifications, $route, $location) {

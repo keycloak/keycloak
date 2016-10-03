@@ -17,13 +17,13 @@
 package org.keycloak.subsystem.server.extension;
 
 import org.jboss.as.controller.AttributeDefinition;
-
-import java.util.List;
 import org.jboss.as.controller.ModelOnlyWriteAttributeHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
+
+import java.util.List;
 
 /**
  * Update an attribute on an Auth Server.

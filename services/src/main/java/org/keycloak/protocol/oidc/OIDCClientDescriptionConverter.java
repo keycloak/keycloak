@@ -19,8 +19,8 @@ package org.keycloak.protocol.oidc;
 
 import org.keycloak.exportimport.ClientDescriptionConverter;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.services.clientregistration.oidc.DescriptionConverter;
 import org.keycloak.util.JsonSerialization;
 

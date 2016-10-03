@@ -17,13 +17,8 @@
 
 package org.keycloak.testsuite.model;
 
-import java.util.Arrays;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicReference;
-
 import org.jboss.logging.Logger;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -33,6 +28,10 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
+
+import java.util.Arrays;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

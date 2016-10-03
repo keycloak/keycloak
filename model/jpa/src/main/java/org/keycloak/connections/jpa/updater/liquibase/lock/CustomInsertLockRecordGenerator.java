@@ -17,16 +17,15 @@
 
 package org.keycloak.connections.jpa.updater.liquibase.lock;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import liquibase.database.Database;
 import liquibase.exception.ValidationErrors;
 import liquibase.sql.Sql;
 import liquibase.sqlgenerator.SqlGeneratorChain;
 import liquibase.sqlgenerator.core.AbstractSqlGenerator;
-import liquibase.statement.core.DeleteStatement;
 import liquibase.statement.core.InitializeDatabaseChangeLogLockTableStatement;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * We need to remove DELETE SQL command, which liquibase adds by default when inserting record to table lock. This is causing buggy behaviour

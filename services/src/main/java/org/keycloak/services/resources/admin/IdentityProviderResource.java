@@ -21,6 +21,7 @@ import org.jboss.resteasy.spi.NotFoundException;
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.IdentityProviderFactory;
 import org.keycloak.broker.provider.IdentityProviderMapper;
+import org.keycloak.broker.social.SocialIdentityProvider;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.FederatedIdentityModel;
@@ -41,7 +42,6 @@ import org.keycloak.representations.idm.IdentityProviderMapperTypeRepresentation
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ServicesLogger;
-import org.keycloak.broker.social.SocialIdentityProvider;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -56,7 +56,6 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -229,7 +228,7 @@ public class IdentityProviderResource {
 
         try {
             IdentityProviderFactory factory = getIdentityProviderFactory();
-            return factory.create(identityProviderModel).export(uriInfo, realm, format);
+            return factory.create(session, identityProviderModel).export(uriInfo, realm, format);
         } catch (Exception e) {
             return ErrorResponse.error("Could not export public broker configuration for identity provider [" + identityProviderModel.getProviderId() + "].", Response.Status.NOT_FOUND);
         }

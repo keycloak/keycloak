@@ -26,8 +26,6 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.Map;
 
-import static java.util.Collections.emptyList;
-
 /**
  * <p>Holds attributes, their values and provides utlity methods to manage them.
  *

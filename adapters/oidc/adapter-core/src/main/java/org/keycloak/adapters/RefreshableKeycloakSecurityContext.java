@@ -20,7 +20,6 @@ package org.keycloak.adapters;
 import org.jboss.logging.Logger;
 import org.keycloak.AuthorizationContext;
 import org.keycloak.KeycloakSecurityContext;
-import org.keycloak.RSATokenVerifier;
 import org.keycloak.adapters.rotation.AdapterRSATokenVerifier;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.Time;

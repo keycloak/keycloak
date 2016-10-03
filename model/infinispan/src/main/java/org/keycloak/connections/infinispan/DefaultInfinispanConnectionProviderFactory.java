@@ -17,6 +17,8 @@
 
 package org.keycloak.connections.infinispan;
 
+import java.util.concurrent.TimeUnit;
+
 import org.infinispan.configuration.cache.CacheMode;
 import org.infinispan.configuration.cache.Configuration;
 import org.infinispan.configuration.cache.ConfigurationBuilder;
@@ -98,7 +100,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
             cacheManager = (EmbeddedCacheManager) new InitialContext().lookup(cacheContainerLookup);
             containerManaged = true;
 
-            cacheManager.defineConfiguration(InfinispanConnectionProvider.REALM_REVISIONS_CACHE_NAME, getRevisionCacheConfig(true, InfinispanConnectionProvider.REALM_REVISIONS_CACHE_DEFAULT_MAX));
+            cacheManager.defineConfiguration(InfinispanConnectionProvider.REALM_REVISIONS_CACHE_NAME, getRevisionCacheConfig(InfinispanConnectionProvider.REALM_REVISIONS_CACHE_DEFAULT_MAX));
             cacheManager.getCache(InfinispanConnectionProvider.REALM_CACHE_NAME, true);
 
             long maxEntries = cacheManager.getCache(InfinispanConnectionProvider.USER_CACHE_NAME).getCacheConfiguration().eviction().maxEntries();
@@ -106,9 +108,11 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
                 maxEntries = InfinispanConnectionProvider.USER_REVISIONS_CACHE_DEFAULT_MAX;
             }
 
-            cacheManager.defineConfiguration(InfinispanConnectionProvider.USER_REVISIONS_CACHE_NAME, getRevisionCacheConfig(true, maxEntries));
+            cacheManager.defineConfiguration(InfinispanConnectionProvider.USER_REVISIONS_CACHE_NAME, getRevisionCacheConfig(maxEntries));
             cacheManager.getCache(InfinispanConnectionProvider.USER_REVISIONS_CACHE_NAME, true);
             cacheManager.getCache(InfinispanConnectionProvider.AUTHORIZATION_CACHE_NAME, true);
+            cacheManager.getCache(InfinispanConnectionProvider.KEYS_CACHE_NAME, true);
+
             logger.debugv("Using container managed Infinispan cache container, lookup={1}", cacheContainerLookup);
         } catch (Exception e) {
             throw new RuntimeException("Failed to retrieve cache container", e);
@@ -116,6 +120,9 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
     }
 
     protected void initEmbedded() {
+
+
+        
         GlobalConfigurationBuilder gcb = new GlobalConfigurationBuilder();
 
         boolean clustered = config.getBoolean("clustered", false);
@@ -176,7 +183,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
         counterConfigBuilder.transaction().transactionManagerLookup(new DummyTransactionManagerLookup());
         counterConfigBuilder.transaction().lockingMode(LockingMode.PESSIMISTIC);
 
-        cacheManager.defineConfiguration(InfinispanConnectionProvider.REALM_REVISIONS_CACHE_NAME, getRevisionCacheConfig(false, InfinispanConnectionProvider.REALM_REVISIONS_CACHE_DEFAULT_MAX));
+        cacheManager.defineConfiguration(InfinispanConnectionProvider.REALM_REVISIONS_CACHE_NAME, getRevisionCacheConfig(InfinispanConnectionProvider.REALM_REVISIONS_CACHE_DEFAULT_MAX));
         cacheManager.getCache(InfinispanConnectionProvider.REALM_CACHE_NAME, true);
 
         long maxEntries = cacheManager.getCache(InfinispanConnectionProvider.USER_CACHE_NAME).getCacheConfiguration().eviction().maxEntries();
@@ -184,23 +191,30 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
             maxEntries = InfinispanConnectionProvider.USER_REVISIONS_CACHE_DEFAULT_MAX;
         }
 
-        cacheManager.defineConfiguration(InfinispanConnectionProvider.USER_REVISIONS_CACHE_NAME, getRevisionCacheConfig(false, maxEntries));
+        cacheManager.defineConfiguration(InfinispanConnectionProvider.USER_REVISIONS_CACHE_NAME, getRevisionCacheConfig(maxEntries));
         cacheManager.getCache(InfinispanConnectionProvider.USER_REVISIONS_CACHE_NAME, true);
+
+        cacheManager.defineConfiguration(InfinispanConnectionProvider.KEYS_CACHE_NAME, getKeysCacheConfig());
+        cacheManager.getCache(InfinispanConnectionProvider.KEYS_CACHE_NAME, true);
     }
 
-    private Configuration getRevisionCacheConfig(boolean managed, long maxEntries) {
+    private Configuration getRevisionCacheConfig(long maxEntries) {
         ConfigurationBuilder cb = new ConfigurationBuilder();
         cb.invocationBatching().enable().transaction().transactionMode(TransactionMode.TRANSACTIONAL);
 
-        // Workaround: Use Dummy manager even in managed ( wildfly/eap ) environment. Without this workaround, there is an issue in EAP7 overlay.
-        // After start+end revisions batch is left the JTA transaction in committed state. This is incorrect and causes other issues afterwards.
-        // TODO: Investigate
-        // if (!managed)
-            cb.transaction().transactionManagerLookup(new DummyTransactionManagerLookup());
+        // Use Dummy manager even in managed ( wildfly/eap ) environment. We don't want infinispan to participate in global transaction
+        cb.transaction().transactionManagerLookup(new DummyTransactionManagerLookup());
 
         cb.transaction().lockingMode(LockingMode.PESSIMISTIC);
 
         cb.eviction().strategy(EvictionStrategy.LRU).type(EvictionType.COUNT).size(maxEntries);
+        return cb.build();
+    }
+
+    protected Configuration getKeysCacheConfig() {
+        ConfigurationBuilder cb = new ConfigurationBuilder();
+        cb.eviction().strategy(EvictionStrategy.LRU).type(EvictionType.COUNT).size(InfinispanConnectionProvider.KEYS_CACHE_DEFAULT_MAX);
+        cb.expiration().maxIdle(InfinispanConnectionProvider.KEYS_CACHE_MAX_IDLE_SECONDS, TimeUnit.SECONDS);
         return cb.build();
     }
 

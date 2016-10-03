@@ -17,14 +17,14 @@
 
 package org.keycloak.connections.mongo.updater.impl.updates;
 
-import java.util.HashSet;
-import java.util.Map;
-
 import com.mongodb.BasicDBList;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBCollection;
 import com.mongodb.DBCursor;
 import org.keycloak.models.KeycloakSession;
+
+import java.util.HashSet;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

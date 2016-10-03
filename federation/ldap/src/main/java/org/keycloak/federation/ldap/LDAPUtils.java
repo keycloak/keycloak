@@ -17,13 +17,6 @@
 
 package org.keycloak.federation.ldap;
 
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import org.keycloak.federation.ldap.idm.model.LDAPDn;
 import org.keycloak.federation.ldap.idm.model.LDAPObject;
 import org.keycloak.federation.ldap.idm.query.Condition;
@@ -38,6 +31,13 @@ import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserFederationMapperModel;
 import org.keycloak.models.UserModel;
+
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Allow to directly call some operations against LDAPIdentityStore.

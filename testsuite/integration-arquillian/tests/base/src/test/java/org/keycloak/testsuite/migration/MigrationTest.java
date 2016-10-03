@@ -16,7 +16,6 @@
  */
 package org.keycloak.testsuite.migration;
 
-import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
@@ -24,6 +23,8 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.arquillian.migration.Migration;
+
+import java.util.List;
 
 /**
  * @author <a href="mailto:vramik@redhat.com">Vlastislav Ramik</a>

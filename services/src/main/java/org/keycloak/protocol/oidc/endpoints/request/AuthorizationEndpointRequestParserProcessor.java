@@ -17,11 +17,6 @@
 
 package org.keycloak.protocol.oidc.endpoints.request;
 
-import java.io.InputStream;
-import java.util.Map;
-
-import javax.ws.rs.core.MultivaluedMap;
-
 import org.keycloak.common.util.StreamUtil;
 import org.keycloak.connections.httpclient.HttpClientProvider;
 import org.keycloak.events.Errors;
@@ -32,6 +27,9 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.services.ErrorPageException;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.messages.Messages;
+
+import javax.ws.rs.core.MultivaluedMap;
+import java.io.InputStream;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -54,12 +52,12 @@ public class AuthorizationEndpointRequestParserProcessor {
             }
 
             if (requestParam != null) {
-                new AuthzEndpointRequestObjectParser(requestParam, client).parseRequest(request);
+                new AuthzEndpointRequestObjectParser(session, requestParam, client).parseRequest(request);
             } else if (requestUriParam != null) {
                 InputStream is = session.getProvider(HttpClientProvider.class).get(requestUriParam);
                 String retrievedRequest = StreamUtil.readString(is);
 
-                new AuthzEndpointRequestObjectParser(retrievedRequest, client).parseRequest(request);
+                new AuthzEndpointRequestObjectParser(session, retrievedRequest, client).parseRequest(request);
             }
 
             return request;

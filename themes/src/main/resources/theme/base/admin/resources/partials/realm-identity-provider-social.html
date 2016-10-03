@@ -1,7 +1,8 @@
 <div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
     <ol class="breadcrumb">
         <li><a href="#/realms/{{realm.realm}}/identity-provider-settings">{{:: 'identity-providers' | translate}}</a></li>
-        <li>{{identityProvider.alias}}</li>
+        <li data-ng-hide="newIdentityProvider">{{provider.name}}</li>
+        <li data-ng-show="newIdentityProvider">{{:: 'add-identity-provider' | translate}}</li>
     </ol>
 
     <kc-tabs-identity-provider></kc-tabs-identity-provider>

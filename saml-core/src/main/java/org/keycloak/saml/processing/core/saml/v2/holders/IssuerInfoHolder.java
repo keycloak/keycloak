@@ -16,11 +16,11 @@
  */
 package org.keycloak.saml.processing.core.saml.v2.holders;
 
+import org.keycloak.dom.saml.v2.assertion.NameIDType;
 import org.keycloak.saml.common.PicketLinkLogger;
 import org.keycloak.saml.common.PicketLinkLoggerFactory;
 import org.keycloak.saml.common.constants.JBossSAMLConstants;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
-import org.keycloak.dom.saml.v2.assertion.NameIDType;
 
 /**
  * Holds info about the issuer for saml messages creation

@@ -22,10 +22,11 @@ import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
+import org.jboss.dmr.ModelNode;
+
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADDRESS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
-import org.jboss.dmr.ModelNode;
 import static org.keycloak.subsystem.server.extension.ThemeResourceDefinition.ALL_ATTRIBUTES;
 
 /**

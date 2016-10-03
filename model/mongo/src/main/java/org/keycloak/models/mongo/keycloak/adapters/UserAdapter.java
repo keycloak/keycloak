@@ -17,39 +17,21 @@
 
 package org.keycloak.models.mongo.keycloak.adapters;
 
-import com.mongodb.DBObject;
-import com.mongodb.QueryBuilder;
-
 import org.keycloak.connections.mongo.api.context.MongoStoreInvocationContext;
-import org.keycloak.hash.PasswordHashManager;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
-import org.keycloak.models.OTPPolicy;
-import org.keycloak.models.ProtocolMapperModel;
-import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.ModelDuplicateException;
-import org.keycloak.models.ModelException;
-import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.UserCredentialModel;
-import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.entities.CredentialEntity;
-import org.keycloak.models.entities.UserConsentEntity;
-import org.keycloak.models.mongo.keycloak.entities.MongoUserConsentEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoUserEntity;
 import org.keycloak.models.mongo.utils.MongoModelUtils;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.common.util.Time;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;

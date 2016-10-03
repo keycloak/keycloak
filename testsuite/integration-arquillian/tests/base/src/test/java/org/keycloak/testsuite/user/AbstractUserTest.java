@@ -1,13 +1,15 @@
 package org.keycloak.testsuite.user;
 
-import javax.ws.rs.core.Response;
-import static javax.ws.rs.core.Response.Status.CREATED;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.representations.idm.UserRepresentation;
-import static org.keycloak.testsuite.admin.ApiUtil.getCreatedId;
-import static org.junit.Assert.assertEquals;
 import org.keycloak.testsuite.AbstractAuthTest;
+
+import javax.ws.rs.core.Response;
+
+import static javax.ws.rs.core.Response.Status.CREATED;
+import static org.junit.Assert.assertEquals;
+import static org.keycloak.testsuite.admin.ApiUtil.getCreatedId;
 
 /**
  *

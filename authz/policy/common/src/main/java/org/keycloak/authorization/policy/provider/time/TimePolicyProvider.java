@@ -25,8 +25,6 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 
-import static com.sun.corba.se.spi.activation.IIOP_CLEAR_TEXT.value;
-
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */

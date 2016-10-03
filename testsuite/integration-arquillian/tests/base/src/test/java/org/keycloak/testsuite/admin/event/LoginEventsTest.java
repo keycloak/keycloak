@@ -17,14 +17,15 @@
 
 package org.keycloak.testsuite.admin.event;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.testsuite.console.page.events.LoginEvents;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;

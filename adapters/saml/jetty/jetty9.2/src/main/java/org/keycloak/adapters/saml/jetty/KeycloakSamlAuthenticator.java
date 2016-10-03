@@ -22,8 +22,8 @@ import org.eclipse.jetty.server.HttpChannel;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.UserIdentity;
 import org.keycloak.adapters.jetty.spi.JettyUserSessionManagement;
-import org.keycloak.adapters.spi.AdapterSessionStore;
 import org.keycloak.adapters.saml.SamlDeployment;
+import org.keycloak.adapters.spi.AdapterSessionStore;
 import org.keycloak.adapters.spi.HttpFacade;
 
 import javax.servlet.ServletRequest;

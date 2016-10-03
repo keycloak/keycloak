@@ -17,9 +17,6 @@
 
 package org.keycloak.cluster.infinispan;
 
-import java.io.Serializable;
-import java.util.concurrent.Callable;
-
 import org.infinispan.Cache;
 import org.infinispan.context.Flag;
 import org.infinispan.lifecycle.ComponentStatus;
@@ -30,8 +27,10 @@ import org.keycloak.cluster.ClusterListener;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.cluster.ExecutionResult;
 import org.keycloak.common.util.Time;
-import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.KeycloakSession;
+
+import java.io.Serializable;
+import java.util.concurrent.Callable;
 
 /**
  *

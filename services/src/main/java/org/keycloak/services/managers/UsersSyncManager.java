@@ -33,8 +33,6 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.timer.TimerProvider;
 
-
-import java.io.Serializable;
 import java.util.List;
 import java.util.concurrent.Callable;
 

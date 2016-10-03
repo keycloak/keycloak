@@ -17,7 +17,7 @@
 
 package org.keycloak.admin.client.resource;
 
-import java.util.List;
+import org.keycloak.representations.idm.ClientRegistrationTrustedHostRepresentation;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -29,8 +29,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-
-import org.keycloak.representations.idm.ClientRegistrationTrustedHostRepresentation;
+import java.util.List;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

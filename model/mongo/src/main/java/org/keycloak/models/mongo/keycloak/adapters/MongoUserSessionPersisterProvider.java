@@ -17,11 +17,6 @@
 
 package org.keycloak.models.mongo.keycloak.adapters;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
-
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
 import com.mongodb.QueryBuilder;
@@ -34,16 +29,21 @@ import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.models.entities.PersistentClientSessionEntity;
-import org.keycloak.models.entities.PersistentUserSessionEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoOfflineUserSessionEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoOnlineUserSessionEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoUserSessionEntity;
+import org.keycloak.models.mongo.keycloak.entities.PersistentClientSessionEntity;
+import org.keycloak.models.mongo.keycloak.entities.PersistentUserSessionEntity;
 import org.keycloak.models.session.PersistentClientSessionAdapter;
 import org.keycloak.models.session.PersistentClientSessionModel;
 import org.keycloak.models.session.PersistentUserSessionAdapter;
 import org.keycloak.models.session.PersistentUserSessionModel;
 import org.keycloak.models.session.UserSessionPersisterProvider;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

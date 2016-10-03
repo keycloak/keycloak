@@ -18,9 +18,9 @@ package org.keycloak.services.resources;
 
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.HttpResponse;
+import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.models.ClientModel;
 import org.keycloak.representations.AccessToken;
-import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.services.ServicesLogger;
 
 import javax.ws.rs.core.Response;

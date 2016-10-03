@@ -17,10 +17,10 @@
 
 package org.keycloak.adapters.rotation;
 
-import java.security.PublicKey;
-
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.jose.jws.JWSInput;
+
+import java.security.PublicKey;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

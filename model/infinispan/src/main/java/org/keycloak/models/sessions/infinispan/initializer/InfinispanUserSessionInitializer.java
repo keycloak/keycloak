@@ -17,14 +17,6 @@
 
 package org.keycloak.models.sessions.infinispan.initializer;
 
-import java.io.Serializable;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-
 import org.infinispan.Cache;
 import org.infinispan.context.Flag;
 import org.infinispan.distexec.DefaultExecutorService;
@@ -35,6 +27,14 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.KeycloakSessionTask;
 import org.keycloak.models.utils.KeycloakModelUtils;
+
+import java.io.Serializable;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 /**
  * Startup initialization for reading persistent userSessions/clientSessions to be filled into infinispan/memory . In cluster,

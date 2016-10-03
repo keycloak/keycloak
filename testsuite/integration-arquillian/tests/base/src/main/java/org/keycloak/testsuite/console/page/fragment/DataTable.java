@@ -18,6 +18,7 @@
 package org.keycloak.testsuite.console.page.fragment;
 
 import org.jboss.arquillian.drone.api.annotation.Drone;
+import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
@@ -25,8 +26,6 @@ import org.openqa.selenium.support.FindBy;
 import java.util.List;
 
 import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
-import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
-import org.openqa.selenium.By;
 import static org.openqa.selenium.By.xpath;
 
 /**

@@ -31,6 +31,7 @@ import org.keycloak.common.Version;
 import org.keycloak.common.util.Time;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.models.Constants;
+import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.representations.AccessToken;
@@ -40,7 +41,15 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.adapter.AbstractServletsAdapterTest;
 import org.keycloak.testsuite.adapter.filter.AdapterActionsFilter;
-import org.keycloak.testsuite.adapter.page.*;
+import org.keycloak.testsuite.adapter.page.BasicAuth;
+import org.keycloak.testsuite.adapter.page.CustomerDb;
+import org.keycloak.testsuite.adapter.page.CustomerDbErrorPage;
+import org.keycloak.testsuite.adapter.page.CustomerPortal;
+import org.keycloak.testsuite.adapter.page.CustomerPortalSubsystem;
+import org.keycloak.testsuite.adapter.page.InputPortal;
+import org.keycloak.testsuite.adapter.page.ProductPortal;
+import org.keycloak.testsuite.adapter.page.SecurePortal;
+import org.keycloak.testsuite.adapter.page.TokenMinTTLPage;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.auth.page.account.Applications;
 import org.keycloak.testsuite.auth.page.login.OAuthGrant;
@@ -70,9 +79,15 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.auth.page.AuthRealm.DEMO;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlEquals;
+import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWithLoginUrlOf;
 import static org.keycloak.testsuite.util.WaitUtils.pause;
 import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
@@ -262,6 +277,43 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
         waitUntilElement(By.tagName("body")).is().visible();
 
         setAdapterAndServerTimeOffset(0, adapterActionsUrl);
+    }
+
+    @Test
+    public void testClientWithJwksUri() throws Exception {
+        // Set client to bad JWKS URI
+        ClientResource clientResource = ApiUtil.findClientResourceByClientId(testRealmResource(), "secure-portal");
+        ClientRepresentation client = clientResource.toRepresentation();
+        OIDCAdvancedConfigWrapper wrapper = OIDCAdvancedConfigWrapper.fromClientRepresentation(client);
+        wrapper.setUseJwksUrl(true);
+        wrapper.setJwksUrl(securePortal + "/bad-jwks-url");
+        clientResource.update(client);
+
+        // Login should fail at the code-to-token
+        securePortal.navigateTo();
+        assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
+        testRealmLoginPage.form().login("bburke@redhat.com", "password");
+        String pageSource = driver.getPageSource();
+        assertCurrentUrlStartsWith(securePortal);
+        assertFalse(pageSource.contains("Bill Burke") && pageSource.contains("Stian Thorgersen"));
+
+        // Set client to correct JWKS URI
+        client = clientResource.toRepresentation();
+        wrapper = OIDCAdvancedConfigWrapper.fromClientRepresentation(client);
+        wrapper.setUseJwksUrl(true);
+        wrapper.setJwksUrl(securePortal + "/" + AdapterConstants.K_JWKS);
+        clientResource.update(client);
+
+        // Login to secure-portal should be fine now. Client keys downloaded from JWKS URI
+        securePortal.navigateTo();
+        assertCurrentUrlEquals(securePortal);
+        pageSource = driver.getPageSource();
+        assertTrue(pageSource.contains("Bill Burke") && pageSource.contains("Stian Thorgersen"));
+
+        // Logout
+        String logoutUri = OIDCLoginProtocolService.logoutUrl(authServerPage.createUriBuilder())
+                .queryParam(OAuth2Constants.REDIRECT_URI, securePortal.toString()).build("demo").toString();
+        driver.navigate().to(logoutUri);
     }
 
     @Test
@@ -550,7 +602,7 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
         token = tokenMinTTLPage.getAccessToken();
         int tokenIssued2 = token.getIssuedAt();
         Assert.assertEquals(tokenIssued1, tokenIssued2);
-        Assert.assertFalse(token.isExpired());
+        assertFalse(token.isExpired());
 
         // Sets 9 minutes offset and assert access token will be refreshed (accessTokenTimeout is 10 minutes, token-min-ttl is 2 minutes. Hence 8 minutes or more should be sufficient)
         setAdapterAndServerTimeOffset(540, tokenMinTTLPage.toString());

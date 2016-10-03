@@ -17,10 +17,10 @@
 
 package org.keycloak.adapters.tomcat;
 
-import java.util.List;
-
 import org.apache.catalina.Manager;
 import org.keycloak.adapters.spi.UserSessionManagement;
+
+import java.util.List;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

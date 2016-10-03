@@ -22,20 +22,10 @@ import org.jboss.as.server.deployment.DeploymentPhaseContext;
 import org.jboss.as.server.deployment.DeploymentUnit;
 import org.jboss.as.server.deployment.DeploymentUnitProcessingException;
 import org.jboss.as.server.deployment.DeploymentUnitProcessor;
-import org.jboss.as.server.deployment.module.ModuleDependency;
-import org.jboss.as.server.deployment.module.ModuleSpecification;
-import org.jboss.as.server.deployment.module.ResourceRoot;
 import org.jboss.logging.Logger;
 import org.jboss.modules.Module;
-import org.jboss.modules.ModuleIdentifier;
-import org.jboss.modules.ModuleLoader;
-import org.jboss.vfs.VirtualFile;
-import org.jboss.vfs.util.AbstractVirtualFileFilterWithAttributes;
 import org.keycloak.provider.ProviderManager;
 import org.keycloak.provider.ProviderManagerRegistry;
-
-import java.io.IOException;
-import java.util.List;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

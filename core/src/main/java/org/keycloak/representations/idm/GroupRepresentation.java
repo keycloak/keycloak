@@ -17,8 +17,6 @@
 
 package org.keycloak.representations.idm;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;

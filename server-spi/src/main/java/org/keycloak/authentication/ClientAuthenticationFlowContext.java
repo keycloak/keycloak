@@ -17,9 +17,9 @@
 
 package org.keycloak.authentication;
 
-import java.util.Map;
-
 import org.keycloak.models.ClientModel;
+
+import java.util.Map;
 
 /**
  * Encapsulates information about the execution in ClientAuthenticationFlow

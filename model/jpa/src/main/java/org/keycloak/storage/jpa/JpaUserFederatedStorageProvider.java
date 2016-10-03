@@ -30,18 +30,14 @@ import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserConsentModel;
-import org.keycloak.models.UserCredentialModel;
-import org.keycloak.models.UserCredentialValueModel;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.utils.FederatedCredentials;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.federated.UserAttributeFederatedStorage;
 import org.keycloak.storage.federated.UserBrokerLinkFederatedStorage;
 import org.keycloak.storage.federated.UserConsentFederatedStorage;
-import org.keycloak.storage.federated.UserCredentialsFederatedStorage;
 import org.keycloak.storage.federated.UserFederatedStorageProvider;
 import org.keycloak.storage.federated.UserGroupMembershipFederatedStorage;
 import org.keycloak.storage.federated.UserRequiredActionsFederatedStorage;
@@ -77,7 +73,6 @@ public class JpaUserFederatedStorageProvider implements
         UserAttributeFederatedStorage,
         UserBrokerLinkFederatedStorage,
         UserConsentFederatedStorage,
-        UserCredentialsFederatedStorage,
         UserGroupMembershipFederatedStorage,
         UserRequiredActionsFederatedStorage,
         UserRoleMappingsFederatedStorage,
@@ -428,76 +423,6 @@ public class JpaUserFederatedStorageProvider implements
 
 
     @Override
-    public List<UserCredentialValueModel> getCredentials(RealmModel realm, UserModel user) {
-        TypedQuery<FederatedUserCredentialEntity> query = em.createNamedQuery("federatedUserCredentialByUser", FederatedUserCredentialEntity.class)
-                .setParameter("userId", user.getId());
-        List<FederatedUserCredentialEntity> results = query.getResultList();
-        List<UserCredentialValueModel> list = new LinkedList<>();
-        for (FederatedUserCredentialEntity credEntity : results) {
-            UserCredentialValueModel credModel = new UserCredentialValueModel();
-            credModel.setId(credEntity.getId());
-            credModel.setType(credEntity.getType());
-            credModel.setDevice(credEntity.getDevice());
-            credModel.setValue(credEntity.getValue());
-            credModel.setCreatedDate(credEntity.getCreatedDate());
-            credModel.setSalt(credEntity.getSalt());
-            credModel.setHashIterations(credEntity.getHashIterations());
-            credModel.setCounter(credEntity.getCounter());
-            credModel.setAlgorithm(credEntity.getAlgorithm());
-            credModel.setDigits(credEntity.getDigits());
-            credModel.setPeriod(credEntity.getPeriod());
-
-            list.add(credModel);
-        }
-        return list;
-    }
-
-    @Override
-    public void updateCredential(RealmModel realm, UserModel user, UserCredentialModel cred) {
-        createIndex(realm, user);
-        FederatedCredentials.updateCredential(session, this, realm, user, cred);
-
-    }
-
-    @Override
-    public void updateCredential(RealmModel realm, UserModel user, UserCredentialValueModel cred) {
-        createIndex(realm, user);
-        FederatedUserCredentialEntity entity = null;
-        if (cred.getId() != null) entity = em.find(FederatedUserCredentialEntity.class, cred.getId());
-        boolean newEntity = false;
-        if (entity == null) {
-            entity = new FederatedUserCredentialEntity();
-            entity.setId(KeycloakModelUtils.generateId());
-            newEntity = true;
-        }
-        entity.setUserId(user.getId());
-        entity.setRealmId(realm.getId());
-        entity.setStorageProviderId(StorageId.resolveProviderId(user));
-        entity.setAlgorithm(cred.getAlgorithm());
-        entity.setCounter(cred.getCounter());
-        Long createdDate = cred.getCreatedDate();
-        if (createdDate == null) createdDate = System.currentTimeMillis();
-        entity.setCreatedDate(createdDate);
-        entity.setDevice(cred.getDevice());
-        entity.setDigits(cred.getDigits());
-        entity.setHashIterations(cred.getHashIterations());
-        entity.setPeriod(cred.getPeriod());
-        entity.setSalt(cred.getSalt());
-        entity.setType(cred.getType());
-        entity.setValue(cred.getValue());
-        if (newEntity) {
-            em.persist(entity);
-        }
-
-    }
-
-    @Override
-    public void removeCredential(RealmModel realm, UserModel user, UserCredentialValueModel cred) {
-        FederatedUserCredentialEntity entity = em.find(FederatedUserCredentialEntity.class, cred.getId());
-        em.remove(entity);
-    }
-
-    @Override
     public Set<GroupModel> getGroups(RealmModel realm, UserModel user) {
         Set<GroupModel> set = new HashSet<>();
         TypedQuery<FederatedUserGroupMembershipEntity> query = em.createNamedQuery("feduserGroupMembership", FederatedUserGroupMembershipEntity.class);
@@ -639,36 +564,6 @@ public class JpaUserFederatedStorageProvider implements
     }
 
     @Override
-    public boolean removeCredential(RealmModel realm, String id) {
-        return false;
-    }
-
-    @Override
-    public CredentialModel getCredentialById(String id) {
-        return null;
-    }
-
-    @Override
-    public List<CredentialModel> getCredentials(RealmModel realm) {
-        return null;
-    }
-
-    @Override
-    public List<CredentialModel> getUserCredentials(RealmModel realm, UserModel user) {
-        return null;
-    }
-
-    @Override
-    public List<CredentialModel> getCredentialsByType(RealmModel realm, UserModel user, String type) {
-        return null;
-    }
-
-    @Override
-    public CredentialModel getCredentialByNameAndType(RealmModel realm, UserModel user, String name, String type) {
-        return null;
-    }
-
-    @Override
     public void updateCredential(RealmModel realm, UserModel user, CredentialModel cred) {
         FederatedUserCredentialEntity entity = em.find(FederatedUserCredentialEntity.class, cred.getId());
         if (entity == null) return;
@@ -686,7 +581,7 @@ public class JpaUserFederatedStorageProvider implements
         if (entity.getCredentialAttributes().isEmpty() && (cred.getConfig() == null || cred.getConfig().isEmpty())) {
 
         } else {
-            MultivaluedHashMap<String, String> attrs = cred.getConfig();
+            MultivaluedHashMap<String, String> attrs = new MultivaluedHashMap<>();
             MultivaluedHashMap<String, String> config = cred.getConfig();
             if (config == null) config = new MultivaluedHashMap<>();
 

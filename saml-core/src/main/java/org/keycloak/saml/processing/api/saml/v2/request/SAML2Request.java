@@ -16,6 +16,13 @@
  */
 package org.keycloak.saml.processing.api.saml.v2.request;
 
+import org.keycloak.dom.saml.v2.SAML2Object;
+import org.keycloak.dom.saml.v2.assertion.NameIDType;
+import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
+import org.keycloak.dom.saml.v2.protocol.LogoutRequestType;
+import org.keycloak.dom.saml.v2.protocol.NameIDPolicyType;
+import org.keycloak.dom.saml.v2.protocol.RequestAbstractType;
+import org.keycloak.dom.saml.v2.protocol.ResponseType;
 import org.keycloak.saml.common.PicketLinkLogger;
 import org.keycloak.saml.common.PicketLinkLoggerFactory;
 import org.keycloak.saml.common.constants.JBossSAMLConstants;
@@ -25,7 +32,6 @@ import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.saml.common.exceptions.ProcessingException;
 import org.keycloak.saml.common.util.DocumentUtil;
 import org.keycloak.saml.common.util.StaxUtil;
-import org.keycloak.dom.saml.v2.SAML2Object;
 import org.keycloak.saml.processing.core.parsers.saml.SAMLParser;
 import org.keycloak.saml.processing.core.saml.v2.common.IDGenerator;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
@@ -33,12 +39,6 @@ import org.keycloak.saml.processing.core.saml.v2.util.XMLTimeUtil;
 import org.keycloak.saml.processing.core.saml.v2.writers.SAMLRequestWriter;
 import org.keycloak.saml.processing.core.saml.v2.writers.SAMLResponseWriter;
 import org.keycloak.saml.processing.core.util.JAXPValidationUtil;
-import org.keycloak.dom.saml.v2.assertion.NameIDType;
-import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
-import org.keycloak.dom.saml.v2.protocol.LogoutRequestType;
-import org.keycloak.dom.saml.v2.protocol.NameIDPolicyType;
-import org.keycloak.dom.saml.v2.protocol.RequestAbstractType;
-import org.keycloak.dom.saml.v2.protocol.ResponseType;
 import org.w3c.dom.Document;
 
 import javax.xml.datatype.XMLGregorianCalendar;

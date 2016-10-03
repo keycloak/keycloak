@@ -17,8 +17,6 @@
 
 package org.keycloak.migration.migrators;
 
-import java.util.List;
-
 import org.keycloak.migration.MigrationProvider;
 import org.keycloak.migration.ModelVersion;
 import org.keycloak.models.AuthenticationFlowModel;
@@ -27,6 +25,8 @@ import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
+
+import java.util.List;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

@@ -27,12 +27,12 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.common.util.KeycloakUriBuilder;
+import org.keycloak.common.util.UriUtils;
 import org.keycloak.constants.ServiceUrlConstants;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.util.JsonSerialization;
-import org.keycloak.common.util.KeycloakUriBuilder;
-import org.keycloak.common.util.UriUtils;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.ByteArrayOutputStream;

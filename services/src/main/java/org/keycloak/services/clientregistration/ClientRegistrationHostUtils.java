@@ -17,14 +17,14 @@
 
 package org.keycloak.services.clientregistration;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.util.List;
-
 import org.jboss.logging.Logger;
 import org.keycloak.models.ClientRegistrationTrustedHostModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.util.List;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

@@ -16,28 +16,13 @@
  */
 package org.keycloak.forms.account.freemarker;
 
-import java.io.IOException;
-import java.net.URI;
-import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Properties;
-
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriBuilder;
-import javax.ws.rs.core.UriInfo;
-
 import org.jboss.logging.Logger;
+import org.keycloak.events.Event;
 import org.keycloak.forms.account.AccountPages;
 import org.keycloak.forms.account.AccountProvider;
-import org.keycloak.forms.account.freemarker.model.ApplicationsBean;
 import org.keycloak.forms.account.freemarker.model.AccountBean;
 import org.keycloak.forms.account.freemarker.model.AccountFederatedIdentityBean;
+import org.keycloak.forms.account.freemarker.model.ApplicationsBean;
 import org.keycloak.forms.account.freemarker.model.FeaturesBean;
 import org.keycloak.forms.account.freemarker.model.LogBean;
 import org.keycloak.forms.account.freemarker.model.PasswordBean;
@@ -46,7 +31,11 @@ import org.keycloak.forms.account.freemarker.model.ReferrerBean;
 import org.keycloak.forms.account.freemarker.model.SessionsBean;
 import org.keycloak.forms.account.freemarker.model.TotpBean;
 import org.keycloak.forms.account.freemarker.model.UrlBean;
-import org.keycloak.events.Event;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.utils.FormMessage;
 import org.keycloak.theme.BrowserSecurityHeaderSetup;
 import org.keycloak.theme.FreeMarkerException;
 import org.keycloak.theme.FreeMarkerUtil;
@@ -58,12 +47,22 @@ import org.keycloak.theme.beans.MessageBean;
 import org.keycloak.theme.beans.MessageFormatterMethod;
 import org.keycloak.theme.beans.MessageType;
 import org.keycloak.theme.beans.MessagesPerFieldBean;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserModel;
-import org.keycloak.models.UserSessionModel;
-import org.keycloak.models.utils.FormMessage;
 import org.keycloak.utils.MediaType;
+
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriBuilder;
+import javax.ws.rs.core.UriInfo;
+import java.io.IOException;
+import java.net.URI;
+import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Properties;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

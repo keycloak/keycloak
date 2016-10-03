@@ -19,17 +19,12 @@ package org.keycloak.authentication.authenticators.browser;
 
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.Authenticator;
-import org.keycloak.common.util.Time;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.LoginProtocol;
-import org.keycloak.protocol.oidc.OIDCLoginProtocol;
-import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.AuthenticationManager;
-import org.keycloak.util.TokenUtil;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

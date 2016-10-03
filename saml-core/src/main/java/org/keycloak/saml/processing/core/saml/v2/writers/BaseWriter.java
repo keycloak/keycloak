@@ -16,14 +16,6 @@
  */
 package org.keycloak.saml.processing.core.saml.v2.writers;
 
-import org.keycloak.saml.common.PicketLinkLogger;
-import org.keycloak.saml.common.PicketLinkLoggerFactory;
-import org.keycloak.saml.common.constants.JBossSAMLConstants;
-import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
-import org.keycloak.saml.common.exceptions.ProcessingException;
-import org.keycloak.saml.common.util.StaxUtil;
-import org.keycloak.saml.common.util.StringUtil;
-import org.keycloak.saml.processing.core.saml.v2.util.StaxWriterUtil;
 import org.keycloak.dom.saml.v2.assertion.AttributeType;
 import org.keycloak.dom.saml.v2.assertion.BaseIDAbstractType;
 import org.keycloak.dom.saml.v2.assertion.EncryptedElementType;
@@ -34,6 +26,14 @@ import org.keycloak.dom.saml.v2.assertion.SubjectConfirmationType;
 import org.keycloak.dom.saml.v2.assertion.SubjectType;
 import org.keycloak.dom.saml.v2.metadata.LocalizedNameType;
 import org.keycloak.dom.xmlsec.w3.xmldsig.KeyInfoType;
+import org.keycloak.saml.common.PicketLinkLogger;
+import org.keycloak.saml.common.PicketLinkLoggerFactory;
+import org.keycloak.saml.common.constants.JBossSAMLConstants;
+import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
+import org.keycloak.saml.common.exceptions.ProcessingException;
+import org.keycloak.saml.common.util.StaxUtil;
+import org.keycloak.saml.common.util.StringUtil;
+import org.keycloak.saml.processing.core.saml.v2.util.StaxWriterUtil;
 
 import javax.xml.datatype.XMLGregorianCalendar;
 import javax.xml.namespace.QName;

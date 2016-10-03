@@ -23,7 +23,6 @@ import org.apache.catalina.core.StandardContext;
 import org.apache.catalina.realm.GenericPrincipal;
 import org.apache.tomcat.util.descriptor.web.LoginConfig;
 import org.keycloak.adapters.saml.AbstractSamlAuthenticatorValve;
-import org.keycloak.adapters.saml.CatalinaSamlSessionStore;
 import org.keycloak.adapters.saml.SamlDeployment;
 import org.keycloak.adapters.saml.SamlSessionStore;
 import org.keycloak.adapters.spi.HttpFacade;

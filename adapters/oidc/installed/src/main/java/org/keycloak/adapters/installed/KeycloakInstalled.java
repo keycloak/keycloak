@@ -19,12 +19,11 @@ package org.keycloak.adapters.installed;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
-import org.keycloak.RSATokenVerifier;
-import org.keycloak.adapters.rotation.AdapterRSATokenVerifier;
-import org.keycloak.common.VerificationException;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.KeycloakDeploymentBuilder;
 import org.keycloak.adapters.ServerRequest;
+import org.keycloak.adapters.rotation.AdapterRSATokenVerifier;
+import org.keycloak.common.VerificationException;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.representations.AccessToken;

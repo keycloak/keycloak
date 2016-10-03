@@ -23,7 +23,6 @@ import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.cache.CacheRealmProvider;
 import org.keycloak.models.cache.infinispan.entities.CachedClientTemplate;
 
 import java.util.HashMap;

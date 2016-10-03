@@ -17,8 +17,6 @@
 
 package org.keycloak.testsuite.oidc;
 
-import java.util.List;
-
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Rule;
@@ -53,6 +51,8 @@ import org.keycloak.testsuite.pages.OAuthGrantPage;
 import org.keycloak.testsuite.rest.resource.TestingOIDCEndpointsApplicationResource;
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.OAuthClient;
+
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -405,6 +405,9 @@ public class OIDCAdvancedRequestParamsTest extends TestRealmKeycloakTest {
         cert.setPublicKey(clientPublicKeyPem);
         CertificateInfoHelper.updateClientRepresentationCertificateInfo(clientRep, cert, JWTClientAuthenticator.ATTR_PREFIX);
         clientResource.update(clientRep);
+
+        // set time offset, so that new keys are downloaded
+        setTimeOffset(20);
 
         // Check signed request_uri will pass
         OAuthClient.AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");

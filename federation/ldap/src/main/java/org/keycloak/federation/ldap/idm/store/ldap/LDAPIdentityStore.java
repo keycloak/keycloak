@@ -17,16 +17,16 @@
 
 package org.keycloak.federation.ldap.idm.store.ldap;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.NoSuchElementException;
-import java.util.Set;
-import java.util.TreeSet;
+import org.jboss.logging.Logger;
+import org.keycloak.federation.ldap.LDAPConfig;
+import org.keycloak.federation.ldap.idm.model.LDAPDn;
+import org.keycloak.federation.ldap.idm.model.LDAPObject;
+import org.keycloak.federation.ldap.idm.query.Condition;
+import org.keycloak.federation.ldap.idm.query.internal.EqualCondition;
+import org.keycloak.federation.ldap.idm.query.internal.LDAPQuery;
+import org.keycloak.federation.ldap.idm.store.IdentityStore;
+import org.keycloak.models.LDAPConstants;
+import org.keycloak.models.ModelException;
 
 import javax.naming.AuthenticationException;
 import javax.naming.NamingEnumeration;
@@ -39,17 +39,16 @@ import javax.naming.directory.DirContext;
 import javax.naming.directory.ModificationItem;
 import javax.naming.directory.SearchControls;
 import javax.naming.directory.SearchResult;
-
-import org.jboss.logging.Logger;
-import org.keycloak.federation.ldap.LDAPConfig;
-import org.keycloak.federation.ldap.idm.model.LDAPDn;
-import org.keycloak.federation.ldap.idm.model.LDAPObject;
-import org.keycloak.federation.ldap.idm.query.Condition;
-import org.keycloak.federation.ldap.idm.query.internal.LDAPQuery;
-import org.keycloak.federation.ldap.idm.query.internal.EqualCondition;
-import org.keycloak.federation.ldap.idm.store.IdentityStore;
-import org.keycloak.models.LDAPConstants;
-import org.keycloak.models.ModelException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * An IdentityStore implementation backed by an LDAP directory

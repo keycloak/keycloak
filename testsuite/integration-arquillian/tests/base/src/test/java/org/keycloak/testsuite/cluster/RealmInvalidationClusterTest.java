@@ -1,12 +1,14 @@
 package org.keycloak.testsuite.cluster;
 
-import javax.ws.rs.NotFoundException;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNull;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.RealmsResource;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.arquillian.ContainerInfo;
+
+import javax.ws.rs.NotFoundException;
+
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNull;
 
 /**
  *

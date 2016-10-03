@@ -17,16 +17,13 @@
 
 package org.keycloak.testsuite.model;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.keycloak.cluster.ClusterProvider;
+import org.keycloak.common.util.Time;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
@@ -40,7 +37,10 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.services.managers.UserManager;
 import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.testsuite.rule.KeycloakRule;
-import org.keycloak.common.util.Time;
+
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

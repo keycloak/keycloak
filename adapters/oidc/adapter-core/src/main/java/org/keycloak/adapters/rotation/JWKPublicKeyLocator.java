@@ -17,10 +17,6 @@
 
 package org.keycloak.adapters.rotation;
 
-import java.security.PublicKey;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
 import org.apache.http.client.methods.HttpGet;
 import org.jboss.logging.Logger;
 import org.keycloak.adapters.HttpAdapterUtils;
@@ -31,6 +27,10 @@ import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.util.JWKSUtils;
+
+import java.security.PublicKey;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * When needed, publicKeys are downloaded by sending request to realm's jwks_url
@@ -71,8 +71,7 @@ public class JWKPublicKeyLocator implements PublicKeyLocator {
                     sendRequest(deployment);
                     lastRequestTime = currentTime;
                 } else {
-                    // TODO: debug
-                    log.infof("Won't send request to realm jwks url. Last request time was %d", lastRequestTime);
+                    log.debugf("Won't send request to realm jwks url. Last request time was %d", lastRequestTime);
                 }
             }
         }
@@ -83,9 +82,9 @@ public class JWKPublicKeyLocator implements PublicKeyLocator {
 
 
     private void sendRequest(KeycloakDeployment deployment) {
-        // Send the request
-        // TODO: trace or remove?
-        log.infof("Going to send request to retrieve new set of realm public keys for client %s", deployment.getResourceName());
+        if (log.isTraceEnabled()) {
+            log.tracef("Going to send request to retrieve new set of realm public keys for client %s", deployment.getResourceName());
+        }
 
         HttpGet getMethod = new HttpGet(deployment.getJwksUrl());
         try {
@@ -93,8 +92,9 @@ public class JWKPublicKeyLocator implements PublicKeyLocator {
 
             Map<String, PublicKey> publicKeys = JWKSUtils.getKeysForUse(jwks, JWK.Use.SIG);
 
-            // TODO: Debug with condition
-            log.infof("Realm public keys successfully retrieved for client %s. New kids: %s", deployment.getResourceName(), publicKeys.keySet().toString());
+            if (log.isDebugEnabled()) {
+                log.debugf("Realm public keys successfully retrieved for client %s. New kids: %s", deployment.getResourceName(), publicKeys.keySet().toString());
+            }
 
             // Update current keys
             currentKeys.clear();

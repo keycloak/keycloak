@@ -17,17 +17,16 @@
 
 package org.keycloak.testsuite.pages;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import javax.ws.rs.core.UriBuilder;
-
 import org.keycloak.services.Urls;
 import org.keycloak.testsuite.Constants;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
+
+import javax.ws.rs.core.UriBuilder;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

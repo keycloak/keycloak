@@ -15,11 +15,11 @@
     <!-- replace JDBC URL -->
     <xsl:template match="//*[local-name()='subsystem' and starts-with(namespace-uri(), $nsDS)]
 		         /*[local-name()='datasources' and starts-with(namespace-uri(), $nsDS)]
-                         /*[local-name()='datasource' and starts-with(namespace-uri(), $nsDS) and @pool-name=$pool.name]
-                         /*[local-name()='connection-url' and starts-with(namespace-uri(), $nsDS)]">
-        <connection-url>
+                         /*[local-name()='xa-datasource' and starts-with(namespace-uri(), $nsDS) and @pool-name=$pool.name]
+                         /*[local-name()='xa-datasource-property' and starts-with(namespace-uri(), $nsDS) and @name='URL']">
+        <xa-datasource-property name="URL">
             <xsl:value-of select="$jdbc.url"/>
-        </connection-url>
+        </xa-datasource-property>
     </xsl:template>
 
     <!-- Copy everything else. -->

@@ -17,12 +17,6 @@
 
 package org.keycloak.authentication.authenticators.broker.util;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.keycloak.authentication.requiredactions.util.UpdateProfileContext;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
@@ -38,6 +32,12 @@ import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.services.resources.IdentityBrokerService;
 import org.keycloak.util.JsonSerialization;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

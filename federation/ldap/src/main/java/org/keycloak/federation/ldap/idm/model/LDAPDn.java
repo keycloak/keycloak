@@ -17,13 +17,10 @@
 
 package org.keycloak.federation.ldap.idm.model;
 
+import javax.naming.ldap.Rdn;
 import java.util.Collection;
 import java.util.Deque;
 import java.util.LinkedList;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import javax.naming.ldap.Rdn;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

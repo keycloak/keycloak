@@ -1,9 +1,9 @@
 package org.keycloak.adapters;
 
-import static org.junit.Assert.*;
-
 import org.junit.Test;
 import org.keycloak.representations.oidc.TokenMetadataRepresentation;
+
+import static org.junit.Assert.assertFalse;
 /**
  * @author github.com/tubbynl
  *

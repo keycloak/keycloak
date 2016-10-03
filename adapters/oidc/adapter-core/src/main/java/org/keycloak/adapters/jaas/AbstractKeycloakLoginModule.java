@@ -17,14 +17,17 @@
 
 package org.keycloak.adapters.jaas;
 
-import java.io.InputStream;
-import java.lang.reflect.Constructor;
-import java.security.Principal;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
+import org.jboss.logging.Logger;
+import org.keycloak.KeycloakPrincipal;
+import org.keycloak.adapters.AdapterUtils;
+import org.keycloak.adapters.KeycloakDeployment;
+import org.keycloak.adapters.KeycloakDeploymentBuilder;
+import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
+import org.keycloak.adapters.rotation.AdapterRSATokenVerifier;
+import org.keycloak.common.VerificationException;
+import org.keycloak.common.util.FindFile;
+import org.keycloak.common.util.reflections.Reflections;
+import org.keycloak.representations.AccessToken;
 
 import javax.security.auth.Subject;
 import javax.security.auth.callback.Callback;
@@ -34,20 +37,14 @@ import javax.security.auth.callback.PasswordCallback;
 import javax.security.auth.callback.UnsupportedCallbackException;
 import javax.security.auth.login.LoginException;
 import javax.security.auth.spi.LoginModule;
-
-import org.jboss.logging.Logger;
-import org.keycloak.KeycloakPrincipal;
-import org.keycloak.RSATokenVerifier;
-import org.keycloak.adapters.AdapterDeploymentContext;
-import org.keycloak.adapters.AdapterUtils;
-import org.keycloak.adapters.KeycloakDeployment;
-import org.keycloak.adapters.KeycloakDeploymentBuilder;
-import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
-import org.keycloak.adapters.rotation.AdapterRSATokenVerifier;
-import org.keycloak.common.VerificationException;
-import org.keycloak.common.util.FindFile;
-import org.keycloak.representations.AccessToken;
-import org.keycloak.common.util.reflections.Reflections;
+import java.io.InputStream;
+import java.lang.reflect.Constructor;
+import java.security.Principal;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

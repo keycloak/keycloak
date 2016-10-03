@@ -17,32 +17,18 @@
 
 package org.keycloak.testsuite.client;
 
-import org.apache.http.HttpResponse;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.message.BasicNameValuePair;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.adapters.authentication.JWTClientCredentialsProvider;
 import org.keycloak.client.registration.Auth;
 import org.keycloak.client.registration.ClientRegistrationException;
 import org.keycloak.client.registration.HttpErrorException;
 import org.keycloak.common.util.CollectionUtil;
-import org.keycloak.common.util.KeycloakUriBuilder;
-import org.keycloak.constants.ServiceUrlConstants;
-import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.jose.jws.Algorithm;
-import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
-import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
-import org.keycloak.representations.AccessToken;
-import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.ClientInitialAccessCreatePresentation;
 import org.keycloak.representations.idm.ClientInitialAccessPresentation;
 import org.keycloak.representations.idm.ClientRegistrationTrustedHostRepresentation;
@@ -50,17 +36,16 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.testsuite.Assert;
-import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
-import org.keycloak.testsuite.client.resources.TestOIDCEndpointsApplicationResource;
-import org.keycloak.testsuite.rest.resource.TestingOIDCEndpointsApplicationResource;
-import org.keycloak.testsuite.util.OAuthClient;
-import java.security.PrivateKey;
+
 import java.util.*;
 
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriBuilder;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -229,59 +214,6 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
     }
 
     @Test
-    public void createClientWithJWKS() throws Exception {
-        OIDCClientRepresentation clientRep = createRep();
-
-        clientRep.setGrantTypes(Collections.singletonList(OAuth2Constants.CLIENT_CREDENTIALS));
-        clientRep.setTokenEndpointAuthMethod(OIDCLoginProtocol.PRIVATE_KEY_JWT);
-
-        // Generate keys for client
-        TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
-        Map<String, String> generatedKeys = oidcClientEndpointsResource.generateKeys();
-
-        JSONWebKeySet keySet = oidcClientEndpointsResource.getJwks();
-        clientRep.setJwks(keySet);
-
-        OIDCClientRepresentation response = reg.oidc().create(clientRep);
-        Assert.assertEquals(OIDCLoginProtocol.PRIVATE_KEY_JWT, response.getTokenEndpointAuthMethod());
-        Assert.assertNull(response.getClientSecret());
-        Assert.assertNull(response.getClientSecretExpiresAt());
-
-        // Tries to authenticate client with privateKey JWT
-        String signedJwt = getClientSignedJWT(response.getClientId(), generatedKeys.get(TestingOIDCEndpointsApplicationResource.PRIVATE_KEY));
-        OAuthClient.AccessTokenResponse accessTokenResponse = doClientCredentialsGrantRequest(signedJwt);
-        Assert.assertEquals(200, accessTokenResponse.getStatusCode());
-        AccessToken accessToken = oauth.verifyToken(accessTokenResponse.getAccessToken());
-        Assert.assertEquals(response.getClientId(), accessToken.getAudience()[0]);
-    }
-
-    @Test
-    public void createClientWithJWKSURI() throws Exception {
-        OIDCClientRepresentation clientRep = createRep();
-
-        clientRep.setGrantTypes(Collections.singletonList(OAuth2Constants.CLIENT_CREDENTIALS));
-        clientRep.setTokenEndpointAuthMethod(OIDCLoginProtocol.PRIVATE_KEY_JWT);
-
-        // Generate keys for client
-        TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
-        Map<String, String> generatedKeys = oidcClientEndpointsResource.generateKeys();
-
-        clientRep.setJwksUri(TestApplicationResourceUrls.clientJwksUri());
-
-        OIDCClientRepresentation response = reg.oidc().create(clientRep);
-        Assert.assertEquals(OIDCLoginProtocol.PRIVATE_KEY_JWT, response.getTokenEndpointAuthMethod());
-        Assert.assertNull(response.getClientSecret());
-        Assert.assertNull(response.getClientSecretExpiresAt());
-
-        // Tries to authenticate client with privateKey JWT
-        String signedJwt = getClientSignedJWT(response.getClientId(), generatedKeys.get(TestingOIDCEndpointsApplicationResource.PRIVATE_KEY));
-        OAuthClient.AccessTokenResponse accessTokenResponse = doClientCredentialsGrantRequest(signedJwt);
-        Assert.assertEquals(200, accessTokenResponse.getStatusCode());
-        AccessToken accessToken = oauth.verifyToken(accessTokenResponse.getAccessToken());
-        Assert.assertEquals(response.getClientId(), accessToken.getAudience()[0]);
-    }
-
-    @Test
     public void testSignaturesRequired() throws Exception {
         OIDCClientRepresentation clientRep = createRep();
         clientRep.setUserinfoSignedResponseAlg(Algorithm.RS256.toString());
@@ -297,55 +229,6 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
         OIDCAdvancedConfigWrapper config = OIDCAdvancedConfigWrapper.fromClientRepresentation(kcClient);
         Assert.assertEquals(config.getUserInfoSignedResponseAlg(), Algorithm.RS256);
         Assert.assertEquals(config.getRequestObjectSignatureAlg(), Algorithm.RS256);
-    }
-
-
-    // Client auth with signedJWT - helper methods
-
-    private String getClientSignedJWT(String clientId, String privateKeyPem) {
-        String realmInfoUrl = KeycloakUriBuilder.fromUri(getAuthServerRoot()).path(ServiceUrlConstants.REALM_INFO_PATH).build(REALM_NAME).toString();
-
-        PrivateKey privateKey = KeycloakModelUtils.getPrivateKey(privateKeyPem);
-
-        // Use token-endpoint as audience as OIDC conformance testsuite is using it too.
-        JWTClientCredentialsProvider jwtProvider = new JWTClientCredentialsProvider() {
-
-            @Override
-            protected JsonWebToken createRequestToken(String clientId, String realmInfoUrl) {
-                JsonWebToken jwt = super.createRequestToken(clientId, realmInfoUrl);
-                String tokenEndpointUrl = OIDCLoginProtocolService.tokenUrl(UriBuilder.fromUri(getAuthServerRoot())).build(REALM_NAME).toString();
-                jwt.audience(tokenEndpointUrl);
-                return jwt;
-            }
-
-        };
-        jwtProvider.setPrivateKey(privateKey);
-        jwtProvider.setTokenTimeout(10);
-        return jwtProvider.createSignedRequestToken(clientId, realmInfoUrl);
-
-    }
-
-
-    private OAuthClient.AccessTokenResponse doClientCredentialsGrantRequest(String signedJwt) throws Exception {
-        List<NameValuePair> parameters = new LinkedList<NameValuePair>();
-        parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.CLIENT_CREDENTIALS));
-        parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ASSERTION_TYPE, OAuth2Constants.CLIENT_ASSERTION_TYPE_JWT));
-        parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ASSERTION, signedJwt));
-
-        HttpResponse response = sendRequest(oauth.getServiceAccountUrl(), parameters);
-        return new OAuthClient.AccessTokenResponse(response);
-    }
-
-    private HttpResponse sendRequest(String requestUrl, List<NameValuePair> parameters) throws Exception {
-        CloseableHttpClient client = new DefaultHttpClient();
-        try {
-            HttpPost post = new HttpPost(requestUrl);
-            UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
-            post.setEntity(formEntity);
-            return client.execute(post);
-        } finally {
-            oauth.closeClient(client);
-        }
     }
 
     private void createTrustedHost(String name, int count) {

@@ -27,8 +27,6 @@ import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 
-import static org.bouncycastle.asn1.x500.style.RFC4519Style.l;
-
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */

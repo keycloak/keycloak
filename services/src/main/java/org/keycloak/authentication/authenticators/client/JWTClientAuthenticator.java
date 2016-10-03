@@ -17,8 +17,28 @@
 
 package org.keycloak.authentication.authenticators.client;
 
+import org.keycloak.OAuth2Constants;
+import org.keycloak.authentication.AuthenticationFlowError;
+import org.keycloak.authentication.ClientAuthenticationFlowContext;
+import org.keycloak.common.util.Time;
+import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.jose.jws.crypto.RSAProvider;
+import org.keycloak.keys.loader.KeyStorageManager;
+import org.keycloak.models.AuthenticationExecutionModel;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.ModelException;
+import org.keycloak.models.RealmModel;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
+import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.representations.JsonWebToken;
+import org.keycloak.services.ServicesLogger;
+import org.keycloak.services.Urls;
+import org.keycloak.services.util.CertificateInfoHelper;
+
+import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.Response;
 import java.security.PublicKey;
-import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -27,30 +47,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriBuilder;
-
-import org.keycloak.OAuth2Constants;
-import org.keycloak.authentication.AuthenticationFlowError;
-import org.keycloak.authentication.ClientAuthenticationFlowContext;
-import org.keycloak.common.util.Time;
-import org.keycloak.jose.jws.JWSInput;
-import org.keycloak.jose.jws.crypto.RSAProvider;
-import org.keycloak.models.AuthenticationExecutionModel;
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.ModelException;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.protocol.oidc.OIDCLoginProtocol;
-import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
-import org.keycloak.provider.ProviderConfigProperty;
-import org.keycloak.representations.JsonWebToken;
-import org.keycloak.representations.idm.CertificateRepresentation;
-import org.keycloak.services.ServicesLogger;
-import org.keycloak.services.Urls;
-import org.keycloak.services.util.CertificateInfoHelper;
 
 /**
  * Client authentication based on JWT signed by client private key .
@@ -125,7 +121,7 @@ public class JWTClientAuthenticator extends AbstractClientAuthenticator {
             }
 
             // Get client key and validate signature
-            PublicKey clientPublicKey = getSignatureValidationKey(client, context);
+            PublicKey clientPublicKey = getSignatureValidationKey(client, context, jws);
             if (clientPublicKey == null) {
                 // Error response already set to context
                 return;
@@ -166,13 +162,14 @@ public class JWTClientAuthenticator extends AbstractClientAuthenticator {
         }
     }
 
-    protected PublicKey getSignatureValidationKey(ClientModel client, ClientAuthenticationFlowContext context) {
-        try {
-            return CertificateInfoHelper.getSignatureValidationKey(client, ATTR_PREFIX);
-        } catch (ModelException me) {
-            Response challengeResponse = ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "unauthorized_client", me.getMessage());
+    protected PublicKey getSignatureValidationKey(ClientModel client, ClientAuthenticationFlowContext context, JWSInput jws) {
+        PublicKey publicKey = KeyStorageManager.getClientPublicKey(context.getSession(), client, jws);
+        if (publicKey == null) {
+            Response challengeResponse = ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "unauthorized_client", "Unable to load public key");
             context.failure(AuthenticationFlowError.CLIENT_CREDENTIALS_SETUP_REQUIRED, challengeResponse);
             return null;
+        } else {
+            return publicKey;
         }
     }
 

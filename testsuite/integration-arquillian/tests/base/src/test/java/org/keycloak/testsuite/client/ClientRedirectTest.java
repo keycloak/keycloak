@@ -23,7 +23,7 @@ import org.keycloak.testsuite.TestRealmKeycloakTest;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.RealmBuilder;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author <a href="mailto:thomas.darimont@gmail.com">Thomas Darimont</a>

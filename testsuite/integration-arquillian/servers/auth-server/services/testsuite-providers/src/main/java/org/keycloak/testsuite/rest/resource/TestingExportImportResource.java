@@ -17,7 +17,8 @@
 
 package org.keycloak.testsuite.rest.resource;
 
-import java.io.File;
+import org.keycloak.exportimport.ExportImportManager;
+import org.keycloak.models.KeycloakSession;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -27,9 +28,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-
-import org.keycloak.exportimport.ExportImportManager;
-import org.keycloak.models.KeycloakSession;
+import java.io.File;
 
 import static org.keycloak.exportimport.ExportImportConfig.ACTION;
 import static org.keycloak.exportimport.ExportImportConfig.DEFAULT_USERS_PER_FILE;

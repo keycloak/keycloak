@@ -18,9 +18,9 @@
 package org.keycloak.jose.jws.crypto;
 
 
+import org.keycloak.common.util.PemUtils;
 import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.jose.jws.JWSInput;
-import org.keycloak.common.util.PemUtils;
 
 import java.security.PrivateKey;
 import java.security.PublicKey;

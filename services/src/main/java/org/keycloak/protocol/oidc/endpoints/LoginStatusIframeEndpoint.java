@@ -19,12 +19,12 @@ package org.keycloak.protocol.oidc.endpoints;
 
 import org.jboss.resteasy.spi.NotFoundException;
 import org.keycloak.Config;
+import org.keycloak.common.util.StreamUtil;
+import org.keycloak.common.util.UriUtils;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
-import org.keycloak.common.util.StreamUtil;
-import org.keycloak.common.util.UriUtils;
 import org.keycloak.services.util.P3PHelper;
 
 import javax.ws.rs.GET;

@@ -1,8 +1,5 @@
 package org.keycloak.testsuite.console.page.federation;
 
-import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
-import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
-
 import org.jboss.arquillian.graphene.findby.FindByJQuery;
 import org.keycloak.testsuite.console.page.fragment.OnOffSwitch;
 import org.keycloak.testsuite.page.Form;
@@ -13,6 +10,8 @@ import org.openqa.selenium.support.ui.Select;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 
 /**
  * @author fkiss, pdrozd

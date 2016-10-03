@@ -18,7 +18,11 @@
 package org.keycloak.models.utils;
 
 import org.bouncycastle.openssl.PEMWriter;
+import org.keycloak.broker.social.SocialIdentityProvider;
+import org.keycloak.broker.social.SocialIdentityProviderFactory;
 import org.keycloak.common.util.Base64Url;
+import org.keycloak.common.util.CertificateUtils;
+import org.keycloak.common.util.PemUtils;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientModel;
@@ -42,13 +46,9 @@ import org.keycloak.models.UserFederationProviderFactory;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.CertificateRepresentation;
-import org.keycloak.common.util.CertificateUtils;
-import org.keycloak.common.util.PemUtils;
 import org.keycloak.transaction.JtaTransactionManagerLookup;
 
 import javax.crypto.spec.SecretKeySpec;
-import javax.naming.InitialContext;
-import javax.sql.DataSource;
 import javax.transaction.InvalidTransactionException;
 import javax.transaction.SystemException;
 import javax.transaction.Transaction;
@@ -62,7 +62,6 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
-import java.sql.DriverManager;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -70,7 +69,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import java.util.function.Function;
 
 /**
  * Set of helper methods, which are useful in various model implementations.
@@ -689,4 +687,21 @@ public final class KeycloakModelUtils {
         }
 
     }
+
+    public static String getIdentityProviderDisplayName(KeycloakSession session, IdentityProviderModel provider) {
+        String displayName = provider.getDisplayName();
+        if (displayName != null && !displayName.isEmpty()) {
+            return displayName;
+        }
+
+        SocialIdentityProviderFactory providerFactory = (SocialIdentityProviderFactory) session.getKeycloakSessionFactory()
+                .getProviderFactory(SocialIdentityProvider.class, provider.getProviderId());
+        if (providerFactory != null) {
+            return providerFactory.getName();
+        } else {
+            return provider.getAlias();
+        }
+    }
+
+
 }

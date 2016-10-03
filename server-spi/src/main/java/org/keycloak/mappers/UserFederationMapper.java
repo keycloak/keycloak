@@ -17,8 +17,6 @@
 
 package org.keycloak.mappers;
 
-import java.util.List;
-
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -27,6 +25,8 @@ import org.keycloak.models.UserFederationProvider;
 import org.keycloak.models.UserFederationSyncResult;
 import org.keycloak.models.UserModel;
 import org.keycloak.provider.Provider;
+
+import java.util.List;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

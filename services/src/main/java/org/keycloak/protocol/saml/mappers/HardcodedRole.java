@@ -18,8 +18,8 @@
 package org.keycloak.protocol.saml.mappers;
 
 import org.keycloak.models.ProtocolMapperModel;
-import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.protocol.saml.SamlProtocol;
+import org.keycloak.provider.ProviderConfigProperty;
 
 import java.util.ArrayList;
 import java.util.HashMap;

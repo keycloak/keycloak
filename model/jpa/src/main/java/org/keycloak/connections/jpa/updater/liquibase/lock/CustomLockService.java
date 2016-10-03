@@ -17,8 +17,6 @@
 
 package org.keycloak.connections.jpa.updater.liquibase.lock;
 
-import java.lang.reflect.Field;
-
 import liquibase.database.core.DerbyDatabase;
 import liquibase.exception.DatabaseException;
 import liquibase.executor.Executor;
@@ -32,6 +30,8 @@ import liquibase.statement.core.RawSqlStatement;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.Time;
 import org.keycloak.common.util.reflections.Reflections;
+
+import java.lang.reflect.Field;
 
 /**
  * Liquibase lock service, which has some bugfixes and assumes timeouts to be configured in milliseconds

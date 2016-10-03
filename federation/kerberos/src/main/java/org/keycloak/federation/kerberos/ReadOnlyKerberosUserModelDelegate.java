@@ -17,8 +17,6 @@
 
 package org.keycloak.federation.kerberos;
 
-import org.keycloak.models.ModelReadOnlyException;
-import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.UserModelDelegate;
 

@@ -17,13 +17,13 @@
 
 package org.keycloak.protocol.oidc.endpoints.request;
 
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.services.ServicesLogger;
+
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

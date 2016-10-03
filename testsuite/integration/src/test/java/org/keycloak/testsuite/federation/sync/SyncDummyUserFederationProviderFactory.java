@@ -17,12 +17,6 @@
 
 package org.keycloak.testsuite.federation.sync;
 
-import java.util.Date;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-
 import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -33,6 +27,11 @@ import org.keycloak.models.UserFederationSyncResult;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.testsuite.federation.DummyUserFederationProviderFactory;
+
+import java.util.Date;
+import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

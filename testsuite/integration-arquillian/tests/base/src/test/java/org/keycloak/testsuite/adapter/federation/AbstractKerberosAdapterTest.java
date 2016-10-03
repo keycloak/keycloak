@@ -17,17 +17,6 @@
 
 package org.keycloak.testsuite.adapter.federation;
 
-import static org.keycloak.testsuite.auth.page.AuthRealm.DEMO;
-import static org.keycloak.testsuite.util.IOUtil.loadRealm;
-
-import java.security.Principal;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.Response;
-
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.Credentials;
 import org.apache.http.client.params.AuthPolicy;
@@ -66,6 +55,15 @@ import org.keycloak.testsuite.auth.page.account.ChangePassword;
 import org.keycloak.testsuite.util.LDAPTestConfiguration;
 import org.keycloak.util.ldap.KerberosEmbeddedServer;
 import org.keycloak.util.ldap.LDAPEmbeddedServer;
+
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.Response;
+import java.security.Principal;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+
+import static org.keycloak.testsuite.util.IOUtil.loadRealm;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

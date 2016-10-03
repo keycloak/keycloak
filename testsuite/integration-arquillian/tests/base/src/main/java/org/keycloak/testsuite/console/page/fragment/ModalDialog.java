@@ -22,7 +22,9 @@ import org.jboss.arquillian.graphene.fragment.Root;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
-import static org.keycloak.testsuite.util.WaitUtils.*;
+
+import static org.keycloak.testsuite.util.WaitUtils.waitForModalFadeIn;
+import static org.keycloak.testsuite.util.WaitUtils.waitForModalFadeOut;
 
 /**
  *

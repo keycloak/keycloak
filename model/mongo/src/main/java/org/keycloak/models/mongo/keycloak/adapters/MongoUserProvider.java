@@ -20,11 +20,12 @@ package org.keycloak.models.mongo.keycloak.adapters;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
 import com.mongodb.QueryBuilder;
-
+import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.connections.mongo.api.MongoStore;
 import org.keycloak.connections.mongo.api.context.MongoStoreInvocationContext;
-import org.keycloak.credential.CredentialInput;
+import org.keycloak.credential.CredentialModel;
+import org.keycloak.credential.UserCredentialStore;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.CredentialValidationOutput;
 import org.keycloak.models.FederatedIdentityModel;
@@ -41,15 +42,18 @@ import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
-import org.keycloak.models.entities.FederatedIdentityEntity;
-import org.keycloak.models.entities.UserConsentEntity;
+import org.keycloak.models.cache.CachedUserModel;
+import org.keycloak.models.mongo.keycloak.entities.CredentialEntity;
+import org.keycloak.models.mongo.keycloak.entities.FederatedIdentityEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoUserConsentEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoUserEntity;
-import org.keycloak.models.utils.CredentialValidation;
+import org.keycloak.models.mongo.keycloak.entities.UserConsentEntity;
+import org.keycloak.models.utils.KeycloakModelUtils;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -59,7 +63,7 @@ import java.util.regex.Pattern;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class MongoUserProvider implements UserProvider {
+public class MongoUserProvider implements UserProvider, UserCredentialStore {
 
     private final MongoStoreInvocationContext invocationContext;
     private final KeycloakSession session;
@@ -627,4 +631,185 @@ public class MongoUserProvider implements UserProvider {
 
     }
 
+    @Override
+    public void updateCredential(RealmModel realm, UserModel user, CredentialModel cred) {
+        MongoUserEntity mongoUser = getMongoUserEntity(user);
+        CredentialEntity credentialEntity = getCredentialEntity(cred, mongoUser);
+        if (credentialEntity == null) return;
+        // old store may not have id set
+        if (credentialEntity.getId() == null) credentialEntity.setId(KeycloakModelUtils.generateId());
+        setValues(cred, credentialEntity);
+        getMongoStore().updateEntity(mongoUser, invocationContext);
+
+    }
+
+    public CredentialEntity getCredentialEntity(CredentialModel cred, MongoUserEntity mongoUser) {
+        CredentialEntity credentialEntity = null;
+        // old store may not have id set
+        for (CredentialEntity entity : mongoUser.getCredentials()) {
+            if (cred.getId() != null && cred.getId().equals(entity.getId())) {
+                credentialEntity = entity;
+                break;
+            } else if (cred.getType().equals(entity.getType())) {
+                credentialEntity = entity;
+                break;
+            }
+        }
+        return credentialEntity;
+    }
+
+    public MongoUserEntity getMongoUserEntity(UserModel user) {
+        UserAdapter adapter = null;
+        if (user instanceof CachedUserModel) {
+            adapter = (UserAdapter)((CachedUserModel)user).getDelegateForUpdate();
+        } else if (user instanceof UserAdapter ){
+            adapter = (UserAdapter)user;
+        } else {
+            return getMongoStore().loadEntity(MongoUserEntity.class, user.getId(), invocationContext);
+
+        }
+        return adapter.getMongoEntity();
+    }
+
+    @Override
+    public CredentialModel createCredential(RealmModel realm, UserModel user, CredentialModel cred) {
+        MongoUserEntity mongoUser = getMongoUserEntity(user);
+        CredentialEntity credentialEntity = new CredentialEntity();
+        credentialEntity.setId(KeycloakModelUtils.generateId());
+        setValues(cred, credentialEntity);
+        cred.setId(credentialEntity.getId());
+        mongoUser.getCredentials().add(credentialEntity);
+        getMongoStore().updateEntity(mongoUser, invocationContext);
+        cred.setId(credentialEntity.getId());
+        return cred;
+    }
+
+    public void setValues(CredentialModel cred, CredentialEntity credentialEntity) {
+        credentialEntity.setType(cred.getType());
+        credentialEntity.setDevice(cred.getDevice());
+        credentialEntity.setValue(cred.getValue());
+        credentialEntity.setSalt(cred.getSalt());
+        credentialEntity.setDevice(cred.getDevice());
+        credentialEntity.setHashIterations(cred.getHashIterations());
+        credentialEntity.setCounter(cred.getCounter());
+        credentialEntity.setAlgorithm(cred.getAlgorithm());
+        credentialEntity.setDigits(cred.getDigits());
+        credentialEntity.setPeriod(cred.getPeriod());
+        if (cred.getConfig() == null) {
+            credentialEntity.setConfig(null);
+        }
+        else {
+            if (credentialEntity.getConfig() == null) credentialEntity.setConfig(new MultivaluedHashMap<>());
+            credentialEntity.getConfig().clear();
+            credentialEntity.getConfig().putAll(cred.getConfig());
+        }
+    }
+
+    @Override
+    public boolean removeStoredCredential(RealmModel realm, UserModel user, String id) {
+        MongoUserEntity mongoUser = getMongoUserEntity(user);
+        Iterator<CredentialEntity> it = mongoUser.getCredentials().iterator();
+        while (it.hasNext()) {
+            CredentialEntity entity = it.next();
+            if (id.equals(entity.getId())) {
+                it.remove();
+                getMongoStore().updateEntity(mongoUser, invocationContext);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public CredentialModel getStoredCredentialById(RealmModel realm, UserModel user, String id) {
+        MongoUserEntity mongoUser = getMongoUserEntity(user);
+        for (CredentialEntity credEntity : mongoUser.getCredentials()) {
+            if(id.equals(credEntity.getId())) {
+                if (credEntity.getId() == null) {
+                    credEntity.setId(KeycloakModelUtils.generateId());
+                    getMongoStore().updateEntity(mongoUser, invocationContext);
+                }
+                return toModel(credEntity);
+            }
+
+        }
+        return null;
+    }
+
+    public CredentialModel toModel(CredentialEntity credEntity) {
+        CredentialModel credModel = new CredentialModel();
+        credModel.setId(credEntity.getId());
+        credModel.setType(credEntity.getType());
+        credModel.setDevice(credEntity.getDevice());
+        credModel.setCreatedDate(credEntity.getCreatedDate());
+        credModel.setValue(credEntity.getValue());
+        credModel.setSalt(credEntity.getSalt());
+        credModel.setHashIterations(credEntity.getHashIterations());
+        credModel.setAlgorithm(credEntity.getAlgorithm());
+        credModel.setCounter(credEntity.getCounter());
+        credModel.setPeriod(credEntity.getPeriod());
+        credModel.setDigits(credEntity.getDigits());
+        if (credEntity.getConfig() != null) {
+            credModel.setConfig(new MultivaluedHashMap<>());
+            credModel.getConfig().putAll(credEntity.getConfig());
+        }
+        return credModel;
+    }
+
+    @Override
+    public List<CredentialModel> getStoredCredentials(RealmModel realm, UserModel user) {
+        List<CredentialModel> list = new LinkedList<>();
+        MongoUserEntity mongoUser = getMongoUserEntity(user);
+        boolean update = false;
+        for (CredentialEntity credEntity : mongoUser.getCredentials()) {
+            if (credEntity.getId() == null) {
+                credEntity.setId(KeycloakModelUtils.generateId());
+                update = true;
+            }
+            CredentialModel credModel = toModel(credEntity);
+            list.add(credModel);
+
+        }
+        if (update) getMongoStore().updateEntity(mongoUser, invocationContext);
+        return list;
+
+    }
+
+    @Override
+    public List<CredentialModel> getStoredCredentialsByType(RealmModel realm, UserModel user, String type) {
+        List<CredentialModel> list = new LinkedList<>();
+        MongoUserEntity mongoUser = getMongoUserEntity(user);
+        boolean update = false;
+        for (CredentialEntity credEntity : mongoUser.getCredentials()) {
+            if (credEntity.getId() == null) {
+                credEntity.setId(KeycloakModelUtils.generateId());
+                update = true;
+            }
+            if (credEntity.getType().equals(type)) {
+                CredentialModel credModel = toModel(credEntity);
+                list.add(credModel);
+            }
+        }
+        if (update) getMongoStore().updateEntity(mongoUser, invocationContext);
+        return list;
+    }
+
+    @Override
+    public CredentialModel getStoredCredentialByNameAndType(RealmModel realm, UserModel user, String name, String type) {
+        MongoUserEntity mongoUser = getMongoUserEntity(user);
+        boolean update = false;
+        CredentialModel credModel = null;
+        for (CredentialEntity credEntity : mongoUser.getCredentials()) {
+            if (credEntity.getId() == null) {
+                credEntity.setId(KeycloakModelUtils.generateId());
+                update = true;
+            }
+            if (credEntity.getType().equals(type) && name.equals(credEntity.getDevice())) {
+                credModel = toModel(credEntity);
+                break;
+            }
+        }
+        if (update) getMongoStore().updateEntity(mongoUser, invocationContext);
+        return credModel;
+    }
 }

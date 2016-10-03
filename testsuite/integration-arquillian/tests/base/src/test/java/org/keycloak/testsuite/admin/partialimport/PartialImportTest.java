@@ -16,16 +16,6 @@
  */
 package org.keycloak.testsuite.admin.partialimport;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import javax.ws.rs.core.Response;
-
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -42,23 +32,30 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.PartialImportRepresentation;
+import org.keycloak.representations.idm.PartialImportRepresentation.Policy;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.representations.idm.RolesRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractAuthTest;
+import org.keycloak.testsuite.Assert;
+import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.util.AssertAdminEvents;
+import org.keycloak.testsuite.util.RealmBuilder;
+
+import javax.ws.rs.core.Response;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-
-import org.keycloak.representations.idm.PartialImportRepresentation.Policy;
-import org.keycloak.representations.idm.RoleRepresentation;
-import org.keycloak.representations.idm.RolesRepresentation;
-import org.keycloak.testsuite.Assert;
-import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.util.AdminEventPaths;
-import org.keycloak.testsuite.util.AssertAdminEvents;
-import org.keycloak.testsuite.util.RealmBuilder;
 
 /**
  * Tests for the partial import endpoint in admin client.  Also tests the

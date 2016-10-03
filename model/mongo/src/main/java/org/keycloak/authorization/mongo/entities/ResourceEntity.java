@@ -22,7 +22,7 @@ import org.keycloak.authorization.model.Scope;
 import org.keycloak.connections.mongo.api.MongoCollection;
 import org.keycloak.connections.mongo.api.MongoIdentifiableEntity;
 import org.keycloak.connections.mongo.api.context.MongoStoreInvocationContext;
-import org.keycloak.models.entities.AbstractIdentifiableEntity;
+import org.keycloak.models.mongo.keycloak.entities.AbstractIdentifiableEntity;
 
 import java.util.ArrayList;
 import java.util.HashSet;

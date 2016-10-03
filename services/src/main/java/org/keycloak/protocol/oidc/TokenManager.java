@@ -17,10 +17,11 @@
 
 package org.keycloak.protocol.oidc;
 
-import org.keycloak.cluster.ClusterProvider;
-import org.keycloak.common.ClientConnection;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
+import org.keycloak.cluster.ClusterProvider;
+import org.keycloak.common.ClientConnection;
+import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
@@ -59,7 +60,6 @@ import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.util.TokenUtil;
-import org.keycloak.common.util.Time;
 
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
@@ -81,7 +81,6 @@ import java.util.Set;
  */
 public class TokenManager {
     protected static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
-    private static final String JWT = "JWT";
 
     // Harcoded for now
     Algorithm jwsAlgorithm = Algorithm.RS256;
@@ -621,7 +620,7 @@ public class TokenManager {
 
     public String encodeToken(RealmModel realm, Object token) {
         String encodedToken = new JWSBuilder()
-                .type(JWT)
+                .type(OAuth2Constants.JWT)
                 .kid(realm.getKeyId())
                 .jsonContent(token)
                 .sign(jwsAlgorithm, realm.getPrivateKey());
@@ -747,7 +746,7 @@ public class TokenManager {
 
             AccessTokenResponse res = new AccessTokenResponse();
             if (accessToken != null) {
-                String encodedToken = new JWSBuilder().type(JWT).kid(realm.getKeyId()).jsonContent(accessToken).sign(jwsAlgorithm, realm.getPrivateKey());
+                String encodedToken = new JWSBuilder().type(OAuth2Constants.JWT).kid(realm.getKeyId()).jsonContent(accessToken).sign(jwsAlgorithm, realm.getPrivateKey());
                 res.setToken(encodedToken);
                 res.setTokenType("bearer");
                 res.setSessionState(accessToken.getSessionState());
@@ -765,11 +764,11 @@ public class TokenManager {
             }
 
             if (idToken != null) {
-                String encodedToken = new JWSBuilder().type(JWT).kid(realm.getKeyId()).jsonContent(idToken).sign(jwsAlgorithm, realm.getPrivateKey());
+                String encodedToken = new JWSBuilder().type(OAuth2Constants.JWT).kid(realm.getKeyId()).jsonContent(idToken).sign(jwsAlgorithm, realm.getPrivateKey());
                 res.setIdToken(encodedToken);
             }
             if (refreshToken != null) {
-                String encodedToken = new JWSBuilder().type(JWT).kid(realm.getKeyId()).jsonContent(refreshToken).sign(jwsAlgorithm, realm.getPrivateKey());
+                String encodedToken = new JWSBuilder().type(OAuth2Constants.JWT).kid(realm.getKeyId()).jsonContent(refreshToken).sign(jwsAlgorithm, realm.getPrivateKey());
                 res.setRefreshToken(encodedToken);
                 if (refreshToken.getExpiration() != 0) {
                     res.setRefreshExpiresIn(refreshToken.getExpiration() - Time.currentTime());

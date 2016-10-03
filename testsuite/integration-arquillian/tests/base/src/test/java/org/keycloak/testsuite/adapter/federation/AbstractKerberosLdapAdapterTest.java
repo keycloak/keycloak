@@ -17,11 +17,6 @@
 
 package org.keycloak.testsuite.adapter.federation;
 
-import java.util.Arrays;
-import java.util.Map;
-
-import javax.ws.rs.core.Response;
-
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -35,6 +30,10 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserFederationProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.admin.ApiUtil;
+
+import javax.ws.rs.core.Response;
+import java.util.Arrays;
+import java.util.Map;
 
 /**
  * Test of LDAPFederationProvider (Kerberos backed by LDAP)

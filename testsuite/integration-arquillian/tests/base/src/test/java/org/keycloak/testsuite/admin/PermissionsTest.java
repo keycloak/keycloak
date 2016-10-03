@@ -17,7 +17,6 @@
 
 package org.keycloak.testsuite.admin;
 
-import org.apache.bcel.generic.RETURN;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataOutput;
 import org.junit.Rule;
 import org.junit.Test;
@@ -73,7 +72,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.fail;
 import static org.keycloak.services.resources.admin.RealmAuth.Resource.AUTHORIZATION;
 import static org.keycloak.services.resources.admin.RealmAuth.Resource.CLIENT;
 
@@ -1440,7 +1441,8 @@ public class PermissionsTest extends AbstractKeycloakTest {
         }, Resource.IDENTITY_PROVIDER, false);
         invoke(new InvocationWithResponse() {
             public void invoke(RealmResource realm, AtomicReference<Response> response) {
-                response.set(realm.identityProviders().create(IdentityProviderBuilder.create().providerId("nosuch").alias("foo").build()));
+                response.set(realm.identityProviders().create(IdentityProviderBuilder.create().providerId("nosuch")
+                        .displayName("nosuch-foo").alias("foo").build()));
             }
         }, Resource.IDENTITY_PROVIDER, true);
 

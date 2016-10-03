@@ -21,7 +21,7 @@ package org.keycloak.authorization.mongo.entities;
 import org.keycloak.connections.mongo.api.MongoCollection;
 import org.keycloak.connections.mongo.api.MongoIdentifiableEntity;
 import org.keycloak.connections.mongo.api.context.MongoStoreInvocationContext;
-import org.keycloak.models.entities.AbstractIdentifiableEntity;
+import org.keycloak.models.mongo.keycloak.entities.AbstractIdentifiableEntity;
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.Logic;
 

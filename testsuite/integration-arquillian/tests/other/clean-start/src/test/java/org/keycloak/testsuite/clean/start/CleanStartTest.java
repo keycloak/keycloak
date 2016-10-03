@@ -19,9 +19,10 @@ package org.keycloak.testsuite.clean.start;
 
 import org.jboss.arquillian.container.test.api.RunAsClient;
 import org.jboss.arquillian.junit.Arquillian;
-import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author <a href="mailto:vramik@redhat.com">Vlastislav Ramik</a>

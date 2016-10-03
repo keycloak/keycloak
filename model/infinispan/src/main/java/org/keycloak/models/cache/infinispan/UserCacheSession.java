@@ -18,6 +18,7 @@
 package org.keycloak.models.cache.infinispan;
 
 import org.jboss.logging.Logger;
+import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.ClientModel;
@@ -42,8 +43,14 @@ import org.keycloak.models.cache.infinispan.entities.CachedUser;
 import org.keycloak.models.cache.infinispan.entities.CachedUserConsent;
 import org.keycloak.models.cache.infinispan.entities.CachedUserConsents;
 import org.keycloak.models.cache.infinispan.entities.UserListQuery;
+import org.keycloak.storage.UserStorageProvider;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -73,6 +80,8 @@ public class UserCacheSession implements UserCache {
     @Override
     public void clear() {
         cache.clear();
+        ClusterProvider cluster = session.getProvider(ClusterProvider.class);
+        cluster.notify(InfinispanUserCacheProviderFactory.USER_CLEAR_CACHE_EVENTS, new ClearCacheEvent());
     }
 
     public UserProvider getDelegate() {
@@ -647,10 +656,12 @@ public class UserCacheSession implements UserCache {
 
     @Override
     public void preRemove(RealmModel realm, RoleModel role) {
+        realmInvalidations.add(realm.getId()); // easier to just invalidate whole realm
         getDelegate().preRemove(realm, role);
     }
     @Override
     public void preRemove(RealmModel realm, GroupModel group) {
+        realmInvalidations.add(realm.getId()); // easier to just invalidate whole realm
         getDelegate().preRemove(realm, group);
     }
 
@@ -674,6 +685,8 @@ public class UserCacheSession implements UserCache {
 
     @Override
     public void preRemove(RealmModel realm, ComponentModel component) {
+        if (!component.getProviderType().equals(UserStorageProvider.class.getName())) return;
+        realmInvalidations.add(realm.getId()); // easier to just invalidate whole realm
         getDelegate().preRemove(realm, component);
 
     }

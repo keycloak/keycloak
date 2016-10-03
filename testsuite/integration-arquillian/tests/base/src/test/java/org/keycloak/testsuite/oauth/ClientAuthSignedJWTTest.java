@@ -24,7 +24,6 @@ import org.apache.http.NameValuePair;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.ContentType;
 import org.apache.http.entity.mime.MultipartEntityBuilder;
 import org.apache.http.entity.mime.content.FileBody;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -32,7 +31,6 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
@@ -40,9 +38,14 @@ import org.keycloak.adapters.AdapterUtils;
 import org.keycloak.adapters.authentication.JWTClientCredentialsProvider;
 import org.keycloak.admin.client.resource.ClientAttributeCertificateResource;
 import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
 import org.keycloak.common.constants.ServiceAccountConstants;
-import org.keycloak.common.util.*;
+import org.keycloak.common.util.BouncyIntegration;
+import org.keycloak.common.util.KeycloakUriBuilder;
+import org.keycloak.common.util.KeystoreUtil;
+import org.keycloak.common.util.Time;
+import org.keycloak.common.util.UriUtils;
 import org.keycloak.constants.ServiceUrlConstants;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -67,14 +70,23 @@ import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.nio.file.Files;
+import java.security.KeyPair;
 import java.security.KeyStore;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.X509Certificate;
-import java.util.*;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
@@ -308,18 +320,21 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
         keyStoreIs.close();
 
         client = getClient(testRealm.getRealm(), client.getId()).toRepresentation();
+        X509Certificate x509Cert = (X509Certificate) keyStore.getCertificate(keyAlias);
 
         assertCertificate(client, certOld,
-                KeycloakModelUtils.getPemFromCertificate((X509Certificate) keyStore.getCertificate(keyAlias)));
+                KeycloakModelUtils.getPemFromCertificate(x509Cert));
 
 
         // Try to login with the new keys
 
         oauth.clientId(client.getClientId());
         PrivateKey privateKey = (PrivateKey) keyStore.getKey(keyAlias, keyPassword.toCharArray());
+        KeyPair keyPair = new KeyPair(x509Cert.getPublicKey(), privateKey);
+
         OAuthClient.AccessTokenResponse response = doGrantAccessTokenRequest(user.getUsername(),
                                                       user.getCredentials().get(0).getValue(),
-                                                        getClientSignedJWT(privateKey, client.getClientId()));
+                                                        getClientSignedJWT(keyPair, client.getClientId()));
 
         assertEquals(200, response.getStatusCode());
 
@@ -469,7 +484,7 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
 
     @Test
     public void testAssertionMissingIssuer() throws Exception {
-        String invalidJwt = getClientSignedJWT(getClient1PrivateKey(), null);
+        String invalidJwt = getClientSignedJWT(getClient1KeyPair(), null);
 
         List<NameValuePair> parameters = new LinkedList<NameValuePair>();
         parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.CLIENT_CREDENTIALS));
@@ -484,7 +499,7 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
 
     @Test
     public void testAssertionUnknownClient() throws Exception {
-        String invalidJwt = getClientSignedJWT(getClient1PrivateKey(), "unknown-client");
+        String invalidJwt = getClientSignedJWT(getClient1KeyPair(), "unknown-client");
 
         List<NameValuePair> parameters = new LinkedList<NameValuePair>();
         parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.CLIENT_CREDENTIALS));
@@ -549,7 +564,7 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
     @Test
     public void testAssertionInvalidSignature() throws Exception {
         // JWT for client1, but signed by privateKey of client2
-        String invalidJwt = getClientSignedJWT(getClient2PrivateKey(), "client1");
+        String invalidJwt = getClientSignedJWT(getClient2KeyPair(), "client1");
 
         List<NameValuePair> parameters = new LinkedList<NameValuePair>();
         parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.CLIENT_CREDENTIALS));
@@ -559,7 +574,7 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
         HttpResponse resp = sendRequest(oauth.getServiceAccountUrl(), parameters);
         OAuthClient.AccessTokenResponse response = new OAuthClient.AccessTokenResponse(resp);
 
-        assertError(response, "client1", "unauthorized_client", Errors.INVALID_CLIENT_CREDENTIALS);
+        assertError(response, "client1", "unauthorized_client", AuthenticationFlowError.CLIENT_CREDENTIALS_SETUP_REQUIRED.toString().toLowerCase());
     }
 
 
@@ -659,7 +674,7 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
 
     private OAuthClient.AccessTokenResponse testMissingClaim(int tokenTimeOffset, String... claims) throws Exception {
         CustomJWTClientCredentialsProvider jwtProvider = new CustomJWTClientCredentialsProvider();
-        jwtProvider.setPrivateKey(getClient1PrivateKey());
+        jwtProvider.setupKeyPair(getClient1KeyPair());
         jwtProvider.setTokenTimeout(10);
 
         for (String claim : claims) {
@@ -778,26 +793,26 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
     }
 
     private String getClient1SignedJWT() {
-        return getClientSignedJWT(getClient1PrivateKey(), "client1");
+        return getClientSignedJWT(getClient1KeyPair(), "client1");
     }
 
     private String getClient2SignedJWT() {
-        return getClientSignedJWT(getClient2PrivateKey(), "client2");
+        return getClientSignedJWT(getClient2KeyPair(), "client2");
     }
 
-    private PrivateKey getClient1PrivateKey() {
-        return KeystoreUtil.loadPrivateKeyFromKeystore("classpath:client-auth-test/keystore-client1.jks",
+    private KeyPair getClient1KeyPair() {
+        return KeystoreUtil.loadKeyPairFromKeystore("classpath:client-auth-test/keystore-client1.jks",
                 "storepass", "keypass", "clientkey", KeystoreUtil.KeystoreFormat.JKS);
     }
 
-    private PrivateKey getClient2PrivateKey() {
-        return KeystoreUtil.loadPrivateKeyFromKeystore("classpath:client-auth-test/keystore-client2.jks",
+    private KeyPair getClient2KeyPair() {
+        return KeystoreUtil.loadKeyPairFromKeystore("classpath:client-auth-test/keystore-client2.jks",
                 "storepass", "keypass", "clientkey", KeystoreUtil.KeystoreFormat.JKS);
     }
 
-    private String getClientSignedJWT(PrivateKey privateKey, String clientId) {
+    private String getClientSignedJWT(KeyPair keyPair, String clientId) {
         JWTClientCredentialsProvider jwtProvider = new JWTClientCredentialsProvider();
-        jwtProvider.setPrivateKey(privateKey);
+        jwtProvider.setupKeyPair(keyPair);
         jwtProvider.setTokenTimeout(10);
         return jwtProvider.createSignedRequestToken(clientId, getRealmInfoUrl());
     }

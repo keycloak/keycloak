@@ -17,17 +17,17 @@
 
 package org.keycloak.testsuite.federation.ldap;
 
+import org.jboss.logging.Logger;
+import org.keycloak.common.constants.KerberosConstants;
+import org.keycloak.models.LDAPConstants;
+import org.keycloak.models.UserFederationProvider;
+
 import java.io.File;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
-
-import org.jboss.logging.Logger;
-import org.keycloak.common.constants.KerberosConstants;
-import org.keycloak.models.LDAPConstants;
-import org.keycloak.models.UserFederationProvider;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

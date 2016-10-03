@@ -22,13 +22,14 @@
 package org.keycloak.testsuite.console.clients;
 
 import org.jboss.arquillian.graphene.page.Page;
-import static org.junit.Assert.*;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.representations.idm.ClientRepresentation;
-import static org.keycloak.testsuite.auth.page.login.Login.OIDC;
 import org.keycloak.testsuite.console.page.clients.credentials.ClientCredentials;
 import org.keycloak.testsuite.console.page.clients.credentials.ClientCredentialsGeneratePrivateKeys;
+
+import static org.junit.Assert.*;
+import static org.keycloak.testsuite.auth.page.login.Login.OIDC;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlEquals;
 
 /**

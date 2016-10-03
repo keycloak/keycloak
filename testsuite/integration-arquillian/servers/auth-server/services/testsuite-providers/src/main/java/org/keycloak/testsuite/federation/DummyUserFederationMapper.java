@@ -17,10 +17,6 @@
 
 package org.keycloak.testsuite.federation;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-
 import org.keycloak.Config;
 import org.keycloak.mappers.FederationConfigValidationException;
 import org.keycloak.mappers.UserFederationMapper;
@@ -36,6 +32,10 @@ import org.keycloak.models.UserFederationSyncResult;
 import org.keycloak.models.UserModel;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.idm.UserFederationMapperSyncConfigRepresentation;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

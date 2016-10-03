@@ -17,13 +17,15 @@
 
 package org.keycloak.models.sessions.infinispan;
 
-import java.io.Serializable;
-
 import org.infinispan.Cache;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
-import org.keycloak.models.*;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.KeycloakSessionTask;
+import org.keycloak.models.UserSessionProvider;
+import org.keycloak.models.UserSessionProviderFactory;
 import org.keycloak.models.sessions.infinispan.entities.LoginFailureEntity;
 import org.keycloak.models.sessions.infinispan.entities.LoginFailureKey;
 import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
@@ -33,6 +35,8 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.PostMigrationEvent;
 import org.keycloak.provider.ProviderEvent;
 import org.keycloak.provider.ProviderEventListener;
+
+import java.io.Serializable;
 
 public class InfinispanUserSessionProviderFactory implements UserSessionProviderFactory {
 

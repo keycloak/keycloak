@@ -1,9 +1,9 @@
 <%@ page language="java" contentType="text/html; charset=ISO-8859-1"
          pageEncoding="ISO-8859-1" %>
-<%@ page import="org.keycloak.example.ProductServiceAccountServlet" %>
-<%@ page import="org.keycloak.representations.AccessToken" %>
 <%@ page import="org.keycloak.common.constants.ServiceAccountConstants" %>
 <%@ page import="org.keycloak.common.util.Time" %>
+<%@ page import="org.keycloak.example.ProductServiceAccountServlet" %>
+<%@ page import="org.keycloak.representations.AccessToken" %>
 <html>
 <head>
     <title>Service account portal</title>

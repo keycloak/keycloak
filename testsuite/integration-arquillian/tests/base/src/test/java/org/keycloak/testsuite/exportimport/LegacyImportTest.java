@@ -17,12 +17,6 @@
 
 package org.keycloak.testsuite.exportimport;
 
-import java.io.File;
-import java.net.URL;
-import java.util.Collection;
-import java.util.List;
-import java.util.Set;
-
 import org.jboss.arquillian.container.spi.client.container.LifecycleException;
 import org.junit.After;
 import org.junit.Assert;
@@ -39,6 +33,12 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
+
+import java.io.File;
+import java.net.URL;
+import java.util.Collection;
+import java.util.List;
+import java.util.Set;
 
 /**
  * Test importing JSON files exported from previous adminClient versions

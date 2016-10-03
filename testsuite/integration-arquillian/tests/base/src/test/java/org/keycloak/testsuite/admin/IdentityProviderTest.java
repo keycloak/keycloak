@@ -39,7 +39,6 @@ import org.keycloak.testsuite.util.AdminEventPaths;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.URI;
@@ -55,7 +54,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -177,6 +179,7 @@ public class IdentityProviderTest extends AbstractAdminTest {
         IdentityProviderRepresentation idp = new IdentityProviderRepresentation();
 
         idp.setAlias(id);
+        idp.setDisplayName(id);
         idp.setProviderId(providerId);
         idp.setEnabled(true);
         if (config != null) {

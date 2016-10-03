@@ -17,11 +17,11 @@
 
 package org.keycloak.examples.providers.events;
 
-import org.keycloak.events.admin.AdminEvent;
-import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventListenerProvider;
 import org.keycloak.events.EventType;
+import org.keycloak.events.admin.AdminEvent;
+import org.keycloak.events.admin.OperationType;
 
 import java.util.Map;
 import java.util.Set;

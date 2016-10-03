@@ -17,7 +17,6 @@
 
 package org.keycloak.models.jpa;
 
-import org.keycloak.connections.jpa.util.JpaUtils;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientTemplateModel;
 import org.keycloak.models.KeycloakSession;

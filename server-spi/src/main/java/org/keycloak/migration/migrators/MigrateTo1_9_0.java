@@ -19,16 +19,8 @@ package org.keycloak.migration.migrators;
 
 import org.keycloak.Config;
 import org.keycloak.migration.ModelVersion;
-import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserFederationMapperModel;
-import org.keycloak.models.UserFederationProviderModel;
-import org.keycloak.models.utils.KeycloakModelUtils;
-
-import java.util.List;
-import java.util.Map;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

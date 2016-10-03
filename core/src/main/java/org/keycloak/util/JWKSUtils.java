@@ -17,13 +17,13 @@
 
 package org.keycloak.util;
 
-import java.security.PublicKey;
-import java.util.HashMap;
-import java.util.Map;
-
 import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKParser;
+
+import java.security.PublicKey;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -41,5 +41,16 @@ public class JWKSUtils {
         }
 
         return result;
+    }
+
+    public static JWK getKeyForUse(JSONWebKeySet keySet, JWK.Use requestedUse) {
+        for (JWK jwk : keySet.getKeys()) {
+            JWKParser parser = JWKParser.create(jwk);
+            if (parser.getJwk().getPublicKeyUse().equals(requestedUse.asString()) && parser.isKeyTypeSupported(jwk.getKeyType())) {
+                return jwk;
+            }
+        }
+
+        return null;
     }
 }

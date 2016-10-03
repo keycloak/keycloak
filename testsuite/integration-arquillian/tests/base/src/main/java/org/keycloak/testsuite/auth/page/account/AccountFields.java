@@ -19,11 +19,11 @@ package org.keycloak.testsuite.auth.page.account;
 
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.page.Form;
-import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
-import static org.keycloak.testsuite.util.WaitUtils.waitUntilElementIsNotPresent;
-
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
+
+import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
+import static org.keycloak.testsuite.util.WaitUtils.waitUntilElementIsNotPresent;
 
 /**
  *

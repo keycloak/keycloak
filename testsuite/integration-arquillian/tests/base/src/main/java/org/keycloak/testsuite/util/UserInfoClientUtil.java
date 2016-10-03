@@ -17,18 +17,17 @@
 
 package org.keycloak.testsuite.util;
 
-import java.net.URI;
+import org.junit.Assert;
+import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
+import org.keycloak.representations.UserInfo;
+import org.keycloak.utils.MediaType;
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
-
-import org.junit.Assert;
-import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
-import org.keycloak.representations.UserInfo;
-import org.keycloak.utils.MediaType;
+import java.net.URI;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

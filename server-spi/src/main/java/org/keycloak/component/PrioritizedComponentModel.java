@@ -16,9 +16,6 @@
  */
 package org.keycloak.component;
 
-import org.keycloak.component.ComponentModel;
-import org.keycloak.storage.UserStorageProviderModel;
-
 import java.util.Comparator;
 
 /**

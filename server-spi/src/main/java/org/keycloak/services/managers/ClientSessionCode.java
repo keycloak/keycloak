@@ -17,6 +17,8 @@
 
 package org.keycloak.services.managers;
 
+import org.keycloak.common.util.Base64Url;
+import org.keycloak.common.util.Time;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.ClientTemplateModel;
@@ -24,14 +26,11 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.common.util.Base64Url;
-import org.keycloak.common.util.Time;
 
 import javax.crypto.Mac;
 import java.security.Key;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.UUID;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

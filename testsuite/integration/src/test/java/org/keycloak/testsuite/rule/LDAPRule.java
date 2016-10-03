@@ -17,12 +17,12 @@
 
 package org.keycloak.testsuite.rule;
 
-import java.util.Map;
-import java.util.Properties;
-
 import org.junit.rules.ExternalResource;
 import org.keycloak.testsuite.federation.ldap.LDAPTestConfiguration;
 import org.keycloak.util.ldap.LDAPEmbeddedServer;
+
+import java.util.Map;
+import java.util.Properties;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

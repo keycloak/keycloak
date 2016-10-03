@@ -23,7 +23,8 @@ import org.keycloak.constants.AdapterConstants;
 import org.springframework.http.HttpMethod;
 import org.springframework.mock.web.MockHttpServletRequest;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Keycloak CSRF request matcher tests.

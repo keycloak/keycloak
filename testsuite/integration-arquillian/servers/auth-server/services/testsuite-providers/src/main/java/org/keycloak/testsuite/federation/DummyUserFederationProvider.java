@@ -27,7 +27,6 @@ import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserFederationProvider;
 import org.keycloak.models.UserModel;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
