@@ -781,7 +781,8 @@ Authentication with signed JWT::
   The client/adapter generates the https://tools.ietf.org/html/rfc7519[JWT] and signs it with his private key.
   The Keycloak then verifies the signed JWT with the client's public key and authenticates client based on it.             
 
-See the demo example and especially the `examples/preconfigured-demo/service-account`                for the example application showing service accounts authentication with both clientId+clientSecret and with signed JWT. 
+See the demo example and especially the `examples/preconfigured-demo/product-app` for the example application showing
+the application using client authentication with signed JWT.
 
 ==== Implement your own client authenticator
 
