@@ -1,0 +1,74 @@
+[[_client_authentication_adapter]]
+==== Client Authentication
+
+When confidential OIDC client needs to send backchannel request (eg. exchange code for the token, or refresh token) it needs to authenticate
+against {{book.project.name}} server. By default, there are 2 possibilities how to authenticate client:
+
+===== Client ID and Client Secret
+
+This is traditional method described in OAuth2 specification. Client has a secret, which needs to be known to both adapter (application) and  {{book.project.name}} server.
+You can simply generate the secret for particular client in {{book.project.name}} admin console and then paste this secret in the `keycloak.json` file on the application's side:
+
+
+[source]
+----
+"credentials": {
+    "secret": "19666a4f-32dd-4049-b082-684c74115f28"
+}
+----
+
+===== Client authentication with signed JWT
+
+This is based on the https://tools.ietf.org/html/rfc7523[RFC7523] specification. It works this way:
+
+* Client must have the private key and certificate. In case of  {{book.project.name}} this is available through the traditional `keystore` file, which is either available
+on client application's classpath or somewhere on the filesystem.
+
+* Once the client application is started, it allows to download it's public key in https://self-issued.info/docs/draft-ietf-jose-json-web-key.html[JWKS] format on URL
+like http://myhost.com/myapp/k_jwks assuming that http://myhost.com/myapp is the base URL of your client application. This URL can be used by the {{book.project.name}} (see below).
+
+* During authentication, client generates JWT token and signs it with his private key and sends it to the {{book.project.name}} in
+the particular backchannel request (eg. code-to-token request) in the `client_assertion` parameter.
+
+* {{book.project.name}} must have public key or certificate of the client, so that it can verify the signature on JWT. In {{book.project.name}} you either
+need to configure client credentials for your client. First you need to choose `Signed JWT` as the method of authenticating your client in the tab `Credentials` in admin console.
+Then you can choose either to:
+** Configure the JWKS URL where {{book.project.name}} can download the client's public keys. This can be URL like http://myhost.com/myapp/k_jwks (see details above). This is flexible as
+client can rotate it's keys anytime and {{book.project.name}} will then always download new keys when needed without need to change something in it's configuration. More acurately,  {{book.project.name}}
+will download new keys when it sees the token signed by unknown `kid` (Key ID).
+** Upload the client's public key or certificate - either in PEM format, in JWK format or from keystore. With this option, public key is hardcoded and
+needs to be changed anytime when client generates new keypair.
+You can even generate your own keystore from {{book.project.name}} admin console if you don't have your own ready.
+See {{book.adminguide.link}}[{{book.adminguide.name}}] for more details of setup in {{book.project.name}} admin console.
+
+For setup on adapter's side you need to have something like this in your `keycloak.json` file:
+
+[source]
+----
+"credentials": {
+  "jwt": {
+    "client-keystore-file": "classpath:keystore-client.jks",
+    "client-keystore-type": "JKS",
+    "client-keystore-password": "storepass",
+    "client-key-password": "keypass",
+    "client-key-alias": "clientkey",
+    "token-expiration": 10
+  }
+}
+----
+
+With this configuration, the keystore file `keystore-client.jks` must be available on classpath in your WAR. If you don't use prefix `classpath:`
+you can point to any file on the filesystem where client application is running.
+
+{% if book.community %}
+For inspiration, you can take a look at the examples distribution into the main demo example into the `product-portal` application.
+
+
+===== Add your own client authentication method
+
+This is possible. You will need to implement both client's side and server's side providers. See `Authentication SPI` section
+in {{book.developerguide.link}}[{{book.developerguide.name}}] for more details.
+
+{% endif %}
+
+

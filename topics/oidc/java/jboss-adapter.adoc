@@ -260,7 +260,6 @@ This metadata is instead defined within server configuration (i.e. `standalone.x
   <subsystem xmlns="urn:jboss:domain:keycloak:1.1">
      <secure-deployment name="WAR MODULE NAME.war">
         <realm>demo</realm>
-        <realm-public-key>MIGfMA0GCSqGSIb3DQEBAQUAA</realm-public-key>
         <auth-server-url>http://localhost:8081/auth</auth-server-url>
         <ssl-required>external</ssl-required>
         <resource>customer-portal</resource>
@@ -284,7 +283,6 @@ If you have multiple deployments secured by the same realm you can share the rea
 ----
 <subsystem xmlns="urn:jboss:domain:keycloak:1.1">
     <realm name="demo">
-        <realm-public-key>MIGfMA0GCSqGSIb3DQEBA...</realm-public-key>
         <auth-server-url>http://localhost:8080/auth</auth-server-url>
         <ssl-required>external</ssl-required>
     </realm>

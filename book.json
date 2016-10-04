@@ -18,9 +18,17 @@
     "community": true,
     "product": false,
     "images": "keycloak-images",
+    "developerguide": {
+      "name": "Server Developer Guide",
+      "link": "https://keycloak.gitbooks.io/server-developer-guide/content/"
+    },
     "adminguide": {
       "name": "Server Administration Guide",
       "link": "https://keycloak.gitbooks.io/server-adminstration-guide/content/"
+    },
+    "installguide": {
+      "name": "Server Installation and Configuration Guide",
+      "link": "https://keycloak.gitbooks.io/server-installation-and-configuration/content/"
     }
   }
 }

@@ -92,7 +92,6 @@ You'll just have to figure out how the json settings match to the `org.keycloak.
                             </Entry>
                         </Map>
                     </Set>
-                    <Set name="realmKey">MIGfMA0GCSqGSIb3DQEBAQUAA4</Set>
                 </New>
             </Set>
         </New>

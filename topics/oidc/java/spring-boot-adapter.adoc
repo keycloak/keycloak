@@ -41,7 +41,6 @@ For example:
 
 
 keycloak.realm = demorealm
-keycloak.realmKey = MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCLCWYuxXmsmfV+Xc9Ik8QET8lD4wuHrJAXbbutS2O/eMjQQLNK7QDX/k/XhOkhxP0YBEypqeXeGaeQJjCxDhFjJXQuewUEMlmSja3IpoJ9/hFn4Cns4m7NGO+rtvnfnwgVfsEOS5EmZhRddp+40KBPPJfTH6Vgu6KjQwuFPj6DTwIDAQAB
 keycloak.auth-server-url = http://127.0.0.1:8080/auth
 keycloak.ssl-required = external
 keycloak.resource = demoapp

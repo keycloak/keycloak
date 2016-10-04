@@ -20,7 +20,6 @@ The roles, security constraint mappings and {{book.project.name}} adapter config
     <bean id="kcAdapterConfig" class="org.keycloak.representations.adapters.config.AdapterConfig">
         <property name="realm" value="demo"/>
         <property name="resource" value="admin-camel-endpoint"/>
-        <property name="realmKey" value="MIGfMA0G..."/>
         <property name="bearerOnly" value="true"/>
         <property name="authServerUrl" value="http://localhost:8080/auth" />
         <property name="sslRequired" value="EXTERNAL"/>

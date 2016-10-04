@@ -26,7 +26,6 @@ injected `KeycloakJettyAuthenticator` inside. The configuration may look like th
     <bean id="kcAdapterConfig" class="org.keycloak.representations.adapters.config.AdapterConfig">
         <property name="realm" value="demo"/>
         <property name="resource" value="custom-cxf-endpoint"/>
-        <property name="realmKey" value="MIGfMA0..."/>
         <property name="bearerOnly" value="true"/>
         <property name="authServerUrl" value="http://localhost:8080/auth" />
         <property name="sslRequired" value="EXTERNAL"/>
