@@ -24,11 +24,9 @@
       ... link:topics/oidc/java/jetty8-adapter.adoc[Jetty 8.1.x Adapter]
       ... link:topics/oidc/java/spring-boot-adapter.adoc[Spring Boot Adapter]
       ... link:topics/oidc/java/spring-security-adapter.adoc[Spring Security Adapter]
-      {% endif %}
-      {% if book.community %}
+      {% endif %}   
       ... link:topics/oidc/java/servlet-filter-adapter.adoc[Java Servlet Filter Adapter]
       ... link:topics/oidc/java/jaas.adoc[JAAS plugin]
-      {% endif %}
       ... link:topics/oidc/java/adapter-context.adoc[Security Context]
       ... link:topics/oidc/java/adapter_error_handling.adoc[Error Handling]
       ... link:topics/oidc/java/logout.adoc[Logout]
