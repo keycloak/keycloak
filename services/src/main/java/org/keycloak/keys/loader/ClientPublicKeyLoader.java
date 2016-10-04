@@ -36,6 +36,7 @@ import org.keycloak.protocol.oidc.utils.JWKSHttpUtils;
 import org.keycloak.representations.idm.CertificateRepresentation;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.util.CertificateInfoHelper;
+import org.keycloak.services.util.ResolveRelative;
 import org.keycloak.util.JWKSUtils;
 
 /**
@@ -59,6 +60,7 @@ public class ClientPublicKeyLoader implements PublicKeyLoader {
         OIDCAdvancedConfigWrapper config = OIDCAdvancedConfigWrapper.fromClientModel(client);
         if (config.isUseJwksUrl()) {
             String jwksUrl = config.getJwksUrl();
+            jwksUrl = ResolveRelative.resolveRelativeUri(session.getContext().getUri().getRequestUri(), client.getRootUrl(), jwksUrl);
             JSONWebKeySet jwks = JWKSHttpUtils.sendJwksRequest(session, jwksUrl);
             return JWKSUtils.getKeysForUse(jwks, JWK.Use.SIG);
         } else {
