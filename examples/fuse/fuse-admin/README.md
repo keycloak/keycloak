@@ -15,7 +15,7 @@ SSH authentication with keycloak credentials on JBoss Fuse 6.2 or newer
 
 Keycloak mainly addresses usecases for authentication of web applications, however if your admin services (like fuse admin console) are protected
 with Keycloak, it may be good to protect non-web services like SSH with Keycloak credentials too. It's possible to do it by using JAAS login module, which
-allows to remotely connect to Keycloak and verify credentials based on [Direct grants](http://docs.jboss.org/keycloak/docs/1.1.0.Beta2/userguide/html/direct-access-grants.html).
+allows to remotely connect to Keycloak and verify credentials based on [Direct grants](https://keycloak.gitbooks.io/server-adminstration-guide/content/v/2.2/topics/sso-protocols/oidc.html).
   
 Example steps for enable SSH authentication:
 
@@ -36,7 +36,7 @@ This file contains configuration of the client application, which is used by JAA
 in [examples readme](../README.md), you can skip this step as `keycloak-jaas` is installed already. Otherwise use those commands (replace Keycloak version in this command with the current version):
 
 ```
-features:addurl mvn:org.keycloak/keycloak-osgi-features/1.2.0.Beta1/xml/features
+features:addurl mvn:org.keycloak/keycloak-osgi-features/2.2.1.Final/xml/features
 features:install keycloak-jaas
 ```
 
