@@ -12,14 +12,17 @@
   * <<fake/../../oidc/java/tomcat-adapter.adoc#_tomcat_adapter,Tomcat>>
   * <<fake/../../oidc/java/jetty9-adapter.adoc#_jetty9_adapter,Jetty 9>>, <<fake/../../oidc/java/jetty8-adapter.adoc#_jetty8_adapter,Jetty 8>>
 {% endif %}
-* <<fake/../../oidc/java/servlet-filter-adapter.adoc#_servlet_filter_adapter,Servlet Filter>>
+
 {% if book.community %}
+* <<fake/../../oidc/java/servlet-filter-adapter.adoc#_servlet_filter_adapter,Servlet Filter>>
   * <<fake/../../oidc/java/spring-security-adapter.adoc#_spring_security_adapter,Spring Security>> (community)
   * <<fake/../../oidc/java/spring-boot-adapter.adoc#_spring_boot_adapter,Spring Boot>> (community)
 {% endif %}
 
+{% if book.community %}
 ===== JavaScript (client-side)
 * <<fake/../../oidc/javascript-adapter.adoc#_javascript_adapter,JavaScript>>
+{% endif %}
 
 ===== Node.js (server-side)
 * <<fake/../../oidc/nodejs-adapter.adoc#_nodejs_adapter,Node.js>>
@@ -74,5 +77,3 @@
 ===== Apache HTTP Server
 
 * https://github.com/UNINETT/mod_auth_mellon[mod_auth_mellon]
-
-
