@@ -32,7 +32,8 @@ This is what one might look like:
    "client-keystore" : "path/to/client-keystore.jks",
    "client-keystore-password" : "geheim",
    "client-key-password" : "geheim",
-   "token-minimum-time-to-live" : 10
+   "token-minimum-time-to-live" : 10,
+   "min-time-between-jwks-requests" : 10
 }
 ----
 
@@ -54,7 +55,9 @@ resource::
 
 realm-public-key::
   PEM format of the realm public key. You can obtain this from the administration console.
-  This is _OPTIONAL_. If not set the adapter will download this from {{book.project.name}}.
+  This is _OPTIONAL_ and it's not recommended to set it. If not set, the adapter will download this from {{book.project.name}} and
+  it will always re-download it when needed (eg. {{book.project.name}} rotate it's keys). However if realm-public-key is set, then adapter
+  will never download new keys from {{book.project.name}}, so when {{book.project.name}} rotate it's keys, adapter will break.
 
 auth-server-url::
   The base URL of the {{book.project.name}} server. All other {{book.project.name}} pages and REST service endpoints are derived from this. It is usually of the form `$$https://host:port/auth$$`.
@@ -198,3 +201,10 @@ token-minimum-time-to-live::
   This is especially useful when the access token is sent to another REST client where it could expire before being evaluated.
   This value should never exceed the realm's access token lifespan.
   This is _OPTIONAL_.  The default value is `0` seconds, so adapter will refresh access token just if it's expired.
+
+min-time-between-jwks-requests::
+  Amount of time, in seconds, specifying minimum interval between two requests to {{book.project.name}} to retrieve new public keys.
+  It is 10 seconds by default.
+  Adapter will always try to download new public key when it recognize token with unknown `kid` . However it won't try it more
+  than once per 10 seconds (by default). This is to avoid DoS when attacker sends lots of tokens with bad `kid` forcing adapter
+  to send lots of requests to {{book.project.name}}.

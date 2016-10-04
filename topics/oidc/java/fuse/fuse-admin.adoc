@@ -27,7 +27,6 @@ sshRealm=keycloak
 {
     "realm": "demo",
     "resource": "ssh-jmx-admin-client",
-    "realm-public-key": "MIGfMA...",
     "ssl-required" : "external",
     "auth-server-url" : "http://localhost:8080/auth",
     "credentials": {
