@@ -3,15 +3,19 @@ How to secure Fuse admin services
 
 Fuse admin console authentication
 ---------------------------------
-Fuse admin console is Hawt.io. See [Hawt.io documentation](http://hawt.io/docs/index.html) for more info about how to secure it with keycloak.
+Fuse admin console is Hawt.io. See [Hawt.io documentation](http://hawt.io/docs/index.html) for more info about how to secure it with keycloak. The demo realm
+has users `root` , `john` and `mary`, which you can test in similar way like described in the [Hawt.io README](https://github.com/hawtio/hawtio/blob/master/sample-keycloak-integration/README.md) .
+
+WARN: Hawt.io version bundled in JBoss Fuse has Keycloak support from JBoss Fuse 6.3.1 . For JBoss Fuse 6.3.0 or older, if you want Keycloak integration, you need to uninstall the provided Hawt.io 
+version and replace it with the different one, which has Keycloak support. You can ideally use the Hawt.io community version 1.4.66 or newer.
 
 
-SSH authentication with keycloak credentials on JBoss Fuse 6.1
---------------------------------------------------------------
+SSH authentication with keycloak credentials on JBoss Fuse 6.2 or newer
+-----------------------------------------------------------------------
 
 Keycloak mainly addresses usecases for authentication of web applications, however if your admin services (like fuse admin console) are protected
 with Keycloak, it may be good to protect non-web services like SSH with Keycloak credentials too. It's possible to do it by using JAAS login module, which
-allows to remotely connect to Keycloak and verify credentials based on [Direct access grants](http://docs.jboss.org/keycloak/docs/1.1.0.Beta2/userguide/html/direct-access-grants.html).
+allows to remotely connect to Keycloak and verify credentials based on [Direct grants](http://docs.jboss.org/keycloak/docs/1.1.0.Beta2/userguide/html/direct-access-grants.html).
   
 Example steps for enable SSH authentication:
 
@@ -42,11 +46,17 @@ features:install keycloak-jaas
 ssh -o PubkeyAuthentication=no -p 8101 admin@localhost
 ```
 
+6) In JBoss Fuse 6.2 you may need to install `ssh` feature as it doesn't seem to be installed here by default.
+
+```
+features:install ssh
+```
+
 And login with password `password` . Note that other users from "demo" realm like bburke@redhat.com don't have SSH access as they don't have `admin` role.
  
 
-JMX authentication with keycloak credentials on JBoss Fuse 6.1
---------------------------------------------------------------
+JMX authentication with keycloak credentials on JBoss Fuse 6.2 or newer
+-----------------------------------------------------------------------
 
 This may be needed in case if you really want to use jconsole or other external tool to perform remote connection to JMX through RMI. Otherwise it may 
 be better to use just hawt.io/jolokia as jolokia agent is installed in hawt.io by default.
@@ -69,16 +79,7 @@ Note again that users without `admin` role are not able to login as they are not
 may be still able to access MBeans remotely via HTTP (Hawtio). So make sure to protect Hawt.io web console with same roles like JMX through RMI to 
 really protect JMX mbeans.
 
-
-SSH and JMX on JBoss Fuse 6.2 
------------------------------
-For SSH steps are very similar to above for 6.1. In JBoss Fuse 6.2 you may need to install `ssh` feature as it doesn't seem to be installed here by default.
-
-```
-features:install ssh
-```
-
-For JMX, the steps are similar like for Fuse 6.1, however there is more fine grained authorization for JMX access in Fuse 6.2.
+For JMX, there is fine grained authorization for JMX access in Fuse 6.2.
 
 Actually if you login as user `admin`, you have very limited privileges without possibility to do much JMX operations as this user has just `admin` role, which is not allowed to do much in JMX.
 
