@@ -638,11 +638,6 @@ public class UserCacheSession implements UserCache {
     }
 
     @Override
-    public CredentialValidationOutput validCredentials(KeycloakSession session, RealmModel realm, UserCredentialModel... input) {
-        return getDelegate().validCredentials(session, realm, input);
-    }
-
-    @Override
     public void grantToAllUsers(RealmModel realm, RoleModel role) {
         realmInvalidations.add(realm.getId()); // easier to just invalidate whole realm
         getDelegate().grantToAllUsers(realm, role);

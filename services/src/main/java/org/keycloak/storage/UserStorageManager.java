@@ -37,7 +37,7 @@ import org.keycloak.models.UserProvider;
 import org.keycloak.models.cache.CachedUserModel;
 import org.keycloak.models.cache.OnUserCache;
 import org.keycloak.storage.federated.UserFederatedStorageProvider;
-import org.keycloak.storage.user.UserCredentialAuthenticationProvider;
+import org.keycloak.credential.CredentialAuthentication;
 import org.keycloak.storage.user.UserLookupProvider;
 import org.keycloak.storage.user.UserQueryProvider;
 import org.keycloak.storage.user.UserRegistrationProvider;
@@ -526,37 +526,6 @@ public class UserStorageManager implements UserProvider, OnUserCache {
     public void preRemove(ProtocolMapperModel protocolMapper) {
         localStorage().preRemove(protocolMapper);
         if (getFederatedStorage() != null) getFederatedStorage().preRemove(protocolMapper);
-    }
-
-    @Override
-    public CredentialValidationOutput validCredentials(KeycloakSession session, RealmModel realm, UserCredentialModel... input) {
-        List<UserCredentialAuthenticationProvider> providers = getStorageProviders(session, realm, UserCredentialAuthenticationProvider.class);
-        if (providers.isEmpty()) return CredentialValidationOutput.failed();
-
-        CredentialValidationOutput result = null;
-        for (UserCredentialModel cred : input) {
-            UserCredentialAuthenticationProvider providerSupportingCreds = null;
-
-            // Find first provider, which supports required credential type
-            for (UserCredentialAuthenticationProvider provider : providers) {
-                if (provider.getSupportedCredentialAuthenticationTypes().contains(cred.getType())) {
-                    providerSupportingCreds = provider;
-                    break;
-                }
-            }
-
-            if (providerSupportingCreds == null) {
-                logger.warn("Don't have provider supporting credentials of type " + cred.getType());
-                return CredentialValidationOutput.failed();
-            }
-
-            logger.debug("Found provider [" + providerSupportingCreds + "] supporting credentials of type " + cred.getType());
-            CredentialValidationOutput currentResult = providerSupportingCreds.validCredential(session, realm, cred);
-            result = (result == null) ? currentResult : result.merge(currentResult);
-        }
-
-        // For now, validCredentials(realm, input) is not supported for local userProviders
-        return (result != null) ? result : CredentialValidationOutput.failed();
     }
 
     @Override

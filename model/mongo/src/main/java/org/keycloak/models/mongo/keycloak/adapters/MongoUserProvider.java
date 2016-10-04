@@ -518,12 +518,6 @@ public class MongoUserProvider implements UserProvider, UserCredentialStore {
     }
 
     @Override
-    public CredentialValidationOutput validCredentials(KeycloakSession session, RealmModel realm, UserCredentialModel... input) {
-        // Not supported yet
-        return null;
-    }
-
-    @Override
     public void addConsent(RealmModel realm, UserModel user, UserConsentModel consent) {
         String clientId = consent.getClient().getId();
         if (getConsentEntityByClientId(user, clientId) != null) {
