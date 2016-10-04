@@ -44,9 +44,8 @@ You also need to add realm config to the same file. Add a new child-element to `
 
     <profile>
         ....
-        <subsystem xmlns="urn:jboss:domain:keycloak:1.0">
+        <subsystem xmlns="urn:jboss:domain:keycloak:1.1">
             <realm name="demo">
-                <realm-public-key>REALM PUBLIC KEY</realm-public-key>
                 <auth-server-url>KEYCLOAK URL</auth-server-url>
                 <ssl-required>external</ssl-required>
             </realm>
@@ -55,7 +54,6 @@ You also need to add realm config to the same file. Add a new child-element to `
 
 In the above snippet replace the following:
 
-* `REALM PUBLIC KEY` - replace with the public key for the realm. You can find this in the admin console by selecting the realm, then clicking on `Keys`
 * `KEYCLOAK URL` - replace with the base url of Keycloak (for example http://localhost:8080/auth or http://keycloak.example.org/auth)
 
 Don't start the WildFly server until you've configured and deployed the demo applications.
@@ -70,7 +68,7 @@ Run the following to deploy it:
     # mvn install
     # cp target/database.war <WILDFLY HOME>/standalone/deployments
 
-Next add the configuration for it to the Keycloak subsystem. Edit `<WILDFLY HOME>/standalone/configuration/standalone.xml` to `<subsystem xmlns="urn:jboss:domain:keycloak:1.0">` add:
+Next add the configuration for it to the Keycloak subsystem. Edit `<WILDFLY HOME>/standalone/configuration/standalone.xml` to `<subsystem xmlns="urn:jboss:domain:keycloak:1.1">` add:
 
     <secure-deployment name="database.war">
         <realm>demo</realm>
@@ -88,12 +86,17 @@ Run the following to deploy it:
     # mvn install
     # cp target/customer-portal.war <WILDFLY HOME>/standalone/deployments
 
-Then open the Keycloak admin console to add a configuration for it. Navigate to the realm and click on `Applications` then `Add Application`. Fill in the form with:
+Then open the Keycloak admin console to add a configuration for it. Navigate to the realm and click on `Clients` then `Add Client`. Fill in the form with:
 
-* Name - `customer-portal`
-* Redirect URI - `http://localhost:8080/customer-portal/*` (click `Add` after filling in the field)
+* Client ID - `customer-portal`
 
-Then click on `Save`. As it's a confidential (non-public) application you need the secret for it. Click on `Credentials` and note the value of the `Secret` field.
+Then click on `Save`. You will see more possibilities to setup client now, so you can add the following:
+`Access Type` - `confidential`
+`Valid Redirect URIs` - `http://localhost:8080/customer-portal/*` (click `Add` after filling in the field)
+
+Then click on `Save` again so that client is updated.
+
+As it's a confidential (non-public) application you need the secret for it. Click on `Credentials` and note the value of the `Secret` field.
 
 Then edit `<WILDFLY HOME>/standalone/configuration/standalone.xml` and add the following to `<subsystem xmlns="urn:jboss:domain:keycloak:1.0">`:
 
@@ -117,21 +120,39 @@ Run the following to deploy it:
     # mvn install
     # cp target/product-portal.war <WILDFLY HOME>/standalone/deployments
 
-Then open the Keycloak admin console to add a configuration for it. Navigate to the realm and click on `Applications` then `Add Application`. Fill in the form with:
+Then open the Keycloak admin console to add a configuration for it. Navigate to the realm and click on `Clients` then `Add Client`. Fill in the form with:
 
-* Name - `product-portal`
-* Redirect URI - `http://localhost:8080/product-portal/*` (click `Add` after filling in the field)
+* Client ID - `product-portal`
 
-Then click on `Save`. As it's a confidential (non-public) application you need the secret for it. Click on `Credentials` and note the value of the `Secret` field.
+Then click on `Save`. You will see more possibilities to setup client now, so you can add the following:
+
+`Access Type` - `confidential`
+`Valid Redirect URIs` - `http://localhost:8080/product-portal/*` (click `Add` after filling in the field)
+
+Then click on `Save` again so that client is updated.
+
+It's a confidential (non-public) application, so we again need client credentials for it. But for product-portal, we will use authentication with signed JWT instead of traditional OAuth2 client secret.
+Click on `Credentials` and fill the following values:
+
+`Client Authenticator` - `Signed JWT`
+`Use JWKS URL` - `ON`
+`JWKS URL` - `/product-portal/k_jwks`
 
 Then edit `<WILDFLY HOME>/standalone/configuration/standalone.xml` and add the following to `<subsystem xmlns="urn:jboss:domain:keycloak:1.0">`:
 
     <secure-deployment name="product-portal.war">
         <realm>demo</realm>
         <resource>product-portal</resource>
-        <credential name="secret">APPLICATION SECRET</credential>
+        <credential name="jwt">
+          <client-keystore-file>classpath:keystore-client.jks</client-keystore-file>
+          <client-keystore-type>JKS</client-keystore-type>
+          <client-keystore-password>storepass</client-keystore-password>
+          <client-key-password>keypass</client-key-password>
+          <client-key-alias>clientkey</client-key-alias>
+          <token-expiration>10</token-expiration>
+        </credential>
     </secure-deployment>
 
-In the above snippet replace the following:
-
-* `APPLICATION SECRET` - replace with the applications secret you just noted from the Keycloak admin console
+With this configuration, the product-portal application will authenticate with JWT token signed by the private key from the file `keystore-client.jks`, which is available
+inside the application WAR. If you don't use `classpath:` prefix in the configuration, you can use any keystore file from filesystem. If you want to generate your own keystore file,
+you can either use `keytool` tool, but you can also generate the one inside Keycloak admin console and then save it locally.
