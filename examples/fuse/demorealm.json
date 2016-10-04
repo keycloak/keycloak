@@ -88,6 +88,57 @@
                 "account": [ "manage-account" ],
                 "realm-management": [ "realm-admin" ]
             }
+        },
+        {
+            "username" : "john",
+            "firstName" : "John",
+            "lastName" : "Anthony",
+            "email" : "john@hawt.io",
+            "enabled" : true,
+            "credentials" : [
+                {
+                    "type" : "password",
+                    "value" : "password"
+                }
+            ],
+            "realmRoles" : [ "viewer" ],
+            "applicationRoles":  {
+                "account" : [ "view-profile", "manage-account" ]
+            }
+        },
+        {
+            "username" : "mary",
+            "firstName" : "Mary",
+            "lastName" : "Kelly",
+            "email" : "mary@hawt.io",
+            "enabled" : true,
+            "credentials" : [
+                {
+                    "type" : "password",
+                    "value" : "password"
+                }
+            ],
+            "applicationRoles":  {
+                "account" : [ "view-profile", "manage-account" ]
+            }
+        },
+        {
+            "username" : "root",
+            "firstName" : "Root",
+            "lastName" : "Root",
+            "email" : "root@hawt.io",
+            "enabled" : true,
+            "credentials" : [
+                {
+                    "type" : "password",
+                    "value" : "password"
+                }
+            ],
+            "realmRoles" : [ "jmxAdmin" ],
+            "applicationRoles":  {
+                "account" : [ "view-profile", "manage-account" ],
+                "realm-management" : [ "realm-admin" ]
+            }
         }
     ],
     "roles" : {
@@ -197,6 +248,17 @@
                 "http://localhost:8181/external-config/*"
             ],
             "secret": "password"
+        },
+        {
+            "clientId" : "hawtio-client",
+            "surrogateAuthRequired" : false,
+            "fullScopeAllowed" : false,
+            "enabled" : true,
+            "redirectUris" : [ "http://localhost:8080/hawtio/*", "http://localhost:8181/hawtio/*", "http://localhost:8081/hawtio/*" ],
+            "webOrigins" : [ "http://localhost:8080", "http://localhost:8181", "http://localhost:8081" ],
+            "bearerOnly" : false,
+            "publicClient" : true,
+            "protocol" : "openid-connect"
         }
 
     ],
@@ -204,6 +266,10 @@
         {
             "client": "ssh-jmx-admin-client",
             "roles": [ "admin", "jmxAdmin" ]
+        },
+        {
+            "client": "hawtio-client",
+            "roles": [ "viewer", "jmxAdmin" ]
         }
     ]
 }
