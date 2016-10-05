@@ -44,7 +44,7 @@
         <karaf3.version>3.0.3</karaf3.version>
         <fuse61.version>6.1.0.redhat-379</fuse61.version>
         <!--<fuse62.version>6.2.0.redhat-133</fuse62.version>-->
-        <fuse62.version>6.2.1.redhat-084</fuse62.version>
+        <fuse62.version>6.2.1.redhat-103</fuse62.version>
         
         <jboss.default.worker.io-threads>16</jboss.default.worker.io-threads>
         <jboss.default.worker.task-max-threads>128</jboss.default.worker.task-max-threads>
