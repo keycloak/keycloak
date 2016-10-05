@@ -412,6 +412,16 @@
                     <name>migrated.auth.server.version</name>
                 </property>
             </activation>
+            <properties>
+                <keycloak.migration.file>src/test/resources/migration-test/migration-realm-${migrated.auth.server.version}.json</keycloak.migration.file>
+                <migration.import.properties>
+                    -Dkeycloak.migration.action=import 
+                    -Dkeycloak.migration.provider=singleFile
+                    -Dkeycloak.migration.file=${keycloak.migration.file}
+                    -Dkeycloak.migration.strategy=OVERWRITE_EXISTING
+                    -Dkeycloak.migration.realmName=Migration
+                </migration.import.properties>
+            </properties>
             <build>
                 <plugins>
                     <plugin>
@@ -445,7 +455,7 @@
                                 <migrated.auth.server.version>${migrated.auth.server.version}</migrated.auth.server.version>
                                 <auth.server.jboss.migration>true</auth.server.jboss.migration>
                                 <keycloak.migration.home>${containers.home}/keycloak-${migrated.auth.server.version}</keycloak.migration.home>
-                                <keycloak.migration.file>src/test/resources/migration-test/migration-realm-${migrated.auth.server.version}.json</keycloak.migration.file>
+                                <migration.import.properties>${migration.import.properties}</migration.import.properties>
                             </systemPropertyVariables>
                         </configuration>
                     </plugin>

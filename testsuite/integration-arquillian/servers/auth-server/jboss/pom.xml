@@ -405,6 +405,8 @@
             <properties>
                 <jdbc.mvn.driver.deployment.dir>${auth.server.home}/modules/system/layers/base/com/${jdbc.mvn.artifactId}/main</jdbc.mvn.driver.deployment.dir>
                 <skip.h2.tcp>true</skip.h2.tcp>
+                <migration.strategy>update</migration.strategy>
+                <initialize.empty>true</initialize.empty>
             </properties>
             <build>
                 <pluginManagement>
@@ -549,6 +551,26 @@
                                                     <include>standalone.xml</include>
                                                 </includes>
                                                 <outputDir>${auth.server.home}/standalone/configuration</outputDir>
+                                            </transformationSet>
+                                            <!-- set migrationStrategy and initializeEmpty inside of keycloak-server subsystem in standalone.xml-->
+                                            <transformationSet>
+                                                <dir>${auth.server.home}/standalone/configuration</dir>
+                                                <stylesheet>${common.resources}/migration-strategy.xsl</stylesheet>
+                                                <includes>
+                                                    <include>standalone.xml</include>
+                                                    <include>standalone-ha.xml</include>
+                                                </includes>
+                                                <outputDir>${auth.server.home}/standalone/configuration</outputDir>
+                                                <parameters>
+                                                    <parameter>
+                                                        <name>migration.strategy</name>
+                                                        <value>${migration.strategy}</value>
+                                                    </parameter>
+                                                    <parameter>
+                                                        <name>initialize.empty</name>
+                                                        <value>${initialize.empty}</value>
+                                                    </parameter>
+                                                </parameters>
                                             </transformationSet>
                                         </transformationSets>
                                     </configuration>
