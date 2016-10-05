@@ -33,5 +33,6 @@
     <modules>
         <module>admin-client</module>
         <module>client-registration</module>
+        <module>admin-client-cxf</module>
     </modules>
 </project>
