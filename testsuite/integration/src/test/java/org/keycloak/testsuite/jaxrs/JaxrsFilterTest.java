@@ -290,46 +290,6 @@ public class JaxrsFilterTest {
         goodResp.close();
     }
 
-    @Test
-    public void testPushNotBefore() {
-        keycloakRule.update(new KeycloakRule.KeycloakSetup() {
-
-            @Override
-            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                Map<String,String> initParams = new TreeMap<String,String>();
-                initParams.put(CONFIG_FILE_INIT_PARAM, "classpath:jaxrs-test/jaxrs-keycloak.json");
-                keycloakRule.deployJaxrsApplication("JaxrsSimpleApp", "/jaxrs-simple", JaxrsTestApplication.class, initParams);
-            }
-
-        });
-
-        // Retrieve token
-        OAuthClient.AccessTokenResponse accessTokenResp = retrieveAccessToken();
-        String authHeader = "Bearer " + accessTokenResp.getAccessToken();
-
-        // Send GET request with token and assert it's passing
-        JaxrsTestResource.SimpleRepresentation getRep = client.target(JAXRS_APP_URL).request()
-                .header(HttpHeaders.AUTHORIZATION, authHeader)
-                .get(JaxrsTestResource.SimpleRepresentation.class);
-        Assert.assertEquals("get", getRep.getMethod());
-        Assert.assertTrue(getRep.getHasUserRole());
-
-        // Push new notBefore now TODO: should use admin console (admin client) instead..
-        int currentTime = Time.currentTime();
-        PushNotBeforeAction action = new PushNotBeforeAction(TokenIdGenerator.generateId(), currentTime + 30, "jaxrs-app", currentTime + 1);
-        String token = new TokenManager().encodeToken(appRealm, action);
-        Response response = client.target(JAXRS_APP_PUSN_NOT_BEFORE_URL).request().post(Entity.text(token));
-        Assert.assertEquals(204, response.getStatus());
-        response.close();
-
-        // Assert that previous token shouldn't pass anymore
-        response = client.target(JAXRS_APP_URL).request()
-                .header(HttpHeaders.AUTHORIZATION, authHeader)
-                .get();
-        Assert.assertEquals(401, response.getStatus());
-        response.close();
-    }
-
     // @Test
     public void testCxfExample() {
         //String uri = "http://localhost:9000/customerservice/customers/123";

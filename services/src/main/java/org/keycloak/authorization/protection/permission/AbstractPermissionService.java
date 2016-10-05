@@ -25,6 +25,7 @@ import org.keycloak.authorization.protection.permission.representation.Permissio
 import org.keycloak.authorization.protection.permission.representation.PermissionResponse;
 import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.jose.jws.JWSBuilder;
+import org.keycloak.models.KeyManager;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.services.ErrorResponseException;
@@ -130,7 +131,8 @@ public class AbstractPermissionService {
     }
 
     private String createPermissionTicket(List<ResourceRepresentation> resources) {
-        return new JWSBuilder().jsonContent(new PermissionTicket(resources, this.resourceServer.getId(), this.identity.getAccessToken()))
-                .rsa256(this.authorization.getKeycloakSession().getContext().getRealm().getPrivateKey());
+        KeyManager.ActiveKey keys = this.authorization.getKeycloakSession().keys().getActiveKey(this.authorization.getRealm());
+        return new JWSBuilder().kid(keys.getKid()).jsonContent(new PermissionTicket(resources, this.resourceServer.getId(), this.identity.getAccessToken()))
+                .rsa256(keys.getPrivateKey());
     }
 }

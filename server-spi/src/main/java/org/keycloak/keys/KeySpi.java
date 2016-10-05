@@ -15,50 +15,33 @@
  * limitations under the License.
  */
 
-package org.keycloak.representations;
+package org.keycloak.keys;
 
-import org.keycloak.common.util.Time;
+import org.keycloak.provider.Provider;
+import org.keycloak.provider.ProviderFactory;
+import org.keycloak.provider.Spi;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class PasswordToken {
-
-    private String realm;
-    private String user;
-    private int timestamp;
-
-    public PasswordToken() {
+public class KeySpi implements Spi {
+    @Override
+    public boolean isInternal() {
+        return true;
     }
 
-    public PasswordToken(String realm, String user) {
-        this.realm = realm;
-        this.user = user;
-        this.timestamp = Time.currentTime();
+    @Override
+    public String getName() {
+        return "keys";
     }
 
-    public String getRealm() {
-        return realm;
+    @Override
+    public Class<? extends Provider> getProviderClass() {
+        return KeyProvider.class;
     }
 
-    public void setRealm(String realm) {
-        this.realm = realm;
+    @Override
+    public Class<? extends ProviderFactory> getProviderFactoryClass() {
+        return KeyProviderFactory.class;
     }
-
-    public String getUser() {
-        return user;
-    }
-
-    public void setUser(String user) {
-        this.user = user;
-    }
-
-    public int getTimestamp() {
-        return timestamp;
-    }
-
-    public void setTimestamp(int timestamp) {
-        this.timestamp = timestamp;
-    }
-
 }

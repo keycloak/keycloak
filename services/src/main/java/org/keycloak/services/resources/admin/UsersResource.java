@@ -839,7 +839,7 @@ public class UsersResource {
         for (String action : actions) {
             clientSession.addRequiredAction(action);
         }
-        ClientSessionCode accessCode = new ClientSessionCode(realm, clientSession);
+        ClientSessionCode accessCode = new ClientSessionCode(session, realm, clientSession);
         accessCode.setAction(ClientSessionModel.Action.EXECUTE_ACTIONS.name());
 
         try {

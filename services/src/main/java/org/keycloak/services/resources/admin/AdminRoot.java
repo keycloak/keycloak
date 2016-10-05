@@ -125,6 +125,7 @@ public class AdminRoot {
         if (realm == null) {
             throw new NotFoundException("Realm not found.  Did you type in a bad URL?");
         }
+        session.getContext().setRealm(realm);
         return realm;
     }
 
@@ -170,6 +171,7 @@ public class AdminRoot {
         if (realm == null) {
             throw new UnauthorizedException("Unknown realm in token");
         }
+        session.getContext().setRealm(realm);
         AuthenticationManager.AuthResult authResult = authManager.authenticateBearerToken(session, realm, uriInfo, clientConnection, headers);
         if (authResult == null) {
             logger.debug("Token not valid");

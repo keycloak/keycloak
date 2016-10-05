@@ -49,6 +49,14 @@ module.factory('RealmLoader', function(Loader, Realm, $route, $q) {
 	});
 });
 
+module.factory('RealmKeysLoader', function(Loader, RealmKeys, $route, $q) {
+    return Loader.get(RealmKeys, function() {
+        return {
+            id : $route.current.params.realm
+        }
+    });
+});
+
 module.factory('RealmEventsConfigLoader', function(Loader, RealmEventsConfig, $route, $q) {
     return Loader.get(RealmEventsConfig, function() {
         return {

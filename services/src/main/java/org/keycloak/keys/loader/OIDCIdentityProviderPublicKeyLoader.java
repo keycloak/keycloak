@@ -22,10 +22,10 @@ import java.util.Collections;
 import java.util.Map;
 
 import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
+import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.jose.jwk.JWK;
-import org.keycloak.jose.jwk.JWKBuilder;
 import org.keycloak.keys.PublicKeyLoader;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.utils.JWKSHttpUtils;
@@ -60,7 +60,7 @@ public class OIDCIdentityProviderPublicKeyLoader implements PublicKeyLoader {
                     return Collections.emptyMap();
                 }
 
-                String kid = JWKBuilder.createKeyId(publicKey);
+                String kid = KeyUtils.createKeyId(publicKey);
                 return Collections.singletonMap(kid, publicKey);
             } catch (Exception e) {
                 logger.warnf(e, "Unable to retrieve publicKey for verify signature of identityProvider '%s' . Error details: %s", config.getAlias(), e.getMessage());

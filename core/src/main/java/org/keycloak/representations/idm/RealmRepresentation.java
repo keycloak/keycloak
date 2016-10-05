@@ -72,9 +72,13 @@ public class RealmRepresentation {
     protected Integer failureFactor;
     //--- end brute force settings
 
+    @Deprecated
     protected String privateKey;
+    @Deprecated
     protected String publicKey;
+    @Deprecated
     protected String certificate;
+    @Deprecated
     protected String codeSecret;
     protected RolesRepresentation roles;
     protected List<GroupRepresentation> groups;

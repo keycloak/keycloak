@@ -34,13 +34,11 @@ import java.security.PublicKey;
  */
 public class AdapterTest {
 
-    public static PublicKey realmPublicKey;
     @ClassRule
     public static AbstractKeycloakRule keycloakRule = new AbstractKeycloakRule() {
         @Override
         protected void configure(KeycloakSession session, RealmManager manager, RealmModel adminRealm) {
-            RealmModel realm = AdapterTestStrategy.baseAdapterTestInitialization(session, manager, adminRealm, getClass());
-            realmPublicKey = realm.getPublicKey();
+            AdapterTestStrategy.baseAdapterTestInitialization(session, manager, adminRealm, getClass());
 
             URL url = getClass().getResource("/adapter-test/cust-app-keycloak.json");
             createApplicationDeployment()

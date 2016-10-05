@@ -212,7 +212,7 @@ public class AuthenticationProcessor {
     }
 
     public String generateCode() {
-        ClientSessionCode accessCode = new ClientSessionCode(getRealm(), getClientSession());
+        ClientSessionCode accessCode = new ClientSessionCode(session, getRealm(), getClientSession());
         clientSession.setTimestamp(Time.currentTime());
         return accessCode.getCode();
     }
@@ -690,10 +690,10 @@ public class AuthenticationProcessor {
 
     }
 
-    public static Response redirectToRequiredActions(RealmModel realm, ClientSessionModel clientSession, UriInfo uriInfo) {
+    public static Response redirectToRequiredActions(KeycloakSession session, RealmModel realm, ClientSessionModel clientSession, UriInfo uriInfo) {
 
         // redirect to non-action url so browser refresh button works without reposting past data
-        ClientSessionCode accessCode = new ClientSessionCode(realm, clientSession);
+        ClientSessionCode accessCode = new ClientSessionCode(session, realm, clientSession);
         accessCode.setAction(ClientSessionModel.Action.REQUIRED_ACTIONS.name());
         clientSession.setTimestamp(Time.currentTime());
 
@@ -764,7 +764,7 @@ public class AuthenticationProcessor {
     }
 
     public void checkClientSession() {
-        ClientSessionCode code = new ClientSessionCode(realm, clientSession);
+        ClientSessionCode code = new ClientSessionCode(session, realm, clientSession);
         String action = ClientSessionModel.Action.AUTHENTICATE.name();
         if (!code.isValidAction(action)) {
             throw new AuthenticationFlowException(AuthenticationFlowError.INVALID_CLIENT_SESSION);
@@ -862,7 +862,7 @@ public class AuthenticationProcessor {
     protected Response authenticationComplete() {
         attachSession();
         if (isActionRequired()) {
-            return redirectToRequiredActions(realm, clientSession, uriInfo);
+            return redirectToRequiredActions(session, realm, clientSession, uriInfo);
         } else {
             event.detail(Details.CODE_ID, clientSession.getId());  // todo This should be set elsewhere.  find out why tests fail.  Don't know where this is supposed to be set
             return AuthenticationManager.finishedRequiredActions(session,  userSession, clientSession, connection, request, uriInfo, event);

@@ -70,11 +70,6 @@ public class RealmEntity extends AbstractIdentifiableEntity {
     private int accessCodeLifespanLogin;
     private int notBefore;
 
-    private String publicKeyPem;
-    private String privateKeyPem;
-    private String certificatePem;
-    private String codeSecret;
-
     private String loginTheme;
     private String accountTheme;
     private String adminTheme;
@@ -351,30 +346,6 @@ public class RealmEntity extends AbstractIdentifiableEntity {
         this.notBefore = notBefore;
     }
 
-    public String getPublicKeyPem() {
-        return publicKeyPem;
-    }
-
-    public void setPublicKeyPem(String publicKeyPem) {
-        this.publicKeyPem = publicKeyPem;
-    }
-
-    public String getPrivateKeyPem() {
-        return privateKeyPem;
-    }
-
-    public void setPrivateKeyPem(String privateKeyPem) {
-        this.privateKeyPem = privateKeyPem;
-    }
-
-    public String getCodeSecret() {
-        return codeSecret;
-    }
-
-    public void setCodeSecret(String codeSecret) {
-        this.codeSecret = codeSecret;
-    }
-
     public String getLoginTheme() {
         return loginTheme;
     }
@@ -525,14 +496,6 @@ public class RealmEntity extends AbstractIdentifiableEntity {
 
     public void setIdentityProviders(List<IdentityProviderEntity> identityProviders) {
         this.identityProviders = identityProviders;
-    }
-
-    public String getCertificatePem() {
-        return certificatePem;
-    }
-
-    public void setCertificatePem(String certificatePem) {
-        this.certificatePem = certificatePem;
     }
 
     public boolean isInternationalizationEnabled() {
