@@ -90,4 +90,17 @@ public interface UserCredentialManager extends UserCredentialStore {
      * @return
      */
     boolean isConfiguredLocally(RealmModel realm, UserModel user, String type);
+
+    /**
+     * Given a CredentialInput, authenticate the user.  This is used in the case where the credential must be processed
+     * to determine and find the user.  An example is Kerberos where the kerberos token might be validated and processed
+     * by a variety of different storage providers.
+     *
+     *
+     * @param session
+     * @param realm
+     * @param input
+     * @return
+     */
+    CredentialValidationOutput authenticate(KeycloakSession session, RealmModel realm, CredentialInput input);
 }
