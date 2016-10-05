@@ -83,13 +83,15 @@ public class ComponentResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public List<ComponentRepresentation> getComponents(@QueryParam("parent") String parent, @QueryParam("type") String type) {
-        auth.requireManage();
+        auth.requireView();
         List<ComponentModel> components = Collections.EMPTY_LIST;
-        if (parent == null) {
+        if (parent == null && type == null) {
             components = realm.getComponents();
 
         } else if (type == null) {
             components = realm.getComponents(parent);
+        } else if (parent == null) {
+            components = realm.getComponents(realm.getId(), type);
         } else {
             components = realm.getComponents(parent, type);
         }
@@ -108,9 +110,10 @@ public class ComponentResource {
         try {
             ComponentModel model = RepresentationToModel.toModel(session, rep);
             if (model.getParentId() == null) model.setParentId(realm.getId());
-            adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo, model.getId()).representation(rep).success();
 
             model = realm.addComponentModel(model);
+
+            adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo, model.getId()).representation(rep).success();
             return Response.created(uriInfo.getAbsolutePathBuilder().path(model.getId()).build()).build();
         } catch (ComponentValidationException e) {
             return ErrorResponse.error(e.getMessage(), Response.Status.BAD_REQUEST);
@@ -132,15 +135,20 @@ public class ComponentResource {
     @PUT
     @Path("{id}")
     @Consumes(MediaType.APPLICATION_JSON)
-    public void updateComponent(@PathParam("id") String id, ComponentRepresentation rep) {
+    public Response updateComponent(@PathParam("id") String id, ComponentRepresentation rep) {
         auth.requireManage();
-        ComponentModel model = realm.getComponent(id);
-        if (model == null) {
-            throw new NotFoundException("Could not find component");
+        try {
+            ComponentModel model = realm.getComponent(id);
+            if (model == null) {
+                throw new NotFoundException("Could not find component");
+            }
+            RepresentationToModel.updateComponent(session, rep, model, false);
+            adminEvent.operation(OperationType.UPDATE).resourcePath(uriInfo, model.getId()).representation(rep).success();
+            realm.updateComponent(model);
+            return Response.noContent().build();
+        } catch (ComponentValidationException e) {
+            return ErrorResponse.error(e.getMessage(), Response.Status.BAD_REQUEST);
         }
-        RepresentationToModel.updateComponent(session, rep, model, false);
-        adminEvent.operation(OperationType.UPDATE).resourcePath(uriInfo, model.getId()).representation(rep).success();
-        realm.updateComponent(model);
 
     }
     @DELETE

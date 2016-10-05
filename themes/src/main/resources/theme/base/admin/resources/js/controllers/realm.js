@@ -2256,23 +2256,9 @@ module.controller('AuthenticationConfigCreateCtrl', function($scope, realm, flow
     };
 });
 
-module.controller('ClientInitialAccessCtrl', function($scope, realm, clientInitialAccess, clientRegTrustedHosts, ClientInitialAccess, ClientRegistrationTrustedHost, Dialog, Notifications, $route, $location) {
+module.controller('ClientInitialAccessCtrl', function($scope, realm, clientInitialAccess, ClientInitialAccess, Dialog, Notifications, $route, $location) {
     $scope.realm = realm;
     $scope.clientInitialAccess = clientInitialAccess;
-    $scope.clientRegTrustedHosts = clientRegTrustedHosts;
-
-    $scope.updateHost = function(hostname) {
-        $location.url('/realms/' + realm.realm + '/client-reg-trusted-hosts/' + hostname);
-    };
-
-    $scope.removeHost = function(hostname) {
-        Dialog.confirmDelete(hostname, 'trusted host for client registration', function() {
-            ClientRegistrationTrustedHost.remove({ realm: realm.realm, hostname: hostname }, function() {
-                Notifications.success("The trusted host for client registration was deleted.");
-                $route.reload();
-            });
-        });
-    };
 
     $scope.remove = function(id) {
         Dialog.confirmDelete(id, 'initial access token', function() {
@@ -2283,57 +2269,6 @@ module.controller('ClientInitialAccessCtrl', function($scope, realm, clientIniti
         });
     }
 });
-
-module.controller('ClientRegistrationTrustedHostDetailCtrl', function($scope, realm, clientRegTrustedHost, ClientRegistrationTrustedHost, Dialog, Notifications, $route, $location) {
-    $scope.realm = realm;
-
-    $scope.create = !clientRegTrustedHost.hostName;
-    $scope.changed = false;
-
-    if ($scope.create) {
-        $scope.count = 5;
-    } else {
-        $scope.hostName = clientRegTrustedHost.hostName;
-        $scope.count = clientRegTrustedHost.count;
-        $scope.remainingCount = clientRegTrustedHost.remainingCount;
-    }
-
-    $scope.save = function() {
-        if ($scope.create) {
-            ClientRegistrationTrustedHost.save({
-                realm: realm.realm
-            }, { hostName: $scope.hostName, count: $scope.count, remainingCount: $scope.count }, function (data) {
-                Notifications.success("The trusted host was created.");
-                $location.url('/realms/' + realm.realm + '/client-reg-trusted-hosts/' + $scope.hostName);
-            });
-        } else {
-            ClientRegistrationTrustedHost.update({
-                realm: realm.realm, hostname: $scope.hostName
-            }, { hostName: $scope.hostName, count: $scope.count, remainingCount: $scope.count }, function (data) {
-                Notifications.success("The trusted host was updated.");
-                $route.reload();
-            });
-        }
-    };
-
-    $scope.cancel = function() {
-        $location.url('/realms/' + realm.realm + '/client-initial-access');
-    };
-
-    $scope.resetRemainingCount = function() {
-        $scope.save();
-    }
-
-    $scope.$watch('count', function(newVal, oldVal) {
-        if (oldVal == newVal) {
-            return;
-        }
-
-        $scope.changed = true;
-    });
-
-});
-
 
 module.controller('ClientInitialAccessCreateCtrl', function($scope, realm, ClientInitialAccess, TimeUnit, Dialog, $location, $translate) {
     $scope.expirationUnit = 'Days';
@@ -2357,7 +2292,7 @@ module.controller('ClientInitialAccessCreateCtrl', function($scope, realm, Clien
     };
 
     $scope.cancel = function() {
-        $location.url('/realms/' + realm.realm + '/client-initial-access');
+        $location.url('/realms/' + realm.realm + '/client-registration/client-initial-access');
     };
 
     $scope.done = function() {
@@ -2375,9 +2310,132 @@ module.controller('ClientInitialAccessCreateCtrl', function($scope, realm, Clien
         var title = $translate.instant('initial-access-token.confirm.title');
         var message = $translate.instant('initial-access-token.confirm.text');
         Dialog.open(title, message, btns, function() {
-            $location.url('/realms/' + realm.realm + '/client-initial-access');
+            $location.url('/realms/' + realm.realm + '/client-registration/client-initial-access');
         });
     };
+});
+
+module.controller('ClientRegPoliciesCtrl', function($scope, realm, clientRegistrationPolicyProviders, policies, Dialog, Notifications, Components, $route, $location) {
+    $scope.realm = realm;
+    $scope.providers = clientRegistrationPolicyProviders;
+    $scope.anonPolicies = [];
+    $scope.authPolicies = [];
+    for (var i=0 ; i<policies.length ; i++) {
+        var policy = policies[i];
+        if (policy.subType === 'anonymous') {
+            $scope.anonPolicies.push(policy);
+        } else if (policy.subType === 'authenticated') {
+            $scope.authPolicies.push(policy);
+        } else {
+            throw 'subType is required for clientRegistration policy component!';
+        }
+    }
+
+    $scope.addProvider = function(authType, provider) {
+        console.log('Add provider: authType ' + authType + ', providerId: ' + provider.id);
+        $location.url("/realms/" + realm.realm + "/client-registration/client-reg-policies/create/" + authType + '/' + provider.id);
+    };
+
+    $scope.getInstanceLink = function(instance) {
+        return "/realms/" + realm.realm + "/client-registration/client-reg-policies/" + instance.providerId + "/" + instance.id;
+    }
+
+    $scope.removeInstance = function(instance) {
+        Dialog.confirmDelete(instance.name, 'client registration policy', function() {
+            Components.remove({
+                realm : realm.realm,
+                componentId : instance.id
+            }, function() {
+                $route.reload();
+                Notifications.success("The policy has been deleted.");
+            });
+        });
+    };
+
+});
+
+module.controller('ClientRegPolicyDetailCtrl', function($scope, realm, clientRegistrationPolicyProviders, instance, Dialog, Notifications, Components, $route, $location) {
+    $scope.realm = realm;
+    $scope.instance = instance;
+    $scope.providerTypes = clientRegistrationPolicyProviders;
+
+    for (var i=0 ; i<$scope.providerTypes.length ; i++) {
+        var providerType = $scope.providerTypes[i];
+        if (providerType.id === instance.providerId) {
+            $scope.providerType = providerType;
+            break;
+        }
+    }
+
+    $scope.create = !$scope.instance.name;
+
+    function toDefaultValue(configProperty) {
+        if (configProperty.type === 'MultivaluedString' || configProperty.type === 'MultivaluedList') {
+            return [];
+        }
+
+        if (configProperty.defaultValue) {
+            return [ configProperty.defaultValue ];
+        } else {
+            return [ '' ];
+        }
+    }
+
+    if ($scope.create) {
+        $scope.instance.name = $scope.instance.providerId;
+        $scope.instance.parentId = realm.id;
+        $scope.instance.config = {};
+
+        if ($scope.providerType.properties) {
+
+            for (var i = 0; i < $scope.providerType.properties.length; i++) {
+                var configProperty = $scope.providerType.properties[i];
+                $scope.instance.config[configProperty.name] = toDefaultValue(configProperty);
+            }
+        }
+    }
+
+    var oldCopy = angular.copy($scope.instance);
+    $scope.changed = false;
+
+    $scope.$watch('instance', function() {
+        if (!angular.equals($scope.instance, oldCopy)) {
+            $scope.changed = true;
+        }
+    }, true);
+
+    $scope.reset = function() {
+        $route.reload();
+    };
+
+    $scope.save = function() {
+        $scope.changed = false;
+        if ($scope.create) {
+            Components.save({realm: realm.realm}, $scope.instance,  function (data, headers) {
+                var l = headers().location;
+                var id = l.substring(l.lastIndexOf("/") + 1);
+                $location.url("/realms/" + realm.realm + "/client-registration/client-reg-policies/" + $scope.instance.providerId + "/" + id);
+                Notifications.success("The policy has been created.");
+            }, function (errorResponse) {
+                if (errorResponse.data && errorResponse.data['error_description']) {
+                    Notifications.error(errorResponse.data['error_description']);
+                }
+            });
+        } else {
+            Components.update({realm: realm.realm,
+                    componentId: instance.id
+                },
+                $scope.instance,  function () {
+                    $route.reload();
+                    Notifications.success("The policy has been updated.");
+                }, function (errorResponse) {
+                    if (errorResponse.data && errorResponse.data['error_description']) {
+                        Notifications.error(errorResponse.data['error_description']);
+                    }
+                });
+        }
+    };
+
 });
 
 module.controller('RealmImportCtrl', function($scope, realm, $route, 

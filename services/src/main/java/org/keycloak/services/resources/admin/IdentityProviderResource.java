@@ -261,13 +261,7 @@ public class IdentityProviderResource {
                     rep.setHelpText(mapper.getHelpText());
                     List<ProviderConfigProperty> configProperties = mapper.getConfigProperties();
                     for (ProviderConfigProperty prop : configProperties) {
-                        ConfigPropertyRepresentation propRep = new ConfigPropertyRepresentation();
-                        propRep.setName(prop.getName());
-                        propRep.setLabel(prop.getLabel());
-                        propRep.setType(prop.getType());
-                        propRep.setDefaultValue(prop.getDefaultValue());
-                        propRep.setHelpText(prop.getHelpText());
-                        propRep.setSecret(prop.isSecret());
+                        ConfigPropertyRepresentation propRep = ModelToRepresentation.toRepresentation(prop);
                         rep.getProperties().add(propRep);
                     }
                     types.put(rep.getId(), rep);

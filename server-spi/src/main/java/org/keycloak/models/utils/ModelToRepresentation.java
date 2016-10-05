@@ -768,16 +768,21 @@ public class ModelToRepresentation {
     public static List<ConfigPropertyRepresentation> toRepresentation(List<ProviderConfigProperty> configProperties) {
         List<ConfigPropertyRepresentation> propertiesRep = new LinkedList<>();
         for (ProviderConfigProperty prop : configProperties) {
-            ConfigPropertyRepresentation propRep = new ConfigPropertyRepresentation();
-            propRep.setName(prop.getName());
-            propRep.setLabel(prop.getLabel());
-            propRep.setType(prop.getType());
-            propRep.setDefaultValue(prop.getDefaultValue());
-            propRep.setHelpText(prop.getHelpText());
-            propRep.setSecret(prop.isSecret());
+            ConfigPropertyRepresentation propRep = toRepresentation(prop);
             propertiesRep.add(propRep);
         }
         return propertiesRep;
+    }
+
+    public static ConfigPropertyRepresentation toRepresentation(ProviderConfigProperty prop) {
+        ConfigPropertyRepresentation propRep = new ConfigPropertyRepresentation();
+        propRep.setName(prop.getName());
+        propRep.setLabel(prop.getLabel());
+        propRep.setType(prop.getType());
+        propRep.setDefaultValue(prop.getDefaultValue());
+        propRep.setHelpText(prop.getHelpText());
+        propRep.setSecret(prop.isSecret());
+        return propRep;
     }
 
     public static ComponentRepresentation toRepresentation(KeycloakSession session, ComponentModel component, boolean internal) {
@@ -786,6 +791,7 @@ public class ModelToRepresentation {
         rep.setName(component.getName());
         rep.setProviderId(component.getProviderId());
         rep.setProviderType(component.getProviderType());
+        rep.setSubType(component.getSubType());
         rep.setParentId(component.getParentId());
         if (internal) {
             rep.setConfig(component.getConfig());

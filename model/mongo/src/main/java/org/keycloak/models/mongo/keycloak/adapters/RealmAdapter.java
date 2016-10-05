@@ -1962,11 +1962,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         } else {
             entity.setId(model.getId());
         }
-        entity.setConfig(model.getConfig());
-        entity.setParentId(model.getParentId());
-        entity.setProviderType(model.getProviderType());
-        entity.setProviderId(model.getProviderId());
-        entity.setName(model.getName());
+        updateComponentEntity(entity, model);
         model.setId(entity.getId());
         realm.getComponentEntities().add(entity);
         updateRealm();
@@ -1980,16 +1976,21 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
 
         for (ComponentEntity entity : realm.getComponentEntities()) {
             if (entity.getId().equals(model.getId())) {
-                entity.setConfig(model.getConfig());
-                entity.setParentId(model.getParentId());
-                entity.setProviderType(model.getProviderType());
-                entity.setProviderId(model.getProviderId());
-                entity.setName(model.getName());
+                updateComponentEntity(entity, model);
 
             }
         }
         updateRealm();
 
+    }
+
+    private void updateComponentEntity(ComponentEntity entity, ComponentModel model) {
+        entity.setConfig(model.getConfig());
+        entity.setParentId(model.getParentId());
+        entity.setProviderType(model.getProviderType());
+        entity.setSubType(model.getSubType());
+        entity.setProviderId(model.getProviderId());
+        entity.setName(model.getName());
     }
 
     @Override
@@ -2053,6 +2054,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         model.setParentId(entity.getParentId());
         model.setProviderId(entity.getProviderId());
         model.setProviderType(entity.getProviderType());
+        model.setSubType(entity.getSubType());
         MultivaluedHashMap<String, String> map = new MultivaluedHashMap<>();
         map.putAll(entity.getConfig());
         model.setConfig(map);

@@ -37,6 +37,10 @@
              <column name="PROVIDER_DISPLAY_NAME" type="VARCHAR(255)"></column>
          </addColumn>
 
+         <addColumn tableName="COMPONENT">
+             <column name="SUB_TYPE" type="VARCHAR(255)"></column>
+         </addColumn>
+
          <customChange class="org.keycloak.connections.jpa.updater.liquibase.custom.ExtractRealmKeysFromRealmTable"/>
          <dropColumn tableName="REALM" columnName="CODE_SECRET" />
          <dropColumn tableName="REALM" columnName="PRIVATE_KEY" />

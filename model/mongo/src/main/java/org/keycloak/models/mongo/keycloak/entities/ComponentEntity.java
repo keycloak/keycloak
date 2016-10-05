@@ -31,6 +31,7 @@ public class ComponentEntity extends AbstractIdentifiableEntity {
     protected String providerType;
     protected String providerId;
     protected String parentId;
+    protected String subType;
     protected Map<String, List<String>> config = new MultivaluedHashMap<>();
 
     public String getName() {
@@ -63,6 +64,14 @@ public class ComponentEntity extends AbstractIdentifiableEntity {
 
     public void setParentId(String parentId) {
         this.parentId = parentId;
+    }
+
+    public String getSubType() {
+        return subType;
+    }
+
+    public void setSubType(String subType) {
+        this.subType = subType;
     }
 
     public Map<String, List<String>> getConfig() {

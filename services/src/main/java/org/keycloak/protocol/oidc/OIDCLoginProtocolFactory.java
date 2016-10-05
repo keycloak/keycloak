@@ -164,7 +164,7 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
 
     @Override
     public String getId() {
-        return "openid-connect";
+        return OIDCLoginProtocol.LOGIN_PROTOCOL;
     }
 
     @Override

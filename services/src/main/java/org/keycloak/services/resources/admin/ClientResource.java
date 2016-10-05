@@ -45,6 +45,8 @@ import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.clientregistration.ClientRegistrationTokenUtils;
+import org.keycloak.services.clientregistration.RegistrationAccessToken;
+import org.keycloak.services.clientregistration.policy.RegistrationAuth;
 import org.keycloak.services.managers.ClientManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.ResourceAdminManager;
@@ -274,7 +276,7 @@ public class ClientResource {
             throw new NotFoundException("Could not find client");
         }
 
-        String token = ClientRegistrationTokenUtils.updateRegistrationAccessToken(session, realm, uriInfo, client);
+        String token = ClientRegistrationTokenUtils.updateRegistrationAccessToken(session, realm, uriInfo, client, RegistrationAuth.AUTHENTICATED);
 
         ClientRepresentation rep = ModelToRepresentation.toRepresentation(client);
         rep.setRegistrationAccessToken(token);

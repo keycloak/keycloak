@@ -60,6 +60,7 @@ public class KeycloakOnUndertow implements DeployableContainer<KeycloakOnUnderto
         di.setClassLoader(getClass().getClassLoader());
         di.setContextPath("/auth");
         di.setDeploymentName("Keycloak");
+        di.addInitParameter(KeycloakApplication.KEYCLOAK_EMBEDDED, "true");
 
         di.setDefaultServletConfig(new DefaultServletConfig(true));
         di.addWelcomePage("theme/keycloak/welcome/resources/index.html");

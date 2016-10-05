@@ -930,7 +930,7 @@ public class AuthenticationManagementResource {
         rep.setProviderId(providerId);
         rep.setName(factory.getDisplayType());
         rep.setHelpText(factory.getHelpText());
-        rep.setProperties(new LinkedList<ConfigPropertyRepresentation>());
+        rep.setProperties(new LinkedList<>());
         List<ProviderConfigProperty> configProperties = factory.getConfigProperties();
         for (ProviderConfigProperty prop : configProperties) {
             ConfigPropertyRepresentation propRep = getConfigPropertyRep(prop);
@@ -940,14 +940,7 @@ public class AuthenticationManagementResource {
     }
 
     private ConfigPropertyRepresentation getConfigPropertyRep(ProviderConfigProperty prop) {
-        ConfigPropertyRepresentation propRep = new ConfigPropertyRepresentation();
-        propRep.setName(prop.getName());
-        propRep.setLabel(prop.getLabel());
-        propRep.setType(prop.getType());
-        propRep.setDefaultValue(prop.getDefaultValue());
-        propRep.setHelpText(prop.getHelpText());
-        propRep.setSecret(prop.isSecret());
-        return propRep;
+        return ModelToRepresentation.toRepresentation(prop);
     }
 
     /**

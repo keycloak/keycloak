@@ -26,7 +26,7 @@ public class SHA256PairwiseSubMapper extends AbstractPairwiseSubMapper {
     private static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
     private final Charset charset;
 
-    public SHA256PairwiseSubMapper() throws NoSuchAlgorithmException {
+    public SHA256PairwiseSubMapper() {
         charset = Charset.forName("UTF-8");
     }
 
@@ -34,7 +34,7 @@ public class SHA256PairwiseSubMapper extends AbstractPairwiseSubMapper {
         Map<String, String> config;
         ProtocolMapperRepresentation pairwise = new ProtocolMapperRepresentation();
         pairwise.setName("pairwise subject identifier");
-        pairwise.setProtocolMapper(AbstractPairwiseSubMapper.getId(PROVIDER_ID));
+        pairwise.setProtocolMapper(new SHA256PairwiseSubMapper().getId());
         pairwise.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
         pairwise.setConsentRequired(false);
         config = new HashMap<>();

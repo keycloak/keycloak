@@ -2053,6 +2053,7 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
         c.setParentId(model.getParentId());
         c.setProviderType(model.getProviderType());
         c.setProviderId(model.getProviderId());
+        c.setSubType(model.getSubType());
         c.setRealm(realm);
         em.persist(c);
         setConfig(model, c);
@@ -2087,6 +2088,7 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
         c.setProviderId(component.getProviderId());
         c.setProviderType(component.getProviderType());
         c.setParentId(component.getParentId());
+        c.setSubType(component.getSubType());
         em.createNamedQuery("deleteComponentConfigByComponent").setParameter("component", c).executeUpdate();
         em.flush();
         setConfig(component, c);
@@ -2156,6 +2158,7 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
         model.setName(c.getName());
         model.setProviderType(c.getProviderType());
         model.setProviderId(c.getProviderId());
+        model.setSubType(c.getSubType());
         model.setParentId(c.getParentId());
         MultivaluedHashMap<String, String> config = new MultivaluedHashMap<>();
         TypedQuery<ComponentConfigEntity> configQuery = em.createNamedQuery("getComponentConfig", ComponentConfigEntity.class)
