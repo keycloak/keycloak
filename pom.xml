@@ -103,6 +103,7 @@
         <hamcrest.version>1.3</hamcrest.version>
         <jmeter.version>2.10</jmeter.version>
         <junit.version>4.12</junit.version>
+        <mockito.version>1.10.19</mockito.version>
         <picketlink.version>2.7.0.Final</picketlink.version>
         <selenium.version>2.35.0</selenium.version>
         <xml-apis.version>1.4.01</xml-apis.version>
@@ -362,6 +363,12 @@
                 <groupId>org.hamcrest</groupId>
                 <artifactId>hamcrest-all</artifactId>
                 <version>${hamcrest.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.mockito</groupId>
+                <artifactId>mockito-core</artifactId>
+                <version>${mockito.version}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
