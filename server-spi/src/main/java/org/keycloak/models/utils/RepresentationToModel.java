@@ -31,10 +31,14 @@ import org.keycloak.authorization.store.ScopeStore;
 import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.common.util.Base64;
+import org.keycloak.common.util.CertificateUtils;
+import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.common.util.PemUtils;
 import org.keycloak.common.util.UriUtils;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.credential.CredentialModel;
+import org.keycloak.keys.KeyProvider;
 import org.keycloak.migration.MigrationProvider;
 import org.keycloak.migration.migrators.MigrationUtils;
 import org.keycloak.models.AuthenticationExecutionModel;
@@ -63,6 +67,7 @@ import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserFederationMapperModel;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.idm.ApplicationRepresentation;
 import org.keycloak.representations.idm.AuthenticationExecutionExportRepresentation;
 import org.keycloak.representations.idm.AuthenticationExecutionRepresentation;
@@ -99,12 +104,16 @@ import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.util.JsonSerialization;
 
 import java.io.IOException;
+import java.security.KeyPair;
+import java.security.cert.Certificate;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
@@ -183,23 +192,6 @@ public class RepresentationToModel {
         if (rep.isVerifyEmail() != null) newRealm.setVerifyEmail(rep.isVerifyEmail());
         if (rep.isResetPasswordAllowed() != null) newRealm.setResetPasswordAllowed(rep.isResetPasswordAllowed());
         if (rep.isEditUsernameAllowed() != null) newRealm.setEditUsernameAllowed(rep.isEditUsernameAllowed());
-        if (rep.getPrivateKey() == null || rep.getPublicKey() == null) {
-            KeycloakModelUtils.generateRealmKeys(newRealm);
-        } else {
-            newRealm.setPrivateKeyPem(rep.getPrivateKey());
-            newRealm.setPublicKeyPem(rep.getPublicKey());
-        }
-        if (rep.getCertificate() == null) {
-            KeycloakModelUtils.generateRealmCertificate(newRealm);
-        } else {
-            newRealm.setCertificatePem(rep.getCertificate());
-        }
-        if (rep.getCodeSecret() == null) {
-            newRealm.setCodeSecret(KeycloakModelUtils.generateCodeSecret());
-        } else {
-            newRealm.setCodeSecret(rep.getCodeSecret());
-        }
-
         if (rep.getLoginTheme() != null) newRealm.setLoginTheme(rep.getLoginTheme());
         if (rep.getAccountTheme() != null) newRealm.setAccountTheme(rep.getAccountTheme());
         if (rep.getAdminTheme() != null) newRealm.setAdminTheme(rep.getAdminTheme());
@@ -381,6 +373,13 @@ public class RepresentationToModel {
             }
         }
 
+        if (newRealm.getComponents(newRealm.getId(), KeyProvider.class.getName()).isEmpty()) {
+            if (rep.getPrivateKey() != null) {
+                DefaultKeyProviders.createProviders(newRealm, rep.getPrivateKey(), rep.getCertificate());
+            } else {
+                DefaultKeyProviders.createProviders(newRealm);
+            }
+        }
     }
 
     protected static void importComponents(RealmModel newRealm, MultivaluedHashMap<String, ComponentExportRepresentation> components, String parentId) {
@@ -817,20 +816,6 @@ public class RepresentationToModel {
         if (rep.getUserFederationProviders() != null) {
             List<UserFederationProviderModel> providerModels = convertFederationProviders(rep.getUserFederationProviders());
             realm.setUserFederationProviders(providerModels);
-        }
-
-        if (Constants.GENERATE.equals(rep.getPublicKey())) {
-            KeycloakModelUtils.generateRealmKeys(realm);
-        } else {
-            if (rep.getPrivateKey() != null && rep.getPublicKey() != null) {
-                realm.setPrivateKeyPem(rep.getPrivateKey());
-                realm.setPublicKeyPem(rep.getPublicKey());
-                realm.setCodeSecret(KeycloakModelUtils.generateCodeSecret());
-            }
-
-            if (rep.getCertificate() != null) {
-                realm.setCertificatePem(rep.getCertificate());
-            }
         }
 
         if(rep.isInternationalizationEnabled() != null){
@@ -1692,15 +1677,80 @@ public class RepresentationToModel {
         return model;
     }
 
-
-    public static ComponentModel toModel(ComponentRepresentation rep) {
+    public static ComponentModel toModel(KeycloakSession session, ComponentRepresentation rep) {
         ComponentModel model = new ComponentModel();
         model.setParentId(rep.getParentId());
         model.setProviderType(rep.getProviderType());
         model.setProviderId(rep.getProviderId());
-        model.setConfig(rep.getConfig());
+        model.setConfig(new MultivaluedHashMap<>());
         model.setName(rep.getName());
+
+        if (rep.getConfig() != null) {
+            Set<String> keys = new HashSet<>(rep.getConfig().keySet());
+            for (String k : keys) {
+                List<String> values = rep.getConfig().get(k);
+                if (values != null) {
+                    ListIterator<String> itr = values.listIterator();
+                    while (itr.hasNext()) {
+                        String v = itr.next();
+                        if (v == null || v.trim().isEmpty()) {
+                            itr.remove();
+                        }
+                    }
+
+                    if (!values.isEmpty()) {
+                        model.getConfig().put(k, values);
+                    }
+                }
+            }
+        }
+
         return model;
+    }
+
+    public static void updateComponent(KeycloakSession session, ComponentRepresentation rep, ComponentModel component, boolean internal) {
+        if (rep.getParentId() != null) {
+            component.setParentId(rep.getParentId());
+        }
+
+        if (rep.getProviderType() != null) {
+            component.setProviderType(rep.getProviderType());
+        }
+
+        if (rep.getProviderId() != null) {
+            component.setProviderId(rep.getProviderId());
+        }
+
+        Map<String, ProviderConfigProperty> providerConfiguration = null;
+        if (!internal) {
+            providerConfiguration = ComponentUtil.getComponentConfigProperties(session, component);
+        }
+
+        if (rep.getConfig() != null) {
+            Set<String> keys = new HashSet<>(rep.getConfig().keySet());
+            for (String k : keys) {
+                if (!internal && !providerConfiguration.containsKey(k)) {
+                    break;
+                }
+
+                List<String> values = rep.getConfig().get(k);
+                if (values == null || values.isEmpty() || values.get(0) == null || values.get(0).trim().isEmpty()) {
+                    component.getConfig().remove(k);
+                } else {
+                    ListIterator<String> itr = values.listIterator();
+                    while (itr.hasNext()) {
+                        String v = itr.next();
+                        if (v == null || v.trim().isEmpty() || v.equals(ComponentRepresentation.SECRET_VALUE)) {
+                            itr.remove();
+                        }
+                    }
+
+                    if (!values.isEmpty()) {
+                        component.getConfig().put(k, values);
+                    }
+                }
+            }
+        }
     }
 
     public static void importAuthorizationSettings(ClientRepresentation clientRepresentation, ClientModel client, KeycloakSession session) {

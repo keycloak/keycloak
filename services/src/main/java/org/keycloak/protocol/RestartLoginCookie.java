@@ -22,8 +22,10 @@ import org.keycloak.common.ClientConnection;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.crypto.HMACProvider;
+import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
+import org.keycloak.models.KeyManager;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.services.ServicesLogger;
@@ -33,6 +35,7 @@ import org.keycloak.services.util.CookieHelper;
 import javax.crypto.SecretKey;
 import javax.ws.rs.core.Cookie;
 import javax.ws.rs.core.UriInfo;
+import java.security.PublicKey;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -112,11 +115,12 @@ public class RestartLoginCookie {
         this.action = action;
     }
 
-    public String encode(RealmModel realm) {
+    public String encode(KeycloakSession session, RealmModel realm) {
+        KeyManager.ActiveKey keys = session.keys().getActiveKey(realm);
+
         JWSBuilder builder = new JWSBuilder();
-        return builder.jsonContent(this)
-                .hmac256((SecretKey)realm.getCodeSecretKey());
-               //.rsa256(realm.getPrivateKey());
+        return builder.kid(keys.getKid()).jsonContent(this)
+               .rsa256(keys.getPrivateKey());
 
     }
 
@@ -133,11 +137,9 @@ public class RestartLoginCookie {
         }
     }
 
-    public static void setRestartCookie(RealmModel realm, ClientConnection connection, UriInfo uriInfo, ClientSessionModel clientSession) {
+    public static void setRestartCookie(KeycloakSession session, RealmModel realm, ClientConnection connection, UriInfo uriInfo, ClientSessionModel clientSession) {
         RestartLoginCookie restart = new RestartLoginCookie(clientSession);
-        String encoded = restart.encode(realm);
-        int keySize = realm.getCodeSecret().length();
-        int size = encoded.length();
+        String encoded = restart.encode(session, realm);
         String path = AuthenticationManager.getRealmCookiePath(realm, uriInfo);
         boolean secureOnly = realm.getSslRequired().isRequired(connection);
         CookieHelper.addCookie(KC_RESTART, encoded, path, null, null, -1, secureOnly, true);
@@ -157,13 +159,8 @@ public class RestartLoginCookie {
         }
         String encodedCookie = cook.getValue();
         JWSInput input = new JWSInput(encodedCookie);
-        /*
-        if (!RSAProvider.verify(input, realm.getPublicKey())) {
-            logger.debug("Failed to verify encoded RestartLoginCookie");
-            return null;
-        }
-        */
-        if (!HMACProvider.verify(input, (SecretKey)realm.getCodeSecretKey())) {
+        PublicKey publicKey = session.keys().getPublicKey(realm, input.getHeader().getKeyId());
+        if (!RSAProvider.verify(input, publicKey)) {
             logger.debug("Failed to verify encoded RestartLoginCookie");
             return null;
         }

@@ -22,6 +22,7 @@ import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testsuite.components.TestProvider;
 import org.keycloak.testsuite.rest.representation.AuthenticatorState;
 
 import javax.ws.rs.Consumes;
@@ -41,7 +42,7 @@ import java.util.Map;
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
 
-@Path("/realms/master/testing")
+@Path("/testing")
 @Consumes(MediaType.APPLICATION_JSON)
 public interface TestingResource {
 
@@ -194,11 +195,6 @@ public interface TestingResource {
     @Produces(MediaType.APPLICATION_JSON)
     boolean isCached(@PathParam("cache") String cacheName, @PathParam("id") String id);
 
-    @GET
-    @Path("/verify-code")
-    @Produces(MediaType.APPLICATION_JSON)
-    String verifyCode(@QueryParam("realm") String realmName, @QueryParam("code") String code);
-
     @POST
     @Path("/update-pass-through-auth-state")
     @Produces(MediaType.APPLICATION_JSON)
@@ -240,5 +236,10 @@ public interface TestingResource {
 
     @Path("export-import")
     TestingExportImportResource exportImport();
+
+    @GET
+    @Path("/test-component")
+    @Produces(MediaType.APPLICATION_JSON)
+    Map<String, TestProvider.DetailsRepresentation> getTestComponentDetails();
 
 }

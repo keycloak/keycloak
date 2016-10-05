@@ -206,6 +206,12 @@ module.factory('Realm', function($resource) {
     });
 });
 
+module.factory('RealmKeys', function($resource) {
+    return $resource(authUrl + '/admin/realms/:id/keys', {
+        id : '@realm'
+    });
+});
+
 module.factory('RealmEventsConfig', function($resource) {
     return $resource(authUrl + '/admin/realms/:id/events/config', {
         id : '@realm'

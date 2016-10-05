@@ -50,10 +50,6 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
     @Rule
     public AssertEvents events = new AssertEvents(this);
 
-    @Page
-    protected ErrorPage errorPage;
-
-
     @Override
     public void beforeAbstractKeycloakTest() throws Exception {
         super.beforeAbstractKeycloakTest();
@@ -61,11 +57,8 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
-
         RealmRepresentation realmRepresentation = loadJson(getClass().getResourceAsStream("/testrealm.json"), RealmRepresentation.class);
-
         testRealms.add(realmRepresentation);
-
     }
 
     @Before
@@ -85,8 +78,6 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
         assertEquals("OpenIdConnect.AuthenticationProperties=2302984sdlk", response.getState());
         Assert.assertNull(response.getError());
 
-        testingClient.testing().verifyCode("test", response.getCode());
-
         String codeId = events.expectLogin().assertEvent().getDetails().get(Details.CODE_ID);
         assertCode(codeId, response.getCode());
     }
@@ -102,7 +93,6 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
         Assert.assertEquals("Success code", title);
 
         String code = driver.findElement(By.id(OAuth2Constants.CODE)).getAttribute("value");
-        testingClient.testing().verifyCode("test", code);
 
         String codeId = events.expectLogin().detail(Details.REDIRECT_URI, "http://localhost:8180/auth/realms/test/protocol/openid-connect/oauth/oob").assertEvent().getDetails().get(Details.CODE_ID);
         assertCode(codeId, code);
@@ -121,8 +111,6 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
         Assert.assertTrue(response.isRedirected());
         Assert.assertNotNull(response.getCode());
 
-        testingClient.testing().verifyCode("test", response.getCode());
-
         String codeId = events.expectLogin().assertEvent().getDetails().get(Details.CODE_ID);
         assertCode(codeId, response.getCode());
     }
@@ -137,8 +125,6 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
         Assert.assertNotNull(response.getCode());
         Assert.assertNull(response.getState());
         Assert.assertNull(response.getError());
-
-        testingClient.testing().verifyCode("test", response.getCode());
 
         String codeId = events.expectLogin().assertEvent().getDetails().get(Details.CODE_ID);
         assertCode(codeId, response.getCode());
@@ -172,14 +158,12 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
 
         assertEquals("OpenIdConnect.AuthenticationProperties=2302984sdlk", state);
 
-        testingClient.testing().verifyCode("test", code);
         String codeId = events.expectLogin().assertEvent().getDetails().get(Details.CODE_ID);
         assertCode(codeId, code);
     }
 
     private void assertCode(String expectedCodeId, String actualCode) {
-        String code = testingClient.testing().verifyCode("test", actualCode);
-        assertEquals(expectedCodeId, code);
+        assertEquals(expectedCodeId, actualCode.split("\\.")[1]);
     }
 
 }

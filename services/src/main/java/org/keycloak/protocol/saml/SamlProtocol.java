@@ -32,6 +32,7 @@ import org.keycloak.dom.saml.v2.protocol.ResponseType;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
+import org.keycloak.models.KeyManager;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
@@ -393,19 +394,22 @@ public class SamlProtocol implements LoginProtocol {
         JaxrsSAML2BindingBuilder bindingBuilder = new JaxrsSAML2BindingBuilder();
         bindingBuilder.relayState(relayState);
 
+        KeyManager keyManager = session.keys();
+        KeyManager.ActiveKey keys = keyManager.getActiveKey(realm);
+
         if (samlClient.requiresRealmSignature()) {
             String canonicalization = samlClient.getCanonicalizationMethod();
             if (canonicalization != null) {
                 bindingBuilder.canonicalizationMethod(canonicalization);
             }
-            bindingBuilder.signatureAlgorithm(samlClient.getSignatureAlgorithm()).signWith(realm.getPrivateKey(), realm.getPublicKey(), realm.getCertificate()).signDocument();
+            bindingBuilder.signatureAlgorithm(samlClient.getSignatureAlgorithm()).signWith(keys.getPrivateKey(), keys.getPublicKey(), keys.getCertificate()).signDocument();
         }
         if (samlClient.requiresAssertionSignature()) {
             String canonicalization = samlClient.getCanonicalizationMethod();
             if (canonicalization != null) {
                 bindingBuilder.canonicalizationMethod(canonicalization);
             }
-            bindingBuilder.signatureAlgorithm(samlClient.getSignatureAlgorithm()).signWith(realm.getPrivateKey(), realm.getPublicKey(), realm.getCertificate()).signAssertions();
+            bindingBuilder.signatureAlgorithm(samlClient.getSignatureAlgorithm()).signWith(keys.getPrivateKey(), keys.getPublicKey(), keys.getCertificate()).signAssertions();
         }
         if (samlClient.requiresEncryption()) {
             PublicKey publicKey = null;
@@ -536,7 +540,8 @@ public class SamlProtocol implements LoginProtocol {
             if (canonicalization != null) {
                 binding.canonicalizationMethod(canonicalization);
             }
-            binding.signatureAlgorithm(algorithm).signWith(realm.getPrivateKey(), realm.getPublicKey(), realm.getCertificate()).signDocument();
+            KeyManager.ActiveKey keys = session.keys().getActiveKey(realm);
+            binding.signatureAlgorithm(algorithm).signWith(keys.getPrivateKey(), keys.getPublicKey(), keys.getCertificate()).signDocument();
         }
 
         try {
@@ -633,7 +638,8 @@ public class SamlProtocol implements LoginProtocol {
     private JaxrsSAML2BindingBuilder createBindingBuilder(SamlClient samlClient) {
         JaxrsSAML2BindingBuilder binding = new JaxrsSAML2BindingBuilder();
         if (samlClient.requiresRealmSignature()) {
-            binding.signatureAlgorithm(samlClient.getSignatureAlgorithm()).signWith(realm.getPrivateKey(), realm.getPublicKey(), realm.getCertificate()).signDocument();
+            KeyManager.ActiveKey keys = session.keys().getActiveKey(realm);
+            binding.signatureAlgorithm(samlClient.getSignatureAlgorithm()).signWith(keys.getPrivateKey(), keys.getPublicKey(), keys.getCertificate()).signDocument();
         }
         return binding;
     }

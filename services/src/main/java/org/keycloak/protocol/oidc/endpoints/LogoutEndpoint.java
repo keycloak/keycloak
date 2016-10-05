@@ -116,7 +116,7 @@ public class LogoutEndpoint {
         boolean error = false;
         if (encodedIdToken != null) {
             try {
-                IDToken idToken = tokenManager.verifyIDToken(realm, encodedIdToken);
+                IDToken idToken = tokenManager.verifyIDToken(session, realm, encodedIdToken);
                 userSession = session.sessions().getUserSession(realm, idToken.getSessionState());
                 if (userSession == null) {
                     error = true;
@@ -187,7 +187,7 @@ public class LogoutEndpoint {
             throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "No refresh token", Response.Status.BAD_REQUEST);
         }
         try {
-            RefreshToken token = tokenManager.verifyRefreshToken(realm, refreshToken, false);
+            RefreshToken token = tokenManager.verifyRefreshToken(session, realm, refreshToken, false);
             UserSessionModel userSessionModel = session.sessions().getUserSession(realm, token.getSessionState());
             if (userSessionModel != null) {
                 logout(userSessionModel);

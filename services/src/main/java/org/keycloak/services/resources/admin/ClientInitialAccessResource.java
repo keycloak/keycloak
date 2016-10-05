@@ -84,13 +84,9 @@ public class ClientInitialAccessResource {
 
         adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo, clientInitialAccessModel.getId()).representation(config).success();
 
-        if (session.getTransactionManager().isActive()) {
-            session.getTransactionManager().commit();
-        }
-
         ClientInitialAccessPresentation rep = wrap(clientInitialAccessModel);
 
-        String token = ClientRegistrationTokenUtils.createInitialAccessToken(realm, uriInfo, clientInitialAccessModel);
+        String token = ClientRegistrationTokenUtils.createInitialAccessToken(session, realm, uriInfo, clientInitialAccessModel);
         rep.setToken(token);
 
         response.setStatus(Response.Status.CREATED.getStatusCode());

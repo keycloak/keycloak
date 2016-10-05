@@ -21,6 +21,7 @@ import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.common.VerificationException;
+import org.keycloak.common.util.PemUtils;
 import org.keycloak.common.util.StreamUtil;
 import org.keycloak.dom.saml.v2.SAML2Object;
 import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
@@ -34,6 +35,8 @@ import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
+import org.keycloak.models.KeyManager;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.AuthorizationEndpointBase;
@@ -59,6 +62,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
@@ -76,6 +80,9 @@ import java.security.PublicKey;
 public class SamlService extends AuthorizationEndpointBase {
 
     protected static final Logger logger = Logger.getLogger(SamlService.class);
+
+    @Context
+    protected KeycloakSession session;
 
     public SamlService(RealmModel realm, EventBuilder event) {
         super(realm, event);
@@ -374,7 +381,8 @@ public class SamlService extends AuthorizationEndpointBase {
             JaxrsSAML2BindingBuilder binding = new JaxrsSAML2BindingBuilder().relayState(logoutRelayState);
             if (samlClient.requiresRealmSignature()) {
                 SignatureAlgorithm algorithm = samlClient.getSignatureAlgorithm();
-                binding.signatureAlgorithm(algorithm).signWith(realm.getPrivateKey(), realm.getPublicKey(), realm.getCertificate()).signDocument();
+                KeyManager.ActiveKey keys = session.keys().getActiveKey(realm);
+                binding.signatureAlgorithm(algorithm).signWith(keys.getPrivateKey(), keys.getPublicKey(), keys.getCertificate()).signDocument();
 
             }
             try {
@@ -508,18 +516,18 @@ public class SamlService extends AuthorizationEndpointBase {
     @Produces(MediaType.APPLICATION_XML)
     @NoCache
     public String getDescriptor() throws Exception {
-        return getIDPMetadataDescriptor(uriInfo, realm);
+        return getIDPMetadataDescriptor(uriInfo, session, realm);
 
     }
 
-    public static String getIDPMetadataDescriptor(UriInfo uriInfo, RealmModel realm) throws IOException {
+    public static String getIDPMetadataDescriptor(UriInfo uriInfo, KeycloakSession session, RealmModel realm) throws IOException {
         InputStream is = SamlService.class.getResourceAsStream("/idp-metadata-template.xml");
         String template = StreamUtil.readString(is);
         template = template.replace("${idp.entityID}", RealmsResource.realmBaseUrl(uriInfo).build(realm.getName()).toString());
         template = template.replace("${idp.sso.HTTP-POST}", RealmsResource.protocolUrl(uriInfo).build(realm.getName(), SamlProtocol.LOGIN_PROTOCOL).toString());
         template = template.replace("${idp.sso.HTTP-Redirect}", RealmsResource.protocolUrl(uriInfo).build(realm.getName(), SamlProtocol.LOGIN_PROTOCOL).toString());
         template = template.replace("${idp.sls.HTTP-POST}", RealmsResource.protocolUrl(uriInfo).build(realm.getName(), SamlProtocol.LOGIN_PROTOCOL).toString());
-        template = template.replace("${idp.signing.certificate}", realm.getCertificatePem());
+        template = template.replace("${idp.signing.certificate}", PemUtils.encodeCertificate(session.keys().getActiveKey(realm).getCertificate()));
         return template;
     }
 

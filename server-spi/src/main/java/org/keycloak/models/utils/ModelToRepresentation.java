@@ -25,6 +25,7 @@ import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.authorization.store.StoreFactory;
+import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.Time;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.credential.CredentialModel;
@@ -265,16 +266,6 @@ public class ModelToRepresentation {
         rep.setEnabled(realm.isEnabled());
         rep.setNotBefore(realm.getNotBefore());
         rep.setSslRequired(realm.getSslRequired().name().toLowerCase());
-        rep.setPublicKey(realm.getPublicKeyPem());
-        if (internal) {
-            rep.setPrivateKey(realm.getPrivateKeyPem());
-            String privateKeyPem = realm.getPrivateKeyPem();
-            if (realm.getCertificatePem() == null && privateKeyPem != null) {
-                KeycloakModelUtils.generateRealmCertificate(realm);
-            }
-            rep.setCodeSecret(realm.getCodeSecret());
-        }
-        rep.setCertificate(realm.getCertificatePem());
         rep.setRegistrationAllowed(realm.isRegistrationAllowed());
         rep.setRegistrationEmailAsUsername(realm.isRegistrationEmailAsUsername());
         rep.setRememberMe(realm.isRememberMe());
@@ -783,19 +774,38 @@ public class ModelToRepresentation {
             propRep.setType(prop.getType());
             propRep.setDefaultValue(prop.getDefaultValue());
             propRep.setHelpText(prop.getHelpText());
+            propRep.setSecret(prop.isSecret());
             propertiesRep.add(propRep);
         }
         return propertiesRep;
     }
 
-    public static ComponentRepresentation toRepresentation(ComponentModel component) {
+    public static ComponentRepresentation toRepresentation(KeycloakSession session, ComponentModel component, boolean internal) {
         ComponentRepresentation rep = new ComponentRepresentation();
         rep.setId(component.getId());
         rep.setName(component.getName());
         rep.setProviderId(component.getProviderId());
         rep.setProviderType(component.getProviderType());
         rep.setParentId(component.getParentId());
-        rep.setConfig(component.getConfig());
+        if (internal) {
+            rep.setConfig(component.getConfig());
+        } else {
+            Map<String, ProviderConfigProperty> configProperties = ComponentUtil.getComponentConfigProperties(session, component);
+            MultivaluedHashMap<String, String> config = new MultivaluedHashMap<>();
+
+            for (Map.Entry<String, List<String>> e : component.getConfig().entrySet()) {
+                ProviderConfigProperty configProperty = configProperties.get(e.getKey());
+                if (configProperty != null) {
+                    if (configProperty.isSecret()) {
+                        config.putSingle(e.getKey(), ComponentRepresentation.SECRET_VALUE);
+                    } else {
+                        config.put(e.getKey(), e.getValue());
+                    }
+                }
+            }
+
+            rep.setConfig(config);
+        }
         return rep;
     }
 

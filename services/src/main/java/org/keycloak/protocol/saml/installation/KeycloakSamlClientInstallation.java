@@ -18,6 +18,7 @@
 package org.keycloak.protocol.saml.installation;
 
 import org.keycloak.Config;
+import org.keycloak.common.util.PemUtils;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -43,12 +44,12 @@ public class KeycloakSamlClientInstallation implements ClientInstallationProvide
         SamlClient samlClient = new SamlClient(client);
         StringBuffer buffer = new StringBuffer();
         buffer.append("<keycloak-saml-adapter>\n");
-        baseXml(realm, client, baseUri, samlClient, buffer);
+        baseXml(session, realm, client, baseUri, samlClient, buffer);
         buffer.append("</keycloak-saml-adapter>\n");
         return Response.ok(buffer.toString(), MediaType.TEXT_PLAIN_TYPE).build();
     }
 
-    public static void baseXml(RealmModel realm, ClientModel client, URI baseUri, SamlClient samlClient, StringBuffer buffer) {
+    public static void baseXml(KeycloakSession session, RealmModel realm, ClientModel client, URI baseUri, SamlClient samlClient, StringBuffer buffer) {
         buffer.append("    <SP entityID=\"").append(client.getClientId()).append("\"\n");
         buffer.append("        sslPolicy=\"").append(realm.getSslRequired().name()).append("\"\n");
         buffer.append("        logoutPage=\"SPECIFY YOUR LOGOUT PAGE!\">\n");
@@ -116,7 +117,7 @@ public class KeycloakSamlClientInstallation implements ClientInstallationProvide
             buffer.append("            <Keys>\n");
             buffer.append("                <Key signing=\"true\">\n");
             buffer.append("                    <CertificatePem>\n");
-            buffer.append("                       ").append(realm.getCertificatePem()).append("\n");
+            buffer.append("                       ").append(PemUtils.encodeCertificate(session.keys().getActiveKey(realm).getCertificate())).append("\n");
             buffer.append("                    </CertificatePem>\n");
             buffer.append("                </Key>\n");
             buffer.append("            </Keys>\n");

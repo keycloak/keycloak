@@ -68,9 +68,6 @@ import java.util.Map;
  */
 public class TokenEndpoint {
 
-    // Flag if code was already exchanged for token
-    private static final String CODE_EXCHANGED = "CODE_EXCHANGED";
-
     private static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
     private MultivaluedMap<String, String> formParams;
     private ClientModel client;
@@ -203,34 +200,29 @@ public class TokenEndpoint {
             throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Missing parameter: " + OAuth2Constants.CODE, Response.Status.BAD_REQUEST);
         }
 
-        ClientSessionCode accessCode = ClientSessionCode.parse(code, session, realm);
-        if (accessCode == null) {
+        ClientSessionCode.ParseResult parseResult = ClientSessionCode.parseResult(code, session, realm);
+        if (parseResult.isClientSessionNotFound() || parseResult.isIllegalHash()) {
             String[] parts = code.split("\\.");
             if (parts.length == 2) {
                 event.detail(Details.CODE_ID, parts[1]);
             }
             event.error(Errors.INVALID_CODE);
-            throw new ErrorResponseException(OAuthErrorException.INVALID_GRANT, "Code not found", Response.Status.BAD_REQUEST);
+            if (parseResult.getClientSession() != null) {
+                session.sessions().removeClientSession(realm, parseResult.getClientSession());
+            }
+            throw new ErrorResponseException(OAuthErrorException.INVALID_GRANT, "Code not valid", Response.Status.BAD_REQUEST);
         }
 
-        ClientSessionModel clientSession = accessCode.getClientSession();
+        ClientSessionModel clientSession = parseResult.getClientSession();
         event.detail(Details.CODE_ID, clientSession.getId());
 
-        String codeExchanged = clientSession.getNote(CODE_EXCHANGED);
-        if (codeExchanged != null && Boolean.parseBoolean(codeExchanged)) {
-            session.sessions().removeClientSession(realm, clientSession);
-
-            event.error(Errors.INVALID_CODE);
-            throw new ErrorResponseException(OAuthErrorException.INVALID_GRANT, "Code used already", Response.Status.BAD_REQUEST);
-        }
-
-        if (!accessCode.isValid(ClientSessionModel.Action.CODE_TO_TOKEN.name(), ClientSessionCode.ActionType.CLIENT)) {
+        if (!parseResult.getCode().isValid(ClientSessionModel.Action.CODE_TO_TOKEN.name(), ClientSessionCode.ActionType.CLIENT)) {
             event.error(Errors.INVALID_CODE);
             throw new ErrorResponseException(OAuthErrorException.INVALID_GRANT, "Code is expired", Response.Status.BAD_REQUEST);
         }
 
-        accessCode.setAction(null);
-        clientSession.setNote(CODE_EXCHANGED, "true");
+        parseResult.getCode().setAction(null);
+
         UserSessionModel userSession = clientSession.getUserSession();
 
         if (userSession == null) {
@@ -275,7 +267,7 @@ public class TokenEndpoint {
         updateClientSession(clientSession);
         updateUserSessionFromClientAuth(userSession);
 
-        AccessToken token = tokenManager.createClientAccessToken(session, accessCode.getRequestedRoles(), realm, client, user, userSession, clientSession);
+        AccessToken token = tokenManager.createClientAccessToken(session, parseResult.getCode().getRequestedRoles(), realm, client, user, userSession, clientSession);
 
         AccessTokenResponse res = tokenManager.responseBuilder(realm, client, event, session, userSession, clientSession)
                 .accessToken(token)

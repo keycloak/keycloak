@@ -714,7 +714,7 @@ public class AccountService extends AbstractSecuredLocalService {
 
                 try {
                     ClientSessionModel clientSession = auth.getClientSession();
-                    ClientSessionCode clientSessionCode = new ClientSessionCode(realm, clientSession);
+                    ClientSessionCode clientSessionCode = new ClientSessionCode(session, realm, clientSession);
                     clientSessionCode.setAction(ClientSessionModel.Action.AUTHENTICATE.name());
                     clientSession.setRedirectUri(redirectUri);
                     clientSession.setNote(OIDCLoginProtocol.STATE_PARAM, UUID.randomUUID().toString());

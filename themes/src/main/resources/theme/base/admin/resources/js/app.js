@@ -248,14 +248,84 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'ClientRegistrationTrustedHostDetailCtrl'
         })
-        .when('/realms/:realm/keys-settings', {
+        .when('/realms/:realm/keys', {
             templateUrl : resourceUrl + '/partials/realm-keys.html',
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
+                },
+                serverInfo : function(ServerInfoLoader) {
+                    return ServerInfoLoader();
+                },
+                keys: function(RealmKeysLoader) {
+                    return RealmKeysLoader();
                 }
             },
-            controller : 'RealmKeysDetailCtrl'
+            controller : 'RealmKeysCtrl'
+        })
+        .when('/realms/:realm/keys/list', {
+            templateUrl : resourceUrl + '/partials/realm-keys-list.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                serverInfo : function(ServerInfoLoader) {
+                    return ServerInfoLoader();
+                },
+                keys: function(RealmKeysLoader) {
+                    return RealmKeysLoader();
+                }
+            },
+            controller : 'RealmKeysCtrl'
+        })
+        .when('/realms/:realm/keys/providers', {
+            templateUrl : resourceUrl + '/partials/realm-keys-providers.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                serverInfo : function(ServerInfoLoader) {
+                    return ServerInfoLoader();
+                }
+            },
+            controller : 'RealmKeysProvidersCtrl'
+        })
+        .when('/create/keys/:realm/providers/:provider', {
+            templateUrl : resourceUrl + '/partials/realm-keys-generic.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                instance : function() {
+                    return {
+                    };
+                },
+                providerId : function($route) {
+                    return $route.current.params.provider;
+                },
+                serverInfo : function(ServerInfoLoader) {
+                    return ServerInfoLoader();
+                }
+            },
+            controller : 'GenericKeystoreCtrl'
+        })
+        .when('/realms/:realm/keys/providers/:provider/:componentId', {
+            templateUrl : resourceUrl + '/partials/realm-keys-generic.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                instance : function(ComponentLoader) {
+                    return ComponentLoader();
+                },
+                providerId : function($route) {
+                    return $route.current.params.provider;
+                },
+                serverInfo : function(ServerInfoLoader) {
+                    return ServerInfoLoader();
+                }
+            },
+            controller : 'GenericKeystoreCtrl'
         })
         .when('/realms/:realm/identity-provider-settings', {
             templateUrl : resourceUrl + '/partials/realm-identity-provider.html',
@@ -2365,6 +2435,9 @@ module.controller('RoleSelectorModalCtrl', function($scope, realm, config, confi
 });
 
 module.controller('ProviderConfigCtrl', function ($modal, $scope) {
+    $scope.fileNames = {};
+
+
     $scope.openRoleSelector = function (configName, config) {
         $modal.open({
             templateUrl: resourceUrl + '/partials/modal/role-selector.html',
@@ -2381,6 +2454,17 @@ module.controller('ProviderConfigCtrl', function ($modal, $scope) {
                 }
             }
         })
+    }
+    
+    $scope.uploadFile = function($files, optionName, config) {
+        var reader = new FileReader();
+        reader.onload = function(e) {
+            $scope.$apply(function() {
+                config[optionName][0] = e.target.result;
+            });
+        };
+        reader.readAsText($files[0]);
+        $scope.fileNames[optionName] = $files[0].name;
     }
 });
 

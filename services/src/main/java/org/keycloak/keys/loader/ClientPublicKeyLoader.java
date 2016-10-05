@@ -23,9 +23,9 @@ import java.util.Collections;
 import java.util.Map;
 
 import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
+import org.keycloak.common.util.KeyUtils;
 import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.jose.jwk.JWK;
-import org.keycloak.jose.jwk.JWKBuilder;
 import org.keycloak.keys.PublicKeyLoader;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -69,7 +69,7 @@ public class ClientPublicKeyLoader implements PublicKeyLoader {
                 PublicKey publicKey = getSignatureValidationKey(certInfo);
 
                 // Check if we have kid in DB, generate otherwise
-                String kid = certInfo.getKid() != null ? certInfo.getKid() : JWKBuilder.createKeyId(publicKey);
+                String kid = certInfo.getKid() != null ? certInfo.getKid() : KeyUtils.createKeyId(publicKey);
                 return Collections.singletonMap(kid, publicKey);
             } catch (ModelException me) {
                 logger.warnf(me, "Unable to retrieve publicKey for verify signature of client '%s' . Error details: %s", client.getClientId(), me.getMessage());

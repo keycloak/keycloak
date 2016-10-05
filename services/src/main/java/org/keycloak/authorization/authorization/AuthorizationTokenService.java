@@ -38,6 +38,7 @@ import org.keycloak.authorization.util.Permissions;
 import org.keycloak.authorization.util.Tokens;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.representations.AccessToken;
@@ -76,6 +77,9 @@ public class AuthorizationTokenService {
 
     @Context
     private HttpRequest httpRequest;
+
+    @Context
+    private KeycloakSession session;
 
     public AuthorizationTokenService(AuthorizationProvider authorization) {
         this.authorization = authorization;
@@ -180,7 +184,7 @@ public class AuthorizationTokenService {
         String rpt = request.getRpt();
 
         if (rpt != null && !"".equals(rpt)) {
-            if (!Tokens.verifySignature(rpt, getRealm().getPublicKey())) {
+            if (!Tokens.verifySignature(session, getRealm(), rpt)) {
                 throw new ErrorResponseException("invalid_rpt", "RPT signature is invalid", Status.FORBIDDEN);
             }
 
@@ -252,13 +256,13 @@ public class AuthorizationTokenService {
         authorization.setPermissions(permissions);
         accessToken.setAuthorization(authorization);
 
-        return new TokenManager().encodeToken(getRealm(), accessToken);
+        return new TokenManager().encodeToken(session, getRealm(), accessToken);
     }
 
     private PermissionTicket verifyPermissionTicket(AuthorizationRequest request) {
         String ticketString = request.getTicket();
 
-        if (ticketString == null || !Tokens.verifySignature(ticketString, getRealm().getPublicKey())) {
+        if (ticketString == null || !Tokens.verifySignature(session, getRealm(), ticketString)) {
             throw new ErrorResponseException("invalid_ticket", "Ticket verification failed", Status.FORBIDDEN);
         }
 

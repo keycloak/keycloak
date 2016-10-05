@@ -16,3 +16,4 @@
 #
 
 org.keycloak.testsuite.domainextension.spi.ExampleSpi
+org.keycloak.testsuite.components.TestSpi

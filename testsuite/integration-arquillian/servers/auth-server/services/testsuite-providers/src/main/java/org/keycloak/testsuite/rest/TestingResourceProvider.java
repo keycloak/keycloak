@@ -21,6 +21,7 @@ import org.infinispan.Cache;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.BadRequestException;
 import org.keycloak.common.util.Time;
+import org.keycloak.component.ComponentModel;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventQuery;
@@ -31,6 +32,8 @@ import org.keycloak.events.admin.AdminEventQuery;
 import org.keycloak.events.admin.AuthDetails;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
+import org.keycloak.keys.KeyProvider;
+import org.keycloak.keys.KeyProviderFactory;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.FederatedIdentityModel;
@@ -44,6 +47,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.AuthDetailsRepresentation;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
@@ -52,6 +56,8 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resource.RealmResourceProvider;
+import org.keycloak.testsuite.components.TestProvider;
+import org.keycloak.testsuite.components.TestProviderFactory;
 import org.keycloak.testsuite.events.EventsListenerProvider;
 import org.keycloak.testsuite.forms.PassThroughAuthenticator;
 import org.keycloak.testsuite.forms.PassThroughClientAuthenticator;
@@ -526,25 +532,6 @@ public class TestingResourceProvider implements RealmResourceProvider {
     public void close() {
     }
 
-    /*
-     * Migration from KeycloakRule#verifyCode
-     */
-    @GET
-    @Path("/verify-code")
-    @Produces(MediaType.APPLICATION_JSON)
-    public String verifyCode(@QueryParam("realm") String realmName, @QueryParam("code") String code) {
-        RealmModel realm = session.realms().getRealm(realmName);
-        try {
-            ClientSessionCode accessCode = ClientSessionCode.parse(code, session, realm);
-            if (accessCode == null) {
-                throw new AssertionError("Invalid code");
-            }
-            return accessCode.getClientSession().getId();
-        } catch (Throwable t) {
-            throw new AssertionError("Failed to parse code", t);
-        }
-    }
-
     @POST
     @Path("/update-pass-through-auth-state")
     @Produces(MediaType.APPLICATION_JSON)
@@ -632,6 +619,23 @@ public class TestingResourceProvider implements RealmResourceProvider {
     @Path("/export-import")
     public TestingExportImportResource getExportImportResource() {
         return new TestingExportImportResource(session);
+    }
+
+    @GET
+    @Path("/test-component")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Map<String, TestProvider.DetailsRepresentation> getTestComponentDetails() {
+        Map<String, TestProvider.DetailsRepresentation> reps = new HashMap<>();
+
+        RealmModel realm = session.getContext().getRealm();
+        for (ComponentModel c : realm.getComponents(realm.getId(), TestProvider.class.getName())) {
+            ProviderFactory<TestProvider> f = session.getKeycloakSessionFactory().getProviderFactory(TestProvider.class, c.getProviderId());
+            TestProviderFactory factory = (TestProviderFactory) f;
+            TestProvider p = (TestProvider) factory.create(session, c);
+            reps.put(c.getName(), p.getDetails());
+        }
+
+        return reps;
     }
 
     private RealmModel getRealmByName(String realmName) {

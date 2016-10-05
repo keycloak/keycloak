@@ -256,7 +256,6 @@ public class SerializedBrokeredIdentityContext implements UpdateProfileContext {
         ctx.setLastName(getLastName());
         ctx.setBrokerSessionId(getBrokerSessionId());
         ctx.setBrokerUserId(getBrokerUserId());
-        ctx.setCode(getCode());
         ctx.setToken(getToken());
 
         RealmModel realm = clientSession.getRealm();
@@ -297,7 +296,6 @@ public class SerializedBrokeredIdentityContext implements UpdateProfileContext {
         ctx.setLastName(context.getLastName());
         ctx.setBrokerSessionId(context.getBrokerSessionId());
         ctx.setBrokerUserId(context.getBrokerUserId());
-        ctx.setCode(context.getCode());
         ctx.setToken(context.getToken());
         ctx.setIdentityProviderId(context.getIdpConfig().getAlias());
 
