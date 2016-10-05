@@ -25,6 +25,18 @@ support for keycloak-server.json.
 To convert your keycloak-server.json, you will use a new jboss-cli operation called `migrate-json`.  
 It is recommended that you run this operation while the server is not running.
 
+The `migrate-json` operation assumes you are migrating with an xml configuration file from an old version.  For example,
+you should not try to migrate your keycloak-server.json to a standalone.xml file that already contains <spi> and <theme>
+tags under the keycloak subsystem.  Before migration, your keycloak subsystem should look like the one below:
+
+.standalone.xml
+[source,xml]
+----
+<subsystem xmlns="urn:jboss:domain:keycloak-server:1.1">
+    <web-context>auth</web-context>
+</subsystem>
+---- 
+
 The jboss-cli tool is discussed in detail in link:{{book.installguide.link}}[{{book.installguide.name}}].
 
 ==== migrate-json in Standalone Mode
