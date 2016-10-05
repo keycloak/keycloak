@@ -49,9 +49,9 @@ import static org.keycloak.testsuite.util.IOUtil.loadJson;
 import static org.keycloak.testsuite.util.IOUtil.loadXML;
 import static org.keycloak.testsuite.util.IOUtil.modifyDocElementAttribute;
 import static org.keycloak.testsuite.util.IOUtil.modifyDocElementValue;
-import static org.keycloak.testsuite.util.IOUtil.removeElementFromDoc;
+import static org.keycloak.testsuite.util.IOUtil.removeElementsFromDoc;
 
-;
+
 
 /**
  * @author tkyjovsk
@@ -97,7 +97,7 @@ public class DeploymentArchiveProcessor implements ApplicationArchiveProcessor {
         if (archive.contains(adapterConfigPath)) {
             log.info("Modifying adapter config " + adapterConfigPath + " in " + archive.getName());
             if (adapterConfigPath.equals(SAML_ADAPTER_CONFIG_PATH)) { // SAML adapter config
-                log.info("Modyfying saml adapter config in " + archive.getName());
+                log.info("Modifying saml adapter config in " + archive.getName());
 
                 Document doc = loadXML(archive.get("WEB-INF/keycloak-saml.xml").getAsset().openStream());
                 if (authServerSslRequired) {
@@ -148,7 +148,17 @@ public class DeploymentArchiveProcessor implements ApplicationArchiveProcessor {
                 } catch (IOException ex) {
                     log.log(Level.FATAL, "Cannot serialize adapter config to JSON.", ex);
                 }
+
+                log.info("Adding OIDCFilter dependencies to " + archive.getName());
+                ((WebArchive) archive).addAsLibraries(KeycloakDependenciesResolver.resolveDependencies("org.keycloak:keycloak-servlet-filter-adapter:" + System.getProperty("project.version")));
+
             }
+
+        } else if (archive.getName().equals("customer-portal-subsystem.war")) {
+
+            log.info("Adding OIDCFilter dependencies to " + archive.getName());
+            ((WebArchive) archive).addAsLibraries(KeycloakDependenciesResolver.resolveDependencies("org.keycloak:keycloak-servlet-filter-adapter:" + System.getProperty("project.version")));
+
         }
     }
 
@@ -210,9 +220,11 @@ public class DeploymentArchiveProcessor implements ApplicationArchiveProcessor {
                 appendChildInDocument(webXmlDoc, "web-app", filterMapping);
 
                 //finally we need to remove all keycloak related configuration from web.xml
-                removeElementFromDoc(webXmlDoc, "web-app", "security-constraint");
-                removeElementFromDoc(webXmlDoc, "web-app", "login-config");
-                removeElementFromDoc(webXmlDoc, "web-app", "security-role");
+                removeElementsFromDoc(webXmlDoc, "web-app", "security-constraint");
+                removeElementsFromDoc(webXmlDoc, "web-app", "login-config");
+                removeElementsFromDoc(webXmlDoc, "web-app", "security-role");
+
+
             }
 
 
