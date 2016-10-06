@@ -91,7 +91,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
         try {
             URI authorizationUrl = createAuthorizationUrl(request).build();
 
-            return Response.temporaryRedirect(authorizationUrl).build();
+            return Response.status(302).location(authorizationUrl).build();
         } catch (Exception e) {
             throw new IdentityBrokerException("Could not create authentication request.", e);
         }

@@ -82,7 +82,7 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
 
             URI authenticationUrl = URI.create(requestToken.getAuthenticationURL());
 
-            return Response.temporaryRedirect(authenticationUrl).build();
+            return Response.status(302).location(authenticationUrl).build();
         } catch (Exception e) {
             throw new IdentityBrokerException("Could send authentication request to twitter.", e);
         }
