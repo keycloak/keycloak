@@ -35,6 +35,10 @@ public class UserConsentRepresentation {
     // Key is clientId, Value is list of granted roles of this client
     protected Map<String, List<String>> grantedClientRoles;
 
+    private Long createdDate;
+
+    private Long lastUpdatedDate;
+
     public String getClientId() {
         return clientId;
     }
@@ -65,5 +69,21 @@ public class UserConsentRepresentation {
 
     public void setGrantedClientRoles(Map<String, List<String>> grantedClientRoles) {
         this.grantedClientRoles = grantedClientRoles;
+    }
+
+    public void setCreatedDate(Long createdDate) {
+        this.createdDate = createdDate;
+    }
+
+    public Long getCreatedDate() {
+        return createdDate;
+    }
+
+    public void setLastUpdatedDate(Long lastUpdatedDate) {
+        this.lastUpdatedDate = lastUpdatedDate;
+    }
+
+    public Long getLastUpdatedDate() {
+        return lastUpdatedDate;
     }
 }

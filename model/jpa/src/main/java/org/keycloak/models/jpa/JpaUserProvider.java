@@ -18,6 +18,7 @@
 package org.keycloak.models.jpa;
 
 import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.common.util.Time;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.credential.UserCredentialStore;
@@ -201,10 +202,14 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
             throw new ModelDuplicateException("Consent already exists for client [" + clientId + "] and user [" + user.getId() + "]");
         }
 
+        long currentTime = Time.currentTimeMillis();
+
         consentEntity = new UserConsentEntity();
         consentEntity.setId(KeycloakModelUtils.generateId());
         consentEntity.setUser(em.getReference(UserEntity.class, user.getId()));
         consentEntity.setClientId(clientId);
+        consentEntity.setCreatedDate(currentTime);
+        consentEntity.setLastUpdatedDate(currentTime);
         em.persist(consentEntity);
         em.flush();
 
@@ -277,6 +282,8 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
             throw new ModelException("Client with id " + entity.getClientId() + " is not available");
         }
         UserConsentModel model = new UserConsentModel(client);
+        model.setCreatedDate(entity.getCreatedDate());
+        model.setLastUpdatedDate(entity.getLastUpdatedDate());
 
         Collection<UserConsentRoleEntity> grantedRoleEntities = entity.getGrantedRoles();
         if (grantedRoleEntities != null) {
@@ -345,6 +352,8 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
             grantedRoleEntities.remove(toRemove);
             em.remove(toRemove);
         }
+
+        consentEntity.setLastUpdatedDate(Time.currentTimeMillis());
 
         em.flush();
     }

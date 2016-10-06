@@ -719,6 +719,8 @@ public class ModelToRepresentation {
         consentRep.setGrantedProtocolMappers(grantedProtocolMappers);
         consentRep.setGrantedRealmRoles(grantedRealmRoles);
         consentRep.setGrantedClientRoles(grantedClientRoles);
+        consentRep.setCreatedDate(model.getCreatedDate());
+        consentRep.setLastUpdatedDate(model.getLastUpdatedDate());
         return consentRep;
     }
 

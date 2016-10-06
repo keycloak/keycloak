@@ -1585,6 +1585,8 @@ public class RepresentationToModel {
         }
 
         UserConsentModel consentModel = new UserConsentModel(client);
+        consentModel.setCreatedDate(consentRep.getCreatedDate());
+        consentModel.setLastUpdatedDate(consentRep.getLastUpdatedDate());
 
         if (consentRep.getGrantedRealmRoles() != null) {
             for (String roleName : consentRep.getGrantedRealmRoles()) {
