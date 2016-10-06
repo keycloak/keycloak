@@ -109,7 +109,7 @@ public interface KeycloakSession {
     UserCache getUserCache();
 
     /**
-     * A possibly cached view of all users in system.
+     * A cached view of all users in system including deprecated UserFederationProvider SPI
      *
      * @return
      */
@@ -126,12 +126,12 @@ public interface KeycloakSession {
     UserCredentialManager userCredentialManager();
 
     /**
-     *  A possibly cached view of all users in system that does NOT include users available from the deprecated UserFederationProvider SPI.
+     *  A cached view of all users in system that does NOT include users available from the deprecated UserFederationProvider SPI.
      */
     UserProvider userStorage();
 
     /**
-     * Keycloak specific local storage for users.  No cache in front, this api talks directly to database.
+     * Keycloak specific local storage for users.  No cache in front, this api talks directly to database configured for Keycloak
      *
      * @return
      */
