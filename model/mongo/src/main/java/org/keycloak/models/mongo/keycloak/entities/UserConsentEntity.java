@@ -29,6 +29,8 @@ public class UserConsentEntity extends AbstractIdentifiableEntity {
     private String clientId;
     private List<String> grantedRoles = new ArrayList<String>();
     private List<String> grantedProtocolMappers = new ArrayList<String>();
+    private Long createdDate;
+    private Long lastUpdatedDate;
 
     public String getUserId() {
         return userId;
@@ -60,5 +62,21 @@ public class UserConsentEntity extends AbstractIdentifiableEntity {
 
     public void setGrantedProtocolMappers(List<String> grantedProtocolMappers) {
         this.grantedProtocolMappers = grantedProtocolMappers;
+    }
+
+    public Long getCreatedDate() {
+        return createdDate;
+    }
+
+    public void setCreatedDate(Long createdDate) {
+        this.createdDate = createdDate;
+    }
+
+    public Long getLastUpdatedDate() {
+        return lastUpdatedDate;
+    }
+
+    public void setLastUpdatedDate(Long lastUpdatedDate) {
+        this.lastUpdatedDate = lastUpdatedDate;
     }
 }
