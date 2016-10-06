@@ -719,7 +719,7 @@ public class AccountService extends AbstractSecuredLocalService {
                     clientSession.setRedirectUri(redirectUri);
                     clientSession.setNote(OIDCLoginProtocol.STATE_PARAM, UUID.randomUUID().toString());
 
-                    return Response.status(302).location(
+                    return Response.seeOther(
                             Urls.identityProviderAuthnRequest(this.uriInfo.getBaseUri(), providerId, realm.getName(), clientSessionCode.getCode()))
                             .build();
                 } catch (Exception spe) {
