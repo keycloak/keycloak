@@ -36,4 +36,65 @@ public class UserStorageProviderModel extends PrioritizedComponentModel {
         super(copy);
     }
 
+    private transient Integer fullSyncPeriod;
+    private transient Integer changedSyncPeriod;
+    private transient Integer lastSync;
+    private transient Boolean importEnabled;
+
+    public boolean isImportEnabled() {
+        if (importEnabled == null) {
+            String val = getConfig().getFirst("importEnabled");
+            if (val == null) importEnabled = false;
+            importEnabled = Boolean.valueOf(val);
+        }
+        return importEnabled;
+
+    }
+
+    public void setImportEnabled(boolean flag) {
+        importEnabled = flag;
+        getConfig().putSingle("importEnabled", Boolean.toString(flag));
+    }
+
+    public int getFullSyncPeriod() {
+        if (fullSyncPeriod == null) {
+            String val = getConfig().getFirst("fullSyncPeriod");
+            if (val == null) fullSyncPeriod = -1;
+            fullSyncPeriod = Integer.valueOf(val);
+        }
+        return fullSyncPeriod;
+    }
+
+    public void setFullSyncPeriod(int fullSyncPeriod) {
+        this.fullSyncPeriod = fullSyncPeriod;
+        getConfig().putSingle("fullSyncPeriod", Integer.toString(fullSyncPeriod));
+    }
+
+    public int getChangedSyncPeriod() {
+        if (changedSyncPeriod == null) {
+            String val = getConfig().getFirst("changedSyncPeriod");
+            if (val == null) changedSyncPeriod = -1;
+            changedSyncPeriod = Integer.valueOf(val);
+        }
+        return changedSyncPeriod;
+    }
+
+    public void setChangedSyncPeriod(int changedSyncPeriod) {
+        this.changedSyncPeriod = changedSyncPeriod;
+        getConfig().putSingle("changedSyncPeriod", Integer.toString(changedSyncPeriod));
+    }
+
+    public int getLastSync() {
+        if (lastSync == null) {
+            String val = getConfig().getFirst("lastSync");
+            if (val == null) lastSync = 0;
+            lastSync = Integer.valueOf(val);
+        }
+        return lastSync;
+    }
+
+    public void setLastSync(int lastSync) {
+        this.lastSync = lastSync;
+        getConfig().putSingle("lastSync", Integer.toString(lastSync));
+    }
 }
