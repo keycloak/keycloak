@@ -816,6 +816,10 @@ module.controller('RealmIdentityProviderCtrl', function($scope, $filter, $upload
     for (var i=0 ; i<$scope.authFlows.length ; i++) {
         $scope.postBrokerAuthFlows.push($scope.authFlows[i]);
     }
+    
+    if (!$scope.identityProvider.postBrokerLoginFlowAlias) {
+        $scope.identityProvider.postBrokerLoginFlowAlias = $scope.postBrokerAuthFlows[0].alias;
+    }
 
     $scope.$watch(function() {
         return $location.path();
