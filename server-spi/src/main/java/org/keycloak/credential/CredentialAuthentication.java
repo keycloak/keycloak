@@ -14,20 +14,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.storage.user;
+package org.keycloak.credential;
 
 import org.keycloak.models.CredentialValidationOutput;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserCredentialModel;
 
 import java.util.Set;
 
 /**
+ * Single purpose method that knows how to authenticate a user based on a credential type.  This is used when the user
+ * is not known but the provider knows how to extract this information from the credential.  Examples are Kerberos.
+ *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public interface UserCredentialAuthenticationProvider {
-    Set<String> getSupportedCredentialAuthenticationTypes();
-    CredentialValidationOutput validCredential(KeycloakSession session, RealmModel realm, UserCredentialModel input);
+public interface CredentialAuthentication {
+    boolean supportsCredentialAuthenticationFor(String type);
+    CredentialValidationOutput authenticate(RealmModel realm, CredentialInput input);
 }

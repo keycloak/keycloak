@@ -73,7 +73,7 @@ public class UserFederationManager implements UserProvider {
         return user;
     }
 
-    protected UserFederationProvider getFederationProvider(UserFederationProviderModel model) {
+    public UserFederationProvider getFederationProvider(UserFederationProviderModel model) {
         return KeycloakModelUtils.getFederationProviderInstance(session, model);
     }
 
@@ -482,40 +482,6 @@ public class UserFederationManager implements UserProvider {
     @Override
     public void preRemove(ProtocolMapperModel protocolMapper) {
         session.userStorage().preRemove(protocolMapper);
-    }
-
-    @Override
-    public CredentialValidationOutput validCredentials(KeycloakSession session, RealmModel realm, UserCredentialModel... input) {
-        List<UserFederationProviderModel> fedProviderModels = realm.getUserFederationProviders();
-        List<UserFederationProvider> fedProviders = new ArrayList<UserFederationProvider>();
-        for (UserFederationProviderModel fedProviderModel : fedProviderModels) {
-            fedProviders.add(getFederationProvider(fedProviderModel));
-        }
-
-        CredentialValidationOutput result = null;
-        for (UserCredentialModel cred : input) {
-            UserFederationProvider providerSupportingCreds = null;
-
-            // Find first provider, which supports required credential type
-            for (UserFederationProvider fedProvider : fedProviders) {
-                if (fedProvider.getSupportedCredentialTypes().contains(cred.getType())) {
-                    providerSupportingCreds = fedProvider;
-                    break;
-                }
-            }
-
-            if (providerSupportingCreds == null) {
-                logger.warn("Don't have provider supporting credentials of type " + cred.getType());
-                return CredentialValidationOutput.failed();
-            }
-
-            logger.debug("Found provider [" + providerSupportingCreds + "] supporting credentials of type " + cred.getType());
-            CredentialValidationOutput currentResult = providerSupportingCreds.validCredentials(realm, cred);
-            result = (result == null) ? currentResult : result.merge(currentResult);
-        }
-
-        // For now, validCredentials(realm, input) is not supported for local userProviders
-        return (result != null) ? result : CredentialValidationOutput.failed();
     }
 
     @Override

@@ -21,7 +21,7 @@ import com.mongodb.BasicDBList;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBCollection;
 import com.mongodb.WriteResult;
-import org.keycloak.hash.Pbkdf2PasswordHashProvider;
+import org.keycloak.credential.hash.Pbkdf2PasswordHashProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.utils.HmacOTP;

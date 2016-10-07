@@ -15,13 +15,12 @@
  * limitations under the License.
  */
 
-package org.keycloak.hash;
+package org.keycloak.keys;
 
 import org.keycloak.provider.ProviderFactory;
 
 /**
- * @author <a href="mailto:me@tsudot.com">Kunal Kerkar</a>
+ * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public interface PasswordHashProviderFactory extends ProviderFactory<PasswordHashProvider> {
-
+public interface PublicKeyStorageProviderFactory extends ProviderFactory<PublicKeyStorageProvider> {
 }

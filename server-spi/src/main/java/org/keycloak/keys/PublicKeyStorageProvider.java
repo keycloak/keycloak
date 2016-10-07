@@ -17,10 +17,24 @@
 
 package org.keycloak.keys;
 
-import org.keycloak.provider.ProviderFactory;
+import java.security.PublicKey;
+
+import org.keycloak.provider.Provider;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public interface KeyStorageProviderFactory extends ProviderFactory<KeyStorageProvider> {
+public interface PublicKeyStorageProvider extends Provider {
+
+
+    /**
+     * Get public key to verify messages signed by particular client. Used for example during JWT client authentication
+     *
+     * @param modelKey
+     * @param kid
+     * @param loader
+     * @return
+     */
+    PublicKey getPublicKey(String modelKey, String kid, PublicKeyLoader loader);
+
 }

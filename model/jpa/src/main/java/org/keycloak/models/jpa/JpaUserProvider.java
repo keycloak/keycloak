@@ -708,12 +708,6 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
     }
 
     @Override
-    public CredentialValidationOutput validCredentials(KeycloakSession session, RealmModel realm, UserCredentialModel... input) {
-        // Not supported yet
-        return null;
-    }
-
-    @Override
     public void preRemove(RealmModel realm, ComponentModel component) {
 
     }

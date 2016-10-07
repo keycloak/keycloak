@@ -32,7 +32,7 @@ import org.keycloak.events.EventType;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.jose.jws.crypto.RSAProvider;
-import org.keycloak.keys.loader.KeyStorageManager;
+import org.keycloak.keys.loader.PublicKeyStorageManager;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -299,7 +299,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
     protected boolean verify(JWSInput jws) {
         if (!getConfig().isValidateSignature()) return true;
 
-        PublicKey publicKey = KeyStorageManager.getIdentityProviderPublicKey(session, session.getContext().getRealm(), getConfig(), jws);
+        PublicKey publicKey = PublicKeyStorageManager.getIdentityProviderPublicKey(session, session.getContext().getRealm(), getConfig(), jws);
 
         return publicKey != null && RSAProvider.verify(jws, publicKey);
     }

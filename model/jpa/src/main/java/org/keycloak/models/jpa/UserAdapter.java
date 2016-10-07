@@ -117,9 +117,10 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
 
         if (firstExistingAttrId != null) {
             // Remove attributes through HQL to avoid StaleUpdateException
-            Query query = em.createNamedQuery("deleteUserAttributesOtherThan");
-            query.setParameter("attrId", firstExistingAttrId);
+            Query query = em.createNamedQuery("deleteUserAttributesByNameAndUserOtherThan");
+            query.setParameter("name", name);
             query.setParameter("userId", user.getId());
+            query.setParameter("attrId", firstExistingAttrId);
             int numUpdated = query.executeUpdate();
 
             // Remove attribute from local entity

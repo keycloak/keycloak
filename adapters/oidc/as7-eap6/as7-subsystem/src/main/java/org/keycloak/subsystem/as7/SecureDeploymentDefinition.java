@@ -23,6 +23,7 @@ import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.operations.common.GenericSubsystemDescribeHandler;
+import org.jboss.as.controller.operations.validation.IntRangeValidator;
 import org.jboss.as.controller.operations.validation.StringLengthValidator;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
@@ -79,6 +80,24 @@ class SecureDeploymentDefinition extends SimpleResourceDefinition {
                     .setAllowExpression(true)
                     .setDefaultValue(new ModelNode(false))
                     .build();
+    protected static final SimpleAttributeDefinition TURN_OFF_CHANGE_SESSION =
+            new SimpleAttributeDefinitionBuilder("turn-off-change-session-id-on-login", ModelType.BOOLEAN, true)
+                    .setXmlName("turn-off-change-session-id-on-login")
+                    .setAllowExpression(true)
+                    .setDefaultValue(new ModelNode(false))
+                    .build();
+    protected static final SimpleAttributeDefinition TOKEN_MINIMUM_TIME_TO_LIVE =
+            new SimpleAttributeDefinitionBuilder("token-minimum-time-to-live", ModelType.INT, true)
+                    .setXmlName("token-minimum-time-to-live")
+                    .setValidator(new IntRangeValidator(-1, true))
+                    .setAllowExpression(true)
+                    .build();
+    protected static final SimpleAttributeDefinition MIN_TIME_BETWEEN_JWKS_REQUESTS =
+            new SimpleAttributeDefinitionBuilder("min-time-between-jwks-requests", ModelType.INT, true)
+                    .setXmlName("min-time-between-jwks-requests")
+                    .setValidator(new IntRangeValidator(-1, true))
+                    .setAllowExpression(true)
+                    .build();
 
     protected static final List<SimpleAttributeDefinition> DEPLOYMENT_ONLY_ATTRIBUTES = new ArrayList<SimpleAttributeDefinition>();
     static {
@@ -88,6 +107,9 @@ class SecureDeploymentDefinition extends SimpleResourceDefinition {
         DEPLOYMENT_ONLY_ATTRIBUTES.add(BEARER_ONLY);
         DEPLOYMENT_ONLY_ATTRIBUTES.add(ENABLE_BASIC_AUTH);
         DEPLOYMENT_ONLY_ATTRIBUTES.add(PUBLIC_CLIENT);
+        DEPLOYMENT_ONLY_ATTRIBUTES.add(TURN_OFF_CHANGE_SESSION);
+        DEPLOYMENT_ONLY_ATTRIBUTES.add(TOKEN_MINIMUM_TIME_TO_LIVE);
+        DEPLOYMENT_ONLY_ATTRIBUTES.add(MIN_TIME_BETWEEN_JWKS_REQUESTS);
     }
 
     protected static final List<SimpleAttributeDefinition> ALL_ATTRIBUTES = new ArrayList<SimpleAttributeDefinition>();

@@ -14,35 +14,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.keycloak.storage.user;
 
-package org.keycloak.hash;
-
-import org.keycloak.provider.Provider;
-import org.keycloak.provider.ProviderFactory;
-import org.keycloak.provider.Spi;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 
 /**
- * @author <a href="mailto:me@tsudot.com">Kunal Kerkar</a>
+ * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
+ * @version $Revision: 1 $
  */
-public class PasswordHashSpi implements Spi {
-
-    @Override
-    public boolean isInternal() {
-        return false;
-    }
-
-    @Override
-    public String getName() {
-        return "password-hash";
-    }
-
-    @Override
-    public Class<? extends Provider> getProviderClass() {
-        return PasswordHashProvider.class;
-    }
-
-    @Override
-    public Class<? extends ProviderFactory> getProviderFactoryClass() {
-        return PasswordHashProviderFactory.class;
-    }
+public interface ImportedUserValidation {
+    UserModel validate(RealmModel realmm, UserModel user);
 }

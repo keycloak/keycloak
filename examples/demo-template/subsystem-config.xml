@@ -18,7 +18,6 @@
 <!-- works with keycloak.json that comes with example -->
 <subsystem xmlns="urn:jboss:domain:keycloak:1.0">
     <realm name="demo">
-        <realm-public-key>MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCrVrCuTtArbgaZzL1hvh0xtL5mc7o0NqPVnYXkLvgcwiC3BjLGw1tGEGoJaXDuSaRllobm53JBhjx33UNv+5z/UMG4kytBWxheNVKnL6GgqlNabMaFfPLPCF8kAgKnsi79NMo+n6KnSY8YeUmec/p2vjO2NjsSAVcWEQMVhJ31LwIDAQAB</realm-public-key>
         <auth-server-url>/auth</auth-server-url>
         <ssl-required>external</ssl-required>
     </realm>
@@ -30,7 +29,14 @@
     <secure-deployment name="product-portal.war">
         <realm>demo</realm>
         <resource>product-portal</resource>
-        <credential name="secret">password</credential>
+        <credential name="jwt">
+            <client-keystore-file>classpath:keystore-client.jks</client-keystore-file>
+            <client-keystore-type>JKS</client-keystore-type>
+            <client-keystore-password>storepass</client-keystore-password>
+            <client-key-password>keypass</client-key-password>
+            <client-key-alias>clientkey</client-key-alias>
+            <token-expiration>10</token-expiration>
+        </credential>
     </secure-deployment>
     <secure-deployment name="database.war">
         <realm>demo</realm>

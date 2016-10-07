@@ -49,6 +49,11 @@ public class CredentialValidationOutput {
         return authStatus;
     }
 
+    /**
+     * State that is passed back by provider
+     *
+     * @return
+     */
     public Map<String, String> getState() {
         return state;
     }

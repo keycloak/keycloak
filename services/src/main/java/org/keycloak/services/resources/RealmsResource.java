@@ -163,7 +163,7 @@ public class RealmsResource {
             targetUri = KeycloakUriBuilder.fromUri(ResolveRelative.resolveRelativeUri(uriInfo.getRequestUri(), client.getRootUrl(), client.getBaseUrl())).build();
         }
 
-        return Response.temporaryRedirect(targetUri).build();
+        return Response.seeOther(targetUri).build();
     }
 
     @Path("{realm}/login-actions")

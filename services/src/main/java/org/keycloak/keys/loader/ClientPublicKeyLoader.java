@@ -26,7 +26,7 @@ import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
 import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKBuilder;
-import org.keycloak.keys.KeyLoader;
+import org.keycloak.keys.PublicKeyLoader;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
@@ -36,12 +36,13 @@ import org.keycloak.protocol.oidc.utils.JWKSHttpUtils;
 import org.keycloak.representations.idm.CertificateRepresentation;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.util.CertificateInfoHelper;
+import org.keycloak.services.util.ResolveRelative;
 import org.keycloak.util.JWKSUtils;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class ClientPublicKeyLoader implements KeyLoader {
+public class ClientPublicKeyLoader implements PublicKeyLoader {
 
     protected static ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
 
@@ -59,6 +60,7 @@ public class ClientPublicKeyLoader implements KeyLoader {
         OIDCAdvancedConfigWrapper config = OIDCAdvancedConfigWrapper.fromClientModel(client);
         if (config.isUseJwksUrl()) {
             String jwksUrl = config.getJwksUrl();
+            jwksUrl = ResolveRelative.resolveRelativeUri(session.getContext().getUri().getRequestUri(), client.getRootUrl(), jwksUrl);
             JSONWebKeySet jwks = JWKSHttpUtils.sendJwksRequest(session, jwksUrl);
             return JWKSUtils.getKeysForUse(jwks, JWK.Use.SIG);
         } else {

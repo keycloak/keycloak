@@ -14,27 +14,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.keycloak.storage.user;
 
-package org.keycloak.keys;
+import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.storage.UserStorageProviderModel;
 
-import java.security.PublicKey;
-
-import org.keycloak.provider.Provider;
+import java.util.Date;
 
 /**
- * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
+ * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
+ * @version $Revision: 1 $
  */
-public interface KeyStorageProvider extends Provider {
-
-
-    /**
-     * Get public key to verify messages signed by particular client. Used for example during JWT client authentication
-     *
-     * @param modelKey
-     * @param kid
-     * @param loader
-     * @return
-     */
-    PublicKey getPublicKey(String modelKey, String kid, KeyLoader loader);
-
+public interface ImportSynchronization {
+    SynchronizationResult sync(KeycloakSessionFactory sessionFactory, String realmId, UserStorageProviderModel model);
+    SynchronizationResult syncSince(Date lastSync, KeycloakSessionFactory sessionFactory, String realmId, UserStorageProviderModel model);
 }

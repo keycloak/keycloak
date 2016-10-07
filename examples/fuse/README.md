@@ -36,7 +36,7 @@ Base steps
 ----------
 
 * Run external instance of Keycloak server on WildFly . It's easiest to run and download Keycloak standalone server. Fuse demo suppose that server is running on [http://localhost:8080/auth](http://localhost:8080/auth)
-* Import realm `demo` from the file testrealm.json on `examples/fuse/testrealm.json` . See [here](../demo-template/README.md#step-3-import-the-test-realm) 
+* Import realm `demo` from the file `demorealm.json` on `examples/fuse/demorealm.json` . See [here](../demo-template/README.md#step-3-import-the-test-realm) 
 the details on how to import the realm
 * Then download Keycloak examples and build Fuse example, which is needed so the feature repository is added to your local maven repo:
 
@@ -51,8 +51,9 @@ Running demo on JBoss Fuse 6.2.1 or JBoss Fuse 6.2.0
 You just need to download and run JBoss Fuse and then run those commands from the karaf terminal to install the needed features and Keycloak fuse demo (Replace Keycloak versions with the current Keycloak version number):
 
 ```
-features:addurl mvn:org.keycloak/keycloak-osgi-features/1.9.4.Final/xml/features
-features:addurl mvn:org.keycloak.example.demo/keycloak-fuse-example-features/1.9.4.Final/xml/features
+KEYCLOAK_VERSION="2.2.1.Final"
+features:addurl mvn:org.keycloak/keycloak-osgi-features/$KEYCLOAK_VERSION/xml/features
+features:addurl mvn:org.keycloak.example.demo/keycloak-fuse-example-features/$KEYCLOAK_VERSION/xml/features
 features:install keycloak-fuse-6.2-example
 ```
 
@@ -72,8 +73,9 @@ Similar steps to the instructions for JBoss Fuse 6.2.1 but you need to install a
 You just need to download and run JBoss Fuse and then run those commands from the karaf terminal to install the needed features and Keycloak fuse demo (Replace Keycloak versions with the current Keycloak version number):
 
 ```
-features:addurl mvn:org.keycloak/keycloak-osgi-features/1.9.4.Final/xml/features
-features:addurl mvn:org.keycloak.example.demo/keycloak-fuse-example-features/1.9.4.Final/xml/features
+KEYCLOAK_VERSION="2.2.1.Final"
+features:addurl mvn:org.keycloak/keycloak-osgi-features/$KEYCLOAK_VERSION/xml/features
+features:addurl mvn:org.keycloak.example.demo/keycloak-fuse-example-features/$KEYCLOAK_VERSION/xml/features
 features:install keycloak-fuse-6.3-example
 ```
 

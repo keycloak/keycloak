@@ -35,7 +35,6 @@ import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.UriUtils;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.credential.CredentialModel;
-import org.keycloak.hash.Pbkdf2PasswordHashProvider;
 import org.keycloak.migration.MigrationProvider;
 import org.keycloak.migration.migrators.MigrationUtils;
 import org.keycloak.models.AuthenticationExecutionModel;
@@ -1434,14 +1433,14 @@ public class RepresentationToModel {
                 // Could happen when migrating from some early version
                 if ((UserCredentialModel.PASSWORD.equals(cred.getType()) || UserCredentialModel.PASSWORD_HISTORY.equals(cred.getType())) &&
                         (cred.getAlgorithm().equals(HmacOTP.HMAC_SHA1))) {
-                    hashedCred.setAlgorithm(Pbkdf2PasswordHashProvider.ID);
+                    hashedCred.setAlgorithm("pbkdf2");
                 } else {
                     hashedCred.setAlgorithm(cred.getAlgorithm());
                 }
 
             } else {
                 if (UserCredentialModel.PASSWORD.equals(cred.getType()) || UserCredentialModel.PASSWORD_HISTORY.equals(cred.getType())) {
-                    hashedCred.setAlgorithm(Pbkdf2PasswordHashProvider.ID);
+                    hashedCred.setAlgorithm("pbkdf2");
                 } else if (UserCredentialModel.isOtp(cred.getType())) {
                     hashedCred.setAlgorithm(HmacOTP.HMAC_SHA1);
                 }
