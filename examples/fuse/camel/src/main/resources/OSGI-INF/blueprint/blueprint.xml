@@ -18,9 +18,10 @@
 
 <blueprint xmlns="http://www.osgi.org/xmlns/blueprint/v1.0.0"
            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xmlns:camel="http://camel.apache.org/schema/blueprint"
            xsi:schemaLocation="
        http://www.osgi.org/xmlns/blueprint/v1.0.0 http://www.osgi.org/xmlns/blueprint/v1.0.0/blueprint.xsd
-       http://camel.apache.org/schema/blueprint http://camel.apache.org/schema/blueprint/camel-blueprint.xsd">
+       http://camel.apache.org/schema/blueprint http://camel.apache.org/schema/blueprint/camel-blueprint-2.17.1.xsd">
 
     <bean id="kcAdapterConfig" class="org.keycloak.representations.adapters.config.AdapterConfig">
         <property name="realm" value="demo"/>
@@ -61,8 +62,23 @@
         <property name="realmName" value="does-not-matter"/>
     </bean>
 
+    <bean id="securityHandlerRest" class="org.eclipse.jetty.security.ConstraintSecurityHandler">
+        <property name="authenticator" ref="keycloakAuthenticator" />
+        <property name="constraintMappings">
+            <list>
+                <ref component-id="constraintMapping" />
+            </list>
+        </property>
+        <property name="authMethod" value="BASIC"/>
+        <property name="realmName" value="does-not-matter"/>
+    </bean>
+
+    <!--we need 2 independent instance of sessionHandler, since jetty will try to start both-->
     <bean id="sessionHandler" class="org.keycloak.adapters.jetty.spi.WrappingSessionHandler">
         <property name="handler" ref="securityHandler" />
+    </bean>
+    <bean id="sessionHandlerRest" class="org.keycloak.adapters.jetty.spi.WrappingSessionHandler">
+        <property name="handler" ref="securityHandlerRest" />
     </bean>
 
     <bean id="helloProcessor" class="org.keycloak.example.CamelHelloProcessor" />
@@ -70,11 +86,40 @@
     <camelContext id="blueprintContext"
                   trace="false"
                   xmlns="http://camel.apache.org/schema/blueprint">
+
+        <restConfiguration component="jetty" contextPath="/restdsl"
+                           port="8484">
+            <!--the link with Keycloak security handlers happens here-->
+            <endpointProperty key="handlers" value="sessionHandlerRest"></endpointProperty>
+            <endpointProperty key="matchOnUriPrefix" value="true"></endpointProperty>
+        </restConfiguration>
+
+        <rest path="/hello" >
+            <description>Hello rest service</description>
+            <get uri="/{id}" outType="java.lang.String">
+                <description>Just an helllo</description>
+                <to uri="direct:justDirect" />
+            </get>
+
+        </rest>
+
+        <route id="justDirect">
+            <from uri="direct:justDirect"/>
+            <process ref="helloProcessor" />
+            <log message="RestDSL correctly invoked ${body}"/>
+            <setBody>
+                <constant>(__This second sentence is returned from a Camel RestDSL endpoint__)</constant>
+            </setBody>
+        </route>
+
+
         <route id="httpBridge">
+            <!--note that we are passing to the endoint the security handlers we have defined above-->
             <from uri="jetty:http://0.0.0.0:8383/admin-camel-endpoint?handlers=sessionHandler&amp;matchOnUriPrefix=true" />
             <process ref="helloProcessor" />
             <log message="The message from camel endpoint contains ${body}"/>
         </route>
+
     </camelContext>
 
 </blueprint>
