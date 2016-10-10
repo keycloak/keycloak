@@ -48,6 +48,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.keycloak.models.RoleModel;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -558,6 +559,11 @@ public class GroupLDAPFederationMapper extends AbstractLDAPFederationMapper impl
         public LDAPGroupMappingsUserDelegate(UserModel user, LDAPObject ldapUser) {
             super(user);
             this.ldapUser = ldapUser;
+        }
+
+        @Override
+        public boolean hasRole(RoleModel role) {
+            return super.hasRole(role) || KeycloakModelUtils.hasRoleFromGroup(getGroups(), role, true);
         }
 
         @Override

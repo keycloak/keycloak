@@ -28,8 +28,24 @@ public interface RoleMapperModel {
 
     Set<RoleModel> getClientRoleMappings(ClientModel app);
 
+    /**
+     * Returns {@code true} if this object is directly or indirectly assigned the given role, {@code false} otherwise.
+     * <p>
+     * For example, {@code true} is returned for hasRole(R) if:
+     * <ul>
+     *  <li>R is directly assigned to this object</li>
+     *  <li>R is not assigned to this object but this object belongs to a group G which is assigned the role R</li>
+     *  <li>R is not assigned to this object but this object belongs to a group G, and G belongs to group H which is assigned the role R</li>
+     * </ul>
+     * @param role
+     * @return see description
+     */
     boolean hasRole(RoleModel role);
 
+    /**
+     * Grants the given role to this object.
+     * @param role
+     */
     void grantRole(RoleModel role);
 
     Set<RoleModel> getRoleMappings();

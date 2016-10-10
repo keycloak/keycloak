@@ -301,7 +301,7 @@ public class UserAdapter implements CachedUserModel {
         for (RoleModel mapping: mappings) {
            if (mapping.hasRole(role)) return true;
         }
-        return false;
+        return KeycloakModelUtils.hasRoleFromGroup(getGroups(), role, true);
     }
 
     @Override
