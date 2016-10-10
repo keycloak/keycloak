@@ -816,6 +816,10 @@ module.controller('RealmIdentityProviderCtrl', function($scope, $filter, $upload
     for (var i=0 ; i<$scope.authFlows.length ; i++) {
         $scope.postBrokerAuthFlows.push($scope.authFlows[i]);
     }
+    
+    if (!$scope.identityProvider.postBrokerLoginFlowAlias) {
+        $scope.identityProvider.postBrokerLoginFlowAlias = $scope.postBrokerAuthFlows[0].alias;
+    }
 
     $scope.$watch(function() {
         return $location.path();
@@ -1807,6 +1811,8 @@ module.controller('CreateExecutionFlowCtrl', function($scope, realm, topFlow, pa
                                                       Notifications, $location) {
     $scope.realm = realm;
     $scope.formProviders = formProviders;
+    
+    var returnToTopFlow = parentFlow.topLevel ? parentFlow.alias : topFlow;
 
     var defaultFlowType = parentFlow.providerId == 'client-flow' ? 'client-flow' : 'basic-flow';
     $scope.flow = {
@@ -1822,12 +1828,12 @@ module.controller('CreateExecutionFlowCtrl', function($scope, realm, topFlow, pa
     $scope.save = function() {
         $scope.flow.provider = $scope.provider.id;
         CreateExecutionFlow.save({realm: realm.realm, alias: parentFlow.alias}, $scope.flow, function() {
-            $location.url("/realms/" + realm.realm + "/authentication/flows/" + topFlow);
+            $location.url("/realms/" + realm.realm + "/authentication/flows/" + returnToTopFlow);
             Notifications.success("Flow Created.");
         })
     }
     $scope.cancel = function() {
-        $location.url("/realms/" + realm.realm + "/authentication/flows/" + topFlow);
+        $location.url("/realms/" + realm.realm + "/authentication/flows/" + returnToTopFlow);
     };
 });
 
@@ -1836,6 +1842,9 @@ module.controller('CreateExecutionCtrl', function($scope, realm, topFlow, parent
                                                       Notifications, $location) {
     $scope.realm = realm;
     $scope.parentFlow = parentFlow;
+    
+    var returnToTopFlow = parentFlow.topLevel ? parentFlow.alias : topFlow;
+    
     if (parentFlow.providerId == 'form-flow') {
         $scope.providers = formActionProviders;
     } else if (parentFlow.providerId == 'client-flow') {
@@ -1854,12 +1863,12 @@ module.controller('CreateExecutionCtrl', function($scope, realm, topFlow, parent
             provider: $scope.provider.id
         }
         CreateExecution.save({realm: realm.realm, alias: parentFlow.alias}, execution, function() {
-            $location.url("/realms/" + realm.realm + "/authentication/flows/" + topFlow);
+            $location.url("/realms/" + realm.realm + "/authentication/flows/" + returnToTopFlow);
             Notifications.success("Execution Created.");
         })
     }
     $scope.cancel = function() {
-        $location.url("/realms/" + realm.realm + "/authentication/flows/" + topFlow);
+        $location.url("/realms/" + realm.realm + "/authentication/flows/" + returnToTopFlow);
     };
 });
 
