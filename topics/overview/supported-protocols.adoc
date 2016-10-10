@@ -1,4 +1,5 @@
 [[_supported_protocols]]
+
 === Supported Protocols
 
 ==== OpenID Connect
