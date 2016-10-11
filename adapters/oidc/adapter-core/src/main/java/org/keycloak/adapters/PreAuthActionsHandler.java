@@ -214,7 +214,7 @@ public class PreAuthActionsHandler {
 
         try {
             JWSInput input = new JWSInput(token);
-            PublicKey publicKey = AdapterRSATokenVerifier.getPublicKey(input, deployment);
+            PublicKey publicKey = AdapterRSATokenVerifier.getPublicKey(input.getHeader().getKeyId(), deployment);
             if (RSAProvider.verify(input, publicKey)) {
                 return input;
             }

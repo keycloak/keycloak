@@ -24,10 +24,12 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.services.ErrorResponseException;
+import org.keycloak.services.Urls;
 import org.keycloak.util.JsonSerialization;
 
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.security.PublicKey;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -70,7 +72,13 @@ public class AccessTokenIntrospectionProvider implements TokenIntrospectionProvi
 
     protected AccessToken toAccessToken(String token) {
         try {
-            return RSATokenVerifier.toAccessToken(token, realm.getPublicKey());
+            RSATokenVerifier verifier = RSATokenVerifier.create(token)
+                    .realmUrl(Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName()));
+
+            PublicKey publicKey = session.keys().getPublicKey(realm, verifier.getHeader().getKeyId());
+            verifier.publicKey(publicKey);
+
+            return verifier.verify().getToken();
         } catch (VerificationException e) {
             throw new ErrorResponseException("invalid_request", "Invalid token.", Response.Status.UNAUTHORIZED);
         }

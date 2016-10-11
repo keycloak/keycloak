@@ -619,7 +619,7 @@ public class LoginActionsService {
     }
 
     private Response redirectToAfterBrokerLoginEndpoint(ClientSessionModel clientSession, boolean firstBrokerLogin) {
-        ClientSessionCode accessCode = new ClientSessionCode(realm, clientSession);
+        ClientSessionCode accessCode = new ClientSessionCode(session, realm, clientSession);
         clientSession.setTimestamp(Time.currentTime());
 
         URI redirect = firstBrokerLogin ? Urls.identityProviderAfterFirstBrokerLogin(uriInfo.getBaseUri(), realm.getName(), accessCode.getCode()) :
@@ -736,7 +736,7 @@ public class LoginActionsService {
 
             event = event.clone().removeDetail(Details.EMAIL).event(EventType.LOGIN);
 
-            return AuthenticationProcessor.redirectToRequiredActions(realm, clientSession, uriInfo);
+            return AuthenticationProcessor.redirectToRequiredActions(session, realm, clientSession, uriInfo);
         } else {
             Checks checks = new Checks();
             if (!checks.verifyCode(code, ClientSessionModel.Action.REQUIRED_ACTIONS.name(), ClientSessionCode.ActionType.USER)) {
@@ -779,7 +779,7 @@ public class LoginActionsService {
             clientSession.getUserSession().getUser().setEmailVerified(true);
             clientSession.setNote(AuthenticationManager.END_AFTER_REQUIRED_ACTIONS, "true");
             clientSession.setNote(ClientSessionModel.Action.EXECUTE_ACTIONS.name(), "true");
-            return AuthenticationProcessor.redirectToRequiredActions(realm, clientSession, uriInfo);
+            return AuthenticationProcessor.redirectToRequiredActions(session, realm, clientSession, uriInfo);
         } else {
             event.error(Errors.INVALID_CODE);
             return ErrorPage.error(session, Messages.INVALID_CODE);

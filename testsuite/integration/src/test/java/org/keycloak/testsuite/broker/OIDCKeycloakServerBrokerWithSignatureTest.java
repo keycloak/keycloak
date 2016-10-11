@@ -25,16 +25,21 @@ import org.junit.ClassRule;
 import org.junit.Test;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
+import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.Time;
+import org.keycloak.keys.KeyProvider;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
+import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.Constants;
 import org.keycloak.testsuite.KeycloakServer;
 import org.keycloak.testsuite.rule.AbstractKeycloakRule;
+
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -112,6 +117,8 @@ public class OIDCKeycloakServerBrokerWithSignatureTest extends AbstractIdentityP
         assertSuccessfulAuthentication(getIdentityProviderModel(), "test-user", "test-user@localhost", false);
 
         // Rotate public keys on the parent broker
+        rotateKeys("realm-with-oidc-identity-provider");
+
         RealmRepresentation realm = keycloak2.realm("realm-with-oidc-identity-provider").toRepresentation();
         realm.setPublicKey(org.keycloak.models.Constants.GENERATE);
         keycloak2.realm("realm-with-oidc-identity-provider").update(realm);
@@ -149,8 +156,7 @@ public class OIDCKeycloakServerBrokerWithSignatureTest extends AbstractIdentityP
         assertSuccessfulAuthentication(getIdentityProviderModel(), "test-user", "test-user@localhost", false);
 
         // Rotate public keys on the parent broker
-        realm.setPublicKey(org.keycloak.models.Constants.GENERATE);
-        keycloak2.realm("realm-with-oidc-identity-provider").update(realm);
+        rotateKeys("realm-with-oidc-identity-provider");
 
         // User not able to login now as new keys can't be yet downloaded (10s timeout)
         loginIDP("test-user");
@@ -171,4 +177,19 @@ public class OIDCKeycloakServerBrokerWithSignatureTest extends AbstractIdentityP
         Time.setOffset(0);
 
     }
+
+    private void rotateKeys(String realmName) {
+        // Rotate public keys on the parent broker
+        String realmId = keycloak2.realm(realmName).toRepresentation().getId();
+        ComponentRepresentation keys = new ComponentRepresentation();
+        keys.setName("generated");
+        keys.setProviderType(KeyProvider.class.getName());
+        keys.setProviderId("rsa-generated");
+        keys.setParentId(realmId);
+        keys.setConfig(new MultivaluedHashMap<>());
+        keys.getConfig().putSingle("priority", "9999");
+        keycloak2.realm("realm-with-oidc-identity-provider").components().add(keys);
+
+    }
+
 }

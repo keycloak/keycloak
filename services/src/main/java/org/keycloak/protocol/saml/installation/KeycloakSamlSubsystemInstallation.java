@@ -41,7 +41,7 @@ public class KeycloakSamlSubsystemInstallation implements ClientInstallationProv
         SamlClient samlClient = new SamlClient(client);
         StringBuffer buffer = new StringBuffer();
         buffer.append("<secure-deployment name=\"YOUR-WAR.war\">\n");
-        KeycloakSamlClientInstallation.baseXml(realm, client, baseUri, samlClient, buffer);
+        KeycloakSamlClientInstallation.baseXml(session, realm, client, baseUri, samlClient, buffer);
         buffer.append("</secure-deployment>\n");
         return Response.ok(buffer.toString(), MediaType.TEXT_PLAIN_TYPE).build();
     }

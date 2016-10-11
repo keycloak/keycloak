@@ -30,6 +30,7 @@ import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKParser;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.KeyManager;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -372,11 +373,9 @@ public class ClientAttributeCertificateResource {
 
 
             if (config.isRealmCertificate() == null || config.isRealmCertificate().booleanValue()) {
-                X509Certificate certificate = realm.getCertificate();
-                if (certificate == null) {
-                    KeycloakModelUtils.generateRealmCertificate(realm);
-                    certificate = realm.getCertificate();
-                }
+                KeyManager keys = session.keys();
+                String kid = keys.getActiveKey(realm).getKid();
+                Certificate certificate = keys.getCertificate(realm, kid);
                 String certificateAlias = config.getRealmAlias();
                 if (certificateAlias == null) certificateAlias = realm.getName();
                 keyStore.setCertificateEntry(certificateAlias, certificate);

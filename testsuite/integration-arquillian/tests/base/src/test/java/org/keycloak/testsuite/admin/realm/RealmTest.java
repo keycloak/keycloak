@@ -84,13 +84,6 @@ public class RealmTest extends AbstractAdminTest {
     public void getRealms() {
         List<RealmRepresentation> realms = adminClient.realms().findAll();
         Assert.assertNames(realms, "master", AuthRealm.TEST, REALM_NAME);
-
-        for (RealmRepresentation rep : realms) {
-            assertNull(rep.getPrivateKey());
-            assertNull(rep.getCodeSecret());
-            assertNotNull(rep.getPublicKey());
-            assertNotNull(rep.getCertificate());
-        }
     }
 
     @Test
@@ -313,11 +306,6 @@ public class RealmTest extends AbstractAdminTest {
         RealmRepresentation rep = realm.toRepresentation();
         Assert.assertEquals(REALM_NAME, rep.getRealm());
         assertTrue(rep.isEnabled());
-
-        assertNull(rep.getPrivateKey());
-        assertNull(rep.getCodeSecret());
-        assertNotNull(rep.getPublicKey());
-        assertNotNull(rep.getCertificate());
     }
 
     @Test
@@ -562,26 +550,6 @@ public class RealmTest extends AbstractAdminTest {
         }
 
         assertEquals(certificate, realm.toRepresentation().getCertificate());
-    }
-
-    @Test
-    public void rotateRealmKeys() {
-        RealmRepresentation realmRep = realm.toRepresentation();
-        String publicKey = realmRep.getPublicKey();
-        String cert = realmRep.getCertificate();
-        assertNotNull(publicKey);
-        assertNotNull(cert);
-
-        RealmRepresentation newRealmRep = new RealmRepresentation();
-        newRealmRep.setRealm(REALM_NAME);
-        newRealmRep.setPublicKey("GENERATE");
-        realm.update(newRealmRep);
-
-        realmRep = realm.toRepresentation();
-        assertNotNull(realmRep.getPublicKey());
-        assertNotNull(realmRep.getCertificate());
-        assertNotEquals(publicKey, realmRep.getPublicKey());
-        assertNotEquals(cert, realmRep.getCertificate());
     }
 
     @Test
