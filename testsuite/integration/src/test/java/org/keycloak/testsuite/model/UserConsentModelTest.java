@@ -105,12 +105,16 @@ public class UserConsentModelTest extends AbstractModelTest {
         Assert.assertTrue(isRoleGranted(realm, "realm-role", johnFooConsent));
         Assert.assertTrue(isRoleGranted(barClient, "bar-client-role", johnFooConsent));
         Assert.assertTrue(isMapperGranted(fooClient, "foo", johnFooConsent));
+        Assert.assertNotNull("Created Date should be set", johnFooConsent.getCreatedDate());
+        Assert.assertNotNull("Last Updated Date should be set", johnFooConsent.getLastUpdatedDate());
 
         UserConsentModel johnBarConsent = realmManager.getSession().users().getConsentByClient(realm, john, barClient.getId());
         Assert.assertEquals(johnBarConsent.getGrantedRoles().size(), 1);
         Assert.assertEquals(johnBarConsent.getGrantedProtocolMappers().size(), 1);
         Assert.assertTrue(isRoleGranted(realm, "realm-role", johnBarConsent));
         Assert.assertTrue(isMapperGranted(barClient, "bar", johnBarConsent));
+        Assert.assertNotNull("Created Date should be set", johnBarConsent.getCreatedDate());
+        Assert.assertNotNull("Last Updated Date should be set", johnBarConsent.getLastUpdatedDate());
 
         UserConsentModel maryConsent = realmManager.getSession().users().getConsentByClient(realm, mary, fooClient.getId());
         Assert.assertEquals(maryConsent.getGrantedRoles().size(), 1);
@@ -118,6 +122,8 @@ public class UserConsentModelTest extends AbstractModelTest {
         Assert.assertTrue(isRoleGranted(realm, "realm-role", maryConsent));
         Assert.assertFalse(isRoleGranted(barClient, "bar-client-role", maryConsent));
         Assert.assertTrue(isMapperGranted(fooClient, "foo", maryConsent));
+        Assert.assertNotNull("Created Date should be set", maryConsent.getCreatedDate());
+        Assert.assertNotNull("Last Updated Date should be set", maryConsent.getLastUpdatedDate());
 
         Assert.assertNull(realmManager.getSession().users().getConsentByClient(realm, mary, barClient.getId()));
     }
@@ -176,6 +182,7 @@ public class UserConsentModelTest extends AbstractModelTest {
         Assert.assertFalse(isRoleGranted(realm, "realm-role", johnConsent));
         Assert.assertTrue(isRoleGranted(realm, "new-realm-role", johnConsent));
         Assert.assertFalse(isMapperGranted(fooClient, "foo", johnConsent));
+        Assert.assertTrue("Created date should be less than last updated date", johnConsent.getCreatedDate() < johnConsent.getLastUpdatedDate());
     }
 
     @Test

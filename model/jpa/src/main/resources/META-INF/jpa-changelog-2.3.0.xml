@@ -36,7 +36,11 @@
          <addColumn tableName="IDENTITY_PROVIDER">
              <column name="PROVIDER_DISPLAY_NAME" type="VARCHAR(255)"></column>
          </addColumn>
-     </changeSet>
 
+         <addColumn tableName="USER_CONSENT">
+             <column name="CREATED_DATE" type="LONG"/>
+             <column name="LAST_UPDATED_DATE" type="LONG"/>
+         </addColumn>
+     </changeSet>
 
 </databaseChangeLog>
