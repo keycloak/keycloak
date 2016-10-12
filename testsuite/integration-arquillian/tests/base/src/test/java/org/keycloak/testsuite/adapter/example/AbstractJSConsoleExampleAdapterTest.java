@@ -376,6 +376,8 @@ public abstract class AbstractJSConsoleExampleAdapterTest extends AbstractExampl
 
         jsConsoleTestAppPage.refreshTimeSkew();
 
+        waitUntilElement(jsConsoleTestAppPage.getTimeSkewValue()).text().not().contains("undefined");
+
         int timeSkew = Integer.parseInt(jsConsoleTestAppPage.getTimeSkewValue().getText());
         assertTrue("TimeSkew was: " + timeSkew + ", but should be ~0", timeSkew >= 0 - TIME_SKEW_TOLERANCE);
         assertTrue("TimeSkew was: " + timeSkew + ", but should be ~0", timeSkew  <= TIME_SKEW_TOLERANCE);
@@ -383,6 +385,8 @@ public abstract class AbstractJSConsoleExampleAdapterTest extends AbstractExampl
         setTimeOffset(40);
         jsConsoleTestAppPage.refreshToken();
         jsConsoleTestAppPage.refreshTimeSkew();
+
+        waitUntilElement(jsConsoleTestAppPage.getTimeSkewValue()).text().not().contains("undefined");
 
         timeSkew = Integer.parseInt(jsConsoleTestAppPage.getTimeSkewValue().getText());
         assertTrue("TimeSkew was: " + timeSkew + ", but should be ~-40", timeSkew + 40 >= 0 - TIME_SKEW_TOLERANCE);
