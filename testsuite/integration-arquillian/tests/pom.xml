@@ -65,6 +65,7 @@
         <auth.server.remote>false</auth.server.remote>
     
         <adapter.test.props/>
+        <migration.import.properties/>
         <examples.home>${project.build.directory}/examples</examples.home>
 
         <browser>phantomjs</browser>
@@ -168,6 +169,7 @@
                             <auth.server.remote>${auth.server.remote}</auth.server.remote>
 
                             <adapter.test.props>${adapter.test.props}</adapter.test.props>
+                            <migration.import.properties>${migration.import.properties}</migration.import.properties>
 
                             <testsuite.constants>${testsuite.constants}</testsuite.constants>
 
@@ -406,14 +408,41 @@
         <!-- Profile for migration tests-->
         
         <profile>
-            <id>migration</id>
+            <id>migration-auto</id>
             <activation>
                 <property>
-                    <name>migrated.auth.server.version</name>
+                    <name>migration.mode</name>
+                    <value>auto</value>
                 </property>
             </activation>
+            <properties>
+                <migration.import.props.previous>
+                    -Dkeycloak.migration.action=import 
+                    -Dkeycloak.migration.provider=singleFile
+                    -Dkeycloak.migration.file=src/test/resources/migration-test/migration-realm-${migrated.auth.server.version}.json
+                    -Dkeycloak.migration.strategy=OVERWRITE_EXISTING
+                </migration.import.props.previous>
+                <skip.add.user.json>true</skip.add.user.json>
+            </properties>
             <build>
                 <plugins>
+                    <plugin>
+                        <artifactId>maven-enforcer-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>enforce</goal>
+                                </goals>
+                                <configuration>
+                                    <rules>
+                                        <requireProperty>
+                                            <property>migrated.auth.server.version</property>
+                                        </requireProperty>
+                                    </rules>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
                     <plugin>
                         <artifactId>maven-dependency-plugin</artifactId>
                         <executions>
@@ -445,13 +474,62 @@
                                 <migrated.auth.server.version>${migrated.auth.server.version}</migrated.auth.server.version>
                                 <auth.server.jboss.migration>true</auth.server.jboss.migration>
                                 <keycloak.migration.home>${containers.home}/keycloak-${migrated.auth.server.version}</keycloak.migration.home>
-                                <keycloak.migration.file>src/test/resources/migration-test/migration-realm-${migrated.auth.server.version}.json</keycloak.migration.file>
+                                <migration.import.props.previous>${migration.import.props.previous}</migration.import.props.previous>
                             </systemPropertyVariables>
                         </configuration>
                     </plugin>
                 </plugins>
             </build>
-        </profile>        
+        </profile>    
+        
+        <profile>
+            <id>migration-import</id>
+            <activation>
+                <property>
+                    <name>migration.mode</name>
+                    <value>import</value>
+                </property>
+            </activation>
+            <properties>
+                <migration.import.properties>
+                    -Dkeycloak.migration.action=import 
+                    -Dkeycloak.migration.provider=singleFile
+                    -Dkeycloak.migration.file=src/test/resources/migration-test/migration-realm-${migrated.auth.server.version}.json
+                    -Dkeycloak.migration.strategy=OVERWRITE_EXISTING
+                </migration.import.properties>
+                <skip.add.user.json>true</skip.add.user.json>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-enforcer-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>enforce</goal>
+                                </goals>
+                                <configuration>
+                                    <rules>
+                                        <requireProperty>
+                                            <property>migrated.auth.server.version</property>
+                                        </requireProperty>
+                                    </rules>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <systemPropertyVariables>
+                                <migrated.auth.server.version>${migrated.auth.server.version}</migrated.auth.server.version>
+                                <migration.import.properties>${migration.import.properties}</migration.import.properties>
+                            </systemPropertyVariables>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>    
       
         <profile>
             <id>no-account</id>
