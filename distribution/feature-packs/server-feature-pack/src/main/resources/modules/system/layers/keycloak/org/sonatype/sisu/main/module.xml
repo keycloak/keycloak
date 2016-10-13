@@ -15,27 +15,18 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
-<module xmlns="urn:jboss:module:1.3" name="org.drools" slot="main">
+<module xmlns="urn:jboss:module:1.3" name="org.sonatype.sisu" slot="main">
     <properties>
         <property name="jboss.api" value="private"/>
     </properties>
     <resources>
-        <artifact name="${org.drools:drools-core}"/>
-        <artifact name="${org.drools:drools-compiler}"/>
+        <artifact name="${com.google.inject.extensions:guice-servlet}"/>
+        <artifact name="${org.sonatype.sisu:sisu-guice::no_aop}"/>
     </resources>
     <dependencies>
-        <module name="javax.activation.api"/>
+        <module name="aopalliance"/>
+        <module name="com.google.guava"/>
         <module name="javax.api"/>
-        <module name="javax.enterprise.api"/>
         <module name="javax.inject.api"/>
-        <module name="org.keycloak.keycloak-core"/>
-        <module name="org.keycloak.keycloak-common"/>
-        <module name="org.keycloak.keycloak-server-spi"/>
-        <module name="com.thoughtworks.xstream"/>
-        <module name="org.antlr" slot="3.5"/>
-        <module name="org.kie"/>
-        <module name="org.mvel"/>
-        <module name="org.slf4j"/>
-        <module name="org.eclipse.jdt.core.compiler.ecj"/>
     </dependencies>
 </module>
