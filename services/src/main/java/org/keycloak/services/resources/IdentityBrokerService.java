@@ -320,7 +320,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
             ctx.saveToClientSession(clientSession, AbstractIdpAuthenticator.BROKERED_CONTEXT_NOTE);
 
             URI redirect = LoginActionsService.firstBrokerLoginProcessor(uriInfo)
-                    .queryParam(OAuth2Constants.CODE, context.getCode())
+                    .queryParam(OAuth2Constants.CODE, clientCode.getCode())
                     .build(realmModel.getName());
             return Response.status(302).location(redirect).build();
 
@@ -333,7 +333,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
             updateFederatedIdentity(context, federatedUser);
             clientSession.setAuthenticatedUser(federatedUser);
 
-            return finishOrRedirectToPostBrokerLogin(clientSession, context, false);
+            return finishOrRedirectToPostBrokerLogin(clientSession, context, false, parsedCode.clientSessionCode);
         }
     }
 
@@ -359,7 +359,11 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
         if (parsedCode.response != null) {
             return parsedCode.response;
         }
-        ClientSessionModel clientSession = parsedCode.clientSessionCode.getClientSession();
+        return afterFirstBrokerLogin(parsedCode.clientSessionCode);
+    }
+
+    private Response afterFirstBrokerLogin(ClientSessionCode clientSessionCode) {
+        ClientSessionModel clientSession = clientSessionCode.getClientSession();
 
         try {
             this.event.detail(Details.CODE_ID, clientSession.getId())
@@ -435,7 +439,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
                 updateFederatedIdentity(context, federatedUser);
             }
 
-            return finishOrRedirectToPostBrokerLogin(clientSession, context, true);
+            return finishOrRedirectToPostBrokerLogin(clientSession, context, true, clientSessionCode);
 
         }  catch (Exception e) {
             return redirectToErrorPage(Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR, e);
@@ -443,12 +447,12 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
     }
 
 
-    private Response finishOrRedirectToPostBrokerLogin(ClientSessionModel clientSession, BrokeredIdentityContext context, boolean wasFirstBrokerLogin) {
+    private Response finishOrRedirectToPostBrokerLogin(ClientSessionModel clientSession, BrokeredIdentityContext context, boolean wasFirstBrokerLogin, ClientSessionCode clientSessionCode) {
         String postBrokerLoginFlowId = context.getIdpConfig().getPostBrokerLoginFlowId();
         if (postBrokerLoginFlowId == null) {
 
             logger.debugf("Skip redirect to postBrokerLogin flow. PostBrokerLogin flow not set for identityProvider '%s'.", context.getIdpConfig().getAlias());
-            return afterPostBrokerLoginFlowSuccess(clientSession, context, wasFirstBrokerLogin);
+            return afterPostBrokerLoginFlowSuccess(clientSession, context, wasFirstBrokerLogin, clientSessionCode);
         } else {
 
             logger.debugf("Redirect to postBrokerLogin flow after authentication with identityProvider '%s'.", context.getIdpConfig().getAlias());
@@ -461,7 +465,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
             clientSession.setNote(PostBrokerLoginConstants.PBL_AFTER_FIRST_BROKER_LOGIN, String.valueOf(wasFirstBrokerLogin));
 
             URI redirect = LoginActionsService.postBrokerLoginProcessor(uriInfo)
-                    .queryParam(OAuth2Constants.CODE, context.getCode())
+                    .queryParam(OAuth2Constants.CODE, clientSessionCode.getCode())
                     .build(realmModel.getName());
             return Response.status(302).location(redirect).build();
         }
@@ -499,13 +503,13 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
             clientSession.removeNote(PostBrokerLoginConstants.PBL_BROKERED_IDENTITY_CONTEXT);
             clientSession.removeNote(PostBrokerLoginConstants.PBL_AFTER_FIRST_BROKER_LOGIN);
 
-            return afterPostBrokerLoginFlowSuccess(clientSession, context, wasFirstBrokerLogin);
+            return afterPostBrokerLoginFlowSuccess(clientSession, context, wasFirstBrokerLogin, parsedCode.clientSessionCode);
         } catch (IdentityBrokerException e) {
             return redirectToErrorPage(Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR, e);
         }
     }
 
-    private Response afterPostBrokerLoginFlowSuccess(ClientSessionModel clientSession, BrokeredIdentityContext context, boolean wasFirstBrokerLogin) {
+    private Response afterPostBrokerLoginFlowSuccess(ClientSessionModel clientSession, BrokeredIdentityContext context, boolean wasFirstBrokerLogin, ClientSessionCode clientSessionCode) {
         String providerId = context.getIdpConfig().getAlias();
         UserModel federatedUser = clientSession.getAuthenticatedUser();
 
@@ -532,7 +536,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
                     return redirectToErrorPage(Messages.IDENTITY_PROVIDER_DIFFERENT_USER_MESSAGE, federatedUser.getUsername(), linkingUser.getUsername());
                 }
 
-                return afterFirstBrokerLogin(context.getCode());
+                return afterFirstBrokerLogin(clientSessionCode);
             } else {
                 return finishBrokerAuthentication(context, federatedUser, clientSession, providerId);
             }
@@ -556,7 +560,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
             logger.debugf("Performing local authentication for user [%s].", federatedUser);
         }
 
-        return AuthenticationProcessor.redirectToRequiredActions(realmModel, clientSession, uriInfo);
+        return AuthenticationProcessor.redirectToRequiredActions(session, realmModel, clientSession, uriInfo);
     }
 
 

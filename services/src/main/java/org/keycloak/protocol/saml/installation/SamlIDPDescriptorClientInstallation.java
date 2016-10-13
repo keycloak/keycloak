@@ -18,6 +18,7 @@
 package org.keycloak.protocol.saml.installation;
 
 import org.keycloak.Config;
+import org.keycloak.common.util.PemUtils;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -37,7 +38,7 @@ import java.net.URI;
  * @version $Revision: 1 $
  */
 public class SamlIDPDescriptorClientInstallation implements ClientInstallationProvider {
-    public static String getIDPDescriptorForClient(RealmModel realm, ClientModel client, URI serverBaseUri) {
+    public static String getIDPDescriptorForClient(KeycloakSession session, RealmModel realm, ClientModel client, URI serverBaseUri) {
         SamlClient samlClient = new SamlClient(client);
         String idpEntityId = RealmsResource.realmBaseUrl(UriBuilder.fromUri(serverBaseUri)).build(realm.getName()).toString();
         String idp = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
@@ -75,7 +76,7 @@ public class SamlIDPDescriptorClientInstallation implements ClientInstallationPr
                 "          <dsig:KeyInfo xmlns:dsig=\"http://www.w3.org/2000/09/xmldsig#\">\n" +
                 "              <dsig:X509Data>\n" +
                 "                  <dsig:X509Certificate>\n" +
-                "                      " + realm.getCertificatePem() + "\n" +
+                "                      " + PemUtils.encodeCertificate(session.keys().getActiveKey(realm).getCertificate()) + "\n" +
                 "                  </dsig:X509Certificate>\n" +
                 "              </dsig:X509Data>\n" +
                 "          </dsig:KeyInfo>\n" +
@@ -87,7 +88,7 @@ public class SamlIDPDescriptorClientInstallation implements ClientInstallationPr
 
     @Override
     public Response generateInstallation(KeycloakSession session, RealmModel realm, ClientModel client, URI serverBaseUri) {
-        String descriptor = getIDPDescriptorForClient(realm, client, serverBaseUri);
+        String descriptor = getIDPDescriptorForClient(session, realm, client, serverBaseUri);
         return Response.ok(descriptor, MediaType.TEXT_PLAIN_TYPE).build();
     }
 

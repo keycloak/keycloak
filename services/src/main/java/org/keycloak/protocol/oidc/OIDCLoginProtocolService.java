@@ -20,10 +20,10 @@ package org.keycloak.protocol.oidc;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.events.EventBuilder;
-import org.keycloak.forms.login.LoginFormsProvider;
-import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKBuilder;
+import org.keycloak.forms.login.LoginFormsProvider;
+import org.keycloak.keys.KeyMetadata;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.endpoints.AuthorizationEndpoint;
@@ -31,6 +31,7 @@ import org.keycloak.protocol.oidc.endpoints.LoginStatusIframeEndpoint;
 import org.keycloak.protocol.oidc.endpoints.LogoutEndpoint;
 import org.keycloak.protocol.oidc.endpoints.TokenEndpoint;
 import org.keycloak.protocol.oidc.endpoints.UserInfoEndpoint;
+import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.resources.RealmsResource;
 
@@ -44,6 +45,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
+import java.util.List;
 
 /**
  * Resource class for the oauth/openid connect token service
@@ -174,8 +176,16 @@ public class OIDCLoginProtocolService {
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     public JSONWebKeySet certs() {
+        List<KeyMetadata> publicKeys = session.keys().getKeys(realm, false);
+        JWK[] keys = new JWK[publicKeys.size()];
+
+        int i = 0;
+        for (KeyMetadata k : publicKeys) {
+            keys[i++] = JWKBuilder.create().kid(k.getKid()).rs256(k.getPublicKey());
+        }
+
         JSONWebKeySet keySet = new JSONWebKeySet();
-        keySet.setKeys(new JWK[]{JWKBuilder.create().rs256(realm.getPublicKey())});
+        keySet.setKeys(keys);
         return keySet;
     }
 

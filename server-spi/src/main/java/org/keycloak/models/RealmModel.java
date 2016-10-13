@@ -178,35 +178,6 @@ public interface RealmModel extends RoleContainerModel {
 
     void setAccessCodeLifespanLogin(int seconds);
 
-    String getKeyId();
-
-    String getPublicKeyPem();
-
-    void setPublicKeyPem(String publicKeyPem);
-
-    String getPrivateKeyPem();
-
-    void setPrivateKeyPem(String privateKeyPem);
-
-    PublicKey getPublicKey();
-
-    void setPublicKey(PublicKey publicKey);
-
-    String getCodeSecret();
-
-    Key getCodeSecretKey();
-
-    void setCodeSecret(String codeSecret);
-
-    X509Certificate getCertificate();
-    void setCertificate(X509Certificate certificate);
-    String getCertificatePem();
-    void setCertificatePem(String certificate);
-
-    PrivateKey getPrivateKey();
-
-    void setPrivateKey(PrivateKey privateKey);
-
     List<RequiredCredentialModel> getRequiredCredentials();
 
     void addRequiredCredential(String cred);

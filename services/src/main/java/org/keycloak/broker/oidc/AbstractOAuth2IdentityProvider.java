@@ -233,9 +233,9 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
                         federatedIdentity.setToken(response);
                     }
 
-                    federatedIdentity.setCode(state);
                     federatedIdentity.setIdpConfig(getConfig());
                     federatedIdentity.setIdp(AbstractOAuth2IdentityProvider.this);
+                    federatedIdentity.setCode(state);
 
                     return callback.authenticated(federatedIdentity);
                 }

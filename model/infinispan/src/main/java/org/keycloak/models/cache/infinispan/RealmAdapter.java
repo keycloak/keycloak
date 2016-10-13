@@ -60,10 +60,6 @@ public class RealmAdapter implements RealmModel {
     protected RealmCacheSession cacheSession;
     protected RealmModel updated;
     protected RealmCache cache;
-    protected volatile transient PublicKey publicKey;
-    protected volatile transient PrivateKey privateKey;
-    protected volatile transient Key codeSecretKey;
-    protected volatile transient X509Certificate certificate;
 
     public RealmAdapter(CachedRealm cached, RealmCacheSession cacheSession) {
         this.cached = cached;
@@ -421,123 +417,6 @@ public class RealmAdapter implements RealmModel {
     public void setAccessCodeLifespanLogin(int seconds) {
         getDelegateForUpdate();
         updated.setAccessCodeLifespanLogin(seconds);
-    }
-
-    @Override
-    public String getKeyId() {
-        if (isUpdated()) return updated.getKeyId();
-        return cached.getKeyId();
-    }
-
-    @Override
-    public String getPublicKeyPem() {
-        if (isUpdated()) return updated.getPublicKeyPem();
-        return cached.getPublicKeyPem();
-    }
-
-    @Override
-    public void setPublicKeyPem(String publicKeyPem) {
-        getDelegateForUpdate();
-        updated.setPublicKeyPem(publicKeyPem);
-    }
-
-    @Override
-    public String getPrivateKeyPem() {
-        if (isUpdated()) return updated.getPrivateKeyPem();
-        return cached.getPrivateKeyPem();
-    }
-
-    @Override
-    public void setPrivateKeyPem(String privateKeyPem) {
-        getDelegateForUpdate();
-        updated.setPrivateKeyPem(privateKeyPem);
-    }
-
-    @Override
-    public PublicKey getPublicKey() {
-        if (isUpdated()) return updated.getPublicKey();
-        if (publicKey != null) return publicKey;
-        publicKey = cached.getPublicKey();
-        if (publicKey != null) return publicKey;
-        publicKey = KeycloakModelUtils.getPublicKey(getPublicKeyPem());
-        return publicKey;
-    }
-
-    @Override
-    public void setPublicKey(PublicKey publicKey) {
-        this.publicKey = publicKey;
-        String publicKeyPem = KeycloakModelUtils.getPemFromKey(publicKey);
-        setPublicKeyPem(publicKeyPem);
-    }
-
-    @Override
-    public X509Certificate getCertificate() {
-        if (isUpdated()) return updated.getCertificate();
-        if (certificate != null) return certificate;
-        certificate = cached.getCertificate();
-        if (certificate != null) return certificate;
-        certificate = KeycloakModelUtils.getCertificate(getCertificatePem());
-        return certificate;
-    }
-
-    @Override
-    public void setCertificate(X509Certificate certificate) {
-        this.certificate = certificate;
-        String certPem = KeycloakModelUtils.getPemFromCertificate(certificate);
-        setCertificatePem(certPem);
-    }
-
-    @Override
-    public String getCertificatePem() {
-        if (isUpdated()) return updated.getCertificatePem();
-        return cached.getCertificatePem();
-    }
-
-    @Override
-    public void setCertificatePem(String certificate) {
-        getDelegateForUpdate();
-        updated.setCertificatePem(certificate);
-
-    }
-
-    @Override
-    public PrivateKey getPrivateKey() {
-        if (isUpdated()) return updated.getPrivateKey();
-        if (privateKey != null) {
-            return privateKey;
-        }
-        privateKey = cached.getPrivateKey();
-        if (privateKey != null) {
-            return privateKey;
-        }
-        privateKey = KeycloakModelUtils.getPrivateKey(getPrivateKeyPem());
-        return privateKey;
-    }
-
-    @Override
-    public void setPrivateKey(PrivateKey privateKey) {
-        this.privateKey = privateKey;
-        String privateKeyPem = KeycloakModelUtils.getPemFromKey(privateKey);
-        setPrivateKeyPem(privateKeyPem);
-    }
-
-    @Override
-    public String getCodeSecret() {
-        return isUpdated() ? updated.getCodeSecret() : cached.getCodeSecret();
-    }
-
-    @Override
-    public Key getCodeSecretKey() {
-        if (codeSecretKey == null) {
-            codeSecretKey = KeycloakModelUtils.getSecretKey(getCodeSecret());
-        }
-        return codeSecretKey;
-    }
-
-    @Override
-    public void setCodeSecret(String codeSecret) {
-        getDelegateForUpdate();
-        updated.setCodeSecret(codeSecret);
     }
 
     @Override

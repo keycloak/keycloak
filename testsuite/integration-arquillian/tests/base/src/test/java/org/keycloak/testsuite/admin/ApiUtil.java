@@ -25,14 +25,17 @@ import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
+import org.keycloak.representations.idm.KeysMetadataRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.Response.StatusType;
 import java.net.URI;
+import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -50,8 +53,8 @@ public class ApiUtil {
         URI location = response.getLocation();
         if (!response.getStatusInfo().equals(Status.CREATED)) {
             StatusType statusInfo = response.getStatusInfo();
-            throw new RuntimeException("Create method returned status " +
-                    statusInfo.getReasonPhrase() + " (Code: " + statusInfo.getStatusCode() + "); expected status: Created (201)");
+            throw new WebApplicationException("Create method returned status " +
+                    statusInfo.getReasonPhrase() + " (Code: " + statusInfo.getStatusCode() + "); expected status: Created (201)", response);
         }
         if (location == null) {
             return null;
@@ -201,4 +204,16 @@ public class ApiUtil {
         }
         return null;
     }
+
+    public static KeysMetadataRepresentation.KeyMetadataRepresentation findActiveKey(RealmResource realm) {
+        KeysMetadataRepresentation keyMetadata = realm.keys().getKeyMetadata();
+        String activeKid = keyMetadata.getActive().get("RSA");
+        for (KeysMetadataRepresentation.KeyMetadataRepresentation rep : keyMetadata.getKeys()) {
+            if (rep.getKid().equals(activeKid)) {
+                return rep;
+            }
+        }
+        return null;
+    }
+
 }

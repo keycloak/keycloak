@@ -274,38 +274,6 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
     String publicKey;
 
     @Test
-    public void refreshTokenRealmKeysChanged() throws Exception {
-        oauth.doLogin("test-user@localhost", "password");
-
-        EventRepresentation loginEvent = events.expectLogin().assertEvent();
-
-        String sessionId = loginEvent.getSessionId();
-        String codeId = loginEvent.getDetails().get(Details.CODE_ID);
-
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-
-        OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
-        String refreshTokenString = response.getRefreshToken();
-        RefreshToken refreshToken = oauth.verifyRefreshToken(refreshTokenString);
-
-        events.expectCodeToToken(codeId, sessionId).assertEvent();
-
-        try {
-
-            RealmManager.realm(adminClient.realm("test")).generateKeys();
-
-            response = oauth.doRefreshTokenRequest(refreshTokenString, "password");
-
-            assertEquals(400, response.getStatusCode());
-            assertEquals("invalid_grant", response.getError());
-
-            events.expectRefresh(refreshToken.getId(), sessionId).user((String) null).session((String) null).clearDetails().error(Errors.INVALID_TOKEN).assertEvent();
-        } finally {
-            RealmManager.realm(adminClient.realm("test")).keyPair(privateKey, publicKey);
-        }
-    }
-
-    @Test
     public void refreshTokenClientDisabled() throws Exception {
         oauth.doLogin("test-user@localhost", "password");
 

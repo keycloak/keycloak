@@ -115,7 +115,7 @@ public class RoleListMapper extends AbstractSAMLProtocolMapper implements SAMLRo
         List<SamlProtocol.ProtocolMapperProcessor<SAMLRoleNameMapper>> roleNameMappers = new LinkedList<>();
         KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
         AttributeType singleAttributeType = null;
-        Set<ProtocolMapperModel> requestedProtocolMappers = new ClientSessionCode(clientSession.getRealm(), clientSession).getRequestedProtocolMappers();
+        Set<ProtocolMapperModel> requestedProtocolMappers = new ClientSessionCode(session, clientSession.getRealm(), clientSession).getRequestedProtocolMappers();
         for (ProtocolMapperModel mapping : requestedProtocolMappers) {
 
             ProtocolMapper mapper = (ProtocolMapper)sessionFactory.getProviderFactory(ProtocolMapper.class, mapping.getProtocolMapper());

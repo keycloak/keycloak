@@ -20,6 +20,7 @@ package org.keycloak.models.jpa;
 import org.jboss.logging.Logger;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.component.ComponentFactory;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.jose.jwk.JWKBuilder;
 import org.keycloak.models.AuthenticationExecutionModel;
@@ -60,6 +61,7 @@ import org.keycloak.models.jpa.entities.RequiredCredentialEntity;
 import org.keycloak.models.jpa.entities.RoleEntity;
 import org.keycloak.models.jpa.entities.UserFederationMapperEntity;
 import org.keycloak.models.jpa.entities.UserFederationProviderEntity;
+import org.keycloak.models.utils.ComponentUtil;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 import javax.persistence.EntityManager;
@@ -88,10 +90,6 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
     protected static final Logger logger = Logger.getLogger(RealmAdapter.class);
     protected RealmEntity realm;
     protected EntityManager em;
-    protected volatile transient PublicKey publicKey;
-    protected volatile transient PrivateKey privateKey;
-    protected volatile transient X509Certificate certificate;
-    protected volatile transient Key codeSecretKey;
     protected KeycloakSession session;
     private PasswordPolicy passwordPolicy;
     private OTPPolicy otpPolicy;
@@ -486,106 +484,6 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
     public void setAccessCodeLifespanLogin(int accessCodeLifespanLogin) {
         realm.setAccessCodeLifespanLogin(accessCodeLifespanLogin);
         em.flush();
-    }
-
-    @Override
-    public String getKeyId() {
-        PublicKey publicKey = getPublicKey();
-        return publicKey != null ? JWKBuilder.create().rs256(publicKey).getKeyId() : null;
-    }
-
-    @Override
-    public String getPublicKeyPem() {
-        return realm.getPublicKeyPem();
-    }
-
-    @Override
-    public void setPublicKeyPem(String publicKeyPem) {
-        realm.setPublicKeyPem(publicKeyPem);
-        em.flush();
-    }
-
-    @Override
-    public X509Certificate getCertificate() {
-        if (certificate != null) return certificate;
-        certificate = KeycloakModelUtils.getCertificate(getCertificatePem());
-        return certificate;
-    }
-
-    @Override
-    public void setCertificate(X509Certificate certificate) {
-        this.certificate = certificate;
-        String certificatePem = KeycloakModelUtils.getPemFromCertificate(certificate);
-        setCertificatePem(certificatePem);
-
-    }
-
-    @Override
-    public String getCertificatePem() {
-        return realm.getCertificatePem();
-    }
-
-    @Override
-    public void setCertificatePem(String certificate) {
-        realm.setCertificatePem(certificate);
-
-    }
-
-    @Override
-    public String getPrivateKeyPem() {
-        return realm.getPrivateKeyPem();
-    }
-
-    @Override
-    public void setPrivateKeyPem(String privateKeyPem) {
-        realm.setPrivateKeyPem(privateKeyPem);
-        em.flush();
-    }
-
-    @Override
-    public PublicKey getPublicKey() {
-        if (publicKey != null) return publicKey;
-        publicKey = KeycloakModelUtils.getPublicKey(getPublicKeyPem());
-        return publicKey;
-    }
-
-    @Override
-    public void setPublicKey(PublicKey publicKey) {
-        this.publicKey = publicKey;
-        String publicKeyPem = KeycloakModelUtils.getPemFromKey(publicKey);
-        setPublicKeyPem(publicKeyPem);
-    }
-
-    @Override
-    public PrivateKey getPrivateKey() {
-        if (privateKey != null) return privateKey;
-        privateKey = KeycloakModelUtils.getPrivateKey(getPrivateKeyPem());
-        return privateKey;
-    }
-
-    @Override
-    public void setPrivateKey(PrivateKey privateKey) {
-        this.privateKey = privateKey;
-        String privateKeyPem = KeycloakModelUtils.getPemFromKey(privateKey);
-        setPrivateKeyPem(privateKeyPem);
-    }
-
-    @Override
-    public String getCodeSecret() {
-        return realm.getCodeSecret();
-    }
-
-    @Override
-    public Key getCodeSecretKey() {
-        if (codeSecretKey == null) {
-            codeSecretKey = KeycloakModelUtils.getSecretKey(getCodeSecret());
-        }
-        return codeSecretKey;
-    }
-
-    @Override
-    public void setCodeSecret(String codeSecret) {
-        realm.setCodeSecret(codeSecret);
     }
 
     protected RequiredCredentialModel initRequiredCredentialModel(String type) {
@@ -2138,6 +2036,13 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
 
     @Override
     public ComponentModel addComponentModel(ComponentModel model) {
+        ComponentFactory componentFactory = ComponentUtil.getComponentFactory(session, model);
+        if (componentFactory == null) {
+            throw new IllegalArgumentException("Invalid component type");
+        }
+
+        componentFactory.validateConfiguration(session, model);
+
         ComponentEntity c = new ComponentEntity();
         if (model.getId() == null) {
             c.setId(KeycloakModelUtils.generateId());
@@ -2171,6 +2076,8 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
 
     @Override
     public void updateComponent(ComponentModel component) {
+        ComponentUtil.getComponentFactory(session, component).validateConfiguration(session, component);
+
         ComponentEntity c = em.find(ComponentEntity.class, component.getId());
         if (c == null) return;
         c.setName(component.getName());

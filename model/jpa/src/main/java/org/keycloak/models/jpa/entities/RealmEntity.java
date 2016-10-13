@@ -117,15 +117,6 @@ public class RealmEntity {
     @Column(name="NOT_BEFORE")
     protected int notBefore;
 
-    @Column(name="PUBLIC_KEY", length = 4000)
-    protected String publicKeyPem;
-    @Column(name="PRIVATE_KEY", length = 4000)
-    protected String privateKeyPem;
-    @Column(name="CERTIFICATE", length = 4000)
-    protected String certificatePem;
-    @Column(name="CODE_SECRET", length = 255)
-    protected String codeSecret;
-
     @Column(name="LOGIN_THEME")
     protected String loginTheme;
     @Column(name="ACCOUNT_THEME")
@@ -384,30 +375,6 @@ public class RealmEntity {
         this.accessCodeLifespanLogin = accessCodeLifespanLogin;
     }
 
-    public String getPublicKeyPem() {
-        return publicKeyPem;
-    }
-
-    public void setPublicKeyPem(String publicKeyPem) {
-        this.publicKeyPem = publicKeyPem;
-    }
-
-    public String getPrivateKeyPem() {
-        return privateKeyPem;
-    }
-
-    public void setPrivateKeyPem(String privateKeyPem) {
-        this.privateKeyPem = privateKeyPem;
-    }
-
-    public String getCodeSecret() {
-        return codeSecret;
-    }
-
-    public void setCodeSecret(String codeSecret) {
-        this.codeSecret = codeSecret;
-    }
-
     public Collection<RequiredCredentialEntity> getRequiredCredentials() {
         return requiredCredentials;
     }
@@ -565,14 +532,6 @@ public class RealmEntity {
 
     public void setAttributes(Collection<RealmAttributeEntity> attributes) {
         this.attributes = attributes;
-    }
-
-    public String getCertificatePem() {
-        return certificatePem;
-    }
-
-    public void setCertificatePem(String certificatePem) {
-        this.certificatePem = certificatePem;
     }
 
     public List<IdentityProviderEntity> getIdentityProviders() {

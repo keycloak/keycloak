@@ -140,11 +140,13 @@ public class CertificateUtils {
      * 
      * @throws Exception the exception
      */
-    public static X509Certificate generateV1SelfSignedCertificate(KeyPair caKeyPair, String subject) throws Exception {
+    public static X509Certificate generateV1SelfSignedCertificate(KeyPair caKeyPair, String subject) {
+        return generateV1SelfSignedCertificate(caKeyPair, subject, BigInteger.valueOf(System.currentTimeMillis()));
+    }
 
+    public static X509Certificate generateV1SelfSignedCertificate(KeyPair caKeyPair, String subject, BigInteger serialNumber) {
         try {
             X500Name subjectDN = new X500Name("CN=" + subject);
-            BigInteger serialNumber = BigInteger.valueOf(System.currentTimeMillis());
             Date validityStartDate = new Date(System.currentTimeMillis() - 100000);
             Calendar calendar = Calendar.getInstance();
             calendar.add(Calendar.YEAR, 10);

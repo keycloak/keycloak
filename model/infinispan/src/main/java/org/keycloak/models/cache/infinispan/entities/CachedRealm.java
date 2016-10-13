@@ -89,15 +89,6 @@ public class CachedRealm extends AbstractRevisioned {
     protected PasswordPolicy passwordPolicy;
     protected OTPPolicy otpPolicy;
 
-    protected transient String keyId;
-    protected transient PublicKey publicKey;
-    protected String publicKeyPem;
-    protected transient PrivateKey privateKey;
-    protected String privateKeyPem;
-    protected transient X509Certificate certificate;
-    protected String certificatePem;
-    protected String codeSecret;
-
     protected String loginTheme;
     protected String accountTheme;
     protected String adminTheme;
@@ -190,15 +181,6 @@ public class CachedRealm extends AbstractRevisioned {
         notBefore = model.getNotBefore();
         passwordPolicy = model.getPasswordPolicy();
         otpPolicy = model.getOTPPolicy();
-
-        keyId = model.getKeyId();
-        publicKeyPem = model.getPublicKeyPem();
-        publicKey = model.getPublicKey();
-        privateKeyPem = model.getPrivateKeyPem();
-        privateKey = model.getPrivateKey();
-        certificatePem = model.getCertificatePem();
-        certificate = model.getCertificate();
-        codeSecret = model.getCodeSecret();
 
         loginTheme = model.getLoginTheme();
         accountTheme = model.getAccountTheme();
@@ -415,22 +397,6 @@ public class CachedRealm extends AbstractRevisioned {
         return accessCodeLifespanLogin;
     }
 
-    public String getKeyId() {
-        return keyId;
-    }
-
-    public String getPublicKeyPem() {
-        return publicKeyPem;
-    }
-
-    public String getPrivateKeyPem() {
-        return privateKeyPem;
-    }
-
-    public String getCodeSecret() {
-        return codeSecret;
-    }
-
     public List<RequiredCredentialModel> getRequiredCredentials() {
         return requiredCredentials;
     }
@@ -505,10 +471,6 @@ public class CachedRealm extends AbstractRevisioned {
 
     public MultivaluedHashMap<String, UserFederationMapperModel> getUserFederationMappers() {
         return userFederationMappers;
-    }
-
-    public String getCertificatePem() {
-        return certificatePem;
     }
 
     public List<IdentityProviderModel> getIdentityProviders() {
@@ -589,18 +551,6 @@ public class CachedRealm extends AbstractRevisioned {
 
     public List<String> getClientTemplates() {
         return clientTemplates;
-    }
-
-    public PublicKey getPublicKey() {
-        return publicKey;
-    }
-
-    public PrivateKey getPrivateKey() {
-        return privateKey;
-    }
-
-    public X509Certificate getCertificate() {
-        return certificate;
     }
 
     public Set<UserFederationMapperModel> getUserFederationMapperSet() {

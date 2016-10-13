@@ -45,6 +45,7 @@ import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.RefreshToken;
+import org.keycloak.representations.idm.KeysMetadataRepresentation;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.util.BasicAuthHelper;
 import org.keycloak.util.JsonSerialization;
@@ -814,12 +815,13 @@ public class OAuthClient {
 
     public PublicKey getRealmPublicKey(String realm) {
         if (!publicKeys.containsKey(realm)) {
-            String publicKeyPem = adminClient.realms().realm(realm).toRepresentation().getPublicKey();
+            KeysMetadataRepresentation keyMetadata = adminClient.realms().realm(realm).keys().getKeyMetadata();
+            String activeKid = keyMetadata.getActive().get("RSA");
             PublicKey publicKey = null;
-            try {
-                publicKey = PemUtils.decodePublicKey(publicKeyPem);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
+            for (KeysMetadataRepresentation.KeyMetadataRepresentation rep : keyMetadata.getKeys()) {
+                if (rep.getKid().equals(activeKid)) {
+                    publicKey = PemUtils.decodePublicKey(rep.getPublicKey());
+                }
             }
             publicKeys.put(realm, publicKey);
         }

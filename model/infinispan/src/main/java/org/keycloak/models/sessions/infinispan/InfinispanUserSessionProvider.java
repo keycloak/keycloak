@@ -106,7 +106,6 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         tx.put(sessionCache, id, entity);
 
         ClientSessionAdapter wrap = wrap(realm, entity, false);
-        wrap.setNote(ClientSessionModel.ACTION_KEY, KeycloakModelUtils.generateCodeSecret());
         return wrap;
     }
 

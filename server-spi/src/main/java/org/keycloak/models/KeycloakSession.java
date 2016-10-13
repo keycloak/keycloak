@@ -145,6 +145,12 @@ public interface KeycloakSession {
      */
     UserFederatedStorageProvider userFederatedStorage();
 
+    /**
+     * Key manager
+     *
+      * @return
+     */
+    KeyManager keys();
 
     /**
      * Keycloak scripting support.

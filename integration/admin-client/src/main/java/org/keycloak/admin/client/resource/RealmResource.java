@@ -207,4 +207,7 @@ public interface RealmResource {
     @Path("components")
     ComponentsResource components();
 
+    @Path("keys")
+    KeyResource keys();
+
 }

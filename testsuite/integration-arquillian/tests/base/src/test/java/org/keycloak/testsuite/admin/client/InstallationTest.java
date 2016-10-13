@@ -22,10 +22,12 @@ import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 
 /**
  * Test getting the installation/configuration files for OIDC and SAML.
@@ -61,8 +63,8 @@ public class InstallationTest extends AbstractClientTest {
         return AuthServerTestEnricher.getAuthServerContextRoot() + "/auth";
     }
 
-    private String samlUrl(RealmRepresentation realmRep) {
-        return authServerUrl() + "/realms/" + realmRep.getId() + "/protocol/saml";
+    private String samlUrl() {
+        return authServerUrl() + "/realms/master/protocol/saml";
     }
 
     @Test
@@ -79,30 +81,27 @@ public class InstallationTest extends AbstractClientTest {
     }
 
     private void assertOidcInstallationConfig(String config) {
-        RealmRepresentation realmRep = realmRep();
-        assertTrue(config.contains(realmRep.getId()));
-        assertFalse(config.contains(realmRep.getPublicKey()));
+        assertTrue(config.contains("master"));
+        assertFalse(config.contains(ApiUtil.findActiveKey(testRealmResource()).getPublicKey()));
         assertTrue(config.contains(authServerUrl()));
     }
 
     @Test
     public void testSamlMetadataIdpDescriptor() {
         String xml = samlClient.getInstallationProvider("saml-idp-descriptor");
-        RealmRepresentation realmRep = realmRep();
         assertTrue(xml.contains("<EntityDescriptor"));
         assertTrue(xml.contains("<IDPSSODescriptor"));
-        assertTrue(xml.contains(realmRep.getCertificate()));
-        assertTrue(xml.contains(samlUrl(realmRep)));
+        assertTrue(xml.contains(ApiUtil.findActiveKey(testRealmResource()).getCertificate()));
+        assertTrue(xml.contains(samlUrl()));
     }
 
     @Test
     public void testSamlAdapterXml() {
         String xml = samlClient.getInstallationProvider("keycloak-saml");
-        RealmRepresentation realmRep = realmRep();
         assertTrue(xml.contains("<keycloak-saml-adapter>"));
         assertTrue(xml.contains(SAML_NAME));
-        assertTrue(xml.contains(realmRep.getCertificate()));
-        assertTrue(xml.contains(samlUrl(realmRep)));
+        assertTrue(xml.contains(ApiUtil.findActiveKey(testRealmResource()).getCertificate()));
+        assertTrue(xml.contains(samlUrl()));
     }
 
     @Test
@@ -116,10 +115,9 @@ public class InstallationTest extends AbstractClientTest {
     @Test
     public void testSamlJBossXml() {
         String xml = samlClient.getInstallationProvider("keycloak-saml-subsystem");
-        RealmRepresentation realmRep = realmRep();
         assertTrue(xml.contains("<secure-deployment"));
         assertTrue(xml.contains(SAML_NAME));
-        assertTrue(xml.contains(realmRep.getCertificate()));
-        assertTrue(xml.contains(samlUrl(realmRep)));
+        assertTrue(xml.contains(ApiUtil.findActiveKey(testRealmResource()).getCertificate()));
+        assertTrue(xml.contains(samlUrl()));
     }
 }

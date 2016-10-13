@@ -118,7 +118,7 @@ public abstract class AuthorizationEndpointBase {
             return processor.finishAuthentication(protocol);
         } else {
             try {
-                RestartLoginCookie.setRestartCookie(realm, clientConnection, uriInfo, clientSession);
+                RestartLoginCookie.setRestartCookie(session, realm, clientConnection, uriInfo, clientSession);
                 if (redirectToAuthentication) {
                     return processor.redirectToFlow();
                 }

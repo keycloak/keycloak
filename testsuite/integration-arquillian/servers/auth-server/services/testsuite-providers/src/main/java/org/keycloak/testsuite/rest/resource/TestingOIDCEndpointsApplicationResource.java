@@ -20,12 +20,13 @@ package org.keycloak.testsuite.rest.resource;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.BadRequestException;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.common.util.KeyUtils;
+import org.keycloak.common.util.PemUtils;
 import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKBuilder;
 import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.jose.jws.JWSBuilder;
-import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.testsuite.rest.TestApplicationResourceProviderFactory;
 
@@ -69,8 +70,8 @@ public class TestingOIDCEndpointsApplicationResource {
             throw new BadRequestException("Error generating signing keypair", e);
         }
 
-        String privateKeyPem = KeycloakModelUtils.getPemFromKey(clientData.getSigningKeyPair().getPrivate());
-        String publicKeyPem = KeycloakModelUtils.getPemFromKey(clientData.getSigningKeyPair().getPublic());
+        String privateKeyPem = PemUtils.encodeKey(clientData.getSigningKeyPair().getPrivate());
+        String publicKeyPem = PemUtils.encodeKey(clientData.getSigningKeyPair().getPublic());
 
         Map<String, String> res = new HashMap<>();
         res.put(PRIVATE_KEY, privateKeyPem);
@@ -120,7 +121,7 @@ public class TestingOIDCEndpointsApplicationResource {
             }
 
             PrivateKey privateKey = clientData.getSigningKeyPair().getPrivate();
-            String kid = JWKBuilder.createKeyId(clientData.getSigningKeyPair().getPublic());
+            String kid = KeyUtils.createKeyId(clientData.getSigningKeyPair().getPublic());
             clientData.setOidcRequest(new JWSBuilder().kid(kid).jsonContent(oidcRequest).rsa256(privateKey));
         } else {
             throw new BadRequestException("Unknown argument: " + jwaAlgorithm);
