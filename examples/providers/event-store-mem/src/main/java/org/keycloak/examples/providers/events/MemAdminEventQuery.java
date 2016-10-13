@@ -20,7 +20,7 @@ package org.keycloak.examples.providers.events;
 import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.events.admin.AdminEventQuery;
 import org.keycloak.events.admin.OperationType;
-import org.keycloak.events.admin.ResourceType;
+import org.keycloak.events.admin.IResourceType;
 
 import java.util.Collections;
 import java.util.Date;
@@ -74,13 +74,13 @@ public class MemAdminEventQuery implements AdminEventQuery {
     }
 
     @Override
-    public AdminEventQuery resourceType(ResourceType... resourceTypes) {
+    public AdminEventQuery resourceType(IResourceType... resourceTypes) {
 
         Iterator<AdminEvent> itr = this.adminEvents.iterator();
         while (itr.hasNext()) {
             AdminEvent next = itr.next();
             boolean include = false;
-            for (ResourceType e : resourceTypes) {
+            for (IResourceType e : resourceTypes) {
                 if (next.getResourceType().equals(e)) {
                     include = true;
                     break;

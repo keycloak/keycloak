@@ -23,7 +23,7 @@ import com.mongodb.DBCursor;
 import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.events.admin.AdminEventQuery;
 import org.keycloak.events.admin.OperationType;
-import org.keycloak.events.admin.ResourceType;
+import org.keycloak.events.admin.IResourceType;
 
 import java.util.Date;
 import java.util.LinkedList;
@@ -59,10 +59,10 @@ public class MongoAdminEventQuery implements AdminEventQuery{
     }
 
     @Override
-    public AdminEventQuery resourceType(ResourceType... resourceTypes) {
+    public AdminEventQuery resourceType(IResourceType... resourceTypes) {
 
         List<String> resourceTypeStrings = new LinkedList<String>();
-        for (ResourceType e : resourceTypes) {
+        for (IResourceType e : resourceTypes) {
             resourceTypeStrings.add(e.toString());
         }
         query.put("resourceType", new BasicDBObject("$in", resourceTypeStrings));

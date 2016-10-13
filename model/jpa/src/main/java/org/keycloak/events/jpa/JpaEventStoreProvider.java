@@ -172,7 +172,7 @@ public class JpaEventStoreProvider implements EventStoreProvider {
         adminEvent.setOperationType(OperationType.valueOf(adminEventEntity.getOperationType()));
 
         if (adminEventEntity.getResourceType() != null) {
-            adminEvent.setResourceType(ResourceType.valueOf(adminEventEntity.getResourceType()));
+            adminEvent.setResourceType(ResourceType.of(adminEventEntity.getResourceType()));
         }
 
         adminEvent.setResourcePath(adminEventEntity.getResourcePath());

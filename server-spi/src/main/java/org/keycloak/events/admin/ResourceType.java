@@ -16,12 +16,15 @@
  */
 package org.keycloak.events.admin;
 
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+
 /**
  * Represents Keycloak resource types for which {@link AdminEvent AdminEvent's} can be triggered.
  *
  * @author <a href="mailto:thomas.darimont@gmail.com">Thomas Darimont</a>
  */
-public enum ResourceType {
+public enum ResourceType implements IResourceType {
 
     /**
      *
@@ -157,4 +160,26 @@ public enum ResourceType {
      *
      */
     , CLUSTER_NODE;
+
+    private static final ConcurrentMap<String, IResourceType> types = new ConcurrentHashMap<>();
+
+    public static IResourceType of(final String name) {
+
+        if (types.isEmpty()) {
+            for (ResourceType type : values()) {
+                types.putIfAbsent(type.name(), type);
+            }
+        }
+
+        types.putIfAbsent(name.toString(/* null-check */), new IResourceType() {
+            @Override
+            public String toString() {
+                return name;
+            }
+        });
+
+        return types.get(name);
+
+    }
+
 }

@@ -23,7 +23,7 @@ import org.keycloak.events.EventStoreProvider;
 import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.events.admin.AuthDetails;
 import org.keycloak.events.admin.OperationType;
-import org.keycloak.events.admin.ResourceType;
+import org.keycloak.events.admin.IResourceType;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -91,7 +91,7 @@ public class AdminEventBuilder {
         return this;
     }
 
-    public AdminEventBuilder resource(ResourceType resourceType){
+    public AdminEventBuilder resource(IResourceType resourceType){
         adminEvent.setResourceType(resourceType);
         return this;
     }

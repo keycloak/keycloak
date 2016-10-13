@@ -20,7 +20,7 @@ package org.keycloak.events.jpa;
 import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.events.admin.AdminEventQuery;
 import org.keycloak.events.admin.OperationType;
-import org.keycloak.events.admin.ResourceType;
+import org.keycloak.events.admin.IResourceType;
 
 import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
@@ -73,10 +73,10 @@ public class JpaAdminEventQuery implements AdminEventQuery {
     }
 
     @Override
-    public AdminEventQuery resourceType(ResourceType... resourceTypes) {
+    public AdminEventQuery resourceType(IResourceType... resourceTypes) {
 
         List<String> resourceTypeStrings = new LinkedList<String>();
-        for (ResourceType e : resourceTypes) {
+        for (IResourceType e : resourceTypes) {
             resourceTypeStrings.add(e.toString());
         }
         predicates.add(root.get("resourceType").in(resourceTypeStrings));
