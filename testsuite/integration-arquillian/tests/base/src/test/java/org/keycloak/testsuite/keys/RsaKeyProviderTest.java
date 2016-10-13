@@ -27,6 +27,7 @@ import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.keys.Attributes;
+import org.keycloak.keys.GeneratedRsaKeyProviderFactory;
 import org.keycloak.keys.KeyMetadata;
 import org.keycloak.keys.KeyProvider;
 import org.keycloak.keys.RsaKeyProvider;
@@ -76,12 +77,14 @@ public class RsaKeyProviderTest extends AbstractKeycloakTest {
 
     @Test
     public void privateKeyOnly() throws Exception {
+        long priority = System.currentTimeMillis();
+
         KeyPair keyPair = KeyUtils.generateRsaKeyPair(2048);
         String kid = KeyUtils.createKeyId(keyPair.getPublic());
 
         ComponentRepresentation rep = createRep("valid", RsaKeyProviderFactory.ID);
         rep.getConfig().putSingle(Attributes.PRIVATE_KEY_KEY, PemUtils.encodeKey(keyPair.getPrivate()));
-        rep.getConfig().putSingle(Attributes.PRIORITY_KEY, "1000");
+        rep.getConfig().putSingle(Attributes.PRIORITY_KEY, Long.toString(priority));
 
         Response response = adminClient.realm("test").components().add(rep);
         String id = ApiUtil.getCreatedId(response);
@@ -100,7 +103,7 @@ public class RsaKeyProviderTest extends AbstractKeycloakTest {
 
         assertEquals(id, key.getProviderId());
         assertEquals(KeyMetadata.Type.RSA.name(), key.getType());
-        assertEquals(1000l, key.getProviderPriority());
+        assertEquals(priority, key.getProviderPriority());
         assertEquals(kid, key.getKid());
         assertEquals(PemUtils.encodeKey(keyPair.getPublic()), keys.getKeys().get(0).getPublicKey());
         assertEquals(keyPair.getPublic(), PemUtils.decodeCertificate(key.getCertificate()).getPublicKey());
@@ -108,6 +111,8 @@ public class RsaKeyProviderTest extends AbstractKeycloakTest {
 
     @Test
     public void keyAndCertificate() throws Exception {
+        long priority = System.currentTimeMillis();
+
         KeyPair keyPair = KeyUtils.generateRsaKeyPair(2048);
         Certificate certificate = CertificateUtils.generateV1SelfSignedCertificate(keyPair, "test");
         String certificatePem = PemUtils.encodeCertificate(certificate);
@@ -115,7 +120,7 @@ public class RsaKeyProviderTest extends AbstractKeycloakTest {
         ComponentRepresentation rep = createRep("valid", RsaKeyProviderFactory.ID);
         rep.getConfig().putSingle(Attributes.PRIVATE_KEY_KEY, PemUtils.encodeKey(keyPair.getPrivate()));
         rep.getConfig().putSingle(Attributes.CERTIFICATE_KEY, certificatePem);
-        rep.getConfig().putSingle(Attributes.PRIORITY_KEY, "1000");
+        rep.getConfig().putSingle(Attributes.PRIORITY_KEY, Long.toString(priority));
 
         Response response = adminClient.realm("test").components().add(rep);
         String id = ApiUtil.getCreatedId(response);
