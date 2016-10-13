@@ -37,6 +37,7 @@ import java.lang.reflect.Method;
 import java.sql.Connection;
 import java.util.List;
 import java.util.Set;
+import liquibase.LabelExpression;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -95,7 +96,7 @@ public class LiquibaseJpaUpdaterProvider implements JpaUpdaterProvider {
 
 
     protected void updateChangeSet(Liquibase liquibase, String changelog, File exportFile) throws LiquibaseException, IOException {
-        List<ChangeSet> changeSets = liquibase.listUnrunChangeSets((Contexts) null);
+        List<ChangeSet> changeSets = liquibase.listUnrunChangeSets((Contexts) null, new LabelExpression());
         if (!changeSets.isEmpty()) {
             List<RanChangeSet> ranChangeSets = liquibase.getDatabase().getRanChangeSetList();
             if (ranChangeSets.isEmpty()) {
@@ -159,7 +160,7 @@ public class LiquibaseJpaUpdaterProvider implements JpaUpdaterProvider {
     }
 
     protected Status validateChangeSet(Liquibase liquibase, String changelog) throws LiquibaseException {
-        List<ChangeSet> changeSets = liquibase.listUnrunChangeSets((Contexts) null);
+        List<ChangeSet> changeSets = liquibase.listUnrunChangeSets((Contexts) null, new LabelExpression());
         if (!changeSets.isEmpty()) {
             if (changeSets.size() == liquibase.getDatabaseChangeLog().getChangeSets().size()) {
                 return Status.EMPTY;
