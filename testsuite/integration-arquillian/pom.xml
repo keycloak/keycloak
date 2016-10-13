@@ -49,6 +49,10 @@
         <version.shrinkwrap.resolvers>2.2.2</version.shrinkwrap.resolvers>
         <undertow-embedded.version>1.0.0.Alpha2</undertow-embedded.version>
 
+        <!--migration properties-->
+        <migration.project.version>2.2.1.Final</migration.project.version>
+        <migration.product.version>1.9.8.Final</migration.product.version>
+        
         <maven.compiler.target>1.8</maven.compiler.target>
         <maven.compiler.source>1.8</maven.compiler.source>
     </properties>
@@ -128,5 +132,20 @@
         <module>servers</module>
         <module>tests</module>
     </modules>
+    
+    <profiles>
+        <profile>
+            <id>test-project-migration</id>
+            <properties>
+                <migrated.auth.server.version>${migration.project.version}</migrated.auth.server.version>
+            </properties>
+        </profile>
+        <profile>
+            <id>test-product-migration</id>
+            <properties>
+                <migrated.auth.server.version>${migration.product.version}</migrated.auth.server.version>
+            </properties>
+        </profile>
+    </profiles>
 
 </project>
