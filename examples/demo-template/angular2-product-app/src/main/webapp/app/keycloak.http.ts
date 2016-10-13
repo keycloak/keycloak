@@ -51,7 +51,7 @@ export class KeycloakHttp extends Http {
         });
 
         return <Observable<Response>>Observable
-            .merge(tokenObservable, tokenUpdateObservable, requestObservable)
+            .merge(tokenObservable, tokenUpdateObservable, requestObservable, 1) // Insure no concurrency in the merged Observables
             .filter((response) => response instanceof Response);
     }
 
