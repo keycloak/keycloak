@@ -1227,14 +1227,16 @@ module.controller('RoleListCtrl', function($scope, $route, Dialog, Notifications
     $scope.realm = realm;
     $scope.roles = roles;
     $scope.currentPage = 1;
+    $scope.currentPageInput = 1;
     $scope.pageSize = 20;
     $scope.numberOfPages = Math.ceil($scope.roles.length/$scope.pageSize);
 
     $scope.$watch('searchQuery', function (newVal, oldVal) {
-        $scope.filtered = filterFilter($scope.roles, newVal);
+        $scope.filtered = filterFilter($scope.roles, {name: newVal});
         $scope.totalItems = $scope.filtered.length;
         $scope.numberOfPages = Math.ceil($scope.totalItems/$scope.pageSize);
         $scope.currentPage = 1;
+        $scope.currentPageInput = 1;
     }, true);
 
     $scope.removeRole = function (role) {

@@ -380,13 +380,3 @@ h1 i {
     height: 600px;
     width: 100%;
 }
-
-.kc-pagination {
-    border: 1px solid #d1d1d1;
-    font-size: 12px;
-    height: 23px;
-    margin-right: 10px;
-    padding-right: 10px;
-    text-align: right;
-    width: 30px;
-}

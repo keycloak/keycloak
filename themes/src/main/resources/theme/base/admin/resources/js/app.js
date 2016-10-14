@@ -2680,20 +2680,38 @@ module.directive('kcOnReadFile', function ($parse) {
 });
 
 module.controller('PagingCtrl', function ($scope) {
-    $scope.isLastPage = function()
-    {
-        if ($scope.currentPage === $scope.numberOfPages) {
-            return true;
-        }
-        return false;
+    $scope.currentPageInput = 1;
+    
+    $scope.firstPage = function() {
+        if (!$scope.hasPrevious()) return;
+        $scope.currentPage = 1;
+        $scope.currentPageInput = 1;
     };
-
-    $scope.isFirstPage = function()
-    {
-        if ($scope.currentPage === 1) {
-            return true;
-        }
-        return false;
+    
+    $scope.lastPage = function() {
+        if (!$scope.hasNext()) return;
+        $scope.currentPage = $scope.numberOfPages;
+        $scope.currentPageInput = $scope.numberOfPages;
+    };
+    
+    $scope.previousPage = function() {
+        if (!$scope.hasPrevious()) return;
+        $scope.currentPage--;
+        $scope.currentPageInput = $scope.currentPage;
+    };
+    
+    $scope.nextPage = function() {
+        if (!$scope.hasNext()) return;
+        $scope.currentPage++;
+        $scope.currentPageInput = $scope.currentPage;
+    };
+    
+    $scope.hasNext = function() {
+        return $scope.currentPage < $scope.numberOfPages;
+    };
+    
+    $scope.hasPrevious = function() {
+        return $scope.currentPage > 1;
     };
 });
 
@@ -2701,15 +2719,34 @@ module.directive('kcPaging', function () {
     return {
         scope: {
             currentPage: '=',
+            currentPageInput: '=',
             numberOfPages: '='
         },
-        restrict: 'A',
+        restrict: 'E',
         replace: true,
         controller: 'PagingCtrl',
         templateUrl: resourceUrl + '/templates/kc-paging.html'
     }
 });
 
+// Tests the page number input from currentPageInput to see
+// if it represents a valid page.  If so, the current page is changed.
+module.directive('kcValidPage', function() {
+   return {
+       require: 'ngModel',
+       link: function(scope, element, attrs, ctrl) {
+           ctrl.$validators.inRange = function(modelValue, viewValue) {
+               if (viewValue >= 1 && viewValue <= scope.numberOfPages) {
+                   scope.currentPage = viewValue;
+               }
+               
+               return true;
+           }
+       }
+   } 
+});
+
+// filter used for paged tables
 module.filter('startFrom', function () {
     return function (input, start) {
         if (input) {
