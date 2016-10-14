@@ -25,6 +25,7 @@ public class ProviderConfigProperty {
     public static final String BOOLEAN_TYPE="boolean";
     public static final String STRING_TYPE="String";
     public static final String SCRIPT_TYPE="Script";
+    public static final String FILE_TYPE="File";
     public static final String ROLE_TYPE="Role";
     public static final String LIST_TYPE="List";
     public static final String CLIENT_LIST_TYPE="ClientList";
@@ -35,6 +36,7 @@ public class ProviderConfigProperty {
     protected String helpText;
     protected String type;
     protected Object defaultValue;
+    protected boolean secret;
 
     public ProviderConfigProperty() {
     }
@@ -45,6 +47,11 @@ public class ProviderConfigProperty {
         this.helpText = helpText;
         this.type = type;
         this.defaultValue = defaultValue;
+    }
+
+    public ProviderConfigProperty(String name, String label, String helpText, String type, Object defaultValue, boolean secret) {
+        this(name, label, helpText, type, defaultValue);
+        this.secret = secret;
     }
 
     public String getName() {
@@ -86,4 +93,13 @@ public class ProviderConfigProperty {
     public void setHelpText(String helpText) {
         this.helpText = helpText;
     }
+
+    public boolean isSecret() {
+        return secret;
+    }
+
+    public void setSecret(boolean secret) {
+        this.secret = secret;
+    }
+
 }

@@ -33,6 +33,6 @@ public interface ComponentFactory<CreatedType, ProviderType extends Provider> ex
         return null;
     }
 
-    void validateConfiguration(KeycloakSession session, ComponentModel config) throws ComponentValidationException;
+    void validateConfiguration(KeycloakSession session, ComponentModel model) throws ComponentValidationException;
 
 }

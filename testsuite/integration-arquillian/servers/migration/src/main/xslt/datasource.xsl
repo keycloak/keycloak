@@ -88,7 +88,7 @@
         <xsl:if test="$driver != 'h2'">
             <driver name="{$driver}" module="com.{$driver}">
                 <xa-datasource-class>
-                    <xsl:value-of select="$xa.datasource.class"/>
+                    <xsl:value-of select="$datasource.class.xa"/>
                 </xa-datasource-class>
             </driver>
         </xsl:if>

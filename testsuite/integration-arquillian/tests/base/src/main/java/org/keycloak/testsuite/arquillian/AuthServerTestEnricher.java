@@ -64,8 +64,7 @@ public class AuthServerTestEnricher {
     private static final String AUTH_SERVER_CLUSTER_PROPERTY = "auth.server.cluster";
     public static final boolean AUTH_SERVER_CLUSTER = Boolean.parseBoolean(System.getProperty(AUTH_SERVER_CLUSTER_PROPERTY, "false"));
 
-    private static final String MIGRATION_PROPERTY = "auth.server.jboss.migration";
-    private static final Boolean MIGRATION_ENABLED = Boolean.parseBoolean(System.getProperty(MIGRATION_PROPERTY));
+    private static final Boolean AUTO_MIGRATION_ENABLED = "auto".equals(System.getProperty("migration.mode"));
 
     @Inject
     @SuiteScoped
@@ -131,7 +130,7 @@ public class AuthServerTestEnricher {
             throw new RuntimeException(String.format("No auth server container matching '%sN' found in arquillian.xml.", authServerBackend));
         }
 
-        if (MIGRATION_ENABLED) {
+        if (AUTO_MIGRATION_ENABLED) {
             // init migratedAuthServerInfo
             for (ContainerInfo container : suiteContext.getContainers()) {
                 // migrated auth server
@@ -166,7 +165,7 @@ public class AuthServerTestEnricher {
 
     public void startMigratedContainer(@Observes(precedence = 2) StartSuiteContainers event) {
         if (suiteContext.isAuthServerMigrationEnabled()) {
-            log.info("\n\n### Starting keycloak " + System.getProperty("version", "- previous") + " ###\n");
+            log.info("\n\n### Starting keycloak " + System.getProperty("migrated.auth.server.version", "- previous") + " ###\n\n");
             startContainerEvent.fire(new StartContainer(suiteContext.getMigratedAuthServerInfo().getArquillianContainer()));
         }
     }

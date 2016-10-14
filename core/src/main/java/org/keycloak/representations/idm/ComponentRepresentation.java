@@ -24,6 +24,8 @@ import org.keycloak.common.util.MultivaluedHashMap;
  */
 public class ComponentRepresentation {
 
+    public static final String SECRET_VALUE = "**********";
+
     private String id;
     private String name;
     private String providerId;

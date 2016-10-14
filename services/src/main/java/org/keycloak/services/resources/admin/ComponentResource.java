@@ -19,12 +19,14 @@ package org.keycloak.services.resources.admin;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.component.ComponentModel;
+import org.keycloak.component.ComponentValidationException;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.idm.ComponentRepresentation;
+import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ServicesLogger;
 
 import javax.ws.rs.Consumes;
@@ -54,9 +56,9 @@ public class ComponentResource {
 
     protected RealmModel realm;
 
-    protected RealmAuth auth;
+    private RealmAuth auth;
 
-    protected AdminEventBuilder adminEvent;
+    private AdminEventBuilder adminEvent;
 
     @Context
     protected ClientConnection clientConnection;
@@ -93,41 +95,38 @@ public class ComponentResource {
         }
         List<ComponentRepresentation> reps = new LinkedList<>();
         for (ComponentModel component : components) {
-            ComponentRepresentation rep = getRepresentation(component);
+            ComponentRepresentation rep = ModelToRepresentation.toRepresentation(session, component, false);
             reps.add(rep);
         }
         return reps;
-    }
-
-    protected ComponentRepresentation getRepresentation(ComponentModel component) {
-        return ModelToRepresentation.toRepresentation(component);
     }
 
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     public Response create(ComponentRepresentation rep) {
         auth.requireManage();
-        ComponentModel model = RepresentationToModel.toModel(rep);
-        if (model.getParentId() == null) model.setParentId(realm.getId());
-        adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo, model.getId()).representation(rep).success();
+        try {
+            ComponentModel model = RepresentationToModel.toModel(session, rep);
+            if (model.getParentId() == null) model.setParentId(realm.getId());
+            adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo, model.getId()).representation(rep).success();
 
-
-
-        model = realm.addComponentModel(model);
-        return Response.created(uriInfo.getAbsolutePathBuilder().path(model.getId()).build()).build();
+            model = realm.addComponentModel(model);
+            return Response.created(uriInfo.getAbsolutePathBuilder().path(model.getId()).build()).build();
+        } catch (ComponentValidationException e) {
+            return ErrorResponse.error(e.getMessage(), Response.Status.BAD_REQUEST);
+        }
     }
 
     @GET
     @Path("{id}")
+    @Produces(MediaType.APPLICATION_JSON)
     public ComponentRepresentation getComponent(@PathParam("id") String id) {
         auth.requireManage();
         ComponentModel model = realm.getComponent(id);
         if (model == null) {
             throw new NotFoundException("Could not find component");
         }
-        return getRepresentation(model);
-
-
+        return ModelToRepresentation.toRepresentation(session, model, false);
     }
 
     @PUT
@@ -139,8 +138,7 @@ public class ComponentResource {
         if (model == null) {
             throw new NotFoundException("Could not find component");
         }
-        model = RepresentationToModel.toModel(rep);
-        model.setId(id);
+        RepresentationToModel.updateComponent(session, rep, model, false);
         adminEvent.operation(OperationType.UPDATE).resourcePath(uriInfo, model.getId()).representation(rep).success();
         realm.updateComponent(model);
 

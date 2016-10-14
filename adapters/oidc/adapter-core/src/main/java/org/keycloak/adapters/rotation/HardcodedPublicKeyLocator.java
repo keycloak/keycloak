@@ -34,7 +34,7 @@ public class HardcodedPublicKeyLocator implements PublicKeyLocator {
     }
 
     @Override
-    public PublicKey getPublicKey(JWSInput input, KeycloakDeployment deployment) {
+    public PublicKey getPublicKey(String kid, KeycloakDeployment deployment) {
         return publicKey;
     }
 }

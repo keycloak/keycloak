@@ -38,6 +38,7 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
+import org.keycloak.models.KeyManager;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
@@ -265,7 +266,8 @@ public class SAMLEndpoint {
             JaxrsSAML2BindingBuilder binding = new JaxrsSAML2BindingBuilder()
                         .relayState(relayState);
             if (config.isWantAuthnRequestsSigned()) {
-                binding.signWith(realm.getPrivateKey(), realm.getPublicKey(), realm.getCertificate())
+                KeyManager.ActiveKey keys = session.keys().getActiveKey(realm);
+                binding.signWith(keys.getPrivateKey(), keys.getPublicKey(), keys.getCertificate())
                         .signatureAlgorithm(provider.getSignatureAlgorithm())
                         .signDocument();
             }
@@ -291,13 +293,13 @@ public class SAMLEndpoint {
         protected Response handleLoginResponse(String samlResponse, SAMLDocumentHolder holder, ResponseType responseType, String relayState) {
 
             try {
-                AssertionType assertion = AssertionUtil.getAssertion(responseType, realm.getPrivateKey());
+                KeyManager.ActiveKey keys = session.keys().getActiveKey(realm);
+                AssertionType assertion = AssertionUtil.getAssertion(responseType, keys.getPrivateKey());
                 SubjectType subject = assertion.getSubject();
                 SubjectType.STSubType subType = subject.getSubType();
                 NameIDType subjectNameID = (NameIDType) subType.getBaseID();
                 //Map<String, String> notes = new HashMap<>();
                 BrokeredIdentityContext identity = new BrokeredIdentityContext(subjectNameID.getValue());
-                identity.setCode(relayState);
                 identity.getContextData().put(SAML_LOGIN_RESPONSE, responseType);
                 identity.getContextData().put(SAML_ASSERTION, assertion);
 
@@ -340,6 +342,7 @@ public class SAMLEndpoint {
                 if (authn != null && authn.getSessionIndex() != null) {
                     identity.setBrokerSessionId(identity.getBrokerUserId() + "." + authn.getSessionIndex());
                  }
+                identity.setCode(relayState);
 
 
                 return callback.authenticated(identity);

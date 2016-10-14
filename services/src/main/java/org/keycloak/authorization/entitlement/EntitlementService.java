@@ -40,6 +40,7 @@ import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakContext;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.representations.AccessToken;
@@ -80,6 +81,9 @@ public class EntitlementService {
 
     @Context
     private HttpRequest request;
+
+    @Context
+    private KeycloakSession session;
 
     public EntitlementService(AuthorizationProvider authorization) {
         this.authorization = authorization;
@@ -200,7 +204,7 @@ public class EntitlementService {
         authorization.setPermissions(permissions);
         accessToken.setAuthorization(authorization);
 
-        return new TokenManager().encodeToken(realm, accessToken);
+        return new TokenManager().encodeToken(this.authorization.getKeycloakSession(), realm, accessToken);
     }
 
     private List<ResourcePermission> createPermissions(EntitlementRequest entitlementRequest, ResourceServer resourceServer, AuthorizationProvider authorization) {
@@ -252,7 +256,7 @@ public class EntitlementService {
 
         if (rpt != null && !"".equals(rpt)) {
             KeycloakContext context = authorization.getKeycloakSession().getContext();
-            if (!Tokens.verifySignature(rpt, context.getRealm().getPublicKey())) {
+            if (!Tokens.verifySignature(session, context.getRealm(), rpt)) {
                 throw new ErrorResponseException("invalid_rpt", "RPT signature is invalid", Status.FORBIDDEN);
             }
 

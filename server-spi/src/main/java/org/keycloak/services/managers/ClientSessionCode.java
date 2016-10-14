@@ -17,18 +17,23 @@
 
 package org.keycloak.services.managers;
 
+import org.jboss.logging.Logger;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.Time;
+import org.keycloak.jose.jws.Algorithm;
+import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.ClientTemplateModel;
+import org.keycloak.models.KeyManager;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 
-import javax.crypto.Mac;
-import java.security.Key;
+import java.security.PublicKey;
+import java.security.Signature;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -38,8 +43,11 @@ import java.util.Set;
  */
 public class ClientSessionCode {
 
-    private static final byte[] HASH_SEPERATOR = "//".getBytes();
+    private static final Logger logger = Logger.getLogger(ClientSessionCode.class);
 
+    private static final String NEXT_CODE = ClientSessionCode.class.getName() + ".nextCode";
+
+    private KeycloakSession session;
     private final RealmModel realm;
     private final ClientSessionModel clientSession;
 
@@ -49,30 +57,10 @@ public class ClientSessionCode {
         USER
     }
 
-    public ClientSessionCode(RealmModel realm, ClientSessionModel clientSession) {
+    public ClientSessionCode(KeycloakSession session, RealmModel realm, ClientSessionModel clientSession) {
+        this.session = session;
         this.realm = realm;
         this.clientSession = clientSession;
-    }
-
-    public static ClientSessionCode parse(String code, KeycloakSession session) {
-        try {
-            String[] parts = code.split("\\.");
-            String id = parts[1];
-
-            ClientSessionModel clientSession = session.sessions().getClientSession(id);
-            if (clientSession == null) {
-                return null;
-            }
-
-            String hash = createHash(clientSession.getRealm(), clientSession);
-            if (!hash.equals(parts[0])) {
-                return null;
-            }
-
-            return new ClientSessionCode(clientSession.getRealm(), clientSession);
-        } catch (RuntimeException e) {
-            return null;
-        }
     }
 
     public static class ParseResult {
@@ -114,21 +102,18 @@ public class ClientSessionCode {
                 return result;
             }
 
-            String hash = createHash(realm, result.clientSession);
-            if (!hash.equals(parts[0])) {
+            if (!verifyCode(code, session, realm, result.clientSession)) {
                 result.illegalHash = true;
                 return result;
             }
 
-            result.code = new ClientSessionCode(realm, result.clientSession);
+            result.code = new ClientSessionCode(session, realm, result.clientSession);
             return result;
         } catch (RuntimeException e) {
             result.illegalHash = true;
             return result;
         }
     }
-
-
 
     public static ClientSessionCode parse(String code, KeycloakSession session, RealmModel realm) {
         try {
@@ -140,12 +125,11 @@ public class ClientSessionCode {
                 return null;
             }
 
-            String hash = createHash(realm, clientSession);
-            if (!hash.equals(parts[0])) {
+            if (!verifyCode(code, session, realm, clientSession)) {
                 return null;
             }
 
-            return new ClientSessionCode(realm, clientSession);
+            return new ClientSessionCode(session, realm, clientSession);
         } catch (RuntimeException e) {
             return null;
         }
@@ -194,7 +178,7 @@ public class ClientSessionCode {
 
 
     public Set<RoleModel> getRequestedRoles() {
-        Set<RoleModel> requestedRoles = new HashSet<RoleModel>();
+        Set<RoleModel> requestedRoles = new HashSet<>();
         for (String roleId : clientSession.getRoles()) {
             RoleModel role = realm.getRoleById(roleId);
             if (role != null) {
@@ -205,7 +189,7 @@ public class ClientSessionCode {
     }
 
     public Set<ProtocolMapperModel> getRequestedProtocolMappers() {
-        Set<ProtocolMapperModel> requestedProtocolMappers = new HashSet<ProtocolMapperModel>();
+        Set<ProtocolMapperModel> requestedProtocolMappers = new HashSet<>();
         Set<String> protocolMappers = clientSession.getProtocolMappers();
         ClientModel client = clientSession.getClient();
         ClientTemplateModel template = client.getClientTemplate();
@@ -229,32 +213,67 @@ public class ClientSessionCode {
     }
 
     public String getCode() {
-        return generateCode(realm, clientSession);
+        String nextCode = (String) session.getAttribute(NEXT_CODE + "." + clientSession.getId());
+        if (nextCode == null) {
+            nextCode = generateCode(session, realm, clientSession);
+            session.setAttribute(NEXT_CODE + "." + clientSession.getId(), nextCode);
+        } else {
+            logger.debug("Code already generated for session, using code from session attributes");
+        }
+        return nextCode;
     }
 
-    private static String generateCode(RealmModel realm, ClientSessionModel clientSession) {
-        String hash = createHash(realm, clientSession);
-
-        StringBuilder sb = new StringBuilder();
-        sb.append(hash);
-        sb.append(".");
-        sb.append(clientSession.getId());
-
-        return sb.toString();
-    }
-
-    private static String createHash(RealmModel realm, ClientSessionModel clientSession) {
+    private static String generateCode(KeycloakSession session, RealmModel realm, ClientSessionModel clientSession) {
         try {
-            Key codeSecretKey = realm.getCodeSecretKey();
-            Mac mac = Mac.getInstance(codeSecretKey.getAlgorithm());
-            mac.init(codeSecretKey);
-            mac.update(clientSession.getId().getBytes());
-            mac.update(HASH_SEPERATOR);
-            mac.update(clientSession.getNote(ClientSessionModel.ACTION_KEY).getBytes());
-            return Base64Url.encode(mac.doFinal());
+            KeyManager.ActiveKey keys = session.keys().getActiveKey(realm);
+
+            String secret = KeycloakModelUtils.generateSecret();
+
+            StringBuilder sb = new StringBuilder();
+            sb.append(secret);
+            sb.append('.');
+            sb.append(clientSession.getId());
+
+            String code = sb.toString();
+
+            Signature signature = RSAProvider.getSignature(Algorithm.RS256);
+            signature.initSign(keys.getPrivateKey());
+            signature.update(code.getBytes("utf-8"));
+
+            sb = new StringBuilder();
+
+            sb.append(Base64Url.encode(signature.sign()));
+            sb.append('.');
+            sb.append(keys.getKid());
+
+            clientSession.setNote(ClientSessionModel.ACTION_SIGNATURE, sb.toString());
+
+            return code;
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
 
+    private static boolean verifyCode(String code, KeycloakSession session, RealmModel realm, ClientSessionModel clientSession) {
+        try {
+            String note = clientSession.getNote(ClientSessionModel.ACTION_SIGNATURE);
+            if (note == null) {
+                logger.debug("Action signature not found in client session");
+                return false;
+            }
+
+            clientSession.removeNote(ClientSessionModel.ACTION_SIGNATURE);
+
+            String[] signed = note.split("\\.");
+
+            PublicKey publicKey = session.keys().getPublicKey(realm, signed[1]);
+
+            Signature verifier = RSAProvider.getSignature(Algorithm.RS256);
+            verifier.initVerify(publicKey);
+            verifier.update(code.getBytes("utf-8"));
+            return verifier.verify(Base64Url.decode(signed[0]));
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
 }

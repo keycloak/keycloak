@@ -380,3 +380,14 @@ h1 i {
     height: 600px;
     width: 100%;
 }
+
+.kc-button-input-file input {
+    float: left;
+    width: 73%;
+}
+
+.kc-button-input-file label {
+    float: left;
+    margin-left: 2%;
+    width: 25%;
+}

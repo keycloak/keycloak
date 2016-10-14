@@ -27,7 +27,7 @@ import java.lang.reflect.Method;
  */
 public class MigrationTestExecutionDecider implements TestExecutionDecider {
 
-    public static final String MIGRATED_AUTH_SERVER_VERSION_PROPERTY = "migrated.auth.server.version";
+    private static final String MIGRATED_AUTH_SERVER_VERSION_PROPERTY = "migrated.auth.server.version";
 
     @Override
     public ExecutionDecision decide(Method method) {

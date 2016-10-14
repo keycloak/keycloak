@@ -46,13 +46,7 @@ public class JWKPublicKeyLocator implements PublicKeyLocator {
     private volatile int lastRequestTime = 0;
 
     @Override
-    public PublicKey getPublicKey(JWSInput input, KeycloakDeployment deployment) {
-        String kid = input.getHeader().getKeyId();
-        return getPublicKey(kid, deployment);
-    }
-
-
-    private PublicKey getPublicKey(String kid, KeycloakDeployment deployment) {
+    public PublicKey getPublicKey(String kid, KeycloakDeployment deployment) {
         int minTimeBetweenRequests = deployment.getMinTimeBetweenJwksRequests();
 
         // Check if key is in cache.

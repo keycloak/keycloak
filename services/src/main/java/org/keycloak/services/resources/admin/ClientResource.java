@@ -274,7 +274,7 @@ public class ClientResource {
             throw new NotFoundException("Could not find client");
         }
 
-        String token = ClientRegistrationTokenUtils.updateRegistrationAccessToken(realm, uriInfo, client);
+        String token = ClientRegistrationTokenUtils.updateRegistrationAccessToken(session, realm, uriInfo, client);
 
         ClientRepresentation rep = ModelToRepresentation.toRepresentation(client);
         rep.setRegistrationAccessToken(token);

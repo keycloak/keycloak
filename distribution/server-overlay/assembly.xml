@@ -37,7 +37,16 @@
                 <include>org/liquibase/**</include>
                 <include>org/mongodb/**</include>
                 <include>org/twitter4j/**</include>
+                <include>aopalliance/**</include>
+                <include>com/thoughtworks/xstream/**</include>
+                <include>org/antlr/**</include>
+                <include>org/apache/**</include>
+                <include>org/codehouse/**</include>
                 <include>org/drools/**</include>
+                <include>org/eclipse/**</include>
+                <include>org/kie/**</include>
+                <include>org/mvel/**</include>
+                <include>org/sonatype/**</include>
                 <include>sun/jdk/jgss/**</include>
             </includes>
         </fileSet>

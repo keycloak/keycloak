@@ -267,6 +267,7 @@ public class IdentityProviderResource {
                         propRep.setType(prop.getType());
                         propRep.setDefaultValue(prop.getDefaultValue());
                         propRep.setHelpText(prop.getHelpText());
+                        propRep.setSecret(prop.isSecret());
                         rep.getProperties().add(propRep);
                     }
                     types.put(rep.getId(), rep);

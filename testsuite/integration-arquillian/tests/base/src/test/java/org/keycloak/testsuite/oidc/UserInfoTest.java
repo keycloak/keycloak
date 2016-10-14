@@ -22,6 +22,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.common.util.PemUtils;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
@@ -190,8 +191,7 @@ public class UserInfoTest extends AbstractKeycloakTest {
                     .assertEvent();
 
             // Check signature and content
-            RealmRepresentation realmRep = adminClient.realm("test").toRepresentation();
-            PublicKey publicKey = KeycloakModelUtils.getPublicKey(realmRep.getPublicKey());
+            PublicKey publicKey = PemUtils.decodePublicKey(ApiUtil.findActiveKey(adminClient.realm("test")).getPublicKey());
 
             Assert.assertEquals(200, response.getStatus());
             Assert.assertEquals(response.getHeaderString(HttpHeaders.CONTENT_TYPE), MediaType.APPLICATION_JWT);

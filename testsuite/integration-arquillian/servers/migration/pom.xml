@@ -75,6 +75,18 @@
                                 <requireProperty>
                                     <property>keycloak.connectionsJpa.password</property>
                                 </requireProperty>
+                                <requireProperty>
+                                    <property>keycloak.connectionsJpa.url</property>
+                                </requireProperty>
+                                <requireProperty>
+                                    <property>db.hostname</property>
+                                </requireProperty>
+                                <requireProperty>
+                                    <property>db.name</property>
+                                </requireProperty>
+                                <requireProperty>
+                                    <property>db.port</property>
+                                </requireProperty>
                             </rules>
                         </configuration>
                     </execution>

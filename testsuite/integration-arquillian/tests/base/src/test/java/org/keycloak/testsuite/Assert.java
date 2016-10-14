@@ -19,6 +19,7 @@ package org.keycloak.testsuite;
 
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ConfigPropertyRepresentation;
+import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
@@ -72,6 +73,8 @@ public class Assert extends org.junit.Assert {
             return ((UserRepresentation) o1).getUsername();
         } else if (o1 instanceof UserFederationProviderFactoryRepresentation) {
             return ((UserFederationProviderFactoryRepresentation) o1).getId();
+        } else if (o1 instanceof GroupRepresentation) {
+            return ((GroupRepresentation) o1).getName();
         }
 
         throw new IllegalArgumentException();

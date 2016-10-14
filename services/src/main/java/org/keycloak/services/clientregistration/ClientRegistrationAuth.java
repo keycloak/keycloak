@@ -79,7 +79,7 @@ public class ClientRegistrationAuth {
             return;
         }
 
-        ClientRegistrationTokenUtils.TokenVerification tokenVerification = ClientRegistrationTokenUtils.verifyToken(realm, uri, split[1]);
+        ClientRegistrationTokenUtils.TokenVerification tokenVerification = ClientRegistrationTokenUtils.verifyToken(session, realm, uri, split[1]);
         if (tokenVerification.getError() != null) {
             throw unauthorized(tokenVerification.getError().getMessage());
         }

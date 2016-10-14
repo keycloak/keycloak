@@ -882,4 +882,11 @@ public class RealmAdminResource {
         adminEvent.operation(OperationType.ACTION).resourcePath(uriInfo).success();
     }
 
+    @Path("keys")
+    public KeyResource keys() {
+        KeyResource resource =  new KeyResource(realm, session, this.auth);
+        ResteasyProviderFactory.getInstance().injectProperties(resource);
+        return resource;
+    }
+
 }
