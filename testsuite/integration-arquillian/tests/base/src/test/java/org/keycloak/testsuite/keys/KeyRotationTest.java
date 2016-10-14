@@ -17,6 +17,8 @@
 
 package org.keycloak.testsuite.keys;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Rule;
 import org.junit.Test;
@@ -28,6 +30,8 @@ import org.keycloak.common.util.PemUtils;
 import org.keycloak.keys.Attributes;
 import org.keycloak.keys.KeyProvider;
 import org.keycloak.keys.RsaKeyProviderFactory;
+import org.keycloak.representations.UserInfo;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.KeysMetadataRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -37,9 +41,13 @@ import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.LoginPage;
+import org.keycloak.testsuite.util.KeycloakModelUtils;
 import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.UserInfoClientUtil;
 
+import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.core.Response;
+import java.io.IOException;
 import java.security.KeyPair;
 import java.security.PublicKey;
 import java.util.List;
@@ -65,6 +73,10 @@ public class KeyRotationTest extends AbstractKeycloakTest {
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         RealmRepresentation realm = loadJson(getClass().getResourceAsStream("/testrealm.json"), RealmRepresentation.class);
         testRealms.add(realm);
+
+        ClientRepresentation confApp = KeycloakModelUtils.createClient(realm, "confidential-cli");
+        confApp.setSecret("secret1");
+        confApp.setServiceAccountsEnabled(Boolean.TRUE);
     }
 
     @Test
@@ -114,6 +126,12 @@ public class KeyRotationTest extends AbstractKeycloakTest {
         assertTokenSignature(key1, response.getAccessToken());
         assertTokenSignature(key1, response.getRefreshToken());
 
+        // Userinfo with keys #1
+        assertUserInfo(response.getAccessToken(), 200);
+
+        // Token introspection with keys #1
+        assertTokenIntrospection(response.getAccessToken(), true);
+
         // Create keys #2
         PublicKey key2 = createKeys2();
 
@@ -123,6 +141,12 @@ public class KeyRotationTest extends AbstractKeycloakTest {
         assertTokenSignature(key2, response.getAccessToken());
         assertTokenSignature(key2, response.getRefreshToken());
 
+        // Userinfo with keys #2
+        assertUserInfo(response.getAccessToken(), 200);
+
+        // Token introspection with keys #2
+        assertTokenIntrospection(response.getAccessToken(), true);
+
         // Drop key #1
         dropKeys1();
 
@@ -131,8 +155,20 @@ public class KeyRotationTest extends AbstractKeycloakTest {
         assertTokenSignature(key2, response.getAccessToken());
         assertTokenSignature(key2, response.getRefreshToken());
 
+        // Userinfo with keys #1 dropped
+        assertUserInfo(response.getAccessToken(), 200);
+
+        // Token introspection with keys #1 dropped
+        assertTokenIntrospection(response.getAccessToken(), true);
+
         // Drop key #2
         dropKeys2();
+
+        // Userinfo with keys #2 dropped
+        assertUserInfo(response.getAccessToken(), 401);
+
+        // Token introspection with keys #2 dropped
+        assertTokenIntrospection(response.getAccessToken(), false);
 
         // Refresh token with keys #2 dropped - should fail as refresh token is signed with key #2
         response = oauth.doRefreshTokenRequest(response.getRefreshToken(), "password");
@@ -230,6 +266,24 @@ public class KeyRotationTest extends AbstractKeycloakTest {
             }
         }
         throw new RuntimeException("Failed to find keys1");
+    }
+
+    private void assertUserInfo(String token, int expectedStatus) {
+        Response userInfoResponse = UserInfoClientUtil.executeUserInfoRequest_getMethod(ClientBuilder.newClient(), token);
+        assertEquals(expectedStatus, userInfoResponse.getStatus());
+        userInfoResponse.close();
+    }
+
+    private void assertTokenIntrospection(String token, boolean expectActive) {
+        try {
+            String tokenResponse = oauth.introspectAccessTokenWithClientCredential("confidential-cli", "secret1", token);
+            ObjectMapper objectMapper = new ObjectMapper();
+            JsonNode jsonNode = objectMapper.readTree(tokenResponse);
+            assertEquals(expectActive, jsonNode.get("active").asBoolean());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
     }
 
 }

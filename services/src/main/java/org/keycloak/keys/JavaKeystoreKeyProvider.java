@@ -53,10 +53,8 @@ public class JavaKeystoreKeyProvider extends AbstractRsaKeyProvider {
 
             KeyPair keyPair = new KeyPair(publicKey, privateKey);
 
-            X509Certificate certificate;
-            if (model.contains(JavaKeystoreKeyProviderFactory.CERTIFICATE_ALIAS_KEY)) {
-                certificate = (X509Certificate) keyStore.getCertificate(model.get(JavaKeystoreKeyProviderFactory.CERTIFICATE_ALIAS_KEY));
-            } else {
+            X509Certificate certificate = (X509Certificate) keyStore.getCertificate(model.get(JavaKeystoreKeyProviderFactory.KEY_ALIAS_KEY));
+            if (certificate == null) {
                 certificate = CertificateUtils.generateV1SelfSignedCertificate(keyPair, realm.getName());
             }
 

@@ -48,9 +48,6 @@ public class JavaKeystoreKeyProviderFactory extends AbstractRsaKeyProviderFactor
     public static String KEY_PASSWORD_KEY = "keyPassword";
     public static ProviderConfigProperty KEY_PASSWORD_PROPERTY = new ProviderConfigProperty(KEY_PASSWORD_KEY, "Private Key password", "Password for the private key", STRING_TYPE, null, true);
 
-    public static String CERTIFICATE_ALIAS_KEY = "certificateAlias";
-    public static ProviderConfigProperty CERTIFICATE_ALIAS_PROPERTY = new ProviderConfigProperty(CERTIFICATE_ALIAS_KEY, "Certificate Alias", "Alias for the certificate", STRING_TYPE, null);
-
     private static final String HELP_TEXT = "Loads keys from a Java keys file";
 
     private static final List<ProviderConfigProperty> CONFIG_PROPERTIES = AbstractRsaKeyProviderFactory.configurationBuilder()
@@ -58,7 +55,6 @@ public class JavaKeystoreKeyProviderFactory extends AbstractRsaKeyProviderFactor
             .property(KEYSTORE_PASSWORD_PROPERTY)
             .property(KEY_ALIAS_PROPERTY)
             .property(KEY_PASSWORD_PROPERTY)
-            .property(CERTIFICATE_ALIAS_PROPERTY)
             .build();
 
     @Override
@@ -74,8 +70,7 @@ public class JavaKeystoreKeyProviderFactory extends AbstractRsaKeyProviderFactor
                 .checkSingle(KEYSTORE_PROPERTY, true)
                 .checkSingle(KEYSTORE_PASSWORD_PROPERTY, true)
                 .checkSingle(KEY_ALIAS_PROPERTY, true)
-                .checkSingle(KEY_PASSWORD_PROPERTY, true)
-                .checkSingle(CERTIFICATE_ALIAS_PROPERTY, false);
+                .checkSingle(KEY_PASSWORD_PROPERTY, true);
 
         try {
             new JavaKeystoreKeyProvider(session.getContext().getRealm(), model)
