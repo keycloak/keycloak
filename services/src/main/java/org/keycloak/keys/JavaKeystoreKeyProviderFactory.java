@@ -43,10 +43,10 @@ public class JavaKeystoreKeyProviderFactory extends AbstractRsaKeyProviderFactor
     public static ProviderConfigProperty KEYSTORE_PASSWORD_PROPERTY = new ProviderConfigProperty(KEYSTORE_PASSWORD_KEY, "Keystore Password", "Password for the keys", STRING_TYPE, null, true);
 
     public static String KEY_ALIAS_KEY = "keyAlias";
-    public static ProviderConfigProperty KEY_ALIAS_PROPERTY = new ProviderConfigProperty(KEY_ALIAS_KEY, "Private Key Alias", "Alias for the private key", STRING_TYPE, null);
+    public static ProviderConfigProperty KEY_ALIAS_PROPERTY = new ProviderConfigProperty(KEY_ALIAS_KEY, "Key Alias", "Alias for the private key", STRING_TYPE, null);
 
     public static String KEY_PASSWORD_KEY = "keyPassword";
-    public static ProviderConfigProperty KEY_PASSWORD_PROPERTY = new ProviderConfigProperty(KEY_PASSWORD_KEY, "Private Key password", "Password for the private key", STRING_TYPE, null, true);
+    public static ProviderConfigProperty KEY_PASSWORD_PROPERTY = new ProviderConfigProperty(KEY_PASSWORD_KEY, "Key Password", "Password for the private key", STRING_TYPE, null, true);
 
     private static final String HELP_TEXT = "Loads keys from a Java keys file";
 
