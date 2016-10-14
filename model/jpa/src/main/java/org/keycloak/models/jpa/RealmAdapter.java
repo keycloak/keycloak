@@ -2158,6 +2158,9 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
     protected void setConfig(ComponentModel model, ComponentEntity c) {
         for (String key : model.getConfig().keySet()) {
             List<String> vals = model.getConfig().get(key);
+            if (vals == null) {
+                continue;
+            }
             for (String val : vals) {
                 ComponentConfigEntity config = new ComponentConfigEntity();
                 config.setId(KeycloakModelUtils.generateId());

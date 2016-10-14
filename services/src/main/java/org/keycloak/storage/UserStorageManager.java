@@ -227,6 +227,13 @@ public class UserStorageManager implements UserProvider, OnUserCache {
         }
     }
 
+    /**
+     * Allows a UserStorageProvider to proxy and/or synchronize an imported user.
+     *
+     * @param realm
+     * @param user
+     * @return
+     */
     protected UserModel importValidation(RealmModel realm, UserModel user) {
         if (user == null || user.getFederationLink() == null) return user;
         UserStorageProvider provider = getStorageProvider(session, realm, user.getFederationLink());

@@ -43,6 +43,7 @@ public class ComponentModel implements Serializable {
         this.name = copy.name;
         this.providerId = copy.providerId;
         this.providerType = copy.providerType;
+        this.parentId = copy.parentId;
         this.config = copy.config;
     }
 

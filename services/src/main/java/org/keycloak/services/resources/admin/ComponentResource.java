@@ -54,9 +54,9 @@ public class ComponentResource {
 
     protected RealmModel realm;
 
-    private RealmAuth auth;
+    protected RealmAuth auth;
 
-    private AdminEventBuilder adminEvent;
+    protected AdminEventBuilder adminEvent;
 
     @Context
     protected ClientConnection clientConnection;
@@ -93,10 +93,14 @@ public class ComponentResource {
         }
         List<ComponentRepresentation> reps = new LinkedList<>();
         for (ComponentModel component : components) {
-            ComponentRepresentation rep = ModelToRepresentation.toRepresentation(component);
+            ComponentRepresentation rep = getRepresentation(component);
             reps.add(rep);
         }
         return reps;
+    }
+
+    protected ComponentRepresentation getRepresentation(ComponentModel component) {
+        return ModelToRepresentation.toRepresentation(component);
     }
 
     @POST
@@ -121,7 +125,7 @@ public class ComponentResource {
         if (model == null) {
             throw new NotFoundException("Could not find component");
         }
-        return ModelToRepresentation.toRepresentation(model);
+        return getRepresentation(model);
 
 
     }
