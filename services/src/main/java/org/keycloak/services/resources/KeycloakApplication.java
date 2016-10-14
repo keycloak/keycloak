@@ -44,6 +44,7 @@ import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.filters.KeycloakTransactionCommitter;
 import org.keycloak.services.managers.ApplianceBootstrap;
 import org.keycloak.services.managers.RealmManager;
+import org.keycloak.services.managers.UserStorageSyncManager;
 import org.keycloak.services.managers.UsersSyncManager;
 import org.keycloak.services.resources.admin.AdminRoot;
 import org.keycloak.services.scheduled.ClearExpiredEvents;
@@ -319,6 +320,7 @@ public class KeycloakApplication extends Application {
             timer.schedule(new ClusterAwareScheduledTaskRunner(sessionFactory, new ClearExpiredEvents(), interval), interval, "ClearExpiredEvents");
             timer.schedule(new ClusterAwareScheduledTaskRunner(sessionFactory, new ClearExpiredUserSessions(), interval), interval, "ClearExpiredUserSessions");
             new UsersSyncManager().bootstrapPeriodic(sessionFactory, timer);
+            new UserStorageSyncManager().bootstrapPeriodic(sessionFactory, timer);
         } finally {
             session.close();
         }

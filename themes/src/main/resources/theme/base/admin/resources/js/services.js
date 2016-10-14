@@ -1667,4 +1667,11 @@ module.factory('Components', function($resource) {
     });
 });
 
+module.factory('UserStorageSync', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/user-storage/:componentId/sync', {
+        realm : '@realm',
+        componentId : '@componentId'
+    });
+});
+
 

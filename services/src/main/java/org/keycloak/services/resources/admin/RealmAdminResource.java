@@ -361,6 +361,14 @@ public class RealmAdminResource {
         return fed;
     }
 
+    @Path("user-storage")
+    public UserStorageProviderResource userStorage() {
+        UserStorageProviderResource fed = new UserStorageProviderResource(realm, auth, adminEvent);
+        ResteasyProviderFactory.getInstance().injectProperties(fed);
+        //resourceContext.initResource(fed);
+        return fed;
+    }
+
     @Path("authentication")
     public AuthenticationManagementResource flows() {
         AuthenticationManagementResource resource = new AuthenticationManagementResource(realm, session, auth, adminEvent);

@@ -44,8 +44,11 @@ public class UserStorageProviderModel extends PrioritizedComponentModel {
     public boolean isImportEnabled() {
         if (importEnabled == null) {
             String val = getConfig().getFirst("importEnabled");
-            if (val == null) importEnabled = false;
-            importEnabled = Boolean.valueOf(val);
+            if (val == null) {
+                importEnabled = true;
+            } else {
+                importEnabled = Boolean.valueOf(val);
+            }
         }
         return importEnabled;
 
@@ -59,8 +62,11 @@ public class UserStorageProviderModel extends PrioritizedComponentModel {
     public int getFullSyncPeriod() {
         if (fullSyncPeriod == null) {
             String val = getConfig().getFirst("fullSyncPeriod");
-            if (val == null) fullSyncPeriod = -1;
-            fullSyncPeriod = Integer.valueOf(val);
+            if (val == null) {
+                fullSyncPeriod = -1;
+            } else {
+                fullSyncPeriod = Integer.valueOf(val);
+            }
         }
         return fullSyncPeriod;
     }
@@ -73,8 +79,11 @@ public class UserStorageProviderModel extends PrioritizedComponentModel {
     public int getChangedSyncPeriod() {
         if (changedSyncPeriod == null) {
             String val = getConfig().getFirst("changedSyncPeriod");
-            if (val == null) changedSyncPeriod = -1;
-            changedSyncPeriod = Integer.valueOf(val);
+            if (val == null) {
+                changedSyncPeriod = -1;
+            } else {
+                changedSyncPeriod = Integer.valueOf(val);
+            }
         }
         return changedSyncPeriod;
     }
@@ -87,8 +96,11 @@ public class UserStorageProviderModel extends PrioritizedComponentModel {
     public int getLastSync() {
         if (lastSync == null) {
             String val = getConfig().getFirst("lastSync");
-            if (val == null) lastSync = 0;
-            lastSync = Integer.valueOf(val);
+            if (val == null) {
+                lastSync = 0;
+            } else {
+                lastSync = Integer.valueOf(val);
+            }
         }
         return lastSync;
     }

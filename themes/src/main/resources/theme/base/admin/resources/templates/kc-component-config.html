@@ -41,7 +41,7 @@
         </div>
 
         <div class="col-md-6" data-ng-if="option.type == 'Script'">
-            <div ng-model="config[option.name]" placeholder="Enter your script..." ui-ace="{ useWrapMode: true, showGutter: true, theme:'github', mode: 'javascript'}">
+            <div ng-model="config[option.name][0]" placeholder="Enter your script..." ui-ace="{ useWrapMode: true, showGutter: true, theme:'github', mode: 'javascript'}">
                 {{config[option.name]}}
             </div>
         </div>

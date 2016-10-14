@@ -49,6 +49,7 @@ import org.keycloak.representations.idm.OAuthClientRepresentation;
 import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.storage.UserStorageProviderModel;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -489,6 +490,13 @@ public class RealmManager implements RealmImporter {
         UsersSyncManager usersSyncManager = new UsersSyncManager();
         for (final UserFederationProviderModel fedProvider : federationProviders) {
             usersSyncManager.notifyToRefreshPeriodicSync(session, realm, fedProvider, false);
+        }
+
+        // Refresh periodic sync tasks for configured storageProviders
+        List<UserStorageProviderModel> storageProviders = realm.getUserStorageProviders();
+        UserStorageSyncManager storageSync = new UserStorageSyncManager();
+        for (UserStorageProviderModel provider : storageProviders) {
+            storageSync.notifyToRefreshPeriodicSync(session, realm, provider, false);
         }
 
         setupAuthorizationServices(realm);

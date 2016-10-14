@@ -300,6 +300,14 @@ public class DefaultKeycloakSessionFactory implements KeycloakSessionFactory, Pr
     }
 
     @Override
+    public Spi getSpi(Class<? extends Provider> providerClass) {
+        for (Spi spi : spis) {
+            if (spi.getProviderClass().equals(providerClass)) return spi;
+        }
+        return null;
+    }
+
+    @Override
     public <T extends Provider> ProviderFactory<T> getProviderFactory(Class<T> clazz) {
          return getProviderFactory(clazz, provider.get(clazz));
     }

@@ -165,6 +165,11 @@ public class UserStorageSyncManager {
 
     // Ensure all cluster nodes are notified
     public void notifyToRefreshPeriodicSync(KeycloakSession session, RealmModel realm, UserStorageProviderModel provider, boolean removed) {
+        UserStorageProviderFactory factory = (UserStorageProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(UserStorageProvider.class, provider.getProviderId());
+        if (!(factory instanceof ImportSynchronization) || !provider.isImportEnabled()) {
+            return;
+
+        }
         UserStorageProviderClusterEvent event = UserStorageProviderClusterEvent.createEvent(removed, realm.getId(), provider);
         session.getProvider(ClusterProvider.class).notify(USER_STORAGE_TASK_KEY, event);
     }

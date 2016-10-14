@@ -17,6 +17,9 @@
 
 package org.keycloak.provider;
 
+import java.util.Collections;
+import java.util.List;
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
@@ -26,5 +29,4 @@ public interface Spi {
     String getName();
     Class<? extends Provider> getProviderClass();
     Class<? extends ProviderFactory> getProviderFactoryClass();
-
 }
