@@ -156,8 +156,8 @@ public interface RealmResource {
     @Path("clients-initial-access")
     ClientInitialAccessResource clientInitialAccess();
 
-    @Path("clients-trusted-hosts")
-    public ClientRegistrationTrustedHostResource clientRegistrationTrustedHost();
+    @Path("client-registration-policy")
+    ClientRegistrationPolicyResource clientRegistrationPolicy();
 
     @Path("partialImport")
     @POST

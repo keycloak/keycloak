@@ -7,6 +7,8 @@ import org.keycloak.services.ServicesLogger;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -23,7 +25,11 @@ public class PairwiseSubMapperUtils {
      * @param clientRedirectUris
      * @return
      */
-    public static Set<String> resolveValidRedirectUris(String clientRootUrl, Set<String> clientRedirectUris) {
+    public static Set<String> resolveValidRedirectUris(String clientRootUrl, Collection<String> clientRedirectUris) {
+        if (clientRedirectUris == null) {
+            return Collections.emptySet();
+        }
+
         Set<String> validRedirects = new HashSet<String>();
         for (String redirectUri : clientRedirectUris) {
             if (redirectUri.startsWith("/")) {

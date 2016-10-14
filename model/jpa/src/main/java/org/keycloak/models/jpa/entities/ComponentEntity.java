@@ -65,6 +65,9 @@ public class ComponentEntity {
     @Column(name="PARENT_ID")
     protected String parentId;
 
+    @Column(name="SUB_TYPE")
+    protected String subType;
+
     public String getId() {
         return id;
     }
@@ -103,6 +106,14 @@ public class ComponentEntity {
 
     public void setParentId(String parentId) {
         this.parentId = parentId;
+    }
+
+    public String getSubType() {
+        return subType;
+    }
+
+    public void setSubType(String subType) {
+        this.subType = subType;
     }
 
     public RealmEntity getRealm() {

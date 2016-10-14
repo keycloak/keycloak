@@ -249,15 +249,7 @@ public class UserFederationProvidersResource {
 
 
     private ConfigPropertyRepresentation toConfigPropertyRepresentation(ProviderConfigProperty prop) {
-
-        ConfigPropertyRepresentation propRep = new ConfigPropertyRepresentation();
-        propRep.setName(prop.getName());
-        propRep.setLabel(prop.getLabel());
-        propRep.setType(prop.getType());
-        propRep.setDefaultValue(prop.getDefaultValue());
-        propRep.setHelpText(prop.getHelpText());
-        propRep.setSecret(prop.isSecret());
-        return propRep;
+        return ModelToRepresentation.toRepresentation(prop);
     }
 
     private List<ConfigPropertyRepresentation> toConfigPropertyRepresentationList(List<ProviderConfigProperty> props) {

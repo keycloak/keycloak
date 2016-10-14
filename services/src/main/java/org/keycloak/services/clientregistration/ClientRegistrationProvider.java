@@ -27,6 +27,8 @@ public interface ClientRegistrationProvider extends Provider {
 
     void setAuth(ClientRegistrationAuth auth);
 
+    ClientRegistrationAuth getAuth();
+
     void setEvent(EventBuilder event);
 
 }

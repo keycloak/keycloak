@@ -200,7 +200,7 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'RealmTokenDetailCtrl'
         })
-        .when('/realms/:realm/client-initial-access', {
+        .when('/realms/:realm/client-registration/client-initial-access', {
             templateUrl : resourceUrl + '/partials/client-initial-access.html',
             resolve : {
                 realm : function(RealmLoader) {
@@ -208,14 +208,11 @@ module.config([ '$routeProvider', function($routeProvider) {
                 },
                 clientInitialAccess : function(ClientInitialAccessLoader) {
                     return ClientInitialAccessLoader();
-                },
-                clientRegTrustedHosts : function(ClientRegistrationTrustedHostListLoader) {
-                    return ClientRegistrationTrustedHostListLoader();
                 }
             },
             controller : 'ClientInitialAccessCtrl'
         })
-        .when('/realms/:realm/client-initial-access/create', {
+        .when('/realms/:realm/client-registration/client-initial-access/create', {
             templateUrl : resourceUrl + '/partials/client-initial-access-create.html',
             resolve : {
                 realm : function(RealmLoader) {
@@ -224,29 +221,54 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'ClientInitialAccessCreateCtrl'
         })
-        .when('/realms/:realm/client-reg-trusted-hosts/create', {
-            templateUrl : resourceUrl + '/partials/client-reg-trusted-host-create.html',
+        .when('/realms/:realm/client-registration/client-reg-policies', {
+            templateUrl : resourceUrl + '/partials/client-reg-policies.html',
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
                 },
-                clientRegTrustedHost : function() {
-                    return {};
+                policies : function(ComponentsLoader) {
+                    return ComponentsLoader.loadComponents(null, 'org.keycloak.services.clientregistration.policy.ClientRegistrationPolicy');
+                },
+                clientRegistrationPolicyProviders : function(ClientRegistrationPolicyProvidersLoader) {
+                    return ClientRegistrationPolicyProvidersLoader();
                 }
             },
-            controller : 'ClientRegistrationTrustedHostDetailCtrl'
+            controller : 'ClientRegPoliciesCtrl'
         })
-        .when('/realms/:realm/client-reg-trusted-hosts/:hostname', {
-            templateUrl : resourceUrl + '/partials/client-reg-trusted-host-detail.html',
+        .when('/realms/:realm/client-registration/client-reg-policies/create/:componentType/:providerId', {
+            templateUrl : resourceUrl + '/partials/client-reg-policy-detail.html',
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
                 },
-                clientRegTrustedHost : function(ClientRegistrationTrustedHostLoader) {
-                    return ClientRegistrationTrustedHostLoader();
+                instance : function($route) {
+                    return {
+                        providerType: 'org.keycloak.services.clientregistration.policy.ClientRegistrationPolicy',
+                        subType: $route.current.params.componentType,
+                        providerId: $route.current.params.providerId
+                    };
+                },
+                clientRegistrationPolicyProviders : function(ClientRegistrationPolicyProvidersLoader) {
+                    return ClientRegistrationPolicyProvidersLoader();
                 }
             },
-            controller : 'ClientRegistrationTrustedHostDetailCtrl'
+            controller : 'ClientRegPolicyDetailCtrl'
+        })
+        .when('/realms/:realm/client-registration/client-reg-policies/:provider/:componentId', {
+            templateUrl : resourceUrl + '/partials/client-reg-policy-detail.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                instance : function(ComponentLoader) {
+                    return ComponentLoader();
+                },
+                clientRegistrationPolicyProviders : function(ClientRegistrationPolicyProvidersLoader) {
+                    return ClientRegistrationPolicyProvidersLoader();
+                }
+            },
+            controller : 'ClientRegPolicyDetailCtrl'
         })
         .when('/realms/:realm/keys', {
             templateUrl : resourceUrl + '/partials/realm-keys.html',
@@ -2455,7 +2477,25 @@ module.controller('ProviderConfigCtrl', function ($modal, $scope) {
             }
         })
     }
-    
+
+    $scope.newValues = [];
+
+    $scope.addValueToMultivalued = function(optionName) {
+        var valueToPush = $scope.newValues[optionName];
+
+        console.log("New value to multivalued: optionName=" + optionName + ", valueToPush=" + valueToPush);
+
+        if (!$scope.config[optionName]) {
+            $scope.config[optionName] = [];
+        }
+        $scope.config[optionName].push(valueToPush);
+        $scope.newValues[optionName] = "";
+    }
+
+    $scope.deleteValueFromMultivalued = function(optionName, index) {
+        $scope.config[optionName].splice(index, 1);
+    }
+
     $scope.uploadFile = function($files, optionName, config) {
         var reader = new FileReader();
         reader.onload = function(e) {

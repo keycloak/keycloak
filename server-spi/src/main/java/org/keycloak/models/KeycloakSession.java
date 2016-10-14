@@ -17,6 +17,7 @@
 
 package org.keycloak.models;
 
+import org.keycloak.component.ComponentModel;
 import org.keycloak.models.cache.UserCache;
 import org.keycloak.provider.Provider;
 import org.keycloak.scripting.ScriptingProvider;
@@ -58,6 +59,8 @@ public interface KeycloakSession {
      * @return
      */
     <T extends Provider> T getProvider(Class<T> clazz, String id);
+
+    <T extends Provider> T getProvider(Class<T> clazz, ComponentModel componentModel);
 
     /**
      * Get all provider factories that manage provider instances of class.

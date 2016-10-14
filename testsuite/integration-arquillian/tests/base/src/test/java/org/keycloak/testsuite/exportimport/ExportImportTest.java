@@ -19,11 +19,8 @@ package org.keycloak.testsuite.exportimport;
 
 import org.jboss.arquillian.container.spi.client.container.LifecycleException;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Test;
-import org.keycloak.admin.client.resource.ComponentsResource;
 import org.keycloak.admin.client.resource.RealmResource;
-import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.exportimport.ExportImportConfig;
 import org.keycloak.exportimport.dir.DirExportProvider;
 import org.keycloak.exportimport.dir.DirExportProviderFactory;
@@ -32,16 +29,14 @@ import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.KeysMetadataRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.util.UserBuilder;
 
 import java.io.File;
 import java.net.URL;
 import java.util.List;
-import java.util.regex.Matcher;
-
-import static org.hamcrest.Matchers.containsInAnyOrder;
+import java.util.Map;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 
 /**
@@ -245,7 +240,15 @@ public class ExportImportTest extends AbstractExportImportTest {
             assertEquals(e.getProviderId(), a.getProviderId());
             assertEquals(e.getProviderType(), a.getProviderType());
             assertEquals(e.getParentId(), a.getParentId());
-            assertEquals(e.getConfig(), a.getConfig());
+            assertEquals(e.getSubType(), a.getSubType());
+            Assert.assertNames(e.getConfig().keySet(), a.getConfig().keySet().toArray(new String[] {}));
+
+            // Compare config values without take order into account
+            for (Map.Entry<String, List<String>> entry : e.getConfig().entrySet()) {
+                List<String> eList = entry.getValue();
+                List<String> aList = a.getConfig().getList(entry.getKey());
+                Assert.assertNames(eList, aList.toArray(new String[] {}));
+            }
         }
     }
 

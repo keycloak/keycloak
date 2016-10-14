@@ -35,6 +35,7 @@ import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.clientregistration.AbstractClientRegistrationProvider;
 import org.keycloak.services.clientregistration.ClientRegistrationAuth;
 import org.keycloak.services.clientregistration.ClientRegistrationContext;
+import org.keycloak.services.clientregistration.DefaultClientRegistrationContext;
 import org.keycloak.services.clientregistration.ClientRegistrationException;
 import org.keycloak.services.clientregistration.ErrorCodes;
 import org.keycloak.services.validation.PairwiseClientValidator;
@@ -78,7 +79,7 @@ public class OIDCClientRegistrationProvider extends AbstractClientRegistrationPr
 
         try {
             ClientRepresentation client = DescriptionConverter.toInternal(session, clientOIDC);
-            OIDCClientRegistrationContext oidcContext = new OIDCClientRegistrationContext(client, clientOIDC);
+            OIDCClientRegistrationContext oidcContext = new OIDCClientRegistrationContext(session, client, this, clientOIDC);
             client = create(oidcContext);
 
             ClientModel clientModel = session.getContext().getRealm().getClientByClientId(client.getClientId());
@@ -110,7 +111,7 @@ public class OIDCClientRegistrationProvider extends AbstractClientRegistrationPr
     public Response updateOIDC(@PathParam("clientId") String clientId, OIDCClientRepresentation clientOIDC) {
         try {
             ClientRepresentation client = DescriptionConverter.toInternal(session, clientOIDC);
-            OIDCClientRegistrationContext oidcContext = new OIDCClientRegistrationContext(client, clientOIDC);
+            OIDCClientRegistrationContext oidcContext = new OIDCClientRegistrationContext(session, client, this, clientOIDC);
             client = update(clientId, oidcContext);
 
             ClientModel clientModel = session.getContext().getRealm().getClientByClientId(client.getClientId());
@@ -131,21 +132,6 @@ public class OIDCClientRegistrationProvider extends AbstractClientRegistrationPr
     public void deleteOIDC(@PathParam("clientId") String clientId) {
         delete(clientId);
     }
-
-    @Override
-    public void setAuth(ClientRegistrationAuth auth) {
-        this.auth = auth;
-    }
-
-    @Override
-    public void setEvent(EventBuilder event) {
-        this.event = event;
-    }
-
-    @Override
-    public void close() {
-    }
-
 
     private void updatePairwiseSubMappers(ClientModel clientModel, SubjectType subjectType, String sectorIdentifierUri) {
         if (subjectType == SubjectType.PAIRWISE) {
@@ -179,29 +165,6 @@ public class OIDCClientRegistrationProvider extends AbstractClientRegistrationPr
                 clientModel.getProtocolMappers().remove(mapping);
             });
         }
-    }
-
-    @Override
-    protected boolean validateClient(ClientRegistrationContext context, ValidationMessages validationMessages) {
-        OIDCClientRegistrationContext oidcContext = (OIDCClientRegistrationContext) context;
-        OIDCClientRepresentation oidcRep = oidcContext.getOidcRep();
-
-        boolean valid = super.validateClient(context, validationMessages);
-
-        ClientRepresentation client = oidcContext.getClient();
-
-        String rootUrl = client.getRootUrl();
-        Set<String> redirectUris = new HashSet<>();
-        if (client.getRedirectUris() != null) redirectUris.addAll(client.getRedirectUris());
-
-        SubjectType subjectType = SubjectType.parse(oidcRep.getSubjectType());
-        String sectorIdentifierUri = oidcRep.getSectorIdentifierUri();
-
-        // If sector_identifier_uri is in oidc config, then always validate it
-        if (SubjectType.PAIRWISE == subjectType || (sectorIdentifierUri != null && !sectorIdentifierUri.isEmpty())) {
-            valid = valid && PairwiseClientValidator.validate(session, rootUrl, redirectUris, oidcRep.getSectorIdentifierUri(), validationMessages);
-        }
-        return valid;
     }
 
     private void updateClientRepWithProtocolMappers(ClientModel clientModel, ClientRepresentation rep) {

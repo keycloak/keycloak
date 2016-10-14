@@ -54,19 +54,24 @@ import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.adapters.action.GlobalRequestResult;
 import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.ComponentTypeRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.PartialImportRepresentation;
 import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.info.SpiInfoRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ServicesLogger;
+import org.keycloak.services.clientregistration.policy.ClientRegistrationPolicy;
+import org.keycloak.services.clientregistration.policy.ClientRegistrationPolicySpi;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.LDAPConnectionTestManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.ResourceAdminManager;
 import org.keycloak.services.managers.UsersSyncManager;
 import org.keycloak.services.resources.admin.RealmAuth.Resource;
+import org.keycloak.services.resources.admin.info.ServerInfoAdminResource;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -202,15 +207,9 @@ public class RealmAdminResource {
         return resource;
     }
 
-
-    /**
-     * Base path for managing client initial access tokens
-     *
-     * @return
-     */
-    @Path("clients-trusted-hosts")
-    public ClientRegistrationTrustedHostResource getClientRegistrationTrustedHost() {
-        ClientRegistrationTrustedHostResource resource = new ClientRegistrationTrustedHostResource(realm, auth, adminEvent);
+    @Path("client-registration-policy")
+    public ClientRegistrationPolicyResource getClientRegistrationPolicy() {
+        ClientRegistrationPolicyResource resource = new ClientRegistrationPolicyResource(realm, auth, adminEvent);
         ResteasyProviderFactory.getInstance().injectProperties(resource);
         return resource;
     }

@@ -143,6 +143,22 @@ module.factory('ComponentLoader', function(Loader, Components, $route, $q) {
     });
 });
 
+module.factory('ComponentsLoader', function(Loader, Components, $route, $q) {
+    var componentsLoader = {};
+
+    componentsLoader.loadComponents = function(parent, componentType) {
+        return Loader.query(Components, function() {
+            return {
+                realm : $route.current.params.realm,
+                parent : parent,
+                type: componentType
+            }
+        })();
+    };
+
+    return componentsLoader;
+});
+
 module.factory('UserFederationInstanceLoader', function(Loader, UserFederationInstances, $route, $q) {
     return Loader.get(UserFederationInstances, function() {
         return {
@@ -518,22 +534,14 @@ module.factory('ClientInitialAccessLoader', function(Loader, ClientInitialAccess
     });
 });
 
-module.factory('ClientRegistrationTrustedHostListLoader', function(Loader, ClientRegistrationTrustedHost, $route) {
-    return Loader.query(ClientRegistrationTrustedHost, function() {
+module.factory('ClientRegistrationPolicyProvidersLoader', function(Loader, ClientRegistrationPolicyProviders, $route) {
+    return Loader.query(ClientRegistrationPolicyProviders, function() {
         return {
             realm: $route.current.params.realm
         }
     });
 });
 
-module.factory('ClientRegistrationTrustedHostLoader', function(Loader, ClientRegistrationTrustedHost, $route) {
-    return Loader.get(ClientRegistrationTrustedHost, function() {
-        return {
-            realm: $route.current.params.realm,
-            hostname : $route.current.params.hostname
-        }
-    });
-});
 
 
 

@@ -35,6 +35,8 @@ public class ClientRegistrationHostUtils {
 
     /**
      * @return null if host from request is not trusted. Otherwise return trusted host model
+     *
+     * TODO: Remove
      */
     public static ClientRegistrationTrustedHostModel getTrustedHost(String hostAddress, KeycloakSession session, RealmModel realm) {
         logger.debugf("Verifying remote host : %s", hostAddress);

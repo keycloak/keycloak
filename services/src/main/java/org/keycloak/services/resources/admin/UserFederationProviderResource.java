@@ -230,13 +230,7 @@ public class UserFederationProviderResource {
                 rep.setSyncConfig(mapperFactory.getSyncConfig());
                 List<ProviderConfigProperty> configProperties = mapperFactory.getConfigProperties();
                 for (ProviderConfigProperty prop : configProperties) {
-                    ConfigPropertyRepresentation propRep = new ConfigPropertyRepresentation();
-                    propRep.setName(prop.getName());
-                    propRep.setLabel(prop.getLabel());
-                    propRep.setType(prop.getType());
-                    propRep.setDefaultValue(prop.getDefaultValue());
-                    propRep.setHelpText(prop.getHelpText());
-                    propRep.setSecret(prop.isSecret());
+                    ConfigPropertyRepresentation propRep = ModelToRepresentation.toRepresentation(prop);
                     rep.getProperties().add(propRep);
                 }
                 rep.setDefaultConfig(mapperFactory.getDefaultConfig(this.federationProviderModel));

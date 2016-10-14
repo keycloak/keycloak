@@ -16,6 +16,8 @@
  */
 package org.keycloak.services;
 
+import org.keycloak.component.ComponentFactory;
+import org.keycloak.component.ComponentModel;
 import org.keycloak.credential.UserCredentialStoreManager;
 import org.keycloak.keys.DefaultKeyManager;
 import org.keycloak.models.KeycloakContext;
@@ -187,6 +189,28 @@ public class DefaultKeycloakSession implements KeycloakSession {
                 providers.put(hash, provider);
             }
         }
+        return provider;
+    }
+
+    @Override
+    public <T extends Provider> T getProvider(Class<T> clazz, ComponentModel componentModel) {
+        String modelId = componentModel.getProviderType() + "::" + componentModel.getId();
+
+        Object found = getAttribute(modelId);
+        if (found != null) {
+            return clazz.cast(found);
+        }
+
+        ProviderFactory<T> providerFactory = factory.getProviderFactory(clazz, componentModel.getProviderId());
+        if (providerFactory == null) {
+            return null;
+        }
+
+        ComponentFactory<T, T> componentFactory = (ComponentFactory<T, T>) providerFactory;
+        T provider = componentFactory.create(this, componentModel);
+        enlistForClose(provider);
+        setAttribute(modelId, provider);
+
         return provider;
     }
 

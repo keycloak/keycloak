@@ -17,20 +17,21 @@
 
 package org.keycloak.services.clientregistration;
 
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.services.validation.ValidationMessages;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class ClientRegistrationContext {
+public interface ClientRegistrationContext {
 
-    private final ClientRepresentation client;
+    ClientRepresentation getClient();
 
-    public ClientRegistrationContext(ClientRepresentation client) {
-        this.client = client;
-    }
+    KeycloakSession getSession();
 
-    public ClientRepresentation getClient() {
-        return client;
-    }
+    ClientRegistrationProvider getProvider();
+
+    boolean validateClient(ValidationMessages validationMessages);
+
 }

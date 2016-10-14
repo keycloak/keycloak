@@ -102,6 +102,8 @@ public class ComponentsTest extends AbstractAdminTest {
 
         String id = createComponent(rep);
         ComponentRepresentation returned = components.component(id).toRepresentation();
+        assertEquals( "foo", returned.getSubType());
+
         assertEquals(1, returned.getConfig().size());
         assertTrue(returned.getConfig().containsKey("required"));
     }
@@ -211,6 +213,7 @@ public class ComponentsTest extends AbstractAdminTest {
         rep.setParentId(realmId);
         rep.setProviderId("test");
         rep.setProviderType(TestProvider.class.getName());
+        rep.setSubType("foo");
 
         MultivaluedHashMap config = new MultivaluedHashMap();
         rep.setConfig(config);

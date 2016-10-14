@@ -30,6 +30,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.Urls;
+import org.keycloak.services.clientregistration.policy.RegistrationAuth;
 import org.keycloak.util.TokenUtil;
 
 import javax.ws.rs.core.UriInfo;
@@ -43,19 +44,23 @@ public class ClientRegistrationTokenUtils {
     public static final String TYPE_INITIAL_ACCESS_TOKEN = "InitialAccessToken";
     public static final String TYPE_REGISTRATION_ACCESS_TOKEN = "RegistrationAccessToken";
 
-    public static String updateRegistrationAccessToken(KeycloakSession session, ClientModel client) {
-        return updateRegistrationAccessToken(session, session.getContext().getRealm(), session.getContext().getUri(), client);
+    public static String updateRegistrationAccessToken(KeycloakSession session, ClientModel client, RegistrationAuth registrationAuth) {
+        return updateRegistrationAccessToken(session, session.getContext().getRealm(), session.getContext().getUri(), client, registrationAuth);
     }
 
-    public static String updateRegistrationAccessToken(KeycloakSession session, RealmModel realm, UriInfo uri, ClientModel client) {
+    public static String updateRegistrationAccessToken(KeycloakSession session, RealmModel realm, UriInfo uri, ClientModel client, RegistrationAuth registrationAuth) {
         String id = KeycloakModelUtils.generateId();
         client.setRegistrationToken(id);
-        String token = createToken(session, realm, uri, id, TYPE_REGISTRATION_ACCESS_TOKEN, 0);
-        return token;
+
+        RegistrationAccessToken regToken = new RegistrationAccessToken();
+        regToken.setRegistrationAuth(registrationAuth.toString().toLowerCase());
+
+        return setupToken(regToken, session, realm, uri, id, TYPE_REGISTRATION_ACCESS_TOKEN, 0);
     }
 
     public static String createInitialAccessToken(KeycloakSession session, RealmModel realm, UriInfo uri, ClientInitialAccessModel model) {
-        return createToken(session, realm, uri, model.getId(), TYPE_INITIAL_ACCESS_TOKEN, model.getExpiration() > 0 ? model.getTimestamp() + model.getExpiration() : 0);
+        JsonWebToken initialToken = new JsonWebToken();
+        return setupToken(initialToken, session, realm, uri, model.getId(), TYPE_INITIAL_ACCESS_TOKEN, model.getExpiration() > 0 ? model.getTimestamp() + model.getExpiration() : 0);
     }
 
     public static TokenVerification verifyToken(KeycloakSession session, RealmModel realm, UriInfo uri, String token) {
@@ -100,9 +105,7 @@ public class ClientRegistrationTokenUtils {
         return TokenVerification.success(jwt);
     }
 
-    private static String createToken(KeycloakSession session, RealmModel realm, UriInfo uri, String id, String type, int expiration) {
-        JsonWebToken jwt = new JsonWebToken();
-
+    private static String setupToken(JsonWebToken jwt, KeycloakSession session, RealmModel realm, UriInfo uri, String id, String type, int expiration) {
         String issuer = getIssuer(realm, uri);
 
         jwt.type(type);

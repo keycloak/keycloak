@@ -50,6 +50,7 @@ import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.storage.UserStorageProviderModel;
+import org.keycloak.services.clientregistration.policy.DefaultClientRegistrationPolicies;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -120,6 +121,7 @@ public class RealmManager implements RealmImporter {
         setupRequiredActions(realm);
         setupOfflineTokens(realm);
         setupAuthorizationServices(realm);
+        setupClientRegistrations(realm);
 
         fireRealmPostCreate(realm);
 
@@ -500,6 +502,8 @@ public class RealmManager implements RealmImporter {
         }
 
         setupAuthorizationServices(realm);
+        setupClientRegistrations(realm);
+
         fireRealmPostCreate(realm);
 
         return realm;
@@ -596,6 +600,10 @@ public class RealmManager implements RealmImporter {
 
     private void setupAuthorizationServices(RealmModel realm) {
         KeycloakModelUtils.setupAuthorizationServices(realm);
+    }
+
+    private void setupClientRegistrations(RealmModel realm) {
+        DefaultClientRegistrationPolicies.addDefaultPolicies(realm);
     }
 
     private void fireRealmPostCreate(RealmModel realm) {

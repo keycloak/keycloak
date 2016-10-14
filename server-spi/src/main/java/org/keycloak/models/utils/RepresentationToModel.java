@@ -392,6 +392,7 @@ public class RepresentationToModel {
                 component.setConfig(compRep.getConfig());
                 component.setProviderType(providerType);
                 component.setProviderId(compRep.getProviderId());
+                component.setSubType(compRep.getSubType());
                 component.setParentId(parentId);
                 component = newRealm.addComponentModel(component);
                 if (compRep.getSubComponents() != null) {
@@ -1684,6 +1685,7 @@ public class RepresentationToModel {
         model.setProviderId(rep.getProviderId());
         model.setConfig(new MultivaluedHashMap<>());
         model.setName(rep.getName());
+        model.setSubType(rep.getSubType());
 
         if (rep.getConfig() != null) {
             Set<String> keys = new HashSet<>(rep.getConfig().keySet());
@@ -1719,6 +1721,10 @@ public class RepresentationToModel {
 
         if (rep.getProviderId() != null) {
             component.setProviderId(rep.getProviderId());
+        }
+
+        if (rep.getSubType() != null) {
+            component.setSubType(rep.getSubType());
         }
 
         Map<String, ProviderConfigProperty> providerConfiguration = null;

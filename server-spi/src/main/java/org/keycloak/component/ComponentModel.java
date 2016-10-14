@@ -35,6 +35,7 @@ public class ComponentModel implements Serializable {
     private String providerId;
     private String providerType;
     private String parentId;
+    private String subType;
     private MultivaluedHashMap<String, String> config = new MultivaluedHashMap<>();
     private transient ConcurrentHashMap<String, Object> notes = new ConcurrentHashMap<>();
 
@@ -46,6 +47,7 @@ public class ComponentModel implements Serializable {
         this.providerId = copy.providerId;
         this.providerType = copy.providerType;
         this.parentId = copy.parentId;
+        this.subType = copy.subType;
         this.config = copy.config;
     }
 
@@ -147,5 +149,13 @@ public class ComponentModel implements Serializable {
 
     public void setParentId(String parentId) {
         this.parentId = parentId;
+    }
+
+    public String getSubType() {
+        return subType;
+    }
+
+    public void setSubType(String subType) {
+        this.subType = subType;
     }
 }

@@ -240,6 +240,7 @@ public class ExportUtils {
             compRep.setProviderId(component.getProviderId());
             compRep.setConfig(component.getConfig());
             compRep.setName(component.getName());
+            compRep.setSubType(component.getSubType());
             compRep.setSubComponents(exportComponents(realm, component.getId()));
             components.add(component.getProviderType(), compRep);
         }

@@ -85,6 +85,8 @@ public class KeycloakApplication extends Application {
     // two places to avoid dependency between Keycloak Subsystem and Keycloak Services module.
     public static final String KEYCLOAK_CONFIG_PARAM_NAME = "org.keycloak.server-subsystem.Config";
 
+    public static final String KEYCLOAK_EMBEDDED = "keycloak.embedded";
+
     private static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
 
     protected boolean embedded = false;
@@ -97,7 +99,7 @@ public class KeycloakApplication extends Application {
 
     public KeycloakApplication(@Context ServletContext context, @Context Dispatcher dispatcher) {
         try {
-            if ("true".equals(context.getInitParameter("keycloak.embedded"))) {
+            if ("true".equals(context.getInitParameter(KEYCLOAK_EMBEDDED))) {
                 embedded = true;
             }
 
