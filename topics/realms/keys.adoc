@@ -19,7 +19,7 @@ status `Active`, but still not be selected as the currently active keypair for t
 is used for signatures is selected based on the the first key provider sorted by priority that is able to provide an
  active keypair.
 
-==== Rotation keys
+==== Rotating keys
 
 It's recommended to regularly rotate keys. To do so you should start by creating new keys with a higher priority than
 the existing active keys. Or create new keys with the same priority and making the previous keys passive.
