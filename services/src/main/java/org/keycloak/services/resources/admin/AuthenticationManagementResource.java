@@ -290,7 +290,7 @@ public class AuthenticationManagementResource {
 
         String newName = data.get("newName");
         if (realm.getFlowByAlias(newName) != null) {
-            return Response.status(Response.Status.CONFLICT).build();
+            return ErrorResponse.exists("New flow alias name already exists");
         }
 
         AuthenticationFlowModel flow = realm.getFlowByAlias(flowAlias);
@@ -310,7 +310,7 @@ public class AuthenticationManagementResource {
         data.put("id", copy.getId());
         adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo).representation(data).success();
 
-        return Response.status(201).build();
+        return Response.status(Response.Status.CREATED).build();
 
     }
 
@@ -344,12 +344,12 @@ public class AuthenticationManagementResource {
     @POST
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
-    public void addExecutionFlow(@PathParam("flowAlias") String flowAlias, Map<String, String> data) {
+    public Response addExecutionFlow(@PathParam("flowAlias") String flowAlias, Map<String, String> data) {
         auth.requireManage();
 
         AuthenticationFlowModel parentFlow = realm.getFlowByAlias(flowAlias);
         if (parentFlow == null) {
-            throw new BadRequestException("Parent flow doesn't exists");
+            return ErrorResponse.error("Parent flow doesn't exists", Response.Status.BAD_REQUEST);
         }
         String alias = data.get("alias");
         String type = data.get("type");
@@ -359,7 +359,7 @@ public class AuthenticationManagementResource {
 
         AuthenticationFlowModel newFlow = realm.getFlowByAlias(alias);
         if (newFlow != null) {
-            throw new BadRequestException("New flow alias name already exists");
+            return ErrorResponse.exists("New flow alias name already exists");
         }
         newFlow = new AuthenticationFlowModel();
         newFlow.setAlias(alias);
@@ -377,6 +377,8 @@ public class AuthenticationManagementResource {
 
         data.put("id", execution.getId());
         adminEvent.operation(OperationType.CREATE).resource(ResourceType.AUTH_EXECUTION_FLOW).resourcePath(uriInfo).representation(data).success();
+
+        return Response.status(Response.Status.CREATED).build();
     }
 
     private int getNextPriority(AuthenticationFlowModel parentFlow) {
