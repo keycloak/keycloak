@@ -29,7 +29,7 @@
 
         var loginIframe = {
             enable: true,
-            callbackMap: [],
+            callbackList: [],
             interval: 5
         };
 
@@ -830,33 +830,25 @@
             document.body.appendChild(iframe);
 
             var messageCallback = function(event) {
+
+
                 if (event.origin !== loginIframe.iframeOrigin) {
                     return;
                 }
 
-                try {
-                    var data = JSON.parse(event.data);
-                } catch (err) {
-                    return;
+
+                for (i = loginIframe.callbackList.length - 1; i >= 0; --i) {
+                    var promise = loginIframe.callbackList[i];
+                    if (event.data == "unchanged") {
+                        promise.setSuccess();
+                    } else {
+                        kc.clearToken();
+                        promise.setError();
+                    }
+                    loginIframe.callbackList.splice(i, 1);
                 }
 
-                if (!data.callbackId) {
-                    return;
-                }
 
-                var promise = loginIframe.callbackMap[data.callbackId];
-                if (!promise) {
-                    return;
-                }
-
-                delete loginIframe.callbackMap[data.callbackId];
-
-                if ((!kc.sessionId || kc.sessionId == data.session) && data.loggedIn) {
-                    promise.setSuccess();
-                } else {
-                    kc.clearToken();
-                    promise.setError();
-                }
             };
             window.addEventListener('message', messageCallback, false);
 
@@ -873,10 +865,11 @@
         function checkLoginIframe() {
             var promise = createPromise();
 
-            if (loginIframe.iframe && loginIframe.iframeOrigin) {
+            if (loginIframe.iframe && loginIframe.iframeOrigin && loginIframe.callbackList.length !== 0) {
                 var msg = {};
                 msg.callbackId = createCallbackId();
-                loginIframe.callbackMap[msg.callbackId] = promise;
+                msg.sessionId = kc.sessionId;
+                loginIframe.callbackList.push(promise);
                 var origin = loginIframe.iframeOrigin;
                 loginIframe.iframe.contentWindow.postMessage(JSON.stringify(msg), origin);
             } else {
