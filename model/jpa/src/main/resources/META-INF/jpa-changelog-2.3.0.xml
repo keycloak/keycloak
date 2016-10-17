@@ -31,6 +31,7 @@
         </createTable>
          <addPrimaryKey columnNames="ID" constraintName="CONSTR_FEDERATED_USER" tableName="FEDERATED_USER"/>
 
+         <dropDefaultValue tableName="USER_ENTITY" columnName="TOTP" />
          <dropColumn tableName="USER_ENTITY" columnName="TOTP" />
 
          <addColumn tableName="IDENTITY_PROVIDER">
