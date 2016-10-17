@@ -39,27 +39,9 @@ export class AppComponent {
   }
 
   reloadData() {
-    //angular dont have http interceptor yet
-
-    this.kc.getToken()
-      .then(token => {
-        let headers = new Headers({
-          'Accept': 'application/json',
-          'Authorization': 'Bearer ' + token
-        });
-
-        let options = new RequestOptions({ headers });
-
-        this.http.get('/database/products', options)
-          .map(res => res.json())
-          .subscribe(prods => this.products = prods,
-            error => console.log(error));
-      })
-      .catch(error => console.log(error));
-  }
-
-  private handleError(error: Response) {
-    console.error(error);
-    return Observable.throw(error.json().error || 'Server error');
+    this.http.get('/database/products')
+      .map(res => res.json())
+      .subscribe(prods => this.products = prods,
+        error => console.log(error));
   }
 }
