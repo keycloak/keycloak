@@ -30,6 +30,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.rule.KeycloakRule;
@@ -37,6 +38,7 @@ import org.keycloak.testsuite.rule.KeycloakRule;
 import javax.ws.rs.core.Response;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
@@ -112,13 +114,17 @@ public class KeycloakTest {
 
         String userId = extractIdFromLocation(response);
 
-        UserRepresentation userRep = keycloak.realm(realmName).users().get(userId).toRepresentation();
-
-        List<String> clientRoles = userRep.getClientRoles().get(APP_CLIENT_ID);
+        List<String> clientRoles = keycloak.realm(realmName)
+                                           .users().get(userId).roles().clientLevel(APP_CLIENT_ID)
+                                           .listEffective().stream().map(RoleRepresentation::toString)
+                                           .collect(Collectors.toList());
         Assert.assertNotNull("clientRoles must not be null!", clientRoles);
         Assert.assertEquals(clientRoles, Arrays.asList(CLIENT_ROLE_NAME));
 
-        List<String> realmRoles = userRep.getRealmRoles();
+        List<String> realmRoles =  keycloak.realm(realmName)
+                                           .users().get(userId).roles().realmLevel()
+                                           .listEffective().stream().map(RoleRepresentation::toString)
+                                           .collect(Collectors.toList());
         Assert.assertNotNull("realmRoles must not be null!", realmRoles);
         Assert.assertTrue("Realm roles should contain: " + REALM_ROLE_NAME, realmRoles.contains(REALM_ROLE_NAME));
     }

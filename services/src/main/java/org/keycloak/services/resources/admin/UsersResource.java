@@ -344,9 +344,6 @@ public class UsersResource {
             rep.setEnabled(false);
         }
 
-        rep.setRealmRoles(ModelToRepresentation.buildRealmRoleNames(user.getRealmRoleMappings()));
-        rep.setClientRoles(ModelToRepresentation.buildClientRoleNamesMapping(user, realm.getClients()));
-
         return rep;
     }
 
