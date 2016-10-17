@@ -458,6 +458,7 @@ module.controller('RealmPasswordPolicyCtrl', function($scope, Realm, realm, $htt
             var value;
             if (policyToken.indexOf('(') == -1) {
                 id = policyToken.trim();
+                value = null;
             } else {
                 id = policyToken.substring(0, policyToken.indexOf('('));
                 value = policyToken.substring(policyToken.indexOf('(') + 1, policyToken.indexOf(')')).trim();
@@ -492,7 +493,14 @@ module.controller('RealmPasswordPolicyCtrl', function($scope, Realm, realm, $htt
 
     $scope.realm = realm;
     $scope.serverInfo = serverInfo;
-    $scope.changed = false; $scope.policy = parse(realm.passwordPolicy);
+
+    $scope.changed = false;
+    $scope.policy = parse(realm.passwordPolicy);
+    var oldCopy = angular.copy($scope.policy);
+
+    $scope.$watch('policy', function() {
+        $scope.changed = ! angular.equals($scope.policy, oldCopy);
+    }, true);
 
     $scope.addPolicy = function(policy){
         policy.value = policy.defaultValue;
@@ -500,21 +508,18 @@ module.controller('RealmPasswordPolicyCtrl', function($scope, Realm, realm, $htt
             $scope.policy = [];
         }
         $scope.policy.push(policy);
-        $scope.changed = true;
     }
 
     $scope.removePolicy = function(index){
         $scope.policy.splice(index, 1);
-        $scope.changed = true;
     }
 
     $scope.save = function() {
-        $scope.changed = false;
         $scope.realm.passwordPolicy = toString($scope.policy);
         console.debug($scope.realm.passwordPolicy);
 
         Realm.update($scope.realm, function () {
-            $location.url("/realms/" + realm.realm + "/authentication/password-policy");
+            $route.reload();
             Notifications.success("Your changes have been saved to the realm.");
         });
     };
