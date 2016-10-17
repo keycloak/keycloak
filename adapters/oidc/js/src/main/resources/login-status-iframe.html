@@ -35,14 +35,15 @@
 
         }
         var data = JSON.parse(event.data);
-        data.loggedIn = false;
         var cookie = getCookie('KEYCLOAK_SESSION');
-        if (cookie) {
-            data.loggedIn = true;
-            data.session = cookie;
+        var state;
+        if (!data.sessionId || data.sessionId == cookie) {
+            state = "unchanged";
+        } else {
+            state = "changed";
         }
 
-        event.source.postMessage(JSON.stringify(data),
+        event.source.postMessage(state,
                 event.origin);
     }
     window.addEventListener("message", receiveMessage, false);
