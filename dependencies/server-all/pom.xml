@@ -31,19 +31,14 @@
     <name>Keycloak Dependencies Server All</name>
 	<description />
 
-    <properties>
-        <!-- Bill of Materials (BOM) for Drools dependencies -->
-        <org.jboss.integration-platform.jboss-integration-platform-bom>6.0.6.Final</org.jboss.integration-platform.jboss-integration-platform-bom>
-    </properties>
-
     <dependencyManagement>
         <dependencies>
             <dependency>
                 <groupId>org.jboss.integration-platform</groupId>
                 <artifactId>jboss-integration-platform-bom</artifactId>
-                <version>${org.jboss.integration-platform.jboss-integration-platform-bom}</version>
                 <type>pom</type>
                 <scope>import</scope>
+                <version>${version.jboss-integration-platform}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
