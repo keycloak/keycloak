@@ -43,8 +43,6 @@ import javax.ws.rs.core.UriInfo;
  */
 public abstract class AuthorizationEndpointBase {
 
-    private static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
-
     protected RealmModel realm;
     protected EventBuilder event;
     protected AuthenticationManager authManager;

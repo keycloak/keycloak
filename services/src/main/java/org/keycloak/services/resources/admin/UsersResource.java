@@ -16,6 +16,7 @@
  */
 package org.keycloak.services.resources.admin;
 
+import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.BadRequestException;
 import org.jboss.resteasy.spi.NotFoundException;
@@ -107,7 +108,7 @@ import java.util.concurrent.TimeUnit;
  * @version $Revision: 1 $
  */
 public class UsersResource {
-    protected static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    private static final Logger logger = Logger.getLogger(UsersResource.class);
 
     protected RealmModel realm;
 
@@ -857,7 +858,7 @@ public class UsersResource {
 
             return Response.ok().build();
         } catch (EmailException e) {
-            logger.failedToSendActionsEmail(e);
+            ServicesLogger.LOGGER.failedToSendActionsEmail(e);
             return ErrorResponse.error("Failed to send execute actions email", Response.Status.INTERNAL_SERVER_ERROR);
         }
     }

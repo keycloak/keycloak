@@ -17,6 +17,7 @@
 
 package org.keycloak.utils;
 
+import org.jboss.logging.Logger;
 import org.keycloak.authentication.Authenticator;
 import org.keycloak.authentication.AuthenticatorFactory;
 import org.keycloak.authentication.ClientAuthenticator;
@@ -28,7 +29,6 @@ import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.services.ServicesLogger;
 
 /**
  * used to set an execution a state based on type.
@@ -38,7 +38,7 @@ import org.keycloak.services.ServicesLogger;
  */
 public class CredentialHelper {
 
-    protected static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    private static final Logger logger = Logger.getLogger(CredentialHelper.class);
 
     public static void setRequiredCredential(KeycloakSession session, String type, RealmModel realm) {
         AuthenticationExecutionModel.Requirement requirement = AuthenticationExecutionModel.Requirement.REQUIRED;

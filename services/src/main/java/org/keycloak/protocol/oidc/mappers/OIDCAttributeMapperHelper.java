@@ -34,7 +34,6 @@ import java.util.Map;
  * @version $Revision: 1 $
  */
 public class OIDCAttributeMapperHelper {
-    private static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
 
     public static final String TOKEN_CLAIM_NAME = "claim.name";
     public static final String TOKEN_CLAIM_NAME_LABEL = "tokenClaimName.label";
@@ -67,7 +66,7 @@ public class OIDCAttributeMapperHelper {
                 return result;
             } else {
                 if (valueAsList.size() > 1) {
-                    logger.multipleValuesForMapper(attributeValue.toString(), mappingModel.getName());
+                    ServicesLogger.LOGGER.multipleValuesForMapper(attributeValue.toString(), mappingModel.getName());
                 }
 
                 attributeValue = valueAsList.get(0);

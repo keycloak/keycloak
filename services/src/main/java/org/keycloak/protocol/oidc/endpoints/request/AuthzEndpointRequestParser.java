@@ -17,9 +17,9 @@
 
 package org.keycloak.protocol.oidc.endpoints.request;
 
+import org.jboss.logging.Logger;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
-import org.keycloak.services.ServicesLogger;
 
 import java.util.HashSet;
 import java.util.Map;
@@ -30,7 +30,7 @@ import java.util.Set;
  */
 abstract class AuthzEndpointRequestParser {
 
-    private static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    private static final Logger logger = Logger.getLogger(AuthzEndpointRequestParser.class);
 
     /**
      * Max number of additional req params copied into client session note to prevent DoS attacks

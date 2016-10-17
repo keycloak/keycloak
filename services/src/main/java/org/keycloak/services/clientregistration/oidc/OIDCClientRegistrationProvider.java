@@ -16,8 +16,8 @@
  */
 package org.keycloak.services.clientregistration.oidc;
 
+import org.jboss.logging.Logger;
 import org.keycloak.common.util.Time;
-import org.keycloak.events.EventBuilder;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
@@ -33,13 +33,8 @@ import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.clientregistration.AbstractClientRegistrationProvider;
-import org.keycloak.services.clientregistration.ClientRegistrationAuth;
-import org.keycloak.services.clientregistration.ClientRegistrationContext;
-import org.keycloak.services.clientregistration.DefaultClientRegistrationContext;
 import org.keycloak.services.clientregistration.ClientRegistrationException;
 import org.keycloak.services.clientregistration.ErrorCodes;
-import org.keycloak.services.validation.PairwiseClientValidator;
-import org.keycloak.services.validation.ValidationMessages;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -52,10 +47,8 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.net.URI;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -63,7 +56,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class OIDCClientRegistrationProvider extends AbstractClientRegistrationProvider {
 
-    private static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    private static final Logger logger = Logger.getLogger(OIDCClientRegistrationProvider.class);
 
     public OIDCClientRegistrationProvider(KeycloakSession session) {
         super(session);
@@ -91,7 +84,7 @@ public class OIDCClientRegistrationProvider extends AbstractClientRegistrationPr
             clientOIDC.setClientIdIssuedAt(Time.currentTime());
             return Response.created(uri).entity(clientOIDC).build();
         } catch (ClientRegistrationException cre) {
-            logger.clientRegistrationException(cre.getMessage());
+            ServicesLogger.LOGGER.clientRegistrationException(cre.getMessage());
             throw new ErrorResponseException(ErrorCodes.INVALID_CLIENT_METADATA, "Client metadata invalid", Response.Status.BAD_REQUEST);
         }
     }
@@ -122,7 +115,7 @@ public class OIDCClientRegistrationProvider extends AbstractClientRegistrationPr
             clientOIDC = DescriptionConverter.toExternalResponse(session, client, uri);
             return Response.ok(clientOIDC).build();
         } catch (ClientRegistrationException cre) {
-            logger.clientRegistrationException(cre.getMessage());
+            ServicesLogger.LOGGER.clientRegistrationException(cre.getMessage());
             throw new ErrorResponseException(ErrorCodes.INVALID_CLIENT_METADATA, "Client metadata invalid", Response.Status.BAD_REQUEST);
         }
     }

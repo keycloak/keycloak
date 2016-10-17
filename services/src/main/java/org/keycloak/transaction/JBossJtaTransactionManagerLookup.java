@@ -16,9 +16,9 @@
  */
 package org.keycloak.transaction;
 
+import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.services.ServicesLogger;
 
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
@@ -29,7 +29,7 @@ import javax.transaction.TransactionManager;
  * @version $Revision: 1 $
  */
 public class JBossJtaTransactionManagerLookup implements JtaTransactionManagerLookup {
-    private static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    private static final Logger logger = Logger.getLogger(JBossJtaTransactionManagerLookup.class);
     private TransactionManager tm;
 
     @Override

@@ -16,6 +16,7 @@
  */
 package org.keycloak.services.resources.admin;
 
+import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.BadRequestException;
 import org.jboss.resteasy.spi.NotFoundException;
@@ -48,7 +49,6 @@ import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
 import org.keycloak.representations.idm.ConfigPropertyRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.services.ErrorResponse;
-import org.keycloak.services.ServicesLogger;
 import org.keycloak.utils.CredentialHelper;
 
 import javax.ws.rs.Consumes;
@@ -83,7 +83,7 @@ public class AuthenticationManagementResource {
     @Context
     private UriInfo uriInfo;
 
-    private static ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    protected static final Logger logger = Logger.getLogger(AuthenticationManagementResource.class);
 
     public AuthenticationManagementResource(RealmModel realm, KeycloakSession session, RealmAuth auth, AdminEventBuilder adminEvent) {
         this.realm = realm;

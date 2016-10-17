@@ -17,6 +17,7 @@
 
 package org.keycloak.email;
 
+import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -44,7 +45,7 @@ import java.util.Properties;
  */
 public class DefaultEmailSenderProvider implements EmailSenderProvider {
 
-    private static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    private static final Logger logger = Logger.getLogger(DefaultEmailSenderProvider.class);
 
     private final KeycloakSession session;
 
@@ -123,7 +124,7 @@ public class DefaultEmailSenderProvider implements EmailSenderProvider {
             }
             transport.sendMessage(msg, new InternetAddress[]{new InternetAddress(address)});
         } catch (Exception e) {
-            logger.failedToSendEmail(e);
+            ServicesLogger.LOGGER.failedToSendEmail(e);
             throw new EmailException(e);
         } finally {
             if (transport != null) {

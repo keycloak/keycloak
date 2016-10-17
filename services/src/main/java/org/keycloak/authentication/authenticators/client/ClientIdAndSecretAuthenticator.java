@@ -25,7 +25,6 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.idm.CredentialRepresentation;
-import org.keycloak.services.ServicesLogger;
 import org.keycloak.util.BasicAuthHelper;
 
 import javax.ws.rs.core.HttpHeaders;
@@ -48,8 +47,6 @@ import java.util.Set;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class ClientIdAndSecretAuthenticator extends AbstractClientAuthenticator {
-
-    protected static ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
 
     public static final String PROVIDER_ID = "client-secret";
 

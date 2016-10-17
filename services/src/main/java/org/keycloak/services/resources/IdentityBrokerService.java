@@ -16,6 +16,7 @@
  */
 package org.keycloak.services.resources;
 
+import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.OAuth2Constants;
@@ -99,7 +100,7 @@ import static org.keycloak.models.Constants.ACCOUNT_MANAGEMENT_CLIENT_ID;
  */
 public class IdentityBrokerService implements IdentityProvider.AuthenticationCallback {
 
-    private static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    private static final Logger logger = Logger.getLogger(IdentityBrokerService.class);
 
     private final RealmModel realmModel;
 
@@ -856,7 +857,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
                     this.session.getTransactionManager().commit();
                 }
             } catch (Exception e) {
-                logger.couldNotFireEvent(e);
+                ServicesLogger.LOGGER.couldNotFireEvent(e);
                 rollback();
             }
         }

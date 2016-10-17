@@ -17,6 +17,7 @@
 
 package org.keycloak.authentication.authenticators.broker;
 
+import org.jboss.logging.Logger;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.authenticators.broker.util.ExistingUserInfo;
 import org.keycloak.authentication.authenticators.broker.util.SerializedBrokeredIdentityContext;
@@ -39,7 +40,7 @@ import java.util.Map;
  */
 public class IdpCreateUserIfUniqueAuthenticator extends AbstractIdpAuthenticator {
 
-    protected static ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    private static Logger logger = Logger.getLogger(IdpCreateUserIfUniqueAuthenticator.class);
 
 
     @Override
@@ -59,7 +60,7 @@ public class IdpCreateUserIfUniqueAuthenticator extends AbstractIdpAuthenticator
 
         String username = getUsername(context, serializedCtx, brokerContext);
         if (username == null) {
-            logger.resetFlow(realm.isRegistrationEmailAsUsername() ? "Email" : "Username");
+            ServicesLogger.LOGGER.resetFlow(realm.isRegistrationEmailAsUsername() ? "Email" : "Username");
             context.getClientSession().setNote(ENFORCE_UPDATE_PROFILE, "true");
             context.resetFlow();
             return;
