@@ -16,6 +16,7 @@
  */
 package org.keycloak.services.managers;
 
+import org.jboss.logging.Logger;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.services.ServicesLogger;
 
@@ -29,14 +30,14 @@ import java.util.Hashtable;
  */
 public class LDAPConnectionTestManager {
 
-    protected static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    private static final Logger logger = Logger.getLogger(LDAPConnectionTestManager.class);
 
     public static final String TEST_CONNECTION = "testConnection";
     public static final String TEST_AUTHENTICATION = "testAuthentication";
 
     public boolean testLDAP(String action, String connectionUrl, String bindDn, String bindCredential, String useTruststoreSpi) {
         if (!TEST_CONNECTION.equals(action) && !TEST_AUTHENTICATION.equals(action)) {
-            logger.unknownAction(action);
+            ServicesLogger.LOGGER.unknownAction(action);
             return false;
         }
 
@@ -73,14 +74,14 @@ public class LDAPConnectionTestManager {
             return true;
         } catch (Exception ne) {
             String errorMessage = (TEST_AUTHENTICATION.equals(action)) ? "Error when authenticating to LDAP: " : "Error when connecting to LDAP: ";
-            logger.errorAuthenticating(ne, errorMessage + ne.getMessage());
+            ServicesLogger.LOGGER.errorAuthenticating(ne, errorMessage + ne.getMessage());
             return false;
         } finally {
             if (ldapContext != null) {
                 try {
                     ldapContext.close();
                 } catch (NamingException ne) {
-                    logger.errorClosingLDAP(ne);
+                    ServicesLogger.LOGGER.errorClosingLDAP(ne);
                 }
             }
         }

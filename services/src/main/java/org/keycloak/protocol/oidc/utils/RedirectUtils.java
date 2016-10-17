@@ -17,10 +17,10 @@
 
 package org.keycloak.protocol.oidc.utils;
 
+import org.jboss.logging.Logger;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.RealmModel;
-import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.Urls;
 
 import javax.ws.rs.core.UriInfo;
@@ -33,7 +33,7 @@ import java.util.Set;
  */
 public class RedirectUtils {
 
-    private static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    private static final Logger logger = Logger.getLogger(RedirectUtils.class);
 
     public static String verifyRealmRedirectUri(UriInfo uriInfo, String redirectUri, RealmModel realm) {
         Set<String> validRedirects = getValidateRedirectUris(uriInfo, realm);

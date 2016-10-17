@@ -17,6 +17,7 @@
 
 package org.keycloak.authentication.authenticators.broker;
 
+import org.jboss.logging.Logger;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.authenticators.broker.util.SerializedBrokeredIdentityContext;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
@@ -45,7 +46,7 @@ import java.util.List;
  */
 public class IdpReviewProfileAuthenticator extends AbstractIdpAuthenticator {
 
-    protected static ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    private static final Logger logger = Logger.getLogger(IdpReviewProfileAuthenticator.class);
 
     @Override
     public boolean requiresUser() {

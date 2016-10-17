@@ -16,6 +16,7 @@
  */
 package org.keycloak.services.managers;
 
+import org.jboss.logging.Logger;
 import org.keycloak.cluster.ClusterEvent;
 import org.keycloak.cluster.ClusterListener;
 import org.keycloak.cluster.ClusterProvider;
@@ -43,7 +44,7 @@ public class UsersSyncManager {
 
     private static final String FEDERATION_TASK_KEY = "federation";
 
-    protected static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    private static final Logger logger = Logger.getLogger(UsersSyncManager.class);
 
     /**
      * Check federationProviderModel of all realms and possibly start periodic sync for them
@@ -177,7 +178,7 @@ public class UsersSyncManager {
                             logger.debugf("Ignored periodic full sync with federation provider %s due small time since last sync", fedProvider.getDisplayName());
                         }
                     } catch (Throwable t) {
-                        logger.errorDuringFullUserSync(t);
+                        ServicesLogger.LOGGER.errorDuringFullUserSync(t);
                     }
                 }
 
@@ -200,7 +201,7 @@ public class UsersSyncManager {
                             logger.debugf("Ignored periodic changed-users sync with federation provider %s due small time since last sync", fedProvider.getDisplayName());
                         }
                     } catch (Throwable t) {
-                        logger.errorDuringChangedUserSync(t);
+                        ServicesLogger.LOGGER.errorDuringChangedUserSync(t);
                     }
                 }
 

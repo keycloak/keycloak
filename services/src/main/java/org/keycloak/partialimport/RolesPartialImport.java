@@ -45,7 +45,6 @@ import java.util.Set;
  * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
  */
 public class RolesPartialImport implements PartialImport<RolesRepresentation> {
-    protected static ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
 
     private Set<RoleRepresentation> realmRolesToOverwrite;
     private Set<RoleRepresentation> realmRolesToSkip;
@@ -98,7 +97,7 @@ public class RolesPartialImport implements PartialImport<RolesRepresentation> {
         try {
             RepresentationToModel.importRoles(rep.getRoles(), realm);
         } catch (Exception e) {
-            logger.roleImportError(e);
+            ServicesLogger.LOGGER.roleImportError(e);
             throw new ErrorResponseException(ErrorResponse.error(e.getMessage(), Response.Status.INTERNAL_SERVER_ERROR));
         }
 

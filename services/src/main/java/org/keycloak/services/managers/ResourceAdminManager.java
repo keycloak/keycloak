@@ -16,6 +16,7 @@
  */
 package org.keycloak.services.managers;
 
+import org.jboss.logging.Logger;
 import org.keycloak.TokenIdGenerator;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.common.util.MultivaluedHashMap;
@@ -53,7 +54,7 @@ import java.util.Set;
  * @version $Revision: 1 $
  */
 public class ResourceAdminManager {
-    protected static ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    private static final Logger logger = Logger.getLogger(ResourceAdminManager.class);
     private static final String CLIENT_SESSION_HOST_PROPERTY = "${application.session.host}";
 
     private KeycloakSession session;
@@ -253,7 +254,7 @@ public class ResourceAdminManager {
             logger.debugf("logout success for %s: %s", managementUrl, success);
             return success;
         } catch (IOException e) {
-            logger.logoutFailed(e, resource.getClientId());
+            ServicesLogger.LOGGER.logoutFailed(e, resource.getClientId());
             return false;
         }
     }
@@ -304,7 +305,7 @@ public class ResourceAdminManager {
             logger.debugf("pushRevocation success for %s: %s", managementUrl, success);
             return success;
         } catch (IOException e) {
-            logger.failedToSendRevocation(e);
+            ServicesLogger.LOGGER.failedToSendRevocation(e);
             return false;
         }
     }
@@ -342,7 +343,7 @@ public class ResourceAdminManager {
             logger.debugf("testAvailability success for %s: %s", managementUrl, success);
             return success;
         } catch (IOException e) {
-            logger.availabilityTestFailed(managementUrl);
+            ServicesLogger.LOGGER.availabilityTestFailed(managementUrl);
             return false;
         }
    }

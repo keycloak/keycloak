@@ -22,6 +22,7 @@ import java.security.cert.X509Certificate;
 import java.util.Collections;
 import java.util.Map;
 
+import org.jboss.logging.Logger;
 import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.jose.jwk.JSONWebKeySet;
@@ -44,7 +45,7 @@ import org.keycloak.util.JWKSUtils;
  */
 public class ClientPublicKeyLoader implements PublicKeyLoader {
 
-    protected static ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    private static final Logger logger = Logger.getLogger(ClientPublicKeyLoader.class);
 
     private final KeycloakSession session;
     private final ClientModel client;

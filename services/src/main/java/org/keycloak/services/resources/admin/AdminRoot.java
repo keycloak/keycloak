@@ -16,6 +16,7 @@
  */
 package org.keycloak.services.resources.admin;
 
+import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.HttpResponse;
 import org.jboss.resteasy.spi.NoLogWebApplicationException;
@@ -32,7 +33,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.services.ForbiddenException;
-import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.RealmManager;
@@ -61,7 +61,7 @@ import java.util.Properties;
  */
 @Path("/admin")
 public class AdminRoot {
-    protected static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    protected static final Logger logger = Logger.getLogger(AdminRoot.class);
 
     @Context
     protected UriInfo uriInfo;

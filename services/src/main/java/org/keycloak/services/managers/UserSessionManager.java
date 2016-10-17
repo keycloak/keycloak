@@ -16,6 +16,7 @@
  */
 package org.keycloak.services.managers;
 
+import org.jboss.logging.Logger;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
@@ -41,7 +42,7 @@ import java.util.Set;
  */
 public class UserSessionManager {
 
-    protected static ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    private static final Logger logger = Logger.getLogger(UserSessionManager.class);
 
     private final KeycloakSession kcSession;
     private final UserSessionPersisterProvider persister;
@@ -136,7 +137,7 @@ public class UserSessionManager {
     public boolean isOfflineTokenAllowed(ClientSessionModel clientSession) {
         RoleModel offlineAccessRole = clientSession.getRealm().getRole(Constants.OFFLINE_ACCESS_ROLE);
         if (offlineAccessRole == null) {
-            logger.roleNotInRealm(Constants.OFFLINE_ACCESS_ROLE);
+            ServicesLogger.LOGGER.roleNotInRealm(Constants.OFFLINE_ACCESS_ROLE);
             return false;
         }
 

@@ -16,6 +16,7 @@
  */
 package org.keycloak.services;
 
+import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakTransaction;
 import org.keycloak.models.KeycloakTransactionManager;
@@ -31,7 +32,7 @@ import java.util.List;
  */
 public class DefaultKeycloakTransactionManager implements KeycloakTransactionManager {
 
-    public static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    private static final Logger logger = Logger.getLogger(DefaultKeycloakTransactionManager.class);
 
     private List<KeycloakTransaction> prepare = new LinkedList<KeycloakTransaction>();
     private List<KeycloakTransaction> transactions = new LinkedList<KeycloakTransaction>();
@@ -140,7 +141,7 @@ public class DefaultKeycloakTransactionManager implements KeycloakTransactionMan
                 try {
                     tx.rollback();
                 } catch (RuntimeException e) {
-                    logger.exceptionDuringRollback(e);
+                    ServicesLogger.LOGGER.exceptionDuringRollback(e);
                 }
             }
         }

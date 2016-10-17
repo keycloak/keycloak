@@ -16,6 +16,7 @@
  */
 package org.keycloak.services.resources.admin;
 
+import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.events.admin.OperationType;
@@ -24,7 +25,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserLoginFailureModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.BruteForceProtector;
 
 import javax.ws.rs.DELETE;
@@ -46,7 +46,7 @@ import java.util.Map;
  * @version $Revision: 1 $
  */
 public class AttackDetectionResource {
-    protected static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    protected static final Logger logger = Logger.getLogger(AttackDetectionResource.class);
     protected RealmAuth auth;
     protected RealmModel realm;
     private AdminEventBuilder adminEvent;

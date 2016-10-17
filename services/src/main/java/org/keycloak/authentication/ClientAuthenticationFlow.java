@@ -17,6 +17,7 @@
 
 package org.keycloak.authentication;
 
+import org.jboss.logging.Logger;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.models.AuthenticationExecutionModel;
@@ -35,7 +36,7 @@ import java.util.List;
  */
 public class ClientAuthenticationFlow implements AuthenticationFlow {
 
-    protected static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    private static final Logger logger = Logger.getLogger(ClientAuthenticationFlow.class);
 
     Response alternativeChallenge = null;
     AuthenticationProcessor processor;
@@ -73,7 +74,7 @@ public class ClientAuthenticationFlow implements AuthenticationFlow {
                 // Fallback to secret just in case (for backwards compatibility)
                 if (expectedClientAuthType == null) {
                     expectedClientAuthType = KeycloakModelUtils.getDefaultClientAuthenticatorType();
-                    logger.authMethodFallback(client.getClientId(), expectedClientAuthType);
+                    ServicesLogger.LOGGER.authMethodFallback(client.getClientId(), expectedClientAuthType);
                 }
 
                 // Check if client authentication matches
@@ -154,7 +155,7 @@ public class ClientAuthenticationFlow implements AuthenticationFlow {
         } else if (status == FlowStatus.FAILURE_CHALLENGE) {
             return sendChallenge(result, execution);
         } else {
-            logger.unknownResultStatus();
+            ServicesLogger.LOGGER.unknownResultStatus();
             throw new AuthenticationFlowException(AuthenticationFlowError.INTERNAL_ERROR);
         }
     }

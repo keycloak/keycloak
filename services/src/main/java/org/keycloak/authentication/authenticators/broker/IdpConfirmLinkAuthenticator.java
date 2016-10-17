@@ -39,15 +39,13 @@ import javax.ws.rs.core.Response;
  */
 public class IdpConfirmLinkAuthenticator extends AbstractIdpAuthenticator {
 
-    protected static ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
-
     @Override
     protected void authenticateImpl(AuthenticationFlowContext context, SerializedBrokeredIdentityContext serializedCtx, BrokeredIdentityContext brokerContext) {
         ClientSessionModel clientSession = context.getClientSession();
 
         String existingUserInfo = clientSession.getNote(EXISTING_USER_INFO);
         if (existingUserInfo == null) {
-            logger.noDuplicationDetected();
+            ServicesLogger.LOGGER.noDuplicationDetected();
             context.attempted();
             return;
         }

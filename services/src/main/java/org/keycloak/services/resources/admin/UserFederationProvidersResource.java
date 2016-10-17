@@ -16,6 +16,7 @@
  */
 package org.keycloak.services.resources.admin;
 
+import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
@@ -67,7 +68,7 @@ import java.util.Properties;
  * @version $Revision: 1 $
  */
 public class UserFederationProvidersResource {
-    protected static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    private static final Logger logger = Logger.getLogger(UserFederationProvidersResource.class);
 
     protected RealmModel realm;
 
@@ -208,7 +209,7 @@ public class UserFederationProvidersResource {
         new UsersSyncManager().notifyToRefreshPeriodicSync(session, realm, model, false);
         boolean kerberosCredsAdded = checkKerberosCredential(session, realm, model);
         if (kerberosCredsAdded) {
-            logger.addedKerberosToRealmCredentials();
+            ServicesLogger.LOGGER.addedKerberosToRealmCredentials();
         }
 
         rep.setId(model.getId());

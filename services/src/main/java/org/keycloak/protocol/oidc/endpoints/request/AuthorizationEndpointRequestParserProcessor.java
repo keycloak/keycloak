@@ -36,8 +36,6 @@ import java.io.InputStream;
  */
 public class AuthorizationEndpointRequestParserProcessor {
 
-    private static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
-
     public static AuthorizationEndpointRequest parseRequest(EventBuilder event, KeycloakSession session, ClientModel client, MultivaluedMap<String, String> requestParams) {
         try {
             AuthorizationEndpointRequest request = new AuthorizationEndpointRequest();
@@ -63,7 +61,7 @@ public class AuthorizationEndpointRequestParserProcessor {
             return request;
 
         } catch (Exception e) {
-            logger.invalidRequest(e);
+            ServicesLogger.LOGGER.invalidRequest(e);
             event.error(Errors.INVALID_REQUEST);
             throw new ErrorPageException(session, Messages.INVALID_REQUEST);
         }
