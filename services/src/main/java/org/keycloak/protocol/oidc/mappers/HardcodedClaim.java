@@ -66,7 +66,7 @@ public class HardcodedClaim extends AbstractOIDCProtocolMapper implements OIDCAc
         types.add("int");
         types.add("boolean");
         property.setType(ProviderConfigProperty.LIST_TYPE);
-        property.setDefaultValue(types);
+        property.setOptions(types);
         property.setHelpText("JSON type that should be used for the value of the claim.  long, int, boolean, and String are valid values.");
         configProperties.add(property);
         property = new ProviderConfigProperty();

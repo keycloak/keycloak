@@ -69,7 +69,7 @@ public class RoleListMapper extends AbstractSAMLProtocolMapper implements SAMLRo
         types.add(AttributeStatementHelper.URI_REFERENCE);
         types.add(AttributeStatementHelper.UNSPECIFIED);
         property.setType(ProviderConfigProperty.LIST_TYPE);
-        property.setDefaultValue(types);
+        property.setOptions(types);
         configProperties.add(property);
         property = new ProviderConfigProperty();
         property.setName(SINGLE_ROLE_ATTRIBUTE);
