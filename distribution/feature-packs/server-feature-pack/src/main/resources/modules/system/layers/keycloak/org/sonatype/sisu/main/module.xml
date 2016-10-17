@@ -20,7 +20,6 @@
         <property name="jboss.api" value="private"/>
     </properties>
     <resources>
-        <artifact name="${com.google.inject.extensions:guice-servlet}"/>
         <artifact name="${org.sonatype.sisu:sisu-guice::no_aop}"/>
     </resources>
     <dependencies>
