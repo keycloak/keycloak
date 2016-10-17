@@ -1,6 +1,5 @@
 = Summary
 
-. link:README.adoc[Introduction]
 . link:topics/overview.adoc[Overview]
 .. link:topics/overview/features.adoc[Features]
 .. link:topics/overview/how.adoc[How Does Security Work?]
