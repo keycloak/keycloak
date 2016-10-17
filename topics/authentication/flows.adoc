@@ -46,6 +46,7 @@ This is better described in an example.  Let's walk through the `browser` authen
   This is marked as _optional_.  If the user has OTP set up, then this authentication type must run and be successful.  If the user doesn't
   have OTP set up, this authentication type is ignored.
 
+{% if book.product %}
 === Executions
 
 Executions can be used 
@@ -94,3 +95,4 @@ function authenticate(context) {
   context.success();
 }
 ----                        
+{% endif %}
