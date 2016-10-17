@@ -22,7 +22,7 @@
     </script>
 
     <script src="${resourceUrl}/lib/jquery/jquery-1.10.2.js" type="text/javascript"></script>
-    <script src="${resourceUrl}/lib/select2-3.4.1/select2.js" type="text/javascript"></script>
+    <script src="${resourceUrl}/lib/select2-3.4.1/select2.min.js" type="text/javascript"></script>
 
     <script src="${resourceUrl}/lib/angular/angular.js"></script>
     <script src="${resourceUrl}/lib/angular/angular-resource.js"></script>
