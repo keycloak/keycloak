@@ -165,6 +165,9 @@ public final class KeycloakAdapterConfigService {
 
     protected boolean isDeploymentConfigured(DeploymentUnit deploymentUnit) {
         ModelNode deployment = getSecureDeployment(deploymentUnit);
+        if (! deployment.isDefined()) {
+            return false;
+        }
         ModelNode resource = deployment.get(SecureDeploymentDefinition.RESOURCE.getName());
         return resource.isDefined();
     }
@@ -202,7 +205,9 @@ public final class KeycloakAdapterConfigService {
 
     private ModelNode getSecureDeployment(DeploymentUnit deploymentUnit) {
         String deploymentName = preferredDeploymentName(deploymentUnit);
-        return this.secureDeployments.get(deploymentName);
+        return this.secureDeployments.containsKey(deploymentName)
+          ? this.secureDeployments.get(deploymentName)
+          : new ModelNode();
     }
     
     // KEYCLOAK-3273: prefer module name if available
