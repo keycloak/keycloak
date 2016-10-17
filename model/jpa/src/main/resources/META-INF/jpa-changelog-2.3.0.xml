@@ -47,7 +47,11 @@
          <dropColumn tableName="REALM" columnName="PUBLIC_KEY" />
          <dropColumn tableName="REALM" columnName="CERTIFICATE" />
 
-     </changeSet>
+         <addColumn tableName="USER_CONSENT">
+             <column name="CREATED_DATE" type="BIGINT"/>
+             <column name="LAST_UPDATED_DATE" type="BIGINT"/>
+         </addColumn>
 
+     </changeSet>
 
 </databaseChangeLog>
