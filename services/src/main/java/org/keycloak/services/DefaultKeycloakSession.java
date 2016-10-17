@@ -228,6 +228,11 @@ public class DefaultKeycloakSession implements KeycloakSession {
     }
 
     @Override
+    public Class<? extends Provider> getProviderClass(String providerClassName) {
+        return factory.getProviderClass(providerClassName);
+    }
+
+    @Override
     public RealmProvider realms() {
         if (model == null) {
             model = getRealmProvider();

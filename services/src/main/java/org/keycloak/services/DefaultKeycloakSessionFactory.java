@@ -339,6 +339,15 @@ public class DefaultKeycloakSessionFactory implements KeycloakSessionFactory, Pr
         return ids;
     }
 
+    Class<? extends Provider> getProviderClass(String providerClassName) {
+        for (Class<? extends Provider> clazz : factoriesMap.keySet()) {
+            if (clazz.getName().equals(providerClassName)) {
+                return clazz;
+            }
+        }
+        return null;
+    }
+
     public void close() {
         ProviderManagerRegistry.SINGLETON.setDeployer(null);
         for (Map<String, ProviderFactory> factories : factoriesMap.values()) {

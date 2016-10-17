@@ -73,6 +73,8 @@ public interface KeycloakSession {
 
     <T extends Provider> Set<T> getAllProviders(Class<T> clazz);
 
+    Class<? extends Provider> getProviderClass(String providerClassName);
+
     Object getAttribute(String attribute);
     Object removeAttribute(String attribute);
     void setAttribute(String name, Object value);

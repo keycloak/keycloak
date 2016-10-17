@@ -47,10 +47,8 @@ public class ComponentUtil {
     }
 
     public static ComponentFactory getComponentFactory(KeycloakSession session, ComponentModel component) {
-        Class<? extends Provider> provider;
-        try {
-            provider = (Class<? extends Provider>) Class.forName(component.getProviderType());
-        } catch (ClassNotFoundException e) {
+        Class<? extends Provider> provider = session.getProviderClass(component.getProviderType());
+        if (provider == null) {
             throw new RuntimeException("Invalid provider type '" + component.getProviderType() + "'");
         }
 
