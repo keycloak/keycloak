@@ -865,13 +865,15 @@
         function checkLoginIframe() {
             var promise = createPromise();
 
-            if (loginIframe.iframe && loginIframe.iframeOrigin && loginIframe.callbackList.length !== 0) {
+            if (loginIframe.iframe && loginIframe.iframeOrigin ) {
                 var msg = {};
                 msg.callbackId = createCallbackId();
                 msg.sessionId = kc.sessionId;
                 loginIframe.callbackList.push(promise);
                 var origin = loginIframe.iframeOrigin;
-                loginIframe.iframe.contentWindow.postMessage(JSON.stringify(msg), origin);
+                if(loginIframe.callbackList.length == 1) {
+                  loginIframe.iframe.contentWindow.postMessage(JSON.stringify(msg), origin);
+                }  
             } else {
                 promise.setSuccess();
             }
