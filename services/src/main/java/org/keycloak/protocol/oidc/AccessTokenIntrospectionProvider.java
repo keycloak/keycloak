@@ -50,27 +50,28 @@ public class AccessTokenIntrospectionProvider implements TokenIntrospectionProvi
         try {
             boolean valid = true;
 
-            RSATokenVerifier verifier = RSATokenVerifier.create(token)
-                    .realmUrl(Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName()));
+            AccessToken toIntrospect = null;
 
-            PublicKey publicKey = session.keys().getPublicKey(realm, verifier.getHeader().getKeyId());
-            if (publicKey == null) {
-                valid = false;
-            } else {
-                try {
+            try {
+                RSATokenVerifier verifier = RSATokenVerifier.create(token)
+                        .realmUrl(Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName()));
+
+                PublicKey publicKey = session.keys().getPublicKey(realm, verifier.getHeader().getKeyId());
+                if (publicKey == null) {
+                    valid = false;
+                } else {
                     verifier.publicKey(publicKey);
                     verifier.verify();
-                } catch (VerificationException e) {
-                    valid = false;
+                    toIntrospect = verifier.getToken();
                 }
+            } catch (VerificationException e) {
+                valid = false;
             }
 
             RealmModel realm = this.session.getContext().getRealm();
             ObjectNode tokenMetadata;
 
-            AccessToken toIntrospect = verifier.getToken();
-
-            if (valid) {
+            if (valid && toIntrospect != null) {
                 valid = tokenManager.isTokenValid(session, realm, toIntrospect);
             }
 
