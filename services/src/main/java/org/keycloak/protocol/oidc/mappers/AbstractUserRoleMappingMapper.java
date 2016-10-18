@@ -35,7 +35,7 @@ import java.util.Set;
  *
  * @author <a href="mailto:thomas.darimont@gmail.com">Thomas Darimont</a>
  */
-abstract class AbstractUserRoleMappingMapper extends AbstractOIDCProtocolMapper {
+abstract class AbstractUserRoleMappingMapper extends AbstractOIDCProtocolMapper implements OIDCAccessTokenMapper, OIDCIDTokenMapper, UserInfoTokenMapper {
 
     /**
      * Returns the role names extracted from the given {@code roleModels} while recursively traversing "Composite Roles".

@@ -45,16 +45,8 @@ public class GroupMembershipMapper extends AbstractOIDCProtocolMapper implements
     private static final List<ProviderConfigProperty> configProperties = new ArrayList<ProviderConfigProperty>();
 
     static {
-        ProviderConfigProperty property;
-        ProviderConfigProperty property1;
-        property1 = new ProviderConfigProperty();
-        property1.setName(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME);
-        property1.setLabel(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME_LABEL);
-        property1.setType(ProviderConfigProperty.STRING_TYPE);
-        property1.setDefaultValue("groups");
-        property1.setHelpText(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME_TOOLTIP);
-        configProperties.add(property1);
-        property1 = new ProviderConfigProperty();
+        OIDCAttributeMapperHelper.addTokenClaimNameConfig(configProperties);
+        ProviderConfigProperty property1 = new ProviderConfigProperty();
         property1.setName("full.path");
         property1.setLabel("Full group path");
         property1.setType(ProviderConfigProperty.BOOLEAN_TYPE);
@@ -62,23 +54,7 @@ public class GroupMembershipMapper extends AbstractOIDCProtocolMapper implements
         property1.setHelpText("Include full path to group i.e. /top/level1/level2, false will just specify the group name");
         configProperties.add(property1);
 
-        property1 = new ProviderConfigProperty();
-        property1.setName(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN);
-        property1.setLabel(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN_LABEL);
-        property1.setType(ProviderConfigProperty.BOOLEAN_TYPE);
-        property1.setDefaultValue("true");
-        property1.setHelpText(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN_HELP_TEXT);
-        configProperties.add(property1);
-        property1 = new ProviderConfigProperty();
-        property1.setName(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN);
-        property1.setLabel(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN_LABEL);
-        property1.setType(ProviderConfigProperty.BOOLEAN_TYPE);
-        property1.setDefaultValue("true");
-        property1.setHelpText(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN_HELP_TEXT);
-        configProperties.add(property1);
-
-
-
+        OIDCAttributeMapperHelper.addIncludeInTokensConfig(configProperties, GroupMembershipMapper.class);
     }
 
     public static final String PROVIDER_ID = "oidc-group-membership-mapper";

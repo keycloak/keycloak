@@ -27,6 +27,7 @@ import org.keycloak.client.registration.ClientRegistrationException;
 import org.keycloak.client.registration.HttpErrorException;
 import org.keycloak.protocol.oidc.mappers.SHA256PairwiseSubMapper;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.UserInfo;
 import org.keycloak.representations.idm.ClientInitialAccessCreatePresentation;
 import org.keycloak.representations.idm.ClientInitialAccessPresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
@@ -38,7 +39,9 @@ import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
 import org.keycloak.testsuite.client.resources.TestOIDCEndpointsApplicationResource;
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.UserInfoClientUtil;
 
+import javax.ws.rs.client.Client;
 import javax.ws.rs.core.Response;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -323,5 +326,17 @@ public class OIDCPairwiseClientRegistrationTest extends AbstractClientRegistrati
         // Assert pairwise client has different subject like userId
         String pairwiseUserId = accessToken.getSubject();
         Assert.assertNotEquals(pairwiseUserId, user.getId());
+
+        // Send request to userInfo endpoint
+        Client jaxrsClient = javax.ws.rs.client.ClientBuilder.newClient();
+        try {
+            // Check that userInfo contains pairwise subjectId as well
+            Response userInfoResponse = UserInfoClientUtil.executeUserInfoRequest_getMethod(jaxrsClient, accessTokenResponse.getAccessToken());
+            UserInfo userInfo = UserInfoClientUtil.testSuccessfulUserInfoResponse(userInfoResponse, "test-user", "test-user@localhost");
+            String userInfoSubId = userInfo.getSubject();
+            Assert.assertEquals(pairwiseUserId, userInfoSubId);
+        } finally {
+            jaxrsClient.close();
+        }
     }
 }

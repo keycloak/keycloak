@@ -49,7 +49,7 @@ public class UserSessionNoteMapper extends AbstractOIDCProtocolMapper implements
         property.setHelpText(ProtocolMapperUtils.USER_SESSION_MODEL_NOTE_HELP_TEXT);
         property.setType(ProviderConfigProperty.STRING_TYPE);
         configProperties.add(property);
-        OIDCAttributeMapperHelper.addAttributeConfig(configProperties);
+        OIDCAttributeMapperHelper.addAttributeConfig(configProperties, UserSessionNoteMapper.class);
     }
 
     public static final String PROVIDER_ID = "oidc-usersessionmodel-note-mapper";

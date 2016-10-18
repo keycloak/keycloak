@@ -43,21 +43,7 @@ public class FullNameMapper extends AbstractOIDCProtocolMapper implements OIDCAc
     private static final List<ProviderConfigProperty> configProperties = new ArrayList<ProviderConfigProperty>();
 
     static {
-        ProviderConfigProperty property;
-        property = new ProviderConfigProperty();
-        property.setName(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN);
-        property.setLabel(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN_LABEL);
-        property.setType(ProviderConfigProperty.BOOLEAN_TYPE);
-        property.setDefaultValue("true");
-        property.setHelpText(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN_HELP_TEXT);
-        configProperties.add(property);
-        property = new ProviderConfigProperty();
-        property.setName(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN);
-        property.setLabel(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN_LABEL);
-        property.setType(ProviderConfigProperty.BOOLEAN_TYPE);
-        property.setDefaultValue("true");
-        property.setHelpText(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN_HELP_TEXT);
-        configProperties.add(property);
+        OIDCAttributeMapperHelper.addIncludeInTokensConfig(configProperties, FullNameMapper.class);
 
     }
 

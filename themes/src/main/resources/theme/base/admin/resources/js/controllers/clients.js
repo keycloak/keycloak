@@ -1705,8 +1705,10 @@ module.controller('ClientProtocolMapperListCtrl', function($scope, realm, client
     updateMappers();
 });
 
-module.controller('ClientProtocolMapperCtrl', function($scope, realm, serverInfo, client, mapper, ClientProtocolMapper, Notifications, Dialog, $location) {
+module.controller('ClientProtocolMapperCtrl', function($scope, realm, serverInfo, client, clients, mapper, ClientProtocolMapper, Notifications, Dialog, $location) {
     $scope.realm = realm;
+    $scope.clients = clients;
+
     /*
     $scope.client = client;
     $scope.create = false;
@@ -1786,8 +1788,9 @@ module.controller('ClientProtocolMapperCtrl', function($scope, realm, serverInfo
 
 });
 
-module.controller('ClientProtocolMapperCreateCtrl', function($scope, realm, serverInfo, client, ClientProtocolMapper, Notifications, Dialog, $location) {
+module.controller('ClientProtocolMapperCreateCtrl', function($scope, realm, serverInfo, client, clients, ClientProtocolMapper, Notifications, Dialog, $location) {
     $scope.realm = realm;
+    $scope.clients = clients;
 
     if (client.protocol == null) {
         client.protocol = 'openid-connect';
@@ -2001,8 +2004,10 @@ module.controller('ClientTemplateProtocolMapperListCtrl', function($scope, realm
     updateMappers();
 });
 
-module.controller('ClientTemplateProtocolMapperCtrl', function($scope, realm, serverInfo, template, mapper, ClientTemplateProtocolMapper, Notifications, Dialog, $location) {
+module.controller('ClientTemplateProtocolMapperCtrl', function($scope, realm, serverInfo, template, mapper, clients, ClientTemplateProtocolMapper, Notifications, Dialog, $location) {
     $scope.realm = realm;
+    $scope.clients = clients;
+
     if (template.protocol == null) {
         template.protocol = 'openid-connect';
     }
@@ -2068,8 +2073,10 @@ module.controller('ClientTemplateProtocolMapperCtrl', function($scope, realm, se
 
 });
 
-module.controller('ClientTemplateProtocolMapperCreateCtrl', function($scope, realm, serverInfo, template, ClientTemplateProtocolMapper, Notifications, Dialog, $location) {
+module.controller('ClientTemplateProtocolMapperCreateCtrl', function($scope, realm, serverInfo, template, clients, ClientTemplateProtocolMapper, Notifications, Dialog, $location) {
     $scope.realm = realm;
+    $scope.clients = clients;
+
     if (template.protocol == null) {
         template.protocol = 'openid-connect';
     }

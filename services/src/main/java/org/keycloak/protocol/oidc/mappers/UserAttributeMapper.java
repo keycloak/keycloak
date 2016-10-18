@@ -51,7 +51,7 @@ public class UserAttributeMapper extends AbstractOIDCProtocolMapper implements O
         property.setHelpText(ProtocolMapperUtils.USER_MODEL_ATTRIBUTE_HELP_TEXT);
         property.setType(ProviderConfigProperty.STRING_TYPE);
         configProperties.add(property);
-        OIDCAttributeMapperHelper.addAttributeConfig(configProperties);
+        OIDCAttributeMapperHelper.addAttributeConfig(configProperties, UserAttributeMapper.class);
 
         property = new ProviderConfigProperty();
         property.setName(ProtocolMapperUtils.MULTIVALUED);
