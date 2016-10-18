@@ -62,6 +62,10 @@ public class DirImportProvider implements ImportProvider {
     public DirImportProvider(File rootDirectory) {
         this.rootDirectory = rootDirectory;
 
+        if (!this.rootDirectory.exists()) {
+            throw new IllegalStateException("Directory " + this.rootDirectory + " doesn't exists");
+        }
+
         logger.infof("Importing from directory %s", this.rootDirectory.getAbsolutePath());
     }
 
