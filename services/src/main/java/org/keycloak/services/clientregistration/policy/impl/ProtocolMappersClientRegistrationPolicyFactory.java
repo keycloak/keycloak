@@ -58,7 +58,7 @@ public class ProtocolMappersClientRegistrationPolicyFactory extends AbstractClie
         property.setLabel("allowed-protocol-mappers.label");
         property.setHelpText("allowed-protocol-mappers.tooltip");
         property.setType(ProviderConfigProperty.MULTIVALUED_LIST_TYPE);
-        property.setDefaultValue(getProtocolMapperFactoryIds());
+        property.setOptions(getProtocolMapperFactoryIds());
         configProperties.add(property);
 
         property = new ProviderConfigProperty();

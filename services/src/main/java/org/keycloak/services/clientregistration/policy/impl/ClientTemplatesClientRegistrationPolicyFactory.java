@@ -60,7 +60,7 @@ public class ClientTemplatesClientRegistrationPolicyFactory extends AbstractClie
         property.setType(ProviderConfigProperty.MULTIVALUED_LIST_TYPE);
 
         if (session != null) {
-            property.setDefaultValue(getClientTemplates(session));
+            property.setOptions(getClientTemplates(session));
         }
 
         configProperties = Collections.singletonList(property);

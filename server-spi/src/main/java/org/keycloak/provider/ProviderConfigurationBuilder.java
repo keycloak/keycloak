@@ -17,6 +17,7 @@
 
 package org.keycloak.provider;
 
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -43,14 +44,17 @@ public class ProviderConfigurationBuilder {
         return this;
     }
 
-    public ProviderConfigurationBuilder property(String name, String label, String helpText, String type, Object defaultValue, boolean secret) {
+    public ProviderConfigurationBuilder property(String name, String label, String helpText, String type, Object defaultValue, List<String> options, boolean secret) {
         ProviderConfigProperty property = new ProviderConfigProperty(name, label, helpText, type, defaultValue);
+        property.setOptions(options);
         property.setSecret(secret);
         properties.add(property);
         return this;
     }
-    public ProviderConfigurationBuilder property(String name, String label, String helpText, String type, Object defaultValue) {
-        properties.add(new ProviderConfigProperty(name, label, helpText, type, defaultValue));
+    public ProviderConfigurationBuilder property(String name, String label, String helpText, String type, Object defaultValue, List<String> options) {
+        ProviderConfigProperty property = new ProviderConfigProperty(name, label, helpText, type, defaultValue);
+        property.setOptions(options);
+        properties.add(property);
         return this;
     }
 
@@ -65,6 +69,7 @@ public class ProviderConfigurationBuilder {
         private String helpText;
         private String type;
         private Object defaultValue;
+        private List<String> options;
         private boolean secret;
 
         public ProviderConfigPropertyBuilder name(String name) {
@@ -92,6 +97,11 @@ public class ProviderConfigurationBuilder {
             return this;
         }
 
+        public ProviderConfigPropertyBuilder options(String... options) {
+            this.options = Arrays.asList(options);
+            return this;
+        }
+
         public ProviderConfigPropertyBuilder secret(boolean secret) {
             this.secret = secret;
             return this;
@@ -104,6 +114,7 @@ public class ProviderConfigurationBuilder {
             property.setHelpText(helpText);
             property.setType(type);
             property.setDefaultValue(defaultValue);
+            property.setOptions(options);
             property.setSecret(secret);
             ProviderConfigurationBuilder.this.properties.add(property);
             return ProviderConfigurationBuilder.this;

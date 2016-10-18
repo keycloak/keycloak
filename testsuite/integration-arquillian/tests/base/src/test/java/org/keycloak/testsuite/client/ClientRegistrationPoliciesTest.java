@@ -329,7 +329,7 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
         ConfigPropertyRepresentation allowedProtocolMappers = list.get(0);
 
         Assert.assertEquals(allowedProtocolMappers.getName(), expectedConfigPropName);
-        return (List<String>) allowedProtocolMappers.getDefaultValue();
+        return allowedProtocolMappers.getOptions();
     }
 
 

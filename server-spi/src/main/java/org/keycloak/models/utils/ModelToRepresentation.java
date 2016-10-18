@@ -782,6 +782,7 @@ public class ModelToRepresentation {
         propRep.setLabel(prop.getLabel());
         propRep.setType(prop.getType());
         propRep.setDefaultValue(prop.getDefaultValue());
+        propRep.setOptions(prop.getOptions());
         propRep.setHelpText(prop.getHelpText());
         propRep.setSecret(prop.isSecret());
         return propRep;

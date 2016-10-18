@@ -182,7 +182,7 @@ public class OIDCAttributeMapperHelper {
         types.add("int");
         types.add("boolean");
         property.setType(ProviderConfigProperty.LIST_TYPE);
-        property.setDefaultValue(types);
+        property.setOptions(types);
         property.setHelpText(JSON_TYPE_TOOLTIP);
         configProperties.add(property);
         property = new ProviderConfigProperty();

@@ -1830,6 +1830,8 @@ module.controller('ClientProtocolMapperCreateCtrl', function($scope, realm, serv
         }, function(error) {
             if (error.status == 400 && error.data.error_description) {
                 Notifications.error(error.data.error_description);
+            } else if (error.status == 409 && error.data.errorMessage) {
+                Notifications.error(error.data.errorMessage);
             } else {
                 Notifications.error('Unexpected error when updating protocol mapper');
             }
