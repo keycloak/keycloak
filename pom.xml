@@ -83,8 +83,8 @@
         <version.jboss-integration-platform>6.0.6.Final</version.jboss-integration-platform>
 
         <!-- Others -->
-        <apacheds.version>2.0.0-M17</apacheds.version>
-        <apacheds.codec.version>1.0.0-M23</apacheds.codec.version>
+        <apacheds.version>2.0.0-M21</apacheds.version>
+        <apacheds.codec.version>1.0.0-M33</apacheds.codec.version>
         <google.zxing.version>3.2.1</google.zxing.version>
         <freemarker.version>2.3.23</freemarker.version>
         <jetty9.version>9.1.0.v20131115</jetty9.version>
