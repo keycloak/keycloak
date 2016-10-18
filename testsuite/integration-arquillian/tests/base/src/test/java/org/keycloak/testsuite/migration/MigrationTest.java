@@ -36,10 +36,8 @@ import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.representations.idm.AuthenticationExecutionExportRepresentation;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
 import static org.keycloak.testsuite.Assert.*;
 import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
 
@@ -49,6 +47,8 @@ import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
 public class MigrationTest extends AbstractKeycloakTest {
 
     private final String MIGRATION = "Migration";
+    private RealmResource migrationRealm;
+    private RealmResource masterRealm;
         
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
@@ -57,66 +57,74 @@ public class MigrationTest extends AbstractKeycloakTest {
     
     @Before
     public void beforeMigrationTest() {
+        migrationRealm = adminClient.realms().realm(MIGRATION);
+        masterRealm = adminClient.realms().realm(MASTER);
+        
         //add migration realm to testRealmReps to make the migration removed after test
         testRealmReps.add(adminClient.realms().realm(MIGRATION).toRepresentation());
     }
     
     @Test
     @Migration(versionFrom = "1.9.8.Final")
-    public void migration198Test() {
-        RealmResource migrationRealm = adminClient.realms().realm(MIGRATION);
-        RealmResource masterRealm = adminClient.realms().realm(MASTER);
-        
-        testMigratedMasterData(masterRealm);
-        testMigratedMigrationData(migrationRealm);
-        
-        // 2.0.0 - org.keycloak.migration.migrators.MigrateTo2_0_0
-        testAuthorizationServices(masterRealm, migrationRealm);
-        
-        // 2.1.0 - org.keycloak.migration.migrators.MigrateTo2_1_0
-        testNameOfOTPRequiredAction(masterRealm, migrationRealm);
-        //there is no migration of RolePolicies (MigrateTo2_1_0#migrateRolePolicies) between 1.9.8 to current version (2.3.0-SNAPSHOT)
-        
-        // 2.2.0 - org.keycloak.migration.migrators.MigrateTo2_2_0
-        testIdentityProviderAuthenticator(masterRealm, migrationRealm);
+    public void migration1_9_8Test() {
+        testMigratedData();
+        testMigrationTo2_0_0();
+        testMigrationTo2_1_0();
+        testMigrationTo2_2_0();
     }
     
     @Test
     @Migration(versionFrom = "2.2.1.Final")
-    public void migration221Test() {
-        RealmResource migrationRealm = adminClient.realms().realm(MIGRATION);
-        RealmResource masterRealm = adminClient.realms().realm(MASTER);
-        
-        testMigratedMasterData(masterRealm);
-        testMigratedMigrationData(migrationRealm);
-        
-        // so far nothing else
+    public void migration2_2_1Test() {
+        testMigratedData();
     }
     
-    private void testMigratedMasterData(RealmResource master) {
-        assertNames(master.roles().list(), "offline_access", "uma_authorization", "create-realm", "master-test-realm-role", "admin");
-        assertNames(master.clients().findAll(), "admin-cli", "security-admin-console", "broker", "account", 
+    private void testMigratedData() {
+        //master realm
+        assertNames(masterRealm.roles().list(), "offline_access", "uma_authorization", "create-realm", "master-test-realm-role", "admin");
+        assertNames(masterRealm.clients().findAll(), "admin-cli", "security-admin-console", "broker", "account", 
                 "master-realm", "master-test-client", "Migration-realm");
-        String id = master.clients().findByClientId("master-test-client").get(0).getId();
-        assertNames(master.clients().get(id).roles().list(), "master-test-client-role");
-        assertNames(master.users().search("", 0, 5), "admin", "master-test-user");
-        assertNames(master.groups().groups(), "master-test-group");
+        String id = masterRealm.clients().findByClientId("master-test-client").get(0).getId();
+        assertNames(masterRealm.clients().get(id).roles().list(), "master-test-client-role");
+        assertNames(masterRealm.users().search("", 0, 5), "admin", "master-test-user");
+        assertNames(masterRealm.groups().groups(), "master-test-group");
+        
+        //migrationRealm
+        assertNames(migrationRealm.roles().list(), "offline_access", "uma_authorization", "migration-test-realm-role");
+        assertNames(migrationRealm.clients().findAll(), "account", "admin-cli", "broker", "migration-test-client", "realm-management", "security-admin-console");
+        String id2 = migrationRealm.clients().findByClientId("migration-test-client").get(0).getId();
+        assertNames(migrationRealm.clients().get(id2).roles().list(), "migration-test-client-role");
+        assertNames(migrationRealm.users().search("", 0, 5), "migration-test-user");
+        assertNames(migrationRealm.groups().groups(), "migration-test-group");
     }
     
-    private void testMigratedMigrationData(RealmResource migration) {
-        assertNames(migration.roles().list(), "offline_access", "uma_authorization", "migration-test-realm-role");
-        assertNames(migration.clients().findAll(), "account", "admin-cli", "broker", "migration-test-client", "realm-management", "security-admin-console");
-        String id = migration.clients().findByClientId("migration-test-client").get(0).getId();
-        assertNames(migration.clients().get(id).roles().list(), "migration-test-client-role");
-        assertNames(migration.users().search("", 0, 5), "migration-test-user");
-        assertNames(migration.groups().groups(), "migration-test-group");
+    /**
+     * @see org.keycloak.migration.migrators.MigrateTo2_0_0
+     */
+    private void testMigrationTo2_0_0() {
+        testAuthorizationServices(masterRealm, migrationRealm);
+    }
+    
+    /**
+     * @see org.keycloak.migration.migrators.MigrateTo2_1_0
+     */
+    private void testMigrationTo2_1_0() {
+        testNameOfOTPRequiredAction(masterRealm, migrationRealm);
+    }
+    
+    /**
+     * @see org.keycloak.migration.migrators.MigrateTo2_2_0
+     */
+    private void testMigrationTo2_2_0() {
+        testIdentityProviderAuthenticator(masterRealm, migrationRealm);
+        //MigrateTo2_2_0#migrateRolePolicies is not relevant any more
     }
     
     private void testAuthorizationServices(RealmResource... realms) {
         for (RealmResource realm : realms) {
             //test setup of authorization services
             for (String roleName : Constants.AUTHZ_DEFAULT_AUTHORIZATION_ROLES) {
-                RoleResource role = realm.roles().get(roleName); //throw javax.ws.rs.NotFoundException
+                RoleResource role = realm.roles().get(roleName); //throws javax.ws.rs.NotFoundException if not found
 
                 assertFalse("Role's scopeParamRequired should be false.", role.toRepresentation().isScopeParamRequired());
                 assertFalse("Role shouldn't be composite should be false.", role.toRepresentation().isComposite());

@@ -571,6 +571,60 @@
                 </pluginManagement>
             </build>
         </profile>
+        
+        <profile>
+            <id>migration-manual</id>
+            <activation>
+                <property>
+                    <name>migration.mode</name>
+                    <value>manual</value>
+                </property>
+            </activation>
+            <build>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <groupId>org.codehaus.mojo</groupId>
+                            <artifactId>xml-maven-plugin</artifactId>
+                            <executions>
+                                <execution>
+                                    <id>set-manual-migration-strategy</id>
+                                    <phase>process-resources</phase>
+                                    <goals>
+                                        <goal>transform</goal>
+                                    </goals>
+                                    <configuration>
+                                        <skip></skip>
+                                        <transformationSets>
+                                            <transformationSet>
+                                                <dir>${auth.server.home}/standalone/configuration</dir>
+                                                <includes>
+                                                    <include>standalone.xml</include>
+                                                </includes>
+                                                <stylesheet>${common.resources}/migration-strategy.xsl</stylesheet>
+                                                <outputDir>${auth.server.home}/standalone/configuration</outputDir>
+                                                <parameters>
+                                                    <parameter>
+                                                        <name>migration.strategy</name>
+                                                        <value>manual</value>
+                                                    </parameter>
+                                                    <parameter>
+                                                        <name>initialize.empty</name>
+                                                        <value>false</value>
+                                                    </parameter>
+                                                </parameters>
+                                            </transformationSet>
+                                        </transformationSets>
+                                    </configuration>
+                                </execution>
+                            </executions>
+                        </plugin>
+                
+                    </plugins>
+                </pluginManagement>
+            </build>
+        </profile>
+        
         <profile>
             <id>auth-server-apply-patch</id>
             <activation>
