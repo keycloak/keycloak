@@ -1955,7 +1955,7 @@ module.controller('CreateExecutionCtrl', function($scope, realm, parentFlow, for
 
 
 
-module.controller('AuthenticationFlowsCtrl', function($scope, $route, realm, flows, selectedFlow, LastFlowSelected,
+module.controller('AuthenticationFlowsCtrl', function($scope, $route, realm, flows, selectedFlow, LastFlowSelected, Dialog,
                                                       AuthenticationFlows, AuthenticationFlowsCopy, AuthenticationFlowExecutions,
                                                       AuthenticationExecution, AuthenticationExecutionRaisePriority, AuthenticationExecutionLowerPriority,
                                                       $modal, Notifications, CopyDialog, $location) {
@@ -2034,6 +2034,12 @@ module.controller('AuthenticationFlowsCtrl', function($scope, $route, realm, flo
         })
     };
 
+    $scope.deleteFlow = function() {
+        Dialog.confirmDelete($scope.flow.alias, 'flow', function() {
+            $scope.removeFlow();
+        });
+    };
+    
     $scope.removeFlow = function() {
         console.log('Remove flow:' + $scope.flow.alias);
         if (realm.browserFlow == $scope.flow.alias) {
@@ -2053,9 +2059,8 @@ module.controller('AuthenticationFlowsCtrl', function($scope, $route, realm, flo
 
         } else {
             AuthenticationFlows.remove({realm: realm.realm, flow: $scope.flow.id}, function () {
-                $location.url("/realms/" + realm.realm + '/authentication/flows');
+                $location.url("/realms/" + realm.realm + '/authentication/flows/' + flows[0].alias);
                 Notifications.success("Flow removed");
-
             })
         }
 
@@ -2100,10 +2105,14 @@ module.controller('AuthenticationFlowsCtrl', function($scope, $route, realm, flo
 
     $scope.removeExecution = function(execution) {
         console.log('removeExecution: ' + execution.id);
-        AuthenticationExecution.remove({realm: realm.realm, execution: execution.id}, function() {
-            Notifications.success("Execution removed");
-            setupForm();
-        })
+        var exeOrFlow = execution.authenticationFlow ? 'flow' : 'execution';
+        Dialog.confirmDelete(execution.displayName, exeOrFlow, function() {
+            AuthenticationExecution.remove({realm: realm.realm, execution: execution.id}, function() {
+                Notifications.success("The " + exeOrFlow + " was removed.");
+                setupForm();
+            });
+        });
+        
     }
 
     $scope.raisePriority = function(execution) {
