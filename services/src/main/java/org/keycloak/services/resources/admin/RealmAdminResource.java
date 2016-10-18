@@ -34,6 +34,7 @@ import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.events.admin.AdminEventQuery;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
+import org.keycloak.events.admin.IResourceType;
 import org.keycloak.exportimport.ClientDescriptionConverter;
 import org.keycloak.exportimport.ClientDescriptionConverterFactory;
 import org.keycloak.models.ClientModel;
@@ -652,9 +653,9 @@ public class RealmAdminResource {
         }
 
         if (resourceTypes != null && !resourceTypes.isEmpty()) {
-            ResourceType[] t = new ResourceType[resourceTypes.size()];
+            IResourceType[] t = new IResourceType[resourceTypes.size()];
             for (int i = 0; i < t.length; i++) {
-                t[i] = ResourceType.valueOf(resourceTypes.get(i));
+                t[i] = ResourceType.of(resourceTypes.get(i));
             }
             query.resourceType(t);
         }
