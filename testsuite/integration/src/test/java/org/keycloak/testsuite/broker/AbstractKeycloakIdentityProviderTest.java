@@ -242,7 +242,7 @@ public abstract class AbstractKeycloakIdentityProviderTest extends AbstractIdent
      * Test for KEYCLOAK-1053 - verify email action is not performed if email is not provided, login is normal, but action stays in set to be performed later
      */
     @Test
-    public void testSuccessfulAuthenticationWithoutUpdateProfile_emailNotProvided_emailVerifyEnabled() {
+    public void testSuccessfulAuthenticationWithoutUpdateProfile_emailNotProvided_emailVerifyEnabled() throws Exception {
         RealmModel realm = getRealm();
         realm.setVerifyEmail(true);
         setUpdateProfileFirstLogin(realm, IdentityProviderRepresentation.UPFLM_OFF);

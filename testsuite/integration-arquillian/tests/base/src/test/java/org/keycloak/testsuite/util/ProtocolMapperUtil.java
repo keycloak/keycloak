@@ -6,6 +6,8 @@ import org.keycloak.protocol.oidc.mappers.HardcodedClaim;
 import org.keycloak.protocol.oidc.mappers.HardcodedRole;
 import org.keycloak.protocol.oidc.mappers.RoleNameMapper;
 import org.keycloak.protocol.oidc.mappers.UserAttributeMapper;
+import org.keycloak.protocol.oidc.mappers.UserClientRoleMappingMapper;
+import org.keycloak.protocol.oidc.mappers.UserRealmRoleMappingMapper;
 import org.keycloak.protocol.oidc.mappers.UserSessionNoteMapper;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 
@@ -102,5 +104,23 @@ public class ProtocolMapperUtil {
                 tokenClaimName, jsonType,
                 consentRequired, consentText,
                 accessToken, idToken));
+    }
+
+
+    public static ProtocolMapperRepresentation createUserRealmRoleMappingMapper(String realmRolePrefix,
+                                                                                String name,
+                                                                                String tokenClaimName,
+                                                                                boolean accessToken, boolean idToken) {
+
+        return ModelToRepresentation.toRepresentation(UserRealmRoleMappingMapper.create(realmRolePrefix, name, tokenClaimName, accessToken, idToken));
+    }
+
+
+    public static ProtocolMapperRepresentation createUserClientRoleMappingMapper(String clientId, String clientRolePrefix,
+                                                                                String name,
+                                                                                String tokenClaimName,
+                                                                                boolean accessToken, boolean idToken) {
+
+        return ModelToRepresentation.toRepresentation(UserClientRoleMappingMapper.create(clientId, clientRolePrefix, name, tokenClaimName, accessToken, idToken));
     }
 }

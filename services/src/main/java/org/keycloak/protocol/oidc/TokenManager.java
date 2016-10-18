@@ -506,10 +506,11 @@ public class TokenManager {
         for (ProtocolMapperModel mapping : mappings) {
 
             ProtocolMapper mapper = (ProtocolMapper)sessionFactory.getProviderFactory(ProtocolMapper.class, mapping.getProtocolMapper());
-            if (mapper == null || !(mapper instanceof OIDCAccessTokenMapper)) continue;
-            token = ((OIDCAccessTokenMapper)mapper).transformAccessToken(token, mapping, session, userSession, clientSession);
-
+            if (mapper instanceof OIDCAccessTokenMapper) {
+                token = ((OIDCAccessTokenMapper) mapper).transformAccessToken(token, mapping, session, userSession, clientSession);
+            }
         }
+
         return token;
     }
 
@@ -520,16 +521,11 @@ public class TokenManager {
         for (ProtocolMapperModel mapping : mappings) {
 
             ProtocolMapper mapper = (ProtocolMapper)sessionFactory.getProviderFactory(ProtocolMapper.class, mapping.getProtocolMapper());
-            if (mapper == null || !(mapper instanceof OIDCAccessTokenMapper)) continue;
-
-            if(mapper instanceof UserInfoTokenMapper){
-                token = ((UserInfoTokenMapper)mapper).transformUserInfoToken(token, mapping, session, userSession, clientSession);
-                continue;
+            if (mapper instanceof UserInfoTokenMapper) {
+                token = ((UserInfoTokenMapper) mapper).transformUserInfoToken(token, mapping, session, userSession, clientSession);
             }
-
-            token = ((OIDCAccessTokenMapper)mapper).transformAccessToken(token, mapping, session, userSession, clientSession);
-
         }
+
         return token;
     }
 
@@ -540,12 +536,11 @@ public class TokenManager {
         for (ProtocolMapperModel mapping : mappings) {
 
             ProtocolMapper mapper = (ProtocolMapper)sessionFactory.getProviderFactory(ProtocolMapper.class, mapping.getProtocolMapper());
-            if (mapper == null || !(mapper instanceof OIDCIDTokenMapper)) continue;
-            token = ((OIDCIDTokenMapper)mapper).transformIDToken(token, mapping, session, userSession, clientSession);
-
+            if (mapper instanceof OIDCIDTokenMapper) {
+                token = ((OIDCIDTokenMapper) mapper).transformIDToken(token, mapping, session, userSession, clientSession);
+            }
         }
     }
-
 
     protected AccessToken initToken(RealmModel realm, ClientModel client, UserModel user, UserSessionModel session, ClientSessionModel clientSession, UriInfo uriInfo) {
         AccessToken token = new AccessToken();

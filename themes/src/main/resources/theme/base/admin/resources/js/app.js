@@ -953,6 +953,9 @@ module.config([ '$routeProvider', function($routeProvider) {
                 },
                 mapper : function(ClientProtocolMapperLoader) {
                     return ClientProtocolMapperLoader();
+                },
+                clients : function(ClientListLoader) {
+                    return ClientListLoader();
                 }
 
             },
@@ -969,6 +972,9 @@ module.config([ '$routeProvider', function($routeProvider) {
                 },
                 client : function(ClientLoader) {
                     return ClientLoader();
+                },
+                clients : function(ClientListLoader) {
+                    return ClientListLoader();
                 }
             },
             controller : 'ClientProtocolMapperCreateCtrl'
@@ -1017,6 +1023,9 @@ module.config([ '$routeProvider', function($routeProvider) {
                 },
                 mapper : function(ClientTemplateProtocolMapperLoader) {
                     return ClientTemplateProtocolMapperLoader();
+                },
+                clients : function(ClientListLoader) {
+                    return ClientListLoader();
                 }
 
             },
@@ -1033,6 +1042,9 @@ module.config([ '$routeProvider', function($routeProvider) {
                 },
                 template : function(ClientTemplateLoader) {
                     return ClientTemplateLoader();
+                },
+                clients : function(ClientListLoader) {
+                    return ClientListLoader();
                 }
             },
             controller : 'ClientTemplateProtocolMapperCreateCtrl'
