@@ -666,10 +666,10 @@ public class LoginActionsService {
             return response;
         }
 
-        UserConsentModel grantedConsent = session.users().getConsentByClient(realm, user, client.getId());
+        UserConsentModel grantedConsent = session.users().getConsentByClient(realm, user.getId(), client.getId());
         if (grantedConsent == null) {
             grantedConsent = new UserConsentModel(client);
-            session.users().addConsent(realm, user, grantedConsent);
+            session.users().addConsent(realm, user.getId(), grantedConsent);
         }
         for (RoleModel role : accessCode.getRequestedRoles()) {
             grantedConsent.addGrantedRole(role);
@@ -679,7 +679,7 @@ public class LoginActionsService {
                 grantedConsent.addGrantedProtocolMapper(protocolMapper);
             }
         }
-        session.users().updateConsent(realm, user, grantedConsent);
+        session.users().updateConsent(realm, user.getId(), grantedConsent);
 
         event.detail(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED);
         event.success();

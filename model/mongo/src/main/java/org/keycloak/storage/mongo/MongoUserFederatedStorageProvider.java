@@ -64,12 +64,6 @@ import java.util.Set;
  */
 public class MongoUserFederatedStorageProvider implements
         UserFederatedStorageProvider,
-        UserAttributeFederatedStorage,
-        UserBrokerLinkFederatedStorage,
-        UserConsentFederatedStorage,
-        UserGroupMembershipFederatedStorage,
-        UserRequiredActionsFederatedStorage,
-        UserRoleMappingsFederatedStorage,
         UserCredentialStore {
 
     private final MongoStoreInvocationContext invocationContext;
@@ -108,8 +102,8 @@ public class MongoUserFederatedStorageProvider implements
 
 
     @Override
-    public boolean removeStoredCredential(RealmModel realm, UserModel user, String id) {
-        FederatedUser userEntity = getUserById(user.getId());
+    public boolean removeStoredCredential(RealmModel realm, String userId, String id) {
+        FederatedUser userEntity = getUserById(userId);
         if (userEntity == null) return false;
         CredentialEntity ce = getCredentialEntity(id, userEntity);
         if (ce != null) return getMongoStore().pullItemFromList(userEntity, "credentials", ce, invocationContext);
@@ -153,7 +147,7 @@ public class MongoUserFederatedStorageProvider implements
     }
 
     @Override
-    public CredentialModel getStoredCredentialById(RealmModel realm, UserModel user, String id) {
+    public CredentialModel getStoredCredentialById(RealmModel realm, String userId, String id) {
         FederatedUser userEntity = getUserById(id);
         if (userEntity != null && userEntity.getCredentials() != null) {
             for (CredentialEntity credentialEntity : userEntity.getCredentials()) {
@@ -167,8 +161,8 @@ public class MongoUserFederatedStorageProvider implements
     }
 
     @Override
-    public List<CredentialModel> getStoredCredentials(RealmModel realm, UserModel user) {
-        FederatedUser userEntity = getUserById(user.getId());
+    public List<CredentialModel> getStoredCredentials(RealmModel realm, String userId) {
+        FederatedUser userEntity = getUserById(userId);
         if (userEntity != null && userEntity.getCredentials() != null) {
             List<CredentialModel> list = new LinkedList<>();
             for (CredentialEntity credentialEntity : userEntity.getCredentials()) {
@@ -180,8 +174,8 @@ public class MongoUserFederatedStorageProvider implements
     }
 
     @Override
-    public List<CredentialModel> getStoredCredentialsByType(RealmModel realm, UserModel user, String type) {
-        FederatedUser userEntity = getUserById(user.getId());
+    public List<CredentialModel> getStoredCredentialsByType(RealmModel realm, String userId, String type) {
+        FederatedUser userEntity = getUserById(userId);
         if (userEntity != null && userEntity.getCredentials() != null) {
             List<CredentialModel> list = new LinkedList<>();
             for (CredentialEntity credentialEntity : userEntity.getCredentials()) {
@@ -193,8 +187,8 @@ public class MongoUserFederatedStorageProvider implements
     }
 
     @Override
-    public CredentialModel getStoredCredentialByNameAndType(RealmModel realm, UserModel user, String name, String type) {
-        FederatedUser userEntity = getUserById(user.getId());
+    public CredentialModel getStoredCredentialByNameAndType(RealmModel realm, String userId, String name, String type) {
+        FederatedUser userEntity = getUserById(userId);
         if (userEntity != null && userEntity.getCredentials() != null) {
             for (CredentialEntity credentialEntity : userEntity.getCredentials()) {
                 if (credentialEntity.getDevice().equals(name) && type.equals(credentialEntity.getType())) {
@@ -285,8 +279,8 @@ public class MongoUserFederatedStorageProvider implements
     }
 
     @Override
-    public void setSingleAttribute(RealmModel realm, UserModel user, String name, String value) {
-        FederatedUser userEntity = findOrCreate(realm, user.getId());
+    public void setSingleAttribute(RealmModel realm, String userId, String name, String value) {
+        FederatedUser userEntity = findOrCreate(realm, userId);
         if (userEntity.getAttributes() == null) {
             userEntity.setAttributes(new HashMap<>());
         }
@@ -298,8 +292,8 @@ public class MongoUserFederatedStorageProvider implements
     }
 
     @Override
-    public void setAttribute(RealmModel realm, UserModel user, String name, List<String> values) {
-        FederatedUser userEntity = findOrCreate(realm, user.getId());
+    public void setAttribute(RealmModel realm, String userId, String name, List<String> values) {
+        FederatedUser userEntity = findOrCreate(realm, userId);
         if (userEntity.getAttributes() == null) {
             userEntity.setAttributes(new HashMap<>());
         }
@@ -310,8 +304,8 @@ public class MongoUserFederatedStorageProvider implements
     }
 
     @Override
-    public void removeAttribute(RealmModel realm, UserModel user, String name) {
-        FederatedUser userEntity = getUserById(user.getId());
+    public void removeAttribute(RealmModel realm, String userId, String name) {
+        FederatedUser userEntity = getUserById(userId);
         if (userEntity == null || userEntity.getAttributes() == null) return;
 
         userEntity.getAttributes().remove(name);
@@ -319,8 +313,8 @@ public class MongoUserFederatedStorageProvider implements
     }
 
     @Override
-    public MultivaluedHashMap<String, String> getAttributes(RealmModel realm, UserModel user) {
-        FederatedUser userEntity = getUserById(user.getId());
+    public MultivaluedHashMap<String, String> getAttributes(RealmModel realm, String userId) {
+        FederatedUser userEntity = getUserById(userId);
         if (userEntity == null || userEntity.getAttributes() == null) return new MultivaluedHashMap<>();
         MultivaluedHashMap<String, String> result = new MultivaluedHashMap<>();
         result.putAll(userEntity.getAttributes());
@@ -351,8 +345,8 @@ public class MongoUserFederatedStorageProvider implements
     }
 
     @Override
-    public void addFederatedIdentity(RealmModel realm, UserModel user, FederatedIdentityModel socialLink) {
-        FederatedUser userEntity = findOrCreate(realm, user.getId());
+    public void addFederatedIdentity(RealmModel realm, String userId, FederatedIdentityModel socialLink) {
+        FederatedUser userEntity = findOrCreate(realm, userId);
         FederatedIdentityEntity federatedIdentityEntity = new FederatedIdentityEntity();
         federatedIdentityEntity.setIdentityProvider(socialLink.getIdentityProvider());
         federatedIdentityEntity.setUserId(socialLink.getUserId());
@@ -363,8 +357,8 @@ public class MongoUserFederatedStorageProvider implements
     }
 
     @Override
-    public boolean removeFederatedIdentity(RealmModel realm, UserModel user, String socialProvider) {
-        FederatedUser userEntity = getUserById(user.getId());
+    public boolean removeFederatedIdentity(RealmModel realm, String userId, String socialProvider) {
+        FederatedUser userEntity = getUserById(userId);
         if (userEntity == null) return false;
 
         FederatedIdentityEntity federatedIdentityEntity = findFederatedIdentityLink(userEntity, socialProvider);
@@ -388,8 +382,8 @@ public class MongoUserFederatedStorageProvider implements
     }
 
     @Override
-    public void updateFederatedIdentity(RealmModel realm, UserModel federatedUser, FederatedIdentityModel federatedIdentityModel) {
-        FederatedUser userEntity = getUserById(federatedUser.getId());
+    public void updateFederatedIdentity(RealmModel realm, String userId, FederatedIdentityModel federatedIdentityModel) {
+        FederatedUser userEntity = getUserById(userId);
         if (userEntity == null) return;
         FederatedIdentityEntity federatedIdentityEntity = findFederatedIdentityLink(userEntity, federatedIdentityModel.getIdentityProvider());
         if (federatedIdentityEntity == null) return;
@@ -401,8 +395,8 @@ public class MongoUserFederatedStorageProvider implements
     }
 
     @Override
-    public Set<FederatedIdentityModel> getFederatedIdentities(UserModel user, RealmModel realm) {
-        FederatedUser userEntity = getUserById(user.getId());
+    public Set<FederatedIdentityModel> getFederatedIdentities(String userId, RealmModel realm) {
+        FederatedUser userEntity = getUserById(userId);
         if (userEntity == null) return Collections.EMPTY_SET;
         List<FederatedIdentityEntity> linkEntities = userEntity.getFederatedIdentities();
 
@@ -420,8 +414,8 @@ public class MongoUserFederatedStorageProvider implements
     }
 
     @Override
-    public FederatedIdentityModel getFederatedIdentity(UserModel user, String socialProvider, RealmModel realm) {
-        FederatedUser userEntity = getUserById(user.getId());
+    public FederatedIdentityModel getFederatedIdentity(String userId, String socialProvider, RealmModel realm) {
+        FederatedUser userEntity = getUserById(userId);
         if (userEntity == null) return null;
         FederatedIdentityEntity federatedIdentityEntity = findFederatedIdentityLink(userEntity, socialProvider);
 
@@ -430,35 +424,35 @@ public class MongoUserFederatedStorageProvider implements
     }
 
     @Override
-    public void addConsent(RealmModel realm, UserModel user, UserConsentModel consent) {
-        session.userLocalStorage().addConsent(realm, user, consent);
+    public void addConsent(RealmModel realm, String userId, UserConsentModel consent) {
+        session.userLocalStorage().addConsent(realm, userId, consent);
 
     }
 
     @Override
-    public UserConsentModel getConsentByClient(RealmModel realm, UserModel user, String clientInternalId) {
-        return session.userLocalStorage().getConsentByClient(realm, user, clientInternalId);
+    public UserConsentModel getConsentByClient(RealmModel realm, String userId, String clientInternalId) {
+        return session.userLocalStorage().getConsentByClient(realm, userId, clientInternalId);
     }
 
     @Override
-    public List<UserConsentModel> getConsents(RealmModel realm, UserModel user) {
-        return session.userLocalStorage().getConsents(realm, user);
+    public List<UserConsentModel> getConsents(RealmModel realm, String userId) {
+        return session.userLocalStorage().getConsents(realm, userId);
     }
 
     @Override
-    public void updateConsent(RealmModel realm, UserModel user, UserConsentModel consent) {
-        session.userLocalStorage().updateConsent(realm, user, consent);
+    public void updateConsent(RealmModel realm, String userId, UserConsentModel consent) {
+        session.userLocalStorage().updateConsent(realm, userId, consent);
 
     }
 
     @Override
-    public boolean revokeConsentForClient(RealmModel realm, UserModel user, String clientInternalId) {
-        return session.userLocalStorage().revokeConsentForClient(realm, user, clientInternalId);
+    public boolean revokeConsentForClient(RealmModel realm, String userId, String clientInternalId) {
+        return session.userLocalStorage().revokeConsentForClient(realm, userId, clientInternalId);
     }
 
     @Override
-    public void updateCredential(RealmModel realm, UserModel user, CredentialModel cred) {
-        FederatedUser userEntity = getUserById(user.getId());
+    public void updateCredential(RealmModel realm, String userId, CredentialModel cred) {
+        FederatedUser userEntity = getUserById(userId);
         if (userEntity == null) return;
         CredentialEntity entity = getCredentialEntity(cred.getId(), userEntity);
         if (entity == null) return;
@@ -489,8 +483,8 @@ public class MongoUserFederatedStorageProvider implements
     }
 
     @Override
-    public CredentialModel createCredential(RealmModel realm, UserModel user, CredentialModel cred) {
-        FederatedUser userEntity = findOrCreate(realm, user.getId());
+    public CredentialModel createCredential(RealmModel realm, String userId, CredentialModel cred) {
+        FederatedUser userEntity = findOrCreate(realm, userId);
         CredentialEntity entity = new CredentialEntity();
         entity.setId(KeycloakModelUtils.generateId());
         toEntity(cred, entity);
@@ -500,8 +494,8 @@ public class MongoUserFederatedStorageProvider implements
     }
 
     @Override
-    public Set<GroupModel> getGroups(RealmModel realm, UserModel user) {
-        FederatedUser userEntity = getUserById(user.getId());
+    public Set<GroupModel> getGroups(RealmModel realm, String userId) {
+        FederatedUser userEntity = getUserById(userId);
         if (userEntity == null || userEntity.getGroupIds() == null || userEntity.getGroupIds().isEmpty()) return Collections.EMPTY_SET;
         Set<GroupModel> groups = new HashSet<>();
         for (String groupId : userEntity.getGroupIds()) {
@@ -513,16 +507,16 @@ public class MongoUserFederatedStorageProvider implements
     }
 
     @Override
-    public void joinGroup(RealmModel realm, UserModel user, GroupModel group) {
-        FederatedUser userEntity = findOrCreate(realm, user.getId());
+    public void joinGroup(RealmModel realm, String userId, GroupModel group) {
+        FederatedUser userEntity = findOrCreate(realm, userId);
         getMongoStore().pushItemToList(userEntity, "groupIds", group.getId(), true, invocationContext);
 
 
     }
 
     @Override
-    public void leaveGroup(RealmModel realm, UserModel user, GroupModel group) {
-        FederatedUser userEntity = getUserById(user.getId());
+    public void leaveGroup(RealmModel realm, String userId, GroupModel group) {
+        FederatedUser userEntity = getUserById(userId);
         if (userEntity == null || group == null) return;
         getMongoStore().pullItemFromList(userEntity, "groupIds", group.getId(), invocationContext);
 
@@ -542,8 +536,8 @@ public class MongoUserFederatedStorageProvider implements
     }
 
     @Override
-    public Set<String> getRequiredActions(RealmModel realm, UserModel user) {
-        FederatedUser userEntity = getUserById(user.getId());
+    public Set<String> getRequiredActions(RealmModel realm, String userId) {
+        FederatedUser userEntity = getUserById(userId);
         if (userEntity == null || userEntity.getRequiredActions() == null || userEntity.getRequiredActions().isEmpty()) return Collections.EMPTY_SET;
         Set<String> set = new HashSet<>();
         set.addAll(userEntity.getRequiredActions());
@@ -551,30 +545,30 @@ public class MongoUserFederatedStorageProvider implements
     }
 
     @Override
-    public void addRequiredAction(RealmModel realm, UserModel user, String action) {
-        FederatedUser userEntity = findOrCreate(realm, user.getId());
+    public void addRequiredAction(RealmModel realm, String userId, String action) {
+        FederatedUser userEntity = findOrCreate(realm, userId);
         getMongoStore().pushItemToList(userEntity, "requiredActions", action, true, invocationContext);
 
     }
 
     @Override
-    public void removeRequiredAction(RealmModel realm, UserModel user, String action) {
-        FederatedUser userEntity = getUserById(user.getId());
+    public void removeRequiredAction(RealmModel realm, String userId, String action) {
+        FederatedUser userEntity = getUserById(userId);
         if (userEntity == null || userEntity.getRequiredActions() == null || userEntity.getRequiredActions().isEmpty()) return;
         getMongoStore().pullItemFromList(userEntity, "requiredActions", action, invocationContext);
 
     }
 
     @Override
-    public void grantRole(RealmModel realm, UserModel user, RoleModel role) {
-        FederatedUser userEntity = findOrCreate(realm, user.getId());
+    public void grantRole(RealmModel realm, String userId, RoleModel role) {
+        FederatedUser userEntity = findOrCreate(realm, userId);
         getMongoStore().pushItemToList(userEntity, "roleIds", role.getId(), true, invocationContext);
 
     }
 
     @Override
-    public Set<RoleModel> getRoleMappings(RealmModel realm, UserModel user) {
-        FederatedUser userEntity = getUserById(user.getId());
+    public Set<RoleModel> getRoleMappings(RealmModel realm, String userId) {
+        FederatedUser userEntity = getUserById(userId);
         if (userEntity == null || userEntity.getRoleIds() == null || userEntity.getRoleIds().isEmpty()) return Collections.EMPTY_SET;
         Set<RoleModel> roles = new HashSet<>();
         for (String roleId : userEntity.getRoleIds()) {
@@ -585,10 +579,53 @@ public class MongoUserFederatedStorageProvider implements
     }
 
     @Override
-    public void deleteRoleMapping(RealmModel realm, UserModel user, RoleModel role) {
-        FederatedUser userEntity = getUserById(user.getId());
+    public void deleteRoleMapping(RealmModel realm, String userId, RoleModel role) {
+        FederatedUser userEntity = getUserById(userId);
         if (userEntity == null || userEntity.getRoleIds() == null || userEntity.getRoleIds().isEmpty()) return;
         getMongoStore().pullItemFromList(userEntity, "roleIds", role.getId(), invocationContext);
 
+    }
+
+    @Override
+    public void updateCredential(RealmModel realm, UserModel user, CredentialModel cred) {
+        updateCredential(realm, user.getId(), cred);
+    }
+
+    @Override
+    public CredentialModel createCredential(RealmModel realm, UserModel user, CredentialModel cred) {
+        return createCredential(realm, user.getId(), cred);
+    }
+
+    @Override
+    public boolean removeStoredCredential(RealmModel realm, UserModel user, String id) {
+        return removeStoredCredential(realm, user.getId(), id);
+    }
+
+    @Override
+    public CredentialModel getStoredCredentialById(RealmModel realm, UserModel user, String id) {
+        return getStoredCredentialById(realm, user.getId(), id);
+    }
+
+    @Override
+    public List<CredentialModel> getStoredCredentials(RealmModel realm, UserModel user) {
+        return getStoredCredentials(realm, user.getId());
+    }
+
+    @Override
+    public List<CredentialModel> getStoredCredentialsByType(RealmModel realm, UserModel user, String type) {
+        return getStoredCredentialsByType(realm, user.getId(), type);
+    }
+
+    @Override
+    public CredentialModel getStoredCredentialByNameAndType(RealmModel realm, UserModel user, String name, String type) {
+        return getStoredCredentialByNameAndType(realm, user.getId(), name, type);
+    }
+
+    @Override
+    public int getStoredUsersCount(RealmModel realm) {
+        DBObject query = new QueryBuilder()
+                .and("realmId").is(realm.getId())
+                .get();
+        return getMongoStore().countEntities(FederatedUser.class, query, invocationContext);
     }
 }

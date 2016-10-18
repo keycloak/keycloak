@@ -75,6 +75,9 @@ public class StorageId implements Serializable {
     public static boolean isLocalStorage(UserModel user) {
         return new StorageId(user.getId()).getProviderId() == null;
     }
+    public static boolean isLocalStorage(String userId) {
+        return new StorageId(userId).getProviderId() == null;
+    }
 
     public String getId() {
         return id;

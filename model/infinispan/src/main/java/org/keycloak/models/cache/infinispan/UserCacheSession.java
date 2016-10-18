@@ -475,15 +475,15 @@ public class UserCacheSession implements UserCache {
     }
 
     @Override
-    public void updateConsent(RealmModel realm, UserModel user, UserConsentModel consent) {
-        invalidations.add(getConsentCacheKey(user.getId()));
-        getDelegate().updateConsent(realm, user, consent);
+    public void updateConsent(RealmModel realm, String userId, UserConsentModel consent) {
+        invalidations.add(getConsentCacheKey(userId));
+        getDelegate().updateConsent(realm, userId, consent);
     }
 
     @Override
-    public boolean revokeConsentForClient(RealmModel realm, UserModel user, String clientInternalId) {
-        invalidations.add(getConsentCacheKey(user.getId()));
-        return getDelegate().revokeConsentForClient(realm, user, clientInternalId);
+    public boolean revokeConsentForClient(RealmModel realm, String userId, String clientInternalId) {
+        invalidations.add(getConsentCacheKey(userId));
+        return getDelegate().revokeConsentForClient(realm, userId, clientInternalId);
     }
 
     public String getConsentCacheKey(String userId) {
@@ -492,25 +492,25 @@ public class UserCacheSession implements UserCache {
 
 
     @Override
-    public void addConsent(RealmModel realm, UserModel user, UserConsentModel consent) {
-        invalidations.add(getConsentCacheKey(user.getId()));
-        getDelegate().addConsent(realm, user, consent);
+    public void addConsent(RealmModel realm, String userId, UserConsentModel consent) {
+        invalidations.add(getConsentCacheKey(userId));
+        getDelegate().addConsent(realm, userId, consent);
     }
 
     @Override
-    public UserConsentModel getConsentByClient(RealmModel realm, UserModel user, String clientId) {
-        logger.tracev("getConsentByClient: {0}", user.getUsername());
+    public UserConsentModel getConsentByClient(RealmModel realm, String userId, String clientId) {
+        logger.tracev("getConsentByClient: {0}", userId);
 
-        String cacheKey = getConsentCacheKey(user.getId());
-        if (realmInvalidations.contains(realm.getId()) || invalidations.contains(user.getId()) || invalidations.contains(cacheKey)) {
-            return getDelegate().getConsentByClient(realm, user, clientId);
+        String cacheKey = getConsentCacheKey(userId);
+        if (realmInvalidations.contains(realm.getId()) || invalidations.contains(userId) || invalidations.contains(cacheKey)) {
+            return getDelegate().getConsentByClient(realm, userId, clientId);
         }
 
         CachedUserConsents cached = cache.get(cacheKey, CachedUserConsents.class);
 
         if (cached == null) {
             Long loaded = cache.getCurrentRevision(cacheKey);
-            List<UserConsentModel> consents = getDelegate().getConsents(realm, user);
+            List<UserConsentModel> consents = getDelegate().getConsents(realm, userId);
             cached = new CachedUserConsents(loaded, cacheKey, realm, consents);
             cache.addRevisioned(cached, startupRevision);
         }
@@ -520,19 +520,19 @@ public class UserCacheSession implements UserCache {
     }
 
     @Override
-    public List<UserConsentModel> getConsents(RealmModel realm, UserModel user) {
-        logger.tracev("getConsents: {0}", user.getUsername());
+    public List<UserConsentModel> getConsents(RealmModel realm, String userId) {
+        logger.tracev("getConsents: {0}", userId);
 
-        String cacheKey = getConsentCacheKey(user.getId());
-        if (realmInvalidations.contains(realm.getId()) || invalidations.contains(user.getId()) || invalidations.contains(cacheKey)) {
-            return getDelegate().getConsents(realm, user);
+        String cacheKey = getConsentCacheKey(userId);
+        if (realmInvalidations.contains(realm.getId()) || invalidations.contains(userId) || invalidations.contains(cacheKey)) {
+            return getDelegate().getConsents(realm, userId);
         }
 
         CachedUserConsents cached = cache.get(cacheKey, CachedUserConsents.class);
 
         if (cached == null) {
             Long loaded = cache.getCurrentRevision(cacheKey);
-            List<UserConsentModel> consents = getDelegate().getConsents(realm, user);
+            List<UserConsentModel> consents = getDelegate().getConsents(realm, userId);
             cached = new CachedUserConsents(loaded, cacheKey, realm, consents);
             cache.addRevisioned(cached, startupRevision);
             return consents;

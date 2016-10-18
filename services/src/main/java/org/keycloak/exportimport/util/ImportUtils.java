@@ -215,11 +215,62 @@ public class ImportUtils {
         }
     }
 
+    // Assuming that it's invoked inside transaction
+    public static void importFederatedUsersFromStream(KeycloakSession session, String realmName, ObjectMapper mapper, InputStream is) throws IOException {
+        RealmProvider model = session.realms();
+        JsonFactory factory = mapper.getJsonFactory();
+        JsonParser parser = factory.createJsonParser(is);
+        try {
+            parser.nextToken();
+
+            while (parser.nextToken() == JsonToken.FIELD_NAME) {
+                if ("realm".equals(parser.getText())) {
+                    parser.nextToken();
+                    String currRealmName = parser.getText();
+                    if (!currRealmName.equals(realmName)) {
+                        throw new IllegalStateException("Trying to import users into invalid realm. Realm name: " + realmName + ", Expected realm name: " + currRealmName);
+                    }
+                } else if ("federatedUsers".equals(parser.getText())) {
+                    parser.nextToken();
+
+                    if (parser.getCurrentToken() == JsonToken.START_ARRAY) {
+                        parser.nextToken();
+                    }
+
+                    // TODO: support for more transactions per single users file (if needed)
+                    List<UserRepresentation> userReps = new ArrayList<UserRepresentation>();
+                    while (parser.getCurrentToken() == JsonToken.START_OBJECT) {
+                        UserRepresentation user = parser.readValueAs(UserRepresentation.class);
+                        userReps.add(user);
+                        parser.nextToken();
+                    }
+
+                    importFederatedUsers(session, model, realmName, userReps);
+
+                    if (parser.getCurrentToken() == JsonToken.END_ARRAY) {
+                        parser.nextToken();
+                    }
+                }
+            }
+        } finally {
+            parser.close();
+        }
+    }
+
     private static void importUsers(KeycloakSession session, RealmProvider model, String realmName, List<UserRepresentation> userReps) {
         RealmModel realm = model.getRealmByName(realmName);
         for (UserRepresentation user : userReps) {
             RepresentationToModel.createUser(session, realm, user);
         }
     }
+
+
+    private static void importFederatedUsers(KeycloakSession session, RealmProvider model, String realmName, List<UserRepresentation> userReps) {
+        RealmModel realm = model.getRealmByName(realmName);
+        for (UserRepresentation user : userReps) {
+            RepresentationToModel.importFederatedUser(session, realm, user);
+        }
+    }
+
 
 }

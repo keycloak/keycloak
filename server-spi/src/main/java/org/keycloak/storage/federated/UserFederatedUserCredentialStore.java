@@ -16,9 +16,10 @@
  */
 package org.keycloak.storage.federated;
 
+import org.keycloak.credential.CredentialModel;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.provider.Provider;
 
 import java.util.List;
 
@@ -26,10 +27,12 @@ import java.util.List;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public interface UserConsentFederatedStorage {
-    void addConsent(RealmModel realm, String userId, UserConsentModel consent);
-    UserConsentModel getConsentByClient(RealmModel realm, String userId, String clientInternalId);
-    List<UserConsentModel> getConsents(RealmModel realm, String userId);
-    void updateConsent(RealmModel realm, String userId, UserConsentModel consent);
-    boolean revokeConsentForClient(RealmModel realm, String userId, String clientInternalId);
+public interface UserFederatedUserCredentialStore extends Provider {
+    void updateCredential(RealmModel realm, String userId, CredentialModel cred);
+    CredentialModel createCredential(RealmModel realm, String userId, CredentialModel cred);
+    boolean removeStoredCredential(RealmModel realm, String userId, String id);
+    CredentialModel getStoredCredentialById(RealmModel realm, String userId, String id);
+    List<CredentialModel> getStoredCredentials(RealmModel realm, String userId);
+    List<CredentialModel> getStoredCredentialsByType(RealmModel realm, String userId, String type);
+    CredentialModel getStoredCredentialByNameAndType(RealmModel realm, String userId, String name, String type);
 }
