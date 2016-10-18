@@ -172,7 +172,8 @@ public abstract class AbstractUserAdapter implements UserModel {
     @Override
     public boolean hasRole(RoleModel role) {
         Set<RoleModel> roles = getRoleMappings();
-        return KeycloakModelUtils.hasRole(roles, role);
+        return KeycloakModelUtils.hasRole(roles, role)
+          || KeycloakModelUtils.hasRoleFromGroup(getGroups(), role, true);
     }
 
     @Override

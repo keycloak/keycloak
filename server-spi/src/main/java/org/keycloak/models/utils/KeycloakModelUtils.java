@@ -70,6 +70,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.StreamSupport;
 
 /**
  * Set of helper methods, which are useful in various model implementations.
@@ -264,6 +265,43 @@ public final class KeycloakModelUtils {
             if (mapping.hasRole(targetRole)) return true;
         }
         return false;
+    }
+
+    /**
+     * Checks whether the {@code targetRole} is contained in the given group or its parents
+     * (if requested)
+     * @param group Group to check role for
+     * @param targetRole
+     * @param checkParentGroup When {@code true}, also parent group is recursively checked for role
+     * @return true if targetRole is in roles (directly or indirectly via composite role)
+     */
+    public static boolean hasRoleFromGroup(GroupModel group, RoleModel targetRole, boolean checkParentGroup) {
+        if (group.hasRole(targetRole))
+            return true;
+
+        if (checkParentGroup) {
+            GroupModel parent = group.getParent();
+            return parent != null && hasRoleFromGroup(parent, targetRole, true);
+        }
+
+        return false;
+    }
+
+    /**
+     * Checks whether the {@code targetRole} is contained in any of the {@code groups} or their parents
+     * (if requested)
+     * @param groups
+     * @param targetRole
+     * @param checkParentGroup When {@code true}, also parent group is recursively checked for role
+     * @return true if targetRole is in roles (directly or indirectly via composite role)
+     */
+    public static boolean hasRoleFromGroup(Iterable<GroupModel> groups, RoleModel targetRole, boolean checkParentGroup) {
+        if (groups == null) {
+            return false;
+        }
+
+        return StreamSupport.stream(groups.spliterator(), false)
+          .anyMatch(group -> hasRoleFromGroup(group, targetRole, checkParentGroup));
     }
 
     /**
