@@ -70,30 +70,30 @@ public abstract class AbstractUserAdapterFederatedStorage implements UserModel {
 
     @Override
     public Set<String> getRequiredActions() {
-        return getFederatedStorage().getRequiredActions(realm, this);
+        return getFederatedStorage().getRequiredActions(realm, this.getId());
     }
 
     @Override
     public void addRequiredAction(String action) {
-        getFederatedStorage().addRequiredAction(realm, this, action);
+        getFederatedStorage().addRequiredAction(realm, this.getId(), action);
 
     }
 
     @Override
     public void removeRequiredAction(String action) {
-        getFederatedStorage().removeRequiredAction(realm, this, action);
+        getFederatedStorage().removeRequiredAction(realm, this.getId(), action);
 
     }
 
     @Override
     public void addRequiredAction(RequiredAction action) {
-        getFederatedStorage().addRequiredAction(realm, this, action.name());
+        getFederatedStorage().addRequiredAction(realm, this.getId(), action.name());
 
     }
 
     @Override
     public void removeRequiredAction(RequiredAction action) {
-        getFederatedStorage().removeRequiredAction(realm, this, action.name());
+        getFederatedStorage().removeRequiredAction(realm, this.getId(), action.name());
     }
 
     /**
@@ -119,7 +119,7 @@ public abstract class AbstractUserAdapterFederatedStorage implements UserModel {
     @Override
     public Set<GroupModel> getGroups() {
         Set<GroupModel> set = new HashSet<>();
-        set.addAll(getFederatedStorage().getGroups(realm, this));
+        set.addAll(getFederatedStorage().getGroups(realm, this.getId()));
         if (appendDefaultGroups()) set.addAll(realm.getDefaultGroups());
         set.addAll(getGroupsInternal());
         return set;
@@ -127,13 +127,13 @@ public abstract class AbstractUserAdapterFederatedStorage implements UserModel {
 
     @Override
     public void joinGroup(GroupModel group) {
-        getFederatedStorage().joinGroup(realm, this, group);
+        getFederatedStorage().joinGroup(realm, this.getId(), group);
 
     }
 
     @Override
     public void leaveGroup(GroupModel group) {
-        getFederatedStorage().leaveGroup(realm, this, group);
+        getFederatedStorage().leaveGroup(realm, this.getId(), group);
 
     }
 
@@ -183,7 +183,7 @@ public abstract class AbstractUserAdapterFederatedStorage implements UserModel {
 
     @Override
     public void grantRole(RoleModel role) {
-        getFederatedStorage().grantRole(realm, this, role);
+        getFederatedStorage().grantRole(realm, this.getId(), role);
 
     }
 
@@ -212,12 +212,12 @@ public abstract class AbstractUserAdapterFederatedStorage implements UserModel {
     }
 
     protected Set<RoleModel> getFederatedRoleMappings() {
-        return getFederatedStorage().getRoleMappings(realm, this);
+        return getFederatedStorage().getRoleMappings(realm, this.getId());
     }
 
     @Override
     public void deleteRoleMapping(RoleModel role) {
-        getFederatedStorage().deleteRoleMapping(realm, this, role);
+        getFederatedStorage().deleteRoleMapping(realm, this.getId(), role);
 
     }
 
@@ -307,35 +307,35 @@ public abstract class AbstractUserAdapterFederatedStorage implements UserModel {
 
     @Override
     public void setSingleAttribute(String name, String value) {
-        getFederatedStorage().setSingleAttribute(realm, this, name, value);
+        getFederatedStorage().setSingleAttribute(realm, this.getId(), name, value);
 
     }
 
     @Override
     public void removeAttribute(String name) {
-        getFederatedStorage().removeAttribute(realm, this, name);
+        getFederatedStorage().removeAttribute(realm, this.getId(), name);
 
     }
 
     @Override
     public void setAttribute(String name, List<String> values) {
-        getFederatedStorage().setAttribute(realm, this, name, values);
+        getFederatedStorage().setAttribute(realm, this.getId(), name, values);
 
     }
 
     @Override
     public String getFirstAttribute(String name) {
-        return getFederatedStorage().getAttributes(realm, this).getFirst(name);
+        return getFederatedStorage().getAttributes(realm, this.getId()).getFirst(name);
     }
 
     @Override
     public Map<String, List<String>> getAttributes() {
-        return getFederatedStorage().getAttributes(realm, this);
+        return getFederatedStorage().getAttributes(realm, this.getId());
     }
 
     @Override
     public List<String> getAttribute(String name) {
-        return getFederatedStorage().getAttributes(realm, this).get(name);
+        return getFederatedStorage().getAttributes(realm, this.getId()).get(name);
     }
 
     @Override

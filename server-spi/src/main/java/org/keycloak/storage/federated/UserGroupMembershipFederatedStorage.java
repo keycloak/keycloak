@@ -28,9 +28,9 @@ import java.util.Set;
  * @version $Revision: 1 $
  */
 public interface UserGroupMembershipFederatedStorage {
-    Set<GroupModel> getGroups(RealmModel realm, UserModel user);
-    void joinGroup(RealmModel realm,UserModel user, GroupModel group);
-    void leaveGroup(RealmModel realm,UserModel user, GroupModel group);
+    Set<GroupModel> getGroups(RealmModel realm, String userId);
+    void joinGroup(RealmModel realm, String userId, GroupModel group);
+    void leaveGroup(RealmModel realm, String userId, GroupModel group);
     List<String> getMembership(RealmModel realm, GroupModel group, int firstResult, int max);
 
 }

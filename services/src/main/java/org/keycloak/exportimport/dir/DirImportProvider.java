@@ -115,6 +115,13 @@ public class DirImportProvider implements ImportProvider {
                 return name.matches(realmName + "-users-[0-9]+\\.json");
             }
         });
+        File[] federatedUserFiles = this.rootDirectory.listFiles(new FilenameFilter() {
+
+            @Override
+            public boolean accept(File dir, String name) {
+                return name.matches(realmName + "-federated-users-[0-9]+\\.json");
+            }
+        });
 
         // Import realm first
         FileInputStream is = new FileInputStream(realmFile);
@@ -140,6 +147,16 @@ public class DirImportProvider implements ImportProvider {
                     protected void runExportImportTask(KeycloakSession session) throws IOException {
                         ImportUtils.importUsersFromStream(session, realmName, JsonSerialization.mapper, fis);
                         logger.infof("Imported users from %s", userFile.getAbsolutePath());
+                    }
+                });
+            }
+            for (final File userFile : federatedUserFiles) {
+                final FileInputStream fis = new FileInputStream(userFile);
+                KeycloakModelUtils.runJobInTransaction(factory, new ExportImportSessionTask() {
+                    @Override
+                    protected void runExportImportTask(KeycloakSession session) throws IOException {
+                        ImportUtils.importFederatedUsersFromStream(session, realmName, JsonSerialization.mapper, fis);
+                        logger.infof("Imported federated users from %s", userFile.getAbsolutePath());
                     }
                 });
             }

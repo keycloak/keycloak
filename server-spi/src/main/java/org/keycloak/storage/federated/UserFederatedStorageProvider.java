@@ -39,9 +39,11 @@ public interface UserFederatedStorageProvider extends Provider,
         UserConsentFederatedStorage,
         UserGroupMembershipFederatedStorage,
         UserRequiredActionsFederatedStorage,
-        UserRoleMappingsFederatedStorage {
+        UserRoleMappingsFederatedStorage,
+        UserFederatedUserCredentialStore {
 
     List<String> getStoredUsers(RealmModel realm, int first, int max);
+    int getStoredUsersCount(RealmModel realm);
 
     void preRemove(RealmModel realm);
 

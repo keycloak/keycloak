@@ -519,16 +519,16 @@ public class MongoUserProvider implements UserProvider, UserCredentialStore {
     }
 
     @Override
-    public void addConsent(RealmModel realm, UserModel user, UserConsentModel consent) {
+    public void addConsent(RealmModel realm, String userId, UserConsentModel consent) {
         String clientId = consent.getClient().getId();
-        if (getConsentEntityByClientId(user, clientId) != null) {
-            throw new ModelDuplicateException("Consent already exists for client [" + clientId + "] and user [" + user.getId() + "]");
+        if (getConsentEntityByClientId(userId, clientId) != null) {
+            throw new ModelDuplicateException("Consent already exists for client [" + clientId + "] and user [" + userId + "]");
         }
 
         long currentTime = Time.currentTimeMillis();
 
         MongoUserConsentEntity consentEntity = new MongoUserConsentEntity();
-        consentEntity.setUserId(user.getId());
+        consentEntity.setUserId(userId);
         consentEntity.setClientId(clientId);
         consentEntity.setCreatedDate(currentTime);
         consentEntity.setLastUpdatedDate(currentTime);
@@ -537,17 +537,17 @@ public class MongoUserProvider implements UserProvider, UserCredentialStore {
     }
 
     @Override
-    public UserConsentModel getConsentByClient(RealmModel realm, UserModel user, String clientId) {
-        UserConsentEntity consentEntity = getConsentEntityByClientId(user, clientId);
+    public UserConsentModel getConsentByClient(RealmModel realm, String userId, String clientId) {
+        UserConsentEntity consentEntity = getConsentEntityByClientId(userId, clientId);
         return consentEntity!=null ? toConsentModel(realm, consentEntity) : null;
     }
 
     @Override
-    public List<UserConsentModel> getConsents(RealmModel realm, UserModel user) {
+    public List<UserConsentModel> getConsents(RealmModel realm, String userId) {
         List<UserConsentModel> result = new ArrayList<UserConsentModel>();
 
         DBObject query = new QueryBuilder()
-                .and("userId").is(user.getId())
+                .and("userId").is(userId)
                 .get();
         List<MongoUserConsentEntity> grantedConsents = getMongoStore().loadEntities(MongoUserConsentEntity.class, query, invocationContext);
 
@@ -559,9 +559,9 @@ public class MongoUserProvider implements UserProvider, UserCredentialStore {
         return result;
     }
 
-    private MongoUserConsentEntity getConsentEntityByClientId(UserModel user, String clientId) {
+    private MongoUserConsentEntity getConsentEntityByClientId(String userId, String clientId) {
         DBObject query = new QueryBuilder()
-                .and("userId").is(user.getId())
+                .and("userId").is(userId)
                 .and("clientId").is(clientId)
                 .get();
         return getMongoStore().loadSingleEntity(MongoUserConsentEntity.class, query, invocationContext);
@@ -607,11 +607,11 @@ public class MongoUserProvider implements UserProvider, UserCredentialStore {
     }
 
     @Override
-    public void updateConsent(RealmModel realm, UserModel user, UserConsentModel consent) {
+    public void updateConsent(RealmModel realm, String userId, UserConsentModel consent) {
         String clientId = consent.getClient().getId();
-        MongoUserConsentEntity consentEntity = getConsentEntityByClientId(user, clientId);
+        MongoUserConsentEntity consentEntity = getConsentEntityByClientId(userId, clientId);
         if (consentEntity == null) {
-            throw new ModelException("Consent not found for client [" + clientId + "] and user [" + user.getId() + "]");
+            throw new ModelException("Consent not found for client [" + clientId + "] and user [" + userId + "]");
         } else {
             fillEntityFromModel(consent, consentEntity);
             getMongoStore().updateEntity(consentEntity, invocationContext);
@@ -619,8 +619,8 @@ public class MongoUserProvider implements UserProvider, UserCredentialStore {
     }
 
     @Override
-    public boolean revokeConsentForClient(RealmModel realm, UserModel user, String clientId) {
-        MongoUserConsentEntity entity = getConsentEntityByClientId(user, clientId);
+    public boolean revokeConsentForClient(RealmModel realm, String userId, String clientId) {
+        MongoUserConsentEntity entity = getConsentEntityByClientId(userId, clientId);
         if (entity == null) {
             return false;
         }
