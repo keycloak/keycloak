@@ -16,6 +16,7 @@
  */
 package org.keycloak.services.resources;
 
+import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.BadRequestException;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.UnauthorizedException;
@@ -33,7 +34,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
 import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.services.ForbiddenException;
-import org.keycloak.services.ServicesLogger;
 
 import javax.ws.rs.HeaderParam;
 import javax.ws.rs.POST;
@@ -53,7 +53,7 @@ import javax.ws.rs.ext.Providers;
  */
 public class ClientsManagementService {
 
-    protected static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    private static final Logger logger = Logger.getLogger(ClientsManagementService.class);
 
     private RealmModel realm;
 

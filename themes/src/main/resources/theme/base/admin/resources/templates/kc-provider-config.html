@@ -12,7 +12,7 @@
             <input ng-model="config[ option.name ]" value="'true'" name="option.name" id="option.name" onoffswitchstring on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
         </div>
         <div class="col-md-6" data-ng-show="option.type == 'List'">
-            <select ng-model="config[ option.name ]" ng-options="data for data in option.defaultValue">
+            <select ng-model="config[ option.name ]" ng-options="data for data in option.options">
                 <option value="" selected> {{:: 'selectOne' | translate}} </option>
             </select>
         </div>

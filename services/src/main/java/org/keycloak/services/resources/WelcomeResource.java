@@ -16,6 +16,7 @@
  */
 package org.keycloak.services.resources;
 
+import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.util.MimeTypeUtil;
@@ -63,7 +64,7 @@ import java.util.Map;
 @Path("/")
 public class WelcomeResource {
 
-    private static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    protected static final Logger logger = Logger.getLogger(WelcomeResource.class);
 
     private static final String KEYCLOAK_STATE_CHECKER = "KEYCLOAK_STATE_CHECKER";
 
@@ -110,7 +111,7 @@ public class WelcomeResource {
             return createWelcomePage(null, null);
         } else {
             if (!isLocal()) {
-                logger.rejectedNonLocalAttemptToCreateInitialUser(session.getContext().getConnection().getRemoteAddr());
+                ServicesLogger.LOGGER.rejectedNonLocalAttemptToCreateInitialUser(session.getContext().getConnection().getRemoteAddr());
                 throw new WebApplicationException(Response.Status.BAD_REQUEST);
             }
 
@@ -139,10 +140,10 @@ public class WelcomeResource {
                 bootstrap = false;
                 applianceBootstrap.createMasterRealmUser(username, password);
 
-                logger.createdInitialAdminUser(username);
+                ServicesLogger.LOGGER.createdInitialAdminUser(username);
                 return createWelcomePage("User created", null);
             } else {
-                logger.initialUserAlreadyCreated();
+                ServicesLogger.LOGGER.initialUserAlreadyCreated();
                 return createWelcomePage(null, "Users already exists");
             }
         }

@@ -195,25 +195,6 @@ public class SharedAttributeDefinitons {
         ATTRIBUTES.add(PRINCIPAL_ATTRIBUTE);
     }
 
-    /**
-     * truststore and truststore-password must be set if ssl-required is not none and disable-trust-manager is false.
-     *
-     * @param attributes The full set of attributes.
-     *
-     * @return <code>true</code> if the attributes are valid, <code>false</code> otherwise.
-     */
-    public static boolean validateTruststoreSetIfRequired(ModelNode attributes) {
-        if (isSet(attributes, DISABLE_TRUST_MANAGER)) {
-            return true;
-        }
-
-        if (isSet(attributes, SSL_REQUIRED) && attributes.get(SSL_REQUIRED.getName()).asString().equals("none")) {
-            return true;
-        }
-
-        return isSet(attributes, TRUSTSTORE) && isSet(attributes, TRUSTSTORE_PASSWORD);
-    }
-
     private static boolean isSet(ModelNode attributes, SimpleAttributeDefinition def) {
         ModelNode attribute = attributes.get(def.getName());
 

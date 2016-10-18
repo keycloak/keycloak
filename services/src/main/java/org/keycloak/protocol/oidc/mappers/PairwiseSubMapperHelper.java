@@ -3,10 +3,8 @@ package org.keycloak.protocol.oidc.mappers;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
-import org.keycloak.services.ServicesLogger;
 
 public class PairwiseSubMapperHelper {
-    private static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
 
     public static final String SECTOR_IDENTIFIER_URI = "sectorIdentifierUri";
     public static final String SECTOR_IDENTIFIER_URI_LABEL = "sectorIdentifierUri.label";

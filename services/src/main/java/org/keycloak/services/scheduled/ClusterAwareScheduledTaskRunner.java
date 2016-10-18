@@ -17,6 +17,7 @@
 
 package org.keycloak.services.scheduled;
 
+import org.jboss.logging.Logger;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.cluster.ExecutionResult;
 import org.keycloak.models.KeycloakSession;
@@ -31,6 +32,8 @@ import java.util.concurrent.Callable;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class ClusterAwareScheduledTaskRunner extends ScheduledTaskRunner {
+
+    private static final Logger logger = Logger.getLogger(ClusterAwareScheduledTaskRunner.class);
 
     private final int intervalSecs;
 

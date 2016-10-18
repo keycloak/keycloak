@@ -64,7 +64,8 @@ public class AuthServerTestEnricher {
     private static final String AUTH_SERVER_CLUSTER_PROPERTY = "auth.server.cluster";
     public static final boolean AUTH_SERVER_CLUSTER = Boolean.parseBoolean(System.getProperty(AUTH_SERVER_CLUSTER_PROPERTY, "false"));
 
-    private static final Boolean AUTO_MIGRATION_ENABLED = "auto".equals(System.getProperty("migration.mode"));
+    private static final Boolean START_MIGRATION_CONTAINER = "auto".equals(System.getProperty("migration.mode")) || 
+            "manual".equals(System.getProperty("migration.mode"));
 
     @Inject
     @SuiteScoped
@@ -130,7 +131,7 @@ public class AuthServerTestEnricher {
             throw new RuntimeException(String.format("No auth server container matching '%sN' found in arquillian.xml.", authServerBackend));
         }
 
-        if (AUTO_MIGRATION_ENABLED) {
+        if (START_MIGRATION_CONTAINER) {
             // init migratedAuthServerInfo
             for (ContainerInfo container : suiteContext.getContainers()) {
                 // migrated auth server

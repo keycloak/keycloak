@@ -156,7 +156,7 @@ public class ConditionalOtpFormAuthenticatorFactory implements AuthenticatorFact
         defaultOutcome.setType(LIST_TYPE);
         defaultOutcome.setName(DEFAULT_OTP_OUTCOME);
         defaultOutcome.setLabel("Fallback OTP handling");
-        defaultOutcome.setDefaultValue(asList(SKIP, FORCE));
+        defaultOutcome.setOptions(asList(SKIP, FORCE));
         defaultOutcome.setHelpText("What to do in case of every check abstains. Defaults to force OTP authentication.");
 
         return asList(forceOtpUserAttribute, skipOtpRole, forceOtpRole, skipOtpForHttpHeader, forceOtpForHttpHeader, defaultOutcome);

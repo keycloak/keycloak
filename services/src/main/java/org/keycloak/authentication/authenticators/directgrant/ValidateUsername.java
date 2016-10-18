@@ -43,7 +43,6 @@ import java.util.List;
  */
 public class ValidateUsername extends AbstractDirectGrantAuthenticator {
 
-    private static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
     public static final String PROVIDER_ID = "direct-grant-validate-username";
 
     @Override
@@ -63,7 +62,7 @@ public class ValidateUsername extends AbstractDirectGrantAuthenticator {
         try {
             user = KeycloakModelUtils.findUserByNameOrEmail(context.getSession(), context.getRealm(), username);
         } catch (ModelDuplicateException mde) {
-            logger.modelDuplicateException(mde);
+            ServicesLogger.LOGGER.modelDuplicateException(mde);
             Response challengeResponse = errorResponse(Response.Status.UNAUTHORIZED.getStatusCode(), "invalid_request", "Invalid user credentials");
             context.failure(AuthenticationFlowError.INVALID_USER, challengeResponse);
             return;

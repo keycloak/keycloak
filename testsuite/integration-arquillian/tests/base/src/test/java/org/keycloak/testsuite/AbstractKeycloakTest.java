@@ -278,6 +278,14 @@ public abstract class AbstractKeycloakTest {
         }
     }
 
+    /**
+     * Creates a user in the given realm and returns its ID.
+     * @param realm Realm name
+     * @param username Username
+     * @param password Password
+     * @param requiredActions
+     * @return ID of the newly created user
+     */
     public String createUser(String realm, String username, String password, String ... requiredActions) {
         List<String> requiredUserActions = Arrays.asList(requiredActions);
 

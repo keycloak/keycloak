@@ -1,9 +1,9 @@
 package org.keycloak.protocol.oidc.utils;
 
+import org.jboss.logging.Logger;
 import org.keycloak.protocol.oidc.mappers.AbstractPairwiseSubMapper;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
-import org.keycloak.services.ServicesLogger;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -16,7 +16,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 public class PairwiseSubMapperUtils {
-    private static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    private static final Logger logger = Logger.getLogger(PairwiseSubMapperUtils.class);
 
     /**
      * Returns a set of valid redirect URIs from the root url and redirect URIs registered on a client.

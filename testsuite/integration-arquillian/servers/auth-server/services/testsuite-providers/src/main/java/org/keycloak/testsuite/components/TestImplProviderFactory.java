@@ -36,12 +36,12 @@ import static org.keycloak.provider.ProviderConfigProperty.STRING_TYPE;
 public class TestImplProviderFactory implements TestProviderFactory {
 
     private List<ProviderConfigProperty> config = ProviderConfigurationBuilder.create()
-            .property("secret", "Secret", "A secret value", STRING_TYPE, null, true)
-            .property("number", "Number", "A number value", STRING_TYPE, null, false)
-            .property("required", "Required", "A required value", STRING_TYPE, null, false)
-            .property("val1", "Value 1", "Some more values", STRING_TYPE, null, false)
-            .property("val2", "Value 2", "Some more values", STRING_TYPE, null, false)
-            .property("val3", "Value 3", "Some more values", STRING_TYPE, null, false)
+            .property("secret", "Secret", "A secret value", STRING_TYPE, null, null, true)
+            .property("number", "Number", "A number value", STRING_TYPE, null, null, false)
+            .property("required", "Required", "A required value", STRING_TYPE, null, null, false)
+            .property("val1", "Value 1", "Some more values", STRING_TYPE, null, null, false)
+            .property("val2", "Value 2", "Some more values", STRING_TYPE, null, null, false)
+            .property("val3", "Value 3", "Some more values", STRING_TYPE, null, null, false)
             .build();
 
     @Override

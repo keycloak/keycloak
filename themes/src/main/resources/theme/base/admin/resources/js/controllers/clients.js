@@ -731,9 +731,21 @@ module.controller('ClientImportCtrl', function($scope, $location, $upload, realm
 });
 
 
-module.controller('ClientListCtrl', function($scope, realm, clients, Client, serverInfo, $route, Dialog, Notifications) {
+module.controller('ClientListCtrl', function($scope, realm, clients, Client, serverInfo, $route, Dialog, Notifications, filterFilter) {
     $scope.realm = realm;
     $scope.clients = clients;
+    $scope.currentPage = 1;
+    $scope.currentPageInput = 1;
+    $scope.pageSize = 20;
+    $scope.numberOfPages = Math.ceil($scope.clients.length/$scope.pageSize);
+
+    $scope.$watch('search', function (newVal, oldVal) {
+        $scope.filtered = filterFilter($scope.clients, newVal);
+        $scope.totalItems = $scope.filtered.length;
+        $scope.numberOfPages = Math.ceil($scope.totalItems/$scope.pageSize);
+        $scope.currentPage = 1;
+        $scope.currentPageInput = 1;
+  }, true);
 
     $scope.removeClient = function(client) {
         Dialog.confirmDelete(client.clientId, 'client', function() {
@@ -1693,8 +1705,10 @@ module.controller('ClientProtocolMapperListCtrl', function($scope, realm, client
     updateMappers();
 });
 
-module.controller('ClientProtocolMapperCtrl', function($scope, realm, serverInfo, client, mapper, ClientProtocolMapper, Notifications, Dialog, $location) {
+module.controller('ClientProtocolMapperCtrl', function($scope, realm, serverInfo, client, clients, mapper, ClientProtocolMapper, Notifications, Dialog, $location) {
     $scope.realm = realm;
+    $scope.clients = clients;
+
     /*
     $scope.client = client;
     $scope.create = false;
@@ -1774,8 +1788,9 @@ module.controller('ClientProtocolMapperCtrl', function($scope, realm, serverInfo
 
 });
 
-module.controller('ClientProtocolMapperCreateCtrl', function($scope, realm, serverInfo, client, ClientProtocolMapper, Notifications, Dialog, $location) {
+module.controller('ClientProtocolMapperCreateCtrl', function($scope, realm, serverInfo, client, clients, ClientProtocolMapper, Notifications, Dialog, $location) {
     $scope.realm = realm;
+    $scope.clients = clients;
 
     if (client.protocol == null) {
         client.protocol = 'openid-connect';
@@ -1818,6 +1833,8 @@ module.controller('ClientProtocolMapperCreateCtrl', function($scope, realm, serv
         }, function(error) {
             if (error.status == 400 && error.data.error_description) {
                 Notifications.error(error.data.error_description);
+            } else if (error.status == 409 && error.data.errorMessage) {
+                Notifications.error(error.data.errorMessage);
             } else {
                 Notifications.error('Unexpected error when updating protocol mapper');
             }
@@ -1987,8 +2004,10 @@ module.controller('ClientTemplateProtocolMapperListCtrl', function($scope, realm
     updateMappers();
 });
 
-module.controller('ClientTemplateProtocolMapperCtrl', function($scope, realm, serverInfo, template, mapper, ClientTemplateProtocolMapper, Notifications, Dialog, $location) {
+module.controller('ClientTemplateProtocolMapperCtrl', function($scope, realm, serverInfo, template, mapper, clients, ClientTemplateProtocolMapper, Notifications, Dialog, $location) {
     $scope.realm = realm;
+    $scope.clients = clients;
+
     if (template.protocol == null) {
         template.protocol = 'openid-connect';
     }
@@ -2054,8 +2073,10 @@ module.controller('ClientTemplateProtocolMapperCtrl', function($scope, realm, se
 
 });
 
-module.controller('ClientTemplateProtocolMapperCreateCtrl', function($scope, realm, serverInfo, template, ClientTemplateProtocolMapper, Notifications, Dialog, $location) {
+module.controller('ClientTemplateProtocolMapperCreateCtrl', function($scope, realm, serverInfo, template, clients, ClientTemplateProtocolMapper, Notifications, Dialog, $location) {
     $scope.realm = realm;
+    $scope.clients = clients;
+
     if (template.protocol == null) {
         template.protocol = 'openid-connect';
     }

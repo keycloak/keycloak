@@ -710,6 +710,8 @@ public class ModelToRepresentation {
         consentRep.setGrantedProtocolMappers(grantedProtocolMappers);
         consentRep.setGrantedRealmRoles(grantedRealmRoles);
         consentRep.setGrantedClientRoles(grantedClientRoles);
+        consentRep.setCreatedDate(model.getCreatedDate());
+        consentRep.setLastUpdatedDate(model.getLastUpdatedDate());
         return consentRep;
     }
 
@@ -780,6 +782,7 @@ public class ModelToRepresentation {
         propRep.setLabel(prop.getLabel());
         propRep.setType(prop.getType());
         propRep.setDefaultValue(prop.getDefaultValue());
+        propRep.setOptions(prop.getOptions());
         propRep.setHelpText(prop.getHelpText());
         propRep.setSecret(prop.isSecret());
         return propRep;

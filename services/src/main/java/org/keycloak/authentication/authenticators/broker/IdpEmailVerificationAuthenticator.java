@@ -17,6 +17,7 @@
 
 package org.keycloak.authentication.authenticators.broker;
 
+import org.jboss.logging.Logger;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.authenticators.broker.util.SerializedBrokeredIdentityContext;
@@ -48,7 +49,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class IdpEmailVerificationAuthenticator extends AbstractIdpAuthenticator {
 
-    protected static ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    private static Logger logger = Logger.getLogger(IdpEmailVerificationAuthenticator.class);
 
     @Override
     protected void authenticateImpl(AuthenticationFlowContext context, SerializedBrokeredIdentityContext serializedCtx, BrokeredIdentityContext brokerContext) {
@@ -57,7 +58,7 @@ public class IdpEmailVerificationAuthenticator extends AbstractIdpAuthenticator 
         ClientSessionModel clientSession = context.getClientSession();
 
         if (realm.getSmtpConfig().size() == 0) {
-            logger.smtpNotConfigured();
+            ServicesLogger.LOGGER.smtpNotConfigured();
             context.attempted();
             return;
         }
@@ -94,7 +95,7 @@ public class IdpEmailVerificationAuthenticator extends AbstractIdpAuthenticator 
         } catch (EmailException e) {
             event.error(Errors.EMAIL_SEND_FAILED);
 
-            logger.confirmBrokerEmailFailed(e);
+            ServicesLogger.LOGGER.confirmBrokerEmailFailed(e);
             Response challenge = context.form()
                     .setError(Messages.EMAIL_SENT_ERROR)
                     .createErrorPage();
@@ -137,7 +138,7 @@ public class IdpEmailVerificationAuthenticator extends AbstractIdpAuthenticator 
                 context.setUser(existingUser);
                 context.success();
             } else {
-                logger.keyParamDoesNotMatch();
+                ServicesLogger.LOGGER.keyParamDoesNotMatch();
                 Response challengeResponse = context.form()
                         .setError(Messages.INVALID_ACCESS_CODE)
                         .createErrorPage();

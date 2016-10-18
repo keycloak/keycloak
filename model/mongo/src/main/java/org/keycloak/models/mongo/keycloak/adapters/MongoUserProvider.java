@@ -21,6 +21,7 @@ import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
 import com.mongodb.QueryBuilder;
 import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.common.util.Time;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.connections.mongo.api.MongoStore;
 import org.keycloak.connections.mongo.api.context.MongoStoreInvocationContext;
@@ -524,9 +525,13 @@ public class MongoUserProvider implements UserProvider, UserCredentialStore {
             throw new ModelDuplicateException("Consent already exists for client [" + clientId + "] and user [" + userId + "]");
         }
 
+        long currentTime = Time.currentTimeMillis();
+
         MongoUserConsentEntity consentEntity = new MongoUserConsentEntity();
         consentEntity.setUserId(userId);
         consentEntity.setClientId(clientId);
+        consentEntity.setCreatedDate(currentTime);
+        consentEntity.setLastUpdatedDate(currentTime);
         fillEntityFromModel(consent, consentEntity);
         getMongoStore().insertEntity(consentEntity, invocationContext);
     }
@@ -568,6 +573,8 @@ public class MongoUserProvider implements UserProvider, UserCredentialStore {
             throw new ModelException("Client with id " + entity.getClientId() + " is not available");
         }
         UserConsentModel model = new UserConsentModel(client);
+        model.setCreatedDate(entity.getCreatedDate());
+        model.setLastUpdatedDate(entity.getLastUpdatedDate());
 
         for (String roleId : entity.getGrantedRoles()) {
             RoleModel roleModel = realm.getRoleById(roleId);
@@ -596,6 +603,7 @@ public class MongoUserProvider implements UserProvider, UserCredentialStore {
             protMapperIds.add(protMapperModel.getId());
         }
         consentEntity.setGrantedProtocolMappers(protMapperIds);
+        consentEntity.setLastUpdatedDate(Time.currentTimeMillis());
     }
 
     @Override

@@ -129,7 +129,7 @@ public class IOUtil {
         node.setTextContent(node.getTextContent().replace(regex, replacement));
     }
 
-    public static void removeElementFromDoc(Document doc, String parentTag, String removeNode) {
+    public static void removeElementsFromDoc(Document doc, String parentTag, String removeNode) {
         NodeList nodes = doc.getElementsByTagName(parentTag);
         if (nodes.getLength() != 1) {
             log.warn("Not able or ambiguous to find element: " + parentTag);
@@ -143,18 +143,23 @@ public class IOUtil {
         }
 
         NodeList removeNodes = parentElement.getElementsByTagName(removeNode);
-        if (removeNodes.getLength() != 1) {
-            log.warn("Not able or ambiguous to find element: " + removeNode + " within node " + parentTag);
-            return;
-        }
-
-        Element removeElement = (Element) removeNodes.item(0);
-        if (removeElement == null) {
+        if (removeNodes == null) {
             log.warn("Not able to find element: " + removeNode + " within node " + parentTag);
             return;
         }
 
-        parentElement.removeChild(removeElement);
+        for (int i = 0; i < removeNodes.getLength();){
+            Element removeElement = (Element) removeNodes.item(i);
+            if (removeElement == null) {
+                log.warn("Not able to find element: " + removeNode + " within node " + parentTag);
+                return;
+            }
+
+            log.info("Removing node " + removeNode);
+            parentElement.removeChild(removeElement);
+
+        }
+
     }
 
     public static String getElementTextContent(Document doc, String path) {

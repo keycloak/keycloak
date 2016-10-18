@@ -17,6 +17,7 @@
 
 package org.keycloak.protocol.oidc.endpoints;
 
+import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.OAuth2Constants;
@@ -68,7 +69,7 @@ import java.util.Map;
  */
 public class TokenEndpoint {
 
-    private static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    private static final Logger logger = Logger.getLogger(TokenEndpoint.class);
     private MultivaluedMap<String, String> formParams;
     private ClientModel client;
     private Map<String, String> clientAuthAttributes;
@@ -309,7 +310,7 @@ public class TokenEndpoint {
     private void updateClientSession(ClientSessionModel clientSession) {
 
         if(clientSession == null) {
-            logger.clientSessionNull();
+            ServicesLogger.LOGGER.clientSessionNull();
             return;
         }
 
@@ -327,16 +328,16 @@ public class TokenEndpoint {
 
     private void updateClientSessions(List<ClientSessionModel> clientSessions) {
         if(clientSessions == null) {
-            logger.clientSessionNull();
+            ServicesLogger.LOGGER.clientSessionNull();
             return;
         }
         for (ClientSessionModel clientSession : clientSessions) {
             if(clientSession == null) {
-                logger.clientSessionNull();
+                ServicesLogger.LOGGER.clientSessionNull();
                 continue;
             }
             if(clientSession.getClient() == null) {
-                logger.clientModelNull();
+                ServicesLogger.LOGGER.clientModelNull();
                 continue;
             }
             if(client.getId().equals(clientSession.getClient().getId())) {

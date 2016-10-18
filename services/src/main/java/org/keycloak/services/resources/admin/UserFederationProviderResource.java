@@ -16,6 +16,7 @@
  */
 package org.keycloak.services.resources.admin;
 
+import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.keycloak.events.admin.OperationType;
@@ -71,7 +72,7 @@ import java.util.Properties;
  */
 public class UserFederationProviderResource {
 
-    protected static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    private static final Logger logger = Logger.getLogger(UserFederationProviderResource.class);
 
     private final KeycloakSession session;
     private final RealmModel realm;
@@ -118,7 +119,7 @@ public class UserFederationProviderResource {
         new UsersSyncManager().notifyToRefreshPeriodicSync(session, realm, model, false);
         boolean kerberosCredsAdded = UserFederationProvidersResource.checkKerberosCredential(session, realm, model);
         if (kerberosCredsAdded) {
-            logger.addedKerberosToRealmCredentials();
+            ServicesLogger.LOGGER.addedKerberosToRealmCredentials();
         }
 
         adminEvent.operation(OperationType.UPDATE).resourcePath(uriInfo).representation(rep).success();
@@ -410,7 +411,7 @@ public class UserFederationProviderResource {
         UserFederationProviderFactory providerFactory = (UserFederationProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(UserFederationProvider.class, providerModel.getProviderName());
         UserFederationProvider federationProvider = providerFactory.getInstance(session, providerModel);
 
-        logger.syncingDataForMapper(mapperModel.getName(), mapperModel.getFederationMapperType(), direction);
+        ServicesLogger.LOGGER.syncingDataForMapper(mapperModel.getName(), mapperModel.getFederationMapperType(), direction);
 
         UserFederationSyncResult syncResult;
         if ("fedToKeycloak".equals(direction)) {

@@ -405,16 +405,10 @@
             </build>
         </profile>
 
-        <!-- Profile for migration tests-->
+        <!-- Profiles for migration tests-->
         
         <profile>
-            <id>migration-auto</id>
-            <activation>
-                <property>
-                    <name>migration.mode</name>
-                    <value>auto</value>
-                </property>
-            </activation>
+            <id>auth-server-migration</id>
             <properties>
                 <migration.import.props.previous>
                     -Dkeycloak.migration.action=import 
@@ -437,6 +431,9 @@
                                     <rules>
                                         <requireProperty>
                                             <property>migrated.auth.server.version</property>
+                                        </requireProperty>
+                                        <requireProperty>
+                                            <property>migration.mode</property>
                                         </requireProperty>
                                     </rules>
                                 </configuration>

@@ -47,7 +47,7 @@ public class UserClientRoleMappingMapper extends AbstractUserRoleMappingMapper {
         clientId.setName(ProtocolMapperUtils.USER_MODEL_CLIENT_ROLE_MAPPING_CLIENT_ID);
         clientId.setLabel(ProtocolMapperUtils.USER_MODEL_CLIENT_ROLE_MAPPING_CLIENT_ID_LABEL);
         clientId.setHelpText(ProtocolMapperUtils.USER_MODEL_CLIENT_ROLE_MAPPING_CLIENT_ID_HELP_TEXT);
-        clientId.setType(ProviderConfigProperty.STRING_TYPE);
+        clientId.setType(ProviderConfigProperty.CLIENT_LIST_TYPE);
         CONFIG_PROPERTIES.add(clientId);
 
         ProviderConfigProperty clientRolePrefix = new ProviderConfigProperty();
@@ -57,7 +57,7 @@ public class UserClientRoleMappingMapper extends AbstractUserRoleMappingMapper {
         clientRolePrefix.setType(ProviderConfigProperty.STRING_TYPE);
         CONFIG_PROPERTIES.add(clientRolePrefix);
 
-        OIDCAttributeMapperHelper.addAttributeConfig(CONFIG_PROPERTIES);
+        OIDCAttributeMapperHelper.addAttributeConfig(CONFIG_PROPERTIES, UserClientRoleMappingMapper.class);
     }
 
     public List<ProviderConfigProperty> getConfigProperties() {
@@ -99,5 +99,22 @@ public class UserClientRoleMappingMapper extends AbstractUserRoleMappingMapper {
 
             OIDCAttributeMapperHelper.mapClaim(token, mappingModel, clientRoleNames);
         }
+    }
+
+
+    public static ProtocolMapperModel create(String clientId, String clientRolePrefix,
+                                             String name,
+                                             String tokenClaimName,
+                                             boolean accessToken, boolean idToken) {
+        ProtocolMapperModel mapper = OIDCAttributeMapperHelper.createClaimMapper(name, "foo",
+                tokenClaimName, "String",
+                true, name,
+                accessToken, idToken,
+                PROVIDER_ID);
+
+        mapper.getConfig().put(ProtocolMapperUtils.USER_MODEL_CLIENT_ROLE_MAPPING_CLIENT_ID, clientId);
+        mapper.getConfig().put(ProtocolMapperUtils.USER_MODEL_CLIENT_ROLE_MAPPING_ROLE_PREFIX, clientRolePrefix);
+        return mapper;
+
     }
 }

@@ -16,6 +16,7 @@
  */
 package org.keycloak.protocol.oidc;
 
+import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.common.util.Time;
@@ -84,7 +85,7 @@ public class OIDCLoginProtocol implements LoginProtocol {
     public static final String CLIENT_SECRET_JWT = "client_secret_jwt";
     public static final String PRIVATE_KEY_JWT = "private_key_jwt";
 
-    private static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    private static final Logger logger = Logger.getLogger(OIDCLoginProtocol.class);
 
     protected KeycloakSession session;
 
@@ -233,7 +234,7 @@ public class OIDCLoginProtocol implements LoginProtocol {
             case PASSIVE_LOGIN_REQUIRED:
                 return OAuthErrorException.LOGIN_REQUIRED;
             default:
-                logger.untranslatedProtocol(error.name());
+                ServicesLogger.LOGGER.untranslatedProtocol(error.name());
                 return OAuthErrorException.SERVER_ERROR;
         }
     }

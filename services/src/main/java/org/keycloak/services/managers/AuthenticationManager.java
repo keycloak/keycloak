@@ -224,7 +224,7 @@ public class AuthenticationManager {
                     protocol.backchannelLogout(userSession, clientSession);
                     clientSession.setAction(ClientSessionModel.Action.LOGGED_OUT.name());
                 } catch (Exception e) {
-                    ServicesLogger.ROOT_LOGGER.failedToLogoutClient(e);
+                    ServicesLogger.LOGGER.failedToLogoutClient(e);
                 }
             }
         }
@@ -245,7 +245,7 @@ public class AuthenticationManager {
                     return response;
                 }
             } catch (Exception e) {
-                ServicesLogger.ROOT_LOGGER.failedToLogoutClient(e);
+                ServicesLogger.LOGGER.failedToLogoutClient(e);
             }
 
         }

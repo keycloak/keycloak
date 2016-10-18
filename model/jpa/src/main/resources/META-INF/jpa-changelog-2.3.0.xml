@@ -31,6 +31,7 @@
         </createTable>
          <addPrimaryKey columnNames="ID" constraintName="CONSTR_FEDERATED_USER" tableName="FEDERATED_USER"/>
 
+         <dropDefaultValue tableName="USER_ENTITY" columnName="TOTP" />
          <dropColumn tableName="USER_ENTITY" columnName="TOTP" />
 
          <addColumn tableName="IDENTITY_PROVIDER">
@@ -47,7 +48,11 @@
          <dropColumn tableName="REALM" columnName="PUBLIC_KEY" />
          <dropColumn tableName="REALM" columnName="CERTIFICATE" />
 
-     </changeSet>
+         <addColumn tableName="USER_CONSENT">
+             <column name="CREATED_DATE" type="BIGINT"/>
+             <column name="LAST_UPDATED_DATE" type="BIGINT"/>
+         </addColumn>
 
+     </changeSet>
 
 </databaseChangeLog>

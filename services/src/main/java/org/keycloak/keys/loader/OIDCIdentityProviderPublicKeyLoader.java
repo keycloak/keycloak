@@ -17,10 +17,7 @@
 
 package org.keycloak.keys.loader;
 
-import java.security.PublicKey;
-import java.util.Collections;
-import java.util.Map;
-
+import org.jboss.logging.Logger;
 import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.PemUtils;
@@ -29,15 +26,18 @@ import org.keycloak.jose.jwk.JWK;
 import org.keycloak.keys.PublicKeyLoader;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.utils.JWKSHttpUtils;
-import org.keycloak.services.ServicesLogger;
 import org.keycloak.util.JWKSUtils;
+
+import java.security.PublicKey;
+import java.util.Collections;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class OIDCIdentityProviderPublicKeyLoader implements PublicKeyLoader {
 
-    protected static ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    private static final Logger logger = Logger.getLogger(OIDCIdentityProviderPublicKeyLoader.class);
 
     private final KeycloakSession session;
     private final OIDCIdentityProviderConfig config;

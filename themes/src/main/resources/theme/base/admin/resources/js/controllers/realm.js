@@ -458,6 +458,7 @@ module.controller('RealmPasswordPolicyCtrl', function($scope, Realm, realm, $htt
             var value;
             if (policyToken.indexOf('(') == -1) {
                 id = policyToken.trim();
+                value = null;
             } else {
                 id = policyToken.substring(0, policyToken.indexOf('('));
                 value = policyToken.substring(policyToken.indexOf('(') + 1, policyToken.indexOf(')')).trim();
@@ -492,7 +493,14 @@ module.controller('RealmPasswordPolicyCtrl', function($scope, Realm, realm, $htt
 
     $scope.realm = realm;
     $scope.serverInfo = serverInfo;
-    $scope.changed = false; $scope.policy = parse(realm.passwordPolicy);
+
+    $scope.changed = false;
+    $scope.policy = parse(realm.passwordPolicy);
+    var oldCopy = angular.copy($scope.policy);
+
+    $scope.$watch('policy', function() {
+        $scope.changed = ! angular.equals($scope.policy, oldCopy);
+    }, true);
 
     $scope.addPolicy = function(policy){
         policy.value = policy.defaultValue;
@@ -500,21 +508,18 @@ module.controller('RealmPasswordPolicyCtrl', function($scope, Realm, realm, $htt
             $scope.policy = [];
         }
         $scope.policy.push(policy);
-        $scope.changed = true;
     }
 
     $scope.removePolicy = function(index){
         $scope.policy.splice(index, 1);
-        $scope.changed = true;
     }
 
     $scope.save = function() {
-        $scope.changed = false;
         $scope.realm.passwordPolicy = toString($scope.policy);
         console.debug($scope.realm.passwordPolicy);
 
         Realm.update($scope.realm, function () {
-            $location.url("/realms/" + realm.realm + "/authentication/password-policy");
+            $route.reload();
             Notifications.success("Your changes have been saved to the realm.");
         });
     };
@@ -1291,9 +1296,21 @@ module.controller('RealmRevocationCtrl', function($scope, Realm, RealmPushRevoca
 });
 
 
-module.controller('RoleListCtrl', function($scope, $route, Dialog, Notifications, realm, roles, RoleById) {
+module.controller('RoleListCtrl', function($scope, $route, Dialog, Notifications, realm, roles, RoleById, filterFilter) {
     $scope.realm = realm;
     $scope.roles = roles;
+    $scope.currentPage = 1;
+    $scope.currentPageInput = 1;
+    $scope.pageSize = 20;
+    $scope.numberOfPages = Math.ceil($scope.roles.length/$scope.pageSize);
+
+    $scope.$watch('searchQuery', function (newVal, oldVal) {
+        $scope.filtered = filterFilter($scope.roles, {name: newVal});
+        $scope.totalItems = $scope.filtered.length;
+        $scope.numberOfPages = Math.ceil($scope.totalItems/$scope.pageSize);
+        $scope.currentPage = 1;
+        $scope.currentPageInput = 1;
+    }, true);
 
     $scope.removeRole = function (role) {
         Dialog.confirmDelete(role.name, 'role', function () {
@@ -1874,14 +1891,12 @@ module.controller('CreateFlowCtrl', function($scope, realm,
     };
 });
 
-module.controller('CreateExecutionFlowCtrl', function($scope, realm, topFlow, parentFlow, formProviders,
+module.controller('CreateExecutionFlowCtrl', function($scope, realm, parentFlow, formProviders,
                                                       CreateExecutionFlow,
                                                       Notifications, $location) {
     $scope.realm = realm;
     $scope.formProviders = formProviders;
     
-    var returnToTopFlow = parentFlow.topLevel ? parentFlow.alias : topFlow;
-
     var defaultFlowType = parentFlow.providerId == 'client-flow' ? 'client-flow' : 'basic-flow';
     $scope.flow = {
         alias: "",
@@ -1896,22 +1911,20 @@ module.controller('CreateExecutionFlowCtrl', function($scope, realm, topFlow, pa
     $scope.save = function() {
         $scope.flow.provider = $scope.provider.id;
         CreateExecutionFlow.save({realm: realm.realm, alias: parentFlow.alias}, $scope.flow, function() {
-            $location.url("/realms/" + realm.realm + "/authentication/flows/" + returnToTopFlow);
+            $location.url("/realms/" + realm.realm + "/authentication/flows");
             Notifications.success("Flow Created.");
         })
     }
     $scope.cancel = function() {
-        $location.url("/realms/" + realm.realm + "/authentication/flows/" + returnToTopFlow);
+        $location.url("/realms/" + realm.realm + "/authentication/flows");
     };
 });
 
-module.controller('CreateExecutionCtrl', function($scope, realm, topFlow, parentFlow, formActionProviders, authenticatorProviders, clientAuthenticatorProviders,
+module.controller('CreateExecutionCtrl', function($scope, realm, parentFlow, formActionProviders, authenticatorProviders, clientAuthenticatorProviders,
                                                       CreateExecution,
                                                       Notifications, $location) {
     $scope.realm = realm;
     $scope.parentFlow = parentFlow;
-    
-    var returnToTopFlow = parentFlow.topLevel ? parentFlow.alias : topFlow;
     
     if (parentFlow.providerId == 'form-flow') {
         $scope.providers = formActionProviders;
@@ -1931,23 +1944,32 @@ module.controller('CreateExecutionCtrl', function($scope, realm, topFlow, parent
             provider: $scope.provider.id
         }
         CreateExecution.save({realm: realm.realm, alias: parentFlow.alias}, execution, function() {
-            $location.url("/realms/" + realm.realm + "/authentication/flows/" + returnToTopFlow);
+            $location.url("/realms/" + realm.realm + "/authentication/flows");
             Notifications.success("Execution Created.");
         })
     }
     $scope.cancel = function() {
-        $location.url("/realms/" + realm.realm + "/authentication/flows/" + returnToTopFlow);
+        $location.url("/realms/" + realm.realm + "/authentication/flows");
     };
 });
 
 
 
-module.controller('AuthenticationFlowsCtrl', function($scope, $route, realm, flows, selectedFlow,
+module.controller('AuthenticationFlowsCtrl', function($scope, $route, realm, flows, selectedFlow, LastFlowSelected,
                                                       AuthenticationFlows, AuthenticationFlowsCopy, AuthenticationFlowExecutions,
                                                       AuthenticationExecution, AuthenticationExecutionRaisePriority, AuthenticationExecutionLowerPriority,
                                                       $modal, Notifications, CopyDialog, $location) {
     $scope.realm = realm;
     $scope.flows = flows;
+    
+    if (selectedFlow !== null) {
+        LastFlowSelected.alias = selectedFlow;
+    }
+    
+    if (selectedFlow === null && LastFlowSelected.alias !== null) {
+        selectedFlow = LastFlowSelected.alias;
+    }
+    
     if (flows.length > 0) {
         $scope.flow = flows[0];
         if (selectedFlow) {

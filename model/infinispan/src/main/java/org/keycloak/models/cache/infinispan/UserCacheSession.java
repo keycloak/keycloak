@@ -555,6 +555,8 @@ public class UserCacheSession implements UserCache {
         }
 
         UserConsentModel consentModel = new UserConsentModel(client);
+        consentModel.setCreatedDate(cachedConsent.getCreatedDate());
+        consentModel.setLastUpdatedDate(cachedConsent.getLastUpdatedDate());
 
         for (String roleId : cachedConsent.getRoleIds()) {
             RoleModel role = session.realms().getRoleById(roleId, realm);

@@ -33,11 +33,19 @@ import org.keycloak.models.KeycloakSession;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.Writer;
 import java.lang.reflect.Method;
 import java.sql.Connection;
 import java.util.List;
 import java.util.Set;
 import liquibase.LabelExpression;
+import liquibase.database.Database;
+import liquibase.exception.DatabaseException;
+import liquibase.executor.Executor;
+import liquibase.executor.ExecutorService;
+import liquibase.executor.LoggingExecutor;
+import liquibase.statement.core.CreateDatabaseChangeLogTableStatement;
+import liquibase.util.StreamUtil;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -96,7 +104,7 @@ public class LiquibaseJpaUpdaterProvider implements JpaUpdaterProvider {
 
 
     protected void updateChangeSet(Liquibase liquibase, String changelog, File exportFile) throws LiquibaseException, IOException {
-        List<ChangeSet> changeSets = liquibase.listUnrunChangeSets((Contexts) null, new LabelExpression());
+        List<ChangeSet> changeSets = getChangeSets(liquibase);
         if (!changeSets.isEmpty()) {
             List<RanChangeSet> ranChangeSets = liquibase.getDatabase().getRanChangeSetList();
             if (ranChangeSets.isEmpty()) {
@@ -110,7 +118,12 @@ public class LiquibaseJpaUpdaterProvider implements JpaUpdaterProvider {
             }
 
             if (exportFile != null) {
-                liquibase.update((Contexts) null, new FileWriter(exportFile));
+                try (Writer exportWriter = new FileWriter(exportFile)) {
+                    if (ranChangeSets.isEmpty()) {
+                        outputChangeLogTableCreationScript(liquibase, exportWriter);
+                    }
+                    liquibase.update((Contexts) null, new LabelExpression(), exportWriter, false);
+                }
             } else {
                 liquibase.update((Contexts) null);
             }
@@ -123,6 +136,27 @@ public class LiquibaseJpaUpdaterProvider implements JpaUpdaterProvider {
             Method resetServices = Reflections.findDeclaredMethod(Liquibase.class, "resetServices");
             Reflections.invokeMethod(true, resetServices, liquibase);
         }
+    }
+
+    private void outputChangeLogTableCreationScript(Liquibase liquibase, final Writer exportWriter) throws DatabaseException {
+        Database database = liquibase.getDatabase();
+
+        Executor oldTemplate = ExecutorService.getInstance().getExecutor(database);
+        LoggingExecutor executor = new LoggingExecutor(ExecutorService.getInstance().getExecutor(database), exportWriter, database);
+        ExecutorService.getInstance().setExecutor(database, executor);
+
+        executor.comment("*********************************************************************");
+        executor.comment("* Keycloak database creation script - apply this script to empty DB *");
+        executor.comment("*********************************************************************" + StreamUtil.getLineSeparator());
+
+        executor.execute(new CreateDatabaseChangeLogTableStatement());
+        // DatabaseChangeLogLockTable is created before this code is executed and recreated if it does not exist automatically
+        // in org.keycloak.connections.jpa.updater.liquibase.lock.CustomLockService.init() called indirectly from
+        // KeycloakApplication constructor (search for waitForLock() call). Hence it is not included in the creation script.
+
+        executor.comment("*********************************************************************" + StreamUtil.getLineSeparator());
+
+        ExecutorService.getInstance().setExecutor(database, oldTemplate);
     }
 
     @Override
@@ -160,7 +194,8 @@ public class LiquibaseJpaUpdaterProvider implements JpaUpdaterProvider {
     }
 
     protected Status validateChangeSet(Liquibase liquibase, String changelog) throws LiquibaseException {
-        List<ChangeSet> changeSets = liquibase.listUnrunChangeSets((Contexts) null, new LabelExpression());
+        List<ChangeSet> changeSets = getChangeSets(liquibase);
+
         if (!changeSets.isEmpty()) {
             if (changeSets.size() == liquibase.getDatabaseChangeLog().getChangeSets().size()) {
                 return Status.EMPTY;
@@ -172,6 +207,15 @@ public class LiquibaseJpaUpdaterProvider implements JpaUpdaterProvider {
             logger.debugf("Validation passed. Database is up-to-date for changelog %s", changelog);
             return Status.VALID;
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<ChangeSet> getChangeSets(Liquibase liquibase) {
+        // TODO tracked as: https://issues.jboss.org/browse/KEYCLOAK-3730
+        // TODO: When https://liquibase.jira.com/browse/CORE-2919 is resolved, replace the following two lines with:
+        // List<ChangeSet> changeSets = liquibase.listUnrunChangeSets((Contexts) null, new LabelExpression(), false);
+        Method listUnrunChangeSets = Reflections.findDeclaredMethod(Liquibase.class, "listUnrunChangeSets", Contexts.class, LabelExpression.class, boolean.class);
+        return Reflections.invokeMethod(true, listUnrunChangeSets, List.class, liquibase, (Contexts) null, new LabelExpression(), false);
     }
 
     private Liquibase getLiquibaseForKeycloakUpdate(Connection connection, String defaultSchema) throws LiquibaseException {

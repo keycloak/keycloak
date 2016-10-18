@@ -17,6 +17,8 @@
 
 package org.keycloak.provider;
 
+import java.util.List;
+
 /**
 * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
 * @version $Revision: 1 $
@@ -46,6 +48,7 @@ public class ProviderConfigProperty {
     protected String helpText;
     protected String type = STRING_TYPE;
     protected Object defaultValue;
+    protected List<String> options;
     protected boolean secret;
 
     public ProviderConfigProperty() {
@@ -94,6 +97,14 @@ public class ProviderConfigProperty {
 
     public void setDefaultValue(Object defaultValue) {
         this.defaultValue = defaultValue;
+    }
+
+    public List<String> getOptions() {
+        return options;
+    }
+
+    public void setOptions(List<String> options) {
+        this.options = options;
     }
 
     public String getHelpText() {

@@ -347,6 +347,11 @@ module.service('UserSearchState', function() {
     };
 });
 
+// Service tracks the last flow selected in Authentication-->Flows tab
+module.service('LastFlowSelected', function() {
+    this.alias = null;
+});
+
 module.factory('UserFederationInstances', function($resource) {
     return $resource(authUrl + '/admin/realms/:realm/user-federation/instances/:instance', {
         realm : '@realm',
