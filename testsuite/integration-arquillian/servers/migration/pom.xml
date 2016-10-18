@@ -67,9 +67,6 @@
                                     <property>jdbc.mvn.version</property>
                                 </requireProperty>
                                 <requireProperty>
-                                    <property>datasource.class.xa</property>
-                                </requireProperty>
-                                <requireProperty>
                                     <property>keycloak.connectionsJpa.user</property>
                                 </requireProperty>
                                 <requireProperty>
@@ -77,15 +74,6 @@
                                 </requireProperty>
                                 <requireProperty>
                                     <property>keycloak.connectionsJpa.url</property>
-                                </requireProperty>
-                                <requireProperty>
-                                    <property>db.hostname</property>
-                                </requireProperty>
-                                <requireProperty>
-                                    <property>db.name</property>
-                                </requireProperty>
-                                <requireProperty>
-                                    <property>db.port</property>
                                 </requireProperty>
                             </rules>
                         </configuration>
