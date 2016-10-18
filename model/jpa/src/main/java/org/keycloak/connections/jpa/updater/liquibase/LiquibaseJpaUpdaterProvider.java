@@ -211,6 +211,7 @@ public class LiquibaseJpaUpdaterProvider implements JpaUpdaterProvider {
 
     @SuppressWarnings("unchecked")
     private List<ChangeSet> getChangeSets(Liquibase liquibase) {
+        // TODO tracked as: https://issues.jboss.org/browse/KEYCLOAK-3730
         // TODO: When https://liquibase.jira.com/browse/CORE-2919 is resolved, replace the following two lines with:
         // List<ChangeSet> changeSets = liquibase.listUnrunChangeSets((Contexts) null, new LabelExpression(), false);
         Method listUnrunChangeSets = Reflections.findDeclaredMethod(Liquibase.class, "listUnrunChangeSets", Contexts.class, LabelExpression.class, boolean.class);
