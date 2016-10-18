@@ -121,7 +121,6 @@ public class AuthenticationManager {
             UserSessionModel cookieSession = session.sessions().getUserSession(realm, token.getSessionState());
             if (cookieSession == null || !cookieSession.getId().equals(userSession.getId())) return;
             expireIdentityCookie(realm, uriInfo, connection);
-            expireRememberMeCookie(realm, uriInfo, connection);
         } catch (Exception e) {
         }
 
