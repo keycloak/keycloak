@@ -65,7 +65,7 @@ public class ComponentsTest extends AbstractAdminTest {
         try {
             createComponent(rep);
         } catch (WebApplicationException e) {
-            assertErrror(e.getResponse(), "Required is required");
+            assertErrror(e.getResponse(), "'Required' is required");
         }
 
         rep.getConfig().putSingle("required", "Required");
@@ -75,7 +75,7 @@ public class ComponentsTest extends AbstractAdminTest {
         try {
             createComponent(rep);
         } catch (WebApplicationException e) {
-            assertErrror(e.getResponse(), "Number should be a number");
+            assertErrror(e.getResponse(), "'Number' should be a number");
         }
     }
 

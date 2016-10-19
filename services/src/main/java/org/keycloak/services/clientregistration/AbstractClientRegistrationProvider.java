@@ -171,6 +171,11 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
     }
 
     @Override
+    public EventBuilder getEvent() {
+        return event;
+    }
+
+    @Override
     public void close() {
     }
 

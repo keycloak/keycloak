@@ -173,7 +173,7 @@ public class ComponentResource {
     private Response localizedErrorResponse(ComponentValidationException cve) {
         Properties messages = AdminRoot.getMessages(session, realm, "admin-messages", auth.getAuth().getToken().getLocale());
 
-        Object[] localizedParameters = Arrays.asList(cve.getParameters()).stream().map((Object parameter) -> {
+        Object[] localizedParameters = cve.getParameters()==null ? null : Arrays.asList(cve.getParameters()).stream().map((Object parameter) -> {
 
             if (parameter instanceof String) {
                 String paramStr = (String) parameter;

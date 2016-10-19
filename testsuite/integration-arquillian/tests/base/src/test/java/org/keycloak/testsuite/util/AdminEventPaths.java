@@ -316,15 +316,6 @@ public class AdminEventPaths {
         return uri.toString();
     }
 
-    // CLIENT REGISTRATION TRUSTED HOSTS
-
-    public static String clientRegistrationTrustedHostPath(String hostName) {
-        URI uri = UriBuilder.fromUri("").path(RealmResource.class, "clientRegistrationTrustedHost")
-                .path(ClientInitialAccessResource.class, "delete")
-                .build(hostName);
-        return uri.toString();
-    }
-
     // GROUPS
 
     public static String groupsPath() {

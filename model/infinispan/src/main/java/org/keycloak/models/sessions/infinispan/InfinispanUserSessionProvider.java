@@ -23,11 +23,9 @@ import org.jboss.logging.Logger;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.ClientInitialAccessModel;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientRegistrationTrustedHostModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakTransaction;
-import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserLoginFailureModel;
 import org.keycloak.models.UserModel;
@@ -35,14 +33,12 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.session.UserSessionPersisterProvider;
 import org.keycloak.models.sessions.infinispan.entities.ClientInitialAccessEntity;
-import org.keycloak.models.sessions.infinispan.entities.ClientRegistrationTrustedHostEntity;
 import org.keycloak.models.sessions.infinispan.entities.ClientSessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.LoginFailureEntity;
 import org.keycloak.models.sessions.infinispan.entities.LoginFailureKey;
 import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
 import org.keycloak.models.sessions.infinispan.stream.ClientInitialAccessPredicate;
-import org.keycloak.models.sessions.infinispan.stream.ClientRegistrationTrustedHostPredicate;
 import org.keycloak.models.sessions.infinispan.stream.ClientSessionPredicate;
 import org.keycloak.models.sessions.infinispan.stream.Comparators;
 import org.keycloak.models.sessions.infinispan.stream.Mappers;
@@ -540,12 +536,6 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         return entity != null ? new ClientInitialAccessAdapter(session, this, cache, realm, entity) : null;
     }
 
-    ClientRegistrationTrustedHostAdapter wrap(RealmModel realm, ClientRegistrationTrustedHostEntity entity) {
-        Cache<String, SessionEntity> cache = getCache(false);
-        return entity != null ? new ClientRegistrationTrustedHostAdapter(session, this, cache, realm, entity) : null;
-    }
-
-
     UserLoginFailureModel wrap(LoginFailureKey key, LoginFailureEntity entity) {
         return entity != null ? new UserLoginFailureAdapter(this, loginFailureCache, key, entity) : null;
     }
@@ -737,62 +727,6 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         return list;
     }
 
-    @Override
-    public ClientRegistrationTrustedHostModel createClientRegistrationTrustedHostModel(RealmModel realm, String hostName, int count) {
-        if (getClientRegistrationTrustedHostModel(realm, hostName) != null) {
-            throw new ModelDuplicateException("Client registration already exists for this realm and hostName");
-        }
-
-        String id = computeClientRegistrationTrustedHostEntityId(realm, hostName);
-
-        ClientRegistrationTrustedHostEntity entity = new ClientRegistrationTrustedHostEntity();
-        entity.setId(id);
-        entity.setHostName(hostName);
-        entity.setRealm(realm.getId());
-        entity.setCount(count);
-        entity.setRemainingCount(count);
-
-        tx.put(sessionCache, id, entity);
-
-        return wrap(realm, entity);
-    }
-
-    @Override
-    public ClientRegistrationTrustedHostModel getClientRegistrationTrustedHostModel(RealmModel realm, String hostName) {
-        String id = computeClientRegistrationTrustedHostEntityId(realm, hostName);
-
-        Cache<String, SessionEntity> cache = getCache(false);
-        ClientRegistrationTrustedHostEntity entity = (ClientRegistrationTrustedHostEntity) cache.get(id);
-
-        // If created in this transaction
-        if (entity == null) {
-            entity = (ClientRegistrationTrustedHostEntity) tx.get(cache, id);
-        }
-
-        return wrap(realm, entity);
-    }
-
-    @Override
-    public void removeClientRegistrationTrustedHostModel(RealmModel realm, String hostName) {
-        String id = computeClientRegistrationTrustedHostEntityId(realm, hostName);
-        tx.remove(getCache(false), id);
-    }
-
-    @Override
-    public List<ClientRegistrationTrustedHostModel> listClientRegistrationTrustedHosts(RealmModel realm) {
-        Iterator<Map.Entry<String, SessionEntity>> itr = sessionCache.entrySet().stream().filter(ClientRegistrationTrustedHostPredicate.create(realm.getId())).iterator();
-        List<ClientRegistrationTrustedHostModel> list = new LinkedList<>();
-        while (itr.hasNext()) {
-            list.add(wrap(realm, (ClientRegistrationTrustedHostEntity) itr.next().getValue()));
-        }
-        return list;
-    }
-
-    private static final String CLIENT_REG_TRUSTED_HOST_ID_PREFIX = "reg:::";
-
-    private String computeClientRegistrationTrustedHostEntityId(RealmModel realm, String hostName) {
-        return CLIENT_REG_TRUSTED_HOST_ID_PREFIX + realm.getId() + ":::" + hostName;
-    }
 
     class InfinispanKeycloakTransaction implements KeycloakTransaction {
 

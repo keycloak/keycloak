@@ -61,4 +61,6 @@ public interface Details {
     String SIGNATURE_REQUIRED = "signature_required";
     String SIGNATURE_ALGORITHM = "signature_algorithm";
 
+    String CLIENT_REGISTRATION_POLICY = "client_registration_policy";
+
 }

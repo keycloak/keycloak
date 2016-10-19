@@ -113,7 +113,7 @@ public class ConfigurationValidationHelper {
 
         String val = model.getConfig().getFirst(key);
         if (val != null && !(val.equals("true") || val.equals("false"))) {
-            throw new ComponentValidationException("''{0}'' should be 'true' or 'false'", label);
+            throw new ComponentValidationException("''{0}'' should be ''true'' or ''false''", label);
         }
 
         return this;
