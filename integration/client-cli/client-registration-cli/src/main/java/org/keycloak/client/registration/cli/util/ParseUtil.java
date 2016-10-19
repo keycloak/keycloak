@@ -38,7 +38,7 @@ import static org.keycloak.client.registration.cli.util.ReflectionUtil.setAttrib
  */
 public class ParseUtil {
 
-    public static final String CLIENTID_OPTION_WARN = "You're using what looks like an OPTION as CLIENT_ID: %s";
+    public static final String CLIENT_OPTION_WARN = "You're using what looks like an OPTION as CLIENT: %s";
     public static final String TOKEN_OPTION_WARN = "You're using what looks like an OPTION as TOKEN: %s";
 
     public static String[] shift(String[] args) {

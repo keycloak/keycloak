@@ -5,6 +5,7 @@ import org.junit.Test;
 import org.keycloak.client.registration.cli.config.ConfigData;
 import org.keycloak.client.registration.cli.config.FileConfigHandler;
 import org.keycloak.client.registration.cli.config.RealmConfigData;
+import org.keycloak.client.registration.cli.util.OsUtil;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.testsuite.cli.KcRegExec;
 import org.keycloak.testsuite.util.TempFileResource;
@@ -16,6 +17,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 
+import static org.keycloak.client.registration.cli.util.OsUtil.CMD;
 import static org.keycloak.client.registration.cli.util.OsUtil.EOL;
 import static org.keycloak.testsuite.cli.KcRegExec.execute;
 
@@ -27,7 +29,7 @@ public class KcRegTest extends AbstractCliTest {
     @Test
     public void testNoArgs() {
         /*
-         *  Test most basic execution that returns the initial help
+         *  Test (sub)commands without any arguments
          */
         KcRegExec exe = execute("");
 
@@ -41,6 +43,123 @@ public class KcRegTest extends AbstractCliTest {
 
         lines = exe.stderrLines();
         Assert.assertTrue("stderr output empty", lines.size() == 0);
+
+        /*
+         * Test commands without arguments
+         */
+        exe = execute("config");
+        assertExitCodeAndStreamSizes(exe, 1, 0, 1);
+        Assert.assertEquals("error message",
+                "Sub-command required by '" + OsUtil.CMD + " config' - one of: 'credentials', 'truststore', 'initial-token', 'registration-token'",
+                exe.stderrLines().get(0));
+
+        exe = execute("create");
+        assertExitCodeAndStreamSizes(exe, 1, 0, 1);
+        Assert.assertEquals("error message", "No file nor attribute values specified", exe.stderrLines().get(0));
+
+        exe = execute("get");
+        assertExitCodeAndStreamSizes(exe, 1, 0, 1);
+        Assert.assertEquals("error message", "CLIENT not specified", exe.stderrLines().get(0));
+
+        exe = execute("update");
+        assertExitCodeAndStreamSizes(exe, 1, 0, 1);
+        Assert.assertEquals("error message", "No file nor attribute values specified", exe.stderrLines().get(0));
+
+        exe = execute("delete");
+        assertExitCodeAndStreamSizes(exe, 1, 0, 1);
+        Assert.assertEquals("error message", "CLIENT not specified", exe.stderrLines().get(0));
+
+        exe = execute("attrs");
+        Assert.assertEquals("exit code", 0, exe.exitCode());
+        Assert.assertTrue("stdout has response", exe.stdoutLines().size() > 10);
+        Assert.assertEquals("first line", "Attributes for default format:", exe.stdoutLines().get(0));
+
+        exe = execute("update-token");
+        assertExitCodeAndStreamSizes(exe, 1, 0, 1);
+        Assert.assertEquals("error message", "CLIENT not specified", exe.stderrLines().get(0));
+
+        exe = execute("help");
+        Assert.assertEquals("exitCode == 0", 0, exe.exitCode());
+        lines = exe.stdoutLines();
+        Assert.assertTrue("stdout output not empty", lines.size() > 0);
+        Assert.assertEquals("stdout first line", "Keycloak Client Registration CLI", lines.get(0));
+        Assert.assertEquals("stdout one but last line", "Use '" + KcRegExec.CMD + " help <command>' for more information about a given command.", lines.get(lines.size() - 2));
+        Assert.assertEquals("stdout last line", "", lines.get(lines.size() - 1));
+    }
+
+    @Test
+    public void testHelpGlobalOption() {
+        /*
+         *  Test --help for all commands
+         */
+        KcRegExec exe = execute("--help");
+        Assert.assertEquals("exit code", 0, exe.exitCode());
+        Assert.assertEquals("no stderr", 0, exe.stderrLines().size());
+        Assert.assertEquals("stdout first line", "Keycloak Client Registration CLI", exe.stdoutLines().get(0));
+
+        exe = execute("create --help");
+        Assert.assertEquals("exit code", 0, exe.exitCode());
+        Assert.assertEquals("no stderr", 0, exe.stderrLines().size());
+        Assert.assertEquals("stdout first line", "Usage: " + CMD + " create [ARGUMENTS]", exe.stdoutLines().get(0));
+
+        exe = execute("get --help");
+        Assert.assertEquals("exit code", 0, exe.exitCode());
+        Assert.assertEquals("no stderr", 0, exe.stderrLines().size());
+        Assert.assertEquals("stdout first line", "Usage: " + CMD + " get CLIENT [ARGUMENTS]", exe.stdoutLines().get(0));
+
+        exe = execute("update --help");
+        Assert.assertEquals("exit code", 0, exe.exitCode());
+        Assert.assertEquals("no stderr", 0, exe.stderrLines().size());
+        Assert.assertEquals("stdout first line", "Usage: " + CMD + " update CLIENT [ARGUMENTS]", exe.stdoutLines().get(0));
+
+        exe = execute("delete --help");
+        Assert.assertEquals("exit code", 0, exe.exitCode());
+        Assert.assertEquals("no stderr", 0, exe.stderrLines().size());
+        Assert.assertEquals("stdout first line", "Usage: " + CMD + " delete CLIENT [ARGUMENTS]", exe.stdoutLines().get(0));
+
+        exe = execute("attrs --help");
+        Assert.assertEquals("exit code", 0, exe.exitCode());
+        Assert.assertEquals("no stderr", 0, exe.stderrLines().size());
+        Assert.assertEquals("stdout first line", "Usage: " + CMD + " attrs [ATTRIBUTE] [ARGUMENTS]", exe.stdoutLines().get(0));
+
+        exe = execute("update-token --help");
+        Assert.assertEquals("exit code", 0, exe.exitCode());
+        Assert.assertEquals("no stderr", 0, exe.stderrLines().size());
+        Assert.assertEquals("stdout first line", "Usage: " + CMD + " update-token CLIENT [ARGUMENTS]", exe.stdoutLines().get(0));
+
+        exe = execute("config --help");
+        Assert.assertEquals("exit code", 0, exe.exitCode());
+        Assert.assertEquals("no stderr", 0, exe.stderrLines().size());
+        Assert.assertEquals("stdout first line", "Usage: " + OsUtil.CMD + " config SUB_COMMAND [ARGUMENTS]", exe.stdoutLines().get(0));
+
+        exe = execute("config credentials --help");
+        Assert.assertEquals("exit code", 0, exe.exitCode());
+        Assert.assertEquals("no stderr", 0, exe.stderrLines().size());
+        Assert.assertEquals("stdout first line",
+                "Usage: " + CMD + " config credentials --server SERVER_URL --realm REALM [ARGUMENTS]",
+                exe.stdoutLines().get(0));
+
+        exe = execute("config initial-token --help");
+        Assert.assertEquals("exit code", 0, exe.exitCode());
+        Assert.assertEquals("no stderr", 0, exe.stderrLines().size());
+        Assert.assertEquals("stdout first line",
+                "Usage: " + CMD + " config initial-token --server SERVER --realm REALM [--delete | TOKEN] [ARGUMENTS]",
+                exe.stdoutLines().get(0));
+
+        exe = execute("config registration-token --help");
+        Assert.assertEquals("exit code", 0, exe.exitCode());
+        Assert.assertEquals("no stderr", 0, exe.stderrLines().size());
+        Assert.assertEquals("stdout first line",
+                "Usage: " + CMD + " config registration-token --server SERVER --realm REALM --client CLIENT [--delete | TOKEN] [ARGUMENTS]",
+                exe.stdoutLines().get(0));
+
+        exe = execute("config truststore --help");
+        Assert.assertEquals("exit code", 0, exe.exitCode());
+        Assert.assertEquals("no stderr", 0, exe.stderrLines().size());
+        Assert.assertEquals("stdout first line",
+                "Usage: " + CMD + " config truststore [TRUSTSTORE | --delete] [--trustpass PASSWOD] [ARGUMENTS]",
+                exe.stdoutLines().get(0));
+
     }
 
     @Test

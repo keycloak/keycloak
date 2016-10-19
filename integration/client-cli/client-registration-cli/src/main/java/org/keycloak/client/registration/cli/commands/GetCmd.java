@@ -35,7 +35,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.util.ArrayList;
 import java.util.List;
 
 import static org.keycloak.client.registration.cli.util.AuthUtil.ensureToken;
@@ -67,13 +66,17 @@ public class GetCmd extends AbstractAuthOptionsCmd {
     private String endpoint;
 
     @Arguments
-    private List<String> args = new ArrayList<>();
+    private List<String> args;
 
     @Override
     public CommandResult execute(CommandInvocation commandInvocation) throws CommandException, InterruptedException {
 
         try {
             processGlobalOptions();
+
+            if (printHelp()) {
+                return CommandResult.SUCCESS;
+            }
 
             if (args == null || args.isEmpty()) {
                 throw new RuntimeException("CLIENT not specified");
@@ -88,7 +91,7 @@ public class GetCmd extends AbstractAuthOptionsCmd {
 
 
             if (clientId.startsWith("-")) {
-                warnfErr(ParseUtil.CLIENTID_OPTION_WARN, clientId);
+                warnfErr(ParseUtil.CLIENT_OPTION_WARN, clientId);
             }
 
             ConfigData config = loadConfig();
@@ -170,6 +173,10 @@ public class GetCmd extends AbstractAuthOptionsCmd {
         } finally {
             commandInvocation.stop();
         }
+    }
+
+    protected String help() {
+        return usage();
     }
 
     public static String usage() {

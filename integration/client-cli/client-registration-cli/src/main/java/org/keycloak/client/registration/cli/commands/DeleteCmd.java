@@ -27,7 +27,6 @@ import org.keycloak.client.registration.cli.util.ParseUtil;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.util.ArrayList;
 import java.util.List;
 
 import static org.keycloak.client.registration.cli.util.AuthUtil.ensureToken;
@@ -46,19 +45,23 @@ import static org.keycloak.client.registration.cli.util.OsUtil.PROMPT;
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
-@CommandDefinition(name = "delete", description = "CLIENT_ID [GLOBAL_OPTIONS]")
+@CommandDefinition(name = "delete", description = "CLIENT [GLOBAL_OPTIONS]")
 public class DeleteCmd extends AbstractAuthOptionsCmd {
 
     @Arguments
-    private List<String> args = new ArrayList<>();
+    private List<String> args;
 
     @Override
     public CommandResult execute(CommandInvocation commandInvocation) throws CommandException, InterruptedException {
         try {
             processGlobalOptions();
 
-            if (args.isEmpty()) {
-                throw new RuntimeException("CLIENT_ID not specified");
+            if (printHelp()) {
+                return CommandResult.SUCCESS;
+            }
+
+            if (args == null || args.isEmpty()) {
+                throw new RuntimeException("CLIENT not specified");
             }
 
             if (args.size() > 1) {
@@ -68,7 +71,7 @@ public class DeleteCmd extends AbstractAuthOptionsCmd {
             String clientId = args.get(0);
 
             if (clientId.startsWith("-")) {
-                warnfErr(ParseUtil.CLIENTID_OPTION_WARN, clientId);
+                warnfErr(ParseUtil.CLIENT_OPTION_WARN, clientId);
             }
 
             String regType = "default";
@@ -108,6 +111,10 @@ public class DeleteCmd extends AbstractAuthOptionsCmd {
         } finally {
             commandInvocation.stop();
         }
+    }
+
+    protected String help() {
+        return usage();
     }
 
     public static String usage() {

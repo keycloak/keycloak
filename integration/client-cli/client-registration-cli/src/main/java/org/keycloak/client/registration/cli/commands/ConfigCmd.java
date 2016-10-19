@@ -42,7 +42,11 @@ public class ConfigCmd extends AbstractAuthOptionsCmd implements Command {
 
     public CommandResult execute(CommandInvocation commandInvocation) throws CommandException, InterruptedException {
         try {
-            if (args.size() == 0) {
+            if (args == null || args.size() == 0) {
+                if (printHelp()) {
+                    return CommandResult.SUCCESS;
+                }
+
                 throw new RuntimeException("Sub-command required by '" + OsUtil.CMD + " config' - one of: 'credentials', 'truststore', 'initial-token', 'registration-token'");
             }
 
@@ -60,13 +64,21 @@ public class ConfigCmd extends AbstractAuthOptionsCmd implements Command {
                 case "registration-token": {
                     return new ConfigRegistrationTokenCmd(this).execute(commandInvocation);
                 }
-                default:
+                default: {
+                    if (printHelp()) {
+                        return CommandResult.SUCCESS;
+                    }
                     throw new RuntimeException("Unknown sub-command: " + cmd);
+                }
             }
 
         } finally {
             commandInvocation.stop();
         }
+    }
+
+    protected String help() {
+        return usage();
     }
 
     public static String usage() {

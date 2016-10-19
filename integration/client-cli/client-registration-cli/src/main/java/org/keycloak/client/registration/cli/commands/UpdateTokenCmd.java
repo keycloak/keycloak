@@ -32,7 +32,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.util.ArrayList;
 import java.util.List;
 
 import static org.keycloak.client.registration.cli.util.AuthUtil.ensureToken;
@@ -55,7 +54,7 @@ import static org.keycloak.client.registration.cli.util.OsUtil.PROMPT;
 public class UpdateTokenCmd extends AbstractAuthOptionsCmd {
 
     @Arguments
-    private List<String> args = new ArrayList<>();
+    private List<String> args;
 
     @Override
     public CommandResult execute(CommandInvocation commandInvocation) throws CommandException, InterruptedException {
@@ -63,14 +62,18 @@ public class UpdateTokenCmd extends AbstractAuthOptionsCmd {
         try {
             processGlobalOptions();
 
-            if (args.isEmpty()) {
+            if (printHelp()) {
+                return CommandResult.SUCCESS;
+            }
+
+            if (args == null || args.isEmpty()) {
                 throw new RuntimeException("CLIENT not specified");
             }
 
             String clientId = args.get(0);
 
             if (clientId.startsWith("-")) {
-                warnfOut(ParseUtil.CLIENTID_OPTION_WARN, clientId);
+                warnfOut(ParseUtil.CLIENT_OPTION_WARN, clientId);
             }
 
             ConfigData config = loadConfig();
@@ -129,6 +132,10 @@ public class UpdateTokenCmd extends AbstractAuthOptionsCmd {
         }
     }
 
+    protected String help() {
+        return usage();
+    }
+
     public static String usage() {
         StringWriter sb = new StringWriter();
         PrintWriter out = new PrintWriter(sb);
@@ -141,7 +148,7 @@ public class UpdateTokenCmd extends AbstractAuthOptionsCmd {
         out.println();
         out.println("  Global options:");
         out.println("    -x                    Print full stack trace when exiting with error");
-        out.println("    -c, --config          Path to the config file (" + DEFAULT_CONFIG_FILE_STRING + " by default)");
+        out.println("    --config              Path to the config file (" + DEFAULT_CONFIG_FILE_STRING + " by default)");
         out.println("    --truststore PATH     Path to a truststore containing trusted certificates");
         out.println("    --trustpass PASSWORD  Truststore password (prompted for if not specified and --truststore is used)");
         out.println("    CREDENTIALS OPTIONS   Same set of options as accepted by '" + CMD + " config credentials' in order to establish");

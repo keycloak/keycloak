@@ -40,6 +40,10 @@ public class ConfigRegistrationTokenCmd extends AbstractAuthOptionsCmd implement
     @Override
     public CommandResult execute(CommandInvocation commandInvocation) throws CommandException, InterruptedException {
         try {
+            if (printHelp()) {
+                return CommandResult.SUCCESS;
+            }
+
             return process(commandInvocation);
         } finally {
             commandInvocation.stop();
@@ -118,6 +122,10 @@ public class ConfigRegistrationTokenCmd extends AbstractAuthOptionsCmd implement
         });
 
         return CommandResult.SUCCESS;
+    }
+
+    protected String help() {
+        return usage();
     }
 
     public static String usage() {
