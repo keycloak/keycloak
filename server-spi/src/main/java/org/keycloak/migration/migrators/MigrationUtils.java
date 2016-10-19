@@ -33,7 +33,7 @@ public class MigrationUtils {
 
     public static void addAdminRole(RealmModel realm, String roleName) {
         ClientModel client = realm.getMasterAdminClient();
-        if (client.getRole(roleName) == null) {
+        if (client != null && client.getRole(roleName) == null) {
             RoleModel role = client.addRole(roleName);
             role.setDescription("${role_" + roleName + "}");
             role.setScopeParamRequired(false);
@@ -43,7 +43,7 @@ public class MigrationUtils {
 
         if (!realm.getName().equals(Config.getAdminRealm())) {
             client = realm.getClientByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID);
-            if (client.getRole(roleName) == null) {
+            if (client != null && client.getRole(roleName) == null) {
                 RoleModel role = client.addRole(roleName);
                 role.setDescription("${role_" + roleName + "}");
                 role.setScopeParamRequired(false);
