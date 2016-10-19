@@ -283,7 +283,6 @@
             <version>2.0.0-M3</version>
             <scope>test</scope>
         </dependency>
-
     </dependencies>
     <build>
         <plugins>
