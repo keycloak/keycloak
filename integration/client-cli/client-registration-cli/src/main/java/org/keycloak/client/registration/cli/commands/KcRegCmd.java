@@ -20,12 +20,12 @@ import org.jboss.aesh.cl.GroupCommandDefinition;
 import org.jboss.aesh.console.command.CommandException;
 import org.jboss.aesh.console.command.CommandResult;
 import org.jboss.aesh.console.command.invocation.CommandInvocation;
-import org.keycloak.client.registration.cli.util.IoUtil;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
 import static org.keycloak.client.registration.cli.util.ConfigUtil.DEFAULT_CONFIG_FILE_STRING;
+import static org.keycloak.client.registration.cli.util.IoUtil.printOut;
 import static org.keycloak.client.registration.cli.util.OsUtil.CMD;
 import static org.keycloak.client.registration.cli.util.OsUtil.PROMPT;
 
@@ -43,9 +43,14 @@ public class KcRegCmd extends AbstractGlobalOptionsCmd {
     @Override
     public CommandResult execute(CommandInvocation commandInvocation) throws CommandException, InterruptedException {
         try {
-            IoUtil.printOut(usage());
-
-            return CommandResult.SUCCESS;
+            // if --help was requested then status is SUCCESS
+            // if not we print help anyway, but status is FAILURE
+            if (printHelp()) {
+                return CommandResult.SUCCESS;
+            } else {
+                printOut(usage());
+                return CommandResult.FAILURE;
+            }
         } finally {
             commandInvocation.stop();
         }

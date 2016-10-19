@@ -47,6 +47,10 @@ class AeshConsoleCallbackImpl extends AeshConsoleCallback {
                 else if(resultHandler != null)
                     resultHandler.onFailure(result);
 
+                if (result == CommandResult.FAILURE) {
+                    // we assume the command has already output any error messages
+                    System.exit(1);
+                }
             } catch (Exception e) {
                 console.stop();
 

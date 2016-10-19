@@ -33,7 +33,7 @@ public class KcRegTest extends AbstractCliTest {
          */
         KcRegExec exe = execute("");
 
-        Assert.assertEquals("exitCode == 0", 0, exe.exitCode());
+        Assert.assertEquals("exitCode", 1, exe.exitCode());
 
         List<String> lines = exe.stdoutLines();
         Assert.assertTrue("stdout output not empty", lines.size() > 0);
