@@ -40,6 +40,10 @@ public class ConfigTruststoreCmd extends AbstractAuthOptionsCmd implements Comma
     @Override
     public CommandResult execute(CommandInvocation commandInvocation) throws CommandException, InterruptedException {
         try {
+            if (printHelp()) {
+                return CommandResult.SUCCESS;
+            }
+
             return process(commandInvocation);
         } finally {
             commandInvocation.stop();
@@ -130,6 +134,9 @@ public class ConfigTruststoreCmd extends AbstractAuthOptionsCmd implements Comma
         return CommandResult.SUCCESS;
     }
 
+    protected String help() {
+        return usage();
+    }
 
     public static String usage() {
         StringWriter sb = new StringWriter();

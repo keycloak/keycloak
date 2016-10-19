@@ -23,17 +23,17 @@ public class KcRegConfigTest extends AbstractCliTest {
 
         try (TempFileResource configFile = new TempFileResource(handler.getConfigFile())) {
 
-            // forget --server
+            // without --server
             KcRegExec exe = execute("config registration-token --config '" + configFile.getName() + "' ");
             assertExitCodeAndStreamSizes(exe, 1, 0, 1);
             Assert.assertEquals("error message", "Required option not specified: --server", exe.stderrLines().get(0));
 
-            // forget --realm
+            // without --realm
             exe = execute("config registration-token --config '" + configFile.getName() + "' --server http://localhost:8080/auth");
             assertExitCodeAndStreamSizes(exe, 1, 0, 1);
             Assert.assertEquals("error message", "Required option not specified: --realm", exe.stderrLines().get(0));
 
-            // forget --client
+            // without --client
             exe = execute("config registration-token --config '" + configFile.getName() + "' --server http://localhost:8080/auth --realm test");
             assertExitCodeAndStreamSizes(exe, 1, 0, 1);
             Assert.assertEquals("error message", "Required option not specified: --client", exe.stderrLines().get(0));
