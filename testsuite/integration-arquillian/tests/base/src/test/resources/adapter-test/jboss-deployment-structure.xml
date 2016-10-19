@@ -27,6 +27,8 @@
             <module name="org.codehaus.jackson.jackson-mapper-asl" />
             <module name="org.bouncycastle" />
             <module name="org.jboss.xnio" />
+            <module name="org.keycloak.keycloak-adapter-spi" />
+            <module name="org.keycloak.keycloak-saml-core" />
 
         </dependencies>
     </deployment>

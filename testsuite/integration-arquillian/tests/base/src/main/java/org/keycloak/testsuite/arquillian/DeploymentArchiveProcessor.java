@@ -42,15 +42,7 @@ import static org.keycloak.testsuite.arquillian.AppServerTestEnricher.hasAppServ
 import static org.keycloak.testsuite.arquillian.AppServerTestEnricher.isRelative;
 import static org.keycloak.testsuite.arquillian.AppServerTestEnricher.isTomcatAppServer;
 import static org.keycloak.testsuite.arquillian.AuthServerTestEnricher.getAuthServerContextRoot;
-import static org.keycloak.testsuite.util.IOUtil.appendChildInDocument;
-import static org.keycloak.testsuite.util.IOUtil.documentToString;
-import static org.keycloak.testsuite.util.IOUtil.getElementTextContent;
-import static org.keycloak.testsuite.util.IOUtil.loadJson;
-import static org.keycloak.testsuite.util.IOUtil.loadXML;
-import static org.keycloak.testsuite.util.IOUtil.modifyDocElementAttribute;
-import static org.keycloak.testsuite.util.IOUtil.modifyDocElementValue;
-import static org.keycloak.testsuite.util.IOUtil.removeElementsFromDoc;
-
+import static org.keycloak.testsuite.util.IOUtil.*;
 
 
 /**
@@ -68,6 +60,7 @@ public class DeploymentArchiveProcessor implements ApplicationArchiveProcessor {
     public static final String ADAPTER_CONFIG_PATH_TENANT2 = "/WEB-INF/classes/tenant2-keycloak.json";
     public static final String ADAPTER_CONFIG_PATH_JS = "/keycloak.json";
     public static final String SAML_ADAPTER_CONFIG_PATH = "/WEB-INF/keycloak-saml.xml";
+    public static final String JBOSS_DEPLOYMENT_XML_PATH = "/WEB-INF/jboss-deployment-structure.xml";
 
     @Override
     public void process(Archive<?> archive, TestClass testClass) {
@@ -122,9 +115,6 @@ public class DeploymentArchiveProcessor implements ApplicationArchiveProcessor {
 
                 // For running SAML tests it is necessary to have few dependencies on app-server side.
                 // Few of them are not in adapter zip so we need to add them manually here
-                log.info("Adding SAMLFilter dependencies to " + archive.getName());
-                ((WebArchive) archive).addAsLibraries(KeycloakDependenciesResolver.resolveDependencies("org.keycloak:keycloak-saml-servlet-filter-adapter:" + System.getProperty("project.version")));
-
             } else { // OIDC adapter config
                 try {
                     AdapterConfig adapterConfig = loadJson(archive.get(adapterConfigPath)
@@ -148,17 +138,7 @@ public class DeploymentArchiveProcessor implements ApplicationArchiveProcessor {
                 } catch (IOException ex) {
                     log.log(Level.FATAL, "Cannot serialize adapter config to JSON.", ex);
                 }
-
-                log.info("Adding OIDCFilter dependencies to " + archive.getName());
-                ((WebArchive) archive).addAsLibraries(KeycloakDependenciesResolver.resolveDependencies("org.keycloak:keycloak-servlet-filter-adapter:" + System.getProperty("project.version")));
-
             }
-
-        } else if (archive.getName().equals("customer-portal-subsystem.war")) {
-
-            log.info("Adding OIDCFilter dependencies to " + archive.getName());
-            ((WebArchive) archive).addAsLibraries(KeycloakDependenciesResolver.resolveDependencies("org.keycloak:keycloak-servlet-filter-adapter:" + System.getProperty("project.version")));
-
         }
     }
 
@@ -176,6 +156,23 @@ public class DeploymentArchiveProcessor implements ApplicationArchiveProcessor {
         return libs;
     }
 
+    public void addFilterDependencies(Archive<?> archive, TestClass testClass) {
+        log.info("Adding filter dependencies to " + archive.getName());
+        String dependency = testClass.getAnnotation(UseServletFilter.class).filterDependency();
+        ((WebArchive) archive).addAsLibraries(KeycloakDependenciesResolver.resolveDependencies((dependency + ":" + System.getProperty("project.version"))));
+
+        try {
+            Document jbossXmlDoc = loadXML(archive.get(JBOSS_DEPLOYMENT_XML_PATH).getAsset().openStream());
+            removeNodeByAttributeValue(jbossXmlDoc, "dependencies", "module", "name", "org.keycloak.keycloak-saml-core");
+            removeNodeByAttributeValue(jbossXmlDoc, "dependencies", "module", "name", "org.keycloak.keycloak-adapter-spi");
+            archive.add(new StringAsset((documentToString(jbossXmlDoc))), JBOSS_DEPLOYMENT_XML_PATH);
+        } catch (TransformerException e) {
+            log.error("Can't transform document to String");
+            throw new RuntimeException(e);
+        }
+
+    }
+
     protected void modifyWebXml(Archive<?> archive, TestClass testClass) {
         try {
             Document webXmlDoc = loadXML(
@@ -185,6 +182,9 @@ public class DeploymentArchiveProcessor implements ApplicationArchiveProcessor {
             }
 
             if (testClass.getJavaClass().isAnnotationPresent(UseServletFilter.class)) {
+
+                addFilterDependencies(archive, testClass);
+
                 //We need to add filter declaration to web.xml
                 log.info("Adding filter to " + testClass.getAnnotation(UseServletFilter.class).filterClass() + " with mapping " + testClass.getAnnotation(UseServletFilter.class).filterPattern() + " for " + archive.getName());
 

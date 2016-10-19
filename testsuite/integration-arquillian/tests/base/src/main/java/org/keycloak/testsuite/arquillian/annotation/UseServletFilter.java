@@ -17,6 +17,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @Inherited
 public @interface UseServletFilter {
 
+    String filterDependency();
     String filterName();
     String filterClass();
     String filterPattern() default "/*";
