@@ -94,7 +94,7 @@ public class TermsAndConditionsTest extends TestRealmKeycloakTest {
 
         // assert user attribute is properly set
         UserRepresentation user = ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost");
-        Map<String,List<String>> attributes = user.getAttributesAsListValues();
+        Map<String,List<String>> attributes = user.getAttributes();
         assertNotNull("timestamp for terms acceptance was not stored in user attributes", attributes);
         List<String> termsAndConditions = attributes.get(TermsAndConditions.USER_ATTRIBUTE);
         assertTrue("timestamp for terms acceptance was not stored in user attributes as "
@@ -128,7 +128,7 @@ public class TermsAndConditionsTest extends TestRealmKeycloakTest {
 
         // assert user attribute is properly removed
         UserRepresentation user = ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost");
-        Map<String,List<String>> attributes = user.getAttributesAsListValues();
+        Map<String,List<String>> attributes = user.getAttributes();
         if (attributes != null) {
             assertNull("expected null for terms acceptance user attribute " + TermsAndConditions.USER_ATTRIBUTE,
                     attributes.get(TermsAndConditions.USER_ATTRIBUTE));

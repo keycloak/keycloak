@@ -197,7 +197,7 @@ public class ModelToRepresentation {
         rep.setRequiredActions(reqActions);
 
         if (user.getAttributes() != null && !user.getAttributes().isEmpty()) {
-            Map<String, Object> attrs = new HashMap<>();
+            Map<String, List<String>> attrs = new HashMap<>();
             attrs.putAll(user.getAttributes());
             rep.setAttributes(attrs);
         }

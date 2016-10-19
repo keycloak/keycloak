@@ -1342,16 +1342,10 @@ public class RepresentationToModel {
         user.setLastName(userRep.getLastName());
         user.setFederationLink(userRep.getFederationLink());
         if (userRep.getAttributes() != null) {
-            for (Map.Entry<String, Object> entry : userRep.getAttributes().entrySet()) {
-                Object value = entry.getValue();
-
-                if (value instanceof Collection) {
-                    Collection<String> colVal = (Collection<String>) value;
-                    user.setAttribute(entry.getKey(), new ArrayList<>(colVal));
-                } else if (value instanceof String) {
-                    // TODO: This is here just for backwards compatibility with KC 1.3 and earlier
-                    String stringVal = (String) value;
-                    user.setSingleAttribute(entry.getKey(), stringVal);
+            for (Map.Entry<String, List<String>> entry : userRep.getAttributes().entrySet()) {
+                List<String> value = entry.getValue();
+                if (value != null) {
+                    user.setAttribute(entry.getKey(), new ArrayList<>(value));
                 }
             }
         }
@@ -2226,20 +2220,11 @@ public class RepresentationToModel {
     public static void importFederatedUser(KeycloakSession session, RealmModel newRealm, UserRepresentation userRep) {
         UserFederatedStorageProvider federatedStorage = session.userFederatedStorage();
         if (userRep.getAttributes() != null) {
-            for (Map.Entry<String, Object> entry : userRep.getAttributes().entrySet()) {
+            for (Map.Entry<String, List<String>> entry : userRep.getAttributes().entrySet()) {
                 String key = entry.getKey();
-                Object value = entry.getValue();
-                if (value == null) continue;
-
-                if (value instanceof Collection) {
-                    Collection<String> colVal = (Collection<String>) value;
-                    List<String> list = new LinkedList<>();
-                    list.addAll(colVal);
-                    federatedStorage.setAttribute(newRealm, userRep.getId(), key, list);
-                } else if (value instanceof String) {
-                    // TODO: This is here just for backwards compatibility with KC 1.3 and earlier
-                    String stringVal = (String) value;
-                    federatedStorage.setSingleAttribute(newRealm, userRep.getId(), key, stringVal);
+                List<String> value = entry.getValue();
+                if (value != null) {
+                    federatedStorage.setAttribute(newRealm, userRep.getId(), key, new LinkedList<>(value));
                 }
             }
         }

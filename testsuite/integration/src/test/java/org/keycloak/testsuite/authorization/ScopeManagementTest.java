@@ -18,15 +18,21 @@
 
 package org.keycloak.testsuite.authorization;
 
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.junit.Test;
 import org.keycloak.authorization.model.Scope;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
+import org.keycloak.util.JsonSerialization;
 
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.Invocation.Builder;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
+
+import java.io.IOException;
+import java.util.LinkedList;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
