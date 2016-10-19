@@ -48,6 +48,9 @@ public class AttrsCmd extends AbstractGlobalOptionsCmd {
         try {
             processGlobalOptions();
 
+            if (printHelp()) {
+                return CommandResult.SUCCESS;
+            }
 
             EndpointType regType = EndpointType.DEFAULT;
             PrintStream out = commandInvocation.getShell().out();
@@ -118,6 +121,10 @@ public class AttrsCmd extends AbstractGlobalOptionsCmd {
         } finally {
             commandInvocation.stop();
         }
+    }
+
+    protected String help() {
+        return usage();
     }
 
     public static String usage() {

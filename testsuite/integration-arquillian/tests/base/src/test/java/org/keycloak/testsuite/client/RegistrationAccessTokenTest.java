@@ -109,7 +109,9 @@ public class RegistrationAccessTokenTest extends AbstractClientRegistrationTest 
 
     @Test
     public void getClientWithBadRegistrationToken() throws ClientRegistrationException {
-        reg.auth(Auth.token("invalid"));
+        String oldToken = client.getRegistrationAccessToken();
+        reg.update(client);
+        reg.auth(Auth.token(oldToken));
         try {
             reg.get(client.getClientId());
             fail("Expected 401");
@@ -134,9 +136,9 @@ public class RegistrationAccessTokenTest extends AbstractClientRegistrationTest 
 
     @Test
     public void updateClientWithBadRegistrationToken() throws ClientRegistrationException {
-        client.setRootUrl("http://newroot");
-
-        reg.auth(Auth.token("invalid"));
+        String oldToken = client.getRegistrationAccessToken();
+        reg.update(client);
+        reg.auth(Auth.token(oldToken));
         try {
             reg.update(client);
             fail("Expected 401");
@@ -155,7 +157,9 @@ public class RegistrationAccessTokenTest extends AbstractClientRegistrationTest 
 
     @Test
     public void deleteClientWithBadRegistrationToken() throws ClientRegistrationException {
-        reg.auth(Auth.token("invalid"));
+        String oldToken = client.getRegistrationAccessToken();
+        reg.update(client);
+        reg.auth(Auth.token(oldToken));
         try {
             reg.delete(client);
             fail("Expected 401");

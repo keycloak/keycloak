@@ -102,6 +102,10 @@ public class CreateCmd extends AbstractAuthOptionsCmd implements Command {
         try {
             processGlobalOptions();
 
+            if (printHelp()) {
+                return CommandResult.SUCCESS;
+            }
+
             if (args != null) {
                 Iterator<String> it = args.iterator();
                 while (it.hasNext()) {
@@ -224,6 +228,10 @@ public class CreateCmd extends AbstractAuthOptionsCmd implements Command {
         } else {
             printErr("Registered new client with client_id '" + clientId + "'");
         }
+    }
+
+    protected String help() {
+        return usage();
     }
 
     public static String usage() {

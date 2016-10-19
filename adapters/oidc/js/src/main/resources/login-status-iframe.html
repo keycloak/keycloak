@@ -24,7 +24,7 @@
         if (!init) {
             var req = new XMLHttpRequest();
 
-            var url = "http://localhost:8080/auth/realms/master/protocol/openid-connect/login-status-iframe.html/init";
+            var url = location.href + "/init";
             url += "?client_id=" + encodeURIComponent(clientId);
             url += "&origin=" + encodeURIComponent(origin);
             url += "&session_state=" + encodeURIComponent(sessionState);
