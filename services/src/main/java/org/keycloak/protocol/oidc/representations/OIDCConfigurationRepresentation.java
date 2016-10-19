@@ -52,6 +52,9 @@ public class OIDCConfigurationRepresentation {
     @JsonProperty("jwks_uri")
     private String jwksUri;
 
+    @JsonProperty("check_session_iframe")
+    private String checkSessionIframe;
+
     @JsonProperty("grant_types_supported")
     private List<String> grantTypesSupported;
 
@@ -148,6 +151,14 @@ public class OIDCConfigurationRepresentation {
 
     public void setJwksUri(String jwksUri) {
         this.jwksUri = jwksUri;
+    }
+
+    public String getCheckSessionIframe() {
+        return checkSessionIframe;
+    }
+
+    public void setCheckSessionIframe(String checkSessionIframe) {
+        this.checkSessionIframe = checkSessionIframe;
     }
 
     public String getLogoutEndpoint() {
