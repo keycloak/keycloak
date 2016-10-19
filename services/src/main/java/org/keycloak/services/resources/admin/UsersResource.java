@@ -274,7 +274,7 @@ public class UsersResource {
     }
 
     /**
-     * Get represenation of the user
+     * Get representation of the user
      *
      * @param id User id
      * @return
