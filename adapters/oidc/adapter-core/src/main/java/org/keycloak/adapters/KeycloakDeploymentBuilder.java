@@ -113,7 +113,7 @@ public class KeycloakDeploymentBuilder {
             deployment.setClient(new HttpClientBuilder().build(adapterConfig));
         }
         if (adapterConfig.getAuthServerUrl() == null && (!deployment.isBearerOnly() || realmKeyPem == null)) {
-            throw new RuntimeException("You must specify auth-url");
+            throw new RuntimeException("You must specify auth-server-url");
         }
         deployment.setAuthServerBaseUrl(adapterConfig);
         if (adapterConfig.getTurnOffChangeSessionIdOnLogin() != null) {
