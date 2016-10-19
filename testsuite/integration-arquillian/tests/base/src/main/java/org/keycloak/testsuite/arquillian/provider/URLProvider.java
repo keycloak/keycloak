@@ -74,7 +74,7 @@ public class URLProvider extends URLResourceProvider {
         }
 
         try {
-            if ("eap6".equals(System.getProperty("app.server"))) {
+            if (System.getProperty("app.server","").startsWith("eap6")) {
                 if (url == null) {
                     url = new URL("http://localhost:8080/");
                 }
