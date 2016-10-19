@@ -688,10 +688,10 @@ public final class KeycloakModelUtils {
         try {
             providerClass = (Class<? extends Provider>)Class.forName(model.getProviderType());
         } catch (ClassNotFoundException e) {
-            throw new RuntimeException(e);
+            return;
         }
         ProviderFactory factory = session.getKeycloakSessionFactory().getProviderFactory(providerClass, model.getProviderId());
-        if (factory instanceof ComponentFactory) {
+        if (factory instanceof ComponentFactory && factory != null) {
             ((ComponentFactory)factory).onCreate(session, realm, model);
         }
     }
