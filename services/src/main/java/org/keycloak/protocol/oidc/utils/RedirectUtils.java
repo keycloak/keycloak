@@ -18,6 +18,7 @@
 package org.keycloak.protocol.oidc.utils;
 
 import org.jboss.logging.Logger;
+import org.keycloak.common.util.UriUtils;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.RealmModel;
@@ -121,15 +122,12 @@ public class RedirectUtils {
 
     private static String relativeToAbsoluteURI(UriInfo uriInfo, String rootUrl, String relative) {
         if (rootUrl == null || rootUrl.isEmpty()) {
-            URI baseUri = uriInfo.getBaseUri();
-            String uri = baseUri.getScheme() + "://" + baseUri.getHost();
-            if (baseUri.getPort() != -1) {
-                uri += ":" + baseUri.getPort();
-            }
-            rootUrl = uri;
+            rootUrl = UriUtils.getOrigin(uriInfo.getBaseUri());
         }
-        relative = rootUrl + relative;
-        return relative;
+        StringBuilder sb = new StringBuilder();
+        sb.append(rootUrl);
+        sb.append(relative);
+        return sb.toString();
     }
 
     private static boolean matchesRedirects(Set<String> validRedirects, String redirect) {
