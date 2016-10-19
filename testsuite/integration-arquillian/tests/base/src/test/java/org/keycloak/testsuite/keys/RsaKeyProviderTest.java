@@ -144,7 +144,7 @@ public class RsaKeyProviderTest extends AbstractKeycloakTest {
         rep.getConfig().putSingle(Attributes.PRIORITY_KEY, "invalid");
 
         Response response = adminClient.realm("test").components().add(rep);
-        assertErrror(response, "Priority should be a number");
+        assertErrror(response, "'Priority' should be a number");
     }
 
     @Test
@@ -156,7 +156,7 @@ public class RsaKeyProviderTest extends AbstractKeycloakTest {
         rep.getConfig().putSingle(Attributes.ENABLED_KEY, "invalid");
 
         Response response = adminClient.realm("test").components().add(rep);
-        assertErrror(response, "Enabled should be 'true' or 'false'");
+        assertErrror(response, "'Enabled' should be 'true' or 'false'");
     }
 
     @Test
@@ -168,7 +168,7 @@ public class RsaKeyProviderTest extends AbstractKeycloakTest {
         rep.getConfig().putSingle(Attributes.ACTIVE_KEY, "invalid");
 
         Response response = adminClient.realm("test").components().add(rep);
-        assertErrror(response, "Active should be 'true' or 'false'");
+        assertErrror(response, "'Active' should be 'true' or 'false'");
     }
 
     @Test
@@ -178,7 +178,7 @@ public class RsaKeyProviderTest extends AbstractKeycloakTest {
         ComponentRepresentation rep = createRep("invalid", RsaKeyProviderFactory.ID);
 
         Response response = adminClient.realm("test").components().add(rep);
-        assertErrror(response, "Private RSA Key is required");
+        assertErrror(response, "'Private RSA Key' is required");
 
         rep.getConfig().putSingle(Attributes.PRIVATE_KEY_KEY, "nonsense");
         response = adminClient.realm("test").components().add(rep);

@@ -76,6 +76,11 @@ public class AdapterInstallationClientRegistrationProvider implements ClientRegi
     }
 
     @Override
+    public EventBuilder getEvent() {
+        return event;
+    }
+
+    @Override
     public void close() {
     }
 

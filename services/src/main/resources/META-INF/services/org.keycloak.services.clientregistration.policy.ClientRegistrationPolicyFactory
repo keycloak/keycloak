@@ -20,3 +20,5 @@ org.keycloak.services.clientregistration.policy.impl.ConsentRequiredClientRegist
 org.keycloak.services.clientregistration.policy.impl.ProtocolMappersClientRegistrationPolicyFactory
 org.keycloak.services.clientregistration.policy.impl.ClientTemplatesClientRegistrationPolicyFactory
 org.keycloak.services.clientregistration.policy.impl.ScopeClientRegistrationPolicyFactory
+org.keycloak.services.clientregistration.policy.impl.ClientDisabledClientRegistrationPolicyFactory
+org.keycloak.services.clientregistration.policy.impl.MaxClientsClientRegistrationPolicyFactory

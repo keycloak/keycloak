@@ -51,7 +51,9 @@ import org.keycloak.services.clientregistration.RegistrationAccessToken;
 import org.keycloak.services.clientregistration.policy.ClientRegistrationPolicy;
 import org.keycloak.services.clientregistration.policy.ClientRegistrationPolicyManager;
 import org.keycloak.services.clientregistration.policy.RegistrationAuth;
+import org.keycloak.services.clientregistration.policy.impl.ClientDisabledClientRegistrationPolicyFactory;
 import org.keycloak.services.clientregistration.policy.impl.ClientTemplatesClientRegistrationPolicyFactory;
+import org.keycloak.services.clientregistration.policy.impl.MaxClientsClientRegistrationPolicyFactory;
 import org.keycloak.services.clientregistration.policy.impl.ProtocolMappersClientRegistrationPolicyFactory;
 import org.keycloak.services.clientregistration.policy.impl.TrustedHostClientRegistrationPolicyFactory;
 import org.keycloak.testsuite.Assert;
@@ -266,6 +268,61 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
         // Try update with enabled consent required. Should pass
         clientRep.setFullScopeAllowed(false);
         reg.update(clientRep);
+    }
+
+
+    @Test
+    public void testClientDisabledPolicy() throws Exception {
+        setTrustedHost("localhost", getPolicyAnon());
+
+        // Assert new client is enabled
+        OIDCClientRepresentation client = create();
+        String clientId = client.getClientId();
+        ClientRepresentation clientRep = ApiUtil.findClientByClientId(realmResource(), clientId).toRepresentation();
+        Assert.assertTrue(clientRep.isEnabled());
+
+        // Add client-disabled policy
+        ComponentRepresentation rep = new ComponentRepresentation();
+        rep.setName("Clients disabled");
+        rep.setParentId(REALM_NAME);
+        rep.setProviderId(ClientDisabledClientRegistrationPolicyFactory.PROVIDER_ID);
+        rep.setProviderType(ClientRegistrationPolicy.class.getName());
+        rep.setSubType(getPolicyAnon());
+        realmResource().components().add(rep);
+
+        // Assert new client is disabled
+        client = create();
+        clientId = client.getClientId();
+        clientRep = ApiUtil.findClientByClientId(realmResource(), clientId).toRepresentation();
+        Assert.assertFalse(clientRep.isEnabled());
+
+        // Try enable client. Should fail
+        clientRep.setEnabled(true);
+        assertFail(ClientRegOp.UPDATE, clientRep, 403, "Not permitted to enable client");
+
+        // Try update disabled client. Should pass
+        clientRep.setEnabled(false);
+        reg.update(clientRep);
+    }
+
+
+    @Test
+    public void testMaxClientsPolicy() throws Exception {
+        setTrustedHost("localhost", getPolicyAnon());
+
+        int clientsCount = realmResource().clients().findAll().size();
+        int newClientsLimit = clientsCount + 1;
+
+        // Allow to create one more client to current limit
+        ComponentRepresentation maxClientsPolicyRep = findPolicyByProviderAndAuth(MaxClientsClientRegistrationPolicyFactory.PROVIDER_ID, getPolicyAnon());
+        maxClientsPolicyRep.getConfig().putSingle(MaxClientsClientRegistrationPolicyFactory.MAX_CLIENTS, String.valueOf(newClientsLimit));
+        realmResource().components().component(maxClientsPolicyRep.getId()).update(maxClientsPolicyRep);
+
+        // I can register one new client
+        OIDCClientRepresentation client = create();
+
+        // I can't register more clients
+        assertOidcFail(ClientRegOp.CREATE, createRepOidc(), 403, "It's allowed to have max " + newClientsLimit + " clients per realm");
     }
 
 

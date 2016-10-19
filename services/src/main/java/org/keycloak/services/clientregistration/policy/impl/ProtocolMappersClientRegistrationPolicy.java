@@ -18,17 +18,15 @@
 package org.keycloak.services.clientregistration.policy.impl;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import org.jboss.logging.Logger;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
-import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
+import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.clientregistration.ClientRegistrationContext;
 import org.keycloak.services.clientregistration.ClientRegistrationProvider;
 import org.keycloak.services.clientregistration.policy.ClientRegistrationPolicy;
@@ -66,7 +64,7 @@ public class ProtocolMappersClientRegistrationPolicy implements ClientRegistrati
             String mapperType = mapper.getProtocolMapper();
 
             if (!allowedMapperProviders.contains(mapperType)) {
-                logger.warnf("ProtocolMapper '%s' of type '%s' not allowed", mapper.getName(), mapperType);
+                ServicesLogger.LOGGER.clientRegistrationMapperNotAllowed(mapper.getName(), mapperType);
                 throw new ClientRegistrationPolicyException("ProtocolMapper type not allowed");
             }
         }
@@ -75,8 +73,7 @@ public class ProtocolMappersClientRegistrationPolicy implements ClientRegistrati
 
     protected void enableConsentRequiredForAll(ClientModel clientModel) {
         if (isConsentRequiredForMappers()) {
-            // TODO: Debug
-            logger.infof("Enable consentRequired for all protocol mappers of client %s", clientModel.getClientId());
+            logger.debugf("Enable consentRequired for all protocol mappers of client %s", clientModel.getClientId());
 
             Set<ProtocolMapperModel> mappers = clientModel.getProtocolMappers();
 
@@ -105,8 +102,7 @@ public class ProtocolMappersClientRegistrationPolicy implements ClientRegistrati
 
         }).forEach((ProtocolMapperModel mapperToRemove) -> {
 
-            // TODO: debug
-            logger.infof("Removing builtin mapper '%s' of type '%s' as type is not permitted", mapperToRemove.getName(), mapperToRemove.getProtocolMapper());
+            logger.debugf("Removing builtin mapper '%s' of type '%s' as type is not permitted", mapperToRemove.getName(), mapperToRemove.getProtocolMapper());
             clientModel.removeProtocolMapper(mapperToRemove);
 
         });

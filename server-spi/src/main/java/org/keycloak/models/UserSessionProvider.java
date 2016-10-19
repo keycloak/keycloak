@@ -82,11 +82,6 @@ public interface UserSessionProvider extends Provider {
     void removeClientInitialAccessModel(RealmModel realm, String id);
     List<ClientInitialAccessModel> listClientInitialAccess(RealmModel realm);
 
-    ClientRegistrationTrustedHostModel createClientRegistrationTrustedHostModel(RealmModel realm, String hostName, int count);
-    ClientRegistrationTrustedHostModel getClientRegistrationTrustedHostModel(RealmModel realm, String hostName);
-    void removeClientRegistrationTrustedHostModel(RealmModel realm, String hostName);
-    List<ClientRegistrationTrustedHostModel> listClientRegistrationTrustedHosts(RealmModel realm);
-
     void close();
 
 }

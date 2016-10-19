@@ -21,11 +21,15 @@ package org.keycloak.component;
  * @version $Revision: 1 $
  */
 public class ComponentValidationException extends RuntimeException {
+
+    private Object[] parameters;
+
     public ComponentValidationException() {
     }
 
-    public ComponentValidationException(String message) {
+    public ComponentValidationException(String message, Object... parameters) {
         super(message);
+        this.parameters = parameters;
     }
 
     public ComponentValidationException(String message, Throwable cause) {
@@ -38,5 +42,13 @@ public class ComponentValidationException extends RuntimeException {
 
     public ComponentValidationException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
         super(message, cause, enableSuppression, writableStackTrace);
+    }
+
+    public Object[] getParameters() {
+        return parameters;
+    }
+
+    public void setParameters(Object[] parameters) {
+        this.parameters = parameters;
     }
 }
