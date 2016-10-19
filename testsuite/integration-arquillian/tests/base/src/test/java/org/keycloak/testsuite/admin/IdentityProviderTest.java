@@ -27,6 +27,10 @@ import org.keycloak.dom.saml.v2.metadata.KeyTypes;
 import org.keycloak.dom.saml.v2.metadata.SPSSODescriptorType;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
+import org.keycloak.models.utils.StripSecretsUtils;
+import org.keycloak.representations.idm.AdminEventRepresentation;
+import org.keycloak.representations.idm.ComponentRepresentation;
+import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperTypeRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
@@ -78,7 +82,7 @@ public class IdentityProviderTest extends AbstractAdminTest {
         IdentityProviderRepresentation newIdentityProvider = createRep("new-identity-provider", "oidc");
 
         newIdentityProvider.getConfig().put("clientId", "clientId");
-        newIdentityProvider.getConfig().put("clientSecret", "clientSecret");
+        newIdentityProvider.getConfig().put("clientSecret", "some secret value");
 
         create(newIdentityProvider);
 
@@ -94,10 +98,17 @@ public class IdentityProviderTest extends AbstractAdminTest {
         assertEquals("new-identity-provider", representation.getAlias());
         assertEquals("oidc", representation.getProviderId());
         assertEquals("clientId", representation.getConfig().get("clientId"));
-        assertEquals("clientSecret", representation.getConfig().get("clientSecret"));
+        assertEquals(ComponentRepresentation.SECRET_VALUE, representation.getConfig().get("clientSecret"));
         assertTrue(representation.isEnabled());
         assertFalse(representation.isStoreToken());
         assertFalse(representation.isTrustEmail());
+
+        testingClient.testing("admin-client-test").getSmtpConfig();
+
+        assertEquals("some secret value", testingClient.testing("admin-client-test").getIdentityProviderConfig("new-identity-provider").get("clientSecret"));
+
+        IdentityProviderRepresentation rep = realm.identityProviders().findAll().stream().filter(i -> i.getAlias().equals("new-identity-provider")).findFirst().get();
+        assertEquals(ComponentRepresentation.SECRET_VALUE, rep.getConfig().get("clientSecret"));
     }
 
     @Test
@@ -105,7 +116,7 @@ public class IdentityProviderTest extends AbstractAdminTest {
         IdentityProviderRepresentation newIdentityProvider = createRep("update-identity-provider", "oidc");
 
         newIdentityProvider.getConfig().put("clientId", "clientId");
-        newIdentityProvider.getConfig().put("clientSecret", "clientSecret");
+        newIdentityProvider.getConfig().put("clientSecret", "some secret value");
 
         create(newIdentityProvider);
 
@@ -125,7 +136,9 @@ public class IdentityProviderTest extends AbstractAdminTest {
         representation.getConfig().put("clientId", "changedClientId");
 
         identityProviderResource.update(representation);
-        assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, AdminEventPaths.identityProviderPath("update-identity-provider"), representation, ResourceType.IDENTITY_PROVIDER);
+        AdminEventRepresentation event = assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, AdminEventPaths.identityProviderPath("update-identity-provider"), representation, ResourceType.IDENTITY_PROVIDER);
+        assertFalse(event.getRepresentation().contains("some secret value"));
+        assertTrue(event.getRepresentation().contains(ComponentRepresentation.SECRET_VALUE));
 
         identityProviderResource = realm.identityProviders().get(representation.getInternalId());
 
@@ -136,6 +149,8 @@ public class IdentityProviderTest extends AbstractAdminTest {
         assertFalse(representation.isEnabled());
         assertTrue(representation.isStoreToken());
         assertEquals("changedClientId", representation.getConfig().get("clientId"));
+
+        assertEquals("some secret value", testingClient.testing("admin-client-test").getIdentityProviderConfig("changed-alias").get("clientSecret"));
     }
 
     @Test
@@ -168,7 +183,14 @@ public class IdentityProviderTest extends AbstractAdminTest {
         Assert.assertNotNull(ApiUtil.getCreatedId(response));
         response.close();
 
+        String secret = idpRep.getConfig() != null ? idpRep.getConfig().get("clientSecret") : null;
+        idpRep = StripSecretsUtils.strip(idpRep);
+
         assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.identityProviderPath(idpRep.getAlias()), idpRep, ResourceType.IDENTITY_PROVIDER);
+
+        if (secret != null) {
+            idpRep.getConfig().put("clientSecret", secret);
+        }
     }
 
     private IdentityProviderRepresentation createRep(String id, String providerId) {

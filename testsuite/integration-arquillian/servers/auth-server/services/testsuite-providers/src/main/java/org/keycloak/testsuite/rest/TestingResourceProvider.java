@@ -37,6 +37,7 @@ import org.keycloak.keys.KeyProviderFactory;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.FederatedIdentityModel;
+import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
@@ -636,6 +637,20 @@ public class TestingResourceProvider implements RealmResourceProvider {
         }
 
         return reps;
+    }
+
+    @GET
+    @Path("/smtp-config")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Map<String, String> getSmtpConfig() {
+        return session.getContext().getRealm().getSmtpConfig();
+    }
+
+    @GET
+    @Path("/identity-config")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Map<String, String> getIdentityProviderConfig(@QueryParam("alias") String alias) {
+        return session.getContext().getRealm().getIdentityProviderByAlias(alias).getConfig();
     }
 
     private RealmModel getRealmByName(String realmName) {
