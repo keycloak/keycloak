@@ -20,6 +20,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jboss.dmr.ModelNode;
+import org.jboss.logging.Logger;
 import org.jboss.resteasy.core.Dispatcher;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.Config;
@@ -44,6 +45,7 @@ import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.filters.KeycloakTransactionCommitter;
 import org.keycloak.services.managers.ApplianceBootstrap;
 import org.keycloak.services.managers.RealmManager;
+import org.keycloak.services.managers.UserStorageSyncManager;
 import org.keycloak.services.managers.UsersSyncManager;
 import org.keycloak.services.resources.admin.AdminRoot;
 import org.keycloak.services.scheduled.ClearExpiredEvents;
@@ -84,7 +86,9 @@ public class KeycloakApplication extends Application {
     // two places to avoid dependency between Keycloak Subsystem and Keycloak Services module.
     public static final String KEYCLOAK_CONFIG_PARAM_NAME = "org.keycloak.server-subsystem.Config";
 
-    private static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    public static final String KEYCLOAK_EMBEDDED = "keycloak.embedded";
+
+    private static final Logger logger = Logger.getLogger(KeycloakApplication.class);
 
     protected boolean embedded = false;
 
@@ -96,7 +100,7 @@ public class KeycloakApplication extends Application {
 
     public KeycloakApplication(@Context ServletContext context, @Context Dispatcher dispatcher) {
         try {
-            if ("true".equals(context.getInitParameter("keycloak.embedded"))) {
+            if ("true".equals(context.getInitParameter(KEYCLOAK_EMBEDDED))) {
                 embedded = true;
             }
 
@@ -262,14 +266,14 @@ public class KeycloakApplication extends Application {
             String dmrConfig = loadDmrConfig(context);
             if (dmrConfig != null) {
                 node = new ObjectMapper().readTree(dmrConfig);
-                logger.loadingFrom("standalone.xml or domain.xml");
+                ServicesLogger.LOGGER.loadingFrom("standalone.xml or domain.xml");
             }
 
             String configDir = System.getProperty("jboss.server.config.dir");
             if (node == null && configDir != null) {
                 File f = new File(configDir + File.separator + "keycloak-server.json");
                 if (f.isFile()) {
-                    logger.loadingFrom(f.getAbsolutePath());
+                    ServicesLogger.LOGGER.loadingFrom(f.getAbsolutePath());
                     node = new ObjectMapper().readTree(f);
                 }
             }
@@ -277,7 +281,7 @@ public class KeycloakApplication extends Application {
             if (node == null) {
                 URL resource = Thread.currentThread().getContextClassLoader().getResource("META-INF/keycloak-server.json");
                 if (resource != null) {
-                    logger.loadingFrom(resource);
+                    ServicesLogger.LOGGER.loadingFrom(resource);
                     node = new ObjectMapper().readTree(resource);
                 }
             }
@@ -319,6 +323,7 @@ public class KeycloakApplication extends Application {
             timer.schedule(new ClusterAwareScheduledTaskRunner(sessionFactory, new ClearExpiredEvents(), interval), interval, "ClearExpiredEvents");
             timer.schedule(new ClusterAwareScheduledTaskRunner(sessionFactory, new ClearExpiredUserSessions(), interval), interval, "ClearExpiredUserSessions");
             new UsersSyncManager().bootstrapPeriodic(sessionFactory, timer);
+            new UserStorageSyncManager().bootstrapPeriodic(sessionFactory, timer);
         } finally {
             session.close();
         }
@@ -366,23 +371,23 @@ public class KeycloakApplication extends Application {
                 manager.setContextPath(getContextPath());
 
                 if (rep.getId() != null && manager.getRealm(rep.getId()) != null) {
-                    logger.realmExists(rep.getRealm(), from);
+                    ServicesLogger.LOGGER.realmExists(rep.getRealm(), from);
                     exists = true;
                 }
 
                 if (manager.getRealmByName(rep.getRealm()) != null) {
-                    logger.realmExists(rep.getRealm(), from);
+                    ServicesLogger.LOGGER.realmExists(rep.getRealm(), from);
                     exists = true;
                 }
                 if (!exists) {
                     RealmModel realm = manager.importRealm(rep);
-                    logger.importedRealm(realm.getName(), from);
+                    ServicesLogger.LOGGER.importedRealm(realm.getName(), from);
                 }
                 session.getTransactionManager().commit();
             } catch (Throwable t) {
                 session.getTransactionManager().rollback();
                 if (!exists) {
-                    logger.unableToImportRealm(t, rep.getRealm(), from);
+                    ServicesLogger.LOGGER.unableToImportRealm(t, rep.getRealm(), from);
                 }
             }
         } finally {
@@ -395,14 +400,14 @@ public class KeycloakApplication extends Application {
         if (configDir != null) {
             File addUserFile = new File(configDir + File.separator + "keycloak-add-user.json");
             if (addUserFile.isFile()) {
-                logger.imprtingUsersFrom(addUserFile);
+                ServicesLogger.LOGGER.imprtingUsersFrom(addUserFile);
 
                 List<RealmRepresentation> realms;
                 try {
                     realms = JsonSerialization.readValue(new FileInputStream(addUserFile), new TypeReference<List<RealmRepresentation>>() {
                     });
                 } catch (IOException e) {
-                    logger.failedToLoadUsers(e);
+                    ServicesLogger.LOGGER.failedToLoadUsers(e);
                     return;
                 }
 
@@ -414,7 +419,7 @@ public class KeycloakApplication extends Application {
 
                             RealmModel realm = session.realms().getRealmByName(realmRep.getRealm());
                             if (realm == null) {
-                                logger.addUserFailedRealmNotFound(userRep.getUsername(), realmRep.getRealm());
+                                ServicesLogger.LOGGER.addUserFailedRealmNotFound(userRep.getUsername(), realmRep.getRealm());
                             } else {
                                 UserModel user = session.users().addUser(realm, userRep.getUsername());
                                 user.setEnabled(userRep.isEnabled());
@@ -423,13 +428,13 @@ public class KeycloakApplication extends Application {
                             }
 
                             session.getTransactionManager().commit();
-                            logger.addUserSuccess(userRep.getUsername(), realmRep.getRealm());
+                            ServicesLogger.LOGGER.addUserSuccess(userRep.getUsername(), realmRep.getRealm());
                         } catch (ModelDuplicateException e) {
                             session.getTransactionManager().rollback();
-                            logger.addUserFailedUserExists(userRep.getUsername(), realmRep.getRealm());
+                            ServicesLogger.LOGGER.addUserFailedUserExists(userRep.getUsername(), realmRep.getRealm());
                         } catch (Throwable t) {
                             session.getTransactionManager().rollback();
-                            logger.addUserFailed(t, userRep.getUsername(), realmRep.getRealm());
+                            ServicesLogger.LOGGER.addUserFailed(t, userRep.getUsername(), realmRep.getRealm());
                         } finally {
                             session.close();
                         }
@@ -437,7 +442,7 @@ public class KeycloakApplication extends Application {
                 }
 
                 if (!addUserFile.delete()) {
-                    logger.failedToDeleteFile(addUserFile.getAbsolutePath());
+                    ServicesLogger.LOGGER.failedToDeleteFile(addUserFile.getAbsolutePath());
                 }
             }
         }

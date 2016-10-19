@@ -17,6 +17,7 @@
 
 package org.keycloak.authentication;
 
+import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAuthenticator;
@@ -63,7 +64,7 @@ import java.util.Map;
  */
 public class AuthenticationProcessor {
     public static final String CURRENT_AUTHENTICATION_EXECUTION = "current.authentication.execution";
-    protected static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    protected static final Logger logger = Logger.getLogger(AuthenticationProcessor.class);
     protected RealmModel realm;
     protected UserSessionModel userSession;
     protected ClientSessionModel clientSession;
@@ -212,7 +213,7 @@ public class AuthenticationProcessor {
     }
 
     public String generateCode() {
-        ClientSessionCode accessCode = new ClientSessionCode(getRealm(), getClientSession());
+        ClientSessionCode accessCode = new ClientSessionCode(session, getRealm(), getClientSession());
         clientSession.setTimestamp(Time.currentTime());
         return accessCode.getCode();
     }
@@ -561,25 +562,25 @@ public class AuthenticationProcessor {
         if (failure instanceof AuthenticationFlowException) {
             AuthenticationFlowException e = (AuthenticationFlowException) failure;
             if (e.getError() == AuthenticationFlowError.INVALID_USER) {
-                logger.failedAuthentication(e);
+                ServicesLogger.LOGGER.failedAuthentication(e);
                 event.error(Errors.USER_NOT_FOUND);
                 return ErrorPage.error(session, Messages.INVALID_USER);
             } else if (e.getError() == AuthenticationFlowError.USER_DISABLED) {
-                logger.failedAuthentication(e);
+                ServicesLogger.LOGGER.failedAuthentication(e);
                 event.error(Errors.USER_DISABLED);
                 return ErrorPage.error(session, Messages.ACCOUNT_DISABLED);
             } else if (e.getError() == AuthenticationFlowError.USER_TEMPORARILY_DISABLED) {
-                logger.failedAuthentication(e);
+                ServicesLogger.LOGGER.failedAuthentication(e);
                 event.error(Errors.USER_TEMPORARILY_DISABLED);
                 return ErrorPage.error(session, Messages.INVALID_USER);
 
             } else if (e.getError() == AuthenticationFlowError.INVALID_CLIENT_SESSION) {
-                logger.failedAuthentication(e);
+                ServicesLogger.LOGGER.failedAuthentication(e);
                 event.error(Errors.INVALID_CODE);
                 return ErrorPage.error(session, Messages.INVALID_CODE);
 
             } else if (e.getError() == AuthenticationFlowError.EXPIRED_CODE) {
-                logger.failedAuthentication(e);
+                ServicesLogger.LOGGER.failedAuthentication(e);
                 event.error(Errors.EXPIRED_CODE);
                 return ErrorPage.error(session, Messages.EXPIRED_CODE);
 
@@ -604,13 +605,13 @@ public class AuthenticationProcessor {
                 return processor.authenticate();
 
             } else {
-                logger.failedAuthentication(e);
+                ServicesLogger.LOGGER.failedAuthentication(e);
                 event.error(Errors.INVALID_USER_CREDENTIALS);
                 return ErrorPage.error(session, Messages.INVALID_USER);
             }
 
         } else {
-            logger.failedAuthentication(failure);
+            ServicesLogger.LOGGER.failedAuthentication(failure);
             event.error(Errors.INVALID_USER_CREDENTIALS);
             return ErrorPage.error(session, Messages.UNEXPECTED_ERROR_HANDLING_REQUEST);
         }
@@ -620,7 +621,7 @@ public class AuthenticationProcessor {
     public Response handleClientAuthException(Exception failure) {
         if (failure instanceof AuthenticationFlowException) {
             AuthenticationFlowException e = (AuthenticationFlowException) failure;
-            logger.failedClientAuthentication(e);
+            ServicesLogger.LOGGER.failedClientAuthentication(e);
             if (e.getError() == AuthenticationFlowError.CLIENT_NOT_FOUND) {
                 event.error(Errors.CLIENT_NOT_FOUND);
                 return ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "invalid_client", "Could not find client");
@@ -635,7 +636,7 @@ public class AuthenticationProcessor {
                 return ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "unauthorized_client", e.getError().toString() + ": " + e.getMessage());
             }
         } else {
-            logger.errorAuthenticatingClient(failure);
+            ServicesLogger.LOGGER.errorAuthenticatingClient(failure);
             event.error(Errors.INVALID_CLIENT_CREDENTIALS);
             return ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "unauthorized_client", "Unexpected error when authenticating client: " + failure.getMessage());
         }
@@ -690,10 +691,10 @@ public class AuthenticationProcessor {
 
     }
 
-    public static Response redirectToRequiredActions(RealmModel realm, ClientSessionModel clientSession, UriInfo uriInfo) {
+    public static Response redirectToRequiredActions(KeycloakSession session, RealmModel realm, ClientSessionModel clientSession, UriInfo uriInfo) {
 
         // redirect to non-action url so browser refresh button works without reposting past data
-        ClientSessionCode accessCode = new ClientSessionCode(realm, clientSession);
+        ClientSessionCode accessCode = new ClientSessionCode(session, realm, clientSession);
         accessCode.setAction(ClientSessionModel.Action.REQUIRED_ACTIONS.name());
         clientSession.setTimestamp(Time.currentTime());
 
@@ -764,7 +765,7 @@ public class AuthenticationProcessor {
     }
 
     public void checkClientSession() {
-        ClientSessionCode code = new ClientSessionCode(realm, clientSession);
+        ClientSessionCode code = new ClientSessionCode(session, realm, clientSession);
         String action = ClientSessionModel.Action.AUTHENTICATE.name();
         if (!code.isValidAction(action)) {
             throw new AuthenticationFlowException(AuthenticationFlowError.INVALID_CLIENT_SESSION);
@@ -862,7 +863,7 @@ public class AuthenticationProcessor {
     protected Response authenticationComplete() {
         attachSession();
         if (isActionRequired()) {
-            return redirectToRequiredActions(realm, clientSession, uriInfo);
+            return redirectToRequiredActions(session, realm, clientSession, uriInfo);
         } else {
             event.detail(Details.CODE_ID, clientSession.getId());  // todo This should be set elsewhere.  find out why tests fail.  Don't know where this is supposed to be set
             return AuthenticationManager.finishedRequiredActions(session,  userSession, clientSession, connection, request, uriInfo, event);

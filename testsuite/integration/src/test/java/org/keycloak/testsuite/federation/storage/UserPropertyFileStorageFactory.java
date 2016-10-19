@@ -22,8 +22,12 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.storage.UserStorageProviderFactory;
+import org.keycloak.storage.UserStorageProviderModel;
+import org.keycloak.storage.user.ImportSynchronization;
+import org.keycloak.storage.user.SynchronizationResult;
 
 import java.io.IOException;
+import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Properties;
@@ -32,7 +36,7 @@ import java.util.Properties;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class UserPropertyFileStorageFactory implements UserStorageProviderFactory<UserPropertyFileStorage> {
+public class UserPropertyFileStorageFactory implements UserStorageProviderFactory<UserPropertyFileStorage>, ImportSynchronization {
 
 
     public static final String PROVIDER_ID = "user-password-props";
@@ -79,5 +83,15 @@ public class UserPropertyFileStorageFactory implements UserStorageProviderFactor
     @Override
     public void close() {
 
+    }
+
+    @Override
+    public SynchronizationResult sync(KeycloakSessionFactory sessionFactory, String realmId, UserStorageProviderModel model) {
+        return SynchronizationResult.ignored();
+    }
+
+    @Override
+    public SynchronizationResult syncSince(Date lastSync, KeycloakSessionFactory sessionFactory, String realmId, UserStorageProviderModel model) {
+        return SynchronizationResult.ignored();
     }
 }

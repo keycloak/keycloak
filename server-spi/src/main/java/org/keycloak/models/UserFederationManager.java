@@ -175,35 +175,30 @@ public class UserFederationManager implements UserProvider {
     }
 
     @Override
-    public void addConsent(RealmModel realm, UserModel user, UserConsentModel consent) {
-        validateUser(realm, user);
-        session.userStorage().addConsent(realm, user, consent);
+    public void addConsent(RealmModel realm, String userId, UserConsentModel consent) {
+        session.userStorage().addConsent(realm, userId, consent);
 
     }
 
     @Override
-    public UserConsentModel getConsentByClient(RealmModel realm, UserModel user, String clientInternalId) {
-        validateUser(realm, user);
-        return session.userStorage().getConsentByClient(realm, user, clientInternalId);
+    public UserConsentModel getConsentByClient(RealmModel realm, String userId, String clientInternalId) {
+        return session.userStorage().getConsentByClient(realm, userId, clientInternalId);
     }
 
     @Override
-    public List<UserConsentModel> getConsents(RealmModel realm, UserModel user) {
-        validateUser(realm, user);
-        return session.userStorage().getConsents(realm, user);
+    public List<UserConsentModel> getConsents(RealmModel realm, String userId) {
+        return session.userStorage().getConsents(realm, userId);
     }
 
     @Override
-    public void updateConsent(RealmModel realm, UserModel user, UserConsentModel consent) {
-        validateUser(realm, user);
-        session.userStorage().updateConsent(realm, user, consent);
+    public void updateConsent(RealmModel realm, String userId, UserConsentModel consent) {
+        session.userStorage().updateConsent(realm, userId, consent);
 
     }
 
     @Override
-    public boolean revokeConsentForClient(RealmModel realm, UserModel user, String clientInternalId) {
-        validateUser(realm, user);
-        return session.userStorage().revokeConsentForClient(realm, user, clientInternalId);
+    public boolean revokeConsentForClient(RealmModel realm, String userId, String clientInternalId) {
+        return session.userStorage().revokeConsentForClient(realm, userId, clientInternalId);
     }
 
     @Override

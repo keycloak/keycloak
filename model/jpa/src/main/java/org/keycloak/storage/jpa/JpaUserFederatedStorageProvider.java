@@ -70,12 +70,6 @@ import java.util.Set;
  */
 public class JpaUserFederatedStorageProvider implements
         UserFederatedStorageProvider,
-        UserAttributeFederatedStorage,
-        UserBrokerLinkFederatedStorage,
-        UserConsentFederatedStorage,
-        UserGroupMembershipFederatedStorage,
-        UserRequiredActionsFederatedStorage,
-        UserRoleMappingsFederatedStorage,
         UserCredentialStore {
 
     private final KeycloakSession session;
@@ -95,66 +89,66 @@ public class JpaUserFederatedStorageProvider implements
      * We create an entry so that its easy to iterate over all things in the database.  Specifically useful for export
      *
      */
-    protected void createIndex(RealmModel realm, UserModel user) {
-        if (em.find(FederatedUser.class, user.getId()) == null) {
+    protected void createIndex(RealmModel realm, String userId) {
+        if (em.find(FederatedUser.class, userId) == null) {
             FederatedUser fedUser = new FederatedUser();
-            fedUser.setId(user.getId());
+            fedUser.setId(userId);
             fedUser.setRealmId(realm.getId());
-            fedUser.setStorageProviderId(StorageId.resolveProviderId(user));
+            fedUser.setStorageProviderId(new StorageId(userId).getProviderId());
             em.persist(fedUser);
         }
     }
 
 
     @Override
-    public void setAttribute(RealmModel realm, UserModel user, String name, List<String> values) {
-        createIndex(realm, user);
-        deleteAttribute(realm, user, name);
+    public void setAttribute(RealmModel realm, String userId, String name, List<String> values) {
+        createIndex(realm, userId);
+        deleteAttribute(realm, userId, name);
         em.flush();
         for (String value : values) {
-            persistAttributeValue(realm, user, name, value);
+            persistAttributeValue(realm, userId, name, value);
         }
     }
 
-    private void deleteAttribute(RealmModel realm, UserModel user, String name) {
+    private void deleteAttribute(RealmModel realm, String userId, String name) {
         em.createNamedQuery("deleteUserFederatedAttributesByUserAndName")
-                .setParameter("userId", user.getId())
+                .setParameter("userId", userId)
                 .setParameter("realmId", realm.getId())
                 .setParameter("name", name)
                 .executeUpdate();
     }
 
-    private void persistAttributeValue(RealmModel realm, UserModel user, String name, String value) {
+    private void persistAttributeValue(RealmModel realm, String userId, String name, String value) {
         FederatedUserAttributeEntity attr = new FederatedUserAttributeEntity();
         attr.setId(KeycloakModelUtils.generateId());
         attr.setName(name);
         attr.setValue(value);
-        attr.setUserId(user.getId());
+        attr.setUserId(userId);
         attr.setRealmId(realm.getId());
-        attr.setStorageProviderId(StorageId.resolveProviderId(user));
+        attr.setStorageProviderId(new StorageId(userId).getProviderId());
         em.persist(attr);
     }
 
     @Override
-    public void setSingleAttribute(RealmModel realm, UserModel user, String name, String value) {
-        createIndex(realm, user);
-        deleteAttribute(realm, user, name);
+    public void setSingleAttribute(RealmModel realm, String userId, String name, String value) {
+        createIndex(realm, userId);
+        deleteAttribute(realm, userId, name);
         em.flush();
-        persistAttributeValue(realm, user, name, value);
+        persistAttributeValue(realm, userId, name, value);
     }
 
     @Override
-    public void removeAttribute(RealmModel realm, UserModel user, String name) {
+    public void removeAttribute(RealmModel realm, String userId, String name) {
         //         createIndex(realm, user); don't need to create an index for removal
-        deleteAttribute(realm, user, name);
+        deleteAttribute(realm, userId, name);
         em.flush();
     }
 
     @Override
-    public MultivaluedHashMap<String, String> getAttributes(RealmModel realm, UserModel user) {
+    public MultivaluedHashMap<String, String> getAttributes(RealmModel realm, String userId) {
         TypedQuery<FederatedUserAttributeEntity> query = em.createNamedQuery("getFederatedAttributesByUser", FederatedUserAttributeEntity.class);
         List<FederatedUserAttributeEntity> list = query
-                .setParameter("userId", user.getId())
+                .setParameter("userId", userId)
                 .setParameter("realmId", realm.getId())
                 .getResultList();
         MultivaluedHashMap<String, String> result = new MultivaluedHashMap<>();
@@ -192,31 +186,31 @@ public class JpaUserFederatedStorageProvider implements
     }
 
     @Override
-    public void addFederatedIdentity(RealmModel realm, UserModel user, FederatedIdentityModel link) {
-        createIndex(realm, user);
+    public void addFederatedIdentity(RealmModel realm, String userId, FederatedIdentityModel link) {
+        createIndex(realm, userId);
         BrokerLinkEntity entity = new BrokerLinkEntity();
         entity.setRealmId(realm.getId());
-        entity.setUserId(user.getId());
+        entity.setUserId(userId);
         entity.setBrokerUserId(link.getUserId());
         entity.setIdentityProvider(link.getIdentityProvider());
         entity.setToken(link.getToken());
         entity.setBrokerUserName(link.getUserName());
-        entity.setStorageProviderId(StorageId.resolveProviderId(user));
+        entity.setStorageProviderId(new StorageId(userId).getProviderId());
         em.persist(entity);
 
     }
 
     @Override
-    public boolean removeFederatedIdentity(RealmModel realm, UserModel user, String socialProvider) {
-        BrokerLinkEntity entity = getBrokerLinkEntity(realm, user, socialProvider);
+    public boolean removeFederatedIdentity(RealmModel realm, String userId, String socialProvider) {
+        BrokerLinkEntity entity = getBrokerLinkEntity(realm, userId, socialProvider);
         if (entity == null) return false;
         em.remove(entity);
         return true;
     }
 
-    private BrokerLinkEntity getBrokerLinkEntity(RealmModel realm, UserModel user, String socialProvider) {
+    private BrokerLinkEntity getBrokerLinkEntity(RealmModel realm, String userId, String socialProvider) {
         TypedQuery<BrokerLinkEntity> query = em.createNamedQuery("findBrokerLinkByUserAndProvider", BrokerLinkEntity.class)
-                .setParameter("userId", user.getId())
+                .setParameter("userId", userId)
                 .setParameter("realmId", realm.getId())
                 .setParameter("identityProvider", socialProvider);
         List<BrokerLinkEntity> results = query.getResultList();
@@ -224,9 +218,9 @@ public class JpaUserFederatedStorageProvider implements
     }
 
     @Override
-    public void updateFederatedIdentity(RealmModel realm, UserModel user, FederatedIdentityModel model) {
-        createIndex(realm, user);
-        BrokerLinkEntity entity = getBrokerLinkEntity(realm, user, model.getIdentityProvider());
+    public void updateFederatedIdentity(RealmModel realm, String userId, FederatedIdentityModel model) {
+        createIndex(realm, userId);
+        BrokerLinkEntity entity = getBrokerLinkEntity(realm, userId, model.getIdentityProvider());
         if (entity == null) return;
         entity.setBrokerUserName(model.getUserName());
         entity.setBrokerUserId(model.getUserId());
@@ -237,9 +231,9 @@ public class JpaUserFederatedStorageProvider implements
     }
 
     @Override
-    public Set<FederatedIdentityModel> getFederatedIdentities(UserModel user, RealmModel realm) {
+    public Set<FederatedIdentityModel> getFederatedIdentities(String userId, RealmModel realm) {
         TypedQuery<BrokerLinkEntity> query = em.createNamedQuery("findBrokerLinkByUser", BrokerLinkEntity.class)
-                .setParameter("userId", user.getId());
+                .setParameter("userId", userId);
         List<BrokerLinkEntity> results = query.getResultList();
         Set<FederatedIdentityModel> set = new HashSet<>();
         for (BrokerLinkEntity entity : results) {
@@ -250,28 +244,28 @@ public class JpaUserFederatedStorageProvider implements
     }
 
     @Override
-    public FederatedIdentityModel getFederatedIdentity(UserModel user, String socialProvider, RealmModel realm) {
-        BrokerLinkEntity entity = getBrokerLinkEntity(realm, user, socialProvider);
+    public FederatedIdentityModel getFederatedIdentity(String userId, String socialProvider, RealmModel realm) {
+        BrokerLinkEntity entity = getBrokerLinkEntity(realm, userId, socialProvider);
         if (entity == null) return null;
         return new FederatedIdentityModel(entity.getIdentityProvider(), entity.getBrokerUserId(), entity.getBrokerUserName(), entity.getToken());
     }
 
     @Override
-    public void addConsent(RealmModel realm, UserModel user, UserConsentModel consent) {
-        createIndex(realm, user);
+    public void addConsent(RealmModel realm, String userId, UserConsentModel consent) {
+        createIndex(realm, userId);
         String clientId = consent.getClient().getId();
 
-        FederatedUserConsentEntity consentEntity = getGrantedConsentEntity(user, clientId);
+        FederatedUserConsentEntity consentEntity = getGrantedConsentEntity(userId, clientId);
         if (consentEntity != null) {
-            throw new ModelDuplicateException("Consent already exists for client [" + clientId + "] and user [" + user.getId() + "]");
+            throw new ModelDuplicateException("Consent already exists for client [" + clientId + "] and user [" + userId + "]");
         }
 
         consentEntity = new FederatedUserConsentEntity();
         consentEntity.setId(KeycloakModelUtils.generateId());
-        consentEntity.setUserId(user.getId());
+        consentEntity.setUserId(userId);
         consentEntity.setClientId(clientId);
         consentEntity.setRealmId(realm.getId());
-        consentEntity.setStorageProviderId(StorageId.resolveProviderId(user));
+        consentEntity.setStorageProviderId(new StorageId(userId).getProviderId());
         em.persist(consentEntity);
         em.flush();
 
@@ -280,15 +274,15 @@ public class JpaUserFederatedStorageProvider implements
     }
 
     @Override
-    public UserConsentModel getConsentByClient(RealmModel realm, UserModel user, String clientInternalId) {
-        FederatedUserConsentEntity entity = getGrantedConsentEntity(user, clientInternalId);
+    public UserConsentModel getConsentByClient(RealmModel realm, String userId, String clientInternalId) {
+        FederatedUserConsentEntity entity = getGrantedConsentEntity(userId, clientInternalId);
         return toConsentModel(realm, entity);
     }
 
     @Override
-    public List<UserConsentModel> getConsents(RealmModel realm, UserModel user) {
+    public List<UserConsentModel> getConsents(RealmModel realm, String userId) {
         TypedQuery<FederatedUserConsentEntity> query = em.createNamedQuery("userFederatedConsentsByUser", FederatedUserConsentEntity.class);
-        query.setParameter("userId", user.getId());
+        query.setParameter("userId", userId);
         List<FederatedUserConsentEntity> results = query.getResultList();
 
         List<UserConsentModel> consents = new ArrayList<UserConsentModel>();
@@ -300,13 +294,13 @@ public class JpaUserFederatedStorageProvider implements
     }
 
     @Override
-    public void updateConsent(RealmModel realm, UserModel user, UserConsentModel consent) {
-        createIndex(realm, user);
+    public void updateConsent(RealmModel realm, String userId, UserConsentModel consent) {
+        createIndex(realm, userId);
         String clientId = consent.getClient().getId();
 
-        FederatedUserConsentEntity consentEntity = getGrantedConsentEntity(user, clientId);
+        FederatedUserConsentEntity consentEntity = getGrantedConsentEntity(userId, clientId);
         if (consentEntity == null) {
-            throw new ModelException("Consent not found for client [" + clientId + "] and user [" + user.getId() + "]");
+            throw new ModelException("Consent not found for client [" + clientId + "] and user [" + userId + "]");
         }
 
         updateGrantedConsentEntity(consentEntity, consent);
@@ -314,8 +308,8 @@ public class JpaUserFederatedStorageProvider implements
     }
 
     @Override
-    public boolean revokeConsentForClient(RealmModel realm, UserModel user, String clientInternalId) {
-        FederatedUserConsentEntity consentEntity = getGrantedConsentEntity(user, clientInternalId);
+    public boolean revokeConsentForClient(RealmModel realm, String userId, String clientInternalId) {
+        FederatedUserConsentEntity consentEntity = getGrantedConsentEntity(userId, clientInternalId);
         if (consentEntity == null) return false;
 
         em.remove(consentEntity);
@@ -323,13 +317,13 @@ public class JpaUserFederatedStorageProvider implements
         return true;
     }
 
-    private FederatedUserConsentEntity getGrantedConsentEntity(UserModel user, String clientId) {
+    private FederatedUserConsentEntity getGrantedConsentEntity(String userId, String clientId) {
         TypedQuery<FederatedUserConsentEntity> query = em.createNamedQuery("userFederatedConsentByUserAndClient", FederatedUserConsentEntity.class);
-        query.setParameter("userId", user.getId());
+        query.setParameter("userId", userId);
         query.setParameter("clientId", clientId);
         List<FederatedUserConsentEntity> results = query.getResultList();
         if (results.size() > 1) {
-            throw new ModelException("More results found for user [" + user.getUsername() + "] and client [" + clientId + "]");
+            throw new ModelException("More results found for user [" + userId + "] and client [" + clientId + "]");
         } else if (results.size() == 1) {
             return results.get(0);
         } else {
@@ -423,10 +417,10 @@ public class JpaUserFederatedStorageProvider implements
 
 
     @Override
-    public Set<GroupModel> getGroups(RealmModel realm, UserModel user) {
+    public Set<GroupModel> getGroups(RealmModel realm, String userId) {
         Set<GroupModel> set = new HashSet<>();
         TypedQuery<FederatedUserGroupMembershipEntity> query = em.createNamedQuery("feduserGroupMembership", FederatedUserGroupMembershipEntity.class);
-        query.setParameter("userId", user.getId());
+        query.setParameter("userId", userId);
         List<FederatedUserGroupMembershipEntity> results = query.getResultList();
         if (results.size() == 0) return set;
         for (FederatedUserGroupMembershipEntity entity : results) {
@@ -437,30 +431,24 @@ public class JpaUserFederatedStorageProvider implements
     }
 
     @Override
-    public void joinGroup(RealmModel realm, UserModel user, GroupModel group) {
-        if (isMemberOf(realm, user, group)) return;
-        createIndex(realm, user);
+    public void joinGroup(RealmModel realm, String userId, GroupModel group) {
+        createIndex(realm, userId);
         FederatedUserGroupMembershipEntity entity = new FederatedUserGroupMembershipEntity();
-        entity.setUserId(user.getId());
-        entity.setStorageProviderId(StorageId.resolveProviderId(user));
+        entity.setUserId(userId);
+        entity.setStorageProviderId(new StorageId(userId).getProviderId());
         entity.setGroupId(group.getId());
         entity.setRealmId(realm.getId());
         em.persist(entity);
 
     }
 
-    public boolean isMemberOf(RealmModel realm, UserModel user, GroupModel group) {
-        Set<GroupModel> roles = user.getGroups();
-        return KeycloakModelUtils.isMember(roles, group);
-    }
-
 
     @Override
-    public void leaveGroup(RealmModel realm, UserModel user, GroupModel group) {
-        if (user == null || group == null) return;
+    public void leaveGroup(RealmModel realm, String userId, GroupModel group) {
+        if (userId == null || group == null) return;
 
         TypedQuery<FederatedUserGroupMembershipEntity> query1 = em.createNamedQuery("feduserMemberOf", FederatedUserGroupMembershipEntity.class);
-        query1.setParameter("userId", user.getId());
+        query1.setParameter("userId", userId);
         query1.setParameter("groupId", group.getId());
         TypedQuery<FederatedUserGroupMembershipEntity> query = query1;
         List<FederatedUserGroupMembershipEntity> results = query.getResultList();
@@ -483,9 +471,9 @@ public class JpaUserFederatedStorageProvider implements
     }
 
     @Override
-    public Set<String> getRequiredActions(RealmModel realm, UserModel user) {
+    public Set<String> getRequiredActions(RealmModel realm, String userId) {
         Set<String> set = new HashSet<>();
-        List<FederatedUserRequiredActionEntity> values = getRequiredActionEntities(realm, user);
+        List<FederatedUserRequiredActionEntity> values = getRequiredActionEntities(realm, userId);
         for (FederatedUserRequiredActionEntity entity : values) {
             set.add(entity.getAction());
         }
@@ -494,29 +482,28 @@ public class JpaUserFederatedStorageProvider implements
 
     }
 
-    private List<FederatedUserRequiredActionEntity> getRequiredActionEntities(RealmModel realm, UserModel user) {
+    private List<FederatedUserRequiredActionEntity> getRequiredActionEntities(RealmModel realm, String userId) {
         TypedQuery<FederatedUserRequiredActionEntity> query = em.createNamedQuery("getFederatedUserRequiredActionsByUser", FederatedUserRequiredActionEntity.class)
-                .setParameter("userId", user.getId())
+                .setParameter("userId", userId)
                 .setParameter("realmId", realm.getId());
         return query.getResultList();
     }
 
     @Override
-    public void addRequiredAction(RealmModel realm, UserModel user, String action) {
-        createIndex(realm, user);
-        if (user.getRequiredActions().contains(action)) return;
+    public void addRequiredAction(RealmModel realm, String userId, String action) {
+        createIndex(realm, userId);
         FederatedUserRequiredActionEntity entity = new FederatedUserRequiredActionEntity();
-        entity.setUserId(user.getId());
+        entity.setUserId(userId);
         entity.setRealmId(realm.getId());
-        entity.setStorageProviderId(StorageId.resolveProviderId(user));
+        entity.setStorageProviderId(new StorageId(userId).getProviderId());
         entity.setAction(action);
         em.persist(entity);
 
     }
 
     @Override
-    public void removeRequiredAction(RealmModel realm, UserModel user, String action) {
-        List<FederatedUserRequiredActionEntity> values = getRequiredActionEntities(realm, user);
+    public void removeRequiredAction(RealmModel realm, String userId, String action) {
+        List<FederatedUserRequiredActionEntity> values = getRequiredActionEntities(realm, userId);
         for (FederatedUserRequiredActionEntity entity : values) {
             if (action.equals(entity.getAction())) em.remove(entity);
         }
@@ -525,12 +512,11 @@ public class JpaUserFederatedStorageProvider implements
     }
 
     @Override
-    public void grantRole(RealmModel realm, UserModel user, RoleModel role) {
-        if (user.hasRole(role)) return;
-        createIndex(realm, user);
+    public void grantRole(RealmModel realm, String userId, RoleModel role) {
+        createIndex(realm, userId);
         FederatedUserRoleMappingEntity entity = new FederatedUserRoleMappingEntity();
-        entity.setUserId(user.getId());
-        entity.setStorageProviderId(StorageId.resolveProviderId(user));
+        entity.setUserId(userId);
+        entity.setStorageProviderId(new StorageId(userId).getProviderId());
         entity.setRealmId(realm.getId());
         entity.setRoleId(role.getId());
         em.persist(entity);
@@ -538,10 +524,10 @@ public class JpaUserFederatedStorageProvider implements
     }
 
     @Override
-    public Set<RoleModel> getRoleMappings(RealmModel realm, UserModel user) {
+    public Set<RoleModel> getRoleMappings(RealmModel realm, String userId) {
         Set<RoleModel> set = new HashSet<>();
         TypedQuery<FederatedUserRoleMappingEntity> query = em.createNamedQuery("feduserRoleMappings", FederatedUserRoleMappingEntity.class);
-        query.setParameter("userId", user.getId());
+        query.setParameter("userId", userId);
         List<FederatedUserRoleMappingEntity> results = query.getResultList();
         if (results.size() == 0) return set;
         for (FederatedUserRoleMappingEntity entity : results) {
@@ -552,9 +538,9 @@ public class JpaUserFederatedStorageProvider implements
     }
 
     @Override
-    public void deleteRoleMapping(RealmModel realm, UserModel user, RoleModel role) {
+    public void deleteRoleMapping(RealmModel realm, String userId, RoleModel role) {
         TypedQuery<FederatedUserRoleMappingEntity> query = em.createNamedQuery("feduserRoleMappings", FederatedUserRoleMappingEntity.class);
-        query.setParameter("userId", user.getId());
+        query.setParameter("userId", userId);
         List<FederatedUserRoleMappingEntity> results = query.getResultList();
         for (FederatedUserRoleMappingEntity entity : results) {
             if (entity.getRoleId().equals(role.getId())) em.remove(entity);
@@ -564,10 +550,10 @@ public class JpaUserFederatedStorageProvider implements
     }
 
     @Override
-    public void updateCredential(RealmModel realm, UserModel user, CredentialModel cred) {
+    public void updateCredential(RealmModel realm, String userId, CredentialModel cred) {
         FederatedUserCredentialEntity entity = em.find(FederatedUserCredentialEntity.class, cred.getId());
         if (entity == null) return;
-        createIndex(realm, user);
+        createIndex(realm, userId);
         entity.setAlgorithm(cred.getAlgorithm());
         entity.setCounter(cred.getCounter());
         entity.setCreatedDate(cred.getCreatedDate());
@@ -618,8 +604,8 @@ public class JpaUserFederatedStorageProvider implements
     }
 
     @Override
-    public CredentialModel createCredential(RealmModel realm, UserModel user, CredentialModel cred) {
-        createIndex(realm, user);
+    public CredentialModel createCredential(RealmModel realm, String userId, CredentialModel cred) {
+        createIndex(realm, userId);
         FederatedUserCredentialEntity entity = new FederatedUserCredentialEntity();
         String id = cred.getId() == null ? KeycloakModelUtils.generateId() : cred.getId();
         entity.setId(id);
@@ -633,9 +619,9 @@ public class JpaUserFederatedStorageProvider implements
         entity.setSalt(cred.getSalt());
         entity.setType(cred.getType());
         entity.setValue(cred.getValue());
-        entity.setUserId(user.getId());
+        entity.setUserId(userId);
         entity.setRealmId(realm.getId());
-        entity.setStorageProviderId(StorageId.resolveProviderId(user));
+        entity.setStorageProviderId(new StorageId(userId).getProviderId());
         em.persist(entity);
         MultivaluedHashMap<String, String> config = cred.getConfig();
         if (config != null && !config.isEmpty()) {
@@ -658,7 +644,7 @@ public class JpaUserFederatedStorageProvider implements
     }
 
     @Override
-    public boolean removeStoredCredential(RealmModel realm, UserModel user, String id) {
+    public boolean removeStoredCredential(RealmModel realm, String userId, String id) {
         FederatedUserCredentialEntity entity = em.find(FederatedUserCredentialEntity.class, id);
         if (entity == null) return false;
         em.remove(entity);
@@ -666,7 +652,7 @@ public class JpaUserFederatedStorageProvider implements
     }
 
     @Override
-    public CredentialModel getStoredCredentialById(RealmModel realm, UserModel user, String id) {
+    public CredentialModel getStoredCredentialById(RealmModel realm, String userId, String id) {
         FederatedUserCredentialEntity entity = em.find(FederatedUserCredentialEntity.class, id);
         if (entity == null) return null;
         CredentialModel model = toModel(entity);
@@ -695,9 +681,9 @@ public class JpaUserFederatedStorageProvider implements
     }
 
     @Override
-    public List<CredentialModel> getStoredCredentials(RealmModel realm, UserModel user) {
+    public List<CredentialModel> getStoredCredentials(RealmModel realm, String userId) {
         TypedQuery<FederatedUserCredentialEntity> query = em.createNamedQuery("federatedUserCredentialByUser", FederatedUserCredentialEntity.class)
-                .setParameter("userId", user.getId());
+                .setParameter("userId", userId);
         List<FederatedUserCredentialEntity> results = query.getResultList();
         List<CredentialModel> rtn = new LinkedList<>();
         for (FederatedUserCredentialEntity entity : results) {
@@ -707,10 +693,10 @@ public class JpaUserFederatedStorageProvider implements
     }
 
     @Override
-    public List<CredentialModel> getStoredCredentialsByType(RealmModel realm, UserModel user, String type) {
+    public List<CredentialModel> getStoredCredentialsByType(RealmModel realm, String userId, String type) {
         TypedQuery<FederatedUserCredentialEntity> query = em.createNamedQuery("federatedUserCredentialByUserAndType", FederatedUserCredentialEntity.class)
                 .setParameter("type", type)
-                .setParameter("userId", user.getId());
+                .setParameter("userId", userId);
         List<FederatedUserCredentialEntity> results = query.getResultList();
         List<CredentialModel> rtn = new LinkedList<>();
         for (FederatedUserCredentialEntity entity : results) {
@@ -720,11 +706,11 @@ public class JpaUserFederatedStorageProvider implements
     }
 
     @Override
-    public CredentialModel getStoredCredentialByNameAndType(RealmModel realm, UserModel user, String name, String type) {
+    public CredentialModel getStoredCredentialByNameAndType(RealmModel realm, String userId, String name, String type) {
         TypedQuery<FederatedUserCredentialEntity> query = em.createNamedQuery("federatedUserCredentialByNameAndType", FederatedUserCredentialEntity.class)
                 .setParameter("type", type)
                 .setParameter("device", name)
-                .setParameter("userId", user.getId());
+                .setParameter("userId", userId);
         List<FederatedUserCredentialEntity> results = query.getResultList();
         if (results.isEmpty()) return null;
         return toModel(results.get(0));
@@ -734,9 +720,52 @@ public class JpaUserFederatedStorageProvider implements
     public List<String> getStoredUsers(RealmModel realm, int first, int max) {
         TypedQuery<String> query = em.createNamedQuery("getFederatedUserIds", String.class)
                 .setParameter("realmId", realm.getId())
-                .setFirstResult(first)
-                .setMaxResults(max);
+                .setFirstResult(first);
+        if (max > 0) query.setMaxResults(max);
         return query.getResultList();
+    }
+
+    @Override
+    public void updateCredential(RealmModel realm, UserModel user, CredentialModel cred) {
+        updateCredential(realm, user.getId(), cred);
+    }
+
+    @Override
+    public CredentialModel createCredential(RealmModel realm, UserModel user, CredentialModel cred) {
+        return createCredential(realm, user.getId(), cred);
+    }
+
+    @Override
+    public boolean removeStoredCredential(RealmModel realm, UserModel user, String id) {
+        return removeStoredCredential(realm, user.getId(), id);
+    }
+
+    @Override
+    public CredentialModel getStoredCredentialById(RealmModel realm, UserModel user, String id) {
+        return getStoredCredentialById(realm, user.getId(), id);
+    }
+
+    @Override
+    public List<CredentialModel> getStoredCredentials(RealmModel realm, UserModel user) {
+        return getStoredCredentials(realm, user.getId());
+    }
+
+    @Override
+    public List<CredentialModel> getStoredCredentialsByType(RealmModel realm, UserModel user, String type) {
+        return getStoredCredentialsByType(realm, user.getId(), type);
+    }
+
+    @Override
+    public CredentialModel getStoredCredentialByNameAndType(RealmModel realm, UserModel user, String name, String type) {
+        return getStoredCredentialByNameAndType(realm, user.getId(), name, type);
+    }
+
+    @Override
+    public int getStoredUsersCount(RealmModel realm) {
+        Object count = em.createNamedQuery("getFederatedUserCount")
+                .setParameter("realmId", realm.getId())
+                .getSingleResult();
+        return ((Number)count).intValue();
     }
 
     @Override

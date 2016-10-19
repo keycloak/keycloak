@@ -49,7 +49,7 @@ public class UserInfoClientUtil {
         return client.target(userInfoUri);
     }
 
-    public static void testSuccessfulUserInfoResponse(Response response, String expectedUsername, String expectedEmail) {
+    public static UserInfo testSuccessfulUserInfoResponse(Response response, String expectedUsername, String expectedEmail) {
         Assert.assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
         Assert.assertEquals(response.getHeaderString(HttpHeaders.CONTENT_TYPE), MediaType.APPLICATION_JSON);
 
@@ -61,6 +61,7 @@ public class UserInfoClientUtil {
         Assert.assertNotNull(userInfo.getSubject());
         Assert.assertEquals(expectedEmail, userInfo.getEmail());
         Assert.assertEquals(expectedUsername, userInfo.getPreferredUsername());
+        return userInfo;
     }
 
 }

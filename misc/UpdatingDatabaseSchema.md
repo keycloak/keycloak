@@ -17,17 +17,15 @@ Creating a JPA change-set
 -------------------------
 
 We use Liquibase to support updating the database. The change-sets are located in 
-`connections/jpa-liquibase/src/main/resources/META-INF`. There's a separate file for each release that requires database
-changes.
+[`model/jpa/src/main/resources/META-INF`](../model/jpa/src/main/resources/META-INF).
+There's a separate file for each release that requires database changes.
 
 To manually create a change-set add a new file in the above location with the name `jpa-changelog-<version>.xml`. This file 
 should contain a single `change-set` with `id` equal to the next version to be released and `author` set to your email 
-address. Then look at Liquibase documentation on how to write this file. Add a reference to this file in `jpa-changelog-master.xml`. 
+address. Then look at Liquibase documentation on how to write this file. Add a reference to this file in
+[`jpa-changelog-master.xml`](../model/jpa/src/main/resources/META-INF/jpa-changelog-master.xml).
 The file should have a single change-set and the id of the change-set should be the next version to be released. 
 
-You also need to update `org.keycloak.connections.jpa.updater.JpaUpdaterProvider#LAST_VERSION`. This
-is used by Keycloak to quickly determine if the database is up to date or not.
-  
 You can also have Liquibase and Hibernate create one for you. To do this follow these steps:
 
 1. Delete existing databases  

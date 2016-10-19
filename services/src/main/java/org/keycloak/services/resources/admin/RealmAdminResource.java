@@ -16,6 +16,7 @@
  */
 package org.keycloak.services.resources.admin;
 
+import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.BadRequestException;
 import org.jboss.resteasy.spi.NotFoundException;
@@ -60,7 +61,6 @@ import org.keycloak.representations.idm.PartialImportRepresentation;
 import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.ErrorResponse;
-import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.LDAPConnectionTestManager;
 import org.keycloak.services.managers.RealmManager;
@@ -101,7 +101,7 @@ import java.util.regex.PatternSyntaxException;
  * @version $Revision: 1 $
  */
 public class RealmAdminResource {
-    protected static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    protected static final Logger logger = Logger.getLogger(RealmAdminResource.class);
     protected RealmAuth auth;
     protected RealmModel realm;
     private TokenManager tokenManager;
@@ -202,15 +202,9 @@ public class RealmAdminResource {
         return resource;
     }
 
-
-    /**
-     * Base path for managing client initial access tokens
-     *
-     * @return
-     */
-    @Path("clients-trusted-hosts")
-    public ClientRegistrationTrustedHostResource getClientRegistrationTrustedHost() {
-        ClientRegistrationTrustedHostResource resource = new ClientRegistrationTrustedHostResource(realm, auth, adminEvent);
+    @Path("client-registration-policy")
+    public ClientRegistrationPolicyResource getClientRegistrationPolicy() {
+        ClientRegistrationPolicyResource resource = new ClientRegistrationPolicyResource(realm, auth, adminEvent);
         ResteasyProviderFactory.getInstance().injectProperties(resource);
         return resource;
     }
@@ -356,6 +350,14 @@ public class RealmAdminResource {
     @Path("user-federation")
     public UserFederationProvidersResource userFederation() {
         UserFederationProvidersResource fed = new UserFederationProvidersResource(realm, auth, adminEvent);
+        ResteasyProviderFactory.getInstance().injectProperties(fed);
+        //resourceContext.initResource(fed);
+        return fed;
+    }
+
+    @Path("user-storage")
+    public UserStorageProviderResource userStorage() {
+        UserStorageProviderResource fed = new UserStorageProviderResource(realm, auth, adminEvent);
         ResteasyProviderFactory.getInstance().injectProperties(fed);
         //resourceContext.initResource(fed);
         return fed;
@@ -872,6 +874,13 @@ public class RealmAdminResource {
         }
 
         adminEvent.operation(OperationType.ACTION).resourcePath(uriInfo).success();
+    }
+
+    @Path("keys")
+    public KeyResource keys() {
+        KeyResource resource =  new KeyResource(realm, session, this.auth);
+        ResteasyProviderFactory.getInstance().injectProperties(resource);
+        return resource;
     }
 
 }

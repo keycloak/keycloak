@@ -28,9 +28,9 @@ import java.util.Set;
  */
 public interface UserRoleMappingsFederatedStorage {
 
-    void grantRole(RealmModel realm,UserModel user, RoleModel role);
+    void grantRole(RealmModel realm, String userId, RoleModel role);
 
-    Set<RoleModel> getRoleMappings(RealmModel realm,UserModel user);
+    Set<RoleModel> getRoleMappings(RealmModel realm,String userId);
 
-    void deleteRoleMapping(RealmModel realm, UserModel user, RoleModel role);
+    void deleteRoleMapping(RealmModel realm, String userId, RoleModel role);
 }

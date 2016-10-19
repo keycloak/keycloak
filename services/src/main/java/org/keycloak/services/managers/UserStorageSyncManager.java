@@ -16,6 +16,7 @@
  */
 package org.keycloak.services.managers;
 
+import org.jboss.logging.Logger;
 import org.keycloak.cluster.ClusterEvent;
 import org.keycloak.cluster.ClusterListener;
 import org.keycloak.cluster.ClusterProvider;
@@ -44,7 +45,7 @@ public class UserStorageSyncManager {
 
     private static final String USER_STORAGE_TASK_KEY = "user-storage";
 
-    protected static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    private static final Logger logger = Logger.getLogger(UserStorageSyncManager.class);
 
     /**
      * Check federationProviderModel of all realms and possibly start periodic sync for them
@@ -165,6 +166,11 @@ public class UserStorageSyncManager {
 
     // Ensure all cluster nodes are notified
     public void notifyToRefreshPeriodicSync(KeycloakSession session, RealmModel realm, UserStorageProviderModel provider, boolean removed) {
+        UserStorageProviderFactory factory = (UserStorageProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(UserStorageProvider.class, provider.getProviderId());
+        if (!(factory instanceof ImportSynchronization) || !provider.isImportEnabled()) {
+            return;
+
+        }
         UserStorageProviderClusterEvent event = UserStorageProviderClusterEvent.createEvent(removed, realm.getId(), provider);
         session.getProvider(ClusterProvider.class).notify(USER_STORAGE_TASK_KEY, event);
     }
@@ -189,7 +195,7 @@ public class UserStorageSyncManager {
                             logger.debugf("Ignored periodic full sync with storage provider %s due small time since last sync", provider.getName());
                         }
                     } catch (Throwable t) {
-                        logger.errorDuringFullUserSync(t);
+                        ServicesLogger.LOGGER.errorDuringFullUserSync(t);
                     }
                 }
 
@@ -212,7 +218,7 @@ public class UserStorageSyncManager {
                             logger.debugf("Ignored periodic changed-users sync with storage provider %s due small time since last sync", provider.getName());
                         }
                     } catch (Throwable t) {
-                        logger.errorDuringChangedUserSync(t);
+                        ServicesLogger.LOGGER.errorDuringChangedUserSync(t);
                     }
                 }
 

@@ -103,39 +103,9 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
         }
     }
 
-    @Test
-    public void testCreateWithTrustedHost() throws Exception {
-        reg.auth(null);
-
-        OIDCClientRepresentation client = createRep();
-
-        // Failed to create client
-        assertCreateFail(client, 401);
-
-        // Create trusted host entry
-        createTrustedHost("localhost", 2);
-
-        // Successfully register client
-        reg.oidc().create(client);
-
-        // Just one remaining available
-        ClientRegistrationTrustedHostRepresentation rep = adminClient.realm(REALM_NAME).clientRegistrationTrustedHost().get("localhost");
-        Assert.assertEquals(1, rep.getRemainingCount().intValue());
-
-        // Successfully register client2
-        reg.oidc().create(client);
-
-        // Failed to create 3rd client
-        assertCreateFail(client, 401);
-    }
-
     // KEYCLOAK-3421
     @Test
     public void createClientWithUriFragment() {
-        reg.auth(null);
-
-        createTrustedHost("localhost", 1);
-
         OIDCClientRepresentation client = createRep();
         client.setRedirectUris(Arrays.asList("http://localhost/auth", "http://localhost/auth#fragment", "http://localhost/auth*"));
 
@@ -229,11 +199,6 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
         OIDCAdvancedConfigWrapper config = OIDCAdvancedConfigWrapper.fromClientRepresentation(kcClient);
         Assert.assertEquals(config.getUserInfoSignedResponseAlg(), Algorithm.RS256);
         Assert.assertEquals(config.getRequestObjectSignatureAlg(), Algorithm.RS256);
-    }
-
-    private void createTrustedHost(String name, int count) {
-        Response response = adminClient.realm(REALM_NAME).clientRegistrationTrustedHost().create(ClientRegistrationTrustedHostRepresentation.create(name, count, count));
-        Assert.assertEquals(201, response.getStatus());
     }
 
 }

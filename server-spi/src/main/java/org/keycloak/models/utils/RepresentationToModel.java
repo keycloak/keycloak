@@ -31,10 +31,14 @@ import org.keycloak.authorization.store.ScopeStore;
 import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.common.util.Base64;
+import org.keycloak.common.util.CertificateUtils;
+import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.common.util.PemUtils;
 import org.keycloak.common.util.UriUtils;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.credential.CredentialModel;
+import org.keycloak.keys.KeyProvider;
 import org.keycloak.migration.MigrationProvider;
 import org.keycloak.migration.migrators.MigrationUtils;
 import org.keycloak.models.AuthenticationExecutionModel;
@@ -63,6 +67,7 @@ import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserFederationMapperModel;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.idm.ApplicationRepresentation;
 import org.keycloak.representations.idm.AuthenticationExecutionExportRepresentation;
 import org.keycloak.representations.idm.AuthenticationExecutionRepresentation;
@@ -96,15 +101,20 @@ import org.keycloak.representations.idm.authorization.ResourceOwnerRepresentatio
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
+import org.keycloak.storage.federated.UserFederatedStorageProvider;
 import org.keycloak.util.JsonSerialization;
 
 import java.io.IOException;
+import java.security.KeyPair;
+import java.security.cert.Certificate;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
@@ -183,23 +193,6 @@ public class RepresentationToModel {
         if (rep.isVerifyEmail() != null) newRealm.setVerifyEmail(rep.isVerifyEmail());
         if (rep.isResetPasswordAllowed() != null) newRealm.setResetPasswordAllowed(rep.isResetPasswordAllowed());
         if (rep.isEditUsernameAllowed() != null) newRealm.setEditUsernameAllowed(rep.isEditUsernameAllowed());
-        if (rep.getPrivateKey() == null || rep.getPublicKey() == null) {
-            KeycloakModelUtils.generateRealmKeys(newRealm);
-        } else {
-            newRealm.setPrivateKeyPem(rep.getPrivateKey());
-            newRealm.setPublicKeyPem(rep.getPublicKey());
-        }
-        if (rep.getCertificate() == null) {
-            KeycloakModelUtils.generateRealmCertificate(newRealm);
-        } else {
-            newRealm.setCertificatePem(rep.getCertificate());
-        }
-        if (rep.getCodeSecret() == null) {
-            newRealm.setCodeSecret(KeycloakModelUtils.generateCodeSecret());
-        } else {
-            newRealm.setCodeSecret(rep.getCodeSecret());
-        }
-
         if (rep.getLoginTheme() != null) newRealm.setLoginTheme(rep.getLoginTheme());
         if (rep.getAccountTheme() != null) newRealm.setAccountTheme(rep.getAccountTheme());
         if (rep.getAdminTheme() != null) newRealm.setAdminTheme(rep.getAdminTheme());
@@ -363,6 +356,13 @@ public class RepresentationToModel {
             }
         }
 
+        if (rep.getFederatedUsers() != null) {
+            for (UserRepresentation userRep : rep.getFederatedUsers()) {
+                importFederatedUser(session, newRealm, userRep);
+
+            }
+        }
+
         if(rep.isInternationalizationEnabled() != null){
             newRealm.setInternationalizationEnabled(rep.isInternationalizationEnabled());
         }
@@ -381,6 +381,13 @@ public class RepresentationToModel {
             }
         }
 
+        if (newRealm.getComponents(newRealm.getId(), KeyProvider.class.getName()).isEmpty()) {
+            if (rep.getPrivateKey() != null) {
+                DefaultKeyProviders.createProviders(newRealm, rep.getPrivateKey(), rep.getCertificate());
+            } else {
+                DefaultKeyProviders.createProviders(newRealm);
+            }
+        }
     }
 
     protected static void importComponents(RealmModel newRealm, MultivaluedHashMap<String, ComponentExportRepresentation> components, String parentId) {
@@ -393,6 +400,7 @@ public class RepresentationToModel {
                 component.setConfig(compRep.getConfig());
                 component.setProviderType(providerType);
                 component.setProviderId(compRep.getProviderId());
+                component.setSubType(compRep.getSubType());
                 component.setParentId(parentId);
                 component = newRealm.addComponentModel(component);
                 if (compRep.getSubComponents() != null) {
@@ -817,20 +825,6 @@ public class RepresentationToModel {
         if (rep.getUserFederationProviders() != null) {
             List<UserFederationProviderModel> providerModels = convertFederationProviders(rep.getUserFederationProviders());
             realm.setUserFederationProviders(providerModels);
-        }
-
-        if (Constants.GENERATE.equals(rep.getPublicKey())) {
-            KeycloakModelUtils.generateRealmKeys(realm);
-        } else {
-            if (rep.getPrivateKey() != null && rep.getPublicKey() != null) {
-                realm.setPrivateKeyPem(rep.getPrivateKey());
-                realm.setPublicKeyPem(rep.getPublicKey());
-                realm.setCodeSecret(KeycloakModelUtils.generateCodeSecret());
-            }
-
-            if (rep.getCertificate() != null) {
-                realm.setCertificatePem(rep.getCertificate());
-            }
         }
 
         if(rep.isInternationalizationEnabled() != null){
@@ -1377,7 +1371,7 @@ public class RepresentationToModel {
         if (userRep.getClientConsents() != null) {
             for (UserConsentRepresentation consentRep : userRep.getClientConsents()) {
                 UserConsentModel consentModel = toModel(newRealm, consentRep);
-                session.userStorage().addConsent(newRealm, user, consentModel);
+                session.userStorage().addConsent(newRealm, user.getId(), consentModel);
             }
         }
         if (userRep.getServiceAccountClientId() != null) {
@@ -1463,6 +1457,32 @@ public class RepresentationToModel {
         credential.setType(cred.getType());
         credential.setValue(cred.getValue());
         return credential;
+    }
+
+    public static CredentialModel toModel(CredentialRepresentation cred) {
+        CredentialModel model = new CredentialModel();
+        model.setHashIterations(cred.getHashIterations());
+        model.setCreatedDate(cred.getCreatedDate());
+        model.setType(cred.getType());
+        model.setDigits(cred.getDigits());
+        model.setConfig(cred.getConfig());
+        model.setDevice(cred.getDevice());
+        model.setAlgorithm(cred.getAlgorithm());
+        model.setCounter(cred.getCounter());
+        model.setPeriod(cred.getPeriod());
+        if (cred.getSalt() != null) {
+            try {
+                model.setSalt(Base64.decode(cred.getSalt()));
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        model.setValue(cred.getValue());
+        if (cred.getHashedSaltedValue() != null) {
+            model.setValue(cred.getHashedSaltedValue());
+        }
+        return model;
+
     }
 
     // Role mappings
@@ -1585,6 +1605,8 @@ public class RepresentationToModel {
         }
 
         UserConsentModel consentModel = new UserConsentModel(client);
+        consentModel.setCreatedDate(consentRep.getCreatedDate());
+        consentModel.setLastUpdatedDate(consentRep.getLastUpdatedDate());
 
         if (consentRep.getGrantedRealmRoles() != null) {
             for (String roleName : consentRep.getGrantedRealmRoles()) {
@@ -1692,15 +1714,85 @@ public class RepresentationToModel {
         return model;
     }
 
-
-    public static ComponentModel toModel(ComponentRepresentation rep) {
+    public static ComponentModel toModel(KeycloakSession session, ComponentRepresentation rep) {
         ComponentModel model = new ComponentModel();
         model.setParentId(rep.getParentId());
         model.setProviderType(rep.getProviderType());
         model.setProviderId(rep.getProviderId());
-        model.setConfig(rep.getConfig());
+        model.setConfig(new MultivaluedHashMap<>());
         model.setName(rep.getName());
+        model.setSubType(rep.getSubType());
+
+        if (rep.getConfig() != null) {
+            Set<String> keys = new HashSet<>(rep.getConfig().keySet());
+            for (String k : keys) {
+                List<String> values = rep.getConfig().get(k);
+                if (values != null) {
+                    ListIterator<String> itr = values.listIterator();
+                    while (itr.hasNext()) {
+                        String v = itr.next();
+                        if (v == null || v.trim().isEmpty()) {
+                            itr.remove();
+                        }
+                    }
+
+                    if (!values.isEmpty()) {
+                        model.getConfig().put(k, values);
+                    }
+                }
+            }
+        }
+
         return model;
+    }
+
+    public static void updateComponent(KeycloakSession session, ComponentRepresentation rep, ComponentModel component, boolean internal) {
+        if (rep.getParentId() != null) {
+            component.setParentId(rep.getParentId());
+        }
+
+        if (rep.getProviderType() != null) {
+            component.setProviderType(rep.getProviderType());
+        }
+
+        if (rep.getProviderId() != null) {
+            component.setProviderId(rep.getProviderId());
+        }
+
+        if (rep.getSubType() != null) {
+            component.setSubType(rep.getSubType());
+        }
+
+        Map<String, ProviderConfigProperty> providerConfiguration = null;
+        if (!internal) {
+            providerConfiguration = ComponentUtil.getComponentConfigProperties(session, component);
+        }
+
+        if (rep.getConfig() != null) {
+            Set<String> keys = new HashSet<>(rep.getConfig().keySet());
+            for (String k : keys) {
+                if (!internal && !providerConfiguration.containsKey(k)) {
+                    break;
+                }
+
+                List<String> values = rep.getConfig().get(k);
+                if (values == null || values.isEmpty() || values.get(0) == null || values.get(0).trim().isEmpty()) {
+                    component.getConfig().remove(k);
+                } else {
+                    ListIterator<String> itr = values.listIterator();
+                    while (itr.hasNext()) {
+                        String v = itr.next();
+                        if (v == null || v.trim().isEmpty() || v.equals(ComponentRepresentation.SECRET_VALUE)) {
+                            itr.remove();
+                        }
+                    }
+
+                    if (!values.isEmpty()) {
+                        component.getConfig().put(k, values);
+                    }
+                }
+            }
+        }
     }
 
     public static void importAuthorizationSettings(ClientRepresentation clientRepresentation, ClientModel client, KeycloakSession session) {
@@ -2129,5 +2221,100 @@ public class RepresentationToModel {
         scope.setId(model.getId());
 
         return model;
+    }
+
+    public static void importFederatedUser(KeycloakSession session, RealmModel newRealm, UserRepresentation userRep) {
+        UserFederatedStorageProvider federatedStorage = session.userFederatedStorage();
+        if (userRep.getAttributes() != null) {
+            for (Map.Entry<String, Object> entry : userRep.getAttributes().entrySet()) {
+                String key = entry.getKey();
+                Object value = entry.getValue();
+                if (value == null) continue;
+
+                if (value instanceof Collection) {
+                    Collection<String> colVal = (Collection<String>) value;
+                    List<String> list = new LinkedList<>();
+                    list.addAll(colVal);
+                    federatedStorage.setAttribute(newRealm, userRep.getId(), key, list);
+                } else if (value instanceof String) {
+                    // TODO: This is here just for backwards compatibility with KC 1.3 and earlier
+                    String stringVal = (String) value;
+                    federatedStorage.setSingleAttribute(newRealm, userRep.getId(), key, stringVal);
+                }
+            }
+        }
+        if (userRep.getRequiredActions() != null) {
+            for (String action: userRep.getRequiredActions()) {
+                federatedStorage.addRequiredAction(newRealm, userRep.getId(), action);
+            }
+        }
+        if (userRep.getCredentials() != null) {
+            for (CredentialRepresentation cred : userRep.getCredentials()) {
+                federatedStorage.createCredential(newRealm, userRep.getId(), toModel(cred));
+            }
+        }
+        createFederatedRoleMappings(federatedStorage, userRep, newRealm);
+
+        if (userRep.getGroups() != null) {
+            for (String path : userRep.getGroups()) {
+                GroupModel group = KeycloakModelUtils.findGroupByPath(newRealm, path);
+                if (group == null) {
+                    throw new RuntimeException("Unable to find group specified by path: " + path);
+
+                }
+                federatedStorage.joinGroup(newRealm, userRep.getId(), group);
+            }
+        }
+
+        if (userRep.getFederatedIdentities() != null) {
+            for (FederatedIdentityRepresentation identity : userRep.getFederatedIdentities()) {
+                FederatedIdentityModel mappingModel = new FederatedIdentityModel(identity.getIdentityProvider(), identity.getUserId(), identity.getUserName());
+                federatedStorage.addFederatedIdentity(newRealm, userRep.getId(), mappingModel);
+            }
+        }
+        if (userRep.getClientConsents() != null) {
+            for (UserConsentRepresentation consentRep : userRep.getClientConsents()) {
+                UserConsentModel consentModel = toModel(newRealm, consentRep);
+                federatedStorage.addConsent(newRealm, userRep.getId(), consentModel);
+            }
+        }
+
+
+    }
+
+    public static void createFederatedRoleMappings(UserFederatedStorageProvider federatedStorage, UserRepresentation userRep, RealmModel realm) {
+        if (userRep.getRealmRoles() != null) {
+            for (String roleString : userRep.getRealmRoles()) {
+                RoleModel role = realm.getRole(roleString.trim());
+                if (role == null) {
+                    role = realm.addRole(roleString.trim());
+                }
+                federatedStorage.grantRole(realm, userRep.getId(), role);
+            }
+        }
+        if (userRep.getClientRoles() != null) {
+            for (Map.Entry<String, List<String>> entry : userRep.getClientRoles().entrySet()) {
+                ClientModel client = realm.getClientByClientId(entry.getKey());
+                if (client == null) {
+                    throw new RuntimeException("Unable to find client role mappings for client: " + entry.getKey());
+                }
+                createFederatedClientRoleMappings(federatedStorage, realm, client, userRep, entry.getValue());
+            }
+        }
+    }
+
+    public static void createFederatedClientRoleMappings(UserFederatedStorageProvider federatedStorage, RealmModel realm, ClientModel clientModel, UserRepresentation userRep, List<String> roleNames) {
+        if (userRep == null) {
+            throw new RuntimeException("User not found");
+        }
+
+        for (String roleName : roleNames) {
+            RoleModel role = clientModel.getRole(roleName.trim());
+            if (role == null) {
+                role = clientModel.addRole(roleName.trim());
+            }
+            federatedStorage.grantRole(realm, userRep.getId(), role);
+
+        }
     }
 }

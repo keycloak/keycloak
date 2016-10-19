@@ -16,6 +16,7 @@
  */
 package org.keycloak.services.resources;
 
+import org.jboss.logging.Logger;
 import org.keycloak.common.util.UriUtils;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.events.Details;
@@ -86,7 +87,7 @@ import java.util.UUID;
  */
 public class AccountService extends AbstractSecuredLocalService {
 
-    private static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    private static final Logger logger = Logger.getLogger(AccountService.class);
 
     private static Set<String> VALID_PATHS = new HashSet<String>();
     static {
@@ -495,7 +496,7 @@ public class AccountService extends AbstractSecuredLocalService {
 
         // Revoke grant in UserModel
         UserModel user = auth.getUser();
-        session.users().revokeConsentForClient(realm, user, client.getId());
+        session.users().revokeConsentForClient(realm, user.getId(), client.getId());
         new UserSessionManager(session).revokeOfflineToken(user, client);
 
         // Logout clientSessions for this user and client
@@ -643,12 +644,12 @@ public class AccountService extends AbstractSecuredLocalService {
             errorEvent.error(Errors.NOT_ALLOWED);
             return account.setError(Messages.READ_ONLY_PASSWORD).createResponse(AccountPages.PASSWORD);
         } catch (ModelException me) {
-            logger.failedToUpdatePassword(me);
+            ServicesLogger.LOGGER.failedToUpdatePassword(me);
             setReferrerOnPage();
             errorEvent.detail(Details.REASON, me.getMessage()).error(Errors.PASSWORD_REJECTED);
             return account.setError(me.getMessage(), me.getParameters()).createResponse(AccountPages.PASSWORD);
         } catch (Exception ape) {
-            logger.failedToUpdatePassword(ape);
+            ServicesLogger.LOGGER.failedToUpdatePassword(ape);
             setReferrerOnPage();
             errorEvent.detail(Details.REASON, ape.getMessage()).error(Errors.PASSWORD_REJECTED);
             return account.setError(ape.getMessage()).createResponse(AccountPages.PASSWORD);
@@ -714,7 +715,7 @@ public class AccountService extends AbstractSecuredLocalService {
 
                 try {
                     ClientSessionModel clientSession = auth.getClientSession();
-                    ClientSessionCode clientSessionCode = new ClientSessionCode(realm, clientSession);
+                    ClientSessionCode clientSessionCode = new ClientSessionCode(session, realm, clientSession);
                     clientSessionCode.setAction(ClientSessionModel.Action.AUTHENTICATE.name());
                     clientSession.setRedirectUri(redirectUri);
                     clientSession.setNote(OIDCLoginProtocol.STATE_PARAM, UUID.randomUUID().toString());

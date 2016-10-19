@@ -17,6 +17,7 @@
 package org.keycloak.services.managers;
 
 
+import org.jboss.logging.Logger;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
@@ -39,7 +40,7 @@ import java.util.concurrent.TimeUnit;
  * @version $Revision: 1 $
  */
 public class DefaultBruteForceProtector implements Runnable, BruteForceProtector {
-    protected static ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    private static final Logger logger = Logger.getLogger(DefaultBruteForceProtector.class);
 
     protected volatile boolean run = true;
     protected int maxDeltaTimeSeconds = 60 * 60 * 12; // 12 hours
@@ -202,7 +203,7 @@ public class DefaultBruteForceProtector implements Runnable, BruteForceProtector
                             session.close();
                         }
                     } catch (Exception e) {
-                        logger.failedProcessingType(e);
+                        ServicesLogger.LOGGER.failedProcessingType(e);
                     }
                 } catch (InterruptedException e) {
                     break;
@@ -214,7 +215,7 @@ public class DefaultBruteForceProtector implements Runnable, BruteForceProtector
     }
 
     protected void logFailure(LoginEvent event) {
-        logger.loginFailure(event.userId, event.ip);
+        ServicesLogger.LOGGER.loginFailure(event.userId, event.ip);
         failures++;
         long delta = 0;
         if (lastFailure > 0) {

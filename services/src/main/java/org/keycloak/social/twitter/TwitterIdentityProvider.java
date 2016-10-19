@@ -148,8 +148,8 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
                 tokenBuilder.append("}");
 
                 identity.setToken(tokenBuilder.toString());
-                identity.setCode(state);
                 identity.setIdpConfig(getConfig());
+                identity.setCode(state);
 
                 return callback.authenticated(identity);
             } catch (Exception e) {

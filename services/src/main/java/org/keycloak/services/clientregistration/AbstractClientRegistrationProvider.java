@@ -21,7 +21,6 @@ import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.models.ClientInitialAccessModel;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientRegistrationTrustedHostModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.utils.ModelToRepresentation;
@@ -29,7 +28,8 @@ import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.ForbiddenException;
-import org.keycloak.services.validation.ClientValidator;
+import org.keycloak.services.clientregistration.policy.ClientRegistrationPolicyManager;
+import org.keycloak.services.clientregistration.policy.RegistrationAuth;
 import org.keycloak.services.validation.ValidationMessages;
 
 import javax.ws.rs.core.Response;
@@ -52,10 +52,10 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
 
         event.event(EventType.CLIENT_REGISTER);
 
-        auth.requireCreate();
+        RegistrationAuth registrationAuth = auth.requireCreate(context);
 
         ValidationMessages validationMessages = new ValidationMessages();
-        if (!validateClient(context, validationMessages)) {
+        if (!context.validateClient(validationMessages)) {
             String errorCode = validationMessages.fieldHasError("redirectUris") ? ErrorCodes.INVALID_REDIRECT_URI : ErrorCodes.INVALID_CLIENT_METADATA;
             throw new ErrorResponseException(
                     errorCode,
@@ -67,21 +67,18 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
         try {
             ClientModel clientModel = RepresentationToModel.createClient(session, session.getContext().getRealm(), client, true);
 
+            ClientRegistrationPolicyManager.triggerAfterRegister(context, registrationAuth, clientModel);
+
             client = ModelToRepresentation.toRepresentation(clientModel);
 
             client.setSecret(clientModel.getSecret());
 
-            String registrationAccessToken = ClientRegistrationTokenUtils.updateRegistrationAccessToken(session, clientModel);
+            String registrationAccessToken = ClientRegistrationTokenUtils.updateRegistrationAccessToken(session, clientModel, registrationAuth);
             client.setRegistrationAccessToken(registrationAccessToken);
 
             if (auth.isInitialAccessToken()) {
                 ClientInitialAccessModel initialAccessModel = auth.getInitialAccessModel();
                 initialAccessModel.decreaseRemainingCount();
-            }
-
-            if (auth.isRegistrationHostTrusted()) {
-                ClientRegistrationTrustedHostModel trustedHost = auth.getTrustedHostModel();
-                trustedHost.decreaseRemainingCount();
             }
 
             event.client(client.getClientId()).success();
@@ -100,7 +97,7 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
         ClientRepresentation rep = ModelToRepresentation.toRepresentation(client);
 
         if (auth.isRegistrationAccessToken()) {
-            String registrationAccessToken = ClientRegistrationTokenUtils.updateRegistrationAccessToken(session, client);
+            String registrationAccessToken = ClientRegistrationTokenUtils.updateRegistrationAccessToken(session, client, auth.getRegistrationAuth());
             rep.setRegistrationAccessToken(registrationAccessToken);
         }
 
@@ -114,14 +111,14 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
         event.event(EventType.CLIENT_UPDATE).client(clientId);
 
         ClientModel client = session.getContext().getRealm().getClientByClientId(clientId);
-        auth.requireUpdate(client);
+        RegistrationAuth registrationAuth = auth.requireUpdate(context, client);
 
         if (!client.getClientId().equals(rep.getClientId())) {
             throw new ErrorResponseException(ErrorCodes.INVALID_CLIENT_METADATA, "Client Identifier modified", Response.Status.BAD_REQUEST);
         }
 
         ValidationMessages validationMessages = new ValidationMessages();
-        if (!validateClient(context, validationMessages)) {
+        if (!context.validateClient(validationMessages)) {
             String errorCode = validationMessages.fieldHasError("redirectUris") ? ErrorCodes.INVALID_REDIRECT_URI : ErrorCodes.INVALID_CLIENT_METADATA;
             throw new ErrorResponseException(
                     errorCode,
@@ -134,9 +131,11 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
         rep = ModelToRepresentation.toRepresentation(client);
 
         if (auth.isRegistrationAccessToken()) {
-            String registrationAccessToken = ClientRegistrationTokenUtils.updateRegistrationAccessToken(session, client);
+            String registrationAccessToken = ClientRegistrationTokenUtils.updateRegistrationAccessToken(session, client, auth.getRegistrationAuth());
             rep.setRegistrationAccessToken(registrationAccessToken);
         }
+
+        ClientRegistrationPolicyManager.triggerAfterUpdate(context, registrationAuth, client);
 
         event.client(client.getClientId()).success();
         return rep;
@@ -147,7 +146,7 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
         event.event(EventType.CLIENT_DELETE).client(clientId);
 
         ClientModel client = session.getContext().getRealm().getClientByClientId(clientId);
-        auth.requireUpdate(client);
+        auth.requireDelete(client);
 
         if (session.getContext().getRealm().removeClient(client.getId())) {
             event.client(client.getClientId()).success();
@@ -162,17 +161,17 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
     }
 
     @Override
+    public ClientRegistrationAuth getAuth() {
+        return this.auth;
+    }
+
+    @Override
     public void setEvent(EventBuilder event) {
         this.event = event;
     }
 
     @Override
     public void close() {
-    }
-
-    protected boolean validateClient(ClientRegistrationContext context, ValidationMessages validationMessages) {
-        ClientRepresentation client = context.getClient();
-        return ClientValidator.validate(client, validationMessages);
     }
 
 }

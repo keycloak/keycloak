@@ -16,11 +16,15 @@
  */
 package org.keycloak.services;
 
+import org.keycloak.component.ComponentFactory;
+import org.keycloak.component.ComponentModel;
 import org.keycloak.credential.UserCredentialStoreManager;
+import org.keycloak.keys.DefaultKeyManager;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.KeycloakTransactionManager;
+import org.keycloak.models.KeyManager;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.UserCredentialManager;
 import org.keycloak.models.UserFederationManager;
@@ -60,6 +64,7 @@ public class DefaultKeycloakSession implements KeycloakSession {
     private UserFederationManager federationManager;
     private UserFederatedStorageProvider userFederatedStorageProvider;
     private KeycloakContext context;
+    private KeyManager keyManager;
 
     public DefaultKeycloakSession(DefaultKeycloakSessionFactory factory) {
         this.factory = factory;
@@ -187,6 +192,28 @@ public class DefaultKeycloakSession implements KeycloakSession {
         return provider;
     }
 
+    @Override
+    public <T extends Provider> T getProvider(Class<T> clazz, ComponentModel componentModel) {
+        String modelId = componentModel.getProviderType() + "::" + componentModel.getId();
+
+        Object found = getAttribute(modelId);
+        if (found != null) {
+            return clazz.cast(found);
+        }
+
+        ProviderFactory<T> providerFactory = factory.getProviderFactory(clazz, componentModel.getProviderId());
+        if (providerFactory == null) {
+            return null;
+        }
+
+        ComponentFactory<T, T> componentFactory = (ComponentFactory<T, T>) providerFactory;
+        T provider = componentFactory.create(this, componentModel);
+        enlistForClose(provider);
+        setAttribute(modelId, provider);
+
+        return provider;
+    }
+
     public <T extends Provider> Set<String> listProviderIds(Class<T> clazz) {
         return factory.getAllProviderIds(clazz);
     }
@@ -198,6 +225,11 @@ public class DefaultKeycloakSession implements KeycloakSession {
             providers.add(getProvider(clazz, id));
         }
         return providers;
+    }
+
+    @Override
+    public Class<? extends Provider> getProviderClass(String providerClassName) {
+        return factory.getProviderClass(providerClassName);
     }
 
     @Override
@@ -219,6 +251,14 @@ public class DefaultKeycloakSession implements KeycloakSession {
             sessionProvider = getProvider(UserSessionProvider.class);
         }
         return sessionProvider;
+    }
+
+    @Override
+    public KeyManager keys() {
+        if (keyManager == null) {
+            keyManager = new DefaultKeyManager(this);
+        }
+        return keyManager;
     }
 
     public void close() {

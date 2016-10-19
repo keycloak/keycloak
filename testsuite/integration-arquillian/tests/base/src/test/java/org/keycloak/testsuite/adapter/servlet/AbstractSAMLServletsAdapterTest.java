@@ -61,13 +61,25 @@ import org.keycloak.testsuite.page.AbstractPage;
 import org.keycloak.testsuite.util.IOUtil;
 import org.openqa.selenium.By;
 import org.w3c.dom.Document;
+import org.xml.sax.SAXException;
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
+import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Form;
+import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
+import javax.xml.XMLConstants;
+import javax.xml.transform.Source;
+import javax.xml.transform.stream.StreamSource;
+import javax.xml.validation.Schema;
+import javax.xml.validation.SchemaFactory;
+import javax.xml.validation.Validator;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.net.URI;
+import java.net.URL;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -722,6 +734,42 @@ public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAd
         employee2ServletPage.checkRolesEndPoint(false);
         employee2ServletPage.logout();
         checkLoggedOut(employee2ServletPage, testRealmSAMLPostLoginPage);
+    }
+
+    @Test
+    public void idpMetadataValidation() throws Exception {
+        driver.navigate().to(authServerPage.toString() + "/realms/" + SAMLSERVLETDEMO + "/protocol/saml/descriptor");
+        validateXMLWithSchema(driver.getPageSource(), "/adapter-test/keycloak-saml/metadata-schema/saml-schema-metadata-2.0.xsd");
+    }
+
+
+    @Test
+    public void spMetadataValidation() throws Exception {
+        ClientResource clientResource = ApiUtil.findClientResourceByClientId(testRealmResource(), "http://localhost:8081/sales-post-sig/");
+        ClientRepresentation representation = clientResource.toRepresentation();
+        Client client = ClientBuilder.newClient();
+        WebTarget target = client.target(authServerPage.toString() + "/admin/realms/" + SAMLSERVLETDEMO + "/clients/" + representation.getId() + "/installation/providers/saml-sp-descriptor");
+        Response response = target.request().header(HttpHeaders.AUTHORIZATION, "Bearer " + adminClient.tokenManager().getAccessToken().getToken()).get();
+        validateXMLWithSchema(response.readEntity(String.class), "/adapter-test/keycloak-saml/metadata-schema/saml-schema-metadata-2.0.xsd");
+        response.close();
+    }
+
+    private void validateXMLWithSchema(String xml, String schemaFileName) throws SAXException, IOException {
+        URL schemaFile = getClass().getResource(schemaFileName);
+
+        Source xmlFile = new StreamSource(new ByteArrayInputStream(xml.getBytes()), xml);
+        SchemaFactory schemaFactory = SchemaFactory
+                .newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
+        Schema schema = schemaFactory.newSchema(schemaFile);
+        Validator validator = schema.newValidator();
+        try {
+            validator.validate(xmlFile);
+            System.out.println(xmlFile.getSystemId() + " is valid");
+        } catch (SAXException e) {
+            System.out.println(xmlFile.getSystemId() + " is NOT valid");
+            System.out.println("Reason: " + e.getLocalizedMessage());
+            Assert.fail();
+        }
     }
 
     private void createProtocolMapper(ProtocolMappersResource resource, String name, String protocol, String protocolMapper, Map<String, String> config) {

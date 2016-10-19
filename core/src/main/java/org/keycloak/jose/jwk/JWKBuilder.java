@@ -18,6 +18,7 @@
 package org.keycloak.jose.jwk;
 
 import org.keycloak.common.util.Base64Url;
+import org.keycloak.common.util.KeyUtils;
 
 import java.math.BigInteger;
 import java.security.Key;
@@ -53,7 +54,7 @@ public class JWKBuilder {
 
         RSAPublicJWK k = new RSAPublicJWK();
 
-        String kid = this.kid != null ? this.kid : createKeyId(key);
+        String kid = this.kid != null ? this.kid : KeyUtils.createKeyId(key);
         k.setKeyId(kid);
         k.setKeyType(RSAPublicJWK.RSA);
         k.setAlgorithm(RSAPublicJWK.RS256);
@@ -62,14 +63,6 @@ public class JWKBuilder {
         k.setPublicExponent(Base64Url.encode(toIntegerBytes(rsaKey.getPublicExponent())));
 
         return k;
-    }
-
-    public static String createKeyId(Key key) {
-        try {
-            return Base64Url.encode(MessageDigest.getInstance(DEFAULT_MESSAGE_DIGEST).digest(key.getEncoded()));
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException(e);
-        }
     }
 
     /**

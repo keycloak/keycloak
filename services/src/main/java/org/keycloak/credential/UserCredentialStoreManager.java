@@ -122,32 +122,34 @@ public class UserCredentialStoreManager implements UserCredentialManager, OnUser
             UserFederationProvider link = session.users().getFederationLink(realm, user);
             if (link != null) {
                 session.users().validateUser(realm, user);
-                Iterator<CredentialInput> it = toValidate.iterator();
-                while (it.hasNext()) {
-                    CredentialInput input = it.next();
-                    if (link.supportsCredentialType(input.getType())
-                            && link.isValid(realm, user, input)) {
-                        it.remove();
-                    }
+                validate(realm, user, toValidate, link);
+            }  // </deprecate>
+            else if (user.getFederationLink() != null) {
+                UserStorageProvider provider = UserStorageManager.getStorageProvider(session, realm, user.getFederationLink());
+                if (provider != null && provider instanceof CredentialInputValidator) {
+                    validate(realm, user, toValidate, ((CredentialInputValidator)provider));
                 }
             }
-            // </deprecate>
         }
 
         if (toValidate.isEmpty()) return true;
 
         List<CredentialInputValidator> credentialProviders = getCredentialProviders(realm, CredentialInputValidator.class);
         for (CredentialInputValidator validator : credentialProviders) {
-            Iterator<CredentialInput> it = toValidate.iterator();
-            while (it.hasNext()) {
-                CredentialInput input = it.next();
-                if (validator.supportsCredentialType(input.getType()) && validator.isValid(realm, user, input)) {
-                    it.remove();
-                }
-            }
+            validate(realm, user, toValidate, validator);
 
         }
         return toValidate.isEmpty();
+    }
+
+    private void validate(RealmModel realm, UserModel user, List<CredentialInput> toValidate, CredentialInputValidator validator) {
+        Iterator<CredentialInput> it = toValidate.iterator();
+        while (it.hasNext()) {
+            CredentialInput input = it.next();
+            if (validator.supportsCredentialType(input.getType()) && validator.isValid(realm, user, input)) {
+                it.remove();
+            }
+        }
     }
 
     protected <T> List<T> getCredentialProviders(RealmModel realm, Class<T> type) {
@@ -178,6 +180,12 @@ public class UserCredentialStoreManager implements UserCredentialManager, OnUser
                 if (link.updateCredential(realm, user, input)) return;
             }
             // </deprecated>
+            else if (user.getFederationLink() != null) {
+                UserStorageProvider provider = UserStorageManager.getStorageProvider(session, realm, user.getFederationLink());
+                if (provider != null && provider instanceof CredentialInputUpdater) {
+                    if (((CredentialInputUpdater)provider).updateCredential(realm, user, input)) return;
+                }
+            }
         }
 
         List<CredentialInputUpdater> credentialProviders = getCredentialProviders(realm, CredentialInputUpdater.class);
@@ -202,6 +210,12 @@ public class UserCredentialStoreManager implements UserCredentialManager, OnUser
             UserFederationProvider link = session.users().getFederationLink(realm, user);
             if (link != null && link.getSupportedCredentialTypes().contains(credentialType)) {
                 link.disableCredentialType(realm, user, credentialType);
+            }
+            else if (user.getFederationLink() != null) {
+                UserStorageProvider provider = UserStorageManager.getStorageProvider(session, realm, user.getFederationLink());
+                if (provider != null && provider instanceof CredentialInputUpdater) {
+                    ((CredentialInputUpdater)provider).disableCredentialType(realm, user, credentialType);
+                }
             }
 
         }
@@ -233,6 +247,12 @@ public class UserCredentialStoreManager implements UserCredentialManager, OnUser
                 if (link.isConfiguredFor(realm, user, type)) return true;
             }
             // </deprecate>
+            else if (user.getFederationLink() != null) {
+                UserStorageProvider provider = UserStorageManager.getStorageProvider(session, realm, user.getFederationLink());
+                if (provider != null && provider instanceof CredentialInputValidator) {
+                    if (((CredentialInputValidator)provider).isConfiguredFor(realm, user, type)) return true;
+                }
+            }
 
         }
 

@@ -28,13 +28,15 @@ import org.keycloak.events.EventBuilder;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClientInitialAccessModel;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientRegistrationTrustedHostModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.ErrorResponseException;
+import org.keycloak.services.clientregistration.policy.RegistrationAuth;
+import org.keycloak.services.clientregistration.policy.ClientRegistrationPolicyException;
+import org.keycloak.services.clientregistration.policy.ClientRegistrationPolicyManager;
 import org.keycloak.util.TokenUtil;
 
 import javax.ws.rs.core.HttpHeaders;
@@ -48,17 +50,17 @@ import java.util.Map;
  */
 public class ClientRegistrationAuth {
 
-    private KeycloakSession session;
-    private EventBuilder event;
+    private final KeycloakSession session;
+    private final ClientRegistrationProvider provider;
+    private final EventBuilder event;
 
     private RealmModel realm;
     private JsonWebToken jwt;
     private ClientInitialAccessModel initialAccessModel;
 
-    private ClientRegistrationTrustedHostModel trustedHostModel;
-
-    public ClientRegistrationAuth(KeycloakSession session, EventBuilder event) {
+    public ClientRegistrationAuth(KeycloakSession session, ClientRegistrationProvider provider, EventBuilder event) {
         this.session = session;
+        this.provider = provider;
         this.event = event;
     }
 
@@ -68,9 +70,6 @@ public class ClientRegistrationAuth {
 
         String authorizationHeader = session.getContext().getRequestHeaders().getRequestHeaders().getFirst(HttpHeaders.AUTHORIZATION);
         if (authorizationHeader == null) {
-
-            // Try trusted hosts
-            trustedHostModel = ClientRegistrationHostUtils.getTrustedHost(session.getContext().getConnection().getRemoteAddr(), session, realm);
             return;
         }
 
@@ -79,7 +78,7 @@ public class ClientRegistrationAuth {
             return;
         }
 
-        ClientRegistrationTokenUtils.TokenVerification tokenVerification = ClientRegistrationTokenUtils.verifyToken(realm, uri, split[1]);
+        ClientRegistrationTokenUtils.TokenVerification tokenVerification = ClientRegistrationTokenUtils.verifyToken(session, realm, uri, split[1]);
         if (tokenVerification.getError() != null) {
             throw unauthorized(tokenVerification.getError().getMessage());
         }
@@ -91,10 +90,6 @@ public class ClientRegistrationAuth {
                 throw unauthorized("Initial Access Token not found");
             }
         }
-    }
-
-    public boolean isRegistrationHostTrusted() {
-        return trustedHostModel != null;
     }
 
     private boolean isBearerToken() {
@@ -109,30 +104,42 @@ public class ClientRegistrationAuth {
         return jwt != null && ClientRegistrationTokenUtils.TYPE_REGISTRATION_ACCESS_TOKEN.equals(jwt.getType());
     }
 
-    public void requireCreate() {
+    public RegistrationAuth requireCreate(ClientRegistrationContext context) {
         init();
 
-        if (isRegistrationHostTrusted()) {
-            // Client registrations from trusted hosts
-            return;
-        } else if (isBearerToken()) {
+        RegistrationAuth registrationAuth = RegistrationAuth.ANONYMOUS;
+
+        if (isBearerToken()) {
             if (hasRole(AdminRoles.MANAGE_CLIENTS, AdminRoles.CREATE_CLIENT)) {
-                return;
+                registrationAuth = RegistrationAuth.AUTHENTICATED;
             } else {
                 throw forbidden();
             }
         } else if (isInitialAccessToken()) {
             if (initialAccessModel.getRemainingCount() > 0) {
                 if (initialAccessModel.getExpiration() == 0 || (initialAccessModel.getTimestamp() + initialAccessModel.getExpiration()) > Time.currentTime()) {
-                    return;
+                    registrationAuth = RegistrationAuth.AUTHENTICATED;
+                } else {
+                    throw unauthorized("Expired initial access token");
                 }
+            } else {
+                throw unauthorized("No remaining count on initial access token");
             }
         }
 
-        throw unauthorized("Not authenticated to view client. Host not trusted and Token is missing or invalid.");
+        try {
+            ClientRegistrationPolicyManager.triggerBeforeRegister(context, registrationAuth);
+        } catch (ClientRegistrationPolicyException crpe) {
+            throw forbidden(crpe.getMessage());
+        }
+
+        return registrationAuth;
     }
 
     public void requireView(ClientModel client) {
+        RegistrationAuth authType = null;
+        boolean authenticated = false;
+
         init();
 
         if (isBearerToken()) {
@@ -140,26 +147,65 @@ public class ClientRegistrationAuth {
                 if (client == null) {
                     throw notFound();
                 }
-                return;
+
+                authenticated = true;
+                authType = RegistrationAuth.AUTHENTICATED;
             } else {
                 throw forbidden();
             }
         } else if (isRegistrationAccessToken()) {
-            if (client.getRegistrationToken() != null && client.getRegistrationToken().equals(jwt.getId())) {
-                return;
+            if (client != null && client.getRegistrationToken() != null && client.getRegistrationToken().equals(jwt.getId())) {
+                authenticated = true;
+                authType = getRegistrationAuth();
             }
         } else if (isInitialAccessToken()) {
-            throw unauthorized("Not initial access token");
+            throw unauthorized("Not initial access token allowed");
         } else {
             if (authenticateClient(client)) {
-                return;
+                authenticated = true;
+                authType = RegistrationAuth.AUTHENTICATED;
             }
         }
 
-        throw unauthorized("Not authorized to view client. Missing or invalid token or bad client credentials.");
+        if (authenticated) {
+            try {
+                ClientRegistrationPolicyManager.triggerBeforeView(session, provider, authType, client);
+            } catch (ClientRegistrationPolicyException crpe) {
+                throw forbidden(crpe.getMessage());
+            }
+        } else {
+            throw unauthorized("Not authorized to view client. Not valid token or client credentials provided.");
+        }
     }
 
-    public void requireUpdate(ClientModel client) {
+    public RegistrationAuth getRegistrationAuth() {
+        String str = (String) jwt.getOtherClaims().get(RegistrationAccessToken.REGISTRATION_AUTH);
+        return RegistrationAuth.fromString(str);
+    }
+
+    public RegistrationAuth requireUpdate(ClientRegistrationContext context, ClientModel client) {
+        RegistrationAuth regAuth = requireUpdateAuth(client);
+
+        try {
+            ClientRegistrationPolicyManager.triggerBeforeUpdate(context, regAuth, client);
+        } catch (ClientRegistrationPolicyException crpe) {
+            throw forbidden(crpe.getMessage());
+        }
+
+        return regAuth;
+    }
+
+    public void requireDelete(ClientModel client) {
+        RegistrationAuth chainType = requireUpdateAuth(client);
+
+        try {
+            ClientRegistrationPolicyManager.triggerBeforeRemove(session, provider, chainType, client);
+        } catch (ClientRegistrationPolicyException crpe) {
+            throw forbidden(crpe.getMessage());
+        }
+    }
+
+    private RegistrationAuth requireUpdateAuth(ClientModel client) {
         init();
 
         if (isBearerToken()) {
@@ -167,25 +213,22 @@ public class ClientRegistrationAuth {
                 if (client == null) {
                     throw notFound();
                 }
-                return;
+
+                return RegistrationAuth.AUTHENTICATED;
             } else {
                 throw forbidden();
             }
         } else if (isRegistrationAccessToken()) {
-            if (client.getRegistrationToken() != null && client != null && client.getRegistrationToken().equals(jwt.getId())) {
-                return;
+            if (client != null && client.getRegistrationToken() != null && client.getRegistrationToken().equals(jwt.getId())) {
+                return getRegistrationAuth();
             }
         }
 
-        throw unauthorized("Not authorized to update client. Missing or invalid token.");
+        throw unauthorized("Not authorized to update client. Maybe missing token or bad token type.");
     }
 
     public ClientInitialAccessModel getInitialAccessModel() {
         return initialAccessModel;
-    }
-
-    public ClientRegistrationTrustedHostModel getTrustedHostModel() {
-        return trustedHostModel;
     }
 
     private boolean hasRole(String... role) {
@@ -227,6 +270,10 @@ public class ClientRegistrationAuth {
     }
 
     private boolean authenticateClient(ClientModel client) {
+        if (client == null) {
+            return false;
+        }
+
         if (client.isPublicClient()) {
             return true;
         }
@@ -259,8 +306,12 @@ public class ClientRegistrationAuth {
     }
 
     private Failure forbidden() {
+        return forbidden("Forbidden");
+    }
+
+    private Failure forbidden(String errorDescription) {
         event.error(Errors.NOT_ALLOWED);
-        throw new ErrorResponseException(OAuthErrorException.INSUFFICIENT_SCOPE, "Forbidden", Response.Status.FORBIDDEN);
+        throw new ErrorResponseException(OAuthErrorException.INSUFFICIENT_SCOPE, errorDescription, Response.Status.FORBIDDEN);
     }
 
     private Failure notFound() {

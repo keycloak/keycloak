@@ -50,6 +50,7 @@ import org.keycloak.representations.info.ServerInfoRepresentation;
 import org.keycloak.representations.info.SpiInfoRepresentation;
 import org.keycloak.representations.info.SystemInfoRepresentation;
 import org.keycloak.representations.info.ThemeInfoRepresentation;
+import org.keycloak.storage.user.ImportSynchronization;
 import org.keycloak.theme.Theme;
 import org.keycloak.theme.ThemeProvider;
 
@@ -135,6 +136,9 @@ public class ServerInfoAdminResource {
                         List<ProviderConfigProperty> configProperties = configured.getConfigProperties();
                         if (configProperties == null) configProperties = Collections.EMPTY_LIST;
                         rep.setProperties(ModelToRepresentation.toRepresentation(configProperties));
+                        if (pi instanceof ImportSynchronization) {
+                            rep.getMetadata().put("synchronizable", true);
+                        }
                         List<ComponentTypeRepresentation> reps = info.getComponentTypes().get(spi.getProviderClass().getName());
                         if (reps == null) {
                             reps = new LinkedList<>();

@@ -16,6 +16,7 @@
  */
 package org.keycloak.services.managers;
 
+import org.jboss.logging.Logger;
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.RSATokenVerifier;
@@ -35,6 +36,7 @@ import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
+import org.keycloak.models.KeyManager;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
@@ -63,6 +65,7 @@ import javax.ws.rs.core.NewCookie;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.net.URI;
+import java.security.PublicKey;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
@@ -81,7 +84,8 @@ public class AuthenticationManager {
     // clientSession note with flag that clientSession was authenticated through SSO cookie
     public static final String SSO_AUTH = "SSO_AUTH";
 
-    protected static ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    protected static final Logger logger = Logger.getLogger(AuthenticationManager.class);
+
     public static final String FORM_USERNAME = "username";
     // used for auth login
     public static final String KEYCLOAK_IDENTITY_COOKIE = "KEYCLOAK_IDENTITY";
@@ -107,11 +111,16 @@ public class AuthenticationManager {
             Cookie cookie = headers.getCookies().get(KEYCLOAK_IDENTITY_COOKIE);
             if (cookie == null) return;
             String tokenString = cookie.getValue();
-            AccessToken token = RSATokenVerifier.verifyToken(tokenString, realm.getPublicKey(), Urls.realmIssuer(uriInfo.getBaseUri(), realm.getName()), false, false);
+
+            RSATokenVerifier verifier = RSATokenVerifier.create(tokenString).realmUrl(Urls.realmIssuer(uriInfo.getBaseUri(), realm.getName())).checkActive(false).checkTokenType(false);
+
+            String kid = verifier.getHeader().getKeyId();
+            PublicKey publicKey = session.keys().getPublicKey(realm, kid);
+
+            AccessToken token = verifier.publicKey(publicKey).verify().getToken();
             UserSessionModel cookieSession = session.sessions().getUserSession(realm, token.getSessionState());
             if (cookieSession == null || !cookieSession.getId().equals(userSession.getId())) return;
             expireIdentityCookie(realm, uriInfo, connection);
-            expireRememberMeCookie(realm, uriInfo, connection);
         } catch (Exception e) {
         }
 
@@ -214,7 +223,7 @@ public class AuthenticationManager {
                     protocol.backchannelLogout(userSession, clientSession);
                     clientSession.setAction(ClientSessionModel.Action.LOGGED_OUT.name());
                 } catch (Exception e) {
-                    logger.failedToLogoutClient(e);
+                    ServicesLogger.LOGGER.failedToLogoutClient(e);
                 }
             }
         }
@@ -235,7 +244,7 @@ public class AuthenticationManager {
                     return response;
                 }
             } catch (Exception e) {
-                logger.failedToLogoutClient(e);
+                ServicesLogger.LOGGER.failedToLogoutClient(e);
             }
 
         }
@@ -284,7 +293,7 @@ public class AuthenticationManager {
         String cookiePath = getIdentityCookiePath(realm, uriInfo);
         String issuer = Urls.realmIssuer(uriInfo.getBaseUri(), realm.getName());
         AccessToken identityToken = createIdentityToken(realm, user, session, issuer);
-        String encoded = encodeToken(realm, identityToken);
+        String encoded = encodeToken(keycloakSession, realm, identityToken);
         boolean secureOnly = realm.getSslRequired().isRequired(connection);
         int maxAge = NewCookie.DEFAULT_MAX_AGE;
         if (session.isRememberMe()) {
@@ -326,10 +335,15 @@ public class AuthenticationManager {
         return null;
     }
 
-    protected static String encodeToken(RealmModel realm, Object token) {
+    protected static String encodeToken(KeycloakSession session, RealmModel realm, Object token) {
+        KeyManager.ActiveKey activeKey = session.keys().getActiveKey(realm);
+
+        logger.tracef("Encoding token with kid '%s'", activeKey.getKid());
+
         String encodedToken = new JWSBuilder()
+                .kid(activeKey.getKid())
                 .jsonContent(token)
-                .rsa256(realm.getPrivateKey());
+                .rsa256(activeKey.getPrivateKey());
         return encodedToken;
     }
 
@@ -430,7 +444,7 @@ public class AuthenticationManager {
             userSession.setNote(AUTH_TIME, String.valueOf(authTime));
         }
 
-        return protocol.authenticated(userSession, new ClientSessionCode(realm, clientSession));
+        return protocol.authenticated(userSession, new ClientSessionCode(session, realm, clientSession));
 
     }
 
@@ -477,9 +491,9 @@ public class AuthenticationManager {
 
         if (client.isConsentRequired()) {
 
-            UserConsentModel grantedConsent = session.users().getConsentByClient(realm, user, client.getId());
+            UserConsentModel grantedConsent = session.users().getConsentByClient(realm, user.getId(), client.getId());
 
-            ClientSessionCode accessCode = new ClientSessionCode(realm, clientSession);
+            ClientSessionCode accessCode = new ClientSessionCode(session, realm, clientSession);
             for (RoleModel r : accessCode.getRequestedRoles()) {
 
                 // Consent already granted by user
@@ -531,11 +545,11 @@ public class AuthenticationManager {
 
         if (client.isConsentRequired()) {
 
-            UserConsentModel grantedConsent = session.users().getConsentByClient(realm, user, client.getId());
+            UserConsentModel grantedConsent = session.users().getConsentByClient(realm, user.getId(), client.getId());
 
             List<RoleModel> realmRoles = new LinkedList<>();
             MultivaluedMap<String, RoleModel> resourceRoles = new MultivaluedMapImpl<>();
-            ClientSessionCode accessCode = new ClientSessionCode(realm, clientSession);
+            ClientSessionCode accessCode = new ClientSessionCode(session, realm, clientSession);
             for (RoleModel r : accessCode.getRequestedRoles()) {
 
                 // Consent already granted by user
@@ -664,13 +678,21 @@ public class AuthenticationManager {
     protected static AuthResult verifyIdentityToken(KeycloakSession session, RealmModel realm, UriInfo uriInfo, ClientConnection connection, boolean checkActive, boolean checkTokenType,
                                                     String tokenString, HttpHeaders headers) {
         try {
-            AccessToken token = RSATokenVerifier.verifyToken(tokenString, realm.getPublicKey(), Urls.realmIssuer(uriInfo.getBaseUri(), realm.getName()), checkActive, checkTokenType);
+            RSATokenVerifier verifier = RSATokenVerifier.create(tokenString).realmUrl(Urls.realmIssuer(uriInfo.getBaseUri(), realm.getName())).checkActive(checkActive).checkTokenType(checkTokenType);
+            String kid = verifier.getHeader().getKeyId();
+
+            PublicKey publicKey = session.keys().getPublicKey(realm, kid);
+            if (publicKey == null) {
+                logger.debugf("Identity cookie signed with unknown kid '%s'", kid);
+                return null;
+            }
+            verifier.publicKey(publicKey);
+
+            AccessToken token = verifier.verify().getToken();
             if (checkActive) {
                 if (!token.isActive() || token.getIssuedAt() < realm.getNotBefore()) {
-                    logger.debug("identity cookie expired");
+                    logger.debug("Identity cookie expired");
                     return null;
-                } else {
-                    logger.debugv("token active - active: {0}, issued-at: {1}, not-before: {2}", token.isActive(), token.getIssuedAt(), realm.getNotBefore());
                 }
             }
 
@@ -689,7 +711,7 @@ public class AuthenticationManager {
 
             return new AuthResult(user, userSession, token);
         } catch (VerificationException e) {
-            logger.debug("Failed to verify identity token", e);
+            logger.debugf("Failed to verify identity token: %s", e.getMessage());
         }
         return null;
     }

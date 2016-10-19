@@ -59,6 +59,7 @@ import org.keycloak.models.mongo.keycloak.entities.RequiredActionProviderEntity;
 import org.keycloak.models.mongo.keycloak.entities.RequiredCredentialEntity;
 import org.keycloak.models.mongo.keycloak.entities.UserFederationMapperEntity;
 import org.keycloak.models.mongo.keycloak.entities.UserFederationProviderEntity;
+import org.keycloak.models.utils.ComponentUtil;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 import java.security.Key;
@@ -84,11 +85,6 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
 
     private final MongoRealmEntity realm;
     private final RealmProvider model;
-
-    protected volatile transient PublicKey publicKey;
-    protected volatile transient PrivateKey privateKey;
-    protected volatile transient X509Certificate certificate;
-    protected volatile transient Key codeSecretKey;
 
     private volatile transient OTPPolicy otpPolicy;
     private volatile transient PasswordPolicy passwordPolicy;
@@ -453,110 +449,6 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     @Override
     public int getAccessCodeLifespanLogin() {
         return realm.getAccessCodeLifespanLogin();
-    }
-
-    @Override
-    public String getKeyId() {
-        PublicKey publicKey = getPublicKey();
-        return publicKey != null ? JWKBuilder.create().rs256(publicKey).getKeyId() : null;
-    }
-
-    @Override
-    public String getPublicKeyPem() {
-        return realm.getPublicKeyPem();
-    }
-
-    @Override
-    public void setPublicKeyPem(String publicKeyPem) {
-        realm.setPublicKeyPem(publicKeyPem);
-        this.publicKey = null;
-        updateRealm();
-    }
-
-    @Override
-    public X509Certificate getCertificate() {
-        if (certificate != null) return certificate;
-        certificate = KeycloakModelUtils.getCertificate(getCertificatePem());
-        return certificate;
-    }
-
-    @Override
-    public void setCertificate(X509Certificate certificate) {
-        this.certificate = certificate;
-        String certificatePem = KeycloakModelUtils.getPemFromCertificate(certificate);
-        setCertificatePem(certificatePem);
-
-    }
-
-    @Override
-    public String getCertificatePem() {
-        return realm.getCertificatePem();
-    }
-
-    @Override
-    public void setCertificatePem(String certificate) {
-        realm.setCertificatePem(certificate);
-
-    }
-
-
-    @Override
-    public String getPrivateKeyPem() {
-        return realm.getPrivateKeyPem();
-    }
-
-    @Override
-    public void setPrivateKeyPem(String privateKeyPem) {
-        realm.setPrivateKeyPem(privateKeyPem);
-        this.privateKey = null;
-        updateRealm();
-    }
-
-    @Override
-    public PublicKey getPublicKey() {
-        if (publicKey != null) return publicKey;
-        publicKey = KeycloakModelUtils.getPublicKey(getPublicKeyPem());
-        return publicKey;
-    }
-
-    @Override
-    public void setPublicKey(PublicKey publicKey) {
-        this.publicKey = publicKey;
-        String publicKeyPem = KeycloakModelUtils.getPemFromKey(publicKey);
-        setPublicKeyPem(publicKeyPem);
-    }
-
-    @Override
-    public PrivateKey getPrivateKey() {
-        if (privateKey != null) return privateKey;
-        privateKey = KeycloakModelUtils.getPrivateKey(getPrivateKeyPem());
-        return privateKey;
-    }
-
-    @Override
-    public void setPrivateKey(PrivateKey privateKey) {
-        this.privateKey = privateKey;
-        String privateKeyPem = KeycloakModelUtils.getPemFromKey(privateKey);
-        setPrivateKeyPem(privateKeyPem);
-    }
-
-    @Override
-    public String getCodeSecret() {
-        return realm.getCodeSecret();
-    }
-
-    @Override
-    public Key getCodeSecretKey() {
-        if (codeSecretKey == null) {
-            codeSecretKey = KeycloakModelUtils.getSecretKey(getCodeSecret());
-        }
-        return codeSecretKey;
-    }
-
-    @Override
-    public void setCodeSecret(String codeSecret) {
-        realm.setCodeSecret(codeSecret);
-        updateRealm();
     }
 
     @Override
@@ -2062,17 +1954,15 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
 
     @Override
     public ComponentModel addComponentModel(ComponentModel model) {
+        ComponentUtil.getComponentFactory(session, model).validateConfiguration(session, model);
+
         ComponentEntity entity = new ComponentEntity();
         if (model.getId() == null) {
             entity.setId(KeycloakModelUtils.generateId());
         } else {
             entity.setId(model.getId());
         }
-        entity.setConfig(model.getConfig());
-        entity.setParentId(model.getParentId());
-        entity.setProviderType(model.getProviderType());
-        entity.setProviderId(model.getProviderId());
-        entity.setName(model.getName());
+        updateComponentEntity(entity, model);
         model.setId(entity.getId());
         realm.getComponentEntities().add(entity);
         updateRealm();
@@ -2082,18 +1972,25 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
 
     @Override
     public void updateComponent(ComponentModel model) {
+        ComponentUtil.getComponentFactory(session, model).validateConfiguration(session, model);
+
         for (ComponentEntity entity : realm.getComponentEntities()) {
             if (entity.getId().equals(model.getId())) {
-                entity.setConfig(model.getConfig());
-                entity.setParentId(model.getParentId());
-                entity.setProviderType(model.getProviderType());
-                entity.setProviderId(model.getProviderId());
-                entity.setName(model.getName());
+                updateComponentEntity(entity, model);
 
             }
         }
         updateRealm();
 
+    }
+
+    private void updateComponentEntity(ComponentEntity entity, ComponentModel model) {
+        entity.setConfig(model.getConfig());
+        entity.setParentId(model.getParentId());
+        entity.setProviderType(model.getProviderType());
+        entity.setSubType(model.getSubType());
+        entity.setProviderId(model.getProviderId());
+        entity.setName(model.getName());
     }
 
     @Override
@@ -2157,6 +2054,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         model.setParentId(entity.getParentId());
         model.setProviderId(entity.getProviderId());
         model.setProviderType(entity.getProviderType());
+        model.setSubType(entity.getSubType());
         MultivaluedHashMap<String, String> map = new MultivaluedHashMap<>();
         map.putAll(entity.getConfig());
         model.setConfig(map);

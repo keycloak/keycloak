@@ -18,6 +18,7 @@
 package org.keycloak.models.jpa;
 
 import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.common.util.Time;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.credential.UserCredentialStore;
@@ -193,18 +194,22 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
     }
 
     @Override
-    public void addConsent(RealmModel realm, UserModel user, UserConsentModel consent) {
+    public void addConsent(RealmModel realm, String userId, UserConsentModel consent) {
         String clientId = consent.getClient().getId();
 
-        UserConsentEntity consentEntity = getGrantedConsentEntity(user, clientId);
+        UserConsentEntity consentEntity = getGrantedConsentEntity(userId, clientId);
         if (consentEntity != null) {
-            throw new ModelDuplicateException("Consent already exists for client [" + clientId + "] and user [" + user.getId() + "]");
+            throw new ModelDuplicateException("Consent already exists for client [" + clientId + "] and user [" + userId + "]");
         }
+
+        long currentTime = Time.currentTimeMillis();
 
         consentEntity = new UserConsentEntity();
         consentEntity.setId(KeycloakModelUtils.generateId());
-        consentEntity.setUser(em.getReference(UserEntity.class, user.getId()));
+        consentEntity.setUser(em.getReference(UserEntity.class, userId));
         consentEntity.setClientId(clientId);
+        consentEntity.setCreatedDate(currentTime);
+        consentEntity.setLastUpdatedDate(currentTime);
         em.persist(consentEntity);
         em.flush();
 
@@ -212,15 +217,15 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
     }
 
     @Override
-    public UserConsentModel getConsentByClient(RealmModel realm, UserModel user, String clientId) {
-        UserConsentEntity entity = getGrantedConsentEntity(user, clientId);
+    public UserConsentModel getConsentByClient(RealmModel realm, String userId, String clientId) {
+        UserConsentEntity entity = getGrantedConsentEntity(userId, clientId);
         return toConsentModel(realm, entity);
     }
 
     @Override
-    public List<UserConsentModel> getConsents(RealmModel realm, UserModel user) {
+    public List<UserConsentModel> getConsents(RealmModel realm, String userId) {
         TypedQuery<UserConsentEntity> query = em.createNamedQuery("userConsentsByUser", UserConsentEntity.class);
-        query.setParameter("userId", user.getId());
+        query.setParameter("userId", userId);
         List<UserConsentEntity> results = query.getResultList();
 
         List<UserConsentModel> consents = new ArrayList<UserConsentModel>();
@@ -232,19 +237,19 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
     }
 
     @Override
-    public void updateConsent(RealmModel realm, UserModel user, UserConsentModel consent) {
+    public void updateConsent(RealmModel realm, String userId, UserConsentModel consent) {
         String clientId = consent.getClient().getId();
 
-        UserConsentEntity consentEntity = getGrantedConsentEntity(user, clientId);
+        UserConsentEntity consentEntity = getGrantedConsentEntity(userId, clientId);
         if (consentEntity == null) {
-            throw new ModelException("Consent not found for client [" + clientId + "] and user [" + user.getId() + "]");
+            throw new ModelException("Consent not found for client [" + clientId + "] and user [" + userId + "]");
         }
 
         updateGrantedConsentEntity(consentEntity, consent);
     }
 
-    public boolean revokeConsentForClient(RealmModel realm, UserModel user, String clientId) {
-        UserConsentEntity consentEntity = getGrantedConsentEntity(user, clientId);
+    public boolean revokeConsentForClient(RealmModel realm, String userId, String clientId) {
+        UserConsentEntity consentEntity = getGrantedConsentEntity(userId, clientId);
         if (consentEntity == null) return false;
 
         em.remove(consentEntity);
@@ -253,13 +258,13 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
     }
 
 
-    private UserConsentEntity getGrantedConsentEntity(UserModel user, String clientId) {
+    private UserConsentEntity getGrantedConsentEntity(String userId, String clientId) {
         TypedQuery<UserConsentEntity> query = em.createNamedQuery("userConsentByUserAndClient", UserConsentEntity.class);
-        query.setParameter("userId", user.getId());
+        query.setParameter("userId", userId);
         query.setParameter("clientId", clientId);
         List<UserConsentEntity> results = query.getResultList();
         if (results.size() > 1) {
-            throw new ModelException("More results found for user [" + user.getUsername() + "] and client [" + clientId + "]");
+            throw new ModelException("More results found for user [" + userId + "] and client [" + clientId + "]");
         } else if (results.size() == 1) {
             return results.get(0);
         } else {
@@ -277,6 +282,8 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
             throw new ModelException("Client with id " + entity.getClientId() + " is not available");
         }
         UserConsentModel model = new UserConsentModel(client);
+        model.setCreatedDate(entity.getCreatedDate());
+        model.setLastUpdatedDate(entity.getLastUpdatedDate());
 
         Collection<UserConsentRoleEntity> grantedRoleEntities = entity.getGrantedRoles();
         if (grantedRoleEntities != null) {
@@ -345,6 +352,8 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
             grantedRoleEntities.remove(toRemove);
             em.remove(toRemove);
         }
+
+        consentEntity.setLastUpdatedDate(Time.currentTimeMillis());
 
         em.flush();
     }

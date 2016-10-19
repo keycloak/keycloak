@@ -25,51 +25,27 @@
 
     <xsl:variable name="nsDS" select="'urn:jboss:domain:datasources:'"/>
     
-    <!-- Remove keycloak datasource definition. For versions from 2.3.0-->
-    <xsl:template match="//*[local-name()='subsystem' and starts-with(namespace-uri(), $nsDS)]
-		         /*[local-name()='datasources' and starts-with(namespace-uri(), $nsDS)]
-                         /*[local-name()='xa-datasource' and starts-with(namespace-uri(), $nsDS) and @pool-name='KeycloakDS']">
-    </xsl:template>
-
-    <!-- Remove keycloak xa-datasource definition. For versions below 2.3.0-->
+    <!-- Remove keycloak datasource definition -->
     <xsl:template match="//*[local-name()='subsystem' and starts-with(namespace-uri(), $nsDS)]
 		         /*[local-name()='datasources' and starts-with(namespace-uri(), $nsDS)]
                          /*[local-name()='datasource' and starts-with(namespace-uri(), $nsDS) and @pool-name='KeycloakDS']">
     </xsl:template>
     
     <xsl:param name="db.jdbc_url"/>
-    <xsl:param name="db.hostname"/>
-    <xsl:param name="db.name"/>
-    <xsl:param name="db.port"/>
     <xsl:param name="driver"/>
-    <xsl:param name="datasource.class.xa"/>
+
+    <xsl:param name="min.poolsize" select="'10'"/>
+    <xsl:param name="max.poolsize" select="'50'"/>
+    <xsl:param name="pool.prefill" select="'true'"/>
     
     <xsl:param name="username"/>
     <xsl:param name="password"/>
     
     <xsl:variable name="newDatasourceDefinition">
-        <xa-datasource jndi-name="java:jboss/datasources/KeycloakDS" pool-name="KeycloakDS" enabled="true" use-java-context="true">
-            <xsl:choose>
-                <xsl:when test="contains($driver, 'oracle')">
-                    <xa-datasource-property name="URL">
-                        <xsl:value-of select="$db.jdbc_url"/>
-                    </xa-datasource-property>
-                </xsl:when>
-                <xsl:otherwise>
-                    <xa-datasource-property name="ServerName">
-                        <xsl:value-of select="$db.hostname"/>
-                    </xa-datasource-property>
-                    <xa-datasource-property name="PortNumber">
-                        <xsl:value-of select="$db.port"/>
-                    </xa-datasource-property>
-                    <xa-datasource-property name="DatabaseName">
-                        <xsl:value-of select="$db.name"/>
-                    </xa-datasource-property>
-                    <xsl:if test="contains($driver, 'db2')">
-                        <xa-datasource-property name="DriverType">4</xa-datasource-property>
-                    </xsl:if>
-                </xsl:otherwise>
-            </xsl:choose>
+        <datasource jndi-name="java:jboss/datasources/KeycloakDS" pool-name="KeycloakDS" enabled="true" use-java-context="true">
+            <connection-url>
+                <xsl:value-of select="$db.jdbc_url"/>
+            </connection-url>
             <driver>
                 <xsl:value-of select="$driver"/>
             </driver>
@@ -81,16 +57,23 @@
                     <xsl:value-of select="$password"/>
                 </password>
             </security>
-        </xa-datasource>
+            <pool>
+                <min-pool-size>
+                    <xsl:value-of select="$min.poolsize"/>
+                </min-pool-size>
+                <max-pool-size>
+                    <xsl:value-of select="$max.poolsize"/>
+                </max-pool-size>
+                <prefill>
+                    <xsl:value-of select="$pool.prefill"/>
+                </prefill>
+            </pool>
+        </datasource>
     </xsl:variable>
     
     <xsl:variable name="newDriverDefinition">
         <xsl:if test="$driver != 'h2'">
-            <driver name="{$driver}" module="com.{$driver}">
-                <xa-datasource-class>
-                    <xsl:value-of select="$xa.datasource.class"/>
-                </xa-datasource-class>
-            </driver>
+            <driver name="{$driver}" module="com.{$driver}"/>
         </xsl:if>
     </xsl:variable>
     

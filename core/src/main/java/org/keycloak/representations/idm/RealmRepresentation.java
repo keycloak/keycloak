@@ -72,9 +72,13 @@ public class RealmRepresentation {
     protected Integer failureFactor;
     //--- end brute force settings
 
+    @Deprecated
     protected String privateKey;
+    @Deprecated
     protected String publicKey;
+    @Deprecated
     protected String certificate;
+    @Deprecated
     protected String codeSecret;
     protected RolesRepresentation roles;
     protected List<GroupRepresentation> groups;
@@ -91,6 +95,7 @@ public class RealmRepresentation {
     protected Integer otpPolicyPeriod;
 
     protected List<UserRepresentation> users;
+    protected List<UserRepresentation> federatedUsers;
     protected List<ScopeMappingRepresentation> scopeMappings;
     protected Map<String, List<ScopeMappingRepresentation>> clientScopeMappings;
     protected List<ClientRepresentation> clients;
@@ -879,4 +884,11 @@ public class RealmRepresentation {
         return attributes;
     }
 
+    public List<UserRepresentation> getFederatedUsers() {
+        return federatedUsers;
+    }
+
+    public void setFederatedUsers(List<UserRepresentation> federatedUsers) {
+        this.federatedUsers = federatedUsers;
+    }
 }

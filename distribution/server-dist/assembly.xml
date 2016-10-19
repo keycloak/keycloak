@@ -46,6 +46,7 @@
                 <exclude>appclient/**</exclude>
                 <exclude>copyright.txt</exclude>
                 <exclude>README.txt</exclude>
+                <exclude>themes/**</exclude>
             </excludes>
         </fileSet>
         <fileSet>
@@ -55,6 +56,14 @@
                 <include>**/*.sh</include>
             </includes>
             <fileMode>0755</fileMode>
+        </fileSet>
+        <fileSet>
+            <directory>target/${project.build.finalName}</directory>
+            <outputDirectory/>
+            <includes>
+                <include>themes/**</include>
+            </includes>
+            <fileMode>0444</fileMode>
         </fileSet>
         <fileSet>
             <directory>src/main/welcome-content</directory>
@@ -68,6 +77,14 @@
             <outputDirectory>modules</outputDirectory>
             <includes>
                 <include>layers.conf</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>target/unpacked/keycloak-client-tools</directory>
+            <outputDirectory/>
+            <filtered>false</filtered>
+            <includes>
+                <include>**/*</include>
             </includes>
         </fileSet>
     </fileSets>

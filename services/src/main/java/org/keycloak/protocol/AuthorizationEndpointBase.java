@@ -43,8 +43,6 @@ import javax.ws.rs.core.UriInfo;
  */
 public abstract class AuthorizationEndpointBase {
 
-    private static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
-
     protected RealmModel realm;
     protected EventBuilder event;
     protected AuthenticationManager authManager;
@@ -118,7 +116,7 @@ public abstract class AuthorizationEndpointBase {
             return processor.finishAuthentication(protocol);
         } else {
             try {
-                RestartLoginCookie.setRestartCookie(realm, clientConnection, uriInfo, clientSession);
+                RestartLoginCookie.setRestartCookie(session, realm, clientConnection, uriInfo, clientSession);
                 if (redirectToAuthentication) {
                     return processor.redirectToFlow();
                 }

@@ -28,10 +28,10 @@ import java.security.PublicKey;
 public interface PublicKeyLocator {
 
     /**
-     * @param input
+     * @param kid
      * @param deployment
      * @return publicKey, which should be used for verify signature on given "input"
      */
-    PublicKey getPublicKey(JWSInput input, KeycloakDeployment deployment);
+    PublicKey getPublicKey(String kid, KeycloakDeployment deployment);
 
 }

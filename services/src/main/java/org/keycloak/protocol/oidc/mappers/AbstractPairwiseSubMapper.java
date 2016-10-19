@@ -25,10 +25,6 @@ import java.util.List;
 public abstract class AbstractPairwiseSubMapper extends AbstractOIDCProtocolMapper implements OIDCAccessTokenMapper, OIDCIDTokenMapper, UserInfoTokenMapper {
     public static final String PROVIDER_ID_SUFFIX = "-pairwise-sub-mapper";
 
-    public static String getId(String prefix) {
-        return prefix + PROVIDER_ID_SUFFIX;
-    }
-
     public abstract String getIdPrefix();
 
     /**
@@ -117,7 +113,7 @@ public abstract class AbstractPairwiseSubMapper extends AbstractOIDCProtocolMapp
 
     @Override
     public final String getId() {
-        return getIdPrefix() + PROVIDER_ID_SUFFIX;
+        return "oidc-" + getIdPrefix() + PROVIDER_ID_SUFFIX;
     }
 }
 

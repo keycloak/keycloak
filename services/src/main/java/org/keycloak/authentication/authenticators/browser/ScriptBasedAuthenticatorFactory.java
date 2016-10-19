@@ -20,10 +20,12 @@ import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.authentication.Authenticator;
 import org.keycloak.authentication.AuthenticatorFactory;
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.StreamUtil;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 
 import java.io.IOException;
@@ -41,7 +43,7 @@ import static org.keycloak.provider.ProviderConfigProperty.STRING_TYPE;
  *
  * @author <a href="mailto:thomas.darimont@gmail.com">Thomas Darimont</a>
  */
-public class ScriptBasedAuthenticatorFactory implements AuthenticatorFactory {
+public class ScriptBasedAuthenticatorFactory implements AuthenticatorFactory, EnvironmentDependentProviderFactory {
 
     private static final Logger LOGGER = Logger.getLogger(ScriptBasedAuthenticatorFactory.class);
 
@@ -147,5 +149,10 @@ public class ScriptBasedAuthenticatorFactory implements AuthenticatorFactory {
                 "This authenticator exposes the following additional variables: 'script', 'realm', 'user', 'session', 'httpRequest', 'LOG'");
 
         return asList(name, description, script);
+    }
+
+    @Override
+    public boolean isSupported() {
+        return Profile.isPreviewEnabled();
     }
 }

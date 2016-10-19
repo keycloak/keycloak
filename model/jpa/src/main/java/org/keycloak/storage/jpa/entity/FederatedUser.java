@@ -31,6 +31,7 @@ import javax.persistence.Table;
  */
 @NamedQueries({
         @NamedQuery(name="getFederatedUserIds", query="select f.id from FederatedUser f where f.realmId=:realmId"),
+        @NamedQuery(name="getFederatedUserCount", query="select count(u) from FederatedUser u where u.realmId = :realmId"),
         @NamedQuery(name="deleteFederatedUserByUser", query="delete from  FederatedUser f where f.id = :userId and f.realmId=:realmId"),
         @NamedQuery(name="deleteFederatedUsersByRealm", query="delete from  FederatedUser f where f.realmId=:realmId"),
         @NamedQuery(name="deleteFederatedUsersByStorageProvider", query="delete from FederatedUser f where f.storageProviderId=:storageProviderId"),

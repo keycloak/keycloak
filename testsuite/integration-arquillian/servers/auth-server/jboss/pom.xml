@@ -429,13 +429,13 @@
                                                 <property>jdbc.mvn.version</property>
                                             </requireProperty>
                                             <requireProperty>
-                                                <property>datasource.class.xa</property>
-                                            </requireProperty>
-                                            <requireProperty>
                                                 <property>keycloak.connectionsJpa.user</property>
                                             </requireProperty>
                                             <requireProperty>
                                                 <property>keycloak.connectionsJpa.password</property>
+                                            </requireProperty>
+                                            <requireProperty>
+                                                <property>keycloak.connectionsJpa.url</property>
                                             </requireProperty>
                                         </rules>
                                     </configuration>
@@ -512,22 +512,6 @@
                                                         <value>${keycloak.connectionsJpa.url}</value>
                                                     </parameter>
                                                     <parameter>
-                                                        <name>db.hostname</name>
-                                                        <value>${db.hostname}</value>
-                                                    </parameter>
-                                                    <parameter>
-                                                        <name>db.port</name>
-                                                        <value>${db.port}</value>
-                                                    </parameter>
-                                                    <parameter>
-                                                        <name>db.name</name>
-                                                        <value>${db.name}</value>
-                                                    </parameter>
-                                                    <parameter>
-                                                        <name>datasource.class.xa</name>
-                                                        <value>${datasource.class.xa}</value>
-                                                    </parameter>
-                                                    <parameter>
                                                         <name>driver</name>
                                                         <value>${jdbc.mvn.artifactId}</value>
                                                     </parameter>
@@ -559,6 +543,60 @@
                 </pluginManagement>
             </build>
         </profile>
+        
+        <profile>
+            <id>migration-manual</id>
+            <activation>
+                <property>
+                    <name>migration.mode</name>
+                    <value>manual</value>
+                </property>
+            </activation>
+            <build>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <groupId>org.codehaus.mojo</groupId>
+                            <artifactId>xml-maven-plugin</artifactId>
+                            <executions>
+                                <execution>
+                                    <id>set-manual-migration-strategy</id>
+                                    <phase>process-resources</phase>
+                                    <goals>
+                                        <goal>transform</goal>
+                                    </goals>
+                                    <configuration>
+                                        <skip></skip>
+                                        <transformationSets>
+                                            <transformationSet>
+                                                <dir>${auth.server.home}/standalone/configuration</dir>
+                                                <includes>
+                                                    <include>standalone.xml</include>
+                                                </includes>
+                                                <stylesheet>${common.resources}/migration-strategy.xsl</stylesheet>
+                                                <outputDir>${auth.server.home}/standalone/configuration</outputDir>
+                                                <parameters>
+                                                    <parameter>
+                                                        <name>migration.strategy</name>
+                                                        <value>manual</value>
+                                                    </parameter>
+                                                    <parameter>
+                                                        <name>initialize.empty</name>
+                                                        <value>false</value>
+                                                    </parameter>
+                                                </parameters>
+                                            </transformationSet>
+                                        </transformationSets>
+                                    </configuration>
+                                </execution>
+                            </executions>
+                        </plugin>
+                
+                    </plugins>
+                </pluginManagement>
+            </build>
+        </profile>
+        
         <profile>
             <id>auth-server-apply-patch</id>
             <activation>

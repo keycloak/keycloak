@@ -17,6 +17,8 @@
 
 package org.keycloak.federation.ldap.mappers;
 
+import java.util.List;
+
 import org.keycloak.Config;
 import org.keycloak.federation.ldap.LDAPFederationProvider;
 import org.keycloak.federation.ldap.LDAPFederationProviderFactory;
@@ -75,13 +77,13 @@ public abstract class AbstractLDAPFederationMapperFactory implements UserFederat
     public void close() {
     }
 
-    public static ProviderConfigProperty createConfigProperty(String name, String label, String helpText, String type, Object defaultValue) {
+    public static ProviderConfigProperty createConfigProperty(String name, String label, String helpText, String type, List<String> options) {
         ProviderConfigProperty configProperty = new ProviderConfigProperty();
         configProperty.setName(name);
         configProperty.setLabel(label);
         configProperty.setHelpText(helpText);
         configProperty.setType(type);
-        configProperty.setDefaultValue(defaultValue);
+        configProperty.setOptions(options);
         return configProperty;
     }
 

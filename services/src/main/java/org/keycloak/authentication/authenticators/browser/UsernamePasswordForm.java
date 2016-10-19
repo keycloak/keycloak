@@ -37,7 +37,7 @@ import javax.ws.rs.core.Response;
  * @version $Revision: 1 $
  */
 public class UsernamePasswordForm extends AbstractUsernameFormAuthenticator implements Authenticator {
-    protected static ServicesLogger log = ServicesLogger.ROOT_LOGGER;
+    protected static ServicesLogger log = ServicesLogger.LOGGER;
 
     @Override
     public void action(AuthenticationFlowContext context) {

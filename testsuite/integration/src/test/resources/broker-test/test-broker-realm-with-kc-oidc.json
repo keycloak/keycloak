@@ -26,8 +26,8 @@
                     "claim.name": "mobile",
                     "Claim JSON Type": "String",
                     "access.token.claim": "true",
-                    "id.token.claim": "true"
-
+                    "id.token.claim": "true",
+                    "userinfo.token.claim": "true"
                 }
             },
             {
@@ -40,8 +40,8 @@
                     "claim.name": "preferred_username",
                     "Claim JSON Type": "String",
                     "access.token.claim": "true",
-                    "id.token.claim": "true"
-
+                    "id.token.claim": "true",
+                    "userinfo.token.claim": "true"
                 }
             },
             {
@@ -54,8 +54,8 @@
                     "claim.name": "email",
                     "Claim JSON Type": "String",
                     "access.token.claim": "true",
-                    "id.token.claim": "true"
-
+                    "id.token.claim": "true",
+                    "userinfo.token.claim": "true"
                 }
             },
             {
@@ -68,8 +68,8 @@
                     "claim.name": "given_name",
                     "Claim JSON Type": "String",
                     "access.token.claim": "true",
-                    "id.token.claim": "true"
-
+                    "id.token.claim": "true",
+                    "userinfo.token.claim": "true"
                 }
             },
             {
@@ -83,7 +83,6 @@
                     "Claim JSON Type": "String",
                     "access.token.claim": "true",
                     "id.token.claim": "true"
-
                 }
             },
             {
@@ -93,8 +92,8 @@
                 "consentRequired": false,
                 "config": {
                     "access.token.claim": "true",
-                    "id.token.claim": "true"
-
+                    "id.token.claim": "true",
+                    "userinfo.token.claim": "true"
                 }
             }
 

@@ -193,7 +193,6 @@ public class ResetPasswordTest extends TestRealmKeycloakTest {
                 .session((String) null)
                 .detail(Details.EMAIL, "test-user@localhost").assertEvent();
 
-
         loginPage.login("login@test.com", "password");
 
         EventRepresentation loginEvent = events.expectLogin().user(userId).detail(Details.USERNAME, "login@test.com").assertEvent();

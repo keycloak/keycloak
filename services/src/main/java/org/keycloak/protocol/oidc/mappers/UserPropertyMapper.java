@@ -38,7 +38,7 @@ import java.util.List;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class UserPropertyMapper extends AbstractOIDCProtocolMapper implements OIDCAccessTokenMapper, OIDCIDTokenMapper {
+public class UserPropertyMapper extends AbstractOIDCProtocolMapper implements OIDCAccessTokenMapper, OIDCIDTokenMapper, UserInfoTokenMapper {
     private static final List<ProviderConfigProperty> configProperties = new ArrayList<ProviderConfigProperty>();
 
     static {
@@ -49,7 +49,7 @@ public class UserPropertyMapper extends AbstractOIDCProtocolMapper implements OI
         property.setType(ProviderConfigProperty.STRING_TYPE);
         property.setHelpText(ProtocolMapperUtils.USER_MODEL_PROPERTY_HELP_TEXT);
         configProperties.add(property);
-        OIDCAttributeMapperHelper.addAttributeConfig(configProperties);
+        OIDCAttributeMapperHelper.addAttributeConfig(configProperties, UserPropertyMapper.class);
     }
 
     public static final String PROVIDER_ID = "oidc-usermodel-property-mapper";
@@ -79,24 +79,8 @@ public class UserPropertyMapper extends AbstractOIDCProtocolMapper implements OI
         return "Map a built in user property (email, firstName, lastName) to a token claim.";
     }
 
-    @Override
-    public AccessToken transformAccessToken(AccessToken token, ProtocolMapperModel mappingModel, KeycloakSession session,
-                                            UserSessionModel userSession, ClientSessionModel clientSession) {
-        if (!OIDCAttributeMapperHelper.includeInAccessToken(mappingModel)) return token;
-        setClaim(token, mappingModel, userSession);
-
-        return token;
-    }
-
-    @Override
-    public IDToken transformIDToken(IDToken token, ProtocolMapperModel mappingModel, KeycloakSession session, UserSessionModel userSession, ClientSessionModel clientSession) {
-        if (!OIDCAttributeMapperHelper.includeInIDToken(mappingModel)) return token;
-        setClaim(token, mappingModel, userSession);
-
-        return token;
-    }
-
     protected void setClaim(IDToken token, ProtocolMapperModel mappingModel, UserSessionModel userSession) {
+
         UserModel user = userSession.getUser();
         String propertyName = mappingModel.getConfig().get(ProtocolMapperUtils.USER_ATTRIBUTE);
         String propertyValue = ProtocolMapperUtils.getUserModelValue(user, propertyName);
@@ -114,6 +98,4 @@ public class UserPropertyMapper extends AbstractOIDCProtocolMapper implements OI
                 accessToken, idToken,
                 PROVIDER_ID);
     }
-
-
 }

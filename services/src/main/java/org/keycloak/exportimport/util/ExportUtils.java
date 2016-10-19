@@ -213,7 +213,7 @@ public class ExportUtils {
         // Finally users if needed
         if (includeUsers) {
             List<UserModel> allUsers = session.users().getUsers(realm, true);
-            List<UserRepresentation> users = new ArrayList<UserRepresentation>();
+            List<UserRepresentation> users = new LinkedList<>();
             for (UserModel user : allUsers) {
                 UserRepresentation userRep = exportUser(session, realm, user);
                 users.add(userRep);
@@ -222,6 +222,16 @@ public class ExportUtils {
             if (users.size() > 0) {
                 rep.setUsers(users);
             }
+
+            List<UserRepresentation> federatedUsers = new LinkedList<>();
+            for (String userId : session.userFederatedStorage().getStoredUsers(realm, 0, -1)) {
+                UserRepresentation userRep = exportFederatedUser(session, realm, userId);
+                federatedUsers.add(userRep);
+            }
+            if (federatedUsers.size() > 0) {
+                rep.setFederatedUsers(federatedUsers);
+            }
+
         }
 
         // components
@@ -240,6 +250,7 @@ public class ExportUtils {
             compRep.setProviderId(component.getProviderId());
             compRep.setConfig(component.getConfig());
             compRep.setName(component.getName());
+            compRep.setSubType(component.getSubType());
             compRep.setSubComponents(exportComponents(realm, component.getId()));
             components.add(component.getProviderType(), compRep);
         }
@@ -509,7 +520,7 @@ public class ExportUtils {
         userRep.setFederationLink(user.getFederationLink());
 
         // Grants
-        List<UserConsentModel> consents = session.users().getConsents(realm, user);
+        List<UserConsentModel> consents = session.users().getConsents(realm, user.getId());
         LinkedList<UserConsentRepresentation> consentReps = new LinkedList<UserConsentRepresentation>();
         for (UserConsentModel consent : consents) {
             UserConsentRepresentation consentRep = ModelToRepresentation.toRepresentation(consent);
@@ -557,6 +568,7 @@ public class ExportUtils {
         credRep.setDigits(userCred.getDigits());
         credRep.setCreatedDate(userCred.getCreatedDate());
         credRep.setConfig(userCred.getConfig());
+        credRep.setPeriod(userCred.getPeriod());
         return credRep;
     }
 
@@ -586,4 +598,122 @@ public class ExportUtils {
             generator.close();
         }
     }
+
+    public static void exportFederatedUsersToStream(KeycloakSession session, RealmModel realm, List<String> usersToExport, ObjectMapper mapper, OutputStream os) throws IOException {
+        JsonFactory factory = mapper.getFactory();
+        JsonGenerator generator = factory.createGenerator(os, JsonEncoding.UTF8);
+        try {
+            if (mapper.isEnabled(SerializationFeature.INDENT_OUTPUT)) {
+                generator.useDefaultPrettyPrinter();
+            }
+            generator.writeStartObject();
+            generator.writeStringField("realm", realm.getName());
+            // generator.writeStringField("strategy", strategy.toString());
+            generator.writeFieldName("federatedUsers");
+            generator.writeStartArray();
+
+            for (String userId : usersToExport) {
+                UserRepresentation userRep = ExportUtils.exportFederatedUser(session, realm, userId);
+                generator.writeObject(userRep);
+            }
+
+            generator.writeEndArray();
+            generator.writeEndObject();
+        } finally {
+            generator.close();
+        }
+    }
+
+    /**
+     * Full export of user data stored in federated storage (including role mappings and credentials)
+     *
+     * @param id
+     * @return fully exported user representation
+     */
+    public static UserRepresentation exportFederatedUser(KeycloakSession session, RealmModel realm, String id) {
+        UserRepresentation userRep = new UserRepresentation();
+        userRep.setId(id);
+        MultivaluedHashMap<String, String> attributes = session.userFederatedStorage().getAttributes(realm, id);
+        if (attributes.size() > 0) {
+            Map<String, Object> attrs = new HashMap<>();
+            attrs.putAll(attributes);
+            userRep.setAttributes(attrs);
+        }
+
+        Set<String> requiredActions = session.userFederatedStorage().getRequiredActions(realm, id);
+        if (requiredActions.size() > 0) {
+            List<String> actions = new LinkedList<>();
+            actions.addAll(requiredActions);
+            userRep.setRequiredActions(actions);
+        }
+
+
+        // Social links
+        Set<FederatedIdentityModel> socialLinks = session.userFederatedStorage().getFederatedIdentities(id, realm);
+        List<FederatedIdentityRepresentation> socialLinkReps = new ArrayList<FederatedIdentityRepresentation>();
+        for (FederatedIdentityModel socialLink : socialLinks) {
+            FederatedIdentityRepresentation socialLinkRep = exportSocialLink(socialLink);
+            socialLinkReps.add(socialLinkRep);
+        }
+        if (socialLinkReps.size() > 0) {
+            userRep.setFederatedIdentities(socialLinkReps);
+        }
+
+        // Role mappings
+        Set<RoleModel> roles = session.userFederatedStorage().getRoleMappings(realm, id);
+        List<String> realmRoleNames = new ArrayList<>();
+        Map<String, List<String>> clientRoleNames = new HashMap<>();
+        for (RoleModel role : roles) {
+            if (role.getContainer() instanceof RealmModel) {
+                realmRoleNames.add(role.getName());
+            } else {
+                ClientModel client = (ClientModel)role.getContainer();
+                String clientId = client.getClientId();
+                List<String> currentClientRoles = clientRoleNames.get(clientId);
+                if (currentClientRoles == null) {
+                    currentClientRoles = new ArrayList<>();
+                    clientRoleNames.put(clientId, currentClientRoles);
+                }
+
+                currentClientRoles.add(role.getName());
+            }
+        }
+
+        if (realmRoleNames.size() > 0) {
+            userRep.setRealmRoles(realmRoleNames);
+        }
+        if (clientRoleNames.size() > 0) {
+            userRep.setClientRoles(clientRoleNames);
+        }
+
+        // Credentials
+        List<CredentialModel> creds = session.userFederatedStorage().getStoredCredentials(realm, id);
+        List<CredentialRepresentation> credReps = new ArrayList<CredentialRepresentation>();
+        for (CredentialModel cred : creds) {
+            CredentialRepresentation credRep = exportCredential(cred);
+            credReps.add(credRep);
+        }
+        userRep.setCredentials(credReps);
+
+        // Grants
+        List<UserConsentModel> consents = session.users().getConsents(realm, id);
+        LinkedList<UserConsentRepresentation> consentReps = new LinkedList<UserConsentRepresentation>();
+        for (UserConsentModel consent : consents) {
+            UserConsentRepresentation consentRep = ModelToRepresentation.toRepresentation(consent);
+            consentReps.add(consentRep);
+        }
+        if (consentReps.size() > 0) {
+            userRep.setClientConsents(consentReps);
+        }
+
+
+        List<String> groups = new LinkedList<>();
+        for (GroupModel group : session.userFederatedStorage().getGroups(realm, id)) {
+            groups.add(ModelToRepresentation.buildGroupPath(group));
+        }
+        userRep.setGroups(groups);
+
+        return userRep;
+    }
+
 }

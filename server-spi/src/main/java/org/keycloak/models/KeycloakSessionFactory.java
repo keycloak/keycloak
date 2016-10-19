@@ -34,6 +34,8 @@ public interface KeycloakSessionFactory extends ProviderEventManager {
 
     Set<Spi> getSpis();
 
+    Spi getSpi(Class<? extends Provider> providerClass);
+
     <T extends Provider> ProviderFactory<T> getProviderFactory(Class<T> clazz);
 
     <T extends Provider> ProviderFactory<T> getProviderFactory(Class<T> clazz, String id);

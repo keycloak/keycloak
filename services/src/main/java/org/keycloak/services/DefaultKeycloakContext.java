@@ -61,6 +61,7 @@ public class DefaultKeycloakContext implements KeycloakContext {
     @Override
     public String getContextPath() {
         KeycloakApplication app = getContextObject(KeycloakApplication.class);
+        if (app == null) return null;
         return app.getContextPath();
     }
 

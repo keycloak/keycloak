@@ -17,12 +17,15 @@
 
 package org.keycloak.models.utils;
 
-import org.bouncycastle.openssl.PEMWriter;
 import org.keycloak.broker.social.SocialIdentityProvider;
 import org.keycloak.broker.social.SocialIdentityProviderFactory;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.CertificateUtils;
+import org.keycloak.common.util.KeyUtils;
+import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.PemUtils;
+import org.keycloak.component.ComponentModel;
+import org.keycloak.keys.KeyProvider;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientModel;
@@ -52,8 +55,6 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.transaction.InvalidTransactionException;
 import javax.transaction.SystemException;
 import javax.transaction.Transaction;
-import java.io.IOException;
-import java.io.StringWriter;
 import java.security.Key;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -69,6 +70,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.StreamSupport;
 
 /**
  * Set of helper methods, which are useful in various model implementations.
@@ -135,82 +137,19 @@ public final class KeycloakModelUtils {
     }
 
     public static String getPemFromKey(Key key) {
-        StringWriter writer = new StringWriter();
-        PEMWriter pemWriter = new PEMWriter(writer);
-        try {
-            pemWriter.writeObject(key);
-            pemWriter.flush();
-            pemWriter.close();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        String s = writer.toString();
-        return PemUtils.removeBeginEnd(s);
+        return PemUtils.encodeKey(key);
     }
 
     public static String getPemFromCertificate(X509Certificate certificate) {
-        StringWriter writer = new StringWriter();
-        PEMWriter pemWriter = new PEMWriter(writer);
-        try {
-            pemWriter.writeObject(certificate);
-            pemWriter.flush();
-            pemWriter.close();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        String s = writer.toString();
-        return PemUtils.removeBeginEnd(s);
-    }
-
-    public static void generateRealmKeys(RealmModel realm) {
-        KeyPair keyPair = null;
-        try {
-            KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA");
-            generator.initialize(2048);
-            keyPair = generator.generateKeyPair();
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException(e);
-        }
-        realm.setPrivateKey(keyPair.getPrivate());
-        realm.setPublicKey(keyPair.getPublic());
-        X509Certificate certificate = null;
-        try {
-            certificate = CertificateUtils.generateV1SelfSignedCertificate(keyPair, realm.getName());
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-        realm.setCertificate(certificate);
-
-        realm.setCodeSecret(generateCodeSecret());
-    }
-
-    public static void generateRealmCertificate(RealmModel realm) {
-        X509Certificate certificate = null;
-        try {
-            certificate = CertificateUtils.generateV1SelfSignedCertificate(new KeyPair(realm.getPublicKey(), realm.getPrivateKey()), realm.getName());
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-        realm.setCertificate(certificate);
+        return PemUtils.encodeCertificate(certificate);
     }
 
     public static CertificateRepresentation generateKeyPairCertificate(String subject) {
-        KeyPair keyPair = null;
-        try {
-            KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA");
-            generator.initialize(2048);
-            keyPair = generator.generateKeyPair();
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException(e);
-        }
-        X509Certificate certificate = null;
-        try {
-            certificate = CertificateUtils.generateV1SelfSignedCertificate(keyPair, subject);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-        String privateKeyPem = KeycloakModelUtils.getPemFromKey(keyPair.getPrivate());
-        String certPem = KeycloakModelUtils.getPemFromCertificate(certificate);
+        KeyPair keyPair = KeyUtils.generateRsaKeyPair(2048);
+        X509Certificate certificate = CertificateUtils.generateV1SelfSignedCertificate(keyPair, subject);
+
+        String privateKeyPem = PemUtils.encodeKey(keyPair.getPrivate());
+        String certPem = PemUtils.encodeCertificate(certificate);
 
         CertificateRepresentation rep = new CertificateRepresentation();
         rep.setPrivateKey(privateKeyPem);
@@ -326,6 +265,43 @@ public final class KeycloakModelUtils {
             if (mapping.hasRole(targetRole)) return true;
         }
         return false;
+    }
+
+    /**
+     * Checks whether the {@code targetRole} is contained in the given group or its parents
+     * (if requested)
+     * @param group Group to check role for
+     * @param targetRole
+     * @param checkParentGroup When {@code true}, also parent group is recursively checked for role
+     * @return true if targetRole is in roles (directly or indirectly via composite role)
+     */
+    public static boolean hasRoleFromGroup(GroupModel group, RoleModel targetRole, boolean checkParentGroup) {
+        if (group.hasRole(targetRole))
+            return true;
+
+        if (checkParentGroup) {
+            GroupModel parent = group.getParent();
+            return parent != null && hasRoleFromGroup(parent, targetRole, true);
+        }
+
+        return false;
+    }
+
+    /**
+     * Checks whether the {@code targetRole} is contained in any of the {@code groups} or their parents
+     * (if requested)
+     * @param groups
+     * @param targetRole
+     * @param checkParentGroup When {@code true}, also parent group is recursively checked for role
+     * @return true if targetRole is in roles (directly or indirectly via composite role)
+     */
+    public static boolean hasRoleFromGroup(Iterable<GroupModel> groups, RoleModel targetRole, boolean checkParentGroup) {
+        if (groups == null) {
+            return false;
+        }
+
+        return StreamSupport.stream(groups.spliterator(), false)
+          .anyMatch(group -> hasRoleFromGroup(group, targetRole, checkParentGroup));
     }
 
     /**

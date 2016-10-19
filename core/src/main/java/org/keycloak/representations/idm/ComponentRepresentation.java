@@ -24,11 +24,14 @@ import org.keycloak.common.util.MultivaluedHashMap;
  */
 public class ComponentRepresentation {
 
+    public static final String SECRET_VALUE = "**********";
+
     private String id;
     private String name;
     private String providerId;
     private String providerType;
     private String parentId;
+    private String subType;
     private MultivaluedHashMap<String, String> config;
 
     public String getId() {
@@ -69,6 +72,14 @@ public class ComponentRepresentation {
 
     public void setParentId(String parentId) {
         this.parentId = parentId;
+    }
+
+    public String getSubType() {
+        return subType;
+    }
+
+    public void setSubType(String subType) {
+        this.subType = subType;
     }
 
     public MultivaluedHashMap<String, String> getConfig() {

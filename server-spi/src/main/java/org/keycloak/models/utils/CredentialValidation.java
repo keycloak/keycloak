@@ -17,44 +17,15 @@
 
 package org.keycloak.models.utils;
 
-import org.keycloak.common.util.Time;
-import org.keycloak.jose.jws.JWSInput;
-import org.keycloak.jose.jws.JWSInputException;
-import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.models.OTPPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
-import org.keycloak.models.UserModel;
-import org.keycloak.representations.PasswordToken;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
 public class CredentialValidation {
-
-
-    public static boolean validPasswordToken(RealmModel realm, UserModel user, String encodedPasswordToken) {
-        try {
-            JWSInput jws = new JWSInput(encodedPasswordToken);
-            if (!RSAProvider.verify(jws, realm.getPublicKey())) {
-                return false;
-            }
-            PasswordToken passwordToken = jws.readJsonContent(PasswordToken.class);
-            if (!passwordToken.getRealm().equals(realm.getName())) {
-                return false;
-            }
-            if (!passwordToken.getUser().equals(user.getId())) {
-                return false;
-            }
-            if (Time.currentTime() - passwordToken.getTimestamp() > realm.getAccessCodeLifespanUserAction()) {
-                return false;
-            }
-            return true;
-        } catch (JWSInputException e) {
-            return false;
-        }
-    }
 
     public static boolean validOTP(RealmModel realm, String token, String secret) {
         OTPPolicy policy = realm.getOTPPolicy();

@@ -1,12 +1,14 @@
 package org.keycloak.protocol.oidc.utils;
 
+import org.jboss.logging.Logger;
 import org.keycloak.protocol.oidc.mappers.AbstractPairwiseSubMapper;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
-import org.keycloak.services.ServicesLogger;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -14,7 +16,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 public class PairwiseSubMapperUtils {
-    private static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    private static final Logger logger = Logger.getLogger(PairwiseSubMapperUtils.class);
 
     /**
      * Returns a set of valid redirect URIs from the root url and redirect URIs registered on a client.
@@ -23,7 +25,11 @@ public class PairwiseSubMapperUtils {
      * @param clientRedirectUris
      * @return
      */
-    public static Set<String> resolveValidRedirectUris(String clientRootUrl, Set<String> clientRedirectUris) {
+    public static Set<String> resolveValidRedirectUris(String clientRootUrl, Collection<String> clientRedirectUris) {
+        if (clientRedirectUris == null) {
+            return Collections.emptySet();
+        }
+
         Set<String> validRedirects = new HashSet<String>();
         for (String redirectUri : clientRedirectUris) {
             if (redirectUri.startsWith("/")) {

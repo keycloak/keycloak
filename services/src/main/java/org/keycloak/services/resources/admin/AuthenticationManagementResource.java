@@ -16,6 +16,7 @@
  */
 package org.keycloak.services.resources.admin;
 
+import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.BadRequestException;
 import org.jboss.resteasy.spi.NotFoundException;
@@ -48,7 +49,6 @@ import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
 import org.keycloak.representations.idm.ConfigPropertyRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.services.ErrorResponse;
-import org.keycloak.services.ServicesLogger;
 import org.keycloak.utils.CredentialHelper;
 
 import javax.ws.rs.Consumes;
@@ -83,7 +83,7 @@ public class AuthenticationManagementResource {
     @Context
     private UriInfo uriInfo;
 
-    private static ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    protected static final Logger logger = Logger.getLogger(AuthenticationManagementResource.class);
 
     public AuthenticationManagementResource(RealmModel realm, KeycloakSession session, RealmAuth auth, AdminEventBuilder adminEvent) {
         this.realm = realm;
@@ -290,7 +290,7 @@ public class AuthenticationManagementResource {
 
         String newName = data.get("newName");
         if (realm.getFlowByAlias(newName) != null) {
-            return Response.status(Response.Status.CONFLICT).build();
+            return ErrorResponse.exists("New flow alias name already exists");
         }
 
         AuthenticationFlowModel flow = realm.getFlowByAlias(flowAlias);
@@ -310,7 +310,7 @@ public class AuthenticationManagementResource {
         data.put("id", copy.getId());
         adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo).representation(data).success();
 
-        return Response.status(201).build();
+        return Response.status(Response.Status.CREATED).build();
 
     }
 
@@ -344,12 +344,12 @@ public class AuthenticationManagementResource {
     @POST
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
-    public void addExecutionFlow(@PathParam("flowAlias") String flowAlias, Map<String, String> data) {
+    public Response addExecutionFlow(@PathParam("flowAlias") String flowAlias, Map<String, String> data) {
         auth.requireManage();
 
         AuthenticationFlowModel parentFlow = realm.getFlowByAlias(flowAlias);
         if (parentFlow == null) {
-            throw new BadRequestException("Parent flow doesn't exists");
+            return ErrorResponse.error("Parent flow doesn't exists", Response.Status.BAD_REQUEST);
         }
         String alias = data.get("alias");
         String type = data.get("type");
@@ -359,7 +359,7 @@ public class AuthenticationManagementResource {
 
         AuthenticationFlowModel newFlow = realm.getFlowByAlias(alias);
         if (newFlow != null) {
-            throw new BadRequestException("New flow alias name already exists");
+            return ErrorResponse.exists("New flow alias name already exists");
         }
         newFlow = new AuthenticationFlowModel();
         newFlow.setAlias(alias);
@@ -377,6 +377,8 @@ public class AuthenticationManagementResource {
 
         data.put("id", execution.getId());
         adminEvent.operation(OperationType.CREATE).resource(ResourceType.AUTH_EXECUTION_FLOW).resourcePath(uriInfo).representation(data).success();
+
+        return Response.status(Response.Status.CREATED).build();
     }
 
     private int getNextPriority(AuthenticationFlowModel parentFlow) {
@@ -930,7 +932,7 @@ public class AuthenticationManagementResource {
         rep.setProviderId(providerId);
         rep.setName(factory.getDisplayType());
         rep.setHelpText(factory.getHelpText());
-        rep.setProperties(new LinkedList<ConfigPropertyRepresentation>());
+        rep.setProperties(new LinkedList<>());
         List<ProviderConfigProperty> configProperties = factory.getConfigProperties();
         for (ProviderConfigProperty prop : configProperties) {
             ConfigPropertyRepresentation propRep = getConfigPropertyRep(prop);
@@ -940,13 +942,7 @@ public class AuthenticationManagementResource {
     }
 
     private ConfigPropertyRepresentation getConfigPropertyRep(ProviderConfigProperty prop) {
-        ConfigPropertyRepresentation propRep = new ConfigPropertyRepresentation();
-        propRep.setName(prop.getName());
-        propRep.setLabel(prop.getLabel());
-        propRep.setType(prop.getType());
-        propRep.setDefaultValue(prop.getDefaultValue());
-        propRep.setHelpText(prop.getHelpText());
-        return propRep;
+        return ModelToRepresentation.toRepresentation(prop);
     }
 
     /**

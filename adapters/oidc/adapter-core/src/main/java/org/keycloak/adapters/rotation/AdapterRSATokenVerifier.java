@@ -38,12 +38,12 @@ public class AdapterRSATokenVerifier {
     }
 
 
-    public static PublicKey getPublicKey(JWSInput input, KeycloakDeployment deployment) throws VerificationException {
+    public static PublicKey getPublicKey(String kid, KeycloakDeployment deployment) throws VerificationException {
         PublicKeyLocator pkLocator = deployment.getPublicKeyLocator();
 
-        PublicKey publicKey = pkLocator.getPublicKey(input, deployment);
+        PublicKey publicKey = pkLocator.getPublicKey(kid, deployment);
         if (publicKey == null) {
-            log.errorf("Didn't find publicKey for kid: %s", input.getHeader().getKeyId());
+            log.errorf("Didn't find publicKey for kid: %s", kid);
             throw new VerificationException("Didn't find publicKey for specified kid");
         }
 
@@ -51,14 +51,8 @@ public class AdapterRSATokenVerifier {
     }
 
     public static AccessToken verifyToken(String tokenString, KeycloakDeployment deployment, boolean checkActive, boolean checkTokenType) throws VerificationException {
-        JWSInput input;
-        try {
-            input = new JWSInput(tokenString);
-        } catch (Exception e) {
-            throw new VerificationException("Couldn't parse token", e);
-        }
-
-        PublicKey publicKey = getPublicKey(input, deployment);
-        return RSATokenVerifier.verifyToken(input, publicKey, deployment.getRealmInfoUrl(), checkActive, checkTokenType);
+        RSATokenVerifier verifier = RSATokenVerifier.create(tokenString).realmUrl(deployment.getRealmInfoUrl()).checkActive(checkActive).checkTokenType(checkTokenType);
+        PublicKey publicKey = getPublicKey(verifier.getHeader().getKeyId(), deployment);
+        return verifier.publicKey(publicKey).verify().getToken();
     }
 }

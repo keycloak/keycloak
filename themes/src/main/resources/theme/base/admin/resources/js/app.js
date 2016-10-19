@@ -200,7 +200,7 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'RealmTokenDetailCtrl'
         })
-        .when('/realms/:realm/client-initial-access', {
+        .when('/realms/:realm/client-registration/client-initial-access', {
             templateUrl : resourceUrl + '/partials/client-initial-access.html',
             resolve : {
                 realm : function(RealmLoader) {
@@ -208,14 +208,11 @@ module.config([ '$routeProvider', function($routeProvider) {
                 },
                 clientInitialAccess : function(ClientInitialAccessLoader) {
                     return ClientInitialAccessLoader();
-                },
-                clientRegTrustedHosts : function(ClientRegistrationTrustedHostListLoader) {
-                    return ClientRegistrationTrustedHostListLoader();
                 }
             },
             controller : 'ClientInitialAccessCtrl'
         })
-        .when('/realms/:realm/client-initial-access/create', {
+        .when('/realms/:realm/client-registration/client-initial-access/create', {
             templateUrl : resourceUrl + '/partials/client-initial-access-create.html',
             resolve : {
                 realm : function(RealmLoader) {
@@ -224,38 +221,133 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'ClientInitialAccessCreateCtrl'
         })
-        .when('/realms/:realm/client-reg-trusted-hosts/create', {
-            templateUrl : resourceUrl + '/partials/client-reg-trusted-host-create.html',
+        .when('/realms/:realm/client-registration/client-reg-policies', {
+            templateUrl : resourceUrl + '/partials/client-reg-policies.html',
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
                 },
-                clientRegTrustedHost : function() {
-                    return {};
+                policies : function(ComponentsLoader) {
+                    return ComponentsLoader.loadComponents(null, 'org.keycloak.services.clientregistration.policy.ClientRegistrationPolicy');
+                },
+                clientRegistrationPolicyProviders : function(ClientRegistrationPolicyProvidersLoader) {
+                    return ClientRegistrationPolicyProvidersLoader();
                 }
             },
-            controller : 'ClientRegistrationTrustedHostDetailCtrl'
+            controller : 'ClientRegPoliciesCtrl'
         })
-        .when('/realms/:realm/client-reg-trusted-hosts/:hostname', {
-            templateUrl : resourceUrl + '/partials/client-reg-trusted-host-detail.html',
+        .when('/realms/:realm/client-registration/client-reg-policies/create/:componentType/:providerId', {
+            templateUrl : resourceUrl + '/partials/client-reg-policy-detail.html',
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
                 },
-                clientRegTrustedHost : function(ClientRegistrationTrustedHostLoader) {
-                    return ClientRegistrationTrustedHostLoader();
+                instance : function($route) {
+                    return {
+                        providerType: 'org.keycloak.services.clientregistration.policy.ClientRegistrationPolicy',
+                        subType: $route.current.params.componentType,
+                        providerId: $route.current.params.providerId
+                    };
+                },
+                clientRegistrationPolicyProviders : function(ClientRegistrationPolicyProvidersLoader) {
+                    return ClientRegistrationPolicyProvidersLoader();
                 }
             },
-            controller : 'ClientRegistrationTrustedHostDetailCtrl'
+            controller : 'ClientRegPolicyDetailCtrl'
         })
-        .when('/realms/:realm/keys-settings', {
+        .when('/realms/:realm/client-registration/client-reg-policies/:provider/:componentId', {
+            templateUrl : resourceUrl + '/partials/client-reg-policy-detail.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                instance : function(ComponentLoader) {
+                    return ComponentLoader();
+                },
+                clientRegistrationPolicyProviders : function(ClientRegistrationPolicyProvidersLoader) {
+                    return ClientRegistrationPolicyProvidersLoader();
+                }
+            },
+            controller : 'ClientRegPolicyDetailCtrl'
+        })
+        .when('/realms/:realm/keys', {
             templateUrl : resourceUrl + '/partials/realm-keys.html',
             resolve : {
                 realm : function(RealmLoader) {
                     return RealmLoader();
+                },
+                serverInfo : function(ServerInfoLoader) {
+                    return ServerInfoLoader();
+                },
+                keys: function(RealmKeysLoader) {
+                    return RealmKeysLoader();
                 }
             },
-            controller : 'RealmKeysDetailCtrl'
+            controller : 'RealmKeysCtrl'
+        })
+        .when('/realms/:realm/keys/list', {
+            templateUrl : resourceUrl + '/partials/realm-keys-list.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                serverInfo : function(ServerInfoLoader) {
+                    return ServerInfoLoader();
+                },
+                keys: function(RealmKeysLoader) {
+                    return RealmKeysLoader();
+                }
+            },
+            controller : 'RealmKeysCtrl'
+        })
+        .when('/realms/:realm/keys/providers', {
+            templateUrl : resourceUrl + '/partials/realm-keys-providers.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                serverInfo : function(ServerInfoLoader) {
+                    return ServerInfoLoader();
+                }
+            },
+            controller : 'RealmKeysProvidersCtrl'
+        })
+        .when('/create/keys/:realm/providers/:provider', {
+            templateUrl : resourceUrl + '/partials/realm-keys-generic.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                instance : function() {
+                    return {
+                    };
+                },
+                providerId : function($route) {
+                    return $route.current.params.provider;
+                },
+                serverInfo : function(ServerInfoLoader) {
+                    return ServerInfoLoader();
+                }
+            },
+            controller : 'GenericKeystoreCtrl'
+        })
+        .when('/realms/:realm/keys/providers/:provider/:componentId', {
+            templateUrl : resourceUrl + '/partials/realm-keys-generic.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                instance : function(ComponentLoader) {
+                    return ComponentLoader();
+                },
+                providerId : function($route) {
+                    return $route.current.params.provider;
+                },
+                serverInfo : function(ServerInfoLoader) {
+                    return ServerInfoLoader();
+                }
+            },
+            controller : 'GenericKeystoreCtrl'
         })
         .when('/realms/:realm/identity-provider-settings', {
             templateUrl : resourceUrl + '/partials/realm-identity-provider.html',
@@ -861,6 +953,9 @@ module.config([ '$routeProvider', function($routeProvider) {
                 },
                 mapper : function(ClientProtocolMapperLoader) {
                     return ClientProtocolMapperLoader();
+                },
+                clients : function(ClientListLoader) {
+                    return ClientListLoader();
                 }
 
             },
@@ -877,6 +972,9 @@ module.config([ '$routeProvider', function($routeProvider) {
                 },
                 client : function(ClientLoader) {
                     return ClientLoader();
+                },
+                clients : function(ClientListLoader) {
+                    return ClientListLoader();
                 }
             },
             controller : 'ClientProtocolMapperCreateCtrl'
@@ -925,6 +1023,9 @@ module.config([ '$routeProvider', function($routeProvider) {
                 },
                 mapper : function(ClientTemplateProtocolMapperLoader) {
                     return ClientTemplateProtocolMapperLoader();
+                },
+                clients : function(ClientListLoader) {
+                    return ClientListLoader();
                 }
 
             },
@@ -941,6 +1042,9 @@ module.config([ '$routeProvider', function($routeProvider) {
                 },
                 template : function(ClientTemplateLoader) {
                     return ClientTemplateLoader();
+                },
+                clients : function(ClientListLoader) {
+                    return ClientListLoader();
                 }
             },
             controller : 'ClientTemplateProtocolMapperCreateCtrl'
@@ -2365,6 +2469,9 @@ module.controller('RoleSelectorModalCtrl', function($scope, realm, config, confi
 });
 
 module.controller('ProviderConfigCtrl', function ($modal, $scope) {
+    $scope.fileNames = {};
+
+
     $scope.openRoleSelector = function (configName, config) {
         $modal.open({
             templateUrl: resourceUrl + '/partials/modal/role-selector.html',
@@ -2381,6 +2488,35 @@ module.controller('ProviderConfigCtrl', function ($modal, $scope) {
                 }
             }
         })
+    }
+
+    $scope.newValues = [];
+
+    $scope.addValueToMultivalued = function(optionName) {
+        var valueToPush = $scope.newValues[optionName];
+
+        console.log("New value to multivalued: optionName=" + optionName + ", valueToPush=" + valueToPush);
+
+        if (!$scope.config[optionName]) {
+            $scope.config[optionName] = [];
+        }
+        $scope.config[optionName].push(valueToPush);
+        $scope.newValues[optionName] = "";
+    }
+
+    $scope.deleteValueFromMultivalued = function(optionName, index) {
+        $scope.config[optionName].splice(index, 1);
+    }
+
+    $scope.uploadFile = function($files, optionName, config) {
+        var reader = new FileReader();
+        reader.onload = function(e) {
+            $scope.$apply(function() {
+                config[optionName][0] = e.target.result;
+            });
+        };
+        reader.readAsText($files[0]);
+        $scope.fileNames[optionName] = $files[0].name;
     }
 });
 
@@ -2676,5 +2812,83 @@ module.directive('kcOnReadFile', function ($parse) {
                 reader.readAsText((onChangeEvent.srcElement || onChangeEvent.target).files[0]);
             });
         }
+    };
+});
+
+module.controller('PagingCtrl', function ($scope) {
+    $scope.currentPageInput = 1;
+    
+    $scope.firstPage = function() {
+        if (!$scope.hasPrevious()) return;
+        $scope.currentPage = 1;
+        $scope.currentPageInput = 1;
+    };
+    
+    $scope.lastPage = function() {
+        if (!$scope.hasNext()) return;
+        $scope.currentPage = $scope.numberOfPages;
+        $scope.currentPageInput = $scope.numberOfPages;
+    };
+    
+    $scope.previousPage = function() {
+        if (!$scope.hasPrevious()) return;
+        $scope.currentPage--;
+        $scope.currentPageInput = $scope.currentPage;
+    };
+    
+    $scope.nextPage = function() {
+        if (!$scope.hasNext()) return;
+        $scope.currentPage++;
+        $scope.currentPageInput = $scope.currentPage;
+    };
+    
+    $scope.hasNext = function() {
+        return $scope.currentPage < $scope.numberOfPages;
+    };
+    
+    $scope.hasPrevious = function() {
+        return $scope.currentPage > 1;
+    };
+});
+
+module.directive('kcPaging', function () {
+    return {
+        scope: {
+            currentPage: '=',
+            currentPageInput: '=',
+            numberOfPages: '='
+        },
+        restrict: 'E',
+        replace: true,
+        controller: 'PagingCtrl',
+        templateUrl: resourceUrl + '/templates/kc-paging.html'
+    }
+});
+
+// Tests the page number input from currentPageInput to see
+// if it represents a valid page.  If so, the current page is changed.
+module.directive('kcValidPage', function() {
+   return {
+       require: 'ngModel',
+       link: function(scope, element, attrs, ctrl) {
+           ctrl.$validators.inRange = function(modelValue, viewValue) {
+               if (viewValue >= 1 && viewValue <= scope.numberOfPages) {
+                   scope.currentPage = viewValue;
+               }
+               
+               return true;
+           }
+       }
+   } 
+});
+
+// filter used for paged tables
+module.filter('startFrom', function () {
+    return function (input, start) {
+        if (input) {
+            start = +start;
+            return input.slice(start);
+        }
+        return [];
     };
 });

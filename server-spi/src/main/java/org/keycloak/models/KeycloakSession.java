@@ -17,6 +17,7 @@
 
 package org.keycloak.models;
 
+import org.keycloak.component.ComponentModel;
 import org.keycloak.models.cache.UserCache;
 import org.keycloak.provider.Provider;
 import org.keycloak.scripting.ScriptingProvider;
@@ -59,6 +60,8 @@ public interface KeycloakSession {
      */
     <T extends Provider> T getProvider(Class<T> clazz, String id);
 
+    <T extends Provider> T getProvider(Class<T> clazz, ComponentModel componentModel);
+
     /**
      * Get all provider factories that manage provider instances of class.
      *
@@ -69,6 +72,8 @@ public interface KeycloakSession {
     <T extends Provider> Set<String> listProviderIds(Class<T> clazz);
 
     <T extends Provider> Set<T> getAllProviders(Class<T> clazz);
+
+    Class<? extends Provider> getProviderClass(String providerClassName);
 
     Object getAttribute(String attribute);
     Object removeAttribute(String attribute);
@@ -145,6 +150,12 @@ public interface KeycloakSession {
      */
     UserFederatedStorageProvider userFederatedStorage();
 
+    /**
+     * Key manager
+     *
+      * @return
+     */
+    KeyManager keys();
 
     /**
      * Keycloak scripting support.

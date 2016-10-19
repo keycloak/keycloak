@@ -26,7 +26,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.models.utils.DefaultKeyProviders;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.ServicesLogger;
 
@@ -36,7 +36,6 @@ import org.keycloak.services.ServicesLogger;
  */
 public class ApplianceBootstrap {
 
-    private static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
     private final KeycloakSession session;
 
     public ApplianceBootstrap(KeycloakSession session) {
@@ -62,7 +61,7 @@ public class ApplianceBootstrap {
         }
 
         String adminRealmName = Config.getAdminRealm();
-        logger.initializingAdminRealm(adminRealmName);
+        ServicesLogger.LOGGER.initializingAdminRealm(adminRealmName);
 
         RealmManager manager = new RealmManager(session);
         manager.setContextPath(contextPath);
@@ -83,7 +82,9 @@ public class ApplianceBootstrap {
         realm.setSslRequired(SslRequired.EXTERNAL);
         realm.setRegistrationAllowed(false);
         realm.setRegistrationEmailAsUsername(false);
-        KeycloakModelUtils.generateRealmKeys(realm);
+
+        session.getContext().setRealm(realm);
+        DefaultKeyProviders.createProviders(realm);
 
         return true;
     }

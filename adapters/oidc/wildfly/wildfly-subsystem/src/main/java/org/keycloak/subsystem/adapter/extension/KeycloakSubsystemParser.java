@@ -85,11 +85,6 @@ class KeycloakSubsystemParser implements XMLStreamConstants, XMLElementReader<Li
             def.parseAndSetParameter(reader.getElementText(), addRealm, reader);
         }
 
-        if (!SharedAttributeDefinitons.validateTruststoreSetIfRequired(addRealm)) {
-            //TODO: externalize the message
-            throw new XMLStreamException("truststore and truststore-password must be set if ssl-required is not none and disable-trust-maanger is false.");
-        }
-
         list.add(addRealm);
     }
 
@@ -112,15 +107,6 @@ class KeycloakSubsystemParser implements XMLStreamConstants, XMLElementReader<Li
             if (def == null) throw new XMLStreamException("Unknown secure-deployment tag " + tagName);
             def.parseAndSetParameter(reader.getElementText(), addSecureDeployment, reader);
         }
-
-
-        /**
-         * TODO need to check realm-ref first.
-        if (!SharedAttributeDefinitons.validateTruststoreSetIfRequired(addSecureDeployment)) {
-            //TODO: externalize the message
-            throw new XMLStreamException("truststore and truststore-password must be set if ssl-required is not none  and disable-trust-maanger is false.");
-        }
-         */
 
         // Must add credentials after the deployment is added.
         resourcesToAdd.add(addSecureDeployment);

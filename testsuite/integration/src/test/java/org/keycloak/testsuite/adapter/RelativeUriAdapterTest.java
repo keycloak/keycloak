@@ -53,15 +53,12 @@ import java.util.Map;
 public class RelativeUriAdapterTest {
 
     public static final String LOGIN_URL = OIDCLoginProtocolService.authUrl(UriBuilder.fromUri("http://localhost:8081/auth")).build("demo").toString();
-    public static PublicKey realmPublicKey;
     @ClassRule
     public static AbstractKeycloakRule keycloakRule = new AbstractKeycloakRule(){
         @Override
         protected void configure(KeycloakSession session, RealmManager manager, RealmModel adminRealm) {
             RealmRepresentation representation = KeycloakServer.loadJson(getClass().getResourceAsStream("/adapter-test/demorealm-relative.json"), RealmRepresentation.class);
-            RealmModel realm = manager.importRealm(representation);
-
-            realmPublicKey = realm.getPublicKey();
+            manager.importRealm(representation);
 
             URL url = getClass().getResource("/adapter-test/cust-app-keycloak-relative.json");
             createApplicationDeployment()

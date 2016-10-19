@@ -17,6 +17,7 @@
 
 package org.keycloak.authentication.authenticators.resetcred;
 
+import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;
@@ -46,7 +47,7 @@ import java.util.List;
  */
 public class ResetCredentialChooseUser implements Authenticator, AuthenticatorFactory {
 
-    protected static ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    private static final Logger logger = Logger.getLogger(ResetCredentialChooseUser.class);
 
     public static final String PROVIDER_ID = "reset-credentials-choose-user";
 

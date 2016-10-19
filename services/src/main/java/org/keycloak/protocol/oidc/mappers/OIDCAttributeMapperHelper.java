@@ -18,6 +18,7 @@
 package org.keycloak.protocol.oidc.mappers;
 
 import org.keycloak.models.ProtocolMapperModel;
+import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.provider.ProviderConfigProperty;
@@ -34,7 +35,6 @@ import java.util.Map;
  * @version $Revision: 1 $
  */
 public class OIDCAttributeMapperHelper {
-    private static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
 
     public static final String TOKEN_CLAIM_NAME = "claim.name";
     public static final String TOKEN_CLAIM_NAME_LABEL = "tokenClaimName.label";
@@ -67,7 +67,7 @@ public class OIDCAttributeMapperHelper {
                 return result;
             } else {
                 if (valueAsList.size() > 1) {
-                    logger.multipleValuesForMapper(attributeValue.toString(), mappingModel.getName());
+                    ServicesLogger.LOGGER.multipleValuesForMapper(attributeValue.toString(), mappingModel.getName());
                 }
 
                 attributeValue = valueAsList.get(0);
@@ -124,7 +124,7 @@ public class OIDCAttributeMapperHelper {
                                                         boolean consentRequired, String consentText,
                                                         boolean accessToken, boolean idToken,
                                                         String mapperId) {
-        return createClaimMapper(name, userAttribute,tokenClaimName, claimType, consentRequired, consentText, accessToken, idToken, false, mapperId);
+        return createClaimMapper(name, userAttribute,tokenClaimName, claimType, consentRequired, consentText, accessToken, idToken, true, mapperId);
     }
 
     public static ProtocolMapperModel createClaimMapper(String name,
@@ -163,18 +163,34 @@ public class OIDCAttributeMapperHelper {
     }
 
     public static boolean includeInUserInfo(ProtocolMapperModel mappingModel){
-        return "true".equals(mappingModel.getConfig().get(INCLUDE_IN_USERINFO));
+        String includeInUserInfo = mappingModel.getConfig().get(INCLUDE_IN_USERINFO);
+
+        // Backwards compatibility
+        if (includeInUserInfo == null && includeInIDToken(mappingModel)) {
+            return true;
+        }
+
+        return "true".equals(includeInUserInfo);
     }
 
-    public static void addAttributeConfig(List<ProviderConfigProperty> configProperties) {
-        ProviderConfigProperty property;
-        property = new ProviderConfigProperty();
+    public static void addAttributeConfig(List<ProviderConfigProperty> configProperties, Class<? extends ProtocolMapper> protocolMapperClass) {
+        addTokenClaimNameConfig(configProperties);
+        addJsonTypeConfig(configProperties);
+
+        addIncludeInTokensConfig(configProperties, protocolMapperClass);
+    }
+
+    public static void addTokenClaimNameConfig(List<ProviderConfigProperty> configProperties) {
+        ProviderConfigProperty property = new ProviderConfigProperty();
         property.setName(TOKEN_CLAIM_NAME);
         property.setLabel(TOKEN_CLAIM_NAME_LABEL);
         property.setType(ProviderConfigProperty.STRING_TYPE);
         property.setHelpText(TOKEN_CLAIM_NAME_TOOLTIP);
         configProperties.add(property);
-        property = new ProviderConfigProperty();
+    }
+
+    public static void addJsonTypeConfig(List<ProviderConfigProperty> configProperties) {
+        ProviderConfigProperty property = new ProviderConfigProperty();
         property.setName(JSON_TYPE);
         property.setLabel(JSON_TYPE);
         List<String> types = new ArrayList(3);
@@ -183,29 +199,40 @@ public class OIDCAttributeMapperHelper {
         types.add("int");
         types.add("boolean");
         property.setType(ProviderConfigProperty.LIST_TYPE);
-        property.setDefaultValue(types);
+        property.setOptions(types);
         property.setHelpText(JSON_TYPE_TOOLTIP);
         configProperties.add(property);
-        property = new ProviderConfigProperty();
-        property.setName(INCLUDE_IN_ID_TOKEN);
-        property.setLabel(INCLUDE_IN_ID_TOKEN_LABEL);
-        property.setType(ProviderConfigProperty.BOOLEAN_TYPE);
-        property.setDefaultValue("true");
-        property.setHelpText(INCLUDE_IN_ID_TOKEN_HELP_TEXT);
-        configProperties.add(property);
-        property = new ProviderConfigProperty();
-        property.setName(INCLUDE_IN_ACCESS_TOKEN);
-        property.setLabel(INCLUDE_IN_ACCESS_TOKEN_LABEL);
-        property.setType(ProviderConfigProperty.BOOLEAN_TYPE);
-        property.setDefaultValue("true");
-        property.setHelpText(INCLUDE_IN_ACCESS_TOKEN_HELP_TEXT);
-        configProperties.add(property);
-        property = new ProviderConfigProperty();
-        property.setName(INCLUDE_IN_USERINFO);
-        property.setLabel(INCLUDE_IN_USERINFO_LABEL);
-        property.setType(ProviderConfigProperty.BOOLEAN_TYPE);
-        property.setDefaultValue("false");
-        property.setHelpText(INCLUDE_IN_USERINFO_HELP_TEXT);
-        configProperties.add(property);
+    }
+
+    public static void addIncludeInTokensConfig(List<ProviderConfigProperty> configProperties, Class<? extends ProtocolMapper> protocolMapperClass) {
+        if (OIDCIDTokenMapper.class.isAssignableFrom(protocolMapperClass)) {
+            ProviderConfigProperty property = new ProviderConfigProperty();
+            property.setName(INCLUDE_IN_ID_TOKEN);
+            property.setLabel(INCLUDE_IN_ID_TOKEN_LABEL);
+            property.setType(ProviderConfigProperty.BOOLEAN_TYPE);
+            property.setDefaultValue("true");
+            property.setHelpText(INCLUDE_IN_ID_TOKEN_HELP_TEXT);
+            configProperties.add(property);
+        }
+
+        if (OIDCAccessTokenMapper.class.isAssignableFrom(protocolMapperClass)) {
+            ProviderConfigProperty property = new ProviderConfigProperty();
+            property.setName(INCLUDE_IN_ACCESS_TOKEN);
+            property.setLabel(INCLUDE_IN_ACCESS_TOKEN_LABEL);
+            property.setType(ProviderConfigProperty.BOOLEAN_TYPE);
+            property.setDefaultValue("true");
+            property.setHelpText(INCLUDE_IN_ACCESS_TOKEN_HELP_TEXT);
+            configProperties.add(property);
+        }
+
+        if (UserInfoTokenMapper.class.isAssignableFrom(protocolMapperClass)) {
+            ProviderConfigProperty property = new ProviderConfigProperty();
+            property.setName(INCLUDE_IN_USERINFO);
+            property.setLabel(INCLUDE_IN_USERINFO_LABEL);
+            property.setType(ProviderConfigProperty.BOOLEAN_TYPE);
+            property.setDefaultValue("true");
+            property.setHelpText(INCLUDE_IN_USERINFO_HELP_TEXT);
+            configProperties.add(property);
+        }
     }
 }

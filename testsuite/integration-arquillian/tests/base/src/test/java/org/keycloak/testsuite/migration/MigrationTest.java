@@ -16,22 +16,39 @@
  */
 package org.keycloak.testsuite.migration;
 
-import org.junit.Before;
+import java.util.HashSet;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
-import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.arquillian.migration.Migration;
 
 import java.util.List;
+import java.util.Set;
+import org.junit.Before;
+import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.admin.client.resource.RoleResource;
+import org.keycloak.models.AdminRoles;
+import org.keycloak.models.AuthenticationExecutionModel;
+import org.keycloak.models.Constants;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.DefaultAuthenticationFlows;
+import org.keycloak.representations.idm.AuthenticationExecutionExportRepresentation;
+import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
+import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
+import org.keycloak.representations.idm.RoleRepresentation;
+import static org.keycloak.testsuite.Assert.*;
+import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
 
 /**
  * @author <a href="mailto:vramik@redhat.com">Vlastislav Ramik</a>
  */
 public class MigrationTest extends AbstractKeycloakTest {
 
-    private final String migrationRealmName = "Migration";
+    private final String MIGRATION = "Migration";
+    private RealmResource migrationRealm;
+    private RealmResource masterRealm;
         
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
@@ -40,31 +57,124 @@ public class MigrationTest extends AbstractKeycloakTest {
     
     @Before
     public void beforeMigrationTest() {
+        migrationRealm = adminClient.realms().realm(MIGRATION);
+        masterRealm = adminClient.realms().realm(MASTER);
         
+        //add migration realm to testRealmReps to make the migration removed after test
+        testRealmReps.add(adminClient.realms().realm(MIGRATION).toRepresentation());
     }
     
     @Test
     @Migration(versionFrom = "1.9.8.Final")
-    public void migration198Test() {
-        //test migrated data
-        test198();
-        
-        //import realm from previous version and test imported data
-        MigrationUtil.executeImport(testingClient);
-        test198();
+    public void migration1_9_8Test() {
+        testMigratedData();
+        testMigrationTo2_0_0();
+        testMigrationTo2_1_0();
+        testMigrationTo2_2_0();
     }
     
-    private void test198() {
-        RealmResource realmResource = adminClient.realms().realm(migrationRealmName);
+    @Test
+    @Migration(versionFrom = "2.2.1.Final")
+    public void migration2_2_1Test() {
+        testMigratedData();
+    }
+    
+    private void testMigratedData() {
+        //master realm
+        assertNames(masterRealm.roles().list(), "offline_access", "uma_authorization", "create-realm", "master-test-realm-role", "admin");
+        assertNames(masterRealm.clients().findAll(), "admin-cli", "security-admin-console", "broker", "account", 
+                "master-realm", "master-test-client", "Migration-realm");
+        String id = masterRealm.clients().findByClientId("master-test-client").get(0).getId();
+        assertNames(masterRealm.clients().get(id).roles().list(), "master-test-client-role");
+        assertNames(masterRealm.users().search("", 0, 5), "admin", "master-test-user");
+        assertNames(masterRealm.groups().groups(), "master-test-group");
         
-        Assert.assertNames(realmResource.roles().list(), "offline_access", "uma_authorization");
-        Assert.assertNames(realmResource.clients().findAll(), "admin-cli", "realm-management", "security-admin-console", "broker", "account");
-        
-        //TODO - add more asserts
-        
-        //cleanup
-        RealmRepresentation realmRep = realmResource.toRepresentation();
-        log.info("removing '" + realmRep.getRealm() + "' realm");
-        removeRealm(realmRep);
+        //migrationRealm
+        assertNames(migrationRealm.roles().list(), "offline_access", "uma_authorization", "migration-test-realm-role");
+        assertNames(migrationRealm.clients().findAll(), "account", "admin-cli", "broker", "migration-test-client", "realm-management", "security-admin-console");
+        String id2 = migrationRealm.clients().findByClientId("migration-test-client").get(0).getId();
+        assertNames(migrationRealm.clients().get(id2).roles().list(), "migration-test-client-role");
+        assertNames(migrationRealm.users().search("", 0, 5), "migration-test-user");
+        assertNames(migrationRealm.groups().groups(), "migration-test-group");
+    }
+    
+    /**
+     * @see org.keycloak.migration.migrators.MigrateTo2_0_0
+     */
+    private void testMigrationTo2_0_0() {
+        testAuthorizationServices(masterRealm, migrationRealm);
+    }
+    
+    /**
+     * @see org.keycloak.migration.migrators.MigrateTo2_1_0
+     */
+    private void testMigrationTo2_1_0() {
+        testNameOfOTPRequiredAction(masterRealm, migrationRealm);
+    }
+    
+    /**
+     * @see org.keycloak.migration.migrators.MigrateTo2_2_0
+     */
+    private void testMigrationTo2_2_0() {
+        testIdentityProviderAuthenticator(masterRealm, migrationRealm);
+        //MigrateTo2_2_0#migrateRolePolicies is not relevant any more
+    }
+    
+    private void testAuthorizationServices(RealmResource... realms) {
+        for (RealmResource realm : realms) {
+            //test setup of authorization services
+            for (String roleName : Constants.AUTHZ_DEFAULT_AUTHORIZATION_ROLES) {
+                RoleResource role = realm.roles().get(roleName); //throws javax.ws.rs.NotFoundException if not found
+
+                assertFalse("Role's scopeParamRequired should be false.", role.toRepresentation().isScopeParamRequired());
+                assertFalse("Role shouldn't be composite should be false.", role.toRepresentation().isComposite());
+
+                assertTrue("role should be added to default roles for new users", realm.toRepresentation().getDefaultRoles().contains(roleName));
+            }
+
+            //test admin roles - master admin client
+            List<ClientRepresentation> clients = realm.clients().findByClientId(realm.toRepresentation().getRealm() + "-realm");
+            if (!clients.isEmpty()) {
+                ClientResource masterAdminClient = realm.clients().get(clients.get(0).getId());
+                masterAdminClient.roles().get(AdminRoles.VIEW_AUTHORIZATION).toRepresentation();
+                masterAdminClient.roles().get(AdminRoles.MANAGE_AUTHORIZATION).toRepresentation();
+            
+                //test admin roles - admin role composite
+                Set<String> roleNames = new HashSet<>();
+                for (RoleRepresentation role : realm.roles().get(AdminRoles.ADMIN).getRoleComposites()) {
+                    roleNames.add(role.getName());
+                }
+                assertTrue(AdminRoles.VIEW_AUTHORIZATION + " should be composite role of " + AdminRoles.ADMIN, roleNames.contains(AdminRoles.VIEW_AUTHORIZATION));
+                assertTrue(AdminRoles.MANAGE_AUTHORIZATION + " should be composite role of " + AdminRoles.ADMIN, roleNames.contains(AdminRoles.MANAGE_AUTHORIZATION));
+            }
+        }
+    }
+    
+    private void testNameOfOTPRequiredAction(RealmResource... realms) {
+        for (RealmResource realm : realms) {
+            RequiredActionProviderRepresentation otpAction = realm.flows().getRequiredAction(UserModel.RequiredAction.CONFIGURE_TOTP.name());
+
+            assertEquals("The name of CONFIGURE_TOTP required action should be 'Configure OTP'.", "Configure OTP", otpAction.getName());
+        }
+    }
+    
+    private void testIdentityProviderAuthenticator(RealmResource... realms) {
+        for (RealmResource realm : realms) {
+            boolean success = false;
+            for (AuthenticationFlowRepresentation flow : realm.flows().getFlows()) {
+                if (flow.getAlias().equals(DefaultAuthenticationFlows.BROWSER_FLOW)) {
+                    for (AuthenticationExecutionExportRepresentation execution : flow.getAuthenticationExecutions()) {
+                        if ("identity-provider-redirector".equals(execution.getAuthenticator())) {
+                            assertEquals("Requirement should be ALTERNATIVE.", AuthenticationExecutionModel.Requirement.ALTERNATIVE.name(), execution.getRequirement());
+                            assertTrue("Priority should be 25.", execution.getPriority() == 25);
+                            success = true;
+                        }
+                    }
+                }
+            } 
+            if (!success) {
+                fail("BROWSER_FLOW should contain execution: 'identity-provider-redirector' authenticator.");
+            }
+        }
     }
 }

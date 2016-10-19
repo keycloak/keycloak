@@ -17,6 +17,7 @@
 
 package org.keycloak.protocol.oidc.endpoints;
 
+import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.OAuth2Constants;
@@ -38,7 +39,6 @@ import org.keycloak.representations.IDToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.services.ErrorPage;
 import org.keycloak.services.ErrorResponseException;
-import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.Cors;
@@ -60,7 +60,7 @@ import javax.ws.rs.core.UriInfo;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class LogoutEndpoint {
-    protected static ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    private static final Logger logger = Logger.getLogger(LogoutEndpoint.class);
 
     @Context
     private KeycloakSession session;
@@ -116,7 +116,7 @@ public class LogoutEndpoint {
         boolean error = false;
         if (encodedIdToken != null) {
             try {
-                IDToken idToken = tokenManager.verifyIDToken(realm, encodedIdToken);
+                IDToken idToken = tokenManager.verifyIDToken(session, realm, encodedIdToken);
                 userSession = session.sessions().getUserSession(realm, idToken.getSessionState());
                 if (userSession == null) {
                     error = true;
@@ -187,7 +187,7 @@ public class LogoutEndpoint {
             throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "No refresh token", Response.Status.BAD_REQUEST);
         }
         try {
-            RefreshToken token = tokenManager.verifyRefreshToken(realm, refreshToken, false);
+            RefreshToken token = tokenManager.verifyRefreshToken(session, realm, refreshToken, false);
             UserSessionModel userSessionModel = session.sessions().getUserSession(realm, token.getSessionState());
             if (userSessionModel != null) {
                 logout(userSessionModel);

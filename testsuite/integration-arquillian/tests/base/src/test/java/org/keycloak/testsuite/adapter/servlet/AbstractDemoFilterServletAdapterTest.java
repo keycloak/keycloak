@@ -1,0 +1,42 @@
+package org.keycloak.testsuite.adapter.servlet;
+
+import org.junit.Ignore;
+import org.junit.Test;
+import org.keycloak.testsuite.arquillian.annotation.UseServletFilter;
+
+/**
+ * Created by zschwarz on 9/14/16.
+ */
+
+@UseServletFilter(filterName = "oidc-filter", filterClass = "org.keycloak.adapters.servlet.KeycloakOIDCFilter")
+public abstract class AbstractDemoFilterServletAdapterTest extends AbstractDemoServletsAdapterTest {
+
+
+    @Test
+    @Override
+    @Ignore
+    public void testCustomerPortalWithSubsystemSettings() {
+
+    }
+
+    @Test
+    @Override
+    @Ignore
+    public void testAuthenticated() {
+
+    }
+
+    @Test
+    @Override
+    @Ignore
+    public void testOIDCParamsForwarding() {
+
+    }
+
+    @Test
+    @Override
+    @Ignore
+    public void testClientWithJwksUri() {
+
+    }
+}

@@ -700,7 +700,8 @@ module.controller('UserFederationCtrl', function($scope, $location, $route, real
     };
 });
 
-module.controller('GenericUserStorageCtrl', function($scope, $location, Notifications, $route, Dialog, realm, serverInfo, instance, providerId, Components) {
+module.controller('GenericUserStorageCtrl', function($scope, $location, Notifications, $route, Dialog, realm,
+                                                     serverInfo, instance, providerId, Components, UserStorageSync) {
     console.log('GenericUserStorageCtrl');
     console.log('providerId: ' + providerId);
     $scope.create = !instance.providerId;
@@ -719,6 +720,7 @@ module.controller('GenericUserStorageCtrl', function($scope, $location, Notifica
 
     }
     $scope.provider = instance;
+    $scope.showSync = false;
 
     console.log("providerFactory: " + providerFactory.id);
 
@@ -733,6 +735,12 @@ module.controller('GenericUserStorageCtrl', function($scope, $location, Notifica
             };
             instance.config['priority'] = ["0"];
 
+            $scope.fullSyncEnabled = false;
+            $scope.changedSyncEnabled = false;
+            if (providerFactory.metadata.synchronizable) {
+                instance.config['fullSyncPeriod'] = ['-1'];
+                instance.config['changedSyncPeriod'] = ['-1'];
+            }
             if (providerFactory.properties) {
 
                 for (var i = 0; i < providerFactory.properties.length; i++) {
@@ -747,6 +755,20 @@ module.controller('GenericUserStorageCtrl', function($scope, $location, Notifica
             }
 
         } else {
+            $scope.fullSyncEnabled = (instance.config['fullSyncPeriod'] && instance.config['fullSyncPeriod'][0] > 0);
+            $scope.changedSyncEnabled = (instance.config['changedSyncPeriod'] && instance.config['changedSyncPeriod'][0]> 0);
+            if (providerFactory.metadata.synchronizable) {
+                if (!instance.config['fullSyncPeriod']) {
+                    console.log('setting to -1');
+                    instance.config['fullSyncPeriod'] = ['-1'];
+
+                }
+                if (!instance.config['changedSyncPeriod']) {
+                    console.log('setting to -1');
+                    instance.config['changedSyncPeriod'] = ['-1'];
+
+                }
+            }
             /*
             console.log('Manage instance');
             console.log(instance.name);
@@ -757,6 +779,13 @@ module.controller('GenericUserStorageCtrl', function($scope, $location, Notifica
                 console.log('config[' + k + "] =");
             }
             */
+        }
+        if (providerFactory.metadata.synchronizable) {
+            if (instance.config && instance.config['importEnabled']) {
+                $scope.showSync = instance.config['importEnabled'][0] == 'true';
+            } else {
+                $scope.showSync = true;
+            }
         }
 
         $scope.changed = false;
@@ -772,6 +801,25 @@ module.controller('GenericUserStorageCtrl', function($scope, $location, Notifica
         }
 
     }, true);
+
+    $scope.$watch('fullSyncEnabled', function(newVal, oldVal) {
+        if (oldVal == newVal) {
+            return;
+        }
+
+        $scope.instance.config['fullSyncPeriod'][0] = $scope.fullSyncEnabled ? "604800" : "-1";
+        $scope.changed = true;
+    });
+
+    $scope.$watch('changedSyncEnabled', function(newVal, oldVal) {
+        if (oldVal == newVal) {
+            return;
+        }
+
+        $scope.instance.config['changedSyncPeriod'][0] = $scope.changedSyncEnabled ? "86400" : "-1";
+        $scope.changed = true;
+    });
+
 
     $scope.save = function() {
         $scope.changed = false;
@@ -814,6 +862,27 @@ module.controller('GenericUserStorageCtrl', function($scope, $location, Notifica
             $route.reload();
         }
     };
+
+    $scope.triggerFullSync = function() {
+        console.log('GenericCtrl: triggerFullSync');
+        triggerSync('triggerFullSync');
+    }
+
+    $scope.triggerChangedUsersSync = function() {
+        console.log('GenericCtrl: triggerChangedUsersSync');
+        triggerSync('triggerChangedUsersSync');
+    }
+
+    function triggerSync(action) {
+        UserStorageSync.save({ action: action, realm: $scope.realm.realm, componentId: $scope.instance.id }, {}, function(syncResult) {
+            $route.reload();
+            Notifications.success("Sync of users finished successfully. " + syncResult.status);
+        }, function() {
+            $route.reload();
+            Notifications.error("Error during sync of users");
+        });
+    }
+
 });
 
 

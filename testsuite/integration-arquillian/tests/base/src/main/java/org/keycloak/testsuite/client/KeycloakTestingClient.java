@@ -41,7 +41,11 @@ public class KeycloakTestingClient {
     }
 
     public TestingResource testing() {
-        return target.proxy(TestingResource.class);
+        return target.path("/realms/master").proxy(TestingResource.class);
+    }
+
+    public TestingResource testing(String realm) {
+        return target.path("/realms/" + realm).proxy(TestingResource.class);
     }
 
     public TestApplicationResource testApp() { return target.proxy(TestApplicationResource.class); }

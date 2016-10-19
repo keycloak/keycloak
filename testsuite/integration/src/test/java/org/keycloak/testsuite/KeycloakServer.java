@@ -309,7 +309,7 @@ public class KeycloakServer {
             di.setDeploymentName("Keycloak");
             di.setDefaultEncoding("UTF-8");
 
-            di.addInitParameter("keycloak.embedded", "true");
+            di.addInitParameter(KeycloakApplication.KEYCLOAK_EMBEDDED, "true");
 
             di.setDefaultServletConfig(new DefaultServletConfig(true));
 

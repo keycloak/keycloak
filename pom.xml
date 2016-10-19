@@ -80,6 +80,7 @@
 
         <!-- Authorization Drools Policy Provider -->
         <version.org.drools>6.4.0.Final</version.org.drools>
+        <version.jboss-integration-platform>6.0.6.Final</version.jboss-integration-platform>
 
         <!-- Others -->
         <apacheds.version>2.0.0-M17</apacheds.version>
@@ -1303,6 +1304,17 @@
                 <artifactId>product-portal-example</artifactId>
                 <version>${project.version}</version>
                 <type>war</type>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-client-registration-cli</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-client-cli-dist</artifactId>
+                <version>${project.version}</version>
+                <type>zip</type>
             </dependency>
         </dependencies>
     </dependencyManagement>

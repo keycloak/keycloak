@@ -206,6 +206,12 @@ module.factory('Realm', function($resource) {
     });
 });
 
+module.factory('RealmKeys', function($resource) {
+    return $resource(authUrl + '/admin/realms/:id/keys', {
+        id : '@realm'
+    });
+});
+
 module.factory('RealmEventsConfig', function($resource) {
     return $resource(authUrl + '/admin/realms/:id/events/config', {
         id : '@realm'
@@ -298,19 +304,6 @@ module.factory('ClientInitialAccess', function($resource) {
     });
 });
 
-module.factory('ClientRegistrationTrustedHost', function($resource) {
-    return $resource(authUrl + '/admin/realms/:realm/clients-trusted-hosts/:hostname', {
-        realm : '@realm',
-        hostname : '@hostname'
-    }, {
-         update : {
-             method : 'PUT'
-         }
-       }
-    );
-});
-
-
 module.factory('ClientProtocolMapper', function($resource) {
     return $resource(authUrl + '/admin/realms/:realm/clients/:client/protocol-mappers/models/:id', {
         realm : '@realm',
@@ -352,6 +345,11 @@ module.service('UserSearchState', function() {
         max : 20,
         first : 0
     };
+});
+
+// Service tracks the last flow selected in Authentication-->Flows tab
+module.service('LastFlowSelected', function() {
+    this.alias = null;
 });
 
 module.factory('UserFederationInstances', function($resource) {
@@ -1658,6 +1656,19 @@ module.factory('Components', function($resource) {
         update : {
             method : 'PUT'
         }
+    });
+});
+
+module.factory('UserStorageSync', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/user-storage/:componentId/sync', {
+        realm : '@realm',
+        componentId : '@componentId'
+    });
+});
+
+module.factory('ClientRegistrationPolicyProviders', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/client-registration-policy/providers', {
+        realm : '@realm',
     });
 });
 
