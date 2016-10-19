@@ -28,6 +28,7 @@ import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.services.ErrorResponse;
+import org.keycloak.services.ErrorResponseException;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -43,9 +44,14 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
+
+import java.text.MessageFormat;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Properties;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -116,7 +122,7 @@ public class ComponentResource {
             adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo, model.getId()).representation(rep).success();
             return Response.created(uriInfo.getAbsolutePathBuilder().path(model.getId()).build()).build();
         } catch (ComponentValidationException e) {
-            return ErrorResponse.error(e.getMessage(), Response.Status.BAD_REQUEST);
+            return localizedErrorResponse(e);
         }
     }
 
@@ -147,7 +153,7 @@ public class ComponentResource {
             realm.updateComponent(model);
             return Response.noContent().build();
         } catch (ComponentValidationException e) {
-            return ErrorResponse.error(e.getMessage(), Response.Status.BAD_REQUEST);
+            return localizedErrorResponse(e);
         }
 
     }
@@ -164,6 +170,22 @@ public class ComponentResource {
 
     }
 
+    private Response localizedErrorResponse(ComponentValidationException cve) {
+        Properties messages = AdminRoot.getMessages(session, realm, "admin-messages", auth.getAuth().getToken().getLocale());
 
+        Object[] localizedParameters = Arrays.asList(cve.getParameters()).stream().map((Object parameter) -> {
+
+            if (parameter instanceof String) {
+                String paramStr = (String) parameter;
+                return messages.getProperty(paramStr, paramStr);
+            } else {
+                return parameter;
+            }
+
+        }).toArray();
+
+        String message = MessageFormat.format(messages.getProperty(cve.getMessage(), cve.getMessage()), localizedParameters);
+        return ErrorResponse.error(message, Response.Status.BAD_REQUEST);
+    }
 
 }

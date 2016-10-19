@@ -33,6 +33,8 @@ import org.keycloak.protocol.saml.mappers.UserAttributeStatementMapper;
 import org.keycloak.protocol.saml.mappers.UserPropertyAttributeStatementMapper;
 import org.keycloak.services.clientregistration.policy.impl.ClientTemplatesClientRegistrationPolicyFactory;
 import org.keycloak.services.clientregistration.policy.impl.ConsentRequiredClientRegistrationPolicyFactory;
+import org.keycloak.services.clientregistration.policy.impl.MaxClientsClientRegistrationPolicy;
+import org.keycloak.services.clientregistration.policy.impl.MaxClientsClientRegistrationPolicyFactory;
 import org.keycloak.services.clientregistration.policy.impl.ProtocolMappersClientRegistrationPolicyFactory;
 import org.keycloak.services.clientregistration.policy.impl.ScopeClientRegistrationPolicyFactory;
 import org.keycloak.services.clientregistration.policy.impl.TrustedHostClientRegistrationPolicyFactory;
@@ -87,8 +89,12 @@ public class DefaultClientRegistrationPolicies {
         ComponentModel consentRequiredModel = createModelInstance("Consent Required", realm, ConsentRequiredClientRegistrationPolicyFactory.PROVIDER_ID, policyTypeKey);
         realm.addComponentModel(consentRequiredModel);
 
-        ComponentModel scopeModel =createModelInstance("Full Scope Disabled", realm, ScopeClientRegistrationPolicyFactory.PROVIDER_ID, policyTypeKey);
+        ComponentModel scopeModel = createModelInstance("Full Scope Disabled", realm, ScopeClientRegistrationPolicyFactory.PROVIDER_ID, policyTypeKey);
         realm.addComponentModel(scopeModel);
+
+        ComponentModel maxClientsModel = createModelInstance("Max Clients Limit", realm, MaxClientsClientRegistrationPolicyFactory.PROVIDER_ID, policyTypeKey);
+        maxClientsModel.put(MaxClientsClientRegistrationPolicyFactory.MAX_CLIENTS, MaxClientsClientRegistrationPolicyFactory.DEFAULT_MAX_CLIENTS);
+        realm.addComponentModel(maxClientsModel);
 
         addGenericPolicies(realm, policyTypeKey);
     }
