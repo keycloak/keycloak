@@ -23,6 +23,7 @@ import org.keycloak.component.ComponentModel;
 import org.keycloak.component.ComponentValidationException;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.RealmModel;
 import org.keycloak.provider.ProviderConfigProperty;
 
 import java.util.Collections;
@@ -82,4 +83,16 @@ public interface UserStorageProviderFactory<T extends UserStorageProvider> exten
 
     }
 
+    /**
+     * Called when UserStorageProviderModel is created.  This allows you to do initialization of any additional configuration
+     * you need to add.  For example, you may be introspecting a database or ldap schema to automatically create mappings.
+     *
+     * @param session
+     * @param realm
+     * @param model
+     */
+    @Override
+    default void onCreate(KeycloakSession session, RealmModel realm, ComponentModel model) {
+
+    }
 }

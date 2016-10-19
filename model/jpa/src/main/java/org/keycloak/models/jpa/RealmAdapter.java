@@ -22,7 +22,6 @@ import org.keycloak.common.enums.SslRequired;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentFactory;
 import org.keycloak.component.ComponentModel;
-import org.keycloak.jose.jwk.JWKBuilder;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.AuthenticatorConfigModel;
@@ -66,10 +65,6 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 
 import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
-import java.security.Key;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -2058,6 +2053,8 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
         em.persist(c);
         setConfig(model, c);
         model.setId(c.getId());
+        KeycloakModelUtils.notifyCreated(session, this, model);
+
         return model;
     }
 

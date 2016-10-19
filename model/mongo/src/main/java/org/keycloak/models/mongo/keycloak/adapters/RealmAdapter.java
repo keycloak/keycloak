@@ -1966,7 +1966,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         model.setId(entity.getId());
         realm.getComponentEntities().add(entity);
         updateRealm();
-
+        KeycloakModelUtils.notifyCreated(session, this, model);
         return model;
     }
 
