@@ -164,13 +164,13 @@ public class ExportImportUtil {
         Assert.assertEquals("app-admin", appRoles.iterator().next().getName());
 
         // Test attributes
-        Map<String, List<String>> attrs = wburke.getAttributesAsListValues();
+        Map<String, List<String>> attrs = wburke.getAttributes();
         Assert.assertEquals(1, attrs.size());
         List<String> attrVals = attrs.get("email");
         Assert.assertEquals(1, attrVals.size());
         Assert.assertEquals("bburke@redhat.com", attrVals.get(0));
 
-        attrs = admin.getAttributesAsListValues();
+        attrs = admin.getAttributes();
         Assert.assertEquals(2, attrs.size());
         attrVals = attrs.get("key1");
         Assert.assertEquals(1, attrVals.size());

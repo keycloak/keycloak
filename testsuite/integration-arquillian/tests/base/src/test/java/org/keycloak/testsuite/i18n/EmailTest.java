@@ -52,8 +52,7 @@ public class EmailTest extends AbstractI18NTest {
 
     private void changeUserLocale(String locale) {
         UserRepresentation user = findUser("login-test");
-        if (user.getAttributes() == null) user.setAttributes(new HashMap<String, Object>());
-        user.getAttributes().put(UserModel.LOCALE, Collections.singletonList(locale));
+        user.singleAttribute(UserModel.LOCALE, locale);
         ApiUtil.findUserByUsernameId(testRealm(), "login-test").update(user);
     }
 
