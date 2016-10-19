@@ -824,32 +824,31 @@
                 setTimeout(check, loginIframe.interval * 1000);
             }
 
-            var src = getRealmUrl() + '/protocol/openid-connect/login-status-iframe.html?client_id=' + encodeURIComponent(kc.clientId) + '&origin=' + getOrigin();
+            var src = getRealmUrl() + '/protocol/openid-connect/login-status-iframe.html';
             iframe.setAttribute('src', src );
             iframe.style.display = 'none';
             document.body.appendChild(iframe);
 
             var messageCallback = function(event) {
-
-
                 if (event.origin !== loginIframe.iframeOrigin) {
                     return;
                 }
 
+                if (event.data != "unchanged") {
+                    kc.clearToken();
+                }
 
-                for (i = loginIframe.callbackList.length - 1; i >= 0; --i) {
+                for (var i = loginIframe.callbackList.length - 1; i >= 0; --i) {
                     var promise = loginIframe.callbackList[i];
                     if (event.data == "unchanged") {
                         promise.setSuccess();
                     } else {
-                        kc.clearToken();
                         promise.setError();
                     }
                     loginIframe.callbackList.splice(i, 1);
                 }
-
-
             };
+
             window.addEventListener('message', messageCallback, false);
 
             var check = function() {
@@ -866,14 +865,12 @@
             var promise = createPromise();
 
             if (loginIframe.iframe && loginIframe.iframeOrigin ) {
-                var msg = {};
-                msg.callbackId = createCallbackId();
-                msg.sessionId = kc.sessionId;
+                var msg = kc.clientId + ' ' + kc.sessionId;
                 loginIframe.callbackList.push(promise);
                 var origin = loginIframe.iframeOrigin;
-                if(loginIframe.callbackList.length == 1) {
-                  loginIframe.iframe.contentWindow.postMessage(JSON.stringify(msg), origin);
-                }  
+                if (loginIframe.callbackList.length == 1) {
+                    loginIframe.iframe.contentWindow.postMessage(msg, origin);
+                }
             } else {
                 promise.setSuccess();
             }
