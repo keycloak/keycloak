@@ -85,12 +85,7 @@ public class LiquibaseJpaUpdaterProvider implements JpaUpdaterProvider {
             Liquibase liquibase = getLiquibaseForKeycloakUpdate(connection, defaultSchema);
             if (file != null) {
                 exportWriter = new FileWriter(file);
-                List<ChangeSet> changeSets = getChangeSets(liquibase);
-                if (! changeSets.isEmpty() && liquibase.getDatabase().getRanChangeSetList().isEmpty()) {
-                    outputChangeLogTableCreationScript(liquibase, exportWriter);
-                }
             }
-
             updateChangeSet(liquibase, liquibase.getChangeLogFile(), exportWriter);
 
             // Run update for each custom JpaEntityProvider
@@ -118,7 +113,6 @@ public class LiquibaseJpaUpdaterProvider implements JpaUpdaterProvider {
         }
     }
 
-
     protected void updateChangeSet(Liquibase liquibase, String changelog, Writer exportWriter) throws LiquibaseException, IOException {
         List<ChangeSet> changeSets = getChangeSets(liquibase);
         if (!changeSets.isEmpty()) {
@@ -134,6 +128,9 @@ public class LiquibaseJpaUpdaterProvider implements JpaUpdaterProvider {
             }
 
             if (exportWriter != null) {
+                if (ranChangeSets.isEmpty()) {
+                    outputChangeLogTableCreationScript(liquibase, exportWriter);
+                }
                 liquibase.update((Contexts) null, new LabelExpression(), exportWriter, false);
             } else {
                 liquibase.update((Contexts) null);
