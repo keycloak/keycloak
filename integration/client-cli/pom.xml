@@ -18,21 +18,20 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <parent>
-        <artifactId>keycloak-parent</artifactId>
+        <artifactId>keycloak-integration-parent</artifactId>
         <groupId>org.keycloak</groupId>
         <version>2.3.0-SNAPSHOT</version>
-        <relativePath>../pom.xml</relativePath>
     </parent>
-    <name>Keycloak Integration</name>
+
+    <name>Keycloak Client CLI</name>
     <description/>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>keycloak-integration-parent</artifactId>
+    <artifactId>keycloak-client-cli-parent</artifactId>
     <packaging>pom</packaging>
 
     <modules>
-        <module>admin-client</module>
-        <module>client-registration</module>
-        <module>client-cli</module>
+        <module>client-registration-cli</module>
+        <module>client-cli-dist</module>
     </modules>
 </project>

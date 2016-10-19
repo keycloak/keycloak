@@ -79,5 +79,13 @@
                 <include>layers.conf</include>
             </includes>
         </fileSet>
+        <fileSet>
+            <directory>target/unpacked/keycloak-client-tools</directory>
+            <outputDirectory/>
+            <filtered>false</filtered>
+            <includes>
+                <include>**/*</include>
+            </includes>
+        </fileSet>
     </fileSets>
 </assembly>
