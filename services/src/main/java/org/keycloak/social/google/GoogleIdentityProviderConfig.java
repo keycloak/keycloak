@@ -16,31 +16,26 @@
  */
 package org.keycloak.social.google;
 
+import org.keycloak.broker.oidc.OAuth2IdentityProviderConfig;
 import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
-import org.keycloak.broker.provider.AbstractIdentityProviderFactory;
 import org.keycloak.models.IdentityProviderModel;
-import org.keycloak.broker.social.SocialIdentityProviderFactory;
-import org.keycloak.models.KeycloakSession;
 
 /**
- * @author Pedro Igor
+ * @author Vlastimil Elias (velias at redhat dot com)
  */
-public class GoogleIdentityProviderFactory extends AbstractIdentityProviderFactory<GoogleIdentityProvider> implements SocialIdentityProviderFactory<GoogleIdentityProvider> {
+public class GoogleIdentityProviderConfig extends OIDCIdentityProviderConfig {
 
-    public static final String PROVIDER_ID = "google";
-
-    @Override
-    public String getName() {
-        return "Google";
+    public GoogleIdentityProviderConfig(IdentityProviderModel model) {
+        super(model);
     }
 
-    @Override
-    public GoogleIdentityProvider create(KeycloakSession session, IdentityProviderModel model) {
-        return new GoogleIdentityProvider(session, new GoogleIdentityProviderConfig(model));
+    public boolean isUserIp() {
+        String userIp = getConfig().get("userIp");
+        return userIp == null ? false : Boolean.valueOf(userIp);
     }
 
-    @Override
-    public String getId() {
-        return PROVIDER_ID;
+    public void setUserIp(boolean ip) {
+        getConfig().put("userIp", String.valueOf(ip));
     }
+
 }

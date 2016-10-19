@@ -24,6 +24,7 @@ import org.keycloak.common.util.CertificateUtils;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.PemUtils;
+import org.keycloak.component.ComponentFactory;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.keys.KeyProvider;
 import org.keycloak.models.AuthenticationExecutionModel;
@@ -48,6 +49,8 @@ import org.keycloak.models.UserFederationProvider;
 import org.keycloak.models.UserFederationProviderFactory;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.provider.Provider;
+import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.idm.CertificateRepresentation;
 import org.keycloak.transaction.JtaTransactionManagerLookup;
 
@@ -680,4 +683,16 @@ public final class KeycloakModelUtils {
     }
 
 
+    public static void notifyCreated(KeycloakSession session, RealmModel realm, ComponentModel model) {
+        Class<? extends Provider> providerClass = null;
+        try {
+            providerClass = (Class<? extends Provider>)Class.forName(model.getProviderType());
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+        ProviderFactory factory = session.getKeycloakSessionFactory().getProviderFactory(providerClass, model.getProviderId());
+        if (factory instanceof ComponentFactory) {
+            ((ComponentFactory)factory).onCreate(session, realm, model);
+        }
+    }
 }
