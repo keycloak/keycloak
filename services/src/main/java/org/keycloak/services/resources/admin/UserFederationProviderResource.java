@@ -26,6 +26,8 @@ import org.keycloak.mappers.UserFederationMapper;
 import org.keycloak.mappers.UserFederationMapperFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.ModelDuplicateException;
+import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserFederationMapperModel;
 import org.keycloak.models.UserFederationProvider;
@@ -41,6 +43,7 @@ import org.keycloak.representations.idm.ConfigPropertyRepresentation;
 import org.keycloak.representations.idm.UserFederationMapperRepresentation;
 import org.keycloak.representations.idm.UserFederationMapperTypeRepresentation;
 import org.keycloak.representations.idm.UserFederationProviderRepresentation;
+import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.UsersSyncManager;
@@ -99,31 +102,43 @@ public class UserFederationProviderResource {
     @PUT
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
-    public void updateProviderInstance(UserFederationProviderRepresentation rep) {
+    public Response updateProviderInstance(UserFederationProviderRepresentation rep) {
         auth.requireManage();
 
         if (federationProviderModel == null) {
             throw new NotFoundException("Could not find federation provider");
         }
 
-        String displayName = rep.getDisplayName();
-        if (displayName != null && displayName.trim().equals("")) {
-            displayName = null;
+        try {
+            String displayName = rep.getDisplayName();
+            if (displayName != null && displayName.trim().equals("")) {
+                displayName = null;
+            }
+            UserFederationProviderModel model = new UserFederationProviderModel(rep.getId(), rep.getProviderName(), rep.getConfig(), rep.getPriority(), displayName,
+                    rep.getFullSyncPeriod(), rep.getChangedSyncPeriod(), rep.getLastSync());
+
+            UserFederationProvidersResource.validateFederationProviderConfig(session, auth, realm, model);
+
+            realm.updateUserFederationProvider(model);
+            new UsersSyncManager().notifyToRefreshPeriodicSync(session, realm, model, false);
+            boolean kerberosCredsAdded = UserFederationProvidersResource.checkKerberosCredential(session, realm, model);
+            if (kerberosCredsAdded) {
+                ServicesLogger.LOGGER.addedKerberosToRealmCredentials();
+            }
+
+            adminEvent.operation(OperationType.UPDATE).resourcePath(uriInfo).representation(rep).success();
+            return Response.noContent().build();
+        } catch (ModelDuplicateException e) {
+            if (session.getTransactionManager().isActive()) {
+                session.getTransactionManager().setRollbackOnly();
+            }
+            return ErrorResponse.exists("Federation provider exists with same name.");
+        } catch (ModelException me) {
+            if (session.getTransactionManager().isActive()) {
+                session.getTransactionManager().setRollbackOnly();
+            }
+            return ErrorResponse.error("Unable to update federation provider.", Response.Status.INTERNAL_SERVER_ERROR);
         }
-        UserFederationProviderModel model = new UserFederationProviderModel(rep.getId(), rep.getProviderName(), rep.getConfig(), rep.getPriority(), displayName,
-                rep.getFullSyncPeriod(), rep.getChangedSyncPeriod(), rep.getLastSync());
-
-        UserFederationProvidersResource.validateFederationProviderConfig(session, auth, realm, model);
-
-        realm.updateUserFederationProvider(model);
-        new UsersSyncManager().notifyToRefreshPeriodicSync(session, realm, model, false);
-        boolean kerberosCredsAdded = UserFederationProvidersResource.checkKerberosCredential(session, realm, model);
-        if (kerberosCredsAdded) {
-            ServicesLogger.LOGGER.addedKerberosToRealmCredentials();
-        }
-
-        adminEvent.operation(OperationType.UPDATE).resourcePath(uriInfo).representation(rep).success();
-
     }
 
     /**
