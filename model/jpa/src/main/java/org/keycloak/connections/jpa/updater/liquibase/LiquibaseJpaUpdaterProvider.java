@@ -79,10 +79,14 @@ public class LiquibaseJpaUpdaterProvider implements JpaUpdaterProvider {
         // Need ThreadLocal as liquibase doesn't seem to have API to inject custom objects into tasks
         ThreadLocalSessionContext.setCurrentSession(session);
 
+        Writer exportWriter = null;
         try {
             // Run update with keycloak master changelog first
             Liquibase liquibase = getLiquibaseForKeycloakUpdate(connection, defaultSchema);
-            updateChangeSet(liquibase, liquibase.getChangeLogFile(), file);
+            if (file != null) {
+                exportWriter = new FileWriter(file);
+            }
+            updateChangeSet(liquibase, liquibase.getChangeLogFile(), exportWriter);
 
             // Run update for each custom JpaEntityProvider
             Set<JpaEntityProvider> jpaProviders = session.getAllProviders(JpaEntityProvider.class);
@@ -92,18 +96,24 @@ public class LiquibaseJpaUpdaterProvider implements JpaUpdaterProvider {
                     String factoryId = jpaProvider.getFactoryId();
                     String changelogTableName = JpaUtils.getCustomChangelogTableName(factoryId);
                     liquibase = getLiquibaseForCustomProviderUpdate(connection, defaultSchema, customChangelog, jpaProvider.getClass().getClassLoader(), changelogTableName);
-                    updateChangeSet(liquibase, liquibase.getChangeLogFile(), file);
+                    updateChangeSet(liquibase, liquibase.getChangeLogFile(), exportWriter);
                 }
             }
         } catch (Exception e) {
             throw new RuntimeException("Failed to update database", e);
         } finally {
             ThreadLocalSessionContext.removeCurrentSession();
+            if (exportWriter != null) {
+                try {
+                    exportWriter.close();
+                } catch (IOException ioe) {
+                    // ignore
+                }
+            }
         }
     }
 
-
-    protected void updateChangeSet(Liquibase liquibase, String changelog, File exportFile) throws LiquibaseException, IOException {
+    protected void updateChangeSet(Liquibase liquibase, String changelog, Writer exportWriter) throws LiquibaseException, IOException {
         List<ChangeSet> changeSets = getChangeSets(liquibase);
         if (!changeSets.isEmpty()) {
             List<RanChangeSet> ranChangeSets = liquibase.getDatabase().getRanChangeSetList();
@@ -117,13 +127,11 @@ public class LiquibaseJpaUpdaterProvider implements JpaUpdaterProvider {
                 }
             }
 
-            if (exportFile != null) {
-                try (Writer exportWriter = new FileWriter(exportFile)) {
-                    if (ranChangeSets.isEmpty()) {
-                        outputChangeLogTableCreationScript(liquibase, exportWriter);
-                    }
-                    liquibase.update((Contexts) null, new LabelExpression(), exportWriter, false);
+            if (exportWriter != null) {
+                if (ranChangeSets.isEmpty()) {
+                    outputChangeLogTableCreationScript(liquibase, exportWriter);
                 }
+                liquibase.update((Contexts) null, new LabelExpression(), exportWriter, false);
             } else {
                 liquibase.update((Contexts) null);
             }

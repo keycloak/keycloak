@@ -172,6 +172,8 @@
                             <migration.import.properties>${migration.import.properties}</migration.import.properties>
 
                             <testsuite.constants>${testsuite.constants}</testsuite.constants>
+                            <cli.log.output>${cli.log.output}</cli.log.output>
+                            <test.intermittent>${test.intermittent}</test.intermittent>
 
                             <browser>${browser}</browser>
                             <firefox_binary>${firefox_binary}</firefox_binary>
@@ -779,6 +781,18 @@
                     <groupId>org.mariadb.jdbc</groupId>
                     <artifactId>mariadb-java-client</artifactId>
                     <version>${mariadb.version}</version>
+                </dependency>
+
+                <!-- CLI -->
+                <!--
+                   - This dependency must come after org.bouncycastle dependencies since it contains BC classes,
+                   - and MAC signature check on classes would fail otherwise with:
+                   - 'java.lang.SecurityException: JCE cannot authenticate the provider BC'
+                 -->
+                <dependency>
+                    <groupId>org.keycloak</groupId>
+                    <artifactId>keycloak-client-cli-dist</artifactId>
+                    <type>zip</type>
                 </dependency>
 
             </dependencies>

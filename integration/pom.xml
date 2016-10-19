@@ -33,5 +33,6 @@
     <modules>
         <module>admin-client</module>
         <module>client-registration</module>
+        <module>client-cli</module>
     </modules>
 </project>

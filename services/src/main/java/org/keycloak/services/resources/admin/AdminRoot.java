@@ -211,7 +211,7 @@ public class AdminRoot {
             logger.debug("authenticated admin access for: " + auth.getUser().getUsername());
         }
 
-        Cors.add(request).allowedOrigins(auth.getToken()).allowedMethods("GET", "PUT", "POST", "DELETE").auth().build(response);
+        Cors.add(request).allowedOrigins(auth.getToken()).allowedMethods("GET", "PUT", "POST", "DELETE").exposedHeaders("Location").auth().build(response);
 
         RealmsAdminResource adminResource = new RealmsAdminResource(auth, tokenManager);
         ResteasyProviderFactory.getInstance().injectProperties(adminResource);

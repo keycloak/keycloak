@@ -49,6 +49,14 @@ public class RegistrationAccessTokenTest extends AbstractClientRegistrationTest 
 
         client = createClient(c);
 
+        c = new ClientRepresentation();
+        c.setEnabled(true);
+        c.setClientId("SomeOtherClient");
+        c.setSecret("RegistrationAccessTokenTestClientSecret");
+        c.setRootUrl("http://root");
+
+        createClient(c);
+
         reg.auth(Auth.token(client.getRegistrationAccessToken()));
     }
 
@@ -79,6 +87,24 @@ public class RegistrationAccessTokenTest extends AbstractClientRegistrationTest 
         // check registration access token is updated
         assertRead(client.getClientId(), client.getRegistrationAccessToken(), false);
         assertRead(client.getClientId(), rep.getRegistrationAccessToken(), true);
+    }
+
+    @Test
+    public void getClientWrongClient() throws ClientRegistrationException {
+        try {
+            reg.get("SomeOtherClient");
+        } catch (ClientRegistrationException e) {
+            assertEquals(401, ((HttpErrorException) e.getCause()).getStatusLine().getStatusCode());
+        }
+    }
+
+    @Test
+    public void getClientMissingClient() throws ClientRegistrationException {
+        try {
+            reg.get("nosuch");
+        } catch (ClientRegistrationException e) {
+            assertEquals(401, ((HttpErrorException) e.getCause()).getStatusLine().getStatusCode());
+        }
     }
 
     @Test

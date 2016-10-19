@@ -40,6 +40,7 @@ import org.keycloak.wellknown.WellKnownProvider;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.NotFoundException;
+import javax.ws.rs.OPTIONS;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -240,6 +241,14 @@ public class RealmsResource {
         return brokerService;
     }
 
+    @OPTIONS
+    @Path("{realm}/.well-known/{provider}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getVersionPreflight(final @PathParam("realm") String name,
+                                        final @PathParam("provider") String providerName) {
+        return Cors.add(request, Response.ok()).allowedMethods("GET").preflight().auth().build();
+    }
+
     @GET
     @Path("{realm}/.well-known/{provider}")
     @Produces(MediaType.APPLICATION_JSON)
@@ -250,7 +259,7 @@ public class RealmsResource {
         WellKnownProvider wellKnown = session.getProvider(WellKnownProvider.class, providerName);
 
         ResponseBuilder responseBuilder = Response.ok(wellKnown.getConfig()).cacheControl(CacheControlUtil.getDefaultCacheControl());
-        return Cors.add(request, responseBuilder).allowedOrigins("*").build();
+        return Cors.add(request, responseBuilder).allowedOrigins("*").auth().build();
     }
 
     @Path("{realm}/authz")

@@ -18,6 +18,7 @@
 package org.keycloak.protocol.oidc;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
+import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.forms.login.LoginFormsProvider;
@@ -32,9 +33,12 @@ import org.keycloak.protocol.oidc.endpoints.LoginStatusIframeEndpoint;
 import org.keycloak.protocol.oidc.endpoints.LogoutEndpoint;
 import org.keycloak.protocol.oidc.endpoints.TokenEndpoint;
 import org.keycloak.protocol.oidc.endpoints.UserInfoEndpoint;
+import org.keycloak.services.resources.Cors;
 import org.keycloak.services.resources.RealmsResource;
+import org.keycloak.services.util.CacheControlUtil;
 
 import javax.ws.rs.GET;
+import javax.ws.rs.OPTIONS;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
@@ -66,6 +70,9 @@ public class OIDCLoginProtocolService {
 
     @Context
     private HttpHeaders headers;
+
+    @Context
+    private HttpRequest request;
 
     public OIDCLoginProtocolService(RealmModel realm, EventBuilder event) {
         this.realm = realm;
@@ -168,11 +175,18 @@ public class OIDCLoginProtocolService {
         return endpoint;
     }
 
+    @OPTIONS
+    @Path("certs")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getVersionPreflight() {
+        return Cors.add(request, Response.ok()).allowedMethods("GET").preflight().auth().build();
+    }
+
     @GET
     @Path("certs")
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
-    public JSONWebKeySet certs() {
+    public Response certs() {
         List<KeyMetadata> publicKeys = session.keys().getKeys(realm, false);
         JWK[] keys = new JWK[publicKeys.size()];
 
@@ -183,7 +197,9 @@ public class OIDCLoginProtocolService {
 
         JSONWebKeySet keySet = new JSONWebKeySet();
         keySet.setKeys(keys);
-        return keySet;
+
+        Response.ResponseBuilder responseBuilder = Response.ok(keySet).cacheControl(CacheControlUtil.getDefaultCacheControl());
+        return Cors.add(request, responseBuilder).allowedOrigins("*").auth().build();
     }
 
     @Path("userinfo")

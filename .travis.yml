@@ -19,7 +19,7 @@ before_script:
   - export MAVEN_SKIP_RC=true
 
 install: 
-  - travis_wait 30 mvn install -Pdistribution -DskipTests=true -B -V -q
+  - travis_wait 60 mvn install -Pdistribution -DskipTests=true -B -V -q
 
 script:
   - mvn test -B

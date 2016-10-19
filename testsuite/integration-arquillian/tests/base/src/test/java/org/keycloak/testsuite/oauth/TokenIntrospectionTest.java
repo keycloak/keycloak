@@ -189,6 +189,24 @@ public class TokenIntrospectionTest extends TestRealmKeycloakTest {
     }
 
     @Test
+    public void testUnsupportedToken() throws Exception {
+        oauth.doLogin("test-user@localhost", "password");
+        String inactiveAccessToken = "unsupported";
+        String tokenResponse = oauth.introspectAccessTokenWithClientCredential("confidential-cli", "secret1", inactiveAccessToken);
+        ObjectMapper objectMapper = new ObjectMapper();
+        JsonNode jsonNode = objectMapper.readTree(tokenResponse);
+
+        assertFalse(jsonNode.get("active").asBoolean());
+
+        TokenMetadataRepresentation rep = objectMapper.readValue(tokenResponse, TokenMetadataRepresentation.class);
+
+        assertFalse(rep.isActive());
+        assertNull(rep.getUserName());
+        assertNull(rep.getClientId());
+        assertNull(rep.getSubject());
+    }
+
+    @Test
     public void testIntrospectAccessToken() throws Exception {
         oauth.doLogin("test-user@localhost", "password");
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);

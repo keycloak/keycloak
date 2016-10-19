@@ -26,7 +26,9 @@ import org.keycloak.admin.client.resource.RealmsResource;
 import org.keycloak.admin.client.resource.ServerInfoResource;
 import org.keycloak.admin.client.token.TokenManager;
 
+import javax.net.ssl.SSLContext;
 import java.net.URI;
+import java.security.KeyStore;
 
 import static org.keycloak.OAuth2Constants.PASSWORD;
 
@@ -53,6 +55,15 @@ public class Keycloak {
         target = client.target(config.getServerUrl());
 
         target.register(new BearerAuthFilter(tokenManager));
+    }
+
+    public static Keycloak getInstance(String serverUrl, String realm, String username, String password, String clientId, String clientSecret, SSLContext sslContext) {
+        ResteasyClient client = new ResteasyClientBuilder()
+                .sslContext(sslContext)
+                .hostnameVerification(ResteasyClientBuilder.HostnameVerificationPolicy.WILDCARD)
+                .connectionPoolSize(10).build();
+
+        return new Keycloak(serverUrl, realm, username, password, clientId, clientSecret, PASSWORD, client);
     }
 
     public static Keycloak getInstance(String serverUrl, String realm, String username, String password, String clientId, String clientSecret) {
