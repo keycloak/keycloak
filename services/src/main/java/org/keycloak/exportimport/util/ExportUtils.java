@@ -635,7 +635,7 @@ public class ExportUtils {
         userRep.setId(id);
         MultivaluedHashMap<String, String> attributes = session.userFederatedStorage().getAttributes(realm, id);
         if (attributes.size() > 0) {
-            Map<String, Object> attrs = new HashMap<>();
+            Map<String, List<String>> attrs = new HashMap<>();
             attrs.putAll(attributes);
             userRep.setAttributes(attrs);
         }

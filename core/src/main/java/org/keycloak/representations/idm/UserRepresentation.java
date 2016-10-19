@@ -17,7 +17,10 @@
 
 package org.keycloak.representations.idm;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import org.keycloak.json.StringListMapDeserializer;
+import org.keycloak.json.StringListMapSerializer;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -43,8 +46,9 @@ public class UserRepresentation {
     protected String federationLink;
     protected String serviceAccountClientId; // For rep, it points to clientId (not DB ID)
 
-    // Currently there is Map<String, List<String>> but for backwards compatibility, we also need to support Map<String, String>
-    protected Map<String, Object> attributes;
+    @JsonSerialize(using = StringListMapSerializer.class)
+    @JsonDeserialize(using = StringListMapDeserializer.class)
+    protected Map<String, List<String>> attributes;
     protected List<CredentialRepresentation> credentials;
     protected List<String> requiredActions;
     protected List<FederatedIdentityRepresentation> federatedIdentities;
@@ -141,17 +145,11 @@ public class UserRepresentation {
         this.emailVerified = emailVerified;
     }
 
-    public Map<String, Object> getAttributes() {
+    public Map<String, List<String>> getAttributes() {
         return attributes;
     }
 
-    // This method can be removed once we can remove backwards compatibility with Keycloak 1.3 (then getAttributes() can be changed to return Map<String, List<String>> )
-    @JsonIgnore
-    public Map<String, List<String>> getAttributesAsListValues() {
-        return (Map) attributes;
-    }
-
-    public void setAttributes(Map<String, Object> attributes) {
+    public void setAttributes(Map<String, List<String>> attributes) {
         this.attributes = attributes;
     }
 
