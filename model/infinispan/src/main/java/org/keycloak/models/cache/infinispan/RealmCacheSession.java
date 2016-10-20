@@ -175,7 +175,7 @@ public class RealmCacheSession implements CacheRealmProvider {
     private void invalidateRealm(String id) {
         invalidations.add(id);
         RealmAdapter adapter = managedRealms.get(id);
-        if (adapter != null) adapter.invalidate();
+        if (adapter != null) adapter.invalidateFlag();
     }
 
     @Override

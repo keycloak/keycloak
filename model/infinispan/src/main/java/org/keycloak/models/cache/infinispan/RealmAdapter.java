@@ -80,6 +80,11 @@ public class RealmAdapter implements CachedRealmModel {
 
     protected boolean invalidated;
 
+    protected void invalidateFlag() {
+        invalidated = true;
+
+    }
+
     @Override
     public void invalidate() {
         invalidated = true;
