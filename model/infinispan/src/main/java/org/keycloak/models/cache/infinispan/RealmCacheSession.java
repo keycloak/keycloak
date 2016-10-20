@@ -29,6 +29,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.cache.CacheRealmProvider;
+import org.keycloak.models.cache.CachedRealmModel;
 import org.keycloak.models.cache.infinispan.entities.CachedClient;
 import org.keycloak.models.cache.infinispan.entities.CachedClientRole;
 import org.keycloak.models.cache.infinispan.entities.CachedClientTemplate;
@@ -374,6 +375,7 @@ public class RealmCacheSession implements CacheRealmProvider {
         if (cached != null) {
             logger.tracev("by id cache hit: {0}", cached.getName());
         }
+        boolean wasCached = false;
         if (cached == null) {
             Long loaded = cache.getCurrentRevision(id);
             RealmModel model = getDelegate().getRealm(id);
@@ -381,12 +383,27 @@ public class RealmCacheSession implements CacheRealmProvider {
             if (invalidations.contains(id)) return model;
             cached = new CachedRealm(loaded, model);
             cache.addRevisioned(cached, startupRevision);
+            wasCached =true;
         } else if (invalidations.contains(id)) {
             return getDelegate().getRealm(id);
         } else if (managedRealms.containsKey(id)) {
             return managedRealms.get(id);
         }
         RealmAdapter adapter = new RealmAdapter(cached, this);
+        if (wasCached) {
+            CachedRealmModel.RealmCachedEvent event = new CachedRealmModel.RealmCachedEvent() {
+                @Override
+                public CachedRealmModel getRealm() {
+                    return adapter;
+                }
+
+                @Override
+                public KeycloakSession getKeycloakSession() {
+                    return session;
+                }
+            };
+            session.getKeycloakSessionFactory().publish(event);
+        }
         managedRealms.put(id, adapter);
         return adapter;
     }

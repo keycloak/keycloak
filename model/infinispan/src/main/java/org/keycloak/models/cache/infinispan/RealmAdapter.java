@@ -36,6 +36,7 @@ import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserFederationMapperModel;
 import org.keycloak.models.UserFederationProviderModel;
+import org.keycloak.models.cache.CachedRealmModel;
 import org.keycloak.models.cache.infinispan.entities.CachedRealm;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
@@ -50,12 +51,13 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class RealmAdapter implements RealmModel {
+public class RealmAdapter implements CachedRealmModel {
     protected CachedRealm cached;
     protected RealmCacheSession cacheSession;
     protected RealmModel updated;
@@ -66,17 +68,32 @@ public class RealmAdapter implements RealmModel {
         this.cacheSession = cacheSession;
     }
 
-    protected void getDelegateForUpdate() {
+    @Override
+    public RealmModel getDelegateForUpdate() {
         if (updated == null) {
             cacheSession.registerRealmInvalidation(cached.getId());
             updated = cacheSession.getDelegate().getRealm(cached.getId());
             if (updated == null) throw new IllegalStateException("Not found in database");
         }
+        return updated;
     }
 
     protected boolean invalidated;
+
+    @Override
     public void invalidate() {
         invalidated = true;
+        getDelegateForUpdate();
+    }
+
+    @Override
+    public long getCacheTimestamp() {
+        return cached.getCacheTimestamp();
+    }
+
+    @Override
+    public ConcurrentHashMap getCachedWith() {
+        return cached.getCachedWith();
     }
 
     protected boolean isUpdated() {

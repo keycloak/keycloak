@@ -16,24 +16,32 @@
  */
 package org.keycloak.models.cache;
 
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.provider.ProviderEvent;
 
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Cached users will implement this interface
+ * Cached realms will implement this interface
  *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public interface CachedUserModel extends UserModel {
+public interface CachedRealmModel extends RealmModel {
+
+    interface RealmCachedEvent extends ProviderEvent {
+        CachedRealmModel getRealm();
+        KeycloakSession getKeycloakSession();
+    }
 
     /**
-     * Invalidates the cache for this user and returns a delegate that represents the actual data provider
+     * Invalidates the cache for this model and returns a delegate that represents the actual data provider
      *
      * @return
      */
-    UserModel getDelegateForUpdate();
+    RealmModel getDelegateForUpdate();
 
     /**
      * Invalidate the cache for this model
