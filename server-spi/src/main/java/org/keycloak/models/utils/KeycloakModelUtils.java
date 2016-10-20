@@ -682,17 +682,4 @@ public final class KeycloakModelUtils {
         }
     }
 
-
-    public static void notifyCreated(KeycloakSession session, RealmModel realm, ComponentModel model) {
-        Class<? extends Provider> providerClass = null;
-        try {
-            providerClass = (Class<? extends Provider>)Class.forName(model.getProviderType());
-        } catch (ClassNotFoundException e) {
-            return;
-        }
-        ProviderFactory factory = session.getKeycloakSessionFactory().getProviderFactory(providerClass, model.getProviderId());
-        if (factory instanceof ComponentFactory && factory != null) {
-            ((ComponentFactory)factory).onCreate(session, realm, model);
-        }
-    }
 }
