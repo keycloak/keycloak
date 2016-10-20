@@ -225,6 +225,23 @@ public class LDAPFederationProvider implements UserFederationProvider {
         return Collections.emptyList();
     }
 
+    public List<UserModel> loadUsersByUids(List<String> uids, RealmModel realm) {
+        List<UserModel> result = new ArrayList<>();
+        for (String uid : uids) {
+            List<UserModel> userModels = session.users().searchForUserByUserAttribute(LDAPConstants.LDAP_ID, uid, realm);
+            if (userModels == null || userModels.size() == 0) {
+                logger.warnf("User with uid '%s' referenced by membership wasn't found in LDAP", uid);
+            } else if (userModels.size() > 1) {
+                logger.warnf("User with uid '%s' referenced by membership found multiple times in LDAP", uid);
+            } else if (!model.getId().equals(userModels.get(0).getFederationLink())) {
+                logger.warnf("Incorrect federation provider of user '%s'", userModels.get(0).getUsername());
+            } else {
+                result.add(userModels.get(0));
+            }
+        }
+        return result;
+    }
+
     public List<UserModel> loadUsersByUsernames(List<String> usernames, RealmModel realm) {
         List<UserModel> result = new ArrayList<>();
         for (String username : usernames) {

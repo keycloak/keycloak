@@ -146,7 +146,7 @@ public enum MembershipType {
             int max = Math.min(memberUids.size(), firstResult + maxResults);
             uids = uids.subList(firstResult, max);
 
-            return groupMapper.getLdapProvider().loadUsersByUsernames(uids, groupMapper.getRealm());
+            return groupMapper.getLdapProvider().loadUsersByUids(uids, groupMapper.getRealm());
         }
 
     };
