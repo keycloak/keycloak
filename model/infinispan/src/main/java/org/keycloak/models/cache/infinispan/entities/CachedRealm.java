@@ -52,7 +52,7 @@ import java.util.Set;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class CachedRealm extends AbstractRevisioned {
+public class CachedRealm extends AbstractExtendableRevisioned {
 
     protected String name;
     protected String displayName;
