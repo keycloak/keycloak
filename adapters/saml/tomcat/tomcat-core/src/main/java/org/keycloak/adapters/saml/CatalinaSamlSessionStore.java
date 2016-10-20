@@ -153,14 +153,14 @@ public class CatalinaSamlSessionStore implements SamlSessionStore {
         }
 
         GenericPrincipal principal = (GenericPrincipal) session.getPrincipal();
-        if (samlSession.getPrincipal().getName().equals(principal.getName()))
         // in clustered environment in JBossWeb, principal is not serialized or saved
         if (principal == null) {
             principal = principalFactory.createPrincipal(request.getContext().getRealm(), samlSession.getPrincipal(), samlSession.getRoles());
             session.setPrincipal(principal);
             session.setAuthType("KEYCLOAK-SAML");
 
-        } else {
+        }
+        else if (samlSession.getPrincipal().getName().equals(principal.getName())){
             if (!principal.getUserPrincipal().getName().equals(samlSession.getPrincipal().getName())) {
                 throw new RuntimeException("Unknown State");
             }
