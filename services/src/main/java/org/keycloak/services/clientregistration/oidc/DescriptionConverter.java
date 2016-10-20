@@ -75,6 +75,9 @@ public class DescriptionConverter {
             OIDCResponseType responseType = OIDCResponseType.parse(oidcResponseTypes);
             client.setStandardFlowEnabled(responseType.hasResponseType(OIDCResponseType.CODE));
             client.setImplicitFlowEnabled(responseType.isImplicitOrHybridFlow());
+
+            client.setPublicClient(responseType.isImplicitFlow());
+
             if (oidcGrantTypes != null) {
                 client.setDirectAccessGrantsEnabled(oidcGrantTypes.contains(OAuth2Constants.PASSWORD));
                 client.setServiceAccountsEnabled(oidcGrantTypes.contains(OAuth2Constants.CLIENT_CREDENTIALS));
