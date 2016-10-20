@@ -35,8 +35,10 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
+import org.keycloak.models.utils.StripSecretsUtils;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderFactory;
+import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.ConfigPropertyRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperTypeRepresentation;
@@ -101,7 +103,7 @@ public class IdentityProviderResource {
         }
 
         IdentityProviderRepresentation rep = ModelToRepresentation.toRepresentation(realm, this.identityProviderModel);
-        return rep;
+        return StripSecretsUtils.strip(rep);
     }
 
     /**
@@ -152,12 +154,18 @@ public class IdentityProviderResource {
         }
     }
 
-    public static void updateIdpFromRep(IdentityProviderRepresentation providerRep, RealmModel realm, KeycloakSession session) {
+    private void updateIdpFromRep(IdentityProviderRepresentation providerRep, RealmModel realm, KeycloakSession session) {
         String internalId = providerRep.getInternalId();
         String newProviderId = providerRep.getAlias();
         String oldProviderId = getProviderIdByInternalId(realm, internalId);
 
-        realm.updateIdentityProvider(RepresentationToModel.toModel(realm, providerRep));
+        IdentityProviderModel updated = RepresentationToModel.toModel(realm, providerRep);
+
+        if (updated.getConfig() != null && ComponentRepresentation.SECRET_VALUE.equals(updated.getConfig().get("clientSecret"))) {
+            updated.getConfig().put("clientSecret", identityProviderModel.getConfig() != null ? identityProviderModel.getConfig().get("clientSecret") : null);
+        }
+
+        realm.updateIdentityProvider(updated);
 
         if (oldProviderId != null && !oldProviderId.equals(newProviderId)) {
 

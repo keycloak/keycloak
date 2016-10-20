@@ -26,6 +26,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
+import org.keycloak.models.utils.StripSecretsUtils;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ErrorResponseException;
@@ -119,7 +120,7 @@ public class ComponentResource {
 
             model = realm.addComponentModel(model);
 
-            adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo, model.getId()).representation(rep).success();
+            adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo, model.getId()).representation(StripSecretsUtils.strip(session, rep)).success();
             return Response.created(uriInfo.getAbsolutePathBuilder().path(model.getId()).build()).build();
         } catch (ComponentValidationException e) {
             return localizedErrorResponse(e);
@@ -149,7 +150,7 @@ public class ComponentResource {
                 throw new NotFoundException("Could not find component");
             }
             RepresentationToModel.updateComponent(session, rep, model, false);
-            adminEvent.operation(OperationType.UPDATE).resourcePath(uriInfo, model.getId()).representation(rep).success();
+            adminEvent.operation(OperationType.UPDATE).resourcePath(uriInfo, model.getId()).representation(StripSecretsUtils.strip(session, rep)).success();
             realm.updateComponent(model);
             return Response.noContent().build();
         } catch (ComponentValidationException e) {

@@ -815,7 +815,12 @@ public class RepresentationToModel {
         }
 
         if (rep.getSmtpServer() != null) {
-            realm.setSmtpConfig(new HashMap(rep.getSmtpServer()));
+            Map<String, String> config = new HashMap(rep.getSmtpServer());
+            if (rep.getSmtpServer().containsKey("password") && ComponentRepresentation.SECRET_VALUE.equals(rep.getSmtpServer().get("password"))) {
+                String passwordValue = realm.getSmtpConfig() != null ? realm.getSmtpConfig().get("password") : null;
+                config.put("password", passwordValue);
+            }
+            realm.setSmtpConfig(config);
         }
 
         if (rep.getBrowserSecurityHeaders() != null) {
@@ -1543,7 +1548,7 @@ public class RepresentationToModel {
         identityProviderModel.setAuthenticateByDefault(representation.isAuthenticateByDefault());
         identityProviderModel.setStoreToken(representation.isStoreToken());
         identityProviderModel.setAddReadTokenRoleOnCreate(representation.isAddReadTokenRoleOnCreate());
-        identityProviderModel.setConfig(representation.getConfig());
+        identityProviderModel.setConfig(new HashMap<>(representation.getConfig()));
 
         String flowAlias = representation.getFirstBrokerLoginFlowAlias();
         if (flowAlias == null) {
