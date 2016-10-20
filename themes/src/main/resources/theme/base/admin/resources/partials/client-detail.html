@@ -89,7 +89,7 @@
                     <input ng-model="client.standardFlowEnabled" name="standardFlowEnabled" id="standardFlowEnabled" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
                 </div>
             </div>
-            <div class="form-group" data-ng-show="protocol == 'openid-connect' && client.publicClient && !client.bearerOnly">
+            <div class="form-group" data-ng-show="protocol == 'openid-connect' && !client.bearerOnly">
                 <label class="col-md-2 control-label" for="implicitFlowEnabled">{{:: 'implicit-flow-enabled' | translate}}</label>
                 <kc-tooltip>{{:: 'implicit-flow-enabled.tooltip' | translate}}</kc-tooltip>
                 <div class="col-md-6">
