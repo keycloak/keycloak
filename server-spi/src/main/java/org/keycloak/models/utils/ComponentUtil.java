@@ -20,6 +20,7 @@ package org.keycloak.models.utils;
 import org.keycloak.component.ComponentFactory;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderFactory;
@@ -59,6 +60,11 @@ public class ComponentUtil {
 
         ComponentFactory cf = (ComponentFactory) f;
         return cf;
+    }
+
+    public static void notifyCreated(KeycloakSession session, RealmModel realm, ComponentModel model) {
+        ComponentFactory factory = getComponentFactory(session, model);
+        factory.onCreate(session, realm, model);
     }
 
 }

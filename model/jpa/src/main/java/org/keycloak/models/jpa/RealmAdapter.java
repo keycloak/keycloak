@@ -2053,7 +2053,7 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
         em.persist(c);
         setConfig(model, c);
         model.setId(c.getId());
-        KeycloakModelUtils.notifyCreated(session, this, model);
+        ComponentUtil.notifyCreated(session, this, model);
 
         return model;
     }

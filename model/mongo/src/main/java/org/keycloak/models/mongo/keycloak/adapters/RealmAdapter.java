@@ -1966,7 +1966,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         model.setId(entity.getId());
         realm.getComponentEntities().add(entity);
         updateRealm();
-        KeycloakModelUtils.notifyCreated(session, this, model);
+        ComponentUtil.notifyCreated(session, this, model);
         return model;
     }
 
@@ -2074,7 +2074,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     @Override
     public ComponentModel getComponent(String id) {
         for (ComponentEntity entity : realm.getComponentEntities()) {
-            if (entity.getId() == entity.getId()) {
+            if (id.equals(entity.getId())) {
                 return entityToModel(entity);
             }
         }
