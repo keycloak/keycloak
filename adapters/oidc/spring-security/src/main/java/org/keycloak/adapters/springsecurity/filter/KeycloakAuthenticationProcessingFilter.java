@@ -63,6 +63,8 @@ import java.io.IOException;
 public class KeycloakAuthenticationProcessingFilter extends AbstractAuthenticationProcessingFilter implements ApplicationContextAware {
     public static final String DEFAULT_LOGIN_URL = "/sso/login";
     public static final String AUTHORIZATION_HEADER = "Authorization";
+    public static final String SCHEME_BEARER = "bearer ";
+    public static final String SCHEME_BASIC = "basic ";
 
     /**
      * Request matcher that matches requests to the {@link KeycloakAuthenticationEntryPoint#DEFAULT_LOGIN_URI default login URI}
@@ -164,7 +166,7 @@ public class KeycloakAuthenticationProcessingFilter extends AbstractAuthenticati
      */
     protected boolean isBearerTokenRequest(HttpServletRequest request) {
         String authValue = request.getHeader(AUTHORIZATION_HEADER);
-        return authValue != null && authValue.startsWith("Bearer");
+        return authValue != null && authValue.toLowerCase().startsWith(SCHEME_BEARER);
     }
 
     /**
@@ -176,7 +178,7 @@ public class KeycloakAuthenticationProcessingFilter extends AbstractAuthenticati
      */
     protected boolean isBasicAuthRequest(HttpServletRequest request) {
         String authValue = request.getHeader(AUTHORIZATION_HEADER);
-        return authValue != null && authValue.startsWith("Basic");
+        return authValue != null && authValue.toLowerCase().startsWith(SCHEME_BASIC);
     }
 
     @Override
