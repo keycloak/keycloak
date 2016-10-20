@@ -68,27 +68,19 @@ public class LoginStatusIframeEndpoint {
 
     @GET
     @Path("init")
-    public Response preCheck(@QueryParam("client_id") String clientId, @QueryParam("origin") String origin, @QueryParam("session_state") String sessionState) {
+    public Response preCheck(@QueryParam("client_id") String clientId, @QueryParam("origin") String origin) {
         try {
             RealmModel realm = session.getContext().getRealm();
-            String sessionId = sessionState.split("/")[2];
-            UserSessionModel userSession = session.sessions().getUserSession(realm, sessionId);
-            if (userSession == null) {
-                return Response.status(Response.Status.NOT_FOUND).build();
-            }
-
             ClientModel client = session.realms().getClientByClientId(clientId, realm);
             if (client != null) {
                 Set<String> validWebOrigins = WebOriginsUtils.resolveValidWebOrigins(uriInfo, client);
                 validWebOrigins.add(UriUtils.getOrigin(uriInfo.getRequestUri()));
-
                 if (validWebOrigins.contains(origin)) {
                     return Response.noContent().build();
                 }
             }
         } catch (Throwable t) {
         }
-
         return Response.status(Response.Status.FORBIDDEN).build();
     }
 
