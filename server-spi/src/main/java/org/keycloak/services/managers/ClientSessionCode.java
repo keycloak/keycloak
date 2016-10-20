@@ -93,10 +93,7 @@ public class ClientSessionCode {
             return result;
         }
         try {
-            String[] parts = code.split("\\.");
-            String id = parts[1];
-
-            result.clientSession = session.sessions().getClientSession(realm, id);
+            result.clientSession = getClientSession(code, session, realm);
             if (result.clientSession == null) {
                 result.clientSessionNotFound = true;
                 return result;
@@ -117,10 +114,7 @@ public class ClientSessionCode {
 
     public static ClientSessionCode parse(String code, KeycloakSession session, RealmModel realm) {
         try {
-            String[] parts = code.split("\\.");
-            String id = parts[1];
-
-            ClientSessionModel clientSession = session.sessions().getClientSession(realm, id);
+            ClientSessionModel clientSession = getClientSession(code, session, realm);
             if (clientSession == null) {
                 return null;
             }
@@ -133,6 +127,12 @@ public class ClientSessionCode {
         } catch (RuntimeException e) {
             return null;
         }
+    }
+
+    public static ClientSessionModel getClientSession(String code, KeycloakSession session, RealmModel realm) {
+        String[] parts = code.split("\\.");
+        String id = parts[1];
+        return session.sessions().getClientSession(realm, id);
     }
 
     public ClientSessionModel getClientSession() {

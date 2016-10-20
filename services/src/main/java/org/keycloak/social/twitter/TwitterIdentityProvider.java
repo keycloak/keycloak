@@ -122,7 +122,7 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
 
                 twitter.setOAuthConsumer(getConfig().getClientId(), getConfig().getClientSecret());
 
-                ClientSessionModel clientSession = parseClientSessionCode(state).getClientSession();
+                ClientSessionModel clientSession = ClientSessionCode.getClientSession(state, session, realm);
 
                 String twitterToken = clientSession.getNote("twitter_token");
                 String twitterSecret = clientSession.getNote("twitter_tokenSecret");
