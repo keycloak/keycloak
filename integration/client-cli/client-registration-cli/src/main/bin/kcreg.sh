@@ -1,5 +1,4 @@
 #!/bin/sh
-RESOLVED_NAME="$0"
 case "`uname`" in
     CYGWIN*)
         CFILE = `cygpath "$0"`
@@ -16,6 +15,9 @@ case "`uname`" in
         ;;
 esac
 
-DIRNAME=`dirname "$RESOLVED_NAME"`
+if [ "x$RESOLVED_NAME" = "x" ]; then
+    RESOLVED_NAME="$0"
+fi
 
+DIRNAME=`dirname "$RESOLVED_NAME"`
 java $KC_OPTS -cp $DIRNAME/client/keycloak-client-registration-cli-${project.version}.jar org.keycloak.client.registration.cli.KcRegMain "$@"
