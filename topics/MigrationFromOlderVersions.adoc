@@ -164,6 +164,19 @@ The version specific section below will mention if any changes are required to a
 
 === Version specific migration
 
+==== Migrating to 2.3.0
+
+===== `realm-public-key` adapter property not recommended
+
+In 2.3.0 release we added support for Public Key Rotation. When admin rotates the realm keys in Keycloak admin console, the Client
+Adapter will be able to recognize it and automatically download new public key from Keycloak. However this automatic download of new
+keys is done just if you don't have `realm-public-key` option in your adapter with the hardcoded public key. For this reason, we don't recommend
+to use `realm-public-key` option in adapter configuration anymore.
+
+Note this option is still supported, but it may be useful just if you really want to have hardcoded public key in your adapter configuration
+and never download the public key from Keycloak. In theory, one reason for this can be to avoid man-in-the-middle attack if you have untrusted network between adapter and Keycloak,
+however in that case, it is much better option to use HTTPS, which will secure all the requests between adapter and Keycloak.
+
 ==== Migrating to 2.2.0
 
 ===== `databaseSchema` property deprecated
