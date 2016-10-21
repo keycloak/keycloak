@@ -21,13 +21,16 @@
     var init;
 
     function checkState(clientId, origin, sessionState, callback) {
-        if (!init) {
+        var cookie = getCookie();
+
+        if (!cookie) {
+            callback('changed');
+        } else  if (!init) {
             var req = new XMLHttpRequest();
 
             var url = location.href + "/init";
             url += "?client_id=" + encodeURIComponent(clientId);
             url += "&origin=" + encodeURIComponent(origin);
-            url += "&session_state=" + encodeURIComponent(sessionState);
 
             req.open('GET', url, true);
 
@@ -50,7 +53,6 @@
             req.send();
         } else {
             if (clientId == init.clientId && origin == init.origin) {
-                var cookie = getCookie();
                 if (sessionState == cookie) {
                     callback('unchanged');
                 } else {
