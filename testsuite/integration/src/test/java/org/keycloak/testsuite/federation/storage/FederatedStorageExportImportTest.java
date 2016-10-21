@@ -16,20 +16,16 @@
  */
 package org.keycloak.testsuite.federation.storage;
 
+import org.junit.After;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
-import org.junit.Rule;
 import org.junit.Test;
-import org.keycloak.OAuth2Constants;
 import org.keycloak.common.util.MultivaluedHashMap;
-import org.keycloak.component.ComponentModel;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.credential.hash.PasswordHashProvider;
 import org.keycloak.exportimport.ExportImportConfig;
 import org.keycloak.exportimport.ExportImportManager;
-import org.keycloak.exportimport.UsersExportStrategy;
 import org.keycloak.exportimport.dir.DirExportProviderFactory;
 import org.keycloak.exportimport.singlefile.SingleFileExportProviderFactory;
 import org.keycloak.models.GroupModel;
@@ -37,20 +33,9 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.UserCredentialModel;
-import org.keycloak.models.UserModel;
-import org.keycloak.models.cache.infinispan.UserAdapter;
 import org.keycloak.policy.HashAlgorithmPasswordPolicyProviderFactory;
 import org.keycloak.services.managers.RealmManager;
-import org.keycloak.storage.StorageId;
-import org.keycloak.storage.UserStorageProviderModel;
-import org.keycloak.testsuite.OAuthClient;
-import org.keycloak.testsuite.pages.AppPage;
-import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.rule.KeycloakRule;
-import org.keycloak.testsuite.rule.WebResource;
-import org.keycloak.testsuite.rule.WebRule;
-import org.openqa.selenium.WebDriver;
 
 import java.io.File;
 import java.util.HashSet;
@@ -79,6 +64,16 @@ public class FederatedStorageExportImportTest {
     public static void setDirs() {
         basePath = new File(System.getProperty("project.build.directory", "target")).getAbsolutePath();
 
+    }
+
+    @After
+    public void cleanup() {
+        KeycloakSession session = keycloakRule.startSession();
+        RealmModel realm = session.realms().getRealmByName("exported");
+        if (realm != null) {
+            session.realms().removeRealm(realm.getId());
+        }
+        keycloakRule.stopSession(session, true);
     }
 
     protected PasswordHashProvider getHashProvider(KeycloakSession session, PasswordPolicy policy) {
@@ -132,6 +127,9 @@ public class FederatedStorageExportImportTest {
         Assert.assertNull(session.realms().getRealmByName("exported"));
         ExportImportConfig.setAction(ExportImportConfig.ACTION_IMPORT);
         new ExportImportManager(session).runImport();
+        keycloakRule.stopSession(session, true);
+
+        session = keycloakRule.startSession();
         realm = session.realms().getRealmByName("exported");
         Assert.assertNotNull(realm);
         role = realm.getRole("test-role");
@@ -149,7 +147,7 @@ public class FederatedStorageExportImportTest {
         List<CredentialModel> creds = session.userFederatedStorage().getStoredCredentials(realm, userId);
         Assert.assertEquals(1, creds.size());
         Assert.assertTrue(getHashProvider(session, realm.getPasswordPolicy()).verify("password", creds.get(0)));
-        session.realms().removeRealm(realmId);
+
         keycloakRule.stopSession(session, true);
 
     }
@@ -195,6 +193,9 @@ public class FederatedStorageExportImportTest {
         Assert.assertNull(session.realms().getRealmByName("exported"));
         ExportImportConfig.setAction(ExportImportConfig.ACTION_IMPORT);
         new ExportImportManager(session).runImport();
+        keycloakRule.stopSession(session, true);
+
+        session = keycloakRule.startSession();
         realm = session.realms().getRealmByName("exported");
         Assert.assertNotNull(realm);
         role = realm.getRole("test-role");
@@ -212,7 +213,7 @@ public class FederatedStorageExportImportTest {
         List<CredentialModel> creds = session.userFederatedStorage().getStoredCredentials(realm, userId);
         Assert.assertEquals(1, creds.size());
         Assert.assertTrue(getHashProvider(session, realm.getPasswordPolicy()).verify("password", creds.get(0)));
-        session.realms().removeRealm(realmId);
+
         keycloakRule.stopSession(session, true);
 
     }
