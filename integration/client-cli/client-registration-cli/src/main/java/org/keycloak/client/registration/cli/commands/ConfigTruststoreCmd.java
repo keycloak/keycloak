@@ -30,11 +30,10 @@ public class ConfigTruststoreCmd extends AbstractAuthOptionsCmd implements Comma
 
     private boolean delete;
 
-    public ConfigTruststoreCmd() {}
 
-    public ConfigTruststoreCmd(ConfigCmd parent) {
+    protected void initFromParent(ConfigCmd parent) {
         this.parent = parent;
-        init(parent);
+        super.initFromParent(parent);
     }
 
     @Override

@@ -53,16 +53,24 @@ public class ConfigCmd extends AbstractAuthOptionsCmd implements Command {
             String cmd = args.get(0);
             switch (cmd) {
                 case "credentials": {
-                    return new ConfigCredentialsCmd(this).execute(commandInvocation);
+                    ConfigCredentialsCmd command = new ConfigCredentialsCmd();
+                    command.initFromParent(this);
+                    return command.execute(commandInvocation);
                 }
                 case "truststore": {
-                    return new ConfigTruststoreCmd(this).execute(commandInvocation);
+                    ConfigTruststoreCmd command = new ConfigTruststoreCmd();
+                    command.initFromParent(this);
+                    return command.execute(commandInvocation);
                 }
                 case "initial-token": {
-                    return new ConfigInitialTokenCmd(this).execute(commandInvocation);
+                    ConfigInitialTokenCmd command = new ConfigInitialTokenCmd();
+                    command.initFromParent(this);
+                    return command.execute(commandInvocation);
                 }
                 case "registration-token": {
-                    return new ConfigRegistrationTokenCmd(this).execute(commandInvocation);
+                    ConfigRegistrationTokenCmd command = new ConfigRegistrationTokenCmd();
+                    command.initFromParent(this);
+                    return command.execute(commandInvocation);
                 }
                 default: {
                     if (printHelp()) {
