@@ -36,11 +36,6 @@ public class ConfigCredentialsCmd extends AbstractAuthOptionsCmd implements Comm
 
     private int sigLifetime = 600;
 
-    public ConfigCredentialsCmd() {}
-
-    public ConfigCredentialsCmd(AbstractAuthOptionsCmd parent) {
-        init(parent);
-    }
 
     public void init(ConfigData configData) {
         if (server == null) {
