@@ -85,9 +85,6 @@ public class UpdateCmd extends AbstractAuthOptionsCmd {
     @Option(shortName = 'm', name = "merge", description = "Merge new values with existing configuration on the server", hasValue = false)
     private boolean mergeMode = true;
 
-    @Option(shortName = 'u', name = "unsafe", description = "Allow updating without registration access token - no optimistic locking", hasValue = false)
-    private boolean allowUnsafe = true;
-
     @Option(shortName = 'o', name = "output", description = "After update output the new client configuration", hasValue = false)
     private boolean outputClient = false;
 
@@ -280,8 +277,6 @@ public class UpdateCmd extends AbstractAuthOptionsCmd {
                     saveMergeConfig(cfg -> {
                         setRegistrationToken(cfg.ensureRealmConfigData(server, realm), clientToUpdate, newToken);
                     });
-                } else if (!allowUnsafe) {
-                    throw new RuntimeException("No Registration Access Token found for client: " + clientId + ". Provide one or use --unsafe.");
                 }
 
                 // merge local representation over remote one
@@ -373,7 +368,6 @@ public class UpdateCmd extends AbstractAuthOptionsCmd {
         out.println("    -f, --file FILENAME   Use the file or standard input if '-' is specified");
         out.println("    -m, --merge           Merge new values with existing configuration on the server");
         out.println("                          Merge is automatically enabled unless --file is specified");
-        out.println("    -u, --unsafe          Allow updating without registration access token - no optimistic locking");
         out.println("    -o, --output          After update output the new client configuration");
         out.println("    -c, --compressed      Don't pretty print the output");
         out.println();
@@ -389,9 +383,9 @@ public class UpdateCmd extends AbstractAuthOptionsCmd {
         out.println("and the following items are shifted.");
         out.println();
         out.println("Merged mode fetches current configuration from the server, applies attribute changes to it, and sends it");
-        out.println("back to the server, overwriting existing configuration there. To ensure there are no unexpected changes");
-        out.println("Registration Access Token is used for authorization when doing changes. Alternatively, one can specify to use");
-        out.println("unsafe mode in which case login session's authorization is used - user requires manage-clients permission.");
+        out.println("back to the server, overwriting existing configuration there. If available, Registration Access Token is used ");
+        out.println("for authorization when doing changes. Otherwise current session's authorization is used in which case user needs");
+        out.println("manage-clients permission for update to work.");
         out.println();
         out.println();
         out.println("Examples:");
