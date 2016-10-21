@@ -37,6 +37,10 @@ public class StripSecretsUtils {
 
     public static ComponentRepresentation strip(KeycloakSession session, ComponentRepresentation rep) {
         Map<String, ProviderConfigProperty> configProperties = ComponentUtil.getComponentConfigProperties(session, rep);
+        if (rep.getConfig() == null) {
+            return rep;
+        }
+
         Iterator<Map.Entry<String, List<String>>> itr = rep.getConfig().entrySet().iterator();
         while (itr.hasNext()) {
             Map.Entry<String, List<String>> next = itr.next();
