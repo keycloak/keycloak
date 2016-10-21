@@ -33,6 +33,7 @@ import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
+import org.keycloak.models.utils.StripSecretsUtils;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.services.ErrorResponse;
@@ -167,7 +168,7 @@ public class IdentityProvidersResource {
         List<IdentityProviderRepresentation> representations = new ArrayList<IdentityProviderRepresentation>();
 
         for (IdentityProviderModel identityProviderModel : realm.getIdentityProviders()) {
-            representations.add(ModelToRepresentation.toRepresentation(realm, identityProviderModel));
+            representations.add(StripSecretsUtils.strip(ModelToRepresentation.toRepresentation(realm, identityProviderModel)));
         }
         return representations;
     }
@@ -191,7 +192,7 @@ public class IdentityProvidersResource {
 
             representation.setInternalId(identityProvider.getInternalId());
             adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo, identityProvider.getAlias())
-                    .representation(representation).success();
+                    .representation(StripSecretsUtils.strip(representation)).success();
             
             return Response.created(uriInfo.getAbsolutePathBuilder().path(representation.getAlias()).build()).build();
         } catch (ModelDuplicateException e) {

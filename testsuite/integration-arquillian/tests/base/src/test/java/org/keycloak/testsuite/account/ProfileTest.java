@@ -72,13 +72,8 @@ public class ProfileTest extends TestRealmKeycloakTest {
         UserRepresentation user = RealmRepUtil.findUser(testRealm, "test-user@localhost");
         user.setFirstName("First");
         user.setLastName("Last");
-        Map<String, Object> attributes = user.getAttributes();
-        if (attributes == null) {
-            attributes = new HashMap<>();
-            user.setAttributes(attributes);
-        }
-        attributes.put("key1", "value1");
-        attributes.put("key2", "value2");
+        user.singleAttribute("key1", "value1");
+        user.singleAttribute("key2", "value2");
 
         UserRepresentation user2 = UserBuilder.create()
                                               .enabled(true)

@@ -31,4 +31,6 @@ public interface ClientRegistrationProvider extends Provider {
 
     void setEvent(EventBuilder event);
 
+    EventBuilder getEvent();
+
 }

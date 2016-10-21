@@ -64,8 +64,6 @@ import java.util.Set;
  * @version $Revision: 1 $
  */
 public class FederatedStorageExportImportTest {
-    public static ComponentModel memoryProvider = null;
-    public static ComponentModel writableProvider = null;
     @ClassRule
     public static KeycloakRule keycloakRule = new KeycloakRule(new KeycloakRule.KeycloakSetup() {
 

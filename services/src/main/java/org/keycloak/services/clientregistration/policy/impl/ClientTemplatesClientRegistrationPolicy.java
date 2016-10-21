@@ -35,8 +35,6 @@ import org.keycloak.services.clientregistration.policy.ClientRegistrationPolicyE
  */
 public class ClientTemplatesClientRegistrationPolicy implements ClientRegistrationPolicy {
 
-    private static final Logger logger = Logger.getLogger(ClientTemplatesClientRegistrationPolicy.class);
-
     private final KeycloakSession session;
     private final ComponentModel componentModel;
 

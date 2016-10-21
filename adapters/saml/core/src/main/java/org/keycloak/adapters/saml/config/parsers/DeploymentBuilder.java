@@ -17,6 +17,7 @@
 
 package org.keycloak.adapters.saml.config.parsers;
 
+import org.jboss.logging.Logger;
 import org.keycloak.adapters.saml.DefaultSamlDeployment;
 import org.keycloak.adapters.saml.SamlDeployment;
 import org.keycloak.adapters.saml.config.Key;
@@ -45,6 +46,9 @@ import java.util.Set;
  * @version $Revision: 1 $
  */
 public class DeploymentBuilder {
+
+    protected static Logger log = Logger.getLogger(DeploymentBuilder.class);
+
     public SamlDeployment build(InputStream xml, ResourceLoader resourceLoader) throws ParsingException {
         DefaultSamlDeployment deployment = new DefaultSamlDeployment();
         DefaultSamlDeployment.DefaultIDP idp = new DefaultSamlDeployment.DefaultIDP();
@@ -90,12 +94,16 @@ public class DeploymentBuilder {
                         KeyStore keyStore = loadKeystore(resourceLoader, key);
                         Certificate cert = null;
                         try {
+                            log.debugf("Try to load key [%s]", key.getKeystore().getCertificateAlias());
                             cert = keyStore.getCertificate(key.getKeystore().getCertificateAlias());
+                            if(cert == null) {
+                                log.errorf("Key alias %s is not found into keystore", key.getKeystore().getCertificateAlias());
+                            }
                             privateKey = (PrivateKey) keyStore.getKey(key.getKeystore().getPrivateKeyAlias(), key.getKeystore().getPrivateKeyPassword().toCharArray());
+                            publicKey = cert.getPublicKey();
                         } catch (Exception e) {
                             throw new RuntimeException(e);
                         }
-                        publicKey = cert.getPublicKey();
                     } else {
                         if (key.getPrivateKeyPem() == null) {
                             throw new RuntimeException("SP signing key must have a PrivateKey defined");

@@ -31,11 +31,11 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.representations.idm.ClientInitialAccessCreatePresentation;
 import org.keycloak.representations.idm.ClientInitialAccessPresentation;
-import org.keycloak.representations.idm.ClientRegistrationTrustedHostRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.testsuite.Assert;
+import org.keycloak.testsuite.admin.ApiUtil;
 
 import java.util.*;
 
@@ -200,5 +200,31 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
         Assert.assertEquals(config.getUserInfoSignedResponseAlg(), Algorithm.RS256);
         Assert.assertEquals(config.getRequestObjectSignatureAlg(), Algorithm.RS256);
     }
+
+    @Test
+    public void createClientImplicitFlow() throws ClientRegistrationException {
+        OIDCClientRepresentation clientRep = createRep();
+
+        // create implicitFlow client and assert it's public client
+        clientRep.setResponseTypes(Arrays.asList("id_token token"));
+        OIDCClientRepresentation response = reg.oidc().create(clientRep);
+
+        String clientId = response.getClientId();
+        ClientRepresentation kcClientRep = getKeycloakClient(clientId);
+        Assert.assertTrue(kcClientRep.isPublicClient());
+
+        // Update client to hybrid and check it's not public client anymore
+        reg.auth(Auth.token(response));
+        response.setResponseTypes(Arrays.asList("id_token token", "code id_token", "code"));
+        reg.oidc().update(response);
+
+        kcClientRep = getKeycloakClient(clientId);
+        Assert.assertFalse(kcClientRep.isPublicClient());
+    }
+
+    private ClientRepresentation getKeycloakClient(String clientId) {
+        return ApiUtil.findClientByClientId(adminClient.realms().realm(REALM_NAME), clientId).toRepresentation();
+    }
+
 
 }

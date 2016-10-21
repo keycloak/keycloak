@@ -80,7 +80,9 @@ public abstract class AbstractAdapterTest extends AbstractAuthTest {
 
     private void modifyClientJWKSUrl(RealmRepresentation realm, String regex, String replacement) {
         if (realm.getClients() != null) {
-            realm.getClients().stream().filter(client -> "client-jwt".equals(client.getClientAuthenticatorType())).forEach(client -> {
+            realm.getClients().stream().
+                    filter(client -> "client-jwt".equals(client.getClientAuthenticatorType()) && client.getAttributes().containsKey("jwks.url")).
+                    forEach(client -> {
                 Map<String, String> attr = client.getAttributes();
                 attr.put("jwks.url", attr.get("jwks.url").replaceFirst(regex, replacement));
                 client.setAttributes(attr);

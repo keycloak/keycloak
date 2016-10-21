@@ -276,7 +276,6 @@
             <artifactId>mariadb-java-client</artifactId>
             <version>${mariadb.version}</version>
         </dependency>
-
     </dependencies>
     <build>
         <plugins>

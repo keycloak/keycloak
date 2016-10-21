@@ -131,11 +131,6 @@ public enum ResourceType {
     /**
      *
      */
-    , CLIENT_REGISTRATION_TRUSTED_HOST_MODEL
-
-    /**
-     *
-     */
     , CLIENT_ROLE
 
     /**

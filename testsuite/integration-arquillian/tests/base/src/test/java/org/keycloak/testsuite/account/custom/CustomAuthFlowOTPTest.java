@@ -159,11 +159,7 @@ public class CustomAuthFlowOTPTest extends AbstractCustomAccountManagementTest {
         setConditionalOTPForm(config);
 
         //add skip user attribute to user
-        Map<String, Object> userAttributes = new HashMap<>();
-        List<String> attributeValues = new ArrayList<>();
-        attributeValues.add("skip");
-        userAttributes.put("userSkipAttribute", attributeValues);
-        testUser.setAttributes(userAttributes);
+        testUser.singleAttribute("userSkipAttribute", "skip");
         testRealmResource().users().get(testUser.getId()).update(testUser);
         
         //test OTP is skipped
@@ -182,11 +178,7 @@ public class CustomAuthFlowOTPTest extends AbstractCustomAccountManagementTest {
         setConditionalOTPForm(config);
 
         //add force user attribute to user
-        Map<String, Object> userAttributes = new HashMap<>();
-        List<String> attributeValues = new ArrayList<>();
-        attributeValues.add("force");
-        userAttributes.put("userSkipAttribute", attributeValues);
-        testUser.setAttributes(userAttributes);
+        testUser.singleAttribute("userSkipAttribute", "force");
         testRealmResource().users().get(testUser.getId()).update(testUser);
         
         //test OTP is required

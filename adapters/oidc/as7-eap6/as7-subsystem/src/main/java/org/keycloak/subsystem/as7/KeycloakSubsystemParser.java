@@ -157,7 +157,7 @@ class KeycloakSubsystemParser implements XMLStreamConstants, XMLElementReader<Li
             credentialsToAdd.add(addCredential);
         } else {
             for (Map.Entry<String, String> entry : values.entrySet()) {
-                ModelNode addCredential = getCredentialToAdd(parent, name + "" + entry.getKey(), entry.getValue());
+                ModelNode addCredential = getCredentialToAdd(parent, name + "." + entry.getKey(), entry.getValue());
                 credentialsToAdd.add(addCredential);
             }
         }

@@ -85,12 +85,7 @@ public class LiquibaseJpaUpdaterProvider implements JpaUpdaterProvider {
             Liquibase liquibase = getLiquibaseForKeycloakUpdate(connection, defaultSchema);
             if (file != null) {
                 exportWriter = new FileWriter(file);
-                List<ChangeSet> changeSets = getChangeSets(liquibase);
-                if (! changeSets.isEmpty() && liquibase.getDatabase().getRanChangeSetList().isEmpty()) {
-                    outputChangeLogTableCreationScript(liquibase, exportWriter);
-                }
             }
-
             updateChangeSet(liquibase, liquibase.getChangeLogFile(), exportWriter);
 
             // Run update for each custom JpaEntityProvider
@@ -118,9 +113,8 @@ public class LiquibaseJpaUpdaterProvider implements JpaUpdaterProvider {
         }
     }
 
-
     protected void updateChangeSet(Liquibase liquibase, String changelog, Writer exportWriter) throws LiquibaseException, IOException {
-        List<ChangeSet> changeSets = getChangeSets(liquibase);
+        List<ChangeSet> changeSets = getLiquibaseUnrunChangeSets(liquibase);
         if (!changeSets.isEmpty()) {
             List<RanChangeSet> ranChangeSets = liquibase.getDatabase().getRanChangeSetList();
             if (ranChangeSets.isEmpty()) {
@@ -134,6 +128,9 @@ public class LiquibaseJpaUpdaterProvider implements JpaUpdaterProvider {
             }
 
             if (exportWriter != null) {
+                if (ranChangeSets.isEmpty()) {
+                    outputChangeLogTableCreationScript(liquibase, exportWriter);
+                }
                 liquibase.update((Contexts) null, new LabelExpression(), exportWriter, false);
             } else {
                 liquibase.update((Contexts) null);
@@ -142,11 +139,11 @@ public class LiquibaseJpaUpdaterProvider implements JpaUpdaterProvider {
             logger.debugv("Completed database update for changelog {0}", changelog);
         } else {
             logger.debugv("Database is up to date for changelog {0}", changelog);
-
-            // Needs to restart liquibase services to clear changeLogHistory.
-            Method resetServices = Reflections.findDeclaredMethod(Liquibase.class, "resetServices");
-            Reflections.invokeMethod(true, resetServices, liquibase);
         }
+
+        // Needs to restart liquibase services to clear ChangeLogHistoryServiceFactory.getInstance().
+        // See https://issues.jboss.org/browse/KEYCLOAK-3769 for discussion relevant to why reset needs to be here
+        resetLiquibaseServices(liquibase);
     }
 
     private void outputChangeLogTableCreationScript(Liquibase liquibase, final Writer exportWriter) throws DatabaseException {
@@ -205,23 +202,35 @@ public class LiquibaseJpaUpdaterProvider implements JpaUpdaterProvider {
     }
 
     protected Status validateChangeSet(Liquibase liquibase, String changelog) throws LiquibaseException {
-        List<ChangeSet> changeSets = getChangeSets(liquibase);
+        final Status result;
+        List<ChangeSet> changeSets = getLiquibaseUnrunChangeSets(liquibase);
 
         if (!changeSets.isEmpty()) {
             if (changeSets.size() == liquibase.getDatabaseChangeLog().getChangeSets().size()) {
-                return Status.EMPTY;
+                result = Status.EMPTY;
             } else {
                 logger.debugf("Validation failed. Database is not up-to-date for changelog %s", changelog);
-                return Status.OUTDATED;
+                result = Status.OUTDATED;
             }
         } else {
             logger.debugf("Validation passed. Database is up-to-date for changelog %s", changelog);
-            return Status.VALID;
+            result = Status.VALID;
         }
+
+        // Needs to restart liquibase services to clear ChangeLogHistoryServiceFactory.getInstance().
+        // See https://issues.jboss.org/browse/KEYCLOAK-3769 for discussion relevant to why reset needs to be here
+        resetLiquibaseServices(liquibase);
+
+        return result;
+    }
+
+    private void resetLiquibaseServices(Liquibase liquibase) {
+        Method resetServices = Reflections.findDeclaredMethod(Liquibase.class, "resetServices");
+        Reflections.invokeMethod(true, resetServices, liquibase);
     }
 
     @SuppressWarnings("unchecked")
-    private List<ChangeSet> getChangeSets(Liquibase liquibase) {
+    private List<ChangeSet> getLiquibaseUnrunChangeSets(Liquibase liquibase) {
         // TODO tracked as: https://issues.jboss.org/browse/KEYCLOAK-3730
         // TODO: When https://liquibase.jira.com/browse/CORE-2919 is resolved, replace the following two lines with:
         // List<ChangeSet> changeSets = liquibase.listUnrunChangeSets((Contexts) null, new LabelExpression(), false);

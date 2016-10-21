@@ -242,4 +242,14 @@ public interface TestingResource {
     @Produces(MediaType.APPLICATION_JSON)
     Map<String, TestProvider.DetailsRepresentation> getTestComponentDetails();
 
+    @GET
+    @Path("/smtp-config")
+    @Produces(MediaType.APPLICATION_JSON)
+    Map<String, String> getSmtpConfig();
+
+    @GET
+    @Path("/identity-config")
+    @Produces(MediaType.APPLICATION_JSON)
+    Map<String, String> getIdentityProviderConfig(@QueryParam("alias") String alias);
+
 }

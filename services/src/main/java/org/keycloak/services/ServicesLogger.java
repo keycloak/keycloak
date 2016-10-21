@@ -434,8 +434,21 @@ public interface ServicesLogger extends BasicLogger {
     @Message(id=97, value="Invalid request")
     void invalidRequest(@Cause Throwable t);
 
-    @LogMessage(level = ERROR)
-    @Message(id=98, value="Failed to get redirect uris from sector identifier URI: %s")
-    void failedToGetRedirectUrisFromSectorIdentifierUri(@Cause Throwable t, String sectorIdentifierUri);
+
+    @LogMessage(level = WARN)
+    @Message(id=99, value="Operation '%s' rejected. %s")
+    void clientRegistrationRequestRejected(String opDescription, String detailedMessage);
+
+    @LogMessage(level = WARN)
+    @Message(id=100, value= "ProtocolMapper '%s' of type '%s' not allowed")
+    void clientRegistrationMapperNotAllowed(String mapperName, String mapperType);
+
+    @LogMessage(level = WARN)
+    @Message(id=101, value= "Failed to verify remote host : %s")
+    void failedToVerifyRemoteHost(String hostname);
+
+    @LogMessage(level = WARN)
+    @Message(id=102, value= "URL '%s' doesn't match any trustedHost or trustedDomain")
+    void urlDoesntMatch(String url);
 
 }

@@ -36,7 +36,7 @@ public class GoogleIdentityProviderFactory extends AbstractIdentityProviderFacto
 
     @Override
     public GoogleIdentityProvider create(KeycloakSession session, IdentityProviderModel model) {
-        return new GoogleIdentityProvider(session, new OIDCIdentityProviderConfig(model));
+        return new GoogleIdentityProvider(session, new GoogleIdentityProviderConfig(model));
     }
 
     @Override

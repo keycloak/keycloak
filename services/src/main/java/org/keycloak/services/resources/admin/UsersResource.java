@@ -262,8 +262,8 @@ public class UsersResource {
             }
         }
 
-        if (rep.getAttributesAsListValues() != null) {
-            for (Map.Entry<String, List<String>> attr : rep.getAttributesAsListValues().entrySet()) {
+        if (rep.getAttributes() != null) {
+            for (Map.Entry<String, List<String>> attr : rep.getAttributes().entrySet()) {
                 user.setAttribute(attr.getKey(), attr.getValue());
             }
 
@@ -274,7 +274,7 @@ public class UsersResource {
     }
 
     /**
-     * Get represenation of the user
+     * Get representation of the user
      *
      * @param id User id
      * @return

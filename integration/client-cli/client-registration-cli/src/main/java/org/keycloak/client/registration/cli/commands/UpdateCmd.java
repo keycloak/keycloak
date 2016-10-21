@@ -106,6 +106,10 @@ public class UpdateCmd extends AbstractAuthOptionsCmd {
         try {
             processGlobalOptions();
 
+            if (printHelp()) {
+                return CommandResult.SUCCESS;
+            }
+
             String clientId = null;
 
             if (args != null) {
@@ -117,7 +121,7 @@ public class UpdateCmd extends AbstractAuthOptionsCmd {
                 clientId = it.next();
 
                 if (clientId.startsWith("-")) {
-                    warnfErr(ParseUtil.CLIENTID_OPTION_WARN, clientId);
+                    warnfErr(ParseUtil.CLIENT_OPTION_WARN, clientId);
                 }
 
                 while (it.hasNext()) {
@@ -334,6 +338,10 @@ public class UpdateCmd extends AbstractAuthOptionsCmd {
         }
     }
 
+    protected String help() {
+        return usage();
+    }
+
     public static String usage() {
         StringWriter sb = new StringWriter();
         PrintWriter out = new PrintWriter(sb);
@@ -348,7 +356,7 @@ public class UpdateCmd extends AbstractAuthOptionsCmd {
         out.println();
         out.println("  Global options:");
         out.println("    -x                    Print full stack trace when exiting with error");
-        out.println("    -c, --config          Path to the config file (" + DEFAULT_CONFIG_FILE_STRING + " by default)");
+        out.println("    --config              Path to the config file (" + DEFAULT_CONFIG_FILE_STRING + " by default)");
         out.println("    --truststore PATH     Path to a truststore containing trusted certificates");
         out.println("    --trustpass PASSWORD  Truststore password (prompted for if not specified and --truststore is used)");
         out.println("    --token TOKEN         Registration access token to use");

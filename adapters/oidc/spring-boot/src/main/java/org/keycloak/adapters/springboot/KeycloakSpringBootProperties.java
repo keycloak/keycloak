@@ -17,14 +17,26 @@
 
 package org.keycloak.adapters.springboot;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.keycloak.representations.adapters.config.AdapterConfig;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @ConfigurationProperties(prefix = "keycloak", ignoreUnknownFields = false)
 public class KeycloakSpringBootProperties extends AdapterConfig {
+
+    /* this is a dummy property to avoid re-rebinding problem with property keycloak.config.resolver
+       when using spring cloud - see KEYCLOAK-2977 */
+    @JsonIgnore
+    private Map config = new HashMap();
+
+    public Map getConfig() {
+        return config;
+    }
 
     private List<SecurityConstraint> securityConstraints = new ArrayList<SecurityConstraint>();
 

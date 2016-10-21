@@ -128,9 +128,23 @@ public class KeycloakAuthenticationProcessingFilterTest {
     }
 
     @Test
+    public void testIsBearerTokenRequestCaseInsensitive() throws Exception {
+        assertFalse(filter.isBearerTokenRequest(request));
+        this.setAuthorizationHeader(request, "bearer");
+        assertTrue(filter.isBearerTokenRequest(request));
+    }
+
+    @Test
     public void testIsBasicAuthRequest() throws Exception {
         assertFalse(filter.isBasicAuthRequest(request));
         this.setBasicAuthHeader(request);
+        assertTrue(filter.isBasicAuthRequest(request));
+    }
+
+    @Test
+    public void testIsBasicAuthRequestCaseInsensitive() throws Exception {
+        assertFalse(filter.isBasicAuthRequest(request));
+        this.setAuthorizationHeader(request, "basic");
         assertTrue(filter.isBasicAuthRequest(request));
     }
 
@@ -221,11 +235,14 @@ public class KeycloakAuthenticationProcessingFilterTest {
     }
 
     private void setBearerAuthHeader(MockHttpServletRequest request) {
-        request.addHeader(KeycloakAuthenticationProcessingFilter.AUTHORIZATION_HEADER, "Bearer " + UUID.randomUUID().toString());
+        setAuthorizationHeader(request, "Bearer");
     }
 
     private void setBasicAuthHeader(MockHttpServletRequest request) {
-        request.addHeader(KeycloakAuthenticationProcessingFilter.AUTHORIZATION_HEADER, "Basic " + UUID.randomUUID().toString());
+        setAuthorizationHeader(request, "Basic");
     }
 
+    private void setAuthorizationHeader(MockHttpServletRequest request, String scheme) {
+      request.addHeader(KeycloakAuthenticationProcessingFilter.AUTHORIZATION_HEADER, scheme + " " + UUID.randomUUID().toString());
+    }
 }

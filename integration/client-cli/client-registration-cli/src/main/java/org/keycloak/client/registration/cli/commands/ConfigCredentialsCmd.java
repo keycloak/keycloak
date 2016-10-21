@@ -69,6 +69,10 @@ public class ConfigCredentialsCmd extends AbstractAuthOptionsCmd implements Comm
         try {
             processGlobalOptions();
 
+            if (printHelp()) {
+                return CommandResult.SUCCESS;
+            }
+
             return process(commandInvocation);
         } finally {
             commandInvocation.stop();
@@ -168,6 +172,10 @@ public class ConfigCredentialsCmd extends AbstractAuthOptionsCmd implements Comm
         saveTokens(tokens, server, realm, clientId, signedRequestToken, sigExpiresAt, secret);
 
         return CommandResult.SUCCESS;
+    }
+
+    protected String help() {
+        return usage();
     }
 
     public static String usage() {

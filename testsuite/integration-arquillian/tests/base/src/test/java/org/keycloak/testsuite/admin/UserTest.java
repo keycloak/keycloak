@@ -417,19 +417,19 @@ public class UserTest extends AbstractAdminTest {
         List<String> vals = new ArrayList<>();
         vals.add("value2user2");
         vals.add("value2user2_2");
-        user2.getAttributesAsListValues().put("attr2", vals);
+        user2.getAttributes().put("attr2", vals);
 
         String user2Id = createUser(user2);
 
         user1 = realm.users().get(user1Id).toRepresentation();
-        assertEquals(2, user1.getAttributesAsListValues().size());
-        assertAttributeValue("value1user1", user1.getAttributesAsListValues().get("attr1"));
-        assertAttributeValue("value2user1", user1.getAttributesAsListValues().get("attr2"));
+        assertEquals(2, user1.getAttributes().size());
+        assertAttributeValue("value1user1", user1.getAttributes().get("attr1"));
+        assertAttributeValue("value2user1", user1.getAttributes().get("attr2"));
 
         user2 = realm.users().get(user2Id).toRepresentation();
-        assertEquals(2, user2.getAttributesAsListValues().size());
-        assertAttributeValue("value1user2", user2.getAttributesAsListValues().get("attr1"));
-        vals = user2.getAttributesAsListValues().get("attr2");
+        assertEquals(2, user2.getAttributes().size());
+        assertAttributeValue("value1user2", user2.getAttributes().get("attr1"));
+        vals = user2.getAttributes().get("attr2");
         assertEquals(2, vals.size());
         assertTrue(vals.contains("value2user2") && vals.contains("value2user2_2"));
 
@@ -439,18 +439,18 @@ public class UserTest extends AbstractAdminTest {
         updateUser(realm.users().get(user1Id), user1);
 
         user1 = realm.users().get(user1Id).toRepresentation();
-        assertEquals(3, user1.getAttributesAsListValues().size());
-        assertAttributeValue("value3user1", user1.getAttributesAsListValues().get("attr1"));
-        assertAttributeValue("value2user1", user1.getAttributesAsListValues().get("attr2"));
-        assertAttributeValue("value4user1", user1.getAttributesAsListValues().get("attr3"));
+        assertEquals(3, user1.getAttributes().size());
+        assertAttributeValue("value3user1", user1.getAttributes().get("attr1"));
+        assertAttributeValue("value2user1", user1.getAttributes().get("attr2"));
+        assertAttributeValue("value4user1", user1.getAttributes().get("attr3"));
 
         user1.getAttributes().remove("attr1");
         updateUser(realm.users().get(user1Id), user1);
 
         user1 = realm.users().get(user1Id).toRepresentation();
-        assertEquals(2, user1.getAttributesAsListValues().size());
-        assertAttributeValue("value2user1", user1.getAttributesAsListValues().get("attr2"));
-        assertAttributeValue("value4user1", user1.getAttributesAsListValues().get("attr3"));
+        assertEquals(2, user1.getAttributes().size());
+        assertAttributeValue("value2user1", user1.getAttributes().get("attr2"));
+        assertAttributeValue("value4user1", user1.getAttributes().get("attr3"));
 
         user1.getAttributes().clear();
         updateUser(realm.users().get(user1Id), user1);

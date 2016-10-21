@@ -24,6 +24,9 @@ import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.common.util.StreamUtil;
 import org.keycloak.dom.saml.v2.SAML2Object;
+import org.keycloak.dom.saml.v2.assertion.BaseIDAbstractType;
+import org.keycloak.dom.saml.v2.assertion.NameIDType;
+import org.keycloak.dom.saml.v2.assertion.SubjectType;
 import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
 import org.keycloak.dom.saml.v2.protocol.LogoutRequestType;
 import org.keycloak.dom.saml.v2.protocol.NameIDPolicyType;
@@ -40,6 +43,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.AuthorizationEndpointBase;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.protocol.saml.profile.ecp.SamlEcpProfileService;
 import org.keycloak.saml.SAML2LogoutResponseBuilder;
@@ -273,6 +277,20 @@ public class SamlService extends AuthorizationEndpointBase {
                     event.detail(Details.REASON, "unsupported_nameid_format");
                     event.error(Errors.INVALID_SAML_AUTHN_REQUEST);
                     return ErrorPage.error(session, Messages.UNSUPPORTED_NAME_ID_FORMAT);
+                }
+            }
+
+            //Reading subject/nameID in the saml request
+            SubjectType subject = requestAbstractType.getSubject();
+            if (subject != null) {
+                SubjectType.STSubType subType = subject.getSubType();
+                if (subType != null) {
+                    BaseIDAbstractType baseID = subject.getSubType().getBaseID();
+                    if (baseID != null && baseID instanceof NameIDType) {
+                        NameIDType nameID = (NameIDType) baseID;
+                        clientSession.setNote(OIDCLoginProtocol.LOGIN_HINT_PARAM, nameID.getValue());
+                    }
+
                 }
             }
 

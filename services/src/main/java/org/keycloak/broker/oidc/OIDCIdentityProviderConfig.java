@@ -93,6 +93,15 @@ public class OIDCIdentityProviderConfig extends OAuth2IdentityProviderConfig {
         getConfig().put("backchannelSupported", String.valueOf(backchannel));
     }
 
+    public boolean isDisableUserInfoService() {
+        String disableUserInfo = getConfig().get("disableUserInfo");
+        return disableUserInfo == null ? false : Boolean.valueOf(disableUserInfo);
+    }
+
+    public void setDisableUserInfoService(boolean disable) {
+        getConfig().put("disableUserInfo", String.valueOf(disable));
+    }
+
 
 
 

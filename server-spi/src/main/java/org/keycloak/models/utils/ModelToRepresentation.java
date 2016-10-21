@@ -197,7 +197,7 @@ public class ModelToRepresentation {
         rep.setRequiredActions(reqActions);
 
         if (user.getAttributes() != null && !user.getAttributes().isEmpty()) {
-            Map<String, Object> attrs = new HashMap<>();
+            Map<String, List<String>> attrs = new HashMap<>();
             attrs.putAll(user.getAttributes());
             rep.setAttributes(attrs);
         }
@@ -303,7 +303,7 @@ public class ModelToRepresentation {
         rep.setAccessCodeLifespan(realm.getAccessCodeLifespan());
         rep.setAccessCodeLifespanUserAction(realm.getAccessCodeLifespanUserAction());
         rep.setAccessCodeLifespanLogin(realm.getAccessCodeLifespanLogin());
-        rep.setSmtpServer(realm.getSmtpConfig());
+        rep.setSmtpServer(new HashMap<>(realm.getSmtpConfig()));
         rep.setBrowserSecurityHeaders(realm.getBrowserSecurityHeaders());
         rep.setAccountTheme(realm.getAccountTheme());
         rep.setLoginTheme(realm.getLoginTheme());
@@ -384,6 +384,10 @@ public class ModelToRepresentation {
 
         Map<String, String> attributes = realm.getAttributes();
         rep.setAttributes(attributes);
+
+        if (!internal) {
+            rep = StripSecretsUtils.strip(rep);
+        }
 
         return rep;
     }
@@ -622,7 +626,7 @@ public class ModelToRepresentation {
         providerRep.setStoreToken(identityProviderModel.isStoreToken());
         providerRep.setTrustEmail(identityProviderModel.isTrustEmail());
         providerRep.setAuthenticateByDefault(identityProviderModel.isAuthenticateByDefault());
-        providerRep.setConfig(identityProviderModel.getConfig());
+        providerRep.setConfig(new HashMap<>(identityProviderModel.getConfig()));
         providerRep.setAddReadTokenRoleOnCreate(identityProviderModel.isAddReadTokenRoleOnCreate());
 
         String firstBrokerLoginFlowId = identityProviderModel.getFirstBrokerLoginFlowId();
@@ -796,24 +800,9 @@ public class ModelToRepresentation {
         rep.setProviderType(component.getProviderType());
         rep.setSubType(component.getSubType());
         rep.setParentId(component.getParentId());
-        if (internal) {
-            rep.setConfig(component.getConfig());
-        } else {
-            Map<String, ProviderConfigProperty> configProperties = ComponentUtil.getComponentConfigProperties(session, component);
-            MultivaluedHashMap<String, String> config = new MultivaluedHashMap<>();
-
-            for (Map.Entry<String, List<String>> e : component.getConfig().entrySet()) {
-                ProviderConfigProperty configProperty = configProperties.get(e.getKey());
-                if (configProperty != null) {
-                    if (configProperty.isSecret()) {
-                        config.putSingle(e.getKey(), ComponentRepresentation.SECRET_VALUE);
-                    } else {
-                        config.put(e.getKey(), e.getValue());
-                    }
-                }
-            }
-
-            rep.setConfig(config);
+        rep.setConfig(new MultivaluedHashMap<>(component.getConfig()));
+        if (!internal) {
+            rep = StripSecretsUtils.strip(session, rep);
         }
         return rep;
     }

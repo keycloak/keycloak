@@ -17,6 +17,7 @@
 package org.keycloak.component;
 
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
 import org.keycloak.provider.ConfiguredProvider;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
@@ -34,5 +35,10 @@ public interface ComponentFactory<CreatedType, ProviderType extends Provider> ex
     }
 
     void validateConfiguration(KeycloakSession session, ComponentModel model) throws ComponentValidationException;
+
+    default
+    void onCreate(KeycloakSession session, RealmModel realm, ComponentModel model) {
+
+    }
 
 }

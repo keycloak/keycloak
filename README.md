@@ -36,7 +36,7 @@ Once completed you will find distribution archives in `distribution`.
 Starting Keycloak
 -----------------
 
-To start Keycloak during development first build as specficied above, then run:
+To start Keycloak during development first build as specified above, then run:
 
     mvn -f testsuite/integration/pom.xml exec:java -Pkeycloak-server 
 
