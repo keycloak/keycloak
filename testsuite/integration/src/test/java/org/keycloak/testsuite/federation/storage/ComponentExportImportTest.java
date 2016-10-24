@@ -16,32 +16,23 @@
  */
 package org.keycloak.testsuite.federation.storage;
 
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
-import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
-import org.keycloak.credential.CredentialModel;
-import org.keycloak.credential.hash.PasswordHashProvider;
 import org.keycloak.exportimport.ExportImportConfig;
 import org.keycloak.exportimport.ExportImportManager;
-import org.keycloak.exportimport.dir.DirExportProviderFactory;
 import org.keycloak.exportimport.singlefile.SingleFileExportProviderFactory;
-import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.RoleModel;
-import org.keycloak.policy.HashAlgorithmPasswordPolicyProviderFactory;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.testsuite.rule.KeycloakRule;
 
 import java.io.File;
 import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 
@@ -67,12 +58,14 @@ public class ComponentExportImportTest {
 
     }
 
-    protected PasswordHashProvider getHashProvider(KeycloakSession session, PasswordPolicy policy) {
-        PasswordHashProvider hash = session.getProvider(PasswordHashProvider.class, policy.getHashAlgorithm());
-        if (hash == null) {
-            return session.getProvider(PasswordHashProvider.class, HashAlgorithmPasswordPolicyProviderFactory.DEFAULT_VALUE);
+    @After
+    public void cleanup() {
+        KeycloakSession session = keycloakRule.startSession();
+        RealmModel realm = session.realms().getRealmByName("exported-component");
+        if (realm != null) {
+            session.realms().removeRealm(realm.getId());
         }
-        return hash;
+        keycloakRule.stopSession(session, true);
     }
 
 
@@ -118,6 +111,9 @@ public class ComponentExportImportTest {
         Assert.assertNull(session.realms().getRealmByName("exported-component"));
         ExportImportConfig.setAction(ExportImportConfig.ACTION_IMPORT);
         new ExportImportManager(session).runImport();
+        keycloakRule.stopSession(session, true);
+
+        session = keycloakRule.startSession();
         realm = session.realms().getRealmByName("exported-component");
         Assert.assertNotNull(realm);
         component = realm.getComponent(component.getId());
@@ -135,7 +131,7 @@ public class ComponentExportImportTest {
         Assert.assertEquals(subComponent.getProviderId(), UserMapStorageFactory.PROVIDER_ID);
         Assert.assertEquals(subComponent.getProviderType(), UserStorageProvider.class.getName());
         Assert.assertEquals(subComponent.getConfig().getFirst("attr"), "value2");
-        session.realms().removeRealm(realmId);
+
         keycloakRule.stopSession(session, true);
 
     }

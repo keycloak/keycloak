@@ -1550,7 +1550,8 @@ module.controller('ClientClusteringCtrl', function($scope, client, Client, Clien
     };
 });
 
-module.controller('ClientClusteringNodeCtrl', function($scope, client, Client, ClientClusterNode, realm, $location, $routeParams, Notifications) {
+module.controller('ClientClusteringNodeCtrl', function($scope, client, Client, ClientClusterNode, realm, 
+                                                       $location, $routeParams, Notifications, Dialog) {
     $scope.client = client;
     $scope.realm = realm;
     $scope.create = !$routeParams.node;
@@ -1563,9 +1564,11 @@ module.controller('ClientClusteringNodeCtrl', function($scope, client, Client, C
     }
 
     $scope.unregisterNode = function() {
-        ClientClusterNode.remove({ realm : realm.realm, client : client.id , node: $scope.node.host }, function() {
-            Notifications.success('Node ' + $scope.node.host + ' unregistered successfully.');
-            $location.url('/realms/' + realm.realm + '/clients/' + client.id +  '/clustering');
+        Dialog.confirmDelete($scope.node.host, 'node', function() {
+            ClientClusterNode.remove({ realm : realm.realm, client : client.id , node: $scope.node.host }, function() {
+                Notifications.success('Node ' + $scope.node.host + ' unregistered successfully.');
+                $location.url('/realms/' + realm.realm + '/clients/' + client.id +  '/clustering');
+            });
         });
     }
 
