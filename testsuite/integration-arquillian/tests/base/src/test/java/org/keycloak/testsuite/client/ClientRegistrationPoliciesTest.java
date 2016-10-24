@@ -60,6 +60,8 @@ import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.util.JsonSerialization;
 
+import javax.ws.rs.core.Response;
+
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -288,7 +290,7 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
         rep.setProviderId(ClientDisabledClientRegistrationPolicyFactory.PROVIDER_ID);
         rep.setProviderType(ClientRegistrationPolicy.class.getName());
         rep.setSubType(getPolicyAnon());
-        realmResource().components().add(rep);
+        realmResource().components().add(rep).close();
 
         // Assert new client is disabled
         client = create();
