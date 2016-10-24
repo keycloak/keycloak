@@ -17,6 +17,7 @@
 package org.keycloak.services.resources.admin;
 
 import org.jboss.logging.Logger;
+import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.component.ComponentModel;
@@ -88,6 +89,7 @@ public class ComponentResource {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
+    @NoCache
     public List<ComponentRepresentation> getComponents(@QueryParam("parent") String parent, @QueryParam("type") String type) {
         auth.requireView();
         List<ComponentModel> components = Collections.EMPTY_LIST;
@@ -129,13 +131,15 @@ public class ComponentResource {
     @GET
     @Path("{id}")
     @Produces(MediaType.APPLICATION_JSON)
+    @NoCache
     public ComponentRepresentation getComponent(@PathParam("id") String id) {
         auth.requireManage();
         ComponentModel model = realm.getComponent(id);
         if (model == null) {
             throw new NotFoundException("Could not find component");
         }
-        return ModelToRepresentation.toRepresentation(session, model, false);
+        ComponentRepresentation rep = ModelToRepresentation.toRepresentation(session, model, false);
+        return rep;
     }
 
     @PUT

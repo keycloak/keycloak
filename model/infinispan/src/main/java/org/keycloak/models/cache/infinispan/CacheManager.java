@@ -13,6 +13,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 
 /**
@@ -126,6 +127,10 @@ public abstract class CacheManager {
     }
 
     public void addRevisioned(Revisioned object, long startupRevision) {
+        addRevisioned(object, startupRevision, -1);
+    }
+
+    public void addRevisioned(Revisioned object, long startupRevision, long lifespan) {
         //startRevisionBatch();
         String id = object.getId();
         try {
@@ -164,7 +169,8 @@ public abstract class CacheManager {
             // revisions cache has a lower value than the object.revision, so update revision and add it to cache
             if (id.endsWith("realm.clients")) RealmCacheManager.logger.tracev("adding Object.revision {0} rev {1}", object.getRevision(), rev);
             revisions.put(id, object.getRevision());
-            cache.putForExternalRead(id, object);
+            if (lifespan < 0) cache.putForExternalRead(id, object);
+            else cache.putForExternalRead(id, object, lifespan, TimeUnit.MILLISECONDS);
         } finally {
             endRevisionBatch();
         }

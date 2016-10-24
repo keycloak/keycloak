@@ -1,5 +1,7 @@
 package org.keycloak.models.cache.infinispan.entities;
 
+import org.keycloak.common.util.Time;
+
 import java.io.Serializable;
 
 /**
@@ -9,7 +11,7 @@ import java.io.Serializable;
 public class AbstractRevisioned implements Revisioned, Serializable {
     private String id;
     private Long revision;
-    private final long cacheTimestamp = System.currentTimeMillis();
+    private final long cacheTimestamp = Time.currentTimeMillis();
 
     public AbstractRevisioned(Long revision, String id) {
         this.revision = revision;

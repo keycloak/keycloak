@@ -1757,18 +1757,9 @@ public class RepresentationToModel {
             component.setSubType(rep.getSubType());
         }
 
-        Map<String, ProviderConfigProperty> providerConfiguration = null;
-        if (!internal) {
-            providerConfiguration = ComponentUtil.getComponentConfigProperties(session, component);
-        }
-
         if (rep.getConfig() != null) {
             Set<String> keys = new HashSet<>(rep.getConfig().keySet());
             for (String k : keys) {
-                if (!internal && !providerConfiguration.containsKey(k)) {
-                    break;
-                }
-
                 List<String> values = rep.getConfig().get(k);
                 if (values == null || values.isEmpty() || values.get(0) == null || values.get(0).trim().isEmpty()) {
                     component.getConfig().remove(k);

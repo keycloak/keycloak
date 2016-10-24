@@ -810,6 +810,8 @@ public class ModelToRepresentation {
                     } else {
                         config.put(e.getKey(), e.getValue());
                     }
+                } else {
+                    config.put(e.getKey(), e.getValue());
                 }
             }
 

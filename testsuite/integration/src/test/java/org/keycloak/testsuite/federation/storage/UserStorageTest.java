@@ -16,11 +16,13 @@
  */
 package org.keycloak.testsuite.federation.storage;
 
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.common.util.Time;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
@@ -28,6 +30,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.cache.CachedUserModel;
 import org.keycloak.models.cache.infinispan.UserAdapter;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.storage.StorageId;
@@ -40,6 +43,7 @@ import org.keycloak.testsuite.rule.WebResource;
 import org.keycloak.testsuite.rule.WebRule;
 import org.openqa.selenium.WebDriver;
 
+import java.util.Calendar;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -120,6 +124,126 @@ public class UserStorageTest {
         loginSuccessAndLogout("tbrady", "goat");
         loginSuccessAndLogout("thor", "hammer");
         loginBadPassword("tbrady");
+    }
+
+    @After
+    public void resetTimeoffset() {
+        Time.setOffset(0);
+
+    }
+
+    @Test
+    public void testIDE() throws Exception {
+        Thread.sleep(100000000);
+    }
+
+    @Test
+    public void testDailyEviction() {
+        Calendar cal = Calendar.getInstance();
+        cal.add(Calendar.HOUR, 1);
+        int hour = cal.get(Calendar.HOUR_OF_DAY);
+        int min = cal.get(Calendar.MINUTE);
+
+        UserStorageProviderModel model = new UserStorageProviderModel(writableProvider);
+        model.setCachePolicy(UserStorageProviderModel.CachePolicy.EVICT_DAILY);
+        model.setEvictionHour(cal.get(Calendar.HOUR_OF_DAY));
+        model.setEvictionMinute(cal.get(Calendar.MINUTE));
+
+        KeycloakSession session = keycloakRule.startSession();
+        RealmModel realm = session.realms().getRealmByName("test");
+        CachedUserModel thor = (CachedUserModel)session.users().getUserByUsername("thor", realm);
+        long thorTimestamp = thor.getCacheTimestamp();
+        realm.updateComponent(model);
+        keycloakRule.stopSession(session, true);
+
+        Time.setOffset(60 * 2 * 60); // 2 hours
+
+        session = keycloakRule.startSession();
+        realm = session.realms().getRealmByName("test");
+        UserModel thor2 = session.users().getUserByUsername("thor", realm);
+        Assert.assertFalse(thor2 instanceof CachedUserModel);
+        model.getConfig().remove("cachePolicy");
+        model.getConfig().remove("evictionHour");
+        model.getConfig().remove("evictionMinute");
+        realm.updateComponent(model);
+        keycloakRule.stopSession(session, true);
+    }
+
+    @Test
+    public void testWeeklyEviction() {
+        Calendar cal = Calendar.getInstance();
+
+        // sets day of the week to 4 days from now
+        cal.add(Calendar.HOUR, 4 * 24);
+
+        UserStorageProviderModel model = new UserStorageProviderModel(writableProvider);
+        model.setCachePolicy(UserStorageProviderModel.CachePolicy.EVICT_WEEKLY);
+        model.setEvictionDay(cal.get(Calendar.DAY_OF_WEEK));
+        model.setEvictionHour(cal.get(Calendar.HOUR_OF_DAY));
+        model.setEvictionMinute(cal.get(Calendar.MINUTE));
+
+        KeycloakSession session = keycloakRule.startSession();
+        RealmModel realm = session.realms().getRealmByName("test");
+        CachedUserModel thor = (CachedUserModel)session.users().getUserByUsername("thor", realm);
+        realm.updateComponent(model);
+        keycloakRule.stopSession(session, true);
+
+        Time.setOffset(60 * 60 * 24 * 2); // 2 days in future, should be cached still
+
+        session = keycloakRule.startSession();
+        realm = session.realms().getRealmByName("test");
+        // test still
+        UserModel thor2 = session.users().getUserByUsername("thor", realm);
+        Assert.assertTrue(thor2 instanceof CachedUserModel);
+        keycloakRule.stopSession(session, true);
+        Time.setOffset(Time.getOffset() + 60 * 60 * 24 * 3); // 3 days into future, cache will be invalidated
+
+        session = keycloakRule.startSession();
+        realm = session.realms().getRealmByName("test");
+        thor2 = session.users().getUserByUsername("thor", realm);
+        Assert.assertFalse(thor2 instanceof CachedUserModel);
+        model.getConfig().remove("cachePolicy");
+        model.getConfig().remove("evictionHour");
+        model.getConfig().remove("evictionMinute");
+        model.getConfig().remove("evictionDay");
+        realm.updateComponent(model);
+        keycloakRule.stopSession(session, true);
+    }
+
+    @Test
+    public void testNoCache() {
+        UserStorageProviderModel model = new UserStorageProviderModel(writableProvider);
+        model.setCachePolicy(UserStorageProviderModel.CachePolicy.NO_CACHE);
+        KeycloakSession session = keycloakRule.startSession();
+        RealmModel realm = session.realms().getRealmByName("test");
+        CachedUserModel thor = (CachedUserModel)session.users().getUserByUsername("thor", realm);
+        realm.updateComponent(model);
+        keycloakRule.stopSession(session, true);
+
+
+        session = keycloakRule.startSession();
+        realm = session.realms().getRealmByName("test");
+        // test still
+        UserModel thor2 = session.users().getUserByUsername("thor", realm);
+        Assert.assertFalse(thor2 instanceof CachedUserModel);
+        keycloakRule.stopSession(session, true);
+
+        session = keycloakRule.startSession();
+        realm = session.realms().getRealmByName("test");
+        thor2 = session.users().getUserByUsername("thor", realm);
+        Assert.assertFalse(thor2 instanceof CachedUserModel);
+        model.getConfig().remove("cachePolicy");
+        model.getConfig().remove("evictionHour");
+        model.getConfig().remove("evictionMinute");
+        model.getConfig().remove("evictionDay");
+        realm.updateComponent(model);
+        keycloakRule.stopSession(session, true);
+
+        session = keycloakRule.startSession();
+        realm = session.realms().getRealmByName("test");
+        thor = (CachedUserModel)session.users().getUserByUsername("thor", realm);
+        keycloakRule.stopSession(session, true);
+
     }
 
     @Test
