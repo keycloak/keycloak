@@ -402,14 +402,14 @@ public class SamlProtocol implements LoginProtocol {
             if (canonicalization != null) {
                 bindingBuilder.canonicalizationMethod(canonicalization);
             }
-            bindingBuilder.signatureAlgorithm(samlClient.getSignatureAlgorithm()).signWith(keys.getPrivateKey(), keys.getPublicKey(), keys.getCertificate()).signDocument();
+            bindingBuilder.signatureAlgorithm(samlClient.getSignatureAlgorithm()).signWith(keys.getKid(), keys.getPrivateKey(), keys.getPublicKey(), keys.getCertificate()).signDocument();
         }
         if (samlClient.requiresAssertionSignature()) {
             String canonicalization = samlClient.getCanonicalizationMethod();
             if (canonicalization != null) {
                 bindingBuilder.canonicalizationMethod(canonicalization);
             }
-            bindingBuilder.signatureAlgorithm(samlClient.getSignatureAlgorithm()).signWith(keys.getPrivateKey(), keys.getPublicKey(), keys.getCertificate()).signAssertions();
+            bindingBuilder.signatureAlgorithm(samlClient.getSignatureAlgorithm()).signWith(keys.getKid(), keys.getPrivateKey(), keys.getPublicKey(), keys.getCertificate()).signAssertions();
         }
         if (samlClient.requiresEncryption()) {
             PublicKey publicKey = null;
@@ -541,7 +541,7 @@ public class SamlProtocol implements LoginProtocol {
                 binding.canonicalizationMethod(canonicalization);
             }
             KeyManager.ActiveKey keys = session.keys().getActiveKey(realm);
-            binding.signatureAlgorithm(algorithm).signWith(keys.getPrivateKey(), keys.getPublicKey(), keys.getCertificate()).signDocument();
+            binding.signatureAlgorithm(algorithm).signWith(keys.getKid(), keys.getPrivateKey(), keys.getPublicKey(), keys.getCertificate()).signDocument();
         }
 
         try {
@@ -639,7 +639,7 @@ public class SamlProtocol implements LoginProtocol {
         JaxrsSAML2BindingBuilder binding = new JaxrsSAML2BindingBuilder();
         if (samlClient.requiresRealmSignature()) {
             KeyManager.ActiveKey keys = session.keys().getActiveKey(realm);
-            binding.signatureAlgorithm(samlClient.getSignatureAlgorithm()).signWith(keys.getPrivateKey(), keys.getPublicKey(), keys.getCertificate()).signDocument();
+            binding.signatureAlgorithm(samlClient.getSignatureAlgorithm()).signWith(keys.getKid(), keys.getPrivateKey(), keys.getPublicKey(), keys.getCertificate()).signDocument();
         }
         return binding;
     }

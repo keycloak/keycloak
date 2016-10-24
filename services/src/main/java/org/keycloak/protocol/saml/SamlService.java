@@ -400,7 +400,7 @@ public class SamlService extends AuthorizationEndpointBase {
             if (samlClient.requiresRealmSignature()) {
                 SignatureAlgorithm algorithm = samlClient.getSignatureAlgorithm();
                 KeyManager.ActiveKey keys = session.keys().getActiveKey(realm);
-                binding.signatureAlgorithm(algorithm).signWith(keys.getPrivateKey(), keys.getPublicKey(), keys.getCertificate()).signDocument();
+                binding.signatureAlgorithm(algorithm).signWith(keys.getKid(), keys.getPrivateKey(), keys.getPublicKey(), keys.getCertificate()).signDocument();
 
             }
             try {

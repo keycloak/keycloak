@@ -267,7 +267,7 @@ public class SAMLEndpoint {
                         .relayState(relayState);
             if (config.isWantAuthnRequestsSigned()) {
                 KeyManager.ActiveKey keys = session.keys().getActiveKey(realm);
-                binding.signWith(keys.getPrivateKey(), keys.getPublicKey(), keys.getCertificate())
+                binding.signWith(keys.getKid(), keys.getPrivateKey(), keys.getPublicKey(), keys.getCertificate())
                         .signatureAlgorithm(provider.getSignatureAlgorithm())
                         .signDocument();
             }

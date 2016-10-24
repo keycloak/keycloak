@@ -121,7 +121,7 @@ public class SAML2Signature {
      * @throws MarshalException
      * @throws GeneralSecurityException
      */
-    public Document sign(Document doc, String referenceID, KeyPair keyPair, String canonicalizationMethodType) throws ParserConfigurationException,
+    public Document sign(Document doc, String referenceID, String keyId, KeyPair keyPair, String canonicalizationMethodType) throws ParserConfigurationException,
             GeneralSecurityException, MarshalException, XMLSignatureException {
         String referenceURI = "#" + referenceID;
 
@@ -130,6 +130,7 @@ public class SAML2Signature {
         if (sibling != null) {
             SignatureUtilTransferObject dto = new SignatureUtilTransferObject();
             dto.setDocumentToBeSigned(doc);
+            dto.setKeyId(keyId);
             dto.setKeyPair(keyPair);
             dto.setDigestMethod(digestMethod);
             dto.setSignatureMethod(signatureMethod);
@@ -142,7 +143,7 @@ public class SAML2Signature {
 
             return XMLSignatureUtil.sign(dto, canonicalizationMethodType);
         }
-        return XMLSignatureUtil.sign(doc, keyPair, digestMethod, signatureMethod, referenceURI, canonicalizationMethodType);
+        return XMLSignatureUtil.sign(doc, keyId, keyPair, digestMethod, signatureMethod, referenceURI, canonicalizationMethodType);
     }
 
     /**
@@ -153,11 +154,11 @@ public class SAML2Signature {
      *
      * @throws org.keycloak.saml.common.exceptions.ProcessingException
      */
-    public void signSAMLDocument(Document samlDocument, KeyPair keypair, String canonicalizationMethodType) throws ProcessingException {
+    public void signSAMLDocument(Document samlDocument, String keyId, KeyPair keypair, String canonicalizationMethodType) throws ProcessingException {
         // Get the ID from the root
         String id = samlDocument.getDocumentElement().getAttribute(ID_ATTRIBUTE_NAME);
         try {
-            sign(samlDocument, id, keypair, canonicalizationMethodType);
+            sign(samlDocument, id, keyId, keypair, canonicalizationMethodType);
         } catch (Exception e) {
             throw new ProcessingException(logger.signatureError(e));
         }

@@ -103,7 +103,7 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
 
                 KeyPair keypair = new KeyPair(keys.getPublicKey(), keys.getPrivateKey());
 
-                binding.signWith(keypair);
+                binding.signWith(keys.getKid(), keypair);
                 binding.signatureAlgorithm(getSignatureAlgorithm());
                 binding.signDocument();
             }
@@ -198,7 +198,7 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
                 .relayState(userSession.getId());
         if (getConfig().isWantAuthnRequestsSigned()) {
             KeyManager.ActiveKey keys = session.keys().getActiveKey(realm);
-            binding.signWith(keys.getPrivateKey(), keys.getPublicKey(), keys.getCertificate())
+            binding.signWith(keys.getKid(), keys.getPrivateKey(), keys.getPublicKey(), keys.getCertificate())
                     .signatureAlgorithm(getSignatureAlgorithm())
                     .signDocument();
         }

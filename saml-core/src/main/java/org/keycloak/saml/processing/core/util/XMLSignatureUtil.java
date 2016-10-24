@@ -79,7 +79,9 @@ import java.security.interfaces.DSAPublicKey;
 import java.security.interfaces.RSAPublicKey;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
+import javax.xml.crypto.dsig.keyinfo.KeyName;
 
 /**
  * Utility for XML Signature <b>Note:</b> You can change the canonicalization method type by using the system property
@@ -157,7 +159,7 @@ public class XMLSignatureUtil {
      * @throws MarshalException
      * @throws GeneralSecurityException
      */
-    public static Document sign(Document doc, Node nodeToBeSigned, KeyPair keyPair, String digestMethod,
+    public static Document sign(Document doc, Node nodeToBeSigned, String keyId, KeyPair keyPair, String digestMethod,
                                 String signatureMethod, String referenceURI, X509Certificate x509Certificate,
                                 String canonicalizationMethodType) throws ParserConfigurationException, GeneralSecurityException,
             MarshalException, XMLSignatureException {
@@ -179,7 +181,7 @@ public class XMLSignatureUtil {
         if (!referenceURI.isEmpty()) {
             propagateIDAttributeSetup(nodeToBeSigned, newDoc.getDocumentElement());
         }
-        newDoc = sign(newDoc, keyPair, digestMethod, signatureMethod, referenceURI, x509Certificate, canonicalizationMethodType);
+        newDoc = sign(newDoc, keyId, keyPair, digestMethod, signatureMethod, referenceURI, x509Certificate, canonicalizationMethodType);
 
         // if the signed element is a SAMLv2.0 assertion we need to move the signature element to the position
         // specified in the schema (before the assertion subject element).
@@ -220,10 +222,10 @@ public class XMLSignatureUtil {
      * @throws MarshalException
      * @throws XMLSignatureException
      */
-    public static void sign(Element elementToSign, Node nextSibling, KeyPair keyPair, String digestMethod,
+    public static void sign(Element elementToSign, Node nextSibling, String keyId, KeyPair keyPair, String digestMethod,
                             String signatureMethod, String referenceURI, String canonicalizationMethodType)
             throws GeneralSecurityException, MarshalException, XMLSignatureException {
-        sign(elementToSign, nextSibling, keyPair, digestMethod, signatureMethod, referenceURI, null, canonicalizationMethodType);
+        sign(elementToSign, nextSibling, keyId, keyPair, digestMethod, signatureMethod, referenceURI, null, canonicalizationMethodType);
     }
 
     /**
@@ -242,7 +244,7 @@ public class XMLSignatureUtil {
      * @throws XMLSignatureException
      * @since 2.5.0
      */
-    public static void sign(Element elementToSign, Node nextSibling, KeyPair keyPair, String digestMethod,
+    public static void sign(Element elementToSign, Node nextSibling, String keyId, KeyPair keyPair, String digestMethod,
                             String signatureMethod, String referenceURI, X509Certificate x509Certificate, String canonicalizationMethodType)
             throws GeneralSecurityException, MarshalException, XMLSignatureException {
         PrivateKey signingKey = keyPair.getPrivate();
@@ -250,7 +252,7 @@ public class XMLSignatureUtil {
 
         DOMSignContext dsc = new DOMSignContext(signingKey, elementToSign, nextSibling);
 
-        signImpl(dsc, digestMethod, signatureMethod, referenceURI, publicKey, x509Certificate, canonicalizationMethodType);
+        signImpl(dsc, digestMethod, signatureMethod, referenceURI, keyId, publicKey, x509Certificate, canonicalizationMethodType);
     }
 
     /**
@@ -284,9 +286,9 @@ public class XMLSignatureUtil {
      * @throws XMLSignatureException
      * @throws MarshalException
      */
-    public static Document sign(Document doc, KeyPair keyPair, String digestMethod, String signatureMethod, String referenceURI, String canonicalizationMethodType)
+    public static Document sign(Document doc, String keyId, KeyPair keyPair, String digestMethod, String signatureMethod, String referenceURI, String canonicalizationMethodType)
             throws GeneralSecurityException, MarshalException, XMLSignatureException {
-        return sign(doc, keyPair, digestMethod, signatureMethod, referenceURI, null, canonicalizationMethodType);
+        return sign(doc, keyId, keyPair, digestMethod, signatureMethod, referenceURI, null, canonicalizationMethodType);
     }
 
     /**
@@ -304,7 +306,7 @@ public class XMLSignatureUtil {
      * @throws MarshalException
      * @since 2.5.0
      */
-    public static Document sign(Document doc, KeyPair keyPair, String digestMethod, String signatureMethod, String referenceURI,
+    public static Document sign(Document doc, String keyId, KeyPair keyPair, String digestMethod, String signatureMethod, String referenceURI,
                                 X509Certificate x509Certificate, String canonicalizationMethodType)
             throws GeneralSecurityException, MarshalException, XMLSignatureException {
         logger.trace("Document to be signed=" + DocumentUtil.asString(doc));
@@ -313,7 +315,7 @@ public class XMLSignatureUtil {
 
         DOMSignContext dsc = new DOMSignContext(signingKey, doc.getDocumentElement());
 
-        signImpl(dsc, digestMethod, signatureMethod, referenceURI, publicKey, x509Certificate, canonicalizationMethodType);
+        signImpl(dsc, digestMethod, signatureMethod, referenceURI, keyId, publicKey, x509Certificate, canonicalizationMethodType);
 
         return doc;
     }
@@ -344,7 +346,7 @@ public class XMLSignatureUtil {
 
         DOMSignContext dsc = new DOMSignContext(signingKey, doc.getDocumentElement(), nextSibling);
 
-        signImpl(dsc, digestMethod, signatureMethod, referenceURI, publicKey, dto.getX509Certificate(), canonicalizationMethodType);
+        signImpl(dsc, digestMethod, signatureMethod, referenceURI, dto.getKeyId(), publicKey, dto.getX509Certificate(), canonicalizationMethodType);
 
         return doc;
     }
@@ -594,7 +596,7 @@ public class XMLSignatureUtil {
         throw logger.unsupportedType(key.toString());
     }
 
-    private static void signImpl(DOMSignContext dsc, String digestMethod, String signatureMethod, String referenceURI, PublicKey publicKey,
+    private static void signImpl(DOMSignContext dsc, String digestMethod, String signatureMethod, String referenceURI, String keyId, PublicKey publicKey,
                                  X509Certificate x509Certificate, String canonicalizationMethodType)
             throws GeneralSecurityException, MarshalException, XMLSignatureException {
         dsc.setDefaultNamespacePrefix("dsig");
@@ -618,35 +620,32 @@ public class XMLSignatureUtil {
 
         KeyInfo ki = null;
         if (includeKeyInfoInSignature) {
-            ki = createKeyInfo(publicKey, x509Certificate);
+            ki = createKeyInfo(keyId, publicKey, x509Certificate);
+        } else {
+            ki = createKeyInfo(keyId, null, null);
         }
         XMLSignature signature = fac.newXMLSignature(si, ki);
 
         signature.sign(dsc);
     }
 
-    private static KeyInfo createKeyInfo(PublicKey publicKey, X509Certificate x509Certificate) throws KeyException {
+    private static KeyInfo createKeyInfo(String keyId, PublicKey publicKey, X509Certificate x509Certificate) throws KeyException {
         KeyInfoFactory keyInfoFactory = fac.getKeyInfoFactory();
-        KeyInfo keyInfo = null;
-        KeyValue keyValue = null;
-        //Just with public key
-        if (publicKey != null) {
-            keyValue = keyInfoFactory.newKeyValue(publicKey);
-            keyInfo = keyInfoFactory.newKeyInfo(Collections.singletonList(keyValue));
+
+        List<Object> items = new LinkedList<>();
+
+        if (keyId != null) {
+            items.add(keyInfoFactory.newKeyName(keyId));
         }
+
         if (x509Certificate != null) {
-            List x509list = new ArrayList();
-
-            x509list.add(x509Certificate);
-            X509Data x509Data = keyInfoFactory.newX509Data(x509list);
-            List items = new ArrayList();
-
-            items.add(x509Data);
-            if (keyValue != null) {
-                items.add(keyValue);
-            }
-            keyInfo = keyInfoFactory.newKeyInfo(items);
+            items.add(keyInfoFactory.newX509Data(Collections.singletonList(x509Certificate)));
         }
-        return keyInfo;
+
+        if (publicKey != null) {
+            items.add(keyInfoFactory.newKeyValue(publicKey));
+        }
+
+        return keyInfoFactory.newKeyInfo(items);
     }
 }

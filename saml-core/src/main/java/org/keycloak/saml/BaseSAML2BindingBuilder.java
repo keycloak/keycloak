@@ -55,6 +55,7 @@ import static org.keycloak.saml.common.util.StringUtil.isNotNull;
 public class BaseSAML2BindingBuilder<T extends BaseSAML2BindingBuilder> {
     protected static final Logger logger = Logger.getLogger(BaseSAML2BindingBuilder.class);
 
+    protected String signingKeyId;
     protected KeyPair signingKeyPair;
     protected X509Certificate signingCertificate;
     protected boolean sign;
@@ -82,23 +83,27 @@ public class BaseSAML2BindingBuilder<T extends BaseSAML2BindingBuilder> {
         return (T)this;
     }
 
-    public T signWith(KeyPair keyPair) {
+    public T signWith(String signingKeyId, KeyPair keyPair) {
+        this.signingKeyId = signingKeyId;
         this.signingKeyPair = keyPair;
         return (T)this;
     }
 
-    public T signWith(PrivateKey privateKey, PublicKey publicKey) {
+    public T signWith(String signingKeyId, PrivateKey privateKey, PublicKey publicKey) {
+        this.signingKeyId = signingKeyId;
         this.signingKeyPair = new KeyPair(publicKey, privateKey);
         return (T)this;
     }
 
-    public T signWith(KeyPair keyPair, X509Certificate cert) {
+    public T signWith(String signingKeyId, KeyPair keyPair, X509Certificate cert) {
+        this.signingKeyId = signingKeyId;
         this.signingKeyPair = keyPair;
         this.signingCertificate = cert;
         return (T)this;
     }
 
-    public T signWith(PrivateKey privateKey, PublicKey publicKey, X509Certificate cert) {
+    public T signWith(String signingKeyId, PrivateKey privateKey, PublicKey publicKey, X509Certificate cert) {
+        this.signingKeyId = signingKeyId;
         this.signingKeyPair = new KeyPair(publicKey, privateKey);
         this.signingCertificate = cert;
         return (T)this;
@@ -263,7 +268,7 @@ public class BaseSAML2BindingBuilder<T extends BaseSAML2BindingBuilder> {
             samlSignature.setX509Certificate(signingCertificate);
         }
 
-        samlSignature.signSAMLDocument(samlDocument, signingKeyPair, canonicalizationMethodType);
+        samlSignature.signSAMLDocument(samlDocument, signingKeyId, signingKeyPair, canonicalizationMethodType);
     }
 
     public void signAssertion(Document samlDocument) throws ProcessingException {

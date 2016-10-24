@@ -82,7 +82,7 @@ public class WebBrowserSsoAuthenticationHandler extends AbstractSamlAuthenticati
             if (deployment.getSignatureCanonicalizationMethod() != null)
                 binding.canonicalizationMethod(deployment.getSignatureCanonicalizationMethod());
             binding.signatureAlgorithm(deployment.getSignatureAlgorithm())
-                    .signWith(deployment.getSigningKeyPair())
+                    .signWith(null, deployment.getSigningKeyPair())
                     .signDocument();
         }
 
@@ -113,7 +113,7 @@ public class WebBrowserSsoAuthenticationHandler extends AbstractSamlAuthenticati
             if (deployment.getSignatureCanonicalizationMethod() != null)
                 binding.canonicalizationMethod(deployment.getSignatureCanonicalizationMethod());
             binding.signatureAlgorithm(deployment.getSignatureAlgorithm());
-            binding.signWith(deployment.getSigningKeyPair())
+            binding.signWith(null, deployment.getSigningKeyPair())
                     .signDocument();
         }
 

@@ -79,7 +79,7 @@ public abstract class AbstractInitiateLogin implements AuthChallenge {
                 binding.canonicalizationMethod(deployment.getSignatureCanonicalizationMethod());
             }
 
-            binding.signWith(keypair);
+            binding.signWith(null, keypair);
             binding.signDocument();
         }
         return binding;
