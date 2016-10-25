@@ -24,6 +24,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderFactory;
+import org.keycloak.representations.idm.ComponentRepresentation;
 
 import java.util.HashMap;
 import java.util.List;
@@ -34,9 +35,25 @@ import java.util.Map;
  */
 public class ComponentUtil {
 
+    public static Map<String, ProviderConfigProperty> getComponentConfigProperties(KeycloakSession session, ComponentRepresentation component) {
+        return getComponentConfigProperties(session, component.getProviderType(), component.getProviderId());
+    }
+
     public static Map<String, ProviderConfigProperty> getComponentConfigProperties(KeycloakSession session, ComponentModel component) {
+        return getComponentConfigProperties(session, component.getProviderType(), component.getProviderId());
+    }
+
+    public static ComponentFactory getComponentFactory(KeycloakSession session, ComponentRepresentation component) {
+        return getComponentFactory(session, component.getProviderType(), component.getProviderId());
+    }
+
+    public static ComponentFactory getComponentFactory(KeycloakSession session, ComponentModel component) {
+        return getComponentFactory(session, component.getProviderType(), component.getProviderId());
+    }
+
+    private static Map<String, ProviderConfigProperty> getComponentConfigProperties(KeycloakSession session, String providerType, String providerId) {
         try {
-            List<ProviderConfigProperty> l = getComponentFactory(session, component).getConfigProperties();
+            List<ProviderConfigProperty> l = getComponentFactory(session, providerType, providerId).getConfigProperties();
             Map<String, ProviderConfigProperty> properties = new HashMap<>();
             for (ProviderConfigProperty p : l) {
                 properties.put(p.getName(), p);
@@ -47,15 +64,15 @@ public class ComponentUtil {
         }
     }
 
-    public static ComponentFactory getComponentFactory(KeycloakSession session, ComponentModel component) {
-        Class<? extends Provider> provider = session.getProviderClass(component.getProviderType());
+    private static ComponentFactory getComponentFactory(KeycloakSession session, String providerType, String providerId) {
+        Class<? extends Provider> provider = session.getProviderClass(providerType);
         if (provider == null) {
-            throw new RuntimeException("Invalid provider type '" + component.getProviderType() + "'");
+            throw new RuntimeException("Invalid provider type '" + providerType + "'");
         }
 
-        ProviderFactory<? extends Provider> f = session.getKeycloakSessionFactory().getProviderFactory(provider, component.getProviderId());
+        ProviderFactory<? extends Provider> f = session.getKeycloakSessionFactory().getProviderFactory(provider, providerId);
         if (f == null) {
-            throw new RuntimeException("No such provider '" + component.getProviderId() + "'");
+            throw new RuntimeException("No such provider '" + providerId + "'");
         }
 
         ComponentFactory cf = (ComponentFactory) f;

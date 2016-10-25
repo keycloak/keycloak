@@ -303,7 +303,7 @@ public class ModelToRepresentation {
         rep.setAccessCodeLifespan(realm.getAccessCodeLifespan());
         rep.setAccessCodeLifespanUserAction(realm.getAccessCodeLifespanUserAction());
         rep.setAccessCodeLifespanLogin(realm.getAccessCodeLifespanLogin());
-        rep.setSmtpServer(realm.getSmtpConfig());
+        rep.setSmtpServer(new HashMap<>(realm.getSmtpConfig()));
         rep.setBrowserSecurityHeaders(realm.getBrowserSecurityHeaders());
         rep.setAccountTheme(realm.getAccountTheme());
         rep.setLoginTheme(realm.getLoginTheme());
@@ -796,26 +796,9 @@ public class ModelToRepresentation {
         rep.setProviderType(component.getProviderType());
         rep.setSubType(component.getSubType());
         rep.setParentId(component.getParentId());
-        if (internal) {
-            rep.setConfig(component.getConfig());
-        } else {
-            Map<String, ProviderConfigProperty> configProperties = ComponentUtil.getComponentConfigProperties(session, component);
-            MultivaluedHashMap<String, String> config = new MultivaluedHashMap<>();
-
-            for (Map.Entry<String, List<String>> e : component.getConfig().entrySet()) {
-                ProviderConfigProperty configProperty = configProperties.get(e.getKey());
-                if (configProperty != null) {
-                    if (configProperty.isSecret()) {
-                        config.putSingle(e.getKey(), ComponentRepresentation.SECRET_VALUE);
-                    } else {
-                        config.put(e.getKey(), e.getValue());
-                    }
-                } else {
-                    config.put(e.getKey(), e.getValue());
-                }
-            }
-
-            rep.setConfig(config);
+        rep.setConfig(new MultivaluedHashMap<>(component.getConfig()));
+        if (!internal) {
+            rep = StripSecretsUtils.strip(session, rep);
         }
         return rep;
     }

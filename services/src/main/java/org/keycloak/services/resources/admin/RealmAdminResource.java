@@ -49,6 +49,7 @@ import org.keycloak.models.cache.UserCache;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
+import org.keycloak.models.utils.StripSecretsUtils;
 import org.keycloak.partialimport.PartialImportManager;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.provider.ProviderFactory;
@@ -309,7 +310,7 @@ public class RealmAdminResource {
                 usersSyncManager.notifyToRefreshPeriodicSync(session, realm, fedProvider, false);
             }
 
-            adminEvent.operation(OperationType.UPDATE).representation(rep).success();
+            adminEvent.operation(OperationType.UPDATE).representation(StripSecretsUtils.strip(rep)).success();
             return Response.noContent().build();
         } catch (PatternSyntaxException e) {
             return ErrorResponse.error("Specified regex pattern(s) is invalid.", Response.Status.BAD_REQUEST);

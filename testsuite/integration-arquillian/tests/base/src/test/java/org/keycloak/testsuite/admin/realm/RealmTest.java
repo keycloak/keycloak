@@ -31,7 +31,10 @@ import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.Constants;
 import org.keycloak.representations.adapters.action.GlobalRequestResult;
 import org.keycloak.representations.adapters.action.PushNotBeforeAction;
+import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.ComponentRepresentation;
+import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
@@ -45,6 +48,7 @@ import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.util.AdminEventPaths;
 import org.keycloak.testsuite.util.CredentialBuilder;
 import org.keycloak.testsuite.util.OAuthClient.AccessTokenResponse;
+import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.util.JsonSerialization;
 
@@ -122,6 +126,34 @@ public class RealmTest extends AbstractAdminTest {
         adminClient.realms().realm("new-realm").remove();
 
         Assert.assertNames(adminClient.realms().findAll(), "master", AuthRealm.TEST, REALM_NAME);
+    }
+
+    @Test
+    public void smtpPasswordSecret() {
+        RealmRepresentation rep = RealmBuilder.create().testEventListener().testMail().build();
+        rep.setRealm("realm-with-smtp");
+        rep.getSmtpServer().put("user", "user");
+        rep.getSmtpServer().put("password", "secret");
+
+        adminClient.realms().create(rep);
+
+        RealmRepresentation returned = adminClient.realm("realm-with-smtp").toRepresentation();
+        assertEquals(ComponentRepresentation.SECRET_VALUE, returned.getSmtpServer().get("password"));
+
+        assertEquals("secret", testingClient.testing("realm-with-smtp").getSmtpConfig().get("password"));
+
+        adminClient.realm("realm-with-smtp").update(rep);
+
+        AdminEventRepresentation event = testingClient.testing().pollAdminEvent();
+        assertFalse(event.getRepresentation().contains("some secret value!!"));
+        assertTrue(event.getRepresentation().contains(ComponentRepresentation.SECRET_VALUE));
+
+        assertEquals("secret", testingClient.testing("realm-with-smtp").getSmtpConfig().get("password"));
+
+        RealmRepresentation realm = adminClient.realms().findAll().stream().filter(r -> r.getRealm().equals("realm-with-smtp")).findFirst().get();
+        assertEquals(ComponentRepresentation.SECRET_VALUE, realm.getSmtpServer().get("password"));
+
+        adminClient.realm("realm-with-smtp").remove();
     }
 
     @Test

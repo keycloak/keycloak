@@ -133,7 +133,6 @@ public class LoginStatusIframeEndpointTest extends AbstractKeycloakTest {
 
             get = new HttpGet(suiteContext.getAuthServerInfo().getContextRoot() + "/auth/realms/master/protocol/openid-connect/login-status-iframe.html/init?"
                 + "client_id=invalid"
-                + "&session_state=" + sessionCookie.getValue()
                 + "&origin=" + suiteContext.getAuthServerInfo().getContextRoot()
             );
             response = client.execute(get);
@@ -142,16 +141,6 @@ public class LoginStatusIframeEndpointTest extends AbstractKeycloakTest {
 
             get = new HttpGet(suiteContext.getAuthServerInfo().getContextRoot() + "/auth/realms/master/protocol/openid-connect/login-status-iframe.html/init?"
                 + "client_id=" + Constants.ADMIN_CONSOLE_CLIENT_ID
-                + "&session_state=invalid"
-                + "&origin=" + suiteContext.getAuthServerInfo().getContextRoot()
-            );
-            response = client.execute(get);
-            assertEquals(403, response.getStatusLine().getStatusCode());
-            response.close();
-
-            get = new HttpGet(suiteContext.getAuthServerInfo().getContextRoot() + "/auth/realms/master/protocol/openid-connect/login-status-iframe.html/init?"
-                + "client_id=" + Constants.ADMIN_CONSOLE_CLIENT_ID
-                + "&session_state=" + sessionCookie.getValue()
                 + "&origin=http://invalid"
             );
             response = client.execute(get);
@@ -160,16 +149,6 @@ public class LoginStatusIframeEndpointTest extends AbstractKeycloakTest {
 
             get = new HttpGet(suiteContext.getAuthServerInfo().getContextRoot() + "/auth/realms/master/protocol/openid-connect/login-status-iframe.html/init?"
                 + "client_id=" + Constants.ADMIN_CONSOLE_CLIENT_ID
-                + "&session_state=master/random/random"
-                + "&origin=" + suiteContext.getAuthServerInfo().getContextRoot()
-            );
-            response = client.execute(get);
-            assertEquals(404, response.getStatusLine().getStatusCode());
-            response.close();
-
-            get = new HttpGet(suiteContext.getAuthServerInfo().getContextRoot() + "/auth/realms/master/protocol/openid-connect/login-status-iframe.html/init?"
-                + "client_id=" + Constants.ADMIN_CONSOLE_CLIENT_ID
-                + "&session_state=" + sessionCookie.getValue()
                 + "&origin=" + suiteContext.getAuthServerInfo().getContextRoot()
             );
             response = client.execute(get);
