@@ -17,6 +17,7 @@
 
 package org.keycloak.provider;
 
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -60,6 +61,15 @@ public class ProviderConfigProperty {
         this.helpText = helpText;
         this.type = type;
         this.defaultValue = defaultValue;
+    }
+
+    public ProviderConfigProperty(String name, String label, String helpText, String type, Object defaultValue, String... options) {
+        this.name = name;
+        this.label = label;
+        this.helpText = helpText;
+        this.type = type;
+        this.defaultValue = defaultValue;
+        this.options = Arrays.asList(options);
     }
 
     public ProviderConfigProperty(String name, String label, String helpText, String type, Object defaultValue, boolean secret) {

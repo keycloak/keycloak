@@ -19,9 +19,9 @@ package org.keycloak.keys;
 
 import org.keycloak.provider.ProviderConfigProperty;
 
-import static org.keycloak.provider.ProviderConfigProperty.BOOLEAN_TYPE;
-import static org.keycloak.provider.ProviderConfigProperty.FILE_TYPE;
-import static org.keycloak.provider.ProviderConfigProperty.STRING_TYPE;
+import java.util.LinkedList;
+
+import static org.keycloak.provider.ProviderConfigProperty.*;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -44,6 +44,6 @@ public interface Attributes {
     ProviderConfigProperty CERTIFICATE_PROPERTY = new ProviderConfigProperty(CERTIFICATE_KEY, "X509 Certificate", "X509 Certificate encoded in PEM format", FILE_TYPE, null);
 
     String KEY_SIZE_KEY = "keySize";
-    ProviderConfigProperty KEY_SIZE_PROPERTY = new ProviderConfigProperty(KEY_SIZE_KEY, "Keysize", "Size for the generated keys (1024, 2048 or 4096)", STRING_TYPE, null);
+    ProviderConfigProperty KEY_SIZE_PROPERTY = new ProviderConfigProperty(KEY_SIZE_KEY, "Keysize", "Size for the generated keys (1024, 2048 or 4096)", LIST_TYPE, "2048", "1024", "2048", "4096");
 
 }
