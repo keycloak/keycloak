@@ -215,7 +215,7 @@ public class KeycloakSpringBootConfiguration {
             securityHandler.setConstraintMappings(jettyConstraintMappings);
             securityHandler.setAuthenticator(keycloakJettyAuthenticator);
 
-            webAppContext.setHandler(securityHandler);
+            webAppContext.insertHandler(securityHandler);
         }
     }
 
