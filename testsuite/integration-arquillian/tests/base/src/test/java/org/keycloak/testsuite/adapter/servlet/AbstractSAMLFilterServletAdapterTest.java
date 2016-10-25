@@ -10,7 +10,8 @@ import org.keycloak.testsuite.arquillian.annotation.UseServletFilter;
  * @author mhajas
  */
 
-@UseServletFilter(filterName = "saml-filter", filterClass = "org.keycloak.adapters.saml.servlet.SamlFilter")
+@UseServletFilter(filterName = "saml-filter", filterClass = "org.keycloak.adapters.saml.servlet.SamlFilter",
+        filterDependency = "org.keycloak:keycloak-saml-servlet-filter-adapter")
 public abstract class AbstractSAMLFilterServletAdapterTest extends AbstractSAMLServletsAdapterTest {
 
     @Before
