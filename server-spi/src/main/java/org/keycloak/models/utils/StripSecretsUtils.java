@@ -50,6 +50,7 @@ public class StripSecretsUtils {
                     next.setValue(Collections.singletonList(ComponentRepresentation.SECRET_VALUE));
                 }
             } else {
+                itr.remove();
             }
         }
         return rep;

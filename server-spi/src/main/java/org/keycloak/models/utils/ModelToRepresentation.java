@@ -385,6 +385,10 @@ public class ModelToRepresentation {
         Map<String, String> attributes = realm.getAttributes();
         rep.setAttributes(attributes);
 
+        if (!internal) {
+            rep = StripSecretsUtils.strip(rep);
+        }
+
         return rep;
     }
 
