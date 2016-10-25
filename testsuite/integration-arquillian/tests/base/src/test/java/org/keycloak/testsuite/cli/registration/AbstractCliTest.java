@@ -430,7 +430,7 @@ public abstract class AbstractCliTest extends AbstractKeycloakTest {
 
         exe = execute("get test-client --no-config --server " + serverUrl + " --realm test " + credentials + " " + extraOptions);
 
-        Assert.assertEquals("exitCode == 0", 0, exe.exitCode());
+        assertExitCodeAndStdErrSize(exe, 0, 1);
 
         ClientRepresentation client2 = JsonSerialization.readValue(exe.stdout(), ClientRepresentation.class);
         Assert.assertEquals("clientId", "test-client", client2.getClientId());
@@ -449,7 +449,7 @@ public abstract class AbstractCliTest extends AbstractKeycloakTest {
         // because the previous invocation didn't use a registration access token
         exe = execute("get test-client --no-config --server " + serverUrl + " --realm test " + extraOptions + " -t " + client.getRegistrationAccessToken());
 
-        Assert.assertEquals("exitCode == 0", 0, exe.exitCode());
+        assertExitCodeAndStdErrSize(exe, 0, 0);
 
         ClientRepresentation client3 = JsonSerialization.readValue(exe.stdout(), ClientRepresentation.class);
         Assert.assertEquals("clientId", "test-client", client3.getClientId());
@@ -466,9 +466,9 @@ public abstract class AbstractCliTest extends AbstractKeycloakTest {
 
 
         exe = execute("update test-client --no-config --server " + serverUrl + " --realm test " +
-                credentials + " " + extraOptions + " -s enabled=false -o --unsafe");
+                credentials + " " + extraOptions + " -s enabled=false -o");
 
-        Assert.assertEquals("exitCode == 0", 0, exe.exitCode());
+        assertExitCodeAndStdErrSize(exe, 0, 1);
 
         ClientRepresentation client4 = JsonSerialization.readValue(exe.stdout(), ClientRepresentation.class);
         Assert.assertEquals("clientId", "test-client", client4.getClientId());
@@ -488,7 +488,7 @@ public abstract class AbstractCliTest extends AbstractKeycloakTest {
         exe = execute("update test-client --no-config --server " + serverUrl + " --realm test " + extraOptions +
                 " -s enabled=true -o -t " + client3.getRegistrationAccessToken());
 
-        Assert.assertEquals("exitCode == 0", 0, exe.exitCode());
+        assertExitCodeAndStdErrSize(exe, 0, 0);
 
         ClientRepresentation client5 = JsonSerialization.readValue(exe.stdout(), ClientRepresentation.class);
         Assert.assertEquals("clientId", "test-client", client5.getClientId());
@@ -527,10 +527,29 @@ public abstract class AbstractCliTest extends AbstractKeycloakTest {
         Assert.assertEquals("config file not modified", lastModified, lastModified2);
     }
 
+    void assertExitCodeAndStdOutSize(KcRegExec exe, int exitCode, int stdOutLineCount) {
+        assertExitCodeAndStreamSizes(exe, exitCode, stdOutLineCount, -1);
+    }
+
+    void assertExitCodeAndStdErrSize(KcRegExec exe, int exitCode, int stdErrLineCount) {
+        assertExitCodeAndStreamSizes(exe, exitCode, -1, stdErrLineCount);
+    }
+
     void assertExitCodeAndStreamSizes(KcRegExec exe, int exitCode, int stdOutLineCount, int stdErrLineCount) {
         Assert.assertEquals("exitCode == " + exitCode, exitCode, exe.exitCode());
-        Assert.assertTrue("stdout output has " + stdOutLineCount + " lines", exe.stdoutLines().size() == stdOutLineCount);
-        Assert.assertTrue("stderr output has " + stdErrLineCount + " lines", exe.stderrLines().size() == stdErrLineCount);
-
+        if (stdOutLineCount != -1) {
+            try {
+                Assert.assertTrue("stdout output has " + stdOutLineCount + " lines", exe.stdoutLines().size() == stdOutLineCount);
+            } catch (Throwable e) {
+                throw new AssertionError("STDOUT: " + exe.stdoutString(), e);
+            }
+        }
+        if (stdErrLineCount != -1) {
+            try {
+                Assert.assertTrue("stderr output has " + stdErrLineCount + " lines", exe.stderrLines().size() == stdErrLineCount);
+            } catch (Throwable e) {
+                throw new AssertionError("STDERR: " + exe.stderrString(), e);
+            }
+        }
     }
 }
