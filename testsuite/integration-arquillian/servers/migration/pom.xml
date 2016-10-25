@@ -216,4 +216,18 @@
             </plugin>
         </plugins>
     </build>
+    
+    <profiles>
+        <profile>
+            <id>productized-server</id>
+            <activation>
+                <property>
+                    <name>previous.product.unpacked.folder.name</name>
+                </property>
+            </activation>
+            <properties>
+                <keycloak.server.home>${project.build.directory}/unpacked/${previous.product.unpacked.folder.name}</keycloak.server.home>
+            </properties>
+        </profile>
+    </profiles>
 </project>

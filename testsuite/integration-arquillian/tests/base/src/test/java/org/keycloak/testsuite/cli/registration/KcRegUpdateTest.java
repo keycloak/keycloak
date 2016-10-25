@@ -148,23 +148,6 @@ public class KcRegUpdateTest extends AbstractCliTest {
             Assert.assertTrue("stderr is empty", exe.stderrLines().isEmpty());
 
             Assert.assertNull("my_client registration token", handler.loadConfig().ensureRealmConfigData(serverUrl, realm).getClients().get("my_client"));
-
-
-
-            // test update without registration access token to produce 'unsafe' error
-            exe = execute("update my_client --config '" + configFile.getName() + "' -o -s bearerOnly=true");
-
-            Assert.assertEquals("exitCode == 1", 1, exe.exitCode());
-            Assert.assertFalse("stderr is not empty", exe.stderrLines().isEmpty());
-            Assert.assertEquals("error message", "No Registration Access Token found for client: my_client. Provide one or use --unsafe.", exe.stderrLines().get(0));
-
-
-            // test using unsafe to perform update
-            exe = execute("update my_client --config '" + configFile.getName() + "' -o -s bearerOnly=true --unsafe");
-
-            Assert.assertEquals("exitCode == 0", 0, exe.exitCode());
-            Assert.assertTrue("stderr is empty", exe.stderrLines().isEmpty());
-
         }
     }
 }

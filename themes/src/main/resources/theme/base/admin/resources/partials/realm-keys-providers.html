@@ -54,7 +54,7 @@
             <td>{{instance.providerId}}</td>
             <td>{{instance.config['priority'][0]}}</td>
             <td class="kc-action-cell" kc-open="/realms/{{realm.realm}}/keys/providers/{{instance.providerId}}/{{instance.id}}">{{:: 'edit' | translate}}</td>
-            <td class="kc-action-cell" data-ng-click="removeInstance(instance)">{{:: 'delete' | translate}}</td>
+            <td class="kc-action-cell" ng-show="instances.length > 1" data-ng-click="removeInstance(instance)">{{:: 'delete' | translate}}</td>
         </tr>
         </tbody>
     </table>
