@@ -32,13 +32,13 @@ public class KcRegCreateTest extends AbstractCliTest {
             KcRegExec exe = execute("config credentials -x --config '" + configFile.getName() +
                     "' --server " + serverUrl + " --realm master --user admin --password admin");
 
-            Assert.assertEquals("exitCode == 0", 0, exe.exitCode());
+            assertExitCodeAndStreamSizes(exe, 0, 0, 1);
 
             // use initial token of another realm with server, and realm override
             String token = issueInitialAccessToken("test");
             exe = execute("create --config '" + configFile.getName() + "' --server " + serverUrl + " --realm test -s clientId=my_first_client -t " + token);
 
-            Assert.assertEquals("exitCode == 0", 0, exe.exitCode());
+            assertExitCodeAndStreamSizes(exe, 0, 0, 1);
         }
     }
 
@@ -57,7 +57,7 @@ public class KcRegCreateTest extends AbstractCliTest {
             KcRegExec exe = execute("config initial-token -x --config '" + configFile.getName() +
                     "' --server " + serverUrl + " --realm " + realm + " " + token);
 
-            Assert.assertEquals("exitCode == 0", 0, exe.exitCode());
+            assertExitCodeAndStreamSizes(exe, 0, 0, 0);
 
             // check that current server, realm, and initial token are saved in the file
             ConfigData config = handler.loadConfig();
@@ -87,8 +87,7 @@ public class KcRegCreateTest extends AbstractCliTest {
 
                 exe = execute("create --config '" + configFile.getName() + "' -o -f - < '" + tmpFile.getName() + "'");
 
-                Assert.assertEquals("exitCode == 0", 0, exe.exitCode());
-                Assert.assertTrue("stderr is empty", exe.stderrLines().isEmpty());
+                assertExitCodeAndStdErrSize(exe, 0, 0);
 
                 ClientRepresentation client = JsonSerialization.readValue(exe.stdout(), ClientRepresentation.class);
                 Assert.assertNotNull("id", client.getId());
@@ -114,8 +113,7 @@ public class KcRegCreateTest extends AbstractCliTest {
                         " -s 'name=My Client App II' -s protocol=keycloak-oidc -s 'webOrigins=[\"http://localhost:8980/myapp2\"]'" +
                         " -s baseUrl=http://localhost:8980/myapp2 -s rootUrl=http://localhost:8980/myapp2");
 
-                Assert.assertEquals("exitCode == 0", 0, exe.exitCode());
-                Assert.assertTrue("stderr is empty", exe.stderrLines().isEmpty());
+                assertExitCodeAndStdErrSize(exe, 0, 0);
 
                 ClientRepresentation client2 = JsonSerialization.readValue(exe.stdout(), ClientRepresentation.class);
                 Assert.assertNotNull("id", client2.getId());
@@ -138,28 +136,21 @@ public class KcRegCreateTest extends AbstractCliTest {
                 // check that using an invalid attribute key is not ignored
                 exe = execute("create --config '" + configFile.getName() + "' -o -f '" + tmpFile.getName() + "' -s client_id=my_client3");
 
-                Assert.assertEquals("exitCode == 1", 1, exe.exitCode());
-                Assert.assertEquals("stderr has one line", 1, exe.stderrLines().size());
+                assertExitCodeAndStreamSizes(exe, 1, 0, 1);
                 Assert.assertEquals("Failed to set attribute 'client_id' on document type 'default'", exe.stderrLines().get(0));
             }
 
             // simple create, output an id
             exe = execute("create --config '" + configFile.getName() + "' -i -s clientId=my_client3");
 
-            Assert.assertEquals("exitCode == 0", 0, exe.exitCode());
-            Assert.assertEquals("stderr is empty", 0, exe.stderrLines().size());
-
-            Assert.assertEquals("stdout has 1 line", 1, exe.stdoutLines().size());
+            assertExitCodeAndStreamSizes(exe, 0, 1, 0);
             Assert.assertEquals("only clientId returned", "my_client3", exe.stdoutLines().get(0));
 
             // simple create, default output
             exe = execute("create --config '" + configFile.getName() + "' -s clientId=my_client4");
 
-            Assert.assertEquals("exitCode == 0", 0, exe.exitCode());
-            Assert.assertEquals("stderr has 1 line", 1, exe.stderrLines().size());
+            assertExitCodeAndStreamSizes(exe, 0, 0, 1);
             Assert.assertEquals("only clientId returned", "Registered new client with client_id 'my_client4'", exe.stderrLines().get(0));
-
-            Assert.assertEquals("stdout is empty", 0, exe.stdoutLines().size());
 
 
 
@@ -178,8 +169,7 @@ public class KcRegCreateTest extends AbstractCliTest {
                         " -s 'redirect_uris=[\"http://localhost:8980/myapp5/*\"]' -s client_uri=http://localhost:8980/myapp5" +
                         " -o -f - < '" + tmpFile.getName() + "'");
 
-                Assert.assertEquals("exitCode == 0", 0, exe.exitCode());
-                Assert.assertTrue("stderr is empty", exe.stderrLines().isEmpty());
+                assertExitCodeAndStdErrSize(exe, 0, 0);
 
                 OIDCClientRepresentation client = JsonSerialization.readValue(exe.stdout(), OIDCClientRepresentation.class);
 
@@ -195,10 +185,8 @@ public class KcRegCreateTest extends AbstractCliTest {
                 // try use incompatible endpoint override
                 exe = execute("create --config '" + configFile.getName() + "' -e default -f '" + tmpFile.getName() + "'");
 
-                Assert.assertEquals("exitCode == 1", 1, exe.exitCode());
-                Assert.assertFalse("stderr not empty", exe.stderrLines().isEmpty());
+                assertExitCodeAndStreamSizes(exe, 1, 0, 1);
                 Assert.assertEquals("Error message", "Attribute 'redirect_uris' not supported on document type 'default'", exe.stderrLines().get(0));
-
             }
 
 
@@ -208,8 +196,7 @@ public class KcRegCreateTest extends AbstractCliTest {
 
             exe = execute("create --config '" + configFile.getName() + "' -o -f - < '" + samlSpMetaFile.getAbsolutePath() + "'");
 
-            Assert.assertEquals("exitCode == 0", 0, exe.exitCode());
-            Assert.assertTrue("stderr is empty", exe.stderrLines().isEmpty());
+            assertExitCodeAndStdErrSize(exe, 0, 0);
 
             ClientRepresentation client = JsonSerialization.readValue(exe.stdout(), ClientRepresentation.class);
             Assert.assertNotNull("id", client.getId());

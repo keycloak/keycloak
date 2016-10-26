@@ -35,7 +35,8 @@ public class KcRegUpdateTest extends AbstractCliTest {
             // create an object so we can update it
             KcRegExec exe = execute("create --config '" + configFile.getName() + "' -o -s clientId=my_client");
 
-            Assert.assertEquals("exitCode == 0", 0, exe.exitCode());
+            assertExitCodeAndStdErrSize(exe, 0, 0);
+
             ClientRepresentation client = JsonSerialization.readValue(exe.stdout(), ClientRepresentation.class);
 
             Assert.assertEquals("enabled", true, client.isEnabled());
@@ -48,8 +49,7 @@ public class KcRegUpdateTest extends AbstractCliTest {
             exe = execute("update my_client --config '" + configFile.getName() + "' -o " +
                         " -s enabled=false -s 'redirectUris=[\"http://localhost:8980/myapp/*\"]'");
 
-            Assert.assertEquals("exitCode == 0", 0, exe.exitCode());
-            Assert.assertTrue("stderr is empty", exe.stderrLines().isEmpty());
+            assertExitCodeAndStdErrSize(exe, 0, 0);
 
             client = JsonSerialization.readValue(exe.stdout(), ClientRepresentation.class);
             Assert.assertEquals("enabled", false, client.isEnabled());
@@ -60,8 +60,7 @@ public class KcRegUpdateTest extends AbstractCliTest {
             // Another merge update - test deleting an attribute, deleting a list item and adding a list item
             exe = execute("update my_client --config '" + configFile.getName() + "' -o -d redirectUris -s webOrigins+=http://localhost:8980/myapp -s webOrigins+=http://localhost:8981/myapp -d webOrigins[0]");
 
-            Assert.assertEquals("exitCode == 0", 0, exe.exitCode());
-            Assert.assertTrue("stderr is empty", exe.stderrLines().isEmpty());
+            assertExitCodeAndStdErrSize(exe, 0, 0);
 
             client = JsonSerialization.readValue(exe.stdout(), ClientRepresentation.class);
 
@@ -76,8 +75,7 @@ public class KcRegUpdateTest extends AbstractCliTest {
             exe = execute("update my_client --config '" + configFile.getName() + "' -o -s 'protocolMappers[0].config.\"id.token.claim\"=false' " +
                     "-s 'protocolMappers[4].config={\"single\": \"true\", \"attribute.nameformat\": \"Basic\", \"attribute.name\": \"Role\"}'");
 
-            Assert.assertEquals("exitCode == 0", 0, exe.exitCode());
-            Assert.assertTrue("stderr is empty", exe.stderrLines().isEmpty());
+            assertExitCodeAndStdErrSize(exe, 0, 0);
 
             client = JsonSerialization.readValue(exe.stdout(), ClientRepresentation.class);
             Assert.assertEquals("protocolMapper[0].config.\"id.token.claim\"", "false", client.getProtocolMappers().get(0).getConfig().get("id.token.claim"));
@@ -112,8 +110,7 @@ public class KcRegUpdateTest extends AbstractCliTest {
                     .stdin(new ByteArrayInputStream("{ \"enabled\": false }".getBytes()))
                     .execute();
 
-            Assert.assertEquals("exitCode == 0", 0, exe.exitCode());
-            Assert.assertTrue("stderr has error", exe.stderrLines().isEmpty());
+            assertExitCodeAndStdErrSize(exe, 0, 0);
 
             client = JsonSerialization.readValue(exe.stdout(), ClientRepresentation.class);
             // web origin is not sent to the server, thus it retains the current value
@@ -130,8 +127,7 @@ public class KcRegUpdateTest extends AbstractCliTest {
                     .stdin(new ByteArrayInputStream("{ \"webOrigins\": [\"http://localhost:8980/myapp\"] }".getBytes()))
                     .execute();
 
-            Assert.assertEquals("exitCode == 0", 0, exe.exitCode());
-            Assert.assertTrue("stderr has error", exe.stderrLines().isEmpty());
+            assertExitCodeAndStdErrSize(exe, 0, 0);
 
             client = JsonSerialization.readValue(exe.stdout(), ClientRepresentation.class);
             Assert.assertEquals("webOrigins", Arrays.asList("http://localhost:8980/myapp"), client.getWebOrigins());
@@ -144,8 +140,7 @@ public class KcRegUpdateTest extends AbstractCliTest {
             exe = execute("config registration-token --config '" + configFile.getName() + "' --server " + serverUrl +
                     " --realm " + realm + " --client my_client -d");
 
-            Assert.assertEquals("exitCode == 0", 0, exe.exitCode());
-            Assert.assertTrue("stderr is empty", exe.stderrLines().isEmpty());
+            assertExitCodeAndStdErrSize(exe, 0, 0);
 
             Assert.assertNull("my_client registration token", handler.loadConfig().ensureRealmConfigData(serverUrl, realm).getClients().get("my_client"));
 
@@ -154,17 +149,14 @@ public class KcRegUpdateTest extends AbstractCliTest {
             // test update without registration access token to produce 'unsafe' error
             exe = execute("update my_client --config '" + configFile.getName() + "' -o -s bearerOnly=true");
 
-            Assert.assertEquals("exitCode == 1", 1, exe.exitCode());
-            Assert.assertFalse("stderr is not empty", exe.stderrLines().isEmpty());
+            assertExitCodeAndStreamSizes(exe, 1, 0, 1);
             Assert.assertEquals("error message", "No Registration Access Token found for client: my_client. Provide one or use --unsafe.", exe.stderrLines().get(0));
 
 
             // test using unsafe to perform update
             exe = execute("update my_client --config '" + configFile.getName() + "' -o -s bearerOnly=true --unsafe");
 
-            Assert.assertEquals("exitCode == 0", 0, exe.exitCode());
-            Assert.assertTrue("stderr is empty", exe.stderrLines().isEmpty());
-
+            assertExitCodeAndStdErrSize(exe, 0, 0);
         }
     }
 }
