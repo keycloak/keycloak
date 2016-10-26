@@ -33,11 +33,10 @@ public class ConfigInitialTokenCmd extends AbstractAuthOptionsCmd implements Com
     private boolean delete;
     private boolean keepDomain;
 
-    public ConfigInitialTokenCmd() {}
 
-    public ConfigInitialTokenCmd(ConfigCmd parent) {
+    protected void initFromParent(ConfigCmd parent) {
         this.parent = parent;
-        init(parent);
+        super.initFromParent(parent);
     }
 
     @Override

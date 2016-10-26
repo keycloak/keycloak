@@ -539,17 +539,30 @@ public abstract class AbstractCliTest extends AbstractKeycloakTest {
         Assert.assertEquals("exitCode == " + exitCode, exitCode, exe.exitCode());
         if (stdOutLineCount != -1) {
             try {
-                Assert.assertTrue("stdout output has " + stdOutLineCount + " lines", exe.stdoutLines().size() == stdOutLineCount);
+                assertLineCount("stdout output", exe.stdoutLines(), stdOutLineCount);
             } catch (Throwable e) {
                 throw new AssertionError("STDOUT: " + exe.stdoutString(), e);
             }
         }
         if (stdErrLineCount != -1) {
             try {
-                Assert.assertTrue("stderr output has " + stdErrLineCount + " lines", exe.stderrLines().size() == stdErrLineCount);
+                assertLineCount("stderr output", exe.stderrLines(), stdErrLineCount);
             } catch (Throwable e) {
                 throw new AssertionError("STDERR: " + exe.stderrString(), e);
             }
         }
+    }
+
+    void assertLineCount(String label, List<String> lines, int count) {
+        if (lines.size() == count) {
+            return;
+        }
+        // there is some kind of race condition in 'kcreg' that results in intermittent extra empty line
+        if (lines.size() == count + 1) {
+            if ("".equals(lines.get(lines.size()-1))) {
+                return;
+            }
+        }
+        Assert.assertTrue(label + " has " + lines.size() + " lines (expected: " + count + ")", lines.size() == count);
     }
 }

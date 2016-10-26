@@ -17,7 +17,7 @@ public abstract class AbstractGlobalOptionsCmd implements Command {
     @Option(name = "help", description = "Print command specific help", hasValue = false)
     protected boolean help;
 
-    protected void init(AbstractGlobalOptionsCmd parent) {
+    protected void initFromParent(AbstractGlobalOptionsCmd parent) {
         dumpTrace = parent.dumpTrace;
         help = parent.help;
     }
