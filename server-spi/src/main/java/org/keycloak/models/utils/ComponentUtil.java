@@ -53,11 +53,17 @@ public class ComponentUtil {
 
     private static Map<String, ProviderConfigProperty> getComponentConfigProperties(KeycloakSession session, String providerType, String providerId) {
         try {
-            List<ProviderConfigProperty> l = getComponentFactory(session, providerType, providerId).getConfigProperties();
+            ComponentFactory componentFactory = getComponentFactory(session, providerType, providerId);
+            List<ProviderConfigProperty> l = componentFactory.getConfigProperties();
             Map<String, ProviderConfigProperty> properties = new HashMap<>();
             for (ProviderConfigProperty p : l) {
                 properties.put(p.getName(), p);
             }
+            List<ProviderConfigProperty> common = componentFactory.getCommonProviderConfigProperties();
+            for (ProviderConfigProperty p : common) {
+                properties.put(p.getName(), p);
+            }
+
             return properties;
         } catch (Exception e) {
             throw new RuntimeException(e);

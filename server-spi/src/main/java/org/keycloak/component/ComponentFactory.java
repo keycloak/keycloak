@@ -20,7 +20,11 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.provider.ConfiguredProvider;
 import org.keycloak.provider.Provider;
+import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderFactory;
+
+import java.util.Collections;
+import java.util.List;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -40,5 +44,16 @@ public interface ComponentFactory<CreatedType, ProviderType extends Provider> ex
     void onCreate(KeycloakSession session, RealmModel realm, ComponentModel model) {
 
     }
+
+    /**
+     * These are config properties that are common across all implementation of this component type
+     *
+     * @return
+     */
+    default
+    List<ProviderConfigProperty> getCommonProviderConfigProperties() {
+        return Collections.EMPTY_LIST;
+    }
+
 
 }

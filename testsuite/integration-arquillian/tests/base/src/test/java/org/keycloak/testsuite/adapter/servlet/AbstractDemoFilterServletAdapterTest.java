@@ -8,7 +8,8 @@ import org.keycloak.testsuite.arquillian.annotation.UseServletFilter;
  * Created by zschwarz on 9/14/16.
  */
 
-@UseServletFilter(filterName = "oidc-filter", filterClass = "org.keycloak.adapters.servlet.KeycloakOIDCFilter")
+@UseServletFilter(filterName = "oidc-filter", filterClass = "org.keycloak.adapters.servlet.KeycloakOIDCFilter",
+        filterDependency = "org.keycloak:keycloak-servlet-filter-adapter")
 public abstract class AbstractDemoFilterServletAdapterTest extends AbstractDemoServletsAdapterTest {
 
 

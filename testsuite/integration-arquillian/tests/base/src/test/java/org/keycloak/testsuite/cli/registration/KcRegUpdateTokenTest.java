@@ -13,7 +13,6 @@ import org.keycloak.util.JsonSerialization;
 
 import java.io.IOException;
 
-import static org.keycloak.client.registration.cli.util.OsUtil.EOL;
 import static org.keycloak.testsuite.cli.KcRegExec.execute;
 
 /**
@@ -59,7 +58,8 @@ public class KcRegUpdateTokenTest extends AbstractCliTest {
 
             // test that the token works
             exe = execute("get reg-cli-secret-direct --no-config --server " + serverUrl + " --realm test -t " + token);
-            Assert.assertEquals("exit code", 0, exe.exitCode());
+
+            assertExitCodeAndStdErrSize(exe, 0, 0);
 
             ClientRepresentation client = JsonSerialization.readValue(exe.stdout(), ClientRepresentation.class);
             Assert.assertEquals("client representation returned", "reg-cli-secret-direct", client.getClientId());

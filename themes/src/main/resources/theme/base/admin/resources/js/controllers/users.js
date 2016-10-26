@@ -653,6 +653,9 @@ module.controller('UserFederationCtrl', function($scope, $location, $route, real
         if (instance.isUserFederationProvider) {
             return instance.priority;
         } else {
+            if (!instance.config['priority']) {
+                console.log('getInstancePriority is undefined');
+            }
             return instance.config['priority'][0];
         }
     }
@@ -740,6 +743,12 @@ module.controller('GenericUserStorageCtrl', function($scope, $location, Notifica
             if (providerFactory.metadata.synchronizable) {
                 instance.config['fullSyncPeriod'] = ['-1'];
                 instance.config['changedSyncPeriod'] = ['-1'];
+                instance.config['cachePolicy'] = ['DEFAULT'];
+                instance.config['evictionDay'] = [''];
+                instance.config['evictionHour'] = [''];
+                instance.config['evictionMinute'] = [''];
+                instance.config['maxLifespan'] = [''];
+
             }
             if (providerFactory.properties) {
 
@@ -769,6 +778,27 @@ module.controller('GenericUserStorageCtrl', function($scope, $location, Notifica
 
                 }
             }
+            if (!instance.config['cachePolicy']) {
+                instance.config['cachePolicy'] = ['DEFAULT'];
+
+            }
+            if (!instance.config['evictionDay']) {
+                instance.config['evictionDay'] = [''];
+
+            }
+            if (!instance.config['evictionHour']) {
+                instance.config['evictionHour'] = [''];
+
+            }
+            if (!instance.config['evictionMinute']) {
+                instance.config['evictionMinute'] = [''];
+
+            }
+            if (!instance.config['maxLifespan']) {
+                instance.config['maxLifespan'] = [''];
+
+            }
+
             /*
             console.log('Manage instance');
             console.log(instance.name);
