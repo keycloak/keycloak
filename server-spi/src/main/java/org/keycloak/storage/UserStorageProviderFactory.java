@@ -25,8 +25,10 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.provider.ProviderConfigurationBuilder;
 
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -94,5 +96,16 @@ public interface UserStorageProviderFactory<T extends UserStorageProvider> exten
     @Override
     default void onCreate(KeycloakSession session, RealmModel realm, ComponentModel model) {
 
+    }
+
+    /**
+     * configuration properties that are common across all UserStorageProvider implementations
+     *
+     * @return
+     */
+    @Override
+    default
+    List<ProviderConfigProperty> getCommonProviderConfigProperties() {
+        return UserStorageProviderSpi.commonConfig();
     }
 }

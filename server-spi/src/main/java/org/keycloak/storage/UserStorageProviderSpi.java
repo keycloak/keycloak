@@ -18,8 +18,13 @@
 package org.keycloak.storage;
 
 import org.keycloak.provider.Provider;
+import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.Spi;
+
+import java.util.Collections;
+import java.util.List;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -44,6 +49,41 @@ public class UserStorageProviderSpi implements Spi {
     @Override
     public Class<? extends ProviderFactory> getProviderFactoryClass() {
         return UserStorageProviderFactory.class;
+    }
+
+    private static final List<ProviderConfigProperty> commonConfig;
+
+    static {
+        List<ProviderConfigProperty> config = ProviderConfigurationBuilder.create()
+                .property()
+                .name("priority").type(ProviderConfigProperty.STRING_TYPE).add()
+                .property()
+                .name("fullSyncPeriod").type(ProviderConfigProperty.STRING_TYPE).add()
+                .property()
+                .name("changedSyncPeriod").type(ProviderConfigProperty.STRING_TYPE).add()
+                .property()
+                .name("lastSync").type(ProviderConfigProperty.STRING_TYPE).add()
+                .property()
+                .name("importEnabled").type(ProviderConfigProperty.BOOLEAN_TYPE).add()
+                .property()
+                .name("cachePolicy").type(ProviderConfigProperty.STRING_TYPE).add()
+                .property()
+                .name("maxLifespan").type(ProviderConfigProperty.STRING_TYPE).add()
+                .property()
+                .name("evictionHour").type(ProviderConfigProperty.STRING_TYPE).add()
+                .property()
+                .name("evictionMinute").type(ProviderConfigProperty.STRING_TYPE).add()
+                .property()
+                .name("evictionDay").type(ProviderConfigProperty.STRING_TYPE).add()
+                .property()
+                .name("cacheInvalidBefore").type(ProviderConfigProperty.STRING_TYPE).add()
+                .build();
+        commonConfig = Collections.unmodifiableList(config);
+    }
+
+    public static List<ProviderConfigProperty> commonConfig() {
+        return commonConfig;
+
     }
 
 }
