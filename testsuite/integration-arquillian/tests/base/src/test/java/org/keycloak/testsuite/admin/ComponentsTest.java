@@ -144,6 +144,24 @@ public class ComponentsTest extends AbstractAdminTest {
         assertEquals(1, returned.getConfig().size());
     }
 
+
+    @Test
+    public void testRename() {
+        ComponentRepresentation rep = createComponentRepresentation("mycomponent");
+        rep.getConfig().addFirst("required", "foo");
+
+        String id = createComponent(rep);
+        ComponentRepresentation returned = components.component(id).toRepresentation();
+        assertEquals("mycomponent", returned.getName());
+
+        rep.setName("myupdatedcomponent");
+
+        components.component(id).update(rep);
+
+        returned = components.component(id).toRepresentation();
+        assertEquals("myupdatedcomponent", returned.getName());
+    }
+
     @Test
     public void testSecretConfig() throws Exception {
         ComponentRepresentation rep = createComponentRepresentation("mycomponent");

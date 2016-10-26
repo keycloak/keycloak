@@ -30,11 +30,10 @@ public class ConfigRegistrationTokenCmd extends AbstractAuthOptionsCmd implement
 
     private boolean delete;
 
-    public ConfigRegistrationTokenCmd() {}
 
-    public ConfigRegistrationTokenCmd(ConfigCmd parent) {
+    protected void initFromParent(ConfigCmd parent) {
         this.parent = parent;
-        init(parent);
+        super.initFromParent(parent);
     }
 
     @Override

@@ -41,19 +41,18 @@
             <div class="form-group clearfix">
                 <label class="col-md-2 control-label" for="consoleDisplayName">{{:: 'console-display-name' | translate}} </label>
                 <div class="col-md-6">
-                    <input class="form-control" id="consoleDisplayName" type="text" ng-model="instance.name" placeholder="{{:: 'defaults-to-id' | translate}}">
+                    <input required class="form-control" id="consoleDisplayName" type="text" ng-model="instance.name" placeholder="{{:: 'defaults-to-id' | translate}}">
                 </div>
                 <kc-tooltip>{{:: 'console-display-name.tooltip' | translate}}</kc-tooltip>
             </div>
 
             <kc-component-config realm="realm" config="instance.config" properties="providerFactory.properties"></kc-component-config>
-
         </fieldset>
 
         <div class="form-group">
             <div class="col-md-10 col-md-offset-2" data-ng-show="create && access.manageRealm">
-                <button kc-save>{{:: 'save' | translate}}</button>
-                <button kc-cancel data-ng-click="cancel()">{{:: 'cancel' | translate}}</button>
+                <button kc-save data-ng-disabled="!changed">{{:: 'save' | translate}}</button>
+                <button kc-cancel data-ng-disabled="!changed" data-ng-click="cancel()">{{:: 'cancel' | translate}}</button>
             </div>
         </div>
 

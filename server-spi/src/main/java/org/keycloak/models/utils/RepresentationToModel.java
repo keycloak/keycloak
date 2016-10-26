@@ -1746,6 +1746,10 @@ public class RepresentationToModel {
     }
 
     public static void updateComponent(KeycloakSession session, ComponentRepresentation rep, ComponentModel component, boolean internal) {
+        if (rep.getName() != null) {
+            component.setName(rep.getName());
+        }
+
         if (rep.getParentId() != null) {
             component.setParentId(rep.getParentId());
         }
