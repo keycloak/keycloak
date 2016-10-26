@@ -1112,12 +1112,10 @@ module.controller('RealmKeysProvidersCtrl', function($scope, Realm, realm, $http
         parent: realm.id,
         type: 'org.keycloak.keys.KeyProvider'
     }, function(data) {
-        console.debug(data);
         $scope.instances = data;
     });
 
     $scope.addProvider = function(provider) {
-        console.log('Add provider: ' + provider.id);
         $location.url("/create/keys/" + realm.realm + "/providers/" + provider.id);
     };
 
@@ -1159,19 +1157,27 @@ module.controller('GenericKeystoreCtrl', function($scope, $location, Notificatio
                 'priority': ["0"]
             }
         }
+    } else {
+        $scope.instance = angular.copy(instance);
+    }
 
-        if (providerFactory.properties) {
-            for (var i = 0; i < providerFactory.properties.length; i++) {
-                var configProperty = providerFactory.properties[i];
+    if (providerFactory.properties) {
+        for (var i = 0; i < providerFactory.properties.length; i++) {
+            var configProperty = providerFactory.properties[i];
+            if (!$scope.instance.config[configProperty.name]) {
                 if (configProperty.defaultValue) {
                     $scope.instance.config[configProperty.name] = [configProperty.defaultValue];
+                    if (!$scope.create) {
+                        instance.config[configProperty.name] = [configProperty.defaultValue];
+                    }
                 } else {
                     $scope.instance.config[configProperty.name] = [''];
+                    if (!$scope.create) {
+                        instance.config[configProperty.name] = [configProperty.defaultValue];
+                    }
                 }
             }
         }
-    } else {
-        $scope.instance = angular.copy(instance);
     }
 
     $scope.$watch('instance', function() {
