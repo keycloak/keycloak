@@ -26,25 +26,25 @@
  */
 package cx.ath.matthew.unix;
 
+import jnr.unixsocket.UnixSocketChannel;
+
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.channels.Channels;
 
 public class USInputStream extends InputStream {
     public static final int MSG_DONTWAIT = 0x40;
+    private UnixSocketChannel channel;
 
-    private native int native_recv(int sock, byte[] b, int off, int len, int flags, int timeout) throws IOException;
-
-    private int sock;
     boolean closed = false;
     private byte[] onebuf = new byte[1];
     private UnixSocket us;
-    private boolean blocking = true;
     private int flags = 0;
     private int timeout = 0;
 
-    public USInputStream(int sock, UnixSocket us) {
-        this.sock = sock;
+    public USInputStream(UnixSocketChannel channel, UnixSocket us) {
         this.us = us;
+        this.channel = channel;
     }
 
     public void close() throws IOException {
@@ -65,7 +65,8 @@ public class USInputStream extends InputStream {
 
     public int read(byte[] b, int off, int len) throws IOException {
         if (closed) throw new NotConnectedException();
-        int count = native_recv(sock, b, off, len, flags, timeout);
+        int count = receive(b, off, len);
+
       /* Yes, I really want to do this. Recv returns 0 for 'connection shut down'.
        * read() returns -1 for 'end of stream.
        * Recv returns -1 for 'EAGAIN' (all other errors cause an exception to be raised)
@@ -90,5 +91,22 @@ public class USInputStream extends InputStream {
 
     public void setSoTimeout(int timeout) {
         this.timeout = timeout;
+    }
+
+    /*
+     * Taken from JRuby with small modifications
+     * @see <a href="https://github.com/jruby/jruby/blob/master/core/src/main/java/org/jruby/ext/socket/RubyUNIXSocket.java">RubyUNIXSocket.java</a>
+     */
+    private int receive(byte[] dataBytes, int off, int len) {
+        int recvStatus = -1;
+        try {
+            InputStream inputStream = Channels.newInputStream(channel);
+            recvStatus = inputStream.read(dataBytes, off, len);
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return recvStatus;
     }
 }
