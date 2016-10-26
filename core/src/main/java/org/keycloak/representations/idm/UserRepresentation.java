@@ -33,6 +33,7 @@ public class UserRepresentation {
 
     protected String self; // link
     protected String id;
+    protected String origin;
     protected Long createdTimestamp;
     protected String username;
     protected Boolean enabled;
@@ -239,5 +240,18 @@ public class UserRepresentation {
 
     public void setGroups(List<String> groups) {
         this.groups = groups;
+    }
+
+    /**
+     * Returns id of UserStorageProvider that loaded this user
+     *
+     * @return NULL if user stored locally
+     */
+    public String getOrigin() {
+        return origin;
+    }
+
+    public void setOrigin(String origin) {
+        this.origin = origin;
     }
 }

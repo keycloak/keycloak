@@ -335,6 +335,7 @@ module.controller('UserTabCtrl', function($scope, $location, Dialog, Notificatio
 });
 
 module.controller('UserDetailCtrl', function($scope, realm, user, BruteForceUser, User,
+                                             Components,
                                              UserFederationInstances, UserImpersonation, RequiredActions,
                                              $location, Dialog, Notifications) {
     $scope.realm = realm;
@@ -362,12 +363,28 @@ module.controller('UserDetailCtrl', function($scope, realm, user, BruteForceUser
         };
         if(user.federationLink) {
             console.log("federationLink is not null");
-            UserFederationInstances.get({realm : realm.realm, instance: user.federationLink}, function(link) {
-                $scope.federationLinkName = link.displayName;
-                $scope.federationLink = "#/realms/" + realm.realm + "/user-federation/providers/" + link.providerName + "/" + link.id;
-            })
+            if (user.federationLink.startsWith('f:')) {
+                 Components.get({realm: realm.realm, componentId: user.federationLink}, function (link) {
+                    $scope.federationLinkName = link.name;
+                    $scope.federationLink = "#/realms/" + realm.realm + "/user-storage/providers/" + link.providerId + "/" + link.id;
+                });
+            } else {
+                UserFederationInstances.get({realm: realm.realm, instance: user.federationLink}, function (link) {
+                    $scope.federationLinkName = link.displayName;
+                    $scope.federationLink = "#/realms/" + realm.realm + "/user-federation/providers/" + link.providerName + "/" + link.id;
+                });
+            }
+
         } else {
             console.log("federationLink is null");
+        }
+        if(user.origin) {
+            Components.get({realm: realm.realm, componentId: user.origin}, function (link) {
+                $scope.originName = link.name;
+                $scope.originLink = "#/realms/" + realm.realm + "/user-storage/providers/" + link.providerId + "/" + link.id;
+            })
+        } else {
+            console.log("origin is null");
         }
         console.log('realm brute force? ' + realm.bruteForceProtected)
         $scope.temporarilyDisabled = false;
