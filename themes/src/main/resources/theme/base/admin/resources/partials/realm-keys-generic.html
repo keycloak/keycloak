@@ -41,13 +41,12 @@
             <div class="form-group clearfix">
                 <label class="col-md-2 control-label" for="consoleDisplayName">{{:: 'console-display-name' | translate}} </label>
                 <div class="col-md-6">
-                    <input class="form-control" id="consoleDisplayName" type="text" ng-model="instance.name" placeholder="{{:: 'defaults-to-id' | translate}}">
+                    <input required class="form-control" id="consoleDisplayName" type="text" ng-model="instance.name" placeholder="{{:: 'defaults-to-id' | translate}}">
                 </div>
                 <kc-tooltip>{{:: 'console-display-name.tooltip' | translate}}</kc-tooltip>
             </div>
 
             <kc-component-config realm="realm" config="instance.config" properties="providerFactory.properties"></kc-component-config>
-
         </fieldset>
 
         <div class="form-group">
