@@ -364,18 +364,15 @@ module.controller('UserDetailCtrl', function($scope, realm, user, BruteForceUser
         if(user.federationLink) {
             console.log("federationLink is not null");
             if (user.federationLink.startsWith('f:')) {
-                var componentId = user.federationLink.substring(2);
-                var idx = componentId.indexOf(':');
-                componentId = componentId.substring(idx);
-                Components.get({realm: realm.realm, componentId: componentId}, function (link) {
+                 Components.get({realm: realm.realm, componentId: user.federationLink}, function (link) {
                     $scope.federationLinkName = link.name;
                     $scope.federationLink = "#/realms/" + realm.realm + "/user-storage/providers/" + link.providerId + "/" + link.id;
-                })
+                });
             } else {
                 UserFederationInstances.get({realm: realm.realm, instance: user.federationLink}, function (link) {
                     $scope.federationLinkName = link.displayName;
                     $scope.federationLink = "#/realms/" + realm.realm + "/user-federation/providers/" + link.providerName + "/" + link.id;
-                })
+                });
             }
 
         } else {
