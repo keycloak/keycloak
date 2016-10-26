@@ -181,6 +181,11 @@ public class SSSDFederationProvider implements UserFederationProvider {
     }
 
     @Override
+    public Set<String> getDisableableCredentialTypes(RealmModel realm, UserModel user) {
+        return Collections.EMPTY_SET;
+    }
+
+    @Override
     public boolean supportsCredentialType(String credentialType) {
         return CredentialModel.PASSWORD.equals(credentialType);
     }

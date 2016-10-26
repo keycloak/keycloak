@@ -425,6 +425,11 @@ public class LDAPFederationProvider implements UserFederationProvider {
     }
 
     @Override
+    public Set<String> getDisableableCredentialTypes(RealmModel realm, UserModel user) {
+        return Collections.EMPTY_SET;
+    }
+
+    @Override
     public boolean supportsCredentialType(String credentialType) {
         return getSupportedCredentialTypes().contains(credentialType);
     }

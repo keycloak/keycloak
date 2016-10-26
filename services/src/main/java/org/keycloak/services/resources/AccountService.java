@@ -440,7 +440,7 @@ public class AccountService extends AbstractSecuredLocalService {
         csrfCheck(stateChecker);
 
         UserModel user = auth.getUser();
-        session.userCredentialManager().disableCredential(realm, user, CredentialModel.OTP);
+        session.userCredentialManager().disableCredentialType(realm, user, CredentialModel.OTP);
 
         event.event(EventType.REMOVE_TOTP).client(auth.getClient()).user(auth.getUser()).success();
 
