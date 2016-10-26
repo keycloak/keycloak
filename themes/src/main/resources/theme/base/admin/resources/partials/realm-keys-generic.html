@@ -52,8 +52,8 @@
 
         <div class="form-group">
             <div class="col-md-10 col-md-offset-2" data-ng-show="create && access.manageRealm">
-                <button kc-save>{{:: 'save' | translate}}</button>
-                <button kc-cancel data-ng-click="cancel()">{{:: 'cancel' | translate}}</button>
+                <button kc-save data-ng-disabled="!changed">{{:: 'save' | translate}}</button>
+                <button kc-cancel data-ng-disabled="!changed" data-ng-click="cancel()">{{:: 'cancel' | translate}}</button>
             </div>
         </div>
 

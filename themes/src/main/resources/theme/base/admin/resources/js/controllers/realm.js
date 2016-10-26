@@ -1112,12 +1112,10 @@ module.controller('RealmKeysProvidersCtrl', function($scope, Realm, realm, $http
         parent: realm.id,
         type: 'org.keycloak.keys.KeyProvider'
     }, function(data) {
-        console.debug(data);
         $scope.instances = data;
     });
 
     $scope.addProvider = function(provider) {
-        console.log('Add provider: ' + provider.id);
         $location.url("/create/keys/" + realm.realm + "/providers/" + provider.id);
     };
 
