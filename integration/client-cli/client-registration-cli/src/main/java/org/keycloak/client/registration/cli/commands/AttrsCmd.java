@@ -61,14 +61,14 @@ public class AttrsCmd extends AbstractGlobalOptionsCmd {
 
             if (args != null) {
                 if (args.size() > 1) {
-                    throw new RuntimeException("Invalid option: " + args.get(1));
+                    throw new IllegalArgumentException("Invalid option: " + args.get(1));
                 }
                 attr = args.get(0);
             }
 
             Class type = regType == EndpointType.DEFAULT ? ClientRepresentation.class : (regType == EndpointType.OIDC ? OIDCClientRepresentation.class : null);
             if (type == null) {
-                throw new RuntimeException("Endpoint not supported: " + regType);
+                throw new IllegalArgumentException("Endpoint not supported: " + regType);
             }
             AttributeKey key = attr == null ? new AttributeKey() : new AttributeKey(attr);
 

@@ -17,6 +17,7 @@ import java.util.List;
 import static org.keycloak.client.registration.cli.util.ConfigUtil.DEFAULT_CONFIG_FILE_STRING;
 import static org.keycloak.client.registration.cli.util.ConfigUtil.saveMergeConfig;
 import static org.keycloak.client.registration.cli.util.OsUtil.CMD;
+import static org.keycloak.client.registration.cli.util.OsUtil.EOL;
 import static org.keycloak.client.registration.cli.util.OsUtil.OS_ARCH;
 import static org.keycloak.client.registration.cli.util.OsUtil.PROMPT;
 
@@ -44,6 +45,9 @@ public class ConfigRegistrationTokenCmd extends AbstractAuthOptionsCmd implement
             }
 
             return process(commandInvocation);
+
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException(e.getMessage() + suggestHelp(), e);
         } finally {
             commandInvocation.stop();
         }
@@ -77,21 +81,21 @@ public class ConfigRegistrationTokenCmd extends AbstractAuthOptionsCmd implement
         }
 
         if (args.size() > 1) {
-            throw new RuntimeException("Invalid option: " + args.get(1));
+            throw new IllegalArgumentException("Invalid option: " + args.get(1));
         }
 
         String token = args.size() == 1 ? args.get(0) : null;
 
         if (server == null) {
-            throw new RuntimeException("Required option not specified: --server");
+            throw new IllegalArgumentException("Required option not specified: --server");
         }
 
         if (realm == null) {
-            throw new RuntimeException("Required option not specified: --realm");
+            throw new IllegalArgumentException("Required option not specified: --realm");
         }
 
         if (clientId == null) {
-            throw new RuntimeException("Required option not specified: --client");
+            throw new IllegalArgumentException("Required option not specified: --client");
         }
 
         checkUnsupportedOptions(
@@ -126,6 +130,10 @@ public class ConfigRegistrationTokenCmd extends AbstractAuthOptionsCmd implement
         });
 
         return CommandResult.SUCCESS;
+    }
+
+    protected String suggestHelp() {
+        return EOL + "Try '" + CMD + " help config registration-token' for more information";
     }
 
     protected String help() {

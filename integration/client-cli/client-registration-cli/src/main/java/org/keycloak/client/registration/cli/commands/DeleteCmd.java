@@ -39,6 +39,7 @@ import static org.keycloak.client.registration.cli.util.HttpUtil.doDelete;
 import static org.keycloak.client.registration.cli.util.HttpUtil.urlencode;
 import static org.keycloak.client.registration.cli.util.IoUtil.warnfErr;
 import static org.keycloak.client.registration.cli.util.OsUtil.CMD;
+import static org.keycloak.client.registration.cli.util.OsUtil.EOL;
 import static org.keycloak.client.registration.cli.util.OsUtil.PROMPT;
 
 
@@ -61,11 +62,11 @@ public class DeleteCmd extends AbstractAuthOptionsCmd {
             processGlobalOptions();
 
             if (args == null || args.isEmpty()) {
-                throw new RuntimeException("CLIENT not specified");
+                throw new IllegalArgumentException("CLIENT not specified");
             }
 
             if (args.size() > 1) {
-                throw new RuntimeException("Invalid option: " + args.get(1));
+                throw new IllegalArgumentException("Invalid option: " + args.get(1));
             }
 
             String clientId = args.get(0);
@@ -108,6 +109,8 @@ public class DeleteCmd extends AbstractAuthOptionsCmd {
             });
             return CommandResult.SUCCESS;
 
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException(e.getMessage() + suggestHelp(), e);
         } finally {
             commandInvocation.stop();
         }
@@ -116,6 +119,10 @@ public class DeleteCmd extends AbstractAuthOptionsCmd {
     @Override
     protected boolean nothingToDo() {
         return noOptions() && (args == null || args.size() == 0);
+    }
+
+    protected String suggestHelp() {
+        return EOL + "Try '" + CMD + " help delete' for more information";
     }
 
     protected String help() {
