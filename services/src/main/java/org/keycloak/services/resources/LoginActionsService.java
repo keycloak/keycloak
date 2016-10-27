@@ -714,12 +714,13 @@ public class LoginActionsService {
             event.event(EventType.VERIFY_EMAIL).detail(Details.EMAIL, user.getEmail());
 
             String keyFromSession = clientSession.getNote(Constants.VERIFY_EMAIL_KEY);
-            clientSession.removeNote(Constants.VERIFY_EMAIL_KEY);
             if (!key.equals(keyFromSession)) {
                 ServicesLogger.LOGGER.invalidKeyForEmailVerification();
                 event.error(Errors.INVALID_USER_CREDENTIALS);
                 throw new WebApplicationException(ErrorPage.error(session, Messages.INVALID_CODE));
             }
+
+            clientSession.removeNote(Constants.VERIFY_EMAIL_KEY);
 
             user.setEmailVerified(true);
 
