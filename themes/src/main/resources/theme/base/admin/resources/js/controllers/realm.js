@@ -2391,7 +2391,7 @@ module.controller('ClientRegPoliciesCtrl', function($scope, realm, clientRegistr
 
 });
 
-module.controller('ClientRegPolicyDetailCtrl', function($scope, realm, clientRegistrationPolicyProviders, instance, Dialog, Notifications, Components, $route, $location) {
+module.controller('ClientRegPolicyDetailCtrl', function($scope, realm, clientRegistrationPolicyProviders, instance, Dialog, Notifications, Components, ComponentUtils, $route, $location) {
     $scope.realm = realm;
     $scope.instance = instance;
     $scope.providerTypes = clientRegistrationPolicyProviders;
@@ -2408,7 +2408,11 @@ module.controller('ClientRegPolicyDetailCtrl', function($scope, realm, clientReg
 
     function toDefaultValue(configProperty) {
         if (configProperty.type === 'MultivaluedString' || configProperty.type === 'MultivaluedList') {
-            return [];
+            if (configProperty.defaultValue) {
+                return configProperty.defaultValue;
+            } else {
+                return [];
+            }
         }
 
         if (configProperty.defaultValue) {
@@ -2430,6 +2434,10 @@ module.controller('ClientRegPolicyDetailCtrl', function($scope, realm, clientReg
                 $scope.instance.config[configProperty.name] = toDefaultValue(configProperty);
             }
         }
+    }
+
+    if ($scope.providerType.properties) {
+        ComponentUtils.addLastEmptyValueToMultivaluedLists($scope.providerType.properties, $scope.instance.config);
     }
 
     var oldCopy = angular.copy($scope.instance);

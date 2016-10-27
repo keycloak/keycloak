@@ -191,6 +191,48 @@ module.factory('Notifications', function($rootScope, $timeout) {
 	return notifications;
 });
 
+
+module.factory('ComponentUtils', function() {
+
+    var utils = {};
+
+    utils.addLastEmptyValueToMultivaluedLists = function(properties, config) {
+
+        for (var i=0 ; i<properties.length ; i++) {
+            var prop = properties[i];
+            if (prop.type === 'MultivaluedString') {
+                var configProperty = config[prop.name];
+
+                if (configProperty == null) {
+                    configProperty = [];
+                    config[prop.name] = configProperty;
+                }
+
+                if (configProperty.length == 0 || configProperty[configProperty.length - 1].length > 0) {
+                    configProperty.push('');
+                }
+            }
+        }
+    }
+
+
+    utils.removeLastEmptyValue = function(componentConfig) {
+
+        for (var configPropertyName in componentConfig) {
+            var configVal = componentConfig[configPropertyName];
+            if (configVal && configVal.length > 0) {
+                var lastVal = configVal[configVal.length - 1];
+                if (lastVal === '') {
+                    console.log('Remove empty value from config property: ' + configPropertyName);
+                    configVal.splice(configVal.length - 1, 1);
+                }
+            }
+        }
+    }
+
+    return utils;
+});
+
 module.factory('Realm', function($resource) {
 	return $resource(authUrl + '/admin/realms/:id', {
 		id : '@realm'
@@ -1657,13 +1699,32 @@ module.factory('DefaultGroups', function($resource) {
     });
 });
 
-module.factory('Components', function($resource) {
+module.factory('Components', function($resource, ComponentUtils) {
     return $resource(authUrl + '/admin/realms/:realm/components/:componentId', {
         realm : '@realm',
         componentId : '@componentId'
     }, {
         update : {
-            method : 'PUT'
+            method : 'PUT',
+            transformRequest: function(componentInstance) {
+
+                if (componentInstance.config) {
+                    ComponentUtils.removeLastEmptyValue(componentInstance.config);
+                }
+
+                return angular.toJson(componentInstance);
+            }
+        },
+        save : {
+            method : 'POST',
+            transformRequest: function(componentInstance) {
+
+                if (componentInstance.config) {
+                    ComponentUtils.removeLastEmptyValue(componentInstance.config);
+                }
+
+                return angular.toJson(componentInstance);
+            }
         }
     });
 });
