@@ -72,11 +72,11 @@ public class GetCmd extends AbstractAuthOptionsCmd {
     public CommandResult execute(CommandInvocation commandInvocation) throws CommandException, InterruptedException {
 
         try {
-            processGlobalOptions();
-
             if (printHelp()) {
-                return CommandResult.SUCCESS;
+                return help ? CommandResult.SUCCESS : CommandResult.FAILURE;
             }
+
+            processGlobalOptions();
 
             if (args == null || args.isEmpty()) {
                 throw new RuntimeException("CLIENT not specified");
@@ -173,6 +173,11 @@ public class GetCmd extends AbstractAuthOptionsCmd {
         } finally {
             commandInvocation.stop();
         }
+    }
+
+    @Override
+    protected boolean nothingToDo() {
+        return noOptions() && endpoint == null && (args == null || args.size() == 0);
     }
 
     protected String help() {

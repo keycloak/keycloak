@@ -101,11 +101,11 @@ public class UpdateCmd extends AbstractAuthOptionsCmd {
         List<AttributeOperation> attrs = new LinkedList<>();
 
         try {
-            processGlobalOptions();
-
             if (printHelp()) {
-                return CommandResult.SUCCESS;
+                return help ? CommandResult.SUCCESS : CommandResult.FAILURE;
             }
+
+            processGlobalOptions();
 
             String clientId = null;
 
@@ -331,6 +331,11 @@ public class UpdateCmd extends AbstractAuthOptionsCmd {
                 printOut(JsonSerialization.writeValueAsPrettyString(result));
             }
         }
+    }
+
+    @Override
+    protected boolean nothingToDo() {
+        return noOptions() && regType == null && file == null && (args == null || args.size() == 0);
     }
 
     protected String help() {

@@ -51,21 +51,49 @@ public class KcRegTest extends AbstractCliTest {
                 "Sub-command required by '" + OsUtil.CMD + " config' - one of: 'credentials', 'truststore', 'initial-token', 'registration-token'",
                 exe.stderrLines().get(0));
 
+        exe = execute("config credentials");
+        assertExitCodeAndStdErrSize(exe, 1, 0);
+        Assert.assertTrue("help message returned", exe.stdoutLines().size() > 10);
+        Assert.assertEquals("help message", "Usage: " + OsUtil.CMD + " config credentials --server SERVER_URL --realm REALM [ARGUMENTS]", exe.stdoutLines().get(0));
+
+        exe = execute("config initial-token");
+        assertExitCodeAndStdErrSize(exe, 1, 0);
+        Assert.assertTrue("help message returned", exe.stdoutLines().size() > 10);
+        Assert.assertEquals("help message", "Usage: " + OsUtil.CMD + " config initial-token --server SERVER --realm REALM [--delete | TOKEN] [ARGUMENTS]", exe.stdoutLines().get(0));
+
+        exe = execute("config registration-token");
+        assertExitCodeAndStdErrSize(exe, 1, 0);
+        Assert.assertTrue("help message returned", exe.stdoutLines().size() > 10);
+        Assert.assertEquals("help message", "Usage: " + OsUtil.CMD + " config registration-token --server SERVER --realm REALM --client CLIENT [--delete | TOKEN] [ARGUMENTS]", exe.stdoutLines().get(0));
+
+        exe = execute("config truststore");
+        assertExitCodeAndStdErrSize(exe, 1, 0);
+        Assert.assertTrue("help message returned", exe.stdoutLines().size() > 10);
+        Assert.assertEquals("help message", "Usage: " + OsUtil.CMD + " config truststore [TRUSTSTORE | --delete] [--trustpass PASSWOD] [ARGUMENTS]", exe.stdoutLines().get(0));
+
         exe = execute("create");
-        assertExitCodeAndStreamSizes(exe, 1, 0, 1);
-        Assert.assertEquals("error message", "No file nor attribute values specified", exe.stderrLines().get(0));
+        assertExitCodeAndStdErrSize(exe, 1, 0);
+        Assert.assertTrue("help message returned", exe.stdoutLines().size() > 10);
+        Assert.assertEquals("help message", "Usage: " + OsUtil.CMD + " create [ARGUMENTS]", exe.stdoutLines().get(0));
+        //Assert.assertEquals("error message", "No file nor attribute values specified", exe.stderrLines().get(0));
 
         exe = execute("get");
-        assertExitCodeAndStreamSizes(exe, 1, 0, 1);
-        Assert.assertEquals("error message", "CLIENT not specified", exe.stderrLines().get(0));
+        assertExitCodeAndStdErrSize(exe, 1, 0);
+        Assert.assertTrue("help message returned", exe.stdoutLines().size() > 10);
+        Assert.assertEquals("help message", "Usage: " + OsUtil.CMD + " get CLIENT [ARGUMENTS]", exe.stdoutLines().get(0));
+        //Assert.assertEquals("error message", "CLIENT not specified", exe.stderrLines().get(0));
 
         exe = execute("update");
-        assertExitCodeAndStreamSizes(exe, 1, 0, 1);
-        Assert.assertEquals("error message", "No file nor attribute values specified", exe.stderrLines().get(0));
+        assertExitCodeAndStdErrSize(exe, 1, 0);
+        Assert.assertTrue("help message returned", exe.stdoutLines().size() > 10);
+        Assert.assertEquals("help message", "Usage: " + OsUtil.CMD + " update CLIENT [ARGUMENTS]", exe.stdoutLines().get(0));
+        //Assert.assertEquals("error message", "No file nor attribute values specified", exe.stderrLines().get(0));
 
         exe = execute("delete");
-        assertExitCodeAndStreamSizes(exe, 1, 0, 1);
-        Assert.assertEquals("error message", "CLIENT not specified", exe.stderrLines().get(0));
+        assertExitCodeAndStdErrSize(exe, 1, 0);
+        Assert.assertTrue("help message returned", exe.stdoutLines().size() > 10);
+        Assert.assertEquals("help message", "Usage: " + OsUtil.CMD + " delete CLIENT [ARGUMENTS]", exe.stdoutLines().get(0));
+        //Assert.assertEquals("error message", "CLIENT not specified", exe.stderrLines().get(0));
 
         exe = execute("attrs");
         Assert.assertEquals("exit code", 0, exe.exitCode());
@@ -73,8 +101,10 @@ public class KcRegTest extends AbstractCliTest {
         Assert.assertEquals("first line", "Attributes for default format:", exe.stdoutLines().get(0));
 
         exe = execute("update-token");
-        assertExitCodeAndStreamSizes(exe, 1, 0, 1);
-        Assert.assertEquals("error message", "CLIENT not specified", exe.stderrLines().get(0));
+        assertExitCodeAndStdErrSize(exe, 1, 0);
+        Assert.assertTrue("help message returned", exe.stdoutLines().size() > 10);
+        Assert.assertEquals("help message", "Usage: " + OsUtil.CMD + " update-token CLIENT [ARGUMENTS]", exe.stdoutLines().get(0));
+        //Assert.assertEquals("error message", "CLIENT not specified", exe.stderrLines().get(0));
 
         exe = execute("help");
         assertExitCodeAndStdErrSize(exe, 0, 0);

@@ -62,16 +62,21 @@ public class ConfigCredentialsCmd extends AbstractAuthOptionsCmd implements Comm
     @Override
     public CommandResult execute(CommandInvocation commandInvocation) throws CommandException, InterruptedException {
         try {
-            processGlobalOptions();
-
             if (printHelp()) {
-                return CommandResult.SUCCESS;
+                return help ? CommandResult.SUCCESS : CommandResult.FAILURE;
             }
+
+            processGlobalOptions();
 
             return process(commandInvocation);
         } finally {
             commandInvocation.stop();
         }
+    }
+
+    @Override
+    protected boolean nothingToDo() {
+        return noOptions();
     }
 
     public CommandResult process(CommandInvocation commandInvocation) throws CommandException, InterruptedException {

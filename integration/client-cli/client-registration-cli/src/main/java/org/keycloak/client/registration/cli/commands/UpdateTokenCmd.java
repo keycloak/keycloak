@@ -60,11 +60,11 @@ public class UpdateTokenCmd extends AbstractAuthOptionsCmd {
     public CommandResult execute(CommandInvocation commandInvocation) throws CommandException, InterruptedException {
 
         try {
-            processGlobalOptions();
-
             if (printHelp()) {
-                return CommandResult.SUCCESS;
+                return help ? CommandResult.SUCCESS : CommandResult.FAILURE;
             }
+
+            processGlobalOptions();
 
             if (args == null || args.isEmpty()) {
                 throw new RuntimeException("CLIENT not specified");
@@ -130,6 +130,11 @@ public class UpdateTokenCmd extends AbstractAuthOptionsCmd {
         } finally {
             commandInvocation.stop();
         }
+    }
+
+    @Override
+    protected boolean nothingToDo() {
+        return noOptions() && (args == null || args.size() == 0);
     }
 
     protected String help() {

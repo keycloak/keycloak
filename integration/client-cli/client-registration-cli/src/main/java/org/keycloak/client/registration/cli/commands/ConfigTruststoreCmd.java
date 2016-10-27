@@ -40,13 +40,18 @@ public class ConfigTruststoreCmd extends AbstractAuthOptionsCmd implements Comma
     public CommandResult execute(CommandInvocation commandInvocation) throws CommandException, InterruptedException {
         try {
             if (printHelp()) {
-                return CommandResult.SUCCESS;
+                return help ? CommandResult.SUCCESS : CommandResult.FAILURE;
             }
 
             return process(commandInvocation);
         } finally {
             commandInvocation.stop();
         }
+    }
+
+    @Override
+    protected boolean nothingToDo() {
+        return noOptions() && parent.args.size() == 1;
     }
 
     public CommandResult process(CommandInvocation commandInvocation) throws CommandException, InterruptedException {

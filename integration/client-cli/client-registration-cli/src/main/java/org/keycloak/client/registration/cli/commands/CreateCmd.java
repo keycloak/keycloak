@@ -100,11 +100,11 @@ public class CreateCmd extends AbstractAuthOptionsCmd implements Command {
         List<AttributeOperation> attrs = new LinkedList<>();
 
         try {
-            processGlobalOptions();
-
             if (printHelp()) {
-                return CommandResult.SUCCESS;
+                return help ? CommandResult.SUCCESS : CommandResult.FAILURE;
             }
+
+            processGlobalOptions();
 
             if (args != null) {
                 Iterator<String> it = args.iterator();
@@ -229,6 +229,12 @@ public class CreateCmd extends AbstractAuthOptionsCmd implements Command {
             printErr("Registered new client with client_id '" + clientId + "'");
         }
     }
+
+    @Override
+    protected boolean nothingToDo() {
+        return noOptions() && regType == null && file == null && (args == null || args.size() == 0);
+    }
+
 
     protected String help() {
         return usage();

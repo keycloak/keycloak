@@ -78,13 +78,8 @@ public class KcRegTruststoreTest extends AbstractCliTest {
             }
         }
 
-        // Check missing argument error
-        KcRegExec exe = execute("config truststore");
-        assertExitCodeAndStreamSizes(exe, 1, 0, 1);
-        Assert.assertEquals("no truststore error", "No truststore specified", exe.stderrLines().get(0));
-
         // configure truststore with password
-        exe = execute("config truststore --trustpass secret '" + truststore.getAbsolutePath() + "'");
+        KcRegExec exe = execute("config truststore --trustpass secret '" + truststore.getAbsolutePath() + "'");
         assertExitCodeAndStreamSizes(exe, 0, 0, 0);
 
         // perform authentication against server - asks for password, then for truststore password
