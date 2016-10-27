@@ -489,6 +489,15 @@ module.factory('UserCredentials', function($resource) {
         }
     }).update;
 
+    credentials.disableCredentialTypes = $resource(authUrl + '/admin/realms/:realm/users/:userId/disable-credential-types', {
+        realm : '@realm',
+        userId : '@userId'
+    }, {
+        update : {
+            method : 'PUT'
+        }
+    }).update;
+
     return credentials;
 });
 

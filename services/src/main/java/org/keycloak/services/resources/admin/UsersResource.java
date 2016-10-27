@@ -723,40 +723,24 @@ public class UsersResource {
      * Disable all credentials for a user of a specific type
      *
      * @param id
-     * @param credentialType
+     * @param credentialTypes
      */
-    @Path("{id}/disable-credential-type/{type}")
-    @DELETE
-    public void disableCredentialType(@PathParam("id") String id, @PathParam("type") String credentialType) {
+    @Path("{id}/disable-credential-types")
+    @PUT
+    @Consumes(MediaType.APPLICATION_JSON)
+    public void disableCredentialType(@PathParam("id") String id, List<String> credentialTypes) {
         auth.requireManage();
 
         UserModel user = session.users().getUserById(id, realm);
         if (user == null) {
             throw new NotFoundException("User not found");
         }
+        if (credentialTypes == null) return;
+        for (String type : credentialTypes) {
+            session.userCredentialManager().disableCredentialType(realm, user, type);
 
-        session.userCredentialManager().disableCredentialType(realm, user, credentialType);
-
-    }
-
-    /**
-     * Credential types that are disablable for this user
-     *
-     * @param id
-     * @return
-     */
-    @Path("{id}/disableable-credential-types")
-    @GET
-    @NoCache
-    @Produces(MediaType.APPLICATION_JSON)
-    public Set<String> getCredentialTypes(@PathParam("id") String id) {
-        auth.requireManage();
-
-        UserModel user = session.users().getUserById(id, realm);
-        if (user == null) {
-            throw new NotFoundException("User not found");
         }
-        return session.userCredentialManager().getDisableableCredentialTypes(realm, user);
+
 
     }
 
