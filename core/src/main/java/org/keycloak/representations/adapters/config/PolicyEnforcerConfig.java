@@ -101,6 +101,18 @@ public class PolicyEnforcerConfig {
         return accessDeniedPath;
     }
 
+    public void setUmaProtocolConfig(UmaProtocolConfig umaProtocolConfig) {
+        this.umaProtocolConfig = umaProtocolConfig;
+    }
+
+    public void setEntitlementProtocolConfig(EntitlementProtocolConfig entitlementProtocolConfig) {
+        this.entitlementProtocolConfig = entitlementProtocolConfig;
+    }
+
+    public void setAccessDeniedPath(String accessDeniedPath) {
+        this.accessDeniedPath = accessDeniedPath;
+    }
+    
     public static class PathConfig {
 
         private String name;
