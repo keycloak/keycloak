@@ -22,6 +22,7 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.ClientResource;
@@ -37,6 +38,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
+import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.adapter.AbstractExampleAdapterTest;
 import org.keycloak.testsuite.adapter.page.PhotozClientAuthzTestApp;
 import org.keycloak.util.JsonSerialization;
@@ -78,6 +80,9 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
         super.setDefaultPageUriParameters();
         testRealmPage.setAuthRealm(REALM_NAME);
     }
+
+    @BeforeClass
+    public static void enabled() { ProfileAssume.assumePreview(); }
 
     @Before
     public void beforePhotozExampleAdapterTest() throws FileNotFoundException {
