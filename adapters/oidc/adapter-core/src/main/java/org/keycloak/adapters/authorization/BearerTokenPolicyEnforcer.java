@@ -41,7 +41,7 @@ public class BearerTokenPolicyEnforcer extends AbstractPolicyEnforcer {
 
     @Override
     protected boolean challenge(PathConfig pathConfig, Set<String> requiredScopes, OIDCHttpFacade facade) {
-        if (getEnforcerConfig().getUmaProtocolConfig() != null) {
+        if (getEnforcerConfig().getUserManagedAccess() != null) {
             challengeUmaAuthentication(pathConfig, requiredScopes, facade);
         } else {
             challengeEntitlementAuthentication(facade);
