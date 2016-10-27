@@ -693,6 +693,20 @@ public class LoginActionsService {
     public Response emailVerification(@QueryParam("code") String code, @QueryParam("key") String key) {
         event.event(EventType.VERIFY_EMAIL);
         if (key != null) {
+            ClientSessionModel clientSession = null;
+            String keyFromSession = null;
+            if (code != null) {
+                clientSession = ClientSessionCode.getClientSession(code, session, realm);
+                keyFromSession = clientSession.getNote(Constants.VERIFY_EMAIL_KEY);
+            }
+
+            if (clientSession == null || !key.equals(keyFromSession)) {
+                ServicesLogger.LOGGER.invalidKeyForEmailVerification();
+                event.error(Errors.INVALID_CODE);
+                throw new WebApplicationException(ErrorPage.error(session, Messages.STALE_VERIFY_EMAIL_LINK));
+            }
+            clientSession.removeNote(Constants.VERIFY_EMAIL_KEY);
+
             Checks checks = new Checks();
             if (!checks.verifyCode(code, ClientSessionModel.Action.REQUIRED_ACTIONS.name(), ClientSessionCode.ActionType.USER)) {
                 if (checks.clientCode == null && checks.result.isClientSessionNotFound() || checks.result.isIllegalHash()) {
@@ -700,8 +714,9 @@ public class LoginActionsService {
                 }
                 return checks.response;
             }
+
             ClientSessionCode accessCode = checks.clientCode;
-            ClientSessionModel clientSession = accessCode.getClientSession();
+            clientSession = accessCode.getClientSession();
             if (!ClientSessionModel.Action.VERIFY_EMAIL.name().equals(clientSession.getNote(AuthenticationManager.CURRENT_REQUIRED_ACTION))) {
                 ServicesLogger.LOGGER.reqdActionDoesNotMatch();
                 event.error(Errors.INVALID_CODE);
@@ -712,14 +727,6 @@ public class LoginActionsService {
             UserModel user = userSession.getUser();
             initEvent(clientSession);
             event.event(EventType.VERIFY_EMAIL).detail(Details.EMAIL, user.getEmail());
-
-            String keyFromSession = clientSession.getNote(Constants.VERIFY_EMAIL_KEY);
-            clientSession.removeNote(Constants.VERIFY_EMAIL_KEY);
-            if (!key.equals(keyFromSession)) {
-                ServicesLogger.LOGGER.invalidKeyForEmailVerification();
-                event.error(Errors.INVALID_USER_CREDENTIALS);
-                throw new WebApplicationException(ErrorPage.error(session, Messages.INVALID_CODE));
-            }
 
             user.setEmailVerified(true);
 

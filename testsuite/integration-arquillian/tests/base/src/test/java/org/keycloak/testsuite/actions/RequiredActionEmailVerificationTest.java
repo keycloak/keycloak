@@ -31,6 +31,7 @@ import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.TestRealmKeycloakTest;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
+import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.InfoPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.RegisterPage;
@@ -71,6 +72,9 @@ public class RequiredActionEmailVerificationTest extends TestRealmKeycloakTest {
 
     @Page
     protected InfoPage infoPage;
+
+    @Page
+    protected ErrorPage errorPage;
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
@@ -177,6 +181,33 @@ public class RequiredActionEmailVerificationTest extends TestRealmKeycloakTest {
     }
 
     @Test
+    public void verifyEmailResendFirstInvalidSecondStillValid() throws IOException, MessagingException {
+        loginPage.open();
+        loginPage.login("test-user@localhost", "password");
+
+        verifyEmailPage.clickResendEmail();
+
+        Assert.assertEquals(2, greenMail.getReceivedMessages().length);
+
+        MimeMessage message1 = greenMail.getReceivedMessages()[0];
+
+        String verificationUrl1 = getPasswordResetEmailLink(message1);
+
+        driver.navigate().to(verificationUrl1.trim());
+
+        assertTrue(errorPage.isCurrent());
+        assertEquals("The link you clicked is a old stale link and is no longer valid. Maybe you have already verified your email?", errorPage.getError());
+
+        MimeMessage message2 = greenMail.getReceivedMessages()[1];
+
+        String verificationUrl2 = getPasswordResetEmailLink(message2);
+
+        driver.navigate().to(verificationUrl2.trim());
+
+        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+    }
+
+    @Test
     public void verifyEmailNewBrowserSession() throws IOException, MessagingException {
         loginPage.open();
         loginPage.login("test-user@localhost", "password");
@@ -221,10 +252,7 @@ public class RequiredActionEmailVerificationTest extends TestRealmKeycloakTest {
         String resendEmailLink = verifyEmailPage.getResendEmailLink();
         String keyInsteadCodeURL = resendEmailLink.replace("code=", "key=");
 
-        AssertEvents.ExpectedEvent emailEvent = events.expectRequiredAction(EventType.SEND_VERIFY_EMAIL).detail("email", "test-user@localhost");
-        EventRepresentation sendEvent = emailEvent.assertEvent();
-        String sessionId = sendEvent.getSessionId();
-        String mailCodeId = sendEvent.getDetails().get(Details.CODE_ID);
+        events.expectRequiredAction(EventType.SEND_VERIFY_EMAIL).detail("email", "test-user@localhost").assertEvent();
 
         driver.navigate().to(keyInsteadCodeURL);
 
@@ -240,10 +268,11 @@ public class RequiredActionEmailVerificationTest extends TestRealmKeycloakTest {
         driver.navigate().to(badKeyURL);
 
         events.expectRequiredAction(EventType.VERIFY_EMAIL_ERROR)
-                .error(Errors.INVALID_USER_CREDENTIALS)
-                .session(sessionId)
-                .detail("email", "test-user@localhost")
-                .detail(Details.CODE_ID, mailCodeId)
+                .error(Errors.INVALID_CODE)
+                .client((String)null)
+                .user((String)null)
+                .session((String)null)
+                .clearDetails()
                 .assertEvent();
     }
 
