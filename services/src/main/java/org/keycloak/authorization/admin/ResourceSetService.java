@@ -27,6 +27,7 @@ import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.Constants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
@@ -233,7 +234,7 @@ public class ResourceSetService {
         }
 
         return Response.ok(
-                storeFactory.getResourceStore().findByResourceServer(search, this.resourceServer.getId(), firstResult != null ? firstResult : -1, maxResult != null ? maxResult : -1).stream()
+                storeFactory.getResourceStore().findByResourceServer(search, this.resourceServer.getId(), firstResult != null ? firstResult : -1, maxResult != null ? maxResult : Constants.DEFAULT_MAX_RESULTS).stream()
                         .map(resource -> toRepresentation(resource, this.resourceServer, authorization))
                         .collect(Collectors.toList()))
                 .build();

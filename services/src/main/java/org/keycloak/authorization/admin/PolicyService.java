@@ -26,6 +26,7 @@ import org.keycloak.authorization.policy.provider.PolicyProviderAdminService;
 import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
 import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.authorization.store.StoreFactory;
+import org.keycloak.models.Constants;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.authorization.PolicyProviderRepresentation;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
@@ -242,7 +243,7 @@ public class PolicyService {
         }
 
         return Response.ok(
-                storeFactory.getPolicyStore().findByResourceServer(search, resourceServer.getId(), firstResult != null ? firstResult : -1, maxResult != null ? maxResult : -1).stream()
+                storeFactory.getPolicyStore().findByResourceServer(search, resourceServer.getId(), firstResult != null ? firstResult : -1, maxResult != null ? maxResult : Constants.DEFAULT_MAX_RESULTS).stream()
                         .map(policy -> toRepresentation(policy, authorization))
                         .collect(Collectors.toList()))
                 .build();

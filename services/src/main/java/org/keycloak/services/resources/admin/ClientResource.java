@@ -27,6 +27,7 @@ import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
@@ -403,7 +404,7 @@ public class ClientResource {
      * Returns a list of user sessions associated with this client
      *
      * @param firstResult Paging offset
-     * @param maxResults Paging size
+     * @param maxResults Maximum results size (defaults to 100)
      * @return
      */
     @Path("user-sessions")
@@ -418,7 +419,7 @@ public class ClientResource {
         }
 
         firstResult = firstResult != null ? firstResult : -1;
-        maxResults = maxResults != null ? maxResults : -1;
+        maxResults = maxResults != null ? maxResults : Constants.DEFAULT_MAX_RESULTS;
         List<UserSessionRepresentation> sessions = new ArrayList<UserSessionRepresentation>();
         for (UserSessionModel userSession : session.sessions().getUserSessions(client.getRealm(), client, firstResult, maxResults)) {
             UserSessionRepresentation rep = ModelToRepresentation.toRepresentation(userSession);
@@ -460,7 +461,7 @@ public class ClientResource {
      * Returns a list of offline user sessions associated with this client
      *
      * @param firstResult Paging offset
-     * @param maxResults Paging size
+     * @param maxResults Maximum results size (defaults to 100)
      * @return
      */
     @Path("offline-sessions")
@@ -475,7 +476,7 @@ public class ClientResource {
         }
 
         firstResult = firstResult != null ? firstResult : -1;
-        maxResults = maxResults != null ? maxResults : -1;
+        maxResults = maxResults != null ? maxResults : Constants.DEFAULT_MAX_RESULTS;
         List<UserSessionRepresentation> sessions = new ArrayList<UserSessionRepresentation>();
         List<UserSessionModel> userSessions = session.sessions().getOfflineUserSessions(client.getRealm(), client, firstResult, maxResults);
         for (UserSessionModel userSession : userSessions) {
