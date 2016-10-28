@@ -42,43 +42,43 @@ public class ConfigCmd extends AbstractAuthOptionsCmd implements Command {
 
     public CommandResult execute(CommandInvocation commandInvocation) throws CommandException, InterruptedException {
         try {
-            if (args == null || args.size() == 0) {
-                if (printHelp()) {
-                    return CommandResult.SUCCESS;
-                }
-
-                throw new RuntimeException("Sub-command required by '" + OsUtil.CMD + " config' - one of: 'credentials', 'truststore', 'initial-token', 'registration-token'");
-            }
-
-            String cmd = args.get(0);
-            switch (cmd) {
-                case "credentials": {
-                    ConfigCredentialsCmd command = new ConfigCredentialsCmd();
-                    command.initFromParent(this);
-                    return command.execute(commandInvocation);
-                }
-                case "truststore": {
-                    ConfigTruststoreCmd command = new ConfigTruststoreCmd();
-                    command.initFromParent(this);
-                    return command.execute(commandInvocation);
-                }
-                case "initial-token": {
-                    ConfigInitialTokenCmd command = new ConfigInitialTokenCmd();
-                    command.initFromParent(this);
-                    return command.execute(commandInvocation);
-                }
-                case "registration-token": {
-                    ConfigRegistrationTokenCmd command = new ConfigRegistrationTokenCmd();
-                    command.initFromParent(this);
-                    return command.execute(commandInvocation);
-                }
-                default: {
-                    if (printHelp()) {
-                        return CommandResult.SUCCESS;
+            if (args != null && args.size() > 0) {
+                String cmd = args.get(0);
+                switch (cmd) {
+                    case "credentials": {
+                        ConfigCredentialsCmd command = new ConfigCredentialsCmd();
+                        command.initFromParent(this);
+                        return command.execute(commandInvocation);
                     }
-                    throw new RuntimeException("Unknown sub-command: " + cmd);
+                    case "truststore": {
+                        ConfigTruststoreCmd command = new ConfigTruststoreCmd();
+                        command.initFromParent(this);
+                        return command.execute(commandInvocation);
+                    }
+                    case "initial-token": {
+                        ConfigInitialTokenCmd command = new ConfigInitialTokenCmd();
+                        command.initFromParent(this);
+                        return command.execute(commandInvocation);
+                    }
+                    case "registration-token": {
+                        ConfigRegistrationTokenCmd command = new ConfigRegistrationTokenCmd();
+                        command.initFromParent(this);
+                        return command.execute(commandInvocation);
+                    }
+                    default: {
+                        if (printHelp()) {
+                            return help ? CommandResult.SUCCESS : CommandResult.FAILURE;
+                        }
+                        throw new RuntimeException("Unknown sub-command: " + cmd);
+                    }
                 }
             }
+
+            if (printHelp()) {
+                return help ? CommandResult.SUCCESS : CommandResult.FAILURE;
+            }
+
+            throw new RuntimeException("Sub-command required by '" + OsUtil.CMD + " config' - one of: 'credentials', 'truststore', 'initial-token', 'registration-token'");
 
         } finally {
             commandInvocation.stop();

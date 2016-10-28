@@ -98,6 +98,14 @@ public abstract class AbstractAuthOptionsCmd extends AbstractGlobalOptionsCmd {
         }
     }
 
+    protected boolean noOptions() {
+        return server == null && realm == null && clientId == null && secret == null &&
+                user == null && password == null &&
+                keystore == null && storePass == null && keyPass == null && alias == null &&
+                trustStore == null && trustPass == null &&
+                token == null && config == null;
+    }
+
     protected void processGlobalOptions() {
 
         super.processGlobalOptions();
