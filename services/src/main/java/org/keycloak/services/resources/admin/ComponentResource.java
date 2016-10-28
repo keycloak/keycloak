@@ -32,6 +32,7 @@ import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ErrorResponseException;
 
+import javax.ws.rs.BadRequestException;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -85,7 +86,7 @@ public class ComponentResource {
         this.realm = realm;
         this.adminEvent = adminEvent;
 
-        auth.init(RealmAuth.Resource.USER);
+        auth.init(RealmAuth.Resource.REALM);
     }
 
     @GET
@@ -126,6 +127,8 @@ public class ComponentResource {
             return Response.created(uriInfo.getAbsolutePathBuilder().path(model.getId()).build()).build();
         } catch (ComponentValidationException e) {
             return localizedErrorResponse(e);
+        } catch (IllegalArgumentException e) {
+            throw new BadRequestException();
         }
     }
 
@@ -134,7 +137,7 @@ public class ComponentResource {
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     public ComponentRepresentation getComponent(@PathParam("id") String id) {
-        auth.requireManage();
+        auth.requireView();
         ComponentModel model = realm.getComponent(id);
         if (model == null) {
             throw new NotFoundException("Could not find component");
@@ -159,8 +162,9 @@ public class ComponentResource {
             return Response.noContent().build();
         } catch (ComponentValidationException e) {
             return localizedErrorResponse(e);
+        } catch (IllegalArgumentException e) {
+            throw new BadRequestException();
         }
-
     }
     @DELETE
     @Path("{id}")

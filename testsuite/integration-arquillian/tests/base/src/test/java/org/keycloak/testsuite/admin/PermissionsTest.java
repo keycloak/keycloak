@@ -33,6 +33,7 @@ import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
 import org.keycloak.representations.idm.ClientInitialAccessCreatePresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientTemplateRepresentation;
+import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
@@ -1574,6 +1575,40 @@ public class PermissionsTest extends AbstractKeycloakTest {
                 realm.userFederation().get("nosuch").syncMapperData("nosuch", "nosuch");
             }
         }, Resource.USER, true);
+    }
+
+    @Test
+    public void components() {
+        invoke(new Invocation() {
+            public void invoke(RealmResource realm) {
+                realm.components().query();
+            }
+        }, Resource.REALM, false);
+        invoke(new Invocation() {
+            public void invoke(RealmResource realm) {
+                realm.components().query("nosuch");
+            }
+        }, Resource.REALM, false);
+        invoke(new InvocationWithResponse() {
+            public void invoke(RealmResource realm, AtomicReference<Response> response) {
+                response.set(realm.components().add(new ComponentRepresentation()));
+            }
+        }, Resource.REALM, true);
+        invoke(new Invocation() {
+            public void invoke(RealmResource realm) {
+                realm.components().component("nosuch").toRepresentation();
+            }
+        }, Resource.REALM, false);
+        invoke(new Invocation() {
+            public void invoke(RealmResource realm) {
+                realm.components().component("nosuch").update(new ComponentRepresentation());
+            }
+        }, Resource.REALM, true);
+        invoke(new Invocation() {
+            public void invoke(RealmResource realm) {
+                realm.components().component("nosuch").remove();
+            }
+        }, Resource.REALM, true);
     }
 
     private void invoke(final Invocation invocation, Resource resource, boolean manage) {
