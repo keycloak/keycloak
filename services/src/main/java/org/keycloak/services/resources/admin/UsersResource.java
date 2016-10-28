@@ -719,7 +719,32 @@ public class UsersResource {
 
     }
 
-     /**
+    /**
+     * Disable all credentials for a user of a specific type
+     *
+     * @param id
+     * @param credentialTypes
+     */
+    @Path("{id}/disable-credential-types")
+    @PUT
+    @Consumes(MediaType.APPLICATION_JSON)
+    public void disableCredentialType(@PathParam("id") String id, List<String> credentialTypes) {
+        auth.requireManage();
+
+        UserModel user = session.users().getUserById(id, realm);
+        if (user == null) {
+            throw new NotFoundException("User not found");
+        }
+        if (credentialTypes == null) return;
+        for (String type : credentialTypes) {
+            session.userCredentialManager().disableCredentialType(realm, user, type);
+
+        }
+
+
+    }
+
+    /**
      * Set up a temporary password for the user
      *
      * User will have to reset the temporary password next time they log in.
@@ -777,7 +802,7 @@ public class UsersResource {
             throw new NotFoundException("User not found");
         }
 
-        session.userCredentialManager().disableCredential(realm, user, CredentialModel.OTP);
+        session.userCredentialManager().disableCredentialType(realm, user, CredentialModel.OTP);
         adminEvent.operation(OperationType.ACTION).resourcePath(uriInfo).success();
     }
 

@@ -19,6 +19,9 @@ package org.keycloak.credential;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 
+import java.util.List;
+import java.util.Set;
+
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
@@ -27,4 +30,14 @@ public interface CredentialInputUpdater {
     boolean supportsCredentialType(String credentialType);
     boolean updateCredential(RealmModel realm, UserModel user, CredentialInput input);
     void disableCredentialType(RealmModel realm, UserModel user, String credentialType);
+
+    /**
+     *
+     * Returns a set of credential types that can be disabled by disableCredentialType() method
+     *
+     * @param realm
+     * @param user
+     * @return
+     */
+    Set<String> getDisableableCredentialTypes(RealmModel realm, UserModel user);
 }

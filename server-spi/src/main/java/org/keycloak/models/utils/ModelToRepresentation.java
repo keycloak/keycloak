@@ -189,6 +189,7 @@ public class ModelToRepresentation {
         rep.setEnabled(user.isEnabled());
         rep.setEmailVerified(user.isEmailVerified());
         rep.setTotp(session.userCredentialManager().isConfiguredFor(realm, user, CredentialModel.OTP));
+        rep.setDisableableCredentialTypes(session.userCredentialManager().getDisableableCredentialTypes(realm, user));
         rep.setFederationLink(user.getFederationLink());
 
         List<String> reqActions = new ArrayList<String>();

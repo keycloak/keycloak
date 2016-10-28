@@ -33,7 +33,9 @@ import org.keycloak.storage.adapter.AbstractUserAdapterFederatedStorage;
 import org.keycloak.storage.user.UserLookupProvider;
 import org.keycloak.storage.user.UserRegistrationProvider;
 
+import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -101,6 +103,11 @@ public class UserMapStorage implements UserLookupProvider, UserStorageProvider, 
     @Override
     public void disableCredentialType(RealmModel realm, UserModel user, String credentialType) {
 
+    }
+
+    @Override
+    public Set<String> getDisableableCredentialTypes(RealmModel realm, UserModel user) {
+        return Collections.EMPTY_SET;
     }
 
     @Override

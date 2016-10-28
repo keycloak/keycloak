@@ -25,7 +25,9 @@ import org.keycloak.models.UserModel;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.Properties;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -107,5 +109,10 @@ public class FilePropertiesFederationProvider extends BasePropertiesFederationPr
     @Override
     public void disableCredentialType(RealmModel realm, UserModel user, String credentialType) {
 
+    }
+
+    @Override
+    public Set<String> getDisableableCredentialTypes(RealmModel realm, UserModel user) {
+        return Collections.EMPTY_SET;
     }
 }

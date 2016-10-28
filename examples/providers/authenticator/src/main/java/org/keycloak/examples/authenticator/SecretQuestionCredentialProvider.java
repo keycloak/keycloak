@@ -29,7 +29,10 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.cache.CachedUserModel;
 import org.keycloak.models.cache.OnUserCache;
 
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -82,8 +85,20 @@ public class SecretQuestionCredentialProvider implements CredentialProvider, Cre
     @Override
     public void disableCredentialType(RealmModel realm, UserModel user, String credentialType) {
         if (!SECRET_QUESTION.equals(credentialType)) return;
-        session.userCredentialManager().disableCredential(realm, user, credentialType);
+        session.userCredentialManager().disableCredentialType(realm, user, credentialType);
         session.getUserCache().evict(realm, user);
+
+    }
+
+    @Override
+    public Set<String> getDisableableCredentialTypes(RealmModel realm, UserModel user) {
+        if (!session.userCredentialManager().getStoredCredentialsByType(realm, user, SECRET_QUESTION).isEmpty()) {
+            Set<String> set = new HashSet<>();
+            set.add(SECRET_QUESTION);
+            return set;
+        } else {
+            return Collections.EMPTY_SET;
+        }
 
     }
 

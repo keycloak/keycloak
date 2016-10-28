@@ -165,6 +165,11 @@ public class KerberosFederationProvider implements UserFederationProvider {
     }
 
     @Override
+    public Set<String> getDisableableCredentialTypes(RealmModel realm, UserModel user) {
+        return Collections.EMPTY_SET;
+    }
+
+    @Override
     public boolean supportsCredentialType(String credentialType) {
         return credentialType.equals(CredentialModel.KERBEROS) || (kerberosConfig.isAllowPasswordAuthentication() && credentialType.equals(CredentialModel.PASSWORD));
     }
