@@ -606,6 +606,47 @@ public class ResetPasswordTest extends TestRealmKeycloakTest {
         }
     }
 
+    @Test
+    public void resetPasswordLinkOpenedInNewBrowser() throws IOException, MessagingException {
+        String username = "login-test";
+        String resetUri = oauth.AUTH_SERVER_ROOT + "/realms/test/login-actions/reset-credentials";
+        driver.navigate().to(resetUri);
+
+        resetPasswordPage.assertCurrent();
+
+        resetPasswordPage.changePassword(username);
+
+        loginPage.assertCurrent();
+        assertEquals("You should receive an email shortly with further instructions.", loginPage.getSuccessMessage());
+
+        events.expectRequiredAction(EventType.SEND_RESET_PASSWORD)
+                .user(userId)
+                .detail(Details.REDIRECT_URI,  oauth.AUTH_SERVER_ROOT + "/realms/test/account/")
+                .client("account")
+                .detail(Details.USERNAME, username)
+                .detail(Details.EMAIL, "login@test.com")
+                .session((String)null)
+                .assertEvent();
+
+        assertEquals(1, greenMail.getReceivedMessages().length);
+
+        MimeMessage message = greenMail.getReceivedMessages()[0];
+
+        String changePasswordUrl = getPasswordResetEmailLink(message);
+
+        driver.manage().deleteAllCookies();
+        driver.navigate().to(changePasswordUrl.trim());
+
+        System.out.println(driver.getPageSource());
+
+        updatePasswordPage.assertCurrent();
+
+        updatePasswordPage.changePassword("resetPassword", "resetPassword");
+
+        assertTrue(infoPage.isCurrent());
+        assertEquals("Your account has been updated.", infoPage.getInfo());
+    }
+
     public static String getPasswordResetEmailLink(MimeMessage message) throws IOException, MessagingException {
     	Multipart multipart = (Multipart) message.getContent();
 

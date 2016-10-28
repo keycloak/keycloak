@@ -41,6 +41,7 @@ import org.keycloak.models.utils.HmacOTP;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.messages.Messages;
+import org.keycloak.services.resources.LoginActionsService;
 
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
@@ -60,6 +61,8 @@ public class ResetCredentialEmail implements Authenticator, AuthenticatorFactory
 
     @Override
     public void authenticate(AuthenticationFlowContext context) {
+        LoginActionsService.createActionCookie(context.getRealm(), context.getUriInfo(), context.getConnection(), context.getClientSession().getId());
+
         UserModel user = context.getUser();
         String username = context.getClientSession().getNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME);
 
