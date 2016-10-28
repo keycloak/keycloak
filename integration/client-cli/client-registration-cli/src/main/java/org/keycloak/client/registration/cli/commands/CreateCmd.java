@@ -56,6 +56,7 @@ import static org.keycloak.client.registration.cli.util.IoUtil.printErr;
 import static org.keycloak.client.registration.cli.util.IoUtil.readFully;
 import static org.keycloak.client.registration.cli.util.IoUtil.readSecret;
 import static org.keycloak.client.registration.cli.util.OsUtil.CMD;
+import static org.keycloak.client.registration.cli.util.OsUtil.EOL;
 import static org.keycloak.client.registration.cli.util.OsUtil.OS_ARCH;
 import static org.keycloak.client.registration.cli.util.OsUtil.PROMPT;
 import static org.keycloak.client.registration.cli.util.ParseUtil.mergeAttributes;
@@ -114,25 +115,25 @@ public class CreateCmd extends AbstractAuthOptionsCmd implements Command {
                         case "-s":
                         case "--set": {
                             if (!it.hasNext()) {
-                                throw new RuntimeException("Option " + option + " requires a value");
+                                throw new IllegalArgumentException("Option " + option + " requires a value");
                             }
                             String[] keyVal = parseKeyVal(it.next());
                             attrs.add(new AttributeOperation(SET, keyVal[0], keyVal[1]));
                             break;
                         }
                         default: {
-                            throw new RuntimeException("Unsupported option: " + option);
+                            throw new IllegalArgumentException("Unsupported option: " + option);
                         }
                     }
                 }
             }
 
             if (file == null && attrs.size() == 0) {
-                throw new RuntimeException("No file nor attribute values specified");
+                throw new IllegalArgumentException("No file nor attribute values specified");
             }
 
             if (outputClient && returnClientId) {
-                throw new RuntimeException("Options -o and -i can't be used together");
+                throw new IllegalArgumentException("Options -o and -i are mutually exclusive");
             }
 
             // if --token is specified read it
@@ -211,6 +212,8 @@ public class CreateCmd extends AbstractAuthOptionsCmd implements Command {
 
             return CommandResult.SUCCESS;
 
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException(e.getMessage() + suggestHelp(), e);
         } finally {
             commandInvocation.stop();
         }
@@ -235,6 +238,9 @@ public class CreateCmd extends AbstractAuthOptionsCmd implements Command {
         return noOptions() && regType == null && file == null && (args == null || args.size() == 0);
     }
 
+    protected String suggestHelp() {
+        return EOL + "Try '" + CMD + " help create' for more information";
+    }
 
     protected String help() {
         return usage();

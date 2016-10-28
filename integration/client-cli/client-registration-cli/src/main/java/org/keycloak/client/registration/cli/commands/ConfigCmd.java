@@ -23,11 +23,13 @@ import org.jboss.aesh.console.command.CommandException;
 import org.jboss.aesh.console.command.Command;
 import org.jboss.aesh.console.command.CommandResult;
 import org.jboss.aesh.console.command.invocation.CommandInvocation;
-import org.keycloak.client.registration.cli.util.OsUtil;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.List;
+
+import static org.keycloak.client.registration.cli.util.OsUtil.CMD;
+import static org.keycloak.client.registration.cli.util.OsUtil.EOL;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
@@ -69,7 +71,7 @@ public class ConfigCmd extends AbstractAuthOptionsCmd implements Command {
                         if (printHelp()) {
                             return help ? CommandResult.SUCCESS : CommandResult.FAILURE;
                         }
-                        throw new RuntimeException("Unknown sub-command: " + cmd);
+                        throw new IllegalArgumentException("Unknown sub-command: " + cmd + suggestHelp());
                     }
                 }
             }
@@ -78,11 +80,15 @@ public class ConfigCmd extends AbstractAuthOptionsCmd implements Command {
                 return help ? CommandResult.SUCCESS : CommandResult.FAILURE;
             }
 
-            throw new RuntimeException("Sub-command required by '" + OsUtil.CMD + " config' - one of: 'credentials', 'truststore', 'initial-token', 'registration-token'");
+            throw new IllegalArgumentException("Sub-command required by '" + CMD + " config' - one of: 'credentials', 'truststore', 'initial-token', 'registration-token'");
 
         } finally {
             commandInvocation.stop();
         }
+    }
+
+    protected String suggestHelp() {
+        return EOL + "Try '" + CMD + " help config' for more information";
     }
 
     protected String help() {
@@ -92,13 +98,13 @@ public class ConfigCmd extends AbstractAuthOptionsCmd implements Command {
     public static String usage() {
         StringWriter sb = new StringWriter();
         PrintWriter out = new PrintWriter(sb);
-        out.println("Usage: " + OsUtil.CMD + " config SUB_COMMAND [ARGUMENTS]");
+        out.println("Usage: " + CMD + " config SUB_COMMAND [ARGUMENTS]");
         out.println();
         out.println("Where SUB_COMMAND is one of: 'credentials', 'truststore', 'initial-token', 'registration-token'");
         out.println();
         out.println();
-        out.println("Use '" + OsUtil.CMD + " help config SUB_COMMAND' for more info.");
-        out.println("Use '" + OsUtil.CMD + " help' for general information and a list of commands.");
+        out.println("Use '" + CMD + " help config SUB_COMMAND' for more info.");
+        out.println("Use '" + CMD + " help' for general information and a list of commands.");
         return sb.toString();
     }
 }

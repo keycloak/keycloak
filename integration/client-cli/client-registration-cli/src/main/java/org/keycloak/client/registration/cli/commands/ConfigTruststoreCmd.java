@@ -17,6 +17,7 @@ import static org.keycloak.client.registration.cli.util.ConfigUtil.DEFAULT_CONFI
 import static org.keycloak.client.registration.cli.util.ConfigUtil.saveMergeConfig;
 import static org.keycloak.client.registration.cli.util.IoUtil.readSecret;
 import static org.keycloak.client.registration.cli.util.OsUtil.CMD;
+import static org.keycloak.client.registration.cli.util.OsUtil.EOL;
 import static org.keycloak.client.registration.cli.util.OsUtil.OS_ARCH;
 import static org.keycloak.client.registration.cli.util.OsUtil.PROMPT;
 
@@ -44,6 +45,9 @@ public class ConfigTruststoreCmd extends AbstractAuthOptionsCmd implements Comma
             }
 
             return process(commandInvocation);
+
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException(e.getMessage() + suggestHelp(), e);
         } finally {
             commandInvocation.stop();
         }
@@ -77,7 +81,7 @@ public class ConfigTruststoreCmd extends AbstractAuthOptionsCmd implements Comma
         }
 
         if (args.size() > 1) {
-            throw new RuntimeException("Invalid option: " + args.get(1));
+            throw new IllegalArgumentException("Invalid option: " + args.get(1));
         }
 
         String truststore = null;
@@ -105,7 +109,7 @@ public class ConfigTruststoreCmd extends AbstractAuthOptionsCmd implements Comma
         if (!delete) {
 
             if (truststore == null) {
-                throw new RuntimeException("No truststore specified");
+                throw new IllegalArgumentException("No truststore specified");
             }
 
             if (!new File(truststore).isFile()) {
@@ -121,10 +125,10 @@ public class ConfigTruststoreCmd extends AbstractAuthOptionsCmd implements Comma
 
         } else {
             if (truststore != null) {
-                throw new RuntimeException("Option --delete is mutually exclusive with specifying a TRUSTSTORE");
+                throw new IllegalArgumentException("Option --delete is mutually exclusive with specifying a TRUSTSTORE");
             }
             if (trustPass != null) {
-                throw new RuntimeException("Options --trustpass and --delete are mutually exclusive");
+                throw new IllegalArgumentException("Options --trustpass and --delete are mutually exclusive");
             }
             store = null;
             pass = null;
@@ -136,6 +140,10 @@ public class ConfigTruststoreCmd extends AbstractAuthOptionsCmd implements Comma
         });
 
         return CommandResult.SUCCESS;
+    }
+
+    protected String suggestHelp() {
+        return EOL + "Try '" + CMD + " help config truststore' for more information";
     }
 
     protected String help() {

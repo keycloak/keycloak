@@ -4,13 +4,14 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.client.registration.cli.config.ConfigData;
 import org.keycloak.client.registration.cli.config.FileConfigHandler;
-import org.keycloak.client.registration.cli.util.ConfigUtil;
 import org.keycloak.testsuite.cli.KcRegExec;
 import org.keycloak.testsuite.util.TempFileResource;
 
 import java.io.File;
 import java.io.IOException;
 
+import static org.keycloak.client.registration.cli.util.ConfigUtil.DEFAULT_CONFIG_FILE_PATH;
+import static org.keycloak.client.registration.cli.util.OsUtil.CMD;
 import static org.keycloak.client.registration.cli.util.OsUtil.EOL;
 import static org.keycloak.testsuite.cli.KcRegExec.execute;
 
@@ -90,15 +91,17 @@ public class KcRegTruststoreTest extends AbstractCliTest {
         assertExitCodeAndStreamSizes(exe, 0, 0, 0);
 
         exe = execute("config truststore --delete '" + truststore.getAbsolutePath() + "'");
-        assertExitCodeAndStreamSizes(exe, 1, 0, 1);
+        assertExitCodeAndStreamSizes(exe, 1, 0, 2);
         Assert.assertEquals("incompatible", "Option --delete is mutually exclusive with specifying a TRUSTSTORE", exe.stderrLines().get(0));
+        Assert.assertEquals("try help", "Try '" + CMD + " help config truststore' for more information", exe.stderrLines().get(1));
 
         exe = execute("config truststore --delete --trustpass secret");
-        assertExitCodeAndStreamSizes(exe, 1, 0, 1);
+        assertExitCodeAndStreamSizes(exe, 1, 0, 2);
         Assert.assertEquals("no truststore error", "Options --trustpass and --delete are mutually exclusive", exe.stderrLines().get(0));
+        Assert.assertEquals("try help", "Try '" + CMD + " help config truststore' for more information", exe.stderrLines().get(1));
 
         FileConfigHandler cfghandler = new FileConfigHandler();
-        cfghandler.setConfigFile(ConfigUtil.DEFAULT_CONFIG_FILE_PATH);
+        cfghandler.setConfigFile(DEFAULT_CONFIG_FILE_PATH);
         ConfigData config = cfghandler.loadConfig();
         Assert.assertNull("truststore null", config.getTruststore());
         Assert.assertNull("trustpass null", config.getTrustpass());

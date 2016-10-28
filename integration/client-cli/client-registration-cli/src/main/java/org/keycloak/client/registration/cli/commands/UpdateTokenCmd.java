@@ -45,6 +45,7 @@ import static org.keycloak.client.registration.cli.util.HttpUtil.doPost;
 import static org.keycloak.client.registration.cli.util.IoUtil.printOut;
 import static org.keycloak.client.registration.cli.util.IoUtil.warnfOut;
 import static org.keycloak.client.registration.cli.util.OsUtil.CMD;
+import static org.keycloak.client.registration.cli.util.OsUtil.EOL;
 import static org.keycloak.client.registration.cli.util.OsUtil.PROMPT;
 
 /**
@@ -67,7 +68,7 @@ public class UpdateTokenCmd extends AbstractAuthOptionsCmd {
             processGlobalOptions();
 
             if (args == null || args.isEmpty()) {
-                throw new RuntimeException("CLIENT not specified");
+                throw new IllegalArgumentException("CLIENT not specified");
             }
 
             String clientId = args.get(0);
@@ -127,6 +128,8 @@ public class UpdateTokenCmd extends AbstractAuthOptionsCmd {
             //System.out.println("Token updated for client " + clientId);
             return CommandResult.SUCCESS;
 
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException(e.getMessage() + suggestHelp(), e);
         } finally {
             commandInvocation.stop();
         }
@@ -135,6 +138,10 @@ public class UpdateTokenCmd extends AbstractAuthOptionsCmd {
     @Override
     protected boolean nothingToDo() {
         return noOptions() && (args == null || args.size() == 0);
+    }
+
+    protected String suggestHelp() {
+        return EOL + "Try '" + CMD + " help update-token' for more information";
     }
 
     protected String help() {
