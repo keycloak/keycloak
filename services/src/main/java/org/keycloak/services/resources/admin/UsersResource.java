@@ -152,10 +152,10 @@ public class UsersResource {
         try {
             UserModel user = session.users().getUserById(id, realm);
             if (user == null) {
-                throw new NotFoundException("User not found");
+                return Response.status(Status.NOT_FOUND).build();
             }
 
-             Set<String> attrsToRemove;
+            Set<String> attrsToRemove;
             if (rep.getAttributes() != null) {
                 attrsToRemove = new HashSet<>(user.getAttributes().keySet());
                 attrsToRemove.removeAll(rep.getAttributes().keySet());

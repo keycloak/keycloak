@@ -274,6 +274,10 @@ public class UserCacheSession implements UserCache {
     }
 
     protected UserModel validateCache(RealmModel realm, CachedUser cached) {
+        if (!realm.getId().equals(cached.getRealm())) {
+            return null;
+        }
+
         StorageId storageId = new StorageId(cached.getId());
         if (!storageId.isLocal()) {
             ComponentModel component = realm.getComponent(storageId.getProviderId());
