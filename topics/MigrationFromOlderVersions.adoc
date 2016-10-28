@@ -166,6 +166,11 @@ The version specific section below will mention if any changes are required to a
 
 ==== Migrating to 2.3.0
 
+===== Default max results on paginated endpoints
+
+All Admin REST API endpoints that support pagination now have a default max results set to 100. If you want to return
+ more than 100 entries you need to explicitly specify that with `?max=<RESULTS>`.
+
 ===== `realm-public-key` adapter property not recommended
 
 In 2.3.0 release we added support for Public Key Rotation. When admin rotates the realm keys in Keycloak admin console, the Client
