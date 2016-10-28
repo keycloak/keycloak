@@ -242,6 +242,8 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
             String name = (String)idToken.getOtherClaims().get(IDToken.NAME);
             String preferredUsername = (String)idToken.getOtherClaims().get(IDToken.PREFERRED_USERNAME);
             String email = (String)idToken.getOtherClaims().get(IDToken.EMAIL);
+            String firstName = (String)idToken.getOtherClaims().get(IDToken.GIVEN_NAME);
+            String lastName = (String)idToken.getOtherClaims().get(IDToken.FAMILY_NAME);
 
             if (!getConfig().isDisableUserInfoService()) {
                 String userInfoUrl = getUserInfoUrl();
@@ -254,6 +256,8 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
                     name = getJsonProperty(userInfo, "name");
                     preferredUsername = getJsonProperty(userInfo, "preferred_username");
                     email = getJsonProperty(userInfo, "email");
+                    firstName = getJsonProperty(userInfo, IDToken.GIVEN_NAME);
+                    lastName = getJsonProperty(userInfo, IDToken.FAMILY_NAME);
                     AbstractJsonUserAttributeMapper.storeUserProfileForMapper(identity, userInfo, getConfig().getAlias());
                 }
             }
@@ -264,7 +268,9 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
             identity.setId(id);
             identity.setName(name);
             identity.setEmail(email);
-
+            identity.setFirstName(firstName);
+            identity.setLastName(lastName);
+ 
             identity.setBrokerUserId(getConfig().getAlias() + "." + id);
             if (tokenResponse.getSessionState() != null) {
                 identity.setBrokerSessionId(getConfig().getAlias() + "." + tokenResponse.getSessionState());
