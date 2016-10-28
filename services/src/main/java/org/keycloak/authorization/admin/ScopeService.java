@@ -25,6 +25,7 @@ import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.authorization.store.StoreFactory;
+import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.resources.admin.RealmAuth;
@@ -177,7 +178,7 @@ public class ScopeService {
         }
 
         return Response.ok(
-                this.authorization.getStoreFactory().getScopeStore().findByResourceServer(search, this.resourceServer.getId(), firstResult != null ? firstResult : -1, maxResult != null ? maxResult : -1).stream()
+                this.authorization.getStoreFactory().getScopeStore().findByResourceServer(search, this.resourceServer.getId(), firstResult != null ? firstResult : -1, maxResult != null ? maxResult : Constants.DEFAULT_MAX_RESULTS).stream()
                         .map(scope -> toRepresentation(scope, this.authorization))
                         .collect(Collectors.toList()))
                 .build();

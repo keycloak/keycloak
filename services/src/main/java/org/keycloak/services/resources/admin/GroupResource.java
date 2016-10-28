@@ -21,6 +21,7 @@ import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
+import org.keycloak.models.Constants;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -196,7 +197,7 @@ public class GroupResource {
      * Returns a list of users, filtered according to query parameters
      *
      * @param firstResult Pagination offset
-     * @param maxResults Pagination size
+     * @param maxResults Maximum results size (defaults to 100)
      * @return
      */
     @GET
@@ -212,7 +213,7 @@ public class GroupResource {
         }
 
         firstResult = firstResult != null ? firstResult : -1;
-        maxResults = maxResults != null ? maxResults : -1;
+        maxResults = maxResults != null ? maxResults : Constants.DEFAULT_MAX_RESULTS;
 
         List<UserRepresentation> results = new ArrayList<UserRepresentation>();
         List<UserModel> userModels = session.users().getGroupMembers(realm, group, firstResult, maxResults);

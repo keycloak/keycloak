@@ -54,4 +54,6 @@ public interface Constants {
 
     // Indication to admin-rest-endpoint that realm keys should be re-generated
     String GENERATE = "GENERATE";
+
+    int DEFAULT_MAX_RESULTS = 100;
 }

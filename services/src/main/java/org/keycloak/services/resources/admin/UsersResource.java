@@ -650,7 +650,7 @@ public class UsersResource {
      * @param email
      * @param username
      * @param first Pagination offset
-     * @param maxResults Pagination size
+     * @param maxResults Maximum results size (defaults to 100)
      * @return
      */
     @GET
@@ -666,7 +666,7 @@ public class UsersResource {
         auth.requireView();
 
         firstResult = firstResult != null ? firstResult : -1;
-        maxResults = maxResults != null ? maxResults : -1;
+        maxResults = maxResults != null ? maxResults : Constants.DEFAULT_MAX_RESULTS;
 
         List<UserRepresentation> results = new ArrayList<UserRepresentation>();
         List<UserModel> userModels;

@@ -517,7 +517,7 @@ public class RealmAdminResource {
      * @param dateTo To date
      * @param dateFrom From date
      * @param firstResult Paging offset
-     * @param maxResults Paging size
+     * @param maxResults Maximum results size (defaults to 100)
      * @return
      */
     @Path("events")
@@ -579,6 +579,8 @@ public class RealmAdminResource {
         }
         if (maxResults != null) {
             query.maxResults(maxResults);
+        } else {
+            query.maxResults(Constants.DEFAULT_MAX_RESULTS);
         }
 
         return toEventListRep(query.getResultList());
@@ -606,7 +608,7 @@ public class RealmAdminResource {
      * @param dateTo
      * @param dateFrom
      * @param firstResult
-     * @param maxResults
+     * @param maxResults Maximum results size (defaults to 100)
      * @return
      */
     @Path("admin-events")
@@ -689,6 +691,8 @@ public class RealmAdminResource {
         }
         if (maxResults != null) {
             query.maxResults(maxResults);
+        } else {
+            query.maxResults(Constants.DEFAULT_MAX_RESULTS);
         }
 
         return toAdminEventRep(query.getResultList());
