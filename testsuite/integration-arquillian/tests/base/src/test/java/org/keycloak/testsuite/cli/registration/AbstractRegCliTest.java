@@ -19,7 +19,7 @@ import org.keycloak.services.clientregistration.policy.ClientRegistrationPolicy;
 import org.keycloak.services.clientregistration.policy.ClientRegistrationPolicyManager;
 import org.keycloak.services.clientregistration.policy.RegistrationAuth;
 import org.keycloak.services.clientregistration.policy.impl.TrustedHostClientRegistrationPolicyFactory;
-import org.keycloak.testsuite.AbstractKeycloakTest;
+import org.keycloak.testsuite.cli.AbstractCliTest;
 import org.keycloak.testsuite.cli.KcRegExec;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
@@ -45,7 +45,7 @@ import static org.keycloak.testsuite.cli.KcRegExec.execute;
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
-public abstract class AbstractCliTest extends AbstractKeycloakTest {
+public abstract class AbstractRegCliTest extends AbstractCliTest {
 
     protected String serverUrl = isAuthServerSSL() ?
             "https://localhost:" + getAuthServerHttpsPort() + "/auth" :
@@ -526,44 +526,5 @@ public abstract class AbstractCliTest extends AbstractKeycloakTest {
 
         lastModified2 = configFile.exists() ? configFile.lastModified() : 0;
         Assert.assertEquals("config file not modified", lastModified, lastModified2);
-    }
-
-    void assertExitCodeAndStdOutSize(KcRegExec exe, int exitCode, int stdOutLineCount) {
-        assertExitCodeAndStreamSizes(exe, exitCode, stdOutLineCount, -1);
-    }
-
-    void assertExitCodeAndStdErrSize(KcRegExec exe, int exitCode, int stdErrLineCount) {
-        assertExitCodeAndStreamSizes(exe, exitCode, -1, stdErrLineCount);
-    }
-
-    void assertExitCodeAndStreamSizes(KcRegExec exe, int exitCode, int stdOutLineCount, int stdErrLineCount) {
-        Assert.assertEquals("exitCode == " + exitCode, exitCode, exe.exitCode());
-        if (stdOutLineCount != -1) {
-            try {
-                assertLineCount("stdout output", exe.stdoutLines(), stdOutLineCount);
-            } catch (Throwable e) {
-                throw new AssertionError("STDOUT: " + exe.stdoutString(), e);
-            }
-        }
-        if (stdErrLineCount != -1) {
-            try {
-                assertLineCount("stderr output", exe.stderrLines(), stdErrLineCount);
-            } catch (Throwable e) {
-                throw new AssertionError("STDERR: " + exe.stderrString(), e);
-            }
-        }
-    }
-
-    void assertLineCount(String label, List<String> lines, int count) {
-        if (lines.size() == count) {
-            return;
-        }
-        // there is some kind of race condition in 'kcreg' that results in intermittent extra empty line
-        if (lines.size() == count + 1) {
-            if ("".equals(lines.get(lines.size()-1))) {
-                return;
-            }
-        }
-        Assert.assertTrue(label + " has " + lines.size() + " lines (expected: " + count + ")", lines.size() == count);
     }
 }

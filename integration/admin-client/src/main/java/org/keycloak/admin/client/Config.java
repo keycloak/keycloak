@@ -110,7 +110,7 @@ public class Config {
     }
 
     public static void checkGrantType(String grantType) {
-        if (!PASSWORD.equals(grantType) && !CLIENT_CREDENTIALS.equals(grantType)) {
+        if (grantType != null && !PASSWORD.equals(grantType) && !CLIENT_CREDENTIALS.equals(grantType)) {
             throw new IllegalArgumentException("Unsupported grantType: " + grantType +
                     " (only " + PASSWORD + " and " + CLIENT_CREDENTIALS + " are supported)");
         }
