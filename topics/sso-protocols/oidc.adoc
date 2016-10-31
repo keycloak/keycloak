@@ -41,7 +41,7 @@ heavy use of browser redirects to obtain an _identity_ and _access_ token.  Here
   as a query parameter in the callback URL.
 . The application extracts the temporary code and makes a background out of band REST invocation to {{book.project.name}}
   to exchange the code for an _identity_, _access_ and _refresh_ token.  Once this temporary code has been used once
-  to obtain the tokens, it can never be used again.  This prevents potential reply attacks.
+  to obtain the tokens, it can never be used again.  This prevents potential replay attacks.
 
 It is important to note that _access_ tokens are usually short lived and often expired after only minutes.  The additional _refresh_
 token that was transmitted by the login protocol allows the application to obtain a new access token after it expires.  This
