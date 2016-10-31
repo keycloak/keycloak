@@ -1,6 +1,10 @@
 [[_client_registration_cli]]
 == Client Registration CLI
 
+{% if book.product %}
+NOTE: Client Registration CLI is a Technology Preview feature and is not fully supported.
+{% endif %}
+
 `Client Registration CLI` is a command line interface tool that can be used by application developers to configure new clients
 to integrate with {book_project_name}. It is specifically designed to interact with {{book.project.name}} Client Registration REST endpoints.
 
