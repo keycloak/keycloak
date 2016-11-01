@@ -43,8 +43,12 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import org.keycloak.dom.saml.v2.protocol.ExtensionsType;
+import org.keycloak.saml.SamlProtocolExtensionsAwareBuilder;
 
 import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.ASSERTION_NSURI;
+import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.PROTOCOL_NSURI;
+import org.w3c.dom.Node;
 
 /**
  * Base Class for the Stax writers for SAML
@@ -237,6 +241,28 @@ public class BaseWriter {
         if (subjectConfirmations != null) {
             for (SubjectConfirmationType subjectConfirmationType : subjectConfirmations) {
                 write(subjectConfirmationType);
+            }
+        }
+
+        StaxUtil.writeEndElement(writer);
+        StaxUtil.flush(writer);
+    }
+
+    public void write(ExtensionsType extensions) throws ProcessingException {
+        if (extensions.getAny().isEmpty()) {
+            return;
+        }
+
+        StaxUtil.writeStartElement(writer, PROTOCOL_PREFIX, JBossSAMLConstants.EXTENSIONS.get(), PROTOCOL_NSURI.get());
+
+        for (Object o : extensions.getAny()) {
+            if (o instanceof Node) {
+                StaxUtil.writeDOMNode(writer, (Node) o);
+            } else if (o instanceof SamlProtocolExtensionsAwareBuilder.NodeGenerator) {
+                SamlProtocolExtensionsAwareBuilder.NodeGenerator ng = (SamlProtocolExtensionsAwareBuilder.NodeGenerator) o;
+                ng.write(writer);
+            } else {
+                throw logger.samlExtensionUnknownChild(o == null ? null : o.getClass());
             }
         }
 

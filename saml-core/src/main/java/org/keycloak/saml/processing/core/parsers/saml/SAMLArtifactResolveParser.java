@@ -58,6 +58,8 @@ public class SAMLArtifactResolveParser extends SAMLRequestAbstractParser impleme
                 continue;
             } else if (JBossSAMLConstants.SIGNATURE.get().equals(elementName)) {
                 continue;
+            } else if (JBossSAMLConstants.EXTENSIONS.get().equals(elementName)) {
+                continue;
             } else
                 throw new RuntimeException(ErrorCodes.UNKNOWN_START_ELEMENT + elementName + "::location="
                         + startElement.getLocation());
