@@ -26,9 +26,11 @@
  */
 package cx.ath.matthew.unix;
 
-import cx.ath.matthew.LibraryLoader;
 import cx.ath.matthew.debug.Debug;
+import jnr.unixsocket.UnixSocketAddress;
+import jnr.unixsocket.UnixSocketChannel;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -37,25 +39,8 @@ import java.io.OutputStream;
  * Represents a UnixSocket.
  */
 public class UnixSocket {
-    static {
-        LibraryLoader.load();
-    }
 
-    private native void native_set_pass_cred(int sock, boolean passcred) throws IOException;
-
-    private native int native_connect(String address, boolean abs) throws IOException;
-
-    private native void native_close(int sock) throws IOException;
-
-    private native int native_getPID(int sock);
-
-    private native int native_getUID(int sock);
-
-    private native int native_getGID(int sock);
-
-    private native void native_send_creds(int sock, byte data) throws IOException;
-
-    private native byte native_recv_creds(int sock, int[] creds) throws IOException;
+    private UnixSocketChannel channel;
 
     private UnixSocketAddress address = null;
     private USOutputStream os = null;
@@ -73,8 +58,8 @@ public class UnixSocket {
         this.sock = sock;
         this.address = address;
         this.connected = true;
-        this.os = new USOutputStream(sock, this);
-        this.is = new USInputStream(sock, this);
+        this.os = new USOutputStream(channel, sock, this);
+        this.is = new USInputStream(channel, this);
     }
 
     /**
@@ -98,7 +83,7 @@ public class UnixSocket {
      * @param address The Unix Socket address to connect to
      */
     public UnixSocket(String address) throws IOException {
-        this(new UnixSocketAddress(address));
+        this(new UnixSocketAddress(new File(address)));
     }
 
     /**
@@ -108,9 +93,11 @@ public class UnixSocket {
      */
     public void connect(UnixSocketAddress address) throws IOException {
         if (connected) close();
-        this.sock = native_connect(address.path, address.abs);
-        this.os = new USOutputStream(this.sock, this);
-        this.is = new USInputStream(this.sock, this);
+        this.channel = UnixSocketChannel.open(address);
+        this.channel = UnixSocketChannel.open(address);
+        this.sock = channel.getFD();
+        this.os = new USOutputStream(channel, sock, this);
+        this.is = new USInputStream(channel, this);
         this.address = address;
         this.connected = true;
         this.closed = false;
@@ -123,7 +110,7 @@ public class UnixSocket {
      * @param address The Unix Socket address to connect to
      */
     public void connect(String address) throws IOException {
-        connect(new UnixSocketAddress(address));
+        connect(new UnixSocketAddress(new File(address)));
     }
 
     public void finalize() {
@@ -138,7 +125,7 @@ public class UnixSocket {
      */
     public synchronized void close() throws IOException {
         if (Debug.debug) Debug.print(Debug.INFO, "Closing socket");
-        native_close(sock);
+        channel.close();
         sock = 0;
         this.closed = true;
         this.connected = false;
@@ -182,91 +169,7 @@ public class UnixSocket {
      */
     public void sendCredentialByte(byte data) throws IOException {
         if (!connected) throw new NotConnectedException();
-        native_send_creds(sock, data);
-    }
-
-    /**
-     * Receive a single byte of data, with credentials.
-     * (Works on BSDs)
-     *
-     * @param data The byte of data to send.
-     * @see getPeerUID
-     * @see getPeerPID
-     * @see getPeerGID
-     */
-    public byte recvCredentialByte() throws IOException {
-        if (!connected) throw new NotConnectedException();
-        int[] creds = new int[]{-1, -1, -1};
-        byte data = native_recv_creds(sock, creds);
-        pid = creds[0];
-        uid = creds[1];
-        gid = creds[2];
-        return data;
-    }
-
-    /**
-     * Get the credential passing status.
-     * (only effective on linux)
-     *
-     * @return The current status of credential passing.
-     * @see setPassCred
-     */
-    public boolean getPassCred() {
-        return passcred;
-    }
-
-    /**
-     * Return the uid of the remote process.
-     * Some data must have been received on the socket to do this.
-     * Either setPassCred must be called on Linux first, or recvCredentialByte
-     * on BSD.
-     *
-     * @return the UID or -1 if it is not available
-     */
-    public int getPeerUID() {
-        if (-1 == uid)
-            uid = native_getUID(sock);
-        return uid;
-    }
-
-    /**
-     * Return the gid of the remote process.
-     * Some data must have been received on the socket to do this.
-     * Either setPassCred must be called on Linux first, or recvCredentialByte
-     * on BSD.
-     *
-     * @return the GID or -1 if it is not available
-     */
-    public int getPeerGID() {
-        if (-1 == gid)
-            gid = native_getGID(sock);
-        return gid;
-    }
-
-    /**
-     * Return the pid of the remote process.
-     * Some data must have been received on the socket to do this.
-     * Either setPassCred must be called on Linux first, or recvCredentialByte
-     * on BSD.
-     *
-     * @return the PID or -1 if it is not available
-     */
-    public int getPeerPID() {
-        if (-1 == pid)
-            pid = native_getPID(sock);
-        return pid;
-    }
-
-    /**
-     * Set the credential passing status.
-     * (Only does anything on linux, for other OS, you need
-     * to use send/recv credentials)
-     *
-     * @param enable Set to true for credentials to be passed.
-     */
-    public void setPassCred(boolean enable) throws IOException {
-        native_set_pass_cred(sock, enable);
-        passcred = enable;
+            os.send(channel.getFD(), new byte[]{ data });
     }
 
     /**
