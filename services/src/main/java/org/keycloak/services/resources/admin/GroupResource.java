@@ -48,6 +48,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.keycloak.services.ErrorResponse;
 
 /**
  * @author Bill Burke
@@ -137,6 +138,12 @@ public class GroupResource {
 
         if (group == null) {
             throw new NotFoundException("Could not find group by id");
+        }
+        
+        for (GroupModel group : group.getSubGroups()) {
+            if (group.getName().equals(rep.getName())) {
+                return ErrorResponse.exists("Parent already contains subgroup named '" + rep.getName() + "'");
+            }
         }
 
         Response.ResponseBuilder builder = Response.status(204);
