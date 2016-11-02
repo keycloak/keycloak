@@ -28,8 +28,11 @@ import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserFederationManager;
 import org.keycloak.models.UserModel;
+import org.keycloak.representations.idm.authorization.ResourceOwnerRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.resources.admin.RealmAuth;
@@ -76,10 +79,26 @@ public class ResourceSetService {
         requireManage();
         StoreFactory storeFactory = this.authorization.getStoreFactory();
         Resource existingResource = storeFactory.getResourceStore().findByName(resource.getName(), this.resourceServer.getId());
+        ResourceOwnerRepresentation owner = resource.getOwner();
 
         if (existingResource != null && existingResource.getResourceServer().getId().equals(this.resourceServer.getId())
-                && existingResource.getOwner().equals(resource.getOwner())) {
+                && existingResource.getOwner().equals(owner)) {
             return ErrorResponse.exists("Resource with name [" + resource.getName() + "] already exists.");
+        }
+
+        String ownerId = owner.getId();
+
+        if (ownerId != null) {
+            if (!resourceServer.getClientId().equals(ownerId)) {
+                RealmModel realm = authorization.getRealm();
+                KeycloakSession keycloakSession = authorization.getKeycloakSession();
+                UserFederationManager users = keycloakSession.users();
+                UserModel ownerModel = users.getUserByUsername(ownerId, realm);
+
+                if (ownerModel == null) {
+                    return ErrorResponse.error("Owner must be a valid username or, if the resource server, the client id.", Status.BAD_REQUEST);
+                }
+            }
         }
 
         Resource model = toModel(resource, this.resourceServer, authorization);
