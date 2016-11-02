@@ -86,17 +86,25 @@ public class ResourceSetService {
             return ErrorResponse.exists("Resource with name [" + resource.getName() + "] already exists.");
         }
 
-        String ownerId = owner.getId();
+        if (owner != null) {
+            String ownerId = owner.getId();
 
-        if (ownerId != null) {
-            if (!resourceServer.getClientId().equals(ownerId)) {
-                RealmModel realm = authorization.getRealm();
-                KeycloakSession keycloakSession = authorization.getKeycloakSession();
-                UserFederationManager users = keycloakSession.users();
-                UserModel ownerModel = users.getUserByUsername(ownerId, realm);
+            if (ownerId != null) {
+                if (!resourceServer.getClientId().equals(ownerId)) {
+                    RealmModel realm = authorization.getRealm();
+                    KeycloakSession keycloakSession = authorization.getKeycloakSession();
+                    UserFederationManager users = keycloakSession.users();
+                    UserModel ownerModel = users.getUserById(ownerId, realm);
 
-                if (ownerModel == null) {
-                    return ErrorResponse.error("Owner must be a valid username or, if the resource server, the client id.", Status.BAD_REQUEST);
+                    if (ownerModel == null) {
+                        ownerModel = users.getUserByUsername(ownerId, realm);
+                    }
+
+                    if (ownerModel == null) {
+                        return ErrorResponse.error("Owner must be a valid username or user identifier. If the resource server, the client id or null.", Status.BAD_REQUEST);
+                    }
+
+                    owner.setId(ownerModel.getId());
                 }
             }
         }
@@ -148,7 +156,7 @@ public class ResourceSetService {
             if (policyModel.getResources().size() == 1) {
                 policyStore.delete(policyModel.getId());
             } else {
-                policyModel.addResource(resource);
+                policyModel.removeResource(resource);
             }
         }
 
