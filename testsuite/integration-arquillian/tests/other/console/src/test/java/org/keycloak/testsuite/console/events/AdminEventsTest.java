@@ -88,6 +88,7 @@ public class AdminEventsTest extends AbstractConsoleTest {
         assertEquals(1, resultList.size());
         resultList.get(0).findElement(By.xpath("//td[text()='CREATE']"));
         resultList.get(0).findElement(By.xpath("//td[text()='clients/" + id + "']"));
+        resultList.get(0).findElement(By.xpath("//td[text()='CLIENT']"));
 
         adminEventsPage.table().reset();
         adminEventsPage.table().filterForm().addOperationType("UPDATE");
@@ -97,6 +98,7 @@ public class AdminEventsTest extends AbstractConsoleTest {
         assertEquals(1, resultList.size());
         resultList.get(0).findElement(By.xpath("//td[text()='UPDATE']"));
         resultList.get(0).findElement(By.xpath("//td[text()='clients/" + id + "']"));
+        resultList.get(0).findElement(By.xpath("//td[text()='CLIENT']"));
 
         adminEventsPage.table().reset();
         adminEventsPage.table().filterForm().addOperationType("DELETE");
@@ -106,6 +108,7 @@ public class AdminEventsTest extends AbstractConsoleTest {
         assertEquals(1, resultList.size());
         resultList.get(0).findElement(By.xpath("//td[text()='DELETE']"));
         resultList.get(0).findElement(By.xpath("//td[text()='clients/" + id + "']"));
+        resultList.get(0).findElement(By.xpath("//td[text()='CLIENT']"));
     }
     
     public ClientsResource clientsResource() {
