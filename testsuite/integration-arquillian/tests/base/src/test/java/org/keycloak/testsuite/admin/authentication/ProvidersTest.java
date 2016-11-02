@@ -32,6 +32,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import static org.keycloak.common.Profile.isPreviewEnabled;
+
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
@@ -135,7 +137,9 @@ public class ProvidersTest extends AbstractAuthenticationTest {
                 "Validates a OTP on a separate OTP form. Only shown if required based on the configured conditions.");
         addProviderInfo(result, "auth-cookie", "Cookie", "Validates the SSO cookie set by the auth server.");
         addProviderInfo(result, "auth-otp-form", "OTP Form", "Validates a OTP on a separate OTP form.");
-        addProviderInfo(result, "auth-script-based", "Script", "Script based authentication. Allows to define custom authentication logic via JavaScript.");
+        if (isPreviewEnabled()) {
+            addProviderInfo(result, "auth-script-based", "Script", "Script based authentication. Allows to define custom authentication logic via JavaScript.");
+        }
         addProviderInfo(result, "auth-spnego", "Kerberos", "Initiates the SPNEGO protocol.  Most often used with Kerberos.");
         addProviderInfo(result, "auth-username-password-form", "Username Password Form",
                 "Validates a username and password from login form.");
