@@ -61,8 +61,9 @@
         <auth.server.jboss.artifactId>integration-arquillian-servers-auth-server-${auth.server}</auth.server.jboss.artifactId>
         <auth.server.jboss.skip.unpack>${auth.server.undertow}</auth.server.jboss.skip.unpack>
         <auth.server.jboss.startup.timeout>300</auth.server.jboss.startup.timeout>
-
+        
         <auth.server.remote>false</auth.server.remote>
+        <auth.server.profile/>
     
         <adapter.test.props/>
         <migration.import.properties/>
@@ -163,6 +164,8 @@
                             <auth.server.config.property.value>${auth.server.config.property.value}</auth.server.config.property.value>
                             <auth.server.adapter.impl.class>${auth.server.adapter.impl.class}</auth.server.adapter.impl.class>
                             
+                            <auth.server.profile>${auth.server.profile}</auth.server.profile>
+                            
                             <frontend.console.output>${frontend.console.output}</frontend.console.output>
                             <backends.console.output>${backend.console.output}</backends.console.output>
 
@@ -244,6 +247,18 @@
                     <artifactId>wildfly-arquillian-container-managed</artifactId>
                 </dependency>
             </dependencies>
+        </profile>
+
+        <profile>
+            <id>auth-server-profile</id>
+            <activation>
+                <property>
+                    <name>keycloak.profile</name>
+                </property>
+            </activation>
+            <properties>
+                <auth.server.profile>-Dkeycloak.profile=${keycloak.profile}</auth.server.profile>
+            </properties>
         </profile>
 
         <profile>
