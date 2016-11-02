@@ -80,6 +80,8 @@ public abstract class AbstractInitiateLogin implements AuthChallenge {
             }
 
             binding.signWith(null, keypair);
+            // TODO: As part of KEYCLOAK-3810, add KeyID to the SAML document
+            //   <related DocumentBuilder>.addExtension(new KeycloakKeySamlExtensionGenerator(<key ID>));
             binding.signDocument();
         }
         return binding;

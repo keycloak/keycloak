@@ -54,8 +54,6 @@ import javax.xml.crypto.dsig.dom.DOMSignContext;
 import javax.xml.crypto.dsig.dom.DOMValidateContext;
 import javax.xml.crypto.dsig.keyinfo.KeyInfo;
 import javax.xml.crypto.dsig.keyinfo.KeyInfoFactory;
-import javax.xml.crypto.dsig.keyinfo.KeyValue;
-import javax.xml.crypto.dsig.keyinfo.X509Data;
 import javax.xml.crypto.dsig.spec.C14NMethodParameterSpec;
 import javax.xml.crypto.dsig.spec.TransformParameterSpec;
 import javax.xml.namespace.QName;
@@ -69,6 +67,7 @@ import java.io.OutputStream;
 import java.security.GeneralSecurityException;
 import java.security.Key;
 import java.security.KeyException;
+import java.security.KeyManagementException;
 import java.security.KeyPair;
 import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
@@ -81,7 +80,14 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import javax.xml.crypto.AlgorithmMethod;
+import javax.xml.crypto.KeySelector;
+import javax.xml.crypto.KeySelectorException;
+import javax.xml.crypto.KeySelectorResult;
+import javax.xml.crypto.XMLCryptoContext;
 import javax.xml.crypto.dsig.keyinfo.KeyName;
+import org.keycloak.rotation.KeyLocator;
+import org.keycloak.saml.processing.api.util.KeyInfoTools;
 
 /**
  * Utility for XML Signature <b>Note:</b> You can change the canonicalization method type by using the system property
@@ -107,14 +113,65 @@ public class XMLSignatureUtil {
 
     ;
 
-    private static String canonicalizationMethodType = CanonicalizationMethod.EXCLUSIVE;
-
-    private static XMLSignatureFactory fac = getXMLSignatureFactory();
+    private static final XMLSignatureFactory fac = getXMLSignatureFactory();
 
     /**
      * By default, we include the keyinfo in the signature
      */
     private static boolean includeKeyInfoInSignature = true;
+
+    private static class KeySelectorUtilizingKeyNameHint extends KeySelector {
+
+        private final KeyLocator locator;
+
+        private boolean keyLocated = false;
+
+        private String keyName = null;
+
+        public KeySelectorUtilizingKeyNameHint(KeyLocator locator) {
+            this.locator = locator;
+        }
+
+        @Override
+        public KeySelectorResult select(KeyInfo keyInfo, KeySelector.Purpose purpose, AlgorithmMethod method, XMLCryptoContext context) throws KeySelectorException {
+            try {
+                KeyName keyNameEl = KeyInfoTools.getKeyName(keyInfo);
+                this.keyName = keyNameEl == null ? null : keyNameEl.getName();
+                final Key key = locator.getKey(keyName);
+                this.keyLocated = key != null;
+                return new KeySelectorResult() {
+                    @Override public Key getKey() {
+                        return key;
+                    }
+                };
+            } catch (KeyManagementException ex) {
+                throw new KeySelectorException(ex);
+            }
+
+        }
+
+        private boolean wasKeyLocated() {
+            return this.keyLocated;
+        }
+    }
+
+    private static class KeySelectorPresetKey extends KeySelector {
+
+        private final Key key;
+
+        public KeySelectorPresetKey(Key key) {
+            this.key = key;
+        }
+
+        @Override
+        public KeySelectorResult select(KeyInfo keyInfo, KeySelector.Purpose purpose, AlgorithmMethod method, XMLCryptoContext context) {
+            return new KeySelectorResult() {
+                @Override public Key getKey() {
+                    return key;
+                }
+            };
+        }
+    }
 
     private static XMLSignatureFactory getXMLSignatureFactory() {
         XMLSignatureFactory xsf = null;
@@ -333,6 +390,7 @@ public class XMLSignatureUtil {
     public static Document sign(SignatureUtilTransferObject dto, String canonicalizationMethodType) throws GeneralSecurityException, MarshalException,
             XMLSignatureException {
         Document doc = dto.getDocumentToBeSigned();
+        String keyId = dto.getKeyId();
         KeyPair keyPair = dto.getKeyPair();
         Node nextSibling = dto.getNextSibling();
         String digestMethod = dto.getDigestMethod();
@@ -346,13 +404,14 @@ public class XMLSignatureUtil {
 
         DOMSignContext dsc = new DOMSignContext(signingKey, doc.getDocumentElement(), nextSibling);
 
-        signImpl(dsc, digestMethod, signatureMethod, referenceURI, dto.getKeyId(), publicKey, dto.getX509Certificate(), canonicalizationMethodType);
+        signImpl(dsc, digestMethod, signatureMethod, referenceURI, keyId, publicKey, dto.getX509Certificate(), canonicalizationMethodType);
 
         return doc;
     }
 
     /**
-     * Validate a signed document with the given public key
+     * Validate a signed document with the given public key. All elements that contain a Signature are checked,
+     * this way both assertions and the containing document are verified when signed.
      *
      * @param signedDoc
      * @param publicKey
@@ -363,7 +422,7 @@ public class XMLSignatureUtil {
      * @throws XMLSignatureException
      */
     @SuppressWarnings("unchecked")
-    public static boolean validate(Document signedDoc, Key publicKey) throws MarshalException, XMLSignatureException {
+    public static boolean validate(Document signedDoc, final KeyLocator locator) throws MarshalException, XMLSignatureException {
         if (signedDoc == null)
             throw logger.nullArgumentError("Signed Document");
 
@@ -376,7 +435,7 @@ public class XMLSignatureUtil {
             return false;
         }
 
-        if (publicKey == null)
+        if (locator == null)
             throw logger.nullValueError("Public Key");
 
         int signedAssertions = 0;
@@ -392,24 +451,7 @@ public class XMLSignatureUtil {
                 }
             }
 
-            DOMValidateContext valContext = new DOMValidateContext(publicKey, nl.item(i));
-            XMLSignature signature = fac.unmarshalXMLSignature(valContext);
-
-            boolean coreValidity = signature.validate(valContext);
-
-            if (!coreValidity) {
-                if (logger.isTraceEnabled()) {
-                    boolean sv = signature.getSignatureValue().validate(valContext);
-                    logger.trace("Signature validation status: " + sv);
-
-                    List<Reference> references = signature.getSignedInfo().getReferences();
-                    for (Reference ref : references) {
-                        logger.trace("[Ref id=" + ref.getId() + ":uri=" + ref.getURI() + "]validity status:" + ref.validate(valContext));
-                    }
-                }
-
-                return false;
-            }
+            if (! validateSingleNode(signatureNode, locator)) return false;
         }
 
         NodeList assertions = signedDoc.getElementsByTagNameNS(assertionNameSpaceUri, JBossSAMLConstants.ASSERTION.get());
@@ -423,6 +465,62 @@ public class XMLSignatureUtil {
         }
 
         return true;
+    }
+
+    private static boolean validateSingleNode(Node signatureNode, final KeyLocator locator) throws MarshalException, XMLSignatureException {
+        KeySelectorUtilizingKeyNameHint sel = new KeySelectorUtilizingKeyNameHint(locator);
+        try {
+            if (validateUsingKeySelector(signatureNode, sel)) {
+                return true;
+            }
+            if (sel.wasKeyLocated()) {
+                return false;
+            }
+        } catch (XMLSignatureException ex) { // pass through MarshalException
+            logger.debug("Verification failed for key " + sel.keyName + ": " + ex);
+            logger.trace(ex);
+        }
+
+        logger.trace("Could not validate signature using ds:KeyInfo/ds:KeyName hint.");
+
+        if (locator instanceof Iterable) {
+            Iterable<Key> availableKeys = (Iterable<Key>) locator;
+
+            logger.trace("Trying hard to validate XML signature using all available keys.");
+
+            for (Key key : availableKeys) {
+                try {
+                    if (validateUsingKeySelector(signatureNode, new KeySelectorPresetKey(key))) {
+                        return true;
+                    }
+                } catch (XMLSignatureException ex) { // pass through MarshalException
+                    logger.debug("Verification failed: " + ex);
+                    logger.trace(ex);
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private static boolean validateUsingKeySelector(Node signatureNode, KeySelector validationKeySelector) throws XMLSignatureException, MarshalException {
+        DOMValidateContext valContext = new DOMValidateContext(validationKeySelector, signatureNode);
+        XMLSignature signature = fac.unmarshalXMLSignature(valContext);
+        boolean coreValidity = signature.validate(valContext);
+        
+        if (! coreValidity) {
+            if (logger.isTraceEnabled()) {
+                boolean sv = signature.getSignatureValue().validate(valContext);
+                logger.trace("Signature validation status: " + sv);
+
+                List<Reference> references = signature.getSignedInfo().getReferences();
+                for (Reference ref : references) {
+                    logger.trace("[Ref id=" + ref.getId() + ":uri=" + ref.getURI() + "]validity status:" + ref.validate(valContext));
+                }
+            }
+        }
+
+        return coreValidity;
     }
 
     /**
@@ -605,7 +703,7 @@ public class XMLSignatureUtil {
         Transform transform1 = fac.newTransform(Transform.ENVELOPED, (TransformParameterSpec) null);
         Transform transform2 = fac.newTransform("http://www.w3.org/2001/10/xml-exc-c14n#", (TransformParameterSpec) null);
 
-        List<Transform> transformList = new ArrayList<Transform>();
+        List<Transform> transformList = new ArrayList<>();
         transformList.add(transform1);
         transformList.add(transform2);
 
@@ -618,7 +716,7 @@ public class XMLSignatureUtil {
         SignatureMethod signatureMethodObj = fac.newSignatureMethod(signatureMethod, null);
         SignedInfo si = fac.newSignedInfo(canonicalizationMethod, signatureMethodObj, referenceList);
 
-        KeyInfo ki = null;
+        KeyInfo ki;
         if (includeKeyInfoInSignature) {
             ki = createKeyInfo(keyId, publicKey, x509Certificate);
         } else {

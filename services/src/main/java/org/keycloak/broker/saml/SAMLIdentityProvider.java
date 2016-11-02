@@ -50,8 +50,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import java.security.KeyPair;
-import java.security.PrivateKey;
-import java.security.PublicKey;
+import org.keycloak.saml.processing.core.util.KeycloakKeySamlExtensionGenerator;
 
 /**
  * @author Pedro Igor
@@ -97,6 +96,7 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
                     .nameIdPolicy(SAML2NameIDPolicyBuilder.format(nameIDPolicyFormat));
             JaxrsSAML2BindingBuilder binding = new JaxrsSAML2BindingBuilder()
                     .relayState(request.getState());
+            boolean postBinding = getConfig().isPostBindingAuthnRequest();
 
             if (getConfig().isWantAuthnRequestsSigned()) {
                 KeyManager.ActiveKey keys = session.keys().getActiveKey(realm);
@@ -106,9 +106,12 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
                 binding.signWith(keys.getKid(), keypair);
                 binding.signatureAlgorithm(getSignatureAlgorithm());
                 binding.signDocument();
+                if (! postBinding) {    // Only include extension if REDIRECT binding and signing whole SAML protocol message
+                    authnRequestBuilder.addExtension(new KeycloakKeySamlExtensionGenerator(keys.getKid()));
+                }
             }
 
-            if (getConfig().isPostBindingAuthnRequest()) {
+            if (postBinding) {
                 return binding.postBinding(authnRequestBuilder.toDocument()).request(destinationUrl);
             } else {
                 return binding.redirectBinding(authnRequestBuilder.toDocument()).request(destinationUrl);

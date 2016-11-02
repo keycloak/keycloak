@@ -24,6 +24,12 @@ import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.Set;
+import org.apache.http.client.HttpClient;
+import org.keycloak.adapters.HttpClientBuilder;
+import org.keycloak.adapters.saml.rotation.SamlDescriptorPublicKeyLocator;
+import org.keycloak.rotation.CompositeKeyLocator;
+import org.keycloak.rotation.HardcodedKeyLocator;
+import org.keycloak.rotation.KeyLocator;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -179,10 +185,14 @@ public class DefaultSamlDeployment implements SamlDeployment {
 
     public static class DefaultIDP implements IDP {
 
+        private static final int DEFAULT_CACHE_TTL = 24 * 60 * 60;
+
         private String entityID;
-        private PublicKey signatureValidationKey;
+        private final CompositeKeyLocator signatureValidationKeyLocator = new CompositeKeyLocator();
         private SingleSignOnService singleSignOnService;
         private SingleLogoutService singleLogoutService;
+        private HardcodedKeyLocator hardcodedKeyLocator;
+        private int minTimeBetweenDescriptorRequests;
 
         @Override
         public String getEntityID() {
@@ -200,8 +210,17 @@ public class DefaultSamlDeployment implements SamlDeployment {
         }
 
         @Override
-        public PublicKey getSignatureValidationKey() {
-            return signatureValidationKey;
+        public KeyLocator getSignatureValidationKeyLocator() {
+            return this.signatureValidationKeyLocator;
+        }
+
+        @Override
+        public int getMinTimeBetweenDescriptorRequests() {
+            return minTimeBetweenDescriptorRequests;
+        }
+
+        public void setMinTimeBetweenDescriptorRequests(int minTimeBetweenDescriptorRequests) {
+            this.minTimeBetweenDescriptorRequests = minTimeBetweenDescriptorRequests;
         }
 
         public void setEntityID(String entityID) {
@@ -209,15 +228,34 @@ public class DefaultSamlDeployment implements SamlDeployment {
         }
 
         public void setSignatureValidationKey(PublicKey signatureValidationKey) {
-            this.signatureValidationKey = signatureValidationKey;
+            this.hardcodedKeyLocator = signatureValidationKey == null ? null : new HardcodedKeyLocator(signatureValidationKey);
+            refreshKeyLocatorConfiguration();
         }
 
         public void setSingleSignOnService(SingleSignOnService singleSignOnService) {
             this.singleSignOnService = singleSignOnService;
+            refreshKeyLocatorConfiguration();
         }
 
         public void setSingleLogoutService(SingleLogoutService singleLogoutService) {
             this.singleLogoutService = singleLogoutService;
+        }
+
+        public void refreshKeyLocatorConfiguration() {
+            this.signatureValidationKeyLocator.clear();
+
+            // When key is set, use that (and only that), otherwise configure dynamic key locator
+            if (this.hardcodedKeyLocator != null) {
+                this.signatureValidationKeyLocator.add(this.hardcodedKeyLocator);
+            } else if (this.singleSignOnService != null) {
+                String samlDescriptorUrl = singleSignOnService.getRequestBindingUrl() + "/descriptor";
+                // TODO
+                HttpClient httpClient = new HttpClientBuilder().build();
+                SamlDescriptorPublicKeyLocator samlDescriptorPublicKeyLocator =
+                  new SamlDescriptorPublicKeyLocator(
+                    samlDescriptorUrl, this.minTimeBetweenDescriptorRequests, DEFAULT_CACHE_TTL, httpClient);
+                this.signatureValidationKeyLocator.add(samlDescriptorPublicKeyLocator);
+            }
         }
     }
 

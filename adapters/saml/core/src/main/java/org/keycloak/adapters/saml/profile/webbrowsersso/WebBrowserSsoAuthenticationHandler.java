@@ -84,6 +84,8 @@ public class WebBrowserSsoAuthenticationHandler extends AbstractSamlAuthenticati
             binding.signatureAlgorithm(deployment.getSignatureAlgorithm())
                     .signWith(null, deployment.getSigningKeyPair())
                     .signDocument();
+            // TODO: As part of KEYCLOAK-3810, add KeyID to the SAML document
+            //   <related DocumentBuilder>.addExtension(new KeycloakKeySamlExtensionGenerator(<key ID>));
         }
 
 
@@ -115,6 +117,8 @@ public class WebBrowserSsoAuthenticationHandler extends AbstractSamlAuthenticati
             binding.signatureAlgorithm(deployment.getSignatureAlgorithm());
             binding.signWith(null, deployment.getSigningKeyPair())
                     .signDocument();
+            // TODO: As part of KEYCLOAK-3810, add KeyID to the SAML document
+            //   <related DocumentBuilder>.addExtension(new KeycloakKeySamlExtensionGenerator(<key ID>));
         }
 
         binding.relayState("logout");

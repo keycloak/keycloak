@@ -202,6 +202,7 @@ public class DeploymentBuilder {
             }
         }
 
+        idp.refreshKeyLocatorConfiguration();
 
         return deployment;
     }

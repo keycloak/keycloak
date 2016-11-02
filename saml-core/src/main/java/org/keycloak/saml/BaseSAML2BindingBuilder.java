@@ -38,11 +38,14 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.xml.crypto.dsig.CanonicalizationMethod;
 import javax.xml.namespace.QName;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
+import java.security.InvalidKeyException;
 import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.Signature;
+import java.security.SignatureException;
 import java.security.cert.X509Certificate;
 
 import static org.keycloak.common.util.HtmlUtils.escapeAttribute;
@@ -338,7 +341,7 @@ public class BaseSAML2BindingBuilder<T extends BaseSAML2BindingBuilder> {
 
     public String base64Encoded(Document document) throws ConfigurationException, ProcessingException, IOException  {
         String documentAsString = DocumentUtil.getDocumentAsString(document);
-        logger.debugv("saml docment: {0}", documentAsString);
+        logger.debugv("saml document: {0}", documentAsString);
         byte[] responseBytes = documentAsString.getBytes("UTF-8");
 
         return RedirectBindingUtil.deflateBase64URLEncode(responseBytes);
@@ -363,7 +366,7 @@ public class BaseSAML2BindingBuilder<T extends BaseSAML2BindingBuilder> {
                 signature.initSign(signingKeyPair.getPrivate());
                 signature.update(rawQuery.getBytes("UTF-8"));
                 sig = signature.sign();
-            } catch (Exception e) {
+            } catch (InvalidKeyException | UnsupportedEncodingException | SignatureException e) {
                 throw new ProcessingException(e);
             }
             String encodedSig = RedirectBindingUtil.base64URLEncode(sig);
