@@ -802,7 +802,7 @@ public class AuthenticationProcessor {
      *
      */
     public void setActionSuccessful() {
-        oneActionWasSuccessful = true;
+//        oneActionWasSuccessful = true;
     }
 
     public Response checkWasSuccessfulBrowserAction() {
