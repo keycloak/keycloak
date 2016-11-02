@@ -63,6 +63,8 @@ JBoss Drools, which require ``photoz-authz-policy`` artifact installed into your
 
     cd examples/authz/photoz
     mvn clean install 
+    
+> Please make sure you have the environment variable M2_HOME set. It should reference the path for your Maven installation. If not set, you will see some WARN messages in the logs when booting Keycloak.
 
 Now, let's import another configuration using the Administration Console in order to configure the client application ``photoz-restful-api`` as a resource server with all resources, scopes, permissions and policies.
 
@@ -71,7 +73,7 @@ open the ``Client Details`` page. Once there, click on the `Authorization` tab.
 
 Click on the ``Select file`` button, which means you want to import a resource server configuration. Now select the file that is located at:
 
-    examples/authz/photoz/photoz-restful-api/photoz-restful-api-authz-config.json
+    examples/authz/photoz/photoz-restful-api/src/main/resources/photoz-restful-api-authz-service.json
     
 Now click ``Upload`` and the resource server will be updated accordingly.
 
