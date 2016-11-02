@@ -860,6 +860,7 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, templates,
     $scope.samlAuthnStatement = false;
     $scope.samlMultiValuedRoles = false;
     $scope.samlServerSignature = false;
+    $scope.samlServerSignatureEnableKeyInfoExtension = false;
     $scope.samlAssertionSignature = false;
     $scope.samlClientSignature = false;
     $scope.samlEncrypt = false;
@@ -906,6 +907,13 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, templates,
             } else {
                 $scope.samlServerSignature = false;
 
+            }
+        }
+        if ($scope.client.attributes["saml.server.signature.keyinfo.ext"]) {
+            if ($scope.client.attributes["saml.server.signature.keyinfo.ext"] == "true") {
+                $scope.samlServerSignatureEnableKeyInfoExtension = true;
+            } else {
+                $scope.samlServerSignatureEnableKeyInfoExtension = false;
             }
         }
         if ($scope.client.attributes["saml.assertion.signature"]) {
@@ -1115,7 +1123,11 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, templates,
             $scope.client.attributes["saml.server.signature"] = "true";
         } else {
             $scope.client.attributes["saml.server.signature"] = "false";
-
+        }
+        if ($scope.samlServerSignatureEnableKeyInfoExtension == true) {
+            $scope.client.attributes["saml.server.signature.keyinfo.ext"] = "true";
+        } else {
+            $scope.client.attributes["saml.server.signature.keyinfo.ext"] = "false";
         }
         if ($scope.samlAssertionSignature == true) {
             $scope.client.attributes["saml.assertion.signature"] = "true";

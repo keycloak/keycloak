@@ -223,6 +223,7 @@ public class ClientSettingsForm extends CreateClientForm {
 	public static final String SAML_FORCE_POST_BINDING = "saml.force.post.binding";
 	public static final String SAML_MULTIVALUED_ROLES = "saml.multivalued.roles";
 	public static final String SAML_SERVER_SIGNATURE = "saml.server.signature";
+	public static final String SAML_SERVER_SIGNATURE_KEYINFO_EXT = "saml.server.signature.keyinfo.ext";
 	public static final String SAML_SIGNATURE_ALGORITHM = "saml.signature.algorithm";
 	public static final String SAML_ASSERTION_CONSUMER_URL_POST = "saml_assertion_consumer_url_post";
 	public static final String SAML_ASSERTION_CONSUMER_URL_REDIRECT = "saml_assertion_consumer_url_redirect";
@@ -236,6 +237,8 @@ public class ClientSettingsForm extends CreateClientForm {
         private OnOffSwitch samlAuthnStatement;
         @FindBy(xpath = ".//div[@class='onoffswitch' and ./input[@id='samlServerSignature']]")
         private OnOffSwitch samlServerSignature;
+        @FindBy(xpath = ".//div[@class='onoffswitch' and ./input[@id='samlServerSignatureEnableKeyInfoExtension']]")
+        private OnOffSwitch samlServerSignatureKeyInfoExt;
         @FindBy(xpath = ".//div[@class='onoffswitch' and ./input[@id='samlAssertionSignature']]")
         private OnOffSwitch samlAssertionSignature;
         @FindBy(id = "signatureAlgorithm")
@@ -277,6 +280,7 @@ public class ClientSettingsForm extends CreateClientForm {
             if (samlServerSignature.isOn() || samlAssertionSignature.isOn()) {
                 signatureAlgorithm.selectByVisibleText(attributes.get(SAML_SIGNATURE_ALGORITHM));
                 canonicalization.selectByValue("string:" + attributes.get(SAML_SIGNATURE_CANONICALIZATION_METHOD));
+                samlServerSignatureKeyInfoExt.setOn("true".equals(attributes.get(SAML_SERVER_SIGNATURE_KEYINFO_EXT)));
             }
             samlEncrypt.setOn("true".equals(attributes.get(SAML_ENCRYPT)));
             samlClientSignature.setOn("true".equals(attributes.get(SAML_CLIENT_SIGNATURE)));

@@ -64,7 +64,11 @@ public class SamlRepresentationAttributes {
     public String getSamlServerSignature() {
         if (getAttributes() == null) return null;
         return getAttributes().get(SamlConfigAttributes.SAML_SERVER_SIGNATURE);
+    }
 
+    public String getAddExtensionsElementWithKeyInfo() {
+        if (getAttributes() == null) return null;
+        return getAttributes().get(SamlConfigAttributes.SAML_SERVER_SIGNATURE_KEYINFO_EXT);
     }
 
     public String getForcePostBinding() {

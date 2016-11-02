@@ -347,6 +347,8 @@ public class SamlService extends AuthorizationEndpointBase {
                 String logoutBinding = getBindingType();
                 if ("true".equals(samlClient.forcePostBinding()))
                     logoutBinding = SamlProtocol.SAML_POST_BINDING;
+                boolean postBinding = Objects.equals(SamlProtocol.SAML_POST_BINDING, logoutBinding);
+
                 String bindingUri = SamlProtocol.getLogoutServiceUrl(uriInfo, client, logoutBinding);
                 UserSessionModel userSession = authResult.getSession();
                 userSession.setNote(SamlProtocol.SAML_LOGOUT_BINDING_URI, bindingUri);
@@ -358,6 +360,7 @@ public class SamlService extends AuthorizationEndpointBase {
                     userSession.setNote(SamlProtocol.SAML_LOGOUT_RELAY_STATE, relayState);
                 userSession.setNote(SamlProtocol.SAML_LOGOUT_REQUEST_ID, logoutRequest.getID());
                 userSession.setNote(SamlProtocol.SAML_LOGOUT_BINDING, logoutBinding);
+                userSession.setNote(SamlProtocol.SAML_LOGOUT_ADD_EXTENSIONS_ELEMENT_WITH_KEY_INFO, Boolean.toString((! postBinding) && samlClient.addExtensionsElementWithKeyInfo()));
                 userSession.setNote(SamlProtocol.SAML_LOGOUT_CANONICALIZATION, samlClient.getCanonicalizationMethod());
                 userSession.setNote(AuthenticationManager.KEYCLOAK_LOGOUT_PROTOCOL, SamlProtocol.LOGIN_PROTOCOL);
                 // remove client from logout requests
@@ -413,7 +416,7 @@ public class SamlService extends AuthorizationEndpointBase {
                 SignatureAlgorithm algorithm = samlClient.getSignatureAlgorithm();
                 KeyManager.ActiveKey keys = session.keys().getActiveKey(realm);
                 binding.signatureAlgorithm(algorithm).signWith(keys.getKid(), keys.getPrivateKey(), keys.getPublicKey(), keys.getCertificate()).signDocument();
-                if (! postBinding) {    // Only include extension if REDIRECT binding and signing whole SAML protocol message
+                if (! postBinding && samlClient.addExtensionsElementWithKeyInfo()) {    // Only include extension if REDIRECT binding and signing whole SAML protocol message
                     builder.addExtension(new KeycloakKeySamlExtensionGenerator(keys.getKid()));
                 }
             }
