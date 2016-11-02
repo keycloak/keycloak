@@ -17,21 +17,19 @@
 
 package org.keycloak.saml;
 
-import org.keycloak.common.util.PemUtils;
-
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
 public class SPMetadataDescriptor {
 
-    public static String getSPDescriptor(String binding, String assertionEndpoint, String logoutEndpoint, boolean wantAuthnRequestsSigned, String entityId, String nameIDPolicyFormat, String certificatePem) {
+    public static String getSPDescriptor(String binding, String assertionEndpoint, String logoutEndpoint, boolean wantAuthnRequestsSigned, String entityId, String nameIDPolicyFormat, String signingCerts) {
         String descriptor =
                 "<EntityDescriptor xmlns=\"urn:oasis:names:tc:SAML:2.0:metadata\" entityID=\"" + entityId + "\">\n" +
                 "    <SPSSODescriptor AuthnRequestsSigned=\"" + wantAuthnRequestsSigned + "\"\n" +
                 "            protocolSupportEnumeration=\"urn:oasis:names:tc:SAML:2.0:protocol urn:oasis:names:tc:SAML:1.1:protocol http://schemas.xmlsoap.org/ws/2003/07/secext\">\n";
-        if (wantAuthnRequestsSigned) {
-            descriptor += xmlKeyInfo(null, certificatePem, "signing", true);
+        if (wantAuthnRequestsSigned  && signingCerts != null) {
+            descriptor += signingCerts;
         }
         descriptor +=
                 "        <SingleLogoutService Binding=\"" + binding + "\" Location=\"" + logoutEndpoint + "\"/>\n" +

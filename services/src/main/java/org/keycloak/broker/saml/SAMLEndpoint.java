@@ -73,8 +73,9 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import java.io.IOException;
-import java.security.PublicKey;
+import java.security.Key;
 import java.security.cert.X509Certificate;
+import java.util.LinkedList;
 import java.util.List;
 import org.keycloak.rotation.HardcodedKeyLocator;
 import org.keycloak.rotation.KeyLocator;
@@ -179,15 +180,18 @@ public class SAMLEndpoint {
         protected abstract SAMLDocumentHolder extractResponseDocument(String response);
         
         protected KeyLocator getIDPKeyLocator() {
-            // TODO !!!!!!!!!!!!!!!! Parse key from IDP's SAML descriptor
+            List<Key> keys = new LinkedList<>();
 
-            X509Certificate certificate = null;
-            try {
-                certificate = XMLSignatureUtil.getX509CertificateFromKeyInfoString(config.getSigningCertificate().replaceAll("\\s", ""));
-            } catch (ProcessingException e) {
-                throw new RuntimeException(e);
+            for (String signingCertificate : config.getSigningCertificates()) {
+                try {
+                    X509Certificate cert = XMLSignatureUtil.getX509CertificateFromKeyInfoString(signingCertificate.replaceAll("\\s", ""));
+                    keys.add(cert.getPublicKey());
+                } catch (ProcessingException e) {
+                    throw new RuntimeException(e);
+                }
             }
-            return new HardcodedKeyLocator(certificate.getPublicKey());
+
+            return new HardcodedKeyLocator(keys);
         }
 
         public Response execute(String samlRequest, String samlResponse, String relayState) {
@@ -277,7 +281,7 @@ public class SAMLEndpoint {
                 binding.signWith(keys.getKid(), keys.getPrivateKey(), keys.getPublicKey(), keys.getCertificate())
                         .signatureAlgorithm(provider.getSignatureAlgorithm())
                         .signDocument();
-                if (! postBinding) {    // Only include extension if REDIRECT binding and signing whole SAML protocol message
+                if (! postBinding && config.isAddExtensionsElementWithKeyInfo()) {    // Only include extension if REDIRECT binding and signing whole SAML protocol message
                     builder.addExtension(new KeycloakKeySamlExtensionGenerator(keys.getKid()));
                 }
             }
