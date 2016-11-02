@@ -92,7 +92,7 @@ public abstract class AbstractUndertowKeycloakAuthMech implements Authentication
                 UndertowHttpFacade facade = createFacade(exchange);
                 KeycloakDeployment deployment = deploymentContext.resolveDeployment(facade);
                 KeycloakSecurityContext ksc = exchange.getAttachment(OIDCUndertowHttpFacade.KEYCLOAK_SECURITY_CONTEXT_KEY);
-                if (ksc != null && ksc instanceof RefreshableKeycloakSecurityContext) {
+                if (!deployment.isBearerOnly() && ksc != null && ksc instanceof RefreshableKeycloakSecurityContext) {
                     ((RefreshableKeycloakSecurityContext) ksc).logout(deployment);
                 }
                 AdapterTokenStore tokenStore = getTokenStore(exchange, facade, deployment, securityContext);
