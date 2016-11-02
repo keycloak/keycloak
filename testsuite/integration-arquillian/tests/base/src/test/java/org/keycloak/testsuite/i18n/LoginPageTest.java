@@ -17,7 +17,6 @@
 package org.keycloak.testsuite.i18n;
 
 import org.apache.http.impl.client.DefaultHttpClient;
-import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.resteasy.client.jaxrs.ResteasyClient;
 import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
 import org.jboss.resteasy.client.jaxrs.engines.ApacheHttpClient4Engine;
@@ -29,6 +28,7 @@ import org.keycloak.testsuite.pages.LoginPage;
 
 import javax.ws.rs.core.Response;
 import org.jboss.arquillian.graphene.page.Page;
+import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.util.IdentityProviderBuilder;
 
 /**
@@ -97,6 +97,8 @@ public class LoginPageTest extends AbstractI18NTest {
 
     @Test
     public void acceptLanguageHeader() {
+        ProfileAssume.assumePreview();
+        
         DefaultHttpClient httpClient = (DefaultHttpClient) new HttpClientBuilder().build();
         ApacheHttpClient4Engine engine = new ApacheHttpClient4Engine(httpClient);
         ResteasyClient client = new ResteasyClientBuilder().httpEngine(engine).build();
