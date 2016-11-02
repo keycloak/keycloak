@@ -332,6 +332,12 @@
                                                 <version>${project.version}</version>
                                                 <type>war</type>
                                             </artifactItem>
+                                            <artifactItem>
+                                                <groupId>org.keycloak.testsuite</groupId>
+                                                <artifactId>integration-arquillian-test-apps-example-camel-cdi</artifactId>
+                                                <version>${project.version}</version>
+                                                <type>war</type>
+                                            </artifactItem>
                                         </artifactItems>
                                         <outputDirectory>${examples.home}</outputDirectory>
                                         <overWriteIfNewer>true</overWriteIfNewer>
