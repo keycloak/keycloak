@@ -387,7 +387,9 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
         // test logout
 
         driver.navigate().to(customerPortal + "/logout");
-        assertTrue(driver.getPageSource().contains("servlet logout ok"));
+        pageSource = driver.getPageSource();
+        assertTrue(pageSource.contains("servlet logout ok"));
+        assertTrue(pageSource.contains("servlet logout from database ok"));
 
         customerPortal.navigateTo();
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
