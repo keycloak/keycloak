@@ -14,8 +14,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.testsuite.adapter.example.authorization;
+package org.keycloak.testsuite.admin.client.authorization;
 
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.KeycloakDeploymentBuilder;
@@ -23,6 +24,7 @@ import org.keycloak.adapters.authorization.PolicyEnforcer;
 import org.keycloak.representations.adapters.config.PolicyEnforcerConfig;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
+import org.keycloak.testsuite.ProfileAssume;
 
 import java.util.List;
 
@@ -33,6 +35,9 @@ import static org.keycloak.testsuite.util.IOUtil.loadRealm;
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 public class EnforcerConfigTest extends AbstractKeycloakTest {
+
+    @BeforeClass
+    public static void enabled() { ProfileAssume.assumePreview(); }
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
