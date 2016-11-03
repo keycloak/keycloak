@@ -30,10 +30,9 @@ import org.keycloak.testsuite.util.GreenMailRule;
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
 import java.io.IOException;
-import java.util.Collections;
-import java.util.HashMap;
 
 import static org.junit.Assert.assertEquals;
+import org.keycloak.testsuite.ProfileAssume;
 
 /**
  * @author <a href="mailto:gerbermichi@me.com">Michael Gerber</a>
@@ -84,6 +83,8 @@ public class EmailTest extends AbstractI18NTest {
 
     @Test
     public void restPasswordEmailGerman() throws IOException, MessagingException {
+        ProfileAssume.assumePreview();
+        
         changeUserLocale("de");
 
         loginPage.open();
