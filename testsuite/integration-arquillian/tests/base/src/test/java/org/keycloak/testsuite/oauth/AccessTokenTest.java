@@ -39,6 +39,7 @@ import org.keycloak.events.Errors;
 import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
+import org.keycloak.models.Constants;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -56,6 +57,7 @@ import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.OAuthClient;
@@ -75,10 +77,8 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import java.io.IOException;
 import java.net.URI;
-import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
@@ -89,14 +89,9 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.admin.ApiUtil.findClientByClientId;
-import static org.keycloak.testsuite.admin.ApiUtil.findClientResourceByClientId;
 import static org.keycloak.testsuite.admin.ApiUtil.findUserByUsername;
 import static org.keycloak.testsuite.admin.ApiUtil.findUserByUsernameId;
 import static org.keycloak.testsuite.util.OAuthClient.AUTH_SERVER_ROOT;
-import static org.keycloak.testsuite.util.ProtocolMapperUtil.createAddressMapper;
-import static org.keycloak.testsuite.util.ProtocolMapperUtil.createClaimMapper;
-import static org.keycloak.testsuite.util.ProtocolMapperUtil.createHardcodedClaim;
-import static org.keycloak.testsuite.util.ProtocolMapperUtil.createHardcodedRole;
 import static org.keycloak.testsuite.util.ProtocolMapperUtil.createRoleNameMapper;
 
 /**
@@ -198,6 +193,30 @@ public class AccessTokenTest extends AbstractKeycloakTest {
         assertEquals(oauth.verifyRefreshToken(response.getRefreshToken()).getId(), event.getDetails().get(Details.REFRESH_TOKEN_ID));
         assertEquals(sessionId, token.getSessionState());
 
+    }
+
+    // KEYCLOAK-3692
+    @Test
+    public void accessTokenWrongCode() throws Exception {
+        oauth.clientId(Constants.ADMIN_CONSOLE_CLIENT_ID);
+        oauth.redirectUri(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth/admin/test/console");
+        oauth.openLoginForm();
+
+        String actionUrl = driver.getPageSource().split("action=\"")[1].split("\"")[0].replaceAll("&amp;", "&");
+        actionUrl = actionUrl.replaceFirst("&execution=.*", "");
+
+        String loginPageCode = actionUrl.split("code=")[1].split("&")[0];
+
+        driver.navigate().to(actionUrl);
+
+        oauth.fillLoginForm("test-user@localhost", "password");
+
+        events.expectLogin().client(Constants.ADMIN_CONSOLE_CLIENT_ID).detail(Details.REDIRECT_URI, AuthServerTestEnricher.getAuthServerContextRoot() + "/auth/admin/test/console").assertEvent();
+
+        OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(loginPageCode, null);
+
+        assertEquals(400, response.getStatusCode());
+        assertNull(response.getRefreshToken());
     }
 
     @Test
