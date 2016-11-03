@@ -18,10 +18,7 @@ package org.keycloak.testsuite.forms;
 
 import org.apache.commons.io.IOUtils;
 import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.*;
 import org.keycloak.authentication.authenticators.browser.ScriptBasedAuthenticatorFactory;
 import org.keycloak.authentication.authenticators.browser.UsernamePasswordFormFactory;
 import org.keycloak.events.Details;
@@ -34,6 +31,7 @@ import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.util.ExecutionBuilder;
 import org.keycloak.testsuite.util.FlowBuilder;
@@ -61,6 +59,9 @@ public class ScriptAuthenticatorTest extends AbstractFlowTest {
     public AssertEvents events = new AssertEvents(this);
 
     private AuthenticationFlowRepresentation flow;
+
+    @BeforeClass
+    public static void enabled() { ProfileAssume.assumePreview(); }
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
