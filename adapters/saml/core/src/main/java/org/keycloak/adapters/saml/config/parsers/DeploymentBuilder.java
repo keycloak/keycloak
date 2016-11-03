@@ -40,6 +40,7 @@ import java.security.PublicKey;
 import java.security.cert.Certificate;
 import java.util.HashSet;
 import java.util.Set;
+import org.keycloak.adapters.cloned.HttpClientBuilder;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -178,36 +179,39 @@ public class DeploymentBuilder {
         if (sp.getIdp().getKeys() != null) {
             for (Key key : sp.getIdp().getKeys()) {
                 if (key.isSigning()) {
-                    if (key.getKeystore() != null) {
-                        KeyStore keyStore = loadKeystore(resourceLoader, key);
-                        Certificate cert = null;
-                        try {
-                            cert = keyStore.getCertificate(key.getKeystore().getCertificateAlias());
-                        } catch (KeyStoreException e) {
-                            throw new RuntimeException(e);
-                        }
-                        idp.setSignatureValidationKey(cert.getPublicKey());
-                    } else {
-                        if (key.getPublicKeyPem() == null && key.getCertificatePem() == null) {
-                            throw new RuntimeException("IDP signing key must have a PublicKey or Certificate defined");
-                        }
-                        try {
-                            PublicKey publicKey = getPublicKeyFromPem(key);
-                            idp.setSignatureValidationKey(publicKey);
-                        } catch (Exception e) {
-                            throw new RuntimeException(e);
-                        }
-                    }
+                    processSigningKey(idp, key, resourceLoader);
                 }
             }
         }
 
+        idp.setClient(new HttpClientBuilder().build(sp.getIdp().getHttpClientConfig()));
         idp.refreshKeyLocatorConfiguration();
 
         return deployment;
     }
 
-    protected static PublicKey getPublicKeyFromPem(Key key) throws Exception {
+    private void processSigningKey(DefaultSamlDeployment.DefaultIDP idp, Key key, ResourceLoader resourceLoader) throws RuntimeException {
+        PublicKey publicKey;
+        if (key.getKeystore() != null) {
+            KeyStore keyStore = loadKeystore(resourceLoader, key);
+            Certificate cert = null;
+            try {
+                cert = keyStore.getCertificate(key.getKeystore().getCertificateAlias());
+            } catch (KeyStoreException e) {
+                throw new RuntimeException(e);
+            }
+            publicKey = cert.getPublicKey();
+        } else {
+            if (key.getPublicKeyPem() == null && key.getCertificatePem() == null) {
+                throw new RuntimeException("IDP signing key must have a PublicKey or Certificate defined");
+            }
+            publicKey = getPublicKeyFromPem(key);
+        }
+
+        idp.addSignatureValidationKey(publicKey);
+    }
+
+    protected static PublicKey getPublicKeyFromPem(Key key) {
         PublicKey publicKey;
         if (key.getPublicKeyPem() != null) {
             publicKey = PemUtils.decodePublicKey(key.getPublicKeyPem().trim());

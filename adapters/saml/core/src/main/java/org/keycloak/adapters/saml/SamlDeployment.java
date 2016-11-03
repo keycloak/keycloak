@@ -23,6 +23,7 @@ import org.keycloak.saml.SignatureAlgorithm;
 import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.util.Set;
+import org.apache.http.client.HttpClient;
 import org.keycloak.rotation.KeyLocator;
 
 /**
@@ -76,6 +77,12 @@ public interface SamlDeployment {
          * @return see description.
          */
         int getMinTimeBetweenDescriptorRequests();
+
+        /**
+         * Returns {@link HttpClient} instance that will be used for http communication with this IdP.
+         * @return see description
+         */
+        HttpClient getClient();
 
         public interface SingleSignOnService {
             /**
