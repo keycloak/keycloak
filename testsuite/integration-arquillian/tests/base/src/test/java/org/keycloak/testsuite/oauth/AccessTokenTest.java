@@ -199,7 +199,7 @@ public class AccessTokenTest extends AbstractKeycloakTest {
     @Test
     public void accessTokenWrongCode() throws Exception {
         oauth.clientId(Constants.ADMIN_CONSOLE_CLIENT_ID);
-        oauth.redirectUri(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth/admin/test/console");
+        oauth.redirectUri(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth/admin/test/console/nosuch.html");
         oauth.openLoginForm();
 
         String actionUrl = driver.getPageSource().split("action=\"")[1].split("\"")[0].replaceAll("&amp;", "&");
@@ -211,7 +211,7 @@ public class AccessTokenTest extends AbstractKeycloakTest {
 
         oauth.fillLoginForm("test-user@localhost", "password");
 
-        events.expectLogin().client(Constants.ADMIN_CONSOLE_CLIENT_ID).detail(Details.REDIRECT_URI, AuthServerTestEnricher.getAuthServerContextRoot() + "/auth/admin/test/console").assertEvent();
+        events.expectLogin().client(Constants.ADMIN_CONSOLE_CLIENT_ID).detail(Details.REDIRECT_URI, AuthServerTestEnricher.getAuthServerContextRoot() + "/auth/admin/test/console/nosuch.html").assertEvent();
 
         OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(loginPageCode, null);
 
