@@ -28,8 +28,10 @@ import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.common.Version;
+import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.Time;
 import org.keycloak.constants.AdapterConstants;
+import org.keycloak.keys.KeyProvider;
 import org.keycloak.models.Constants;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -37,6 +39,7 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.VersionRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.adapter.AbstractServletsAdapterTest;
@@ -245,25 +248,26 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
         driver.navigate().to(logoutUri);
 
         // Generate new realm key
-        RealmRepresentation realmRep = testRealmResource().toRepresentation();
-        String oldPublicKey = realmRep.getPublicKey();
-        String oldPrivateKey = realmRep.getPrivateKey();
-        realmRep.setPublicKey(Constants.GENERATE);
-        testRealmResource().update(realmRep);
-
-        // Try to login again. It should fail now
-        tokenMinTTLPage.navigateTo();
-        testRealmLoginPage.form().waitForUsernameInputPresent();
-        assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
-        testRealmLoginPage.form().login("bburke@redhat.com", "password");
-        URLAssert.assertCurrentUrlStartsWith(driver, tokenMinTTLPage.getInjectedUrl().toString());
-        assertNull(tokenMinTTLPage.getAccessToken());
+        String realmId = adminClient.realm(DEMO).toRepresentation().getId();
+        ComponentRepresentation keys = new ComponentRepresentation();
+        keys.setName("generated");
+        keys.setProviderType(KeyProvider.class.getName());
+        keys.setProviderId("rsa-generated");
+        keys.setParentId(realmId);
+        keys.setConfig(new MultivaluedHashMap<>());
+        keys.getConfig().putSingle("priority", "100");
+        Response response = adminClient.realm(DEMO).components().add(keys);
+        assertEquals(201, response.getStatus());
+        response.close();
 
         String adapterActionsUrl = tokenMinTTLPage.toString() + "/unsecured/foo";
         setAdapterAndServerTimeOffset(300, adapterActionsUrl);
 
         // Try to login. Should work now due to realm key change
         tokenMinTTLPage.navigateTo();
+        testRealmLoginPage.form().waitForUsernameInputPresent();
+        assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
+        testRealmLoginPage.form().login("bburke@redhat.com", "password");
         assertCurrentUrlEquals(tokenMinTTLPage);
         token = tokenMinTTLPage.getAccessToken();
         Assert.assertEquals("bburke@redhat.com", token.getPreferredUsername());
