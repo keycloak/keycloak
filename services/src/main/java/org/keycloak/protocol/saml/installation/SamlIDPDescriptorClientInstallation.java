@@ -32,6 +32,11 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import java.net.URI;
+import java.util.Set;
+import java.util.TreeSet;
+import org.keycloak.dom.saml.v2.metadata.KeyTypes;
+import org.keycloak.keys.KeyMetadata;
+import org.keycloak.saml.SPMetadataDescriptor;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -41,49 +46,61 @@ public class SamlIDPDescriptorClientInstallation implements ClientInstallationPr
     public static String getIDPDescriptorForClient(KeycloakSession session, RealmModel realm, ClientModel client, URI serverBaseUri) {
         SamlClient samlClient = new SamlClient(client);
         String idpEntityId = RealmsResource.realmBaseUrl(UriBuilder.fromUri(serverBaseUri)).build(realm.getName()).toString();
-        String idp = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-                 "<EntityDescriptor entityID=\"" + idpEntityId + "\"\n" +
-                "                   xmlns=\"urn:oasis:names:tc:SAML:2.0:metadata\"\n" +
-                "                   xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n" +
-                "   <IDPSSODescriptor WantAuthnRequestsSigned=\"" + Boolean.toString(samlClient.requiresClientSignature()) + "\"\n" +
-                "      protocolSupportEnumeration=\"urn:oasis:names:tc:SAML:2.0:protocol\">\n";
+        StringBuilder sb = new StringBuilder();
+        sb.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+          + "<EntityDescriptor entityID=\"").append(idpEntityId).append("\"\n"
+          + "                   xmlns=\"urn:oasis:names:tc:SAML:2.0:metadata\"\n"
+          + "                   xmlns:dsig=\"http://www.w3.org/2000/09/xmldsig#\"\n"
+          + "                   xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n"
+          + "   <IDPSSODescriptor WantAuthnRequestsSigned=\"")
+          .append(samlClient.requiresClientSignature())
+          .append("\"\n"
+            + "      protocolSupportEnumeration=\"urn:oasis:names:tc:SAML:2.0:protocol\">\n");
         if (samlClient.forceNameIDFormat() && samlClient.getNameIDFormat() != null) {
-            idp +=  "   <NameIDFormat>" + samlClient.getNameIDFormat() + "</NameIDFormat>\n";
+            sb.append("   <NameIDFormat>").append(samlClient.getNameIDFormat()).append("</NameIDFormat>\n");
         } else {
-            idp +=  "   <NameIDFormat>urn:oasis:names:tc:SAML:2.0:nameid-format:persistent</NameIDFormat>\n" +
-                    "   <NameIDFormat>urn:oasis:names:tc:SAML:2.0:nameid-format:transient</NameIDFormat>\n" +
-                    "   <NameIDFormat>urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified</NameIDFormat>\n" +
-                    "   <NameIDFormat>urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress</NameIDFormat>\n";
+            sb.append("   <NameIDFormat>urn:oasis:names:tc:SAML:2.0:nameid-format:persistent</NameIDFormat>\n"
+              + "   <NameIDFormat>urn:oasis:names:tc:SAML:2.0:nameid-format:transient</NameIDFormat>\n"
+              + "   <NameIDFormat>urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified</NameIDFormat>\n"
+              + "   <NameIDFormat>urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress</NameIDFormat>\n");
         }
         String bindUrl = RealmsResource.protocolUrl(UriBuilder.fromUri(serverBaseUri)).build(realm.getName(), SamlProtocol.LOGIN_PROTOCOL).toString();
-        idp +=  "\n" +
-                "      <SingleSignOnService Binding=\"urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST\"\n" +
-                "         Location=\"" + bindUrl + "\" />\n";
-        if (!samlClient.forcePostBinding()) {
-           idp +=   "      <SingleSignOnService Binding=\"urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect\"\n" +
-                    "         Location=\"" + bindUrl + "\" />\n";
+        sb.append("\n"
+          + "      <SingleSignOnService Binding=\"urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST\"\n"
+          + "         Location=\"").append(bindUrl).append("\" />\n");
+        if (! samlClient.forcePostBinding()) {
+           sb.append("      <SingleSignOnService Binding=\"urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect\"\n"
+             + "         Location=\"").append(bindUrl).append("\" />\n");
 
         }
-        idp +=  "      <SingleLogoutService\n" +
-                "         Binding=\"urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST\"\n" +
-                "         Location=\"" + bindUrl + "\" />\n";
-        if (!samlClient.forcePostBinding()) {
-            idp +=  "      <SingleLogoutService\n" +
-                    "         Binding=\"urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect\"\n" +
-                    "         Location=\"" + bindUrl + "\" />\n";
+        sb.append("      <SingleLogoutService\n"
+          + "         Binding=\"urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST\"\n"
+          + "         Location=\"").append(bindUrl).append("\" />\n");
+        if (! samlClient.forcePostBinding()) {
+            sb.append("      <SingleLogoutService\n"
+              + "         Binding=\"urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect\"\n"
+              + "         Location=\"").append(bindUrl).append("\" />\n");
         }
-        idp +=  "      <KeyDescriptor use=\"signing\">\n" +
-                "          <dsig:KeyInfo xmlns:dsig=\"http://www.w3.org/2000/09/xmldsig#\">\n" +
-                "              <dsig:X509Data>\n" +
-                "                  <dsig:X509Certificate>\n" +
-                "                      " + PemUtils.encodeCertificate(session.keys().getActiveKey(realm).getCertificate()) + "\n" +
-                "                  </dsig:X509Certificate>\n" +
-                "              </dsig:X509Data>\n" +
-                "          </dsig:KeyInfo>\n" +
-                "      </KeyDescriptor>\n" +
-                "   </IDPSSODescriptor>\n" +
-                "</EntityDescriptor>\n";
-        return idp;
+
+        Set<KeyMetadata> keys = new TreeSet<>((o1, o2) -> o1.getStatus() == o2.getStatus() // Status can be only PASSIVE OR ACTIVE, push PASSIVE to end of list
+          ? (int) (o2.getProviderPriority() - o1.getProviderPriority())
+          : (o1.getStatus() == KeyMetadata.Status.PASSIVE ? 1 : -1));
+        keys.addAll(session.keys().getKeys(realm, false));
+        for (KeyMetadata key : keys) {
+            addKeyInfo(sb, key, KeyTypes.SIGNING.value());
+        }
+
+        sb.append("   </IDPSSODescriptor>\n"
+          + "</EntityDescriptor>\n");
+        return sb.toString();
+    }
+
+    private static void addKeyInfo(StringBuilder target, KeyMetadata key, String purpose) {
+        if (key == null) {
+            return;
+        }
+
+        target.append(SPMetadataDescriptor.xmlKeyInfo("      ", key.getKid(), PemUtils.encodeCertificate(key.getCertificate()), purpose, false));
     }
 
     @Override
