@@ -44,9 +44,11 @@ import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.TypedQuery;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -197,6 +199,17 @@ public class EjbExampleUserStorageProvider implements UserStorageProvider,
 
         getUserAdapter(user).setPassword(null);
 
+    }
+
+    @Override
+    public Set<String> getDisableableCredentialTypes(RealmModel realm, UserModel user) {
+        if (getUserAdapter(user).getPassword() != null) {
+            Set<String> set = new HashSet<>();
+            set.add(CredentialModel.PASSWORD);
+            return set;
+        } else {
+            return Collections.emptySet();
+        }
     }
 
     @Override

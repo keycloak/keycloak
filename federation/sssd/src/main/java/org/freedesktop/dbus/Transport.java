@@ -12,7 +12,6 @@ package org.freedesktop.dbus;
 
 import cx.ath.matthew.debug.Debug;
 import cx.ath.matthew.unix.UnixSocket;
-import cx.ath.matthew.unix.UnixSocketAddress;
 import cx.ath.matthew.utils.Hexdump;
 
 import java.io.BufferedReader;
@@ -26,7 +25,6 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
-import java.net.ServerSocket;
 import java.net.Socket;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -257,10 +255,8 @@ public class Transport {
             return new String(res);
         }
 
-        public static final int MODE_SERVER = 1;
         public static final int MODE_CLIENT = 2;
 
-        public static final int AUTH_NONE = 0;
         public static final int AUTH_EXTERNAL = 1;
         public static final int AUTH_SHA = 2;
         public static final int AUTH_ANON = 4;
@@ -277,15 +273,12 @@ public class Transport {
         public static final int WAIT_DATA = 1;
         public static final int WAIT_OK = 2;
         public static final int WAIT_REJECT = 3;
-        public static final int WAIT_AUTH = 4;
-        public static final int WAIT_BEGIN = 5;
         public static final int AUTHENTICATED = 6;
         public static final int FAILED = 7;
 
         public static final int OK = 1;
         public static final int CONTINUE = 2;
         public static final int ERROR = 3;
-        public static final int REJECT = 4;
 
         public Command receive(InputStream s) throws IOException {
             StringBuffer sb = new StringBuffer();
@@ -395,88 +388,7 @@ public class Transport {
             }
         }
 
-        public String challenge = "";
         public String cookie = "";
-
-        public int do_response(int auth, String Uid, String kernelUid, Command c) {
-            MessageDigest md = null;
-            try {
-                md = MessageDigest.getInstance("SHA");
-            } catch (NoSuchAlgorithmException NSAe) {
-                if (Debug.debug && AbstractConnection.EXCEPTION_DEBUG) Debug.print(Debug.ERR, NSAe);
-                return ERROR;
-            }
-            switch (auth) {
-                case AUTH_NONE:
-                    switch (c.getMechs()) {
-                        case AUTH_ANON:
-                            return OK;
-                        case AUTH_EXTERNAL:
-                            if (0 == col.compare(Uid, c.getData()) &&
-                                    (null == kernelUid || 0 == col.compare(Uid, kernelUid)))
-                                return OK;
-                            else
-                                return ERROR;
-                        case AUTH_SHA:
-                            String context = COOKIE_CONTEXT;
-                            long id = System.currentTimeMillis();
-                            byte[] buf = new byte[8];
-                            Message.marshallintBig(id, buf, 0, 8);
-                            challenge = stupidlyEncode(md.digest(buf));
-                            Random r = new Random();
-                            r.nextBytes(buf);
-                            cookie = stupidlyEncode(md.digest(buf));
-                            try {
-                                addCookie(context, "" + id, id / 1000, cookie);
-                            } catch (IOException IOe) {
-                                if (Debug.debug && AbstractConnection.EXCEPTION_DEBUG) Debug.print(Debug.ERR, IOe);
-                            }
-                            if (Debug.debug)
-                                Debug.print(Debug.DEBUG, "Sending challenge: " + context + ' ' + id + ' ' + challenge);
-                            c.setResponse(stupidlyEncode(context + ' ' + id + ' ' + challenge));
-                            return CONTINUE;
-                        default:
-                            return ERROR;
-                    }
-                case AUTH_SHA:
-                    String[] response = stupidlyDecode(c.getData()).split(" ");
-                    if (response.length < 2) return ERROR;
-                    String cchal = response[0];
-                    String hash = response[1];
-                    String prehash = challenge + ":" + cchal + ":" + cookie;
-                    byte[] buf = md.digest(prehash.getBytes());
-                    String posthash = stupidlyEncode(buf);
-                    if (Debug.debug)
-                        Debug.print(Debug.DEBUG, "Authenticating Hash; data=" + prehash + " remote hash=" + hash + " local hash=" + posthash);
-                    if (0 == col.compare(posthash, hash))
-                        return OK;
-                    else
-                        return ERROR;
-                default:
-                    return ERROR;
-            }
-        }
-
-        public String[] getTypes(int types) {
-            switch (types) {
-                case AUTH_EXTERNAL:
-                    return new String[]{"EXTERNAL"};
-                case AUTH_SHA:
-                    return new String[]{"DBUS_COOKIE_SHA1"};
-                case AUTH_ANON:
-                    return new String[]{"ANONYMOUS"};
-                case AUTH_SHA + AUTH_EXTERNAL:
-                    return new String[]{"EXTERNAL", "DBUS_COOKIE_SHA1"};
-                case AUTH_SHA + AUTH_ANON:
-                    return new String[]{"ANONYMOUS", "DBUS_COOKIE_SHA1"};
-                case AUTH_EXTERNAL + AUTH_ANON:
-                    return new String[]{"ANONYMOUS", "EXTERNAL"};
-                case AUTH_EXTERNAL + AUTH_ANON + AUTH_SHA:
-                    return new String[]{"ANONYMOUS", "EXTERNAL", "DBUS_COOKIE_SHA1"};
-                default:
-                    return new String[]{};
-            }
-        }
 
         /**
          * performs SASL auth on the given streams.
@@ -488,7 +400,6 @@ public class Transport {
         public boolean auth(int mode, int types, String guid, OutputStream out, InputStream in, UnixSocket us) throws IOException {
             String username = System.getProperty("user.name");
             String Uid = null;
-            String kernelUid = null;
             try {
                 Class c = Class.forName("com.sun.security.auth.module.UnixSystem");
                 Method m = c.getMethod("getUid");
@@ -618,110 +529,6 @@ public class Transport {
                                 state = FAILED;
                         }
                         break;
-                    case MODE_SERVER:
-                        switch (state) {
-                            case INITIAL_STATE:
-                                byte[] buf = new byte[1];
-                                if (null == us) {
-                                    in.read(buf);
-                                } else {
-                                    buf[0] = us.recvCredentialByte();
-                                    int kuid = us.getPeerUID();
-                                    if (kuid >= 0)
-                                        kernelUid = stupidlyEncode("" + kuid);
-                                }
-                                if (0 != buf[0]) state = FAILED;
-                                else state = WAIT_AUTH;
-                                break;
-                            case WAIT_AUTH:
-                                c = receive(in);
-                                switch (c.getCommand()) {
-                                    case COMMAND_AUTH:
-                                        if (null == c.getData()) {
-                                            send(out, COMMAND_REJECTED, getTypes(types));
-                                        } else {
-                                            switch (do_response(current, Uid, kernelUid, c)) {
-                                                case CONTINUE:
-                                                    send(out, COMMAND_DATA, c.getResponse());
-                                                    current = c.getMechs();
-                                                    state = WAIT_DATA;
-                                                    break;
-                                                case OK:
-                                                    send(out, COMMAND_OK, guid);
-                                                    state = WAIT_BEGIN;
-                                                    current = 0;
-                                                    break;
-                                                case REJECT:
-                                                    send(out, COMMAND_REJECTED, getTypes(types));
-                                                    current = 0;
-                                                    break;
-                                            }
-                                        }
-                                        break;
-                                    case COMMAND_ERROR:
-                                        send(out, COMMAND_REJECTED, getTypes(types));
-                                        break;
-                                    case COMMAND_BEGIN:
-                                        state = FAILED;
-                                        break;
-                                    default:
-                                        send(out, COMMAND_ERROR, "Got invalid command");
-                                        break;
-                                }
-                                break;
-                            case WAIT_DATA:
-                                c = receive(in);
-                                switch (c.getCommand()) {
-                                    case COMMAND_DATA:
-                                        switch (do_response(current, Uid, kernelUid, c)) {
-                                            case CONTINUE:
-                                                send(out, COMMAND_DATA, c.getResponse());
-                                                state = WAIT_DATA;
-                                                break;
-                                            case OK:
-                                                send(out, COMMAND_OK, guid);
-                                                state = WAIT_BEGIN;
-                                                current = 0;
-                                                break;
-                                            case REJECT:
-                                                send(out, COMMAND_REJECTED, getTypes(types));
-                                                current = 0;
-                                                break;
-                                        }
-                                        break;
-                                    case COMMAND_ERROR:
-                                    case COMMAND_CANCEL:
-                                        send(out, COMMAND_REJECTED, getTypes(types));
-                                        state = WAIT_AUTH;
-                                        break;
-                                    case COMMAND_BEGIN:
-                                        state = FAILED;
-                                        break;
-                                    default:
-                                        send(out, COMMAND_ERROR, "Got invalid command");
-                                        break;
-                                }
-                                break;
-                            case WAIT_BEGIN:
-                                c = receive(in);
-                                switch (c.getCommand()) {
-                                    case COMMAND_ERROR:
-                                    case COMMAND_CANCEL:
-                                        send(out, COMMAND_REJECTED, getTypes(types));
-                                        state = WAIT_AUTH;
-                                        break;
-                                    case COMMAND_BEGIN:
-                                        state = AUTHENTICATED;
-                                        break;
-                                    default:
-                                        send(out, COMMAND_ERROR, "Got invalid command");
-                                        break;
-                                }
-                                break;
-                            default:
-                                state = FAILED;
-                        }
-                        break;
                     default:
                         return false;
                 }
@@ -781,25 +588,15 @@ public class Transport {
             types = SASL.AUTH_EXTERNAL;
             mode = SASL.MODE_CLIENT;
             us = new UnixSocket();
-            if (null != address.getParameter("abstract"))
-                us.connect(new UnixSocketAddress(address.getParameter("abstract"), true));
-            else if (null != address.getParameter("path"))
-                us.connect(new UnixSocketAddress(address.getParameter("path"), false));
-            us.setPassCred(true);
+            if (null != address.getParameter("path"))
+                us.connect(new jnr.unixsocket.UnixSocketAddress(new File(address.getParameter("path"))));
             in = us.getInputStream();
             out = us.getOutputStream();
         } else if ("tcp".equals(address.getType())) {
             types = SASL.AUTH_SHA;
-            if (null != address.getParameter("listen")) {
-                mode = SASL.MODE_SERVER;
-                ServerSocket ss = new ServerSocket();
-                ss.bind(new InetSocketAddress(address.getParameter("host"), Integer.parseInt(address.getParameter("port"))));
-                s = ss.accept();
-            } else {
-                mode = SASL.MODE_CLIENT;
-                s = new Socket();
-                s.connect(new InetSocketAddress(address.getParameter("host"), Integer.parseInt(address.getParameter("port"))));
-            }
+            mode = SASL.MODE_CLIENT;
+            s = new Socket();
+            s.connect(new InetSocketAddress(address.getParameter("host"), Integer.parseInt(address.getParameter("port"))));
             in = s.getInputStream();
             out = s.getOutputStream();
         } else {

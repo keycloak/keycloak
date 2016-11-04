@@ -39,6 +39,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
+import static org.keycloak.testsuite.cli.KcRegExec.WORK_DIR;
 import static org.keycloak.testsuite.cli.KcRegExec.execute;
 
 /**
@@ -351,7 +352,7 @@ public abstract class AbstractCliTest extends AbstractKeycloakTest {
 
     FileConfigHandler initCustomConfigFile() {
         String filename = UUID.randomUUID().toString() + ".config";
-        File cfgFile = new File(KcRegExec.WORK_DIR + "/" + filename);
+        File cfgFile = new File(WORK_DIR + "/" + filename);
         FileConfigHandler handler = new FileConfigHandler();
         handler.setConfigFile(cfgFile.getAbsolutePath());
         return handler;
@@ -363,7 +364,7 @@ public abstract class AbstractCliTest extends AbstractKeycloakTest {
 
     File initTempFile(String extension, String content) throws IOException {
         String filename = UUID.randomUUID().toString() + extension;
-        File file = new File(KcRegExec.WORK_DIR + "/" + filename);
+        File file = new File(WORK_DIR + "/" + filename);
         if (content != null) {
             OutputStream os = new FileOutputStream(file);
             os.write(content.getBytes(Charset.forName("iso_8859_1")));

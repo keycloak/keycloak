@@ -110,7 +110,7 @@ public abstract class AbstractPolicyEnforcer {
     protected boolean isAuthorized(PathConfig actualPathConfig, Set<String> requiredScopes, AccessToken accessToken, OIDCHttpFacade httpFacade) {
         Request request = httpFacade.getRequest();
         PolicyEnforcerConfig enforcerConfig = getEnforcerConfig();
-        String accessDeniedPath = enforcerConfig.getAccessDeniedPath();
+        String accessDeniedPath = enforcerConfig.getOnDenyRedirectTo();
 
         if (accessDeniedPath != null) {
             if (request.getURI().contains(accessDeniedPath)) {

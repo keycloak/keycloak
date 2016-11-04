@@ -35,9 +35,11 @@ import org.keycloak.storage.UserStorageProvider;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -196,7 +198,7 @@ public class UserCredentialStoreManager implements UserCredentialManager, OnUser
         }
     }
     @Override
-    public void disableCredential(RealmModel realm, UserModel user, String credentialType) {
+    public void disableCredentialType(RealmModel realm, UserModel user, String credentialType) {
         if (!StorageId.isLocalStorage(user)) {
             String providerId = StorageId.resolveProviderId(user);
             UserStorageProvider provider = UserStorageManager.getStorageProvider(session, realm, providerId);
@@ -229,6 +231,38 @@ public class UserCredentialStoreManager implements UserCredentialManager, OnUser
 
 
     }
+
+    @Override
+    public Set<String> getDisableableCredentialTypes(RealmModel realm, UserModel user) {
+        Set<String> types = new HashSet<>();
+        if (!StorageId.isLocalStorage(user)) {
+            String providerId = StorageId.resolveProviderId(user);
+            UserStorageProvider provider = UserStorageManager.getStorageProvider(session, realm, providerId);
+            if (provider instanceof CredentialInputUpdater) {
+                CredentialInputUpdater updater = (CredentialInputUpdater)provider;
+                types.addAll(updater.getDisableableCredentialTypes(realm, user));
+            }
+        } else {
+            UserFederationProvider link = session.users().getFederationLink(realm, user);
+            if (link != null) {
+                types.addAll(link.getDisableableCredentialTypes(realm, user));
+            }
+            else if (user.getFederationLink() != null) {
+                UserStorageProvider provider = UserStorageManager.getStorageProvider(session, realm, user.getFederationLink());
+                if (provider != null && provider instanceof CredentialInputUpdater) {
+                    types.addAll(((CredentialInputUpdater)provider).getDisableableCredentialTypes(realm, user));
+                }
+            }
+
+        }
+
+        List<CredentialInputUpdater> credentialProviders = getCredentialProviders(realm, CredentialInputUpdater.class);
+        for (CredentialInputUpdater updater : credentialProviders) {
+            types.addAll(updater.getDisableableCredentialTypes(realm, user));
+        }
+        return types;
+    }
+
     @Override
     public boolean isConfiguredFor(RealmModel realm, UserModel user, String type) {
         if (!StorageId.isLocalStorage(user)) {

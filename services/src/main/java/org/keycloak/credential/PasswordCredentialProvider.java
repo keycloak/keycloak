@@ -33,8 +33,10 @@ import org.keycloak.policy.PolicyError;
 
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -148,6 +150,17 @@ public class PasswordCredentialProvider implements CredentialProvider, Credentia
         if (!supportsCredentialType(credentialType)) return;
         PasswordPolicy policy = realm.getPasswordPolicy();
         expirePassword(realm, user, policy);
+    }
+
+    @Override
+    public Set<String> getDisableableCredentialTypes(RealmModel realm, UserModel user) {
+        if (!getCredentialStore().getStoredCredentialsByType(realm, user, CredentialModel.PASSWORD).isEmpty()) {
+            Set<String> set = new HashSet<>();
+            set.add(CredentialModel.PASSWORD);
+            return set;
+        } else {
+            return Collections.EMPTY_SET;
+        }
     }
 
     @Override

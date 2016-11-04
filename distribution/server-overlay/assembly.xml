@@ -84,7 +84,7 @@
             <outputDirectory></outputDirectory>
         </fileSet>
         <fileSet>
-            <directory>cli</directory>
+            <directory>src/main/cli</directory>
             <includes>
                 <include>*.cli</include>
             </includes>
@@ -93,6 +93,10 @@
     </fileSets>
 
     <files>
+        <file>
+            <source>target/README.txt</source>
+            <outputDirectory></outputDirectory>
+        </file>
         <file>
             <source>${project.build.directory}/unpacked/keycloak-${project.version}/bin/add-user-keycloak.sh</source>
             <outputDirectory>bin</outputDirectory>

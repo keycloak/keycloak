@@ -73,12 +73,12 @@ public class ComponentUtil {
     private static ComponentFactory getComponentFactory(KeycloakSession session, String providerType, String providerId) {
         Class<? extends Provider> provider = session.getProviderClass(providerType);
         if (provider == null) {
-            throw new RuntimeException("Invalid provider type '" + providerType + "'");
+            throw new IllegalArgumentException("Invalid provider type '" + providerType + "'");
         }
 
         ProviderFactory<? extends Provider> f = session.getKeycloakSessionFactory().getProviderFactory(provider, providerId);
         if (f == null) {
-            throw new RuntimeException("No such provider '" + providerId + "'");
+            throw new IllegalArgumentException("No such provider '" + providerId + "'");
         }
 
         ComponentFactory cf = (ComponentFactory) f;

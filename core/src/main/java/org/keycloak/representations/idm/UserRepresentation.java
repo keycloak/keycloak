@@ -24,6 +24,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -33,6 +34,7 @@ public class UserRepresentation {
 
     protected String self; // link
     protected String id;
+    protected String origin;
     protected Long createdTimestamp;
     protected String username;
     protected Boolean enabled;
@@ -47,6 +49,7 @@ public class UserRepresentation {
     @JsonDeserialize(using = StringListMapDeserializer.class)
     protected Map<String, List<String>> attributes;
     protected List<CredentialRepresentation> credentials;
+    protected Set<String> disableableCredentialTypes;
     protected List<String> requiredActions;
     protected List<FederatedIdentityRepresentation> federatedIdentities;
     protected List<String> realmRoles;
@@ -239,5 +242,26 @@ public class UserRepresentation {
 
     public void setGroups(List<String> groups) {
         this.groups = groups;
+    }
+
+    /**
+     * Returns id of UserStorageProvider that loaded this user
+     *
+     * @return NULL if user stored locally
+     */
+    public String getOrigin() {
+        return origin;
+    }
+
+    public void setOrigin(String origin) {
+        this.origin = origin;
+    }
+
+    public Set<String> getDisableableCredentialTypes() {
+        return disableableCredentialTypes;
+    }
+
+    public void setDisableableCredentialTypes(Set<String> disableableCredentialTypes) {
+        this.disableableCredentialTypes = disableableCredentialTypes;
     }
 }

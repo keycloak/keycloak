@@ -25,6 +25,7 @@ import static org.keycloak.client.registration.cli.util.ConfigUtil.saveTokens;
 import static org.keycloak.client.registration.cli.util.IoUtil.printErr;
 import static org.keycloak.client.registration.cli.util.IoUtil.readSecret;
 import static org.keycloak.client.registration.cli.util.OsUtil.CMD;
+import static org.keycloak.client.registration.cli.util.OsUtil.EOL;
 import static org.keycloak.client.registration.cli.util.OsUtil.OS_ARCH;
 import static org.keycloak.client.registration.cli.util.OsUtil.PROMPT;
 
@@ -62,23 +63,30 @@ public class ConfigCredentialsCmd extends AbstractAuthOptionsCmd implements Comm
     @Override
     public CommandResult execute(CommandInvocation commandInvocation) throws CommandException, InterruptedException {
         try {
-            processGlobalOptions();
-
             if (printHelp()) {
-                return CommandResult.SUCCESS;
+                return help ? CommandResult.SUCCESS : CommandResult.FAILURE;
             }
 
+            processGlobalOptions();
+
             return process(commandInvocation);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException(e.getMessage() + suggestHelp(), e);
         } finally {
             commandInvocation.stop();
         }
+    }
+
+    @Override
+    protected boolean nothingToDo() {
+        return noOptions();
     }
 
     public CommandResult process(CommandInvocation commandInvocation) throws CommandException, InterruptedException {
 
         // check server
         if (server == null) {
-            throw new RuntimeException("Required option not specified: --server");
+            throw new IllegalArgumentException("Required option not specified: --server");
         }
 
         try {
@@ -88,7 +96,7 @@ public class ConfigCredentialsCmd extends AbstractAuthOptionsCmd implements Comm
         }
 
         if (realm == null)
-            throw new RuntimeException("Required option not specified: --realm");
+            throw new IllegalArgumentException("Required option not specified: --realm");
 
         String signedRequestToken = null;
         boolean clientSet = clientId != null;
@@ -117,7 +125,7 @@ public class ConfigCredentialsCmd extends AbstractAuthOptionsCmd implements Comm
 
         if (keystore != null) {
             if (secret != null) {
-                throw new RuntimeException("Can't use both --keystore and --secret");
+                throw new IllegalArgumentException("Can't use both --keystore and --secret");
             }
 
             if (!new File(keystore).isFile()) {
@@ -167,6 +175,10 @@ public class ConfigCredentialsCmd extends AbstractAuthOptionsCmd implements Comm
         saveTokens(tokens, server, realm, clientId, signedRequestToken, sigExpiresAt, secret);
 
         return CommandResult.SUCCESS;
+    }
+
+    protected String suggestHelp() {
+        return EOL + "Try '" + CMD + " help config credentials' for more information";
     }
 
     protected String help() {

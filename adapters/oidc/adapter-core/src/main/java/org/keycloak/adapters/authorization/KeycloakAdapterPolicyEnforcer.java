@@ -88,7 +88,7 @@ public class KeycloakAdapterPolicyEnforcer extends AbstractPolicyEnforcer {
 
     @Override
     protected boolean challenge(PathConfig pathConfig, Set<String> requiredScopes, OIDCHttpFacade facade) {
-        String accessDeniedPath = getEnforcerConfig().getAccessDeniedPath();
+        String accessDeniedPath = getEnforcerConfig().getOnDenyRedirectTo();
         HttpFacade.Response response = facade.getResponse();
 
         if (accessDeniedPath != null) {
@@ -107,7 +107,7 @@ public class KeycloakAdapterPolicyEnforcer extends AbstractPolicyEnforcer {
             AuthzClient authzClient = getAuthzClient();
             KeycloakDeployment deployment = getPolicyEnforcer().getDeployment();
 
-            if (getEnforcerConfig().getUmaProtocolConfig() != null) {
+            if (getEnforcerConfig().getUserManagedAccess() != null) {
                 LOGGER.debug("Obtaining authorization for  authenticated user.");
                 PermissionRequest permissionRequest = new PermissionRequest();
 

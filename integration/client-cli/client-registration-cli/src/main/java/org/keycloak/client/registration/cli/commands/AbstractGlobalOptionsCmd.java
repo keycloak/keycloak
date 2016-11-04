@@ -27,11 +27,15 @@ public abstract class AbstractGlobalOptionsCmd implements Command {
     }
 
     protected boolean printHelp() {
-        if (help) {
+        if (help || nothingToDo()) {
             printOut(help());
             return true;
         }
 
+        return false;
+    }
+
+    protected boolean nothingToDo() {
         return false;
     }
 

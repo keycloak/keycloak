@@ -29,7 +29,9 @@ import org.keycloak.models.utils.HmacOTP;
 import org.keycloak.models.utils.TimeBasedOTP;
 
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -138,6 +140,19 @@ public class OTPCredentialProvider implements CredentialProvider, CredentialInpu
             session.getUserCache().evict(realm, user);
         }
     }
+
+    @Override
+    public Set<String> getDisableableCredentialTypes(RealmModel realm, UserModel user) {
+        if (!getCredentialStore().getStoredCredentialsByType(realm, user, CredentialModel.HOTP).isEmpty()
+        || !getCredentialStore().getStoredCredentialsByType(realm, user, CredentialModel.TOTP).isEmpty()) {
+            Set<String> set = new HashSet<>();
+            set.add(CredentialModel.OTP);
+            return set;
+        } else {
+            return Collections.EMPTY_SET;
+        }
+    }
+
 
     @Override
     public boolean supportsCredentialType(String credentialType) {

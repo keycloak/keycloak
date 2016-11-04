@@ -12,6 +12,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.Arrays;
 
+import static org.keycloak.client.registration.cli.util.OsUtil.CMD;
 import static org.keycloak.testsuite.cli.KcRegExec.execute;
 
 /**
@@ -90,9 +91,9 @@ public class KcRegUpdateTest extends AbstractCliTest {
             // check that using an invalid attribute key is not ignored
             exe = execute("update my_client --nonexisting --config '" + configFile.getName() + "'");
 
-            assertExitCodeAndStreamSizes(exe, 1, 0, 1);
+            assertExitCodeAndStreamSizes(exe, 1, 0, 2);
             Assert.assertEquals("error message", "Unsupported option: --nonexisting", exe.stderrLines().get(0));
-
+            Assert.assertEquals("try help", "Try '" + CMD + " help update' for more information", exe.stderrLines().get(1));
 
 
             // try use incompatible endpoint

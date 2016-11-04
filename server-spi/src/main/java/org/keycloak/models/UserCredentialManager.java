@@ -20,6 +20,7 @@ import org.keycloak.credential.CredentialInput;
 import org.keycloak.credential.UserCredentialStore;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -67,7 +68,16 @@ public interface UserCredentialManager extends UserCredentialStore {
      * @param user
      * @param credentialType
      */
-    void disableCredential(RealmModel realm, UserModel user, String credentialType);
+    void disableCredentialType(RealmModel realm, UserModel user, String credentialType);
+
+    /**
+     * Returns a set of credential types that can be disabled by disableCredentialType() method
+     *
+     * @param realm
+     * @param user
+     * @return
+     */
+    Set<String> getDisableableCredentialTypes(RealmModel realm, UserModel user);
 
     /**
      * Checks to see if user has credential type configured.  Looks in UserStorageProvider or UserFederationProvider first,
@@ -82,7 +92,8 @@ public interface UserCredentialManager extends UserCredentialStore {
 
     /**
      * Only loops through each CredentialProvider to see if credential type is configured for the user.
-     * This allows UserStorageProvider and UserFederationProvider to look to abort isValid
+     * This allows UserStorageProvider and UserFederationProvider isValid() implementations to punt to local storage
+     * when validating a credential that has been overriden in Keycloak storage.
      *
      * @param realm
      * @param user

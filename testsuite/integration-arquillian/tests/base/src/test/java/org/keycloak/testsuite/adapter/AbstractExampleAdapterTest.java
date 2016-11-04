@@ -51,13 +51,7 @@ public abstract class AbstractExampleAdapterTest extends AbstractAdapterTest {
         System.out.println(EXAMPLES_VERSION_SUFFIX);
 
         EXAMPLES_HOME_DIR = EXAMPLES_HOME + "/example-realms";
-
-        if (!System.getProperty("unpacked.container.folder.name","").isEmpty()) {
-            TEST_APPS_HOME_DIR = EXAMPLES_HOME + "/" + System.getProperty("unpacked.container.folder.name","") + "-test-apps";
-        } else {
-            TEST_APPS_HOME_DIR = EXAMPLES_HOME + "/Keycloak-" + EXAMPLES_VERSION_SUFFIX + "-test-apps";
-        }
-
+        TEST_APPS_HOME_DIR = EXAMPLES_HOME + "/test-apps-dist";
         EXAMPLES_WEB_XML = EXAMPLES_HOME + "/web.xml";
     }
 

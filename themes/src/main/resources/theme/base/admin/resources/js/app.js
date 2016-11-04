@@ -2468,7 +2468,7 @@ module.controller('RoleSelectorModalCtrl', function($scope, realm, config, confi
     })
 });
 
-module.controller('ProviderConfigCtrl', function ($modal, $scope) {
+module.controller('ProviderConfigCtrl', function ($modal, $scope, ComponentUtils) {
     $scope.fileNames = {};
 
 
@@ -2490,18 +2490,17 @@ module.controller('ProviderConfigCtrl', function ($modal, $scope) {
         })
     }
 
-    $scope.newValues = [];
+    ComponentUtils.addLastEmptyValueToMultivaluedLists($scope.properties, $scope.config);
 
     $scope.addValueToMultivalued = function(optionName) {
-        var valueToPush = $scope.newValues[optionName];
+        var configProperty = $scope.config[optionName];
+        var lastIndex = configProperty.length - 1;
+        var lastValue = configProperty[lastIndex];
+        console.log("Option=" + optionName + ", lastIndex=" + lastIndex + ", lastValue=" + lastValue);
 
-        console.log("New value to multivalued: optionName=" + optionName + ", valueToPush=" + valueToPush);
-
-        if (!$scope.config[optionName]) {
-            $scope.config[optionName] = [];
+        if (lastValue.length > 0) {
+            configProperty.push('');
         }
-        $scope.config[optionName].push(valueToPush);
-        $scope.newValues[optionName] = "";
     }
 
     $scope.deleteValueFromMultivalued = function(optionName, index) {

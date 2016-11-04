@@ -54,17 +54,15 @@
         <div class="col-sm-6" data-ng-if="option.type == 'MultivaluedString'">
             <div class="input-group" ng-repeat="(i, currentOption) in config[option.name] track by $index">
                 <input class="form-control" ng-model="config[option.name][i]">
-                <div class="input-group-btn">
+                <div class="input-group-btn" data-ng-if="$index < config[option.name].length - 1">
                     <button class="btn btn-default" type="button" data-ng-click="deleteValueFromMultivalued(option.name, $index)"><span class="fa fa-minus"></span></button>
+                </div>
+
+                <div class="input-group-btn" data-ng-if="$index === config[option.name].length - 1">
+                    <button class="btn btn-default" type="button" data-ng-click="addValueToMultivalued(option.name)"><span class="fa fa-plus"></span></button>
                 </div>
             </div>
 
-            <div class="input-group">
-                <input class="form-control" ng-model="newValues[option.name]">
-                <div class="input-group-btn">
-                    <button class="btn btn-default" type="button" data-ng-click="newValues[option.name].length > 0 && addValueToMultivalued(option.name)"><span class="fa fa-plus"></span></button>
-                </div>
-            </div>
         </div>
 
         <kc-tooltip>{{:: option.helpText | translate}}</kc-tooltip>

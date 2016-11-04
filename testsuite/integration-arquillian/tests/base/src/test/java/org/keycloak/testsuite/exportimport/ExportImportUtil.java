@@ -61,6 +61,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
+import org.keycloak.common.Profile;
 
 /**
  *
@@ -374,8 +375,10 @@ public class ExportImportUtil {
         UserRepresentation linked = testingClient.testing().getUserByServiceAccountClient(realm.getRealm(), otherApp.getClientId());//session.users().getUserByServiceAccountClient(otherApp);
         Assert.assertNotNull(linked);
         Assert.assertEquals("my-service-user", linked.getUsername());
-
-        assertAuthorizationSettings(realmRsc);
+        
+        if (Profile.isPreviewEnabled()) {
+            assertAuthorizationSettings(realmRsc);
+        }
     }
 
     private static boolean isProtocolMapperGranted(Map<String, Object> consent, ProtocolMapperRepresentation mapperRep) {

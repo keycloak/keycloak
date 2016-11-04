@@ -90,7 +90,7 @@ public class UserFederationProvidersResource {
         this.realm = realm;
         this.adminEvent = adminEvent.resource(ResourceType.USER_FEDERATION_PROVIDER);
 
-        auth.init(RealmAuth.Resource.USER);
+        auth.init(RealmAuth.Resource.REALM);
     }
 
     /**

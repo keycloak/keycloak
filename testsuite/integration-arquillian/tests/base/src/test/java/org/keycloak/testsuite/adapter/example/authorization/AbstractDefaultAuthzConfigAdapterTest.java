@@ -20,6 +20,7 @@ import org.jboss.arquillian.container.test.api.Deployer;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.ClientResource;
@@ -27,6 +28,7 @@ import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
+import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.adapter.AbstractExampleAdapterTest;
 
 import java.io.File;
@@ -46,6 +48,9 @@ public abstract class AbstractDefaultAuthzConfigAdapterTest extends AbstractExam
 
     private static final String REALM_NAME = "hello-world-authz";
     private static final String RESOURCE_SERVER_ID = "hello-world-authz-service";
+
+    @BeforeClass
+    public static void enabled() { ProfileAssume.assumePreview(); }
 
     @ArquillianResource
     private Deployer deployer;

@@ -13,7 +13,7 @@
         <p>Keycloak can federate external user databases. Out of the box we have support for LDAP and Active Directory.</p>
         <p>To get started select a provider from the dropdown below:</p>
         <div class="blank-slate-pf-main-action">
-            <div class="row" data-ng-show="access.manageUsers">
+            <div class="row" data-ng-show="access.manageRealm">
                 <div class="col-sm-4 col-sm-offset-4">
                     <div class="form-group">
                         <select class="form-control" ng-model="selectedProvider"
@@ -29,7 +29,7 @@
 
     <table class="table table-striped table-bordered" data-ng-show="instances && instances.length > 0">
         <thead>
-            <tr ng-show="providers.length > 0 && access.manageUsers">
+            <tr ng-show="providers.length > 0 && access.manageRealm">
                 <th colspan="5" class="kc-table-actions">
                     <div class="pull-right">
                         <div>

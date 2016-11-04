@@ -33,6 +33,7 @@ import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
 import org.keycloak.representations.idm.ClientInitialAccessCreatePresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientTemplateRepresentation;
+import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
@@ -77,6 +78,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 import static org.keycloak.services.resources.admin.RealmAuth.Resource.AUTHORIZATION;
 import static org.keycloak.services.resources.admin.RealmAuth.Resource.CLIENT;
+import org.keycloak.testsuite.ProfileAssume;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -781,6 +783,7 @@ public class PermissionsTest extends AbstractKeycloakTest {
 
     @Test
     public void clientAuthorization() {
+        ProfileAssume.assumePreview();
         invoke(new InvocationWithResponse() {
             public void invoke(RealmResource realm, AtomicReference<Response> response) {
                 realm.clients().create(ClientBuilder.create().clientId("foo-authz").build());
@@ -1511,69 +1514,103 @@ public class PermissionsTest extends AbstractKeycloakTest {
             public void invoke(RealmResource realm) {
                 realm.userFederation().getProviderInstances();
             }
-        }, Resource.USER, false);
+        }, Resource.REALM, false);
         invoke(new Invocation() {
             public void invoke(RealmResource realm) {
                 realm.userFederation().getProviderFactories();
             }
-        }, Resource.USER, false);
+        }, Resource.REALM, false);
         invoke(new Invocation() {
             public void invoke(RealmResource realm) {
                 realm.userFederation().getProviderFactory("nosuch");
             }
-        }, Resource.USER, false);
+        }, Resource.REALM, false);
         invoke(new InvocationWithResponse() {
             public void invoke(RealmResource realm, AtomicReference<Response> response) {
                 UserFederationProviderRepresentation rep = new UserFederationProviderRepresentation();
                 rep.setProviderName("ldap");
                 response.set(realm.userFederation().create(rep));
             }
-        }, Resource.USER, true);
+        }, Resource.REALM, true);
         invoke(new Invocation() {
             public void invoke(RealmResource realm) {
                 realm.userFederation().get("nosuch").toRepresentation();
             }
-        }, Resource.USER, false);
+        }, Resource.REALM, false);
         invoke(new Invocation() {
             public void invoke(RealmResource realm) {
                 realm.userFederation().get("nosuch").update(new UserFederationProviderRepresentation());
             }
-        }, Resource.USER, true);
+        }, Resource.REALM, true);
         invoke(new Invocation() {
             public void invoke(RealmResource realm) {
                 realm.userFederation().get("nosuch").remove();
             }
-        }, Resource.USER, true);
+        }, Resource.REALM, true);
         invoke(new Invocation() {
             public void invoke(RealmResource realm) {
                 realm.userFederation().get("nosuch").syncUsers("nosuch");
             }
-        }, Resource.USER, true);
+        }, Resource.REALM, true);
         invoke(new Invocation() {
             public void invoke(RealmResource realm) {
                 realm.userFederation().get("nosuch").getMapperTypes();
             }
-        }, Resource.USER, false);
+        }, Resource.REALM, false);
         invoke(new Invocation() {
             public void invoke(RealmResource realm) {
                 realm.userFederation().get("nosuch").getMappers();
             }
-        }, Resource.USER, false);
+        }, Resource.REALM, false);
         invoke(new InvocationWithResponse() {
             public void invoke(RealmResource realm, AtomicReference<Response> response) {
                 response.set(realm.userFederation().get("nosuch").addMapper(new UserFederationMapperRepresentation()));
             }
-        }, Resource.USER, true);
+        }, Resource.REALM, true);
         invoke(new Invocation() {
             public void invoke(RealmResource realm) {
                 realm.userFederation().get("nosuch").getMapperById("nosuch");
             }
-        }, Resource.USER, false);
+        }, Resource.REALM, false);
         invoke(new Invocation() {
             public void invoke(RealmResource realm) {
                 realm.userFederation().get("nosuch").syncMapperData("nosuch", "nosuch");
             }
-        }, Resource.USER, true);
+        }, Resource.REALM, true);
+    }
+
+    @Test
+    public void components() {
+        invoke(new Invocation() {
+            public void invoke(RealmResource realm) {
+                realm.components().query();
+            }
+        }, Resource.REALM, false);
+        invoke(new Invocation() {
+            public void invoke(RealmResource realm) {
+                realm.components().query("nosuch");
+            }
+        }, Resource.REALM, false);
+        invoke(new InvocationWithResponse() {
+            public void invoke(RealmResource realm, AtomicReference<Response> response) {
+                response.set(realm.components().add(new ComponentRepresentation()));
+            }
+        }, Resource.REALM, true);
+        invoke(new Invocation() {
+            public void invoke(RealmResource realm) {
+                realm.components().component("nosuch").toRepresentation();
+            }
+        }, Resource.REALM, false);
+        invoke(new Invocation() {
+            public void invoke(RealmResource realm) {
+                realm.components().component("nosuch").update(new ComponentRepresentation());
+            }
+        }, Resource.REALM, true);
+        invoke(new Invocation() {
+            public void invoke(RealmResource realm) {
+                realm.components().component("nosuch").remove();
+            }
+        }, Resource.REALM, true);
     }
 
     private void invoke(final Invocation invocation, Resource resource, boolean manage) {

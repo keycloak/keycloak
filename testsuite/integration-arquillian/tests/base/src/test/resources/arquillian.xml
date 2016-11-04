@@ -67,6 +67,7 @@
                 -Djboss.bind.address=0.0.0.0 
                 ${adapter.test.props}
                 ${migration.import.properties}
+                ${auth.server.profile}
             </property>
             <property name="javaVmArguments">
                 ${auth.server.memory.settings}
@@ -89,6 +90,7 @@
                     -Djboss.socket.binding.port-offset=${auth.server.backend1.port.offset} 
                     -Djboss.node.name=node1
                     ${adapter.test.props}
+                    ${auth.server.profile}
                 </property>
                 <property name="javaVmArguments">
                     ${auth.server.memory.settings}
@@ -109,6 +111,7 @@
                     -Djboss.socket.binding.port-offset=${auth.server.backend2.port.offset} 
                     -Djboss.node.name=node2
                     ${adapter.test.props}
+                    ${auth.server.profile}
                 </property>
                 <property name="javaVmArguments">
                     ${auth.server.memory.settings}

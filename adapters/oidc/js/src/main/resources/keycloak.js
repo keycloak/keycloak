@@ -1049,7 +1049,7 @@
 
             function clearExpired() {
                 var time = new Date().getTime();
-                for (var i = 1; i <= localStorage.length; i++)  {
+                for (var i = 0; i < localStorage.length; i++)  {
                     var key = localStorage.key(i);
                     if (key && key.indexOf('kc-callback-') == 0) {
                         var value = localStorage.getItem(key);

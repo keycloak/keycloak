@@ -62,6 +62,7 @@ import static org.keycloak.client.registration.cli.util.IoUtil.warnfErr;
 import static org.keycloak.client.registration.cli.util.IoUtil.readFully;
 import static org.keycloak.client.registration.cli.util.HttpUtil.APPLICATION_JSON;
 import static org.keycloak.client.registration.cli.util.OsUtil.CMD;
+import static org.keycloak.client.registration.cli.util.OsUtil.EOL;
 import static org.keycloak.client.registration.cli.util.OsUtil.PROMPT;
 import static org.keycloak.client.registration.cli.util.ParseUtil.mergeAttributes;
 import static org.keycloak.client.registration.cli.util.ParseUtil.parseFileOrStdin;
@@ -101,18 +102,18 @@ public class UpdateCmd extends AbstractAuthOptionsCmd {
         List<AttributeOperation> attrs = new LinkedList<>();
 
         try {
-            processGlobalOptions();
-
             if (printHelp()) {
-                return CommandResult.SUCCESS;
+                return help ? CommandResult.SUCCESS : CommandResult.FAILURE;
             }
+
+            processGlobalOptions();
 
             String clientId = null;
 
             if (args != null) {
                 Iterator<String> it = args.iterator();
                 if (!it.hasNext()) {
-                    throw new RuntimeException("CLIENT_ID not specified");
+                    throw new IllegalArgumentException("CLIENT_ID not specified");
                 }
 
                 clientId = it.next();
@@ -127,7 +128,7 @@ public class UpdateCmd extends AbstractAuthOptionsCmd {
                         case "-s":
                         case "--set": {
                             if (!it.hasNext()) {
-                                throw new RuntimeException("Option " + option + " requires a value");
+                                throw new IllegalArgumentException("Option " + option + " requires a value");
                             }
                             String[] keyVal = parseKeyVal(it.next());
                             attrs.add(new AttributeOperation(SET, keyVal[0], keyVal[1]));
@@ -139,14 +140,14 @@ public class UpdateCmd extends AbstractAuthOptionsCmd {
                             break;
                         }
                         default: {
-                            throw new RuntimeException("Unsupported option: " + option);
+                            throw new IllegalArgumentException("Unsupported option: " + option);
                         }
                     }
                 }
             }
 
             if (file == null && attrs.size() == 0) {
-                throw new RuntimeException("No file nor attribute values specified");
+                throw new IllegalArgumentException("No file nor attribute values specified");
             }
 
             // We have several options for update:
@@ -318,6 +319,8 @@ public class UpdateCmd extends AbstractAuthOptionsCmd {
 
             return CommandResult.SUCCESS;
 
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException(e.getMessage() + suggestHelp(), e);
         } finally {
             commandInvocation.stop();
         }
@@ -331,6 +334,15 @@ public class UpdateCmd extends AbstractAuthOptionsCmd {
                 printOut(JsonSerialization.writeValueAsPrettyString(result));
             }
         }
+    }
+
+    @Override
+    protected boolean nothingToDo() {
+        return noOptions() && regType == null && file == null && (args == null || args.size() == 0);
+    }
+
+    protected String suggestHelp() {
+        return EOL + "Try '" + CMD + " help update' for more information";
     }
 
     protected String help() {

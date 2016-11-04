@@ -335,6 +335,7 @@ module.controller('UserTabCtrl', function($scope, $location, Dialog, Notificatio
 });
 
 module.controller('UserDetailCtrl', function($scope, realm, user, BruteForceUser, User,
+                                             Components,
                                              UserFederationInstances, UserImpersonation, RequiredActions,
                                              $location, Dialog, Notifications) {
     $scope.realm = realm;
@@ -362,12 +363,28 @@ module.controller('UserDetailCtrl', function($scope, realm, user, BruteForceUser
         };
         if(user.federationLink) {
             console.log("federationLink is not null");
-            UserFederationInstances.get({realm : realm.realm, instance: user.federationLink}, function(link) {
-                $scope.federationLinkName = link.displayName;
-                $scope.federationLink = "#/realms/" + realm.realm + "/user-federation/providers/" + link.providerName + "/" + link.id;
-            })
+            if (user.federationLink.startsWith('f:')) {
+                 Components.get({realm: realm.realm, componentId: user.federationLink}, function (link) {
+                    $scope.federationLinkName = link.name;
+                    $scope.federationLink = "#/realms/" + realm.realm + "/user-storage/providers/" + link.providerId + "/" + link.id;
+                });
+            } else {
+                UserFederationInstances.get({realm: realm.realm, instance: user.federationLink}, function (link) {
+                    $scope.federationLinkName = link.displayName;
+                    $scope.federationLink = "#/realms/" + realm.realm + "/user-federation/providers/" + link.providerName + "/" + link.id;
+                });
+            }
+
         } else {
             console.log("federationLink is null");
+        }
+        if(user.origin) {
+            Components.get({realm: realm.realm, componentId: user.origin}, function (link) {
+                $scope.originName = link.name;
+                $scope.originLink = "#/realms/" + realm.realm + "/user-storage/providers/" + link.providerId + "/" + link.id;
+            })
+        } else {
+            console.log("origin is null");
         }
         console.log('realm brute force? ' + realm.bruteForceProtected)
         $scope.temporarilyDisabled = false;
@@ -484,7 +501,7 @@ module.controller('UserDetailCtrl', function($scope, realm, user, BruteForceUser
     }
 });
 
-module.controller('UserCredentialsCtrl', function($scope, realm, user, RequiredActions, User, UserExecuteActionsEmail, UserCredentials, Notifications, Dialog) {
+module.controller('UserCredentialsCtrl', function($scope, realm, user, $route, RequiredActions, User, UserExecuteActionsEmail, UserCredentials, Notifications, Dialog) {
     console.log('UserCredentialsCtrl');
 
     $scope.realm = realm;
@@ -537,18 +554,19 @@ module.controller('UserCredentialsCtrl', function($scope, realm, user, RequiredA
         });
     };
 
-    $scope.removeTotp = function() {
-        Dialog.confirm('Remove totp', 'Are you sure you want to remove the users totp configuration?', function() {
-            UserCredentials.removeTotp({ realm: realm.realm, userId: user.id }, { }, function() {
-                Notifications.success("The users totp configuration has been removed");
-                $scope.user.totp = false;
+    $scope.disableCredentialTypes = function() {
+        Dialog.confirm('Disable credentials', 'Are you sure you want to disable these the users credentials?', function() {
+            UserCredentials.disableCredentialTypes({ realm: realm.realm, userId: user.id }, $scope.disableableCredentialTypes, function() {
+                $route.reload();
+                Notifications.success("Credentials disabled");
             }, function() {
-                Notifications.error("Failed to remove the users totp configuration");
+                Notifications.error("Failed to disable credentials");
             });
         });
     };
 
     $scope.emailActions = [];
+    $scope.disableableCredentialTypes = [];
 
     $scope.sendExecuteActionsEmail = function() {
         if ($scope.changed) {
