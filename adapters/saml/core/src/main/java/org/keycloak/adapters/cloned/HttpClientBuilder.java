@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.adapters;
+package org.keycloak.adapters.cloned;
 
 import org.apache.http.HttpHost;
 import org.apache.http.client.CookieStore;
@@ -38,7 +38,6 @@ import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.HttpConnectionParams;
 import org.keycloak.common.util.EnvUtil;
 import org.keycloak.common.util.KeystoreUtil;
-import org.keycloak.representations.adapters.config.AdapterHttpClientConfig;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
