@@ -85,6 +85,7 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import org.keycloak.testsuite.adapter.page.CustomerPortalNoConf;
 import static org.keycloak.testsuite.auth.page.AuthRealm.DEMO;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlEquals;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
@@ -100,6 +101,8 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
 
     @Page
     private CustomerPortal customerPortal;
+    @Page
+    private CustomerPortalNoConf customerPortalNoConf;
     @Page
     private CustomerPortalSubsystem customerPortalSubsystem;
     @Page
@@ -128,6 +131,11 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
     @Deployment(name = CustomerPortal.DEPLOYMENT_NAME)
     protected static WebArchive customerPortal() {
         return servletDeployment(CustomerPortal.DEPLOYMENT_NAME, CustomerServlet.class, ErrorServlet.class);
+    }
+    
+    @Deployment(name = CustomerPortalNoConf.DEPLOYMENT_NAME)
+    protected static WebArchive customerPortalNoConf() {
+        return servletDeployment(CustomerPortalNoConf.DEPLOYMENT_NAME, CustomerServletNoConf.class, ErrorServlet.class);
     }
 
     @Deployment(name = CustomerPortalSubsystem.DEPLOYMENT_NAME)
@@ -828,6 +836,13 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
         } else {
             log.info("Checking app server log on app-server: \"" + System.getProperty("app.server") + "\" is not supported.");
         }
+    }
+    
+    @Test
+    public void testWithoutKeycloakConf() {
+        customerPortalNoConf.navigateTo();
+        String pageSource = driver.getPageSource();
+        assertTrue(pageSource.contains("Forbidden") || pageSource.contains("HTTP Status 401"));
     }
 
 
