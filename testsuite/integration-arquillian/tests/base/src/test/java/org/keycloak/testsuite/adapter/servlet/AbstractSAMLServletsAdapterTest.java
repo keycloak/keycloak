@@ -24,6 +24,12 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ProtocolMappersResource;
+import org.keycloak.common.util.KeyUtils;
+import org.keycloak.common.util.PemUtils;
+import org.keycloak.keys.Attributes;
+import org.keycloak.keys.KeyProvider;
+import org.keycloak.keys.RsaKeyProviderFactory;
+import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.protocol.saml.mappers.AttributeStatementHelper;
 import org.keycloak.protocol.saml.mappers.RoleListMapper;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -40,6 +46,9 @@ import org.keycloak.testsuite.adapter.page.BadRealmSalesPostSigServlet;
 import org.keycloak.testsuite.adapter.page.Employee2Servlet;
 import org.keycloak.testsuite.adapter.page.EmployeeServlet;
 import org.keycloak.testsuite.adapter.page.EmployeeSigFrontServlet;
+import org.keycloak.testsuite.adapter.page.EmployeeSigPostNoIdpKeyServlet;
+import org.keycloak.testsuite.adapter.page.EmployeeSigRedirNoIdpKeyServlet;
+import org.keycloak.testsuite.adapter.page.EmployeeSigRedirOptNoIdpKeyServlet;
 import org.keycloak.testsuite.adapter.page.EmployeeSigServlet;
 import org.keycloak.testsuite.adapter.page.InputPortal;
 import org.keycloak.testsuite.adapter.page.MissingAssertionSig;
@@ -80,6 +89,8 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
+import java.security.KeyPair;
+import java.security.PublicKey;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -108,6 +119,15 @@ public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAd
 
     @Page
     protected EmployeeSigServlet employeeSigServletPage;
+
+    @Page
+    protected EmployeeSigPostNoIdpKeyServlet employeeSigPostNoIdpKeyServletPage;
+
+    @Page
+    protected EmployeeSigRedirNoIdpKeyServlet employeeSigRedirNoIdpKeyServletPage;
+
+    @Page
+    protected EmployeeSigRedirOptNoIdpKeyServlet employeeSigRedirOptNoIdpKeyServletPage;
 
     @Page
     protected EmployeeSigFrontServlet employeeSigFrontServletPage;
@@ -182,6 +202,21 @@ public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAd
     @Deployment(name = EmployeeSigServlet.DEPLOYMENT_NAME)
     protected static WebArchive employeeSig() {
         return samlServletDeployment(EmployeeSigServlet.DEPLOYMENT_NAME, SendUsernameServlet.class);
+    }
+
+    @Deployment(name = EmployeeSigPostNoIdpKeyServlet.DEPLOYMENT_NAME)
+    protected static WebArchive employeeSigPostNoIdpKeyServlet() {
+        return samlServletDeployment(EmployeeSigPostNoIdpKeyServlet.DEPLOYMENT_NAME, SendUsernameServlet.class);
+    }
+
+    @Deployment(name = EmployeeSigRedirNoIdpKeyServlet.DEPLOYMENT_NAME)
+    protected static WebArchive employeeSigRedirNoIdpKeyServlet() {
+        return samlServletDeployment(EmployeeSigRedirNoIdpKeyServlet.DEPLOYMENT_NAME, SendUsernameServlet.class);
+    }
+
+    @Deployment(name = EmployeeSigRedirOptNoIdpKeyServlet.DEPLOYMENT_NAME)
+    protected static WebArchive employeeSigRedirOptNoIdpKeyServlet() {
+        return samlServletDeployment(EmployeeSigRedirOptNoIdpKeyServlet.DEPLOYMENT_NAME, SendUsernameServlet.class);
     }
 
     @Deployment(name = EmployeeSigFrontServlet.DEPLOYMENT_NAME)
@@ -392,6 +427,69 @@ public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAd
     @Test
     public void employeeSigTest() {
         testSuccessfulAndUnauthorizedLogin(employeeSigServletPage, testRealmSAMLRedirectLoginPage);
+    }
+
+    private PublicKey createKeys(String priority) throws Exception {
+        KeyPair keyPair = KeyUtils.generateRsaKeyPair(1024);
+        String privateKeyPem = PemUtils.encodeKey(keyPair.getPrivate());
+        PublicKey publicKey = keyPair.getPublic();
+
+        ComponentRepresentation rep = new ComponentRepresentation();
+        rep.setName("mycomponent");
+        rep.setParentId("demo");
+        rep.setProviderId(RsaKeyProviderFactory.ID);
+        rep.setProviderType(KeyProvider.class.getName());
+
+        org.keycloak.common.util.MultivaluedHashMap config = new org.keycloak.common.util.MultivaluedHashMap();
+        config.addFirst("priority", priority);
+        config.addFirst(Attributes.PRIVATE_KEY_KEY, privateKeyPem);
+        rep.setConfig(config);
+
+        testRealmResource().components().add(rep);
+
+        return publicKey;
+    }
+
+    private void dropKeys(String priority) {
+        for (ComponentRepresentation c : testRealmResource().components().query("demo", KeyProvider.class.getName())) {
+            if (c.getConfig().getFirst("priority").equals(priority)) {
+                testRealmResource().components().component(c.getId()).remove();
+                return;
+            }
+        }
+        throw new RuntimeException("Failed to find keys");
+    }
+
+    private void testRotatedKeysPropagated(SAMLServlet servletPage, Login loginPage) throws Exception {
+        boolean keyDropped = false;
+        try {
+            log.info("Creating new key");
+            createKeys("1000");
+            testSuccessfulAndUnauthorizedLogin(servletPage, loginPage);
+            log.info("Dropping new key");
+            dropKeys("1000");
+            keyDropped = true;
+            testSuccessfulAndUnauthorizedLogin(servletPage, loginPage);
+        } finally {
+            if (! keyDropped) {
+                dropKeys("1000");
+            }
+        }
+    }
+
+    @Test
+    public void employeeSigPostNoIdpKeyTest() throws Exception {
+        testRotatedKeysPropagated(employeeSigPostNoIdpKeyServletPage, testRealmSAMLPostLoginPage);
+    }
+
+    @Test
+    public void employeeSigRedirNoIdpKeyTest() throws Exception {
+        testRotatedKeysPropagated(employeeSigRedirNoIdpKeyServletPage, testRealmSAMLRedirectLoginPage);
+    }
+
+    @Test
+    public void employeeSigRedirOptNoIdpKeyTest() throws Exception {
+        testRotatedKeysPropagated(employeeSigRedirOptNoIdpKeyServletPage, testRealmSAMLRedirectLoginPage);
     }
 
     @Test
