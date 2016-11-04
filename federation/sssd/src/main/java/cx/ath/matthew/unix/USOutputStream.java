@@ -26,22 +26,31 @@
  */
 package cx.ath.matthew.unix;
 
+import jnr.constants.platform.linux.SocketLevel;
+import jnr.posix.CmsgHdr;
+import jnr.posix.MsgHdr;
+import jnr.posix.POSIX;
+import jnr.posix.POSIXFactory;
+import jnr.unixsocket.UnixSocketChannel;
+
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 
 public class USOutputStream extends OutputStream {
-    private native int native_send(int sock, byte[] b, int off, int len) throws IOException;
 
-    private native int native_send(int sock, byte[][] b) throws IOException;
+    private UnixSocketChannel channel;
 
     private int sock;
     boolean closed = false;
     private byte[] onebuf = new byte[1];
     private UnixSocket us;
 
-    public USOutputStream(int sock, UnixSocket us) {
+    public USOutputStream(UnixSocketChannel channel, int sock, UnixSocket us) {
         this.sock = sock;
         this.us = us;
+        this.channel = channel;
     }
 
     public void close() throws IOException {
@@ -52,14 +61,9 @@ public class USOutputStream extends OutputStream {
     public void flush() {
     } // no-op, we do not buffer
 
-    public void write(byte[][] b) throws IOException {
-        if (closed) throw new NotConnectedException();
-        native_send(sock, b);
-    }
-
     public void write(byte[] b, int off, int len) throws IOException {
         if (closed) throw new NotConnectedException();
-        native_send(sock, b, off, len);
+        send(sock, b, off, len);
     }
 
     public void write(int b) throws IOException {
@@ -74,5 +78,47 @@ public class USOutputStream extends OutputStream {
 
     public UnixSocket getSocket() {
         return us;
+    }
+
+    /*
+     * Taken from JRuby with small modifications
+     * @see <a href="https://github.com/jruby/jruby/blob/master/core/src/main/java/org/jruby/ext/socket/RubyUNIXSocket.java">RubyUNIXSocket.java</a>
+     */
+    private void send(int sock, ByteBuffer[] outIov) {
+
+        final POSIX posix = POSIXFactory.getNativePOSIX();
+        MsgHdr outMessage = posix.allocateMsgHdr();
+
+        outMessage.setIov(outIov);
+
+        CmsgHdr outControl = outMessage.allocateControl(4);
+        outControl.setLevel(SocketLevel.SOL_SOCKET.intValue());
+        outControl.setType(0x01);
+
+        ByteBuffer fdBuf = ByteBuffer.allocateDirect(4);
+        fdBuf.order(ByteOrder.nativeOrder());
+        fdBuf.putInt(0, channel.getFD());
+        outControl.setData(fdBuf);
+
+        posix.sendmsg(sock, outMessage, 0);
+
+    }
+
+    private void send(int sock, byte[] dataBytes, int off, int len) {
+        ByteBuffer[] outIov = new ByteBuffer[1];
+        outIov[0] = ByteBuffer.allocateDirect(dataBytes.length);
+        outIov[0].put(dataBytes, off, len);
+        outIov[0].flip();
+
+        send(sock, outIov);
+    }
+
+    protected void send(int sock, byte[] dataBytes) {
+        ByteBuffer[] outIov = new ByteBuffer[1];
+        outIov[0] = ByteBuffer.allocateDirect(dataBytes.length);
+        outIov[0].put(dataBytes);
+        outIov[0].flip();
+
+        send(sock, outIov);
     }
 }

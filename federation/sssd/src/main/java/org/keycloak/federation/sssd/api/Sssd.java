@@ -17,8 +17,6 @@
 
 package org.keycloak.federation.sssd.api;
 
-import cx.ath.matthew.LibraryLoader;
-import org.freedesktop.DBus;
 import org.freedesktop.dbus.DBusConnection;
 import org.freedesktop.dbus.Variant;
 import org.freedesktop.dbus.exceptions.DBusException;
@@ -26,6 +24,9 @@ import org.freedesktop.sssd.infopipe.InfoPipe;
 import org.freedesktop.sssd.infopipe.User;
 import org.jboss.logging.Logger;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -110,24 +111,17 @@ public class Sssd {
         return userGroups;
     }
 
-    public static boolean isAvailable(){
+    public static boolean isAvailable() {
         boolean sssdAvailable = false;
         try {
-            if (LibraryLoader.load().succeed()) {
-                DBusConnection connection = DBusConnection.getConnection(DBusConnection.SYSTEM);
-                DBus dbus = connection.getRemoteObject(DBus.BUSNAME, DBus.OBJECTPATH, DBus.class);
-                sssdAvailable = Arrays.asList(dbus.ListNames()).contains(InfoPipe.BUSNAME);
-                if (!sssdAvailable) {
-                    logger.debugv("SSSD is not available in your system. Federation provider will be disabled.");
-                } else {
-                    sssdAvailable = true;
-                }
-                connection.disconnect();
+            Path path = Paths.get("/etc/sssd");
+            if (!Files.exists(path)) {
+                logger.debugv("SSSD is not available in your system. Federation provider will be disabled.");
             } else {
-                logger.debugv("libunix_dbus_java not found. Federation provider will be disabled.");
+                sssdAvailable = true;
             }
-        } catch (DBusException e) {
-            logger.error("Failed to check the status of SSSD", e);
+        } catch (Exception e) {
+            logger.error("SSSD check failed", e);
         }
         return sssdAvailable;
     }
