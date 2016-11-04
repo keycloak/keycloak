@@ -92,13 +92,13 @@ public class InfinispanUserSessionInitializer {
 
 
     private boolean isFinished() {
-        InitializerState state = (InitializerState) workCache.get(stateKey);
+        InitializerState state = getStateFromCache();
         return state != null && state.isFinished();
     }
 
 
     private InitializerState getOrCreateInitializerState() {
-        InitializerState state = (InitializerState) workCache.get(stateKey);
+        InitializerState state = getStateFromCache();
         if (state == null) {
             final int[] count = new int[1];
 
@@ -128,6 +128,12 @@ public class InfinispanUserSessionInitializer {
 
     }
 
+    private InitializerState getStateFromCache() {
+        // TODO: We ignore cacheStore for now, so that in Cross-DC scenario (with RemoteStore enabled) is the remoteStore ignored. This means that every DC needs to load offline sessions separately.
+        return (InitializerState) workCache.getAdvancedCache()
+                .withFlags(Flag.SKIP_CACHE_STORE, Flag.SKIP_CACHE_LOAD)
+                .get(stateKey);
+    }
 
     private void saveStateToCache(final InitializerState state) {
 
@@ -138,8 +144,9 @@ public class InfinispanUserSessionInitializer {
             public void run() {
 
                 // Save this synchronously to ensure all nodes read correct state
+                // TODO: We ignore cacheStore for now, so that in Cross-DC scenario (with RemoteStore enabled) is the remoteStore ignored. This means that every DC needs to load offline sessions separately.
                 InfinispanUserSessionInitializer.this.workCache.getAdvancedCache().
-                        withFlags(Flag.IGNORE_RETURN_VALUES, Flag.FORCE_SYNCHRONOUS)
+                        withFlags(Flag.IGNORE_RETURN_VALUES, Flag.FORCE_SYNCHRONOUS, Flag.SKIP_CACHE_STORE, Flag.SKIP_CACHE_LOAD)
                         .put(stateKey, state);
             }
 

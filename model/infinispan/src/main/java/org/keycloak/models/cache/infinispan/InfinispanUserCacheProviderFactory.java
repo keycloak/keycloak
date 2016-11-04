@@ -21,7 +21,6 @@ import org.infinispan.Cache;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.cluster.ClusterEvent;
-import org.keycloak.cluster.ClusterListener;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.KeycloakSession;
@@ -29,6 +28,7 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.cache.UserCache;
 import org.keycloak.models.cache.UserCacheProviderFactory;
 import org.keycloak.models.cache.infinispan.entities.Revisioned;
+import org.keycloak.models.cache.infinispan.events.InvalidationEvent;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -55,13 +55,25 @@ public class InfinispanUserCacheProviderFactory implements UserCacheProviderFact
                     Cache<String, Revisioned> cache = session.getProvider(InfinispanConnectionProvider.class).getCache(InfinispanConnectionProvider.USER_CACHE_NAME);
                     Cache<String, Long> revisions = session.getProvider(InfinispanConnectionProvider.class).getCache(InfinispanConnectionProvider.USER_REVISIONS_CACHE_NAME);
                     userCache = new UserCacheManager(cache, revisions);
+
                     ClusterProvider cluster = session.getProvider(ClusterProvider.class);
-                    cluster.registerListener(USER_CLEAR_CACHE_EVENTS, new ClusterListener() {
-                        @Override
-                        public void run(ClusterEvent event) {
-                            userCache.clear();
+
+                    cluster.registerListener(ClusterProvider.ALL, (ClusterEvent event) -> {
+
+                        if (event instanceof InvalidationEvent) {
+                            InvalidationEvent invalidationEvent = (InvalidationEvent) event;
+                            userCache.invalidationEventReceived(invalidationEvent);
                         }
+
                     });
+
+                    cluster.registerListener(USER_CLEAR_CACHE_EVENTS, (ClusterEvent event) -> {
+
+                        userCache.clear();
+
+                    });
+
+                    log.debug("Registered cluster listeners");
                 }
             }
         }

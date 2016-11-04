@@ -953,13 +953,6 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
     }
 
     @Override
-    public boolean removeRoleById(String id) {
-        RoleModel role = getRoleById(id);
-        if (role == null) return false;
-        return role.getContainer().removeRole(role);
-    }
-
-    @Override
     public PasswordPolicy getPasswordPolicy() {
         if (passwordPolicy == null) {
             passwordPolicy = PasswordPolicy.parse(session, realm.getPasswordPolicy());
@@ -1930,12 +1923,6 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
     @Override
     public GroupModel createGroup(String id, String name) {
         return session.realms().createGroup(this, id, name);
-    }
-
-    @Override
-    public void addTopLevelGroup(GroupModel subGroup) {
-        session.realms().addTopLevelGroup(this, subGroup);
-
     }
 
     @Override

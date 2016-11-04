@@ -29,6 +29,6 @@ public interface ClusterListener {
      *
      * @param event value of notification (Object added into the cache)
      */
-    void run(ClusterEvent event);
+    void eventReceived(ClusterEvent event);
 
 }
