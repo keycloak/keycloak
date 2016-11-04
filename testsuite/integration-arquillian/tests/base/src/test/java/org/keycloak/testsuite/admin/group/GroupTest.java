@@ -149,6 +149,32 @@ public class GroupTest extends AbstractGroupTest {
     }
 
     @Test
+    public void doNotAllowSameGroupNameAtSameLevel() throws Exception {
+        RealmResource realm = adminClient.realms().realm("test");
+        
+        GroupRepresentation topGroup = new GroupRepresentation();
+        topGroup.setName("top");
+        topGroup = createGroup(realm, topGroup);
+        
+        GroupRepresentation anotherTopGroup = new GroupRepresentation();
+        anotherTopGroup.setName("top");
+        Response response = realm.groups().add(anotherTopGroup);
+        assertEquals(409, response.getStatus()); // conflict status 409 - same name not allowed
+        
+        GroupRepresentation level2Group = new GroupRepresentation();
+        level2Group.setName("level2");
+        response = realm.groups().group(topGroup.getId()).subGroup(level2Group);
+        response.close();
+        assertEquals(201, response.getStatus()); // created status
+
+        GroupRepresentation anotherlevel2Group = new GroupRepresentation();
+        anotherlevel2Group.setName("level2");
+        response = realm.groups().group(topGroup.getId()).subGroup(anotherlevel2Group);
+        response.close();
+        assertEquals(409, response.getStatus()); // conflict status 409 - same name not allowed
+    }
+    
+    @Test
     public void createAndTestGroups() throws Exception {
         RealmResource realm = adminClient.realms().realm("test");
         {
@@ -176,7 +202,7 @@ public class GroupTest extends AbstractGroupTest {
         GroupRepresentation topGroup = new GroupRepresentation();
         topGroup.setName("top");
         topGroup = createGroup(realm, topGroup);
-
+        
         List<RoleRepresentation> roles = new LinkedList<>();
         roles.add(topRole);
         realm.groups().group(topGroup.getId()).roles().realmLevel().add(roles);
