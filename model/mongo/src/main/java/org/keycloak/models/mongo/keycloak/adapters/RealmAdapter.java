@@ -1954,7 +1954,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
 
     @Override
     public ComponentModel addComponentModel(ComponentModel model) {
-        ComponentUtil.getComponentFactory(session, model).validateConfiguration(session, model);
+        ComponentUtil.getComponentFactory(session, model).validateConfiguration(session, this, model);
 
         ComponentEntity entity = new ComponentEntity();
         if (model.getId() == null) {
@@ -1964,6 +1964,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         }
         updateComponentEntity(entity, model);
         model.setId(entity.getId());
+        if (model.getParentId() == null) entity.setParentId(this.getId());
         realm.getComponentEntities().add(entity);
         updateRealm();
         ComponentUtil.notifyCreated(session, this, model);
@@ -1972,7 +1973,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
 
     @Override
     public void updateComponent(ComponentModel model) {
-        ComponentUtil.getComponentFactory(session, model).validateConfiguration(session, model);
+        ComponentUtil.getComponentFactory(session, model).validateConfiguration(session, this, model);
 
         for (ComponentEntity entity : realm.getComponentEntities()) {
             if (entity.getId().equals(model.getId())) {
@@ -1999,6 +2000,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         while(it.hasNext()) {
             if (it.next().getId().equals(component.getId())) {
                 session.users().preRemove(this, component);
+                removeComponents(component.getId());
                 it.remove();
                 break;
             }

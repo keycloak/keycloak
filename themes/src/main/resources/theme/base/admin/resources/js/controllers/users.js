@@ -761,13 +761,13 @@ module.controller('GenericUserStorageCtrl', function($scope, $location, Notifica
             if (providerFactory.metadata.synchronizable) {
                 instance.config['fullSyncPeriod'] = ['-1'];
                 instance.config['changedSyncPeriod'] = ['-1'];
-                instance.config['cachePolicy'] = ['DEFAULT'];
-                instance.config['evictionDay'] = [''];
-                instance.config['evictionHour'] = [''];
-                instance.config['evictionMinute'] = [''];
-                instance.config['maxLifespan'] = [''];
 
             }
+            instance.config['cachePolicy'] = ['DEFAULT'];
+            instance.config['evictionDay'] = [''];
+            instance.config['evictionHour'] = [''];
+            instance.config['evictionMinute'] = [''];
+            instance.config['maxLifespan'] = [''];
             if (providerFactory.properties) {
 
                 for (var i = 0; i < providerFactory.properties.length; i++) {
@@ -816,17 +816,10 @@ module.controller('GenericUserStorageCtrl', function($scope, $location, Notifica
                 instance.config['maxLifespan'] = [''];
 
             }
-
-            /*
-            console.log('Manage instance');
-            console.log(instance.name);
-            console.log(instance.providerId);
-            console.log(instance.providerType);
-            console.log(instance.parentId);
-            for (var k in instance.config) {
-                console.log('config[' + k + "] =");
+            if (!instance.config['priority']) {
+                instance.config['priority'] = ['0'];
             }
-            */
+
         }
         if (providerFactory.metadata.synchronizable) {
             if (instance.config && instance.config['importEnabled']) {

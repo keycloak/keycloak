@@ -81,7 +81,7 @@ public interface UserStorageProviderFactory<T extends UserStorageProvider> exten
     }
 
     @Override
-    default void validateConfiguration(KeycloakSession session, ComponentModel config) throws ComponentValidationException {
+    default void validateConfiguration(KeycloakSession session, RealmModel realm, ComponentModel config) throws ComponentValidationException {
 
     }
 

@@ -22,13 +22,19 @@ import org.jboss.resteasy.spi.NotFoundException;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.component.ComponentValidationException;
+import org.keycloak.component.SubComponentFactory;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.models.utils.StripSecretsUtils;
+import org.keycloak.provider.Provider;
+import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.idm.ComponentRepresentation;
+import org.keycloak.representations.idm.ComponentTypeRepresentation;
+import org.keycloak.representations.idm.ConfigPropertyRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ErrorResponseException;
 
@@ -196,5 +202,33 @@ public class ComponentResource {
         String message = MessageFormat.format(messages.getProperty(cve.getMessage(), cve.getMessage()), localizedParameters);
         return ErrorResponse.error(message, Response.Status.BAD_REQUEST);
     }
+
+    @GET
+    @Path("{id}/sub-component-config")
+    @Produces(MediaType.APPLICATION_JSON)
+    @NoCache
+    public List<ConfigPropertyRepresentation> getSubcomponentConfig(@PathParam("id") String id, @QueryParam("type") String providerType, @QueryParam("id") String providerId) {
+        auth.requireView();
+        ComponentModel parent = realm.getComponent(id);
+        if (parent == null) {
+            throw new NotFoundException("Could not find component");
+        }
+        Class<? extends Provider> providerClass = null;
+        try {
+            providerClass = (Class<? extends Provider>)Class.forName(providerType);
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+        ProviderFactory factory = session.getKeycloakSessionFactory().getProviderFactory(providerClass, providerId);
+        if (factory == null) {
+            throw new NotFoundException("Could not find subcomponent factory");
+
+        }
+        if (!(factory instanceof SubComponentFactory)) return Collections.EMPTY_LIST;
+        List<ProviderConfigProperty> props = ((SubComponentFactory)factory).getConfigProperties(realm, parent);
+        return ModelToRepresentation.toRepresentation(props);
+    }
+
+
 
 }

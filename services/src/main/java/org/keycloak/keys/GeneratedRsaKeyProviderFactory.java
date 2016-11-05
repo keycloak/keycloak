@@ -57,8 +57,8 @@ public class GeneratedRsaKeyProviderFactory extends AbstractRsaKeyProviderFactor
     }
 
     @Override
-    public void validateConfiguration(KeycloakSession session, ComponentModel model) throws ComponentValidationException {
-        super.validateConfiguration(session, model);
+    public void validateConfiguration(KeycloakSession session, RealmModel realm, ComponentModel model) throws ComponentValidationException {
+        super.validateConfiguration(session, realm, model);
 
         ConfigurationValidationHelper.check(model)
                 .checkInt(Attributes.KEY_SIZE_PROPERTY, false);
@@ -75,7 +75,6 @@ public class GeneratedRsaKeyProviderFactory extends AbstractRsaKeyProviderFactor
         }
 
         if (!(model.contains(Attributes.PRIVATE_KEY_KEY) && model.contains(Attributes.CERTIFICATE_KEY))) {
-            RealmModel realm = session.realms().getRealm(model.getParentId());
             generateKeys(realm, model, size);
 
             logger.debugv("Generated keys for {0}", realm.getName());
@@ -83,7 +82,6 @@ public class GeneratedRsaKeyProviderFactory extends AbstractRsaKeyProviderFactor
             PrivateKey privateKey = PemUtils.decodePrivateKey(model.get(Attributes.PRIVATE_KEY_KEY));
             int currentSize = ((RSAPrivateKey) privateKey).getModulus().bitLength();
             if (currentSize != size) {
-                RealmModel realm = session.realms().getRealm(model.getParentId());
                 generateKeys(realm, model, size);
 
                 logger.debugv("Key size changed, generating new keys for {0}", realm.getName());

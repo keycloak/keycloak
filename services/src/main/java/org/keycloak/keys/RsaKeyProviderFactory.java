@@ -56,8 +56,8 @@ public class RsaKeyProviderFactory extends AbstractRsaKeyProviderFactory {
     }
 
     @Override
-    public void validateConfiguration(KeycloakSession session, ComponentModel model) throws ComponentValidationException {
-        super.validateConfiguration(session, model);
+    public void validateConfiguration(KeycloakSession session, RealmModel realm, ComponentModel model) throws ComponentValidationException {
+        super.validateConfiguration(session, realm, model);
 
         ConfigurationValidationHelper.check(model)
                 .checkSingle(Attributes.PRIVATE_KEY_PROPERTY, true)
@@ -89,7 +89,6 @@ public class RsaKeyProviderFactory extends AbstractRsaKeyProviderFactory {
             }
         } else {
             try {
-                RealmModel realm = session.realms().getRealm(model.getParentId());
                 Certificate certificate = CertificateUtils.generateV1SelfSignedCertificate(keyPair, realm.getName());
                 model.put(Attributes.CERTIFICATE_KEY, PemUtils.encodeCertificate(certificate));
             } catch (Throwable t) {

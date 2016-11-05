@@ -38,7 +38,7 @@ public interface ComponentFactory<CreatedType, ProviderType extends Provider> ex
         return null;
     }
 
-    void validateConfiguration(KeycloakSession session, ComponentModel model) throws ComponentValidationException;
+    void validateConfiguration(KeycloakSession session, RealmModel realm, ComponentModel model) throws ComponentValidationException;
 
     default
     void onCreate(KeycloakSession session, RealmModel realm, ComponentModel model) {
