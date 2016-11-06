@@ -78,6 +78,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 import static org.keycloak.services.resources.admin.RealmAuth.Resource.AUTHORIZATION;
 import static org.keycloak.services.resources.admin.RealmAuth.Resource.CLIENT;
+import org.keycloak.testsuite.ProfileAssume;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -782,6 +783,7 @@ public class PermissionsTest extends AbstractKeycloakTest {
 
     @Test
     public void clientAuthorization() {
+        ProfileAssume.assumePreview();
         invoke(new InvocationWithResponse() {
             public void invoke(RealmResource realm, AtomicReference<Response> response) {
                 realm.clients().create(ClientBuilder.create().clientId("foo-authz").build());

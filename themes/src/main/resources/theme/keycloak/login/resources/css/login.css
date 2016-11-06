@@ -244,18 +244,26 @@ ol#kc-totp-settings li:first-of-type {
 .zocial.microsoft {background-color: #0052a4; color: #fff;}
 .zocial.microsoft:before { content: "\f15d"; }
 
+@media (min-width: 1281px) {
+    #kc-container-wrapper {
+        bottom: 13%;        
+    }
+    
+    #kc-logo-wrapper {
+        position: absolute;
+        top: 50px;
+        right: 50px;
+    }
+}
 
 @media (min-width: 768px) {
     #kc-container-wrapper {
-        bottom: 13%;
         position: absolute;
         width: 100%;
     }
 
     #kc-logo-wrapper {
-        position: absolute;
-        top: 50px;
-        right: 50px;
+        margin-left: auto;
     }
 
     .login-pf .container {

@@ -21,9 +21,11 @@ package org.keycloak.authorization.store;
 import org.keycloak.authorization.store.syncronization.ClientApplicationSynchronizer;
 import org.keycloak.authorization.store.syncronization.RealmSynchronizer;
 import org.keycloak.authorization.store.syncronization.Synchronizer;
+import org.keycloak.authorization.store.syncronization.UserSynchronizer;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel.ClientRemovedEvent;
 import org.keycloak.models.RealmModel.RealmRemovedEvent;
+import org.keycloak.models.UserModel.UserRemovedEvent;
 import org.keycloak.provider.ProviderEvent;
 import org.keycloak.provider.ProviderFactory;
 
@@ -45,6 +47,7 @@ public interface AuthorizationStoreFactory extends ProviderFactory<StoreFactory>
 
         synchronizers.put(ClientRemovedEvent.class, new ClientApplicationSynchronizer());
         synchronizers.put(RealmRemovedEvent.class, new RealmSynchronizer());
+        synchronizers.put(UserRemovedEvent.class, new UserSynchronizer());
 
         factory.register(event -> {
             try {

@@ -118,12 +118,11 @@
         /**
          * Obtains all entitlements from a Keycloak Server based on a give resourceServerId.
          */
-        this.entitlement = function (resourceSeververId) {
+        this.entitlement = function (resourceSeververId, entitlementRequest     ) {
             this.then = function (onGrant, onDeny, onError) {
                 var request = new XMLHttpRequest();
 
-                request.open('GET', keycloak.authServerUrl + '/realms/' + keycloak.realm + '/authz/entitlement/' + resourceSeververId, true);
-                request.setRequestHeader('Authorization', 'Bearer ' + keycloak.token)
+
 
                 request.onreadystatechange = function () {
                     if (request.readyState == 4) {
@@ -149,7 +148,19 @@
                     }
                 };
 
-                request.send(null);
+                var erJson = null
+
+                if(entitlementRequest) {
+                    request.open('POST', keycloak.authServerUrl + '/realms/' + keycloak.realm + '/authz/entitlement/' + resourceSeververId, true);
+                    request.setRequestHeader("Content-type", "application/json");
+                    erJson = JSON.stringify(entitlementRequest)
+                } else {
+                    request.open('GET', keycloak.authServerUrl + '/realms/' + keycloak.realm + '/authz/entitlement/' + resourceSeververId, true);
+                }
+
+                request.setRequestHeader('Authorization', 'Bearer ' + keycloak.token)
+                request.send(erJson);
+
             };
 
             return this;

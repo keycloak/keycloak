@@ -68,6 +68,7 @@ public abstract class AbstractAdapterTest extends AbstractAuthTest {
             } else {
                 modifyClientRedirectUris(tr, "^(/.*/\\*)", appServerContextRootPage.toString() + "$1");
                 modifyClientUrls(tr, "^(/.*)", appServerContextRootPage.toString() + "$1");
+                modifyClientWebOrigins(tr, "8080", System.getProperty("app.server.http.port", null));
                 modifySamlMasterURLs(tr, "8080", System.getProperty("auth.server.http.port", null));
                 modifySAMLClientsAttributes(tr, "8080", System.getProperty("app.server.http.port", "8280"));
                 modifyClientJWKSUrl(tr, "^(/.*)", appServerContextRootPage.toString() + "$1");

@@ -108,13 +108,9 @@ public class CachedResourceStore implements ResourceStore {
 
     @Override
     public List<Resource> findByOwner(String ownerId) {
-        List<String> cachedIds = this.cache.get(getResourceOwnerCacheKey(ownerId));
 
-        if (cachedIds == null) {
-            for (Resource resource : getDelegate().findByOwner(ownerId)) {
-                updateCachedIds(getResourceOwnerCacheKey(ownerId), resource, true);
-            }
-            cachedIds = this.cache.getOrDefault(getResourceOwnerCacheKey(ownerId), Collections.emptyList());
+        for (Resource resource : getDelegate().findByOwner(ownerId)) {
+            updateCachedIds(getResourceOwnerCacheKey(ownerId), resource, true);
         }
 
         return  ((List<String>) this.cache.getOrDefault(getResourceOwnerCacheKey(ownerId), Collections.emptyList())).stream().map(this::findById)

@@ -28,8 +28,15 @@ import java.net.URLEncoder;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.admin.ApiUtil.createUserWithAdminClient;
 import static org.keycloak.testsuite.admin.ApiUtil.resetUserPassword;
+import static org.keycloak.testsuite.broker.BrokerTestConstants.USER_EMAIL;
+import org.keycloak.testsuite.pages.IdpConfirmLinkPage;
+import static org.keycloak.testsuite.util.MailAssert.assertEmailAndGetUrl;
+import org.keycloak.testsuite.util.MailServer;
+import org.keycloak.testsuite.util.MailServerConfiguration;
+import org.keycloak.testsuite.util.UserBuilder;
 
 public abstract class AbstractBrokerTest extends AbstractKeycloakTest {
 
@@ -61,6 +68,9 @@ public abstract class AbstractBrokerTest extends AbstractKeycloakTest {
 
     @Page
     protected ErrorPage errorPage;
+    
+    @Page
+    protected IdpConfirmLinkPage idpConfirmLinkPage;
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
@@ -198,6 +208,68 @@ public abstract class AbstractBrokerTest extends AbstractKeycloakTest {
         assertEquals(accountPage.buildUri().toASCIIString().replace("master", "consumer") + "/", driver.getCurrentUrl());
 
         assertEquals(userCount, adminClient.realm(consumerRealmName()).users().count());
+    }
+    
+    // KEYCLOAK-2957
+    @Test
+    public void testLinkAccountWithEmailVerified() {
+        //start mail server
+        MailServer.start();
+        MailServer.createEmailAccount(USER_EMAIL, "password");
+        
+        try {
+            //configure smpt server in the realm
+            RealmRepresentation master = adminClient.realm(consumerRealmName()).toRepresentation();
+            master.setSmtpServer(suiteContext.getSmtpServer());
+            adminClient.realm(consumerRealmName()).update(master);
+        
+            //create user on consumer's site who should be linked later
+            UserRepresentation newUser = UserBuilder.create().username("consumer").email(USER_EMAIL).enabled(true).build();
+            String userId = createUserWithAdminClient(adminClient.realm(consumerRealmName()), newUser);
+            resetUserPassword(adminClient.realm(consumerRealmName()).users().get(userId), "password", false);
+        
+            //test
+            driver.navigate().to(getAccountUrl(consumerRealmName()));
+
+            log.debug("Clicking social " + getIDPAlias());
+            accountLoginPage.clickSocial(getIDPAlias());
+
+            waitForPage("log in to");
+
+            Assert.assertTrue("Driver should be on the provider realm page right now",
+                    driver.getCurrentUrl().contains("/auth/realms/" + providerRealmName() + "/"));
+
+            log.debug("Logging in");
+            accountLoginPage.login(getUserLogin(), getUserPassword());
+
+            waitForPage("update account information");
+
+            Assert.assertTrue(updateAccountInformationPage.isCurrent());
+            Assert.assertTrue("We must be on correct realm right now",
+                    driver.getCurrentUrl().contains("/auth/realms/" + consumerRealmName() + "/"));
+
+            log.debug("Updating info on updateAccount page");
+            updateAccountInformationPage.updateAccountInformation("Firstname", "Lastname");
+
+            //link account by email
+            waitForPage("account already exists");
+            idpConfirmLinkPage.clickLinkAccount();
+            
+            String url = assertEmailAndGetUrl(MailServerConfiguration.FROM, USER_EMAIL, 
+                    "Someone wants to link your ", false);
+
+            log.info("navigating to url from email: " + url);
+            driver.navigate().to(url);
+
+            //test if user is logged in
+            assertEquals(accountPage.buildUri().toASCIIString().replace("master", "consumer") + "/", driver.getCurrentUrl());
+            
+            //test if the user has verified email
+            assertTrue(adminClient.realm(consumerRealmName()).users().get(userId).toRepresentation().isEmailVerified());
+        } finally {
+            // stop mail server
+            MailServer.stop();
+        }
     }
 
     // KEYCLOAK-3267
