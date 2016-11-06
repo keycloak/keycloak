@@ -61,14 +61,18 @@ import java.util.Set;
  */
 public class LDAPTestUtils {
     public static MultivaluedHashMap<String, String> getLdapRuleConfig(LDAPRule ldapRule) {
-        MultivaluedHashMap<String, String> config = new MultivaluedHashMap<>();
         Map<String,String> ldapConfig = ldapRule.getConfig();
+        return toLdapConfig(ldapConfig);
+
+    }
+
+    public static MultivaluedHashMap<String, String> toLdapConfig(Map<String, String> ldapConfig) {
+        MultivaluedHashMap<String, String> config = new MultivaluedHashMap<>();
         for (Map.Entry<String, String> entry : ldapConfig.entrySet()) {
             config.add(entry.getKey(), entry.getValue());
 
         }
         return config;
-
     }
 
 
