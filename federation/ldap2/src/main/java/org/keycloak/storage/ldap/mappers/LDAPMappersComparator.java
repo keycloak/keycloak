@@ -62,8 +62,8 @@ public class LDAPMappersComparator {
         @Override
         public int compare(ComponentModel o1, ComponentModel o2) {
             // UserAttributeLDAPFederationMapper first
-            boolean isO1AttrMapper = o1.getProviderType().equals(UserAttributeLDAPStorageMapperFactory.PROVIDER_ID);
-            boolean isO2AttrMapper = o2.getProviderType().equals(UserAttributeLDAPStorageMapperFactory.PROVIDER_ID);
+            boolean isO1AttrMapper = o1.getProviderId().equals(UserAttributeLDAPStorageMapperFactory.PROVIDER_ID);
+            boolean isO2AttrMapper = o2.getProviderId().equals(UserAttributeLDAPStorageMapperFactory.PROVIDER_ID);
             if (!isO1AttrMapper) {
                 if (isO2AttrMapper) {
                     return 1;

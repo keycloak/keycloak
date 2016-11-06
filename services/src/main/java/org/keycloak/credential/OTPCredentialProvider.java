@@ -230,7 +230,7 @@ public class OTPCredentialProvider implements CredentialProvider, CredentialInpu
         } else {
             TimeBasedOTP validator = new TimeBasedOTP(policy.getAlgorithm(), policy.getDigits(), policy.getPeriod(), policy.getLookAheadWindow());
             List<CredentialModel> creds = getCachedCredentials(user, CredentialModel.TOTP);
-            if (creds.isEmpty()) {
+            if (creds == null) {
                 creds = getCredentialStore().getStoredCredentialsByType(realm, user, CredentialModel.TOTP);
             } else {
                 logger.debugv("Cache hit for TOTP for user {0}", user.getUsername());
