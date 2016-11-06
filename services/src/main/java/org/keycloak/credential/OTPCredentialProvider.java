@@ -43,8 +43,9 @@ public class OTPCredentialProvider implements CredentialProvider, CredentialInpu
     protected KeycloakSession session;
 
     protected List<CredentialModel> getCachedCredentials(UserModel user, String type) {
-        if (!(user instanceof CachedUserModel)) return Collections.EMPTY_LIST;
+        if (!(user instanceof CachedUserModel)) return null;
         CachedUserModel cached = (CachedUserModel)user;
+        if (cached.isMarkedForEviction()) return null;
         List<CredentialModel> rtn = (List<CredentialModel>)cached.getCachedWith().get(OTPCredentialProvider.class.getName() + "." + type);
         if (rtn == null) return Collections.EMPTY_LIST;
         return rtn;
@@ -186,8 +187,9 @@ public class OTPCredentialProvider implements CredentialProvider, CredentialInpu
     }
 
     protected boolean configuredForTOTP(RealmModel realm, UserModel user) {
-        return !getCachedCredentials(user, CredentialModel.TOTP).isEmpty()
-                || !getCredentialStore().getStoredCredentialsByType(realm, user, CredentialModel.TOTP).isEmpty();
+        List<CredentialModel> cachedCredentials = getCachedCredentials(user, CredentialModel.TOTP);
+        if (cachedCredentials == null) return !getCredentialStore().getStoredCredentialsByType(realm, user, CredentialModel.TOTP).isEmpty();
+        return !cachedCredentials.isEmpty();
     }
 
     public static boolean validOTP(RealmModel realm, String token, String secret) {

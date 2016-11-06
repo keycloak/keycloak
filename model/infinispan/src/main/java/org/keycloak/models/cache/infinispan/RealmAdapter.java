@@ -28,6 +28,7 @@ import org.keycloak.models.ClientTemplateModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OTPPolicy;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
@@ -39,6 +40,7 @@ import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.cache.CachedRealmModel;
 import org.keycloak.models.cache.infinispan.entities.CachedRealm;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.storage.UserStorageProvider;
 
 import java.security.Key;
 import java.security.PrivateKey;
@@ -62,10 +64,12 @@ public class RealmAdapter implements CachedRealmModel {
     protected RealmCacheSession cacheSession;
     protected RealmModel updated;
     protected RealmCache cache;
+    protected KeycloakSession session;
 
-    public RealmAdapter(CachedRealm cached, RealmCacheSession cacheSession) {
+    public RealmAdapter(KeycloakSession session, CachedRealm cached, RealmCacheSession cacheSession) {
         this.cached = cached;
         this.cacheSession = cacheSession;
+        this.session = session;
     }
 
     @Override
@@ -1333,12 +1337,28 @@ public class RealmAdapter implements CachedRealmModel {
     @Override
     public ComponentModel addComponentModel(ComponentModel model) {
         getDelegateForUpdate();
+        evictUsers(model);
         return updated.addComponentModel(model);
+    }
+
+    public void evictUsers(ComponentModel model) {
+        String parentId = model.getParentId();
+        evictUsers(parentId);
+    }
+
+    public void evictUsers(String parentId) {
+        if (parentId != null && !parentId.equals(getId())) {
+            ComponentModel parent = getComponent(parentId);
+            if (parent != null && UserStorageProvider.class.getName().equals(parent.getProviderType())) {
+                session.getUserCache().evict(this);
+            }
+        }
     }
 
     @Override
     public void updateComponent(ComponentModel component) {
         getDelegateForUpdate();
+        evictUsers(component);
         updated.updateComponent(component);
 
     }
@@ -1346,6 +1366,7 @@ public class RealmAdapter implements CachedRealmModel {
     @Override
     public void removeComponent(ComponentModel component) {
         getDelegateForUpdate();
+        evictUsers(component);
         updated.removeComponent(component);
 
     }
@@ -1353,6 +1374,7 @@ public class RealmAdapter implements CachedRealmModel {
     @Override
     public void removeComponents(String parentId) {
         getDelegateForUpdate();
+        evictUsers(parentId);
         updated.removeComponents(parentId);
 
     }

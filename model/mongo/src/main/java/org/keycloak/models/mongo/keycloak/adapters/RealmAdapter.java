@@ -1964,7 +1964,10 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         }
         updateComponentEntity(entity, model);
         model.setId(entity.getId());
-        if (model.getParentId() == null) entity.setParentId(this.getId());
+        if (model.getParentId() == null) {
+            entity.setParentId(this.getId());
+            model.setParentId(this.getId());
+        }
         realm.getComponentEntities().add(entity);
         updateRealm();
         ComponentUtil.notifyCreated(session, this, model);

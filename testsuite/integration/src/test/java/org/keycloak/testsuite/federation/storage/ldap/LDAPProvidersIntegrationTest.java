@@ -79,16 +79,6 @@ public class LDAPProvidersIntegrationTest {
 
     private static ComponentModel ldapModel = null;
 
-    private static MultivaluedHashMap<String, String> getLdapRuleConfig() {
-        MultivaluedHashMap<String, String> config = new MultivaluedHashMap<>();
-        Map<String,String> ldapConfig = ldapRule.getConfig();
-        for (Map.Entry<String, String> entry : ldapConfig.entrySet()) {
-            config.add(entry.getKey(), entry.getValue());
-
-        }
-        return config;
-
-    }
 
     private static KeycloakRule keycloakRule = new KeycloakRule(new KeycloakRule.KeycloakSetup() {
 
@@ -96,7 +86,7 @@ public class LDAPProvidersIntegrationTest {
         public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
             LDAPTestUtils.addLocalUser(manager.getSession(), appRealm, "marykeycloak", "mary@test.com", "password-app");
 
-            MultivaluedHashMap<String,String> ldapConfig = getLdapRuleConfig();
+            MultivaluedHashMap<String,String> ldapConfig = LDAPTestUtils.getLdapRuleConfig(ldapRule);
             ldapConfig.putSingle(LDAPConstants.SYNC_REGISTRATIONS, "true");
             ldapConfig.putSingle(LDAPConstants.EDIT_MODE, LDAPStorageProviderFactory.EditMode.WRITABLE.toString());
             UserStorageProviderModel model = new UserStorageProviderModel();
@@ -441,7 +431,7 @@ public class LDAPProvidersIntegrationTest {
         }
     }
 
-    @Test
+    //@Test // don't think we should support this, bburke
     public void testDirectLDAPUpdate() {
         KeycloakSession session = keycloakRule.startSession();
 
@@ -728,6 +718,17 @@ public class LDAPProvidersIntegrationTest {
 
     @Test
     public void testRemoveFederatedUser() {
+        /*
+        {
+            KeycloakSession session = keycloakRule.startSession();
+            RealmModel appRealm = session.realms().getRealmByName("test");
+            UserModel user = session.users().getUserByUsername("registerUserSuccess2", appRealm);
+            keycloakRule.stopSession(session, true);
+            if (user == null) {
+                registerUserLdapSuccess();
+            }
+        }
+        */
         KeycloakSession session = keycloakRule.startSession();
         try {
             RealmModel appRealm = session.realms().getRealmByName("test");
@@ -756,26 +757,26 @@ public class LDAPProvidersIntegrationTest {
             LDAPTestUtils.addLDAPUser(ldapProvider, appRealm, "username4", "John4", "Doel4", "user4@email.org", null, "124");
 
             // Users are not at local store at this moment
-            Assert.assertNull(session.userStorage().getUserByUsername("username1", appRealm));
-            Assert.assertNull(session.userStorage().getUserByUsername("username2", appRealm));
-            Assert.assertNull(session.userStorage().getUserByUsername("username3", appRealm));
-            Assert.assertNull(session.userStorage().getUserByUsername("username4", appRealm));
+            Assert.assertNull(session.userLocalStorage().getUserByUsername("username1", appRealm));
+            Assert.assertNull(session.userLocalStorage().getUserByUsername("username2", appRealm));
+            Assert.assertNull(session.userLocalStorage().getUserByUsername("username3", appRealm));
+            Assert.assertNull(session.userLocalStorage().getUserByUsername("username4", appRealm));
 
             // search by username
             session.users().searchForUser("username1", appRealm);
-            LDAPTestUtils.assertUserImported(session.userStorage(), appRealm, "username1", "John1", "Doel1", "user1@email.org", "121");
+            LDAPTestUtils.assertUserImported(session.userLocalStorage(), appRealm, "username1", "John1", "Doel1", "user1@email.org", "121");
 
             // search by email
             session.users().searchForUser("user2@email.org", appRealm);
-            LDAPTestUtils.assertUserImported(session.userStorage(), appRealm, "username2", "John2", "Doel2", "user2@email.org", "122");
+            LDAPTestUtils.assertUserImported(session.userLocalStorage(), appRealm, "username2", "John2", "Doel2", "user2@email.org", "122");
 
             // search by lastName
             session.users().searchForUser("Doel3", appRealm);
-            LDAPTestUtils.assertUserImported(session.userStorage(), appRealm, "username3", "John3", "Doel3", "user3@email.org", "123");
+            LDAPTestUtils.assertUserImported(session.userLocalStorage(), appRealm, "username3", "John3", "Doel3", "user3@email.org", "123");
 
             // search by firstName + lastName
             session.users().searchForUser("John4 Doel4", appRealm);
-            LDAPTestUtils.assertUserImported(session.userStorage(), appRealm, "username4", "John4", "Doel4", "user4@email.org", "124");
+            LDAPTestUtils.assertUserImported(session.userLocalStorage(), appRealm, "username4", "John4", "Doel4", "user4@email.org", "124");
         } finally {
             keycloakRule.stopSession(session, true);
         }
@@ -803,15 +804,15 @@ public class LDAPProvidersIntegrationTest {
             LDAPTestUtils.addLDAPUser(ldapProvider, appRealm, "username7", "John7", "Doel7", "user7@email.org", null, "127");
 
             // search by email
-            session.users().searchForUser("user5@email.org", appRealm);
-            LDAPTestUtils.assertUserImported(session.userStorage(), appRealm, "username5", "John5", "Doel5", "user5@email.org", "125");
+            List<UserModel> list = session.users().searchForUser("user5@email.org", appRealm);
+            LDAPTestUtils.assertUserImported(session.userLocalStorage(), appRealm, "username5", "John5", "Doel5", "user5@email.org", "125");
 
             session.users().searchForUser("John6 Doel6", appRealm);
-            LDAPTestUtils.assertUserImported(session.userStorage(), appRealm, "username6", "John6", "Doel6", "user6@email.org", "126");
+            LDAPTestUtils.assertUserImported(session.userLocalStorage(), appRealm, "username6", "John6", "Doel6", "user6@email.org", "126");
 
             session.users().searchForUser("user7@email.org", appRealm);
             session.users().searchForUser("John7 Doel7", appRealm);
-            Assert.assertNull(session.userStorage().getUserByUsername("username7", appRealm));
+            Assert.assertNull(session.userLocalStorage().getUserByUsername("username7", appRealm));
 
             // Remove custom filter
             ldapModel.getConfig().remove(LDAPConstants.CUSTOM_USER_SEARCH_FILTER);
@@ -850,7 +851,7 @@ public class LDAPProvidersIntegrationTest {
             Assert.assertTrue(session.users().removeUser(appRealm, user));
 
             // Assert user not available locally, but will be reimported from LDAP once searched
-            Assert.assertNull(session.userStorage().getUserByUsername("johnkeycloak", appRealm));
+            Assert.assertNull(session.userLocalStorage().getUserByUsername("johnkeycloak", appRealm));
             Assert.assertNotNull(session.users().getUserByUsername("johnkeycloak", appRealm));
         } finally {
             keycloakRule.stopSession(session, false);

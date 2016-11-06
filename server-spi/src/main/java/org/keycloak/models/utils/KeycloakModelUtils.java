@@ -52,6 +52,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.idm.CertificateRepresentation;
+import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.transaction.JtaTransactionManagerLookup;
 
 import javax.crypto.spec.SecretKeySpec;
@@ -372,6 +373,29 @@ public final class KeycloakModelUtils {
         }
         return null;
     }
+
+    public static UserStorageProviderModel findUserStorageProviderByName(String displayName, RealmModel realm) {
+        if (displayName == null) {
+            return null;
+        }
+
+        for (UserStorageProviderModel fedProvider : realm.getUserStorageProviders()) {
+            if (displayName.equals(fedProvider.getName())) {
+                return fedProvider;
+            }
+        }
+        return null;
+    }
+
+    public static UserStorageProviderModel findUserStorageProviderById(String fedProviderId, RealmModel realm) {
+        for (UserStorageProviderModel fedProvider : realm.getUserStorageProviders()) {
+            if (fedProviderId.equals(fedProvider.getId())) {
+                return fedProvider;
+            }
+        }
+        return null;
+    }
+
     public static ComponentModel createComponentModel(String name, String parentId, String providerId, String providerType, String... config) {
         ComponentModel mapperModel = new ComponentModel();
         mapperModel.setParentId(parentId);

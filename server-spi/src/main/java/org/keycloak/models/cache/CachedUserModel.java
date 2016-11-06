@@ -35,6 +35,8 @@ public interface CachedUserModel extends UserModel {
      */
     UserModel getDelegateForUpdate();
 
+    boolean isMarkedForEviction();
+
     /**
      * Invalidate the cache for this model
      *

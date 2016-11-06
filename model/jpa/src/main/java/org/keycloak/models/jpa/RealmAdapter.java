@@ -2046,7 +2046,10 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
         }
         c.setName(model.getName());
         c.setParentId(model.getParentId());
-        if (model.getParentId() == null) c.setParentId(this.getId());
+        if (model.getParentId() == null) {
+            c.setParentId(this.getId());
+            model.setParentId(this.getId());
+        }
         c.setProviderType(model.getProviderType());
         c.setProviderId(model.getProviderId());
         c.setSubType(model.getSubType());

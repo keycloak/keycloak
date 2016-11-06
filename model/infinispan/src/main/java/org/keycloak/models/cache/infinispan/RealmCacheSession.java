@@ -389,7 +389,7 @@ public class RealmCacheSession implements CacheRealmProvider {
         } else if (managedRealms.containsKey(id)) {
             return managedRealms.get(id);
         }
-        RealmAdapter adapter = new RealmAdapter(cached, this);
+        RealmAdapter adapter = new RealmAdapter(session, cached, this);
         if (wasCached) {
             CachedRealmModel.RealmCachedEvent event = new CachedRealmModel.RealmCachedEvent() {
                 @Override

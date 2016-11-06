@@ -157,6 +157,7 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
 
     // throw ModelDuplicateException if there is different user in model with same email
     protected void checkDuplicateEmail(String userModelAttrName, String email, RealmModel realm, KeycloakSession session, UserModel user) {
+        if (email == null) return;
         if (UserModel.EMAIL.equalsIgnoreCase(userModelAttrName)) {
             // lowercase before search
             email = KeycloakModelUtils.toLowerCaseSafe(email);
