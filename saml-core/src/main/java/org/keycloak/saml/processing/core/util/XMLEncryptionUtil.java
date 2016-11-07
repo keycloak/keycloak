@@ -20,12 +20,14 @@ import org.apache.xml.security.encryption.EncryptedData;
 import org.apache.xml.security.encryption.EncryptedKey;
 import org.apache.xml.security.encryption.XMLCipher;
 import org.apache.xml.security.encryption.XMLEncryptionException;
+
 import org.keycloak.saml.common.PicketLinkLogger;
 import org.keycloak.saml.common.PicketLinkLoggerFactory;
 import org.keycloak.saml.common.exceptions.ConfigurationException;
 import org.keycloak.saml.common.exceptions.ProcessingException;
 import org.keycloak.saml.common.util.DocumentUtil;
 import org.keycloak.saml.common.util.StringUtil;
+
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -37,6 +39,7 @@ import java.security.Key;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.HashMap;
+import java.util.Objects;
 
 /**
  * Utility for XML Encryption <b>Note: </b> This utility is currently using Apache XML Security library API. JSR-106 is
@@ -68,6 +71,10 @@ public class XMLEncryptionUtil {
     public static final String XMLENC_NS = "http://www.w3.org/2001/04/xmlenc#";
 
     private static HashMap<String, EncryptionAlgorithm> algorithms = new HashMap<String, EncryptionAlgorithm>(4);
+
+    private static final String RSA_ENCRYPTION_SCHEME = Objects.equals(System.getProperty("keycloak.saml.key_trans.rsa_v1.5"), "true")
+      ? XMLCipher.RSA_v1dot5
+      : XMLCipher.RSA_OAEP;
 
     private static class EncryptionAlgorithm {
 
@@ -514,7 +521,7 @@ public class XMLEncryptionUtil {
             }
         }
         if (publicKeyAlgo.contains("RSA"))
-            return XMLCipher.RSA_v1dot5;
+            return RSA_ENCRYPTION_SCHEME;
         if (publicKeyAlgo.contains("DES"))
             return XMLCipher.TRIPLEDES_KeyWrap;
         throw logger.unsupportedType("unsupported publicKey Algo:" + publicKeyAlgo);
