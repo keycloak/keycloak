@@ -17,15 +17,12 @@
 
 package org.keycloak.protocol.oidc.mappers;
 
-import org.keycloak.models.ClientSessionModel;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.ProtocolMapperModel;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.GroupModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.UserSessionModel;
-import org.keycloak.representations.AccessToken;
-import org.keycloak.representations.IDToken;
 
 import java.util.ArrayDeque;
+import java.util.Collection;
 import java.util.Deque;
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -39,6 +36,8 @@ abstract class AbstractUserRoleMappingMapper extends AbstractOIDCProtocolMapper 
 
     /**
      * Returns the role names extracted from the given {@code roleModels} while recursively traversing "Composite Roles".
+     * Note that this method enumerates roles directly from the given role models, not accounting for roles coming
+     * from group membership.
      * <p>
      * Optionally prefixes each role name with the given {@code prefix}.
      * </p>
@@ -48,10 +47,68 @@ abstract class AbstractUserRoleMappingMapper extends AbstractOIDCProtocolMapper 
      * @return
      */
     protected Set<String> flattenRoleModelToRoleNames(Set<RoleModel> roleModels, String prefix) {
-
         Set<String> roleNames = new LinkedHashSet<>();
+        String realPrefix = prefix == null ? "" : prefix.trim();
+
+        addRoleNames(roleModels, realPrefix, roleNames);
+
+        return roleNames;
+    }
+
+    /**
+     * Returns the realm role names extracted from the given {@code group}
+     * and its parent groups while recursively traversing "Composite Roles".
+     * <p>
+     * Optionally prefixes each role name with the given {@code prefix}.
+     * </p>
+     *
+     * @param roleModels
+     * @param prefix     the prefix to apply, may be {@literal null}
+     * @return
+     */
+    protected Set<String> flattenRealmRoleModelToRoleNames(GroupModel group, String prefix) {
+        Set<String> roleNames = new LinkedHashSet<>();
+        String realPrefix = prefix == null ? "" : prefix.trim();
+
+        while (group != null) {
+            addRoleNames(group.getRealmRoleMappings(), realPrefix, roleNames);
+            group = group.getParent();
+        }
+
+        return roleNames;
+    }
+
+    /**
+     * Returns the client role names defined for given client roles
+     * extracted from the given {@code group} and its parent
+     * groups while recursively traversing "Composite Roles".
+     * <p>
+     * Optionally prefixes each role name with the given {@code prefix}.
+     * </p>
+     *
+     * @param roleModels
+     * @param prefix     the prefix to apply, may be {@literal null}
+     * @return
+     */
+    protected Set<String> flattenClientRoleModelToRoleNames(GroupModel group, ClientModel app, String prefix) {
+        Set<String> roleNames = new LinkedHashSet<>();
+        String realPrefix = prefix == null ? "" : prefix.trim();
+
+        while (group != null) {
+            addRoleNames(group.getClientRoleMappings(app), realPrefix, roleNames);
+            group = group.getParent();
+        }
+
+        return roleNames;
+    }
+
+    private void addRoleNames(Collection<RoleModel> roleModels, String prefix, Set<String> targetRoleNames) {
+        if (roleModels == null) {
+            return;
+        }
 
         Deque<RoleModel> stack = new ArrayDeque<>(roleModels);
+
         while (!stack.isEmpty()) {
 
             RoleModel current = stack.pop();
@@ -63,14 +120,8 @@ abstract class AbstractUserRoleMappingMapper extends AbstractOIDCProtocolMapper 
             }
 
             String roleName = current.getName();
-
-            if (prefix != null && !prefix.trim().isEmpty()) {
-                roleName = prefix.trim() + roleName;
-            }
-
-            roleNames.add(roleName);
+            roleName = prefix + roleName;
+            targetRoleNames.add(roleName);
         }
-
-        return roleNames;
     }
 }

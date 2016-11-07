@@ -85,6 +85,18 @@
       "groups": [
         "/topGroup/level2group"
       ]
+    },
+    {
+      "username" : "roleRichUser",
+      "enabled": true,
+      "email" : "rich.roles@redhat.com",
+      "credentials" : [
+        { "type" : "password",
+          "value" : "password" }
+      ],
+      "groups": [
+        "/roleRichGroup/level2group"
+      ]
     }
   ],
   "scopeMappings": [
@@ -301,6 +313,17 @@
         {
           "name": "customer-admin",
           "description": "Have Customer Admin privileges"
+        },
+        {
+          "name": "customer-admin-composite-role",
+          "description": "Have Customer Admin privileges via composite role",
+          "composite" : true,
+          "composites" : {
+            "realm" : [ "customer-user-premium" ],
+            "client" : {
+              "test-app" : [ "customer-admin" ]
+            }
+          }
         }
       ]
     }
@@ -321,6 +344,31 @@
           "realmRoles": ["admin"],
           "clientRoles": {
             "test-app": ["customer-user"]
+          },
+          "attributes": {
+            "level2Attribute": ["true"]
+
+          }
+        }
+      ]
+    },
+    {
+      "name": "roleRichGroup",
+      "attributes": {
+        "topAttribute": ["true"]
+
+      },
+      "realmRoles": ["user"],
+      "clientRoles": {
+        "account": ["manage-account"]
+      },
+
+      "subGroups": [
+        {
+          "name": "level2group",
+          "realmRoles": ["admin"],
+          "clientRoles": {
+            "test-app": ["customer-user", "customer-admin-composite-role"]
           },
           "attributes": {
             "level2Attribute": ["true"]
