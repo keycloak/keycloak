@@ -244,7 +244,7 @@ ol#kc-totp-settings li:first-of-type {
 .zocial.microsoft {background-color: #0052a4; color: #fff;}
 .zocial.microsoft:before { content: "\f15d"; }
 
-@media (min-width: 801px) {
+@media (min-width: 1281px) {
     #kc-container-wrapper {
         bottom: 13%;        
     }
