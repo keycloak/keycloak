@@ -18,18 +18,13 @@
 package org.keycloak.protocol.oidc.mappers;
 
 import org.keycloak.models.ProtocolMapperModel;
-import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.ProtocolMapperUtils;
-import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.IDToken;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * Allows mapping of user realm role mappings to an ID and Access Token claim.
@@ -40,7 +35,7 @@ public class UserRealmRoleMappingMapper extends AbstractUserRoleMappingMapper {
 
     public static final String PROVIDER_ID = "oidc-usermodel-realm-role-mapper";
 
-    private static final List<ProviderConfigProperty> CONFIG_PROPERTIES = new ArrayList<ProviderConfigProperty>();
+    private static final List<ProviderConfigProperty> CONFIG_PROPERTIES = new ArrayList<>();
 
     static {
 
@@ -54,6 +49,7 @@ public class UserRealmRoleMappingMapper extends AbstractUserRoleMappingMapper {
         OIDCAttributeMapperHelper.addAttributeConfig(CONFIG_PROPERTIES, UserRealmRoleMappingMapper.class);
     }
 
+    @Override
     public List<ProviderConfigProperty> getConfigProperties() {
         return CONFIG_PROPERTIES;
     }
@@ -78,16 +74,11 @@ public class UserRealmRoleMappingMapper extends AbstractUserRoleMappingMapper {
         return "Map a user realm role to a token claim.";
     }
 
+    @Override
     protected void setClaim(IDToken token, ProtocolMapperModel mappingModel, UserSessionModel userSession) {
-
-        UserModel user = userSession.getUser();
-
         String rolePrefix = mappingModel.getConfig().get(ProtocolMapperUtils.USER_MODEL_REALM_ROLE_MAPPING_ROLE_PREFIX);
-        Set<String> realmRoleNames = flattenRoleModelToRoleNames(user.getRealmRoleMappings(), rolePrefix);
-
-        OIDCAttributeMapperHelper.mapClaim(token, mappingModel, realmRoleNames);
+        AbstractUserRoleMappingMapper.setClaim(token, mappingModel, userSession, role -> ! role.isClientRole(), rolePrefix);
     }
-
 
     public static ProtocolMapperModel create(String realmRolePrefix,
                                              String name,
