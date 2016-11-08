@@ -164,6 +164,13 @@ The version specific section below will mention if any changes are required to a
 
 === Version specific migration
 
+==== Migrating to 2.4.0
+
+===== Key encryption algorithm in SAML assertions
+
+Key in SAML assertions and documents are now encrypted using RSA-OAEP encryption scheme.
+If you want to use encrypted assertions, make sure that service providers understand this encryption scheme.
+
 ==== Migrating to 2.3.0
 
 ===== Default max results on paginated endpoints
