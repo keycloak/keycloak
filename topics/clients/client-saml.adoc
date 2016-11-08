@@ -58,6 +58,18 @@ Include AuthnStatement::
 Sign Documents::
   When turned on, {{book.project.name}} will sign the document using the realm's private key. 
 
+Optimize REDIRECT signing key lookup::
+  When turned on, the SAML protocol messages will include {{book.project.name}}
+  native extension that contains a hint with signing key ID. When the SP
+  understands this extension, it can use it for signature validation instead of
+  attempting to validate signature with all known keys. This option only applies to
+  REDIRECT bindings where the signature is transferred in query parameters where
+  there is no place with this information in the signature information
+  (contrary to POST binding messages where key ID is always included in
+  document signature). Currently this is relevant to situations where both
+  IDP and SP are provided by {{book.project.name}} server and adapter. This
+  option is only relevant when `Sign Documents` is switched on.
+
 Sign Assertions::
   The `Sign Documents` switch signs the whole document.
   With this setting the assertion is also signed and embedded within the SAML XML Auth response.
