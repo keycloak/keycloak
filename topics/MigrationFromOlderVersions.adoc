@@ -170,6 +170,9 @@ The version specific section below will mention if any changes are required to a
 
 Key in SAML assertions and documents are now encrypted using RSA-OAEP encryption scheme.
 If you want to use encrypted assertions, make sure that service providers understand this encryption scheme.
+In the unlikely case that SP would not be able to handle the new scheme, {{book.project.name}}
+can be made to use legacy RSA-v1.5 encryption scheme when started with system property
+`keycloak.saml.key_trans.rsa_v1.5` set to `true`.
 
 ==== Migrating to 2.3.0
 
