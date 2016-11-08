@@ -132,21 +132,12 @@ public class OAuthClient {
 
     public AuthorizationEndpointResponse doLogin(String username, String password) {
         openLoginForm();
-        String src = driver.getPageSource();
-        try {
-            driver.findElement(By.id("username")).sendKeys(username);
-            driver.findElement(By.id("password")).sendKeys(password);
-            driver.findElement(By.name("login")).click();
-        } catch (Throwable t) {
-            System.err.println(src);
-            throw t;
-        }
+        fillLoginForm(username, password);
 
         return new AuthorizationEndpointResponse(this);
     }
 
-    public void doLoginGrant(String username, String password) {
-        openLoginForm();
+    public void fillLoginForm(String username, String password) {
         String src = driver.getPageSource();
         try {
             driver.findElement(By.id("username")).sendKeys(username);
@@ -156,6 +147,11 @@ public class OAuthClient {
             System.err.println(src);
             throw t;
         }
+    }
+
+    public void doLoginGrant(String username, String password) {
+        openLoginForm();
+        fillLoginForm(username, password);
     }
 
     public AccessTokenResponse doAccessTokenRequest(String code, String password) {
