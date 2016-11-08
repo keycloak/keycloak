@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <EntityDescriptor entityID="http://localhost:8080/auth/realms/master"
                   xmlns="urn:oasis:names:tc:SAML:2.0:metadata"
+                  xmlns:dsig="http://www.w3.org/2000/09/xmldsig#"
 >
    <IDPSSODescriptor WantAuthnRequestsSigned="true"
       protocolSupportEnumeration="urn:oasis:names:tc:SAML:2.0:protocol">

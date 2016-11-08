@@ -72,4 +72,15 @@ public class ConfigXmlConstants {
     public static final String VALIDATE_REQUEST_SIGNATURE_ATTR = "validateRequestSignature";
     public static final String POST_BINDING_URL_ATTR = "postBindingUrl";
     public static final String REDIRECT_BINDING_URL_ATTR = "redirectBindingUrl";
+
+    public static final String HTTP_CLIENT_ELEMENT = "HttpClient";
+    public static final String ALLOW_ANY_HOSTNAME_ATTR = "allowAnyHostname";
+    public static final String CLIENT_KEYSTORE_ATTR = "clientKeystore";
+    public static final String CLIENT_KEYSTORE_PASSWORD_ATTR = "clientKeystorePassword";
+    public static final String CONNECTION_POOL_SIZE_ATTR = "connectionPoolSize";
+    public static final String DISABLE_TRUST_MANAGER_ATTR = "disableTrustManager";
+    public static final String PROXY_URL_ATTR = "proxyUrl";
+    public static final String TRUSTSTORE_ATTR = "truststore";
+    public static final String TRUSTSTORE_PASSWORD_ATTR = "truststorePassword";
+
 }

@@ -101,6 +101,7 @@ public class EntityDescriptorDescriptionConverter implements ClientDescriptionCo
         app.setFullScopeAllowed(true);
         app.setProtocol(SamlProtocol.LOGIN_PROTOCOL);
         attributes.put(SamlConfigAttributes.SAML_SERVER_SIGNATURE, SamlProtocol.ATTRIBUTE_TRUE_VALUE); // default to true
+        attributes.put(SamlConfigAttributes.SAML_SERVER_SIGNATURE_KEYINFO_EXT, SamlProtocol.ATTRIBUTE_FALSE_VALUE); // default to false
         attributes.put(SamlConfigAttributes.SAML_SIGNATURE_ALGORITHM, SignatureAlgorithm.RSA_SHA256.toString());
         attributes.put(SamlConfigAttributes.SAML_AUTHNSTATEMENT, SamlProtocol.ATTRIBUTE_TRUE_VALUE);
         SPSSODescriptorType spDescriptorType = CoreConfigUtil.getSPDescriptor(entity);

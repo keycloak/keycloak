@@ -193,6 +193,7 @@ public class ImportIdentityProviderTest extends AbstractIdentityProviderModelTes
         assertEquals(true, config.isPostBindingAuthnRequest());
         assertEquals(true, config.isPostBindingResponse());
         assertEquals(true, config.isValidateSignature());
+        assertEquals(false, config.isAddExtensionsElementWithKeyInfo());
     }
 
     private void assertOidcIdentityProviderConfig(IdentityProviderModel identityProvider) {

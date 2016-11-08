@@ -108,6 +108,7 @@ public class SAMLIdentityProviderFactory extends AbstractIdentityProviderFactory
                     samlIdentityProviderConfig.setSingleLogoutServiceUrl(singleLogoutServiceUrl);
                     samlIdentityProviderConfig.setSingleSignOnServiceUrl(singleSignOnServiceUrl);
                     samlIdentityProviderConfig.setWantAuthnRequestsSigned(idpDescriptor.isWantAuthnRequestsSigned());
+                    samlIdentityProviderConfig.setAddExtensionsElementWithKeyInfo(false);
                     samlIdentityProviderConfig.setValidateSignature(idpDescriptor.isWantAuthnRequestsSigned());
                     samlIdentityProviderConfig.setPostBindingResponse(postBinding);
                     samlIdentityProviderConfig.setPostBindingAuthnRequest(postBinding);
@@ -121,7 +122,7 @@ public class SAMLIdentityProviderFactory extends AbstractIdentityProviderFactory
                             Element x509KeyInfo = DocumentUtil.getChildElement(keyInfo, new QName("dsig", "X509Certificate"));
 
                             if (KeyTypes.SIGNING.equals(keyDescriptorType.getUse())) {
-                                samlIdentityProviderConfig.setSigningCertificate(x509KeyInfo.getTextContent());
+                                samlIdentityProviderConfig.addSigningCertificate(x509KeyInfo.getTextContent());
                             } else if (KeyTypes.ENCRYPTION.equals(keyDescriptorType.getUse())) {
                                 samlIdentityProviderConfig.setEncryptionPublicKey(x509KeyInfo.getTextContent());
                             } else if (keyDescriptorType.getUse() ==  null) {
@@ -131,8 +132,8 @@ public class SAMLIdentityProviderFactory extends AbstractIdentityProviderFactory
                     }
 
                     if (defaultCertificate != null) {
-                        if (samlIdentityProviderConfig.getSigningCertificate() == null) {
-                            samlIdentityProviderConfig.setSigningCertificate(defaultCertificate);
+                        if (samlIdentityProviderConfig.getSigningCertificates().length == 0) {
+                            samlIdentityProviderConfig.addSigningCertificate(defaultCertificate);
                         }
 
                         if (samlIdentityProviderConfig.getEncryptionPublicKey() == null) {

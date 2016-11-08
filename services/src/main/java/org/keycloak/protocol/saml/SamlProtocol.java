@@ -74,8 +74,10 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
+import org.keycloak.saml.processing.core.util.KeycloakKeySamlExtensionGenerator;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -98,6 +100,7 @@ public class SamlProtocol implements LoginProtocol {
     public static final String SAML_REDIRECT_BINDING = "get";
     public static final String SAML_REQUEST_ID = "SAML_REQUEST_ID";
     public static final String SAML_LOGOUT_BINDING = "saml.logout.binding";
+    public static final String SAML_LOGOUT_ADD_EXTENSIONS_ELEMENT_WITH_KEY_INFO = "saml.logout.addExtensionsElementWithKeyInfo";
     public static final String SAML_LOGOUT_REQUEST_ID = "SAML_LOGOUT_REQUEST_ID";
     public static final String SAML_LOGOUT_RELAY_STATE = "SAML_LOGOUT_RELAY_STATE";
     public static final String SAML_LOGOUT_CANONICALIZATION = "SAML_LOGOUT_CANONICALIZATION";
@@ -373,7 +376,15 @@ public class SamlProtocol implements LoginProtocol {
         }
 
         Document samlDocument = null;
+        KeyManager keyManager = session.keys();
+        KeyManager.ActiveKey keys = keyManager.getActiveKey(realm);
+        boolean postBinding = isPostBinding(clientSession);
+
         try {
+            if ((! postBinding) && samlClient.requiresRealmSignature() && samlClient.addExtensionsElementWithKeyInfo()) {
+                builder.addExtension(new KeycloakKeySamlExtensionGenerator(keys.getKid()));
+            }
+
             ResponseType samlModel = builder.buildModel();
             final AttributeStatementType attributeStatement = populateAttributeStatements(attributeStatementMappers, session, userSession, clientSession);
             populateRoles(roleListMapper, session, userSession, clientSession, attributeStatement);
@@ -394,22 +405,19 @@ public class SamlProtocol implements LoginProtocol {
         JaxrsSAML2BindingBuilder bindingBuilder = new JaxrsSAML2BindingBuilder();
         bindingBuilder.relayState(relayState);
 
-        KeyManager keyManager = session.keys();
-        KeyManager.ActiveKey keys = keyManager.getActiveKey(realm);
-
         if (samlClient.requiresRealmSignature()) {
             String canonicalization = samlClient.getCanonicalizationMethod();
             if (canonicalization != null) {
                 bindingBuilder.canonicalizationMethod(canonicalization);
             }
-            bindingBuilder.signatureAlgorithm(samlClient.getSignatureAlgorithm()).signWith(keys.getPrivateKey(), keys.getPublicKey(), keys.getCertificate()).signDocument();
+            bindingBuilder.signatureAlgorithm(samlClient.getSignatureAlgorithm()).signWith(keys.getKid(), keys.getPrivateKey(), keys.getPublicKey(), keys.getCertificate()).signDocument();
         }
         if (samlClient.requiresAssertionSignature()) {
             String canonicalization = samlClient.getCanonicalizationMethod();
             if (canonicalization != null) {
                 bindingBuilder.canonicalizationMethod(canonicalization);
             }
-            bindingBuilder.signatureAlgorithm(samlClient.getSignatureAlgorithm()).signWith(keys.getPrivateKey(), keys.getPublicKey(), keys.getCertificate()).signAssertions();
+            bindingBuilder.signatureAlgorithm(samlClient.getSignatureAlgorithm()).signWith(keys.getKid(), keys.getPrivateKey(), keys.getPublicKey(), keys.getCertificate()).signAssertions();
         }
         if (samlClient.requiresEncryption()) {
             PublicKey publicKey = null;
@@ -496,12 +504,17 @@ public class SamlProtocol implements LoginProtocol {
             if (isLogoutPostBindingForClient(clientSession)) {
                 String bindingUri = getLogoutServiceUrl(uriInfo, client, SAML_POST_BINDING);
                 SAML2LogoutRequestBuilder logoutBuilder = createLogoutRequest(bindingUri, clientSession, client);
+                // This is POST binding, hence KeyID is included in dsig:KeyInfo/dsig:KeyName, no need to add <samlp:Extensions> element
                 JaxrsSAML2BindingBuilder binding = createBindingBuilder(samlClient);
                 return binding.postBinding(logoutBuilder.buildDocument()).request(bindingUri);
             } else {
                 logger.debug("frontchannel redirect binding");
                 String bindingUri = getLogoutServiceUrl(uriInfo, client, SAML_REDIRECT_BINDING);
                 SAML2LogoutRequestBuilder logoutBuilder = createLogoutRequest(bindingUri, clientSession, client);
+                if (samlClient.requiresRealmSignature() && samlClient.addExtensionsElementWithKeyInfo()) {
+                    KeyManager.ActiveKey keys = session.keys().getActiveKey(realm);
+                    logoutBuilder.addExtension(new KeycloakKeySamlExtensionGenerator(keys.getKid()));
+                }
                 JaxrsSAML2BindingBuilder binding = createBindingBuilder(samlClient);
                 return binding.redirectBinding(logoutBuilder.buildDocument()).request(bindingUri);
             }
@@ -534,6 +547,7 @@ public class SamlProtocol implements LoginProtocol {
         JaxrsSAML2BindingBuilder binding = new JaxrsSAML2BindingBuilder();
         binding.relayState(logoutRelayState);
         String signingAlgorithm = userSession.getNote(SAML_LOGOUT_SIGNATURE_ALGORITHM);
+        boolean postBinding = isLogoutPostBindingForInitiator(userSession);
         if (signingAlgorithm != null) {
             SignatureAlgorithm algorithm = SignatureAlgorithm.valueOf(signingAlgorithm);
             String canonicalization = userSession.getNote(SAML_LOGOUT_CANONICALIZATION);
@@ -541,7 +555,11 @@ public class SamlProtocol implements LoginProtocol {
                 binding.canonicalizationMethod(canonicalization);
             }
             KeyManager.ActiveKey keys = session.keys().getActiveKey(realm);
-            binding.signatureAlgorithm(algorithm).signWith(keys.getPrivateKey(), keys.getPublicKey(), keys.getCertificate()).signDocument();
+            binding.signatureAlgorithm(algorithm).signWith(keys.getKid(), keys.getPrivateKey(), keys.getPublicKey(), keys.getCertificate()).signDocument();
+            boolean addExtension = (! postBinding) && Objects.equals("true", userSession.getNote(SamlProtocol.SAML_LOGOUT_ADD_EXTENSIONS_ELEMENT_WITH_KEY_INFO));
+            if (addExtension) {    // Only include extension if REDIRECT binding and signing whole SAML protocol message
+                builder.addExtension(new KeycloakKeySamlExtensionGenerator(keys.getKid()));
+            }
         }
 
         try {
@@ -577,6 +595,7 @@ public class SamlProtocol implements LoginProtocol {
         String logoutRequestString = null;
         try {
             JaxrsSAML2BindingBuilder binding = createBindingBuilder(samlClient);
+            // This is POST binding, hence KeyID is included in dsig:KeyInfo/dsig:KeyName, no need to add <samlp:Extensions> element
             logoutRequestString = binding.postBinding(logoutBuilder.buildDocument()).encoded();
         } catch (Exception e) {
             logger.warn("failed to send saml logout", e);
@@ -639,7 +658,7 @@ public class SamlProtocol implements LoginProtocol {
         JaxrsSAML2BindingBuilder binding = new JaxrsSAML2BindingBuilder();
         if (samlClient.requiresRealmSignature()) {
             KeyManager.ActiveKey keys = session.keys().getActiveKey(realm);
-            binding.signatureAlgorithm(samlClient.getSignatureAlgorithm()).signWith(keys.getPrivateKey(), keys.getPublicKey(), keys.getCertificate()).signDocument();
+            binding.signatureAlgorithm(samlClient.getSignatureAlgorithm()).signWith(keys.getKid(), keys.getPrivateKey(), keys.getPublicKey(), keys.getCertificate()).signDocument();
         }
         return binding;
     }

@@ -73,9 +73,13 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import java.io.IOException;
-import java.security.PublicKey;
+import java.security.Key;
 import java.security.cert.X509Certificate;
+import java.util.LinkedList;
 import java.util.List;
+import org.keycloak.rotation.HardcodedKeyLocator;
+import org.keycloak.rotation.KeyLocator;
+import org.keycloak.saml.processing.core.util.KeycloakKeySamlExtensionGenerator;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -174,14 +178,20 @@ public class SAMLEndpoint {
         protected abstract void verifySignature(String key, SAMLDocumentHolder documentHolder) throws VerificationException;
         protected abstract SAMLDocumentHolder extractRequestDocument(String samlRequest);
         protected abstract SAMLDocumentHolder extractResponseDocument(String response);
-        protected PublicKey getIDPKey() {
-            X509Certificate certificate = null;
-            try {
-                certificate = XMLSignatureUtil.getX509CertificateFromKeyInfoString(config.getSigningCertificate().replaceAll("\\s", ""));
-            } catch (ProcessingException e) {
-                throw new RuntimeException(e);
+        
+        protected KeyLocator getIDPKeyLocator() {
+            List<Key> keys = new LinkedList<>();
+
+            for (String signingCertificate : config.getSigningCertificates()) {
+                try {
+                    X509Certificate cert = XMLSignatureUtil.getX509CertificateFromKeyInfoString(signingCertificate.replaceAll("\\s", ""));
+                    keys.add(cert.getPublicKey());
+                } catch (ProcessingException e) {
+                    throw new RuntimeException(e);
+                }
             }
-            return certificate.getPublicKey();
+
+            return new HardcodedKeyLocator(keys);
         }
 
         public Response execute(String samlRequest, String samlResponse, String relayState) {
@@ -265,14 +275,18 @@ public class SAMLEndpoint {
             builder.issuer(issuerURL);
             JaxrsSAML2BindingBuilder binding = new JaxrsSAML2BindingBuilder()
                         .relayState(relayState);
+            boolean postBinding = config.isPostBindingResponse();
             if (config.isWantAuthnRequestsSigned()) {
                 KeyManager.ActiveKey keys = session.keys().getActiveKey(realm);
-                binding.signWith(keys.getPrivateKey(), keys.getPublicKey(), keys.getCertificate())
+                binding.signWith(keys.getKid(), keys.getPrivateKey(), keys.getPublicKey(), keys.getCertificate())
                         .signatureAlgorithm(provider.getSignatureAlgorithm())
                         .signDocument();
+                if (! postBinding && config.isAddExtensionsElementWithKeyInfo()) {    // Only include extension if REDIRECT binding and signing whole SAML protocol message
+                    builder.addExtension(new KeycloakKeySamlExtensionGenerator(keys.getKid()));
+                }
             }
             try {
-                if (config.isPostBindingResponse()) {
+                if (postBinding) {
                     return binding.postBinding(builder.buildDocument()).response(config.getSingleLogoutServiceUrl());
                 } else {
                     return binding.redirectBinding(builder.buildDocument()).response(config.getSingleLogoutServiceUrl());
@@ -418,7 +432,7 @@ public class SAMLEndpoint {
     protected class PostBinding extends Binding {
         @Override
         protected void verifySignature(String key, SAMLDocumentHolder documentHolder) throws VerificationException {
-            SamlProtocolUtils.verifyDocumentSignature(documentHolder.getSamlDocument(), getIDPKey());
+            SamlProtocolUtils.verifyDocumentSignature(documentHolder.getSamlDocument(), getIDPKeyLocator());
         }
 
         @Override
@@ -440,8 +454,8 @@ public class SAMLEndpoint {
     protected class RedirectBinding extends Binding {
         @Override
         protected void verifySignature(String key, SAMLDocumentHolder documentHolder) throws VerificationException {
-            PublicKey publicKey = getIDPKey();
-            SamlProtocolUtils.verifyRedirectSignature(publicKey, uriInfo, key);
+            KeyLocator locator = getIDPKeyLocator();
+            SamlProtocolUtils.verifyRedirectSignature(documentHolder, locator, uriInfo, key);
         }
 
 

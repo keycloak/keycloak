@@ -71,6 +71,9 @@ public class SAMLResponseParser extends SAMLStatusResponseTypeParser implements 
             } else if (JBossSAMLConstants.ASSERTION.get().equals(elementName)) {
                 SAMLAssertionParser assertionParser = new SAMLAssertionParser();
                 response.addAssertion(new RTChoiceType((AssertionType) assertionParser.parse(xmlEventReader)));
+            } else if (JBossSAMLConstants.EXTENSIONS.get().equals(elementName)) {
+                SAMLExtensionsParser extensionsParser = new SAMLExtensionsParser();
+                response.setExtensions(extensionsParser.parse(xmlEventReader));
             } else if (JBossSAMLConstants.STATUS.get().equals(elementName)) {
                 response.setStatus(parseStatus(xmlEventReader));
             } else if (JBossSAMLConstants.ENCRYPTED_ASSERTION.get().equals(elementName)) {

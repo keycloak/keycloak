@@ -297,6 +297,14 @@ public interface PicketLinkLogger {
     RuntimeException parserExpectedTag(String tag, String foundElementTag);
 
     /**
+     * @param ns
+     * @param foundElementNs
+     *
+     * @return
+     */
+    RuntimeException parserExpectedNamespace(String ns, String foundElementNs);
+
+    /**
      * @param elementName
      *
      * @return
@@ -1219,4 +1227,6 @@ public interface PicketLinkLogger {
     RuntimeException parserFeatureNotSupported(String feature);
 
     ProcessingException samlAssertionWrongAudience(String serviceURL);
+
+    ProcessingException samlExtensionUnknownChild(Class<?> clazz);
 }

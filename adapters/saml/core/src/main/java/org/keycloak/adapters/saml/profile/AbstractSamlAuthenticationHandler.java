@@ -64,11 +64,20 @@ import org.w3c.dom.Node;
 
 import java.io.IOException;
 import java.net.URI;
+import java.security.InvalidKeyException;
+import java.security.Key;
+import java.security.KeyManagementException;
 import java.security.PublicKey;
 import java.security.Signature;
+import java.security.SignatureException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import org.keycloak.dom.saml.v2.SAML2Object;
+import org.keycloak.dom.saml.v2.protocol.ExtensionsType;
+import org.keycloak.rotation.KeyLocator;
+import org.keycloak.saml.processing.core.util.KeycloakKeySamlExtensionGenerator;
+import org.w3c.dom.Element;
 
 /**
  *
@@ -257,11 +266,42 @@ public abstract class AbstractSamlAuthenticationHandler implements SamlAuthentic
     }
 
     private void validateSamlSignature(SAMLDocumentHolder holder, boolean postBinding, String paramKey) throws VerificationException {
+        KeyLocator signatureValidationKey = deployment.getIDP().getSignatureValidationKeyLocator();
         if (postBinding) {
-            verifyPostBindingSignature(holder.getSamlDocument(), deployment.getIDP().getSignatureValidationKey());
+            verifyPostBindingSignature(holder.getSamlDocument(), signatureValidationKey);
         } else {
-            verifyRedirectBindingSignature(deployment.getIDP().getSignatureValidationKey(), paramKey);
+            String keyId = getMessageSigningKeyId(holder.getSamlObject());
+            verifyRedirectBindingSignature(paramKey, signatureValidationKey, keyId);
         }
+    }
+
+    private String getMessageSigningKeyId(SAML2Object doc) {
+        final ExtensionsType extensions;
+        if (doc instanceof RequestAbstractType) {
+            extensions = ((RequestAbstractType) doc).getExtensions();
+        } else if (doc instanceof StatusResponseType) {
+            extensions = ((StatusResponseType) doc).getExtensions();
+        } else {
+            return null;
+        }
+
+        if (extensions == null) {
+            return null;
+        }
+
+        for (Object ext : extensions.getAny()) {
+            if (! (ext instanceof Element)) {
+                continue;
+            }
+
+            String res = KeycloakKeySamlExtensionGenerator.getMessageSigningKeyIdFromElement((Element) ext);
+
+            if (res != null) {
+                return res;
+            }
+        }
+
+        return null;
     }
 
     private boolean checkStatusCodeValue(StatusCodeType statusCode, String expectedValue){
@@ -473,10 +513,10 @@ public abstract class AbstractSamlAuthenticationHandler implements SamlAuthentic
         return false;
     }
 
-    public void verifyPostBindingSignature(Document document, PublicKey publicKey) throws VerificationException {
+    public void verifyPostBindingSignature(Document document, KeyLocator keyLocator) throws VerificationException {
         SAML2Signature saml2Signature = new SAML2Signature();
         try {
-            if (!saml2Signature.validate(document, publicKey)) {
+            if (!saml2Signature.validate(document, keyLocator)) {
                 throw new VerificationException("Invalid signature on document");
             }
         } catch (ProcessingException e) {
@@ -484,7 +524,7 @@ public abstract class AbstractSamlAuthenticationHandler implements SamlAuthentic
         }
     }
 
-    public void verifyRedirectBindingSignature(PublicKey publicKey, String paramKey) throws VerificationException {
+    private void verifyRedirectBindingSignature(String paramKey, KeyLocator keyLocator, String keyId) throws VerificationException {
         String request = facade.getRequest().getQueryParamValue(paramKey);
         String algorithm = facade.getRequest().getQueryParamValue(GeneralConstants.SAML_SIG_ALG_REQUEST_KEY);
         String signature = facade.getRequest().getQueryParamValue(GeneralConstants.SAML_SIGNATURE_REQUEST_KEY);
@@ -511,16 +551,80 @@ public abstract class AbstractSamlAuthenticationHandler implements SamlAuthentic
         try {
             //byte[] decodedSignature = RedirectBindingUtil.urlBase64Decode(signature);
             byte[] decodedSignature = Base64.decode(signature);
+            byte[] rawQueryBytes = rawQuery.getBytes("UTF-8");
 
             SignatureAlgorithm signatureAlgorithm = SignatureAlgorithm.getFromXmlMethod(decodedAlgorithm);
-            Signature validator = signatureAlgorithm.createSignature(); // todo plugin signature alg
-            validator.initVerify(publicKey);
-            validator.update(rawQuery.getBytes("UTF-8"));
-            if (!validator.verify(decodedSignature)) {
+
+            if (! validateRedirectBindingSignature(signatureAlgorithm, rawQueryBytes, decodedSignature, keyLocator, keyId)) {
                 throw new VerificationException("Invalid query param signature");
             }
         } catch (Exception e) {
             throw new VerificationException(e);
         }
+    }
+
+    private boolean validateRedirectBindingSignature(SignatureAlgorithm sigAlg, byte[] rawQueryBytes, byte[] decodedSignature, KeyLocator locator, String keyId)
+      throws KeyManagementException, VerificationException {
+        try {
+            Key key;
+            try {
+                key = locator.getKey(keyId);
+                boolean keyLocated = key != null;
+
+                if (validateRedirectBindingSignatureForKey(sigAlg, rawQueryBytes, decodedSignature, key)) {
+                    return true;
+                }
+
+                if (keyLocated) {
+                    return false;
+                }
+            } catch (KeyManagementException ex) {
+            }
+        } catch (SignatureException ex) {
+            log.debug("Verification failed for key %s: %s", keyId, ex);
+            log.trace(ex);
+        }
+
+        if (locator instanceof Iterable) {
+            Iterable<Key> availableKeys = (Iterable<Key>) locator;
+
+            log.trace("Trying hard to validate XML signature using all available keys.");
+
+            for (Key key : availableKeys) {
+                try {
+                    if (validateRedirectBindingSignatureForKey(sigAlg, rawQueryBytes, decodedSignature, key)) {
+                        return true;
+                    }
+                } catch (SignatureException ex) {
+                    log.debug("Verification failed: %s", ex);
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private boolean validateRedirectBindingSignatureForKey(SignatureAlgorithm sigAlg, byte[] rawQueryBytes, byte[] decodedSignature, Key key)
+      throws SignatureException {
+        if (key == null) {
+            return false;
+        }
+
+        if (! (key instanceof PublicKey)) {
+            log.warnf("Unusable key for signature validation: %s", key);
+            return false;
+        }
+
+        Signature signature = sigAlg.createSignature(); // todo plugin signature alg
+        try {
+            signature.initVerify((PublicKey) key);
+        } catch (InvalidKeyException ex) {
+            log.warnf(ex, "Unusable key for signature validation: %s", key);
+            return false;
+        }
+
+        signature.update(rawQueryBytes);
+
+        return signature.verify(decodedSignature);
     }
 }
