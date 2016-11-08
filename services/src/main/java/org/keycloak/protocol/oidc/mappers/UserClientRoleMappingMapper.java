@@ -18,6 +18,7 @@
 package org.keycloak.protocol.oidc.mappers;
 
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.GroupModel;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
@@ -96,6 +97,9 @@ public class UserClientRoleMappingMapper extends AbstractUserRoleMappingMapper {
 
             String rolePrefix = mappingModel.getConfig().get(ProtocolMapperUtils.USER_MODEL_CLIENT_ROLE_MAPPING_ROLE_PREFIX);
             Set<String> clientRoleNames = flattenRoleModelToRoleNames(clientRoleMappings, rolePrefix);
+            for (GroupModel group : user.getGroups()) {
+                clientRoleNames.addAll(flattenClientRoleModelToRoleNames(group, clientModel, rolePrefix));
+            }
 
             OIDCAttributeMapperHelper.mapClaim(token, mappingModel, clientRoleNames);
         }

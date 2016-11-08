@@ -18,17 +18,15 @@
 package org.keycloak.protocol.oidc.mappers;
 
 import org.keycloak.models.ProtocolMapperModel;
+import org.keycloak.models.GroupModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.ProtocolMapperUtils;
-import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.IDToken;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -84,6 +82,9 @@ public class UserRealmRoleMappingMapper extends AbstractUserRoleMappingMapper {
 
         String rolePrefix = mappingModel.getConfig().get(ProtocolMapperUtils.USER_MODEL_REALM_ROLE_MAPPING_ROLE_PREFIX);
         Set<String> realmRoleNames = flattenRoleModelToRoleNames(user.getRealmRoleMappings(), rolePrefix);
+        for (GroupModel group : user.getGroups()) {
+            realmRoleNames.addAll(flattenRealmRoleModelToRoleNames(group, rolePrefix));
+        }
 
         OIDCAttributeMapperHelper.mapClaim(token, mappingModel, realmRoleNames);
     }
