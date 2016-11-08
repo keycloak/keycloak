@@ -123,7 +123,7 @@ public class JavaKeystoreKeyProviderTest extends AbstractKeycloakTest {
         rep.getConfig().putSingle("keystore", "/nosuchfile");
 
         Response response = adminClient.realm("test").components().add(rep);
-        assertErrror(response, "Failed to load keys");
+        assertErrror(response, "Failed to load keys. File not found on server.");
     }
 
     @Test
@@ -132,7 +132,7 @@ public class JavaKeystoreKeyProviderTest extends AbstractKeycloakTest {
         rep.getConfig().putSingle("keystore", "invalid");
 
         Response response = adminClient.realm("test").components().add(rep);
-        assertErrror(response, "Failed to load keys");
+        assertErrror(response, "Failed to load keys. File not found on server.");
     }
 
     @Test
@@ -141,7 +141,7 @@ public class JavaKeystoreKeyProviderTest extends AbstractKeycloakTest {
         rep.getConfig().putSingle("keyAlias", "invalid");
 
         Response response = adminClient.realm("test").components().add(rep);
-        assertErrror(response, "Failed to load keys");
+        assertErrror(response, "Failed to load keys. Error creating X509v1Certificate.");
     }
 
     @Test
@@ -150,7 +150,7 @@ public class JavaKeystoreKeyProviderTest extends AbstractKeycloakTest {
         rep.getConfig().putSingle("keyPassword", "invalid");
 
         Response response = adminClient.realm("test").components().add(rep);
-        assertErrror(response, "Failed to load keys");
+        assertErrror(response, "Failed to load keys. Keystore on server can not be recovered.");
     }
 
     protected void assertErrror(Response response, String error) {
@@ -159,7 +159,7 @@ public class JavaKeystoreKeyProviderTest extends AbstractKeycloakTest {
         }
 
         ErrorRepresentation errorRepresentation = response.readEntity(ErrorRepresentation.class);
-        assertEquals(error, errorRepresentation.getErrorMessage());
+        assertTrue(errorRepresentation.getErrorMessage().startsWith(error));
     }
 
     protected ComponentRepresentation createRep(String name, long priority) {

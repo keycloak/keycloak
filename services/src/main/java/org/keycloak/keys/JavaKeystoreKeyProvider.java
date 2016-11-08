@@ -24,11 +24,17 @@ import org.keycloak.component.ComponentModel;
 import org.keycloak.models.RealmModel;
 
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.security.KeyPair;
 import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.UnrecoverableKeyException;
 import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 
 /**
@@ -61,8 +67,18 @@ public class JavaKeystoreKeyProvider extends AbstractRsaKeyProvider {
             String kid = KeyUtils.createKeyId(keyPair.getPublic());
 
             return new Keys(kid, keyPair, certificate);
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to load keys", e);
+        } catch (KeyStoreException kse) {
+            throw new RuntimeException("KeyStore error on server. " + kse.getMessage(), kse);
+        } catch (FileNotFoundException fnfe) {
+            throw new RuntimeException("File not found on server. " + fnfe.getMessage(), fnfe);
+        } catch (IOException ioe) {
+            throw new RuntimeException("IO error on server. " + ioe.getMessage(), ioe);
+        } catch (NoSuchAlgorithmException nsae) {
+            throw new RuntimeException("Algorithm not available on server. " + nsae.getMessage(), nsae);
+        } catch (CertificateException ce) {
+            throw new RuntimeException("Certificate error on server. " + ce.getMessage(), ce);
+        } catch (UnrecoverableKeyException uke) {
+            throw new RuntimeException("Keystore on server can not be recovered. " + uke.getMessage(), uke);
         }
     }
 
