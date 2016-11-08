@@ -127,7 +127,7 @@ public abstract class AbstractKeycloakAuthenticatorValve extends FormAuthenticat
             InputStream configInputStream = getConfigInputStream(context);
             KeycloakDeployment kd;
             if (configInputStream == null) {
-                log.fine("No adapter configuration. Keycloak is unconfigured and will deny all requests.");
+                log.warning("No adapter configuration. Keycloak is unconfigured and will deny all requests.");
                 kd = new KeycloakDeployment();
             } else {
                 kd = KeycloakDeploymentBuilder.build(configInputStream);
@@ -196,6 +196,8 @@ public abstract class AbstractKeycloakAuthenticatorValve extends FormAuthenticat
         CatalinaHttpFacade facade = new OIDCCatalinaHttpFacade(request, response);
         KeycloakDeployment deployment = deploymentContext.resolveDeployment(facade);
         if (deployment == null || !deployment.isConfigured()) {
+            //needed for the EAP6/AS7 adapter relying on the tomcat core adapter
+            facade.getResponse().sendError(401);
             return false;
         }
         AdapterTokenStore tokenStore = getTokenStore(request, facade, deployment);
