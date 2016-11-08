@@ -59,6 +59,7 @@
  .... link:topics/saml/java/general-config/idp_singlesignonservice_subelement.adoc[IDP SingleSignOnService sub element]
  .... link:topics/saml/java/general-config/idp_singlelogoutservice_subelement.adoc[IDP SingleLogoutService sub element]
  .... link:topics/saml/java/general-config/idp_keys_subelement.adoc[IDP Keys subelement]
+ .... link:topics/saml/java/general-config/idp_httpclient_subelement.adoc[IDP HttpClient subelement]
  ... link:topics/saml/java/jboss-adapter.adoc[JBoss EAP/Wildfly Adapter]
  .... link:topics/saml/java/jboss-adapter/jboss_adapter_installation.adoc[Adapter Installation]
  .... link:topics/saml/java/jboss-adapter/required_per_war_configuration.adoc[Per WAR Configuration]

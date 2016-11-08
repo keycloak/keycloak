@@ -1,3 +1,4 @@
+[[_sp-idp-singlesignonservice]]
 
 ===== IDP SingleSignOnService sub element
 
