@@ -20,6 +20,7 @@ import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.keycloak.common.ClientConnection;
+import org.keycloak.component.ComponentFactory;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.component.ComponentValidationException;
 import org.keycloak.component.SubComponentFactory;
@@ -59,6 +60,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.stream.Collectors;
 
@@ -207,7 +209,7 @@ public class ComponentResource {
     @Path("{id}/sub-component-config")
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
-    public List<ConfigPropertyRepresentation> getSubcomponentConfig(@PathParam("id") String id, @QueryParam("type") String providerType, @QueryParam("id") String providerId) {
+    public ComponentTypeRepresentation getSubcomponentConfig(@PathParam("id") String id, @QueryParam("type") String providerType, @QueryParam("id") String providerId) {
         auth.requireView();
         ComponentModel parent = realm.getComponent(id);
         if (parent == null) {
@@ -224,9 +226,29 @@ public class ComponentResource {
             throw new NotFoundException("Could not find subcomponent factory");
 
         }
-        if (!(factory instanceof SubComponentFactory)) return Collections.EMPTY_LIST;
-        List<ProviderConfigProperty> props = ((SubComponentFactory)factory).getConfigProperties(realm, parent);
-        return ModelToRepresentation.toRepresentation(props);
+        if (!(factory instanceof ComponentFactory)) {
+            throw new NotFoundException("Not a component factory");
+
+        }
+        ComponentFactory componentFactory = (ComponentFactory)factory;
+        ComponentTypeRepresentation rep = new ComponentTypeRepresentation();
+        rep.setId(providerId);
+        rep.setHelpText(componentFactory.getHelpText());
+        List<ProviderConfigProperty> props = null;
+        Map<String, Object> metadata = null;
+        if (factory instanceof SubComponentFactory) {
+            props = ((SubComponentFactory)factory).getConfigProperties(realm, parent);
+            metadata = ((SubComponentFactory)factory).getTypeMetadata(realm, parent);
+
+        } else {
+            props = componentFactory.getConfigProperties();
+            metadata = componentFactory.getTypeMetadata();
+        }
+
+        List<ConfigPropertyRepresentation> propReps =  ModelToRepresentation.toRepresentation(props);
+        rep.setProperties(propReps);
+        rep.setMetadata(metadata);
+        return rep;
     }
 
 

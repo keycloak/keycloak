@@ -27,7 +27,9 @@ import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.idm.UserFederationMapperSyncConfigRepresentation;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -60,8 +62,12 @@ public abstract class AbstractLDAPStorageMapperFactory implements LDAPStorageMap
     }
 
     @Override
-    public UserFederationMapperSyncConfigRepresentation getSyncConfig() {
-        return new UserFederationMapperSyncConfigRepresentation(false, null, false, null);
+    public Map<String, Object> getTypeMetadata() {
+        Map<String, Object> metadata = new HashMap<>();
+        metadata.put("fedToKeycloakSyncSupported", false);
+        metadata.put("keycloakToFedSyncSupported", false);
+
+        return metadata;
     }
 
     @Override

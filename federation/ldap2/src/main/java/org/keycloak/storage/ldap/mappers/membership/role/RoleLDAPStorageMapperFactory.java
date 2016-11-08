@@ -168,9 +168,16 @@ public class RoleLDAPStorageMapperFactory extends AbstractLDAPStorageMapperFacto
     }
 
     @Override
-    public UserFederationMapperSyncConfigRepresentation getSyncConfig() {
-        return new UserFederationMapperSyncConfigRepresentation(true, "sync-ldap-roles-to-keycloak", true, "sync-keycloak-roles-to-ldap");
+    public Map<String, Object> getTypeMetadata() {
+        Map<String, Object> metadata = new HashMap<>();
+        metadata.put("fedToKeycloakSyncSupported", true);
+        metadata.put("fedToKeycloakSyncMessage", "sync-ldap-roles-to-keycloak");
+        metadata.put("keycloakToFedSyncSupported", true);
+        metadata.put("keycloakToFedSyncMessage", "sync-keycloak-roles-to-ldap");
+
+        return metadata;
     }
+
 
     @Override
     public void validateConfiguration(KeycloakSession session, RealmModel realm, ComponentModel config) throws ComponentValidationException {

@@ -44,8 +44,6 @@ public interface LDAPStorageMapperFactory<T extends LDAPStorageMapper> extends S
      */
     T create(KeycloakSession session, ComponentModel model);
 
-    UserFederationMapperSyncConfigRepresentation getSyncConfig();
-
     /**
      * This is the name of the provider and will be showed in the admin console as an option.
      *

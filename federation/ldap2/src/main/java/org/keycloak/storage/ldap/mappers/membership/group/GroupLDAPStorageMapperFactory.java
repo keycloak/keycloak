@@ -176,9 +176,16 @@ public class GroupLDAPStorageMapperFactory extends AbstractLDAPStorageMapperFact
     }
 
     @Override
-    public UserFederationMapperSyncConfigRepresentation getSyncConfig() {
-        return new UserFederationMapperSyncConfigRepresentation(true, "sync-ldap-groups-to-keycloak", true, "sync-keycloak-groups-to-ldap");
+    public Map<String, Object> getTypeMetadata() {
+        Map<String, Object> metadata = new HashMap<>();
+        metadata.put("fedToKeycloakSyncSupported", true);
+        metadata.put("fedToKeycloakSyncMessage", "sync-ldap-groups-to-keycloak");
+        metadata.put("keycloakToFedSyncSupported", true);
+        metadata.put("keycloakToFedSyncMessage", "sync-keycloak-groups-to-ldap");
+
+        return metadata;
     }
+
 
     @Override
     public void validateConfiguration(KeycloakSession session, RealmModel realm, ComponentModel config) throws ComponentValidationException {

@@ -26,10 +26,13 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
+import org.keycloak.storage.user.ImportSynchronization;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -107,5 +110,15 @@ public interface UserStorageProviderFactory<T extends UserStorageProvider> exten
     default
     List<ProviderConfigProperty> getCommonProviderConfigProperties() {
         return UserStorageProviderSpi.commonConfig();
+    }
+
+    @Override
+    default
+    Map<String, Object> getTypeMetadata() {
+        Map<String, Object> metadata = new HashMap<>();
+        if (this instanceof ImportSynchronization) {
+            metadata.put("synchronizable", true);
+        }
+        return metadata;
     }
 }

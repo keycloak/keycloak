@@ -19,6 +19,7 @@ package org.keycloak.storage.ldap;
 
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
+import org.keycloak.common.constants.KerberosConstants;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.component.ComponentValidationException;
 import org.keycloak.federation.kerberos.CommonKerberosConfig;
@@ -33,6 +34,8 @@ import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderFactory;
 import org.keycloak.storage.UserStorageProviderModel;
@@ -83,9 +86,114 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
 
 
     private static final Logger logger = Logger.getLogger(LDAPStorageProviderFactory.class);
-    public static final String PROVIDER_NAME = "ldap2";//LDAPConstants.LDAP_PROVIDER;
+    public static final String PROVIDER_NAME = LDAPConstants.LDAP_PROVIDER;
 
     private LDAPIdentityStoreRegistry ldapStoreRegistry;
+
+    protected static final List<ProviderConfigProperty> configProperties;
+
+    static {
+        configProperties = getConfigProps(null);
+    }
+
+    private static List<ProviderConfigProperty> getConfigProps(ComponentModel parent) {
+        boolean readOnly = false;
+        if (parent != null) {
+            LDAPConfig config = new LDAPConfig(parent.getConfig());
+            readOnly = config.getEditMode() != LDAPStorageProviderFactory.EditMode.WRITABLE;
+        }
+
+
+        return ProviderConfigurationBuilder.create()
+                .property().name(LDAPConstants.EDIT_MODE)
+                .type(ProviderConfigProperty.STRING_TYPE)
+                .add()
+                .property().name(LDAPConstants.SYNC_REGISTRATIONS)
+                .type(ProviderConfigProperty.BOOLEAN_TYPE)
+                .defaultValue("false")
+                .add()
+                .property().name(LDAPConstants.VENDOR)
+                .type(ProviderConfigProperty.STRING_TYPE)
+                .add()
+                .property().name(LDAPConstants.USERNAME_LDAP_ATTRIBUTE)
+                .type(ProviderConfigProperty.STRING_TYPE)
+                .add()
+                .property().name(LDAPConstants.RDN_LDAP_ATTRIBUTE)
+                .type(ProviderConfigProperty.STRING_TYPE)
+                .add()
+                .property().name(LDAPConstants.UUID_LDAP_ATTRIBUTE)
+                .type(ProviderConfigProperty.STRING_TYPE)
+                .add()
+                .property().name(LDAPConstants.USER_OBJECT_CLASSES)
+                .type(ProviderConfigProperty.STRING_TYPE)
+                .add()
+                .property().name(LDAPConstants.CONNECTION_URL)
+                .type(ProviderConfigProperty.STRING_TYPE)
+                .add()
+                .property().name(LDAPConstants.USERS_DN)
+                .type(ProviderConfigProperty.STRING_TYPE)
+                .add()
+                .property().name(LDAPConstants.AUTH_TYPE)
+                .type(ProviderConfigProperty.STRING_TYPE)
+                .defaultValue("simple")
+                .add()
+                .property().name(LDAPConstants.BIND_DN)
+                .type(ProviderConfigProperty.STRING_TYPE)
+                .add()
+                .property().name(LDAPConstants.BIND_CREDENTIAL)
+                .type(ProviderConfigProperty.PASSWORD)
+                .secret(true)
+                .add()
+                .property().name(LDAPConstants.CUSTOM_USER_SEARCH_FILTER)
+                .type(ProviderConfigProperty.STRING_TYPE)
+                .add()
+                .property().name(LDAPConstants.SEARCH_SCOPE)
+                .type(ProviderConfigProperty.STRING_TYPE)
+                .defaultValue("1")
+                .add()
+                .property().name(LDAPConstants.USE_TRUSTSTORE_SPI)
+                .type(ProviderConfigProperty.STRING_TYPE)
+                .defaultValue("ldapsOnly")
+                .add()
+                .property().name(LDAPConstants.CONNECTION_POOLING)
+                .type(ProviderConfigProperty.BOOLEAN_TYPE)
+                .defaultValue("true")
+                .add()
+                .property().name(LDAPConstants.PAGINATION)
+                .type(ProviderConfigProperty.BOOLEAN_TYPE)
+                .defaultValue("true")
+                .add()
+                .property().name(KerberosConstants.ALLOW_KERBEROS_AUTHENTICATION)
+                .type(ProviderConfigProperty.BOOLEAN_TYPE)
+                .defaultValue("false")
+                .add()
+                .property().name(KerberosConstants.SERVER_PRINCIPAL)
+                .type(ProviderConfigProperty.STRING_TYPE)
+                .add()
+                .property().name(KerberosConstants.KEYTAB)
+                .type(ProviderConfigProperty.STRING_TYPE)
+                .add()
+                .property().name(KerberosConstants.KERBEROS_REALM)
+                .type(ProviderConfigProperty.STRING_TYPE)
+                .add()
+                .property().name(KerberosConstants.DEBUG)
+                .type(ProviderConfigProperty.BOOLEAN_TYPE)
+                .defaultValue("false")
+                .add()
+                .property().name(KerberosConstants.USE_KERBEROS_FOR_PASSWORD_AUTHENTICATION)
+                .type(ProviderConfigProperty.BOOLEAN_TYPE)
+                .defaultValue("false")
+                .add()
+                .property().name(KerberosConstants.SERVER_PRINCIPAL)
+                .type(ProviderConfigProperty.STRING_TYPE)
+                .add()
+                .build();
+    }
+
+    @Override
+    public List<ProviderConfigProperty> getConfigProperties() {
+        return configProperties;
+    }
 
     @Override
     public LDAPStorageProvider create(KeycloakSession session, ComponentModel model) {

@@ -1469,6 +1469,26 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'RealmSessionStatsCtrl'
         })
+        .when('/create/user-storage/:realm/providers/ldap', {
+            templateUrl : resourceUrl + '/partials/user-storage-ldap.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                instance : function() {
+                    return {
+
+                    };
+                },
+                providerId : function($route) {
+                    return $route.current.params.provider;
+                },
+                serverInfo : function(ServerInfoLoader) {
+                    return ServerInfoLoader();
+                }
+            },
+            controller : 'LDAPUserStorageCtrl'
+        })
         .when('/create/user-storage/:realm/providers/:provider', {
             templateUrl : resourceUrl + '/partials/user-storage-generic.html',
             resolve : {
@@ -1488,6 +1508,24 @@ module.config([ '$routeProvider', function($routeProvider) {
                 }
             },
             controller : 'GenericUserStorageCtrl'
+        })
+        .when('/realms/:realm/user-storage/providers/ldap/:componentId', {
+            templateUrl : resourceUrl + '/partials/user-storage-ldap.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                instance : function(ComponentLoader) {
+                    return ComponentLoader();
+                },
+                providerId : function($route) {
+                    return $route.current.params.provider;
+                },
+                serverInfo : function(ServerInfoLoader) {
+                    return ServerInfoLoader();
+                }
+            },
+            controller : 'LDAPUserStorageCtrl'
         })
         .when('/realms/:realm/user-storage/providers/:provider/:componentId', {
             templateUrl : resourceUrl + '/partials/user-storage-generic.html',

@@ -25,6 +25,7 @@ import org.keycloak.provider.ProviderFactory;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -53,6 +54,18 @@ public interface ComponentFactory<CreatedType, ProviderType extends Provider> ex
     default
     List<ProviderConfigProperty> getCommonProviderConfigProperties() {
         return Collections.EMPTY_LIST;
+    }
+
+    /**
+     * This is metadata about this component type.  Its really configuration information about the component type and not
+     * an individual instance
+     *
+     * @return
+     */
+    default
+    Map<String, Object> getTypeMetadata() {
+        return Collections.EMPTY_MAP;
+
     }
 
 
