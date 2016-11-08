@@ -48,6 +48,13 @@ public class SPXmlParser extends AbstractParser {
             return str;
     }
 
+    public static int getIntegerAttributeValue(StartElement startElement, String tag, int defaultValue) {
+        String result = getAttributeValue(startElement, tag);
+        if (result == null)
+            return defaultValue;
+        return Integer.valueOf(result);
+    }
+
     public static boolean getBooleanAttributeValue(StartElement startElement, String tag, boolean defaultValue) {
         String result = getAttributeValue(startElement, tag);
         if (result == null)

@@ -450,6 +450,11 @@ public class DefaultPicketLinkLogger implements PicketLinkLogger {
         return new RuntimeException(ErrorCodes.EXPECTED_TAG + tag + ">.  Found <" + foundElementTag + ">");
     }
 
+    @Override
+    public RuntimeException parserExpectedNamespace(String ns, String foundElementNs) {
+        return new RuntimeException(ErrorCodes.EXPECTED_NAMESPACE + ns + ">.  Found <" + foundElementNs + ">");
+    }
+
     /*
      *(non-Javadoc)
      *
@@ -2378,4 +2383,10 @@ public class DefaultPicketLinkLogger implements PicketLinkLogger {
         return new ProcessingException("Wrong audience [" + serviceURL + "].");
     }
 
+    @Override
+    public ProcessingException samlExtensionUnknownChild(Class<?> clazz) {
+        return new ProcessingException("Unknown child type specified for extension: " 
+          + (clazz == null ? "<null>" : clazz.getSimpleName())
+          + ".");
+    }
 }

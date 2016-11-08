@@ -68,6 +68,9 @@ public class SAMLArtifactResponseParser extends SAMLStatusResponseTypeParser imp
             } else if (JBossSAMLConstants.SIGNATURE.get().equals(elementName)) {
                 Element sig = StaxParserUtil.getDOMElement(xmlEventReader);
                 response.setSignature(sig);
+            } else if (JBossSAMLConstants.EXTENSIONS.get().equals(elementName)) {
+                SAMLExtensionsParser extensionsParser = new SAMLExtensionsParser();
+                response.setExtensions(extensionsParser.parse(xmlEventReader));
             } else if (JBossSAMLConstants.AUTHN_REQUEST.get().equals(elementName)) {
                 SAMLAuthNRequestParser authnParser = new SAMLAuthNRequestParser();
                 AuthnRequestType authn = (AuthnRequestType) authnParser.parse(xmlEventReader);

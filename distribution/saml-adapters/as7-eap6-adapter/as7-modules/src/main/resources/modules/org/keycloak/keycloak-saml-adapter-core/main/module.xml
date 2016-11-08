@@ -34,6 +34,7 @@
         <module name="org.keycloak.keycloak-saml-adapter-api-public"/>
         <module name="org.keycloak.keycloak-saml-core"/>
         <module name="org.keycloak.keycloak-common"/>
+        <module name="org.apache.httpcomponents"/>
     </dependencies>
 
 </module>

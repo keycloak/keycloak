@@ -74,6 +74,17 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.security.PublicKey;
+import java.util.Objects;
+import java.util.Properties;
+import java.util.Set;
+import java.util.TreeSet;
+import org.keycloak.common.util.StringPropertyReplacer;
+import org.keycloak.dom.saml.v2.metadata.KeyTypes;
+import org.keycloak.keys.KeyMetadata;
+import org.keycloak.rotation.HardcodedKeyLocator;
+import org.keycloak.rotation.KeyLocator;
+import org.keycloak.saml.SPMetadataDescriptor;
+import org.keycloak.saml.processing.core.util.KeycloakKeySamlExtensionGenerator;
 
 /**
  * Resource class for the oauth/openid connect token service
@@ -336,6 +347,8 @@ public class SamlService extends AuthorizationEndpointBase {
                 String logoutBinding = getBindingType();
                 if ("true".equals(samlClient.forcePostBinding()))
                     logoutBinding = SamlProtocol.SAML_POST_BINDING;
+                boolean postBinding = Objects.equals(SamlProtocol.SAML_POST_BINDING, logoutBinding);
+
                 String bindingUri = SamlProtocol.getLogoutServiceUrl(uriInfo, client, logoutBinding);
                 UserSessionModel userSession = authResult.getSession();
                 userSession.setNote(SamlProtocol.SAML_LOGOUT_BINDING_URI, bindingUri);
@@ -347,6 +360,7 @@ public class SamlService extends AuthorizationEndpointBase {
                     userSession.setNote(SamlProtocol.SAML_LOGOUT_RELAY_STATE, relayState);
                 userSession.setNote(SamlProtocol.SAML_LOGOUT_REQUEST_ID, logoutRequest.getID());
                 userSession.setNote(SamlProtocol.SAML_LOGOUT_BINDING, logoutBinding);
+                userSession.setNote(SamlProtocol.SAML_LOGOUT_ADD_EXTENSIONS_ELEMENT_WITH_KEY_INFO, Boolean.toString((! postBinding) && samlClient.addExtensionsElementWithKeyInfo()));
                 userSession.setNote(SamlProtocol.SAML_LOGOUT_CANONICALIZATION, samlClient.getCanonicalizationMethod());
                 userSession.setNote(AuthenticationManager.KEYCLOAK_LOGOUT_PROTOCOL, SamlProtocol.LOGIN_PROTOCOL);
                 // remove client from logout requests
@@ -397,14 +411,17 @@ public class SamlService extends AuthorizationEndpointBase {
             builder.destination(logoutBindingUri);
             builder.issuer(RealmsResource.realmBaseUrl(uriInfo).build(realm.getName()).toString());
             JaxrsSAML2BindingBuilder binding = new JaxrsSAML2BindingBuilder().relayState(logoutRelayState);
+            boolean postBinding = SamlProtocol.SAML_POST_BINDING.equals(logoutBinding);
             if (samlClient.requiresRealmSignature()) {
                 SignatureAlgorithm algorithm = samlClient.getSignatureAlgorithm();
                 KeyManager.ActiveKey keys = session.keys().getActiveKey(realm);
-                binding.signatureAlgorithm(algorithm).signWith(keys.getPrivateKey(), keys.getPublicKey(), keys.getCertificate()).signDocument();
-
+                binding.signatureAlgorithm(algorithm).signWith(keys.getKid(), keys.getPrivateKey(), keys.getPublicKey(), keys.getCertificate()).signDocument();
+                if (! postBinding && samlClient.addExtensionsElementWithKeyInfo()) {    // Only include extension if REDIRECT binding and signing whole SAML protocol message
+                    builder.addExtension(new KeycloakKeySamlExtensionGenerator(keys.getKid()));
+                }
             }
             try {
-                if (SamlProtocol.SAML_POST_BINDING.equals(logoutBinding)) {
+                if (postBinding) {
                     return binding.postBinding(builder.buildDocument()).response(logoutBindingUri);
                 } else {
                     return binding.redirectBinding(builder.buildDocument()).response(logoutBindingUri);
@@ -466,7 +483,8 @@ public class SamlService extends AuthorizationEndpointBase {
                 return;
             }
             PublicKey publicKey = SamlProtocolUtils.getSignatureValidationKey(client);
-            SamlProtocolUtils.verifyRedirectSignature(publicKey, uriInfo, GeneralConstants.SAML_REQUEST_KEY);
+            KeyLocator clientKeyLocator = new HardcodedKeyLocator(publicKey);
+            SamlProtocolUtils.verifyRedirectSignature(documentHolder, clientKeyLocator, uriInfo, GeneralConstants.SAML_REQUEST_KEY);
         }
 
         @Override
@@ -541,12 +559,30 @@ public class SamlService extends AuthorizationEndpointBase {
     public static String getIDPMetadataDescriptor(UriInfo uriInfo, KeycloakSession session, RealmModel realm) throws IOException {
         InputStream is = SamlService.class.getResourceAsStream("/idp-metadata-template.xml");
         String template = StreamUtil.readString(is);
-        template = template.replace("${idp.entityID}", RealmsResource.realmBaseUrl(uriInfo).build(realm.getName()).toString());
-        template = template.replace("${idp.sso.HTTP-POST}", RealmsResource.protocolUrl(uriInfo).build(realm.getName(), SamlProtocol.LOGIN_PROTOCOL).toString());
-        template = template.replace("${idp.sso.HTTP-Redirect}", RealmsResource.protocolUrl(uriInfo).build(realm.getName(), SamlProtocol.LOGIN_PROTOCOL).toString());
-        template = template.replace("${idp.sls.HTTP-POST}", RealmsResource.protocolUrl(uriInfo).build(realm.getName(), SamlProtocol.LOGIN_PROTOCOL).toString());
-        template = template.replace("${idp.signing.certificate}", PemUtils.encodeCertificate(session.keys().getActiveKey(realm).getCertificate()));
-        return template;
+        Properties props = new Properties();
+        props.put("idp.entityID", RealmsResource.realmBaseUrl(uriInfo).build(realm.getName()).toString());
+        props.put("idp.sso.HTTP-POST", RealmsResource.protocolUrl(uriInfo).build(realm.getName(), SamlProtocol.LOGIN_PROTOCOL).toString());
+        props.put("idp.sso.HTTP-Redirect", RealmsResource.protocolUrl(uriInfo).build(realm.getName(), SamlProtocol.LOGIN_PROTOCOL).toString());
+        props.put("idp.sls.HTTP-POST", RealmsResource.protocolUrl(uriInfo).build(realm.getName(), SamlProtocol.LOGIN_PROTOCOL).toString());
+        StringBuilder keysString = new StringBuilder();
+        Set<KeyMetadata> keys = new TreeSet<>((o1, o2) -> o1.getStatus() == o2.getStatus() // Status can be only PASSIVE OR ACTIVE, push PASSIVE to end of list
+          ? (int) (o2.getProviderPriority() - o1.getProviderPriority())
+          : (o1.getStatus() == KeyMetadata.Status.PASSIVE ? 1 : -1));
+        keys.addAll(session.keys().getKeys(realm, false));
+        for (KeyMetadata key : keys) {
+            addKeyInfo(keysString, key, KeyTypes.SIGNING.value());
+        }
+        props.put("idp.signing.certificates", keysString.toString());
+        return StringPropertyReplacer.replaceProperties(template, props);
+    }
+
+    private static void addKeyInfo(StringBuilder target, KeyMetadata key, String purpose) {
+        if (key == null) {
+            return;
+        }
+
+        target.append(SPMetadataDescriptor.xmlKeyInfo("                        ",
+          key.getKid(), PemUtils.encodeCertificate(key.getCertificate()), purpose, false));
     }
 
     @GET

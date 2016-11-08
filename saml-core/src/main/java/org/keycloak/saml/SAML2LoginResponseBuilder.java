@@ -39,6 +39,9 @@ import org.keycloak.saml.processing.core.saml.v2.util.XMLTimeUtil;
 import org.w3c.dom.Document;
 
 import java.net.URI;
+import java.util.LinkedList;
+import java.util.List;
+import org.keycloak.dom.saml.v2.protocol.ExtensionsType;
 
 import static org.keycloak.saml.common.util.StringUtil.isNotNull;
 
@@ -49,7 +52,7 @@ import static org.keycloak.saml.common.util.StringUtil.isNotNull;
  *
  * @author bburke@redhat.com
 */
-public class SAML2LoginResponseBuilder {
+public class SAML2LoginResponseBuilder implements SamlProtocolExtensionsAwareBuilder<SAML2LoginResponseBuilder> {
     protected static final PicketLinkLogger logger = PicketLinkLoggerFactory.getLogger();
 
     protected String destination;
@@ -64,6 +67,7 @@ public class SAML2LoginResponseBuilder {
     protected String authMethod;
     protected String requestIssuer;
     protected String sessionIndex;
+    protected final List<NodeGenerator> extensions = new LinkedList<>();
 
 
     public SAML2LoginResponseBuilder sessionIndex(String sessionIndex) {
@@ -136,6 +140,12 @@ public class SAML2LoginResponseBuilder {
         return this;
     }
 
+    @Override
+    public SAML2LoginResponseBuilder addExtension(NodeGenerator extension) {
+        this.extensions.add(extension);
+        return this;
+    }
+
     public Document buildDocument(ResponseType responseType) throws ConfigurationException, ProcessingException {
         Document samlResponseDocument = null;
 
@@ -205,6 +215,14 @@ public class SAML2LoginResponseBuilder {
             else authnStatement.setSessionIndex(assertion.getID());
 
             assertion.addStatement(authnStatement);
+        }
+
+        if (! this.extensions.isEmpty()) {
+            ExtensionsType extensionsType = new ExtensionsType();
+            for (NodeGenerator extension : this.extensions) {
+                extensionsType.addExtension(extension);
+            }
+            responseType.setExtensions(extensionsType);
         }
 
         return responseType;

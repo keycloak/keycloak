@@ -74,6 +74,8 @@ public class SAMLSloRequestParser extends SAMLRequestAbstractParser implements P
                 continue;
             } else if (JBossSAMLConstants.SIGNATURE.get().equals(elementName)) {
                 continue;
+            } else if (JBossSAMLConstants.EXTENSIONS.get().equals(elementName)) {
+                continue;
             } else
                 throw logger.parserUnknownTag(elementName, startElement.getLocation());
         }

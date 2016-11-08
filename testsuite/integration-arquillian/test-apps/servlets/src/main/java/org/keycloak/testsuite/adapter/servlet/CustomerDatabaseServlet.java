@@ -40,7 +40,13 @@ public class CustomerDatabaseServlet extends HttpServlet {
         pw.println("Bill Burke");
         pw.print("</body></html>");
         pw.flush();
-
-
+    }
+    
+    @Override
+    protected void doDelete(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        req.logout();
+        PrintWriter pw = resp.getWriter();
+        pw.println("servlet logout from database ok");
+        pw.flush();  
     }
 }

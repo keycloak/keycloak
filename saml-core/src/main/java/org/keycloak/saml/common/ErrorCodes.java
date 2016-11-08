@@ -48,6 +48,8 @@ public interface ErrorCodes {
 
     String EXPECTED_TAG = "PL00066: Parser : Expected start tag:";
 
+    String EXPECTED_NAMESPACE = "PL00107: Parser : Expected start element namespace:";
+
     String EXPECTED_TEXT_VALUE = "PL00071: Parser: Expected text value:";
 
     String EXPECTED_END_TAG = "PL00066: Parser : Expected end tag:";

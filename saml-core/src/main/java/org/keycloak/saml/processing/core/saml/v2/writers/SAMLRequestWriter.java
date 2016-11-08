@@ -36,6 +36,7 @@ import javax.xml.namespace.QName;
 import javax.xml.stream.XMLStreamWriter;
 import java.net.URI;
 import java.util.List;
+import org.keycloak.dom.saml.v2.protocol.ExtensionsType;
 
 import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.ASSERTION_NSURI;
 import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.PROTOCOL_NSURI;
@@ -122,6 +123,11 @@ public class SAMLRequestWriter extends BaseWriter {
             StaxUtil.writeDOMElement(writer, sig);
         }
 
+        ExtensionsType extensions = request.getExtensions();
+        if (extensions != null && ! extensions.getAny().isEmpty()) {
+            write(extensions);
+        }
+
         NameIDPolicyType nameIDPolicy = request.getNameIDPolicy();
         if (nameIDPolicy != null) {
             write(nameIDPolicy);
@@ -169,6 +175,11 @@ public class SAMLRequestWriter extends BaseWriter {
         Element signature = logOutRequest.getSignature();
         if (signature != null) {
             StaxUtil.writeDOMElement(writer, signature);
+        }
+
+        ExtensionsType extensions = logOutRequest.getExtensions();
+        if (extensions != null && ! extensions.getAny().isEmpty()) {
+            write(extensions);
         }
 
         NameIDType nameID = logOutRequest.getNameID();
@@ -278,6 +289,11 @@ public class SAMLRequestWriter extends BaseWriter {
         if (sig != null) {
             StaxUtil.writeDOMElement(writer, sig);
         }
+        ExtensionsType extensions = request.getExtensions();
+        if (extensions != null && ! extensions.getAny().isEmpty()) {
+            write(extensions);
+        }
+
         String artifact = request.getArtifact();
         if (StringUtil.isNotNull(artifact)) {
             StaxUtil.writeStartElement(writer, PROTOCOL_PREFIX, JBossSAMLConstants.ARTIFACT.get(), PROTOCOL_NSURI.get());
@@ -314,6 +330,10 @@ public class SAMLRequestWriter extends BaseWriter {
         Element sig = request.getSignature();
         if (sig != null) {
             StaxUtil.writeDOMElement(writer, sig);
+        }
+        ExtensionsType extensions = request.getExtensions();
+        if (extensions != null && ! extensions.getAny().isEmpty()) {
+            write(extensions);
         }
         SubjectType subject = request.getSubject();
         if (subject != null) {

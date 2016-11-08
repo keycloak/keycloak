@@ -39,5 +39,6 @@
         <module name="org.jboss.logging"/>
         <module name="org.jboss.vfs"/>
         <module name="org.jboss.metadata"/>
+        <module name="org.apache.httpcomponents"/>
     </dependencies>
 </module>
