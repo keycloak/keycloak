@@ -29,8 +29,10 @@ import org.keycloak.testsuite.pages.LoginPage;
 import java.io.IOException;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
+import org.keycloak.testsuite.auth.page.account.AccountManagement;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -46,6 +48,9 @@ public class LogoutTest extends TestRealmKeycloakTest {
 
     @Page
     protected LoginPage loginPage;
+
+    @Page
+    protected AccountManagement accountManagementPage;
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
@@ -130,4 +135,45 @@ public class LogoutTest extends TestRealmKeycloakTest {
         events.expectLogin().session(sessionId3).removeDetail(Details.USERNAME).assertEvent();
     }
 
+    //KEYCLOAK-2741
+    @Test
+    public void logoutWithRememberMe() {
+        setRememberMe(true);
+        
+        try {
+            loginPage.open();
+            assertFalse(loginPage.isRememberMeChecked());
+            loginPage.setRememberMe(true);
+            assertTrue(loginPage.isRememberMeChecked());
+            loginPage.login("test-user@localhost", "password");
+
+            String sessionId = events.expectLogin().assertEvent().getSessionId();
+
+            // Expire session
+            testingClient.testing().removeUserSession("test", sessionId);
+
+            // Assert rememberMe checked and username/email prefilled
+            loginPage.open();
+            assertTrue(loginPage.isRememberMeChecked());
+            assertEquals("test-user@localhost", loginPage.getUsername());
+
+            loginPage.login("test-user@localhost", "password");
+            
+            //log out
+            appPage.openAccount();
+            accountManagementPage.signOut();
+            // Assert rememberMe not checked nor username/email prefilled
+            assertTrue(loginPage.isCurrent());
+            assertFalse(loginPage.isRememberMeChecked());
+            assertNotEquals("test-user@localhost", loginPage.getUsername());
+        } finally {
+            setRememberMe(false);
+        }
+    }
+    
+    private void setRememberMe(boolean enabled) {
+        RealmRepresentation rep = adminClient.realm("test").toRepresentation();
+        rep.setRememberMe(enabled);
+        adminClient.realm("test").update(rep);
+    }
 }
