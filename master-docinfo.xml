@@ -1,10 +1,10 @@
 <productname>Red Hat Single Sign-On</productname>
-<productnumber>7.0</productnumber>
+<productnumber>7.1-Beta</productnumber>
 <subtitle>Authorization Services Guide</subtitle>
 <title>Authorization Services Guide</title>
-<release>7.0</release>
+<release>7.1-Beta</release>
 <abstract>
-	    <para>This guide consist of information for authorization services for Red Hat Single Sign-On 7.0</para>
+	    <para>This guide consists of information for authorization services for Red Hat Single Sign-On 7.1-Beta</para>
     </abstract>
 <authorgroup>
     <orgname>Red Hat Customer Content Services</orgname>
