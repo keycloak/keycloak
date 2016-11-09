@@ -123,6 +123,14 @@ public class EntityDescriptorDescriptionConverter implements ClientDescriptionCo
             attributes.put(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_REDIRECT_ATTRIBUTE, assertionConsumerServiceRedirectBinding);
             redirectUris.add(assertionConsumerServiceRedirectBinding);
         }
+        String assertionConsumerServiceSoapBinding = CoreConfigUtil.getServiceURL(spDescriptorType, JBossSAMLURIConstants.SAML_SOAP_BINDING.get());
+        if (assertionConsumerServiceSoapBinding != null) {
+            redirectUris.add(assertionConsumerServiceSoapBinding);
+        }
+        String assertionConsumerServicePaosBinding = CoreConfigUtil.getServiceURL(spDescriptorType, JBossSAMLURIConstants.SAML_PAOS_BINDING.get());
+        if (assertionConsumerServicePaosBinding != null) {
+            redirectUris.add(assertionConsumerServicePaosBinding);
+        }
         if (spDescriptorType.getNameIDFormat() != null) {
             for (String format : spDescriptorType.getNameIDFormat()) {
                 String attribute = SamlClient.samlNameIDFormatToClientAttribute(format);
