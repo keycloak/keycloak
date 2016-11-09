@@ -22,6 +22,7 @@
         <module>hello-world-authz-service</module>
         <module>servlet-authz</module>
         <module>servlets</module>
+        <module>app-profile-jee</module>
     </modules>
 
     <build>

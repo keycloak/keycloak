@@ -1,0 +1,101 @@
+
+body {
+    background-color: #333;
+    font-family: sans-serif;
+    font-size: 30px;
+}
+
+button {
+    font-family: sans-serif;
+    font-size: 30px;
+    width: 200px;
+
+    background-color: #0085cf;
+    background-image: linear-gradient(to bottom, #00a8e1 0%, #0085cf 100%);
+    background-repeat: repeat-x;
+
+    border: 2px solid #ccc;
+    color: #fff;
+    -webkit-border-radius: 30px;
+
+    text-transform: uppercase;
+
+    -webkit-box-shadow: 2px 2px 10px 0px rgba(0,0,0,0.5);
+    -moz-box-shadow: 2px 2px 10px 0px rgba(0,0,0,0.5);
+    box-shadow: 2px 2px 10px 0px rgba(0,0,0,0.5);
+}
+
+button:hover {
+    background-color: #006ba6;
+    background-image: none;
+    -webkit-box-shadow: none;
+    -moz-box-shadow: none;
+    box-shadow: none;
+}
+
+hr {
+    border: none;
+    background-color: #eee;
+    height: 10px;
+}
+
+.menu {
+    padding: 10px;
+    margin-bottom: 10px;
+}
+
+.content {
+    background-color: #eee;
+    border: 1px solid #ccc;
+    padding: 10px;
+    -webkit-border-radius: 10px;
+
+    -webkit-box-shadow: 2px 2px 10px 0px rgba(0,0,0,0.5);
+    -moz-box-shadow: 2px 2px 10px 0px rgba(0,0,0,0.5);
+    box-shadow: 2px 2px 10px 0px rgba(0,0,0,0.5);
+}
+
+.content .message {
+    padding: 10px;
+    background-color: #fff;
+    border: 1px solid #ccc;
+    font-size: 40px;
+    -webkit-border-radius: 10px;
+}
+
+#token .content .message {
+    font-size: 20px;
+    overflow: scroll;
+    padding: 5px;
+    white-space: pre;
+    text-transform: none;
+}
+
+.wrapper {
+    position: absolute;
+    left: 10px;
+    top: 10px;
+    bottom: 10px;
+    right: 10px;
+}
+
+.error {
+    color: #a21e22;
+}
+
+table {
+   width: 100%; 
+}
+
+tr.even {
+    background-color: #eee;
+}
+
+td {
+    padding: 5px;
+}
+
+td.label {
+    font-weight: bold;
+    width: 250px;
+}
