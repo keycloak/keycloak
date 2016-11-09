@@ -64,6 +64,11 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-ldap-storage</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
             <groupId>org.jboss.spec.javax.servlet</groupId>
             <artifactId>jboss-servlet-api_3.0_spec</artifactId>
         </dependency>

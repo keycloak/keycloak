@@ -136,7 +136,7 @@ public class ComponentResource {
         } catch (ComponentValidationException e) {
             return localizedErrorResponse(e);
         } catch (IllegalArgumentException e) {
-            throw new BadRequestException();
+            throw new BadRequestException(e);
         }
     }
 
@@ -205,50 +205,59 @@ public class ComponentResource {
         return ErrorResponse.error(message, Response.Status.BAD_REQUEST);
     }
 
+    /**
+     * List of subcomponent types that are available to configure for a particular parent component.
+     *
+     * @param parentId
+     * @param subtype
+     * @return
+     */
     @GET
-    @Path("{id}/sub-component-config")
+    @Path("{id}/sub-component-types")
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
-    public ComponentTypeRepresentation getSubcomponentConfig(@PathParam("id") String id, @QueryParam("type") String providerType, @QueryParam("id") String providerId) {
+    public List<ComponentTypeRepresentation> getSubcomponentConfig(@PathParam("id") String parentId, @QueryParam("type") String subtype) {
         auth.requireView();
-        ComponentModel parent = realm.getComponent(id);
+        ComponentModel parent = realm.getComponent(parentId);
         if (parent == null) {
-            throw new NotFoundException("Could not find component");
+            throw new NotFoundException("Could not find parent component");
+        }
+        if (subtype == null) {
+            throw new BadRequestException("must specify a subtype");
         }
         Class<? extends Provider> providerClass = null;
         try {
-            providerClass = (Class<? extends Provider>)Class.forName(providerType);
+            providerClass = (Class<? extends Provider>)Class.forName(subtype);
         } catch (ClassNotFoundException e) {
             throw new RuntimeException(e);
         }
-        ProviderFactory factory = session.getKeycloakSessionFactory().getProviderFactory(providerClass, providerId);
-        if (factory == null) {
-            throw new NotFoundException("Could not find subcomponent factory");
+        List<ComponentTypeRepresentation> subcomponents = new LinkedList<>();
+        for (ProviderFactory factory : session.getKeycloakSessionFactory().getProviderFactories(providerClass)) {
+            ComponentTypeRepresentation rep = new ComponentTypeRepresentation();
+            rep.setId(factory.getId());
+            if (!(factory instanceof ComponentFactory)) {
+                continue;
+            }
+            ComponentFactory componentFactory = (ComponentFactory)factory;
 
+            rep.setHelpText(componentFactory.getHelpText());
+            List<ProviderConfigProperty> props = null;
+            Map<String, Object> metadata = null;
+            if (factory instanceof SubComponentFactory) {
+                props = ((SubComponentFactory)factory).getConfigProperties(realm, parent);
+                metadata = ((SubComponentFactory)factory).getTypeMetadata(realm, parent);
+
+            } else {
+                props = componentFactory.getConfigProperties();
+                metadata = componentFactory.getTypeMetadata();
+            }
+
+            List<ConfigPropertyRepresentation> propReps =  ModelToRepresentation.toRepresentation(props);
+            rep.setProperties(propReps);
+            rep.setMetadata(metadata);
+            subcomponents.add(rep);
         }
-        if (!(factory instanceof ComponentFactory)) {
-            throw new NotFoundException("Not a component factory");
-
-        }
-        ComponentFactory componentFactory = (ComponentFactory)factory;
-        ComponentTypeRepresentation rep = new ComponentTypeRepresentation();
-        rep.setId(providerId);
-        rep.setHelpText(componentFactory.getHelpText());
-        List<ProviderConfigProperty> props = null;
-        Map<String, Object> metadata = null;
-        if (factory instanceof SubComponentFactory) {
-            props = ((SubComponentFactory)factory).getConfigProperties(realm, parent);
-            metadata = ((SubComponentFactory)factory).getTypeMetadata(realm, parent);
-
-        } else {
-            props = componentFactory.getConfigProperties();
-            metadata = componentFactory.getTypeMetadata();
-        }
-
-        List<ConfigPropertyRepresentation> propReps =  ModelToRepresentation.toRepresentation(props);
-        rep.setProperties(propReps);
-        rep.setMetadata(metadata);
-        return rep;
+        return subcomponents;
     }
 
 

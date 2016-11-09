@@ -1870,6 +1870,183 @@ module.controller('LDAPUserStorageCtrl', function($scope, $location, Notificatio
 
 });
 
+module.controller('LDAPTabCtrl', function(Dialog, $scope, Current, Notifications, $location) {
+    $scope.removeUserFederation = function() {
+        Dialog.confirmDelete($scope.instance.name, 'ldap provider', function() {
+            $scope.instance.$remove({
+                realm : Current.realm.realm,
+                componentId : $scope.instance.id
+            }, function() {
+                $location.url("/realms/" + Current.realm.realm + "/user-federation");
+                Notifications.success("The provider has been deleted.");
+            });
+        });
+    };
+});
+
+
+module.controller('LDAPMapperListCtrl', function($scope, $location, Notifications, $route, Dialog, realm, provider, mappers) {
+    console.log('LDAPMapperListCtrl');
+
+    $scope.realm = realm;
+    $scope.provider = provider;
+    $scope.instance = provider;
+
+    $scope.mappers = mappers;
+
+});
+
+module.controller('LDAPMapperCtrl', function($scope, $route, realm,  provider, mapperTypes, mapper, clients, Components, LDAPMapperSync, Notifications, Dialog, $location) {
+    console.log('LDAPMapperCtrl');
+    $scope.realm = realm;
+    $scope.provider = provider;
+    $scope.clients = clients;
+    $scope.create = false;
+    $scope.changed = false;
+
+    for (var i = 0; i < mapperTypes.length; i++) {
+        console.log('mapper.providerId: ' + mapper.providerId);
+        console.log('mapperTypes[i].id ' + mapperTypes[i].id);
+        if (mapperTypes[i].id == mapper.providerId) {
+            $scope.mapperType = mapperTypes[i];
+            break;
+        }
+    }
+
+    if ($scope.mapperType.properties) {
+
+        for (var i = 0; i < $scope.mapperType.properties.length; i++) {
+            var configProperty = $scope.mapperType.properties[i];
+            if (!mapper.config[configProperty.name]) {
+                if (configProperty.defaultValue) {
+                    mapper.config[configProperty.name] = [configProperty.defaultValue];
+                } else {
+                    mapper.config[configProperty.name] = [''];
+                }
+            }
+
+        }
+    }
+    $scope.mapper = angular.copy(mapper);
+
+
+    $scope.$watch('mapper', function() {
+        if (!angular.equals($scope.mapper, mapper)) {
+            $scope.changed = true;
+        }
+    }, true);
+
+    $scope.save = function() {
+        Components.update({realm: realm.realm,
+                componentId: mapper.id
+            },
+            $scope.mapper,  function () {
+                $route.reload();
+                Notifications.success("The mapper has been updated.");
+            }, function (errorResponse) {
+                if (errorResponse.data && errorResponse.data['error_description']) {
+                    Notifications.error(errorResponse.data['error_description']);
+                }
+            });
+    };
+
+    $scope.reset = function() {
+        $scope.mapper = angular.copy(mapper);
+        $scope.changed = false;
+    };
+
+    $scope.remove = function() {
+        Dialog.confirmDelete($scope.mapper.name, 'ldap mapper', function() {
+            Components.remove({
+                realm : realm.realm,
+                componentId : mapper.id
+            }, function() {
+                $location.url("/realms/" + realm.realm + '/ldap-mappers/' + provider.id);
+                Notifications.success("The provider has been deleted.");
+            });
+        });
+    };
+
+    $scope.triggerFedToKeycloakSync = function() {
+        triggerMapperSync("fedToKeycloak")
+    }
+
+    $scope.triggerKeycloakToFedSync = function() {
+        triggerMapperSync("keycloakToFed");
+    }
+
+    function triggerMapperSync(direction) {
+        LDAPMapperSync.save({ direction: direction, realm: realm.realm, parentId: provider.id, mapperId : $scope.mapper.id }, {}, function(syncResult) {
+            Notifications.success("Data synced successfully. " + syncResult.status);
+        }, function(error) {
+            Notifications.error(error.data.errorMessage);
+        });
+    }
+
+});
+
+module.controller('LDAPMapperCreateCtrl', function($scope, realm, provider, mapperTypes, clients, Components, Notifications, Dialog, $location) {
+    console.log('LDAPMapperCreateCtrl');
+    $scope.realm = realm;
+    $scope.provider = provider;
+    $scope.clients = clients;
+    $scope.create = true;
+    $scope.mapper = { config: {}};
+    $scope.mapperTypes = mapperTypes;
+    $scope.mapperType = null;
+    $scope.changed = true;
+
+    $scope.$watch('mapperType', function() {
+        if ($scope.mapperType != null) {
+            $scope.mapper.config = {};
+            if ($scope.mapperType.properties) {
+
+                for (var i = 0; i < $scope.mapperType.properties.length; i++) {
+                    var configProperty = $scope.mapperType.properties[i];
+                    if (!$scope.mapper.config[configProperty.name]) {
+                        if (configProperty.defaultValue) {
+                            $scope.mapper.config[configProperty.name] = [configProperty.defaultValue];
+                        } else {
+                            $scope.mapper.config[configProperty.name] = [''];
+                        }
+                    }
+
+                }
+            }
+        }
+    }, true);
+
+    $scope.save = function() {
+        if ($scope.mapperType == null) {
+            Notifications.error("You need to select mapper type!");
+            return;
+        }
+
+        $scope.mapper.providerId = $scope.mapperType.id;
+        $scope.mapper.providerType = 'org.keycloak.storage.ldap.mappers.LDAPStorageMapper';
+        $scope.mapper.parentId = provider.id;
+
+        Components.save({realm: realm.realm}, $scope.mapper,  function (data, headers) {
+            var l = headers().location;
+            var id = l.substring(l.lastIndexOf("/") + 1);
+
+            $location.url("/realms/" + realm.realm + "/ldap-mappers/" + $scope.mapper.parentId + "/mappers/" + id);
+            Notifications.success("The mapper has been created.");
+        }, function (errorResponse) {
+            if (errorResponse.data && errorResponse.data['error_description']) {
+                Notifications.error(errorResponse.data['error_description']);
+            }
+        });
+    };
+
+    $scope.reset = function() {
+        $location.url("/realms/" + realm.realm + '/ldap-mappers/' + provider.id);
+    };
+
+
+});
+
+
 
 
 
