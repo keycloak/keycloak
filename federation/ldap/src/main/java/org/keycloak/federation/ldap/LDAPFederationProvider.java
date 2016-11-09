@@ -47,7 +47,7 @@ import org.keycloak.models.UserFederationMapperModel;
 import org.keycloak.models.UserFederationProvider;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.services.managers.UserManager;
+import org.keycloak.models.UserManager;
 
 import javax.naming.AuthenticationException;
 import java.util.ArrayList;

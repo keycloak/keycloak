@@ -24,7 +24,7 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.idm.PartialImportRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.services.managers.UserManager;
+import org.keycloak.models.UserManager;
 
 import java.util.HashMap;
 import java.util.List;

@@ -111,13 +111,6 @@ public class DefaultKeycloakContext implements KeycloakContext {
     }
 
     @Override
-    public RealmImporter getRealmManager() {
-        RealmManager manager = new RealmManager(session);
-        manager.setContextPath(getContextPath());
-        return manager;
-    }
-
-    @Override
     public Locale resolveLocale(UserModel user) {
         return LocaleHelper.getLocale(session, realm, user);
     }

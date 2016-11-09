@@ -33,7 +33,7 @@ import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserFederationProvider;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.services.managers.UserManager;
+import org.keycloak.models.UserManager;
 
 import java.util.Collections;
 import java.util.HashMap;

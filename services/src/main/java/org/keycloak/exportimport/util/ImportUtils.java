@@ -108,7 +108,8 @@ public class ImportUtils {
             }
         }
 
-        RealmImporter realmManager = session.getContext().getRealmManager();
+        RealmManager realmManager = new RealmManager(session);
+        realmManager.setContextPath(session.getContext().getContextPath());
         realmManager.importRealm(rep);
 
         if (System.getProperty(ExportImportConfig.ACTION) != null) {

@@ -20,6 +20,7 @@ package org.keycloak.authentication.authenticators.browser;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.RoleUtils;
 
 import javax.ws.rs.core.MultivaluedMap;
 import java.util.List;
@@ -30,7 +31,6 @@ import static org.keycloak.authentication.authenticators.browser.ConditionalOtpF
 import static org.keycloak.authentication.authenticators.browser.ConditionalOtpFormAuthenticator.OtpDecision.SHOW_OTP;
 import static org.keycloak.authentication.authenticators.browser.ConditionalOtpFormAuthenticator.OtpDecision.SKIP_OTP;
 import static org.keycloak.models.utils.KeycloakModelUtils.getRoleFromString;
-import static org.keycloak.models.utils.KeycloakModelUtils.hasRole;
 
 /**
  * An {@link OTPFormAuthenticator} that can conditionally require OTP authentication.
@@ -264,6 +264,6 @@ public class ConditionalOtpFormAuthenticator extends OTPFormAuthenticator {
         RoleModel role = getRoleFromString(context.getRealm(), roleName);
         UserModel user = context.getUser();
 
-        return hasRole(user.getRoleMappings(), role);
+        return RoleUtils.hasRole(user.getRoleMappings(), role);
     }
 }

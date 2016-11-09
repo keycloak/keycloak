@@ -49,7 +49,7 @@ public class HistoryPasswordPolicyProvider implements PasswordPolicyProvider {
     @Override
     public PolicyError validate(RealmModel realm, UserModel user, String password) {
         PasswordPolicy policy = session.getContext().getRealm().getPasswordPolicy();
-        int passwordHistoryPolicyValue = policy.getPolicyConfig(HistoryPasswordPolicyProviderFactory.ID);
+        int passwordHistoryPolicyValue = policy.getPolicyConfig(PasswordPolicy.PASSWORD_HISTORY_ID);
         if (passwordHistoryPolicyValue != -1) {
             List<CredentialModel> storedPasswords = session.userCredentialManager().getStoredCredentialsByType(realm, user, CredentialModel.PASSWORD);
             for (CredentialModel cred : storedPasswords) {
