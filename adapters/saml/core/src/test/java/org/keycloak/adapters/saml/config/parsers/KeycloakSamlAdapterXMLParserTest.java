@@ -87,7 +87,7 @@ public class KeycloakSamlAdapterXMLParserTest {
         assertEquals(1, config.getSps().size());
         SP sp = config.getSps().get(0);
         assertEquals("sp", sp.getEntityID());
-        assertEquals("ssl", sp.getSslPolicy());
+        assertEquals("EXTERNAL", sp.getSslPolicy());
         assertEquals("format", sp.getNameIDPolicyFormat());
         assertTrue(sp.isForceAuthentication());
         assertTrue(sp.isIsPassive());
@@ -106,26 +106,26 @@ public class KeycloakSamlAdapterXMLParserTest {
         assertTrue(encryption.isEncryption());
         assertEquals("private pem", encryption.getPrivateKeyPem());
         assertEquals("public pem", encryption.getPublicKeyPem());
-        assertEquals("policy", sp.getPrincipalNameMapping().getPolicy());
+        assertEquals("FROM_ATTRIBUTE", sp.getPrincipalNameMapping().getPolicy());
         assertEquals("attribute", sp.getPrincipalNameMapping().getAttributeName());
         assertTrue(sp.getRoleAttributes().size() == 1);
         assertTrue(sp.getRoleAttributes().contains("member"));
 
         IDP idp = sp.getIdp();
         assertEquals("idp", idp.getEntityID());
-        assertEquals("RSA", idp.getSignatureAlgorithm());
+        assertEquals("RSA_SHA256", idp.getSignatureAlgorithm());
         assertEquals("canon", idp.getSignatureCanonicalizationMethod());
         assertTrue(idp.getSingleSignOnService().isSignRequest());
         assertTrue(idp.getSingleSignOnService().isValidateResponseSignature());
-        assertEquals("post", idp.getSingleSignOnService().getRequestBinding());
+        assertEquals("POST", idp.getSingleSignOnService().getRequestBinding());
         assertEquals("url", idp.getSingleSignOnService().getBindingUrl());
 
         assertTrue(idp.getSingleLogoutService().isSignRequest());
         assertTrue(idp.getSingleLogoutService().isSignResponse());
         assertTrue(idp.getSingleLogoutService().isValidateRequestSignature());
         assertTrue(idp.getSingleLogoutService().isValidateResponseSignature());
-        assertEquals("redirect", idp.getSingleLogoutService().getRequestBinding());
-        assertEquals("post", idp.getSingleLogoutService().getResponseBinding());
+        assertEquals("REDIRECT", idp.getSingleLogoutService().getRequestBinding());
+        assertEquals("POST", idp.getSingleLogoutService().getResponseBinding());
         assertEquals("posturl", idp.getSingleLogoutService().getPostBindingUrl());
         assertEquals("redirecturl", idp.getSingleLogoutService().getRedirectBindingUrl());
 
