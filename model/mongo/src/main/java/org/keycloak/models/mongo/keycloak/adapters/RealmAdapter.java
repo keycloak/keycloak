@@ -1954,6 +1954,13 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
 
     @Override
     public ComponentModel addComponentModel(ComponentModel model) {
+        model = importComponentModel(model);
+        ComponentUtil.notifyCreated(session, this, model);
+        return model;
+    }
+
+    @Override
+    public ComponentModel importComponentModel(ComponentModel model) {
         ComponentUtil.getComponentFactory(session, model).validateConfiguration(session, this, model);
 
         ComponentEntity entity = new ComponentEntity();
@@ -1970,7 +1977,6 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         }
         realm.getComponentEntities().add(entity);
         updateRealm();
-        ComponentUtil.notifyCreated(session, this, model);
         return model;
     }
 

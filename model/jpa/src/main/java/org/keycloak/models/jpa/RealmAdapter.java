@@ -2031,6 +2031,14 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
 
     @Override
     public ComponentModel addComponentModel(ComponentModel model) {
+        model = importComponentModel(model);
+        ComponentUtil.notifyCreated(session, this, model);
+
+        return model;
+    }
+
+    @Override
+    public ComponentModel importComponentModel(ComponentModel model) {
         ComponentFactory componentFactory = ComponentUtil.getComponentFactory(session, model);
         if (componentFactory == null) {
             throw new IllegalArgumentException("Invalid component type");
@@ -2057,8 +2065,6 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
         em.persist(c);
         setConfig(model, c);
         model.setId(c.getId());
-        ComponentUtil.notifyCreated(session, this, model);
-
         return model;
     }
 

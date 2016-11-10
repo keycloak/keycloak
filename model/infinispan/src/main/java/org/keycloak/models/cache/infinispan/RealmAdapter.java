@@ -1341,6 +1341,13 @@ public class RealmAdapter implements CachedRealmModel {
         return updated.addComponentModel(model);
     }
 
+    @Override
+    public ComponentModel importComponentModel(ComponentModel model) {
+        getDelegateForUpdate();
+        evictUsers(model);
+        return updated.importComponentModel(model);
+    }
+
     public void evictUsers(ComponentModel model) {
         String parentId = model.getParentId();
         evictUsers(parentId);

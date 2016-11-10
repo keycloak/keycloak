@@ -132,7 +132,7 @@ public class UserStorageTest {
 
     }
 
-    @Test
+    //@Test
     public void testIDE() throws Exception {
         Thread.sleep(100000000);
     }

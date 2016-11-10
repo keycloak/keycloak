@@ -54,6 +54,7 @@ import org.keycloak.models.GroupModel;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.OTPPolicy;
 import org.keycloak.models.PasswordPolicy;
@@ -101,6 +102,8 @@ import org.keycloak.representations.idm.authorization.ResourceOwnerRepresentatio
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
+import org.keycloak.storage.UserStorageProvider;
+import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.storage.federated.UserFederatedStorageProvider;
 import org.keycloak.util.JsonSerialization;
 
@@ -305,36 +308,8 @@ public class RepresentationToModel {
             String parentId = newRealm.getId();
             importComponents(newRealm, components, parentId);
         }
+        importUserFederationProvidersAndMappers(rep, newRealm);
 
-        List<UserFederationProviderModel> providerModels = null;
-        if (rep.getUserFederationProviders() != null) {
-            providerModels = convertFederationProviders(rep.getUserFederationProviders());
-            newRealm.setUserFederationProviders(providerModels);
-        }
-        if (rep.getUserFederationMappers() != null) {
-
-            // Remove builtin mappers for federation providers, which have some mappers already provided in JSON (likely due to previous export)
-            if (rep.getUserFederationProviders() != null) {
-                Set<String> providerNames = new TreeSet<String>();
-                for (UserFederationMapperRepresentation representation : rep.getUserFederationMappers()) {
-                    providerNames.add(representation.getFederationProviderDisplayName());
-                }
-                for (String providerName : providerNames) {
-                    for (UserFederationProviderModel providerModel : providerModels) {
-                        if (providerName.equals(providerModel.getDisplayName())) {
-                            Set<UserFederationMapperModel> toDelete = newRealm.getUserFederationMappersByFederationProvider(providerModel.getId());
-                            for (UserFederationMapperModel mapperModel : toDelete) {
-                                newRealm.removeUserFederationMapper(mapperModel);
-                            }
-                        }
-                    }
-                }
-            }
-
-            for (UserFederationMapperRepresentation representation : rep.getUserFederationMappers()) {
-                newRealm.addUserFederationMapper(toModel(newRealm, representation));
-            }
-        }
 
         if (rep.getGroups() != null) {
             importGroups(newRealm, rep);
@@ -390,6 +365,64 @@ public class RepresentationToModel {
         }
     }
 
+    public static void importUserFederationProvidersAndMappers(RealmRepresentation rep, RealmModel newRealm) {
+        // providers to convert to component model
+        Set<String> convertSet = new HashSet<>();
+        convertSet.add(LDAPConstants.LDAP_PROVIDER);
+        Map<String, String> mapperConvertSet = new HashMap<>();
+        mapperConvertSet.put(LDAPConstants.LDAP_PROVIDER, "org.keycloak.storage.ldap.mappers.LDAPStorageMapper");
+
+
+        List<UserFederationProviderModel> providerModels = null;
+        Map<String, ComponentModel> userStorageModels = new HashMap<>();
+
+        if (rep.getUserFederationProviders() != null) {
+            providerModels = new LinkedList<>();
+            for (UserFederationProviderRepresentation fedRep : rep.getUserFederationProviders()) {
+                if (convertSet.contains(fedRep.getProviderName())) {
+                    ComponentModel component = convertFedProviderToComponent(newRealm.getId(), fedRep);
+                    userStorageModels.put(fedRep.getDisplayName(), newRealm.importComponentModel(component));
+                } else {
+                    providerModels.add(convertFederationProvider(fedRep));
+                }
+
+            }
+            newRealm.setUserFederationProviders(providerModels);
+        }
+        if (rep.getUserFederationMappers() != null) {
+
+            // Remove builtin mappers for federation providers, which have some mappers already provided in JSON (likely due to previous export)
+            if (rep.getUserFederationProviders() != null) {
+                Set<String> providerNames = new TreeSet<String>();
+                for (UserFederationMapperRepresentation representation : rep.getUserFederationMappers()) {
+                    providerNames.add(representation.getFederationProviderDisplayName());
+                }
+                for (String providerName : providerNames) {
+                    for (UserFederationProviderModel providerModel : providerModels) {
+                        if (providerName.equals(providerModel.getDisplayName())) {
+                            Set<UserFederationMapperModel> toDelete = newRealm.getUserFederationMappersByFederationProvider(providerModel.getId());
+                            for (UserFederationMapperModel mapperModel : toDelete) {
+                                newRealm.removeUserFederationMapper(mapperModel);
+                            }
+                        }
+                    }
+                }
+            }
+
+            for (UserFederationMapperRepresentation representation : rep.getUserFederationMappers()) {
+                if (userStorageModels.containsKey(representation.getFederationProviderDisplayName())) {
+                    ComponentModel parent = userStorageModels.get(representation.getFederationProviderDisplayName());
+                    String newMapperType = mapperConvertSet.get(parent.getProviderId());
+                    ComponentModel mapper = convertFedMapperToComponent(newRealm, parent, representation, newMapperType);
+                    newRealm.importComponentModel(mapper);
+
+                } else {
+                    newRealm.addUserFederationMapper(toModel(newRealm, representation));
+                }
+            }
+        }
+    }
+
     protected static void importComponents(RealmModel newRealm, MultivaluedHashMap<String, ComponentExportRepresentation> components, String parentId) {
         for (Map.Entry<String, List<ComponentExportRepresentation>> entry : components.entrySet()) {
             String providerType = entry.getKey();
@@ -402,7 +435,7 @@ public class RepresentationToModel {
                 component.setProviderId(compRep.getProviderId());
                 component.setSubType(compRep.getSubType());
                 component.setParentId(parentId);
-                component = newRealm.addComponentModel(component);
+                component = newRealm.importComponentModel(component);
                 if (compRep.getSubComponents() != null) {
                     importComponents(newRealm, compRep.getSubComponents(), component.getId());
                 }
@@ -865,13 +898,52 @@ public class RepresentationToModel {
         List<UserFederationProviderModel> result = new ArrayList<UserFederationProviderModel>();
 
         for (UserFederationProviderRepresentation representation : providers) {
-            UserFederationProviderModel model = new UserFederationProviderModel(representation.getId(), representation.getProviderName(),
-                    representation.getConfig(), representation.getPriority(), representation.getDisplayName(),
-                    representation.getFullSyncPeriod(), representation.getChangedSyncPeriod(), representation.getLastSync());
+            UserFederationProviderModel model = convertFederationProvider(representation);
             result.add(model);
         }
         return result;
     }
+
+    private static UserFederationProviderModel convertFederationProvider(UserFederationProviderRepresentation representation) {
+        return new UserFederationProviderModel(representation.getId(), representation.getProviderName(),
+                        representation.getConfig(), representation.getPriority(), representation.getDisplayName(),
+                        representation.getFullSyncPeriod(), representation.getChangedSyncPeriod(), representation.getLastSync());
+    }
+
+    public static ComponentModel convertFedProviderToComponent(String realmId, UserFederationProviderRepresentation fedModel) {
+        UserStorageProviderModel model = new UserStorageProviderModel();
+        model.setId(fedModel.getId());
+        model.setName(fedModel.getDisplayName());
+        model.setParentId(realmId);
+        model.setProviderId(fedModel.getProviderName());
+        model.setProviderType(UserStorageProvider.class.getName());
+        model.setFullSyncPeriod(fedModel.getFullSyncPeriod());
+        model.setPriority(fedModel.getPriority());
+        model.setChangedSyncPeriod(fedModel.getChangedSyncPeriod());
+        model.setLastSync(fedModel.getLastSync());
+        if (fedModel.getConfig() != null) {
+            for (Map.Entry<String, String> entry : fedModel.getConfig().entrySet()) {
+                model.getConfig().putSingle(entry.getKey(), entry.getValue());
+            }
+        }
+        return model;
+    }
+
+    public static ComponentModel convertFedMapperToComponent(RealmModel realm, ComponentModel parent, UserFederationMapperRepresentation rep, String newMapperType) {
+        ComponentModel mapper = new ComponentModel();
+        mapper.setId(rep.getId());
+        mapper.setName(rep.getName());
+        mapper.setProviderId(rep.getFederationMapperType());
+        mapper.setProviderType(newMapperType);
+        mapper.setParentId(parent.getId());
+        if (rep.getConfig() != null) {
+            for (Map.Entry<String, String> entry : rep.getConfig().entrySet()) {
+                mapper.getConfig().putSingle(entry.getKey(), entry.getValue());
+            }
+        }
+        return mapper;
+    }
+
 
     public static UserFederationMapperModel toModel(RealmModel realm, UserFederationMapperRepresentation rep) {
         UserFederationMapperModel model = new UserFederationMapperModel();

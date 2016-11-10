@@ -21,7 +21,7 @@
     </properties>
 
     <resources>
-        <artifact name="${org.keycloak:keycloak-ldap-federation}"/>
+        <artifact name="${org.keycloak:keycloak-ldap-storage}"/>
     </resources>
 
     <dependencies>

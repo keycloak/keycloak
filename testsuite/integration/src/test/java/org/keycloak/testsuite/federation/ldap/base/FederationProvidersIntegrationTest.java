@@ -48,7 +48,9 @@ import org.keycloak.models.UserFederationProvider;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.OAuthClient;
 import org.keycloak.testsuite.federation.ldap.FederationTestUtils;
@@ -61,8 +63,10 @@ import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.testsuite.rule.LDAPRule;
 import org.keycloak.testsuite.rule.WebResource;
 import org.keycloak.testsuite.rule.WebRule;
+import org.keycloak.util.JsonSerialization;
 import org.openqa.selenium.WebDriver;
 
+import java.io.FileOutputStream;
 import java.util.List;
 import java.util.Map;
 
@@ -103,6 +107,20 @@ public class FederationProvidersIntegrationTest {
             appRealm.getClientByClientId("test-app").setDirectAccessGrantsEnabled(true);
         }
     });
+
+    /*
+    @Test
+    public void exportJson() throws Exception {
+        KeycloakSession session = keycloakRule.startSession();
+        FileOutputStream os = new FileOutputStream("/Users/williamburke/jboss/keycloak/p1b-repo/keycloak/fed-provider.json");
+        RealmManager manager = new RealmManager(session);
+        RealmModel appRealm = manager.getRealm("test");
+        RealmRepresentation rep = ModelToRepresentation.toRepresentation(appRealm, true);
+        JsonSerialization.writeValueToStream(os, rep);
+        os.close();
+
+    }
+    */
 
     @ClassRule
     public static TestRule chain = RuleChain
