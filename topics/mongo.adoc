@@ -28,6 +28,10 @@ to use Mongo.
 <spi name="user">
     <default-provider>jpa</default-provider>
 </spi>
+<spi name="userFederatedStorage">
+    <default-provider>jpa</default-provider>
+    <provider name="jpa" enabled="true"/>
+</spi>
 <spi name="userSessionPersister">
     <default-provider>jpa</default-provider>
 </spi>
@@ -54,6 +58,10 @@ Change that XML snippet to use Mongo:
 </spi>
 <spi name="user">
     <default-provider>mongo</default-provider>
+</spi>
+<spi name="userFederatedStorage">
+    <default-provider>mongo</default-provider>-->
+    <provider name="mongo" enabled="true"/>
 </spi>
 <spi name="userSessionPersister">
     <default-provider>mongo</default-provider>
