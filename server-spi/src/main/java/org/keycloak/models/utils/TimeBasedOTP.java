@@ -76,8 +76,8 @@ public class TimeBasedOTP extends HmacOTP {
     public boolean validateTOTP(String token, byte[] secret) {
         long currentInterval = this.clock.getCurrentInterval();
 
-        for (int i = this.lookAheadWindow; i >= 0; --i) {
-            String steps = Long.toHexString(currentInterval - i).toUpperCase();
+        for (int i = -this.lookAheadWindow; i <= this.lookAheadWindow; ++i) {
+            String steps = Long.toHexString(currentInterval + i).toUpperCase();
 
             // Just get a 16 digit string
             while (steps.length() < 16)
