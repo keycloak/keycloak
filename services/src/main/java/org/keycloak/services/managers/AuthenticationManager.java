@@ -436,7 +436,11 @@ public class AuthenticationManager {
         // refresh the cookies!
         createLoginCookie(session, realm, userSession.getUser(), userSession, uriInfo, clientConnection);
         if (userSession.getState() != UserSessionModel.State.LOGGED_IN) userSession.setState(UserSessionModel.State.LOGGED_IN);
-        if (userSession.isRememberMe()) createRememberMeCookie(realm, userSession.getLoginUsername(), uriInfo, clientConnection);
+        if (userSession.isRememberMe()) {
+            createRememberMeCookie(realm, userSession.getLoginUsername(), uriInfo, clientConnection);
+        } else {
+            expireRememberMeCookie(realm, uriInfo, clientConnection);
+        }
 
         // Update userSession note with authTime. But just if flag SSO_AUTH is not set
         if (!isSSOAuthentication(clientSession)) {
