@@ -166,6 +166,12 @@ The version specific section below will mention if any changes are required to a
 
 ==== Migrating to 2.4.0
 
+===== Server SPI split into Server SPI and Sever SPI Private
+
+The keycloak-server-spi module has been split into keycloak-server-spi and keycloak-server-spi-private. APIs within
+keycloak-server-spi will not change between minor releases, while we reserve the right and may quite likely change
+APIs in keycloak-server-spi-private between minor releases.
+
 ===== Key encryption algorithm in SAML assertions
 
 Key in SAML assertions and documents are now encrypted using RSA-OAEP encryption scheme.
@@ -199,10 +205,7 @@ however in that case, it is much better option to use HTTPS, which will secure a
 The `databaseSchema` property for both JPA and Mongo is now deprecated and has been replaced by `initializeEmpty`
 and `migrationStrategy`. `initializeEmpty` can bet set to `true` or `false` and controls if an empty database should
 be initialized. `migrationStrategy` can be set to `update`, `validate` and `manual`. `manual` is only supported for
-relational databases and will write an SQL file with the required changes to the database schema. Please note that
-for Oracle database, the created SQL file contains `SET DEFINE OFF` command understood by Oracle SQL clients.
-Should the script be consumed by any other client, please replace the lines with equivalent command of the tool of
-your choice that disables variable expansion or remove it completely if such functionality is not applicable.
+relational databases and will write an SQL file with the required changes to the database schema.
 
 ===== Changes in Client's Valid Redirect URIs
 The following scenarios are affected:
