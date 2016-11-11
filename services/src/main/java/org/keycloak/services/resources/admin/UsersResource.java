@@ -66,7 +66,7 @@ import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.BruteForceProtector;
 import org.keycloak.services.managers.ClientSessionCode;
-import org.keycloak.services.managers.UserManager;
+import org.keycloak.models.UserManager;
 import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.services.resources.AccountService;
 import org.keycloak.services.validation.Validation;

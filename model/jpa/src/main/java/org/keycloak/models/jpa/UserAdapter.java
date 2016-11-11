@@ -31,6 +31,7 @@ import org.keycloak.models.jpa.entities.UserGroupMembershipEntity;
 import org.keycloak.models.jpa.entities.UserRequiredActionEntity;
 import org.keycloak.models.jpa.entities.UserRoleMappingEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.models.utils.RoleUtils;
 
 import javax.persistence.EntityManager;
 import javax.persistence.Query;
@@ -338,7 +339,7 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
     @Override
     public boolean isMemberOf(GroupModel group) {
         Set<GroupModel> roles = getGroups();
-        return KeycloakModelUtils.isMember(roles, group);
+        return RoleUtils.isMember(roles, group);
     }
 
     protected TypedQuery<UserGroupMembershipEntity> getUserGroupMappingQuery(GroupModel group) {
@@ -352,8 +353,8 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
     @Override
     public boolean hasRole(RoleModel role) {
         Set<RoleModel> roles = getRoleMappings();
-        return KeycloakModelUtils.hasRole(roles, role)
-          || KeycloakModelUtils.hasRoleFromGroup(getGroups(), role, true);
+        return RoleUtils.hasRole(roles, role)
+          || RoleUtils.hasRoleFromGroup(getGroups(), role, true);
     }
 
     protected TypedQuery<UserRoleMappingEntity> getUserRoleMappingEntityTypedQuery(RoleModel role) {

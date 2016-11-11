@@ -120,7 +120,7 @@
         <osgi.bundle.plugin.version>2.3.7</osgi.bundle.plugin.version>
         <wildfly.plugin.version>1.0.1.Final</wildfly.plugin.version>
         <nexus.staging.plugin.version>1.6.5</nexus.staging.plugin.version>
-        
+
         <!-- Surefire Settings -->
         <surefire.memory.settings>-Xms512m -Xmx2048m -XX:MetaspaceSize=96m -XX:MaxMetaspaceSize=256m</surefire.memory.settings>
     </properties>
@@ -175,6 +175,7 @@
         <module>core</module>
         <module>dependencies</module>
         <module>server-spi</module>
+        <module>server-spi-private</module>
         <module>saml-core-api</module>
         <module>saml-core</module>
         <module>proxy</module>
@@ -940,6 +941,11 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-server-spi-private</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-model-jpa</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -1483,7 +1489,7 @@
                 </plugins>
             </build>
         </profile>
-        
+
         <profile>
             <id>nexus-staging</id>
             <build>

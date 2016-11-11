@@ -20,7 +20,6 @@ package org.keycloak.models;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.cache.UserCache;
 import org.keycloak.provider.Provider;
-import org.keycloak.scripting.ScriptingProvider;
 import org.keycloak.storage.federated.UserFederatedStorageProvider;
 
 import java.util.Set;
@@ -157,8 +156,4 @@ public interface KeycloakSession {
      */
     KeyManager keys();
 
-    /**
-     * Keycloak scripting support.
-     */
-    ScriptingProvider scripting();
 }

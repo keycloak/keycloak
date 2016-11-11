@@ -20,23 +20,19 @@ package org.keycloak.policy;
 import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.PasswordPolicy;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class HistoryPasswordPolicyProviderFactory implements PasswordPolicyProviderFactory {
+public class HashIterationsPasswordPolicyProviderFactory implements PasswordPolicyProvider, PasswordPolicyProviderFactory {
 
-    public static final String ID = "passwordHistory";
-    public static final Integer DEFAULT_VALUE = 3;
-
-    @Override
-    public String getId() {
-        return ID;
-    }
 
     @Override
     public PasswordPolicyProvider create(KeycloakSession session) {
-        return new HistoryPasswordPolicyProvider(session);
+        return this;
     }
 
     @Override
@@ -48,8 +44,28 @@ public class HistoryPasswordPolicyProviderFactory implements PasswordPolicyProvi
     }
 
     @Override
+    public String getId() {
+        return PasswordPolicy.HASH_ITERATIONS_ID;
+    }
+
+    @Override
+    public PolicyError validate(RealmModel realm, UserModel user, String password) {
+        return null;
+    }
+
+    @Override
+    public PolicyError validate(String user, String password) {
+        return null;
+    }
+
+    @Override
+    public Object parseConfig(String value) {
+        return value != null ? Integer.parseInt(value) : PasswordPolicy.HASH_ITERATIONS_DEFAULT;
+    }
+
+    @Override
     public String getDisplayName() {
-        return "Not Recently Used";
+        return "Hashing Iterations";
     }
 
     @Override
@@ -59,7 +75,7 @@ public class HistoryPasswordPolicyProviderFactory implements PasswordPolicyProvi
 
     @Override
     public String getDefaultConfigValue() {
-        return String.valueOf(HistoryPasswordPolicyProviderFactory.DEFAULT_VALUE);
+        return String.valueOf(PasswordPolicy.HASH_ITERATIONS_DEFAULT);
     }
 
     @Override

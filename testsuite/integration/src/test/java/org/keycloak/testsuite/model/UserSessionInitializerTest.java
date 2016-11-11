@@ -34,7 +34,7 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.UserSessionProviderFactory;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
-import org.keycloak.services.managers.UserManager;
+import org.keycloak.models.UserManager;
 import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.testsuite.rule.KeycloakRule;
 
