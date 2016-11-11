@@ -21,6 +21,7 @@ import com.mongodb.BasicDBList;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBCollection;
 import com.mongodb.DBCursor;
+import org.jboss.logging.Logger;
 import org.keycloak.keys.KeyProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
@@ -37,6 +38,7 @@ import java.util.Set;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class Update2_4_0 extends Update {
+    private final Logger logger = Logger.getLogger(getClass());
 
     @Override
     public String getId() {
@@ -45,8 +47,8 @@ public class Update2_4_0 extends Update {
 
     @Override
     public void update(KeycloakSession session) {
-        portUserFedToComponent(LDAPConstants.LDAP_PROVIDER);
         portUserFedMappersToComponent(LDAPConstants.LDAP_PROVIDER, "org.keycloak.storage.ldap.mappers.LDAPStorageMapper");
+        portUserFedToComponent(LDAPConstants.LDAP_PROVIDER);
     }
 
     public void portUserFedToComponent(String providerId) {
@@ -64,6 +66,7 @@ public class Update2_4_0 extends Update {
                 BasicDBObject fedProvider = (BasicDBObject)obj;
                 if (fedProvider.getString("providerName").equals(providerId)) {
                     String id = fedProvider.getString("id");
+                    removedProviders.add(id);
                     int priority = fedProvider.getInt("priority");
                     String displayName = fedProvider.getString("displayName");
                     int fullSyncPeriod = fedProvider.getInt("fullSyncPeriod");
@@ -112,6 +115,7 @@ public class Update2_4_0 extends Update {
         }
     }
     public void portUserFedMappersToComponent(String providerId, String mapperType) {
+        //logger.info("*** port mappers");
         DBCollection realms = db.getCollection("realms");
         DBCursor cursor = realms.find();
         while (cursor.hasNext()) {
@@ -125,11 +129,16 @@ public class Update2_4_0 extends Update {
             BasicDBList fedMappers = (BasicDBList) realm.get("userFederationMappers");
             for (Object obj : federationProviders) {
                 BasicDBObject fedProvider = (BasicDBObject)obj;
-                if (fedProvider.getString("providerName").equals(providerId)) {
+                String providerName = fedProvider.getString("providerName");
+                //logger.info("looking for mappers of fed provider: " + providerName);
+                if (providerName.equals(providerId)) {
                     String id = fedProvider.getString("id");
+                    //logger.info("found fed provider: " + id + ", looking at mappers");
                     for (Object obj2 : fedMappers) {
                         BasicDBObject fedMapper = (BasicDBObject)obj2;
-                        if (fedMapper.getString("federationProviderId").equals(id)) {
+                        String federationProviderId = fedMapper.getString("federationProviderId");
+                        //logger.info("looking at mapper with federationProviderId: " + federationProviderId);
+                        if (federationProviderId.equals(id)) {
                             String name = fedMapper.getString("name");
                             String mapperId = fedMapper.getString("id");
                             removedProviders.add(mapperId);
@@ -139,7 +148,7 @@ public class Update2_4_0 extends Update {
                             component.put("name", name);
                             component.put("providerType", mapperType);
                             component.put("providerId", mapperProviderId);
-                            component.put("parentId", providerId);
+                            component.put("parentId", id);
 
                             BasicDBObject fedConfig = (BasicDBObject)fedMapper.get("config");
                             BasicDBObject config = new BasicDBObject();
