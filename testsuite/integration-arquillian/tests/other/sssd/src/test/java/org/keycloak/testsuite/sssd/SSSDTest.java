@@ -109,7 +109,6 @@ public class SSSDTest extends AbstractKeycloakTest {
         driver.navigate().to(getAccountUrl());
         Assert.assertEquals("Browser should be on login page now", "Log in to " + REALM_NAME, driver.getTitle());
         accountLoginPage.login(ADMIN_USERNAME, ADMIN_PASSWORD);
-
         Assert.assertEquals("Unexpected error when handling authentication request to identity provider.", accountLoginPage.getInstruction());
     }
 
@@ -120,8 +119,7 @@ public class SSSDTest extends AbstractKeycloakTest {
         driver.navigate().to(getAccountUrl());
         Assert.assertEquals("Browser should be on login page now", "Log in to " + REALM_NAME, driver.getTitle());
         accountLoginPage.login(USERNAME, PASSWORD);
-        Assert.assertEquals("Browser should be on account page now, logged in", "Keycloak Account Management", driver.getTitle());
-
+        Assert.assertTrue(profilePage.isCurrent());
         testUserGroups();
     }
 
