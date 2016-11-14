@@ -55,7 +55,6 @@ public class LiquibaseJpaUpdaterProvider implements JpaUpdaterProvider {
     private static final Logger logger = Logger.getLogger(LiquibaseJpaUpdaterProvider.class);
 
     public static final String CHANGELOG = "META-INF/jpa-changelog-master.xml";
-    public static final String DB2_CHANGELOG = "META-INF/db2-jpa-changelog-master.xml";
 
     private final KeycloakSession session;
 
@@ -99,7 +98,7 @@ public class LiquibaseJpaUpdaterProvider implements JpaUpdaterProvider {
                     updateChangeSet(liquibase, liquibase.getChangeLogFile(), exportWriter);
                 }
             }
-        } catch (Exception e) {
+        } catch (LiquibaseException | IOException e) {
             throw new RuntimeException("Failed to update database", e);
         } finally {
             ThreadLocalSessionContext.removeCurrentSession();

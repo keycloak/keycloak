@@ -31,10 +31,7 @@ import org.keycloak.authorization.store.ScopeStore;
 import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.common.util.Base64;
-import org.keycloak.common.util.CertificateUtils;
-import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.MultivaluedHashMap;
-import org.keycloak.common.util.PemUtils;
 import org.keycloak.common.util.UriUtils;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.credential.CredentialModel;
@@ -108,11 +105,7 @@ import org.keycloak.storage.federated.UserFederatedStorageProvider;
 import org.keycloak.util.JsonSerialization;
 
 import java.io.IOException;
-import java.security.KeyPair;
-import java.security.cert.Certificate;
-import java.security.cert.X509Certificate;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -1938,7 +1931,18 @@ public class RepresentationToModel {
             toModel(resourceRepresentation, resourceServer, authorization);
         });
 
-        rep.getPolicies().forEach(policyRepresentation -> {
+        importPolicies(authorization, resourceServer, rep.getPolicies(), null);
+    }
+
+    private static Policy importPolicies(AuthorizationProvider authorization, ResourceServer resourceServer, List<PolicyRepresentation> policiesToImport, String parentPolicyName) {
+        StoreFactory storeFactory = authorization.getStoreFactory();
+        KeycloakSession session = authorization.getKeycloakSession();
+        RealmModel realm = authorization.getRealm();
+        for (PolicyRepresentation policyRepresentation : policiesToImport) {
+            if (parentPolicyName != null && !parentPolicyName.equals(policyRepresentation.getName())) {
+                continue;
+            }
+
             Map<String, String> config = policyRepresentation.getConfig();
 
             String roles = config.get("roles");
@@ -1972,6 +1976,16 @@ public class RepresentationToModel {
                         }
 
                         if (role == null) {
+                            role = realm.getRoleById(roleName);
+
+                            if (role == null) {
+                                String finalRoleName1 = roleName;
+                                role = realm.getClients().stream().map(clientModel -> clientModel.getRole(finalRoleName1)).filter(roleModel -> roleModel != null)
+                                        .findFirst().orElse(null);
+                            }
+                        }
+
+                        if (role == null) {
                             throw new RuntimeException("Error while importing configuration. Role [" + roleName + "] could not be found.");
                         }
 
@@ -1988,7 +2002,19 @@ public class RepresentationToModel {
             if (users != null && !users.isEmpty()) {
                 try {
                     List<String> usersMap = JsonSerialization.readValue(users, List.class);
-                    config.put("users", JsonSerialization.writeValueAsString(usersMap.stream().map(userName -> session.users().getUserByUsername(userName, realm).getId()).collect(Collectors.toList())));
+                    config.put("users", JsonSerialization.writeValueAsString(usersMap.stream().map(userId -> {
+                        UserModel user = session.users().getUserByUsername(userId, realm);
+
+                        if (user == null) {
+                            user = session.users().getUserById(userId, realm);
+                        }
+
+                        if (user == null) {
+                            throw new RuntimeException("Error while importing configuration. User [" + userId + "] could not be found.");
+                        }
+
+                        return user.getId();
+                    }).collect(Collectors.toList())));
                 } catch (Exception e) {
                     throw new RuntimeException("Error while exporting policy [" + policyRepresentation.getName() + "].", e);
                 }
@@ -1998,9 +2024,14 @@ public class RepresentationToModel {
 
             if (scopes != null && !scopes.isEmpty()) {
                 try {
+                    ScopeStore scopeStore = storeFactory.getScopeStore();
                     List<String> scopesMap = JsonSerialization.readValue(scopes, List.class);
                     config.put("scopes", JsonSerialization.writeValueAsString(scopesMap.stream().map(scopeName -> {
                         Scope newScope = scopeStore.findByName(scopeName, resourceServer.getId());
+
+                        if (newScope == null) {
+                            newScope = scopeStore.findById(scopeName);
+                        }
 
                         if (newScope == null) {
                             throw new RuntimeException("Scope with name [" + scopeName + "] not defined.");
@@ -2019,8 +2050,21 @@ public class RepresentationToModel {
                 ResourceStore resourceStore = storeFactory.getResourceStore();
                 try {
                     List<String> resources = JsonSerialization.readValue(policyResources, List.class);
-                    config.put("resources", JsonSerialization.writeValueAsString(resources.stream().map(resourceName -> {
-                        return resourceStore.findByName(resourceName, resourceServer.getId()).getId();
+                    config.put("resources", JsonSerialization.writeValueAsString(resources.stream().map(new Function<String, String>() {
+                        @Override
+                        public String apply(String resourceName) {
+                            Resource resource = resourceStore.findByName(resourceName, resourceServer.getId());
+
+                            if (resource == null) {
+                                resource = resourceStore.findById(resourceName);
+                            }
+
+                            if (resource == null) {
+                                throw new RuntimeException("Resource with name [" + resourceName + "] not defined.");
+                            }
+
+                            return resource.getId();
+                        }
                     }).collect(Collectors.toList())));
                 } catch (Exception e) {
                     throw new RuntimeException("Error while exporting policy [" + policyRepresentation.getName() + "].", e);
@@ -2037,7 +2081,14 @@ public class RepresentationToModel {
                         Policy policy = policyStore.findByName(policyName, resourceServer.getId());
 
                         if (policy == null) {
-                            throw new RuntimeException("Policy with name [" + policyName + "] not defined.");
+                            policy = policyStore.findById(policyName);
+                        }
+
+                        if (policy == null) {
+                            policy = importPolicies(authorization, resourceServer, policiesToImport, policyName);
+                            if (policy == null) {
+                                throw new RuntimeException("Policy with name [" + policyName + "] not defined.");
+                            }
                         }
 
                         return policy.getId();
@@ -2047,8 +2098,14 @@ public class RepresentationToModel {
                 }
             }
 
-            toModel(policyRepresentation, resourceServer, authorization);
-        });
+            if (parentPolicyName == null) {
+                toModel(policyRepresentation, resourceServer, authorization);
+            } else if (parentPolicyName.equals(policyRepresentation.getName())) {
+                return toModel(policyRepresentation, resourceServer, authorization);
+            }
+        }
+
+        return null;
     }
 
     public static Policy toModel(PolicyRepresentation policy, ResourceServer resourceServer, AuthorizationProvider authorization) {
