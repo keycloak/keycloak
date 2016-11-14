@@ -26,8 +26,13 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>keycloak-ldap-federation</artifactId>
-    <name>Keycloak LDAP Federation</name>
+    <name>Keycloak LDAP UserStoreProvider</name>
     <description />
+
+    <properties>
+        <maven.compiler.target>1.8</maven.compiler.target>
+        <maven.compiler.source>1.8</maven.compiler.source>
+    </properties>
 
     <dependencies>
         <dependency>
@@ -38,11 +43,6 @@
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-server-spi</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-server-spi-private</artifactId>
             <scope>provided</scope>
         </dependency>
         <dependency>

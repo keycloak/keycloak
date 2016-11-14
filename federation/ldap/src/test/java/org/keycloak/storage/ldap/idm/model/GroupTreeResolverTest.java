@@ -15,11 +15,11 @@
  * limitations under the License.
  */
 
-package org.keycloak.federation.ldap.idm.model;
+package org.keycloak.storage.ldap.idm.model;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.keycloak.federation.ldap.mappers.membership.group.GroupTreeResolver;
+import org.keycloak.storage.ldap.mappers.membership.group.GroupTreeResolver;
 
 import java.util.Arrays;
 import java.util.List;

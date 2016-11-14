@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.federation.ldap.idm.model;
+package org.keycloak.storage.ldap.idm.model;
 
 import org.junit.Assert;
 import org.junit.Test;

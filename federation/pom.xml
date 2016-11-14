@@ -34,7 +34,7 @@
 
     <modules>
         <module>kerberos</module>
-        <module>ldap2</module>
+        <module>ldap</module>
         <module>sssd</module>
     </modules>
 

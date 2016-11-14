@@ -15,26 +15,25 @@
  * limitations under the License.
  */
 
-package org.keycloak.federation.ldap.idm.model;
+package org.keycloak.storage.ldap.idm.model;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.keycloak.federation.ldap.LDAPConfig;
-import org.keycloak.federation.ldap.mappers.FullNameLDAPFederationMapper;
-import org.keycloak.federation.ldap.mappers.FullNameLDAPFederationMapperFactory;
-import org.keycloak.federation.ldap.mappers.LDAPMappersComparator;
-import org.keycloak.federation.ldap.mappers.UserAttributeLDAPFederationMapper;
-import org.keycloak.federation.ldap.mappers.UserAttributeLDAPFederationMapperFactory;
+import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.component.ComponentModel;
 import org.keycloak.models.LDAPConstants;
-import org.keycloak.models.UserFederationMapperModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.storage.ldap.LDAPConfig;
+import org.keycloak.storage.ldap.mappers.FullNameLDAPStorageMapper;
+import org.keycloak.storage.ldap.mappers.FullNameLDAPStorageMapperFactory;
+import org.keycloak.storage.ldap.mappers.LDAPMappersComparator;
+import org.keycloak.storage.ldap.mappers.LDAPStorageMapper;
+import org.keycloak.storage.ldap.mappers.UserAttributeLDAPStorageMapper;
+import org.keycloak.storage.ldap.mappers.UserAttributeLDAPStorageMapperFactory;
 
-import java.util.HashMap;
-import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -45,11 +44,11 @@ public class LDAPMappersComparatorTest {
 
     @Test
     public void testCompareWithCNUsername() {
-        Map<String, String> cfg = new HashMap<>();
-        cfg.put(LDAPConstants.USERNAME_LDAP_ATTRIBUTE, LDAPConstants.CN);
+        MultivaluedHashMap<String, String> cfg = new MultivaluedHashMap<>();
+        cfg.add(LDAPConstants.USERNAME_LDAP_ATTRIBUTE, LDAPConstants.CN);
         LDAPConfig config = new LDAPConfig(cfg);
 
-        List<UserFederationMapperModel> sorted = LDAPMappersComparator.sortAsc(config, getMappers());
+        List<ComponentModel> sorted = LDAPMappersComparator.sortAsc(config, getMappers());
         assertOrder(sorted, "username-cn", "sAMAccountName", "first name", "full name");
 
         sorted = LDAPMappersComparator.sortDesc(config, getMappers());
@@ -58,57 +57,57 @@ public class LDAPMappersComparatorTest {
 
     @Test
     public void testCompareWithSAMAccountNameUsername() {
-        Map<String, String> cfg = new HashMap<>();
-        cfg.put(LDAPConstants.USERNAME_LDAP_ATTRIBUTE, LDAPConstants.SAM_ACCOUNT_NAME);
+        MultivaluedHashMap<String, String> cfg = new MultivaluedHashMap<>();
+        cfg.add(LDAPConstants.USERNAME_LDAP_ATTRIBUTE, LDAPConstants.SAM_ACCOUNT_NAME);
         LDAPConfig config = new LDAPConfig(cfg);
 
-        List<UserFederationMapperModel> sorted = LDAPMappersComparator.sortAsc(config, getMappers());
+        List<ComponentModel> sorted = LDAPMappersComparator.sortAsc(config, getMappers());
         assertOrder(sorted, "sAMAccountName", "username-cn", "first name", "full name");
 
         sorted = LDAPMappersComparator.sortDesc(config, getMappers());
         assertOrder(sorted, "full name", "first name", "username-cn", "sAMAccountName");
     }
 
-    private void assertOrder(List<UserFederationMapperModel> result, String... names) {
+    private void assertOrder(List<ComponentModel> result, String... names) {
         Assert.assertEquals(result.size(), names.length);
         for (int i=0 ; i<names.length ; i++) {
             Assert.assertEquals(names[i], result.get(i).getName());
         }
     }
 
-    private Set<UserFederationMapperModel> getMappers() {
-        Set<UserFederationMapperModel> result = new HashSet<>();
+    private List<ComponentModel> getMappers() {
+        List<ComponentModel> result = new LinkedList<>();
 
-        UserFederationMapperModel mapperModel = KeycloakModelUtils.createUserFederationMapperModel("first name",  "fed-provider", UserAttributeLDAPFederationMapperFactory.PROVIDER_ID,
-                UserAttributeLDAPFederationMapper.USER_MODEL_ATTRIBUTE, UserModel.FIRST_NAME,
-                UserAttributeLDAPFederationMapper.LDAP_ATTRIBUTE, LDAPConstants.GIVENNAME,
-                UserAttributeLDAPFederationMapper.READ_ONLY, "true",
-                UserAttributeLDAPFederationMapper.ALWAYS_READ_VALUE_FROM_LDAP, "true",
-                UserAttributeLDAPFederationMapper.IS_MANDATORY_IN_LDAP, "true");
+        ComponentModel mapperModel = KeycloakModelUtils.createComponentModel("first name",  "fed-provider", UserAttributeLDAPStorageMapperFactory.PROVIDER_ID, LDAPStorageMapper.class.getName(),
+                UserAttributeLDAPStorageMapper.USER_MODEL_ATTRIBUTE, UserModel.FIRST_NAME,
+                UserAttributeLDAPStorageMapper.LDAP_ATTRIBUTE, LDAPConstants.GIVENNAME,
+                UserAttributeLDAPStorageMapper.READ_ONLY, "true",
+                UserAttributeLDAPStorageMapper.ALWAYS_READ_VALUE_FROM_LDAP, "true",
+                UserAttributeLDAPStorageMapper.IS_MANDATORY_IN_LDAP, "true");
         mapperModel.setId("idd1");
         result.add(mapperModel);
 
-        mapperModel = KeycloakModelUtils.createUserFederationMapperModel("username-cn", "fed-provider", UserAttributeLDAPFederationMapperFactory.PROVIDER_ID,
-                UserAttributeLDAPFederationMapper.USER_MODEL_ATTRIBUTE, UserModel.USERNAME,
-                UserAttributeLDAPFederationMapper.LDAP_ATTRIBUTE, LDAPConstants.CN,
-                UserAttributeLDAPFederationMapper.READ_ONLY, "true",
-                UserAttributeLDAPFederationMapper.ALWAYS_READ_VALUE_FROM_LDAP, "false",
-                UserAttributeLDAPFederationMapper.IS_MANDATORY_IN_LDAP, "true");
+        mapperModel = KeycloakModelUtils.createComponentModel("username-cn", "fed-provider", UserAttributeLDAPStorageMapperFactory.PROVIDER_ID,LDAPStorageMapper.class.getName(),
+                UserAttributeLDAPStorageMapper.USER_MODEL_ATTRIBUTE, UserModel.USERNAME,
+                UserAttributeLDAPStorageMapper.LDAP_ATTRIBUTE, LDAPConstants.CN,
+                UserAttributeLDAPStorageMapper.READ_ONLY, "true",
+                UserAttributeLDAPStorageMapper.ALWAYS_READ_VALUE_FROM_LDAP, "false",
+                UserAttributeLDAPStorageMapper.IS_MANDATORY_IN_LDAP, "true");
         mapperModel.setId("idd2");
         result.add(mapperModel);
 
-        mapperModel = KeycloakModelUtils.createUserFederationMapperModel("full name", "fed-provider", FullNameLDAPFederationMapperFactory.PROVIDER_ID,
-                FullNameLDAPFederationMapper.LDAP_FULL_NAME_ATTRIBUTE, LDAPConstants.CN,
-                UserAttributeLDAPFederationMapper.READ_ONLY, "true");
+        mapperModel = KeycloakModelUtils.createComponentModel("full name", "fed-provider", FullNameLDAPStorageMapperFactory.PROVIDER_ID,LDAPStorageMapper.class.getName(),
+                FullNameLDAPStorageMapper.LDAP_FULL_NAME_ATTRIBUTE, LDAPConstants.CN,
+                UserAttributeLDAPStorageMapper.READ_ONLY, "true");
         mapperModel.setId("idd3");
         result.add(mapperModel);
 
-        mapperModel = KeycloakModelUtils.createUserFederationMapperModel("sAMAccountName", "fed-provider", UserAttributeLDAPFederationMapperFactory.PROVIDER_ID,
-                UserAttributeLDAPFederationMapper.USER_MODEL_ATTRIBUTE, UserModel.USERNAME,
-                UserAttributeLDAPFederationMapper.LDAP_ATTRIBUTE, LDAPConstants.SAM_ACCOUNT_NAME,
-                UserAttributeLDAPFederationMapper.READ_ONLY, "false",
-                UserAttributeLDAPFederationMapper.ALWAYS_READ_VALUE_FROM_LDAP, "false",
-                UserAttributeLDAPFederationMapper.IS_MANDATORY_IN_LDAP, "true");
+        mapperModel = KeycloakModelUtils.createComponentModel("sAMAccountName", "fed-provider", UserAttributeLDAPStorageMapperFactory.PROVIDER_ID,LDAPStorageMapper.class.getName(),
+                UserAttributeLDAPStorageMapper.USER_MODEL_ATTRIBUTE, UserModel.USERNAME,
+                UserAttributeLDAPStorageMapper.LDAP_ATTRIBUTE, LDAPConstants.SAM_ACCOUNT_NAME,
+                UserAttributeLDAPStorageMapper.READ_ONLY, "false",
+                UserAttributeLDAPStorageMapper.ALWAYS_READ_VALUE_FROM_LDAP, "false",
+                UserAttributeLDAPStorageMapper.IS_MANDATORY_IN_LDAP, "true");
         mapperModel.setId("idd4");
         result.add(mapperModel);
 
