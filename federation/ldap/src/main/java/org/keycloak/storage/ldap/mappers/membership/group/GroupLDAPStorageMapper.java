@@ -25,6 +25,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.models.utils.RoleUtils;
 import org.keycloak.models.utils.UserModelDelegate;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
 import org.keycloak.storage.ldap.LDAPUtils;
@@ -564,7 +565,7 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
 
         @Override
         public boolean hasRole(RoleModel role) {
-            return super.hasRole(role) || KeycloakModelUtils.hasRoleFromGroup(getGroups(), role, true);
+            return super.hasRole(role) || RoleUtils.hasRoleFromGroup(getGroups(), role, true);
         }
 
         @Override
