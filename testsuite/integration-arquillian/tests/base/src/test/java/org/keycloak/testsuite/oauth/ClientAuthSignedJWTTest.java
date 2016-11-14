@@ -158,7 +158,7 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
 
         defaultUser = UserBuilder.create()
                 .id(KeycloakModelUtils.generateId())
-                .serviceAccountId(app1.getClientId())
+                //.serviceAccountId(app1.getClientId())
                 .username("test-user@localhost")
                 .password("password")
                 .build();

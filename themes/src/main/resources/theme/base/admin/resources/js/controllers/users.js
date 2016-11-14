@@ -627,12 +627,14 @@ module.controller('UserFederationCtrl', function($scope, $location, $route, real
     for (var i = 0; i < $scope.providers.length; i++) {
         $scope.providers[i].isUserFederationProvider = false;
     }
+    /*
     UserFederationProviders.query({realm: realm.realm}, function(data) {
         for (var i = 0; i < data.length; i++) {
             data[i].isUserFederationProvider = true;
             $scope.providers.push(data[i]);
         }
     });
+    */
 
     $scope.addProvider = function(provider) {
         console.log('Add provider: ' + provider.id);
@@ -761,13 +763,13 @@ module.controller('GenericUserStorageCtrl', function($scope, $location, Notifica
             if (providerFactory.metadata.synchronizable) {
                 instance.config['fullSyncPeriod'] = ['-1'];
                 instance.config['changedSyncPeriod'] = ['-1'];
-                instance.config['cachePolicy'] = ['DEFAULT'];
-                instance.config['evictionDay'] = [''];
-                instance.config['evictionHour'] = [''];
-                instance.config['evictionMinute'] = [''];
-                instance.config['maxLifespan'] = [''];
 
             }
+            instance.config['cachePolicy'] = ['DEFAULT'];
+            instance.config['evictionDay'] = [''];
+            instance.config['evictionHour'] = [''];
+            instance.config['evictionMinute'] = [''];
+            instance.config['maxLifespan'] = [''];
             if (providerFactory.properties) {
 
                 for (var i = 0; i < providerFactory.properties.length; i++) {
@@ -816,17 +818,10 @@ module.controller('GenericUserStorageCtrl', function($scope, $location, Notifica
                 instance.config['maxLifespan'] = [''];
 
             }
-
-            /*
-            console.log('Manage instance');
-            console.log(instance.name);
-            console.log(instance.providerId);
-            console.log(instance.providerType);
-            console.log(instance.parentId);
-            for (var k in instance.config) {
-                console.log('config[' + k + "] =");
+            if (!instance.config['priority']) {
+                instance.config['priority'] = ['0'];
             }
-            */
+
         }
         if (providerFactory.metadata.synchronizable) {
             if (instance.config && instance.config['importEnabled']) {
@@ -1559,5 +1554,499 @@ module.controller('UserGroupMembershipCtrl', function($scope, $route, realm, gro
     }
 
 });
+
+module.controller('LDAPUserStorageCtrl', function($scope, $location, Notifications, $route, Dialog, realm,
+                                                     serverInfo, instance, Components, UserStorageSync, RealmLDAPConnectionTester) {
+    console.log('LDAPUserStorageCtrl');
+    var providerId = 'ldap';
+    console.log('providerId: ' + providerId);
+    $scope.create = !instance.providerId;
+    console.log('create: ' + $scope.create);
+    var providers = serverInfo.componentTypes['org.keycloak.storage.UserStorageProvider'];
+    console.log('providers length ' + providers.length);
+    var providerFactory = null;
+    for (var i = 0; i < providers.length; i++) {
+        var p = providers[i];
+        console.log('provider: ' + p.id);
+        if (p.id == providerId) {
+            $scope.providerFactory = p;
+            providerFactory = p;
+            break;
+        }
+
+    }
+
+    $scope.provider = instance;
+    $scope.showSync = false;
+
+    $scope.ldapVendors = [
+        { "id": "ad", "name": "Active Directory" },
+        { "id": "rhds", "name": "Red Hat Directory Server" },
+        { "id": "tivoli", "name": "Tivoli" },
+        { "id": "edirectory", "name": "Novell eDirectory" },
+        { "id": "other", "name": "Other" }
+    ];
+
+    $scope.authTypes = [
+        { "id": "none", "name": "none" },
+        { "id": "simple", "name": "simple" }
+    ];
+
+    $scope.searchScopes = [
+        { "id": "1", "name": "One Level" },
+        { "id": "2", "name": "Subtree" }
+    ];
+
+    $scope.useTruststoreOptions = [
+        { "id": "always", "name": "Always" },
+        { "id": "ldapsOnly", "name": "Only for ldaps" },
+        { "id": "never", "name": "Never" }
+    ];
+
+    var DEFAULT_BATCH_SIZE = "1000";
+
+
+    console.log("providerFactory: " + providerFactory.id);
+
+    function initUserStorageSettings() {
+        if ($scope.create) {
+            instance.name = 'ldap';
+            instance.providerId = 'ldap';
+            instance.providerType = 'org.keycloak.storage.UserStorageProvider';
+            instance.parentId = realm.id;
+            instance.config = {
+
+            };
+            instance.config['priority'] = ["0"];
+
+            $scope.fullSyncEnabled = false;
+            $scope.changedSyncEnabled = false;
+            instance.config['fullSyncPeriod'] = ['-1'];
+            instance.config['changedSyncPeriod'] = ['-1'];
+            instance.config['cachePolicy'] = ['DEFAULT'];
+            instance.config['evictionDay'] = [''];
+            instance.config['evictionHour'] = [''];
+            instance.config['evictionMinute'] = [''];
+            instance.config['maxLifespan'] = [''];
+            instance.config['batchSizeForSync'] = [DEFAULT_BATCH_SIZE];
+
+            if (providerFactory.properties) {
+
+                for (var i = 0; i < providerFactory.properties.length; i++) {
+                    var configProperty = providerFactory.properties[i];
+                    if (configProperty.defaultValue) {
+                        instance.config[configProperty.name] = [configProperty.defaultValue];
+                    } else {
+                        instance.config[configProperty.name] = [''];
+                    }
+
+                }
+            }
+
+
+        } else {
+            $scope.fullSyncEnabled = (instance.config['fullSyncPeriod'] && instance.config['fullSyncPeriod'][0] > 0);
+            $scope.changedSyncEnabled = (instance.config['changedSyncPeriod'] && instance.config['changedSyncPeriod'][0]> 0);
+            if (!instance.config['fullSyncPeriod']) {
+                console.log('setting to -1');
+                instance.config['fullSyncPeriod'] = ['-1'];
+
+            }
+            if (!instance.config['changedSyncPeriod']) {
+                console.log('setting to -1');
+                instance.config['changedSyncPeriod'] = ['-1'];
+
+            }
+            if (!instance.config['cachePolicy']) {
+                instance.config['cachePolicy'] = ['DEFAULT'];
+
+            }
+            if (!instance.config['evictionDay']) {
+                instance.config['evictionDay'] = [''];
+
+            }
+            if (!instance.config['evictionHour']) {
+                instance.config['evictionHour'] = [''];
+
+            }
+            if (!instance.config['evictionMinute']) {
+                instance.config['evictionMinute'] = [''];
+
+            }
+            if (!instance.config['maxLifespan']) {
+                instance.config['maxLifespan'] = [''];
+
+            }
+            if (!instance.config['priority']) {
+                instance.config['priority'] = ['0'];
+            }
+
+            if (providerFactory.properties) {
+
+                for (var i = 0; i < providerFactory.properties.length; i++) {
+                    var configProperty = providerFactory.properties[i];
+                    if (!instance.config[configProperty.name]) {
+                        if (configProperty.defaultValue) {
+                            instance.config[configProperty.name] = [configProperty.defaultValue];
+                        } else {
+                            instance.config[configProperty.name] = [''];
+                        }
+                    }
+
+                }
+            }
+
+            for (var i=0 ; i<$scope.ldapVendors.length ; i++) {
+                if ($scope.ldapVendors[i].id === instance.config['vendor'][0]) {
+                    $scope.vendorName = $scope.ldapVendors[i].name;
+                }
+            };
+
+
+
+        }
+        if (instance.config && instance.config['importEnabled']) {
+            $scope.showSync = instance.config['importEnabled'][0] == 'true';
+        } else {
+            $scope.showSync = true;
+        }
+
+        $scope.changed = false;
+    }
+
+    initUserStorageSettings();
+    $scope.instance = angular.copy(instance);
+    $scope.realm = realm;
+
+    $scope.$watch('instance', function() {
+        if (!angular.equals($scope.instance, instance)) {
+            $scope.changed = true;
+        }
+
+        if (!angular.equals($scope.instance.config['vendor'][0], $scope.lastVendor)) {
+            console.log("LDAP vendor changed");
+            $scope.lastVendor = $scope.instance.config['vendor'][0];
+
+            if ($scope.lastVendor === "ad") {
+                $scope.instance.config['usernameLDAPAttribute'][0] = "cn";
+                $scope.instance.config['userObjectClasses'][0] = "person, organizationalPerson, user";
+            } else {
+                $scope.instance.config['usernameLDAPAttribute'][0] = "uid";
+                $scope.instance.config['userObjectClasses'][0] = "inetOrgPerson, organizationalPerson";
+            }
+
+            $scope.instance.config['rdnLDAPAttribute'][0] = $scope.instance.config['usernameLDAPAttribute'][0];
+
+            var vendorToUUID = {
+                rhds: "nsuniqueid",
+                tivoli: "uniqueidentifier",
+                edirectory: "guid",
+                ad: "objectGUID",
+                other: "entryUUID"
+            };
+            $scope.instance.config['uuidLDAPAttribute'][0] = vendorToUUID[$scope.lastVendor];
+        }
+
+
+    }, true);
+
+    $scope.$watch('fullSyncEnabled', function(newVal, oldVal) {
+        if (oldVal == newVal) {
+            return;
+        }
+
+        $scope.instance.config['fullSyncPeriod'][0] = $scope.fullSyncEnabled ? "604800" : "-1";
+        $scope.changed = true;
+    });
+
+    $scope.$watch('changedSyncEnabled', function(newVal, oldVal) {
+        if (oldVal == newVal) {
+            return;
+        }
+
+        $scope.instance.config['changedSyncPeriod'][0] = $scope.changedSyncEnabled ? "86400" : "-1";
+        $scope.changed = true;
+    });
+
+
+    $scope.save = function() {
+        $scope.changed = false;
+        if (!parseInt($scope.instance.config['batchSizeForSync'[0]])) {
+            $scope.instance.config['batchSizeForSync'][0] = DEFAULT_BATCH_SIZE;
+        } else {
+            $scope.instance.config['batchSizeForSync'][0] = parseInt($scope.instance.config.batchSizeForSync).toString();
+        }
+
+        if ($scope.create) {
+            Components.save({realm: realm.realm}, $scope.instance,  function (data, headers) {
+                var l = headers().location;
+                var id = l.substring(l.lastIndexOf("/") + 1);
+
+                $location.url("/realms/" + realm.realm + "/user-storage/providers/" + $scope.instance.providerId + "/" + id);
+                Notifications.success("The provider has been created.");
+            }, function (errorResponse) {
+                if (errorResponse.data && errorResponse.data['error_description']) {
+                    Notifications.error(errorResponse.data['error_description']);
+                }
+            });
+        } else {
+            Components.update({realm: realm.realm,
+                    componentId: instance.id
+                },
+                $scope.instance,  function () {
+                    $route.reload();
+                    Notifications.success("The provider has been updated.");
+                }, function (errorResponse) {
+                    if (errorResponse.data && errorResponse.data['error_description']) {
+                        Notifications.error(errorResponse.data['error_description']);
+                    }
+                });
+        }
+    };
+
+    $scope.reset = function() {
+        initUserStorageSettings();
+        $scope.instance = angular.copy(instance);
+    };
+
+    $scope.cancel = function() {
+        if ($scope.create) {
+            $location.url("/realms/" + realm.realm + "/user-storage");
+        } else {
+            $route.reload();
+        }
+    };
+
+    $scope.triggerFullSync = function() {
+        console.log('GenericCtrl: triggerFullSync');
+        triggerSync('triggerFullSync');
+    }
+
+    $scope.triggerChangedUsersSync = function() {
+        console.log('GenericCtrl: triggerChangedUsersSync');
+        triggerSync('triggerChangedUsersSync');
+    }
+
+    function triggerSync(action) {
+        UserStorageSync.save({ action: action, realm: $scope.realm.realm, componentId: $scope.instance.id }, {}, function(syncResult) {
+            $route.reload();
+            Notifications.success("Sync of users finished successfully. " + syncResult.status);
+        }, function() {
+            $route.reload();
+            Notifications.error("Error during sync of users");
+        });
+    }
+
+    var initConnectionTest = function(testAction, ldapConfig) {
+        return {
+            action: testAction,
+            realm: $scope.realm.realm,
+            connectionUrl: ldapConfig.connectionUrl,
+            bindDn: ldapConfig.bindDn,
+            bindCredential: ldapConfig.bindCredential,
+            useTruststoreSpi: ldapConfig.useTruststoreSpi
+        };
+    };
+
+    $scope.testConnection = function() {
+        console.log('LDAPCtrl: testConnection');
+        RealmLDAPConnectionTester.get(initConnectionTest("testConnection", $scope.instance.config), function() {
+            Notifications.success("LDAP connection successful.");
+        }, function() {
+            Notifications.error("Error when trying to connect to LDAP. See server.log for details.");
+        });
+    }
+
+    $scope.testAuthentication = function() {
+        console.log('LDAPCtrl: testAuthentication');
+        RealmLDAPConnectionTester.get(initConnectionTest("testAuthentication", $scope.instance.config), function() {
+            Notifications.success("LDAP authentication successful.");
+        }, function() {
+            Notifications.error("LDAP authentication failed. See server.log for details");
+        });
+    }
+
+
+
+});
+
+module.controller('LDAPTabCtrl', function(Dialog, $scope, Current, Notifications, $location) {
+    $scope.removeUserFederation = function() {
+        Dialog.confirmDelete($scope.instance.name, 'ldap provider', function() {
+            $scope.instance.$remove({
+                realm : Current.realm.realm,
+                componentId : $scope.instance.id
+            }, function() {
+                $location.url("/realms/" + Current.realm.realm + "/user-federation");
+                Notifications.success("The provider has been deleted.");
+            });
+        });
+    };
+});
+
+
+module.controller('LDAPMapperListCtrl', function($scope, $location, Notifications, $route, Dialog, realm, provider, mappers) {
+    console.log('LDAPMapperListCtrl');
+
+    $scope.realm = realm;
+    $scope.provider = provider;
+    $scope.instance = provider;
+
+    $scope.mappers = mappers;
+
+});
+
+module.controller('LDAPMapperCtrl', function($scope, $route, realm,  provider, mapperTypes, mapper, clients, Components, LDAPMapperSync, Notifications, Dialog, $location) {
+    console.log('LDAPMapperCtrl');
+    $scope.realm = realm;
+    $scope.provider = provider;
+    $scope.clients = clients;
+    $scope.create = false;
+    $scope.changed = false;
+
+    for (var i = 0; i < mapperTypes.length; i++) {
+        console.log('mapper.providerId: ' + mapper.providerId);
+        console.log('mapperTypes[i].id ' + mapperTypes[i].id);
+        if (mapperTypes[i].id == mapper.providerId) {
+            $scope.mapperType = mapperTypes[i];
+            break;
+        }
+    }
+
+    if ($scope.mapperType.properties) {
+
+        for (var i = 0; i < $scope.mapperType.properties.length; i++) {
+            var configProperty = $scope.mapperType.properties[i];
+            if (!mapper.config[configProperty.name]) {
+                if (configProperty.defaultValue) {
+                    mapper.config[configProperty.name] = [configProperty.defaultValue];
+                } else {
+                    mapper.config[configProperty.name] = [''];
+                }
+            }
+
+        }
+    }
+    $scope.mapper = angular.copy(mapper);
+
+
+    $scope.$watch('mapper', function() {
+        if (!angular.equals($scope.mapper, mapper)) {
+            $scope.changed = true;
+        }
+    }, true);
+
+    $scope.save = function() {
+        Components.update({realm: realm.realm,
+                componentId: mapper.id
+            },
+            $scope.mapper,  function () {
+                $route.reload();
+                Notifications.success("The mapper has been updated.");
+            }, function (errorResponse) {
+                if (errorResponse.data && errorResponse.data['error_description']) {
+                    Notifications.error(errorResponse.data['error_description']);
+                }
+            });
+    };
+
+    $scope.reset = function() {
+        $scope.mapper = angular.copy(mapper);
+        $scope.changed = false;
+    };
+
+    $scope.remove = function() {
+        Dialog.confirmDelete($scope.mapper.name, 'ldap mapper', function() {
+            Components.remove({
+                realm : realm.realm,
+                componentId : mapper.id
+            }, function() {
+                $location.url("/realms/" + realm.realm + '/ldap-mappers/' + provider.id);
+                Notifications.success("The provider has been deleted.");
+            });
+        });
+    };
+
+    $scope.triggerFedToKeycloakSync = function() {
+        triggerMapperSync("fedToKeycloak")
+    }
+
+    $scope.triggerKeycloakToFedSync = function() {
+        triggerMapperSync("keycloakToFed");
+    }
+
+    function triggerMapperSync(direction) {
+        LDAPMapperSync.save({ direction: direction, realm: realm.realm, parentId: provider.id, mapperId : $scope.mapper.id }, {}, function(syncResult) {
+            Notifications.success("Data synced successfully. " + syncResult.status);
+        }, function(error) {
+            Notifications.error(error.data.errorMessage);
+        });
+    }
+
+});
+
+module.controller('LDAPMapperCreateCtrl', function($scope, realm, provider, mapperTypes, clients, Components, Notifications, Dialog, $location) {
+    console.log('LDAPMapperCreateCtrl');
+    $scope.realm = realm;
+    $scope.provider = provider;
+    $scope.clients = clients;
+    $scope.create = true;
+    $scope.mapper = { config: {}};
+    $scope.mapperTypes = mapperTypes;
+    $scope.mapperType = null;
+    $scope.changed = true;
+
+    $scope.$watch('mapperType', function() {
+        if ($scope.mapperType != null) {
+            $scope.mapper.config = {};
+            if ($scope.mapperType.properties) {
+
+                for (var i = 0; i < $scope.mapperType.properties.length; i++) {
+                    var configProperty = $scope.mapperType.properties[i];
+                    if (!$scope.mapper.config[configProperty.name]) {
+                        if (configProperty.defaultValue) {
+                            $scope.mapper.config[configProperty.name] = [configProperty.defaultValue];
+                        } else {
+                            $scope.mapper.config[configProperty.name] = [''];
+                        }
+                    }
+
+                }
+            }
+        }
+    }, true);
+
+    $scope.save = function() {
+        if ($scope.mapperType == null) {
+            Notifications.error("You need to select mapper type!");
+            return;
+        }
+
+        $scope.mapper.providerId = $scope.mapperType.id;
+        $scope.mapper.providerType = 'org.keycloak.storage.ldap.mappers.LDAPStorageMapper';
+        $scope.mapper.parentId = provider.id;
+
+        Components.save({realm: realm.realm}, $scope.mapper,  function (data, headers) {
+            var l = headers().location;
+            var id = l.substring(l.lastIndexOf("/") + 1);
+
+            $location.url("/realms/" + realm.realm + "/ldap-mappers/" + $scope.mapper.parentId + "/mappers/" + id);
+            Notifications.success("The mapper has been created.");
+        }, function (errorResponse) {
+            if (errorResponse.data && errorResponse.data['error_description']) {
+                Notifications.error(errorResponse.data['error_description']);
+            }
+        });
+    };
+
+    $scope.reset = function() {
+        $location.url("/realms/" + realm.realm + '/ldap-mappers/' + provider.id);
+    };
+
+
+});
+
+
+
 
 

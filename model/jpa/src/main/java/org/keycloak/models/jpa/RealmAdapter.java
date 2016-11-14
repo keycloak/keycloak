@@ -2031,12 +2031,20 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
 
     @Override
     public ComponentModel addComponentModel(ComponentModel model) {
+        model = importComponentModel(model);
+        ComponentUtil.notifyCreated(session, this, model);
+
+        return model;
+    }
+
+    @Override
+    public ComponentModel importComponentModel(ComponentModel model) {
         ComponentFactory componentFactory = ComponentUtil.getComponentFactory(session, model);
         if (componentFactory == null) {
             throw new IllegalArgumentException("Invalid component type");
         }
 
-        componentFactory.validateConfiguration(session, model);
+        componentFactory.validateConfiguration(session, this, model);
 
         ComponentEntity c = new ComponentEntity();
         if (model.getId() == null) {
@@ -2046,6 +2054,10 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
         }
         c.setName(model.getName());
         c.setParentId(model.getParentId());
+        if (model.getParentId() == null) {
+            c.setParentId(this.getId());
+            model.setParentId(this.getId());
+        }
         c.setProviderType(model.getProviderType());
         c.setProviderId(model.getProviderId());
         c.setSubType(model.getSubType());
@@ -2053,8 +2065,6 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
         em.persist(c);
         setConfig(model, c);
         model.setId(c.getId());
-        ComponentUtil.notifyCreated(session, this, model);
-
         return model;
     }
 
@@ -2077,7 +2087,7 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
 
     @Override
     public void updateComponent(ComponentModel component) {
-        ComponentUtil.getComponentFactory(session, component).validateConfiguration(session, component);
+        ComponentUtil.getComponentFactory(session, component).validateConfiguration(session, this, component);
 
         ComponentEntity c = em.find(ComponentEntity.class, component.getId());
         if (c == null) return;
@@ -2098,6 +2108,7 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
         ComponentEntity c = em.find(ComponentEntity.class, component.getId());
         if (c == null) return;
         session.users().preRemove(this, component);
+        removeComponents(component.getId());
         em.createNamedQuery("deleteComponentConfigByComponent").setParameter("component", c).executeUpdate();
         em.remove(c);
     }

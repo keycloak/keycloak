@@ -20,6 +20,7 @@ package org.keycloak.services.resources.admin.info;
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.IdentityProviderFactory;
 import org.keycloak.broker.social.SocialIdentityProvider;
+import org.keycloak.component.ComponentFactory;
 import org.keycloak.events.EventType;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
@@ -136,8 +137,8 @@ public class ServerInfoAdminResource {
                         List<ProviderConfigProperty> configProperties = configured.getConfigProperties();
                         if (configProperties == null) configProperties = Collections.EMPTY_LIST;
                         rep.setProperties(ModelToRepresentation.toRepresentation(configProperties));
-                        if (pi instanceof ImportSynchronization) {
-                            rep.getMetadata().put("synchronizable", true);
+                        if (pi instanceof ComponentFactory) {
+                            rep.setMetadata(((ComponentFactory)pi).getTypeMetadata());
                         }
                         List<ComponentTypeRepresentation> reps = info.getComponentTypes().get(spi.getProviderClass().getName());
                         if (reps == null) {

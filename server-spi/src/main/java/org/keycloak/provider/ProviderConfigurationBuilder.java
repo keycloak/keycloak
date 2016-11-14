@@ -102,6 +102,12 @@ public class ProviderConfigurationBuilder {
             return this;
         }
 
+        public ProviderConfigPropertyBuilder options(List<String> options) {
+            this.options = options;
+            return this;
+        }
+
+
         public ProviderConfigPropertyBuilder secret(boolean secret) {
             this.secret = secret;
             return this;

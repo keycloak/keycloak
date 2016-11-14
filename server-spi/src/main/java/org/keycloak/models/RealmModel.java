@@ -274,7 +274,22 @@ public interface RealmModel extends RoleContainerModel {
     public IdentityProviderMapperModel getIdentityProviderMapperByName(String brokerAlias, String name);
 
 
+    /**
+     * Adds component model.  Will call onCreate() method of ComponentFactory
+     *
+     * @param model
+     * @return
+     */
     ComponentModel addComponentModel(ComponentModel model);
+
+    /**
+     * Adds component model.  Will NOT call onCreate() method of ComponentFactory
+     *
+     * @param model
+     * @return
+     */
+    ComponentModel importComponentModel(ComponentModel model);
+
     void updateComponent(ComponentModel component);
     void removeComponent(ComponentModel component);
     void removeComponents(String parentId);

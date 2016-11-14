@@ -143,6 +143,15 @@ module.factory('ComponentLoader', function(Loader, Components, $route, $q) {
     });
 });
 
+module.factory('LDAPMapperLoader', function(Loader, Components, $route, $q) {
+    return Loader.get(Components, function() {
+        return {
+            realm : $route.current.params.realm,
+            componentId: $route.current.params.mapperId
+        }
+    });
+});
+
 module.factory('ComponentsLoader', function(Loader, Components, $route, $q) {
     var componentsLoader = {};
 
@@ -151,6 +160,22 @@ module.factory('ComponentsLoader', function(Loader, Components, $route, $q) {
             return {
                 realm : $route.current.params.realm,
                 parent : parent,
+                type: componentType
+            }
+        })();
+    };
+
+    return componentsLoader;
+});
+
+module.factory('SubComponentTypesLoader', function(Loader, SubComponentTypes, $route, $q) {
+    var componentsLoader = {};
+
+    componentsLoader.loadComponents = function(parent, componentType) {
+        return Loader.query(SubComponentTypes, function() {
+            return {
+                realm : $route.current.params.realm,
+                componentId : parent,
                 type: componentType
             }
         })();

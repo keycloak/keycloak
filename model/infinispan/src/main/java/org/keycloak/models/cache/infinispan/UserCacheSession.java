@@ -115,7 +115,10 @@ public class UserCacheSession implements UserCache {
         }
     }
 
-
+    @Override
+    public void evict(RealmModel realm) {
+        realmInvalidations.add(realm.getId());
+    }
 
     protected void runInvalidations() {
         for (String realmId : realmInvalidations) {
@@ -498,14 +501,67 @@ public class UserCacheSession implements UserCache {
     @Override
     public UserModel getServiceAccount(ClientModel client) {
         // Just an attempt to find the user from cache by default serviceAccount username
-        String username = ServiceAccountConstants.SERVICE_ACCOUNT_USER_PREFIX + client.getClientId();
-        UserModel user = getUserByUsername(username, client.getRealm());
+        UserModel user = findServiceAccount(client);
         if (user != null && user.getServiceAccountClientLink() != null && user.getServiceAccountClientLink().equals(client.getId())) {
             return user;
         }
 
         return getDelegate().getServiceAccount(client);
     }
+
+    public UserModel findServiceAccount(ClientModel client) {
+        String username = ServiceAccountConstants.SERVICE_ACCOUNT_USER_PREFIX + client.getClientId();
+        logger.tracev("getServiceAccount: {0}", username);
+        username = username.toLowerCase();
+        RealmModel realm = client.getRealm();
+        if (realmInvalidations.contains(realm.getId())) {
+            logger.tracev("realmInvalidations");
+            return getDelegate().getServiceAccount(client);
+        }
+        String cacheKey = getUserByUsernameCacheKey(realm.getId(), username);
+        if (invalidations.contains(cacheKey)) {
+            logger.tracev("invalidations");
+            return getDelegate().getServiceAccount(client);
+        }
+        UserListQuery query = cache.get(cacheKey, UserListQuery.class);
+
+        String userId = null;
+        if (query == null) {
+            logger.tracev("query null");
+            Long loaded = cache.getCurrentRevision(cacheKey);
+            UserModel model = getDelegate().getServiceAccount(client);
+            if (model == null) {
+                logger.tracev("model from delegate null");
+                return null;
+            }
+            userId = model.getId();
+            if (invalidations.contains(userId)) return model;
+            if (managedUsers.containsKey(userId)) {
+                logger.tracev("return managed user");
+                return managedUsers.get(userId);
+            }
+
+            UserModel adapter = getUserAdapter(realm, userId, loaded, model);
+            if (adapter instanceof UserAdapter) { // this was cached, so we can cache query too
+                query = new UserListQuery(loaded, cacheKey, realm, model.getId());
+                cache.addRevisioned(query, startupRevision);
+            }
+            managedUsers.put(userId, adapter);
+            return adapter;
+        } else {
+            userId = query.getUsers().iterator().next();
+            if (invalidations.contains(userId)) {
+                logger.tracev("invalidated cache return delegate");
+                return getDelegate().getUserByUsername(username, realm);
+
+            }
+            logger.trace("return getUserById");
+            return getUserById(userId, realm);
+        }
+    }
+
+
+
 
     @Override
     public List<UserModel> getUsers(RealmModel realm, boolean includeServiceAccounts) {

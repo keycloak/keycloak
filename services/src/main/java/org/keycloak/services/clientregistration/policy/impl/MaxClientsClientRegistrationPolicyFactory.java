@@ -23,6 +23,7 @@ import java.util.List;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.component.ComponentValidationException;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
 import org.keycloak.provider.ConfigurationValidationHelper;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.services.clientregistration.policy.AbstractClientRegistrationPolicyFactory;
@@ -72,7 +73,7 @@ public class MaxClientsClientRegistrationPolicyFactory extends AbstractClientReg
     }
 
     @Override
-    public void validateConfiguration(KeycloakSession session, ComponentModel config) throws ComponentValidationException {
+    public void validateConfiguration(KeycloakSession session, RealmModel realm, ComponentModel config) throws ComponentValidationException {
         ConfigurationValidationHelper.check(config)
                 .checkInt(MAX_CLIENTS_PROPERTY, true);
     }

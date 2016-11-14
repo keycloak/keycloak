@@ -26,8 +26,13 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>keycloak-ldap-federation</artifactId>
-    <name>Keycloak LDAP Federation</name>
+    <name>Keycloak LDAP UserStoreProvider</name>
     <description />
+
+    <properties>
+        <maven.compiler.target>1.8</maven.compiler.target>
+        <maven.compiler.source>1.8</maven.compiler.source>
+    </properties>
 
     <dependencies>
         <dependency>

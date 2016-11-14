@@ -1,0 +1,6 @@
+org.keycloak.storage.ldap.mappers.FullNameLDAPStorageMapperFactory
+org.keycloak.storage.ldap.mappers.HardcodedLDAPRoleStorageMapperFactory
+org.keycloak.storage.ldap.mappers.membership.group.GroupLDAPStorageMapperFactory
+org.keycloak.storage.ldap.mappers.membership.role.RoleLDAPStorageMapperFactory
+org.keycloak.storage.ldap.mappers.msad.MSADUserAccountControlStorageMapperFactory
+org.keycloak.storage.ldap.mappers.UserAttributeLDAPStorageMapperFactory
