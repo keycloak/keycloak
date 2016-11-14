@@ -27,6 +27,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.mongo.keycloak.entities.MongoUserEntity;
 import org.keycloak.models.mongo.utils.MongoModelUtils;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.models.utils.RoleUtils;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -262,14 +263,14 @@ public class UserAdapter extends AbstractMongoAdapter<MongoUserEntity> implement
     public boolean isMemberOf(GroupModel group) {
         if (user.getGroupIds().contains(group.getId())) return true;
         Set<GroupModel> groups = getGroups();
-        return KeycloakModelUtils.isMember(groups, group);
+        return RoleUtils.isMember(groups, group);
     }
 
     @Override
     public boolean hasRole(RoleModel role) {
         Set<RoleModel> roles = getRoleMappings();
-        return KeycloakModelUtils.hasRole(roles, role)
-          || KeycloakModelUtils.hasRoleFromGroup(getGroups(), role, true);
+        return RoleUtils.hasRole(roles, role)
+          || RoleUtils.hasRoleFromGroup(getGroups(), role, true);
     }
 
     @Override

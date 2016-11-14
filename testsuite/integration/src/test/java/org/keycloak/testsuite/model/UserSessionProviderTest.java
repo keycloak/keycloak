@@ -31,7 +31,7 @@ import org.keycloak.models.UserLoginFailureModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
-import org.keycloak.services.managers.UserManager;
+import org.keycloak.models.UserManager;
 import org.keycloak.testsuite.rule.KeycloakRule;
 
 import java.util.Arrays;

@@ -20,21 +20,23 @@ package org.keycloak.policy;
 import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserModel;
+import org.keycloak.models.PasswordPolicy;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class HashIterationsPasswordPolicyProviderFactory implements PasswordPolicyProvider, PasswordPolicyProviderFactory {
+public class HistoryPasswordPolicyProviderFactory implements PasswordPolicyProviderFactory {
 
-    public static final int DEFAULT_VALUE = 20000;
+    public static final Integer DEFAULT_VALUE = 3;
 
-    public static final String ID = "hashIterations";
+    @Override
+    public String getId() {
+        return PasswordPolicy.PASSWORD_HISTORY_ID;
+    }
 
     @Override
     public PasswordPolicyProvider create(KeycloakSession session) {
-        return this;
+        return new HistoryPasswordPolicyProvider(session);
     }
 
     @Override
@@ -46,28 +48,8 @@ public class HashIterationsPasswordPolicyProviderFactory implements PasswordPoli
     }
 
     @Override
-    public String getId() {
-        return ID;
-    }
-
-    @Override
-    public PolicyError validate(RealmModel realm, UserModel user, String password) {
-        return null;
-    }
-
-    @Override
-    public PolicyError validate(String user, String password) {
-        return null;
-    }
-
-    @Override
-    public Object parseConfig(String value) {
-        return value != null ? Integer.parseInt(value) : DEFAULT_VALUE;
-    }
-
-    @Override
     public String getDisplayName() {
-        return "Hashing Iterations";
+        return "Not Recently Used";
     }
 
     @Override
@@ -77,7 +59,7 @@ public class HashIterationsPasswordPolicyProviderFactory implements PasswordPoli
 
     @Override
     public String getDefaultConfigValue() {
-        return String.valueOf(DEFAULT_VALUE);
+        return String.valueOf(HistoryPasswordPolicyProviderFactory.DEFAULT_VALUE);
     }
 
     @Override

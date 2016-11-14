@@ -19,8 +19,6 @@ package org.keycloak.models;
 
 import org.jboss.logging.Logger;
 import org.keycloak.component.ComponentModel;
-import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.services.managers.UserManager;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -74,7 +72,8 @@ public class UserFederationManager implements UserProvider {
     }
 
     public UserFederationProvider getFederationProvider(UserFederationProviderModel model) {
-        return KeycloakModelUtils.getFederationProviderInstance(session, model);
+        UserFederationProviderFactory factory = (UserFederationProviderFactory)session.getKeycloakSessionFactory().getProviderFactory(UserFederationProvider.class, model.getProviderName());
+        return factory.getInstance(session, model);
     }
 
     public UserFederationProvider getFederationLink(RealmModel realm, UserModel user) {
@@ -122,7 +121,7 @@ public class UserFederationManager implements UserProvider {
     }
 
     protected void deleteInvalidUser(final RealmModel realm, final UserModel user) {
-        KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), new KeycloakSessionTask() {
+        runJobInTransaction(session.getKeycloakSessionFactory(), new KeycloakSessionTask() {
 
             @Override
             public void run(KeycloakSession session) {
@@ -136,6 +135,29 @@ public class UserFederationManager implements UserProvider {
         });
     }
 
+    private  static void runJobInTransaction(KeycloakSessionFactory factory, KeycloakSessionTask task) {
+        KeycloakSession session = factory.create();
+        KeycloakTransaction tx = session.getTransactionManager();
+        try {
+            tx.begin();
+            task.run(session);
+
+            if (tx.isActive()) {
+                if (tx.getRollbackOnly()) {
+                    tx.rollback();
+                } else {
+                    tx.commit();
+                }
+            }
+        } catch (RuntimeException re) {
+            if (tx.isActive()) {
+                tx.rollback();
+            }
+            throw re;
+        } finally {
+            session.close();
+        }
+    }
 
     protected UserModel validateAndProxyUser(RealmModel realm, UserModel user) {
         UserModel managed = managedUsers.get(user.getId());

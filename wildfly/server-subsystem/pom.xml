@@ -108,7 +108,7 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-server-spi</artifactId>
+            <artifactId>keycloak-server-spi-private</artifactId>
             <scope>provided</scope>
         </dependency>
 

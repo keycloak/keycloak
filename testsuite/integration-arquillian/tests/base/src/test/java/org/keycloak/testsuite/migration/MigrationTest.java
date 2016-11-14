@@ -36,9 +36,15 @@ import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.representations.idm.AuthenticationExecutionExportRepresentation;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.ClientTemplateRepresentation;
+import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
-import static org.keycloak.testsuite.Assert.*;
+import static org.keycloak.testsuite.Assert.assertEquals;
+import static org.keycloak.testsuite.Assert.assertFalse;
+import static org.keycloak.testsuite.Assert.assertNames;
+import static org.keycloak.testsuite.Assert.assertTrue;
+import static org.keycloak.testsuite.Assert.fail;
 import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
 
 /**
@@ -71,12 +77,14 @@ public class MigrationTest extends AbstractKeycloakTest {
         testMigrationTo2_0_0();
         testMigrationTo2_1_0();
         testMigrationTo2_2_0();
+        testMigrationTo2_3_0();
     }
     
     @Test
     @Migration(versionFrom = "2.2.1.Final")
     public void migration2_2_1Test() {
         testMigratedData();
+        testMigrationTo2_3_0();
     }
     
     private void testMigratedData() {
@@ -118,6 +126,13 @@ public class MigrationTest extends AbstractKeycloakTest {
     private void testMigrationTo2_2_0() {
         testIdentityProviderAuthenticator(masterRealm, migrationRealm);
         //MigrateTo2_2_0#migrateRolePolicies is not relevant any more
+    }
+    
+    /**
+     * @see org.keycloak.migration.migrators.MigrateTo2_3_0
+     */
+    private void testMigrationTo2_3_0() {
+        testUpdateProtocolMappers(masterRealm, migrationRealm);
     }
     
     private void testAuthorizationServices(RealmResource... realms) {
@@ -175,6 +190,28 @@ public class MigrationTest extends AbstractKeycloakTest {
             if (!success) {
                 fail("BROWSER_FLOW should contain execution: 'identity-provider-redirector' authenticator.");
             }
+        }
+    }
+
+    private void testUpdateProtocolMappers(RealmResource... realms) {
+        for (RealmResource realm : realms) {
+            for (ClientRepresentation client : realm.clients().findAll()) {
+                for (ProtocolMapperRepresentation protocolMapper : client.getProtocolMappers()) {
+                    testUpdateProtocolMapper(protocolMapper);
+                }
+            }
+            for (ClientTemplateRepresentation clientTemlate : realm.clientTemplates().findAll()) {
+                for (ProtocolMapperRepresentation protocolMapper : clientTemlate.getProtocolMappers()) {
+                    testUpdateProtocolMapper(protocolMapper);
+                }
+            }
+        }
+    }
+    
+    private void testUpdateProtocolMapper(ProtocolMapperRepresentation protocolMapper) {
+        if (protocolMapper.getConfig().get("id.token.claim") != null) {
+            assertEquals("ProtocolMapper's config should contain key 'userinfo.token.claim'.", 
+                    protocolMapper.getConfig().get("id.token.claim"), protocolMapper.getConfig().get("userinfo.token.claim"));
         }
     }
 }

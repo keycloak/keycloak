@@ -33,7 +33,7 @@ import org.keycloak.models.session.UserSessionPersisterProvider;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.services.managers.ClientManager;
 import org.keycloak.services.managers.RealmManager;
-import org.keycloak.services.managers.UserManager;
+import org.keycloak.models.UserManager;
 import org.keycloak.testsuite.rule.KeycloakRule;
 
 import java.util.ArrayList;

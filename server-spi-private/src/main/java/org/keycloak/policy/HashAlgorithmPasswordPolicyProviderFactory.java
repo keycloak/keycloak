@@ -20,16 +20,14 @@ package org.keycloak.policy;
 import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class ForceExpiredPasswordPolicyProviderFactory implements PasswordPolicyProviderFactory, PasswordPolicyProvider {
-
-    public static final String ID = "forceExpiredPasswordChange";
-    public static final int DEFAULT_VALUE = 365;
+public class HashAlgorithmPasswordPolicyProviderFactory implements PasswordPolicyProviderFactory, PasswordPolicyProvider {
 
     @Override
     public PasswordPolicyProvider create(KeycloakSession session) {
@@ -50,7 +48,7 @@ public class ForceExpiredPasswordPolicyProviderFactory implements PasswordPolicy
 
     @Override
     public String getId() {
-        return ID;
+        return PasswordPolicy.HASH_ALGORITHM_ID;
     }
 
     @Override
@@ -65,7 +63,7 @@ public class ForceExpiredPasswordPolicyProviderFactory implements PasswordPolicy
 
     @Override
     public String getDisplayName() {
-        return "Expire Password";
+        return "Hashing Algorithm";
     }
 
     @Override
@@ -75,7 +73,7 @@ public class ForceExpiredPasswordPolicyProviderFactory implements PasswordPolicy
 
     @Override
     public String getDefaultConfigValue() {
-        return String.valueOf(DEFAULT_VALUE);
+        return PasswordPolicy.HASH_ALGORITHM_DEFAULT;
     }
 
     @Override
@@ -85,7 +83,7 @@ public class ForceExpiredPasswordPolicyProviderFactory implements PasswordPolicy
 
     @Override
     public Object parseConfig(String value) {
-        return value != null ? Integer.parseInt(value) : DEFAULT_VALUE;
+        return value != null ? value : PasswordPolicy.HASH_ALGORITHM_DEFAULT;
     }
 
 }

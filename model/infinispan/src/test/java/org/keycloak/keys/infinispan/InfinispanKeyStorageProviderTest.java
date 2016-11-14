@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.models.keys.infinispan;
+package org.keycloak.keys.infinispan;
 
 import java.security.PublicKey;
 import java.util.Collections;
@@ -40,8 +40,6 @@ import org.junit.Test;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.keys.PublicKeyLoader;
-import org.keycloak.keys.infinispan.InfinispanPublicKeyStorageProvider;
-import org.keycloak.keys.infinispan.PublicKeysEntry;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

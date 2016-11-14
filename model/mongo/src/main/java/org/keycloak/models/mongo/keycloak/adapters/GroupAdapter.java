@@ -28,6 +28,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.mongo.keycloak.entities.MongoGroupEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.models.utils.RoleUtils;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -146,7 +147,7 @@ public class GroupAdapter extends AbstractMongoAdapter<MongoGroupEntity> impleme
     @Override
     public boolean hasRole(RoleModel role) {
         Set<RoleModel> roles = getRoleMappings();
-        return KeycloakModelUtils.hasRole(roles, role);
+        return RoleUtils.hasRole(roles, role);
     }
 
     @Override

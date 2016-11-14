@@ -45,6 +45,7 @@ import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -477,6 +478,55 @@ public class LoginTest extends TestRealmKeycloakTest {
             Assert.assertEquals("login-test", loginPage.getUsername());
 
             loginPage.setRememberMe(false);
+        } finally {
+            setRememberMe(false);
+        }
+    }
+
+    //KEYCLOAK-2741
+    @Test
+    public void loginAgainWithoutRememberMe() {
+        setRememberMe(true);
+
+        try {
+            //login with remember me
+            loginPage.open();
+            assertFalse(loginPage.isRememberMeChecked());
+            loginPage.setRememberMe(true);
+            assertTrue(loginPage.isRememberMeChecked());
+            loginPage.login("login-test", "password");
+
+            Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+            Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
+            EventRepresentation loginEvent = events.expectLogin().user(userId)
+                                                   .detail(Details.USERNAME, "login-test")
+                                                   .detail(Details.REMEMBER_ME, "true")
+                                                   .assertEvent();
+            String sessionId = loginEvent.getSessionId();
+
+            // Expire session
+            testingClient.testing().removeUserSession("test", sessionId);
+
+            // Assert rememberMe checked and username/email prefilled
+            loginPage.open();
+            assertTrue(loginPage.isRememberMeChecked());
+            Assert.assertEquals("login-test", loginPage.getUsername());
+
+            //login without remember me
+            loginPage.setRememberMe(false);
+            loginPage.login("login-test", "password");
+            
+            // Expire session
+            loginEvent = events.expectLogin().user(userId)
+                                                   .detail(Details.USERNAME, "login-test")
+                                                   .assertEvent();
+            sessionId = loginEvent.getSessionId();
+            testingClient.testing().removeUserSession("test", sessionId);
+            
+            // Assert rememberMe not checked nor username/email prefilled
+            loginPage.open();
+            assertFalse(loginPage.isRememberMeChecked());
+            assertNotEquals("login-test", loginPage.getUsername());
         } finally {
             setRememberMe(false);
         }

@@ -25,7 +25,7 @@ import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.DefaultRoles;
-import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.models.utils.RoleUtils;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.federated.UserFederatedStorageProvider;
 
@@ -140,7 +140,7 @@ public abstract class AbstractUserAdapterFederatedStorage implements UserModel {
     @Override
     public boolean isMemberOf(GroupModel group) {
         Set<GroupModel> roles = getGroups();
-        return KeycloakModelUtils.isMember(roles, group);
+        return RoleUtils.isMember(roles, group);
     }
 
     @Override
@@ -177,8 +177,8 @@ public abstract class AbstractUserAdapterFederatedStorage implements UserModel {
     @Override
     public boolean hasRole(RoleModel role) {
         Set<RoleModel> roles = getRoleMappings();
-        return KeycloakModelUtils.hasRole(roles, role)
-          || KeycloakModelUtils.hasRoleFromGroup(getGroups(), role, true);
+        return RoleUtils.hasRole(roles, role)
+          || RoleUtils.hasRoleFromGroup(getGroups(), role, true);
     }
 
     @Override

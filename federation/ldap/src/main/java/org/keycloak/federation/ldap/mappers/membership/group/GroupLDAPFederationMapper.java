@@ -38,6 +38,7 @@ import org.keycloak.models.UserFederationMapperModel;
 import org.keycloak.models.UserFederationSyncResult;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.models.utils.RoleUtils;
 import org.keycloak.models.utils.UserModelDelegate;
 
 import java.util.Collection;
@@ -563,7 +564,7 @@ public class GroupLDAPFederationMapper extends AbstractLDAPFederationMapper impl
 
         @Override
         public boolean hasRole(RoleModel role) {
-            return super.hasRole(role) || KeycloakModelUtils.hasRoleFromGroup(getGroups(), role, true);
+            return super.hasRole(role) || RoleUtils.hasRoleFromGroup(getGroups(), role, true);
         }
 
         @Override
