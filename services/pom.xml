@@ -65,7 +65,7 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-ldap-storage</artifactId>
+            <artifactId>keycloak-ldap-federation</artifactId>
             <scope>provided</scope>
         </dependency>
         <dependency>

@@ -19,14 +19,11 @@ package org.keycloak.testsuite.admin;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.UserFederationProviderResource;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
-import org.keycloak.federation.ldap.mappers.UserAttributeLDAPFederationMapper;
-import org.keycloak.federation.ldap.mappers.UserAttributeLDAPFederationMapperFactory;
-import org.keycloak.federation.ldap.mappers.membership.role.RoleLDAPFederationMapperFactory;
-import org.keycloak.federation.ldap.mappers.membership.role.RoleMapperConfig;
 import org.keycloak.representations.idm.ConfigPropertyRepresentation;
 import org.keycloak.representations.idm.UserFederationMapperRepresentation;
 import org.keycloak.representations.idm.UserFederationMapperTypeRepresentation;
@@ -50,10 +47,12 @@ import java.util.Set;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class UserFederationMapperTest extends AbstractAdminTest {
+@Ignore
+public class UserStorageMapperTest extends AbstractAdminTest {
 
     private String ldapProviderId;
     private String dummyProviderId;
+    /*
 
     @Before
     public void initFederationProviders() {
@@ -304,4 +303,5 @@ public class UserFederationMapperTest extends AbstractAdminTest {
         }
         return null;
     }
+    */
 }

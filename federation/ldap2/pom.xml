@@ -25,7 +25,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>keycloak-ldap-storage</artifactId>
+    <artifactId>keycloak-ldap-federation</artifactId>
     <name>Keycloak LDAP UserStoreProvider</name>
     <description />
 

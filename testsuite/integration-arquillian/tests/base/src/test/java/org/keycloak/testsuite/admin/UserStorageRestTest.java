@@ -17,6 +17,7 @@
 
 package org.keycloak.testsuite.admin;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.UserFederationProvidersResource;
 import org.keycloak.common.constants.KerberosConstants;
@@ -45,7 +46,8 @@ import java.util.Map;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class UserFederationTest extends AbstractAdminTest {
+@Ignore
+public class UserStorageRestTest extends AbstractAdminTest {
 
     @Test
     public void testProviderFactories() {

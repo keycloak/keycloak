@@ -25,10 +25,11 @@ import org.keycloak.admin.client.resource.ClientTemplateResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.constants.KerberosConstants;
-import org.keycloak.federation.ldap.mappers.FullNameLDAPFederationMapper;
-import org.keycloak.federation.ldap.mappers.FullNameLDAPFederationMapperFactory;
+import org.keycloak.component.ComponentModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.LDAPConstants;
+import org.keycloak.models.UserFederationMapperModel;
+import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
@@ -37,6 +38,8 @@ import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.ClientMappingsRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientTemplateRepresentation;
+import org.keycloak.representations.idm.ComponentExportRepresentation;
+import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
@@ -49,6 +52,11 @@ import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
+import org.keycloak.storage.UserStorageProvider;
+import org.keycloak.storage.UserStorageProviderModel;
+import org.keycloak.storage.ldap.mappers.FullNameLDAPStorageMapper;
+import org.keycloak.storage.ldap.mappers.FullNameLDAPStorageMapperFactory;
+import org.keycloak.storage.ldap.mappers.LDAPStorageMapper;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.util.RealmRepUtil;
@@ -260,33 +268,34 @@ public class ExportImportUtil {
         Assert.assertEquals("googleId", google.getConfig().get("clientId"));
         Assert.assertEquals("googleSecret", google.getConfig().get("clientSecret"));
 
+        //////////////////
         // Test federation providers
+        // on import should convert UserfederationProviderRepresentation to Component model
         List<UserFederationProviderRepresentation> fedProviders = realm.getUserFederationProviders();
-        Assert.assertTrue(fedProviders.size() == 2);
-        UserFederationProviderRepresentation ldap1 = fedProviders.get(0);
-        Assert.assertEquals("MyLDAPProvider1", ldap1.getDisplayName());
-        Assert.assertEquals("ldap", ldap1.getProviderName());
-        Assert.assertEquals(1, ldap1.getPriority());
-        Assert.assertEquals("ldap://foo", ldap1.getConfig().get(LDAPConstants.CONNECTION_URL));
+        Assert.assertTrue(fedProviders == null || fedProviders.size() == 0);
+        List<ComponentRepresentation> storageProviders = realmRsc.components().query(realm.getId(), UserStorageProvider.class.getName());
+        Assert.assertTrue(storageProviders.size() == 2);
+        ComponentRepresentation ldap1 = storageProviders.get(0);
+        ComponentRepresentation ldap2 = storageProviders.get(1);
+        if (!"MyLDAPProvider1".equals(ldap1.getName())) {
+            ldap2 = ldap1;
+            ldap1 = storageProviders.get(1);
+        }
+        Assert.assertEquals("MyLDAPProvider1", ldap1.getName());
+        Assert.assertEquals("ldap", ldap1.getProviderId());
+        Assert.assertEquals("1", ldap1.getConfig().getFirst("priority"));
+        Assert.assertEquals("ldap://foo", ldap1.getConfig().getFirst(LDAPConstants.CONNECTION_URL));
 
-        UserFederationProviderRepresentation ldap2 = fedProviders.get(1);
-        Assert.assertEquals("MyLDAPProvider2", ldap2.getDisplayName());
-        Assert.assertEquals("ldap://bar", ldap2.getConfig().get(LDAPConstants.CONNECTION_URL));
+        Assert.assertEquals("MyLDAPProvider2", ldap2.getName());
+        Assert.assertEquals("ldap://bar", ldap2.getConfig().getFirst(LDAPConstants.CONNECTION_URL));
 
         // Test federation mappers
-        List<UserFederationMapperRepresentation> fedMappers1 = realmRsc.userFederation().get(ldap1.getId()).getMappers();
-        Assert.assertTrue(fedMappers1.size() == 1);
-        UserFederationMapperRepresentation fullNameMapper = fedMappers1.iterator().next();
+        List<ComponentRepresentation> fedMappers1 = realmRsc.components().query(ldap1.getId(), LDAPStorageMapper.class.getName());
+        ComponentRepresentation fullNameMapper = fedMappers1.iterator().next();
         Assert.assertEquals("FullNameMapper", fullNameMapper.getName());
-        Assert.assertEquals(FullNameLDAPFederationMapperFactory.PROVIDER_ID, fullNameMapper.getFederationMapperType());
-        //Assert.assertEquals(ldap1.getId(), fullNameMapper.getFederationProviderId());
-        Assert.assertEquals("cn", fullNameMapper.getConfig().get(FullNameLDAPFederationMapper.LDAP_FULL_NAME_ATTRIBUTE));
-
-        // All builtin LDAP mappers should be here
-        List<UserFederationMapperRepresentation> fedMappers2 = realmRsc.userFederation().get(ldap2.getId()).getMappers();
-        Assert.assertTrue(fedMappers2.size() > 3);
-        List<UserFederationMapperRepresentation> allMappers = realm.getUserFederationMappers();
-        Assert.assertEquals(allMappers.size(), fedMappers1.size() + fedMappers2.size());
+        Assert.assertEquals(FullNameLDAPStorageMapperFactory.PROVIDER_ID, fullNameMapper.getProviderId());
+        Assert.assertEquals("cn", fullNameMapper.getConfig().getFirst(FullNameLDAPStorageMapper.LDAP_FULL_NAME_ATTRIBUTE));
+        /////////////////
 
         // Assert that federation link wasn't created during import
         Assert.assertNull(testingClient.testing().getUserByUsernameFromFedProviderFactory(realm.getRealm(), "wburke"));
