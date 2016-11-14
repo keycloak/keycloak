@@ -94,19 +94,19 @@ public class Sssd {
             InfoPipe infoPipe = infopipe();
             attributes = infoPipe.getUserAttributes(username, Arrays.asList(attr));
         } catch (Exception e) {
-            logger.error("Failed to retrieve user's attributes from SSSD", e);
+            throw new SSSDException("Failed to retrieve user's attributes. Check if SSSD service is active.");
         }
 
         return attributes;
     }
 
     public List<String> getUserGroups() {
-        List<String> userGroups = null;
+        List<String> userGroups;
         try {
             InfoPipe infoPipe = Sssd.infopipe();
             userGroups = infoPipe.getUserGroups(username);
         } catch (Exception e) {
-            logger.error("Failed to retrieve user's groups from SSSD", e);
+            throw new SSSDException("Failed to retrieve user's groups from SSSD. Check if SSSD service is active.");
         }
         return userGroups;
     }
