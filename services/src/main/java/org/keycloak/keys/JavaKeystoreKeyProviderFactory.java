@@ -27,6 +27,7 @@ import org.keycloak.provider.ConfigurationValidationHelper;
 import org.keycloak.provider.ProviderConfigProperty;
 
 import java.util.List;
+import org.jboss.logging.Logger;
 
 import static org.keycloak.provider.ProviderConfigProperty.STRING_TYPE;
 
@@ -34,6 +35,7 @@ import static org.keycloak.provider.ProviderConfigProperty.STRING_TYPE;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class JavaKeystoreKeyProviderFactory extends AbstractRsaKeyProviderFactory {
+    private static final Logger logger = Logger.getLogger(JavaKeystoreKeyProviderFactory.class);
 
     public static final String ID = "java-keystore";
 
@@ -77,7 +79,8 @@ public class JavaKeystoreKeyProviderFactory extends AbstractRsaKeyProviderFactor
             new JavaKeystoreKeyProvider(session.getContext().getRealm(), model)
                     .loadKeys(session.getContext().getRealm(), model);
         } catch (Throwable t) {
-            throw new ComponentValidationException("Failed to load keys", t);
+            logger.error("Failed to load keys.", t);
+            throw new ComponentValidationException("Failed to load keys. " + t.getMessage(), t);
         }
     }
 

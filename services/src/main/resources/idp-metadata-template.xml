@@ -16,22 +16,12 @@
   ~ limitations under the License.
   -->
 
-<EntitiesDescriptor Name="urn:keycloak"
-					xmlns="urn:oasis:names:tc:SAML:2.0:metadata"
+<EntitiesDescriptor Name="urn:keycloak" xmlns="urn:oasis:names:tc:SAML:2.0:metadata"
 					xmlns:dsig="http://www.w3.org/2000/09/xmldsig#">
 	<EntityDescriptor entityID="${idp.entityID}">
 		<IDPSSODescriptor WantAuthnRequestsSigned="true"
 			protocolSupportEnumeration="urn:oasis:names:tc:SAML:2.0:protocol">
-
-			<KeyDescriptor use="signing">
-				 <dsig:KeyInfo>
-					 <dsig:X509Data>
-						 <dsig:X509Certificate>
-							 ${idp.signing.certificate}
-						 </dsig:X509Certificate>
-					 </dsig:X509Data>
-				 </dsig:KeyInfo>
-			</KeyDescriptor>
+${idp.signing.certificates}
 			<SingleLogoutService
 					Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST"
 					Location="${idp.sls.HTTP-POST}" />

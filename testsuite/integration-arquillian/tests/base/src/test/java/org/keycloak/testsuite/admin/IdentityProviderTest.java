@@ -57,16 +57,42 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import javax.xml.crypto.dsig.XMLSignature;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.hamcrest.Matchers.*;
+import org.keycloak.dom.saml.v2.metadata.KeyDescriptorType;
+import org.w3c.dom.NodeList;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class IdentityProviderTest extends AbstractAdminTest {
+
+    // Certificate imported from
+    private static final String SIGNING_CERT_1 = "MIICmzCCAYMCBgFUYnC0OjANBgkqhkiG9w0BAQsFADARMQ8wDQY"
+      + "DVQQDDAZtYXN0ZXIwHhcNMTYwNDI5MTQzMjEzWhcNMjYwNDI5MTQzMzUzWjARMQ8wDQYDVQQDDAZtYXN0ZXI"
+      + "wggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCN25AW1poMEZRbuMAHG58AThZmCwMV6/Gcui4mjGa"
+      + "cRFyudgqzLjQ2rxpoW41JAtLjbjeAhuWvirUcFVcOeS3gM/ZC27qCpYighAcylZz6MYocnEe1+e8rPPk4JlI"
+      + "D6Wv62dgu+pL/vYsQpRhvD3Y2c/ytgr5D32xF+KnzDehUy5BSyzypvu12Wq9mS5vK5tzkN37EjkhpY2ZxaXP"
+      + "ubjDIITCAL4Q8M/m5IlacBaUZbzI4AQrHnMP1O1IH2dHSWuMiBe+xSDTco72PmuYPJKTV4wQdeBUIkYbfLc4"
+      + "RxVmXEvgkQgyW86EoMPxlWJpj7+mTIR+l+2thZPr/VgwTs82rAgMBAAEwDQYJKoZIhvcNAQELBQADggEBAA/"
+      + "Ip/Hi8RoVu5ouaFFlc5whT7ltuK8slfLGW4tM4vJXhInYwsqIRQKBNDYW/64xle3eII4u1yAH1OYRRwEs7Em"
+      + "1pr4QuFuTY1at+aE0sE46XDlyESI0txJjWxYoT133vM0We2pj1b2nxgU30rwjKA3whnKEfTEYT/n3JBSqNgg"
+      + "y6l8ZGw/oPSgvPaR4+xeB1tfQFC4VrLoYKoqH6hAL530nKxL+qV8AIfL64NDEE8ankIAEDAAFe8x3CPUfXR/"
+      + "p4KOANKkpz8ieQaHDb1eITkAwUwjESj6UF9D1aePlhWls/HX0gujFXtWfWfrJ8CU/ogwlH8y1jgRuLjFQYZk6llc=";
+
+    private static final String SIGNING_CERT_2 = "MIIBnDCCAQUCBgFYKXKsPTANBgkqhkiG9w0BAQsFADAUMRIwEAY"
+      + "DVQQDDAlzYW1sLWRlbW8wHhcNMTYxMTAzMDkwNzEwWhcNMjYxMTAzMDkwODUwWjAUMRIwEAYDVQQDDAlzYW1"
+      + "sLWRlbW8wgZ8wDQYJKoZIhvcNAQEBBQADgY0AMIGJAoGBAKtWsK5O0CtuBpnMvWG+HTG0vmZzujQ2o9WdheQ"
+      + "u+BzCILcGMsbDW0YQaglpcO5JpGWWhubnckGGPHfdQ2/7nP9QwbiTK0FbGF41UqcvoaCqU1psxoV88s8IXyQ"
+      + "CAqeyLv00yj6foqdJjxh5SZ5z+na+M7Y2OxIBVxYRAxWEnfUvAgMBAAEwDQYJKoZIhvcNAQELBQADgYEAhet"
+      + "vOU8TyqfZF5jpv0IcrviLl/DoFrbjByeHR+pu/vClcAOjL/u7oQELuuTfNsBI4tpexUj5G8q/YbEz0gk7idf"
+      + "LXrAUVcsR73oTngrhRfwUSmPrjjK0kjcRb6HL9V/+wh3R/6mEd59U08ExT8N38rhmn0CI3ehMdebReprP7U8=";
 
     @Test
     public void testFindAll() {
@@ -303,7 +329,45 @@ public class IdentityProviderTest extends AbstractAdminTest {
         form.addFormData("file", body, MediaType.APPLICATION_XML_TYPE, "saml-idp-metadata.xml");
 
         Map<String, String> result = realm.identityProviders().importFrom(form);
-        assertSamlImport(result);
+        assertSamlImport(result, SIGNING_CERT_1);
+
+        // Create new SAML identity provider using configuration retrieved from import-config
+        create(createRep("saml", "saml", result));
+
+        IdentityProviderResource provider = realm.identityProviders().get("saml");
+        IdentityProviderRepresentation rep = provider.toRepresentation();
+        assertCreatedSamlIdp(rep);
+
+        // Now list the providers - we should see the one just created
+        List<IdentityProviderRepresentation> providers = realm.identityProviders().findAll();
+        Assert.assertNotNull("identityProviders not null", providers);
+        Assert.assertEquals("identityProviders instance count", 1, providers.size());
+        assertEqual(rep, providers.get(0));
+
+        // Perform export, and make sure some of the values are like they're supposed to be
+        Response response = realm.identityProviders().get("saml").export("xml");
+        Assert.assertEquals(200, response.getStatus());
+        body = response.readEntity(String.class);
+        response.close();
+
+        assertSamlExport(body);
+    }
+
+    @Test
+    public void testSamlImportAndExportMultipleSigningKeys() throws URISyntaxException, IOException, ParsingException {
+
+        // Use import-config to convert IDPSSODescriptor file into key value pairs
+        // to use when creating a SAML Identity Provider
+        MultipartFormDataOutput form = new MultipartFormDataOutput();
+        form.addFormData("providerId", "saml", MediaType.TEXT_PLAIN_TYPE);
+
+        URL idpMeta = getClass().getClassLoader().getResource("admin-test/saml-idp-metadata-two-signing-certs.xml");
+        byte [] content = Files.readAllBytes(Paths.get(idpMeta.toURI()));
+        String body = new String(content, Charset.forName("utf-8"));
+        form.addFormData("file", body, MediaType.APPLICATION_XML_TYPE, "saml-idp-metadata-two-signing-certs");
+
+        Map<String, String> result = realm.identityProviders().importFrom(form);
+        assertSamlImport(result, SIGNING_CERT_1 + "," + SIGNING_CERT_2);
 
         // Create new SAML identity provider using configuration retrieved from import-config
         create(createRep("saml", "saml", result));
@@ -464,18 +528,29 @@ public class IdentityProviderTest extends AbstractAdminTest {
         // import endpoint simply converts IDPSSODescriptor into key value pairs.
         // check that saml-idp-metadata.xml was properly converted into key value pairs
         //System.out.println(config);
-        Assert.assertEquals("Config size", 7, config.size());
-        Assert.assertEquals("validateSignature", "true", config.get("validateSignature"));
-        Assert.assertEquals("singleLogoutServiceUrl", "http://localhost:8080/auth/realms/master/protocol/saml", config.get("singleLogoutServiceUrl"));
-        Assert.assertEquals("postBindingResponse", "true", config.get("postBindingResponse"));
-        Assert.assertEquals("postBindingAuthnRequest", "true", config.get("postBindingAuthnRequest"));
-        Assert.assertEquals("singleSignOnServiceUrl", "http://localhost:8080/auth/realms/master/protocol/saml", config.get("singleSignOnServiceUrl"));
-        Assert.assertEquals("wantAuthnRequestsSigned", "true", config.get("wantAuthnRequestsSigned"));
-        Assert.assertNotNull("signingCertificate not null", config.get("signingCertificate"));
+        assertThat(config.keySet(), containsInAnyOrder(
+          "validateSignature",
+          "singleLogoutServiceUrl",
+          "postBindingResponse",
+          "postBindingAuthnRequest",
+          "singleSignOnServiceUrl",
+          "wantAuthnRequestsSigned",
+          "signingCertificate",
+          "addExtensionsElementWithKeyInfo"
+        ));
+        assertThat(config, hasEntry("validateSignature", "true"));
+        assertThat(config, hasEntry("singleLogoutServiceUrl", "http://localhost:8080/auth/realms/master/protocol/saml"));
+        assertThat(config, hasEntry("postBindingResponse", "true"));
+        assertThat(config, hasEntry("postBindingAuthnRequest", "true"));
+        assertThat(config, hasEntry("singleSignOnServiceUrl", "http://localhost:8080/auth/realms/master/protocol/saml"));
+        assertThat(config, hasEntry("wantAuthnRequestsSigned", "true"));
+        assertThat(config, hasEntry("addExtensionsElementWithKeyInfo", "false"));
+        assertThat(config, hasEntry(is("signingCertificate"), notNullValue()));
     }
 
-    private void assertSamlImport(Map<String, String> config) {
+    private void assertSamlImport(Map<String, String> config, String expectedSigningCertificates) {
         assertSamlConfig(config);
+        assertThat(config, hasEntry("signingCertificate", expectedSigningCertificates));
     }
 
     private void assertSamlExport(String body) throws ParsingException, URISyntaxException {
@@ -534,7 +609,11 @@ public class IdentityProviderTest extends AbstractAdminTest {
 
         Assert.assertNotNull("KeyDescriptor not null", desc.getKeyDescriptor());
         Assert.assertEquals("KeyDescriptor.size", 1, desc.getKeyDescriptor().size());
-        Assert.assertEquals("KeyDescriptor.Use", KeyTypes.SIGNING, desc.getKeyDescriptor().get(0).getUse());
+        KeyDescriptorType keyDesc = desc.getKeyDescriptor().get(0);
+        assertThat(keyDesc, notNullValue());
+        assertThat(keyDesc.getUse(), equalTo(KeyTypes.SIGNING));
+        NodeList cert = keyDesc.getKeyInfo().getElementsByTagNameNS(XMLSignature.XMLNS, "X509Certificate");
+        assertThat("KeyDescriptor.Signing.Cert existence", cert.getLength(), is(1));
     }
 
     private void assertProviderInfo(Map<String, String> info, String id, String name) {

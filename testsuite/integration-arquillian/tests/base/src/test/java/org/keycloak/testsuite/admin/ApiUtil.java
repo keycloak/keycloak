@@ -83,7 +83,7 @@ public class ApiUtil {
 
     public static ClientResource findClientResourceByName(RealmResource realm, String name) {
         for (ClientRepresentation c : realm.clients().findAll()) {
-            if (c.getName().equals(name)) {
+            if (name.equals(c.getName())) {
                 return realm.clients().get(c.getId());
             }
         }
@@ -92,7 +92,7 @@ public class ApiUtil {
 
     public static ClientResource findClientByClientId(RealmResource realm, String clientId) {
         for (ClientRepresentation c : realm.clients().findAll()) {
-            if (c.getClientId().equals(clientId)) {
+            if (clientId.equals(c.getClientId())) {
                 return realm.clients().get(c.getId());
             }
         }

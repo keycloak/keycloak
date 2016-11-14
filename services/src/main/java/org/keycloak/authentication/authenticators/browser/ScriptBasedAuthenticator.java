@@ -142,7 +142,7 @@ public class ScriptBasedAuthenticator implements Authenticator {
 
         RealmModel realm = context.getRealm();
 
-        ScriptingProvider scripting = context.getSession().scripting();
+        ScriptingProvider scripting = context.getSession().getProvider(ScriptingProvider.class);
 
         //TODO lookup script by scriptId instead of creating it every time
         ScriptModel script = scripting.createScript(realm.getId(), ScriptModel.TEXT_JAVASCRIPT, scriptName, scriptCode, scriptDescription);

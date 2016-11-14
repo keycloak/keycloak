@@ -22,15 +22,10 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
-import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.MultivaluedHashMap;
-import org.keycloak.common.util.PemUtils;
-import org.keycloak.keys.Attributes;
-import org.keycloak.keys.GeneratedRsaKeyProviderFactory;
 import org.keycloak.keys.JavaKeystoreKeyProviderFactory;
 import org.keycloak.keys.KeyMetadata;
 import org.keycloak.keys.KeyProvider;
-import org.keycloak.keys.RsaKeyProviderFactory;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.KeysMetadataRepresentation;
@@ -45,9 +40,6 @@ import javax.ws.rs.core.Response;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
-import java.security.KeyPair;
-import java.security.cert.Certificate;
-import java.security.interfaces.RSAPublicKey;
 import java.util.List;
 
 import static org.junit.Assert.*;
@@ -123,7 +115,7 @@ public class JavaKeystoreKeyProviderTest extends AbstractKeycloakTest {
         rep.getConfig().putSingle("keystore", "/nosuchfile");
 
         Response response = adminClient.realm("test").components().add(rep);
-        assertErrror(response, "Failed to load keys");
+        assertErrror(response, "Failed to load keys. File not found on server.");
     }
 
     @Test
@@ -132,7 +124,7 @@ public class JavaKeystoreKeyProviderTest extends AbstractKeycloakTest {
         rep.getConfig().putSingle("keystore", "invalid");
 
         Response response = adminClient.realm("test").components().add(rep);
-        assertErrror(response, "Failed to load keys");
+        assertErrror(response, "Failed to load keys. File not found on server.");
     }
 
     @Test
@@ -141,7 +133,7 @@ public class JavaKeystoreKeyProviderTest extends AbstractKeycloakTest {
         rep.getConfig().putSingle("keyAlias", "invalid");
 
         Response response = adminClient.realm("test").components().add(rep);
-        assertErrror(response, "Failed to load keys");
+        assertErrror(response, "Failed to load keys. Error creating X509v1Certificate.");
     }
 
     @Test
@@ -150,7 +142,7 @@ public class JavaKeystoreKeyProviderTest extends AbstractKeycloakTest {
         rep.getConfig().putSingle("keyPassword", "invalid");
 
         Response response = adminClient.realm("test").components().add(rep);
-        assertErrror(response, "Failed to load keys");
+        assertErrror(response, "Failed to load keys. Keystore on server can not be recovered.");
     }
 
     protected void assertErrror(Response response, String error) {
@@ -159,7 +151,7 @@ public class JavaKeystoreKeyProviderTest extends AbstractKeycloakTest {
         }
 
         ErrorRepresentation errorRepresentation = response.readEntity(ErrorRepresentation.class);
-        assertEquals(error, errorRepresentation.getErrorMessage());
+        assertTrue(errorRepresentation.getErrorMessage().startsWith(error));
     }
 
     protected ComponentRepresentation createRep(String name, long priority) {

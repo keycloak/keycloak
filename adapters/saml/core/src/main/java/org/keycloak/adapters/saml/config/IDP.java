@@ -19,6 +19,7 @@ package org.keycloak.adapters.saml.config;
 
 import java.io.Serializable;
 import java.util.List;
+import org.keycloak.adapters.cloned.AdapterHttpClientConfig;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -157,12 +158,97 @@ public class IDP implements Serializable {
         }
     }
 
+    public static class HttpClientConfig implements AdapterHttpClientConfig {
+
+        private String truststore;
+        private String truststorePassword;
+        private String clientKeystore;
+        private String clientKeystorePassword;
+        private boolean allowAnyHostname;
+        private boolean disableTrustManager;
+        private int connectionPoolSize;
+        private String proxyUrl;
+
+        @Override
+        public String getTruststore() {
+            return truststore;
+        }
+
+        public void setTruststore(String truststore) {
+            this.truststore = truststore;
+        }
+
+        @Override
+        public String getTruststorePassword() {
+            return truststorePassword;
+        }
+
+        public void setTruststorePassword(String truststorePassword) {
+            this.truststorePassword = truststorePassword;
+        }
+
+        @Override
+        public String getClientKeystore() {
+            return clientKeystore;
+        }
+
+        public void setClientKeystore(String clientKeystore) {
+            this.clientKeystore = clientKeystore;
+        }
+
+        @Override
+        public String getClientKeystorePassword() {
+            return clientKeystorePassword;
+        }
+
+        public void setClientKeystorePassword(String clientKeystorePassword) {
+            this.clientKeystorePassword = clientKeystorePassword;
+        }
+
+        @Override
+        public boolean isAllowAnyHostname() {
+            return allowAnyHostname;
+        }
+
+        public void setAllowAnyHostname(boolean allowAnyHostname) {
+            this.allowAnyHostname = allowAnyHostname;
+        }
+
+        @Override
+        public boolean isDisableTrustManager() {
+            return disableTrustManager;
+        }
+
+        public void setDisableTrustManager(boolean disableTrustManager) {
+            this.disableTrustManager = disableTrustManager;
+        }
+
+        @Override
+        public int getConnectionPoolSize() {
+            return connectionPoolSize;
+        }
+
+        public void setConnectionPoolSize(int connectionPoolSize) {
+            this.connectionPoolSize = connectionPoolSize;
+        }
+
+        @Override
+        public String getProxyUrl() {
+            return proxyUrl;
+        }
+
+        public void setProxyUrl(String proxyUrl) {
+            this.proxyUrl = proxyUrl;
+        }
+    }
+
     private String entityID;
     private String signatureAlgorithm;
     private String signatureCanonicalizationMethod;
     private SingleSignOnService singleSignOnService;
     private SingleLogoutService singleLogoutService;
     private List<Key> keys;
+    private AdapterHttpClientConfig httpClientConfig = new HttpClientConfig();
 
     public String getEntityID() {
         return entityID;
@@ -210,6 +296,14 @@ public class IDP implements Serializable {
 
     public void setSignatureCanonicalizationMethod(String signatureCanonicalizationMethod) {
         this.signatureCanonicalizationMethod = signatureCanonicalizationMethod;
+    }
+
+    public AdapterHttpClientConfig getHttpClientConfig() {
+        return httpClientConfig;
+    }
+
+    public void setHttpClientConfig(AdapterHttpClientConfig httpClientConfig) {
+        this.httpClientConfig = httpClientConfig;
     }
 
 }

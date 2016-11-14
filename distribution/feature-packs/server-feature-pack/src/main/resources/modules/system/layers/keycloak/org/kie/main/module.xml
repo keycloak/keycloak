@@ -32,11 +32,13 @@
         <module name="org.keycloak.keycloak-core"/>
         <module name="org.keycloak.keycloak-common"/>
         <module name="org.keycloak.keycloak-server-spi"/>
+        <module name="org.keycloak.keycloak-server-spi-private"/>
         <module name="org.slf4j"/>
         <module name="org.apache.commons.logging"/>
         <module name="org.keycloak.keycloak-core"/>
         <module name="org.keycloak.keycloak-common"/>
         <module name="org.keycloak.keycloak-server-spi"/>
+        <module name="org.keycloak.keycloak-server-spi-private"/>
         <module name="com.sun.xml.bind"/>
         <module name="com.thoughtworks.xstream"/>
         <module name="org.apache.ant"/>

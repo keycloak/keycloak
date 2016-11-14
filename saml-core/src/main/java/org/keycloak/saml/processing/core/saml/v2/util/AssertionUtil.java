@@ -62,6 +62,7 @@ import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import org.keycloak.rotation.HardcodedKeyLocator;
 
 /**
  * Utility to deal with assertions
@@ -276,7 +277,7 @@ public class AssertionUtil {
             Node n = doc.importNode(assertionElement, true);
             doc.appendChild(n);
 
-            return new SAML2Signature().validate(doc, publicKey);
+            return new SAML2Signature().validate(doc, new HardcodedKeyLocator(publicKey));
         } catch (Exception e) {
             logger.signatureAssertionValidationError(e);
         }

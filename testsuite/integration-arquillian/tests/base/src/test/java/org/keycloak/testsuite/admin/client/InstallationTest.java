@@ -21,13 +21,11 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.ClientResource;
-import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
+import static org.junit.Assert.assertThat;
+import static org.hamcrest.Matchers.*;
 
 /**
  * Test getting the installation/configuration files for OIDC and SAML.
@@ -71,7 +69,7 @@ public class InstallationTest extends AbstractClientTest {
     public void testOidcJBossXml() {
         String xml = oidcClient.getInstallationProvider("keycloak-oidc-jboss-subsystem");
         assertOidcInstallationConfig(xml);
-        assertTrue(xml.contains("<secure-deployment"));
+        assertThat(xml, containsString("<secure-deployment"));
     }
 
     @Test
@@ -81,43 +79,43 @@ public class InstallationTest extends AbstractClientTest {
     }
 
     private void assertOidcInstallationConfig(String config) {
-        assertTrue(config.contains("master"));
-        assertFalse(config.contains(ApiUtil.findActiveKey(testRealmResource()).getPublicKey()));
-        assertTrue(config.contains(authServerUrl()));
+        assertThat(config, containsString("master"));
+        assertThat(config, not(containsString(ApiUtil.findActiveKey(testRealmResource()).getPublicKey())));
+        assertThat(config, containsString(authServerUrl()));
     }
 
     @Test
     public void testSamlMetadataIdpDescriptor() {
         String xml = samlClient.getInstallationProvider("saml-idp-descriptor");
-        assertTrue(xml.contains("<EntityDescriptor"));
-        assertTrue(xml.contains("<IDPSSODescriptor"));
-        assertTrue(xml.contains(ApiUtil.findActiveKey(testRealmResource()).getCertificate()));
-        assertTrue(xml.contains(samlUrl()));
+        assertThat(xml, containsString("<EntityDescriptor"));
+        assertThat(xml, containsString("<IDPSSODescriptor"));
+        assertThat(xml, containsString(ApiUtil.findActiveKey(testRealmResource()).getCertificate()));
+        assertThat(xml, containsString(samlUrl()));
     }
 
     @Test
     public void testSamlAdapterXml() {
         String xml = samlClient.getInstallationProvider("keycloak-saml");
-        assertTrue(xml.contains("<keycloak-saml-adapter>"));
-        assertTrue(xml.contains(SAML_NAME));
-        assertTrue(xml.contains(ApiUtil.findActiveKey(testRealmResource()).getCertificate()));
-        assertTrue(xml.contains(samlUrl()));
+        assertThat(xml, containsString("<keycloak-saml-adapter>"));
+        assertThat(xml, containsString(SAML_NAME));
+        assertThat(xml, not(containsString(ApiUtil.findActiveKey(testRealmResource()).getCertificate())));
+        assertThat(xml, containsString(samlUrl()));
     }
 
     @Test
     public void testSamlMetadataSpDescriptor() {
         String xml = samlClient.getInstallationProvider("saml-sp-descriptor");
-        assertTrue(xml.contains("<EntityDescriptor"));
-        assertTrue(xml.contains("<SPSSODescriptor"));
-        assertTrue(xml.contains(SAML_NAME));
+        assertThat(xml, containsString("<EntityDescriptor"));
+        assertThat(xml, containsString("<SPSSODescriptor"));
+        assertThat(xml, containsString(SAML_NAME));
     }
 
     @Test
     public void testSamlJBossXml() {
         String xml = samlClient.getInstallationProvider("keycloak-saml-subsystem");
-        assertTrue(xml.contains("<secure-deployment"));
-        assertTrue(xml.contains(SAML_NAME));
-        assertTrue(xml.contains(ApiUtil.findActiveKey(testRealmResource()).getCertificate()));
-        assertTrue(xml.contains(samlUrl()));
+        assertThat(xml, containsString("<secure-deployment"));
+        assertThat(xml, containsString(SAML_NAME));
+        assertThat(xml, not(containsString(ApiUtil.findActiveKey(testRealmResource()).getCertificate())));
+        assertThat(xml, containsString(samlUrl()));
     }
 }

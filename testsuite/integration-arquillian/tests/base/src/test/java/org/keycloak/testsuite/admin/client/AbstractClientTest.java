@@ -27,6 +27,7 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractAuthTest;
+import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.events.EventsListenerProviderFactory;
 import org.keycloak.testsuite.util.AdminEventPaths;
@@ -70,9 +71,16 @@ public abstract class AbstractClientTest extends AbstractAuthTest {
 
     // returns UserRepresentation retrieved from server, with all fields, including id
     protected UserRepresentation getFullUserRep(String userName) {
+        // the search returns all users who has userName contained in their username.
         List<UserRepresentation> results = testRealmResource().users().search(userName, null, null, null, null, null);
-        if (results.size() != 1) throw new RuntimeException("Did not find single user with username " + userName);
-        return results.get(0);
+        UserRepresentation result = null;
+        for (UserRepresentation user : results) {
+            if (userName.equals(user.getUsername())) {
+                result = user;
+            }
+        }
+        Assert.assertNotNull("Did not find user with username " + userName, result);
+        return result;
     }
 
     protected String createOidcClient(String name) {

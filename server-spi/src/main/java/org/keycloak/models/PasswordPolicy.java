@@ -17,10 +17,6 @@
 
 package org.keycloak.models;
 
-import org.keycloak.policy.ForceExpiredPasswordPolicyProviderFactory;
-import org.keycloak.policy.HashAlgorithmPasswordPolicyProviderFactory;
-import org.keycloak.policy.HashIterationsPasswordPolicyProviderFactory;
-import org.keycloak.policy.HistoryPasswordPolicyProviderFactory;
 import org.keycloak.policy.PasswordPolicyProvider;
 
 import java.io.Serializable;
@@ -32,6 +28,18 @@ import java.util.Set;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class PasswordPolicy implements Serializable {
+
+    public static final String HASH_ALGORITHM_ID = "hashAlgorithm";
+
+    public static final String HASH_ALGORITHM_DEFAULT = "pbkdf2";
+
+    public static final String HASH_ITERATIONS_ID = "hashIterations";
+
+    public static final int HASH_ITERATIONS_DEFAULT = 20000;
+
+    public static final String PASSWORD_HISTORY_ID = "passwordHistory";
+
+    public static final String FORCE_EXPIRED_ID = "forceExpiredPasswordChange";
 
     private String policyString;
     private Map<String, Object> policyConfig;
@@ -84,32 +92,32 @@ public class PasswordPolicy implements Serializable {
     }
 
     public String getHashAlgorithm() {
-        if (policyConfig.containsKey(HashAlgorithmPasswordPolicyProviderFactory.ID)) {
-            return getPolicyConfig(HashAlgorithmPasswordPolicyProviderFactory.ID);
+        if (policyConfig.containsKey(HASH_ALGORITHM_ID)) {
+            return getPolicyConfig(HASH_ALGORITHM_ID);
         } else {
-            return HashAlgorithmPasswordPolicyProviderFactory.DEFAULT_VALUE;
+            return HASH_ALGORITHM_DEFAULT;
         }
     }
 
     public int getHashIterations() {
-        if (policyConfig.containsKey(HashIterationsPasswordPolicyProviderFactory.ID)) {
-            return getPolicyConfig(HashIterationsPasswordPolicyProviderFactory.ID);
+        if (policyConfig.containsKey(HASH_ITERATIONS_ID)) {
+            return getPolicyConfig(HASH_ITERATIONS_ID);
         } else {
-            return HashIterationsPasswordPolicyProviderFactory.DEFAULT_VALUE;
+            return HASH_ITERATIONS_DEFAULT;
         }
     }
 
     public int getExpiredPasswords() {
-        if (policyConfig.containsKey(HistoryPasswordPolicyProviderFactory.ID)) {
-            return getPolicyConfig(HistoryPasswordPolicyProviderFactory.ID);
+        if (policyConfig.containsKey(PASSWORD_HISTORY_ID)) {
+            return getPolicyConfig(PASSWORD_HISTORY_ID);
         } else {
             return -1;
         }
     }
 
     public int getDaysToExpirePassword() {
-        if (policyConfig.containsKey(ForceExpiredPasswordPolicyProviderFactory.ID)) {
-            return getPolicyConfig(ForceExpiredPasswordPolicyProviderFactory.ID);
+        if (policyConfig.containsKey(FORCE_EXPIRED_ID)) {
+            return getPolicyConfig(FORCE_EXPIRED_ID);
         } else {
             return -1;
         }

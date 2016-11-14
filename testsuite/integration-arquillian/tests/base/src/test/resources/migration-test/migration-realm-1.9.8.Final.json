@@ -829,6 +829,7 @@
   }, {
     "id" : "d89c5b0f-bee6-4a97-86b1-118efa21e508",
     "clientId" : "master-test-client",
+    "name" : "master-test-client",
     "surrogateAuthRequired" : false,
     "enabled" : true,
     "clientAuthenticatorType" : "client-secret",
@@ -1898,6 +1899,7 @@
   }, {
     "id" : "d8262b3f-02e4-409e-97fc-ee5532e0801e",
     "clientId" : "migration-test-client",
+    "name" : "migration-test-client",
     "surrogateAuthRequired" : false,
     "enabled" : true,
     "clientAuthenticatorType" : "client-secret",

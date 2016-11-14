@@ -140,7 +140,7 @@ public class PasswordCredentialProvider implements CredentialProvider, Credentia
         PasswordHashProvider hash = session.getProvider(PasswordHashProvider.class, policy.getHashAlgorithm());
         if (hash == null) {
             logger.warnv("Realm PasswordPolicy PasswordHashProvider {0} not found", policy.getHashAlgorithm());
-            return session.getProvider(PasswordHashProvider.class, HashAlgorithmPasswordPolicyProviderFactory.DEFAULT_VALUE);
+            return session.getProvider(PasswordHashProvider.class, PasswordPolicy.HASH_ALGORITHM_DEFAULT);
         }
         return hash;
     }

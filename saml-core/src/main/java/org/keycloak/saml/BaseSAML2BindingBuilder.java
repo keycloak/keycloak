@@ -38,11 +38,14 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.xml.crypto.dsig.CanonicalizationMethod;
 import javax.xml.namespace.QName;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
+import java.security.InvalidKeyException;
 import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.Signature;
+import java.security.SignatureException;
 import java.security.cert.X509Certificate;
 
 import static org.keycloak.common.util.HtmlUtils.escapeAttribute;
@@ -55,6 +58,7 @@ import static org.keycloak.saml.common.util.StringUtil.isNotNull;
 public class BaseSAML2BindingBuilder<T extends BaseSAML2BindingBuilder> {
     protected static final Logger logger = Logger.getLogger(BaseSAML2BindingBuilder.class);
 
+    protected String signingKeyId;
     protected KeyPair signingKeyPair;
     protected X509Certificate signingCertificate;
     protected boolean sign;
@@ -82,23 +86,27 @@ public class BaseSAML2BindingBuilder<T extends BaseSAML2BindingBuilder> {
         return (T)this;
     }
 
-    public T signWith(KeyPair keyPair) {
+    public T signWith(String signingKeyId, KeyPair keyPair) {
+        this.signingKeyId = signingKeyId;
         this.signingKeyPair = keyPair;
         return (T)this;
     }
 
-    public T signWith(PrivateKey privateKey, PublicKey publicKey) {
+    public T signWith(String signingKeyId, PrivateKey privateKey, PublicKey publicKey) {
+        this.signingKeyId = signingKeyId;
         this.signingKeyPair = new KeyPair(publicKey, privateKey);
         return (T)this;
     }
 
-    public T signWith(KeyPair keyPair, X509Certificate cert) {
+    public T signWith(String signingKeyId, KeyPair keyPair, X509Certificate cert) {
+        this.signingKeyId = signingKeyId;
         this.signingKeyPair = keyPair;
         this.signingCertificate = cert;
         return (T)this;
     }
 
-    public T signWith(PrivateKey privateKey, PublicKey publicKey, X509Certificate cert) {
+    public T signWith(String signingKeyId, PrivateKey privateKey, PublicKey publicKey, X509Certificate cert) {
+        this.signingKeyId = signingKeyId;
         this.signingKeyPair = new KeyPair(publicKey, privateKey);
         this.signingCertificate = cert;
         return (T)this;
@@ -263,7 +271,7 @@ public class BaseSAML2BindingBuilder<T extends BaseSAML2BindingBuilder> {
             samlSignature.setX509Certificate(signingCertificate);
         }
 
-        samlSignature.signSAMLDocument(samlDocument, signingKeyPair, canonicalizationMethodType);
+        samlSignature.signSAMLDocument(samlDocument, signingKeyId, signingKeyPair, canonicalizationMethodType);
     }
 
     public void signAssertion(Document samlDocument) throws ProcessingException {
@@ -333,7 +341,7 @@ public class BaseSAML2BindingBuilder<T extends BaseSAML2BindingBuilder> {
 
     public String base64Encoded(Document document) throws ConfigurationException, ProcessingException, IOException  {
         String documentAsString = DocumentUtil.getDocumentAsString(document);
-        logger.debugv("saml docment: {0}", documentAsString);
+        logger.debugv("saml document: {0}", documentAsString);
         byte[] responseBytes = documentAsString.getBytes("UTF-8");
 
         return RedirectBindingUtil.deflateBase64URLEncode(responseBytes);
@@ -358,7 +366,7 @@ public class BaseSAML2BindingBuilder<T extends BaseSAML2BindingBuilder> {
                 signature.initSign(signingKeyPair.getPrivate());
                 signature.update(rawQuery.getBytes("UTF-8"));
                 sig = signature.sign();
-            } catch (Exception e) {
+            } catch (InvalidKeyException | UnsupportedEncodingException | SignatureException e) {
                 throw new ProcessingException(e);
             }
             String encodedSig = RedirectBindingUtil.base64URLEncode(sig);

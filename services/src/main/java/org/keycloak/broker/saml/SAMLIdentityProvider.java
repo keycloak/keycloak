@@ -50,8 +50,11 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import java.security.KeyPair;
-import java.security.PrivateKey;
-import java.security.PublicKey;
+import java.util.Set;
+import java.util.TreeSet;
+import org.keycloak.dom.saml.v2.metadata.KeyTypes;
+import org.keycloak.keys.KeyMetadata;
+import org.keycloak.saml.processing.core.util.KeycloakKeySamlExtensionGenerator;
 
 /**
  * @author Pedro Igor
@@ -97,18 +100,22 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
                     .nameIdPolicy(SAML2NameIDPolicyBuilder.format(nameIDPolicyFormat));
             JaxrsSAML2BindingBuilder binding = new JaxrsSAML2BindingBuilder()
                     .relayState(request.getState());
+            boolean postBinding = getConfig().isPostBindingAuthnRequest();
 
             if (getConfig().isWantAuthnRequestsSigned()) {
                 KeyManager.ActiveKey keys = session.keys().getActiveKey(realm);
 
                 KeyPair keypair = new KeyPair(keys.getPublicKey(), keys.getPrivateKey());
 
-                binding.signWith(keypair);
+                binding.signWith(keys.getKid(), keypair);
                 binding.signatureAlgorithm(getSignatureAlgorithm());
                 binding.signDocument();
+                if (! postBinding && getConfig().isAddExtensionsElementWithKeyInfo()) {    // Only include extension if REDIRECT binding and signing whole SAML protocol message
+                    authnRequestBuilder.addExtension(new KeycloakKeySamlExtensionGenerator(keys.getKid()));
+                }
             }
 
-            if (getConfig().isPostBindingAuthnRequest()) {
+            if (postBinding) {
                 return binding.postBinding(authnRequestBuilder.toDocument()).request(destinationUrl);
             } else {
                 return binding.redirectBinding(authnRequestBuilder.toDocument()).request(destinationUrl);
@@ -198,7 +205,7 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
                 .relayState(userSession.getId());
         if (getConfig().isWantAuthnRequestsSigned()) {
             KeyManager.ActiveKey keys = session.keys().getActiveKey(realm);
-            binding.signWith(keys.getPrivateKey(), keys.getPublicKey(), keys.getCertificate())
+            binding.signWith(keys.getKid(), keys.getPrivateKey(), keys.getPublicKey(), keys.getCertificate())
                     .signatureAlgorithm(getSignatureAlgorithm())
                     .signDocument();
         }
@@ -225,9 +232,25 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
         boolean wantAuthnRequestsSigned = getConfig().isWantAuthnRequestsSigned();
         String entityId = getEntityId(uriInfo, realm);
         String nameIDPolicyFormat = getConfig().getNameIDPolicyFormat();
-        String certificatePem = PemUtils.encodeCertificate(session.keys().getActiveKey(realm).getCertificate());
-        String descriptor = SPMetadataDescriptor.getSPDescriptor(authnBinding, endpoint, endpoint, wantAuthnRequestsSigned, entityId, nameIDPolicyFormat, certificatePem);
+
+        StringBuilder keysString = new StringBuilder();
+        Set<KeyMetadata> keys = new TreeSet<>((o1, o2) -> o1.getStatus() == o2.getStatus() // Status can be only PASSIVE OR ACTIVE, push PASSIVE to end of list
+          ? (int) (o2.getProviderPriority() - o1.getProviderPriority())
+          : (o1.getStatus() == KeyMetadata.Status.PASSIVE ? 1 : -1));
+        keys.addAll(session.keys().getKeys(realm, false));
+        for (KeyMetadata key : keys) {
+            addKeyInfo(keysString, key, KeyTypes.SIGNING.value());
+        }
+        String descriptor = SPMetadataDescriptor.getSPDescriptor(authnBinding, endpoint, endpoint, wantAuthnRequestsSigned, entityId, nameIDPolicyFormat, keysString.toString());
         return Response.ok(descriptor, MediaType.APPLICATION_XML_TYPE).build();
+    }
+
+    private static void addKeyInfo(StringBuilder target, KeyMetadata key, String purpose) {
+        if (key == null) {
+            return;
+        }
+
+        target.append(SPMetadataDescriptor.xmlKeyInfo("        ", key.getKid(), PemUtils.encodeCertificate(key.getCertificate()), purpose, true));
     }
 
     public SignatureAlgorithm getSignatureAlgorithm() {

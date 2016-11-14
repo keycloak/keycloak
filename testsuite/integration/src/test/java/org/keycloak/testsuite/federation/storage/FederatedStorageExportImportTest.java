@@ -79,7 +79,7 @@ public class FederatedStorageExportImportTest {
     protected PasswordHashProvider getHashProvider(KeycloakSession session, PasswordPolicy policy) {
         PasswordHashProvider hash = session.getProvider(PasswordHashProvider.class, policy.getHashAlgorithm());
         if (hash == null) {
-            return session.getProvider(PasswordHashProvider.class, HashAlgorithmPasswordPolicyProviderFactory.DEFAULT_VALUE);
+            return session.getProvider(PasswordHashProvider.class, PasswordPolicy.HASH_ALGORITHM_DEFAULT);
         }
         return hash;
     }

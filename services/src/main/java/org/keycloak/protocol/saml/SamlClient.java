@@ -23,6 +23,8 @@ import org.keycloak.saml.SignatureAlgorithm;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 
 /**
+ * Configuration of a SAML-enabled client.
+ *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
@@ -116,7 +118,14 @@ public class SamlClient extends ClientConfigResolver {
 
     public void setRequiresRealmSignature(boolean val) {
         client.setAttribute(SamlConfigAttributes.SAML_SERVER_SIGNATURE, Boolean.toString(val));
+    }
 
+    public boolean addExtensionsElementWithKeyInfo() {
+        return "true".equals(resolveAttribute(SamlConfigAttributes.SAML_SERVER_SIGNATURE_KEYINFO_EXT));
+    }
+
+    public void setAddExtensionsElementWithKeyInfo(boolean val) {
+        client.setAttribute(SamlConfigAttributes.SAML_SERVER_SIGNATURE_KEYINFO_EXT, Boolean.toString(val));
     }
 
     public boolean forcePostBinding() {

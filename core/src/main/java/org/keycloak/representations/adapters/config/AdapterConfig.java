@@ -39,7 +39,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
         "proxy-url", "turn-off-change-session-id-on-login", "token-minimum-time-to-live", "min-time-between-jwks-requests",
         "policy-enforcer"
 })
-public class AdapterConfig extends BaseAdapterConfig {
+public class AdapterConfig extends BaseAdapterConfig implements AdapterHttpClientConfig {
 
     @JsonProperty("allow-any-hostname")
     protected boolean allowAnyHostname;
@@ -82,6 +82,7 @@ public class AdapterConfig extends BaseAdapterConfig {
     @JsonProperty("proxy-url")
     protected String proxyUrl;
 
+    @Override
     public boolean isAllowAnyHostname() {
         return allowAnyHostname;
     }
@@ -90,6 +91,7 @@ public class AdapterConfig extends BaseAdapterConfig {
         this.allowAnyHostname = allowAnyHostname;
     }
 
+    @Override
     public boolean isDisableTrustManager() {
         return disableTrustManager;
     }
@@ -98,6 +100,7 @@ public class AdapterConfig extends BaseAdapterConfig {
         this.disableTrustManager = disableTrustManager;
     }
 
+    @Override
     public String getTruststore() {
         return truststore;
     }
@@ -106,6 +109,7 @@ public class AdapterConfig extends BaseAdapterConfig {
         this.truststore = truststore;
     }
 
+    @Override
     public String getTruststorePassword() {
         return truststorePassword;
     }
@@ -114,6 +118,7 @@ public class AdapterConfig extends BaseAdapterConfig {
         this.truststorePassword = truststorePassword;
     }
 
+    @Override
     public String getClientKeystore() {
         return clientKeystore;
     }
@@ -122,6 +127,7 @@ public class AdapterConfig extends BaseAdapterConfig {
         this.clientKeystore = clientKeystore;
     }
 
+    @Override
     public String getClientKeystorePassword() {
         return clientKeystorePassword;
     }
@@ -138,6 +144,7 @@ public class AdapterConfig extends BaseAdapterConfig {
         this.clientKeyPassword = clientKeyPassword;
     }
 
+    @Override
     public int getConnectionPoolSize() {
         return connectionPoolSize;
     }
@@ -202,6 +209,7 @@ public class AdapterConfig extends BaseAdapterConfig {
         this.policyEnforcerConfig = policyEnforcerConfig;
     }
 
+    @Override
     public String getProxyUrl() {
         return proxyUrl;
     }

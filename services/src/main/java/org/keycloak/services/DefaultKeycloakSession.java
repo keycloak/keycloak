@@ -59,7 +59,6 @@ public class DefaultKeycloakSession implements KeycloakSession {
     private UserProvider userModel;
     private UserStorageManager userStorageManager;
     private UserCredentialStoreManager userCredentialStorageManager;
-    private ScriptingProvider scriptingProvider;
     private UserSessionProvider sessionProvider;
     private UserFederationManager federationManager;
     private UserFederatedStorageProvider userFederatedStorageProvider;
@@ -274,15 +273,5 @@ public class DefaultKeycloakSession implements KeycloakSession {
             } catch (Exception e) {
             }
         }
-    }
-
-    @Override
-    public ScriptingProvider scripting() {
-
-        if (scriptingProvider == null) {
-            scriptingProvider = getProvider(ScriptingProvider.class);
-        }
-
-        return scriptingProvider;
     }
 }

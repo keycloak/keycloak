@@ -62,13 +62,44 @@ public class SAMLIdentityProviderConfig extends IdentityProviderModel {
         getConfig().put("forceAuthn", String.valueOf(forceAuthn));
     }
 
+    /**
+     * @deprecated Prefer {@link #getSigningCertificates()}}
+     * @param signingCertificate
+     */
     public String getSigningCertificate() {
-        return getConfig().get("signingCertificate");
+        return getConfig().get(SIGNING_CERTIFICATE_KEY);
     }
 
+    /**
+     * @deprecated Prefer {@link #addSigningCertificate(String)}}
+     * @param signingCertificate
+     */
     public void setSigningCertificate(String signingCertificate) {
-        getConfig().put("signingCertificate", signingCertificate);
+        getConfig().put(SIGNING_CERTIFICATE_KEY, signingCertificate);
     }
+
+    public void addSigningCertificate(String signingCertificate) {
+        String crt = getConfig().get(SIGNING_CERTIFICATE_KEY);
+        if (crt == null || crt.isEmpty()) {
+            getConfig().put(SIGNING_CERTIFICATE_KEY, signingCertificate);
+        } else {
+            // Note that "," is not coding character per PEM format specification:
+            // see https://tools.ietf.org/html/rfc1421, section 4.3.2.4 Step 4: Printable Encoding
+            getConfig().put(SIGNING_CERTIFICATE_KEY, crt + "," + signingCertificate);
+        }
+    }
+
+    public String[] getSigningCertificates() {
+        String crt = getConfig().get(SIGNING_CERTIFICATE_KEY);
+        if (crt == null || crt.isEmpty()) {
+            return new String[] { };
+        }
+        // Note that "," is not coding character per PEM format specification:
+        // see https://tools.ietf.org/html/rfc1421, section 4.3.2.4 Step 4: Printable Encoding
+        return crt.split(",");
+    }
+
+    public static final String SIGNING_CERTIFICATE_KEY = "signingCertificate";
 
     public String getNameIDPolicyFormat() {
         return getConfig().get("nameIDPolicyFormat");
@@ -84,6 +115,14 @@ public class SAMLIdentityProviderConfig extends IdentityProviderModel {
 
     public void setWantAuthnRequestsSigned(boolean wantAuthnRequestsSigned) {
         getConfig().put("wantAuthnRequestsSigned", String.valueOf(wantAuthnRequestsSigned));
+    }
+
+    public boolean isAddExtensionsElementWithKeyInfo() {
+        return Boolean.valueOf(getConfig().get("addExtensionsElementWithKeyInfo"));
+    }
+
+    public void setAddExtensionsElementWithKeyInfo(boolean addExtensionsElementWithKeyInfo) {
+        getConfig().put("addExtensionsElementWithKeyInfo", String.valueOf(addExtensionsElementWithKeyInfo));
     }
 
     public String getSignatureAlgorithm() {
