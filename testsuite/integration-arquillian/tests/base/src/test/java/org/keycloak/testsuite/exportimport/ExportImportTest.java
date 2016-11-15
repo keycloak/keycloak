@@ -141,11 +141,7 @@ public class ExportImportTest extends AbstractExportImportTest {
 
         ExportImportUtil.assertDataImportedInRealm(adminClient, testingClient, testRealmRealm.toRepresentation());
     }
-
-    private void removeRealm(String realmName) {
-        adminClient.realm(realmName).remove();
-    }
-
+    
     private void testFullExportImport() throws LifecycleException {
         testingClient.testing().exportImport().setAction(ExportImportConfig.ACTION_EXPORT);
         testingClient.testing().exportImport().setRealmName("");

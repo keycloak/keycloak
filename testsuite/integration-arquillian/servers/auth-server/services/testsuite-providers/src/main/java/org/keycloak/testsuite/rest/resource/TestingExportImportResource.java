@@ -36,7 +36,9 @@ import static org.keycloak.exportimport.ExportImportConfig.DIR;
 import static org.keycloak.exportimport.ExportImportConfig.FILE;
 import static org.keycloak.exportimport.ExportImportConfig.PROVIDER;
 import static org.keycloak.exportimport.ExportImportConfig.REALM_NAME;
+import static org.keycloak.exportimport.ExportImportConfig.STRATEGY;
 import static org.keycloak.exportimport.ExportImportConfig.USERS_PER_FILE;
+import org.keycloak.exportimport.Strategy;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -95,6 +97,13 @@ public class TestingExportImportResource {
     @Produces(MediaType.APPLICATION_JSON)
     public String setDir(@QueryParam("dir") String dir) {
         return System.setProperty(DIR, dir);
+    }
+
+    @PUT
+    @Path("/set-import-strategy")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public void setStrategy(@QueryParam("importStrategy") Strategy strategy) {
+        System.setProperty(STRATEGY, strategy.name());
     }
 
     @PUT
