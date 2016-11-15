@@ -3,14 +3,15 @@
 
 
 <!--
-  ~ Copyright 2016 Red Hat, Inc. and/or its affiliates
-  ~ and other contributors as indicated by the @author tags.
+  ~ JBoss, Home of Professional Open Source.
+  ~ Copyright 2016 Red Hat, Inc., and individual contributors
+  ~ as indicated by the @author tags.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
   ~ You may obtain a copy of the License at
   ~
-  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~     http://www.apache.org/licenses/LICENSE-2.0
   ~
   ~ Unless required by applicable law or agreed to in writing, software
   ~ distributed under the License is distributed on an "AS IS" BASIS,
@@ -19,22 +20,23 @@
   ~ limitations under the License.
   -->
 
-<module xmlns="urn:jboss:module:1.1" name="org.keycloak.keycloak-adapter-core">
+<module xmlns="urn:jboss:module:1.1" name="org.keycloak.keycloak-authz-client">
     <resources>
         <!-- Insert resources here -->
     </resources>
     <dependencies>
+        <module name="org.bouncycastle" />
         <module name="javax.api"/>
-        <module name="com.fasterxml.jackson.core.jackson-annotations"/>
+        <module name="javax.activation.api"/>
+        <module name="sun.jdk" optional="true" />
+        <module name="javax.ws.rs.api"/>
+        <module name="org.keycloak.keycloak-core"/>
+        <module name="org.keycloak.keycloak-common"/>
+        <module name="org.apache.httpcomponents"/>
         <module name="com.fasterxml.jackson.core.jackson-core"/>
+        <module name="com.fasterxml.jackson.core.jackson-annotations"/>
         <module name="com.fasterxml.jackson.core.jackson-databind"/>
         <module name="com.fasterxml.jackson.jaxrs.jackson-jaxrs-json-provider"/>
-        <module name="org.apache.httpcomponents"/>
-        <module name="org.jboss.logging"/>
-        <module name="org.keycloak.keycloak-common"/>
-        <module name="org.keycloak.keycloak-core"/>
-        <module name="org.keycloak.keycloak-adapter-spi"/>
-        <module name="org.keycloak.keycloak-authz-client"/>
     </dependencies>
 
 </module>
