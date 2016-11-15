@@ -128,11 +128,7 @@ public class RoleAdapter implements RoleModel, JpaModel<RoleEntity> {
 
     @Override
     public boolean hasRole(RoleModel role) {
-        if (this.equals(role)) return true;
-        if (!isComposite()) return false;
-
-        Set<RoleModel> visited = new HashSet<RoleModel>();
-        return KeycloakModelUtils.searchFor(role, this, visited);
+        return this.equals(role) || KeycloakModelUtils.searchFor(role, this);
     }
 
     @Override

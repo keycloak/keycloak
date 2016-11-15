@@ -38,6 +38,7 @@ public class RoleAdapter implements RoleModel {
     protected CachedRole cached;
     protected RealmCacheSession cacheSession;
     protected RealmModel realm;
+    protected Set<RoleModel> composites;
 
     public RoleAdapter(CachedRole cached, RealmCacheSession session, RealmModel realm) {
         this.cached = cached;
@@ -132,15 +133,19 @@ public class RoleAdapter implements RoleModel {
     @Override
     public Set<RoleModel> getComposites() {
         if (isUpdated()) return updated.getComposites();
-        Set<RoleModel> set = new HashSet<RoleModel>();
-        for (String id : cached.getComposites()) {
-            RoleModel role = realm.getRoleById(id);
-            if (role == null) {
-                throw new IllegalStateException("Could not find composite in role " + getName() + ": " + id);
+
+        if (composites == null) {
+            composites = new HashSet<RoleModel>();
+            for (String id : cached.getComposites()) {
+                RoleModel role = realm.getRoleById(id);
+                if (role == null) {
+                    throw new IllegalStateException("Could not find composite in role " + getName() + ": " + id);
+                }
+                composites.add(role);
             }
-            set.add(role);
         }
-        return set;
+
+        return composites;
     }
 
     @Override
@@ -171,11 +176,7 @@ public class RoleAdapter implements RoleModel {
 
     @Override
     public boolean hasRole(RoleModel role) {
-        if (this.equals(role)) return true;
-        if (!isComposite()) return false;
-
-        Set<RoleModel> visited = new HashSet<RoleModel>();
-        return KeycloakModelUtils.searchFor(role, this, visited);
+        return this.equals(role) || KeycloakModelUtils.searchFor(role, this);
     }
 
     @Override
