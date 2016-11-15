@@ -119,6 +119,12 @@
             </dependencies>
         </profile>
         <profile>
+            <id>clean-start</id>
+            <modules>
+                <module>clean-start</module>
+            </modules>
+        </profile>
+        <profile>
             <id>console-ui-tests</id>
             <modules>
                 <module>console</module>
