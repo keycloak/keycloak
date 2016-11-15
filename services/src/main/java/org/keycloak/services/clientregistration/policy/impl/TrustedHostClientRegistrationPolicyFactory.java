@@ -23,6 +23,7 @@ import java.util.List;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.component.ComponentValidationException;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
 import org.keycloak.provider.ConfigurationValidationHelper;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.services.clientregistration.policy.AbstractClientRegistrationPolicyFactory;
@@ -70,7 +71,7 @@ public class TrustedHostClientRegistrationPolicyFactory extends AbstractClientRe
     }
 
     @Override
-    public void validateConfiguration(KeycloakSession session, ComponentModel config) throws ComponentValidationException {
+    public void validateConfiguration(KeycloakSession session, RealmModel realm, ComponentModel config) throws ComponentValidationException {
         ConfigurationValidationHelper.check(config)
                 .checkBoolean(HOST_SENDING_REGISTRATION_REQUEST_MUST_MATCH_PROPERTY, true)
                 .checkBoolean(CLIENT_URIS_MUST_MATCH_PROPERTY, true);

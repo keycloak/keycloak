@@ -31,10 +31,7 @@ import org.keycloak.authorization.store.ScopeStore;
 import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.common.util.Base64;
-import org.keycloak.common.util.CertificateUtils;
-import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.MultivaluedHashMap;
-import org.keycloak.common.util.PemUtils;
 import org.keycloak.common.util.UriUtils;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.credential.CredentialModel;
@@ -54,6 +51,7 @@ import org.keycloak.models.GroupModel;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.OTPPolicy;
 import org.keycloak.models.PasswordPolicy;
@@ -101,15 +99,13 @@ import org.keycloak.representations.idm.authorization.ResourceOwnerRepresentatio
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
+import org.keycloak.storage.UserStorageProvider;
+import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.storage.federated.UserFederatedStorageProvider;
 import org.keycloak.util.JsonSerialization;
 
 import java.io.IOException;
-import java.security.KeyPair;
-import java.security.cert.Certificate;
-import java.security.cert.X509Certificate;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -305,36 +301,8 @@ public class RepresentationToModel {
             String parentId = newRealm.getId();
             importComponents(newRealm, components, parentId);
         }
+        importUserFederationProvidersAndMappers(rep, newRealm);
 
-        List<UserFederationProviderModel> providerModels = null;
-        if (rep.getUserFederationProviders() != null) {
-            providerModels = convertFederationProviders(rep.getUserFederationProviders());
-            newRealm.setUserFederationProviders(providerModels);
-        }
-        if (rep.getUserFederationMappers() != null) {
-
-            // Remove builtin mappers for federation providers, which have some mappers already provided in JSON (likely due to previous export)
-            if (rep.getUserFederationProviders() != null) {
-                Set<String> providerNames = new TreeSet<String>();
-                for (UserFederationMapperRepresentation representation : rep.getUserFederationMappers()) {
-                    providerNames.add(representation.getFederationProviderDisplayName());
-                }
-                for (String providerName : providerNames) {
-                    for (UserFederationProviderModel providerModel : providerModels) {
-                        if (providerName.equals(providerModel.getDisplayName())) {
-                            Set<UserFederationMapperModel> toDelete = newRealm.getUserFederationMappersByFederationProvider(providerModel.getId());
-                            for (UserFederationMapperModel mapperModel : toDelete) {
-                                newRealm.removeUserFederationMapper(mapperModel);
-                            }
-                        }
-                    }
-                }
-            }
-
-            for (UserFederationMapperRepresentation representation : rep.getUserFederationMappers()) {
-                newRealm.addUserFederationMapper(toModel(newRealm, representation));
-            }
-        }
 
         if (rep.getGroups() != null) {
             importGroups(newRealm, rep);
@@ -390,6 +358,64 @@ public class RepresentationToModel {
         }
     }
 
+    public static void importUserFederationProvidersAndMappers(RealmRepresentation rep, RealmModel newRealm) {
+        // providers to convert to component model
+        Set<String> convertSet = new HashSet<>();
+        convertSet.add(LDAPConstants.LDAP_PROVIDER);
+        Map<String, String> mapperConvertSet = new HashMap<>();
+        mapperConvertSet.put(LDAPConstants.LDAP_PROVIDER, "org.keycloak.storage.ldap.mappers.LDAPStorageMapper");
+
+
+        List<UserFederationProviderModel> providerModels = null;
+        Map<String, ComponentModel> userStorageModels = new HashMap<>();
+
+        if (rep.getUserFederationProviders() != null) {
+            providerModels = new LinkedList<>();
+            for (UserFederationProviderRepresentation fedRep : rep.getUserFederationProviders()) {
+                if (convertSet.contains(fedRep.getProviderName())) {
+                    ComponentModel component = convertFedProviderToComponent(newRealm.getId(), fedRep);
+                    userStorageModels.put(fedRep.getDisplayName(), newRealm.importComponentModel(component));
+                } else {
+                    providerModels.add(convertFederationProvider(fedRep));
+                }
+
+            }
+            newRealm.setUserFederationProviders(providerModels);
+        }
+        if (rep.getUserFederationMappers() != null) {
+
+            // Remove builtin mappers for federation providers, which have some mappers already provided in JSON (likely due to previous export)
+            if (rep.getUserFederationProviders() != null) {
+                Set<String> providerNames = new TreeSet<String>();
+                for (UserFederationMapperRepresentation representation : rep.getUserFederationMappers()) {
+                    providerNames.add(representation.getFederationProviderDisplayName());
+                }
+                for (String providerName : providerNames) {
+                    for (UserFederationProviderModel providerModel : providerModels) {
+                        if (providerName.equals(providerModel.getDisplayName())) {
+                            Set<UserFederationMapperModel> toDelete = newRealm.getUserFederationMappersByFederationProvider(providerModel.getId());
+                            for (UserFederationMapperModel mapperModel : toDelete) {
+                                newRealm.removeUserFederationMapper(mapperModel);
+                            }
+                        }
+                    }
+                }
+            }
+
+            for (UserFederationMapperRepresentation representation : rep.getUserFederationMappers()) {
+                if (userStorageModels.containsKey(representation.getFederationProviderDisplayName())) {
+                    ComponentModel parent = userStorageModels.get(representation.getFederationProviderDisplayName());
+                    String newMapperType = mapperConvertSet.get(parent.getProviderId());
+                    ComponentModel mapper = convertFedMapperToComponent(newRealm, parent, representation, newMapperType);
+                    newRealm.importComponentModel(mapper);
+
+                } else {
+                    newRealm.addUserFederationMapper(toModel(newRealm, representation));
+                }
+            }
+        }
+    }
+
     protected static void importComponents(RealmModel newRealm, MultivaluedHashMap<String, ComponentExportRepresentation> components, String parentId) {
         for (Map.Entry<String, List<ComponentExportRepresentation>> entry : components.entrySet()) {
             String providerType = entry.getKey();
@@ -402,7 +428,7 @@ public class RepresentationToModel {
                 component.setProviderId(compRep.getProviderId());
                 component.setSubType(compRep.getSubType());
                 component.setParentId(parentId);
-                component = newRealm.addComponentModel(component);
+                component = newRealm.importComponentModel(component);
                 if (compRep.getSubComponents() != null) {
                     importComponents(newRealm, compRep.getSubComponents(), component.getId());
                 }
@@ -865,13 +891,52 @@ public class RepresentationToModel {
         List<UserFederationProviderModel> result = new ArrayList<UserFederationProviderModel>();
 
         for (UserFederationProviderRepresentation representation : providers) {
-            UserFederationProviderModel model = new UserFederationProviderModel(representation.getId(), representation.getProviderName(),
-                    representation.getConfig(), representation.getPriority(), representation.getDisplayName(),
-                    representation.getFullSyncPeriod(), representation.getChangedSyncPeriod(), representation.getLastSync());
+            UserFederationProviderModel model = convertFederationProvider(representation);
             result.add(model);
         }
         return result;
     }
+
+    private static UserFederationProviderModel convertFederationProvider(UserFederationProviderRepresentation representation) {
+        return new UserFederationProviderModel(representation.getId(), representation.getProviderName(),
+                        representation.getConfig(), representation.getPriority(), representation.getDisplayName(),
+                        representation.getFullSyncPeriod(), representation.getChangedSyncPeriod(), representation.getLastSync());
+    }
+
+    public static ComponentModel convertFedProviderToComponent(String realmId, UserFederationProviderRepresentation fedModel) {
+        UserStorageProviderModel model = new UserStorageProviderModel();
+        model.setId(fedModel.getId());
+        model.setName(fedModel.getDisplayName());
+        model.setParentId(realmId);
+        model.setProviderId(fedModel.getProviderName());
+        model.setProviderType(UserStorageProvider.class.getName());
+        model.setFullSyncPeriod(fedModel.getFullSyncPeriod());
+        model.setPriority(fedModel.getPriority());
+        model.setChangedSyncPeriod(fedModel.getChangedSyncPeriod());
+        model.setLastSync(fedModel.getLastSync());
+        if (fedModel.getConfig() != null) {
+            for (Map.Entry<String, String> entry : fedModel.getConfig().entrySet()) {
+                model.getConfig().putSingle(entry.getKey(), entry.getValue());
+            }
+        }
+        return model;
+    }
+
+    public static ComponentModel convertFedMapperToComponent(RealmModel realm, ComponentModel parent, UserFederationMapperRepresentation rep, String newMapperType) {
+        ComponentModel mapper = new ComponentModel();
+        mapper.setId(rep.getId());
+        mapper.setName(rep.getName());
+        mapper.setProviderId(rep.getFederationMapperType());
+        mapper.setProviderType(newMapperType);
+        mapper.setParentId(parent.getId());
+        if (rep.getConfig() != null) {
+            for (Map.Entry<String, String> entry : rep.getConfig().entrySet()) {
+                mapper.getConfig().putSingle(entry.getKey(), entry.getValue());
+            }
+        }
+        return mapper;
+    }
+
 
     public static UserFederationMapperModel toModel(RealmModel realm, UserFederationMapperRepresentation rep) {
         UserFederationMapperModel model = new UserFederationMapperModel();
@@ -1866,7 +1931,18 @@ public class RepresentationToModel {
             toModel(resourceRepresentation, resourceServer, authorization);
         });
 
-        rep.getPolicies().forEach(policyRepresentation -> {
+        importPolicies(authorization, resourceServer, rep.getPolicies(), null);
+    }
+
+    private static Policy importPolicies(AuthorizationProvider authorization, ResourceServer resourceServer, List<PolicyRepresentation> policiesToImport, String parentPolicyName) {
+        StoreFactory storeFactory = authorization.getStoreFactory();
+        KeycloakSession session = authorization.getKeycloakSession();
+        RealmModel realm = authorization.getRealm();
+        for (PolicyRepresentation policyRepresentation : policiesToImport) {
+            if (parentPolicyName != null && !parentPolicyName.equals(policyRepresentation.getName())) {
+                continue;
+            }
+
             Map<String, String> config = policyRepresentation.getConfig();
 
             String roles = config.get("roles");
@@ -1900,6 +1976,16 @@ public class RepresentationToModel {
                         }
 
                         if (role == null) {
+                            role = realm.getRoleById(roleName);
+
+                            if (role == null) {
+                                String finalRoleName1 = roleName;
+                                role = realm.getClients().stream().map(clientModel -> clientModel.getRole(finalRoleName1)).filter(roleModel -> roleModel != null)
+                                        .findFirst().orElse(null);
+                            }
+                        }
+
+                        if (role == null) {
                             throw new RuntimeException("Error while importing configuration. Role [" + roleName + "] could not be found.");
                         }
 
@@ -1916,7 +2002,19 @@ public class RepresentationToModel {
             if (users != null && !users.isEmpty()) {
                 try {
                     List<String> usersMap = JsonSerialization.readValue(users, List.class);
-                    config.put("users", JsonSerialization.writeValueAsString(usersMap.stream().map(userName -> session.users().getUserByUsername(userName, realm).getId()).collect(Collectors.toList())));
+                    config.put("users", JsonSerialization.writeValueAsString(usersMap.stream().map(userId -> {
+                        UserModel user = session.users().getUserByUsername(userId, realm);
+
+                        if (user == null) {
+                            user = session.users().getUserById(userId, realm);
+                        }
+
+                        if (user == null) {
+                            throw new RuntimeException("Error while importing configuration. User [" + userId + "] could not be found.");
+                        }
+
+                        return user.getId();
+                    }).collect(Collectors.toList())));
                 } catch (Exception e) {
                     throw new RuntimeException("Error while exporting policy [" + policyRepresentation.getName() + "].", e);
                 }
@@ -1926,9 +2024,14 @@ public class RepresentationToModel {
 
             if (scopes != null && !scopes.isEmpty()) {
                 try {
+                    ScopeStore scopeStore = storeFactory.getScopeStore();
                     List<String> scopesMap = JsonSerialization.readValue(scopes, List.class);
                     config.put("scopes", JsonSerialization.writeValueAsString(scopesMap.stream().map(scopeName -> {
                         Scope newScope = scopeStore.findByName(scopeName, resourceServer.getId());
+
+                        if (newScope == null) {
+                            newScope = scopeStore.findById(scopeName);
+                        }
 
                         if (newScope == null) {
                             throw new RuntimeException("Scope with name [" + scopeName + "] not defined.");
@@ -1947,8 +2050,21 @@ public class RepresentationToModel {
                 ResourceStore resourceStore = storeFactory.getResourceStore();
                 try {
                     List<String> resources = JsonSerialization.readValue(policyResources, List.class);
-                    config.put("resources", JsonSerialization.writeValueAsString(resources.stream().map(resourceName -> {
-                        return resourceStore.findByName(resourceName, resourceServer.getId()).getId();
+                    config.put("resources", JsonSerialization.writeValueAsString(resources.stream().map(new Function<String, String>() {
+                        @Override
+                        public String apply(String resourceName) {
+                            Resource resource = resourceStore.findByName(resourceName, resourceServer.getId());
+
+                            if (resource == null) {
+                                resource = resourceStore.findById(resourceName);
+                            }
+
+                            if (resource == null) {
+                                throw new RuntimeException("Resource with name [" + resourceName + "] not defined.");
+                            }
+
+                            return resource.getId();
+                        }
                     }).collect(Collectors.toList())));
                 } catch (Exception e) {
                     throw new RuntimeException("Error while exporting policy [" + policyRepresentation.getName() + "].", e);
@@ -1965,7 +2081,14 @@ public class RepresentationToModel {
                         Policy policy = policyStore.findByName(policyName, resourceServer.getId());
 
                         if (policy == null) {
-                            throw new RuntimeException("Policy with name [" + policyName + "] not defined.");
+                            policy = policyStore.findById(policyName);
+                        }
+
+                        if (policy == null) {
+                            policy = importPolicies(authorization, resourceServer, policiesToImport, policyName);
+                            if (policy == null) {
+                                throw new RuntimeException("Policy with name [" + policyName + "] not defined.");
+                            }
                         }
 
                         return policy.getId();
@@ -1975,8 +2098,14 @@ public class RepresentationToModel {
                 }
             }
 
-            toModel(policyRepresentation, resourceServer, authorization);
-        });
+            if (parentPolicyName == null) {
+                toModel(policyRepresentation, resourceServer, authorization);
+            } else if (parentPolicyName.equals(policyRepresentation.getName())) {
+                return toModel(policyRepresentation, resourceServer, authorization);
+            }
+        }
+
+        return null;
     }
 
     public static Policy toModel(PolicyRepresentation policy, ResourceServer resourceServer, AuthorizationProvider authorization) {

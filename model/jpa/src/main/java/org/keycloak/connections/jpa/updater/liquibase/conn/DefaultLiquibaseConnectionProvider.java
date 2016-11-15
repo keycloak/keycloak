@@ -22,7 +22,6 @@ import liquibase.changelog.ChangeSet;
 import liquibase.changelog.DatabaseChangeLog;
 import liquibase.database.Database;
 import liquibase.database.DatabaseFactory;
-import liquibase.database.core.DB2Database;
 import liquibase.database.jvm.JdbcConnection;
 import liquibase.exception.LiquibaseException;
 import liquibase.logging.LogFactory;
@@ -129,7 +128,7 @@ public class DefaultLiquibaseConnectionProvider implements LiquibaseConnectionPr
             database.setDefaultSchemaName(defaultSchema);
         }
 
-        String changelog = (database instanceof DB2Database) ? LiquibaseJpaUpdaterProvider.DB2_CHANGELOG :  LiquibaseJpaUpdaterProvider.CHANGELOG;
+        String changelog = LiquibaseJpaUpdaterProvider.CHANGELOG;
         ResourceAccessor resourceAccessor = new ClassLoaderResourceAccessor(getClass().getClassLoader());
 
         logger.debugf("Using changelog file %s and changelogTableName %s", changelog, database.getDatabaseChangeLogTableName());
@@ -154,7 +153,7 @@ public class DefaultLiquibaseConnectionProvider implements LiquibaseConnectionPr
 
     private static class LogWrapper extends LogFactory {
 
-        private liquibase.logging.Logger logger = new liquibase.logging.Logger() {
+        private static final liquibase.logging.Logger logger = new liquibase.logging.Logger() {
             @Override
             public void setName(String name) {
             }

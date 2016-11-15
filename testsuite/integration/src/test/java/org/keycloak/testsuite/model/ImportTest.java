@@ -22,8 +22,7 @@ import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
 import org.keycloak.common.constants.KerberosConstants;
-import org.keycloak.federation.ldap.mappers.FullNameLDAPFederationMapper;
-import org.keycloak.federation.ldap.mappers.FullNameLDAPFederationMapperFactory;
+import org.keycloak.component.ComponentModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientTemplateModel;
@@ -49,6 +48,9 @@ import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
 import org.keycloak.protocol.oidc.mappers.UserSessionNoteMapper;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.RealmManager;
+import org.keycloak.storage.UserStorageProviderModel;
+import org.keycloak.storage.ldap.mappers.FullNameLDAPStorageMapper;
+import org.keycloak.storage.ldap.mappers.FullNameLDAPStorageMapperFactory;
 
 import java.util.List;
 import java.util.Map;
@@ -278,31 +280,28 @@ public class ImportTest extends AbstractModelTest {
 
         // Test federation providers
         List<UserFederationProviderModel> fedProviders = realm.getUserFederationProviders();
-        Assert.assertTrue(fedProviders.size() == 2);
-        UserFederationProviderModel ldap1 = fedProviders.get(0);
-        Assert.assertEquals("MyLDAPProvider1", ldap1.getDisplayName());
-        Assert.assertEquals("ldap", ldap1.getProviderName());
+        Assert.assertTrue(fedProviders.size() == 0);
+        List<UserStorageProviderModel> storageProviders = realm.getUserStorageProviders();
+        Assert.assertTrue(storageProviders.size() == 2);
+        UserStorageProviderModel ldap1 = storageProviders.get(0);
+        Assert.assertEquals("MyLDAPProvider1", ldap1.getName());
+        Assert.assertEquals("ldap", ldap1.getProviderId());
         Assert.assertEquals(1, ldap1.getPriority());
-        Assert.assertEquals("ldap://foo", ldap1.getConfig().get(LDAPConstants.CONNECTION_URL));
+        Assert.assertEquals("ldap://foo", ldap1.getConfig().getFirst(LDAPConstants.CONNECTION_URL));
 
-        UserFederationProviderModel ldap2 = fedProviders.get(1);
-        Assert.assertEquals("MyLDAPProvider2", ldap2.getDisplayName());
-        Assert.assertEquals("ldap://bar", ldap2.getConfig().get(LDAPConstants.CONNECTION_URL));
+        UserStorageProviderModel ldap2 = storageProviders.get(1);
+        Assert.assertEquals("MyLDAPProvider2", ldap2.getName());
+        Assert.assertEquals("ldap://bar", ldap2.getConfig().getFirst(LDAPConstants.CONNECTION_URL));
 
         // Test federation mappers
-        Set<UserFederationMapperModel> fedMappers1 = realm.getUserFederationMappersByFederationProvider(ldap1.getId());
-        Assert.assertTrue(fedMappers1.size() == 1);
-        UserFederationMapperModel fullNameMapper = fedMappers1.iterator().next();
+        Set<UserFederationMapperModel> userFedMappers1 = realm.getUserFederationMappers();
+        Assert.assertTrue(userFedMappers1.size() == 0);
+        List<ComponentModel> fedMappers1 = realm.getComponents(ldap1.getId());
+        ComponentModel fullNameMapper = fedMappers1.iterator().next();
         Assert.assertEquals("FullNameMapper", fullNameMapper.getName());
-        Assert.assertEquals(FullNameLDAPFederationMapperFactory.PROVIDER_ID, fullNameMapper.getFederationMapperType());
-        Assert.assertEquals(ldap1.getId(), fullNameMapper.getFederationProviderId());
-        Assert.assertEquals("cn", fullNameMapper.getConfig().get(FullNameLDAPFederationMapper.LDAP_FULL_NAME_ATTRIBUTE));
-
-        // All builtin LDAP mappers should be here
-        Set<UserFederationMapperModel> fedMappers2 = realm.getUserFederationMappersByFederationProvider(ldap2.getId());
-        Assert.assertTrue(fedMappers2.size() > 3);
-        Set<UserFederationMapperModel> allMappers = realm.getUserFederationMappers();
-        Assert.assertEquals(allMappers.size(), fedMappers1.size() + fedMappers2.size());
+        Assert.assertEquals(FullNameLDAPStorageMapperFactory.PROVIDER_ID, fullNameMapper.getProviderId());
+        Assert.assertEquals(ldap1.getId(), fullNameMapper.getParentId());
+        Assert.assertEquals("cn", fullNameMapper.getConfig().getFirst(FullNameLDAPStorageMapper.LDAP_FULL_NAME_ATTRIBUTE));
 
         // Assert that federation link wasn't created during import
         UserFederationProviderFactory factory = (UserFederationProviderFactory)session.getKeycloakSessionFactory().getProviderFactory(UserFederationProvider.class, "dummy");

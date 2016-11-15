@@ -1699,6 +1699,13 @@ module.factory('DefaultGroups', function($resource) {
     });
 });
 
+module.factory('SubComponentTypes', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/components/:componentId/sub-component-types', {
+        realm: '@realm',
+        componentId: '@componentId'
+    });
+});
+
 module.factory('Components', function($resource, ComponentUtils) {
     return $resource(authUrl + '/admin/realms/:realm/components/:componentId', {
         realm : '@realm',
@@ -1741,5 +1748,15 @@ module.factory('ClientRegistrationPolicyProviders', function($resource) {
         realm : '@realm',
     });
 });
+
+module.factory('LDAPMapperSync', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/user-storage/:parentId/mappers/:mapperId/sync', {
+        realm : '@realm',
+        componentId : '@componentId',
+        mapperId: '@mapperId'
+    });
+});
+
+
 
 

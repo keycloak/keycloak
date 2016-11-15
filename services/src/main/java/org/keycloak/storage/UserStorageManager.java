@@ -138,6 +138,12 @@ public class UserStorageManager implements UserProvider, OnUserCache {
         if (getFederatedStorage() != null) getFederatedStorage().preRemove(realm, user);
         StorageId storageId = new StorageId(user.getId());
         if (storageId.getProviderId() == null) {
+            if (user.getFederationLink() != null) {
+                UserStorageProvider provider = getStorageProvider(session, realm, user.getFederationLink());
+                if (provider != null && provider instanceof UserRegistrationProvider) {
+                    ((UserRegistrationProvider)provider).removeUser(realm, user);
+                }
+            }
             return localStorage().removeUser(realm, user);
         }
         UserRegistrationProvider registry = (UserRegistrationProvider)getStorageProvider(session, realm, storageId.getProviderId());

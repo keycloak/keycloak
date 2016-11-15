@@ -24,9 +24,14 @@ import org.keycloak.component.ComponentModel;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.provider.ProviderFactory;
+import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.UserStorageSyncManager;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
+import org.keycloak.storage.ldap.LDAPStorageProvider;
+import org.keycloak.storage.ldap.LDAPStorageProviderFactory;
+import org.keycloak.storage.ldap.mappers.LDAPStorageMapper;
 import org.keycloak.storage.user.SynchronizationResult;
 
 import javax.ws.rs.POST;
@@ -118,6 +123,47 @@ public class UserStorageProviderResource {
 
         return syncResult;
     }
+
+    /**
+     * Trigger sync of mapper data related to ldap mapper (roles, groups, ...)
+     *
+     * @return
+     */
+    @POST
+    @Path("{parentId}/mappers/{id}/sync")
+    @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
+    public SynchronizationResult syncMapperData(@PathParam("parentId") String parentId, @PathParam("id") String mapperId, @QueryParam("direction") String direction) {
+        auth.requireManage();
+
+        ComponentModel parentModel = realm.getComponent(parentId);
+        if (parentModel == null) throw new NotFoundException("Parent model not found");
+        ComponentModel mapperModel = realm.getComponent(mapperId);
+        if (mapperModel == null) throw new NotFoundException("Mapper model not found");
+        LDAPStorageMapper mapper = session.getProvider(LDAPStorageMapper.class, mapperModel);
+        ProviderFactory factory = session.getKeycloakSessionFactory().getProviderFactory(LDAPStorageProvider.class, parentModel.getProviderId());
+
+        LDAPStorageProviderFactory providerFactory = (LDAPStorageProviderFactory)factory;
+        LDAPStorageProvider federationProvider = providerFactory.create(session, parentModel);
+
+        ServicesLogger.LOGGER.syncingDataForMapper(mapperModel.getName(), mapperModel.getProviderId(), direction);
+
+        SynchronizationResult syncResult;
+        if ("fedToKeycloak".equals(direction)) {
+            syncResult = mapper.syncDataFromFederationProviderToKeycloak(mapperModel, federationProvider, session, realm);
+        } else if ("keycloakToFed".equals(direction)) {
+            syncResult = mapper.syncDataFromKeycloakToFederationProvider(mapperModel, federationProvider, session, realm);
+        } else {
+            throw new NotFoundException("Unknown direction: " + direction);
+        }
+
+        Map<String, Object> eventRep = new HashMap<>();
+        eventRep.put("action", direction);
+        eventRep.put("result", syncResult);
+        adminEvent.operation(OperationType.ACTION).resourcePath(uriInfo).representation(eventRep).success();
+        return syncResult;
+    }
+
 
 
 

@@ -65,6 +65,11 @@ public class UserAdapter implements CachedUserModel {
     }
 
     @Override
+    public boolean isMarkedForEviction() {
+        return updated != null;
+    }
+
+    @Override
     public void invalidate() {
         getDelegateForUpdate();
     }

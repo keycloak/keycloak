@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!--
+  ~ Copyright 2016 Red Hat, Inc. and/or its affiliates
+  ~ and other contributors as indicated by the @author tags.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<databaseChangeLog logicalFilePath="META-INF/db2-jpa-changelog-1.2.0.Beta1.xml" xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+    <changeSet author="psilva@redhat.com" id="1.2.0.Beta1">
+        <preConditions onSqlOutput="TEST" onFail="MARK_RAN">
+            <dbms type="db2" />
+        </preConditions>
+
+        <delete tableName="CLIENT_SESSION_ROLE" />
+        <delete tableName="CLIENT_SESSION_NOTE" />
+        <delete tableName="CLIENT_SESSION" />
+        <delete tableName="USER_SESSION" />
+        <createTable tableName="PROTOCOL_MAPPER">
+            <column name="ID" type="VARCHAR(36)">
+                <constraints nullable="false" />
+            </column>
+            <column name="NAME" type="VARCHAR(255)">
+                <constraints nullable="false" />
+            </column>
+            <column name="PROTOCOL" type="VARCHAR(255)">
+                <constraints nullable="false" />
+            </column>
+            <column name="PROTOCOL_MAPPER_NAME" type="VARCHAR(255)">
+                <constraints nullable="false" />
+            </column>
+            <column name="CONSENT_REQUIRED" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false" />
+            </column>
+            <column name="CONSENT_TEXT" type="VARCHAR(255)" />
+            <column name="CLIENT_ID" type="VARCHAR(36)">
+                <constraints nullable="false" />
+            </column>
+        </createTable>
+        <createTable tableName="PROTOCOL_MAPPER_CONFIG">
+            <column name="PROTOCOL_MAPPER_ID" type="VARCHAR(36)">
+                <constraints nullable="false" />
+            </column>
+            <column name="VALUE" type="CLOB" />
+            <column name="NAME" type="VARCHAR(255)">
+                <constraints nullable="false" />
+            </column>
+        </createTable>
+        <createTable tableName="FEDERATED_IDENTITY">
+            <column name="IDENTITY_PROVIDER" type="VARCHAR(255)">
+                <constraints nullable="false" />
+            </column>
+            <column name="REALM_ID" type="VARCHAR(36)">
+                <constraints nullable="false" />
+            </column>
+            <column name="FEDERATED_USER_ID" type="VARCHAR(255)" />
+            <column name="FEDERATED_USERNAME" type="VARCHAR(255)" />
+            <column name="TOKEN" type="TEXT" />
+            <column name="USER_ID" type="VARCHAR(36)">
+                <constraints nullable="false" />
+            </column>
+        </createTable>
+        <createTable tableName="IDENTITY_PROVIDER">
+            <column name="INTERNAL_ID" type="VARCHAR(36)">
+                <constraints nullable="false" />
+            </column>
+            <column name="ENABLED" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false" />
+            </column>
+            <column name="PROVIDER_ALIAS" type="VARCHAR(255)">
+                <constraints nullable="false" />
+            </column>
+            <column name="PROVIDER_ID" type="VARCHAR(255)" />
+            <column name="UPDATE_PROFILE_FIRST_LOGIN" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false" />
+            </column>
+            <column name="STORE_TOKEN" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false" />
+            </column>
+            <column name="AUTHENTICATE_BY_DEFAULT" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false" />
+            </column>
+            <column name="REALM_ID" type="VARCHAR(36)">
+                <constraints nullable="false" />
+            </column>
+        </createTable>
+        <createTable tableName="IDENTITY_PROVIDER_CONFIG">
+            <column name="IDENTITY_PROVIDER_ID" type="VARCHAR(36)">
+                <constraints nullable="false" />
+            </column>
+            <column name="VALUE" type="CLOB" />
+            <column name="NAME" type="VARCHAR(255)">
+                <constraints nullable="false" />
+            </column>
+        </createTable>
+        <createTable tableName="CLIENT_IDENTITY_PROV_MAPPING">
+            <column name="CLIENT_ID" type="VARCHAR(36)">
+                <constraints nullable="false" />
+            </column>
+            <column name="IDENTITY_PROVIDER_ID" type="VARCHAR(36)">
+                <constraints nullable="false" />
+            </column>
+            <column name="RETRIEVE_TOKEN" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false" />
+            </column>
+        </createTable>
+        <createTable tableName="REALM_SUPPORTED_LOCALES">
+            <column name="REALM_ID" type="VARCHAR(36)">
+                <constraints nullable="false" />
+            </column>
+            <column name="VALUE" type="VARCHAR(255)" />
+        </createTable>
+        <createTable tableName="USER_SESSION_NOTE">
+            <column name="USER_SESSION" type="VARCHAR(36)">
+                <constraints nullable="false" />
+            </column>
+            <column name="NAME" type="VARCHAR(255)">
+                <constraints nullable="false" />
+            </column>
+            <column name="VALUE" type="VARCHAR(2048)" />
+        </createTable>
+        <addColumn tableName="CLIENT">
+            <column name="FRONTCHANNEL_LOGOUT" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false" />
+            </column>
+        </addColumn>
+        <addColumn tableName="USER_SESSION">
+            <column name="USER_SESSION_STATE" type="INT" />
+            <column name="BROKER_SESSION_ID" type="VARCHAR(255)" />
+            <column name="BROKER_USER_ID" type="VARCHAR(255)" />
+        </addColumn>
+        <addPrimaryKey columnNames="ID" constraintName="CONSTRAINT_PCM" tableName="PROTOCOL_MAPPER" />
+        <addPrimaryKey columnNames="INTERNAL_ID" constraintName="CONSTRAINT_2B" tableName="IDENTITY_PROVIDER" />
+        <addPrimaryKey columnNames="IDENTITY_PROVIDER, USER_ID" constraintName="CONSTRAINT_40" tableName="FEDERATED_IDENTITY" />
+        <addPrimaryKey columnNames="IDENTITY_PROVIDER_ID, NAME" constraintName="CONSTRAINT_D" tableName="IDENTITY_PROVIDER_CONFIG" />
+        <addPrimaryKey columnNames="PROTOCOL_MAPPER_ID, NAME" constraintName="CONSTRAINT_PMConfig" tableName="PROTOCOL_MAPPER_CONFIG" />
+        <addPrimaryKey columnNames="USER_SESSION, NAME" constraintName="CONSTRAINT_USN_PK" tableName="USER_SESSION_NOTE" />
+        <addForeignKeyConstraint baseColumnNames="REALM_ID" baseTableName="IDENTITY_PROVIDER" constraintName="FK2B4EBC52AE5C3B34" referencedColumnNames="ID" referencedTableName="REALM" />
+        <addForeignKeyConstraint baseColumnNames="CLIENT_ID" baseTableName="PROTOCOL_MAPPER" constraintName="FK_PCM_REALM" referencedColumnNames="ID" referencedTableName="CLIENT" />
+        <addForeignKeyConstraint baseColumnNames="USER_ID" baseTableName="FEDERATED_IDENTITY" constraintName="FK404288B92EF007A6" referencedColumnNames="ID" referencedTableName="USER_ENTITY" />
+        <addForeignKeyConstraint baseColumnNames="IDENTITY_PROVIDER_ID" baseTableName="IDENTITY_PROVIDER_CONFIG" constraintName="FKDC4897CF864C4E43" referencedColumnNames="INTERNAL_ID" referencedTableName="IDENTITY_PROVIDER" />
+        <addForeignKeyConstraint baseColumnNames="PROTOCOL_MAPPER_ID" baseTableName="PROTOCOL_MAPPER_CONFIG" constraintName="FK_PMConfig" referencedColumnNames="ID" referencedTableName="PROTOCOL_MAPPER" />
+        <addForeignKeyConstraint baseColumnNames="IDENTITY_PROVIDER_ID" baseTableName="CLIENT_IDENTITY_PROV_MAPPING" constraintName="FK_7CELWNIBJI49AVXSRTUF6XJ12" referencedColumnNames="INTERNAL_ID" referencedTableName="IDENTITY_PROVIDER" />
+        <addForeignKeyConstraint baseColumnNames="CLIENT_ID" baseTableName="CLIENT_IDENTITY_PROV_MAPPING" constraintName="FK_56ELWNIBJI49AVXSRTUF6XJ23" referencedColumnNames="ID" referencedTableName="CLIENT" />
+        <addForeignKeyConstraint baseColumnNames="REALM_ID" baseTableName="REALM_SUPPORTED_LOCALES" constraintName="FK_SUPPORTED_LOCALES_REALM" referencedColumnNames="ID" referencedTableName="REALM" />
+        <addForeignKeyConstraint baseColumnNames="USER_SESSION" baseTableName="USER_SESSION_NOTE" constraintName="FK5EDFB00FF51D3472" referencedColumnNames="ID" referencedTableName="USER_SESSION" />
+        <addUniqueConstraint columnNames="PROVIDER_ALIAS, REALM_ID" constraintName="UK_2DAELWNIBJI49AVXSRTUF6XJ33" tableName="IDENTITY_PROVIDER" />
+        <addUniqueConstraint columnNames="IDENTITY_PROVIDER_ID,CLIENT_ID" constraintName="UK_7CAELWNIBJI49AVXSRTUF6XJ12" tableName="CLIENT_IDENTITY_PROV_MAPPING" />
+        <addColumn tableName="REALM">
+            <column name="LOGIN_LIFESPAN" type="INT" />
+            <column name="INTERNATIONALIZATION_ENABLED" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false" />
+            </column>
+            <column name="DEFAULT_LOCALE" type="VARCHAR(255)" />
+            <column name="REG_EMAIL_AS_USERNAME" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false" />
+            </column>
+        </addColumn>
+        <!-- KEYCLOAK-1106 APPLICATION_ID and REALM_ID switched in REALM_APPLICATION table -->
+        <dropForeignKeyConstraint baseTableName="REALM_APPLICATION" constraintName="FK_71S3P0DIUXAWWQQSA528UBY2Q" />
+        <dropForeignKeyConstraint baseTableName="REALM_APPLICATION" constraintName="FK_L5QGA3RFME47335JY8JXYXH3I" />
+        <dropUniqueConstraint tableName="REALM_APPLICATION" constraintName="UK_L5QGA3RFME47335JY8JXYXH3I" />
+        <renameColumn tableName="REALM_APPLICATION" oldColumnName="APPLICATION_ID" newColumnName="APPLICATION_ID_TMP" columnDataType="VARCHAR(36)" />
+        <renameColumn tableName="REALM_APPLICATION" oldColumnName="REALM_ID" newColumnName="APPLICATION_ID" columnDataType="VARCHAR(36)" />
+        <renameColumn tableName="REALM_APPLICATION" oldColumnName="APPLICATION_ID_TMP" newColumnName="REALM_ID" columnDataType="VARCHAR(36)" />
+        <!--<addUniqueConstraint columnNames="APPLICATION_ID" constraintName="UK_M6QGA3RFME47335JY8JXYXH3I" tableName="REALM_APPLICATION" />
+        <addForeignKeyConstraint baseColumnNames="APPLICATION_ID" baseTableName="REALM_APPLICATION" constraintName="FK_82S3P0DIUXAWWQQSA528UBY2Q" referencedColumnNames="ID" referencedTableName="CLIENT" />
+        <addForeignKeyConstraint baseColumnNames="REALM_ID" baseTableName="REALM_APPLICATION" constraintName="FK_M6QGA3RFME47335JY8JXYXH3I" referencedColumnNames="ID" referencedTableName="REALM" />-->
+        <customChange class="org.keycloak.connections.jpa.updater.liquibase.custom.JpaUpdate1_2_0_Beta1" />
+        <!-- Remove obsolete 'social' and 'claims' stuff -->
+        <dropForeignKeyConstraint baseTableName="USER_SOCIAL_LINK" constraintName="FK_68CJYS5UWM55UY823Y75XG4OM" />
+        <dropTable tableName="USER_SOCIAL_LINK" cascadeConstraints="true" />
+        <dropForeignKeyConstraint baseTableName="REALM_SOCIAL_CONFIG" constraintName="FK_SV5I3C2TI7G0G922FGE683SOV" />
+        <dropTable tableName="REALM_SOCIAL_CONFIG" cascadeConstraints="true" />
+        <dropColumn tableName="CLIENT" columnName="ALLOWED_CLAIMS_MASK" />
+        <createTable tableName="REALM_ENABLED_EVENT_TYPES">
+            <column name="REALM_ID" type="VARCHAR(36)">
+                <constraints nullable="false" />
+            </column>
+            <column name="VALUE" type="VARCHAR(255)" />
+        </createTable>
+        <addForeignKeyConstraint baseColumnNames="REALM_ID" baseTableName="REALM_ENABLED_EVENT_TYPES" constraintName="FK_H846O4H0W8EPX5NWEDRF5Y69J" referencedColumnNames="ID" referencedTableName="REALM" />
+    </changeSet>
+</databaseChangeLog>

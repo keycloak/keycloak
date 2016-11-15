@@ -20,15 +20,22 @@ import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.keycloak.common.ClientConnection;
+import org.keycloak.component.ComponentFactory;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.component.ComponentValidationException;
+import org.keycloak.component.SubComponentFactory;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.models.utils.StripSecretsUtils;
+import org.keycloak.provider.Provider;
+import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.idm.ComponentRepresentation;
+import org.keycloak.representations.idm.ComponentTypeRepresentation;
+import org.keycloak.representations.idm.ConfigPropertyRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ErrorResponseException;
 
@@ -53,6 +60,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.stream.Collectors;
 
@@ -128,7 +136,7 @@ public class ComponentResource {
         } catch (ComponentValidationException e) {
             return localizedErrorResponse(e);
         } catch (IllegalArgumentException e) {
-            throw new BadRequestException();
+            throw new BadRequestException(e);
         }
     }
 
@@ -196,5 +204,62 @@ public class ComponentResource {
         String message = MessageFormat.format(messages.getProperty(cve.getMessage(), cve.getMessage()), localizedParameters);
         return ErrorResponse.error(message, Response.Status.BAD_REQUEST);
     }
+
+    /**
+     * List of subcomponent types that are available to configure for a particular parent component.
+     *
+     * @param parentId
+     * @param subtype
+     * @return
+     */
+    @GET
+    @Path("{id}/sub-component-types")
+    @Produces(MediaType.APPLICATION_JSON)
+    @NoCache
+    public List<ComponentTypeRepresentation> getSubcomponentConfig(@PathParam("id") String parentId, @QueryParam("type") String subtype) {
+        auth.requireView();
+        ComponentModel parent = realm.getComponent(parentId);
+        if (parent == null) {
+            throw new NotFoundException("Could not find parent component");
+        }
+        if (subtype == null) {
+            throw new BadRequestException("must specify a subtype");
+        }
+        Class<? extends Provider> providerClass = null;
+        try {
+            providerClass = (Class<? extends Provider>)Class.forName(subtype);
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+        List<ComponentTypeRepresentation> subcomponents = new LinkedList<>();
+        for (ProviderFactory factory : session.getKeycloakSessionFactory().getProviderFactories(providerClass)) {
+            ComponentTypeRepresentation rep = new ComponentTypeRepresentation();
+            rep.setId(factory.getId());
+            if (!(factory instanceof ComponentFactory)) {
+                continue;
+            }
+            ComponentFactory componentFactory = (ComponentFactory)factory;
+
+            rep.setHelpText(componentFactory.getHelpText());
+            List<ProviderConfigProperty> props = null;
+            Map<String, Object> metadata = null;
+            if (factory instanceof SubComponentFactory) {
+                props = ((SubComponentFactory)factory).getConfigProperties(realm, parent);
+                metadata = ((SubComponentFactory)factory).getTypeMetadata(realm, parent);
+
+            } else {
+                props = componentFactory.getConfigProperties();
+                metadata = componentFactory.getTypeMetadata();
+            }
+
+            List<ConfigPropertyRepresentation> propReps =  ModelToRepresentation.toRepresentation(props);
+            rep.setProperties(propReps);
+            rep.setMetadata(metadata);
+            subcomponents.add(rep);
+        }
+        return subcomponents;
+    }
+
+
 
 }

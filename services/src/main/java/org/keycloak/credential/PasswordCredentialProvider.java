@@ -59,7 +59,7 @@ public class PasswordCredentialProvider implements CredentialProvider, Credentia
 
     public CredentialModel getPassword(RealmModel realm, UserModel user) {
         List<CredentialModel> passwords = null;
-        if (user instanceof CachedUserModel) {
+        if (user instanceof CachedUserModel && !((CachedUserModel)user).isMarkedForEviction()) {
             CachedUserModel cached = (CachedUserModel)user;
             passwords = (List<CredentialModel>)cached.getCachedWith().get(PASSWORD_CACHE_KEY);
 

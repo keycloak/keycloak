@@ -352,19 +352,7 @@ public class ModelToRepresentation {
             }
         }
 
-        List<UserFederationProviderModel> fedProviderModels = realm.getUserFederationProviders();
-        if (fedProviderModels.size() > 0) {
-            List<UserFederationProviderRepresentation> fedProviderReps = new ArrayList<UserFederationProviderRepresentation>();
-            for (UserFederationProviderModel model : fedProviderModels) {
-                UserFederationProviderRepresentation fedProvRep = toRepresentation(model);
-                fedProviderReps.add(fedProvRep);
-            }
-            rep.setUserFederationProviders(fedProviderReps);
-        }
-
-        for (UserFederationMapperModel mapper : realm.getUserFederationMappers()) {
-            rep.addUserFederationMapper(toRepresentation(realm, mapper));
-        }
+        exportUserFederationProvidersAndMappers(realm, rep);
 
         for (IdentityProviderModel provider : realm.getIdentityProviders()) {
             rep.addIdentityProvider(toRepresentation(realm, provider));
@@ -394,6 +382,22 @@ public class ModelToRepresentation {
         }
 
         return rep;
+    }
+
+    public static void exportUserFederationProvidersAndMappers(RealmModel realm, RealmRepresentation rep) {
+        List<UserFederationProviderModel> fedProviderModels = realm.getUserFederationProviders();
+        if (fedProviderModels.size() > 0) {
+            List<UserFederationProviderRepresentation> fedProviderReps = new ArrayList<UserFederationProviderRepresentation>();
+            for (UserFederationProviderModel model : fedProviderModels) {
+                UserFederationProviderRepresentation fedProvRep = toRepresentation(model);
+                fedProviderReps.add(fedProvRep);
+            }
+            rep.setUserFederationProviders(fedProviderReps);
+        }
+
+        for (UserFederationMapperModel mapper : realm.getUserFederationMappers()) {
+            rep.addUserFederationMapper(toRepresentation(realm, mapper));
+        }
     }
 
     public static void exportGroups(RealmModel realm, RealmRepresentation rep) {

@@ -32,5 +32,12 @@ public interface UserCache extends UserProvider {
      * @param user
      */
     void evict(RealmModel realm, UserModel user);
+
+    /**
+     * Evict users of a specific realm
+     *
+     * @param realm
+     */
+    void evict(RealmModel realm);
     void clear();
 }

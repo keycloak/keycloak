@@ -64,6 +64,8 @@ public class UserStorageProviderSpi implements Spi {
                 .property()
                 .name("lastSync").type(ProviderConfigProperty.STRING_TYPE).add()
                 .property()
+                .name("batchSizeForSync").type(ProviderConfigProperty.STRING_TYPE).add()
+                .property()
                 .name("importEnabled").type(ProviderConfigProperty.BOOLEAN_TYPE).add()
                 .property()
                 .name("cachePolicy").type(ProviderConfigProperty.STRING_TYPE).add()
