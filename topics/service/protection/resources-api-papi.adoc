@@ -15,4 +15,4 @@ This endpoint provides registration operations outlined as follows (entire path 
 * List resource set descriptions: GET /resource_set
 * List resource set descriptions using a filter: GET /resource_set?filter=${filter}
 
-For more details about the contract for each of these operations, please refer to  https://docs.kantarainitiative.org/uma/rec-oauth-resource-reg-v1_0_1.html[UMA Resource Set Registration].
+For more information about the contract for each of these operations, see https://docs.kantarainitiative.org/uma/rec-oauth-resource-reg-v1_0_1.html[UMA Resource Set Registration].

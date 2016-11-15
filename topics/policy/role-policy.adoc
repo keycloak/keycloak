@@ -1,17 +1,12 @@
 == Role-Based Policy
 
-This type of policy allows you to define conditions for your permissions where only a set of one or more roles is allowed
-to access an object.
+You can use this type of policy to define conditions for your permissions where a set of one or more roles is permitted to access an object.
 
-By default, roles added to this policy are not marked as required and the policy will grant access if the user asking for access has any of these roles. However, {{book.project.name}} also allows you
-to mark a specific role as link:role-policy-required-role.adoc[required] in case you want to enforce the presence of a role. You can even mix required and non-required roles, regardless of whether they are realm
-or client roles.
+By default, roles added to this policy are not specified as required and the policy will grant access if the user requesting access has been granted any of these roles. However, you can specify a specific role as link:role-policy-required-role.adoc[required] if you want to enforce a specific role. You can also combine required and non-required roles, regardless of whether they are realm or client roles.
 
-Role policies can be very useful when you need a more restricted role-based access control (RBAC), where specific roles must be present in order to grant access to an object. For instance,
-you may enforce that a user must consent to letting a client application (which is acting on his behalf) access his resources. Here you can benefit from {{book.project.name}} Client Scope Mapping to
-enable consent pages or even enforce clients to explicitly provide a scope when obtaining access tokens from a {{book.project.name}} server.
+Role policies can be useful when you need more restricted role-based access control (RBAC), where specific roles must be enforced to grant access to an object. For instance, you can enforce that a user must consent to allowing a client application (which is acting on the user's behalf) to access the user's resources. You can use {{book.project.name}} Client Scope Mapping to enable consent pages or even enforce clients to explicitly provide a scope when obtaining access tokens from a {{book.project.name}} server.
 
-To create a new Role-based policy, select the option *Role-Based* in the dropdown located in the right upper corner of the permission listing.
+To create a new role-based policy, select *Role-Based* in the dropdown list in the upper right corner of the permission listing.
 
 .Add Role-Based Policy
 image:../../images/policy/create-role.png[alt="Add Role-Based Policy"]
@@ -20,20 +15,20 @@ image:../../images/policy/create-role.png[alt="Add Role-Based Policy"]
 
 * *Name*
 +
-A human-readable and unique string describing the policy. We strongly suggest that you use names that are closely related with your business and security requirements, so you
-can identify them more easily and also know what they actually mean.
+A human-readable and unique string describing the policy. A best practice is to use names that are closely related to your business and security requirements, so you
+can identify them more easily.
 +
 * *Description*
 +
-A string with more details about this policy.
+A string containing details about this policy.
 +
 * *Realm Roles*
 +
-Specifies which *realm* role(s) are allowed by this policy.
+Specifies which *realm* roles are permitted by this policy.
 +
 * *Client Roles*
 +
-Specifies which *client* role(s) are allowed by this policy. To enable this field you need to select a `Client` first.
+Specifies which *client* roles are permitted by this policy. To enable this field must first select a `Client`.
 +
 * *Logic*
 +

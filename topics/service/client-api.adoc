@@ -1,6 +1,6 @@
 == Authorization Client API
 
-If you are using Java, you can access all {{book.project.name}} {{book.project.module}} using a Client API.
+If you are using Java, you can access all {{book.project.name}} {{book.project.module}} using a client API.
 
 === Maven Dependency
 
@@ -29,20 +29,20 @@ The client configuration is defined in a JSON file as follows:
 }
 ```
 
-* *realm*
+* *realm* (required)
 +
-Name of the realm. This is REQUIRED.
+The name of the realm.
 
-* *auth-server-url*
+* *auth-server-url* (required)
 +
-The base URL of the Keycloak server. All other Keycloak pages and REST service endpoints are derived from this. It is usually of the form https://host:port/auth. This is REQUIRED.
+The base URL of the Keycloak server. All other Keycloak pages and REST service endpoints are derived from this. It is usually in the form https://host:port/auth. 
 
-* *resource*
+* *resource* (required)
 +
-The client-id of the application. Each application has a client-id that is used to identify the application. This is REQUIRED.
+The client-id of the application. Each application has a client-id that is used to identify the application. 
 
-* *credentials*
-Specify the credentials of the application. This is an object notation where the key is the credential type and the value is the value of the credential type. Currently only secret/password is supported. This is REQUIRED.
+* *credentials* (required)
+Specifies the credentials of the application. This is an object notation where the key is the credential type and the value is the value of the credential type. Currently only secret/password is supported. 
 
 === Obtaining User Entitlements
 
@@ -52,12 +52,12 @@ Here is an example illustrating how to obtain user entitlements:
 // create a new instance based on the configuration defined in keycloak-authz.json
 AuthzClient authzClient = AuthzClient.create();
 
-// obtain an Entitlement API Token in order to get access to the Entitlement API.
-// this token is just an access token issued to a client on behalf of an user
+// obtain an Entitlement API Token to get access to the Entitlement API.
+// this token is an access token issued to a client on behalf of an user
 // with a scope = kc_entitlement
 String eat = getEntitlementAPIToken(authzClient);
 
-// send the entitlement request to the server in order to
+// send the entitlement request to the server to
 // obtain an RPT with all permissions granted to the user
 EntitlementResponse response = authzClient.entitlement(eat)
     .getAll("hello-world-authz-service");
@@ -74,8 +74,8 @@ Here is an example illustrating how to obtain user entitlements for a set of one
 // create a new instance based on the configuration defined in keycloak-authz.json
 AuthzClient authzClient = AuthzClient.create();
 
-// obtain an Entitlement API Token in order to get access to the Entitlement API.
-// this token is just an access token issued to a client on behalf of an user
+// obtain an Entitlement API Token to get access to the Entitlement API.
+// this token is an access token issued to a client on behalf of an user
 // with a scope = kc_entitlement
 String eat = getEntitlementAPIToken(authzClient);
 
@@ -87,7 +87,7 @@ permission.setResourceSetName("Hello World Resource");
 
 request.addPermission(permission);
 
-// send the entitlement request to the server in order to obtain a RPT
+// send the entitlement request to the server to obtain an RPT
 // with all permissions granted to the user
 EntitlementResponse response = authzClient.entitlement(eat)
     .get("hello-world-authz-service", request);

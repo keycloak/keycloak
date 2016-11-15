@@ -1,7 +1,7 @@
 == Policy Enforcers
 
 Policy Enforcement Point (PEP) is a design pattern and as such you can implement it in different ways. {{book.project.name}} provides all the necessary means
-to implement PEPs for different platforms, environments, and even different programming languages. {{book.project.name}} {{book.project.module}} presents a RESTful API,
+to implement PEPs for different platforms, environments, and programming languages. {{book.project.name}} {{book.project.module}} presents a RESTful API,
 and leverages OAuth2 authorization capabilities for fine-grained authorization using a centralized authorization server.
 
 image:../../images/pep-pattern-diagram.png[alt="PEP Overview"]

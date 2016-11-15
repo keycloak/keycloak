@@ -3,11 +3,11 @@
 The {{book.project.name}} Authorization can also help you to quickly get started with the authorization services and understand how to apply the same concepts to your
 own applications.
 
-If you are using the {{book.project.name}} Demo Distribution and you have it properly extracted in your filesystem:
+If you are using the {{book.project.name}} Demo Distribution and you have it properly extracted in your file system:
 
 * **keycloak-demo-{{book.project.version}}.[zip|tar.gz]**
 
-You can check out the available examples from the following directory:
+you can check out the available examples from the following directory:
 
 ```bash
 cd ${KEYCLOAK_DEMO_SERVER_DIR}/examples/authz
@@ -17,14 +17,14 @@ Or you can get them from https://github.com/keycloak/keycloak/tree/{{book.projec
 
 Each example has a `README` file with instructions about how to build, deploy, and test the example.
 
-Here is a brief description of each of them:
+Here is a brief description of each example:
 
 .Authorization Examples
 |===
 |Name |Description
 
 | https://github.com/keycloak/keycloak/tree/{{book.project.version}}/examples/authz/servlet-authz[hello-world-authz-service]
-| A single page application which is protected by a policy enforcer that decides whether a user can access that page or not based on the permissions obtained from a Keycloak Server.
+| A single-page application that is protected by a policy enforcer that decides whether a user can access that page based on the permissions obtained from a Keycloak Server.
 
 | https://github.com/keycloak/keycloak/tree/{{book.project.version}}/examples/authz/servlet-authz[photoz]
 | A simple application based on HTML5+AngularJS+JAX-RS that demonstrates how to enable fine-grained permissions to RESTFul based services and HTML5 clients.

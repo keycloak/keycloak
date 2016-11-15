@@ -1,29 +1,32 @@
-== Creating a Realm
+== Creating a Realm and a User
 
-The first step is to create a realm. The realm we are about to create is very simple and consists of:
+The first step is to create a realm and a user in that realm. The realm consists of:
 
 * A single user
 
-* A single client application, which we're going to turn into a link:../../overview/terminology.html[Resource Server] and enable
-the authorization services
+* A single client application, which then becomes a link:../../overview/terminology.html[resource server] for which you need to enable authorization services.
 
-Create a realm with a name *hello-world-authz*. Once created, you should see a page similar to the following:
+To create a realm and a user complete the following steps:
+
+1. Create a realm with a name *hello-world-authz*. Once created, a page similar to the following is displayed:
 
 .Realm hello-world-authz
 image:../../../images/getting-started/hello-world/create-realm.png[alt="Realm hello-world-authz"]
 
-Next, create a single user in your newly-created realm. Click on the `Users` left menu item. This will bring you
-to the user list page. On the right side of the empty user list, you should see an `Add User` button. Click that to start creating the new user with the username of *alice*.
+2. Create a user for your newly created realm. Click *Users*. The user list page opens. 
 
-Fill in the fields as shown below and click `Save`.
+3. On the right side of the empty user list, click *Add User*. 
+
+4. Complete the fields as shown in the screenshot below to create a new user with the username of *alice* and then click *Save*.
 
 .Add User
 image:../../../images/getting-started/hello-world/create-user.png[alt="Add User"]
 
-Next, set a password for the *alice* user by clicking on the `Credentials` tab to display the `Credentials` page.
+5. Set a password for the *alice* user by clicking the *Credentials* tab.
 
 .Set User Password
 image:../../../images/getting-started/hello-world/reset-user-pwd.png[alt="Set User Password"]
 
-Fill in the `New Password` and `Password Confirmation` fields with a password and click  the `Temporary` switch to turn it `OFF`. Lastly,
-click on the `Reset Password` button to set the user's password.
+6. Complete the *New Password* and *Password Confirmation* fields with a password and click the *Temporary* switch to *OFF*. 
+
+7. Click *Reset Password* to set the user's password.

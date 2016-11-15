@@ -1,9 +1,9 @@
 == Protecting a Stateless Service Using a Bearer Token
 
-If the adapter is configured with the `bearer-only` configuration option, the policy enforcer will decide whether a request
-is allowed to access a protected resource or not based on the permissions carried along with a bearer token.
+If the adapter is configured with the `bearer-only` configuration option, the policy enforcer decides whether a request
+to access a protected resource is allowed or denied based on the permissions of the bearer token.
 
-. HTTP GET example passing a RPT as a bearer token
+. HTTP GET example passing an RPT as a bearer token
 ```bash
 GET /my-resource-server/my-protected-resource HTTP/1.1
 Host: host.com
@@ -11,7 +11,7 @@ Authorization: Bearer ${RPT}
 ...
 ```
 
-In this example, you would have a *keycloak.json* file in your application similar to the following:
+In this example, a *keycloak.json* file in your application is similar to the following:
 
 .Example of WEB-INF/keycloak.json with the bearer-only configuration option
 ```json
@@ -23,10 +23,10 @@ In this example, you would have a *keycloak.json* file in your application simil
 === Authorization Response
 
 When a client tries to access a resource server with a bearer token that is lacking permissions to access a protected resource, the resource server
-will respond with a *401* status code and a `WWW-Authenticate` header. The value of the `WWW-Authenticate` header depends on the authorization protocol
+responds with a *401* status code and a `WWW-Authenticate` header. The value of the `WWW-Authenticate` header depends on the authorization protocol
 in use by the resource server.
 
-Here is an example of a response from a resource server which is using UMA as the authorization protocol:
+Here is an example of a response from a resource server that is using UMA as the authorization protocol:
 
 ```bash
 HTTP/1.1 401 Unauthorized
@@ -40,7 +40,6 @@ HTTP/1.1 401 Unauthorized
 WWW-Authenticate: KC_ETT realm="photoz-restful-api",as_uri="http://localhost:8080/auth/realms/photoz/authz/entitlement"
 ```
 
-Once  a client receives a response from the server, it should check the status code and `WWW-Authenticate` header in order to obtain
-a RPT from a {{book.project.name}} Server.
+Once  a client receives a response from the server, it examines the status code and `WWW-Authenticate` header to obtain an RPT from the {{book.project.name}} Server.
 
 

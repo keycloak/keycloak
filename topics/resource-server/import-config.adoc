@@ -1,25 +1,27 @@
-== Exporting and Importing Configuration
+== Exporting and Importing Configuration Files
 
-The configuration settings for a resource server can be exported and downloaded. The resulting configuration contains settings you've introduced for the resource server (client).
-Import/Export is helpful when you would like to create an initial configuration for a resource server or to update an existing configuration. The configuration contains definitions for:
+The configuration settings for a resource server (or client) can be exported and downloaded. You can also import an existing configuration file for a resource server. Importing and exporting a configuration file is helpful when you want to create an initial configuration for a resource server or to update an existing configuration. The configuration file contains definitions for:
 
-* Protected Resources and Scopes
+* Protected resources and scopes
 * Policies
 * Permissions
 
-To export configuration, go to the `Resource Server Settings` page.
+=== Exporting a Configuration File
+
+To export a configuration file, complete the following steps:
+
+1. Navigate to the *Resource Server Settings* page.
 
 .Resource Server Settings
 image:../../images/resource-server/authz-settings.png[alt="Resource Server Settings"]
 
-In this page, you'll see a `Export Settings` section, which provides a single `Export` button. Click on that button and you'll see.
+2. On this page, in the Export Settings section, click *Export*.
 
 .Export Settings
 image:../../images/resource-server/authz-export.png[alt="Export Settings"]
 
-The configuration is exported in JSON format and displyed in a text area, which you can copy and paste. You may also click the `Download` button to download the configuration as a file.
+The configuration file is exported in JSON format and displayed in a text area, from which you can copy and paste. You can also click *Download* to download the configuration file and save it.
 
-=== Importing
+=== Importing a Configuration File
 
-To import a file with the configuration for a resource server, click on the `Select file` to open a file chooser dialog to select a file in your
-filesystem containing the configuration you want to import.
+To import a configuration file for a resource server, click *Select file* to select a file containing the configuration you want to import.

@@ -1,8 +1,8 @@
 == Requesting Entitlements
 
-Client applications can use a specific endpoint to obtain a special security token called a *Requesting Party Token* or *RPT*.
-This token consists of all the entitlements (or permissions) for a user as a result of the evaluation of the permissions and authorization policies associated with the resource(s) being requested.
-With an RPT in hand, client applications can gain access to protected resources at the resource server.
+Client applications can use a specific endpoint to obtain a special security token called a requesting party token (RPT).
+This token consists of all the entitlements (or permissions) for a user as a result of the evaluation of the permissions and authorization policies associated with the resources being requested.
+With an RPT, client applications can gain access to protected resources at the resource server.
 
 ```bash
 http://${host}:${port}/auth/realms/${realm_name}/authz/entitlement
@@ -19,11 +19,11 @@ curl -X GET \
 ```
 
 [NOTE]
-When asking for entitlements using this endpoint, you need to provide the access_token (as a bearer token) representing a user's identity and his consent to access authorization data on his behalf.
+When requesting entitlements using this endpoint, you must provide the access_token (as a bearer token) representing a user's identity and his consent to access authorization data on his behalf.
 
 In the curl example, *${resource_server_id}* is the *client_id* registered with the client application acting as a resource server.
 
-As a result, you'll get a response from the server as follows:
+As a result, the server response is:
 
 ```json
 {
@@ -31,12 +31,12 @@ As a result, you'll get a response from the server as follows:
 }
 ```
 
-Using this method to obtain entitlements, the server will respond to the requesting client with *all* entitlements for a user, based on the evaluation of the permissions and
+Using this method to obtain entitlements, the server responds to the requesting client with *all* entitlements for a user, based on the evaluation of the permissions and
 authorization policies associated with the resources managed by the resource server.
 
 === Obtaining Entitlements for a Specific Set of Resources
 
-The entitlements endpoint also allows you to obtain a user's entitlements for a set of one or more resources. For example, using curl:
+You can also use the entitlements endpoint to obtain a user's entitlements for a set of one or more resources. For example, using curl:
 
 ```bash
 curl -X POST -H "Authorization: Bearer ${access_token}" -d '{
@@ -48,7 +48,7 @@ curl -X POST -H "Authorization: Bearer ${access_token}" -d '{
 }' "http://localhost:8080/auth/realms/hello-world-authz/authz/entitlement/hello-world-authz-service"
 ```
 
-As a result, you'll get a response from the server as follows:
+As a result, the server response is:
 
 ```json
 {
@@ -56,10 +56,10 @@ As a result, you'll get a response from the server as follows:
 }
 ```
 
-Unlike the GET version, the server is going to respond with an RPT holding the permissions granted during the evaluation of the permissions and authorization policies
+Unlike the GET version, the server responds with an RPT holding the permissions granted during the evaluation of the permissions and authorization policies
 associated with the resources being requested.
 
-When asking for entitlements, you can also specify the scopes you want to have access. Using curl:
+When requesting entitlements, you can also specify the scopes you want to access. For example, using curl:
 
 ```bash
 curl -X POST -H "Authorization: Bearer ${access_token}" -d '{
@@ -74,12 +74,11 @@ curl -X POST -H "Authorization: Bearer ${access_token}" -d '{
 }' "http://localhost:8080/auth/realms/hello-world-authz/authz/entitlement/hello-world-authz-service"
 ```
 
-=== Requesting Party Token or RPT
+=== Requesting Party Token
 
-A RPT is a https://tools.ietf.org/html/rfc7519[JSON Web Token (JWT)] digitally signed using https://www.rfc-editor.org/rfc/rfc7515.txt[JSON Web Signature (JWS)].
-The token is built based on the access_token sent by the client during the authorization process.
+A requesting party token (RPT) is a https://tools.ietf.org/html/rfc7519[JSON web token (JWT)] digitally signed using https://www.rfc-editor.org/rfc/rfc7515.txt[JSON web signature (JWS)]. The token is built based on the access_token sent by the client during the authorization process.
 
-When you decode a RPT, you will see a payload similar to the following:
+When you decode an RPT, you see a payload similar to the following:
 
 ```json
 {
