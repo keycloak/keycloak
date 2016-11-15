@@ -1,12 +1,12 @@
 == Hello World
 
-The purpose of this guide is to get you up and running as quickly as possible so that you can play with and test drive various authorization features provided by {{book.project.name}}.
-This quick tour relies heavily on the default out-of-the-box database and server configuration and does not cover complex deployment options.
-For more in-depth discussion of any features or configuration options, consult the appropriate detail sections for those features and options in this documentation.
+The purpose of this getting started guide is to get you up and running as quickly as possible so that you can experiment with and test various authorization features provided by {{book.project.name}}.
+This quick tour relies heavily on the default database and server configurations and does not cover complex deployment options.
+For more information on features or configuration options, see the appropriate sections in this documentation.
 
-From this guide you'll understand some key concepts around {{book.project.name}} {{book.project.module}}:
+This guide explains key concepts about {{book.project.name}} {{book.project.module}}:
 
-* Enabling fine-grained authorization to a client application
+* Enabling fine-grained authorization for a client application
 * Configuring a client application to be a resource server, with protected resources
 * Defining permissions and authorization policies to govern access to protected resources
-* Enabling policy enforcement in your applications
+* Enabling policy enforcement in your applications.

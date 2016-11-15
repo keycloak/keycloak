@@ -1,9 +1,10 @@
 == Drools-Based Policy
 
-This type of policy allows you to define conditions for your permissions using http://www.drools.org[Drools], which is a rule evaluation environment. It is one of the _Rule-Based_ policy types
+With this type of policy you can define conditions for your permissions using http://www.drools.org[Drools], which is a rule evaluation environment. It is one of the _Rule-Based_ policy types
 supported by {{book.project.name}}, and provides flexibility to write any policy based on the link:evaluation-api.adoc[Evaluation API].
 
-To create a new Drools-based policy, select the option *Drools* in the dropdown located in the right upper corner of the permission listing.
+To create a new Drools-based policy, in the dropdown list in the right upper corner of the permission listing,
+ select *Drools*.
 
 .Add Drools Policy
 image:../../images/policy/create-drools.png[alt="Add Drools Policy"]
@@ -37,7 +38,7 @@ The version of the artifact.
 +
 * *Module*
 +
-The module used by this policy. You must provide a module in order to select a specific session from where rules will be loaded from.
+The module used by this policy. You must provide a module to select a specific session from which rules will be loaded.
 +
 * *Session*
 +
@@ -53,7 +54,7 @@ The link:logic.html[Logic] of this policy to apply after the other conditions ha
 
 === Examples
 
-Here is a simple example of a Drools-Based policy that uses Attribute-Based Access Control (ABAC) to define a condition that evaluates to a GRANT
+Here is a simple example of a Drools-based policy that uses attribute-based access control (ABAC) to define a condition that evaluates to a GRANT
 only if the authenticated user is the owner of the requested resource:
 
 ```javascript
@@ -87,4 +88,4 @@ rule "Authorize Using Identity Information"
 end
 ```
 
-For more details about what you can access from the `org.keycloak.authorization.policy.evaluation.Evaluation` interface, see link:./evaluation-api.adoc[Evaluation API].
+For more information about what you can access from the `org.keycloak.authorization.policy.evaluation.Evaluation` interface, see link:./evaluation-api.adoc[Evaluation API].

@@ -1,8 +1,8 @@
 == Creating Resource-based Permissions
 
-A Resource-based permission defines a set of one or more resources to protect using a set of one or more authorization policies.
+A resource-based permission defines a set of one or more resources to protect using a set of one or more authorization policies.
 
-To create a new Resource-based permission, select the option *Resource-based* in the dropdown located in the right upper corner of the permission listing.
+To create a new resource-based permission, select *Resource-based* in the dropdown list in the upper right corner of the permission listing.
 
 .Add Resource-Based Permission
 image:../../images/permission/create-resource.png[alt="Add Resource-Based Permission"]
@@ -11,21 +11,21 @@ image:../../images/permission/create-resource.png[alt="Add Resource-Based Permis
 
 * *Name*
 +
-A human-readable and unique string describing the permission. We strongly suggest you to use names that are closely related with your business and security requirements, so you
-can identify them more easily and also know what they actually mean.
+A human-readable and unique string describing the permission. A best practice is to use names that are closely related to your business and security requirements, so you
+can identify them more easily.
 +
 * *Description*
 +
-A string with more details about this permission.
+A string containing details about this permission.
 
 [[_apply_resource_type]]
 * *Apply To Resource Type*
 +
-Specifies if this permission would be applied to all resources with a given type. When you select this field, you'll be prompted to enter the resource type to protect.
+Specifies if the permission is applied to all resources with a given type. When selecting this field, you are prompted to enter the resource type to protect.
 +
 ** Resource Type
 +
-Defines the resource type to protect. When defined, this permission is going to be evaluated for all resources matching the type.
+Defines the resource type to protect. When defined, this permission is evaluated for all resources matching that type.
 +
 * *Resources*
 +

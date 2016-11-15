@@ -2,17 +2,17 @@
 
 image:../../images/authz-arch-overview.png[alt="Keycloak AuthZ Architecture Overview"]
 
-From a design perspective, the {{book.project.module}} are based on a well-defined set of authorization patterns providing these capabilities:
+From a design perspective, {{book.project.module}} is based on a well-defined set of authorization patterns providing these capabilities:
 
 * **Policy Administration Point (PAP)**
 +
-Provides a set of UIs based on {{book.project.name}} Administration Console to manage resource servers, resources, scopes, permissions, and policies.
-Part of this also accomplished remotely through the use of the link:../service/protection/protection-api.adoc[Protection API].
+Provides a set of UIs based on the {{book.project.name}} Administration Console to manage resource servers, resources, scopes, permissions, and policies.
+Part of this is also accomplished remotely through the use of the link:../service/protection/protection-api.adoc[Protection API].
 +
 
 * **Policy Decision Point (PDP)**
 +
-Provides a distributable policy decision point to where authorization requests are sent and policies are evaluated accordingly with the permissions being requested. Part of this also accomplished remotely through the use of the
+Provides a distributable policy decision point to where authorization requests are sent and policies are evaluated accordingly with the permissions being requested. Part of this is also accomplished remotely through the use of the
 link:../service/authorization/authorization-api.adoc[Authorization] and link:../service/entitlement/entitlement-api.adoc[Entitlement] APIs.
 +
 
@@ -40,46 +40,40 @@ Three main processes define the necessary steps to understand how to use KC to e
 
 image:../../images/resource-mgmt-process.png[alt="Resource Management Overview"]
 
-First, you need to tell to {{book.project.name}} what are you looking to protect, which usually represents a web application or a set of one or more services. See link:../overview/terminology.html[Terminology] for more information about
-Resource Servers.
+First, you need to specify {{book.project.name}} what are you looking to protect, which usually represents a web application or a set of one or more services. For more information on resource servers see link:../overview/terminology.html[Terminology].
 
-Resource Servers are managed using the {{book.project.name}} Administration Console. There you can enable any registered client application as a resource server and start managing the resources and scopes you want to protect.
+Resource servers are managed using the {{book.project.name}} Administration Console. There you can enable any registered client application as a resource server and start managing the resources and scopes you want to protect.
 
 image:../../images/rs-r-scopes.png[alt="Resource Server Overview"]
 
-A Resource can be a web page, a RESTFul resource, a file in your filesystem, an EJB, etc. They can represent a group of resources (just like a Class in Java) or they can represent a single and specific resource.
+A resource can be a web page, a RESTFul resource, a file in your file system, an EJB, and so on. They can represent a group of resources (just like a Class in Java) or they can represent a single and specific resource.
 
-For instance, you may have a _Bank Account_ resource that represents all banking accounts and use it to define the authorization policies that are common to all banking accounts. However,
-you may want to define specific policies for _Alice Account_ (a resource instance that belongs to a customer), where only the owner is allowed to access some information or perform an operation.
+For instance, you might have a _Bank Account_ resource that represents all banking accounts and use it to define the authorization policies that are common to all banking accounts. However, you might want to define specific policies for _Alice Account_ (a resource instance that belongs to a customer), where only the owner is allowed to access some information or perform an operation.
 
-Resources can be managed using {{book.project.name}} Administration Console or the link:../service/protection/protection-api.adoc[Protection API]. In the latter case, resource servers are able to
-manage their resources remotely.
+Resources can be managed using the {{book.project.name}} Administration Console or the link:../service/protection/protection-api.adoc[Protection API]. In the latter case, resource servers are able to manage their resources remotely.
 
-Scopes usually represent the actions that can be performed on a resource, but they are not limited to that. You can also use scopes to represent a single or multiple attributes within a resource.
+Scopes usually represent the actions that can be performed on a resource, but they are not limited to that. You can also use scopes to represent one or more attributes within a resource.
 
 ==== Permission and Policy Management
 
-Once you have defined your resource server and all the resources you want to protect, you can start working with the fun part: *Permission and Policy Management*.
+Once you have defined your resource server and all the resources you want to protect, you must set up permissions and policies.
 
 This process involves all the necessary steps to actually define the security and access requirements that govern your resources.
 
 image:../../images/policy-mgmt-process.png[alt="Permission and Policy Management Overview"]
 
-Policies define the conditions that must be satisfied to access or perform operations on something (resource or scope), but they are not tied with what they are protecting. They are generic and can be reused
-to build permissions or even more complex policies.
+Policies define the conditions that must be satisfied to access or perform operations on something (resource or scope), but they are not tied to what they are protecting. They are generic and can be reused to build permissions or even more complex policies.
 
-For instance, we may want to allow access to a group of resources only for users granted with a role "User Premium". For that, we can just define a simple RBAC (Role-based Access Control).
+For instance,to allow access to a group of resources only for users granted with a role "User Premium,"" you can use RBAC (Role-based Access Control).
 
-{{book.project.name}} provides a few built-in policy types(and their respective policy providers) covering the most common access control mechanisms. You can even create policies based on rules written using JavaScript or JBoss Drools.
+{{book.project.name}} provides a few built-in policy types (and their respective policy providers) covering the most common access control mechanisms. You can even create policies based on rules written using JavaScript or JBoss Drools.
 
-Once you have your policies defined, you can start defining your permissions. Differently than policies, permissions are tied coupled with the resource they are protecting. Here you specify
-what you want to protect (resource or scope) and the policies that must be satisfied in order to _GRANT_ or _DENY_ that permission to someone asking for it.
+Once you have your policies defined, you can start defining your permissions. Permissions are coupled with the resource they are protecting. Here you specify
+what you want to protect (resource or scope) and the policies that must be satisfied to grant or deny permission.
 
 ==== Policy Enforcement
 
-*Policy Enforcement* involves the necessary steps to actually enforce authorization decisions to a resource server. This is achieved by enabling a *Policy Enforcement Point* or PEP at the
-resource server that is capable of communication with the authorization server, ask for authorization data and control access to protected resources based on the decisions and permissions returned
- by the server.
+*Policy Enforcement* involves the necessary steps to actually enforce authorization decisions to a resource server. This is achieved by enabling a *Policy Enforcement Point* or PEP at the resource server that is capable of communicating with the authorization server, ask for authorization data and control access to protected resources based on the decisions and permissions returned by the server.
 
 image:../../images/pep-pattern-diagram.png[alt="PEP Overview"]
 
@@ -88,18 +82,18 @@ image:../../images/pep-pattern-diagram.png[alt="PEP Overview"]
 
 === Authorization Services
 
-Authorization Services consist of the following RESTFul APIs:
+Authorization services consist of the following RESTFul APIs:
 
 * *Protection API*
 * *Authorization API*
 * *Entitlement API*
 
-Each of these services provide a specific API covering the different steps involved in the authorization process.
+Each of these services provides a specific API covering the different steps involved in the authorization process.
 
 ==== Protection API
 
 The *Protection API* is a https://docs.kantarainitiative.org/uma/rec-uma-core.html[UMA-compliant] endpoint providing a small set of operations
-for resource servers in order help them managing their resources and scopes. Only resource servers are allowed to access this API, which also requires a
+for resource servers to help them manage their resources and scopes. Only resource servers are allowed to access this API, which also requires a
 *uma_protection* scope.
 
 The operations provided by the Protection API can be organized in two main groups:
@@ -109,25 +103,22 @@ The operations provided by the Protection API can be organized in two main group
     ** Delete Resource
     ** Find by Id
     ** Find All
-    ** Find with filters (eg.: search by name, type or URI)
+    ** Find with filters (for example, search by name, type, or URI)
 * *Permission Management*
     ** Issue Permission Tickets
 
 [NOTE]
 By default, Remote Resource Management is enabled. You can change that using the {{book.project.name}} Administration Console and only allow resource management through the console.
 
-When using the UMA protocol, the issuance of Permission Tickets by the Protection API is an important part of the whole authorization process. As we'll see later, they represent the permissions
-being requested by client and that are sent to the server in order to obtain a final token with all permissions granted during the evaluation of the permissions and policies
-associated with the resources and scopes being requested.
+When using the UMA protocol, the issuance of Permission Tickets by the Protection API is an important part of the whole authorization process. As described in a subsequent section, they represent the permissions being requested by the client and that are sent to the server to obtain a final token with all permissions granted during the evaluation of the permissions and policies associated with the resources and scopes being requested.
 
 For more information, see link:../service/protection/protection-api.adoc[Protection API].
 
 ==== Authorization API
 
-The *Authorization API* is also a https://docs.kantarainitiative.org/uma/rec-uma-core.html[UMA-compliant] endpoint providing a single operation that exchanges an Access Token and link:./terminology.adoc#_permission_ticket[Permission Ticket].
-with a *Requesting Party Token* or *RPT*.
+The Authorization API is also a https://docs.kantarainitiative.org/uma/rec-uma-core.html[UMA-compliant] endpoint providing a single operation that exchanges an Access Token and link:./terminology.adoc#_permission_ticket[Permission Ticket] with a Requesting Party Token (RPT).
 
-The RPT holds all permissions granted to a client and can be used to call a resource server in order to get access to its protected resources.
+The RPT holds all permissions granted to a client and can be used to call a resource server to get access to its protected resources.
 
 When asking a RPT you can also provide a previously issued RPT. In this case, the resulting RPT will consist of the union of the permissions from the previously RPT and the new ones
 within a permission ticket.
@@ -138,14 +129,14 @@ For more information, see link:../service/authorization/authorization-api.adoc[A
 
 === Entitlement API
 
-The *Entitlement API* provides a 1-legged protocol to issue RPTs. Unlike the _Authorization API_, the Entitlement API only expects an Access Token.
+The Entitlement API provides a 1-legged protocol to issue RPTs. Unlike the Authorization API, the Entitlement API only expects an access token.
 
-From this API you can obtain all the entitlements or permissions for an user (based on the resources managed by a given resource server) or just the entitlements for a set of
+From this API you can obtain all the entitlements or permissions for a user (based on the resources managed by a given resource server) or just the entitlements for a set of
 one or more resources.
 
 image:../../images/entitlement-calls.png[alt="Entitlement API Overview"]
 
-For more informationm, see link:../service/entitlement/entitlement-api.adoc[Entitlement API].
+For more information see link:../service/entitlement/entitlement-api.adoc[Entitlement API].
 
 
 

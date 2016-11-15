@@ -1,11 +1,11 @@
 === Viewing Resources
 
-When you click on *Resource* tab, you'll see a page that lists the resources associated with a resource server.
+On the *Resource* page, you see a list of the resources associated with a resource server.
 
 .Resources
 image:../../images/resource/view.png[alt="Resources"]
 
-The resource list provides some very useful information about the protected resources, such as:
+The resource list provides information about the protected resources, such as:
 
 * Type
 * URI
@@ -13,7 +13,7 @@ The resource list provides some very useful information about the protected reso
 * Associated scopes, if any
 * Associated permissions
 
-From this list, you can also directly create a permission by clicking on the `Create Permission` button for the resource you want to create the permission.
+From this list, you can also directly create a permission by clicking *Create Permission* for the resource for which you want to create the permission.
 
 [NOTE]
-Before creating permissions to your resources, make sure you have already defined the policies you want to associate with the permission.
+Before creating permissions for your resources, be sure you have already defined the policies that you want to associate with the permission.

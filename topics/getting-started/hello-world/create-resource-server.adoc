@@ -1,25 +1,27 @@
 == Enabling Authorization Services
 
-You can enable authorization services in any existing client application configured to use the OpenID Connect Protocol. However, in this guide we are
-going to create a new client from scratch.
+You can enable authorization services in an existing client application configured to use the OpenID Connect Protocol. You can also create a new client.
 
-Click on the `Clients` left menu item to start creating a new client application and fill in the fields as shown below:
+To create a new client, complete the following steps:
+
+1. Click *Clients* to start creating a new client application and fill in the fields as shown in the screenshot below:
 
 .Create Client Application
 image:../../../images/getting-started/hello-world/create-client.png[alt="Create Client Application"]
 
-Click on the `Save` button to create the client. This should display the `Client Details` page.
+2. Click *Save*. The Client Details page is displayed.
 
 .Client Details
 image:../../../images/getting-started/hello-world/enable-authz.png[alt="Client Details"]
 
-In this page, click the `Authorization Enabled` switch and turn it `ON`, then click the `Save` button.
-After saving, a new `Authorization` tab will show up in the tab set for the client. Click on this tab and you should see a page similar to the following:
+3. On the Client Details page, click the *Authorization Enabled* switch to *ON*, and then click *Save*.
+A new *Authorization* tab is displayed for the client. 
+
+4. Click the *Authorization* tab and an Authorization Settings page similar to the following is displayed:
 
 .Authorization Settings
 image:../../../images/getting-started/hello-world/authz-settings.png[alt="Authorization Settings"]
 
-When you enable authorization services for a client application, {{book.project.name}} automatically creates several link:../../resource-server/default-config.html[Default Settings] for
-your client authorization configuration.
+When you enable authorization services for a client application, {{book.project.name}} automatically creates several link:../../resource-server/default-config.html[default settings] for your client authorization configuration.
 
-For more details about authorization configuration, please see link:../../resource-server/enable-authorization.html[Enabling Authorization Services].
+For more information about authorization configuration, see link:../../resource-server/enable-authorization.html[Enabling Authorization Services].
