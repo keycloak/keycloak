@@ -77,6 +77,8 @@ public class JSConsoleTestApp extends AbstractPageWithInjectedUrl {
     private WebElement createBearerRequest;
     @FindBy(xpath = "//button[text() = 'Bearer to keycloak']")
     private WebElement createBearerRequestToKeycloakButton;
+    @FindBy(xpath = "//button[text() = 'Cert request']")
+    private WebElement certRequestButton;
     @FindBy(xpath = "//button[text() = 'refresh timeSkew']")
     private WebElement refreshTimeSkewButton;
 
@@ -177,5 +179,9 @@ public class JSConsoleTestApp extends AbstractPageWithInjectedUrl {
 
     public void refreshTimeSkew() {
         refreshTimeSkewButton.click();
+    }
+
+    public void sendCertRequest() {
+        certRequestButton.click();
     }
 }
