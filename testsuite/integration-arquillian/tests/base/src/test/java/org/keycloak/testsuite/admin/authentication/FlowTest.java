@@ -50,6 +50,9 @@ public class FlowTest extends AbstractAuthenticationTest {
         
         authMgmtResource.createFlow(newFlow("Foo", "Foo flow", "generic", true, false));
         addFlowToParent("Foo", "child");
+        
+        // Under the old code, this would throw an error because "grandchild"
+        // was left in the database
         addFlowToParent("child", "grandchild");
     }
     
