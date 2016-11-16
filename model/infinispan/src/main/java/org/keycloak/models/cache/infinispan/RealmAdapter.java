@@ -39,13 +39,8 @@ import org.keycloak.models.UserFederationMapperModel;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.cache.CachedRealmModel;
 import org.keycloak.models.cache.infinispan.entities.CachedRealm;
-import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.storage.UserStorageProvider;
 
-import java.security.Key;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -75,7 +70,7 @@ public class RealmAdapter implements CachedRealmModel {
     @Override
     public RealmModel getDelegateForUpdate() {
         if (updated == null) {
-            cacheSession.registerRealmInvalidation(cached.getId());
+            cacheSession.registerRealmInvalidation(cached.getId(), cached.getName());
             updated = cacheSession.getDelegate().getRealm(cached.getId());
             if (updated == null) throw new IllegalStateException("Not found in database");
         }
@@ -732,13 +727,6 @@ public class RealmAdapter implements CachedRealmModel {
     }
 
     @Override
-    public boolean removeRoleById(String id) {
-        cacheSession.registerRoleInvalidation(id);
-        getDelegateForUpdate();
-        return updated.removeRoleById(id);
-    }
-
-    @Override
     public boolean isEventsEnabled() {
         if (isUpdated()) return updated.isEventsEnabled();
         return cached.isEventsEnabled();
@@ -837,18 +825,12 @@ public class RealmAdapter implements CachedRealmModel {
 
     @Override
     public RoleModel addRole(String name) {
-        getDelegateForUpdate();
-        RoleModel role = updated.addRole(name);
-        cacheSession.registerRoleInvalidation(role.getId());
-        return role;
+        return cacheSession.addRealmRole(this, name);
     }
 
     @Override
     public RoleModel addRole(String id, String name) {
-        getDelegateForUpdate();
-        RoleModel role =  updated.addRole(id, name);
-        cacheSession.registerRoleInvalidation(role.getId());
-        return role;
+        return cacheSession.addRealmRole(this, id, name);
     }
 
     @Override
@@ -1255,12 +1237,6 @@ public class RealmAdapter implements CachedRealmModel {
     @Override
     public GroupModel createGroup(String id, String name) {
         return cacheSession.createGroup(this, id, name);
-    }
-
-    @Override
-    public void addTopLevelGroup(GroupModel subGroup) {
-        cacheSession.addTopLevelGroup(this, subGroup);
-
     }
 
     @Override

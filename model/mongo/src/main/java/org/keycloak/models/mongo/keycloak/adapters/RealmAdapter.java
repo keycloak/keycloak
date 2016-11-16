@@ -23,7 +23,6 @@ import org.keycloak.common.enums.SslRequired;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.connections.mongo.api.context.MongoStoreInvocationContext;
-import org.keycloak.jose.jwk.JWKBuilder;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.AuthenticatorConfigModel;
@@ -62,10 +61,6 @@ import org.keycloak.models.mongo.keycloak.entities.UserFederationProviderEntity;
 import org.keycloak.models.utils.ComponentUtil;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
-import java.security.Key;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -516,13 +511,6 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     }
 
     @Override
-    public boolean removeRoleById(String id) {
-        RoleModel role = getRoleById(id);
-        if (role == null) return false;
-        return removeRole(role);
-    }
-
-    @Override
     public Set<RoleModel> getRoles() {
         DBObject query = new QueryBuilder()
                 .and("realmId").is(getId())
@@ -552,12 +540,6 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     @Override
     public GroupModel createGroup(String id, String name) {
         return session.realms().createGroup(this, id, name);
-    }
-
-    @Override
-    public void addTopLevelGroup(GroupModel subGroup) {
-        session.realms().addTopLevelGroup(this, subGroup);
-
     }
 
     @Override

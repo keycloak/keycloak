@@ -172,7 +172,7 @@ public class UserStorageSyncManager {
 
         }
         UserStorageProviderClusterEvent event = UserStorageProviderClusterEvent.createEvent(removed, realm.getId(), provider);
-        session.getProvider(ClusterProvider.class).notify(USER_STORAGE_TASK_KEY, event);
+        session.getProvider(ClusterProvider.class).notify(USER_STORAGE_TASK_KEY, event, false);
     }
 
 
@@ -282,7 +282,7 @@ public class UserStorageSyncManager {
         }
 
         @Override
-        public void run(ClusterEvent event) {
+        public void eventReceived(ClusterEvent event) {
             final UserStorageProviderClusterEvent fedEvent = (UserStorageProviderClusterEvent) event;
             KeycloakModelUtils.runJobInTransaction(sessionFactory, new KeycloakSessionTask() {
 

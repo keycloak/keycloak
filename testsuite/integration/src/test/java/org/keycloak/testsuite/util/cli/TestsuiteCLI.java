@@ -57,7 +57,11 @@ public class TestsuiteCLI {
             UserCommands.Remove.class,
             UserCommands.Count.class,
             UserCommands.GetUser.class,
-            SyncDummyFederationProviderCommand.class
+            SyncDummyFederationProviderCommand.class,
+            RoleCommands.CreateRoles.class,
+            CacheCommands.ListCachesCommand.class,
+            CacheCommands.GetCacheCommand.class,
+            CacheCommands.CacheRealmObjectsCommand.class
     };
 
     private final KeycloakSessionFactory sessionFactory;

@@ -97,7 +97,10 @@
         "default": {
             "clustered": "${keycloak.connectionsInfinispan.clustered:false}",
             "async": "${keycloak.connectionsInfinispan.async:false}",
-            "sessionsOwners": "${keycloak.connectionsInfinispan.sessionsOwners:2}"
+            "sessionsOwners": "${keycloak.connectionsInfinispan.sessionsOwners:2}",
+            "remoteStoreEnabled": "${keycloak.connectionsInfinispan.remoteStoreEnabled:false}",
+            "remoteStoreHost": "${keycloak.connectionsInfinispan.remoteStoreHost:localhost}",
+            "remoteStorePort": "${keycloak.connectionsInfinispan.remoteStorePort:11222}"
         }
     },
 

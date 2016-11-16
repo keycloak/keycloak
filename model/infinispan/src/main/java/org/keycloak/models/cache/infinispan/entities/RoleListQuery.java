@@ -59,7 +59,8 @@ public class RoleListQuery extends AbstractRevisioned implements RoleQuery, InCl
     public String toString() {
         return "RoleListQuery{" +
                 "id='" + getId() + "'" +
-                "realmName='" + realmName + '\'' +
+                ", realmName='" + realmName + '\'' +
+                ", clientUuid='" + client + '\'' +
                 '}';
     }
 }
