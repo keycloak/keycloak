@@ -38,13 +38,7 @@ import java.util.Collection;
  * @version $Revision: 1 $
  */
 @NamedQueries({
-        @NamedQuery(name="getAllGroupsByRealm", query="select u from GroupEntity u where u.realm = :realm order by u.name"),
-        @NamedQuery(name="getAllGroupIdsByRealm", query="select u.id from GroupEntity u where u.realm.id = :realm order by u.name"),
-        @NamedQuery(name="getGroupById", query="select u from GroupEntity u where u.id = :id and u.realm = :realm"),
         @NamedQuery(name="getGroupIdsByParent", query="select u.id from GroupEntity u where u.parent = :parent"),
-        @NamedQuery(name="getTopLevelGroupIds", query="select u.id from GroupEntity u where u.parent is null and u.realm.id = :realm"),
-        @NamedQuery(name="getGroupCount", query="select count(u) from GroupEntity u where u.realm = :realm"),
-        @NamedQuery(name="deleteGroupsByRealm", query="delete from GroupEntity u where u.realm = :realm")
 })
 @Entity
 @Table(name="KEYCLOAK_GROUP")

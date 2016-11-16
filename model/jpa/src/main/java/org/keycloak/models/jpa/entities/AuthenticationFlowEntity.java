@@ -39,10 +39,6 @@ import java.util.Collection;
  */
 @Table(name="AUTHENTICATION_FLOW")
 @Entity
-@NamedQueries({
-        @NamedQuery(name="getAuthenticationFlowsByRealm", query="select flow from AuthenticationFlowEntity flow where flow.realm = :realm"),
-        @NamedQuery(name="deleteAuthenticationFlowByRealm", query="delete from AuthenticationFlowEntity flow where flow.realm = :realm")
-})
 public class AuthenticationFlowEntity {
     @Id
     @Column(name="ID", length = 36)
