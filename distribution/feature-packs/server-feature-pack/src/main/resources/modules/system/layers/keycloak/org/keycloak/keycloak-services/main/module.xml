@@ -30,7 +30,7 @@
         <module name="org.keycloak.keycloak-js-adapter" services="import"/>
         <module name="org.keycloak.keycloak-kerberos-federation" services="import"/>
         <module name="org.keycloak.keycloak-ldap-federation" services="import"/>
-        <module name="org.keycloak.keycloak-sssd-federation" services="import"/>
+        <module name="org.keycloak.keycloak-sssd-federation" optional="true" services="import"/>
         <module name="org.keycloak.keycloak-server-spi" services="import"/>
         <module name="org.keycloak.keycloak-server-spi-private" services="import"/>
         <module name="org.keycloak.keycloak-model-jpa" services="import"/>
