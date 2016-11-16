@@ -180,6 +180,12 @@ In the unlikely case that SP would not be able to handle the new scheme, {{book.
 can be made to use legacy RSA-v1.5 encryption scheme when started with system property
 `keycloak.saml.key_trans.rsa_v1.5` set to `true`.
 
+===== Infinispan caches realms and users are always local
+
+Even if you use {{book.project.name}} in cluster, the caches `realms` and `users` defined in infinispan subsystem in `standalone-ha.xml` are
+always local caches now. There is separate cache `work`, which handles sending invalidation messages between cluster nodes and informing whole cluster
+what records in underlying `realms` and `users` caches should be invalidated.
+
 ==== Migrating to 2.3.0
 
 ===== Default max results on paginated endpoints
