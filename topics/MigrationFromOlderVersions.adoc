@@ -205,7 +205,10 @@ however in that case, it is much better option to use HTTPS, which will secure a
 The `databaseSchema` property for both JPA and Mongo is now deprecated and has been replaced by `initializeEmpty`
 and `migrationStrategy`. `initializeEmpty` can bet set to `true` or `false` and controls if an empty database should
 be initialized. `migrationStrategy` can be set to `update`, `validate` and `manual`. `manual` is only supported for
-relational databases and will write an SQL file with the required changes to the database schema.
+relational databases and will write an SQL file with the required changes to the database schema. Please note that
+for Oracle database, the created SQL file contains `SET DEFINE OFF` command understood by Oracle SQL clients.
+Should the script be consumed by any other client, please replace the lines with equivalent command of the tool of
+your choice that disables variable expansion or remove it completely if such functionality is not applicable.
 
 ===== Changes in Client's Valid Redirect URIs
 The following scenarios are affected:
