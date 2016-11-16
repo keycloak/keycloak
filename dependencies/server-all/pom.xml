@@ -256,6 +256,10 @@
             </exclusions>
         </dependency>
         <dependency>
+            <groupId>org.sonatype.sisu.inject</groupId>
+            <artifactId>guice-servlet</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.sonatype.plexus</groupId>
             <artifactId>plexus-cipher</artifactId>
         </dependency>
