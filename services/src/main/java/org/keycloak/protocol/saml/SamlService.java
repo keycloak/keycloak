@@ -611,12 +611,29 @@ public class SamlService extends AuthorizationEndpointBase {
             return ErrorPage.error(session, Messages.INVALID_REDIRECT_URI);
         }
 
+        ClientSessionModel clientSession = createClientSessionForIdpInitiatedSso(this.session, this.realm, client, relayState);
+
+        return newBrowserAuthentication(clientSession, false, false);
+    }
+
+    /**
+     * Creates a client session object for SAML IdP-initiated SSO session.
+     * The session takes the parameters from from client definition,
+     * namely binding type and redirect URL.
+     *
+     * @param session KC session
+     * @param realm Realm to create client session in
+     * @param client Client to create client session for
+     * @param relayState Optional relay state - free field as per SAML specification
+     * @return
+     */
+    public static ClientSessionModel createClientSessionForIdpInitiatedSso(KeycloakSession session, RealmModel realm, ClientModel client, String relayState) {
         String bindingType = SamlProtocol.SAML_POST_BINDING;
         if (client.getManagementUrl() == null && client.getAttribute(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_POST_ATTRIBUTE) == null && client.getAttribute(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_REDIRECT_ATTRIBUTE) != null) {
             bindingType = SamlProtocol.SAML_REDIRECT_BINDING;
         }
 
-        String redirect = null;
+        String redirect;
         if (bindingType.equals(SamlProtocol.SAML_REDIRECT_BINDING)) {
             redirect = client.getAttribute(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_REDIRECT_ATTRIBUTE);
         } else {
@@ -640,8 +657,7 @@ public class SamlService extends AuthorizationEndpointBase {
             clientSession.setNote(GeneralConstants.RELAY_STATE, relayState);
         }
 
-        return newBrowserAuthentication(clientSession, false, false);
-
+        return clientSession;
     }
 
     @POST
