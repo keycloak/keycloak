@@ -26,53 +26,61 @@
  */
 package cx.ath.matthew.unix;
 
-import java.io.IOException;
-import java.io.OutputStream;
+/**
+ * Represents an address for a Unix Socket
+ */
+public class UnixSocketAddress {
+    String path;
+    boolean abs;
 
-public class USOutputStream extends OutputStream {
-    private native int native_send(int sock, byte[] b, int off, int len) throws IOException;
-
-    private native int native_send(int sock, byte[][] b) throws IOException;
-
-    private int sock;
-    boolean closed = false;
-    private byte[] onebuf = new byte[1];
-    private UnixSocket us;
-
-    public USOutputStream(int sock, UnixSocket us) {
-        this.sock = sock;
-        this.us = us;
+    /**
+     * Create the address.
+     *
+     * @param path The path to the Unix Socket.
+     * @param abs  True if this should be an abstract socket.
+     */
+    public UnixSocketAddress(String path, boolean abs) {
+        this.path = path;
+        this.abs = abs;
     }
 
-    public void close() throws IOException {
-        closed = true;
-        us.close();
+    /**
+     * Create the address.
+     *
+     * @param path The path to the Unix Socket.
+     */
+    public UnixSocketAddress(String path) {
+        this.path = path;
+        this.abs = false;
     }
 
-    public void flush() {
-    } // no-op, we do not buffer
-
-    public void write(byte[][] b) throws IOException {
-        if (closed) throw new NotConnectedException();
-        native_send(sock, b);
+    /**
+     * Return the path.
+     */
+    public String getPath() {
+        return path;
     }
 
-    public void write(byte[] b, int off, int len) throws IOException {
-        if (closed) throw new NotConnectedException();
-        native_send(sock, b, off, len);
+    /**
+     * Returns true if this an address for an abstract socket.
+     */
+    public boolean isAbstract() {
+        return abs;
     }
 
-    public void write(int b) throws IOException {
-        onebuf[0] = (byte) (b % 0x7F);
-        if (1 == (b % 0x80)) onebuf[0] = (byte) -onebuf[0];
-        write(onebuf);
+    /**
+     * Return the Address as a String.
+     */
+    public String toString() {
+        return "unix" + (abs ? ":abstract" : "") + ":path=" + path;
     }
 
-    public boolean isClosed() {
-        return closed;
+    public boolean equals(Object o) {
+        if (!(o instanceof UnixSocketAddress)) return false;
+        return ((UnixSocketAddress) o).path.equals(this.path);
     }
 
-    public UnixSocket getSocket() {
-        return us;
+    public int hashCode() {
+        return path.hashCode();
     }
 }
