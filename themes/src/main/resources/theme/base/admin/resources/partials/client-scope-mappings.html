@@ -41,7 +41,7 @@
             </fieldset>
         </form>
 
-        <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageClients" data-ng-show="!client.fullScopeAllowed" data-ng-hide="client.useTemplateScope && template && template.fullScopeAllowed">
+        <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageClients" data-ng-hide="hideRoleSelector()">
             <div class="form-group">
                 <label class="col-md-2 control-label" class="control-label">{{:: 'realm-roles' | translate}}</label>
                 <div class="col-md-10">
@@ -132,6 +132,6 @@
                 </div>
             </div>
         </form>
-    </div>
+        </div>
 
 <kc-menu></kc-menu>
