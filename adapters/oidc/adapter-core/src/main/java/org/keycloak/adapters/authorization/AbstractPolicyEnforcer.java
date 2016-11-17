@@ -92,6 +92,10 @@ public abstract class AbstractPolicyEnforcer {
                     return createEmptyAuthorizationContext(false);
                 }
 
+                if (EnforcementMode.DISABLED.equals(pathConfig.getEnforcementMode())) {
+                    return createEmptyAuthorizationContext(true);
+                }
+
                 PathConfig actualPathConfig = resolvePathConfig(pathConfig, request);
                 Set<String> requiredScopes = getRequiredScopes(actualPathConfig, request);
 
@@ -133,14 +137,17 @@ public abstract class AbstractPolicyEnforcer {
         }
 
         List<Permission> permissions = authorization.getPermissions();
+        boolean hasPermission = false;
 
         for (Permission permission : permissions) {
             if (permission.getResourceSetId() != null) {
                 if (isResourcePermission(actualPathConfig, permission)) {
+                    hasPermission = true;
+
                     if (actualPathConfig.isInstance() && !matchResourcePermission(actualPathConfig, permission)) {
                         continue;
-
                     }
+
                     if (hasResourceScopePermission(requiredScopes, permission, actualPathConfig)) {
                         LOGGER.debugf("Authorization GRANTED for path [%s]. Permissions [%s].", actualPathConfig, permissions);
                         if (request.getMethod().equalsIgnoreCase("DELETE") && actualPathConfig.isInstance()) {
@@ -151,9 +158,14 @@ public abstract class AbstractPolicyEnforcer {
                 }
             } else {
                 if (hasResourceScopePermission(requiredScopes, permission, actualPathConfig)) {
+                    hasPermission = true;
                     return true;
                 }
             }
+        }
+
+        if (!hasPermission && EnforcementMode.PERMISSIVE.equals(actualPathConfig.getEnforcementMode())) {
+            return true;
         }
 
         LOGGER.debugf("Authorization FAILED for path [%s]. No enough permissions [%s].", actualPathConfig, permissions);
@@ -226,6 +238,7 @@ public abstract class AbstractPolicyEnforcer {
                 config.setScopes(originalConfig.getScopes());
                 config.setMethods(originalConfig.getMethods());
                 config.setParentConfig(originalConfig);
+                config.setEnforcementMode(originalConfig.getEnforcementMode());
 
                 this.paths.add(config);
 
