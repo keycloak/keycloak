@@ -19,6 +19,7 @@ package org.keycloak.adapters.authorization;
 
 import org.jboss.logging.Logger;
 import org.keycloak.AuthorizationContext;
+import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.adapters.OIDCHttpFacade;
 import org.keycloak.adapters.spi.HttpFacade.Request;
 import org.keycloak.adapters.spi.HttpFacade.Response;
@@ -66,40 +67,47 @@ public abstract class AbstractPolicyEnforcer {
             return createEmptyAuthorizationContext(true);
         }
 
-        AccessToken accessToken = httpFacade.getSecurityContext().getToken();
-        Request request = httpFacade.getRequest();
-        Response response = httpFacade.getResponse();
-        String pathInfo = URI.create(request.getURI()).getPath().substring(1);
-        String path = pathInfo.substring(pathInfo.indexOf('/'), pathInfo.length());
-        PathConfig pathConfig = this.pathMatcher.matches(path, this.paths);
+        KeycloakSecurityContext securityContext = httpFacade.getSecurityContext();
 
-        LOGGER.debugf("Checking permissions for path [%s] with config [%s].", request.getURI(), pathConfig);
+        if (securityContext != null) {
+            AccessToken accessToken = securityContext.getToken();
 
-        if (pathConfig == null) {
-            if (EnforcementMode.PERMISSIVE.equals(enforcementMode)) {
-                return createAuthorizationContext(accessToken);
+            if (accessToken != null) {
+                Request request = httpFacade.getRequest();
+                Response response = httpFacade.getResponse();
+                String pathInfo = URI.create(request.getURI()).getPath().substring(1);
+                String path = pathInfo.substring(pathInfo.indexOf('/'), pathInfo.length());
+                PathConfig pathConfig = this.pathMatcher.matches(path, this.paths);
+
+                LOGGER.debugf("Checking permissions for path [%s] with config [%s].", request.getURI(), pathConfig);
+
+                if (pathConfig == null) {
+                    if (EnforcementMode.PERMISSIVE.equals(enforcementMode)) {
+                        return createAuthorizationContext(accessToken);
+                    }
+
+                    LOGGER.debugf("Could not find a configuration for path [%s]", path);
+                    response.sendError(403, "Could not find a configuration for path [" + path + "].");
+
+                    return createEmptyAuthorizationContext(false);
+                }
+
+                PathConfig actualPathConfig = resolvePathConfig(pathConfig, request);
+                Set<String> requiredScopes = getRequiredScopes(actualPathConfig, request);
+
+                if (isAuthorized(actualPathConfig, requiredScopes, accessToken, httpFacade)) {
+                    try {
+                        return createAuthorizationContext(accessToken);
+                    } catch (Exception e) {
+                        throw new RuntimeException("Error processing path [" + actualPathConfig.getPath() + "].", e);
+                    }
+                }
+
+                if (!challenge(actualPathConfig, requiredScopes, httpFacade)) {
+                    LOGGER.debugf("Sending challenge to the client. Path [%s]", pathConfig);
+                    response.sendError(403, "Authorization failed.");
+                }
             }
-
-            LOGGER.debugf("Could not find a configuration for path [%s]", path);
-            response.sendError(403, "Could not find a configuration for path [" + path + "].");
-
-            return createEmptyAuthorizationContext(false);
-        }
-
-        PathConfig actualPathConfig = resolvePathConfig(pathConfig, request);
-        Set<String> requiredScopes = getRequiredScopes(actualPathConfig, request);
-
-        if (isAuthorized(actualPathConfig, requiredScopes, accessToken, httpFacade)) {
-            try {
-                return createAuthorizationContext(accessToken);
-            } catch (Exception e) {
-                throw new RuntimeException("Error processing path [" + actualPathConfig.getPath() + "].", e);
-            }
-        }
-
-        if (!challenge(actualPathConfig, requiredScopes, httpFacade)) {
-            LOGGER.debugf("Sending challenge to the client. Path [%s]", pathConfig);
-            response.sendError(403, "Authorization failed.");
         }
 
         return createEmptyAuthorizationContext(false);
