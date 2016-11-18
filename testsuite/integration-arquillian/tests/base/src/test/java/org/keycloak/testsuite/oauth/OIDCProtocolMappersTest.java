@@ -43,10 +43,8 @@ import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.ProtocolMapperUtil;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.hamcrest.Matchers.*;
+import static org.junit.Assert.*;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.admin.ApiUtil.findClientByClientId;
 import static org.keycloak.testsuite.admin.ApiUtil.findClientResourceByClientId;
@@ -222,11 +220,152 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
 
         // Verify attribute is filled
         Map<String, Object> roleMappings = (Map<String, Object>)idToken.getOtherClaims().get("roles-custom");
-        Assert.assertEquals(2, roleMappings.size());
+        Assert.assertThat(roleMappings.keySet(), containsInAnyOrder("realm", "test-app"));
         String realmRoleMappings = (String) roleMappings.get("realm");
         String testAppMappings = (String) roleMappings.get("test-app");
-        Assert.assertTrue(realmRoleMappings.contains("pref.user"));
-        Assert.assertEquals("[customer-user]", testAppMappings);
+        assertRoles(realmRoleMappings,
+          "pref.user",                      // from direct assignment in user definition
+          "pref.offline_access"             // from direct assignment in user definition
+        );
+        assertRoles(testAppMappings,
+          "customer-user"                   // from direct assignment in user definition
+        );
+    }
+
+
+    @Test
+    public void testUserGroupRoleToAttributeMappers() throws Exception {
+        // Add mapper for realm roles
+        String clientId = "test-app";
+        ProtocolMapperRepresentation realmMapper = ProtocolMapperUtil.createUserRealmRoleMappingMapper("pref.", "Realm roles mapper", "roles-custom.realm", true, true);
+        ProtocolMapperRepresentation clientMapper = ProtocolMapperUtil.createUserClientRoleMappingMapper(clientId, "ta.", "Client roles mapper", "roles-custom.test-app", true, true);
+
+        ProtocolMappersResource protocolMappers = ApiUtil.findClientResourceByClientId(adminClient.realm("test"), clientId).getProtocolMappers();
+        protocolMappers.createMapper(Arrays.asList(realmMapper, clientMapper));
+
+        // Login user
+        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("password", "rich.roles@redhat.com", "password");
+        IDToken idToken = oauth.verifyIDToken(response.getIdToken());
+
+        // Verify attribute is filled
+        Map<String, Object> roleMappings = (Map<String, Object>)idToken.getOtherClaims().get("roles-custom");
+        Assert.assertThat(roleMappings.keySet(), containsInAnyOrder("realm", clientId));
+        String realmRoleMappings = (String) roleMappings.get("realm");
+        String testAppMappings = (String) roleMappings.get(clientId);
+        assertRoles(realmRoleMappings,
+          "pref.admin",                     // from direct assignment to /roleRichGroup/level2group
+          "pref.user",                      // from parent group of /roleRichGroup/level2group, i.e. from /roleRichGroup
+          "pref.customer-user-premium",     // from client role customer-admin-composite-role - realm role for test-app
+          "pref.realm-composite-role",      // from parent group of /roleRichGroup/level2group, i.e. from /roleRichGroup
+          "pref.sample-realm-role"          // from realm role realm-composite-role
+        );
+        assertRoles(testAppMappings,
+          "ta.customer-user",                  // from direct assignment to /roleRichGroup/level2group
+          "ta.customer-admin-composite-role",  // from direct assignment to /roleRichGroup/level2group
+          "ta.customer-admin",                 // from client role customer-admin-composite-role - client role for test-app
+          "ta.sample-client-role"              // from realm role realm-composite-role - client role for test-app
+        );
+    }
+
+    @Test
+    public void testUserGroupRoleToAttributeMappersNotScopedOtherApp() throws Exception {
+        String clientId = "test-app-authz";
+        ProtocolMapperRepresentation realmMapper = ProtocolMapperUtil.createUserRealmRoleMappingMapper("pref.", "Realm roles mapper", "roles-custom.realm", true, true);
+        ProtocolMapperRepresentation clientMapper = ProtocolMapperUtil.createUserClientRoleMappingMapper(clientId, null, "Client roles mapper", "roles-custom." + clientId, true, true);
+
+        ProtocolMappersResource protocolMappers = ApiUtil.findClientResourceByClientId(adminClient.realm("test"), clientId).getProtocolMappers();
+        protocolMappers.createMapper(Arrays.asList(realmMapper, clientMapper));
+
+        // Login user
+        ClientManager.realm(adminClient.realm("test")).clientId(clientId).directAccessGrant(true);
+        oauth.clientId(clientId);
+        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "rich.roles@redhat.com", "password");
+        IDToken idToken = oauth.verifyIDToken(response.getIdToken());
+
+        // Verify attribute is filled
+        Map<String, Object> roleMappings = (Map<String, Object>)idToken.getOtherClaims().get("roles-custom");
+        Assert.assertThat(roleMappings.keySet(), containsInAnyOrder("realm", clientId));
+        String realmRoleMappings = (String) roleMappings.get("realm");
+        String testAppAuthzMappings = (String) roleMappings.get(clientId);
+        assertRoles(realmRoleMappings,
+          "pref.admin",                     // from direct assignment to /roleRichGroup/level2group
+          "pref.user",                      // from parent group of /roleRichGroup/level2group, i.e. from /roleRichGroup
+          "pref.customer-user-premium",     // from client role customer-admin-composite-role - realm role for test-app
+          "pref.realm-composite-role",      // from parent group of /roleRichGroup/level2group, i.e. from /roleRichGroup
+          "pref.sample-realm-role"          // from realm role realm-composite-role
+        );
+        assertRoles(testAppAuthzMappings);  // There is no client role defined for test-app-authz
+    }
+
+    @Test
+    public void testUserGroupRoleToAttributeMappersScoped() throws Exception {
+        String clientId = "test-app-scope";
+        ProtocolMapperRepresentation realmMapper = ProtocolMapperUtil.createUserRealmRoleMappingMapper("pref.", "Realm roles mapper", "roles-custom.realm", true, true);
+        ProtocolMapperRepresentation clientMapper = ProtocolMapperUtil.createUserClientRoleMappingMapper(clientId, null, "Client roles mapper", "roles-custom.test-app-scope", true, true);
+
+        ProtocolMappersResource protocolMappers = ApiUtil.findClientResourceByClientId(adminClient.realm("test"), clientId).getProtocolMappers();
+        protocolMappers.createMapper(Arrays.asList(realmMapper, clientMapper));
+
+        // Login user
+        ClientManager.realm(adminClient.realm("test")).clientId(clientId).directAccessGrant(true);
+        oauth.clientId(clientId);
+        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("password", "rich.roles@redhat.com", "password");
+        IDToken idToken = oauth.verifyIDToken(response.getIdToken());
+
+        // Verify attribute is filled
+        Map<String, Object> roleMappings = (Map<String, Object>)idToken.getOtherClaims().get("roles-custom");
+        Assert.assertThat(roleMappings.keySet(), containsInAnyOrder("realm", clientId));
+        String realmRoleMappings = (String) roleMappings.get("realm");
+        String testAppScopeMappings = (String) roleMappings.get(clientId);
+        assertRoles(realmRoleMappings,
+          "pref.admin",                     // from direct assignment to /roleRichGroup/level2group
+          "pref.user"                       // from parent group of /roleRichGroup/level2group, i.e. from /roleRichGroup
+        );
+        assertRoles(testAppScopeMappings,
+          "test-app-allowed-by-scope"       // from direct assignment to roleRichUser, present as scope allows it
+        );
+    }
+
+    @Test
+    public void testUserGroupRoleToAttributeMappersScopedClientNotSet() throws Exception {
+        String clientId = "test-app-scope";
+        ProtocolMapperRepresentation realmMapper = ProtocolMapperUtil.createUserRealmRoleMappingMapper("pref.", "Realm roles mapper", "roles-custom.realm", true, true);
+        ProtocolMapperRepresentation clientMapper = ProtocolMapperUtil.createUserClientRoleMappingMapper(null, null, "Client roles mapper", "roles-custom.test-app-scope", true, true);
+
+        ProtocolMappersResource protocolMappers = ApiUtil.findClientResourceByClientId(adminClient.realm("test"), clientId).getProtocolMappers();
+        protocolMappers.createMapper(Arrays.asList(realmMapper, clientMapper));
+
+        // Login user
+        ClientManager.realm(adminClient.realm("test")).clientId(clientId).directAccessGrant(true);
+        oauth.clientId(clientId);
+        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("password", "rich.roles@redhat.com", "password");
+        IDToken idToken = oauth.verifyIDToken(response.getIdToken());
+
+        // Verify attribute is filled
+        Map<String, Object> roleMappings = (Map<String, Object>)idToken.getOtherClaims().get("roles-custom");
+        Assert.assertThat(roleMappings.keySet(), containsInAnyOrder("realm", clientId));
+        String realmRoleMappings = (String) roleMappings.get("realm");
+        String testAppScopeMappings = (String) roleMappings.get(clientId);
+        assertRoles(realmRoleMappings,
+          "pref.admin",                     // from direct assignment to /roleRichGroup/level2group
+          "pref.user"                       // from parent group of /roleRichGroup/level2group, i.e. from /roleRichGroup
+        );
+        assertRoles(testAppScopeMappings,
+          "test-app-allowed-by-scope",      // from direct assignment to roleRichUser, present as scope allows it
+          "customer-admin-composite-role"   // from direct assignment to /roleRichGroup/level2group, present as scope allows it
+        );
+    }
+
+    private void assertRoles(String actualRoleString, String...expectedRoles) {
+        String[] roles;
+        Assert.assertThat(actualRoleString.matches("^\\[.*\\]$"), is(true));
+        roles = actualRoleString.substring(1, actualRoleString.length() - 1).split(",\\s*");
+
+        if (expectedRoles == null || expectedRoles.length == 0) {
+            Assert.assertThat(roles, arrayContainingInAnyOrder(""));
+        } else {
+            Assert.assertThat(roles, arrayContainingInAnyOrder(expectedRoles));
+        }
     }
 
 
