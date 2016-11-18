@@ -627,14 +627,21 @@ module.controller('UserFederationCtrl', function($scope, $location, $route, real
     for (var i = 0; i < $scope.providers.length; i++) {
         $scope.providers[i].isUserFederationProvider = false;
     }
-    /*
+
     UserFederationProviders.query({realm: realm.realm}, function(data) {
         for (var i = 0; i < data.length; i++) {
             data[i].isUserFederationProvider = true;
+
+            var existingProvider = $scope.providers.find(function(provider){ return provider.id == data[i].id });
+            if (existingProvider) {
+                angular.copy(data[i], existingProvider);
+                continue;
+            }
+
             $scope.providers.push(data[i]);
         }
     });
-    */
+
 
     $scope.addProvider = function(provider) {
         console.log('Add provider: ' + provider.id);
