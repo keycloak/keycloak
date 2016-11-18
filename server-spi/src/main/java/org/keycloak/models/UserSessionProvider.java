@@ -55,7 +55,6 @@ public interface UserSessionProvider extends Provider {
 
     void onRealmRemoved(RealmModel realm);
     void onClientRemoved(RealmModel realm, ClientModel client);
-    void onUserRemoved(RealmModel realm, UserModel user);
 
     UserSessionModel createOfflineUserSession(UserSessionModel userSession);
     UserSessionModel getOfflineUserSession(RealmModel realm, String userSessionId);

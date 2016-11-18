@@ -431,8 +431,8 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         }
     }
 
-    @Override
-    public void onUserRemoved(RealmModel realm, UserModel user) {
+
+    protected void onUserRemoved(RealmModel realm, UserModel user) {
         removeUserSessions(realm, user, true);
         removeUserSessions(realm, user, false);
 

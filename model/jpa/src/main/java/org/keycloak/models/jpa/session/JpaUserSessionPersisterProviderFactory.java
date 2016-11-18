@@ -45,11 +45,6 @@ public class JpaUserSessionPersisterProviderFactory implements UserSessionPersis
     }
 
     @Override
-    public void postInit(KeycloakSessionFactory factory) {
-
-    }
-
-    @Override
     public void close() {
 
     }

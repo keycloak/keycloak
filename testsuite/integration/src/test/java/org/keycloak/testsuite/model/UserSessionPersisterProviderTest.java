@@ -336,6 +336,7 @@ public class UserSessionPersisterProviderTest {
 
         resetSession();
 
+        Assert.assertEquals(1, persister.getUserSessionsCount(true));
         loadedSessions = loadPersistedSessionsPaginated(true, 10, 1, 1);
         UserSessionModel persistedSession = loadedSessions.get(0);
         UserSessionProviderTest.assertSession(persistedSession, session.users().getUserByUsername("user2", realm), "127.0.0.3", started, started, "test-app");
