@@ -87,6 +87,19 @@ If you don't have permission, please make sure that the user running {{book.proj
 
 ==== Enabling SSSD Federation Provider
 
-All you have to do is to configure a federated SSSD store, go to the Admin Console. Click on the User Federation left menu option. When you get to this page there is an Add Provider select box. You should see `sssd` within this list. Selecting `sssd` will bring you to the `sssd` configuration page and save it.
+{{book.project.name}} uses DBus-Java under the covers to communicate at a low level with D-Bus which depends on  http://www.matthew.ath.cx/projects/java/[Unix Sockets Library]. There's a RPM for this library https://github.com/keycloak/libunix-dbus-java/releases[here]. Before installing it, make sure to check the RPM signature:
+
+  $ rpm -K libunix-dbus-java-0.8.0-1.fc24.x86_64.rpm
+  libunix-dbus-java-0.8.0-1.fc24.x86_64.rpm:
+    Header V4 RSA/SHA256 Signature, key ID 84dc9914: OK
+    Header SHA1 digest: OK (d17bb7ebaa7a5304c1856ee4357c8ba4ec9c0b89)
+    V4 RSA/SHA256 Signature, key ID 84dc9914: OK
+    MD5 digest: OK (770c2e68d052cb4a4473e1e9fd8818cf)
+  $ sudo yum install libunix-dbus-java-0.8.0-1.fc24.x86_64.rpm
+
+For authentication with PAM {{book.project.name}} uses JNA under the covers. Please make ensure you have this package installed:
+  $ sudo yum install jna
+
+After the installation, all you have to do is to configure a federated SSSD store, go to the Admin Console. Click on the User Federation left menu option. When you get to this page there is an Add Provider select box. You should see `sssd` within this list. Selecting `sssd` will bring you to the `sssd` configuration page and save it.
 
 Now you should be able to authenticate against  {{book.project.name}} using FreeIPA/IdM credentials.
