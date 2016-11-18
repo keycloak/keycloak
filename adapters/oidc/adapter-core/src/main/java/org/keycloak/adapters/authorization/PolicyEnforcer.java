@@ -105,7 +105,16 @@ public class PolicyEnforcer {
     }
 
     private List<PathConfig> configurePaths(ProtectedResource protectedResource, PolicyEnforcerConfig enforcerConfig) {
-        if (enforcerConfig.getPaths().isEmpty()) {
+        boolean loadPathsFromServer = true;
+
+        for (PathConfig pathConfig : enforcerConfig.getPaths()) {
+            if (!PolicyEnforcerConfig.EnforcementMode.DISABLED.equals(pathConfig.getEnforcementMode())) {
+                loadPathsFromServer = false;
+                break;
+            }
+        }
+
+        if (loadPathsFromServer) {
             LOGGER.info("No path provided in configuration.");
             return configureAllPathsForResourceServer(protectedResource);
         } else {
