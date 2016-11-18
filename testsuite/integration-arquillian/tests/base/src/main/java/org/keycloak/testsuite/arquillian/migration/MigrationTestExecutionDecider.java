@@ -20,6 +20,7 @@ import org.jboss.arquillian.test.spi.execution.ExecutionDecision;
 import org.jboss.arquillian.test.spi.execution.TestExecutionDecider;
 
 import java.lang.reflect.Method;
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:vramik@redhat.com">Vlastislav Ramik</a>
@@ -27,6 +28,7 @@ import java.lang.reflect.Method;
  */
 public class MigrationTestExecutionDecider implements TestExecutionDecider {
 
+    private final Logger log = Logger.getLogger(MigrationTestExecutionDecider.class);
     private static final String MIGRATED_AUTH_SERVER_VERSION_PROPERTY = "migrated.auth.server.version";
 
     @Override
@@ -35,8 +37,10 @@ public class MigrationTestExecutionDecider implements TestExecutionDecider {
         String migratedAuthServerVersion = System.getProperty(MIGRATED_AUTH_SERVER_VERSION_PROPERTY);
         boolean migrationTest = migratedAuthServerVersion != null;
         Migration migrationAnnotation = method.getAnnotation(Migration.class);
-
-        if (migrationTest && migrationAnnotation != null) {
+        
+         if (migrationTest && migrationAnnotation != null) {
+            log.info("migration from version: " + migratedAuthServerVersion);
+            
             String versionFrom = migrationAnnotation.versionFrom();
 
             if (migratedAuthServerVersion.contains(versionFrom)) {
