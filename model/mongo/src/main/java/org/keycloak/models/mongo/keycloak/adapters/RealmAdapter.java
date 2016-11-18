@@ -1988,28 +1988,39 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     @Override
     public void removeComponent(ComponentModel component) {
         Iterator<ComponentEntity> it = realm.getComponentEntities().iterator();
+        ComponentEntity found = null;
         while(it.hasNext()) {
-            if (it.next().getId().equals(component.getId())) {
-                session.users().preRemove(this, component);
-                removeComponents(component.getId());
-                it.remove();
+            ComponentEntity next = it.next();
+            if (next.getId().equals(component.getId())) {
+                found = next;
                 break;
             }
         }
-        updateRealm();
 
+        if (found != null) {
+            session.users().preRemove(this, component);
+            removeComponents(component.getId());
+            realm.getComponentEntities().remove(found);
+            updateRealm();
+        }
     }
 
     @Override
     public void removeComponents(String parentId) {
         Iterator<ComponentEntity> it = realm.getComponentEntities().iterator();
+        Set<ComponentEntity> toRemove = new HashSet<>();
         while(it.hasNext()) {
             ComponentEntity next = it.next();
             if (next.getParentId().equals(parentId)) {
-                session.users().preRemove(this, entityToModel(next));
-                it.remove();
+                toRemove.add(next);
             }
         }
+
+        for (ComponentEntity toRem : toRemove) {
+            session.users().preRemove(this, entityToModel(toRem));
+            realm.getComponentEntities().remove(toRem);
+        }
+
         updateRealm();
 
     }

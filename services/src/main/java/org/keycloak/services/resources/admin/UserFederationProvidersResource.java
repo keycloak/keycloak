@@ -21,6 +21,7 @@ import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.common.constants.KerberosConstants;
+import org.keycloak.component.ComponentModel;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.mappers.FederationConfigValidationException;
@@ -60,8 +61,10 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 
 /**
@@ -261,6 +264,33 @@ public class UserFederationProvidersResource {
         UserFederationProviderResource instanceResource = new UserFederationProviderResource(session, realm, this.auth, model, adminEvent);
         ResteasyProviderFactory.getInstance().injectProperties(instanceResource);
         return instanceResource;
+    }
+
+    // TODO: This endpoint exists, so that admin console can lookup userFederation provider OR userStorage provider by federationLink.
+    // TODO: Endpoint should be removed once UserFederation SPI is removed as fallback is not needed anymore than
+    @GET
+    @Path("instances-with-fallback/{id}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @NoCache
+    public Map<String, String> getUserFederationInstanceWithFallback(@PathParam("id") String id) {
+        this.auth.requireView();
+
+        Map<String, String> result = new HashMap<>();
+        UserFederationProviderModel model = KeycloakModelUtils.findUserFederationProviderById(id, realm);
+        if (model != null) {
+            result.put("federationLinkName", model.getDisplayName());
+            result.put("federationLink", "#/realms/" + realm.getName() + "/user-federation/providers/" + model.getProviderName() + "/" + model.getId());
+            return result;
+        } else {
+            ComponentModel userStorage = KeycloakModelUtils.findUserStorageProviderById(id, realm);
+            if (userStorage != null) {
+                result.put("federationLinkName", userStorage.getName());
+                result.put("federationLink", "#/realms/" + realm.getName() + "/user-storage/providers/" + userStorage.getProviderId() + "/" + userStorage.getId());
+                return result;
+            } else {
+                throw new NotFoundException("Could not find federation provider or userStorage provider");
+            }
+        }
     }
 
 
