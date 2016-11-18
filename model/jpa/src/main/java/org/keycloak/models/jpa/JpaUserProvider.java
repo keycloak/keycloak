@@ -124,17 +124,6 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
         UserEntity userEntity = em.find(UserEntity.class, user.getId());
         if (userEntity == null) return false;
         removeUser(userEntity);
-        session.getKeycloakSessionFactory().publish(new UserModel.UserRemovedEvent() {
-            @Override
-            public UserModel getUser() {
-                return user;
-            }
-
-            @Override
-            public KeycloakSession getKeycloakSession() {
-                return session;
-            }
-        });
         return true;
     }
 

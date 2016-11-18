@@ -35,6 +35,7 @@ public interface UserModel extends RoleMapperModel {
     String LOCALE = "locale";
 
     interface UserRemovedEvent extends ProviderEvent {
+        RealmModel getRealm();
         UserModel getUser();
         KeycloakSession getKeycloakSession();
     }
