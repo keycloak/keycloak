@@ -261,6 +261,7 @@ public class UserAdapter extends AbstractMongoAdapter<MongoUserEntity> implement
 
     @Override
     public boolean isMemberOf(GroupModel group) {
+        if (user.getGroupIds() == null) return false;
         if (user.getGroupIds().contains(group.getId())) return true;
         Set<GroupModel> groups = getGroups();
         return RoleUtils.isMember(groups, group);

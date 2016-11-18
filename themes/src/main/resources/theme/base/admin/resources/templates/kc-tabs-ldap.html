@@ -1,6 +1,6 @@
 <div data-ng-controller="LDAPTabCtrl">
     <h1 data-ng-hide="create">
-        {{instance.displayName|capitalize}}
+        {{instance.name|capitalize}}
         <i class="pficon pficon-delete clickable" data-ng-show="!create && access.manageUsers" data-ng-click="removeUserFederation()"></i>
     </h1>
     <h1 data-ng-show="create">{{:: 'add-user-federation-provider' | translate}}</h1>

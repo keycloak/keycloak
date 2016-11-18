@@ -337,7 +337,7 @@ module.controller('UserTabCtrl', function($scope, $location, Dialog, Notificatio
 module.controller('UserDetailCtrl', function($scope, realm, user, BruteForceUser, User,
                                              Components,
                                              UserFederationInstances, UserImpersonation, RequiredActions,
-                                             $location, Dialog, Notifications) {
+                                             $location, $http, Dialog, Notifications) {
     $scope.realm = realm;
     $scope.create = !user.id;
     $scope.editUsername = $scope.create || $scope.realm.editUsernameAllowed;
@@ -362,7 +362,16 @@ module.controller('UserDetailCtrl', function($scope, realm, user, BruteForceUser
             });
         };
         if(user.federationLink) {
-            console.log("federationLink is not null");
+            console.log("federationLink is not null. It is " + user.federationLink);
+
+            // TODO: This is temporary and should be removed once we remove userFederation SPI. It can be replaced with Components.get below
+            var fedUrl = authUrl + '/admin/realms/' + realm.realm + '/user-federation/instances-with-fallback/' + user.federationLink;
+            $http.get(fedUrl).success(function(data, status, headers, config) {
+                $scope.federationLinkName = data.federationLinkName;
+                $scope.federationLink = data.federationLink;
+            });
+
+            /*
             if (user.federationLink.startsWith('f:')) {
                  Components.get({realm: realm.realm, componentId: user.federationLink}, function (link) {
                     $scope.federationLinkName = link.name;
@@ -373,7 +382,7 @@ module.controller('UserDetailCtrl', function($scope, realm, user, BruteForceUser
                     $scope.federationLinkName = link.displayName;
                     $scope.federationLink = "#/realms/" + realm.realm + "/user-federation/providers/" + link.providerName + "/" + link.id;
                 });
-            }
+            }*/
 
         } else {
             console.log("federationLink is null");

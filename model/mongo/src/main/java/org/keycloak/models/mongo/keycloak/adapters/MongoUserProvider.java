@@ -50,6 +50,7 @@ import org.keycloak.models.mongo.keycloak.entities.MongoUserConsentEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoUserEntity;
 import org.keycloak.models.mongo.keycloak.entities.UserConsentEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.models.utils.UserModelDelegate;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -661,16 +662,18 @@ public class MongoUserProvider implements UserProvider, UserCredentialStore {
     }
 
     public MongoUserEntity getMongoUserEntity(UserModel user) {
-        UserAdapter adapter = null;
-        if (user instanceof CachedUserModel) {
-            adapter = (UserAdapter)((CachedUserModel)user).getDelegateForUpdate();
-        } else if (user instanceof UserAdapter ){
-            adapter = (UserAdapter)user;
+        if (user instanceof UserAdapter) {
+            UserAdapter adapter = (UserAdapter)user;
+            return adapter.getMongoEntity();
+        } else if (user instanceof CachedUserModel) {
+            UserModel delegate = ((CachedUserModel)user).getDelegateForUpdate();
+            return getMongoUserEntity(delegate);
+        } else if (user instanceof UserModelDelegate){
+            UserModel delegate = ((UserModelDelegate) user).getDelegate();
+            return getMongoUserEntity(delegate);
         } else {
             return getMongoStore().loadEntity(MongoUserEntity.class, user.getId(), invocationContext);
-
         }
-        return adapter.getMongoEntity();
     }
 
     @Override
