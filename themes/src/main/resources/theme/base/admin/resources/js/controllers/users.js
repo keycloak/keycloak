@@ -631,6 +631,14 @@ module.controller('UserFederationCtrl', function($scope, $location, $route, real
     UserFederationProviders.query({realm: realm.realm}, function(data) {
         for (var i = 0; i < data.length; i++) {
             data[i].isUserFederationProvider = true;
+
+            // avoid adding duplicate entries to providers list
+            var existingProvider = $scope.providers.find(function(provider){ return provider.id == data[i].id });
+            if (existingProvider) {
+                angular.copy(data[i], existingProvider);
+                continue;
+            }
+
             $scope.providers.push(data[i]);
         }
     });
