@@ -43,7 +43,7 @@ public class UserPolicyProviderFactory implements PolicyProviderFactory {
 
     @Override
     public String getName() {
-        return "User-Based";
+        return "User";
     }
 
     @Override
