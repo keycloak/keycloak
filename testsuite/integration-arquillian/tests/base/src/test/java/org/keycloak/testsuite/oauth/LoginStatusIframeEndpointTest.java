@@ -31,12 +31,15 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
 import org.junit.Test;
+import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.models.Constants;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 
 import java.io.IOException;
 import java.net.URLEncoder;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -155,6 +158,31 @@ public class LoginStatusIframeEndpointTest extends AbstractKeycloakTest {
             assertEquals(204, response.getStatusLine().getStatusCode());
             response.close();
         } finally {
+            client.close();
+        }
+    }
+
+    @Test
+    public void checkIframeWildcardOrigin() throws IOException {
+        String id = adminClient.realm("master").clients().findByClientId(Constants.ADMIN_CONSOLE_CLIENT_ID).get(0).getId();
+        ClientResource master = adminClient.realm("master").clients().get(id);
+        ClientRepresentation rep = master.toRepresentation();
+        List<String> org = rep.getWebOrigins();
+        CloseableHttpClient client = HttpClients.createDefault();
+        try {
+            rep.setWebOrigins(Collections.singletonList("*"));
+            master.update(rep);
+
+            HttpGet get = new HttpGet(suiteContext.getAuthServerInfo().getContextRoot() + "/auth/realms/master/protocol/openid-connect/login-status-iframe.html/init?"
+                    + "client_id=" + Constants.ADMIN_CONSOLE_CLIENT_ID
+                    + "&origin=" + "http://anything"
+            );
+            CloseableHttpResponse response = client.execute(get);
+            assertEquals(204, response.getStatusLine().getStatusCode());
+            response.close();
+        } finally {
+            rep.setWebOrigins(org);
+            master.update(rep);
             client.close();
         }
     }

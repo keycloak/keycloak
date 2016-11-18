@@ -21,6 +21,7 @@ import org.keycloak.common.util.UriUtils;
 import org.keycloak.models.ClientModel;
 
 import javax.ws.rs.core.UriInfo;
+import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -31,17 +32,20 @@ public class WebOriginsUtils {
     public static final String INCLUDE_REDIRECTS = "+";
 
     public static Set<String> resolveValidWebOrigins(UriInfo uriInfo, ClientModel client) {
-        Set<String> webOrigins = client.getWebOrigins();
-        if (webOrigins != null && webOrigins.contains("+")) {
-            webOrigins.remove(INCLUDE_REDIRECTS);
+        Set<String> origins = new HashSet<>();
+        if (client.getWebOrigins() != null) {
+            origins.addAll(client.getWebOrigins());
+        }
+        if (origins.contains("+")) {
+            origins.remove(INCLUDE_REDIRECTS);
             client.getRedirectUris();
             for (String redirectUri : RedirectUtils.resolveValidRedirects(uriInfo, client.getRootUrl(), client.getRedirectUris())) {
                 if (redirectUri.startsWith("http://") || redirectUri.startsWith("https://")) {
-                    webOrigins.add(UriUtils.getOrigin(redirectUri));
+                    origins.add(UriUtils.getOrigin(redirectUri));
                 }
             }
         }
-        return webOrigins;
+        return origins;
     }
 
 }

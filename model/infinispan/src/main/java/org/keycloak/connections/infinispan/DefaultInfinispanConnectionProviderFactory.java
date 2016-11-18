@@ -175,7 +175,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
             replicationConfigBuilder.clustering().cacheMode(async ? CacheMode.REPL_ASYNC : CacheMode.REPL_SYNC);
         }
 
-        boolean jdgEnabled = config.getBoolean("remoteStoreEnabled");
+        boolean jdgEnabled = config.getBoolean("remoteStoreEnabled", false);
         if (jdgEnabled) {
             configureRemoteCacheStore(replicationConfigBuilder, async);
         }
