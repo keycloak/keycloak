@@ -37,6 +37,33 @@ import java.util.Map;
  */
 public class FlowTest extends AbstractAuthenticationTest {
 
+    // KEYCLOAK-3681: Delete top flow doesn't delete all subflows
+    @Test
+    public void testRemoveSubflows() {
+        authMgmtResource.createFlow(newFlow("Foo", "Foo flow", "generic", true, false));
+        addFlowToParent("Foo", "child");
+        addFlowToParent("child", "grandchild");
+        
+        List<AuthenticationFlowRepresentation> flows = authMgmtResource.getFlows();
+        AuthenticationFlowRepresentation found = findFlowByAlias("Foo", flows);
+        authMgmtResource.deleteFlow(found.getId());
+        
+        authMgmtResource.createFlow(newFlow("Foo", "Foo flow", "generic", true, false));
+        addFlowToParent("Foo", "child");
+        
+        // Under the old code, this would throw an error because "grandchild"
+        // was left in the database
+        addFlowToParent("child", "grandchild");
+    }
+    
+    private void addFlowToParent(String parentAlias, String childAlias) {
+        Map<String, String> data = new HashMap<>();
+        data.put("alias", childAlias);
+        data.put("type", "generic");
+        data.put("description", childAlias + " flow");
+        authMgmtResource.addExecutionFlow(parentAlias, data);
+    }
+    
     @Test
     public void testAddRemoveFlow() {
 
