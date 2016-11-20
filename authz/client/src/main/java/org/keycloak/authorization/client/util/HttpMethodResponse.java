@@ -41,7 +41,7 @@ public class HttpMethodResponse<R> {
         });
     }
 
-    public HttpMethodResponse<R> json(Class<R> responseType) {
+    public HttpMethodResponse<R> json(final Class<R> responseType) {
         return new HttpMethodResponse<R>(this.method) {
             @Override
             public R execute() {
