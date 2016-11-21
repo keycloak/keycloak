@@ -2286,6 +2286,12 @@ module.directive('kcSave', function ($compile, Notifications) {
             elem.addClass("btn btn-primary");
             elem.attr("type","submit");
             elem.bind('click', function() {
+                console.info("***** clicked me ****");
+                console.info("elem=" + elem);
+                console.info($scope.hasOwnProperty("changed"));
+                console.info("ctrl=" + ctrl);
+                if ($scope.hasOwnProperty("changed") && !$scope.changed) return;
+                
                 $scope.$apply(function() {
                     var form = elem.closest('form');
                     if (form && form.attr('name')) {
