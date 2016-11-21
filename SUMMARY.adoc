@@ -22,7 +22,7 @@
  .. link:topics/policy/role-policy.adoc[Role-Based Policy]
  ... link:topics/policy/role-policy-required-role.adoc[Defining a Role as Required]
  .. link:topics/policy/js-policy.adoc[JavaScript-Based Policy]
- .. link:topics/policy/drools-policy.adoc[Drools-Based Policy]
+ .. link:topics/policy/drools-policy.adoc[Rule-Based Policy]
  .. link:topics/policy/time-policy.adoc[Time-Based Policy]
  .. link:topics/policy/aggregated-policy.adoc[Aggregated Policy]
  .. link:topics/policy/logic.adoc[Positive and Negative Logic]

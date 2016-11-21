@@ -1,4 +1,4 @@
-== Drools-Based Policy
+== Rule-Based Policy
 
 With this type of policy you can define conditions for your permissions using http://www.drools.org[Drools], which is a rule evaluation environment. It is one of the _Rule-Based_ policy types
 supported by {{book.project.name}}, and provides flexibility to write any policy based on the link:evaluation-api.adoc[Evaluation API].
