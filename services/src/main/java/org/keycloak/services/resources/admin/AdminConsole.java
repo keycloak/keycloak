@@ -319,7 +319,7 @@ public class AdminConsole {
     @Path("messages.json")
     @Produces(MediaType.APPLICATION_JSON)
     public Properties getMessages(@QueryParam("lang") String lang) {
-        return AdminRoot.getMessages(session, realm, "admin-messages", lang);
+        return AdminRoot.getMessages(session, realm, lang, "admin-messages");
     }
 
 }
