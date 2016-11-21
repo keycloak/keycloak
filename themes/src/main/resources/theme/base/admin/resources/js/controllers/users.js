@@ -630,6 +630,7 @@ module.controller('UserFederationCtrl', function($scope, $location, $route, real
     console.log('UserFederationCtrl ++++****');
     $scope.realm = realm;
     $scope.providers = serverInfo.componentTypes['org.keycloak.storage.UserStorageProvider'];
+    $scope.instancesLoaded = false;
 
     if (!$scope.providers) $scope.providers = [];
     
@@ -709,7 +710,7 @@ module.controller('UserFederationCtrl', function($scope, $location, $route, real
                 data[i].isUserFederationProvider = true;
                 $scope.instances.push(data[i]);
             }
-            
+            $scope.instancesLoaded = true;
         });
     });
 
