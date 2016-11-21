@@ -301,7 +301,7 @@ public class RepresentationToModel {
             String parentId = newRealm.getId();
             importComponents(newRealm, components, parentId);
         }
-        importUserFederationProvidersAndMappers(rep, newRealm);
+        importUserFederationProvidersAndMappers(session, rep, newRealm);
 
 
         if (rep.getGroups() != null) {
@@ -358,7 +358,7 @@ public class RepresentationToModel {
         }
     }
 
-    public static void importUserFederationProvidersAndMappers(RealmRepresentation rep, RealmModel newRealm) {
+    public static void importUserFederationProvidersAndMappers(KeycloakSession session, RealmRepresentation rep, RealmModel newRealm) {
         // providers to convert to component model
         Set<String> convertSet = new HashSet<>();
         convertSet.add(LDAPConstants.LDAP_PROVIDER);
@@ -382,6 +382,10 @@ public class RepresentationToModel {
             }
             newRealm.setUserFederationProviders(providerModels);
         }
+
+        // This is for case, when you have hand-written JSON file with LDAP userFederationProvider, but WITHOUT any userFederationMappers configured. Default LDAP mappers need to be created in that case.
+        Set<String> storageProvidersWhichShouldImportDefaultMappers = new HashSet<>(userStorageModels.keySet());
+
         if (rep.getUserFederationMappers() != null) {
 
             // Remove builtin mappers for federation providers, which have some mappers already provided in JSON (likely due to previous export)
@@ -409,10 +413,17 @@ public class RepresentationToModel {
                     ComponentModel mapper = convertFedMapperToComponent(newRealm, parent, representation, newMapperType);
                     newRealm.importComponentModel(mapper);
 
+
+                    storageProvidersWhichShouldImportDefaultMappers.remove(representation.getFederationProviderDisplayName());
+
                 } else {
                     newRealm.addUserFederationMapper(toModel(newRealm, representation));
                 }
             }
+        }
+
+        for (String providerDisplayName : storageProvidersWhichShouldImportDefaultMappers) {
+            ComponentUtil.notifyCreated(session, newRealm, userStorageModels.get(providerDisplayName));
         }
     }
 
