@@ -97,7 +97,7 @@ public class LDAPLegacyImportTest {
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
-            RepresentationToModel.importUserFederationProvidersAndMappers(imported, appRealm);
+            RepresentationToModel.importUserFederationProvidersAndMappers(session, imported, appRealm);
             ldapModel = appRealm.getComponents(appRealm.getId(), UserStorageProvider.class.getName()).get(0);
             // Delete all LDAP users and add some new for testing
             LDAPStorageProvider ldapFedProvider = LDAPTestUtils.getLdapProvider(session, ldapModel);

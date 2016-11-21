@@ -1788,7 +1788,7 @@ module.controller('LDAPUserStorageCtrl', function($scope, $location, Notificatio
 
     $scope.save = function() {
         $scope.changed = false;
-        if (!parseInt($scope.instance.config['batchSizeForSync'][0])) {
+        if (!$scope.instance.config['batchSizeForSync'] || !parseInt($scope.instance.config['batchSizeForSync'][0])) {
             $scope.instance.config['batchSizeForSync'] = [ DEFAULT_BATCH_SIZE ];
         } else {
             $scope.instance.config['batchSizeForSync'][0] = parseInt($scope.instance.config.batchSizeForSync).toString();
