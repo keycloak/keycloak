@@ -41,6 +41,7 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserFederationProviderModel;
+import org.keycloak.models.UserManager;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
 import org.keycloak.models.cache.CachedUserModel;
@@ -51,6 +52,7 @@ import org.keycloak.models.mongo.keycloak.entities.MongoUserEntity;
 import org.keycloak.models.mongo.keycloak.entities.UserConsentEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.UserModelDelegate;
+import org.keycloak.storage.UserStorageProvider;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -631,7 +633,19 @@ public class MongoUserProvider implements UserProvider, UserCredentialStore {
 
     @Override
     public void preRemove(RealmModel realm, ComponentModel component) {
+        if (!component.getProviderType().equals(UserStorageProvider.class.getName())) return;
+        DBObject query = new QueryBuilder()
+                .and("federationLink").is(component.getId())
+                .get();
 
+        List<MongoUserEntity> mongoUsers = getMongoStore().loadEntities(MongoUserEntity.class, query, invocationContext);
+        UserManager userManager = new UserManager(session);
+
+        for (MongoUserEntity userEntity : mongoUsers) {
+            // Doing this way to ensure UserRemovedEvent triggered with proper callbacks.
+            UserAdapter user = new UserAdapter(session, realm, userEntity, invocationContext);
+            userManager.removeUser(realm, user, this);
+        }
     }
 
     @Override
