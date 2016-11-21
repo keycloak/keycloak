@@ -63,27 +63,6 @@ import java.util.List;
  */
 public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LDAPStorageProvider>, ImportSynchronization {
 
-    /**
-     * Optional type that can be by implementations to describe edit mode of federation storage
-     *
-     */
-    public enum EditMode {
-        /**
-         * federation storage is read-only
-         */
-        READ_ONLY,
-        /**
-         * federation storage is writable
-         *
-         */
-        WRITABLE,
-        /**
-         * updates to user are stored locally and not synced with federation storage.
-         *
-         */
-        UNSYNCED
-    }
-
 
     private static final Logger logger = Logger.getLogger(LDAPStorageProviderFactory.class);
     public static final String PROVIDER_NAME = LDAPConstants.LDAP_PROVIDER;
@@ -100,7 +79,7 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
         boolean readOnly = false;
         if (parent != null) {
             LDAPConfig config = new LDAPConfig(parent.getConfig());
-            readOnly = config.getEditMode() != LDAPStorageProviderFactory.EditMode.WRITABLE;
+            readOnly = config.getEditMode() != UserStorageProvider.EditMode.WRITABLE;
         }
 
 
@@ -229,11 +208,11 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
         LDAPConfig ldapConfig = new LDAPConfig(model.getConfig());
 
         boolean activeDirectory = ldapConfig.isActiveDirectory();
-        EditMode editMode = ldapConfig.getEditMode();
-        String readOnly = String.valueOf(editMode == EditMode.READ_ONLY || editMode == EditMode.UNSYNCED);
+        UserStorageProvider.EditMode editMode = ldapConfig.getEditMode();
+        String readOnly = String.valueOf(editMode == UserStorageProvider.EditMode.READ_ONLY || editMode == UserStorageProvider.EditMode.UNSYNCED);
         String usernameLdapAttribute = ldapConfig.getUsernameLdapAttribute();
 
-        String alwaysReadValueFromLDAP = String.valueOf(editMode==EditMode.READ_ONLY || editMode== EditMode.WRITABLE);
+        String alwaysReadValueFromLDAP = String.valueOf(editMode== UserStorageProvider.EditMode.READ_ONLY || editMode== UserStorageProvider.EditMode.WRITABLE);
 
         ComponentModel mapperModel;
         mapperModel = KeycloakModelUtils.createComponentModel("username", model.getId(), UserAttributeLDAPStorageMapperFactory.PROVIDER_ID, LDAPStorageMapper.class.getName(),
@@ -259,7 +238,7 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
                 realm.addComponentModel(mapperModel);
 
             } else {
-                if (editMode == EditMode.WRITABLE) {
+                if (editMode == UserStorageProvider.EditMode.WRITABLE) {
 
                     // For AD deployments with "sAMAccountName" as username and writable, we need to map "cn" as username as well (this is needed so we can register new users from KC into LDAP) and we will map "givenName" to first name.
                     mapperModel = KeycloakModelUtils.createComponentModel("first name", model.getId(), UserAttributeLDAPStorageMapperFactory.PROVIDER_ID,LDAPStorageMapper.class.getName(),

@@ -45,6 +45,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserFederationProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.adapter.AbstractServletsAdapterTest;
 import org.keycloak.testsuite.adapter.page.KerberosPortal;
@@ -89,7 +90,7 @@ public abstract class AbstractKerberosAdapterTest extends AbstractServletsAdapte
     
     protected abstract String getConnectionPropertiesLocation();
 
-    protected abstract CommonKerberosConfig getKerberosConfig(UserFederationProviderModel model);
+    protected abstract CommonKerberosConfig getKerberosConfig(UserStorageProviderModel model);
     
     @Deployment(name = KerberosPortal.DEPLOYMENT_NAME)
     protected static WebArchive kerberosPortal() {
@@ -116,8 +117,8 @@ public abstract class AbstractKerberosAdapterTest extends AbstractServletsAdapte
             ldapEmbeddedServer.init();
             ldapEmbeddedServer.start();
         }
-        UserFederationProviderModel model = new UserFederationProviderModel();
-        model.setConfig(ldapTestConfiguration.getLDAPConfig());
+        UserStorageProviderModel model = new UserStorageProviderModel();
+        model.setConfig(AbstractKerberosStandaloneAdapterTest.toComponentConfig(ldapTestConfiguration.getLDAPConfig()));
         spnegoSchemeFactory = new KeycloakSPNegoSchemeFactory(getKerberosConfig(model));
         initHttpClient(true);
         removeAllUsers();

@@ -21,17 +21,13 @@ import org.keycloak.component.ComponentModel;
 import org.keycloak.component.ComponentValidationException;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserFederationProvider;
-import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
+import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.ldap.LDAPConfig;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
-import org.keycloak.storage.ldap.LDAPStorageProviderFactory;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -50,7 +46,7 @@ public class UserAttributeLDAPStorageMapperFactory extends AbstractLDAPStorageMa
         String readOnly = "false";
         if (parent != null) {
             LDAPConfig ldapConfig = new LDAPConfig(parent.getConfig());
-            readOnly = ldapConfig.getEditMode() == LDAPStorageProviderFactory.EditMode.WRITABLE ? "false" : "true";
+            readOnly = ldapConfig.getEditMode() == UserStorageProvider.EditMode.WRITABLE ? "false" : "true";
         }
         return ProviderConfigurationBuilder.create()
                     .property().name(UserAttributeLDAPStorageMapper.USER_MODEL_ATTRIBUTE)

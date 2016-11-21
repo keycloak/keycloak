@@ -31,7 +31,6 @@ import org.keycloak.models.utils.UserModelDelegate;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
-import org.keycloak.storage.ldap.LDAPStorageProviderFactory;
 import org.keycloak.storage.ldap.LDAPUtils;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
 import org.keycloak.storage.ldap.idm.query.internal.LDAPQuery;
@@ -62,11 +61,11 @@ import java.util.Set;
 public class LDAPTestUtils {
     public static MultivaluedHashMap<String, String> getLdapRuleConfig(LDAPRule ldapRule) {
         Map<String,String> ldapConfig = ldapRule.getConfig();
-        return toLdapConfig(ldapConfig);
+        return toComponentConfig(ldapConfig);
 
     }
 
-    public static MultivaluedHashMap<String, String> toLdapConfig(Map<String, String> ldapConfig) {
+    public static MultivaluedHashMap<String, String> toComponentConfig(Map<String, String> ldapConfig) {
         MultivaluedHashMap<String, String> config = new MultivaluedHashMap<>();
         for (Map.Entry<String, String> entry : ldapConfig.entrySet()) {
             config.add(entry.getKey(), entry.getValue());

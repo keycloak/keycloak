@@ -28,6 +28,7 @@ import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.Time;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.services.managers.UserStorageSyncManager;
+import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -43,8 +44,6 @@ import org.keycloak.storage.ldap.LDAPStorageProviderFactory;
 import org.keycloak.storage.user.SynchronizationResult;
 import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.testsuite.rule.LDAPRule;
-
-import java.util.Map;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -65,7 +64,7 @@ public class LDAPSyncTest {
 
             MultivaluedHashMap<String,String> ldapConfig = LDAPTestUtils.getLdapRuleConfig(ldapRule);
             ldapConfig.putSingle(LDAPConstants.SYNC_REGISTRATIONS, "false");
-            ldapConfig.putSingle(LDAPConstants.EDIT_MODE, LDAPStorageProviderFactory.EditMode.WRITABLE.toString());
+            ldapConfig.putSingle(LDAPConstants.EDIT_MODE, UserStorageProvider.EditMode.WRITABLE.toString());
             UserStorageProviderModel model = new UserStorageProviderModel();
             model.setLastSync(0);
             model.setChangedSyncPeriod(-1);

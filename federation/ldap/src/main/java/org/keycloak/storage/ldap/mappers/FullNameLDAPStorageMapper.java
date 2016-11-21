@@ -21,8 +21,8 @@ import org.keycloak.component.ComponentModel;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
-import org.keycloak.storage.ldap.LDAPStorageProviderFactory;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
 import org.keycloak.storage.ldap.idm.query.Condition;
 import org.keycloak.storage.ldap.idm.query.internal.EqualCondition;
@@ -84,7 +84,7 @@ public class FullNameLDAPStorageMapper extends AbstractLDAPStorageMapper {
 
     @Override
     public UserModel proxy(LDAPObject ldapUser, UserModel delegate) {
-        if (ldapProvider.getEditMode() == LDAPStorageProviderFactory.EditMode.WRITABLE && !isReadOnly()) {
+        if (ldapProvider.getEditMode() == UserStorageProvider.EditMode.WRITABLE && !isReadOnly()) {
 
 
             TxAwareLDAPUserModelDelegate txDelegate = new TxAwareLDAPUserModelDelegate(delegate, ldapProvider, ldapUser) {

@@ -49,6 +49,7 @@ public class Update2_4_0 extends Update {
     public void update(KeycloakSession session) {
         portUserFedMappersToComponent(LDAPConstants.LDAP_PROVIDER, "org.keycloak.storage.ldap.mappers.LDAPStorageMapper");
         portUserFedToComponent(LDAPConstants.LDAP_PROVIDER);
+        portUserFedToComponent("kerberos");
     }
 
     public void portUserFedToComponent(String providerId) {

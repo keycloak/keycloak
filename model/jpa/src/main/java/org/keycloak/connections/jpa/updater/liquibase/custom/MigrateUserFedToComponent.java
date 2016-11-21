@@ -31,12 +31,13 @@ import java.sql.ResultSet;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class PortLdapUserFedToComponentModel extends AbstractUserFedToComponent {
+public class MigrateUserFedToComponent extends AbstractUserFedToComponent {
 
     @Override
     protected void generateStatementsImpl() throws CustomChangeException {
         String providerId = LDAPConstants.LDAP_PROVIDER;
         convertFedProviderToComponent(LDAPConstants.LDAP_PROVIDER, "org.keycloak.storage.ldap.mappers.LDAPStorageMapper");
+        convertFedProviderToComponent("kerberos", null);
     }
 
     @Override

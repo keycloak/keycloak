@@ -31,6 +31,7 @@ import org.junit.Test;
 import org.keycloak.adapters.HttpClientBuilder;
 import org.keycloak.authentication.authenticators.browser.SpnegoAuthenticator;
 import org.keycloak.common.constants.KerberosConstants;
+import org.keycloak.component.ComponentModel;
 import org.keycloak.events.Details;
 import org.keycloak.federation.kerberos.CommonKerberosConfig;
 import org.keycloak.models.ClientModel;
@@ -44,6 +45,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.mappers.UserSessionNoteMapper;
 import org.keycloak.services.managers.RealmManager;
+import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.OAuthClient;
 import org.keycloak.testsuite.pages.AccountPasswordPage;
@@ -179,7 +181,7 @@ public abstract class AbstractKerberosTest {
         AssertEvents events = getAssertEvents();
 
         // Change editMode to READ_ONLY
-        updateProviderEditMode(UserFederationProvider.EditMode.READ_ONLY);
+        updateProviderEditMode(UserStorageProvider.EditMode.READ_ONLY);
 
         // Login with username/password from kerberos
         changePasswordPage.open();
@@ -200,7 +202,7 @@ public abstract class AbstractKerberosTest {
         Assert.assertTrue(driver.getPageSource().contains("You can't update your password as your account is read only"));
 
         // Change editMode to UNSYNCED
-        updateProviderEditMode(UserFederationProvider.EditMode.UNSYNCED);
+        updateProviderEditMode(UserStorageProvider.EditMode.UNSYNCED);
 
         // Successfully change password now
         changePasswordPage.changePassword("theduke", "newPass", "newPass");
@@ -382,15 +384,15 @@ public abstract class AbstractKerberosTest {
     }
 
 
-    protected void updateProviderEditMode(UserFederationProvider.EditMode editMode) {
+    protected void updateProviderEditMode(UserStorageProvider.EditMode editMode) {
         KeycloakRule keycloakRule = getKeycloakRule();
 
         KeycloakSession session = keycloakRule.startSession();
         try {
             RealmModel realm = session.realms().getRealm("test");
-            UserFederationProviderModel kerberosProviderModel = realm.getUserFederationProviders().get(0);
-            kerberosProviderModel.getConfig().put(LDAPConstants.EDIT_MODE, editMode.toString());
-            realm.updateUserFederationProvider(kerberosProviderModel);
+            ComponentModel kerberosProviderModel = realm.getComponents(realm.getId(), UserStorageProvider.class.getName()).get(0);
+            kerberosProviderModel.getConfig().putSingle(LDAPConstants.EDIT_MODE, editMode.toString());
+            realm.updateComponent(kerberosProviderModel);
         } finally {
             keycloakRule.stopSession(session, true);
         }

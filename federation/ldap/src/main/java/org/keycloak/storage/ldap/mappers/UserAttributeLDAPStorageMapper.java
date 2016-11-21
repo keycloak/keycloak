@@ -29,8 +29,8 @@ import org.keycloak.models.utils.UserModelDelegate;
 import org.keycloak.models.utils.reflection.Property;
 import org.keycloak.models.utils.reflection.PropertyCriteria;
 import org.keycloak.models.utils.reflection.PropertyQueries;
+import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
-import org.keycloak.storage.ldap.LDAPStorageProviderFactory;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
 import org.keycloak.storage.ldap.idm.query.Condition;
 import org.keycloak.storage.ldap.idm.query.internal.LDAPQuery;
@@ -179,7 +179,7 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
         final boolean isMandatoryInLdap = parseBooleanParameter(mapperModel, IS_MANDATORY_IN_LDAP);
 
         // For writable mode, we want to propagate writing of attribute to LDAP as well
-        if (ldapProvider.getEditMode() == LDAPStorageProviderFactory.EditMode.WRITABLE && !isReadOnly()) {
+        if (ldapProvider.getEditMode() == UserStorageProvider.EditMode.WRITABLE && !isReadOnly()) {
 
             delegate = new TxAwareLDAPUserModelDelegate(delegate, ldapProvider, ldapUser) {
 

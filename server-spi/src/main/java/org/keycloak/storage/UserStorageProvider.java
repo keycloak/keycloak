@@ -26,8 +26,31 @@ import org.keycloak.provider.Provider;
  * @version $Revision: 1 $
  */
 public interface UserStorageProvider extends Provider {
+
+
     void preRemove(RealmModel realm);
     void preRemove(RealmModel realm, GroupModel group);
     void preRemove(RealmModel realm, RoleModel role);
+
+    /**
+     * Optional type that can be by implementations to describe edit mode of federation storage
+     *
+     */
+    enum EditMode {
+        /**
+         * federation storage is read-only
+         */
+        READ_ONLY,
+        /**
+         * federation storage is writable
+         *
+         */
+        WRITABLE,
+        /**
+         * updates to user are stored locally and not synced with federation storage.
+         *
+         */
+        UNSYNCED
+    }
 }
 

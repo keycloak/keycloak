@@ -19,11 +19,14 @@ package org.keycloak.testsuite.federation;
 
 import org.junit.Assert;
 import org.junit.ClassRule;
+import org.junit.FixMethodOrder;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.RuleChain;
 import org.junit.rules.TestRule;
+import org.junit.runners.MethodSorters;
 import org.keycloak.common.constants.KerberosConstants;
+import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.federation.kerberos.CommonKerberosConfig;
 import org.keycloak.federation.kerberos.KerberosConfig;
 import org.keycloak.federation.kerberos.KerberosFederationProviderFactory;
@@ -32,7 +35,10 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.RealmManager;
+import org.keycloak.storage.UserStorageProviderModel;
+import org.keycloak.storage.ldap.LDAPStorageProviderFactory;
 import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.federation.storage.ldap.LDAPTestUtils;
 import org.keycloak.testsuite.rule.KerberosRule;
 import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.testsuite.rule.WebRule;
@@ -47,11 +53,12 @@ import java.util.Map;
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class KerberosStandaloneTest extends AbstractKerberosTest {
 
     private static final String PROVIDER_CONFIG_LOCATION = "kerberos/kerberos-standalone-connection.properties";
 
-    private static UserFederationProviderModel kerberosModel;
+    private static UserStorageProviderModel kerberosModel;
 
     private static KerberosRule kerberosRule = new KerberosRule(PROVIDER_CONFIG_LOCATION);
 
@@ -69,7 +76,18 @@ public class KerberosStandaloneTest extends AbstractKerberosTest {
 
 
             Map<String,String> kerberosConfig = kerberosRule.getConfig();
-            kerberosModel = appRealm.addUserFederationProvider(KerberosFederationProviderFactory.PROVIDER_NAME, kerberosConfig, 0, "kerberos-standalone", -1, -1, 0);
+            MultivaluedHashMap<String, String> config = LDAPTestUtils.toComponentConfig(kerberosConfig);
+
+            UserStorageProviderModel model = new UserStorageProviderModel();
+            model.setLastSync(0);
+            model.setChangedSyncPeriod(-1);
+            model.setFullSyncPeriod(-1);
+            model.setName("kerberos-standalone");
+            model.setPriority(0);
+            model.setProviderId(KerberosFederationProviderFactory.PROVIDER_NAME);
+            model.setConfig(config);
+
+            kerberosModel = new UserStorageProviderModel(appRealm.addComponentModel(model));
         }
 
     }) {
@@ -121,6 +139,18 @@ public class KerberosStandaloneTest extends AbstractKerberosTest {
 
     @Test
     @Override
+    public void spnegoCaseInsensitiveTest() throws Exception {
+        super.spnegoCaseInsensitiveTest();
+    }
+
+    @Test
+    @Override
+    public void credentialDelegationTest() throws Exception {
+        super.credentialDelegationTest();
+    }
+
+    @Test
+    @Override
     public void usernamePasswordLoginTest() throws Exception {
         super.usernamePasswordLoginTest();
     }
@@ -131,9 +161,9 @@ public class KerberosStandaloneTest extends AbstractKerberosTest {
         KeycloakSession session = keycloakRule.startSession();
         try {
             RealmModel realm = session.realms().getRealm("test");
-            UserFederationProviderModel kerberosProviderModel = realm.getUserFederationProviders().get(0);
-            kerberosProviderModel.getConfig().put(KerberosConstants.UPDATE_PROFILE_FIRST_LOGIN, "true");
-            realm.updateUserFederationProvider(kerberosProviderModel);
+            UserStorageProviderModel kerberosProviderModel = realm.getUserStorageProviders().get(0);
+            kerberosProviderModel.getConfig().putSingle(KerberosConstants.UPDATE_PROFILE_FIRST_LOGIN, "true");
+            realm.updateComponent(kerberosProviderModel);
         } finally {
             keycloakRule.stopSession(session, true);
         }
@@ -153,9 +183,9 @@ public class KerberosStandaloneTest extends AbstractKerberosTest {
         session = keycloakRule.startSession();
         try {
             RealmModel realm = session.realms().getRealm("test");
-            UserFederationProviderModel kerberosProviderModel = realm.getUserFederationProviders().get(0);
-            kerberosProviderModel.getConfig().put(KerberosConstants.UPDATE_PROFILE_FIRST_LOGIN, "false");
-            realm.updateUserFederationProvider(kerberosProviderModel);
+            UserStorageProviderModel kerberosProviderModel = realm.getUserStorageProviders().get(0);
+            kerberosProviderModel.getConfig().putSingle(KerberosConstants.UPDATE_PROFILE_FIRST_LOGIN, "false");
+            realm.updateComponent(kerberosProviderModel);
         } finally {
             keycloakRule.stopSession(session, true);
         }

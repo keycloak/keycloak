@@ -27,6 +27,7 @@ import org.junit.rules.TestRule;
 import org.junit.runners.MethodSorters;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
+import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
 import org.keycloak.storage.ldap.LDAPStorageProviderFactory;
@@ -52,7 +53,6 @@ import org.keycloak.testsuite.rule.WebResource;
 import org.keycloak.testsuite.rule.WebRule;
 import org.openqa.selenium.WebDriver;
 
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -73,7 +73,7 @@ public class LDAPRoleMappingsTest {
 
             MultivaluedHashMap<String,String> ldapConfig = LDAPTestUtils.getLdapRuleConfig(ldapRule);
             ldapConfig.putSingle(LDAPConstants.SYNC_REGISTRATIONS, "true");
-            ldapConfig.putSingle(LDAPConstants.EDIT_MODE, LDAPStorageProviderFactory.EditMode.WRITABLE.toString());
+            ldapConfig.putSingle(LDAPConstants.EDIT_MODE, UserStorageProvider.EditMode.WRITABLE.toString());
             UserStorageProviderModel model = new UserStorageProviderModel();
             model.setLastSync(0);
             model.setChangedSyncPeriod(-1);

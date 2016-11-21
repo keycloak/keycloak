@@ -19,6 +19,7 @@ package org.keycloak.storage.ldap;
 
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.models.LDAPConstants;
+import org.keycloak.storage.UserStorageProvider;
 
 import javax.naming.directory.SearchControls;
 import java.util.Collection;
@@ -171,12 +172,12 @@ public class LDAPConfig {
         return null;
     }
 
-    public LDAPStorageProviderFactory.EditMode getEditMode() {
+    public UserStorageProvider.EditMode getEditMode() {
         String editModeString = config.getFirst(LDAPConstants.EDIT_MODE);
         if (editModeString == null) {
-            return LDAPStorageProviderFactory.EditMode.READ_ONLY;
+            return UserStorageProvider.EditMode.READ_ONLY;
         } else {
-            return LDAPStorageProviderFactory.EditMode.valueOf(editModeString);
+            return UserStorageProvider.EditMode.valueOf(editModeString);
         }
     }
 }

@@ -22,17 +22,13 @@ import org.keycloak.component.ComponentValidationException;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserFederationProvider;
-import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
+import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.ldap.LDAPConfig;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
-import org.keycloak.storage.ldap.LDAPStorageProviderFactory;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -51,7 +47,7 @@ public class FullNameLDAPStorageMapperFactory extends AbstractLDAPStorageMapperF
         boolean readOnly = false;
         if (parent != null) {
             LDAPConfig config = new LDAPConfig(parent.getConfig());
-            readOnly = config.getEditMode() != LDAPStorageProviderFactory.EditMode.WRITABLE;
+            readOnly = config.getEditMode() != UserStorageProvider.EditMode.WRITABLE;
         }
 
 
@@ -107,9 +103,9 @@ public class FullNameLDAPStorageMapperFactory extends AbstractLDAPStorageMapperF
 
         }
         LDAPConfig cfg = new LDAPConfig(parent.getConfig());
-        LDAPStorageProviderFactory.EditMode editMode = cfg.getEditMode();
+        UserStorageProvider.EditMode editMode = cfg.getEditMode();
 
-        if (writeOnly && cfg.getEditMode() != LDAPStorageProviderFactory.EditMode.WRITABLE) {
+        if (writeOnly && cfg.getEditMode() != UserStorageProvider.EditMode.WRITABLE) {
             throw new ComponentValidationException("ldapErrorCantWriteOnlyForReadOnlyLdap");
         }
         if (writeOnly && readOnly) {

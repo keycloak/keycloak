@@ -362,6 +362,7 @@ public class RepresentationToModel {
         // providers to convert to component model
         Set<String> convertSet = new HashSet<>();
         convertSet.add(LDAPConstants.LDAP_PROVIDER);
+        convertSet.add("kerberos");
         Map<String, String> mapperConvertSet = new HashMap<>();
         mapperConvertSet.put(LDAPConstants.LDAP_PROVIDER, "org.keycloak.storage.ldap.mappers.LDAPStorageMapper");
 
