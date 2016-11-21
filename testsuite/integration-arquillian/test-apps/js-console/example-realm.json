@@ -19,7 +19,7 @@
             ],
             "realmRoles": [ "user" ],
             "clientRoles": {
-                "realm-management" : [ "view-realm" ],
+                "realm-management" : [ "view-realm", "manage-users" ],
                 "account": ["view-profile", "manage-account"]
             }
         },{
