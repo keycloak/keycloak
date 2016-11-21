@@ -22,6 +22,7 @@
 
     <resources>
         <artifact name="${org.keycloak:keycloak-sssd-federation}"/>
+        <resource-root path="/usr/share/java/jna.jar"/>
     </resources>
 
     <dependencies>

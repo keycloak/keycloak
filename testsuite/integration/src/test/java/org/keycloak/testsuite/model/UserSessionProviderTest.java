@@ -74,8 +74,12 @@ public class UserSessionProviderTest {
         UserModel user2 = session.users().getUserByUsername("user2", realm);
 
         UserManager um = new UserManager(session);
-        um.removeUser(realm, user1);
-        um.removeUser(realm, user2);
+        if (user1 != null) {
+            um.removeUser(realm, user1);
+        }
+        if (user2 != null) {
+            um.removeUser(realm, user2);
+        }
         kc.stopSession(session, true);
     }
 
@@ -528,11 +532,12 @@ public class UserSessionProviderTest {
 
         resetSession();
 
-        session.sessions().onUserRemoved(realm, session.users().getUserByUsername("user1", realm));
+        UserModel user1 = session.users().getUserByUsername("user1", realm);
+        new UserManager(session).removeUser(realm, user1);
 
         resetSession();
 
-        assertTrue(session.sessions().getUserSessions(realm, session.users().getUserByUsername("user1", realm)).isEmpty());
+        assertTrue(session.sessions().getUserSessions(realm, user1).isEmpty());
         assertFalse(session.sessions().getUserSessions(realm, session.users().getUserByUsername("user2", realm)).isEmpty());
 
         assertNull(session.sessions().getUserLoginFailure(realm, "user1"));

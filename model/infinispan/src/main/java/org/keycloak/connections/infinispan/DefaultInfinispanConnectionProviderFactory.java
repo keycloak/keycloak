@@ -27,11 +27,14 @@ import org.infinispan.eviction.EvictionStrategy;
 import org.infinispan.eviction.EvictionType;
 import org.infinispan.manager.DefaultCacheManager;
 import org.infinispan.manager.EmbeddedCacheManager;
+import org.infinispan.persistence.remote.configuration.ExhaustedAction;
+import org.infinispan.persistence.remote.configuration.RemoteStoreConfigurationBuilder;
 import org.infinispan.transaction.LockingMode;
 import org.infinispan.transaction.TransactionMode;
 import org.infinispan.transaction.lookup.DummyTransactionManagerLookup;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
+import org.keycloak.cluster.infinispan.KeycloakHotRodMarshallerFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 
@@ -126,7 +129,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
         GlobalConfigurationBuilder gcb = new GlobalConfigurationBuilder();
 
         boolean clustered = config.getBoolean("clustered", false);
-        boolean async = config.getBoolean("async", true);
+        boolean async = config.getBoolean("async", false);
         boolean allowDuplicateJMXDomains = config.getBoolean("allowDuplicateJMXDomains", true);
 
         if (clustered) {
@@ -139,14 +142,11 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
 
         logger.debug("Started embedded Infinispan cache container");
 
-        ConfigurationBuilder invalidationConfigBuilder = new ConfigurationBuilder();
-        if (clustered) {
-            invalidationConfigBuilder.clustering().cacheMode(async ? CacheMode.INVALIDATION_ASYNC : CacheMode.INVALIDATION_SYNC);
-        }
-        Configuration invalidationCacheConfiguration = invalidationConfigBuilder.build();
+        ConfigurationBuilder modelCacheConfigBuilder = new ConfigurationBuilder();
+        Configuration modelCacheConfiguration = modelCacheConfigBuilder.build();
 
-        cacheManager.defineConfiguration(InfinispanConnectionProvider.REALM_CACHE_NAME, invalidationCacheConfiguration);
-        cacheManager.defineConfiguration(InfinispanConnectionProvider.USER_CACHE_NAME, invalidationCacheConfiguration);
+        cacheManager.defineConfiguration(InfinispanConnectionProvider.REALM_CACHE_NAME, modelCacheConfiguration);
+        cacheManager.defineConfiguration(InfinispanConnectionProvider.USER_CACHE_NAME, modelCacheConfiguration);
 
         ConfigurationBuilder sessionConfigBuilder = new ConfigurationBuilder();
         if (clustered) {
@@ -174,8 +174,14 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
         if (clustered) {
             replicationConfigBuilder.clustering().cacheMode(async ? CacheMode.REPL_ASYNC : CacheMode.REPL_SYNC);
         }
-        Configuration replicationCacheConfiguration = replicationConfigBuilder.build();
-        cacheManager.defineConfiguration(InfinispanConnectionProvider.WORK_CACHE_NAME, replicationCacheConfiguration);
+
+        boolean jdgEnabled = config.getBoolean("remoteStoreEnabled", false);
+        if (jdgEnabled) {
+            configureRemoteCacheStore(replicationConfigBuilder, async);
+        }
+
+        Configuration replicationEvictionCacheConfiguration = replicationConfigBuilder.build();
+        cacheManager.defineConfiguration(InfinispanConnectionProvider.WORK_CACHE_NAME, replicationEvictionCacheConfiguration);
 
         ConfigurationBuilder counterConfigBuilder = new ConfigurationBuilder();
         counterConfigBuilder.invocationBatching().enable()
@@ -209,6 +215,34 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
 
         cb.eviction().strategy(EvictionStrategy.LRU).type(EvictionType.COUNT).size(maxEntries);
         return cb.build();
+    }
+
+    // Used for cross-data centers scenario. Usually integration with external JDG server, which itself handles communication between DCs.
+    private void configureRemoteCacheStore(ConfigurationBuilder builder, boolean async) {
+        String jdgServer = config.get("remoteStoreServer", "localhost");
+        Integer jdgPort = config.getInt("remoteStorePort", 11222);
+
+        builder.persistence()
+                .passivation(false)
+                .addStore(RemoteStoreConfigurationBuilder.class)
+                    .fetchPersistentState(false)
+                    .ignoreModifications(false)
+                    .purgeOnStartup(false)
+                    .preload(false)
+                    .shared(true)
+                    .remoteCacheName(InfinispanConnectionProvider.WORK_CACHE_NAME)
+                    .rawValues(true)
+                    .forceReturnValues(false)
+                    .marshaller(KeycloakHotRodMarshallerFactory.class.getName())
+                    .addServer()
+                        .host(jdgServer)
+                        .port(jdgPort)
+//                  .connectionPool()
+//                      .maxActive(100)
+//                      .exhaustedAction(ExhaustedAction.CREATE_NEW)
+                    .async()
+                        .enabled(async);
+
     }
 
     protected Configuration getKeysCacheConfig() {

@@ -1,3 +1,4 @@
+
 <!--
   ~ Copyright 2016 Red Hat, Inc. and/or its affiliates
   ~ and other contributors as indicated by the @author tags.
@@ -39,6 +40,9 @@
                 <include>org/keycloak/keycloak-as7-subsystem/**</include>
                 <include>org/keycloak/keycloak-adapter-subsystem/**</include>
                 <include>org/keycloak/keycloak-servlet-oauth-client/**</include>
+
+                <!-- Authorization -->
+                <include>org/keycloak/keycloak-authz-client/**</include>
             </includes>
             <excludes>
                 <exclude>**/*.war</exclude>

@@ -28,8 +28,8 @@ import org.keycloak.representations.idm.ClientRepresentation;
 
 import java.io.IOException;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
+import static org.hamcrest.Matchers.*;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -49,10 +49,14 @@ public class SAMLClientRegistrationTest extends AbstractClientRegistrationTest {
         String entityDescriptor = IOUtils.toString(getClass().getResourceAsStream("/clientreg-test/saml-entity-descriptor.xml"));
         ClientRepresentation response = reg.saml().create(entityDescriptor);
 
-        assertNotNull(response.getRegistrationAccessToken());
-        assertEquals("loadbalancer-9.siroe.com", response.getClientId());
-        assertEquals(1, response.getRedirectUris().size());
-        assertEquals("https://LoadBalancer-9.siroe.com:3443/federation/Consumer/metaAlias/sp", response.getRedirectUris().get(0));
+        assertThat(response.getRegistrationAccessToken(), notNullValue());
+        assertThat(response.getClientId(), is("loadbalancer-9.siroe.com"));
+        assertThat(response.getRedirectUris(), containsInAnyOrder(
+          "https://LoadBalancer-9.siroe.com:3443/federation/Consumer/metaAlias/sp/post",
+          "https://LoadBalancer-9.siroe.com:3443/federation/Consumer/metaAlias/sp/soap",
+          "https://LoadBalancer-9.siroe.com:3443/federation/Consumer/metaAlias/sp/paos",
+          "https://LoadBalancer-9.siroe.com:3443/federation/Consumer/metaAlias/sp/redirect"
+        ));  // No redirect URI for ARTIFACT binding which is unsupported
     }
 
 }

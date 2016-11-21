@@ -142,9 +142,13 @@ public class AuthenticatedActionsHandler {
             AuthorizationContext authorizationContext = policyEnforcer.enforce(facade);
             RefreshableKeycloakSecurityContext session = (RefreshableKeycloakSecurityContext) facade.getSecurityContext();
 
-            session.setAuthorizationContext(authorizationContext);
+            if (session != null) {
+                session.setAuthorizationContext(authorizationContext);
 
-            return  authorizationContext.isGranted();
+                return authorizationContext.isGranted();
+            }
+
+            return true;
         } catch (Exception e) {
             throw new RuntimeException("Failed to enforce policy decisions.", e);
         }

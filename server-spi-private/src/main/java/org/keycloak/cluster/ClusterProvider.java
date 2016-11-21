@@ -48,7 +48,8 @@ public interface ClusterProvider extends Provider {
 
 
     /**
-     * Register task (listener) under given key. When this key will be put to the cache on any cluster node, the task will be executed
+     * Register task (listener) under given key. When this key will be put to the cache on any cluster node, the task will be executed.
+     * When using {@link #ALL} as the taskKey, then listener will be always triggered for any value put into the cache.
      *
      * @param taskKey
      * @param task
@@ -57,10 +58,18 @@ public interface ClusterProvider extends Provider {
 
 
     /**
-     * Notify registered listeners on all cluster nodes
+     * Notify registered listeners on all cluster nodes. It will notify listeners registered under given taskKey AND also listeners registered with {@link #ALL} key (those are always executed)
      *
      * @param taskKey
      * @param event
+     * @param ignoreSender if true, then sender node itself won't receive the notification
      */
-    void notify(String taskKey, ClusterEvent event);
+    void notify(String taskKey, ClusterEvent event, boolean ignoreSender);
+
+
+    /**
+     * Special value to be used with {@link #registerListener}  to specify that particular listener will be always triggered for all notifications
+     * with any key.
+     */
+    String ALL = "ALL";
 }

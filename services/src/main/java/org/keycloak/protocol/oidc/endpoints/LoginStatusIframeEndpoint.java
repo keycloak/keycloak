@@ -75,7 +75,7 @@ public class LoginStatusIframeEndpoint {
             if (client != null) {
                 Set<String> validWebOrigins = WebOriginsUtils.resolveValidWebOrigins(uriInfo, client);
                 validWebOrigins.add(UriUtils.getOrigin(uriInfo.getRequestUri()));
-                if (validWebOrigins.contains(origin)) {
+                if (validWebOrigins.contains("*") || validWebOrigins.contains(origin)) {
                     return Response.noContent().build();
                 }
             }

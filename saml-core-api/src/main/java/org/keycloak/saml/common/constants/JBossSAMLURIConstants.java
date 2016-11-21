@@ -79,8 +79,9 @@ public enum JBossSAMLURIConstants {
             "http://www.w3.org/2000/09/xmldsig#rsa-sha1"),
 
     SAML_HTTP_POST_BINDING("urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST"),
-    SAML_HTTP_SOAP_BINDING("urn:oasis:names:tc:SAML:2.0:bindings:SOAP"),
     SAML_HTTP_REDIRECT_BINDING("urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect"),
+    SAML_SOAP_BINDING("urn:oasis:names:tc:SAML:2.0:bindings:SOAP"),
+    SAML_PAOS_BINDING("urn:oasis:names:tc:SAML:2.0:bindings:PAOS"),
 
     SAML_11_NS("urn:oasis:names:tc:SAML:1.0:assertion"),
 

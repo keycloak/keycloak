@@ -155,7 +155,7 @@ public class UsersSyncManager {
     // Ensure all cluster nodes are notified
     public void notifyToRefreshPeriodicSync(KeycloakSession session, RealmModel realm, UserFederationProviderModel federationProvider, boolean removed) {
         FederationProviderClusterEvent event = FederationProviderClusterEvent.createEvent(removed, realm.getId(), federationProvider);
-        session.getProvider(ClusterProvider.class).notify(FEDERATION_TASK_KEY, event);
+        session.getProvider(ClusterProvider.class).notify(FEDERATION_TASK_KEY, event, false);
     }
 
 
@@ -265,7 +265,7 @@ public class UsersSyncManager {
         }
 
         @Override
-        public void run(ClusterEvent event) {
+        public void eventReceived(ClusterEvent event) {
             final FederationProviderClusterEvent fedEvent = (FederationProviderClusterEvent) event;
             KeycloakModelUtils.runJobInTransaction(sessionFactory, new KeycloakSessionTask() {
 

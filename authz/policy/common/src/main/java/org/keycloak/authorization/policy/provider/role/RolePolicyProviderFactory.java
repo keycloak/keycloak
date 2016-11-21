@@ -45,7 +45,7 @@ public class RolePolicyProviderFactory implements PolicyProviderFactory {
 
     @Override
     public String getName() {
-        return "Role-Based";
+        return "Role";
     }
 
     @Override

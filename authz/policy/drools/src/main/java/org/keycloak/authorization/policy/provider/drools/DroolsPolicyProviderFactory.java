@@ -30,7 +30,7 @@ public class DroolsPolicyProviderFactory implements PolicyProviderFactory {
 
     @Override
     public String getName() {
-        return "Drools";
+        return "Rule";
     }
 
     @Override

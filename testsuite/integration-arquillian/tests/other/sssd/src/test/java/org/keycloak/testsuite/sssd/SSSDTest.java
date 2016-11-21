@@ -2,6 +2,7 @@ package org.keycloak.testsuite.sssd;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.representations.idm.GroupRepresentation;
@@ -72,6 +73,7 @@ public class SSSDTest extends AbstractKeycloakTest {
         adminClient.realm(REALM_NAME).userFederation().create(userFederation);
     }
 
+    @Ignore
     @Test
     public void testProviderFactories() {
         List<UserFederationProviderFactoryRepresentation> providerFactories = adminClient.realm(REALM_NAME).userFederation().getProviderFactories();

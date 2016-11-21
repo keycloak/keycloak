@@ -23,6 +23,7 @@ import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.OneToMany;
+import javax.persistence.GenerationType;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -33,7 +34,6 @@ import java.util.List;
 public class Album {
 
     @Id
-    @GeneratedValue
     private Long id;
 
     @Column(nullable = false)

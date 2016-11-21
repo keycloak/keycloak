@@ -12,5 +12,5 @@ Then registering the provider by editing `standalone/configuration/standalone.xm
         <provider>module:org.keycloak.examples.hello-rest-example</provider>
     </providers>
 
-Then start (or restart) the server. Once started open http://localhost:8080/realms/master/hello and you should see the message _Hello master_.
+Then start (or restart) the server. Once started open http://localhost:8080/auth/realms/master/hello and you should see the message _Hello master_.
 You can also invoke the endpoint for other realms by replacing `master` with the realm name in the above url.

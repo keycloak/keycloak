@@ -257,37 +257,20 @@ public abstract class AbstractKeycloakTest {
         adminClient.realms().create(realm);
     }
 
-    public void removeRealm(RealmRepresentation realm) {
+    public void removeRealm(String realmName) {
+        log.info("removing realm: " + realmName);
         try {
-            adminClient.realms().realm(realm.getRealm()).remove();
+            adminClient.realms().realm(realmName).remove();
         } catch (NotFoundException e) {
         }
+    }
+
+    public void removeRealm(RealmRepresentation realm) {
+        removeRealm(realm.getRealm());
     }
     
     public RealmsResource realmsResouce() {
         return adminClient.realms();
-    }
-
-    public void createRealm(String realm) {
-        try {
-            RealmResource realmResource = adminClient.realms().realm(realm);
-            // Throws NotFoundException in case the realm does not exist! Ugly but there
-            // does not seem to be a way to this just by asking.
-            RealmRepresentation realmRepresentation = realmResource.toRepresentation();
-        } catch (NotFoundException ex) {
-            RealmRepresentation realmRepresentation = new RealmRepresentation();
-            realmRepresentation.setRealm(realm);
-            realmRepresentation.setEnabled(true);
-            realmRepresentation.setRegistrationAllowed(true);
-            adminClient.realms().create(realmRepresentation);
-
-//            List<RequiredActionProviderRepresentation> requiredActions = adminClient.realm(realm).flows().getRequiredActions();
-//            for (RequiredActionProviderRepresentation a : requiredActions) {
-//                a.setEnabled(false);
-//                a.setDefaultAction(false);
-//                adminClient.realm(realm).flows().updateRequiredAction(a.getAlias(), a);
-//            }
-        }
     }
 
     /**

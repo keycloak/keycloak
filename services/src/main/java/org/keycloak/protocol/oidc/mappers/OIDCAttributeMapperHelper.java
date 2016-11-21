@@ -100,6 +100,9 @@ public class OIDCAttributeMapperHelper {
         if (attributeValue == null) return;
 
         String protocolClaim = mappingModel.getConfig().get(TOKEN_CLAIM_NAME);
+        if (protocolClaim == null) {
+            return;
+        }
         String[] split = protocolClaim.split("\\.");
         Map<String, Object> jsonObject = token.getOtherClaims();
         for (int i = 0; i < split.length; i++) {
