@@ -37,8 +37,6 @@ import javax.ws.rs.core.Response;
  * @version $Revision: 1 $
  */
 public class OTPFormAuthenticator extends AbstractUsernameFormAuthenticator implements Authenticator {
-    public static final String TOTP_FORM_ACTION = "totp";
-
     @Override
     public void action(AuthenticationFlowContext context) {
         validateOTP(context);
@@ -98,8 +96,6 @@ public class OTPFormAuthenticator extends AbstractUsernameFormAuthenticator impl
         }
 
     }
-
-
 
     @Override
     public void close() {

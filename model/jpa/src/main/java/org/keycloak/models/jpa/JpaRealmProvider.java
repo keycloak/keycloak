@@ -146,7 +146,8 @@ public class JpaRealmProvider implements RealmProvider {
         query.setParameter("realm", realm.getId());
         List<String> clients = query.getResultList();
         for (String client : clients) {
-            session.realms().removeClient(client, adapter);
+            // No need to go through cache. Clients were already invalidated
+            removeClient(client, adapter);
         }
 
         for (ClientTemplateEntity a : new LinkedList<>(realm.getClientTemplates())) {
@@ -154,7 +155,8 @@ public class JpaRealmProvider implements RealmProvider {
         }
 
         for (RoleModel role : adapter.getRoles()) {
-            session.realms().removeRole(adapter, role);
+            // No need to go through cache. Roles were already invalidated
+            removeRole(adapter, role);
         }
 
 
@@ -486,7 +488,8 @@ public class JpaRealmProvider implements RealmProvider {
         session.users().preRemove(realm, client);
 
         for (RoleModel role : client.getRoles()) {
-            client.removeRole(role);
+            // No need to go through cache. Roles were already invalidated
+            removeRole(realm, role);
         }
 
         ClientEntity clientEntity = ((ClientAdapter)client).getEntity();

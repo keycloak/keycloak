@@ -288,7 +288,16 @@ public class AdminRoot {
         }
     }
 
-    public static Properties getMessages(KeycloakSession session, RealmModel realm, String bundle, String lang) {
+    public static Properties getMessages(KeycloakSession session, RealmModel realm, String lang, String... bundles) {
+        Properties compound = new Properties();
+        for (String bundle : bundles) {
+            Properties current = getMessages(session, realm, lang, bundle);
+            compound.putAll(current);
+        }
+        return compound;
+    }
+
+    private static Properties getMessages(KeycloakSession session, RealmModel realm, String lang, String bundle) {
         try {
             Theme theme = getTheme(session, realm);
             Locale locale = lang != null ? Locale.forLanguageTag(lang) : Locale.ENGLISH;

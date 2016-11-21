@@ -20,7 +20,6 @@ package org.keycloak.testsuite.exportimport;
 import org.jboss.arquillian.container.spi.client.container.LifecycleException;
 import org.junit.After;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.Config;
 import org.keycloak.admin.client.resource.ClientResource;
@@ -39,6 +38,11 @@ import java.net.URL;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
+import static org.junit.Assert.assertNotNull;
+import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.exportimport.Strategy;
+import static org.keycloak.testsuite.Assert.assertNames;
+import static org.keycloak.testsuite.migration.MigrationTest.MIGRATION;
 
 /**
  * Test importing JSON files exported from previous adminClient versions
@@ -57,46 +61,82 @@ public class LegacyImportTest extends AbstractExportImportTest {
     public void addTestRealms(List<RealmRepresentation> testRealms) {
     }
 
+    @Test
+    public void importPreviousProject() throws Exception {
 
-    @Ignore // TODO: Restart and set system properties doesn't work on wildfly ATM. Figure and re-enable
+        String projectVersion = System.getProperty("migration.project.version");
+        assertNotNull(projectVersion);
+        
+        testLegacyImport(projectVersion);
+    }
+    
+    @Test
+    public void importPreviousProduct() throws Exception {
+
+        String productVersion = System.getProperty("migration.product.version");
+        assertNotNull(productVersion);
+        
+        testLegacyImport(productVersion);
+    }
+
+    private void testLegacyImport(String version) {
+        String file = "/migration-test/migration-realm-" + version + ".json";
+        
+        URL url = LegacyImportTest.class.getResource(file);
+        String targetFilePath = new File(url.getFile()).getAbsolutePath();
+        testingClient.testing().exportImport().setFile(targetFilePath);
+        testingClient.testing().exportImport().setProvider(SingleFileExportProviderFactory.PROVIDER_ID);
+        testingClient.testing().exportImport().setAction(ExportImportConfig.ACTION_IMPORT);
+        testingClient.testing().exportImport().setRealmName(MIGRATION);
+        testingClient.testing().exportImport().setStrategy(Strategy.IGNORE_EXISTING);
+        
+        try {
+            testingClient.testing().exportImport().runImport();
+
+            RealmResource imported = adminClient.realm(MIGRATION);
+
+            assertNames(imported.roles().list(), "offline_access", "uma_authorization", "migration-test-realm-role");
+            assertNames(imported.clients().findAll(), "account", "admin-cli", "broker", "migration-test-client", "realm-management", "security-admin-console");
+            String id = imported.clients().findByClientId("migration-test-client").get(0).getId();
+            assertNames(imported.clients().get(id).roles().list(), "migration-test-client-role");
+            assertNames(imported.users().search("", 0, 5), "migration-test-user");
+            assertNames(imported.groups().groups(), "migration-test-group");
+        } finally {
+            removeRealm(MIGRATION);
+        }
+    }
+
+    //KEYCLOAK-1982
     @Test
     public void importFrom11() throws LifecycleException {
-        // Setup system properties for import ( TODO: Set properly with external-container )
-        ExportImportConfig.setProvider(SingleFileExportProviderFactory.PROVIDER_ID);
         URL url = LegacyImportTest.class.getResource("/exportimport-test/kc11-exported-realm.json");
         String targetFilePath = new File(url.getFile()).getAbsolutePath();
-        ExportImportConfig.setFile(targetFilePath);
-        ExportImportConfig.setAction(ExportImportConfig.ACTION_IMPORT);
+        testingClient.testing().exportImport().setFile(targetFilePath);
+        testingClient.testing().exportImport().setProvider(SingleFileExportProviderFactory.PROVIDER_ID);
+        testingClient.testing().exportImport().setAction(ExportImportConfig.ACTION_IMPORT);
 
-        // Restart to enforce full import
-        restartServer();
+        try {
+            testingClient.testing().exportImport().runImport();
 
+            // Assert "locale" mapper available in security-admin-console client
+            ClientResource foo11AdminConsoleClient = adminClient.realm("foo11").clients().get("a9ca4217-74a8-4658-92c8-c2f9ed48a474");
+            assertLocaleMapperPresent(foo11AdminConsoleClient);
 
-        // Assert "locale" mapper available in security-admin-console client for both master and foo11 realm
-        ClientResource foo11AdminConsoleClient = adminClient.realm("foo11").clients().get("a9ca4217-74a8-4658-92c8-c2f9ed48a474");
-        assertLocaleMapperPresent(foo11AdminConsoleClient);
+            // Assert "realm-management" role correctly set and contains all admin roles.
+            ClientResource foo11RealmManagementClient = adminClient.realm("foo11").clients().get("c7a9cf59-feeb-44a4-a467-e008e157efa2");
+            List<RoleRepresentation> roles = foo11RealmManagementClient.roles().list();
+            assertRolesAvailable(roles);
 
-        ClientResource masterAdminConsoleClient = adminClient.realm(Config.getAdminRealm()).clients().get("22ed594d-8c21-43f0-a080-c8879a411f94");
-        assertLocaleMapperPresent(masterAdminConsoleClient);
+            // Assert all admin roles are also available as composites of "realm-admin"
+            Set<RoleRepresentation> realmAdminComposites = foo11RealmManagementClient.roles().get(AdminRoles.REALM_ADMIN).getRoleComposites();
+            assertRolesAvailable(realmAdminComposites);
 
-
-        // Assert "realm-management" role correctly set and contains all admin roles.
-        ClientResource foo11RealmManagementClient = adminClient.realm("foo11").clients().get("c7a9cf59-feeb-44a4-a467-e008e157efa2");
-        List<RoleRepresentation> roles = foo11RealmManagementClient.roles().list();
-        assertRolesAvailable(roles);
-
-        // Assert all admin roles are also available as composites of "realm-admin"
-        Set<RoleRepresentation> realmAdminComposites = foo11RealmManagementClient.roles().get(AdminRoles.REALM_ADMIN).getRoleComposites();
-        assertRolesAvailable(realmAdminComposites);
-
-        // Assert "foo11-master" client correctly set and contains all admin roles.
-        ClientResource foo11MasterAdminClient = adminClient.realm(Config.getAdminRealm()).clients().get("c9c3bd5f-b69d-4640-8b27-45d4f3866a36");
-        roles = foo11MasterAdminClient.roles().list();
-        assertRolesAvailable(roles);
-
-        // Assert all admin roles are also available as composites of "admin" role
-        Set<RoleRepresentation> masterAdminComposites = adminClient.realm(Config.getAdminRealm()).roles().get(AdminRoles.ADMIN).getRoleComposites();
-        assertRolesAvailable(masterAdminComposites);
+            // Assert all admin roles are also available as composites of "admin" role
+            Set<RoleRepresentation> masterAdminComposites = adminClient.realm(Config.getAdminRealm()).roles().get(AdminRoles.ADMIN).getRoleComposites();
+            assertRolesAvailable(masterAdminComposites);
+        } finally {
+            removeRealm("foo11");
+        }
     }
 
 

@@ -19,6 +19,7 @@ package org.keycloak.models.cache.infinispan;
 
 import org.jboss.logging.Logger;
 import org.keycloak.cluster.ClusterProvider;
+import org.keycloak.models.cache.infinispan.events.InvalidationEvent;
 import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.common.util.Time;
 import org.keycloak.component.ComponentModel;
@@ -42,6 +43,12 @@ import org.keycloak.models.cache.infinispan.entities.CachedUser;
 import org.keycloak.models.cache.infinispan.entities.CachedUserConsent;
 import org.keycloak.models.cache.infinispan.entities.CachedUserConsents;
 import org.keycloak.models.cache.infinispan.entities.UserListQuery;
+import org.keycloak.models.cache.infinispan.events.UserCacheRealmInvalidationEvent;
+import org.keycloak.models.cache.infinispan.events.UserConsentsUpdatedEvent;
+import org.keycloak.models.cache.infinispan.events.UserFederationLinkRemovedEvent;
+import org.keycloak.models.cache.infinispan.events.UserFederationLinkUpdatedEvent;
+import org.keycloak.models.cache.infinispan.events.UserFullInvalidationEvent;
+import org.keycloak.models.cache.infinispan.events.UserUpdatedEvent;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
@@ -72,6 +79,7 @@ public class UserCacheSession implements UserCache {
 
     protected Set<String> invalidations = new HashSet<>();
     protected Set<String> realmInvalidations = new HashSet<>();
+    protected Set<InvalidationEvent> invalidationEvents = new HashSet<>(); // Events to be sent across cluster
     protected Map<String, UserModel> managedUsers = new HashMap<>();
 
     public UserCacheSession(UserCacheManager cache, KeycloakSession session) {
@@ -85,7 +93,7 @@ public class UserCacheSession implements UserCache {
     public void clear() {
         cache.clear();
         ClusterProvider cluster = session.getProvider(ClusterProvider.class);
-        cluster.notify(InfinispanUserCacheProviderFactory.USER_CLEAR_CACHE_EVENTS, new ClearCacheEvent());
+        cluster.notify(InfinispanUserCacheProviderFactory.USER_CLEAR_CACHE_EVENTS, new ClearCacheEvent(), true);
     }
 
     public UserProvider getDelegate() {
@@ -97,10 +105,8 @@ public class UserCacheSession implements UserCache {
     }
 
     public void registerUserInvalidation(RealmModel realm,CachedUser user) {
-        invalidations.add(user.getId());
-        if (user.getEmail() != null) invalidations.add(getUserByEmailCacheKey(realm.getId(), user.getEmail()));
-        invalidations.add(getUserByUsernameCacheKey(realm.getId(), user.getUsername()));
-        if (realm.isIdentityFederationEnabled()) invalidations.add(getFederatedIdentityLinksCacheKey(user.getId()));
+        cache.userUpdatedInvalidations(user.getId(), user.getUsername(), user.getEmail(), user.getRealm(), invalidations);
+        invalidationEvents.add(UserUpdatedEvent.create(user.getId(), user.getUsername(), user.getEmail(), user.getRealm()));
     }
 
     @Override
@@ -108,16 +114,14 @@ public class UserCacheSession implements UserCache {
         if (user instanceof CachedUserModel) {
             ((CachedUserModel)user).invalidate();
         } else {
-            invalidations.add(user.getId());
-            if (user.getEmail() != null) invalidations.add(getUserByEmailCacheKey(realm.getId(), user.getEmail()));
-            invalidations.add(getUserByUsernameCacheKey(realm.getId(), user.getUsername()));
-            if (realm.isIdentityFederationEnabled()) invalidations.add(getFederatedIdentityLinksCacheKey(user.getId()));
+            cache.userUpdatedInvalidations(user.getId(), user.getUsername(), user.getEmail(), realm.getId(), invalidations);
+            invalidationEvents.add(UserUpdatedEvent.create(user.getId(), user.getUsername(), user.getEmail(), realm.getId()));
         }
     }
 
     @Override
     public void evict(RealmModel realm) {
-        realmInvalidations.add(realm.getId());
+        addRealmInvalidation(realm.getId());
     }
 
     protected void runInvalidations() {
@@ -127,6 +131,8 @@ public class UserCacheSession implements UserCache {
         for (String invalidation : invalidations) {
             cache.invalidateObject(invalidation);
         }
+
+        cache.sendInvalidationEvents(session, invalidationEvents);
     }
 
     private KeycloakTransaction getTransaction() {
@@ -201,19 +207,23 @@ public class UserCacheSession implements UserCache {
         return adapter;
     }
 
-    public String getUserByUsernameCacheKey(String realmId, String username) {
+    static String getUserByUsernameCacheKey(String realmId, String username) {
         return realmId + ".username." + username;
     }
 
-    public String getUserByEmailCacheKey(String realmId, String email) {
+    static String getUserByEmailCacheKey(String realmId, String email) {
         return realmId + ".email." + email;
     }
 
-    public String getUserByFederatedIdentityCacheKey(String realmId, FederatedIdentityModel socialLink) {
-        return realmId + ".idp." + socialLink.getIdentityProvider() + "." + socialLink.getUserId();
+    private static String getUserByFederatedIdentityCacheKey(String realmId, FederatedIdentityModel socialLink) {
+        return getUserByFederatedIdentityCacheKey(realmId, socialLink.getIdentityProvider(), socialLink.getUserId());
     }
 
-    public String getFederatedIdentityLinksCacheKey(String userId) {
+    static String getUserByFederatedIdentityCacheKey(String realmId, String identityProvider, String socialUserId) {
+        return realmId + ".idp." + identityProvider + "." + socialUserId;
+    }
+
+    static String getFederatedIdentityLinksCacheKey(String userId) {
         return userId + ".idplinks";
     }
 
@@ -655,25 +665,30 @@ public class UserCacheSession implements UserCache {
 
     @Override
     public void updateConsent(RealmModel realm, String userId, UserConsentModel consent) {
-        invalidations.add(getConsentCacheKey(userId));
+        invalidateConsent(userId);
         getDelegate().updateConsent(realm, userId, consent);
     }
 
     @Override
     public boolean revokeConsentForClient(RealmModel realm, String userId, String clientInternalId) {
-        invalidations.add(getConsentCacheKey(userId));
+        invalidateConsent(userId);
         return getDelegate().revokeConsentForClient(realm, userId, clientInternalId);
     }
 
-    public String getConsentCacheKey(String userId) {
+    static String getConsentCacheKey(String userId) {
         return userId + ".consents";
     }
 
 
     @Override
     public void addConsent(RealmModel realm, String userId, UserConsentModel consent) {
-        invalidations.add(getConsentCacheKey(userId));
+        invalidateConsent(userId);
         getDelegate().addConsent(realm, userId, consent);
+    }
+
+    private void invalidateConsent(String userId) {
+        cache.consentInvalidation(userId, invalidations);
+        invalidationEvents.add(UserConsentsUpdatedEvent.create(userId));
     }
 
     @Override
@@ -754,7 +769,7 @@ public class UserCacheSession implements UserCache {
     public UserModel addUser(RealmModel realm, String id, String username, boolean addDefaultRoles, boolean addDefaultRequiredActions) {
         UserModel user = getDelegate().addUser(realm, id, username, addDefaultRoles, addDefaultRoles);
         // just in case the transaction is rolled back you need to invalidate the user and all cache queries for that user
-        invalidateUser(realm, user);
+        fullyInvalidateUser(realm, user);
         managedUsers.put(user.getId(), user);
         return user;
     }
@@ -763,94 +778,89 @@ public class UserCacheSession implements UserCache {
     public UserModel addUser(RealmModel realm, String username) {
         UserModel user = getDelegate().addUser(realm, username);
         // just in case the transaction is rolled back you need to invalidate the user and all cache queries for that user
-        invalidateUser(realm, user);
+        fullyInvalidateUser(realm, user);
         managedUsers.put(user.getId(), user);
         return user;
     }
 
-    protected void invalidateUser(RealmModel realm, UserModel user) {
-        // just in case the transaction is rolled back you need to invalidate the user and all cache queries for that user
+    // just in case the transaction is rolled back you need to invalidate the user and all cache queries for that user
+    protected void fullyInvalidateUser(RealmModel realm, UserModel user) {
+        Set<FederatedIdentityModel> federatedIdentities = realm.isIdentityFederationEnabled() ? getFederatedIdentities(user, realm) : null;
 
-        if (realm.isIdentityFederationEnabled()) {
-            // Invalidate all keys for lookup this user by any identityProvider link
-            Set<FederatedIdentityModel> federatedIdentities = getFederatedIdentities(user, realm);
-            for (FederatedIdentityModel socialLink : federatedIdentities) {
-                String fedIdentityCacheKey = getUserByFederatedIdentityCacheKey(realm.getId(), socialLink);
-                invalidations.add(fedIdentityCacheKey);
-            }
+        UserFullInvalidationEvent event = UserFullInvalidationEvent.create(user.getId(), user.getUsername(), user.getEmail(), realm.getId(), realm.isIdentityFederationEnabled(), federatedIdentities);
 
-            // Invalidate federationLinks of user
-            invalidations.add(getFederatedIdentityLinksCacheKey(user.getId()));
-        }
-
-        invalidations.add(user.getId());
-        if (user.getEmail() != null) invalidations.add(getUserByEmailCacheKey(realm.getId(), user.getEmail()));
-        invalidations.add(getUserByUsernameCacheKey(realm.getId(), user.getUsername()));
+        cache.fullUserInvalidation(user.getId(), user.getUsername(), user.getEmail(), realm.getId(), realm.isIdentityFederationEnabled(), event.getFederatedIdentities(), invalidations);
+        invalidationEvents.add(event);
     }
 
     @Override
     public boolean removeUser(RealmModel realm, UserModel user) {
-        invalidateUser(realm, user);
+        fullyInvalidateUser(realm, user);
         return getDelegate().removeUser(realm, user);
     }
 
     @Override
     public void addFederatedIdentity(RealmModel realm, UserModel user, FederatedIdentityModel socialLink) {
-        invalidations.add(getFederatedIdentityLinksCacheKey(user.getId()));
+        invalidateFederationLink(user.getId());
         getDelegate().addFederatedIdentity(realm, user, socialLink);
     }
 
     @Override
     public void updateFederatedIdentity(RealmModel realm, UserModel federatedUser, FederatedIdentityModel federatedIdentityModel) {
-        invalidations.add(getFederatedIdentityLinksCacheKey(federatedUser.getId()));
+        invalidateFederationLink(federatedUser.getId());
         getDelegate().updateFederatedIdentity(realm, federatedUser, federatedIdentityModel);
+    }
+
+    private void invalidateFederationLink(String userId) {
+        cache.federatedIdentityLinkUpdatedInvalidation(userId, invalidations);
+        invalidationEvents.add(UserFederationLinkUpdatedEvent.create(userId));
     }
 
     @Override
     public boolean removeFederatedIdentity(RealmModel realm, UserModel user, String socialProvider) {
         // Needs to invalidate both directions
         FederatedIdentityModel socialLink = getFederatedIdentity(user, socialProvider, realm);
-        invalidations.add(getFederatedIdentityLinksCacheKey(user.getId()));
-        if (socialLink != null) {
-            invalidations.add(getUserByFederatedIdentityCacheKey(realm.getId(), socialLink));
-        }
+
+        UserFederationLinkRemovedEvent event = UserFederationLinkRemovedEvent.create(user.getId(), realm.getId(), socialLink);
+        cache.federatedIdentityLinkRemovedInvalidation(user.getId(), realm.getId(), event.getIdentityProviderId(), event.getSocialUserId(), invalidations);
+        invalidationEvents.add(event);
 
         return getDelegate().removeFederatedIdentity(realm, user, socialProvider);
     }
 
     @Override
     public void grantToAllUsers(RealmModel realm, RoleModel role) {
-        realmInvalidations.add(realm.getId()); // easier to just invalidate whole realm
+        addRealmInvalidation(realm.getId()); // easier to just invalidate whole realm
         getDelegate().grantToAllUsers(realm, role);
     }
 
     @Override
     public void preRemove(RealmModel realm) {
-        realmInvalidations.add(realm.getId());
+        addRealmInvalidation(realm.getId());
         getDelegate().preRemove(realm);
     }
 
     @Override
     public void preRemove(RealmModel realm, RoleModel role) {
-        realmInvalidations.add(realm.getId()); // easier to just invalidate whole realm
+        addRealmInvalidation(realm.getId()); // easier to just invalidate whole realm
         getDelegate().preRemove(realm, role);
     }
     @Override
     public void preRemove(RealmModel realm, GroupModel group) {
-        realmInvalidations.add(realm.getId()); // easier to just invalidate whole realm
+        addRealmInvalidation(realm.getId()); // easier to just invalidate whole realm
         getDelegate().preRemove(realm, group);
     }
 
 
     @Override
     public void preRemove(RealmModel realm, UserFederationProviderModel link) {
-        realmInvalidations.add(realm.getId()); // easier to just invalidate whole realm
+        addRealmInvalidation(realm.getId()); // easier to just invalidate whole realm
         getDelegate().preRemove(realm, link);
     }
 
     @Override
     public void preRemove(RealmModel realm, ClientModel client) {
-        realmInvalidations.add(realm.getId()); // easier to just invalidate whole realm
+        addRealmInvalidation(realm.getId()); // easier to just invalidate whole realm
         getDelegate().preRemove(realm, client);
     }
 
@@ -862,9 +872,14 @@ public class UserCacheSession implements UserCache {
     @Override
     public void preRemove(RealmModel realm, ComponentModel component) {
         if (!component.getProviderType().equals(UserStorageProvider.class.getName())) return;
-        realmInvalidations.add(realm.getId()); // easier to just invalidate whole realm
+        addRealmInvalidation(realm.getId()); // easier to just invalidate whole realm
         getDelegate().preRemove(realm, component);
 
+    }
+
+    private void addRealmInvalidation(String realmId) {
+        realmInvalidations.add(realmId);
+        invalidationEvents.add(UserCacheRealmInvalidationEvent.create(realmId));
     }
 
 }

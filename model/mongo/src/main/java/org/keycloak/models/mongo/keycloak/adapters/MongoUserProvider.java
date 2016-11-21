@@ -41,6 +41,7 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserFederationProviderModel;
+import org.keycloak.models.UserManager;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
 import org.keycloak.models.cache.CachedUserModel;
@@ -50,6 +51,8 @@ import org.keycloak.models.mongo.keycloak.entities.MongoUserConsentEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoUserEntity;
 import org.keycloak.models.mongo.keycloak.entities.UserConsentEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.models.utils.UserModelDelegate;
+import org.keycloak.storage.UserStorageProvider;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -630,7 +633,19 @@ public class MongoUserProvider implements UserProvider, UserCredentialStore {
 
     @Override
     public void preRemove(RealmModel realm, ComponentModel component) {
+        if (!component.getProviderType().equals(UserStorageProvider.class.getName())) return;
+        DBObject query = new QueryBuilder()
+                .and("federationLink").is(component.getId())
+                .get();
 
+        List<MongoUserEntity> mongoUsers = getMongoStore().loadEntities(MongoUserEntity.class, query, invocationContext);
+        UserManager userManager = new UserManager(session);
+
+        for (MongoUserEntity userEntity : mongoUsers) {
+            // Doing this way to ensure UserRemovedEvent triggered with proper callbacks.
+            UserAdapter user = new UserAdapter(session, realm, userEntity, invocationContext);
+            userManager.removeUser(realm, user, this);
+        }
     }
 
     @Override
@@ -661,16 +676,18 @@ public class MongoUserProvider implements UserProvider, UserCredentialStore {
     }
 
     public MongoUserEntity getMongoUserEntity(UserModel user) {
-        UserAdapter adapter = null;
-        if (user instanceof CachedUserModel) {
-            adapter = (UserAdapter)((CachedUserModel)user).getDelegateForUpdate();
-        } else if (user instanceof UserAdapter ){
-            adapter = (UserAdapter)user;
+        if (user instanceof UserAdapter) {
+            UserAdapter adapter = (UserAdapter)user;
+            return adapter.getMongoEntity();
+        } else if (user instanceof CachedUserModel) {
+            UserModel delegate = ((CachedUserModel)user).getDelegateForUpdate();
+            return getMongoUserEntity(delegate);
+        } else if (user instanceof UserModelDelegate){
+            UserModel delegate = ((UserModelDelegate) user).getDelegate();
+            return getMongoUserEntity(delegate);
         } else {
             return getMongoStore().loadEntity(MongoUserEntity.class, user.getId(), invocationContext);
-
         }
-        return adapter.getMongoEntity();
     }
 
     @Override

@@ -251,7 +251,11 @@ public class AuthenticationManagementResource {
     @NoCache
     public void deleteFlow(@PathParam("id") String id) {
         auth.requireManage();
-
+        
+        deleteFlow(id, true);
+    }
+    
+    private void deleteFlow(String id, boolean isTopMostLevel) {
         AuthenticationFlowModel flow = realm.getAuthenticationFlowById(id);
         if (flow == null) {
             throw new NotFoundException("Could not find flow with id");
@@ -259,18 +263,17 @@ public class AuthenticationManagementResource {
         if (flow.isBuiltIn()) {
             throw new BadRequestException("Can't delete built in flow");
         }
+        
         List<AuthenticationExecutionModel> executions = realm.getAuthenticationExecutions(id);
         for (AuthenticationExecutionModel execution : executions) {
-        	if(execution.getFlowId() != null) {
-        		AuthenticationFlowModel nonTopLevelFlow = realm.getAuthenticationFlowById(execution.getFlowId());
-        		realm.removeAuthenticationFlow(nonTopLevelFlow);
-        	}
-        	realm.removeAuthenticatorExecution(execution);
+            if(execution.getFlowId() != null) {
+                deleteFlow(execution.getFlowId(), false);
+            }
         }
         realm.removeAuthenticationFlow(flow);
 
         // Use just one event for top-level flow. Using separate events won't work properly for flows of depth 2 or bigger
-        adminEvent.operation(OperationType.DELETE).resourcePath(uriInfo).success();
+        if (isTopMostLevel) adminEvent.operation(OperationType.DELETE).resourcePath(uriInfo).success();
     }
 
     /**

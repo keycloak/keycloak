@@ -48,7 +48,7 @@ public class HttpMethod<R> {
     private HttpMethodResponse<R> response;
 
     public HttpMethod(Configuration configuration, RequestBuilder builder) {
-        this(configuration, builder, new HashMap<>(), new HashMap<>());
+        this(configuration, builder, new HashMap<String, String>(), new HashMap<String, String>());
     }
 
     public HttpMethod(Configuration configuration, RequestBuilder builder, HashMap<String, String> params, HashMap<String, String> headers) {

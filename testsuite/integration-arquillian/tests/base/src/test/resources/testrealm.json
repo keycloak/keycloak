@@ -85,6 +85,21 @@
       "groups": [
         "/topGroup/level2group"
       ]
+    },
+    {
+      "username" : "roleRichUser",
+      "enabled": true,
+      "email" : "rich.roles@redhat.com",
+      "credentials" : [
+        { "type" : "password",
+          "value" : "password" }
+      ],
+      "groups": [
+        "/roleRichGroup/level2group"
+      ],
+      "clientRoles": {
+        "test-app-scope": [ "test-app-allowed-by-scope", "test-app-disallowed-by-scope" ]
+      }
     }
   ],
   "scopeMappings": [
@@ -95,6 +110,10 @@
     {
       "client": "test-app",
       "roles": ["user"]
+    },
+    {
+      "client": "test-app-scope",
+      "roles": ["user", "admin"]
     }
   ],
   "clients": [
@@ -107,6 +126,16 @@
       ],
       "adminUrl": "http://localhost:8180/auth/realms/master/app/admin",
       "secret": "password"
+    },
+    {
+      "clientId" : "test-app-scope",
+      "enabled": true,
+
+      "redirectUris": [
+        "http://localhost:8180/auth/realms/master/app/*"
+      ],
+      "secret": "password",
+      "fullScopeAllowed": "false"
     },
     {
       "clientId" : "third-party",
@@ -290,6 +319,22 @@
       {
         "name": "customer-user-premium",
         "description": "Have User Premium privileges"
+      },
+      {
+        "name": "sample-realm-role",
+        "description": "Sample realm role"
+      },
+      {
+        "name": "realm-composite-role",
+        "description": "Realm composite role containing client role",
+        "composite" : true,
+        "composites" : {
+          "realm" : [ "sample-realm-role" ],
+          "client" : {
+            "test-app" : [ "sample-client-role" ],
+            "account" : [ "view-profile" ]
+          }
+        }
       }
     ],
     "client" : {
@@ -301,6 +346,31 @@
         {
           "name": "customer-admin",
           "description": "Have Customer Admin privileges"
+        },
+        {
+          "name": "sample-client-role",
+          "description": "Sample client role"
+        },
+        {
+          "name": "customer-admin-composite-role",
+          "description": "Have Customer Admin privileges via composite role",
+          "composite" : true,
+          "composites" : {
+            "realm" : [ "customer-user-premium" ],
+            "client" : {
+              "test-app" : [ "customer-admin" ]
+            }
+          }
+        }
+      ],
+      "test-app-scope" : [
+        {
+          "name": "test-app-allowed-by-scope",
+          "description": "Role allowed by scope in test-app-scope"
+        },
+        {
+          "name": "test-app-disallowed-by-scope",
+          "description": "Role disallowed by scope in test-app-scope"
         }
       ]
     }
@@ -328,6 +398,31 @@
           }
         }
       ]
+    },
+    {
+      "name": "roleRichGroup",
+      "attributes": {
+        "topAttribute": ["true"]
+
+      },
+      "realmRoles": ["user", "realm-composite-role"],
+      "clientRoles": {
+        "account": ["manage-account"]
+      },
+
+      "subGroups": [
+        {
+          "name": "level2group",
+          "realmRoles": ["admin"],
+          "clientRoles": {
+            "test-app": ["customer-user", "customer-admin-composite-role"]
+          },
+          "attributes": {
+            "level2Attribute": ["true"]
+
+          }
+        }
+      ]
     }
   ],
 
@@ -337,6 +432,16 @@
       {
         "client": "third-party",
         "roles": ["customer-user"]
+      },
+      {
+        "client": "test-app-scope",
+        "roles": ["customer-admin-composite-role"]
+      }
+    ],
+    "test-app-scope": [
+      {
+        "client": "test-app-scope",
+        "roles": ["test-app-allowed-by-scope"]
       }
     ]
   },

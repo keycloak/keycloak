@@ -1352,7 +1352,11 @@ module.controller('ClientScopeMappingCtrl', function($scope, $http, realm, clien
 
     }
 
-
+    $scope.hideRoleSelector = function() {
+       return ($scope.client.useTemplateScope && $scope.template && template.fullScopeAllowed)
+               || (!$scope.template && $scope.client.fullScopeAllowed);
+    }
+    
     $scope.changeFlag = function() {
         Client.update({
             realm : realm.realm,

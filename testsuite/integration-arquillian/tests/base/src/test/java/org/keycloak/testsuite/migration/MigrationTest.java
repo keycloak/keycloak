@@ -52,7 +52,7 @@ import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
  */
 public class MigrationTest extends AbstractKeycloakTest {
 
-    private final String MIGRATION = "Migration";
+    public static final String MIGRATION = "Migration";
     private RealmResource migrationRealm;
     private RealmResource masterRealm;
         

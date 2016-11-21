@@ -337,7 +337,7 @@ module.controller('UserTabCtrl', function($scope, $location, Dialog, Notificatio
 module.controller('UserDetailCtrl', function($scope, realm, user, BruteForceUser, User,
                                              Components,
                                              UserFederationInstances, UserImpersonation, RequiredActions,
-                                             $location, Dialog, Notifications) {
+                                             $location, $http, Dialog, Notifications) {
     $scope.realm = realm;
     $scope.create = !user.id;
     $scope.editUsername = $scope.create || $scope.realm.editUsernameAllowed;
@@ -362,7 +362,16 @@ module.controller('UserDetailCtrl', function($scope, realm, user, BruteForceUser
             });
         };
         if(user.federationLink) {
-            console.log("federationLink is not null");
+            console.log("federationLink is not null. It is " + user.federationLink);
+
+            // TODO: This is temporary and should be removed once we remove userFederation SPI. It can be replaced with Components.get below
+            var fedUrl = authUrl + '/admin/realms/' + realm.realm + '/user-federation/instances-with-fallback/' + user.federationLink;
+            $http.get(fedUrl).success(function(data, status, headers, config) {
+                $scope.federationLinkName = data.federationLinkName;
+                $scope.federationLink = data.federationLink;
+            });
+
+            /*
             if (user.federationLink.startsWith('f:')) {
                  Components.get({realm: realm.realm, componentId: user.federationLink}, function (link) {
                     $scope.federationLinkName = link.name;
@@ -373,7 +382,7 @@ module.controller('UserDetailCtrl', function($scope, realm, user, BruteForceUser
                     $scope.federationLinkName = link.displayName;
                     $scope.federationLink = "#/realms/" + realm.realm + "/user-federation/providers/" + link.providerName + "/" + link.id;
                 });
-            }
+            }*/
 
         } else {
             console.log("federationLink is null");
@@ -627,14 +636,21 @@ module.controller('UserFederationCtrl', function($scope, $location, $route, real
     for (var i = 0; i < $scope.providers.length; i++) {
         $scope.providers[i].isUserFederationProvider = false;
     }
-    /*
+
     UserFederationProviders.query({realm: realm.realm}, function(data) {
         for (var i = 0; i < data.length; i++) {
             data[i].isUserFederationProvider = true;
+
+            var existingProvider = $scope.providers.find(function(provider){ return provider.id == data[i].id });
+            if (existingProvider) {
+                angular.copy(data[i], existingProvider);
+                continue;
+            }
+
             $scope.providers.push(data[i]);
         }
     });
-    */
+
 
     $scope.addProvider = function(provider) {
         console.log('Add provider: ' + provider.id);
@@ -1712,6 +1728,7 @@ module.controller('LDAPUserStorageCtrl', function($scope, $location, Notificatio
         }
 
         $scope.changed = false;
+        $scope.lastVendor = instance.config['vendor'][0];
     }
 
     initUserStorageSettings();
@@ -1724,7 +1741,7 @@ module.controller('LDAPUserStorageCtrl', function($scope, $location, Notificatio
         }
 
         if (!angular.equals($scope.instance.config['vendor'][0], $scope.lastVendor)) {
-            console.log("LDAP vendor changed");
+            console.log("LDAP vendor changed. Previous=" + $scope.lastVendor + " New=" + $scope.instance.config['vendor'][0]);
             $scope.lastVendor = $scope.instance.config['vendor'][0];
 
             if ($scope.lastVendor === "ad") {
@@ -1771,8 +1788,8 @@ module.controller('LDAPUserStorageCtrl', function($scope, $location, Notificatio
 
     $scope.save = function() {
         $scope.changed = false;
-        if (!parseInt($scope.instance.config['batchSizeForSync'[0]])) {
-            $scope.instance.config['batchSizeForSync'][0] = DEFAULT_BATCH_SIZE;
+        if (!parseInt($scope.instance.config['batchSizeForSync'][0])) {
+            $scope.instance.config['batchSizeForSync'] = [ DEFAULT_BATCH_SIZE ];
         } else {
             $scope.instance.config['batchSizeForSync'][0] = parseInt($scope.instance.config.batchSizeForSync).toString();
         }

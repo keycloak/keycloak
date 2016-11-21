@@ -17,8 +17,6 @@
 
 package org.keycloak.models;
 
-import org.keycloak.models.session.UserSessionPersisterProvider;
-
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
@@ -35,17 +33,25 @@ public class UserManager {
     }
 
     public boolean removeUser(RealmModel realm, UserModel user, UserProvider userProvider) {
-        UserSessionProvider sessions = session.sessions();
-        if (sessions != null) {
-            sessions.onUserRemoved(realm, user);
-        }
-
-        UserSessionPersisterProvider sessionsPersister = session.getProvider(UserSessionPersisterProvider.class);
-        if (sessionsPersister != null) {
-            sessionsPersister.onUserRemoved(realm, user);
-        }
-
         if (userProvider.removeUser(realm, user)) {
+            session.getKeycloakSessionFactory().publish(new UserModel.UserRemovedEvent() {
+
+                @Override
+                public RealmModel getRealm() {
+                    return realm;
+                }
+
+                @Override
+                public UserModel getUser() {
+                    return user;
+                }
+
+                @Override
+                public KeycloakSession getKeycloakSession() {
+                    return session;
+                }
+
+            });
             return true;
         }
         return false;

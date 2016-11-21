@@ -23,14 +23,14 @@
                             </div>
                             <div class="input-group">
                                 <select class="form-control search" data-ng-model="query.type"
-                                        ng-options="p.type as p.name group by p.group for p in policyProviders track by p.type" data-ng-change="firstPage()">
+                                        ng-options="p.type as p.name for p in policyProviders track by p.type" data-ng-change="firstPage()">
                                     <option value="" selected ng-click="query.type = ''">{{:: 'authz-all-types' | translate}}</option>
                                 </select>
                             </div>
                         </div>
                         <div class="pull-right">
                             <select class="form-control" ng-model="policyType"
-                                    ng-options="p.name group by p.group for p in policyProviders track by p.type"
+                                    ng-options="p.name for p in policyProviders track by p.type"
                                     data-ng-change="addPolicy(policyType);">
                                 <option value="" disabled selected>{{:: 'authz-create-policy' | translate}}...</option>
                             </select>

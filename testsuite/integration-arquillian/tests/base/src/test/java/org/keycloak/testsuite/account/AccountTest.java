@@ -58,6 +58,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import static org.hamcrest.Matchers.*;
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
@@ -756,7 +758,7 @@ public class AccountTest extends TestRealmKeycloakTest {
         Assert.assertTrue(applicationsPage.isCurrent());
 
         Map<String, AccountApplicationsPage.AppEntry> apps = applicationsPage.getApplications();
-        Assert.assertEquals(4, apps.size());
+        Assert.assertThat(apps.keySet(), containsInAnyOrder("Account", "test-app", "test-app-scope", "third-party", "test-app-authz"));
 
         AccountApplicationsPage.AppEntry accountEntry = apps.get("Account");
         Assert.assertEquals(2, accountEntry.getRolesAvailable().size());

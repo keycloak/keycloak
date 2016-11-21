@@ -122,6 +122,9 @@ public class PolicyEnforcerConfig {
         private List<String> scopes = Collections.emptyList();
         private String id;
 
+        @JsonProperty("enforcement-mode")
+        private EnforcementMode enforcementMode = EnforcementMode.ENFORCING;
+
         @JsonIgnore
         private PathConfig parentConfig;
 
@@ -173,6 +176,14 @@ public class PolicyEnforcerConfig {
             return id;
         }
 
+        public EnforcementMode getEnforcementMode() {
+            return enforcementMode;
+        }
+
+        public void setEnforcementMode(EnforcementMode enforcementMode) {
+            this.enforcementMode = enforcementMode;
+        }
+
         @Override
         public String toString() {
             return "PathConfig{" +
@@ -181,6 +192,7 @@ public class PolicyEnforcerConfig {
                     ", path='" + path + '\'' +
                     ", scopes=" + scopes +
                     ", id='" + id + '\'' +
+                    ", enforcerMode='" + enforcementMode + '\'' +
                     '}';
         }
 
