@@ -1728,6 +1728,7 @@ module.controller('LDAPUserStorageCtrl', function($scope, $location, Notificatio
         }
 
         $scope.changed = false;
+        $scope.lastVendor = instance.config['vendor'][0];
     }
 
     initUserStorageSettings();
@@ -1740,7 +1741,7 @@ module.controller('LDAPUserStorageCtrl', function($scope, $location, Notificatio
         }
 
         if (!angular.equals($scope.instance.config['vendor'][0], $scope.lastVendor)) {
-            console.log("LDAP vendor changed");
+            console.log("LDAP vendor changed. Previous=" + $scope.lastVendor + " New=" + $scope.instance.config['vendor'][0]);
             $scope.lastVendor = $scope.instance.config['vendor'][0];
 
             if ($scope.lastVendor === "ad") {
@@ -1787,8 +1788,8 @@ module.controller('LDAPUserStorageCtrl', function($scope, $location, Notificatio
 
     $scope.save = function() {
         $scope.changed = false;
-        if (!parseInt($scope.instance.config['batchSizeForSync'[0]])) {
-            $scope.instance.config['batchSizeForSync'][0] = DEFAULT_BATCH_SIZE;
+        if (!parseInt($scope.instance.config['batchSizeForSync'][0])) {
+            $scope.instance.config['batchSizeForSync'] = [ DEFAULT_BATCH_SIZE ];
         } else {
             $scope.instance.config['batchSizeForSync'][0] = parseInt($scope.instance.config.batchSizeForSync).toString();
         }
