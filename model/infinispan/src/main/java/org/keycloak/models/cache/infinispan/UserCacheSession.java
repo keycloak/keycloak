@@ -121,7 +121,7 @@ public class UserCacheSession implements UserCache {
 
     @Override
     public void evict(RealmModel realm) {
-        realmInvalidations.add(realm.getId());
+        addRealmInvalidation(realm.getId());
     }
 
     protected void runInvalidations() {
