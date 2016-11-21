@@ -122,15 +122,15 @@ The name of the HTTP method.
 +
 An array of strings with the scopes associated with the method. When you associate scopes with a specific method, the client trying to access a protected resource (or path) must provide an RPT that grants permission to all scopes specified in the list. For example, if you define a method _POST_ with a scope _create_, the RPT must contain a permission granting access to the _create_ scope when performing a POST to the path.
 +
-**** *enforcement-mode*
+*** *enforcement-mode*
 +
 Specifies how policies are enforced.
 +
-***** *ENFORCING*
+**** *ENFORCING*
 +
 (default mode) Requests are denied by default even when there is no policy associated with a given resource.
 +
-***** *DISABLED*
+**** *DISABLED*
 +
 Disables the evaluation of policies for a path
 +
