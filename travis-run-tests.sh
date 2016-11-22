@@ -7,7 +7,8 @@ fi
 if [ $1 == "group1" ]; then
     mvn test -B -f testsuite/integration-arquillian/tests/base -Dtest=org.keycloak.testsuite.a**.*Test
     mvn test -B -f testsuite/integration-arquillian/tests/base -Dtest=org.keycloak.testsuite.b**.*Test
-    mvn test -B -f testsuite/integration-arquillian/tests/base -Dtest=org.keycloak.testsuite.c**.*Test
+    mvn test -B -f testsuite/integration-arquillian/tests/base -Dtest=org.keycloak.testsuite.cli**.*Test
+    mvn test -B -f testsuite/integration-arquillian/tests/base -Dtest=org.keycloak.testsuite.com**.*Test
 fi
 
 if [ $1 == "group2" ]; then
