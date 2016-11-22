@@ -2,6 +2,7 @@ package org.keycloak.testsuite.console.federation;
 
 import org.apache.commons.configuration.ConfigurationException;
 import org.jboss.arquillian.graphene.page.Page;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserFederationProviderRepresentation;
@@ -18,6 +19,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * @author fkiss, pdrozd
  */
+@Ignore
 public class LdapUserFederationTest extends AbstractConsoleTest {
 
     private static final String UNSYNCED = "UNSYNCED";
