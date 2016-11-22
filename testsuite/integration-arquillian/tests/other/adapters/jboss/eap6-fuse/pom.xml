@@ -29,7 +29,7 @@
 
     <artifactId>integration-arquillian-tests-adapters-eap6-fuse</artifactId>
 
-    <name>Adapter Tests - JBoss - EAP 6</name>
+    <name>Adapter Tests - JBoss - EAP 6 Fuse</name>
     
     <properties>
         <app.server>eap6-fuse</app.server>

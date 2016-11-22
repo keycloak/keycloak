@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.keycloak.testsuite.adapter.servlet;
 
 import org.apache.commons.io.FileUtils;
@@ -32,7 +31,6 @@ import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.Time;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.keys.KeyProvider;
-import org.keycloak.models.Constants;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
@@ -48,7 +46,6 @@ import org.keycloak.testsuite.adapter.page.BasicAuth;
 import org.keycloak.testsuite.adapter.page.CustomerDb;
 import org.keycloak.testsuite.adapter.page.CustomerDbErrorPage;
 import org.keycloak.testsuite.adapter.page.CustomerPortal;
-import org.keycloak.testsuite.adapter.page.CustomerPortalSubsystem;
 import org.keycloak.testsuite.adapter.page.InputPortal;
 import org.keycloak.testsuite.adapter.page.ProductPortal;
 import org.keycloak.testsuite.adapter.page.SecurePortal;
@@ -58,7 +55,6 @@ import org.keycloak.testsuite.auth.page.account.Applications;
 import org.keycloak.testsuite.auth.page.login.OAuthGrant;
 import org.keycloak.testsuite.console.page.events.Config;
 import org.keycloak.testsuite.console.page.events.LoginEvents;
-import org.keycloak.testsuite.util.URLAssert;
 import org.keycloak.testsuite.util.URLUtils;
 import org.keycloak.util.BasicAuthHelper;
 import org.openqa.selenium.By;
@@ -86,7 +82,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import org.keycloak.testsuite.adapter.page.CustomerPortalNoConf;
 import static org.keycloak.testsuite.auth.page.AuthRealm.DEMO;
@@ -106,8 +101,6 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
     private CustomerPortal customerPortal;
     @Page
     private CustomerPortalNoConf customerPortalNoConf;
-    @Page
-    private CustomerPortalSubsystem customerPortalSubsystem;
     @Page
     private SecurePortal securePortal;
     @Page
@@ -135,15 +128,10 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
     protected static WebArchive customerPortal() {
         return servletDeployment(CustomerPortal.DEPLOYMENT_NAME, CustomerServlet.class, ErrorServlet.class);
     }
-    
+
     @Deployment(name = CustomerPortalNoConf.DEPLOYMENT_NAME)
     protected static WebArchive customerPortalNoConf() {
         return servletDeployment(CustomerPortalNoConf.DEPLOYMENT_NAME, CustomerServletNoConf.class, ErrorServlet.class);
-    }
-
-    @Deployment(name = CustomerPortalSubsystem.DEPLOYMENT_NAME)
-    protected static WebArchive customerPortalSubsystem() {
-        return servletDeployment(CustomerPortalSubsystem.DEPLOYMENT_NAME, CustomerServlet.class, ErrorServlet.class);
     }
 
     @Deployment(name = SecurePortal.DEPLOYMENT_NAME)
@@ -195,14 +183,6 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
         // Delete all cookies from token-min-ttl page to be sure we are logged out
         tokenMinTTLPage.navigateTo();
         driver.manage().deleteAllCookies();
-    }
-
-    @Test
-    public void testCustomerPortalWithSubsystemSettings() {
-        customerPortalSubsystem.navigateTo();
-        assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
-        testRealmLoginPage.form().login("bburke@redhat.com", "password");
-        assertTrue(driver.getPageSource().contains("Bill Burke") && driver.getPageSource().contains("Stian Thorgersen"));
     }
 
     @Test
@@ -843,13 +823,12 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
             log.info("Checking app server log on app-server: \"" + System.getProperty("app.server") + "\" is not supported.");
         }
     }
-    
+
     @Test
     public void testWithoutKeycloakConf() {
         customerPortalNoConf.navigateTo();
         String pageSource = driver.getPageSource();
         assertTrue(pageSource.contains("Forbidden") || pageSource.contains("HTTP Status 401"));
     }
-
 
 }

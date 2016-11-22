@@ -176,6 +176,16 @@
             "secret": "password"
         },
         {
+            "clientId": "product-portal-subsystem",
+            "enabled": true,
+            "adminUrl": "/product-portal-subsystem",
+            "baseUrl": "/product-portal-subsystem",
+            "redirectUris": [
+                "/product-portal-subsystem/*"
+            ],
+            "secret": "password"
+        },
+        {
             "clientId": "secure-portal",
             "enabled": true,
             "adminUrl": "/secure-portal",
