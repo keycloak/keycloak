@@ -535,6 +535,9 @@ module.controller('UserCredentialsCtrl', function($scope, realm, user, $route, R
     });
 
     $scope.resetPassword = function() {
+        // hit enter without entering both fields - ignore
+        if (!$scope.passwordAndConfirmPasswordEntered()) return;
+        
         if ($scope.pwdChange) {
             if ($scope.password != $scope.confirmPassword) {
                 Notifications.error("Password and confirmation does not match.");
@@ -563,6 +566,10 @@ module.controller('UserCredentialsCtrl', function($scope, realm, user, $route, R
         });
     };
 
+    $scope.passwordAndConfirmPasswordEntered = function() {
+        return $scope.password && $scope.confirmPassword;
+    }
+    
     $scope.disableCredentialTypes = function() {
         Dialog.confirm('Disable credentials', 'Are you sure you want to disable these the users credentials?', function() {
             UserCredentials.disableCredentialTypes({ realm: realm.realm, userId: user.id }, $scope.disableableCredentialTypes, function() {
