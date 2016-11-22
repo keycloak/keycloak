@@ -231,6 +231,13 @@
             "bearerOnly": true
         },
         {
+            "clientId": "admin-camel-restdsl",
+            "enabled": true,
+            "adminUrl": "http://localhost:8484/restdsl",
+            "baseUrl": "http://localhost:8484/restdsl",
+            "bearerOnly": true
+        },
+        {
             "clientId": "ssh-jmx-admin-client",
             "enabled": true,
             "publicClient": false,
