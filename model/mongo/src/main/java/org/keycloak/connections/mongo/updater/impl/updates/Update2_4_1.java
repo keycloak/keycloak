@@ -17,37 +17,22 @@
 
 package org.keycloak.connections.mongo.updater.impl.updates;
 
-import com.mongodb.BasicDBList;
-import com.mongodb.BasicDBObject;
-import com.mongodb.DBCollection;
-import com.mongodb.DBCursor;
-import org.jboss.logging.Logger;
-import org.keycloak.keys.KeyProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
-import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.storage.UserStorageProvider;
-
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class Update2_4_0 extends AbstractMigrateUserFedToComponent {
+public class Update2_4_1 extends AbstractMigrateUserFedToComponent {
 
     @Override
     public String getId() {
-        return "2.4.0";
+        return "2.4.1";
     }
 
     @Override
     public void update(KeycloakSession session) {
-        portUserFedMappersToComponent(LDAPConstants.LDAP_PROVIDER, "org.keycloak.storage.ldap.mappers.LDAPStorageMapper");
-        portUserFedToComponent(LDAPConstants.LDAP_PROVIDER);
+        portUserFedToComponent("kerberos");
     }
 
 }

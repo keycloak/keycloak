@@ -19,7 +19,10 @@ package org.keycloak.federation.kerberos;
 
 import org.jboss.logging.Logger;
 import org.keycloak.common.constants.KerberosConstants;
+import org.keycloak.credential.CredentialAuthentication;
 import org.keycloak.credential.CredentialInput;
+import org.keycloak.credential.CredentialInputUpdater;
+import org.keycloak.credential.CredentialInputValidator;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.federation.kerberos.impl.KerberosUsernamePasswordAuthenticator;
 import org.keycloak.federation.kerberos.impl.SPNEGOAuthenticator;
@@ -34,6 +37,10 @@ import org.keycloak.models.UserFederationProvider;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserManager;
+import org.keycloak.storage.UserStorageProvider;
+import org.keycloak.storage.UserStorageProviderModel;
+import org.keycloak.storage.user.ImportedUserValidation;
+import org.keycloak.storage.user.UserLookupProvider;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -45,17 +52,22 @@ import java.util.Set;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class KerberosFederationProvider implements UserFederationProvider {
+public class KerberosFederationProvider implements UserStorageProvider,
+        UserLookupProvider,
+        CredentialInputValidator,
+        CredentialInputUpdater,
+        CredentialAuthentication,
+        ImportedUserValidation {
 
     private static final Logger logger = Logger.getLogger(KerberosFederationProvider.class);
     public static final String KERBEROS_PRINCIPAL = "KERBEROS_PRINCIPAL";
 
     protected KeycloakSession session;
-    protected UserFederationProviderModel model;
+    protected UserStorageProviderModel model;
     protected KerberosConfig kerberosConfig;
     protected KerberosFederationProviderFactory factory;
 
-    public KerberosFederationProvider(KeycloakSession session,UserFederationProviderModel model, KerberosFederationProviderFactory factory) {
+    public KerberosFederationProvider(KeycloakSession session, UserStorageProviderModel model, KerberosFederationProviderFactory factory) {
         this.session = session;
         this.model = model;
         this.kerberosConfig = new KerberosConfig(model);
@@ -63,35 +75,20 @@ public class KerberosFederationProvider implements UserFederationProvider {
     }
 
     @Override
-    public UserModel validateAndProxy(RealmModel realm, UserModel local) {
-        if (!isValid(realm, local)) {
+    public UserModel validate(RealmModel realm, UserModel user) {
+        if (!isValid(realm, user)) {
             return null;
         }
 
         if (kerberosConfig.getEditMode() == EditMode.READ_ONLY) {
-            return new ReadOnlyKerberosUserModelDelegate(local, this);
+            return new ReadOnlyKerberosUserModelDelegate(user, this);
         } else {
-            return local;
+            return user;
         }
     }
 
     @Override
-    public boolean synchronizeRegistrations() {
-        return false;
-    }
-
-    @Override
-    public UserModel register(RealmModel realm, UserModel user) {
-        return null;
-    }
-
-    @Override
-    public boolean removeUser(RealmModel realm, UserModel user) {
-        return true;
-    }
-
-    @Override
-    public UserModel getUserByUsername(RealmModel realm, String username) {
+    public UserModel getUserByUsername(String username, RealmModel realm) {
         KerberosUsernamePasswordAuthenticator authenticator = factory.createKerberosUsernamePasswordAuthenticator(kerberosConfig);
         if (authenticator.isUserAvailable(username)) {
             // Case when method was called with username including kerberos realm like john@REALM.ORG . Authenticator already checked that kerberos realm was correct
@@ -106,18 +103,13 @@ public class KerberosFederationProvider implements UserFederationProvider {
     }
 
     @Override
-    public UserModel getUserByEmail(RealmModel realm, String email) {
+    public UserModel getUserByEmail(String email, RealmModel realm) {
         return null;
     }
 
     @Override
-    public List<UserModel> searchByAttributes(Map<String, String> attributes, RealmModel realm, int maxResults) {
-        return Collections.emptyList();
-    }
-
-    @Override
-    public List<UserModel> getGroupMembers(RealmModel realm, GroupModel group, int firstResult, int maxResults) {
-        return Collections.emptyList();
+    public UserModel getUserById(String id, RealmModel realm) {
+        return null;
     }
 
     @Override
@@ -135,19 +127,11 @@ public class KerberosFederationProvider implements UserFederationProvider {
 
     }
 
-    @Override
     public boolean isValid(RealmModel realm, UserModel local) {
         // KerberosUsernamePasswordAuthenticator.isUserAvailable is an overhead, so avoid it for now
 
         String kerberosPrincipal = local.getUsername() + "@" + kerberosConfig.getKerberosRealm();
         return kerberosPrincipal.equalsIgnoreCase(local.getFirstAttribute(KERBEROS_PRINCIPAL));
-    }
-
-    @Override
-    public Set<String> getSupportedCredentialTypes() {
-        Set<String> supportedCredTypes = new HashSet<String>();
-        supportedCredTypes.add(UserCredentialModel.KERBEROS);
-        return supportedCredTypes;
     }
 
     @Override
@@ -175,6 +159,11 @@ public class KerberosFederationProvider implements UserFederationProvider {
     }
 
     @Override
+    public boolean supportsCredentialAuthenticationFor(String type) {
+        return CredentialModel.KERBEROS.equals(type);
+    }
+
+    @Override
     public boolean isConfiguredFor(RealmModel realm, UserModel user, String credentialType) {
         return supportsCredentialType(credentialType);
     }
@@ -199,7 +188,9 @@ public class KerberosFederationProvider implements UserFederationProvider {
     }
 
     @Override
-    public CredentialValidationOutput validCredentials(RealmModel realm, UserCredentialModel credential) {
+    public CredentialValidationOutput authenticate(RealmModel realm, CredentialInput input) {
+        if (!(input instanceof UserCredentialModel)) return null;
+        UserCredentialModel credential = (UserCredentialModel)input;
         if (credential.getType().equals(UserCredentialModel.KERBEROS)) {
             String spnegoToken = credential.getValue();
             SPNEGOAuthenticator spnegoAuthenticator = factory.createSPNEGOAuthenticator(spnegoToken, kerberosConfig);
@@ -226,7 +217,7 @@ public class KerberosFederationProvider implements UserFederationProvider {
             }
 
         } else {
-            return CredentialValidationOutput.failed();
+            return null;
         }
     }
 
@@ -243,22 +234,23 @@ public class KerberosFederationProvider implements UserFederationProvider {
      * @return user if found or successfully created. Null if user with same username already exists, but is not linked to this provider
      */
     protected UserModel findOrCreateAuthenticatedUser(RealmModel realm, String username) {
-        UserModel user = session.userStorage().getUserByUsername(username, realm);
+        UserModel user = session.userLocalStorage().getUserByUsername(username, realm);
         if (user != null) {
+            user = session.users().getUserById(user.getId(), realm);  // make sure we get a cached instance
             logger.debug("Kerberos authenticated user " + username + " found in Keycloak storage");
 
             if (!model.getId().equals(user.getFederationLink())) {
-                logger.warn("User with username " + username + " already exists, but is not linked to provider [" + model.getDisplayName() + "]");
+                logger.warn("User with username " + username + " already exists, but is not linked to provider [" + model.getName() + "]");
                 return null;
             } else {
-                UserModel proxied = validateAndProxy(realm, user);
+                UserModel proxied = validate(realm, user);
                 if (proxied != null) {
                     return proxied;
                 } else {
-                    logger.warn("User with username " + username + " already exists and is linked to provider [" + model.getDisplayName() +
+                    logger.warn("User with username " + username + " already exists and is linked to provider [" + model.getName() +
                             "] but kerberos principal is not correct. Kerberos principal on user is: " + user.getFirstAttribute(KERBEROS_PRINCIPAL));
                     logger.warn("Will re-create user");
-                    new UserManager(session).removeUser(realm, user, session.userStorage());
+                    new UserManager(session).removeUser(realm, user, session.userLocalStorage());
                 }
             }
         }
@@ -272,7 +264,7 @@ public class KerberosFederationProvider implements UserFederationProvider {
         String email = username + "@" + kerberosConfig.getKerberosRealm().toLowerCase();
 
         logger.debugf("Creating kerberos user: %s, email: %s to local Keycloak storage", username, email);
-        UserModel user = session.userStorage().addUser(realm, username);
+        UserModel user = session.userLocalStorage().addUser(realm, username);
         user.setEnabled(true);
         user.setEmail(email);
         user.setFederationLink(model.getId());
@@ -282,6 +274,6 @@ public class KerberosFederationProvider implements UserFederationProvider {
             user.addRequiredAction(UserModel.RequiredAction.UPDATE_PROFILE);
         }
 
-        return validateAndProxy(realm, user);
+        return validate(realm, user);
     }
 }

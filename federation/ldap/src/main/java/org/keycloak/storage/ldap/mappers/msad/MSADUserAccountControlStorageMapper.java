@@ -25,8 +25,8 @@ import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.UserModelDelegate;
+import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
-import org.keycloak.storage.ldap.LDAPStorageProviderFactory;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
 import org.keycloak.storage.ldap.idm.query.internal.LDAPQuery;
 import org.keycloak.storage.ldap.mappers.AbstractLDAPStorageMapper;
@@ -64,7 +64,7 @@ public class MSADUserAccountControlStorageMapper extends AbstractLDAPStorageMapp
         // This needs to be read-only and can be set to writable just on demand
         query.addReturningReadOnlyLdapAttribute(LDAPConstants.PWD_LAST_SET);
 
-        if (ldapProvider.getEditMode() != LDAPStorageProviderFactory.EditMode.WRITABLE) {
+        if (ldapProvider.getEditMode() != UserStorageProvider.EditMode.WRITABLE) {
             query.addReturningReadOnlyLdapAttribute(LDAPConstants.USER_ACCOUNT_CONTROL);
         }
     }
@@ -119,7 +119,7 @@ public class MSADUserAccountControlStorageMapper extends AbstractLDAPStorageMapp
     protected boolean processAuthErrorCode(String errorCode, UserModel user) {
         logger.debugf("MSAD Error code is '%s' after failed LDAP login of user '%s'", errorCode, user.getUsername());
 
-        if (ldapProvider.getEditMode() == LDAPStorageProviderFactory.EditMode.WRITABLE) {
+        if (ldapProvider.getEditMode() == UserStorageProvider.EditMode.WRITABLE) {
             if (errorCode.equals("532") || errorCode.equals("773")) {
                 // User needs to change his MSAD password. Allow him to login, but add UPDATE_PASSWORD required action
                 user.addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
@@ -200,7 +200,7 @@ public class MSADUserAccountControlStorageMapper extends AbstractLDAPStorageMapp
             // Always update DB
             super.setEnabled(enabled);
 
-            if (ldapProvider.getEditMode() == LDAPStorageProviderFactory.EditMode.WRITABLE && getPwdLastSet() > 0) {
+            if (ldapProvider.getEditMode() == UserStorageProvider.EditMode.WRITABLE && getPwdLastSet() > 0) {
                 logger.debugf("Going to propagate enabled=%s for ldapUser '%s' to MSAD", enabled, ldapUser.getDn().toString());
 
                 UserAccountControl control = getUserAccountControl(ldapUser);
@@ -225,7 +225,7 @@ public class MSADUserAccountControlStorageMapper extends AbstractLDAPStorageMapp
             // Always update DB
             super.addRequiredAction(action);
 
-            if (ldapProvider.getEditMode() == LDAPStorageProviderFactory.EditMode.WRITABLE && RequiredAction.UPDATE_PASSWORD.toString().equals(action)) {
+            if (ldapProvider.getEditMode() == UserStorageProvider.EditMode.WRITABLE && RequiredAction.UPDATE_PASSWORD.toString().equals(action)) {
                 logger.debugf("Going to propagate required action UPDATE_PASSWORD to MSAD for ldap user '%s' ", ldapUser.getDn().toString());
 
                 // Normally it's read-only
@@ -247,7 +247,7 @@ public class MSADUserAccountControlStorageMapper extends AbstractLDAPStorageMapp
             // Always update DB
             super.removeRequiredAction(action);
 
-            if (ldapProvider.getEditMode() == LDAPStorageProviderFactory.EditMode.WRITABLE && RequiredAction.UPDATE_PASSWORD.toString().equals(action)) {
+            if (ldapProvider.getEditMode() == UserStorageProvider.EditMode.WRITABLE && RequiredAction.UPDATE_PASSWORD.toString().equals(action)) {
 
                 // Don't set pwdLastSet in MSAD when it is new user
                 UserAccountControl accountControl = getUserAccountControl(ldapUser);
@@ -267,7 +267,7 @@ public class MSADUserAccountControlStorageMapper extends AbstractLDAPStorageMapp
         public Set<String> getRequiredActions() {
             Set<String> requiredActions = super.getRequiredActions();
 
-            if (ldapProvider.getEditMode() == LDAPStorageProviderFactory.EditMode.WRITABLE) {
+            if (ldapProvider.getEditMode() == UserStorageProvider.EditMode.WRITABLE) {
                 if (getPwdLastSet() == 0 || getUserAccountControl(ldapUser).has(UserAccountControl.PASSWORD_EXPIRED)) {
                     requiredActions = new HashSet<>(requiredActions);
                     requiredActions.add(RequiredAction.UPDATE_PASSWORD.toString());

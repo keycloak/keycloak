@@ -18,9 +18,12 @@
 package org.keycloak.federation.kerberos;
 
 import org.keycloak.common.constants.KerberosConstants;
+import org.keycloak.component.ComponentModel;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.UserFederationProvider;
 import org.keycloak.models.UserFederationProviderModel;
+import org.keycloak.storage.UserStorageProvider;
+import org.keycloak.storage.UserStorageProvider.EditMode;
 
 /**
  * Configuration specific to {@link KerberosFederationProvider}
@@ -29,25 +32,25 @@ import org.keycloak.models.UserFederationProviderModel;
  */
 public class KerberosConfig extends CommonKerberosConfig {
 
-    public KerberosConfig(UserFederationProviderModel userFederationProvider) {
-        super(userFederationProvider);
+    public KerberosConfig(ComponentModel component) {
+        super(component);
     }
 
-    public UserFederationProvider.EditMode getEditMode() {
-        String editModeString = getConfig().get(LDAPConstants.EDIT_MODE);
+    public EditMode getEditMode() {
+        String editModeString = componentModel.getConfig().getFirst(LDAPConstants.EDIT_MODE);
         if (editModeString == null) {
-            return UserFederationProvider.EditMode.UNSYNCED;
+            return EditMode.UNSYNCED;
         } else {
-            return UserFederationProvider.EditMode.valueOf(editModeString);
+            return EditMode.valueOf(editModeString);
         }
     }
 
     public boolean isAllowPasswordAuthentication() {
-        return Boolean.valueOf(getConfig().get(KerberosConstants.ALLOW_PASSWORD_AUTHENTICATION));
+        return Boolean.valueOf(componentModel.getConfig().getFirst(KerberosConstants.ALLOW_PASSWORD_AUTHENTICATION));
     }
 
     public boolean isUpdateProfileFirstLogin() {
-        return Boolean.valueOf(getConfig().get(KerberosConstants.UPDATE_PROFILE_FIRST_LOGIN));
+        return Boolean.valueOf(componentModel.getConfig().getFirst(KerberosConstants.UPDATE_PROFILE_FIRST_LOGIN));
     }
 
 }

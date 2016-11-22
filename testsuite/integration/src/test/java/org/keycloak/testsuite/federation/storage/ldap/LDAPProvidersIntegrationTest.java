@@ -65,7 +65,6 @@ import org.keycloak.testsuite.rule.WebRule;
 import org.openqa.selenium.WebDriver;
 
 import java.util.List;
-import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 
@@ -88,7 +87,7 @@ public class LDAPProvidersIntegrationTest {
 
             MultivaluedHashMap<String,String> ldapConfig = LDAPTestUtils.getLdapRuleConfig(ldapRule);
             ldapConfig.putSingle(LDAPConstants.SYNC_REGISTRATIONS, "true");
-            ldapConfig.putSingle(LDAPConstants.EDIT_MODE, LDAPStorageProviderFactory.EditMode.WRITABLE.toString());
+            ldapConfig.putSingle(LDAPConstants.EDIT_MODE, UserStorageProvider.EditMode.WRITABLE.toString());
             UserStorageProviderModel model = new UserStorageProviderModel();
             model.setLastSync(0);
             model.setChangedSyncPeriod(-1);
@@ -670,7 +669,7 @@ public class LDAPProvidersIntegrationTest {
             RealmModel appRealm = session.realms().getRealmByName("test");
 
             UserStorageProviderModel model = new UserStorageProviderModel(ldapModel);
-            model.getConfig().putSingle(LDAPConstants.EDIT_MODE, LDAPStorageProviderFactory.EditMode.READ_ONLY.toString());
+            model.getConfig().putSingle(LDAPConstants.EDIT_MODE, UserStorageProvider.EditMode.READ_ONLY.toString());
             appRealm.updateComponent(model);
             UserModel user = session.users().getUserByUsername("johnkeycloak", appRealm);
             Assert.assertNotNull(user);
@@ -710,7 +709,7 @@ public class LDAPProvidersIntegrationTest {
         session = keycloakRule.startSession();
         try {
             RealmModel appRealm = session.realms().getRealmByName("test");
-            Assert.assertEquals(LDAPStorageProviderFactory.EditMode.WRITABLE.toString(), appRealm.getComponent(ldapModel.getId()).getConfig().getFirst(LDAPConstants.EDIT_MODE));
+            Assert.assertEquals(UserStorageProvider.EditMode.WRITABLE.toString(), appRealm.getComponent(ldapModel.getId()).getConfig().getFirst(LDAPConstants.EDIT_MODE));
         } finally {
             keycloakRule.stopSession(session, false);
         }
@@ -829,7 +828,7 @@ public class LDAPProvidersIntegrationTest {
             RealmModel appRealm = session.realms().getRealmByName("test");
 
             UserStorageProviderModel model = new UserStorageProviderModel(ldapModel);
-            model.getConfig().putSingle(LDAPConstants.EDIT_MODE, LDAPStorageProviderFactory.EditMode.UNSYNCED.toString());
+            model.getConfig().putSingle(LDAPConstants.EDIT_MODE, UserStorageProvider.EditMode.UNSYNCED.toString());
             appRealm.updateComponent(model);
             UserModel user = session.users().getUserByUsername("johnkeycloak", appRealm);
             Assert.assertNotNull(user);
@@ -860,7 +859,7 @@ public class LDAPProvidersIntegrationTest {
         session = keycloakRule.startSession();
         try {
             RealmModel appRealm = session.realms().getRealmByName("test");
-            Assert.assertEquals(LDAPStorageProviderFactory.EditMode.WRITABLE.toString(),  appRealm.getComponent(ldapModel.getId()).getConfig().getFirst(LDAPConstants.EDIT_MODE));
+            Assert.assertEquals(UserStorageProvider.EditMode.WRITABLE.toString(),  appRealm.getComponent(ldapModel.getId()).getConfig().getFirst(LDAPConstants.EDIT_MODE));
         } finally {
             keycloakRule.stopSession(session, false);
         }

@@ -47,7 +47,6 @@ import org.keycloak.utils.CredentialHelper;
 
 import javax.ws.rs.core.Response;
 import java.net.URL;
-import java.util.Map;
 
 /**
  * Test of LDAPFederationProvider (Kerberos backed by LDAP)
@@ -73,7 +72,7 @@ public class KerberosLdapTest extends AbstractKerberosTest {
                     .servletClass(KerberosCredDelegServlet.class).adapterConfigPath(url.getPath())
                     .role("user").deployApplication();
 
-            MultivaluedHashMap<String, String> ldapConfig = LDAPTestUtils.toLdapConfig(kerberosRule.getConfig());
+            MultivaluedHashMap<String, String> ldapConfig = LDAPTestUtils.toComponentConfig(kerberosRule.getConfig());
             UserStorageProviderModel model = new UserStorageProviderModel();
             model.setLastSync(0);
             model.setChangedSyncPeriod(-1);
@@ -135,42 +134,13 @@ public class KerberosLdapTest extends AbstractKerberosTest {
         super.usernamePasswordLoginTest();
     }
 
-    protected void updateProviderEditMode(LDAPStorageProviderFactory.EditMode editMode) {
-        KeycloakRule keycloakRule = getKeycloakRule();
-
-        KeycloakSession session = keycloakRule.startSession();
-        try {
-            RealmModel realm = session.realms().getRealm("test");
-            ComponentModel kerberosProviderModel = realm.getComponents(realm.getId(), UserStorageProvider.class.getName()).get(0);
-            kerberosProviderModel.getConfig().putSingle(LDAPConstants.EDIT_MODE, editMode.toString());
-            realm.updateComponent(kerberosProviderModel);
-        } finally {
-            keycloakRule.stopSession(session, true);
-        }
-    }
-
-    @Override
-    protected void updateProviderEditMode(UserFederationProvider.EditMode editMode) {
-        switch (editMode) {
-            case WRITABLE:
-                updateProviderEditMode(LDAPStorageProviderFactory.EditMode.WRITABLE);
-                break;
-            case READ_ONLY:
-                updateProviderEditMode(LDAPStorageProviderFactory.EditMode.READ_ONLY);
-                break;
-            case UNSYNCED:
-                updateProviderEditMode(LDAPStorageProviderFactory.EditMode.UNSYNCED);
-                break;
-        }
-    }
-
     @Test
     public void writableEditModeTest() throws Exception {
         KeycloakRule keycloakRule = getKeycloakRule();
         AssertEvents events = getAssertEvents();
 
         // Change editMode to WRITABLE
-        updateProviderEditMode(LDAPStorageProviderFactory.EditMode.WRITABLE);
+        updateProviderEditMode(UserStorageProvider.EditMode.WRITABLE);
 
         // Login with username/password from kerberos
         changePasswordPage.open();

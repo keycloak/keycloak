@@ -21,12 +21,16 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.common.constants.KerberosConstants;
+import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.federation.kerberos.CommonKerberosConfig;
 import org.keycloak.federation.kerberos.KerberosConfig;
 import org.keycloak.federation.kerberos.KerberosFederationProviderFactory;
 import org.keycloak.models.UserFederationProviderModel;
+import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserFederationProviderRepresentation;
+import org.keycloak.storage.UserStorageProvider;
+import org.keycloak.storage.UserStorageProviderModel;
 
 import javax.ws.rs.core.Response;
 import java.util.Arrays;
@@ -39,28 +43,36 @@ import java.util.Map;
  */
 public abstract class AbstractKerberosStandaloneAdapterTest extends AbstractKerberosAdapterTest {
 
+    public static MultivaluedHashMap<String, String> toComponentConfig(Map<String, String> ldapConfig) {
+        MultivaluedHashMap<String, String> config = new MultivaluedHashMap<>();
+        for (Map.Entry<String, String> entry : ldapConfig.entrySet()) {
+            config.add(entry.getKey(), entry.getValue());
+
+        }
+        return config;
+    }
+
     protected static final String PROVIDER_CONFIG_LOCATION = "kerberos-standalone-connection.properties";
 
     @Before
     public void init() throws Exception{
-        Map<String,String> ldapConfig = getConfig();
-        UserFederationProviderRepresentation userFederationProviderRepresentation = new UserFederationProviderRepresentation();
-        userFederationProviderRepresentation.setProviderName(KerberosFederationProviderFactory.PROVIDER_NAME);
-        userFederationProviderRepresentation.setConfig(ldapConfig);
-        userFederationProviderRepresentation.setPriority(0);
-        userFederationProviderRepresentation.setDisplayName("kerberos-standalone");
-        userFederationProviderRepresentation.setFullSyncPeriod(-1);
-        userFederationProviderRepresentation.setChangedSyncPeriod(-1);
-        userFederationProviderRepresentation.setLastSync(0);
-        
         RealmRepresentation realmRepresentation = testRealmResource().toRepresentation();
-        realmRepresentation.setUserFederationProviders(Arrays.asList(userFederationProviderRepresentation));
-        realmRepresentation.setEventsEnabled(true); 
+        Map<String,String> ldapConfig = getConfig();
+        ComponentRepresentation component = new ComponentRepresentation();
+        component.setName("kerberos-standalone");
+        component.setParentId(realmRepresentation.getId());
+        component.setProviderId(KerberosFederationProviderFactory.PROVIDER_NAME);
+        component.setProviderType(UserStorageProvider.class.getName());
+        component.setConfig(toComponentConfig(ldapConfig));
+        component.getConfig().putSingle("priority", "0");
+
+        testRealmResource().components().add(component);
+        realmRepresentation.setEventsEnabled(true);
         testRealmResource().update(realmRepresentation);        
     }
     
     @Override
-    protected CommonKerberosConfig getKerberosConfig(UserFederationProviderModel model) {
+    protected CommonKerberosConfig getKerberosConfig(UserStorageProviderModel model) {
         return new KerberosConfig(model);
     }
     

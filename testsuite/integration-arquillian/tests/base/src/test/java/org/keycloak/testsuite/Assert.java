@@ -18,6 +18,7 @@
 package org.keycloak.testsuite;
 
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.ConfigPropertyRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
@@ -75,6 +76,8 @@ public class Assert extends org.junit.Assert {
             return ((UserFederationProviderFactoryRepresentation) o1).getId();
         } else if (o1 instanceof GroupRepresentation) {
             return ((GroupRepresentation) o1).getName();
+        }else if (o1 instanceof ComponentRepresentation) {
+            return ((ComponentRepresentation) o1).getName();
         }
 
         throw new IllegalArgumentException();

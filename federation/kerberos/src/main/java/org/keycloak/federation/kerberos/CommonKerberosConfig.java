@@ -19,7 +19,6 @@ package org.keycloak.federation.kerberos;
 
 import org.keycloak.common.constants.KerberosConstants;
 import org.keycloak.component.ComponentModel;
-import org.keycloak.models.UserFederationProviderModel;
 
 import java.util.Map;
 
@@ -30,12 +29,7 @@ import java.util.Map;
  */
 public abstract class CommonKerberosConfig {
 
-    protected UserFederationProviderModel providerModel;
     protected ComponentModel componentModel;
-
-    public CommonKerberosConfig(UserFederationProviderModel userFederationProvider) {
-        this.providerModel = userFederationProvider;
-    }
 
     public CommonKerberosConfig(ComponentModel componentModel) {
         this.componentModel = componentModel;
@@ -43,32 +37,24 @@ public abstract class CommonKerberosConfig {
 
     // Should be always true for KerberosFederationProvider
     public boolean isAllowKerberosAuthentication() {
-        if (providerModel != null) return Boolean.valueOf(getConfig().get(KerberosConstants.ALLOW_KERBEROS_AUTHENTICATION));
-        else return Boolean.valueOf(componentModel.getConfig().getFirst(KerberosConstants.ALLOW_KERBEROS_AUTHENTICATION));
+        return Boolean.valueOf(componentModel.getConfig().getFirst(KerberosConstants.ALLOW_KERBEROS_AUTHENTICATION));
     }
 
     public String getKerberosRealm() {
-        if (providerModel != null) return getConfig().get(KerberosConstants.KERBEROS_REALM);
-        else return componentModel.getConfig().getFirst(KerberosConstants.KERBEROS_REALM);
+        return componentModel.getConfig().getFirst(KerberosConstants.KERBEROS_REALM);
     }
 
     public String getServerPrincipal() {
-        if (providerModel != null) return getConfig().get(KerberosConstants.SERVER_PRINCIPAL);
-        else return componentModel.getConfig().getFirst(KerberosConstants.SERVER_PRINCIPAL);
+        return componentModel.getConfig().getFirst(KerberosConstants.SERVER_PRINCIPAL);
     }
 
     public String getKeyTab() {
-        if (providerModel != null) return getConfig().get(KerberosConstants.KEYTAB);
-        else return componentModel.getConfig().getFirst(KerberosConstants.KEYTAB);
+        return componentModel.getConfig().getFirst(KerberosConstants.KEYTAB);
     }
 
     public boolean isDebug() {
-        if (providerModel != null) return Boolean.valueOf(getConfig().get(KerberosConstants.DEBUG));
-        else return Boolean.valueOf(componentModel.getConfig().getFirst(KerberosConstants.DEBUG));
+        return Boolean.valueOf(componentModel.getConfig().getFirst(KerberosConstants.DEBUG));
     }
 
-    protected Map<String, String> getConfig() {
-        return providerModel.getConfig();
-    }
 
 }

@@ -19,18 +19,29 @@ package org.keycloak.federation.kerberos;
 
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
+import org.keycloak.common.constants.KerberosConstants;
+import org.keycloak.component.ComponentModel;
+import org.keycloak.component.ComponentValidationException;
 import org.keycloak.federation.kerberos.impl.KerberosServerSubjectAuthenticator;
 import org.keycloak.federation.kerberos.impl.KerberosUsernamePasswordAuthenticator;
 import org.keycloak.federation.kerberos.impl.SPNEGOAuthenticator;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.LDAPConstants;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserFederationProvider;
 import org.keycloak.models.UserFederationProviderFactory;
 import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserFederationSyncResult;
+import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.provider.ProviderConfigurationBuilder;
+import org.keycloak.storage.UserStorageProvider;
+import org.keycloak.storage.UserStorageProviderFactory;
+import org.keycloak.storage.UserStorageProviderModel;
 
 import java.util.Collections;
 import java.util.Date;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -39,18 +50,14 @@ import java.util.Set;
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class KerberosFederationProviderFactory implements UserFederationProviderFactory {
+public class KerberosFederationProviderFactory implements UserStorageProviderFactory<KerberosFederationProvider> {
 
     private static final Logger logger = Logger.getLogger(KerberosFederationProviderFactory.class);
     public static final String PROVIDER_NAME = "kerberos";
-    @Override
-    public UserFederationProvider getInstance(KeycloakSession session, UserFederationProviderModel model) {
-        return new KerberosFederationProvider(session, model, this);
-    }
 
     @Override
-    public Set<String> getConfigurationOptions() {
-        return Collections.emptySet();
+    public KerberosFederationProvider create(KeycloakSession session, ComponentModel model) {
+        return new KerberosFederationProvider(session, new UserStorageProviderModel(model), this);
     }
 
     @Override
@@ -58,22 +65,61 @@ public class KerberosFederationProviderFactory implements UserFederationProvider
         return PROVIDER_NAME;
     }
 
-    @Override
-    public UserFederationSyncResult syncAllUsers(KeycloakSessionFactory sessionFactory, String realmId, UserFederationProviderModel model) {
-        logger.warn("Sync users not supported for this provider");
-        return UserFederationSyncResult.empty();
+    protected static final List<ProviderConfigProperty> configProperties;
+
+    static {
+        configProperties = getConfigProps();
     }
 
-    @Override
-    public UserFederationSyncResult syncChangedUsers(KeycloakSessionFactory sessionFactory, String realmId, UserFederationProviderModel model, Date lastSync) {
-        logger.warn("Sync users not supported for this provider");
-        return UserFederationSyncResult.empty();
+    private static List<ProviderConfigProperty> getConfigProps() {
+        return ProviderConfigurationBuilder.create()
+                .property().name(KerberosConstants.KERBEROS_REALM)
+                .label("kerberos-realm")
+                .helpText("kerberos-realm.tooltip")
+                .type(ProviderConfigProperty.STRING_TYPE)
+                .add()
+                .property().name(KerberosConstants.SERVER_PRINCIPAL)
+                .label("server-principal")
+                .helpText("server-principal.tooltip")
+                .type(ProviderConfigProperty.STRING_TYPE)
+                .add()
+                .property().name(KerberosConstants.KEYTAB)
+                .label("keytab")
+                .helpText("keytab.tooltip")
+                .type(ProviderConfigProperty.STRING_TYPE)
+                .add()
+                .property().name(KerberosConstants.DEBUG)
+                .label("debug")
+                .helpText("debug.tooltip")
+                .type(ProviderConfigProperty.BOOLEAN_TYPE)
+                .defaultValue("false")
+                .add()
+                .property().name(KerberosConstants.ALLOW_PASSWORD_AUTHENTICATION)
+                .label("allow-password-authentication")
+                .helpText("allow-password-authentication.tooltip")
+                .type(ProviderConfigProperty.BOOLEAN_TYPE)
+                .defaultValue("false")
+                .add()
+                .property().name(LDAPConstants.EDIT_MODE)
+                .label("edit-mode")
+                .helpText("edit-mode.tooltip")
+                .type(ProviderConfigProperty.LIST_TYPE)
+                .options(UserStorageProvider.EditMode.READ_ONLY.toString(), UserStorageProvider.EditMode.UNSYNCED.toString())
+                .add()
+                .property().name(KerberosConstants.UPDATE_PROFILE_FIRST_LOGIN)
+                .label("update-profile-first-login")
+                .helpText("update-profile-first-login.tooltip")
+                .type(ProviderConfigProperty.BOOLEAN_TYPE)
+                .defaultValue("false")
+                .add()
+                .build();
     }
 
-    @Override
-    public UserFederationProvider create(KeycloakSession session) {
-        throw new IllegalAccessError("Illegal to call this method");
+     @Override
+    public List<ProviderConfigProperty> getConfigProperties() {
+        return configProperties;
     }
+
 
     @Override
     public void init(Config.Scope config) {

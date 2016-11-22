@@ -20,6 +20,7 @@ package org.keycloak.federation.sssd;
 import org.freedesktop.dbus.Variant;
 import org.jboss.logging.Logger;
 import org.keycloak.credential.CredentialInput;
+import org.keycloak.credential.CredentialInputValidator;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.federation.sssd.api.Sssd;
 import org.keycloak.federation.sssd.impl.PAMAuthenticator;
@@ -35,6 +36,9 @@ import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.UserManager;
+import org.keycloak.storage.UserStorageProvider;
+import org.keycloak.storage.UserStorageProviderModel;
+import org.keycloak.storage.user.UserLookupProvider;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -49,16 +53,16 @@ import java.util.Set;
  * @author <a href="mailto:bruno@abstractj.org">Bruno Oliveira</a>
  * @version $Revision: 1 $
  */
-public class SSSDFederationProvider implements UserFederationProvider {
+public class SSSDFederationProvider implements UserStorageProvider, UserLookupProvider, CredentialInputValidator {
 
     private static final Logger logger = Logger.getLogger(SSSDFederationProvider.class);
 
     protected static final Set<String> supportedCredentialTypes = new HashSet<>();
     private final SSSDFederationProviderFactory factory;
     protected KeycloakSession session;
-    protected UserFederationProviderModel model;
+    protected UserStorageProviderModel model;
 
-    public SSSDFederationProvider(KeycloakSession session, UserFederationProviderModel model, SSSDFederationProviderFactory sssdFederationProviderFactory) {
+    public SSSDFederationProvider(KeycloakSession session, UserStorageProviderModel model, SSSDFederationProviderFactory sssdFederationProviderFactory) {
         this.session = session;
         this.model = model;
         this.factory = sssdFederationProviderFactory;
@@ -70,7 +74,7 @@ public class SSSDFederationProvider implements UserFederationProvider {
 
 
     @Override
-    public UserModel getUserByUsername(RealmModel realm, String username) {
+    public UserModel getUserByUsername(String username, RealmModel realm) {
         return findOrCreateAuthenticatedUser(realm, username);
     }
 
@@ -82,22 +86,22 @@ public class SSSDFederationProvider implements UserFederationProvider {
      * @return user if found or successfully created. Null if user with same username already exists, but is not linked to this provider
      */
     protected UserModel findOrCreateAuthenticatedUser(RealmModel realm, String username) {
-        UserModel user = session.userStorage().getUserByUsername(username, realm);
+        UserModel user = session.userLocalStorage().getUserByUsername(username, realm);
         if (user != null) {
             logger.debug("SSSD authenticated user " + username + " found in Keycloak storage");
 
             if (!model.getId().equals(user.getFederationLink())) {
-                logger.warn("User with username " + username + " already exists, but is not linked to provider [" + model.getDisplayName() + "]");
+                logger.warn("User with username " + username + " already exists, but is not linked to provider [" + model.getName() + "]");
                 return null;
             } else {
                 UserModel proxied = validateAndProxy(realm, user);
                 if (proxied != null) {
                     return proxied;
                 } else {
-                    logger.warn("User with username " + username + " already exists and is linked to provider [" + model.getDisplayName() +
+                    logger.warn("User with username " + username + " already exists and is linked to provider [" + model.getName() +
                             "] but principal is not correct.");
                     logger.warn("Will re-create user");
-                    new UserManager(session).removeUser(realm, user, session.userStorage());
+                    new UserManager(session).removeUser(realm, user, session.userLocalStorage());
                 }
             }
         }
@@ -110,7 +114,7 @@ public class SSSDFederationProvider implements UserFederationProvider {
         Sssd sssd = new Sssd(username);
         Map<String, Variant> sssdUser = sssd.getUserAttributes();
         logger.debugf("Creating SSSD user: %s to local Keycloak storage", username);
-        UserModel user = session.userStorage().addUser(realm, username);
+        UserModel user = session.userLocalStorage().addUser(realm, username);
         user.setEnabled(true);
         user.setEmail(Sssd.getRawAttribute(sssdUser.get("mail")));
         user.setFirstName(Sssd.getRawAttribute(sssdUser.get("givenname")));
@@ -127,18 +131,13 @@ public class SSSDFederationProvider implements UserFederationProvider {
     }
 
     @Override
-    public UserModel getUserByEmail(RealmModel realm, String email) {
+    public UserModel getUserById(String id, RealmModel realm) {
         return null;
     }
 
     @Override
-    public List<UserModel> searchByAttributes(Map<String, String> attributes, RealmModel realm, int maxResults) {
-        return Collections.emptyList();
-    }
-
-    @Override
-    public List<UserModel> getGroupMembers(RealmModel realm, GroupModel group, int firstResult, int maxResults) {
-        return Collections.emptyList();
+    public UserModel getUserByEmail(String email, RealmModel realm) {
+        return null;
     }
 
     @Override
@@ -158,31 +157,9 @@ public class SSSDFederationProvider implements UserFederationProvider {
 
     }
 
-    @Override
     public boolean isValid(RealmModel realm, UserModel local) {
         Map<String, Variant> attributes = new Sssd(local.getUsername()).getUserAttributes();
         return Sssd.getRawAttribute(attributes.get("mail")).equalsIgnoreCase(local.getEmail());
-    }
-
-    @Override
-    public Set<String> getSupportedCredentialTypes() {
-        return supportedCredentialTypes;
-    }
-
-    @Override
-    public boolean updateCredential(RealmModel realm, UserModel user, CredentialInput input) {
-        if (!(input instanceof UserCredentialModel) || !CredentialModel.PASSWORD.equals(input.getType())) return false;
-        throw new ModelReadOnlyException("Federated storage is not writable");
-    }
-
-    @Override
-    public void disableCredentialType(RealmModel realm, UserModel user, String credentialType) {
-
-    }
-
-    @Override
-    public Set<String> getDisableableCredentialTypes(RealmModel realm, UserModel user) {
-        return Collections.EMPTY_SET;
     }
 
     @Override
@@ -204,33 +181,12 @@ public class SSSDFederationProvider implements UserFederationProvider {
         return (pam.authenticate() != null);
     }
 
-    @Override
-    public CredentialValidationOutput validCredentials(RealmModel realm, UserCredentialModel credential) {
-        return CredentialValidationOutput.failed();
-    }
-
-    @Override
     public UserModel validateAndProxy(RealmModel realm, UserModel local) {
         if (isValid(realm, local)) {
             return new ReadonlySSSDUserModelDelegate(local, this);
         } else {
             return null;
         }
-    }
-
-    @Override
-    public boolean synchronizeRegistrations() {
-        return false;
-    }
-
-    @Override
-    public UserModel register(RealmModel realm, UserModel user) {
-        throw new IllegalStateException("Registration not supported");
-    }
-
-    @Override
-    public boolean removeUser(RealmModel realm, UserModel user) {
-        return true;
     }
 
     @Override

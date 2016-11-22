@@ -15,39 +15,31 @@
  * limitations under the License.
  */
 
-package org.keycloak.connections.mongo.updater.impl.updates;
+package org.keycloak.connections.jpa.updater.liquibase.custom;
 
-import com.mongodb.BasicDBList;
-import com.mongodb.BasicDBObject;
-import com.mongodb.DBCollection;
-import com.mongodb.DBCursor;
-import org.jboss.logging.Logger;
+import liquibase.exception.CustomChangeException;
+import liquibase.statement.core.InsertStatement;
+import liquibase.structure.core.Table;
 import org.keycloak.keys.KeyProvider;
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.storage.UserStorageProvider;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 
 /**
- * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
+ * @author <a href="mailto:bburke@redhat.com">Bill Burke</a>
  */
-public class Update2_4_0 extends AbstractMigrateUserFedToComponent {
+public class MigrateUserFedToComponent extends AbstractUserFedToComponent {
 
     @Override
-    public String getId() {
-        return "2.4.0";
+    protected void generateStatementsImpl() throws CustomChangeException {
+        convertFedProviderToComponent("kerberos", null);
     }
 
     @Override
-    public void update(KeycloakSession session) {
-        portUserFedMappersToComponent(LDAPConstants.LDAP_PROVIDER, "org.keycloak.storage.ldap.mappers.LDAPStorageMapper");
-        portUserFedToComponent(LDAPConstants.LDAP_PROVIDER);
+    protected String getTaskId() {
+        return "Update 2.4.1.Final";
     }
-
 }
