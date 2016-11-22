@@ -95,7 +95,7 @@ Or on Windows:
 ----
 c:\> kcreg config credentials --server http://localhost:8080/auth --realm demo --user user --client reg-cli
 c:\> kcreg create -s clientId=my_client -s "redirectUris=[\"http://localhost:8980/myapp/*\"]"
-c:\> kcreg get
+c:\> kcreg get my_client
 ----
 
 
@@ -265,13 +265,13 @@ Once a new client is created you can retrieve it again by using `kcreg get`.
 On Linux:
 [source,bash]
 ----
-$ kcreg.sh get
+$ kcreg.sh get myclient
 ----
 
 On Windows:
 [source,bash]
 ----
-C:\> kcreg get
+C:\> kcreg get myclient
 ----
 
 
@@ -280,13 +280,13 @@ You can also get an adapter configuration which you can drop into your web appli
 On Linux:
 [source,bash]
 ----
-$ kcreg.sh get -e install
+$ kcreg.sh get myclient -e install
 ----
 
 On Windows:
 [source,bash]
 ----
-C:\> kcreg get -e install
+C:\> kcreg get myclient -e install
 ----
 
 See `kcreg get --help` for more information about `kcreg get`.
@@ -299,7 +299,7 @@ One is to submit a complete new state to the server after getting current config
 On Linux:
 [source,bash]
 ----
-$ kcreg.sh get > myclient.json
+$ kcreg.sh get myclient > myclient.json
 $ vi myclient.json
 $ kcreg.sh update myclient -f myclient.json
 ----
@@ -307,7 +307,7 @@ $ kcreg.sh update myclient -f myclient.json
 On Windows:
 [source,bash]
 ----
-C:\> kcreg get > myclient.json
+C:\> kcreg get myclient > myclient.json
 C:\> notepad myclient.json
 C:\> kcreg update myclient -f myclient.json
 ----
