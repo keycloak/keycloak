@@ -219,7 +219,9 @@ public class UserTest extends AbstractAdminTest {
 
     }
     
-    private void createUsers() {
+    private List<String> createUsers() {
+
+        List<String> userIds = new ArrayList<>();
         for (int i = 1; i < 10; i++) {
             UserRepresentation user = new UserRepresentation();
             user.setUsername("username" + i);
@@ -227,8 +229,9 @@ public class UserTest extends AbstractAdminTest {
             user.setFirstName("First" + i);
             user.setLastName("Last" + i);
 
-            createUser(user);
+            userIds.add(createUser(user));
         }
+        return userIds;
     }
 
     @Test
@@ -265,6 +268,22 @@ public class UserTest extends AbstractAdminTest {
 
         users = realm.users().search("last", null, null);
         assertEquals(9, users.size());
+    }
+
+
+    /**
+     * See https://issues.jboss.org/browse/KEYCLOAK-3879
+     */
+    @Test
+    public void searchByUserId() {
+        List<String> userIds = createUsers();
+
+        for (int i = 0; i < 2; i++) {
+            UserRepresentation userById = realm.users().get(userIds.get(i)).toRepresentation();
+            List<UserRepresentation> users = realm.users().search(userIds.get(i), null, null);
+            assertEquals(1, users.size());
+            assertEquals(userById.getUsername(), users.get(0).getUsername());
+        }
     }
 
     @Test

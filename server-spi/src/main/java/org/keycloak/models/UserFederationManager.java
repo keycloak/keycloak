@@ -409,12 +409,21 @@ public class UserFederationManager implements UserProvider {
             attributes.put(UserModel.USERNAME, search.trim().toLowerCase());
         }
         federationLoad(realm, attributes);
-        return query(new PaginatedQuery() {
+
+        List<UserModel> result = query(new PaginatedQuery() {
             @Override
             public List<UserModel> query(RealmModel realm, int first, int max) {
                 return session.userStorage().searchForUser(search, realm, first, max);
             }
         }, realm, firstResult, maxResults);
+
+        // see KEYCLOAK-3879
+        UserModel userById = getUserById(search.trim(), realm);
+        if (userById != null) {
+            result.add(userById);
+        }
+
+        return result;
     }
 
     @Override
