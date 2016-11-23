@@ -77,13 +77,6 @@ public class SSSDTest extends AbstractKeycloakTest {
         adminClient.realm(REALM_NAME).components().add(userFederation);
     }
 
-    @Ignore
-    @Test
-    public void testProviderFactories() {
-        List<UserFederationProviderFactoryRepresentation> providerFactories = adminClient.realm(REALM_NAME).userFederation().getProviderFactories();
-        Assert.assertNames(providerFactories, "ldap", "kerberos", "dummy", "dummy-configurable", "sssd");
-    }
-
     @Test
     public void testWrongUser() {
         log.debug("Testing wrong password for user " + USERNAME);

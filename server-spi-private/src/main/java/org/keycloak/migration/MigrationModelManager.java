@@ -18,13 +18,6 @@
 package org.keycloak.migration;
 
 import org.jboss.logging.Logger;
-import org.keycloak.migration.migrators.MigrateTo1_2_0;
-import org.keycloak.migration.migrators.MigrateTo1_3_0;
-import org.keycloak.migration.migrators.MigrateTo1_4_0;
-import org.keycloak.migration.migrators.MigrateTo1_5_0;
-import org.keycloak.migration.migrators.MigrateTo1_6_0;
-import org.keycloak.migration.migrators.MigrateTo1_7_0;
-import org.keycloak.migration.migrators.MigrateTo1_8_0;
 import org.keycloak.migration.migrators.MigrateTo1_9_0;
 import org.keycloak.migration.migrators.MigrateTo1_9_2;
 import org.keycloak.migration.migrators.MigrateTo2_0_0;
@@ -42,13 +35,6 @@ public class MigrationModelManager {
     private static Logger logger = Logger.getLogger(MigrationModelManager.class);
 
     private static final Migration[] migrations = {
-        new MigrateTo1_2_0(),
-        new MigrateTo1_3_0(),
-        new MigrateTo1_4_0(),
-        new MigrateTo1_5_0(),
-        new MigrateTo1_6_0(),
-        new MigrateTo1_7_0(),
-        new MigrateTo1_8_0(),
         new MigrateTo1_9_0(),
         new MigrateTo1_9_2(),
         new MigrateTo2_0_0(),

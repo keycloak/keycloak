@@ -117,7 +117,7 @@ public interface KeycloakSession {
      *
      * @return
      */
-    UserFederationManager users();
+    UserProvider users();
 
 
     /**

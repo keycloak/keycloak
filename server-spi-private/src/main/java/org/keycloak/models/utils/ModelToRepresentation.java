@@ -352,8 +352,6 @@ public class ModelToRepresentation {
             }
         }
 
-        exportUserFederationProvidersAndMappers(realm, rep);
-
         for (IdentityProviderModel provider : realm.getIdentityProviders()) {
             rep.addIdentityProvider(toRepresentation(realm, provider));
         }
@@ -384,23 +382,7 @@ public class ModelToRepresentation {
         return rep;
     }
 
-    public static void exportUserFederationProvidersAndMappers(RealmModel realm, RealmRepresentation rep) {
-        List<UserFederationProviderModel> fedProviderModels = realm.getUserFederationProviders();
-        if (fedProviderModels.size() > 0) {
-            List<UserFederationProviderRepresentation> fedProviderReps = new ArrayList<UserFederationProviderRepresentation>();
-            for (UserFederationProviderModel model : fedProviderModels) {
-                UserFederationProviderRepresentation fedProvRep = toRepresentation(model);
-                fedProviderReps.add(fedProvRep);
-            }
-            rep.setUserFederationProviders(fedProviderReps);
-        }
-
-        for (UserFederationMapperModel mapper : realm.getUserFederationMappers()) {
-            rep.addUserFederationMapper(toRepresentation(realm, mapper));
-        }
-    }
-
-    public static void exportGroups(RealmModel realm, RealmRepresentation rep) {
+     public static void exportGroups(RealmModel realm, RealmRepresentation rep) {
         List<GroupRepresentation> groups = toGroupHierarchy(realm, true);
         rep.setGroups(groups);
     }
@@ -602,24 +584,6 @@ public class ModelToRepresentation {
         rep.setFullSyncPeriod(model.getFullSyncPeriod());
         rep.setChangedSyncPeriod(model.getChangedSyncPeriod());
         rep.setLastSync(model.getLastSync());
-        return rep;
-    }
-
-     public static UserFederationMapperRepresentation toRepresentation(RealmModel realm, UserFederationMapperModel model) {
-        UserFederationMapperRepresentation rep = new UserFederationMapperRepresentation();
-        rep.setId(model.getId());
-        rep.setName(model.getName());
-        rep.setFederationMapperType(model.getFederationMapperType());
-        Map<String, String> config = new HashMap<String, String>();
-        config.putAll(model.getConfig());
-        rep.setConfig(config);
-
-        UserFederationProviderModel fedProvider = KeycloakModelUtils.findUserFederationProviderById(model.getFederationProviderId(), realm);
-        if (fedProvider == null) {
-            throw new ModelException("Couldn't find federation provider with ID " + model.getId());
-        }
-        rep.setFederationProviderDisplayName(fedProvider.getDisplayName());
-
         return rep;
     }
 

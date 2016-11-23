@@ -25,6 +25,7 @@ import org.keycloak.models.CredentialValidationOutput;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionTask;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
@@ -32,6 +33,7 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserFederationProviderModel;
+import org.keycloak.models.UserManager;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
 import org.keycloak.models.cache.CachedUserModel;
@@ -51,6 +53,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import static org.keycloak.models.utils.KeycloakModelUtils.runJobInTransaction;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -244,12 +248,38 @@ public class UserStorageManager implements UserProvider, OnUserCache {
         if (user == null || user.getFederationLink() == null) return user;
         UserStorageProvider provider = getStorageProvider(session, realm, user.getFederationLink());
         if (provider != null && provider instanceof ImportedUserValidation) {
-            return ((ImportedUserValidation)provider).validate(realm, user);
+            UserModel validated = ((ImportedUserValidation)provider).validate(realm, user);
+            if (validated == null) {
+                deleteInvalidUser(realm, user);
+                return null;
+            } else {
+                return validated;
+            }
+
         } else {
             return user;
         }
 
     }
+
+    protected void deleteInvalidUser(final RealmModel realm, final UserModel user) {
+        String userId = user.getId();
+        String userName = user.getUsername();
+        session.getUserCache().evict(realm, user);
+        runJobInTransaction(session.getKeycloakSessionFactory(), new KeycloakSessionTask() {
+
+            @Override
+            public void run(KeycloakSession session) {
+                RealmModel realmModel = session.realms().getRealm(realm.getId());
+                if (realmModel == null) return;
+                UserModel deletedUser = session.userLocalStorage().getUserById(userId, realmModel);
+                new UserManager(session).removeUser(realmModel, deletedUser, session.userLocalStorage());
+                logger.debugf("Removed invalid user '%s'", userName);
+            }
+
+        });
+    }
+
 
     protected List<UserModel> importValidation(RealmModel realm, List<UserModel> users) {
         List<UserModel> tmp = new LinkedList<>();

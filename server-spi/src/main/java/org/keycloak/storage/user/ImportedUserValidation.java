@@ -20,9 +20,19 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 
 /**
+ * If your UserStorageProvider is importing users into local storage, you can validate that import whenever the
+ * user is queried from local storage.
+ *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
 public interface ImportedUserValidation {
-    UserModel validate(RealmModel realmm, UserModel user);
+    /**
+     * If this method returns null, then the user storage in local storage will be removed
+     *
+     * @param realm
+     * @param user
+     * @return null if user no longer valid
+     */
+    UserModel validate(RealmModel realm, UserModel user);
 }

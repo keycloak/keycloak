@@ -57,9 +57,11 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resource.RealmResourceProvider;
+import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.testsuite.components.TestProvider;
 import org.keycloak.testsuite.components.TestProviderFactory;
 import org.keycloak.testsuite.events.EventsListenerProvider;
+import org.keycloak.testsuite.federation.DummyUserFederationProviderFactory;
 import org.keycloak.testsuite.forms.PassThroughAuthenticator;
 import org.keycloak.testsuite.forms.PassThroughClientAuthenticator;
 import org.keycloak.testsuite.rest.representation.AuthenticatorState;
@@ -580,8 +582,8 @@ public class TestingResourceProvider implements RealmResourceProvider {
     public UserRepresentation getUserByUsernameFromFedProviderFactory(@QueryParam("realmName") String realmName,
                                                                       @QueryParam("userName") String userName) {
         RealmModel realm = getRealmByName(realmName);
-        UserFederationProviderFactory factory = (UserFederationProviderFactory)session.getKeycloakSessionFactory().getProviderFactory(UserFederationProvider.class, "dummy");
-        UserModel user = factory.getInstance(session, null).getUserByUsername(realm, userName);
+        DummyUserFederationProviderFactory factory = (DummyUserFederationProviderFactory)session.getKeycloakSessionFactory().getProviderFactory(UserStorageProvider.class, "dummy");
+        UserModel user = factory.create(session, null).getUserByUsername(userName, realm);
         if (user == null) return null;
         return ModelToRepresentation.toRepresentation(session, realm, user);
     }

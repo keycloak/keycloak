@@ -376,37 +376,14 @@ public class RepresentationToModel {
                 if (convertSet.contains(fedRep.getProviderName())) {
                     ComponentModel component = convertFedProviderToComponent(newRealm.getId(), fedRep);
                     userStorageModels.put(fedRep.getDisplayName(), newRealm.importComponentModel(component));
-                } else {
-                    providerModels.add(convertFederationProvider(fedRep));
                 }
-
             }
-            newRealm.setUserFederationProviders(providerModels);
         }
 
         // This is for case, when you have hand-written JSON file with LDAP userFederationProvider, but WITHOUT any userFederationMappers configured. Default LDAP mappers need to be created in that case.
         Set<String> storageProvidersWhichShouldImportDefaultMappers = new HashSet<>(userStorageModels.keySet());
 
         if (rep.getUserFederationMappers() != null) {
-
-            // Remove builtin mappers for federation providers, which have some mappers already provided in JSON (likely due to previous export)
-            if (rep.getUserFederationProviders() != null) {
-                Set<String> providerNames = new TreeSet<String>();
-                for (UserFederationMapperRepresentation representation : rep.getUserFederationMappers()) {
-                    providerNames.add(representation.getFederationProviderDisplayName());
-                }
-                for (String providerName : providerNames) {
-                    for (UserFederationProviderModel providerModel : providerModels) {
-                        if (providerName.equals(providerModel.getDisplayName())) {
-                            Set<UserFederationMapperModel> toDelete = newRealm.getUserFederationMappersByFederationProvider(providerModel.getId());
-                            for (UserFederationMapperModel mapperModel : toDelete) {
-                                newRealm.removeUserFederationMapper(mapperModel);
-                            }
-                        }
-                    }
-                }
-            }
-
             for (UserFederationMapperRepresentation representation : rep.getUserFederationMappers()) {
                 if (userStorageModels.containsKey(representation.getFederationProviderDisplayName())) {
                     ComponentModel parent = userStorageModels.get(representation.getFederationProviderDisplayName());
@@ -417,8 +394,6 @@ public class RepresentationToModel {
 
                     storageProvidersWhichShouldImportDefaultMappers.remove(representation.getFederationProviderDisplayName());
 
-                } else {
-                    newRealm.addUserFederationMapper(toModel(newRealm, representation));
                 }
             }
         }
@@ -865,11 +840,6 @@ public class RepresentationToModel {
             realm.setBrowserSecurityHeaders(rep.getBrowserSecurityHeaders());
         }
 
-        if (rep.getUserFederationProviders() != null) {
-            List<UserFederationProviderModel> providerModels = convertFederationProviders(rep.getUserFederationProviders());
-            realm.setUserFederationProviders(providerModels);
-        }
-
         if(rep.isInternationalizationEnabled() != null){
             realm.setInternationalizationEnabled(rep.isInternationalizationEnabled());
         }
@@ -949,23 +919,6 @@ public class RepresentationToModel {
         return mapper;
     }
 
-
-    public static UserFederationMapperModel toModel(RealmModel realm, UserFederationMapperRepresentation rep) {
-        UserFederationMapperModel model = new UserFederationMapperModel();
-        model.setId(rep.getId());
-        model.setName(rep.getName());
-        model.setFederationMapperType(rep.getFederationMapperType());
-        model.setConfig(rep.getConfig());
-
-        UserFederationProviderModel fedProvider = KeycloakModelUtils.findUserFederationProviderByDisplayName(rep.getFederationProviderDisplayName(), realm);
-        if (fedProvider == null) {
-            throw new ModelException("Couldn't find federation provider with display name [" + rep.getFederationProviderDisplayName() + "] referenced from mapper ["
-                    + rep.getName());
-        }
-        model.setFederationProviderId(fedProvider.getId());
-
-        return model;
-    }
 
     // Roles
 

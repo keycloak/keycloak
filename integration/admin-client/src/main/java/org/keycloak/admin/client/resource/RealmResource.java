@@ -172,9 +172,6 @@ public interface RealmResource {
     @Path("attack-detection")
     AttackDetectionResource attackDetection();
 
-    @Path("user-federation")
-    UserFederationProvidersResource userFederation();
-
     @Path("testLDAPConnection")
     @GET
     @NoCache

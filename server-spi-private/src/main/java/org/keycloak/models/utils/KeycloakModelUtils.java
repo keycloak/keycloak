@@ -283,28 +283,6 @@ public final class KeycloakModelUtils {
     }
 
 
-    public static UserFederationProviderModel findUserFederationProviderByDisplayName(String displayName, RealmModel realm) {
-        if (displayName == null) {
-            return null;
-        }
-
-        for (UserFederationProviderModel fedProvider : realm.getUserFederationProviders()) {
-            if (displayName.equals(fedProvider.getDisplayName())) {
-                return fedProvider;
-            }
-        }
-        return null;
-    }
-
-    public static UserFederationProviderModel findUserFederationProviderById(String fedProviderId, RealmModel realm) {
-        for (UserFederationProviderModel fedProvider : realm.getUserFederationProviders()) {
-            if (fedProviderId.equals(fedProvider.getId())) {
-                return fedProvider;
-            }
-        }
-        return null;
-    }
-
     public static UserStorageProviderModel findUserStorageProviderByName(String displayName, RealmModel realm) {
         if (displayName == null) {
             return null;

@@ -300,7 +300,7 @@ public class UserCacheSession implements UserCache {
             // its also hard to test stuff
             boolean invalidate = false;
             if (policy != null) {
-                String currentTime = DateFormat.getDateTimeInstance(DateFormat.FULL, DateFormat.FULL).format(new Date(Time.currentTimeMillis()));
+                //String currentTime = DateFormat.getDateTimeInstance(DateFormat.FULL, DateFormat.FULL).format(new Date(Time.currentTimeMillis()));
                 if (policy == UserStorageProviderModel.CachePolicy.NO_CACHE) {
                     invalidate = true;
                 } else if (cached.getCacheTimestamp() < model.getCacheInvalidBefore()) {
@@ -317,8 +317,8 @@ public class UserCacheSession implements UserCache {
                     int oneWeek = 7 * 24 * 60 * 60 * 1000;
                     long weeklyTimeout = weeklyTimeout(model.getEvictionDay(), model.getEvictionHour(), model.getEvictionMinute());
                     long lastTimeout = weeklyTimeout - oneWeek;
-                    String timeout = DateFormat.getDateTimeInstance(DateFormat.FULL, DateFormat.FULL).format(new Date(weeklyTimeout));
-                    String stamp = DateFormat.getDateTimeInstance(DateFormat.FULL, DateFormat.FULL).format(new Date(cached.getCacheTimestamp()));
+                    //String timeout = DateFormat.getDateTimeInstance(DateFormat.FULL, DateFormat.FULL).format(new Date(weeklyTimeout));
+                    //String stamp = DateFormat.getDateTimeInstance(DateFormat.FULL, DateFormat.FULL).format(new Date(cached.getCacheTimestamp()));
                     if (cached.getCacheTimestamp() <= lastTimeout) {
                         invalidate = true;
                     }

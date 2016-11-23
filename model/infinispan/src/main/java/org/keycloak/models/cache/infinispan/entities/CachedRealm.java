@@ -33,8 +33,6 @@ import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.RequiredCredentialModel;
-import org.keycloak.models.UserFederationMapperModel;
-import org.keycloak.models.UserFederationProviderModel;
 
 import java.security.PrivateKey;
 import java.security.PublicKey;
@@ -96,12 +94,9 @@ public class CachedRealm extends AbstractExtendableRevisioned {
     protected String masterAdminClient;
 
     protected List<RequiredCredentialModel> requiredCredentials;
-    protected List<UserFederationProviderModel> userFederationProviders;
     protected MultivaluedHashMap<String, ComponentModel> componentsByParent = new MultivaluedHashMap<>();
     protected MultivaluedHashMap<String, ComponentModel> componentsByParentAndType = new MultivaluedHashMap<>();
     protected Map<String, ComponentModel> components = new HashMap<>();
-    protected MultivaluedHashMap<String, UserFederationMapperModel> userFederationMappers = new MultivaluedHashMap<String, UserFederationMapperModel>();
-    protected Set<UserFederationMapperModel> userFederationMapperSet;
     protected List<IdentityProviderModel> identityProviders;
 
     protected Map<String, String> browserSecurityHeaders;
@@ -187,11 +182,6 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         emailTheme = model.getEmailTheme();
 
         requiredCredentials = model.getRequiredCredentials();
-        userFederationProviders = model.getUserFederationProviders();
-        userFederationMapperSet = model.getUserFederationMappers();
-        for (UserFederationMapperModel mapper : userFederationMapperSet) {
-            this.userFederationMappers.add(mapper.getFederationProviderId(), mapper);
-        }
 
         this.identityProviders = new ArrayList<>();
 
@@ -462,14 +452,6 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         return adminEventsDetailsEnabled;
     }
 
-    public List<UserFederationProviderModel> getUserFederationProviders() {
-        return userFederationProviders;
-    }
-
-    public MultivaluedHashMap<String, UserFederationMapperModel> getUserFederationMappers() {
-        return userFederationMappers;
-    }
-
     public List<IdentityProviderModel> getIdentityProviders() {
         return identityProviders;
     }
@@ -544,10 +526,6 @@ public class CachedRealm extends AbstractExtendableRevisioned {
 
     public List<String> getClientTemplates() {
         return clientTemplates;
-    }
-
-    public Set<UserFederationMapperModel> getUserFederationMapperSet() {
-        return userFederationMapperSet;
     }
 
     public List<AuthenticationFlowModel> getAuthenticationFlowList() {

@@ -30,7 +30,6 @@ import org.keycloak.representations.idm.UserFederationMapperTypeRepresentation;
 import org.keycloak.representations.idm.UserFederationProviderRepresentation;
 import org.keycloak.representations.idm.UserFederationSyncResultRepresentation;
 import org.keycloak.testsuite.Assert;
-import org.keycloak.testsuite.federation.DummyUserFederationMapper;
 import org.keycloak.testsuite.util.AdminEventPaths;
 import org.keycloak.testsuite.util.UserFederationProviderBuilder;
 
