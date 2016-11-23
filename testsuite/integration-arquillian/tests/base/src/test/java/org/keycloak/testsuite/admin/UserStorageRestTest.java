@@ -82,7 +82,7 @@ public class UserStorageRestTest extends AbstractAdminTest {
     }
 
     private UserFederationProvidersResource userFederation() {
-        return realm.userFederation();
+        return null;//realm.userFederation();
     }
 
 

@@ -33,27 +33,18 @@ import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserConsentModel;
-import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.mongo.keycloak.entities.CredentialEntity;
 import org.keycloak.models.mongo.keycloak.entities.FederatedIdentityEntity;
-import org.keycloak.models.mongo.keycloak.entities.MongoUserEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageProvider;
-import org.keycloak.storage.federated.UserAttributeFederatedStorage;
-import org.keycloak.storage.federated.UserBrokerLinkFederatedStorage;
-import org.keycloak.storage.federated.UserConsentFederatedStorage;
 import org.keycloak.storage.federated.UserFederatedStorageProvider;
-import org.keycloak.storage.federated.UserGroupMembershipFederatedStorage;
-import org.keycloak.storage.federated.UserRequiredActionsFederatedStorage;
-import org.keycloak.storage.federated.UserRoleMappingsFederatedStorage;
 import org.keycloak.storage.mongo.entity.FederatedUser;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
@@ -218,11 +209,6 @@ public class MongoUserFederatedStorageProvider implements
                 .and("realmId").is(realm.getId())
                 .get();
         getMongoStore().removeEntities(FederatedUser.class, query, true, invocationContext);
-    }
-
-    @Override
-    public void preRemove(RealmModel realm, UserFederationProviderModel link) {
-
     }
 
     @Override

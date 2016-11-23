@@ -17,15 +17,17 @@
 
 package org.keycloak.migration.migrators;
 
+import org.keycloak.component.ComponentModel;
 import org.keycloak.migration.ModelVersion;
 import org.keycloak.models.ImpersonationConstants;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserFederationMapperModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.models.utils.DefaultRequiredActions;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.storage.UserStorageProviderModel;
 
 import java.util.Arrays;
 import java.util.List;
@@ -36,7 +38,6 @@ import java.util.List;
  */
 public class MigrateTo1_4_0 implements Migration {
     public static final ModelVersion VERSION = new ModelVersion("1.4.0");
-
     public ModelVersion getVersion() {
         return VERSION;
     }
@@ -58,21 +59,29 @@ public class MigrateTo1_4_0 implements Migration {
 
     private void migrateLDAPMappers(KeycloakSession session, RealmModel realm) {
         List<String> mandatoryInLdap = Arrays.asList("username", "username-cn", "first name", "last name");
-        for (UserFederationMapperModel ldapMapper : realm.getUserFederationMappers()) {
-            if (mandatoryInLdap.contains(ldapMapper.getName())) {
-                ldapMapper.getConfig().put("is.mandatory.in.ldap", "true");
-                realm.updateUserFederationMapper(ldapMapper);
+        for (UserStorageProviderModel providerModel : realm.getUserStorageProviders()) {
+            if (providerModel.getProviderId().equals(LDAPConstants.LDAP_PROVIDER)) {
+                List<ComponentModel> mappers = realm.getComponents(providerModel.getId());
+                for (ComponentModel mapper : mappers) {
+                    if (mandatoryInLdap.contains(mapper.getName())) {
+                        mapper = new ComponentModel(mapper);  // don't want to modify cache
+                        mapper.getConfig().putSingle("is.mandatory.in.ldap", "true");
+                        realm.updateComponent(mapper);
+                    }
+
+                }
             }
         }
     }
 
     private void migrateUsers(KeycloakSession session, RealmModel realm) {
-        List<UserModel> users = session.userStorage().getUsers(realm, false);
+        List<UserModel> users = session.userLocalStorage().getUsers(realm, false);
         for (UserModel user : users) {
             String email = user.getEmail();
             email = KeycloakModelUtils.toLowerCaseSafe(email);
             if (email != null && !email.equals(user.getEmail())) {
                 user.setEmail(email);
+                session.userCache().evict(realm, user);
             }
         }
     }

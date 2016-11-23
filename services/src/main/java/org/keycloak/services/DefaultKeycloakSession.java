@@ -27,14 +27,12 @@ import org.keycloak.models.KeycloakTransactionManager;
 import org.keycloak.models.KeyManager;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.UserCredentialManager;
-import org.keycloak.models.UserFederationManager;
 import org.keycloak.models.UserProvider;
 import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.cache.CacheRealmProvider;
 import org.keycloak.models.cache.UserCache;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
-import org.keycloak.scripting.ScriptingProvider;
 import org.keycloak.storage.UserStorageManager;
 import org.keycloak.storage.federated.UserFederatedStorageProvider;
 
@@ -60,7 +58,6 @@ public class DefaultKeycloakSession implements KeycloakSession {
     private UserStorageManager userStorageManager;
     private UserCredentialStoreManager userCredentialStorageManager;
     private UserSessionProvider sessionProvider;
-    private UserFederationManager federationManager;
     private UserFederatedStorageProvider userFederatedStorageProvider;
     private KeycloakContext context;
     private KeyManager keyManager;
@@ -68,7 +65,6 @@ public class DefaultKeycloakSession implements KeycloakSession {
     public DefaultKeycloakSession(DefaultKeycloakSessionFactory factory) {
         this.factory = factory;
         this.transactionManager = new DefaultKeycloakTransactionManager(this);
-        federationManager = new UserFederationManager(this);
         context = new DefaultKeycloakContext(this);
     }
 
@@ -86,17 +82,8 @@ public class DefaultKeycloakSession implements KeycloakSession {
         }
     }
 
-    private UserProvider getUserProvider() {
-        UserCache cache = getProvider(UserCache.class);
-        if (cache != null) {
-            return cache;
-        } else {
-            return getProvider(UserProvider.class);
-        }
-    }
-
     @Override
-    public UserCache getUserCache() {
+    public UserCache userCache() {
         return getProvider(UserCache.class);
 
     }
@@ -151,17 +138,19 @@ public class DefaultKeycloakSession implements KeycloakSession {
     }
 
     @Override
-    public UserCredentialManager userCredentialManager() {
-        if (userCredentialStorageManager == null) userCredentialStorageManager = new UserCredentialStoreManager(this);
-        return userCredentialStorageManager;
+    public UserProvider users() {
+        UserCache cache = getProvider(UserCache.class);
+        if (cache != null) {
+            return cache;
+        } else {
+            return userStorageManager();
+        }
     }
 
     @Override
-    public UserProvider userStorage() {
-        if (userModel == null) {
-            userModel = getUserProvider();
-        }
-        return userModel;
+    public UserCredentialManager userCredentialManager() {
+        if (userCredentialStorageManager == null) userCredentialStorageManager = new UserCredentialStoreManager(this);
+        return userCredentialStorageManager;
     }
 
     public <T extends Provider> T getProvider(Class<T> clazz) {
@@ -237,11 +226,6 @@ public class DefaultKeycloakSession implements KeycloakSession {
             model = getRealmProvider();
         }
         return model;
-    }
-
-    @Override
-    public UserFederationManager users() {
-        return federationManager;
     }
 
     @Override

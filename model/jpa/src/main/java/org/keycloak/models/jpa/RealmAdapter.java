@@ -31,7 +31,6 @@ import org.keycloak.models.GroupModel;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.OTPPolicy;
 import org.keycloak.models.PasswordPolicy;
@@ -39,9 +38,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.UserFederationMapperModel;
-import org.keycloak.models.UserFederationProviderCreationEventImpl;
-import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.jpa.entities.AuthenticationExecutionEntity;
 import org.keycloak.models.jpa.entities.AuthenticationFlowEntity;
 import org.keycloak.models.jpa.entities.AuthenticatorConfigEntity;
@@ -58,8 +54,6 @@ import org.keycloak.models.jpa.entities.RealmEntity;
 import org.keycloak.models.jpa.entities.RequiredActionProviderEntity;
 import org.keycloak.models.jpa.entities.RequiredCredentialEntity;
 import org.keycloak.models.jpa.entities.RoleEntity;
-import org.keycloak.models.jpa.entities.UserFederationMapperEntity;
-import org.keycloak.models.jpa.entities.UserFederationProviderEntity;
 import org.keycloak.models.utils.ComponentUtil;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
@@ -68,7 +62,6 @@ import javax.persistence.TypedQuery;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -734,194 +727,6 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
     }
 
 
-    private void removeFederationMappersForProvider(String federationProviderId) {
-        Set<UserFederationMapperEntity> mappers = getUserFederationMapperEntitiesByFederationProvider(federationProviderId);
-        for (UserFederationMapperEntity mapper : mappers) {
-            realm.getUserFederationMappers().remove(mapper);
-            em.remove(mapper);
-        }
-    }
-
-    @Override
-    public List<UserFederationProviderModel> getUserFederationProviders() {
-        List<UserFederationProviderEntity> entities = realm.getUserFederationProviders();
-        if (entities.isEmpty()) return Collections.EMPTY_LIST;
-        List<UserFederationProviderEntity> copy = new ArrayList<UserFederationProviderEntity>();
-        for (UserFederationProviderEntity entity : entities) {
-            copy.add(entity);
-
-        }
-        Collections.sort(copy, new Comparator<UserFederationProviderEntity>() {
-
-            @Override
-            public int compare(UserFederationProviderEntity o1, UserFederationProviderEntity o2) {
-                return o1.getPriority() - o2.getPriority();
-            }
-
-        });
-        List<UserFederationProviderModel> result = new ArrayList<UserFederationProviderModel>();
-        for (UserFederationProviderEntity entity : copy) {
-            result.add(new UserFederationProviderModel(entity.getId(), entity.getProviderName(), entity.getConfig(), entity.getPriority(), entity.getDisplayName(),
-                    entity.getFullSyncPeriod(), entity.getChangedSyncPeriod(), entity.getLastSync()));
-        }
-
-        return Collections.unmodifiableList(result);
-    }
-
-    @Override
-    public UserFederationProviderModel addUserFederationProvider(String providerName, Map<String, String> config, int priority, String displayName, int fullSyncPeriod, int changedSyncPeriod, int lastSync) {
-        KeycloakModelUtils.ensureUniqueDisplayName(displayName, null, getUserFederationProviders());
-
-        String id = KeycloakModelUtils.generateId();
-        UserFederationProviderEntity entity = new UserFederationProviderEntity();
-        entity.setId(id);
-        entity.setRealm(realm);
-        entity.setProviderName(providerName);
-        entity.setConfig(config);
-        entity.setPriority(priority);
-        if (displayName == null) {
-            displayName = id;
-        }
-        entity.setDisplayName(displayName);
-        entity.setFullSyncPeriod(fullSyncPeriod);
-        entity.setChangedSyncPeriod(changedSyncPeriod);
-        entity.setLastSync(lastSync);
-        em.persist(entity);
-        realm.getUserFederationProviders().add(entity);
-        em.flush();
-        UserFederationProviderModel providerModel = new UserFederationProviderModel(entity.getId(), providerName, config, priority, displayName, fullSyncPeriod, changedSyncPeriod, lastSync);
-
-        session.getKeycloakSessionFactory().publish(new UserFederationProviderCreationEventImpl(this, providerModel));
-
-        return providerModel;
-    }
-
-    @Override
-    public void removeUserFederationProvider(UserFederationProviderModel provider) {
-        Iterator<UserFederationProviderEntity> it = realm.getUserFederationProviders().iterator();
-        while (it.hasNext()) {
-            UserFederationProviderEntity entity = it.next();
-            if (entity.getId().equals(provider.getId())) {
-
-                session.users().preRemove(this, provider);
-                removeFederationMappersForProvider(provider.getId());
-
-                it.remove();
-                em.remove(entity);
-                return;
-            }
-        }
-    }
-    @Override
-    public void updateUserFederationProvider(UserFederationProviderModel model) {
-        KeycloakModelUtils.ensureUniqueDisplayName(model.getDisplayName(), model, getUserFederationProviders());
-
-        Iterator<UserFederationProviderEntity> it = realm.getUserFederationProviders().iterator();
-        while (it.hasNext()) {
-            UserFederationProviderEntity entity = it.next();
-            if (entity.getId().equals(model.getId())) {
-                String displayName = model.getDisplayName();
-                if (displayName != null) {
-                    entity.setDisplayName(model.getDisplayName());
-                }
-                entity.setConfig(model.getConfig());
-                entity.setPriority(model.getPriority());
-                entity.setProviderName(model.getProviderName());
-                entity.setPriority(model.getPriority());
-                entity.setFullSyncPeriod(model.getFullSyncPeriod());
-                entity.setChangedSyncPeriod(model.getChangedSyncPeriod());
-                entity.setLastSync(model.getLastSync());
-                break;
-            }
-        }
-    }
-
-    @Override
-    public void setUserFederationProviders(List<UserFederationProviderModel> providers) {
-        for (UserFederationProviderModel currentProvider : providers) {
-            KeycloakModelUtils.ensureUniqueDisplayName(currentProvider.getDisplayName(), currentProvider, providers);
-        }
-
-        Iterator<UserFederationProviderEntity> it = realm.getUserFederationProviders().iterator();
-        while (it.hasNext()) {
-            UserFederationProviderEntity entity = it.next();
-            boolean found = false;
-            for (UserFederationProviderModel model : providers) {
-                if (entity.getId().equals(model.getId())) {
-                    entity.setConfig(model.getConfig());
-                    entity.setPriority(model.getPriority());
-                    entity.setProviderName(model.getProviderName());
-                    String displayName = model.getDisplayName();
-                    if (displayName != null) {
-                        entity.setDisplayName(displayName);
-                    }
-                    entity.setFullSyncPeriod(model.getFullSyncPeriod());
-                    entity.setChangedSyncPeriod(model.getChangedSyncPeriod());
-                    entity.setLastSync(model.getLastSync());
-                    found = true;
-                    break;
-                }
-
-            }
-            if (found) continue;
-            session.users().preRemove(this, new UserFederationProviderModel(entity.getId(), entity.getProviderName(), entity.getConfig(), entity.getPriority(), entity.getDisplayName(),
-                    entity.getFullSyncPeriod(), entity.getChangedSyncPeriod(), entity.getLastSync()));
-            removeFederationMappersForProvider(entity.getId());
-
-            it.remove();
-            em.remove(entity);
-        }
-
-        List<UserFederationProviderModel> add = new LinkedList<>();
-        for (UserFederationProviderModel model : providers) {
-            boolean found = false;
-            for (UserFederationProviderEntity entity : realm.getUserFederationProviders()) {
-                if (entity.getId().equals(model.getId())) {
-                    found = true;
-                    break;
-                }
-            }
-            if (!found) add.add(model);
-        }
-
-        for (UserFederationProviderModel model : add) {
-            UserFederationProviderEntity entity = new UserFederationProviderEntity();
-            if (model.getId() != null) {
-                entity.setId(model.getId());
-            } else {
-                String id = KeycloakModelUtils.generateId();
-                entity.setId(id);
-                model.setId(id);
-            }
-            entity.setConfig(model.getConfig());
-            entity.setPriority(model.getPriority());
-            entity.setProviderName(model.getProviderName());
-            entity.setPriority(model.getPriority());
-            String displayName = model.getDisplayName();
-            if (displayName == null) {
-                displayName = entity.getId();
-            }
-            entity.setDisplayName(displayName);
-            entity.setFullSyncPeriod(model.getFullSyncPeriod());
-            entity.setChangedSyncPeriod(model.getChangedSyncPeriod());
-            entity.setLastSync(model.getLastSync());
-            entity.setRealm(realm);
-            em.persist(entity);
-            realm.getUserFederationProviders().add(entity);
-
-            session.getKeycloakSessionFactory().publish(new UserFederationProviderCreationEventImpl(this, model));
-        }
-    }
-
-    protected UserFederationProviderEntity getUserFederationProviderEntityById(String federationProviderId) {
-        for (UserFederationProviderEntity entity : realm.getUserFederationProviders()) {
-            if (entity.getId().equals(federationProviderId)) {
-                return entity;
-            }
-        }
-        return null;
-    }
-
     @Override
     public RoleModel getRole(String name) {
         return session.realms().getRealmRole(this, name);
@@ -1400,130 +1205,6 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
         if (entity.getConfig() != null) config.putAll(entity.getConfig());
         mapping.setConfig(config);
         return mapping;
-    }
-
-    @Override
-    public Set<UserFederationMapperModel> getUserFederationMappers() {
-        Collection<UserFederationMapperEntity> entities = this.realm.getUserFederationMappers();
-        if (entities.isEmpty()) return Collections.EMPTY_SET;
-        Set<UserFederationMapperModel> mappers = new HashSet<>();
-        for (UserFederationMapperEntity entity : entities) {
-            UserFederationMapperModel mapper = entityToModel(entity);
-            mappers.add(mapper);
-        }
-        return Collections.unmodifiableSet(mappers);
-    }
-
-    @Override
-    public Set<UserFederationMapperModel> getUserFederationMappersByFederationProvider(String federationProviderId) {
-        Set<UserFederationMapperEntity> mapperEntities = getUserFederationMapperEntitiesByFederationProvider(federationProviderId);
-        if (mapperEntities.isEmpty()) return Collections.EMPTY_SET;
-        Set<UserFederationMapperModel> mappers = new HashSet<UserFederationMapperModel>();
-        for (UserFederationMapperEntity entity : mapperEntities) {
-            UserFederationMapperModel mapper = entityToModel(entity);
-            mappers.add(mapper);
-        }
-        return Collections.unmodifiableSet(mappers);
-    }
-
-    @Override
-    public UserFederationMapperModel addUserFederationMapper(UserFederationMapperModel model) {
-        if (getUserFederationMapperByName(model.getFederationProviderId(), model.getName()) != null) {
-            throw new ModelDuplicateException("User federation mapper must be unique per federation provider. There is already: " + model.getName());
-        }
-        String id = KeycloakModelUtils.generateId();
-        UserFederationMapperEntity entity = new UserFederationMapperEntity();
-        entity.setId(id);
-        entity.setName(model.getName());
-        entity.setFederationProvider(getUserFederationProviderEntityById(model.getFederationProviderId()));
-        entity.setFederationMapperType(model.getFederationMapperType());
-        entity.setRealm(this.realm);
-        entity.setConfig(model.getConfig());
-
-        em.persist(entity);
-        this.realm.getUserFederationMappers().add(entity);
-        UserFederationMapperModel mapperModel = entityToModel(entity);
-
-        return mapperModel;
-    }
-
-    @Override
-    public void removeUserFederationMapper(UserFederationMapperModel mapper) {
-        UserFederationMapperEntity toDelete = getUserFederationMapperEntity(mapper.getId());
-        if (toDelete != null) {
-            this.realm.getUserFederationMappers().remove(toDelete);
-            em.remove(toDelete);
-        }
-    }
-
-    protected UserFederationMapperEntity getUserFederationMapperEntity(String id) {
-        for (UserFederationMapperEntity entity : this.realm.getUserFederationMappers()) {
-            if (entity.getId().equals(id)) {
-                return entity;
-            }
-        }
-        return null;
-
-    }
-
-    protected UserFederationMapperEntity getUserFederationMapperEntityByName(String federationProviderId, String name) {
-        for (UserFederationMapperEntity entity : this.realm.getUserFederationMappers()) {
-            if (federationProviderId.equals(entity.getFederationProvider().getId()) && entity.getName().equals(name)) {
-                return entity;
-            }
-        }
-        return null;
-
-    }
-
-    protected Set<UserFederationMapperEntity> getUserFederationMapperEntitiesByFederationProvider(String federationProviderId) {
-        Set<UserFederationMapperEntity> mappers = new HashSet<UserFederationMapperEntity>();
-        for (UserFederationMapperEntity entity : this.realm.getUserFederationMappers()) {
-            if (federationProviderId.equals(entity.getFederationProvider().getId())) {
-                mappers.add(entity);
-            }
-        }
-        return mappers;
-    }
-
-    @Override
-    public void updateUserFederationMapper(UserFederationMapperModel mapper) {
-        UserFederationMapperEntity entity = getUserFederationMapperEntity(mapper.getId());
-        entity.setFederationProvider(getUserFederationProviderEntityById(mapper.getFederationProviderId()));
-        entity.setFederationMapperType(mapper.getFederationMapperType());
-        if (entity.getConfig() == null) {
-            entity.setConfig(mapper.getConfig());
-        } else {
-            entity.getConfig().clear();
-            entity.getConfig().putAll(mapper.getConfig());
-        }
-        em.flush();
-    }
-
-    @Override
-    public UserFederationMapperModel getUserFederationMapperById(String id) {
-        UserFederationMapperEntity entity = getUserFederationMapperEntity(id);
-        if (entity == null) return null;
-        return entityToModel(entity);
-    }
-
-    @Override
-    public UserFederationMapperModel getUserFederationMapperByName(String federationProviderId, String name) {
-        UserFederationMapperEntity entity = getUserFederationMapperEntityByName(federationProviderId, name);
-        if (entity == null) return null;
-        return entityToModel(entity);
-    }
-
-    protected UserFederationMapperModel entityToModel(UserFederationMapperEntity entity) {
-        UserFederationMapperModel mapper = new UserFederationMapperModel();
-        mapper.setId(entity.getId());
-        mapper.setName(entity.getName());
-        mapper.setFederationProviderId(entity.getFederationProvider().getId());
-        mapper.setFederationMapperType(entity.getFederationMapperType());
-        Map<String, String> config = new HashMap<String, String>();
-        if (entity.getConfig() != null) config.putAll(entity.getConfig());
-        mapper.setConfig(config);
-        return mapper;
     }
 
     @Override

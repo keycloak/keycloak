@@ -107,7 +107,7 @@ public class LDAPGroupMapper2WaySyncTest {
         KeycloakSession session = keycloakRule.startSession();
         try {
             RealmModel realm = session.realms().getRealmByName("test");
-            ComponentModel mapperModel = LDAPTestUtils.getComponentByName(realm,ldapModel, "groupsMapper");
+            ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(realm,ldapModel, "groupsMapper");
             LDAPStorageProvider ldapProvider = LDAPTestUtils.getLdapProvider(session, ldapModel);
 
             // Update group mapper to skip preserve inheritance and check it will pass now
@@ -139,7 +139,7 @@ public class LDAPGroupMapper2WaySyncTest {
         session = keycloakRule.startSession();
         try {
             RealmModel realm = session.realms().getRealmByName("test");
-            ComponentModel mapperModel = LDAPTestUtils.getComponentByName(realm,ldapModel, "groupsMapper");
+            ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(realm,ldapModel, "groupsMapper");
             LDAPStorageProvider ldapProvider = LDAPTestUtils.getLdapProvider(session, ldapModel);
 
             // Sync from LDAP back into Keycloak
@@ -171,7 +171,7 @@ public class LDAPGroupMapper2WaySyncTest {
         KeycloakSession session = keycloakRule.startSession();
         try {
             RealmModel realm = session.realms().getRealmByName("test");
-            ComponentModel mapperModel = LDAPTestUtils.getComponentByName(realm,ldapModel, "groupsMapper");
+            ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(realm,ldapModel, "groupsMapper");
             LDAPStorageProvider ldapProvider = LDAPTestUtils.getLdapProvider(session, ldapModel);
 
             // Update group mapper to skip preserve inheritance and check it will pass now
@@ -203,7 +203,7 @@ public class LDAPGroupMapper2WaySyncTest {
         session = keycloakRule.startSession();
         try {
             RealmModel realm = session.realms().getRealmByName("test");
-            ComponentModel mapperModel = LDAPTestUtils.getComponentByName(realm,ldapModel, "groupsMapper");
+            ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(realm,ldapModel, "groupsMapper");
             LDAPStorageProvider ldapProvider = LDAPTestUtils.getLdapProvider(session, ldapModel);
 
             // Sync from LDAP back into Keycloak

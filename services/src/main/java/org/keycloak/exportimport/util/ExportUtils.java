@@ -44,8 +44,8 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserConsentModel;
-import org.keycloak.models.UserFederationManager;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserProvider;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientTemplateRepresentation;
@@ -358,7 +358,7 @@ public class ExportUtils {
             String users = config.get("users");
 
             if (users != null && !users.isEmpty()) {
-                UserFederationManager userManager = session.users();
+                UserProvider userManager = session.users();
                 List<String> userIds = JsonSerialization.readValue(users, List.class);
                 config.put("users", JsonSerialization.writeValueAsString(userIds.stream().map(userId -> userManager.getUserById(userId, realm).getUsername()).collect(Collectors.toList())));
             }

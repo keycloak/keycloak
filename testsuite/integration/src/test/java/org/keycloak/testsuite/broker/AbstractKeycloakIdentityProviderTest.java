@@ -26,10 +26,10 @@ import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.services.Urls;
+import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.testsuite.broker.util.UserSessionStatusServlet;
 import org.keycloak.testsuite.federation.DummyUserFederationProviderFactory;
 import org.openqa.selenium.By;
@@ -46,7 +46,6 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.net.URI;
-import java.util.HashMap;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
@@ -634,7 +633,14 @@ public abstract class AbstractKeycloakIdentityProviderTest extends AbstractIdent
 
         // Add federationProvider to realm. It's configured with sync registrations
         RealmModel realm = getRealm();
-        UserFederationProviderModel dummyModel = realm.addUserFederationProvider(DummyUserFederationProviderFactory.PROVIDER_NAME, new HashMap<String, String>(), 1, "test-dummy", -1, -1, 0);
+        UserStorageProviderModel model = new UserStorageProviderModel();
+        model.setProviderId(DummyUserFederationProviderFactory.PROVIDER_NAME);
+        model.setPriority(1);
+        model.setName("test-sync-dummy");
+        model.setFullSyncPeriod(-1);
+        model.setChangedSyncPeriod(-1);
+        model.setLastSync(0);
+        UserStorageProviderModel dummyModel = new UserStorageProviderModel(realm.addComponentModel(model));
 
         brokerServerRule.stopSession(session, true);
         session = brokerServerRule.startSession();
@@ -682,7 +688,7 @@ public abstract class AbstractKeycloakIdentityProviderTest extends AbstractIdent
 
             // remove dummy federation provider for this realm
             realm = getRealm();
-            realm.removeUserFederationProvider(dummyModel);
+            realm.removeComponent(dummyModel);
 
             brokerServerRule.stopSession(session, true);
             session = brokerServerRule.startSession();

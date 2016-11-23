@@ -22,14 +22,16 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.KeycloakSessionTask;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserFederationProviderModel;
-import org.keycloak.models.UserFederationSyncResult;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.provider.ProviderConfigurationBuilder;
+import org.keycloak.storage.UserStorageProviderModel;
+import org.keycloak.storage.user.SynchronizationResult;
 import org.keycloak.testsuite.federation.DummyUserFederationProviderFactory;
 
 import java.util.Date;
-import java.util.Set;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -59,21 +61,27 @@ public class SyncDummyUserFederationProviderFactory extends DummyUserFederationP
         return SYNC_PROVIDER_ID;
     }
 
-    @Override
-    public Set<String> getConfigurationOptions() {
-        Set<String> list = super.getConfigurationOptions();
-        list.add(WAIT_TIME);
-        return list;
+
+    public List<ProviderConfigProperty> getConfigProperties() {
+        return ProviderConfigurationBuilder.create()
+                .property().name("important.config")
+                .type(ProviderConfigProperty.STRING_TYPE)
+                .add()
+                .property().name(WAIT_TIME)
+                .type(ProviderConfigProperty.STRING_TYPE)
+                .add()
+                .build();
     }
 
+
     @Override
-    public UserFederationSyncResult syncChangedUsers(KeycloakSessionFactory sessionFactory, final String realmId, final UserFederationProviderModel model, Date lastSync) {
+    public SynchronizationResult syncSince(Date lastSync, KeycloakSessionFactory sessionFactory, String realmId, UserStorageProviderModel model) {
 
         KeycloakModelUtils.runJobInTransaction(sessionFactory, new KeycloakSessionTask() {
 
             @Override
             public void run(KeycloakSession session) {
-                int waitTime = Integer.parseInt(model.getConfig().get(WAIT_TIME));
+                int waitTime = Integer.parseInt(model.getConfig().getFirst(WAIT_TIME));
 
                 logger.infof("Starting sync of changed users. Wait time is: %s", waitTime);
 
@@ -82,13 +90,13 @@ public class SyncDummyUserFederationProviderFactory extends DummyUserFederationP
                 // KEYCLOAK-2412 : Just remove and add some users for testing purposes
                 for (int i = 0; i < 10; i++) {
                     String username = "dummyuser-" + i;
-                    UserModel user = session.userStorage().getUserByUsername(username, realm);
+                    UserModel user = session.userLocalStorage().getUserByUsername(username, realm);
 
                     if (user != null) {
-                        session.userStorage().removeUser(realm, user);
+                        session.userLocalStorage().removeUser(realm, user);
                     }
 
-                    user = session.userStorage().addUser(realm, username);
+                    user = session.userLocalStorage().addUser(realm, username);
                 }
 
                 logger.infof("Finished sync of changed users. Waiting now for %d seconds", waitTime);
@@ -109,7 +117,7 @@ public class SyncDummyUserFederationProviderFactory extends DummyUserFederationP
         // countDown, so the SyncFederationTest can continue
         latch2.countDown();
 
-        return new UserFederationSyncResult();
+        return new SynchronizationResult();
     }
 
 }

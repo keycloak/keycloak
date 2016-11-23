@@ -383,7 +383,7 @@ public class LDAPProvidersIntegrationTest {
             LDAPObject johnZip = LDAPTestUtils.addLDAPUser(ldapFedProvider, appRealm, "johnzip", "John", "Zip", "johnzip@email.org", null, "12398");
 
             // Remove default zipcode mapper and add the mapper for "POstalCode" to test case sensitivity
-            ComponentModel currentZipMapper = LDAPTestUtils.getComponentByName(appRealm, ldapModel, "zipCodeMapper");
+            ComponentModel currentZipMapper = LDAPTestUtils.getSubcomponentByName(appRealm, ldapModel, "zipCodeMapper");
             appRealm.removeComponent(currentZipMapper);
             LDAPTestUtils.addUserAttributeMapper(appRealm, ldapModel, "zipCodeMapper-cs", "postal_code", "POstalCode");
 
@@ -480,12 +480,12 @@ public class LDAPProvidersIntegrationTest {
             RealmModel appRealm = new RealmManager(session).getRealmByName("test");
 
             // Update postalCode mapper to always read the value from LDAP
-            ComponentModel zipMapper = LDAPTestUtils.getComponentByName(appRealm, ldapModel, "zipCodeMapper");
+            ComponentModel zipMapper = LDAPTestUtils.getSubcomponentByName(appRealm, ldapModel, "zipCodeMapper");
             zipMapper.getConfig().putSingle(UserAttributeLDAPStorageMapper.ALWAYS_READ_VALUE_FROM_LDAP, "true");
             appRealm.updateComponent(zipMapper);
 
             // Update lastName mapper to read the value from Keycloak DB
-            ComponentModel lastNameMapper = LDAPTestUtils.getComponentByName(appRealm, ldapModel, "last name");
+            ComponentModel lastNameMapper = LDAPTestUtils.getSubcomponentByName(appRealm, ldapModel, "last name");
             lastNameMapper.getConfig().putSingle(UserAttributeLDAPStorageMapper.ALWAYS_READ_VALUE_FROM_LDAP, "false");
             appRealm.updateComponent(lastNameMapper);
 
@@ -527,7 +527,7 @@ public class LDAPProvidersIntegrationTest {
             LDAPTestUtils.addLDAPUser(ldapFedProvider, appRealm, "fullname", "James Dee", "Dee", "fullname@email.org", null, "4578");
 
             // add fullname mapper to the provider and remove "firstNameMapper". For this test, we will simply map full name to the LDAP attribute, which was before firstName ( "givenName" on active directory, "cn" on other LDAP servers)
-            firstNameMapper =  LDAPTestUtils.getComponentByName(appRealm, ldapModel, "first name");
+            firstNameMapper =  LDAPTestUtils.getSubcomponentByName(appRealm, ldapModel, "first name");
             String ldapFirstNameAttributeName = firstNameMapper.getConfig().getFirst(UserAttributeLDAPStorageMapper.LDAP_ATTRIBUTE);
             appRealm.removeComponent(firstNameMapper);
 
@@ -547,7 +547,7 @@ public class LDAPProvidersIntegrationTest {
             LDAPTestUtils.assertUserImported(session.users(), appRealm, "fullname", "James", "Dee", "fullname@email.org", "4578");
 
             // change mapper to writeOnly
-            ComponentModel fullNameMapperModel = LDAPTestUtils.getComponentByName(appRealm, ldapModel, "full name");
+            ComponentModel fullNameMapperModel = LDAPTestUtils.getSubcomponentByName(appRealm, ldapModel, "full name");
             fullNameMapperModel.getConfig().putSingle(FullNameLDAPStorageMapper.WRITE_ONLY, "true");
             appRealm.updateComponent(fullNameMapperModel);
         } finally {
@@ -581,7 +581,7 @@ public class LDAPProvidersIntegrationTest {
             session.users().removeUser(appRealm, fullnameUser);
 
             // Revert mappers
-            ComponentModel fullNameMapperModel = LDAPTestUtils.getComponentByName(appRealm, ldapModel, "full name");
+            ComponentModel fullNameMapperModel = LDAPTestUtils.getSubcomponentByName(appRealm, ldapModel, "full name");
             appRealm.removeComponent(fullNameMapperModel);
 
             firstNameMapper.setId(null);
@@ -628,7 +628,7 @@ public class LDAPProvidersIntegrationTest {
             }
 
             // Revert mappers
-            ComponentModel hardcodedMapperModel = LDAPTestUtils.getComponentByName(appRealm, ldapModel, "hardcoded role");
+            ComponentModel hardcodedMapperModel = LDAPTestUtils.getSubcomponentByName(appRealm, ldapModel, "hardcoded role");
             appRealm.removeComponent(hardcodedMapperModel);
         } finally {
             keycloakRule.stopSession(session, true);

@@ -30,18 +30,11 @@ import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserConsentModel;
-import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageProvider;
-import org.keycloak.storage.federated.UserAttributeFederatedStorage;
-import org.keycloak.storage.federated.UserBrokerLinkFederatedStorage;
-import org.keycloak.storage.federated.UserConsentFederatedStorage;
 import org.keycloak.storage.federated.UserFederatedStorageProvider;
-import org.keycloak.storage.federated.UserGroupMembershipFederatedStorage;
-import org.keycloak.storage.federated.UserRequiredActionsFederatedStorage;
-import org.keycloak.storage.federated.UserRoleMappingsFederatedStorage;
 import org.keycloak.storage.jpa.entity.BrokerLinkEntity;
 import org.keycloak.storage.jpa.entity.FederatedUser;
 import org.keycloak.storage.jpa.entity.FederatedUserAttributeEntity;
@@ -792,38 +785,6 @@ public class JpaUserFederatedStorageProvider implements
                 .setParameter("realmId", realm.getId()).executeUpdate();
         num = em.createNamedQuery("deleteFederatedUsersByRealm")
                 .setParameter("realmId", realm.getId()).executeUpdate();
-    }
-
-    @Override
-    public void preRemove(RealmModel realm, UserFederationProviderModel link) {
-        int num = em.createNamedQuery("deleteFederatedUserRoleMappingsByRealmAndLink")
-                .setParameter("realmId", realm.getId())
-                .setParameter("link", link.getId())
-                .executeUpdate();
-        num = em.createNamedQuery("deleteFederatedUserRequiredActionsByRealmAndLink")
-                .setParameter("realmId", realm.getId())
-                .setParameter("link", link.getId())
-                .executeUpdate();
-        num = em.createNamedQuery("deleteBrokerLinkByRealmAndLink")
-                .setParameter("realmId", realm.getId())
-                .setParameter("link", link.getId())
-                .executeUpdate();
-        num = em.createNamedQuery("deleteFederatedCredentialAttributeByRealmAndLink")
-                .setParameter("realmId", realm.getId())
-                .setParameter("link", link.getId())
-                .executeUpdate();
-        num = em.createNamedQuery("deleteFederatedUserCredentialsByRealmAndLink")
-                .setParameter("realmId", realm.getId())
-                .setParameter("link", link.getId())
-                .executeUpdate();
-        num = em.createNamedQuery("deleteUserFederatedAttributesByRealmAndLink")
-                .setParameter("realmId", realm.getId())
-                .setParameter("link", link.getId())
-                .executeUpdate();
-        num = em.createNamedQuery("deleteFederatedUsersByRealmAndLink")
-                .setParameter("realmId", realm.getId())
-                .setParameter("link", link.getId())
-                .executeUpdate();
     }
 
     @Override

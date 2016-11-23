@@ -247,7 +247,7 @@ public class LDAPRoleMappingsTest {
             }
 
             // Add some role mappings directly into LDAP
-            ComponentModel roleMapperModel = LDAPTestUtils.getComponentByName(appRealm, ldapModel, "realmRolesMapper");
+            ComponentModel roleMapperModel = LDAPTestUtils.getSubcomponentByName(appRealm, ldapModel, "realmRolesMapper");
             LDAPStorageProvider ldapProvider = LDAPTestUtils.getLdapProvider(session, ldapModel);
             RoleLDAPStorageMapper roleMapper = LDAPTestUtils.getRoleMapper(roleMapperModel, ldapProvider, appRealm);
 
@@ -309,7 +309,7 @@ public class LDAPRoleMappingsTest {
             LDAPTestUtils.addOrUpdateRoleLDAPMappers(appRealm, ldapModel, LDAPGroupMapperMode.IMPORT);
 
             // Add some role mappings directly in LDAP
-            ComponentModel roleMapperModel = LDAPTestUtils.getComponentByName(appRealm, ldapModel, "realmRolesMapper");
+            ComponentModel roleMapperModel = LDAPTestUtils.getSubcomponentByName(appRealm, ldapModel, "realmRolesMapper");
             LDAPStorageProvider ldapProvider = LDAPTestUtils.getLdapProvider(session, ldapModel);
             RoleLDAPStorageMapper roleMapper = LDAPTestUtils.getRoleMapper(roleMapperModel, ldapProvider, appRealm);
 

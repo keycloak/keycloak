@@ -495,7 +495,7 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
                             if (username != null) {
                                 UserModel existing = session.userLocalStorage().getUserByUsername(username, currentRealm);
                                 if (existing != null) {
-                                    session.getUserCache().evict(currentRealm, existing);
+                                    session.userCache().evict(currentRealm, existing);
                                     session.userLocalStorage().removeUser(currentRealm, existing);
                                 }
                             }

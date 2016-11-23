@@ -32,7 +32,6 @@ import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserConsentModel;
-import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
 import org.keycloak.models.cache.CachedUserModel;
@@ -53,9 +52,7 @@ import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
 
-import java.text.DateFormat;
 import java.util.Calendar;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -300,7 +297,7 @@ public class UserCacheSession implements UserCache {
             // its also hard to test stuff
             boolean invalidate = false;
             if (policy != null) {
-                String currentTime = DateFormat.getDateTimeInstance(DateFormat.FULL, DateFormat.FULL).format(new Date(Time.currentTimeMillis()));
+                //String currentTime = DateFormat.getDateTimeInstance(DateFormat.FULL, DateFormat.FULL).format(new Date(Time.currentTimeMillis()));
                 if (policy == UserStorageProviderModel.CachePolicy.NO_CACHE) {
                     invalidate = true;
                 } else if (cached.getCacheTimestamp() < model.getCacheInvalidBefore()) {
@@ -317,8 +314,8 @@ public class UserCacheSession implements UserCache {
                     int oneWeek = 7 * 24 * 60 * 60 * 1000;
                     long weeklyTimeout = weeklyTimeout(model.getEvictionDay(), model.getEvictionHour(), model.getEvictionMinute());
                     long lastTimeout = weeklyTimeout - oneWeek;
-                    String timeout = DateFormat.getDateTimeInstance(DateFormat.FULL, DateFormat.FULL).format(new Date(weeklyTimeout));
-                    String stamp = DateFormat.getDateTimeInstance(DateFormat.FULL, DateFormat.FULL).format(new Date(cached.getCacheTimestamp()));
+                    //String timeout = DateFormat.getDateTimeInstance(DateFormat.FULL, DateFormat.FULL).format(new Date(weeklyTimeout));
+                    //String stamp = DateFormat.getDateTimeInstance(DateFormat.FULL, DateFormat.FULL).format(new Date(cached.getCacheTimestamp()));
                     if (cached.getCacheTimestamp() <= lastTimeout) {
                         invalidate = true;
                     }
@@ -851,12 +848,6 @@ public class UserCacheSession implements UserCache {
         getDelegate().preRemove(realm, group);
     }
 
-
-    @Override
-    public void preRemove(RealmModel realm, UserFederationProviderModel link) {
-        addRealmInvalidation(realm.getId()); // easier to just invalidate whole realm
-        getDelegate().preRemove(realm, link);
-    }
 
     @Override
     public void preRemove(RealmModel realm, ClientModel client) {

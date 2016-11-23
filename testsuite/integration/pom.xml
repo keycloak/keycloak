@@ -164,7 +164,7 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>federation-properties-example</artifactId>
+            <artifactId>user-storage-properties-example</artifactId>
         </dependency>
 
         <!-- Dependency on services from integration-arquillian -->

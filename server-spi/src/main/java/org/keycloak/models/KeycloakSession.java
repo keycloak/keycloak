@@ -110,29 +110,29 @@ public interface KeycloakSession {
      *
      * @return may be null if cache is disabled
      */
-    UserCache getUserCache();
+    UserCache userCache();
 
     /**
-     * A cached view of all users in system including deprecated UserFederationProvider SPI
+     * A cached view of all users in system including  users loaded by UserStorageProviders
      *
      * @return
      */
-    UserFederationManager users();
+    UserProvider users();
 
 
     /**
-     * Un-cached view of all users in system that does NOT include users available from the deprecated UserFederationProvider SPI.
+     * Un-cached view of all users in system including users loaded by UserStorageProviders
      *
      * @return
      */
     UserProvider userStorageManager();
 
-    UserCredentialManager userCredentialManager();
-
     /**
-     *  A cached view of all users in system that does NOT include users available from the deprecated UserFederationProvider SPI.
+     * Service that allows you to valid and update credentials for a user
+     *
+     * @return
      */
-    UserProvider userStorage();
+    UserCredentialManager userCredentialManager();
 
     /**
      * Keycloak specific local storage for users.  No cache in front, this api talks directly to database configured for Keycloak

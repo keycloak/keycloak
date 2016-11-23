@@ -35,8 +35,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.UserFederationMapperModel;
-import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.cache.CachedRealmModel;
 import org.keycloak.models.cache.infinispan.entities.CachedRealm;
 import org.keycloak.storage.UserStorageProvider;
@@ -635,38 +633,6 @@ public class RealmAdapter implements CachedRealmModel {
     }
 
     @Override
-    public List<UserFederationProviderModel> getUserFederationProviders() {
-        if (isUpdated()) return updated.getUserFederationProviders();
-        return cached.getUserFederationProviders();
-    }
-
-    @Override
-    public void setUserFederationProviders(List<UserFederationProviderModel> providers) {
-        getDelegateForUpdate();
-        updated.setUserFederationProviders(providers);
-    }
-
-    @Override
-    public UserFederationProviderModel addUserFederationProvider(String providerName, Map<String, String> config, int priority, String displayName, int fullSyncPeriod, int changedSyncPeriod, int lastSync) {
-        getDelegateForUpdate();
-        return updated.addUserFederationProvider(providerName, config, priority, displayName, fullSyncPeriod, changedSyncPeriod, lastSync);
-    }
-
-    @Override
-    public void removeUserFederationProvider(UserFederationProviderModel provider) {
-        getDelegateForUpdate();
-        updated.removeUserFederationProvider(provider);
-
-    }
-
-    @Override
-    public void updateUserFederationProvider(UserFederationProviderModel provider) {
-        getDelegateForUpdate();
-        updated.updateUserFederationProvider(provider);
-
-    }
-
-    @Override
     public String getLoginTheme() {
         if (isUpdated()) return updated.getLoginTheme();
         return cached.getLoginTheme();
@@ -947,63 +913,6 @@ public class RealmAdapter implements CachedRealmModel {
         List<IdentityProviderMapperModel> models = cached.getIdentityProviderMappers().getList(alias);
         if (models == null) return null;
         for (IdentityProviderMapperModel model : models) {
-            if (model.getName().equals(name)) return model;
-        }
-        return null;
-    }
-
-    @Override
-    public Set<UserFederationMapperModel> getUserFederationMappers() {
-        if (isUpdated()) return updated.getUserFederationMappers();
-        return cached.getUserFederationMapperSet();
-    }
-
-    @Override
-    public Set<UserFederationMapperModel> getUserFederationMappersByFederationProvider(String federationProviderId) {
-        if (isUpdated()) return updated.getUserFederationMappersByFederationProvider(federationProviderId);
-        Set<UserFederationMapperModel> mappers = new HashSet<>();
-        List<UserFederationMapperModel> list = cached.getUserFederationMappers().getList(federationProviderId);
-        for (UserFederationMapperModel entity : list) {
-            mappers.add(entity);
-        }
-        return Collections.unmodifiableSet(mappers);
-    }
-
-    @Override
-    public UserFederationMapperModel addUserFederationMapper(UserFederationMapperModel mapper) {
-        getDelegateForUpdate();
-        return updated.addUserFederationMapper(mapper);
-    }
-
-    @Override
-    public void removeUserFederationMapper(UserFederationMapperModel mapper) {
-        getDelegateForUpdate();
-        updated.removeUserFederationMapper(mapper);
-    }
-
-    @Override
-    public void updateUserFederationMapper(UserFederationMapperModel mapper) {
-        getDelegateForUpdate();
-        updated.updateUserFederationMapper(mapper);
-    }
-
-    @Override
-    public UserFederationMapperModel getUserFederationMapperById(String id) {
-        if (isUpdated()) return updated.getUserFederationMapperById(id);
-        for (List<UserFederationMapperModel> models : cached.getUserFederationMappers().values()) {
-            for (UserFederationMapperModel model : models) {
-                if (model.getId().equals(id)) return model;
-            }
-        }
-        return null;
-    }
-
-    @Override
-    public UserFederationMapperModel getUserFederationMapperByName(String federationProviderId, String name) {
-        if (isUpdated()) return updated.getUserFederationMapperByName(federationProviderId, name);
-        List<UserFederationMapperModel> models = cached.getUserFederationMappers().getList(federationProviderId);
-        if (models == null) return null;
-        for (UserFederationMapperModel model : models) {
             if (model.getName().equals(name)) return model;
         }
         return null;
@@ -1333,7 +1242,7 @@ public class RealmAdapter implements CachedRealmModel {
         if (parentId != null && !parentId.equals(getId())) {
             ComponentModel parent = getComponent(parentId);
             if (parent != null && UserStorageProvider.class.getName().equals(parent.getProviderType())) {
-                session.getUserCache().evict(this);
+                session.userCache().evict(this);
             }
         }
     }

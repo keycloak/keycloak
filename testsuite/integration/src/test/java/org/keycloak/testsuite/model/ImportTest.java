@@ -36,10 +36,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserConsentModel;
-import org.keycloak.models.UserFederationMapperModel;
-import org.keycloak.models.UserFederationProvider;
-import org.keycloak.models.UserFederationProviderFactory;
-import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -48,9 +44,11 @@ import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
 import org.keycloak.protocol.oidc.mappers.UserSessionNoteMapper;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.RealmManager;
+import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.storage.ldap.mappers.FullNameLDAPStorageMapper;
 import org.keycloak.storage.ldap.mappers.FullNameLDAPStorageMapperFactory;
+import org.keycloak.testsuite.federation.DummyUserFederationProviderFactory;
 
 import java.util.List;
 import java.util.Map;
@@ -279,8 +277,6 @@ public class ImportTest extends AbstractModelTest {
         Assert.assertEquals("googleSecret", google.getConfig().get("clientSecret"));
 
         // Test federation providers
-        List<UserFederationProviderModel> fedProviders = realm.getUserFederationProviders();
-        Assert.assertTrue(fedProviders.size() == 0);
         List<UserStorageProviderModel> storageProviders = realm.getUserStorageProviders();
         Assert.assertTrue(storageProviders.size() == 2);
         UserStorageProviderModel ldap1 = storageProviders.get(0);
@@ -294,8 +290,6 @@ public class ImportTest extends AbstractModelTest {
         Assert.assertEquals("ldap://bar", ldap2.getConfig().getFirst(LDAPConstants.CONNECTION_URL));
 
         // Test federation mappers
-        Set<UserFederationMapperModel> userFedMappers1 = realm.getUserFederationMappers();
-        Assert.assertTrue(userFedMappers1.size() == 0);
         List<ComponentModel> fedMappers1 = realm.getComponents(ldap1.getId());
         ComponentModel fullNameMapper = fedMappers1.iterator().next();
         Assert.assertEquals("FullNameMapper", fullNameMapper.getName());
@@ -304,8 +298,8 @@ public class ImportTest extends AbstractModelTest {
         Assert.assertEquals("cn", fullNameMapper.getConfig().getFirst(FullNameLDAPStorageMapper.LDAP_FULL_NAME_ATTRIBUTE));
 
         // Assert that federation link wasn't created during import
-        UserFederationProviderFactory factory = (UserFederationProviderFactory)session.getKeycloakSessionFactory().getProviderFactory(UserFederationProvider.class, "dummy");
-        Assert.assertNull(factory.getInstance(session, null).getUserByUsername(realm, "wburke"));
+        DummyUserFederationProviderFactory factory = (DummyUserFederationProviderFactory)session.getKeycloakSessionFactory().getProviderFactory(UserStorageProvider.class, "dummy");
+        Assert.assertNull(factory.create(session, null).getUserByUsername("wburke", realm));
 
         // Test builtin authentication flows
         AuthenticationFlowModel clientFlow = realm.getClientAuthenticationFlow();

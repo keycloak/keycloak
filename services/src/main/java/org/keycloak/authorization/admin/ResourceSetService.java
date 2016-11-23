@@ -30,8 +30,8 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserFederationManager;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserProvider;
 import org.keycloak.representations.idm.authorization.ResourceOwnerRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.services.ErrorResponse;
@@ -93,7 +93,7 @@ public class ResourceSetService {
                 if (!resourceServer.getClientId().equals(ownerId)) {
                     RealmModel realm = authorization.getRealm();
                     KeycloakSession keycloakSession = authorization.getKeycloakSession();
-                    UserFederationManager users = keycloakSession.users();
+                    UserProvider users = keycloakSession.users();
                     UserModel ownerModel = users.getUserById(ownerId, realm);
 
                     if (ownerModel == null) {

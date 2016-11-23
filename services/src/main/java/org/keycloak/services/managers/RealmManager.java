@@ -31,7 +31,6 @@ import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.session.UserSessionPersisterProvider;
@@ -228,7 +227,6 @@ public class RealmManager implements RealmImporter {
     }
 
     public boolean removeRealm(RealmModel realm) {
-        List<UserFederationProviderModel> federationProviders = realm.getUserFederationProviders();
 
         ClientModel masterAdminClient = realm.getMasterAdminClient();
         boolean removed = model.removeRealm(realm.getId());
@@ -247,11 +245,13 @@ public class RealmManager implements RealmImporter {
                 sessionsPersister.onRealmRemoved(realm);
             }
 
-            // Remove all periodic syncs for configured federation providers
-            UsersSyncManager usersSyncManager = new UsersSyncManager();
-            for (final UserFederationProviderModel fedProvider : federationProviders) {
-                usersSyncManager.notifyToRefreshPeriodicSync(session, realm, fedProvider, true);
+          // Refresh periodic sync tasks for configured storageProviders
+            List<UserStorageProviderModel> storageProviders = realm.getUserStorageProviders();
+            UserStorageSyncManager storageSync = new UserStorageSyncManager();
+            for (UserStorageProviderModel provider : storageProviders) {
+                storageSync.notifyToRefreshPeriodicSync(session, realm, provider, true);
             }
+
         }
         return removed;
     }
@@ -486,13 +486,6 @@ public class RealmManager implements RealmImporter {
 
         setupAuthenticationFlows(realm);
         setupRequiredActions(realm);
-
-        // Refresh periodic sync tasks for configured federationProviders
-        List<UserFederationProviderModel> federationProviders = realm.getUserFederationProviders();
-        UsersSyncManager usersSyncManager = new UsersSyncManager();
-        for (final UserFederationProviderModel fedProvider : federationProviders) {
-            usersSyncManager.notifyToRefreshPeriodicSync(session, realm, fedProvider, false);
-        }
 
         // Refresh periodic sync tasks for configured storageProviders
         List<UserStorageProviderModel> storageProviders = realm.getUserStorageProviders();

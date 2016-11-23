@@ -22,11 +22,8 @@ import org.keycloak.broker.social.SocialIdentityProviderFactory;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.CertificateUtils;
 import org.keycloak.common.util.KeyUtils;
-import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.PemUtils;
-import org.keycloak.component.ComponentFactory;
 import org.keycloak.component.ComponentModel;
-import org.keycloak.keys.KeyProvider;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientModel;
@@ -38,19 +35,12 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.KeycloakSessionTask;
 import org.keycloak.models.KeycloakTransaction;
-import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.ScopeContainerModel;
 import org.keycloak.models.UserCredentialModel;
-import org.keycloak.models.UserFederationMapperModel;
-import org.keycloak.models.UserFederationProvider;
-import org.keycloak.models.UserFederationProviderFactory;
-import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.provider.Provider;
-import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.idm.CertificateRepresentation;
 import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.transaction.JtaTransactionManagerLookup;
@@ -61,20 +51,15 @@ import javax.transaction.SystemException;
 import javax.transaction.Transaction;
 import java.security.Key;
 import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import java.util.stream.StreamSupport;
 
 /**
  * Set of helper methods, which are useful in various model implementations.
@@ -259,51 +244,6 @@ public final class KeycloakModelUtils {
 
     // USER FEDERATION RELATED STUFF
 
-    /**
-     * Ensure that displayName of myProvider (if not null) is unique and there is no other provider with same displayName in the list.
-     *
-     * @param displayName         to check for duplications
-     * @param myProvider          provider, which is excluded from the list (if present)
-     * @param federationProviders
-     * @throws ModelDuplicateException if there is other provider with same displayName
-     */
-    public static void ensureUniqueDisplayName(String displayName, UserFederationProviderModel myProvider, List<UserFederationProviderModel> federationProviders) throws ModelDuplicateException {
-        if (displayName != null) {
-
-            for (UserFederationProviderModel federationProvider : federationProviders) {
-                if (myProvider != null && (myProvider.equals(federationProvider) || (myProvider.getId() != null && myProvider.getId().equals(federationProvider.getId())))) {
-                    continue;
-                }
-
-                if (displayName.equals(federationProvider.getDisplayName())) {
-                    throw new ModelDuplicateException("There is already existing federation provider with display name: " + displayName);
-                }
-            }
-        }
-    }
-
-
-    public static UserFederationProviderModel findUserFederationProviderByDisplayName(String displayName, RealmModel realm) {
-        if (displayName == null) {
-            return null;
-        }
-
-        for (UserFederationProviderModel fedProvider : realm.getUserFederationProviders()) {
-            if (displayName.equals(fedProvider.getDisplayName())) {
-                return fedProvider;
-            }
-        }
-        return null;
-    }
-
-    public static UserFederationProviderModel findUserFederationProviderById(String fedProviderId, RealmModel realm) {
-        for (UserFederationProviderModel fedProvider : realm.getUserFederationProviders()) {
-            if (fedProviderId.equals(fedProvider.getId())) {
-                return fedProvider;
-            }
-        }
-        return null;
-    }
 
     public static UserStorageProviderModel findUserStorageProviderByName(String displayName, RealmModel realm) {
         if (displayName == null) {
@@ -350,41 +290,6 @@ public final class KeycloakModelUtils {
         return mapperModel;
     }
 
-
-
-    public static UserFederationMapperModel createUserFederationMapperModel(String name, String federationProviderId, String mapperType, String... config) {
-        UserFederationMapperModel mapperModel = new UserFederationMapperModel();
-        mapperModel.setName(name);
-        mapperModel.setFederationProviderId(federationProviderId);
-        mapperModel.setFederationMapperType(mapperType);
-
-        Map<String, String> configMap = new HashMap<>();
-        String key = null;
-        for (String configEntry : config) {
-            if (key == null) {
-                key = configEntry;
-            } else {
-                configMap.put(key, configEntry);
-                key = null;
-            }
-        }
-        if (key != null) {
-            throw new IllegalStateException("Invalid count of arguments for config. Maybe mistake?");
-        }
-        mapperModel.setConfig(configMap);
-
-        return mapperModel;
-    }
-
-    public static UserFederationProviderFactory getFederationProviderFactory(KeycloakSession session, UserFederationProviderModel model) {
-        return (UserFederationProviderFactory)session.getKeycloakSessionFactory().getProviderFactory(UserFederationProvider.class, model.getProviderName());
-    }
-
-    public static UserFederationProvider getFederationProviderInstance(KeycloakSession session, UserFederationProviderModel model) {
-        UserFederationProviderFactory factory = getFederationProviderFactory(session, model);
-        return factory.getInstance(session, model);
-
-    }
 
     // END USER FEDERATION RELATED STUFF
 

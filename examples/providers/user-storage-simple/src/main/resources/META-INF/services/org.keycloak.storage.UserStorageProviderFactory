@@ -1,0 +1,2 @@
+org.keycloak.examples.federation.properties.ClasspathPropertiesStorageFactory
+org.keycloak.examples.federation.properties.FilePropertiesStorageFactory

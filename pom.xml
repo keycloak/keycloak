@@ -1296,7 +1296,7 @@
 
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>federation-properties-example</artifactId>
+                <artifactId>user-storage-properties-example</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

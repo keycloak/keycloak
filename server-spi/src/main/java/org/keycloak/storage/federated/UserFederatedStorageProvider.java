@@ -23,7 +23,6 @@ import org.keycloak.models.GroupModel;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.provider.Provider;
 
@@ -46,8 +45,6 @@ public interface UserFederatedStorageProvider extends Provider,
     int getStoredUsersCount(RealmModel realm);
 
     void preRemove(RealmModel realm);
-
-    void preRemove(RealmModel realm, UserFederationProviderModel link);
 
     void preRemove(RealmModel realm, GroupModel group);
 

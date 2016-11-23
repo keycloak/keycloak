@@ -17,15 +17,13 @@
 
 package org.keycloak.testsuite.util.cli;
 
+import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.services.managers.UsersSyncManager;
+import org.keycloak.services.managers.UserStorageSyncManager;
+import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.testsuite.federation.sync.SyncDummyUserFederationProviderFactory;
-
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -38,25 +36,33 @@ public class SyncDummyFederationProviderCommand extends AbstractCommand {
         int changedSyncPeriod = getIntArg(1);
 
         RealmModel realm = session.realms().getRealmByName("master");
-        UserFederationProviderModel fedProviderModel = KeycloakModelUtils.findUserFederationProviderByDisplayName("cluster-dummy", realm);
+        UserStorageProviderModel fedProviderModel = KeycloakModelUtils.findUserStorageProviderByName("cluster-dummy", realm);
         if (fedProviderModel == null) {
-            Map<String, String> cfg = new HashMap<>();
+            MultivaluedHashMap<String, String> cfg = fedProviderModel.getConfig();
             updateConfig(cfg, waitTime);
-            fedProviderModel = realm.addUserFederationProvider(SyncDummyUserFederationProviderFactory.SYNC_PROVIDER_ID, cfg, 1, "cluster-dummy", -1, changedSyncPeriod, -1);
+
+            UserStorageProviderModel model = new UserStorageProviderModel();
+            model.setProviderId(SyncDummyUserFederationProviderFactory.SYNC_PROVIDER_ID);
+            model.setPriority(1);
+            model.setName("cluster-dummy");
+            model.setFullSyncPeriod(-1);
+            model.setChangedSyncPeriod(changedSyncPeriod);
+            model.setLastSync(-1);
+            fedProviderModel = new UserStorageProviderModel(realm.addComponentModel(model));
         } else {
-            Map<String, String> cfg = fedProviderModel.getConfig();
+            MultivaluedHashMap<String, String> cfg = fedProviderModel.getConfig();
             updateConfig(cfg, waitTime);
             fedProviderModel.setChangedSyncPeriod(changedSyncPeriod);
-            realm.updateUserFederationProvider(fedProviderModel);
+            realm.updateComponent(fedProviderModel);
         }
 
-        new UsersSyncManager().notifyToRefreshPeriodicSync(session, realm, fedProviderModel, false);
+        new UserStorageSyncManager().notifyToRefreshPeriodicSync(session, realm, fedProviderModel, false);
 
         log.infof("User federation provider created and sync was started", waitTime);
     }
 
-    private void updateConfig(Map<String, String> cfg, int waitTime) {
-        cfg.put(SyncDummyUserFederationProviderFactory.WAIT_TIME, String.valueOf(waitTime));
+    private void updateConfig(MultivaluedHashMap<String, String> cfg, int waitTime) {
+        cfg.putSingle(SyncDummyUserFederationProviderFactory.WAIT_TIME, String.valueOf(waitTime));
     }
 
 

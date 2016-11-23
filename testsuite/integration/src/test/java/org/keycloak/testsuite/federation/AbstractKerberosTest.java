@@ -39,8 +39,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserFederationProvider;
-import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.mappers.UserSessionNoteMapper;
@@ -345,14 +343,14 @@ public abstract class AbstractKerberosTest {
             RealmManager manager = new RealmManager(session);
 
             RealmModel appRealm = manager.getRealm("test");
-            List<UserModel> users = session.userStorage().getUsers(appRealm, true);
+            List<UserModel> users = session.users().getUsers(appRealm, true);
             for (UserModel user : users) {
                 if (!user.getUsername().equals(AssertEvents.DEFAULT_USERNAME)) {
-                    session.userStorage().removeUser(appRealm, user);
+                    session.users().removeUser(appRealm, user);
                 }
             }
 
-            Assert.assertEquals(1, session.userStorage().getUsers(appRealm, true).size());
+            Assert.assertEquals(1, session.users().getUsers(appRealm, true).size());
         } finally {
             keycloakRule.stopSession(session, true);
         }

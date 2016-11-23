@@ -78,7 +78,7 @@ public class SecretQuestionCredentialProvider implements CredentialProvider, Cre
             creds.get(0).setValue(credInput.getValue());
             session.userCredentialManager().updateCredential(realm, user, creds.get(0));
         }
-        session.getUserCache().evict(realm, user);
+        session.userCache().evict(realm, user);
         return true;
     }
 
@@ -86,7 +86,7 @@ public class SecretQuestionCredentialProvider implements CredentialProvider, Cre
     public void disableCredentialType(RealmModel realm, UserModel user, String credentialType) {
         if (!SECRET_QUESTION.equals(credentialType)) return;
         session.userCredentialManager().disableCredentialType(realm, user, credentialType);
-        session.getUserCache().evict(realm, user);
+        session.userCache().evict(realm, user);
 
     }
 

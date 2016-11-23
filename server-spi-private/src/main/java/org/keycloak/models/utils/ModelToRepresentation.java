@@ -52,8 +52,6 @@ import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserCredentialModel;
-import org.keycloak.models.UserFederationMapperModel;
-import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.provider.ProviderConfigProperty;
@@ -78,8 +76,6 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserConsentRepresentation;
-import org.keycloak.representations.idm.UserFederationMapperRepresentation;
-import org.keycloak.representations.idm.UserFederationProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
@@ -352,8 +348,6 @@ public class ModelToRepresentation {
             }
         }
 
-        exportUserFederationProvidersAndMappers(realm, rep);
-
         for (IdentityProviderModel provider : realm.getIdentityProviders()) {
             rep.addIdentityProvider(toRepresentation(realm, provider));
         }
@@ -384,23 +378,7 @@ public class ModelToRepresentation {
         return rep;
     }
 
-    public static void exportUserFederationProvidersAndMappers(RealmModel realm, RealmRepresentation rep) {
-        List<UserFederationProviderModel> fedProviderModels = realm.getUserFederationProviders();
-        if (fedProviderModels.size() > 0) {
-            List<UserFederationProviderRepresentation> fedProviderReps = new ArrayList<UserFederationProviderRepresentation>();
-            for (UserFederationProviderModel model : fedProviderModels) {
-                UserFederationProviderRepresentation fedProvRep = toRepresentation(model);
-                fedProviderReps.add(fedProvRep);
-            }
-            rep.setUserFederationProviders(fedProviderReps);
-        }
-
-        for (UserFederationMapperModel mapper : realm.getUserFederationMappers()) {
-            rep.addUserFederationMapper(toRepresentation(realm, mapper));
-        }
-    }
-
-    public static void exportGroups(RealmModel realm, RealmRepresentation rep) {
+     public static void exportGroups(RealmModel realm, RealmRepresentation rep) {
         List<GroupRepresentation> groups = toGroupHierarchy(realm, true);
         rep.setGroups(groups);
     }
@@ -588,37 +566,6 @@ public class ModelToRepresentation {
         rep.setUseTemplateMappers(clientModel.useTemplateMappers());
         rep.setUseTemplateConfig(clientModel.useTemplateConfig());
         rep.setUseTemplateScope(clientModel.useTemplateScope());
-
-        return rep;
-    }
-
-    public static UserFederationProviderRepresentation toRepresentation(UserFederationProviderModel model) {
-        UserFederationProviderRepresentation rep = new UserFederationProviderRepresentation();
-        rep.setId(model.getId());
-        rep.setConfig(model.getConfig());
-        rep.setProviderName(model.getProviderName());
-        rep.setPriority(model.getPriority());
-        rep.setDisplayName(model.getDisplayName());
-        rep.setFullSyncPeriod(model.getFullSyncPeriod());
-        rep.setChangedSyncPeriod(model.getChangedSyncPeriod());
-        rep.setLastSync(model.getLastSync());
-        return rep;
-    }
-
-     public static UserFederationMapperRepresentation toRepresentation(RealmModel realm, UserFederationMapperModel model) {
-        UserFederationMapperRepresentation rep = new UserFederationMapperRepresentation();
-        rep.setId(model.getId());
-        rep.setName(model.getName());
-        rep.setFederationMapperType(model.getFederationMapperType());
-        Map<String, String> config = new HashMap<String, String>();
-        config.putAll(model.getConfig());
-        rep.setConfig(config);
-
-        UserFederationProviderModel fedProvider = KeycloakModelUtils.findUserFederationProviderById(model.getFederationProviderId(), realm);
-        if (fedProvider == null) {
-            throw new ModelException("Couldn't find federation provider with ID " + model.getId());
-        }
-        rep.setFederationProviderDisplayName(fedProvider.getDisplayName());
 
         return rep;
     }

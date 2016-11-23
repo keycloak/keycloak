@@ -17,13 +17,14 @@
 
 package org.keycloak.migration.migrators;
 
+import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.component.ComponentModel;
 import org.keycloak.migration.ModelVersion;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserFederationMapperModel;
-import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.storage.UserStorageProviderModel;
 
 import java.util.List;
 import java.util.Map;
@@ -39,22 +40,21 @@ public class MigrateTo1_8_0 implements Migration {
         return VERSION;
     }
 
+
     public void migrate(KeycloakSession session) {
         List<RealmModel> realms = session.realms().getRealms();
         for (RealmModel realm : realms) {
 
-            List<UserFederationProviderModel> federationProviders = realm.getUserFederationProviders();
-            for (UserFederationProviderModel fedProvider : federationProviders) {
+            List<UserStorageProviderModel> federationProviders = realm.getUserStorageProviders();
+            for (UserStorageProviderModel fedProvider : federationProviders) {
 
-                if (fedProvider.getProviderName().equals(LDAPConstants.LDAP_PROVIDER)) {
-                    Map<String, String> config = fedProvider.getConfig();
+                if (fedProvider.getProviderId().equals(LDAPConstants.LDAP_PROVIDER)) {
 
-                    if (isActiveDirectory(config)) {
-
+                    if (isActiveDirectory(fedProvider)) {
                         // Create mapper for MSAD account controls
-                        if (realm.getUserFederationMapperByName(fedProvider.getId(), "MSAD account controls") == null) {
-                            UserFederationMapperModel mapperModel = KeycloakModelUtils.createUserFederationMapperModel("MSAD account controls", fedProvider.getId(), LDAPConstants.MSAD_USER_ACCOUNT_CONTROL_MAPPER);
-                            realm.addUserFederationMapper(mapperModel);
+                        if (getMapperByName(realm, fedProvider, "MSAD account controls") == null) {
+                            ComponentModel mapperModel = KeycloakModelUtils.createComponentModel("MSAD account controls", fedProvider.getId(), LDAPConstants.MSAD_USER_ACCOUNT_CONTROL_MAPPER, "org.keycloak.storage.ldap.mappers.LDAPStorageMapper");
+                            realm.addComponentModel(mapperModel);
                         }
                     }
                 }
@@ -63,8 +63,19 @@ public class MigrateTo1_8_0 implements Migration {
         }
     }
 
-    private boolean isActiveDirectory(Map<String, String> ldapConfig) {
-        String vendor = ldapConfig.get(LDAPConstants.VENDOR);
+    public static ComponentModel getMapperByName(RealmModel realm, ComponentModel providerModel, String name) {
+        List<ComponentModel> components = realm.getComponents(providerModel.getId(), "org.keycloak.storage.ldap.mappers.LDAPStorageMapper");
+        for (ComponentModel component : components) {
+            if (component.getName().equals(name)) {
+                return component;
+            }
+        }
+        return null;
+    }
+
+
+    private boolean isActiveDirectory(UserStorageProviderModel provider) {
+        String vendor = provider.getConfig().getFirst(LDAPConstants.VENDOR);
         return vendor != null && vendor.equals(LDAPConstants.VENDOR_ACTIVE_DIRECTORY);
     }
 }

@@ -17,15 +17,16 @@
 
 package org.keycloak.migration.migrators;
 
+import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.component.ComponentFactory;
+import org.keycloak.component.ComponentModel;
 import org.keycloak.migration.ModelVersion;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserFederationEventAwareProviderFactory;
-import org.keycloak.models.UserFederationMapperModel;
-import org.keycloak.models.UserFederationProvider;
-import org.keycloak.models.UserFederationProviderFactory;
-import org.keycloak.models.UserFederationProviderModel;
+import org.keycloak.provider.ProviderFactory;
+import org.keycloak.storage.UserStorageProvider;
+import org.keycloak.storage.UserStorageProviderModel;
 
 import javax.naming.directory.SearchControls;
 import java.util.List;
@@ -37,7 +38,6 @@ import java.util.Set;
  * @version $Revision: 1 $
  */
 public class MigrateTo1_3_0 implements Migration {
-
     public static final ModelVersion VERSION = new ModelVersion("1.3.0");
 
     public ModelVersion getVersion() {
@@ -53,44 +53,45 @@ public class MigrateTo1_3_0 implements Migration {
     }
 
     private void migrateLDAPProviders(KeycloakSession session, RealmModel realm) {
-        List<UserFederationProviderModel> federationProviders = realm.getUserFederationProviders();
-        for (UserFederationProviderModel fedProvider : federationProviders) {
+        List<UserStorageProviderModel> federationProviders = realm.getUserStorageProviders();
+        for (UserStorageProviderModel fedProvider : federationProviders) {
 
-            if (fedProvider.getProviderName().equals(LDAPConstants.LDAP_PROVIDER)) {
-                Map<String, String> config = fedProvider.getConfig();
+            if (fedProvider.getProviderId().equals(LDAPConstants.LDAP_PROVIDER)) {
+                fedProvider = new UserStorageProviderModel(fedProvider);  // copy don't want to muck with cache
+                MultivaluedHashMap<String, String> config = fedProvider.getConfig();
 
-                // Update config properties for LDAP federated provider
+                // Update config properties for LDAP federation provider
                 if (config.get(LDAPConstants.SEARCH_SCOPE) == null) {
-                    config.put(LDAPConstants.SEARCH_SCOPE, String.valueOf(SearchControls.SUBTREE_SCOPE));
+                    config.putSingle(LDAPConstants.SEARCH_SCOPE, String.valueOf(SearchControls.SUBTREE_SCOPE));
                 }
 
-                String usersDn = config.remove("userDnSuffix");
-                if (usersDn != null && config.get(LDAPConstants.USERS_DN) == null) {
+                List<String> usersDn = config.remove("userDnSuffix");
+                if (usersDn != null && !usersDn.isEmpty() && config.getFirst(LDAPConstants.USERS_DN) == null) {
                     config.put(LDAPConstants.USERS_DN, usersDn);
                 }
 
-                String usernameLdapAttribute = config.get(LDAPConstants.USERNAME_LDAP_ATTRIBUTE);
-                if (usernameLdapAttribute != null && config.get(LDAPConstants.RDN_LDAP_ATTRIBUTE) == null) {
+                String usernameLdapAttribute = config.getFirst(LDAPConstants.USERNAME_LDAP_ATTRIBUTE);
+                if (usernameLdapAttribute != null && config.getFirst(LDAPConstants.RDN_LDAP_ATTRIBUTE) == null) {
                     if (usernameLdapAttribute.equalsIgnoreCase(LDAPConstants.SAM_ACCOUNT_NAME)) {
-                        config.put(LDAPConstants.RDN_LDAP_ATTRIBUTE, LDAPConstants.CN);
+                        config.putSingle(LDAPConstants.RDN_LDAP_ATTRIBUTE, LDAPConstants.CN);
                     } else {
-                        config.put(LDAPConstants.RDN_LDAP_ATTRIBUTE, usernameLdapAttribute);
+                        config.putSingle(LDAPConstants.RDN_LDAP_ATTRIBUTE, usernameLdapAttribute);
                     }
                 }
 
-                if (config.get(LDAPConstants.UUID_LDAP_ATTRIBUTE) == null) {
-                    String uuidAttrName = LDAPConstants.getUuidAttributeName(config.get(LDAPConstants.VENDOR));
-                    config.put(LDAPConstants.UUID_LDAP_ATTRIBUTE, uuidAttrName);
+                if (config.getFirst(LDAPConstants.UUID_LDAP_ATTRIBUTE) == null) {
+                    String uuidAttrName = LDAPConstants.getUuidAttributeName(config.getFirst(LDAPConstants.VENDOR));
+                    config.putSingle(LDAPConstants.UUID_LDAP_ATTRIBUTE, uuidAttrName);
                 }
 
-                realm.updateUserFederationProvider(fedProvider);
+                realm.updateComponent(fedProvider);
 
                 // Create default mappers for LDAP
-                Set<UserFederationMapperModel> mappers = realm.getUserFederationMappersByFederationProvider(fedProvider.getId());
+                List<ComponentModel> mappers = realm.getComponents(fedProvider.getId());
                 if (mappers.isEmpty()) {
-                    UserFederationProviderFactory ldapFactory = (UserFederationProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(UserFederationProvider.class, LDAPConstants.LDAP_PROVIDER);
+                    ProviderFactory ldapFactory = session.getKeycloakSessionFactory().getProviderFactory(UserStorageProvider.class, LDAPConstants.LDAP_PROVIDER);
                     if (ldapFactory != null) {
-                        ((UserFederationEventAwareProviderFactory) ldapFactory).onProviderModelCreated(realm, fedProvider);
+                        ((ComponentFactory) ldapFactory).onCreate(session, realm, fedProvider);
                     }
                 }
             }
