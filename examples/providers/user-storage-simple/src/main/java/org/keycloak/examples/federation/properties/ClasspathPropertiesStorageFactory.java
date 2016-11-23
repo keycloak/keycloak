@@ -18,22 +18,40 @@
 package org.keycloak.examples.federation.properties;
 
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.UserFederationProviderModel;
+import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.provider.ProviderConfigurationBuilder;
+import org.keycloak.storage.UserStorageProviderModel;
 
 import java.io.InputStream;
+import java.util.List;
 import java.util.Properties;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class ClasspathPropertiesFederationFactory extends BasePropertiesFederationFactory {
+public class ClasspathPropertiesStorageFactory extends BasePropertiesStorageFactory<ClasspathPropertiesStorageProvider> {
 
     public static final String PROVIDER_NAME = "classpath-properties";
+    protected static final List<ProviderConfigProperty> configProperties;
+
+    static {
+        configProperties = ProviderConfigurationBuilder.create()
+                .property().name("path")
+                .type(ProviderConfigProperty.STRING_TYPE)
+                .label("Classpath")
+                .helpText("Classpath of properties file")
+                .add().build();
+    }
 
     @Override
-    protected BasePropertiesFederationProvider createProvider(KeycloakSession session, UserFederationProviderModel model, Properties props) {
-        return new ClasspathPropertiesFederationProvider(session, model, props);
+    public List<ProviderConfigProperty> getConfigProperties() {
+        return configProperties;
+    }
+
+    @Override
+    protected BasePropertiesStorageProvider createProvider(KeycloakSession session, UserStorageProviderModel model, Properties props) {
+        return new ClasspathPropertiesStorageProvider(session, model, props);
     }
 
     protected InputStream getPropertiesFileStream(String path) {

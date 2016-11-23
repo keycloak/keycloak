@@ -18,73 +18,45 @@
 package org.keycloak.examples.federation.properties;
 
 import org.keycloak.credential.CredentialInput;
+import org.keycloak.credential.CredentialInputUpdater;
+import org.keycloak.credential.CredentialModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.storage.ReadOnlyException;
+import org.keycloak.storage.UserStorageProviderModel;
+import org.keycloak.storage.adapter.AbstractUserAdapter;
 
 import java.util.Collections;
 import java.util.Properties;
 import java.util.Set;
 
 /**
+ * Creates a read-only user.  Implements CredentialInputUpdater so that passwords cannot be updated
+ *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class ClasspathPropertiesFederationProvider extends BasePropertiesFederationProvider {
+public class ClasspathPropertiesStorageProvider extends BasePropertiesStorageProvider implements CredentialInputUpdater {
 
-    public ClasspathPropertiesFederationProvider(KeycloakSession session, UserFederationProviderModel model, Properties properties) {
+    public ClasspathPropertiesStorageProvider(KeycloakSession session, UserStorageProviderModel model, Properties properties) {
         super(session, model, properties);
     }
 
-    /**
-     * Keycloak will call this method if it finds an imported UserModel.  Here we proxy the UserModel with
-     * a Readonly proxy which will barf if password is updated.
-     *
-     * @param local
-     * @return
-     */
     @Override
-    public UserModel validateAndProxy(RealmModel realm, UserModel local) {
-        if (isValid(realm, local)) {
-            return new ReadonlyUserModelProxy(local);
-        } else {
-            return null;
-        }
-    }
-
-    /**
-     * The properties file is readonly so don't suppport registration.
-     *
-     * @return
-     */
-    @Override
-    public boolean synchronizeRegistrations() {
-        return false;
-    }
-
-    /**
-     * The properties file is readonly so don't suppport registration.
-     *
-     * @return
-     */
-    @Override
-    public UserModel register(RealmModel realm, UserModel user) {
-        throw new IllegalStateException("Registration not supported");
-    }
-
-    /**
-     * The properties file is readonly so don't removing a user
-     *
-     * @return
-     */
-    @Override
-    public boolean removeUser(RealmModel realm, UserModel user) {
-        throw new IllegalStateException("Remove not supported");
+    protected UserModel createAdapter(RealmModel realm, String username) {
+        return new AbstractUserAdapter(session, realm, model) {
+            @Override
+            public String getUsername() {
+                return username;
+            }
+        };
     }
 
     @Override
     public boolean updateCredential(RealmModel realm, UserModel user, CredentialInput input) {
+        if (input.getType().equals(CredentialModel.PASSWORD)) throw new ReadOnlyException("user is read only for this update");
+
         return false;
     }
 

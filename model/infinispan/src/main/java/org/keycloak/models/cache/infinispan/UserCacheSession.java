@@ -32,7 +32,6 @@ import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserConsentModel;
-import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
 import org.keycloak.models.cache.CachedUserModel;
@@ -53,9 +52,7 @@ import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
 
-import java.text.DateFormat;
 import java.util.Calendar;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -851,12 +848,6 @@ public class UserCacheSession implements UserCache {
         getDelegate().preRemove(realm, group);
     }
 
-
-    @Override
-    public void preRemove(RealmModel realm, UserFederationProviderModel link) {
-        addRealmInvalidation(realm.getId()); // easier to just invalidate whole realm
-        getDelegate().preRemove(realm, link);
-    }
 
     @Override
     public void preRemove(RealmModel realm, ClientModel client) {

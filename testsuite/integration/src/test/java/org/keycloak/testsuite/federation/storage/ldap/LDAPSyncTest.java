@@ -315,7 +315,7 @@ public class LDAPSyncTest {
             // Remove all users from model
             for (UserModel user : session.userLocalStorage().getUsers(testRealm, true)) {
                 System.out.println("trying to delete user: " + user.getUsername());
-                session.getUserCache().evict(testRealm, user);
+                session.userCache().evict(testRealm, user);
                 session.userLocalStorage().removeUser(testRealm, user);
             }
 

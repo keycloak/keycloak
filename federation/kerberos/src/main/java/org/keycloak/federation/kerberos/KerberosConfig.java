@@ -20,9 +20,6 @@ package org.keycloak.federation.kerberos;
 import org.keycloak.common.constants.KerberosConstants;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.LDAPConstants;
-import org.keycloak.models.UserFederationProvider;
-import org.keycloak.models.UserFederationProviderModel;
-import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProvider.EditMode;
 
 /**

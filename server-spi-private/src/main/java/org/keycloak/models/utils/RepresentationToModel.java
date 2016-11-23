@@ -62,8 +62,6 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.ScopeContainerModel;
 import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserCredentialModel;
-import org.keycloak.models.UserFederationMapperModel;
-import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.idm.ApplicationRepresentation;
@@ -113,7 +111,6 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -367,11 +364,9 @@ public class RepresentationToModel {
         mapperConvertSet.put(LDAPConstants.LDAP_PROVIDER, "org.keycloak.storage.ldap.mappers.LDAPStorageMapper");
 
 
-        List<UserFederationProviderModel> providerModels = null;
         Map<String, ComponentModel> userStorageModels = new HashMap<>();
 
         if (rep.getUserFederationProviders() != null) {
-            providerModels = new LinkedList<>();
             for (UserFederationProviderRepresentation fedRep : rep.getUserFederationProviders()) {
                 if (convertSet.contains(fedRep.getProviderName())) {
                     ComponentModel component = convertFedProviderToComponent(newRealm.getId(), fedRep);
@@ -869,22 +864,6 @@ public class RepresentationToModel {
     // Basic realm stuff
 
 
-    private static List<UserFederationProviderModel> convertFederationProviders(List<UserFederationProviderRepresentation> providers) {
-        List<UserFederationProviderModel> result = new ArrayList<UserFederationProviderModel>();
-
-        for (UserFederationProviderRepresentation representation : providers) {
-            UserFederationProviderModel model = convertFederationProvider(representation);
-            result.add(model);
-        }
-        return result;
-    }
-
-    private static UserFederationProviderModel convertFederationProvider(UserFederationProviderRepresentation representation) {
-        return new UserFederationProviderModel(representation.getId(), representation.getProviderName(),
-                        representation.getConfig(), representation.getPriority(), representation.getDisplayName(),
-                        representation.getFullSyncPeriod(), representation.getChangedSyncPeriod(), representation.getLastSync());
-    }
-
     public static ComponentModel convertFedProviderToComponent(String realmId, UserFederationProviderRepresentation fedModel) {
         UserStorageProviderModel model = new UserStorageProviderModel();
         model.setId(fedModel.getId());
@@ -1368,7 +1347,7 @@ public class RepresentationToModel {
         convertDeprecatedSocialProviders(userRep);
 
         // Import users just to user storage. Don't federate
-        UserModel user = session.userStorage().addUser(newRealm, userRep.getId(), userRep.getUsername(), false, false);
+        UserModel user = session.userLocalStorage().addUser(newRealm, userRep.getId(), userRep.getUsername(), false, false);
         user.setEnabled(userRep.isEnabled() != null && userRep.isEnabled());
         user.setCreatedTimestamp(userRep.getCreatedTimestamp());
         user.setEmail(userRep.getEmail());
@@ -1400,7 +1379,7 @@ public class RepresentationToModel {
         if (userRep.getClientConsents() != null) {
             for (UserConsentRepresentation consentRep : userRep.getClientConsents()) {
                 UserConsentModel consentModel = toModel(newRealm, consentRep);
-                session.userStorage().addConsent(newRealm, user.getId(), consentModel);
+                session.users().addConsent(newRealm, user.getId(), consentModel);
             }
         }
         if (userRep.getServiceAccountClientId() != null) {

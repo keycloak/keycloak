@@ -18,30 +18,48 @@
 package org.keycloak.examples.federation.properties;
 
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.UserFederationProviderModel;
+import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.provider.ProviderConfigurationBuilder;
+import org.keycloak.storage.UserStorageProviderModel;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
+import java.util.List;
 import java.util.Properties;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class FilePropertiesFederationFactory extends BasePropertiesFederationFactory {
+public class FilePropertiesStorageFactory extends BasePropertiesStorageFactory<FilePropertiesStorageProvider> {
 
     public static final String PROVIDER_NAME = "file-properties";
+    protected static final List<ProviderConfigProperty> configProperties;
+
+    static {
+        configProperties = ProviderConfigurationBuilder.create()
+                .property().name("path")
+                .type(ProviderConfigProperty.STRING_TYPE)
+                .label("Path")
+                .helpText("File path to properties file")
+                .add().build();
+    }
 
     @Override
-    protected BasePropertiesFederationProvider createProvider(KeycloakSession session, UserFederationProviderModel model, Properties props) {
-        return new FilePropertiesFederationProvider(session, props, model);
+    public List<ProviderConfigProperty> getConfigProperties() {
+        return configProperties;
+    }
+
+    @Override
+    protected BasePropertiesStorageProvider createProvider(KeycloakSession session, UserStorageProviderModel model, Properties props) {
+        return new FilePropertiesStorageProvider(session, props, model);
     }
     protected InputStream getPropertiesFileStream(String path) {
         try {
             return new FileInputStream(path);
         } catch (FileNotFoundException e) {
-            throw new RuntimeException(e);
+            return null;
         }
     }
 

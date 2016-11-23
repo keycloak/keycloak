@@ -22,8 +22,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.KeycloakSessionTask;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserFederationProviderModel;
-import org.keycloak.models.UserFederationSyncResult;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.provider.ProviderConfigProperty;
@@ -34,7 +32,6 @@ import org.keycloak.testsuite.federation.DummyUserFederationProviderFactory;
 
 import java.util.Date;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -93,13 +90,13 @@ public class SyncDummyUserFederationProviderFactory extends DummyUserFederationP
                 // KEYCLOAK-2412 : Just remove and add some users for testing purposes
                 for (int i = 0; i < 10; i++) {
                     String username = "dummyuser-" + i;
-                    UserModel user = session.userStorage().getUserByUsername(username, realm);
+                    UserModel user = session.userLocalStorage().getUserByUsername(username, realm);
 
                     if (user != null) {
-                        session.userStorage().removeUser(realm, user);
+                        session.userLocalStorage().removeUser(realm, user);
                     }
 
-                    user = session.userStorage().addUser(realm, username);
+                    user = session.userLocalStorage().addUser(realm, username);
                 }
 
                 logger.infof("Finished sync of changed users. Waiting now for %d seconds", waitTime);

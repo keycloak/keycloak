@@ -35,8 +35,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.UserFederationMapperModel;
-import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.cache.CachedRealmModel;
 import org.keycloak.models.cache.infinispan.entities.CachedRealm;
 import org.keycloak.storage.UserStorageProvider;
@@ -1244,7 +1242,7 @@ public class RealmAdapter implements CachedRealmModel {
         if (parentId != null && !parentId.equals(getId())) {
             ComponentModel parent = getComponent(parentId);
             if (parent != null && UserStorageProvider.class.getName().equals(parent.getProviderType())) {
-                session.getUserCache().evict(this);
+                session.userCache().evict(this);
             }
         }
     }

@@ -21,7 +21,6 @@ import org.jboss.logging.Logger;
 import org.keycloak.common.util.reflections.Types;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.CredentialValidationOutput;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
@@ -31,16 +30,12 @@ import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserConsentModel;
-import org.keycloak.models.UserCredentialModel;
-import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserManager;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
 import org.keycloak.models.cache.CachedUserModel;
 import org.keycloak.models.cache.OnUserCache;
 import org.keycloak.storage.federated.UserFederatedStorageProvider;
-import org.keycloak.credential.CredentialAuthentication;
-import org.keycloak.storage.user.ImportSynchronization;
 import org.keycloak.storage.user.ImportedUserValidation;
 import org.keycloak.storage.user.UserLookupProvider;
 import org.keycloak.storage.user.UserQueryProvider;
@@ -248,7 +243,7 @@ public class UserStorageManager implements UserProvider, OnUserCache {
         if (user == null || user.getFederationLink() == null) return user;
         UserStorageProvider provider = getStorageProvider(session, realm, user.getFederationLink());
         if (provider != null && provider instanceof ImportedUserValidation) {
-            UserModel validated = ((ImportedUserValidation)provider).validate(realm, user);
+            UserModel validated = ((ImportedUserValidation) provider).validate(realm, user);
             if (validated == null) {
                 deleteInvalidUser(realm, user);
                 return null;
@@ -256,6 +251,11 @@ public class UserStorageManager implements UserProvider, OnUserCache {
                 return validated;
             }
 
+        } else if (provider == null) {
+            // remove linked user with unknown storage provider.
+            logger.debugf("Removed user with federation link of unknown storage provider '%s'", user.getUsername());
+            deleteInvalidUser(realm, user);
+            return null;
         } else {
             return user;
         }
@@ -265,7 +265,7 @@ public class UserStorageManager implements UserProvider, OnUserCache {
     protected void deleteInvalidUser(final RealmModel realm, final UserModel user) {
         String userId = user.getId();
         String userName = user.getUsername();
-        session.getUserCache().evict(realm, user);
+        session.userCache().evict(realm, user);
         runJobInTransaction(session.getKeycloakSessionFactory(), new KeycloakSessionTask() {
 
             @Override
@@ -321,11 +321,13 @@ public class UserStorageManager implements UserProvider, OnUserCache {
     @Override
     public UserModel getUserByEmail(String email, RealmModel realm) {
         UserModel user = localStorage().getUserByEmail(email, realm);
-        if (user != null) return user;
+        if (user != null) {
+            return importValidation(realm, user);
+        }
         for (UserLookupProvider provider : getStorageProviders(session, realm, UserLookupProvider.class)) {
             user = provider.getUserByEmail(email, realm);
             if (user != null) {
-                return importValidation(realm, user);
+                return user;
             }
         }
         return null;
@@ -560,12 +562,6 @@ public class UserStorageManager implements UserProvider, OnUserCache {
                 provider.preRemove(realm);
             }
         }
-    }
-
-    @Override
-    public void preRemove(RealmModel realm, UserFederationProviderModel model) {
-        if (getFederatedStorage() != null) getFederatedStorage().preRemove(realm, model);
-        localStorage().preRemove(realm, model);
     }
 
     @Override

@@ -31,7 +31,6 @@ import org.keycloak.models.GroupModel;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.OTPPolicy;
 import org.keycloak.models.PasswordPolicy;
@@ -39,9 +38,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.UserFederationMapperModel;
-import org.keycloak.models.UserFederationProviderCreationEventImpl;
-import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.jpa.entities.AuthenticationExecutionEntity;
 import org.keycloak.models.jpa.entities.AuthenticationFlowEntity;
 import org.keycloak.models.jpa.entities.AuthenticatorConfigEntity;
@@ -58,8 +54,6 @@ import org.keycloak.models.jpa.entities.RealmEntity;
 import org.keycloak.models.jpa.entities.RequiredActionProviderEntity;
 import org.keycloak.models.jpa.entities.RequiredCredentialEntity;
 import org.keycloak.models.jpa.entities.RoleEntity;
-import org.keycloak.models.jpa.entities.UserFederationMapperEntity;
-import org.keycloak.models.jpa.entities.UserFederationProviderEntity;
 import org.keycloak.models.utils.ComponentUtil;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
@@ -68,7 +62,6 @@ import javax.persistence.TypedQuery;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -1212,18 +1205,6 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
         if (entity.getConfig() != null) config.putAll(entity.getConfig());
         mapping.setConfig(config);
         return mapping;
-    }
-
-    protected UserFederationMapperModel entityToModel(UserFederationMapperEntity entity) {
-        UserFederationMapperModel mapper = new UserFederationMapperModel();
-        mapper.setId(entity.getId());
-        mapper.setName(entity.getName());
-        mapper.setFederationProviderId(entity.getFederationProvider().getId());
-        mapper.setFederationMapperType(entity.getFederationMapperType());
-        Map<String, String> config = new HashMap<String, String>();
-        if (entity.getConfig() != null) config.putAll(entity.getConfig());
-        mapper.setConfig(config);
-        return mapper;
     }
 
     @Override

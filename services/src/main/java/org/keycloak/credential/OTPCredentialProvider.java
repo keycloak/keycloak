@@ -102,7 +102,7 @@ public class OTPCredentialProvider implements CredentialProvider, CredentialInpu
         } else {
             getCredentialStore().updateCredential(realm, user, model);
         }
-        session.getUserCache().evict(realm, user);
+        session.userCache().evict(realm, user);
         return true;
 
 
@@ -138,7 +138,7 @@ public class OTPCredentialProvider implements CredentialProvider, CredentialInpu
 
         }
         if (disableTOTP || disableHOTP) {
-            session.getUserCache().evict(realm, user);
+            session.userCache().evict(realm, user);
         }
     }
 

@@ -14,36 +14,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package org.keycloak.models;
-
-import org.keycloak.provider.Provider;
-import org.keycloak.provider.ProviderFactory;
-import org.keycloak.provider.Spi;
+package org.keycloak.storage;
 
 /**
- * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
+ * Thrown when UserStorageProvider UserModel adapter is read-only
+ *
+ * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
+ * @version $Revision: 1 $
  */
-public class UserFederationSpi implements Spi {
-
-    @Override
-    public boolean isInternal() {
-        return true;
+public class ReadOnlyException extends RuntimeException {
+    public ReadOnlyException(String message) {
+        super(message);
     }
-
-    @Override
-    public String getName() {
-        return "userFederation";
-    }
-
-    @Override
-    public Class<? extends Provider> getProviderClass() {
-        return UserFederationProvider.class;
-    }
-
-    @Override
-    public Class<? extends ProviderFactory> getProviderFactoryClass() {
-        return UserFederationProviderFactory.class;
-    }
-
 }

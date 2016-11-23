@@ -67,8 +67,6 @@ public interface UserProvider extends Provider,
     UserModel addUser(RealmModel realm, String id, String username, boolean addDefaultRoles, boolean addDefaultRequiredActions);
     void preRemove(RealmModel realm);
 
-    void preRemove(RealmModel realm, UserFederationProviderModel link);
-
     void preRemove(RealmModel realm, RoleModel role);
     void preRemove(RealmModel realm, GroupModel group);
 

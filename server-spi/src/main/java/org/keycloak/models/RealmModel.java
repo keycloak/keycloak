@@ -67,11 +67,6 @@ public interface RealmModel extends RoleContainerModel {
         KeycloakSession getKeycloakSession();
     }
 
-    interface UserFederationProviderCreationEvent extends ProviderEvent {
-        UserFederationProviderModel getCreatedFederationProvider();
-        RealmModel getRealm();
-    }
-
     String getId();
 
     String getName();

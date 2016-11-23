@@ -52,8 +52,6 @@ import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserCredentialModel;
-import org.keycloak.models.UserFederationMapperModel;
-import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.provider.ProviderConfigProperty;
@@ -78,8 +76,6 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserConsentRepresentation;
-import org.keycloak.representations.idm.UserFederationMapperRepresentation;
-import org.keycloak.representations.idm.UserFederationProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
@@ -571,19 +567,6 @@ public class ModelToRepresentation {
         rep.setUseTemplateConfig(clientModel.useTemplateConfig());
         rep.setUseTemplateScope(clientModel.useTemplateScope());
 
-        return rep;
-    }
-
-    public static UserFederationProviderRepresentation toRepresentation(UserFederationProviderModel model) {
-        UserFederationProviderRepresentation rep = new UserFederationProviderRepresentation();
-        rep.setId(model.getId());
-        rep.setConfig(model.getConfig());
-        rep.setProviderName(model.getProviderName());
-        rep.setPriority(model.getPriority());
-        rep.setDisplayName(model.getDisplayName());
-        rep.setFullSyncPeriod(model.getFullSyncPeriod());
-        rep.setChangedSyncPeriod(model.getChangedSyncPeriod());
-        rep.setLastSync(model.getLastSync());
         return rep;
     }
 

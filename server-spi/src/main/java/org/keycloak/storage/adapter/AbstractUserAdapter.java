@@ -27,6 +27,7 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.DefaultRoles;
 import org.keycloak.models.utils.RoleUtils;
+import org.keycloak.storage.ReadOnlyException;
 import org.keycloak.storage.StorageId;
 
 import java.util.Collections;
@@ -49,11 +50,6 @@ import java.util.Set;
  * @version $Revision: 1 $
  */
 public abstract class AbstractUserAdapter implements UserModel {
-    public static class ReadOnlyException extends RuntimeException {
-        public ReadOnlyException(String message) {
-            super(message);
-        }
-    }
     protected KeycloakSession session;
     protected RealmModel realm;
     protected ComponentModel storageProviderModel;
