@@ -360,7 +360,7 @@ public class LDAPSyncTest {
             UserStorageProviderModel providerModel = KeycloakModelUtils.findUserStorageProviderByName(ldapModel.getName(), testRealm);
             providerModel.getConfig().putSingle(LDAPConstants.USERNAME_LDAP_ATTRIBUTE, origUsernameAttrName);
             testRealm.updateComponent(providerModel);
-            ComponentModel streetMapper = LDAPTestUtils.getComponentByName(testRealm, providerModel, "streetMapper");
+            ComponentModel streetMapper = LDAPTestUtils.getSubcomponentByName(testRealm, providerModel, "streetMapper");
             testRealm.removeComponent(streetMapper);
         } finally {
             keycloakRule.stopSession(session, true);

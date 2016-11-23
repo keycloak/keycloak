@@ -125,7 +125,7 @@ public class LDAPGroupMapperSyncTest {
         KeycloakSession session = keycloakRule.startSession();
         try {
             RealmModel realm = session.realms().getRealmByName("test");
-            ComponentModel mapperModel = LDAPTestUtils.getComponentByName(realm,ldapModel, "groupsMapper");
+            ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(realm,ldapModel, "groupsMapper");
             LDAPStorageProvider ldapProvider = LDAPTestUtils.getLdapProvider(session, ldapModel);
             GroupLDAPStorageMapper groupMapper = LDAPTestUtils.getGroupMapper(mapperModel, ldapProvider, realm);
 
@@ -171,7 +171,7 @@ public class LDAPGroupMapperSyncTest {
         KeycloakSession session = keycloakRule.startSession();
         try {
             RealmModel realm = session.realms().getRealmByName("test");
-            ComponentModel mapperModel = LDAPTestUtils.getComponentByName(realm,ldapModel, "groupsMapper");
+            ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(realm,ldapModel, "groupsMapper");
             LDAPStorageProvider ldapProvider = LDAPTestUtils.getLdapProvider(session, ldapModel);
             GroupLDAPStorageMapper groupMapper = LDAPTestUtils.getGroupMapper(mapperModel, ldapProvider, realm);
 
@@ -220,7 +220,7 @@ public class LDAPGroupMapperSyncTest {
         KeycloakSession session = keycloakRule.startSession();
         try {
             RealmModel realm = session.realms().getRealmByName("test");
-            ComponentModel mapperModel = LDAPTestUtils.getComponentByName(realm,ldapModel, "groupsMapper");
+            ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(realm,ldapModel, "groupsMapper");
             LDAPStorageProvider ldapProvider = LDAPTestUtils.getLdapProvider(session, ldapModel);
 
             // Sync groups with inheritance
@@ -275,7 +275,7 @@ public class LDAPGroupMapperSyncTest {
         KeycloakSession session = keycloakRule.startSession();
         try {
             RealmModel realm = session.realms().getRealmByName("test");
-            ComponentModel mapperModel = LDAPTestUtils.getComponentByName(realm,ldapModel, "groupsMapper");
+            ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(realm,ldapModel, "groupsMapper");
             LDAPStorageProvider ldapProvider = LDAPTestUtils.getLdapProvider(session, ldapModel);
             GroupLDAPStorageMapper groupMapper = LDAPTestUtils.getGroupMapper(mapperModel, ldapProvider, realm);
 
