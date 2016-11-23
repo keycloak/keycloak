@@ -1,10 +1,18 @@
 package org.keycloak.testsuite.broker;
 
+import org.keycloak.protocol.ProtocolMapperUtils;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
+import org.keycloak.protocol.oidc.mappers.UserAttributeMapper;
+import org.keycloak.protocol.oidc.mappers.UserPropertyMapper;
+import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.arquillian.SuiteContext;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -51,6 +59,37 @@ public class KcOidcBrokerConfiguration implements BrokerConfiguration {
 
         client.setAdminUrl(getAuthRoot(suiteContext) +
                 "/auth/realms/" + REALM_CONS_NAME + "/broker/" + IDP_OIDC_ALIAS + "/endpoint");
+
+        ProtocolMapperRepresentation emailMapper = new ProtocolMapperRepresentation();
+        emailMapper.setName("email");
+        emailMapper.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+        emailMapper.setProtocolMapper(UserPropertyMapper.PROVIDER_ID);
+        emailMapper.setConsentRequired(false);
+
+        Map<String, String> emailMapperConfig = emailMapper.getConfig();
+        emailMapperConfig.put(ProtocolMapperUtils.USER_ATTRIBUTE, "email");
+        emailMapperConfig.put(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME, "email");
+        emailMapperConfig.put(OIDCAttributeMapperHelper.JSON_TYPE, ProviderConfigProperty.STRING_TYPE);
+        emailMapperConfig.put(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true");
+        emailMapperConfig.put(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "true");
+        emailMapperConfig.put(OIDCAttributeMapperHelper.INCLUDE_IN_USERINFO, "true");
+
+        ProtocolMapperRepresentation userAttrMapper = new ProtocolMapperRepresentation();
+        userAttrMapper.setName("attribute - name");
+        userAttrMapper.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+        userAttrMapper.setProtocolMapper(UserAttributeMapper.PROVIDER_ID);
+        userAttrMapper.setConsentRequired(false);
+
+        Map<String, String> userAttrMapperConfig = userAttrMapper.getConfig();
+        userAttrMapperConfig.put(ProtocolMapperUtils.USER_ATTRIBUTE, AbstractUserAttributeMapperTest.ATTRIBUTE_TO_MAP_NAME);
+        userAttrMapperConfig.put(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME, AbstractUserAttributeMapperTest.ATTRIBUTE_TO_MAP_NAME);
+        userAttrMapperConfig.put(OIDCAttributeMapperHelper.JSON_TYPE, ProviderConfigProperty.STRING_TYPE);
+        userAttrMapperConfig.put(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true");
+        userAttrMapperConfig.put(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "true");
+        userAttrMapperConfig.put(OIDCAttributeMapperHelper.INCLUDE_IN_USERINFO, "true");
+//        userAttrMapperConfig.put(ProtocolMapperUtils.MULTIVALUED, "true");
+
+        client.setProtocolMappers(Arrays.asList(emailMapper, userAttrMapper));
 
         return Collections.singletonList(client);
     }
