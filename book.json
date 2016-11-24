@@ -29,6 +29,7 @@
     "installguide": {
       "name": "Server Installation and Configuration Guide",
       "link": "https://keycloak.gitbooks.io/server-installation-and-configuration/content/"
-    }
+    },
+    "fuseVersion": "JBoss Fuse 6.3.0 Rollup 1"
   }
 }

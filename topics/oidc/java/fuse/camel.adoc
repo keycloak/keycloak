@@ -97,7 +97,7 @@ org.osgi.service.event,
 
 Camel RestDSL is a Camel feature to define your REST endpoints in a fluent way.
 But under the hood, the capability to provide all this magic, is still demanded to specific implementation classes and
-you have to instruct them on how to integrate with Keycloak.
+you have to instruct them on how to integrate with {{book.project.name}}.
 
 The way to configure the integration mechanism depends on the Camel component that you configure your RestDSL defined routes to work with.
 
