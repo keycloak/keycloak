@@ -5,12 +5,18 @@
  */
 package org.keycloak.testsuite.broker;
 
+import org.keycloak.protocol.ProtocolMapperUtils;
+import org.keycloak.protocol.saml.SamlProtocol;
+import org.keycloak.protocol.saml.mappers.AttributeStatementHelper;
+import org.keycloak.protocol.saml.mappers.UserAttributeStatementMapper;
+import org.keycloak.protocol.saml.mappers.UserPropertyAttributeStatementMapper;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.arquillian.SuiteContext;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -71,21 +77,43 @@ public class KcSamlBrokerConfiguration implements BrokerConfiguration {
 
         client.setAttributes(attributes);
 
-        ProtocolMapperRepresentation mapper = new ProtocolMapperRepresentation();
-        mapper.setName("email");
-        mapper.setProtocol("saml");
-        mapper.setProtocolMapper("saml-user-property-mapper");
-        mapper.setConsentRequired(false);
+        ProtocolMapperRepresentation emailMapper = new ProtocolMapperRepresentation();
+        emailMapper.setName("email");
+        emailMapper.setProtocol(SamlProtocol.LOGIN_PROTOCOL);
+        emailMapper.setProtocolMapper(UserPropertyAttributeStatementMapper.PROVIDER_ID);
+        emailMapper.setConsentRequired(false);
 
-        Map<String, String> mapperConfig = mapper.getConfig();
-        mapperConfig.put("user.attribute", "email");
-        mapperConfig.put("attribute.name", "urn:oid:1.2.840.113549.1.9.1");
-        mapperConfig.put("attribute.nameformat", "urn:oasis:names:tc:SAML:2.0:attrname-format:uri");
-        mapperConfig.put("friendly.name", "email");
+        Map<String, String> emailMapperConfig = emailMapper.getConfig();
+        emailMapperConfig.put(ProtocolMapperUtils.USER_ATTRIBUTE, "email");
+        emailMapperConfig.put(AttributeStatementHelper.SAML_ATTRIBUTE_NAME, "urn:oid:1.2.840.113549.1.9.1");
+        emailMapperConfig.put(AttributeStatementHelper.SAML_ATTRIBUTE_NAMEFORMAT, "urn:oasis:names:tc:SAML:2.0:attrname-format:uri");
+        emailMapperConfig.put(AttributeStatementHelper.FRIENDLY_NAME, "email");
 
-        client.setProtocolMappers(Collections.singletonList(
-                mapper
-        ));
+        ProtocolMapperRepresentation userAttrMapper = new ProtocolMapperRepresentation();
+        userAttrMapper.setName("attribute - name");
+        userAttrMapper.setProtocol(SamlProtocol.LOGIN_PROTOCOL);
+        userAttrMapper.setProtocolMapper(UserAttributeStatementMapper.PROVIDER_ID);
+        userAttrMapper.setConsentRequired(false);
+
+        Map<String, String> userAttrMapperConfig = userAttrMapper.getConfig();
+        userAttrMapperConfig.put(ProtocolMapperUtils.USER_ATTRIBUTE, AbstractUserAttributeMapperTest.ATTRIBUTE_TO_MAP_NAME);
+        userAttrMapperConfig.put(AttributeStatementHelper.SAML_ATTRIBUTE_NAME, AbstractUserAttributeMapperTest.ATTRIBUTE_TO_MAP_NAME);
+        userAttrMapperConfig.put(AttributeStatementHelper.SAML_ATTRIBUTE_NAMEFORMAT, AttributeStatementHelper.BASIC);
+        userAttrMapperConfig.put(AttributeStatementHelper.FRIENDLY_NAME, "");
+
+        ProtocolMapperRepresentation userFriendlyAttrMapper = new ProtocolMapperRepresentation();
+        userFriendlyAttrMapper.setName("attribute - friendly name");
+        userFriendlyAttrMapper.setProtocol(SamlProtocol.LOGIN_PROTOCOL);
+        userFriendlyAttrMapper.setProtocolMapper(UserAttributeStatementMapper.PROVIDER_ID);
+        userFriendlyAttrMapper.setConsentRequired(false);
+
+        Map<String, String> userFriendlyAttrMapperConfig = userFriendlyAttrMapper.getConfig();
+        userFriendlyAttrMapperConfig.put(ProtocolMapperUtils.USER_ATTRIBUTE, AbstractUserAttributeMapperTest.ATTRIBUTE_TO_MAP_FRIENDLY_NAME);
+        userFriendlyAttrMapperConfig.put(AttributeStatementHelper.SAML_ATTRIBUTE_NAME, "");
+        userFriendlyAttrMapperConfig.put(AttributeStatementHelper.SAML_ATTRIBUTE_NAMEFORMAT, AttributeStatementHelper.BASIC);
+        userFriendlyAttrMapperConfig.put(AttributeStatementHelper.FRIENDLY_NAME, AbstractUserAttributeMapperTest.ATTRIBUTE_TO_MAP_FRIENDLY_NAME);
+
+        client.setProtocolMappers(Arrays.asList(emailMapper, userAttrMapper, userFriendlyAttrMapper));
 
         return Collections.singletonList(client);
     }

@@ -1,0 +1,341 @@
+package org.keycloak.testsuite.broker;
+
+import org.keycloak.admin.client.resource.IdentityProviderResource;
+import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.admin.client.resource.UsersResource;
+import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
+import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testsuite.AbstractKeycloakTest;
+import org.keycloak.testsuite.Assert;
+import org.keycloak.testsuite.Retry;
+import org.keycloak.testsuite.pages.AccountPasswordPage;
+import org.keycloak.testsuite.pages.ErrorPage;
+import org.keycloak.testsuite.pages.IdpConfirmLinkPage;
+import org.keycloak.testsuite.pages.LoginPage;
+import org.keycloak.testsuite.pages.UpdateAccountInformationPage;
+import org.keycloak.testsuite.util.UserBuilder;
+
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+import javax.ws.rs.core.Response;
+import org.jboss.arquillian.graphene.page.Page;
+import org.junit.Before;
+import org.junit.Ignore;
+import org.junit.Test;
+import org.openqa.selenium.TimeoutException;
+
+import static org.junit.Assert.*;
+import static org.hamcrest.Matchers.*;
+import static org.keycloak.testsuite.admin.ApiUtil.*;
+import static org.keycloak.testsuite.broker.BrokerTestTools.encodeUrl;
+import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
+
+/**
+ *
+ * @author hmlnarik
+ */
+public abstract class AbstractUserAttributeMapperTest extends AbstractKeycloakTest {
+
+    protected static final String MAPPED_ATTRIBUTE_NAME = "mapped-user-attribute";
+    protected static final String MAPPED_ATTRIBUTE_FRIENDLY_NAME = "mapped-user-attribute-friendly";
+    protected static final String ATTRIBUTE_TO_MAP_NAME = "user-attribute";
+    protected static final String ATTRIBUTE_TO_MAP_FRIENDLY_NAME = "user-attribute-friendly";
+
+    private static final Set<String> PROTECTED_NAMES = ImmutableSet.<String>builder().add("email").add("lastName").add("firstName").build();
+    private static final Map<String, String> ATTRIBUTE_NAME_TRANSLATION = ImmutableMap.<String, String>builder()
+      .put(ATTRIBUTE_TO_MAP_FRIENDLY_NAME, MAPPED_ATTRIBUTE_FRIENDLY_NAME)
+      .put(ATTRIBUTE_TO_MAP_NAME, MAPPED_ATTRIBUTE_NAME)
+      .build();
+
+    @Page
+    protected LoginPage accountLoginPage;
+
+    @Page
+    protected UpdateAccountInformationPage updateAccountInformationPage;
+
+    @Page
+    protected AccountPasswordPage accountPasswordPage;
+
+    @Page
+    protected ErrorPage errorPage;
+
+    @Page
+    protected IdpConfirmLinkPage idpConfirmLinkPage;
+
+    protected BrokerConfiguration bc = getBrokerConfiguration();
+
+    protected String userId;
+
+    /**
+     * Returns a broker configuration. Return value should not change between calls.
+     * @return
+     */
+    protected abstract BrokerConfiguration getBrokerConfiguration();
+
+    protected abstract Iterable<IdentityProviderMapperRepresentation> createIdentityProviderMappers();
+
+    @Override
+    public void addTestRealms(List<RealmRepresentation> testRealms) {
+        RealmRepresentation providerRealm = bc.createProviderRealm();
+        RealmRepresentation consumerRealm = bc.createConsumerRealm();
+
+        testRealms.add(providerRealm);
+        testRealms.add(consumerRealm);
+    }
+
+    @Before
+    public void addIdentityProviderToConsumerRealm() {
+        log.debug("adding identity provider to realm " + bc.consumerRealmName());
+
+        RealmResource realm = adminClient.realm(bc.consumerRealmName());
+        final IdentityProviderRepresentation idp = bc.setUpIdentityProvider(suiteContext);
+        realm.identityProviders().create(idp);
+
+        IdentityProviderResource idpResource = realm.identityProviders().get(idp.getAlias());
+        for (IdentityProviderMapperRepresentation mapper : createIdentityProviderMappers()) {
+            mapper.setIdentityProviderAlias(bc.getIDPAlias());
+            Response resp = idpResource.addMapper(mapper);
+            resp.close();
+        }
+    }
+
+    @Before
+    public void addClients() {
+        List<ClientRepresentation> clients = bc.createProviderClients(suiteContext);
+        if (clients != null) {
+            RealmResource providerRealm = adminClient.realm(bc.providerRealmName());
+            for (ClientRepresentation client : clients) {
+                log.debug("adding client " + client.getName() + " to realm " + bc.providerRealmName());
+
+                providerRealm.clients().create(client);
+            }
+        }
+
+        clients = bc.createConsumerClients(suiteContext);
+        if (clients != null) {
+            RealmResource consumerRealm = adminClient.realm(bc.consumerRealmName());
+            for (ClientRepresentation client : clients) {
+                log.debug("adding client " + client.getName() + " to realm " + bc.consumerRealmName());
+
+                consumerRealm.clients().create(client);
+            }
+        }
+    }
+
+    protected void createUserInProviderRealm(Map<String, List<String>> attributes) {
+        log.debug("creating user in realm " + bc.providerRealmName());
+
+        UserRepresentation user = UserBuilder.create()
+          .username(bc.getUserLogin())
+          .email(bc.getUserEmail())
+          .build();
+        user.setEmailVerified(true);
+        user.setAttributes(attributes);
+        this.userId = createUserAndResetPasswordWithAdminClient(adminClient.realm(bc.providerRealmName()), user, bc.getUserPassword());
+    }
+
+    private void logInAsUserInIDP() {
+        driver.navigate().to(getAccountUrl(bc.consumerRealmName()));
+
+        log.debug("Clicking social " + bc.getIDPAlias());
+        accountLoginPage.clickSocial(bc.getIDPAlias());
+
+        waitForPage(driver, "log in to");
+
+        Assert.assertTrue("Driver should be on the provider realm page right now",
+          driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));
+
+        log.debug("Logging in");
+        accountLoginPage.login(bc.getUserLogin(), bc.getUserPassword());
+    }
+
+    /** Logs in the IDP and updates account information */
+    private void logInAsUserInIDPForFirstTime() {
+        logInAsUserInIDP();
+
+        waitForPage(driver, "update account information");
+
+        Assert.assertTrue(updateAccountInformationPage.isCurrent());
+        Assert.assertTrue("We must be on correct realm right now",
+                driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"));
+
+        log.debug("Updating info on updateAccount page");
+        updateAccountInformationPage.updateAccountInformation(bc.getUserLogin(), bc.getUserEmail(), "Firstname", "Lastname");
+    }
+
+    private String getAccountUrl(String realmName) {
+        return BrokerTestTools.getAuthRoot(suiteContext) + "/auth/realms/" + realmName + "/account";
+    }
+
+    private void logoutFromRealm(String realm) {
+        driver.navigate().to(BrokerTestTools.getAuthRoot(suiteContext)
+          + "/auth/realms/" + realm
+          + "/protocol/" + "openid-connect"
+          + "/logout?redirect_uri=" + encodeUrl(getAccountUrl(realm)));
+
+        try {
+            Retry.execute(() -> {
+                try {
+                    waitForPage(driver, "log in to " + realm);
+                } catch (TimeoutException ex) {
+                    driver.navigate().refresh();
+                    log.debug("[Retriable] Timed out waiting for login page");
+                    throw ex;
+                }
+            }, 10, 100);
+        } catch (TimeoutException e) {
+            log.debug(driver.getTitle());
+            log.debug(driver.getPageSource());
+            Assert.fail("Timeout while waiting for login page");
+        }
+    }
+
+    private UserRepresentation findUser(String realm, String userName, String email) {
+        UsersResource consumerUsers = adminClient.realm(realm).users();
+
+        int userCount = consumerUsers.count();
+        assertThat("There must be at least one user", userCount, greaterThan(0));
+
+        List<UserRepresentation> users = consumerUsers.search("", 0, userCount);
+
+        for (UserRepresentation user : users) {
+            if (user.getUsername().equals(userName) && user.getEmail().equals(email)) {
+                return user;
+            }
+        }
+
+        fail("User " + userName + " not found in " + realm + " realm");
+        return null;
+    }
+
+    private void assertUserAttributes(Map<String, List<String>> attrs, UserRepresentation userRep) {
+        Set<String> mappedAttrNames = attrs.entrySet().stream()
+          .filter(me -> me.getValue() != null && ! me.getValue().isEmpty())
+          .map(me -> me.getKey())
+          .filter(a -> ! PROTECTED_NAMES.contains(a))
+          .map(ATTRIBUTE_NAME_TRANSLATION::get)
+          .collect(Collectors.toSet());
+
+        if (mappedAttrNames.isEmpty()) {
+            assertThat("No attributes are expected to be present", userRep.getAttributes(), nullValue());
+        } else {
+            assertThat(userRep.getAttributes(), notNullValue());
+            assertThat(userRep.getAttributes().keySet(), equalTo(mappedAttrNames));
+            for (Map.Entry<String, List<String>> me : attrs.entrySet()) {
+                String mappedAttrName = ATTRIBUTE_NAME_TRANSLATION.get(me.getKey());
+                if (mappedAttrNames.contains(mappedAttrName)) {
+                    assertThat(userRep.getAttributes().get(mappedAttrName), equalTo(me.getValue()));
+                }
+            }
+        }
+
+        if (attrs.containsKey("email")) {
+            assertThat(userRep.getEmail(), equalTo(attrs.get("email").get(0)));
+        }
+        if (attrs.containsKey("firstName")) {
+            assertThat(userRep.getFirstName(), equalTo(attrs.get("firstName").get(0)));
+        }
+        if (attrs.containsKey("lastName")) {
+            assertThat(userRep.getLastName(), equalTo(attrs.get("lastName").get(0)));
+        }
+    }
+
+    protected void testValueMapping(Map<String, List<String>> initialUserAttributes, Map<String, List<String>> modifiedUserAttributes) {
+        String email = bc.getUserEmail();
+        createUserInProviderRealm(initialUserAttributes);
+
+        logInAsUserInIDPForFirstTime();
+        UserRepresentation userRep = findUser(bc.consumerRealmName(), bc.getUserLogin(), email);
+
+        assertUserAttributes(initialUserAttributes, userRep);
+
+        logoutFromRealm(bc.consumerRealmName());
+
+        // update user in provider realm
+        UserRepresentation userRepProvider = findUser(bc.providerRealmName(), bc.getUserLogin(), email);
+        Map<String, List<String>> modifiedWithoutSpecialKeys = modifiedUserAttributes.entrySet().stream()
+          .filter(a -> ! PROTECTED_NAMES.contains(a.getKey()))
+          .filter(a -> a.getValue() != null)  // Remove empty attributes
+          .collect(Collectors.toMap(p -> p.getKey(), p -> p.getValue()));
+        userRepProvider.setAttributes(modifiedWithoutSpecialKeys);
+        if (modifiedUserAttributes.containsKey("email")) {
+            userRepProvider.setEmail(modifiedUserAttributes.get("email").get(0));
+            email = modifiedUserAttributes.get("email").get(0);
+        }
+        if (modifiedUserAttributes.containsKey("firstName")) {
+            userRepProvider.setFirstName(modifiedUserAttributes.get("firstName").get(0));
+        }
+        if (modifiedUserAttributes.containsKey("lastName")) {
+            userRepProvider.setLastName(modifiedUserAttributes.get("lastName").get(0));
+        }
+        adminClient.realm(bc.providerRealmName()).users().get(userRepProvider.getId()).update(userRepProvider);
+
+        logInAsUserInIDP();
+        userRep = findUser(bc.consumerRealmName(), bc.getUserLogin(), email);
+
+        assertUserAttributes(modifiedUserAttributes, userRep);
+    }
+
+    @Test
+    public void testBasicMappingSingleValue() {
+        testValueMapping(ImmutableMap.<String, List<String>>builder()
+          .put(ATTRIBUTE_TO_MAP_NAME, ImmutableList.<String>builder().add("value 1").build())
+          .build(),
+          ImmutableMap.<String, List<String>>builder()
+          .put(ATTRIBUTE_TO_MAP_NAME, ImmutableList.<String>builder().add("second value").build())
+          .build()
+        );
+    }
+
+    @Test
+    public void testBasicMappingEmail() {
+        testValueMapping(ImmutableMap.<String, List<String>>builder()
+          .put("email", ImmutableList.<String>builder().add(bc.getUserEmail()).build())
+          .build(),
+          ImmutableMap.<String, List<String>>builder()
+          .put("email", ImmutableList.<String>builder().add("other_email@redhat.com").build())
+          .build()
+        );
+    }
+
+    @Test
+    public void testBasicMappingClearValue() {
+        testValueMapping(ImmutableMap.<String, List<String>>builder()
+          .put(ATTRIBUTE_TO_MAP_NAME, ImmutableList.<String>builder().add("value 1").build())
+          .build(),
+          ImmutableMap.<String, List<String>>builder()
+          .put(ATTRIBUTE_TO_MAP_NAME, ImmutableList.<String>builder().build())
+          .build()
+        );
+    }
+
+    @Test
+    public void testBasicMappingRemoveValue() {
+        testValueMapping(ImmutableMap.<String, List<String>>builder()
+          .put(ATTRIBUTE_TO_MAP_NAME, ImmutableList.<String>builder().add("value 1").build())
+          .build(),
+          ImmutableMap.<String, List<String>>builder()
+          .build()
+        );
+    }
+
+    @Test
+    @Ignore("Unignore to test KEYCLOAK-3648")
+    public void testBasicMappingMultipleValues() {
+        testValueMapping(ImmutableMap.<String, List<String>>builder()
+          .put(ATTRIBUTE_TO_MAP_NAME, ImmutableList.<String>builder().add("value 1").add("value 2").build())
+          .build(),
+          ImmutableMap.<String, List<String>>builder()
+          .put(ATTRIBUTE_TO_MAP_NAME, ImmutableList.<String>builder().add("second value").add("second value 2").build())
+          .build()
+        );
+    }
+}

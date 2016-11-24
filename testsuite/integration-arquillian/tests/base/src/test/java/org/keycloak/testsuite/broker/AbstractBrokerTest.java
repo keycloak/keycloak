@@ -140,7 +140,7 @@ public abstract class AbstractBrokerTest extends AbstractKeycloakTest {
                 driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"));
 
         log.debug("Updating info on updateAccount page");
-        updateAccountInformationPage.updateAccountInformation("Firstname", "Lastname");
+        updateAccountInformationPage.updateAccountInformation(bc.getUserLogin(), bc.getUserEmail(), "Firstname", "Lastname");
 
         UsersResource consumerUsers = adminClient.realm(bc.consumerRealmName()).users();
 
