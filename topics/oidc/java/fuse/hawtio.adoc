@@ -1,0 +1,129 @@
+
+[[_hawtio]]
+===== Secure Hawtio Admin Console
+
+The steps to secure Hawtio Admin Console with {{book.project.name}} are:
+
+* Add these properties to the file `$FUSE_HOME/etc/system.properties` :
+
+[source]
+----
+hawtio.keycloakEnabled=true
+hawtio.realm=keycloak
+hawtio.keycloakClientConfig=${karaf.base}/etc/keycloak-hawtio-client.json
+hawtio.rolePrincipalClasses=org.keycloak.adapters.jaas.RolePrincipal,org.apache.karaf.jaas.boot.principal.RolePrincipal
+----
+
+* Create client in {{book.project.name}} admin console in your realm. Assuming you have {{book.project.name}} realm `demo` and you created client `hawtio-client`, which is marked
+with `public` Access Type and has redirect URI pointing to Hawtio -  http://localhost:8181/hawtio/* .
+
+* Create file `keycloak-hawtio-client.json` in the directory `$FUSE_HOME/etc` and use the content like this (Change properties `realm`, `resource` and `auth-server-url` according to
+your {{book.project.name}} environment. The property `resource` should point to the client created in previous step. This file is used by the client (Hawtio Javascript application) side.
+
+[source,json]
+----
+{
+  "realm" : "demo",
+  "resource" : "hawtio-client",
+  "auth-server-url" : "http://localhost:8080/auth",
+  "ssl-required" : "external",
+  "public-client" : true
+}
+----
+
+* Create file `keycloak-hawtio.json` in the directory `$FUSE_HOME/etc` and use the content like this (Change properties `realm` and `auth-server-url` according to
+your {{book.project.name}} environment. This file is used by the adapters on server (JAAS Login module) side.
+
+
+[source,json]
+----
+{
+  "realm" : "demo",
+  "resource" : "jaas",
+  "bearer-only" : true,
+  "auth-server-url" : "http://localhost:8080/auth",
+  "ssl-required" : "external",
+  "use-resource-role-mappings": false,
+  "principal-attribute": "preferred_username"
+}
+----
+
+* Start {{book.fuseVersion}} and install feature `keycloak` if you didn't already. The commands in Karaf terminal are like:
+
+
+[source, subs="attributes"]
+----
+features:addurl mvn:org.keycloak/keycloak-osgi-features/{{book.project.version}}/xml/features
+features:install keycloak
+----
+
+* Go to http://localhost:8181/hawtio and login as some user from your {{book.project.name}} realm. See file `$FUSE_HOME/etc/system.properties` and property `hawtio.roles` .
+Just those with some of the role are able to successfully authenticate to Hawtio and do something here.
+
+
+====== Secure Hawtio on EAP
+
+This subsection contains needed steps for the case, when you want to run Hawtio on the Wildfly 10 server.
+
+* Setup {{book.project.name}} similarly like mentioned above in the section for securing Hawtion on JBoss Fuse. So assuming you have {{book.project.name}} realm `demo`
+and client `hawtio-client`. Assumption is that your {{book.project.name}} is running on `localhost:8080` when the Wildfly with deployed hawtio will be running on `localhost:8181`.
+
+* Copy `hawtio.war` to the `$WILDFLY_HOME/standalone/configuration` directory. See Hawtio/Fuse documentation for more details about the Hawtio deployment.
+
+* Copy files `keycloak-hawtio.json` and `keycloak-hawtio-client.json` with the above content to the `$WILDFLY_HOME/standalone/configuration` directory.
+
+* Install {{book.project.name}} adapter subsystem to your Wildfly as described in the <<fake/../../jboss-adapter.adoc#_jboss_adapter,JBoss adapter documentation>>
+
+* In `$WILDFLY_HOME/standalone/configuration/standalone.xml` configure system properties like this:
+
+[source,xml]
+----
+<extensions>
+...
+</extensions>
+
+<system-properties>
+    <property name="hawtio.authenticationEnabled" value="true" />
+    <property name="hawtio.realm" value="hawtio" />
+    <property name="hawtio.roles" value="admin,viewer" />
+    <property name="hawtio.rolePrincipalClasses" value="org.keycloak.adapters.jaas.RolePrincipal" />
+    <property name="hawtio.keycloakEnabled" value="true" />
+    <property name="hawtio.keycloakClientConfig" value="${jboss.server.config.dir}/keycloak-hawtio-client.json" />
+    <property name="hawtio.keycloakServerConfig" value="${jboss.server.config.dir}/keycloak-hawtio.json" />
+</system-properties>
+----
+
+Also add hawtio realm to this file to the `security-domains` section:
+
+[source,xml]
+----
+<security-domain name="hawtio" cache-type="default">
+    <authentication>
+        <login-module code="org.keycloak.adapters.jaas.BearerTokenLoginModule" flag="required">
+            <module-option name="keycloak-config-file" value="${hawtio.keycloakServerConfig}"/>
+        </login-module>
+    </authentication>
+</security-domain>
+----
+
+Finally add the `secure-deployment` section `hawtio` to the adapter subsystem. It should ensure that Hawtio WAR is able to find the JAAS login module classes.
+
+
+[source,xml]
+----
+<subsystem xmlns="urn:jboss:domain:keycloak:1.1">
+    <secure-deployment name="hawtio.war" />
+</subsystem>
+----
+
+* Restart Wildfly server with Hawtio
+
+[source,xml]
+----
+cd $WILDFLY_HOME/bin
+./standalone.sh -Djboss.socket.binding.port-offset=101
+----
+
+* Access Hawtio on http://localhost:8181/hawtio . It will be secured by the {{book.project.name}} .
+
+

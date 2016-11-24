@@ -18,6 +18,7 @@
       .... link:topics/oidc/java/fuse/cxf-separate.adoc[Apache CXF on Separate Jetty]
       .... link:topics/oidc/java/fuse/cxf-builtin.adoc[Apache CXF on default Jetty]
       .... link:topics/oidc/java/fuse/fuse-admin.adoc[Fuse Admin Services]
+      .... link:topics/oidc/java/fuse/hawtio.adoc[Hawtio Admin Console]
       {% if book.community %}
       ... link:topics/oidc/java/tomcat-adapter.adoc[Tomcat 6, 7 and 8 Adapters]
       ... link:topics/oidc/java/jetty9-adapter.adoc[Jetty 9.x Adapters]
