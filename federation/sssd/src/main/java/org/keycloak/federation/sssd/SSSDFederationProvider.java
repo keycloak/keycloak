@@ -20,22 +20,19 @@ package org.keycloak.federation.sssd;
 import org.freedesktop.dbus.Variant;
 import org.jboss.logging.Logger;
 import org.keycloak.credential.CredentialInput;
+import org.keycloak.credential.CredentialInputUpdater;
 import org.keycloak.credential.CredentialInputValidator;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.federation.sssd.api.Sssd;
 import org.keycloak.federation.sssd.impl.PAMAuthenticator;
-import org.keycloak.models.GroupModel;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.RoleModel;
-import org.keycloak.models.UserCredentialModel;
-import org.keycloak.models.UserModel;
+import org.keycloak.models.*;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.models.UserManager;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
+import org.keycloak.storage.user.ImportedUserValidation;
 import org.keycloak.storage.user.UserLookupProvider;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -47,7 +44,11 @@ import java.util.Set;
  * @author <a href="mailto:bruno@abstractj.org">Bruno Oliveira</a>
  * @version $Revision: 1 $
  */
-public class SSSDFederationProvider implements UserStorageProvider, UserLookupProvider, CredentialInputValidator {
+public class SSSDFederationProvider implements UserStorageProvider,
+        UserLookupProvider,
+        CredentialInputUpdater,
+        CredentialInputValidator,
+        ImportedUserValidation {
 
     private static final Logger logger = Logger.getLogger(SSSDFederationProvider.class);
 
@@ -72,13 +73,18 @@ public class SSSDFederationProvider implements UserStorageProvider, UserLookupPr
         return findOrCreateAuthenticatedUser(realm, username);
     }
 
-    /**
-     * Called after successful authentication
-     *
-     * @param realm    realm
-     * @param username username without realm prefix
-     * @return user if found or successfully created. Null if user with same username already exists, but is not linked to this provider
-     */
+    @Override
+    public UserModel validate(RealmModel realm, UserModel user) {
+        return validateAndProxy(realm, user);
+    }
+
+        /**
+         * Called after successful authentication
+         *
+         * @param realm    realm
+         * @param username username without realm prefix
+         * @return user if found or successfully created. Null if user with same username already exists, but is not linked to this provider
+         */
     protected UserModel findOrCreateAuthenticatedUser(RealmModel realm, String username) {
         UserModel user = session.userLocalStorage().getUserByUsername(username, realm);
         if (user != null) {
@@ -186,5 +192,19 @@ public class SSSDFederationProvider implements UserStorageProvider, UserLookupPr
     @Override
     public void close() {
         Sssd.disconnect();
+    }
+
+    @Override
+    public boolean updateCredential(RealmModel realm, UserModel user, CredentialInput input) {
+        throw new IllegalStateException("You can't update your password as your account is read only.");
+    }
+
+    @Override
+    public void disableCredentialType(RealmModel realm, UserModel user, String credentialType) {
+    }
+
+    @Override
+    public Set<String> getDisableableCredentialTypes(RealmModel realm, UserModel user) {
+        return Collections.EMPTY_SET;
     }
 }
