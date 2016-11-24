@@ -20,6 +20,7 @@
 .. link:topics/database/jdbc.adoc[JDBC Setup]
 .. link:topics/database/datasource.adoc[Datasource Setup]
 .. link:topics/database/hibernate.adoc[Database Configuration]
+.. link:topics/database/unicode-considerations.adoc[Unicode considerations]
 . link:topics/mongo.adoc[Mongo DB Setup]
 . link:topics/network.adoc[Network Setup]
 .. link:topics/network/bind-address.adoc[Bind Addresses]
