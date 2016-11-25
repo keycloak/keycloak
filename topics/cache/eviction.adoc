@@ -14,19 +14,23 @@ _domain.xml_ depending on your <<fake/../../operating-mode.adoc#_operating-mode,
 [source,xml]
 ----
 <subsystem xmlns="urn:jboss:domain:infinispan:4.0">
-   <cache-container name="keycloak" jndi-name="infinispan/Keycloak">
-       <local-cache name="realms"/>
-       <local-cache name="users">
-          <eviction max-entries="10000" strategy="LRU"/>
-       </local-cache>
-       <local-cache name="sessions"/>
-       <local-cache name="offlineSessions"/>
-       <local-cache name="loginFailures"/>
-       <local-cache name="work"/>
-       <local-cache name="realmVersions">
-          <transaction mode="BATCH" locking="PESSIMISTIC"/>
-       </local-cache>
-   </cache-container>
+    <cache-container name="keycloak" jndi-name="infinispan/Keycloak">
+        <local-cache name="realms"/>
+        <local-cache name="users">
+           <eviction strategy="LRU" max-entries="10000"/>
+        </local-cache>
+        <local-cache name="sessions"/>
+        <local-cache name="offlineSessions"/>
+        <local-cache name="loginFailures"/>
+        <local-cache name="work"/>
+        <local-cache name="authorization">
+           <eviction strategy="LRU" max-entries="100"/>
+        </local-cache>
+        <local-cache name="keys">
+           <eviction strategy="LRU" max-entries="1000"/>
+           <expiration max-idle="3600000"/>
+        </local-cache>
+    </cache-container>
 ----
 
 
@@ -34,21 +38,23 @@ _domain.xml_ depending on your <<fake/../../operating-mode.adoc#_operating-mode,
 [source,xml]
 ----
 <subsystem xmlns="urn:jboss:domain:infinispan:4.0">
-   <cache-container name="keycloak" jndi-name="infinispan/Keycloak">
-       <transport lock-timeout="60000"/>
-       <local-cache name="realms" />
-       <local-cache name="users">
-           <eviction max-entries="10000" strategy="LRU"/>
-       </local-cache>
-       <distributed-cache name="sessions" mode="SYNC" owners="1"/>
-       <distributed-cache name="offlineSessions" mode="SYNC" owners="1"/>
-       <distributed-cache name="loginFailures" mode="SYNC" owners="1"/>
-       <replicated-cache name="work" mode="SYNC"/>
-       <local-cache name="realmVersions">
-           <transaction mode="BATCH" locking="PESSIMISTIC"/>
-       </local-cache>
-   </cache-container>
+    <cache-container name="keycloak" jndi-name="infinispan/Keycloak">
+        <transport lock-timeout="60000"/>
+        <local-cache name="realms"/>
+        <local-cache name="users">
+            <eviction max-entries="10000" strategy="LRU"/>
+        </local-cache>
+        <distributed-cache name="sessions" mode="SYNC" owners="1"/>
+        <distributed-cache name="offlineSessions" mode="SYNC" owners="1"/>
+        <distributed-cache name="loginFailures" mode="SYNC" owners="1"/>
+        <distributed-cache name="authorization" mode="SYNC" owners="1"/>
+        <replicated-cache name="work" mode="SYNC"/>
+        <local-cache name="keys">
+            <eviction max-entries="1000" strategy="LRU"/>
+            <expiration max-idle="3600000"/>
+        </local-cache>
+    </cache-container>
 ----
 
-To limit or expand the number of allowed entries simply add, edit, or remove the `eviction` element from the `invalidation-cache` or
-`distributed-cache` declaration you want to change.
+To limit or expand the number of allowed entries simply add, edit, or remove the `eviction` element or the `expiration` element of particular cache
+configuration.
