@@ -59,6 +59,7 @@ import org.keycloak.testsuite.federation.DummyUserFederationProviderFactory;
 import org.keycloak.testsuite.forms.PassThroughAuthenticator;
 import org.keycloak.testsuite.forms.PassThroughClientAuthenticator;
 import org.keycloak.testsuite.rest.representation.AuthenticatorState;
+import org.keycloak.testsuite.rest.resource.TestCacheResource;
 import org.keycloak.testsuite.rest.resource.TestingExportImportResource;
 
 import javax.ws.rs.Consumes;
@@ -516,14 +517,11 @@ public class TestingResourceProvider implements RealmResourceProvider {
         return details;
     }
 
-    @GET
-    @Path("/cache/{cache}/{id}")
-    @Produces(MediaType.APPLICATION_JSON)
-    public boolean isCached(@PathParam("cache") String cacheName, @PathParam("id") String id) {
-        InfinispanConnectionProvider provider = session.getProvider(InfinispanConnectionProvider.class);
-        Cache<Object, Object> cache = provider.getCache(cacheName);
-        return cache.containsKey(id);
+    @Path("/cache/{cache}")
+    public TestCacheResource getCacheResource(@PathParam("cache") String cacheName) {
+        return new TestCacheResource(session, cacheName);
     }
+
 
     @Override
     public void close() {

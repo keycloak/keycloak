@@ -128,7 +128,7 @@ public class InfinispanKeyStorageProviderTest {
 
         @Override
         public void run() {
-            InfinispanPublicKeyStorageProvider provider = new InfinispanPublicKeyStorageProvider(keys, tasksInProgress, minTimeBetweenRequests);
+            InfinispanPublicKeyStorageProvider provider = new InfinispanPublicKeyStorageProvider(null, keys, tasksInProgress, minTimeBetweenRequests);
             provider.getPublicKey(modelKey, "kid1", new SampleLoader(modelKey));
         }
 

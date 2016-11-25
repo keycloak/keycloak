@@ -463,12 +463,12 @@ public class RealmTest extends AbstractAdminTest {
     @Test
     public void clearRealmCache() {
         RealmRepresentation realmRep = realm.toRepresentation();
-        assertTrue(testingClient.testing().isCached("realms", realmRep.getId()));
+        assertTrue(testingClient.testing().cache("realms").contains(realmRep.getId()));
 
         realm.clearRealmCache();
         assertAdminEvents.assertEvent(realmId, OperationType.ACTION, "clear-realm-cache", ResourceType.REALM);
 
-        assertFalse(testingClient.testing().isCached("realms", realmRep.getId()));
+        assertFalse(testingClient.testing().cache("realms").contains(realmRep.getId()));
     }
 
     @Test
@@ -482,13 +482,15 @@ public class RealmTest extends AbstractAdminTest {
 
         realm.users().get(userId).toRepresentation();
 
-        assertTrue(testingClient.testing().isCached("users", userId));
+        assertTrue(testingClient.testing().cache("users").contains(userId));
 
         realm.clearUserCache();
         assertAdminEvents.assertEvent(realmId, OperationType.ACTION, "clear-user-cache", ResourceType.REALM);
 
-        assertFalse(testingClient.testing().isCached("users", userId));
+        assertFalse(testingClient.testing().cache("users").contains(userId));
     }
+
+    // NOTE: clearKeysCache tested in KcOIDCBrokerWithSignatureTest
 
     @Test
     public void pushNotBefore() {

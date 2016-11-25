@@ -1,6 +1,5 @@
 package org.keycloak.testsuite.broker;
 
-import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
@@ -8,13 +7,7 @@ import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
-import org.keycloak.testsuite.Retry;
-import org.keycloak.testsuite.pages.AccountPasswordPage;
-import org.keycloak.testsuite.pages.ErrorPage;
-import org.keycloak.testsuite.pages.LoginPage;
-import org.keycloak.testsuite.pages.UpdateAccountInformationPage;
 import org.keycloak.testsuite.util.RealmBuilder;
 
 import org.openqa.selenium.TimeoutException;
@@ -27,45 +20,12 @@ import static org.keycloak.testsuite.admin.ApiUtil.createUserWithAdminClient;
 import static org.keycloak.testsuite.admin.ApiUtil.resetUserPassword;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.USER_EMAIL;
 import static org.keycloak.testsuite.broker.BrokerTestTools.*;
-import org.keycloak.testsuite.pages.IdpConfirmLinkPage;
 import static org.keycloak.testsuite.util.MailAssert.assertEmailAndGetUrl;
 import org.keycloak.testsuite.util.MailServer;
 import org.keycloak.testsuite.util.MailServerConfiguration;
 import org.keycloak.testsuite.util.UserBuilder;
 
-public abstract class AbstractBrokerTest extends AbstractKeycloakTest {
-
-    @Page
-    protected LoginPage accountLoginPage;
-
-    @Page
-    protected UpdateAccountInformationPage updateAccountInformationPage;
-
-    @Page
-    protected AccountPasswordPage accountPasswordPage;
-
-    @Page
-    protected ErrorPage errorPage;
-    
-    @Page
-    protected IdpConfirmLinkPage idpConfirmLinkPage;
-
-    protected BrokerConfiguration bc = getBrokerConfiguration();
-
-    /**
-     * Returns a broker configuration. Return value should not change between calls.
-     * @return 
-     */
-    protected abstract BrokerConfiguration getBrokerConfiguration();
-
-    @Override
-    public void addTestRealms(List<RealmRepresentation> testRealms) {
-        RealmRepresentation providerRealm = bc.createProviderRealm();
-        RealmRepresentation consumerRealm = bc.createConsumerRealm();
-
-        testRealms.add(providerRealm);
-        testRealms.add(consumerRealm);
-    }
+public abstract class AbstractBrokerTest extends AbstractBaseBrokerTest {
 
     @Before
     public void createUser() {
@@ -114,12 +74,9 @@ public abstract class AbstractBrokerTest extends AbstractKeycloakTest {
         }
     }
 
-    protected String getAuthRoot() {
-        return suiteContext.getAuthServerInfo().getContextRoot().toString();
-    }
 
     @Test
-    public void logInAsUserInIDP() {
+    public void testLogInAsUserInIDP() {
         driver.navigate().to(getAccountUrl(bc.consumerRealmName()));
 
         log.debug("Clicking social " + bc.getIDPAlias());
@@ -165,7 +122,7 @@ public abstract class AbstractBrokerTest extends AbstractKeycloakTest {
 
     @Test
     public void loginWithExistingUser() {
-        logInAsUserInIDP();
+        testLogInAsUserInIDP();
 
         Integer userCount = adminClient.realm(bc.consumerRealmName()).users().count();
 
@@ -299,28 +256,6 @@ public abstract class AbstractBrokerTest extends AbstractKeycloakTest {
         assertEquals("Account is disabled, contact admin.", errorPage.getError());
     }
 
-    protected void logoutFromRealm(String realm) {
-        driver.navigate().to(getAuthRoot()
-          + "/auth/realms/" + realm
-          + "/protocol/" + "openid-connect"
-          + "/logout?redirect_uri=" + encodeUrl(getAccountUrl(realm)));
-
-        try {
-            Retry.execute(() -> {
-                try {
-                    waitForPage(driver, "log in to " + realm);
-                } catch (TimeoutException ex) {
-                    driver.navigate().refresh();
-                    log.debug("[Retriable] Timed out waiting for login page");
-                    throw ex;
-                }
-            }, 10, 100);
-        } catch (TimeoutException e) {
-            log.debug(driver.getTitle());
-            log.debug(driver.getPageSource());
-            Assert.fail("Timeout while waiting for login page");
-        }
-    }
 
     protected void testSingleLogout() {
         log.debug("Testing single log out");
@@ -337,13 +272,5 @@ public abstract class AbstractBrokerTest extends AbstractKeycloakTest {
 
         Assert.assertTrue("Should be on " + bc.consumerRealmName() + " realm on login page",
                 driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/protocol/openid-connect/"));
-    }
-
-    private String getAccountUrl(String realmName) {
-        return getAuthRoot() + "/auth/realms/" + realmName + "/account";
-    }
-
-    private String getAccountPasswordUrl(String realmName) {
-        return getAuthRoot() + "/auth/realms/" + realmName + "/account/password";
     }
 }

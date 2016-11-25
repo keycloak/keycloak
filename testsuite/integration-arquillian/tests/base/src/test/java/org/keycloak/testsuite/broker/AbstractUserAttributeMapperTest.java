@@ -42,7 +42,7 @@ import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
  *
  * @author hmlnarik
  */
-public abstract class AbstractUserAttributeMapperTest extends AbstractKeycloakTest {
+public abstract class AbstractUserAttributeMapperTest extends AbstractBaseBrokerTest {
 
     protected static final String MAPPED_ATTRIBUTE_NAME = "mapped-user-attribute";
     protected static final String MAPPED_ATTRIBUTE_FRIENDLY_NAME = "mapped-user-attribute-friendly";
@@ -55,41 +55,7 @@ public abstract class AbstractUserAttributeMapperTest extends AbstractKeycloakTe
       .put(ATTRIBUTE_TO_MAP_NAME, MAPPED_ATTRIBUTE_NAME)
       .build();
 
-    @Page
-    protected LoginPage accountLoginPage;
-
-    @Page
-    protected UpdateAccountInformationPage updateAccountInformationPage;
-
-    @Page
-    protected AccountPasswordPage accountPasswordPage;
-
-    @Page
-    protected ErrorPage errorPage;
-
-    @Page
-    protected IdpConfirmLinkPage idpConfirmLinkPage;
-
-    protected BrokerConfiguration bc = getBrokerConfiguration();
-
-    protected String userId;
-
-    /**
-     * Returns a broker configuration. Return value should not change between calls.
-     * @return
-     */
-    protected abstract BrokerConfiguration getBrokerConfiguration();
-
     protected abstract Iterable<IdentityProviderMapperRepresentation> createIdentityProviderMappers();
-
-    @Override
-    public void addTestRealms(List<RealmRepresentation> testRealms) {
-        RealmRepresentation providerRealm = bc.createProviderRealm();
-        RealmRepresentation consumerRealm = bc.createConsumerRealm();
-
-        testRealms.add(providerRealm);
-        testRealms.add(consumerRealm);
-    }
 
     @Before
     public void addIdentityProviderToConsumerRealm() {
@@ -140,62 +106,6 @@ public abstract class AbstractUserAttributeMapperTest extends AbstractKeycloakTe
         user.setEmailVerified(true);
         user.setAttributes(attributes);
         this.userId = createUserAndResetPasswordWithAdminClient(adminClient.realm(bc.providerRealmName()), user, bc.getUserPassword());
-    }
-
-    private void logInAsUserInIDP() {
-        driver.navigate().to(getAccountUrl(bc.consumerRealmName()));
-
-        log.debug("Clicking social " + bc.getIDPAlias());
-        accountLoginPage.clickSocial(bc.getIDPAlias());
-
-        waitForPage(driver, "log in to");
-
-        Assert.assertTrue("Driver should be on the provider realm page right now",
-          driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));
-
-        log.debug("Logging in");
-        accountLoginPage.login(bc.getUserLogin(), bc.getUserPassword());
-    }
-
-    /** Logs in the IDP and updates account information */
-    private void logInAsUserInIDPForFirstTime() {
-        logInAsUserInIDP();
-
-        waitForPage(driver, "update account information");
-
-        Assert.assertTrue(updateAccountInformationPage.isCurrent());
-        Assert.assertTrue("We must be on correct realm right now",
-                driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"));
-
-        log.debug("Updating info on updateAccount page");
-        updateAccountInformationPage.updateAccountInformation(bc.getUserLogin(), bc.getUserEmail(), "Firstname", "Lastname");
-    }
-
-    private String getAccountUrl(String realmName) {
-        return BrokerTestTools.getAuthRoot(suiteContext) + "/auth/realms/" + realmName + "/account";
-    }
-
-    private void logoutFromRealm(String realm) {
-        driver.navigate().to(BrokerTestTools.getAuthRoot(suiteContext)
-          + "/auth/realms/" + realm
-          + "/protocol/" + "openid-connect"
-          + "/logout?redirect_uri=" + encodeUrl(getAccountUrl(realm)));
-
-        try {
-            Retry.execute(() -> {
-                try {
-                    waitForPage(driver, "log in to " + realm);
-                } catch (TimeoutException ex) {
-                    driver.navigate().refresh();
-                    log.debug("[Retriable] Timed out waiting for login page");
-                    throw ex;
-                }
-            }, 10, 100);
-        } catch (TimeoutException e) {
-            log.debug(driver.getTitle());
-            log.debug(driver.getPageSource());
-            Assert.fail("Timeout while waiting for login page");
-        }
     }
 
     private UserRepresentation findUser(String realm, String userName, String email) {

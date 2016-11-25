@@ -15,31 +15,37 @@
  * limitations under the License.
  */
 
-package org.keycloak.keys;
+package org.keycloak.testsuite.client.resources;
 
-import java.security.PublicKey;
+import java.util.Set;
 
-import org.keycloak.provider.Provider;
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.MediaType;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public interface PublicKeyStorageProvider extends Provider {
+public interface TestingCacheResource {
 
 
-    /**
-     * Get public key to verify messages signed by particular client. Used for example during JWT client authentication
-     *
-     * @param modelKey
-     * @param kid
-     * @param loader
-     * @return
-     */
-    PublicKey getPublicKey(String modelKey, String kid, PublicKeyLoader loader);
+    @GET
+    @Path("/contains/{id}")
+    @Produces(MediaType.APPLICATION_JSON)
+    boolean contains(@PathParam("id") String id);
 
-    /**
-     * Clears all the cached public keys, so they need to be loaded again
-     */
-    void clearCache();
+
+    @GET
+    @Path("/enumerate-keys")
+    @Produces(MediaType.APPLICATION_JSON)
+    Set<String> enumerateKeys();
+
+
+    @GET
+    @Path("/size")
+    @Produces(MediaType.APPLICATION_JSON)
+    int size();
 
 }

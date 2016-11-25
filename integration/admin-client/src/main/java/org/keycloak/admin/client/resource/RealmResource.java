@@ -187,6 +187,10 @@ public interface RealmResource {
     @POST
     void clearUserCache();
 
+    @Path("clear-keys-cache")
+    @POST
+    void clearKeysCache();
+
     @Path("push-revocation")
     @POST
     @Produces(MediaType.APPLICATION_JSON)

@@ -24,12 +24,15 @@ import java.util.concurrent.FutureTask;
 import org.infinispan.Cache;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
+import org.keycloak.cluster.ClusterEvent;
+import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.keys.PublicKeyStorageProvider;
 import org.keycloak.keys.PublicKeyStorageSpi;
 import org.keycloak.keys.PublicKeyStorageProviderFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.cache.infinispan.events.InvalidationEvent;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -40,6 +43,8 @@ public class InfinispanPublicKeyStorageProviderFactory implements PublicKeyStora
 
     public static final String PROVIDER_ID = "infinispan";
 
+    public static final String KEYS_CLEAR_CACHE_EVENTS = "KEYS_CLEAR_CACHE_EVENTS";
+
     private Cache<String, PublicKeysEntry> keysCache;
 
     private final Map<String, FutureTask<PublicKeysEntry>> tasksInProgress = new ConcurrentHashMap<>();
@@ -49,7 +54,7 @@ public class InfinispanPublicKeyStorageProviderFactory implements PublicKeyStora
     @Override
     public PublicKeyStorageProvider create(KeycloakSession session) {
         lazyInit(session);
-        return new InfinispanPublicKeyStorageProvider(keysCache, tasksInProgress, minTimeBetweenRequests);
+        return new InfinispanPublicKeyStorageProvider(session, keysCache, tasksInProgress, minTimeBetweenRequests);
     }
 
     private void lazyInit(KeycloakSession session) {
@@ -57,6 +62,13 @@ public class InfinispanPublicKeyStorageProviderFactory implements PublicKeyStora
             synchronized (this) {
                 if (keysCache == null) {
                     this.keysCache = session.getProvider(InfinispanConnectionProvider.class).getCache(InfinispanConnectionProvider.KEYS_CACHE_NAME);
+
+                    ClusterProvider cluster = session.getProvider(ClusterProvider.class);
+                    cluster.registerListener(KEYS_CLEAR_CACHE_EVENTS, (ClusterEvent event) -> {
+
+                        keysCache.clear();
+
+                    });
                 }
             }
         }
