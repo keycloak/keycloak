@@ -17,15 +17,11 @@
 
 package org.keycloak.migration.migrators;
 
-import java.util.LinkedList;
-import java.util.List;
 
 import org.keycloak.migration.ModelVersion;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientTemplateModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.ProtocolMapperContainerModel;
-import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 
 /**
@@ -39,26 +35,12 @@ public class MigrateTo2_3_0 implements Migration {
     public void migrate(KeycloakSession session) {
         for (RealmModel realm : session.realms().getRealms()) {
             for (ClientModel client : realm.getClients()) {
-                updateProtocolMappers(client);
+                MigrationUtils.updateProtocolMappers(client);
             }
 
             for (ClientTemplateModel clientTemplate : realm.getClientTemplates()) {
-                updateProtocolMappers(clientTemplate);
+                MigrationUtils.updateProtocolMappers(clientTemplate);
             }
-        }
-    }
-
-    private void updateProtocolMappers(ProtocolMapperContainerModel client) {
-        List<ProtocolMapperModel> toUpdate = new LinkedList<>();
-        for (ProtocolMapperModel mapper : client.getProtocolMappers()) {
-            if (!mapper.getConfig().containsKey("userinfo.token.claim") && mapper.getConfig().containsKey("id.token.claim")) {
-                mapper.getConfig().put("userinfo.token.claim", mapper.getConfig().get("id.token.claim"));
-                toUpdate.add(mapper);
-            }
-        }
-
-        for (ProtocolMapperModel mapper : toUpdate) {
-            client.updateProtocolMapper(mapper);
         }
     }
 
