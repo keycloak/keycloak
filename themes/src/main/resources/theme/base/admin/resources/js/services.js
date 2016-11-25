@@ -678,6 +678,12 @@ module.factory('RealmClearRealmCache', function($resource) {
     });
 });
 
+module.factory('RealmClearKeysCache', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/clear-keys-cache', {
+        realm : '@realm'
+    });
+});
+
 module.factory('RealmSessionStats', function($resource) {
     return $resource(authUrl + '/admin/realms/:realm/session-stats', {
         realm : '@realm'

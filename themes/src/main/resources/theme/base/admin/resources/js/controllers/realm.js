@@ -426,7 +426,7 @@ module.controller('RealmThemeCtrl', function($scope, Current, Realm, realm, serv
     $scope.$watch('realm.internationalizationEnabled', updateSupported);
 });
 
-module.controller('RealmCacheCtrl', function($scope, realm, RealmClearUserCache, RealmClearRealmCache, Notifications) {
+module.controller('RealmCacheCtrl', function($scope, realm, RealmClearUserCache, RealmClearRealmCache, RealmClearKeysCache, Notifications) {
     $scope.realm = angular.copy(realm);
 
     $scope.clearUserCache = function() {
@@ -440,6 +440,13 @@ module.controller('RealmCacheCtrl', function($scope, realm, RealmClearUserCache,
            Notifications.success("Realm cache cleared");
         });
     }
+
+    $scope.clearKeysCache = function() {
+        RealmClearKeysCache.save({ realm: realm.realm}, function () {
+           Notifications.success("Public keys cache cleared");
+        });
+    }
+
 
 });
 

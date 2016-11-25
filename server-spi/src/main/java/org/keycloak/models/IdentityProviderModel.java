@@ -69,18 +69,20 @@ public class IdentityProviderModel implements Serializable {
     }
 
     public IdentityProviderModel(IdentityProviderModel model) {
-        this.internalId = model.getInternalId();
-        this.providerId = model.getProviderId();
-        this.alias = model.getAlias();
-        this.displayName = model.getDisplayName();
-        this.config = new HashMap<String, String>(model.getConfig());
-        this.enabled = model.isEnabled();
-        this.trustEmail = model.isTrustEmail();
-        this.storeToken = model.isStoreToken();
-        this.authenticateByDefault = model.isAuthenticateByDefault();
-        this.addReadTokenRoleOnCreate = model.addReadTokenRoleOnCreate;
-        this.firstBrokerLoginFlowId = model.getFirstBrokerLoginFlowId();
-        this.postBrokerLoginFlowId = model.getPostBrokerLoginFlowId();
+        if (model != null) {
+            this.internalId = model.getInternalId();
+            this.providerId = model.getProviderId();
+            this.alias = model.getAlias();
+            this.displayName = model.getDisplayName();
+            this.config = new HashMap<String, String>(model.getConfig());
+            this.enabled = model.isEnabled();
+            this.trustEmail = model.isTrustEmail();
+            this.storeToken = model.isStoreToken();
+            this.authenticateByDefault = model.isAuthenticateByDefault();
+            this.addReadTokenRoleOnCreate = model.addReadTokenRoleOnCreate;
+            this.firstBrokerLoginFlowId = model.getFirstBrokerLoginFlowId();
+            this.postBrokerLoginFlowId = model.getPostBrokerLoginFlowId();
+        }
     }
 
     public String getInternalId() {

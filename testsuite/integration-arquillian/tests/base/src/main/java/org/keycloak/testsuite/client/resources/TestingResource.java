@@ -24,6 +24,7 @@ import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.components.TestProvider;
 import org.keycloak.testsuite.rest.representation.AuthenticatorState;
+import org.keycloak.testsuite.rest.resource.TestCacheResource;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -190,10 +191,8 @@ public interface TestingResource {
     @Produces(MediaType.APPLICATION_JSON)
     Response removeExpired(@QueryParam("realm") final String realm);
 
-    @GET
-    @Path("/cache/{cache}/{id}")
-    @Produces(MediaType.APPLICATION_JSON)
-    boolean isCached(@PathParam("cache") String cacheName, @PathParam("id") String id);
+    @Path("/cache/{cache}")
+    TestingCacheResource cache(@PathParam("cache") String cacheName);
 
     @POST
     @Path("/update-pass-through-auth-state")

@@ -36,6 +36,7 @@ import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.exportimport.ClientDescriptionConverter;
 import org.keycloak.exportimport.ClientDescriptionConverterFactory;
+import org.keycloak.keys.PublicKeyStorageProvider;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.GroupModel;
@@ -868,6 +869,23 @@ public class RealmAdminResource {
         UserCache cache = session.getProvider(UserCache.class);
         if (cache != null) {
             cache.clear();
+        }
+
+        adminEvent.operation(OperationType.ACTION).resourcePath(uriInfo).success();
+    }
+
+    /**
+     * Clear cache of external public keys (Public keys of clients or Identity providers)
+     *
+     */
+    @Path("clear-keys-cache")
+    @POST
+    public void clearKeysCache() {
+        auth.requireManage();
+
+        PublicKeyStorageProvider cache = session.getProvider(PublicKeyStorageProvider.class);
+        if (cache != null) {
+            cache.clearCache();
         }
 
         adminEvent.operation(OperationType.ACTION).resourcePath(uriInfo).success();

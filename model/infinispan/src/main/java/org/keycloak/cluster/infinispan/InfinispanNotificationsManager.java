@@ -152,18 +152,8 @@ public class InfinispanNotificationsManager {
 
         private void hotrodEventReceived(String key) {
             // TODO: Look at CacheEventConverter stuff to possibly include value in the event and avoid additional remoteCache request
-            Object value = remoteCache.get(key);
-
-            Serializable rawValue;
-            if (value instanceof MarshalledEntry) {
-                Object rw = ((MarshalledEntry)value).getValue();
-                rawValue = (Serializable) rw;
-            } else {
-                rawValue = (Serializable) value;
-            }
-
-
-            eventReceived(key, rawValue);
+            Object value = workCache.get(key);
+            eventReceived(key, (Serializable) value);
         }
 
     }

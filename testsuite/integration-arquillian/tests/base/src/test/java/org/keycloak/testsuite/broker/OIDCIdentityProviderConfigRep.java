@@ -15,31 +15,29 @@
  * limitations under the License.
  */
 
-package org.keycloak.keys;
+package org.keycloak.testsuite.broker;
 
-import java.security.PublicKey;
+import java.util.Map;
 
-import org.keycloak.provider.Provider;
+import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
+import org.keycloak.representations.idm.IdentityProviderRepresentation;
 
 /**
+ * Helper to avoid updating rep configuration with hardcoded constants
+ *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public interface PublicKeyStorageProvider extends Provider {
+class OIDCIdentityProviderConfigRep extends OIDCIdentityProviderConfig {
 
+    private final IdentityProviderRepresentation rep;
 
-    /**
-     * Get public key to verify messages signed by particular client. Used for example during JWT client authentication
-     *
-     * @param modelKey
-     * @param kid
-     * @param loader
-     * @return
-     */
-    PublicKey getPublicKey(String modelKey, String kid, PublicKeyLoader loader);
+    public OIDCIdentityProviderConfigRep(IdentityProviderRepresentation rep) {
+        super(null);
+        this.rep = rep;
+    }
 
-    /**
-     * Clears all the cached public keys, so they need to be loaded again
-     */
-    void clearCache();
-
+    @Override
+    public Map<String, String> getConfig() {
+        return rep.getConfig();
+    }
 }

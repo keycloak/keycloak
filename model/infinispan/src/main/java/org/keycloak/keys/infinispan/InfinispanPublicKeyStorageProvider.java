@@ -27,9 +27,13 @@ import java.util.concurrent.FutureTask;
 
 import org.infinispan.Cache;
 import org.jboss.logging.Logger;
+import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.common.util.Time;
 import org.keycloak.keys.PublicKeyLoader;
 import org.keycloak.keys.PublicKeyStorageProvider;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.cache.infinispan.ClearCacheEvent;
+import org.keycloak.models.cache.infinispan.InfinispanCacheRealmProviderFactory;
 
 
 /**
@@ -39,18 +43,27 @@ public class InfinispanPublicKeyStorageProvider implements PublicKeyStorageProvi
 
     private static final Logger log = Logger.getLogger(InfinispanPublicKeyStorageProvider.class);
 
+    private final KeycloakSession session;
+
     private final Cache<String, PublicKeysEntry> keys;
 
     private final Map<String, FutureTask<PublicKeysEntry>> tasksInProgress;
 
     private final int minTimeBetweenRequests ;
 
-    public InfinispanPublicKeyStorageProvider(Cache<String, PublicKeysEntry> keys, Map<String, FutureTask<PublicKeysEntry>> tasksInProgress, int minTimeBetweenRequests) {
+    public InfinispanPublicKeyStorageProvider(KeycloakSession session, Cache<String, PublicKeysEntry> keys, Map<String, FutureTask<PublicKeysEntry>> tasksInProgress, int minTimeBetweenRequests) {
+        this.session = session;
         this.keys = keys;
         this.tasksInProgress = tasksInProgress;
         this.minTimeBetweenRequests = minTimeBetweenRequests;
     }
 
+    @Override
+    public void clearCache() {
+        keys.clear();
+        ClusterProvider cluster = session.getProvider(ClusterProvider.class);
+        cluster.notify(InfinispanPublicKeyStorageProviderFactory.KEYS_CLEAR_CACHE_EVENTS, new ClearCacheEvent(), true);
+    }
 
     @Override
     public PublicKey getPublicKey(String modelKey, String kid, PublicKeyLoader loader) {
