@@ -142,6 +142,7 @@ public class KeycloakAuthenticationProcessingFilter extends AbstractAuthenticati
         if (AuthOutcome.FAILED.equals(result)) {
             throw new KeycloakAuthenticationException("Auth outcome: " + result);
         }
+       
         else if (AuthOutcome.AUTHENTICATED.equals(result)) {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             Assert.notNull(authentication, "Authentication SecurityContextHolder was null");

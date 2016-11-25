@@ -71,8 +71,8 @@ public abstract class KeycloakWebSecurityConfigurerAdapter extends WebSecurityCo
         return factoryBean.getObject();
     }
 
-    protected AuthenticationEntryPoint authenticationEntryPoint() {
-        return new KeycloakAuthenticationEntryPoint();
+    protected AuthenticationEntryPoint authenticationEntryPoint(AdapterDeploymentContext adapterDeploymentContext) throws Exception {
+        return new KeycloakAuthenticationEntryPoint(adapterDeploymentContext);
     }
 
     protected KeycloakAuthenticationProvider keycloakAuthenticationProvider() {
@@ -117,7 +117,7 @@ public abstract class KeycloakWebSecurityConfigurerAdapter extends WebSecurityCo
                 .and()
                 .addFilterBefore(keycloakPreAuthActionsFilter(), LogoutFilter.class)
                 .addFilterBefore(keycloakAuthenticationProcessingFilter(), BasicAuthenticationFilter.class)
-                .exceptionHandling().authenticationEntryPoint(authenticationEntryPoint())
+                .exceptionHandling().authenticationEntryPoint(authenticationEntryPoint(adapterDeploymentContext()))
                 .and()
                 .logout()
                 .addLogoutHandler(keycloakLogoutHandler())

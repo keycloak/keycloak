@@ -26,6 +26,15 @@ import org.springframework.mock.web.MockHttpServletResponse;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import org.keycloak.adapters.AdapterDeploymentContext;
+import org.keycloak.adapters.KeycloakDeployment;
+import org.keycloak.adapters.spi.HttpFacade;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
+import org.mockito.Mock;
+import static org.mockito.Mockito.when;
+import org.mockito.MockitoAnnotations;
+import org.springframework.context.ApplicationContext;
 
 /**
  * Keycloak authentication entry point tests.
@@ -35,12 +44,24 @@ public class KeycloakAuthenticationEntryPointTest {
     private KeycloakAuthenticationEntryPoint authenticationEntryPoint;
     private MockHttpServletRequest request;
     private MockHttpServletResponse response;
+    @Mock
+    private ApplicationContext applicationContext;
+   
+    @Mock
+    private AdapterDeploymentContext adapterDeploymentContext;
+    
+    @Mock
+    private KeycloakDeployment keycloakDeployment;
 
     @Before
     public void setUp() throws Exception {
-        authenticationEntryPoint = new KeycloakAuthenticationEntryPoint();
+        MockitoAnnotations.initMocks(this);
+        authenticationEntryPoint = new KeycloakAuthenticationEntryPoint(adapterDeploymentContext);
         request = new MockHttpServletRequest();
         response = new MockHttpServletResponse();
+        when(applicationContext.getBean(eq(AdapterDeploymentContext.class))).thenReturn(adapterDeploymentContext);
+        when(adapterDeploymentContext.resolveDeployment(any(HttpFacade.class))).thenReturn(keycloakDeployment);
+        when(keycloakDeployment.isBearerOnly()).thenReturn(Boolean.FALSE);
     }
 
     @Test
