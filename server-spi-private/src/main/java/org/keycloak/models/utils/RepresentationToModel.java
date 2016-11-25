@@ -1059,7 +1059,7 @@ public class RepresentationToModel {
                 client.addProtocolMapper(toModel(mapper));
             }
 
-
+            MigrationUtils.updateProtocolMappers(client);
 
         }
 
@@ -1069,6 +1069,7 @@ public class RepresentationToModel {
                     client.setClientTemplate(template);
                     break;
                 }
+                MigrationUtils.updateProtocolMappers(template);
             }
         }
 
