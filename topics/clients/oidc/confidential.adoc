@@ -45,4 +45,7 @@ client changes it's keys, {{book.project.name}} will automatically download them
 If you use client secured by {{book.project.name}} adapter, you can configure the JWKS URL like https://myhost.com/myapp/k_jwks assuming that https://myhost.com/myapp is the
 root URL of your client application. See {{book.developerguide.link}}[{{book.developerguide.name}}] for additional details.
 
+WARNING: For the performance purposes, {{book.project.name}} caches the public keys of the OIDC clients. If you think that private key of your client
+was compromised, it is obviously good to update your keys, but it's also good to clear the keys cache. See <<fake/../../realms/cache.adoc#_clear-cache, Clearing the cache>>
+section for more details.
 

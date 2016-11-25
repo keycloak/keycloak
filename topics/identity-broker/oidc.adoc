@@ -53,6 +53,9 @@ You must define the OpenID Connection configuration options as well.  They basic
 |Validate Signatures
 |Another optional switch. This is to specify if {{book.project.name}} will verify the signatures on the external ID Token signed by this Identity provider. If this is on,
 the {{book.project.name}} will need to know the public key of the external OIDC identity provider. See below for how to setup it.
+WARNING: For the performance purposes, {{book.project.name}} caches the public key of the external OIDC identity provider. If you think that private key of your Identity provider
+was compromised, it is obviously good to update your keys, but it's also good to clear the keys cache. See
+<<fake/../../realms/cache.adoc#_clear-cache, Clearing the cache>> section for more details.
 
 |Use JWKS URL
 |Applicable just `Validate Signatures` is on. If the switch is on, then identity provider public keys  will be downloaded from given JWKS URL.
