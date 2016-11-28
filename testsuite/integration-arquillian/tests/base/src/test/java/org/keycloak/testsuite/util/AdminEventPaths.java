@@ -35,8 +35,6 @@ import org.keycloak.admin.client.resource.RoleByIdResource;
 import org.keycloak.admin.client.resource.RoleMappingResource;
 import org.keycloak.admin.client.resource.RoleResource;
 import org.keycloak.admin.client.resource.RolesResource;
-import org.keycloak.admin.client.resource.UserFederationProviderResource;
-import org.keycloak.admin.client.resource.UserFederationProvidersResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.admin.client.resource.UsersResource;
 
@@ -281,29 +279,6 @@ public class AdminEventPaths {
 
     public static String identityProviderMapperPath(String idpAlias, String idpMapperId) {
         URI uri = UriBuilder.fromUri(identityProviderPath(idpAlias)).path(IdentityProviderResource.class, "getMapperById").build(idpMapperId);
-        return uri.toString();
-    }
-
-    // USER FEDERATION PROVIDERS AND MAPPERS
-
-    public static String userFederationsResourcePath() {
-        URI uri = UriBuilder.fromUri("").path(RealmResource.class, "userFederation").build();
-        return uri.toString();
-    }
-
-    public static String userFederationCreateResourcePath() {
-        URI uri = UriBuilder.fromUri(userFederationsResourcePath()).path(UserFederationProvidersResource.class, "create").build();
-        return uri.toString();
-    }
-
-    public static String userFederationResourcePath(String userFederationId) {
-        URI uri = UriBuilder.fromUri(userFederationsResourcePath()).path(UserFederationProvidersResource.class, "get").build(userFederationId);
-        return uri.toString();
-    }
-
-    public static String userFederationMapperResourcePath(String userFederationId, String userFederationMapperId) {
-        URI uri = UriBuilder.fromUri(userFederationResourcePath(userFederationId))
-                .path(UserFederationProviderResource.class, "getMapperById").build(userFederationMapperId);
         return uri.toString();
     }
 

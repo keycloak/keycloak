@@ -18,37 +18,13 @@
 package org.keycloak.testsuite.admin;
 
 import org.junit.Ignore;
-import org.junit.Test;
-import org.keycloak.admin.client.resource.UserFederationProvidersResource;
-import org.keycloak.common.constants.KerberosConstants;
-import org.keycloak.events.admin.OperationType;
-import org.keycloak.events.admin.ResourceType;
-import org.keycloak.models.AuthenticationExecutionModel;
-import org.keycloak.models.LDAPConstants;
-import org.keycloak.provider.ProviderConfigProperty;
-import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
-import org.keycloak.representations.idm.UserFederationProviderFactoryRepresentation;
-import org.keycloak.representations.idm.UserFederationProviderRepresentation;
-import org.keycloak.representations.idm.UserFederationSyncResultRepresentation;
-import org.keycloak.testsuite.Assert;
-import org.keycloak.testsuite.admin.authentication.AbstractAuthenticationTest;
-import org.keycloak.testsuite.util.AdminEventPaths;
-import org.keycloak.testsuite.util.UserFederationProviderBuilder;
-
-import javax.ws.rs.BadRequestException;
-import javax.ws.rs.NotFoundException;
-import javax.ws.rs.core.Response;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 @Ignore
 public class UserStorageRestTest extends AbstractAdminTest {
-
+/*
     @Test
     public void testProviderFactories() {
         List<UserFederationProviderFactoryRepresentation> providerFactories = userFederation().getProviderFactories();
@@ -339,7 +315,7 @@ public class UserStorageRestTest extends AbstractAdminTest {
         Assert.assertEquals(-1, userFederation().get(id1).toRepresentation().getLastSync());
 
         // Sync and assert it happened
-        UserFederationSyncResultRepresentation syncResult = userFederation().get(id1).syncUsers("triggerFullSync");
+        SynchronizationResultRepresentation syncResult = userFederation().get(id1).syncUsers("triggerFullSync");
         Assert.assertEquals("0 imported users, 0 updated users", syncResult.getStatus());
 
         Map<String, Object> eventRep = new HashMap<>();
@@ -404,4 +380,5 @@ public class UserStorageRestTest extends AbstractAdminTest {
         Assert.assertNotNull(kerberosExecution);
         return kerberosExecution;
     }
+    */
 }

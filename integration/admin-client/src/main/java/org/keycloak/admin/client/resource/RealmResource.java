@@ -208,6 +208,10 @@ public interface RealmResource {
     @Path("components")
     ComponentsResource components();
 
+    @Path("user-storage")
+    UserStorageProviderResource userStorage();
+
+
     @Path("keys")
     KeyResource keys();
 
