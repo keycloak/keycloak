@@ -3,7 +3,7 @@
         <span>{{:: 'user-federation' | translate}}</span>
     </h1>
 
-    <div class="blank-slate-pf" data-ng-hide="instances && instances.length > 0">
+    <div class="blank-slate-pf" data-ng-hide="!instancesLoaded || (instances && instances.length > 0)">
         <div class="blank-slate-pf-icon">
             <span class="fa fa-database"></span>
         </div>
