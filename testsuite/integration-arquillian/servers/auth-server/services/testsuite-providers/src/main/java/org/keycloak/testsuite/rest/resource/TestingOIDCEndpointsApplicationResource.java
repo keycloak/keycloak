@@ -35,6 +35,8 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
+
+import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
@@ -63,13 +65,20 @@ public class TestingOIDCEndpointsApplicationResource {
     @NoCache
     public Map<String, String> generateKeys() {
         try {
-            KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA");
-            generator.initialize(2048);
-            clientData.setSigningKeyPair(generator.generateKeyPair());
-        } catch (NoSuchAlgorithmException e) {
+            KeyPair keyPair = KeyUtils.generateRsaKeyPair(2048);
+            clientData.setSigningKeyPair(keyPair);
+        } catch (Exception e) {
             throw new BadRequestException("Error generating signing keypair", e);
         }
 
+        return getKeysAsPem();
+    }
+
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/get-keys-as-pem")
+    public Map<String, String> getKeysAsPem() {
         String privateKeyPem = PemUtils.encodeKey(clientData.getSigningKeyPair().getPrivate());
         String publicKeyPem = PemUtils.encodeKey(clientData.getSigningKeyPair().getPublic());
 

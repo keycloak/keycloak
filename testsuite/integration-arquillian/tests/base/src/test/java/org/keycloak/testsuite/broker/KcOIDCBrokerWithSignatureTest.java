@@ -28,6 +28,8 @@ import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.keys.KeyProvider;
+import org.keycloak.keys.PublicKeyStorageUtils;
+import org.keycloak.keys.loader.PublicKeyStorageManager;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
@@ -107,15 +109,7 @@ public class KcOIDCBrokerWithSignatureTest extends AbstractBaseBrokerTest {
     @Test
     public void testSignatureVerificationJwksUrl() throws Exception {
         // Configure OIDC identity provider with JWKS URL
-        IdentityProviderRepresentation idpRep = getIdentityProvider();
-        OIDCIdentityProviderConfigRep cfg = new OIDCIdentityProviderConfigRep(idpRep);
-        cfg.setValidateSignature(true);
-        cfg.setUseJwksUrl(true);
-
-        UriBuilder b = OIDCLoginProtocolService.certsUrl(UriBuilder.fromUri(OAuthClient.AUTH_SERVER_ROOT));
-        String jwksUrl = b.build(bc.providerRealmName()).toString();
-        cfg.setJwksUrl(jwksUrl);
-        updateIdentityProvider(idpRep);
+        updateIdentityProviderWithJwksUrl();
 
         // Check that user is able to login
         logInAsUserInIDPForFirstTime();
@@ -137,6 +131,19 @@ public class KcOIDCBrokerWithSignatureTest extends AbstractBaseBrokerTest {
 
         logInAsUserInIDP();
         assertLoggedInAccountManagement();
+    }
+
+    // Configure OIDC identity provider with JWKS URL and validateSignature=true
+    private void updateIdentityProviderWithJwksUrl() {
+        IdentityProviderRepresentation idpRep = getIdentityProvider();
+        OIDCIdentityProviderConfigRep cfg = new OIDCIdentityProviderConfigRep(idpRep);
+        cfg.setValidateSignature(true);
+        cfg.setUseJwksUrl(true);
+
+        UriBuilder b = OIDCLoginProtocolService.certsUrl(UriBuilder.fromUri(OAuthClient.AUTH_SERVER_ROOT));
+        String jwksUrl = b.build(bc.providerRealmName()).toString();
+        cfg.setJwksUrl(jwksUrl);
+        updateIdentityProvider(idpRep);
     }
 
 
@@ -178,23 +185,17 @@ public class KcOIDCBrokerWithSignatureTest extends AbstractBaseBrokerTest {
     @Test
     public void testClearKeysCache() throws Exception {
         // Configure OIDC identity provider with JWKS URL
-        IdentityProviderRepresentation idpRep = getIdentityProvider();
-        OIDCIdentityProviderConfigRep cfg = new OIDCIdentityProviderConfigRep(idpRep);
-        cfg.setValidateSignature(true);
-        cfg.setUseJwksUrl(true);
-
-        UriBuilder b = OIDCLoginProtocolService.certsUrl(UriBuilder.fromUri(OAuthClient.AUTH_SERVER_ROOT));
-        String jwksUrl = b.build(bc.providerRealmName()).toString();
-        cfg.setJwksUrl(jwksUrl);
-        updateIdentityProvider(idpRep);
+        updateIdentityProviderWithJwksUrl();
 
         // Check that user is able to login
         logInAsUserInIDPForFirstTime();
         assertLoggedInAccountManagement();
 
+        logoutFromRealm(bc.consumerRealmName());
 
         // Check that key is cached
-        String expectedCacheKey = consumerRealm().toRepresentation().getId() + "::idp::" + idpRep.getInternalId();
+        IdentityProviderRepresentation idpRep = getIdentityProvider();
+        String expectedCacheKey = PublicKeyStorageUtils.getIdpModelCacheKey(consumerRealm().toRepresentation().getId(), idpRep.getInternalId());
         TestingCacheResource cache = testingClient.testing(bc.consumerRealmName()).cache(InfinispanConnectionProvider.KEYS_CACHE_NAME);
         Assert.assertTrue(cache.contains(expectedCacheKey));
 
@@ -203,6 +204,40 @@ public class KcOIDCBrokerWithSignatureTest extends AbstractBaseBrokerTest {
         Assert.assertFalse(cache.contains(expectedCacheKey));
         Assert.assertEquals(cache.size(), 0);
     }
+
+
+    // Test that when I update identityProvier, then the record in publicKey cache is cleared and it's not possible to authenticate with it anymore
+    @Test
+    public void testPublicKeyCacheInvalidatedWhenProviderUpdated() throws Exception {
+        // Configure OIDC identity provider with JWKS URL
+        updateIdentityProviderWithJwksUrl();
+
+        // Check that user is able to login
+        logInAsUserInIDPForFirstTime();
+        assertLoggedInAccountManagement();
+
+        logoutFromRealm(bc.consumerRealmName());
+
+        // Check that key is cached
+        IdentityProviderRepresentation idpRep = getIdentityProvider();
+        String expectedCacheKey = PublicKeyStorageUtils.getIdpModelCacheKey(consumerRealm().toRepresentation().getId(), idpRep.getInternalId());
+        TestingCacheResource cache = testingClient.testing(bc.consumerRealmName()).cache(InfinispanConnectionProvider.KEYS_CACHE_NAME);
+        Assert.assertTrue(cache.contains(expectedCacheKey));
+
+        // Update identityProvider to some bad JWKS_URL
+        OIDCIdentityProviderConfigRep cfg = new OIDCIdentityProviderConfigRep(idpRep);
+        cfg.setJwksUrl("http://localhost:43214/non-existent");
+        updateIdentityProvider(idpRep);
+
+        // Check that key is not cached anymore
+        Assert.assertFalse(cache.contains(expectedCacheKey));
+
+        // Check that user is not able to login with IDP
+        setTimeOffset(20);
+        logInAsUserInIDP();
+        assertErrorPage("Unexpected error when authenticating with identity provider");
+    }
+
 
 
     private void rotateKeys() {

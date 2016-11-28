@@ -37,6 +37,11 @@ public interface TestOIDCEndpointsApplicationResource {
     @Path("/generate-keys")
     Map<String, String> generateKeys();
 
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/get-keys-as-pem")
+    Map<String, String> getKeysAsPem();
+
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)

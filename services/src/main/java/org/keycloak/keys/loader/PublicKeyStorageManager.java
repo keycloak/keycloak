@@ -22,6 +22,7 @@ import java.security.PublicKey;
 import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.keys.PublicKeyStorageProvider;
+import org.keycloak.keys.PublicKeyStorageUtils;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -36,13 +37,9 @@ public class PublicKeyStorageManager {
 
         PublicKeyStorageProvider keyStorage = session.getProvider(PublicKeyStorageProvider.class);
 
-        String modelKey = getModelKey(client);
+        String modelKey = PublicKeyStorageUtils.getClientModelCacheKey(client.getRealm().getId(), client.getId());
         ClientPublicKeyLoader loader = new ClientPublicKeyLoader(session, client);
         return keyStorage.getPublicKey(modelKey, kid, loader);
-    }
-
-    private static String getModelKey(ClientModel client) {
-        return client.getRealm().getId() + "::client::" + client.getId();
     }
 
 
@@ -51,12 +48,9 @@ public class PublicKeyStorageManager {
 
         PublicKeyStorageProvider keyStorage = session.getProvider(PublicKeyStorageProvider.class);
 
-        String modelKey = getModelKey(realm, idpConfig);
+        String modelKey = PublicKeyStorageUtils.getIdpModelCacheKey(realm.getId(), idpConfig.getInternalId());
         OIDCIdentityProviderPublicKeyLoader loader = new OIDCIdentityProviderPublicKeyLoader(session, idpConfig);
         return keyStorage.getPublicKey(modelKey, kid, loader);
     }
 
-    private static String getModelKey(RealmModel realm, OIDCIdentityProviderConfig idpConfig) {
-        return realm.getId() + "::idp::" + idpConfig.getInternalId();
-    }
 }
