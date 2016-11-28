@@ -20,7 +20,7 @@ package org.keycloak.representations.idm;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class UserFederationSyncResultRepresentation {
+public class SynchronizationResultRepresentation {
 
     private boolean ignored;
 
@@ -30,6 +30,9 @@ public class UserFederationSyncResultRepresentation {
     private int failed;
 
     private String status;
+
+    public SynchronizationResultRepresentation() {
+    }
 
     public boolean isIgnored() {
         return ignored;

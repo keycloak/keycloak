@@ -29,6 +29,7 @@ import org.keycloak.models.UserProvider;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.UserModelDelegate;
 import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.representations.idm.SynchronizationResultRepresentation;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
 import org.keycloak.storage.ldap.LDAPUtils;
@@ -304,6 +305,12 @@ public class LDAPTestUtils {
 
 
     public static void assertSyncEquals(SynchronizationResult syncResult, int expectedAdded, int expectedUpdated, int expectedRemoved, int expectedFailed) {
+        Assert.assertEquals(expectedAdded, syncResult.getAdded());
+        Assert.assertEquals(expectedUpdated, syncResult.getUpdated());
+        Assert.assertEquals(expectedRemoved, syncResult.getRemoved());
+        Assert.assertEquals(expectedFailed, syncResult.getFailed());
+    }
+    public static void assertSyncEquals(SynchronizationResultRepresentation syncResult, int expectedAdded, int expectedUpdated, int expectedRemoved, int expectedFailed) {
         Assert.assertEquals(expectedAdded, syncResult.getAdded());
         Assert.assertEquals(expectedUpdated, syncResult.getUpdated());
         Assert.assertEquals(expectedRemoved, syncResult.getRemoved());

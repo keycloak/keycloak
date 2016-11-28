@@ -34,6 +34,7 @@ import org.keycloak.storage.ldap.LDAPStorageProviderFactory;
 import org.keycloak.storage.ldap.mappers.LDAPStorageMapper;
 import org.keycloak.storage.user.SynchronizationResult;
 
+import javax.ws.rs.BadRequestException;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -141,7 +142,7 @@ public class UserStorageProviderResource {
         ComponentModel mapperModel = realm.getComponent(mapperId);
         if (mapperModel == null) throw new NotFoundException("Mapper model not found");
         LDAPStorageMapper mapper = session.getProvider(LDAPStorageMapper.class, mapperModel);
-        ProviderFactory factory = session.getKeycloakSessionFactory().getProviderFactory(LDAPStorageProvider.class, parentModel.getProviderId());
+        ProviderFactory factory = session.getKeycloakSessionFactory().getProviderFactory(UserStorageProvider.class, parentModel.getProviderId());
 
         LDAPStorageProviderFactory providerFactory = (LDAPStorageProviderFactory)factory;
         LDAPStorageProvider federationProvider = providerFactory.create(session, parentModel);
@@ -154,7 +155,7 @@ public class UserStorageProviderResource {
         } else if ("keycloakToFed".equals(direction)) {
             syncResult = mapper.syncDataFromKeycloakToFederationProvider(mapperModel, federationProvider, session, realm);
         } else {
-            throw new NotFoundException("Unknown direction: " + direction);
+            throw new BadRequestException("Unknown direction: " + direction);
         }
 
         Map<String, Object> eventRep = new HashMap<>();

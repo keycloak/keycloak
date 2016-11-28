@@ -25,8 +25,11 @@ import org.junit.Test;
 import org.junit.rules.RuleChain;
 import org.junit.rules.TestRule;
 import org.junit.runners.MethodSorters;
+import org.keycloak.admin.client.Keycloak;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
+import org.keycloak.models.Constants;
+import org.keycloak.representations.idm.SynchronizationResultRepresentation;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
@@ -50,8 +53,13 @@ import org.keycloak.storage.user.SynchronizationResult;
 import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.testsuite.rule.LDAPRule;
 
+import javax.ws.rs.BadRequestException;
 import java.util.List;
 import java.util.Set;
+
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MASTER;
+import static org.keycloak.models.AdminRoles.ADMIN;
+import static org.keycloak.testsuite.Constants.AUTH_SERVER_ROOT;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -106,8 +114,12 @@ public class LDAPGroupMapperSyncTest {
             .outerRule(ldapRule)
             .around(keycloakRule);
 
+    protected Keycloak adminClient;
+
     @Before
     public void before() {
+        adminClient = Keycloak.getInstance(AUTH_SERVER_ROOT, MASTER, ADMIN, ADMIN, Constants.ADMIN_CLI_CLIENT_ID);
+
         KeycloakSession session = keycloakRule.startSession();
         try {
             RealmModel realm = session.realms().getRealmByName("test");
@@ -164,6 +176,24 @@ public class LDAPGroupMapperSyncTest {
         } finally {
             keycloakRule.stopSession(session, false);
         }
+    }
+
+    @Test
+    public void testSyncRestAPI() {
+        KeycloakSession session = keycloakRule.startSession();
+        try {
+            RealmModel realm = session.realms().getRealmByName("test");
+            ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(realm,ldapModel, "groupsMapper");
+            try {
+                // testing KEYCLOAK-3980 which threw an NPE because I was looking up the factory wrong.
+                SynchronizationResultRepresentation syncResultRep = adminClient.realm("test").userStorage().syncMapperData(ldapModel.getId(), mapperModel.getId(), "error");
+                Assert.fail("Should throw 400");
+            } catch (BadRequestException e) {
+            }
+        } finally {
+            keycloakRule.stopSession(session, false);
+        }
+
     }
 
     @Test
