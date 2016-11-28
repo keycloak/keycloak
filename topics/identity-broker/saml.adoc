@@ -60,6 +60,7 @@ This link is an XML document describing metadata about the IDP.
 
 You can also import all this configuration data by providing a URL or XML file that points to the entity descriptor of the external SAML IDP you want to connect to.
 
+[[_identity_broker_saml_sp_descriptor]]
 ==== SP Descriptor
 
 Once you create a SAML provider, there is an `EXPORT` button that appears when viewing that provider.
