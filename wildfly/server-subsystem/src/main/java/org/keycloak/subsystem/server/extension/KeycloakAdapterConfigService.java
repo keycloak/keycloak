@@ -85,7 +85,7 @@ public final class KeycloakAdapterConfigService {
     // be where the Keycloak server's Config interface expects it to be.
     
     private void massageScheduledTaskInterval(ModelNode copy) {
-        if (!copy.hasDefined("scheduled-task-intervale")) return;
+        if (!copy.hasDefined("scheduled-task-interval")) return;
         ModelNode taskInterval = copy.remove("scheduled-task-interval");
         copy.get("scheduled", "interval").set(taskInterval);
     }
