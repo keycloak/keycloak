@@ -67,6 +67,18 @@ public interface RealmModel extends RoleContainerModel {
         KeycloakSession getKeycloakSession();
     }
 
+    interface IdentityProviderUpdatedEvent extends ProviderEvent {
+        RealmModel getRealm();
+        IdentityProviderModel getUpdatedIdentityProvider();
+        KeycloakSession getKeycloakSession();
+    }
+
+    interface IdentityProviderRemovedEvent extends ProviderEvent {
+        RealmModel getRealm();
+        IdentityProviderModel getRemovedIdentityProvider();
+        KeycloakSession getKeycloakSession();
+    }
+
     String getId();
 
     String getName();

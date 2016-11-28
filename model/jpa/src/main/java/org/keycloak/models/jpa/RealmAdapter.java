@@ -960,28 +960,33 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
         List<IdentityProviderModel> identityProviders = new ArrayList<IdentityProviderModel>();
 
         for (IdentityProviderEntity entity: entities) {
-            IdentityProviderModel identityProviderModel = new IdentityProviderModel();
-            identityProviderModel.setProviderId(entity.getProviderId());
-            identityProviderModel.setAlias(entity.getAlias());
-            identityProviderModel.setDisplayName(entity.getDisplayName());
-
-            identityProviderModel.setInternalId(entity.getInternalId());
-            Map<String, String> config = entity.getConfig();
-            Map<String, String> copy = new HashMap<>();
-            copy.putAll(config);
-            identityProviderModel.setConfig(copy);
-            identityProviderModel.setEnabled(entity.isEnabled());
-            identityProviderModel.setTrustEmail(entity.isTrustEmail());
-            identityProviderModel.setAuthenticateByDefault(entity.isAuthenticateByDefault());
-            identityProviderModel.setFirstBrokerLoginFlowId(entity.getFirstBrokerLoginFlowId());
-            identityProviderModel.setPostBrokerLoginFlowId(entity.getPostBrokerLoginFlowId());
-            identityProviderModel.setStoreToken(entity.isStoreToken());
-            identityProviderModel.setAddReadTokenRoleOnCreate(entity.isAddReadTokenRoleOnCreate());
+            IdentityProviderModel identityProviderModel = entityToModel(entity);
 
             identityProviders.add(identityProviderModel);
         }
 
         return Collections.unmodifiableList(identityProviders);
+    }
+
+    private IdentityProviderModel entityToModel(IdentityProviderEntity entity) {
+        IdentityProviderModel identityProviderModel = new IdentityProviderModel();
+        identityProviderModel.setProviderId(entity.getProviderId());
+        identityProviderModel.setAlias(entity.getAlias());
+        identityProviderModel.setDisplayName(entity.getDisplayName());
+
+        identityProviderModel.setInternalId(entity.getInternalId());
+        Map<String, String> config = entity.getConfig();
+        Map<String, String> copy = new HashMap<>();
+        copy.putAll(config);
+        identityProviderModel.setConfig(copy);
+        identityProviderModel.setEnabled(entity.isEnabled());
+        identityProviderModel.setTrustEmail(entity.isTrustEmail());
+        identityProviderModel.setAuthenticateByDefault(entity.isAuthenticateByDefault());
+        identityProviderModel.setFirstBrokerLoginFlowId(entity.getFirstBrokerLoginFlowId());
+        identityProviderModel.setPostBrokerLoginFlowId(entity.getPostBrokerLoginFlowId());
+        identityProviderModel.setStoreToken(entity.isStoreToken());
+        identityProviderModel.setAddReadTokenRoleOnCreate(entity.isAddReadTokenRoleOnCreate());
+        return identityProviderModel;
     }
 
     @Override
@@ -1024,8 +1029,28 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
     public void removeIdentityProviderByAlias(String alias) {
         for (IdentityProviderEntity entity : realm.getIdentityProviders()) {
             if (entity.getAlias().equals(alias)) {
+
                 em.remove(entity);
                 em.flush();
+
+                session.getKeycloakSessionFactory().publish(new RealmModel.IdentityProviderRemovedEvent() {
+
+                    @Override
+                    public RealmModel getRealm() {
+                        return RealmAdapter.this;
+                    }
+
+                    @Override
+                    public IdentityProviderModel getRemovedIdentityProvider() {
+                        return entityToModel(entity);
+                    }
+
+                    @Override
+                    public KeycloakSession getKeycloakSession() {
+                        return session;
+                    }
+                });
+
             }
         }
     }
@@ -1048,6 +1073,24 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
         }
 
         em.flush();
+
+        session.getKeycloakSessionFactory().publish(new RealmModel.IdentityProviderUpdatedEvent() {
+
+            @Override
+            public RealmModel getRealm() {
+                return RealmAdapter.this;
+            }
+
+            @Override
+            public IdentityProviderModel getUpdatedIdentityProvider() {
+                return identityProvider;
+            }
+
+            @Override
+            public KeycloakSession getKeycloakSession() {
+                return session;
+            }
+        });
     }
 
     @Override

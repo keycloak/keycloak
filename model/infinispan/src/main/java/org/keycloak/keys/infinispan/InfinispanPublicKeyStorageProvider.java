@@ -19,6 +19,7 @@ package org.keycloak.keys.infinispan;
 
 import java.security.PublicKey;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -32,6 +33,7 @@ import org.keycloak.common.util.Time;
 import org.keycloak.keys.PublicKeyLoader;
 import org.keycloak.keys.PublicKeyStorageProvider;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakTransaction;
 import org.keycloak.models.cache.infinispan.ClearCacheEvent;
 import org.keycloak.models.cache.infinispan.InfinispanCacheRealmProviderFactory;
 
@@ -51,12 +53,16 @@ public class InfinispanPublicKeyStorageProvider implements PublicKeyStorageProvi
 
     private final int minTimeBetweenRequests ;
 
+    private Set<String> invalidations = new HashSet<>();
+
     public InfinispanPublicKeyStorageProvider(KeycloakSession session, Cache<String, PublicKeysEntry> keys, Map<String, FutureTask<PublicKeysEntry>> tasksInProgress, int minTimeBetweenRequests) {
         this.session = session;
         this.keys = keys;
         this.tasksInProgress = tasksInProgress;
         this.minTimeBetweenRequests = minTimeBetweenRequests;
+        session.getTransactionManager().enlistAfterCompletion(getAfterTransaction());
     }
+
 
     @Override
     public void clearCache() {
@@ -64,6 +70,56 @@ public class InfinispanPublicKeyStorageProvider implements PublicKeyStorageProvi
         ClusterProvider cluster = session.getProvider(ClusterProvider.class);
         cluster.notify(InfinispanPublicKeyStorageProviderFactory.KEYS_CLEAR_CACHE_EVENTS, new ClearCacheEvent(), true);
     }
+
+
+    void addInvalidation(String cacheKey) {
+        this.invalidations.add(cacheKey);
+    }
+
+
+    protected KeycloakTransaction getAfterTransaction() {
+        return new KeycloakTransaction() {
+
+            @Override
+            public void begin() {
+            }
+
+            @Override
+            public void commit() {
+                runInvalidations();
+            }
+
+            @Override
+            public void rollback() {
+                runInvalidations();
+            }
+
+            @Override
+            public void setRollbackOnly() {
+            }
+
+            @Override
+            public boolean getRollbackOnly() {
+                return false;
+            }
+
+            @Override
+            public boolean isActive() {
+                return true;
+            }
+        };
+    }
+
+
+    protected void runInvalidations() {
+        ClusterProvider cluster = session.getProvider(ClusterProvider.class);
+
+        for (String cacheKey : invalidations) {
+            keys.remove(cacheKey);
+            cluster.notify(cacheKey, PublicKeyStorageInvalidationEvent.create(cacheKey), true);
+        }
+    }
+
 
     @Override
     public PublicKey getPublicKey(String modelKey, String kid, PublicKeyLoader loader) {
