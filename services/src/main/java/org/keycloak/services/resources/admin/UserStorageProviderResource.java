@@ -80,9 +80,13 @@ public class UserStorageProviderResource {
         auth.init(RealmAuth.Resource.USER);
     }
 
-   /**
+    /**
      * Trigger sync of users
      *
+     * Action can be "triggerFullSync" or "triggerChangedUsersSync"
+     *
+     * @param id
+     * @param action
      * @return
      */
     @POST
@@ -127,6 +131,8 @@ public class UserStorageProviderResource {
 
     /**
      * Trigger sync of mapper data related to ldap mapper (roles, groups, ...)
+     *
+     * direction is "fedToKeycloak" or "keycloakToFed"
      *
      * @return
      */

@@ -30,11 +30,32 @@ import javax.ws.rs.core.MediaType;
  * @version $Revision: 1 $
  */
 public interface UserStorageProviderResource {
+    /**
+     * If the provider supports synchronization, this will invoke it.
+     *
+     * Action can be "triggerFullSync" or "triggerChangedUsersSync"
+     *
+     *
+     * @param action
+     * @return
+     */
     @POST
     @Path("{componentId}/sync")
     @Produces(MediaType.APPLICATION_JSON)
     SynchronizationResultRepresentation syncUsers(@QueryParam("action") String action);
 
+    /**
+     * REST invocation for initiating sync for an ldap mapper.  This method may be moved in the future.  Right now
+     * don't have a good place for it.
+     *
+     * direction is "fedToKeycloak" or "keycloakToFed"
+     *
+     *
+     * @param componentId
+     * @param mapperId
+     * @param direction
+     * @return
+     */
     @POST
     @Path("{componentId}/mappers/{mapperId}/sync")
     @Produces(MediaType.APPLICATION_JSON)
