@@ -66,6 +66,14 @@
             <artifactId>keycloak-dependencies-server-all</artifactId>
             <type>pom</type>
         </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-undertow-adapter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-servlet-filter-adapter</artifactId>
+        </dependency>
     </dependencies>
 
 </project>
