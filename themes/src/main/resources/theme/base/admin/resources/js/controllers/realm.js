@@ -2638,11 +2638,19 @@ module.controller('RealmImportCtrl', function($scope, realm, $route,
     $scope.itemCount = function(section) {
         if (!$scope.importing) return 0;
         if ($scope.hasRealmRoles() && (section === 'roles.realm')) return $scope.fileContent.roles.realm.length;
-        if ($scope.hasClientRoles() && (section === 'roles.client')) return Object.keys($scope.fileContent.roles.client).length;
+        if ($scope.hasClientRoles() && (section === 'roles.client')) return clientRolesCount($scope.fileContent.roles.client);
         
         if (!$scope.fileContent.hasOwnProperty(section)) return 0;
         
         return $scope.fileContent[section].length;
+    }
+    
+    clientRolesCount = function(clientRoles) {
+        var total = 0;
+        for (var clientName in clientRoles) {
+            total += clientRoles[clientName].length;
+        }
+        return total;
     }
     
     $scope.hasResources = function() {
