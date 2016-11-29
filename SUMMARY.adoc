@@ -1,4 +1,4 @@
-= Summary
+= {{book.title}}
 
 . link:topics/overview.adoc[Overview]
 .. link:topics/overview/recommended-reading.adoc[Recommended Reading]
@@ -40,4 +40,3 @@
 .. link:topics/cache/disable.adoc[Disabling Caching]
 .. link:topics/cache/clear.adoc[Clearing Caches at Runtime]
 . link:topics/proxy.adoc[Keycloak Security Proxy]
-
