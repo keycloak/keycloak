@@ -1,99 +1,98 @@
 <!--
-~ Copyright 2016 Red Hat, Inc. and/or its affiliates
-~ and other contributors as indicated by the @author tags.
-~
-~ Licensed under the Apache License, Version 2.0 (the "License");
-~ you may not use this file except in compliance with the License.
-~ You may obtain a copy of the License at
-~
-~ http://www.apache.org/licenses/LICENSE-2.0
-~
-~ Unless required by applicable law or agreed to in writing, software
-~ distributed under the License is distributed on an "AS IS" BASIS,
-~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-~ See the License for the specific language governing permissions and
-~ limitations under the License.
--->
+  ~ Copyright 2016 Red Hat, Inc. and/or its affiliates
+  ~ and other contributors as indicated by the @author tags.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
 
 <html>
 <body>
-  <script>
-  var init;
-  
-  function checkState(clientId, origin, sessionState, callback) {
-    var cookie = getCookie();
-    
-    if (!cookie) {
-      callback('changed');
-    } else if (!init) {
-      var req = new XMLHttpRequest(),
-        url = location.href + '/init';
+<script>
+    var init;
 
-      url += '?client_id=' + encodeURIComponent(clientId);
-      url += '&origin=' + encodeURIComponent(origin);
-      
-      req.open('GET', url, true);
-      
-      req.onreadystatechange = function () {
-        if (req.readyState === 4) {
-          if (req.status === 204) {
-            init = {
-              clientId: clientId,
-              origin: origin
-            }
-            callback('unchanged');
-          } else if (req.status === 404) {
+    function checkState(clientId, origin, sessionState, callback) {
+        var cookie = getCookie();
+
+        if (!cookie) {
             callback('changed');
-          } else {
-            callback('error');
-          }
-        }
-      };
-      
-      req.send();
-    } else {
-      if (clientId === init.clientId && origin === init.origin) {
-        if (sessionState === cookie) {
-          callback('unchanged');
+        } else  if (!init) {
+            var req = new XMLHttpRequest();
+
+            var url = location.href + "/init";
+            url += "?client_id=" + encodeURIComponent(clientId);
+            url += "&origin=" + encodeURIComponent(origin);
+
+            req.open('GET', url, true);
+
+            req.onreadystatechange = function () {
+                if (req.readyState === 4) {
+                    if (req.status === 204) {
+                        init = {
+                            clientId: clientId,
+                            origin: origin
+                        }
+                        callback('unchanged');
+                    } else if (req.status === 404) {
+                        callback('changed');
+                    } else {
+                        callback('error');
+                    }
+                }
+            };
+
+            req.send();
         } else {
-          callback('changed');
+            if (clientId === init.clientId && origin === init.origin) {
+                if (sessionState === cookie) {
+                    callback('unchanged');
+                } else {
+                    callback('changed');
+                }
+            } else {
+                callback('error');
+            }
         }
-      } else {
-        callback('error');
-      }
     }
-  }
-  
-  function getCookie() {
-    var name = 'KEYCLOAK_SESSION=',
-      ca = document.cookie.split(';'),
-      i = 0,
-      length = ca.length,
-      c = null;
-    
-    for (; i < length; i++) {
-      c = ca[i].trim();
-      if (c.indexOf(name) === 0) return c.substring(name.length, c.length);
+
+    function getCookie()
+    {
+        var name = 'KEYCLOAK_SESSION=';
+        var ca = document.cookie.split(';');
+        for(var i=0; i<ca.length; i++)
+        {
+            var c = ca[i].trim();
+            if (c.indexOf(name)===0) return c.substring(name.length,c.length);
+        }
+        return null;
     }
-    return null;
-  }
-  
-  function receiveMessage(event) {
-    var origin = event.origin,
-    data = event.data.split(' '),
-    clientId = data[0],
-    sessionState = data[1];
-    
-    if (data.length !== 2) {
-      event.source.postMessage('error', origin);
+
+    function receiveMessage(event)
+    {
+        var origin = event.origin;
+        var data = event.data.split(' ');
+        if (data.length != 2) {
+            event.source.postMessage('error', origin);
+        }
+
+        var clientId = data[0];
+        var sessionState = data[1];
+
+        checkState(clientId, event.origin, sessionState, function(result) {
+            event.source.postMessage(result, origin);
+        });
     }
-    
-    checkState(clientId, event.origin, sessionState, function (result) {
-      event.source.postMessage(result, origin);
-    });
-  }
-  
-  window.addEventListener('message', receiveMessage, false);
-  </script>
+
+    window.addEventListener("message", receiveMessage, false);
+</script>
 </body>
 </html>
