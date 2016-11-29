@@ -1,3 +1,4 @@
+[[_service_entitlement_whatis_obtain_eat]]
 == Entitlement API Tokens
 
 An entitlement API token (EAT) is a special OAuth2 access token with the scope *kc_entitlement*.

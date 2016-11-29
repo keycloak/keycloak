@@ -1,3 +1,4 @@
+[[_service_entitlement_api_aapi]]
 == Requesting Entitlements
 
 Client applications can use a specific endpoint to obtain a special security token called a requesting party token (RPT).

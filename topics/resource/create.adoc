@@ -1,3 +1,4 @@
+[[_resource_create]]
 == Creating Resources
 
 Creating a resource is straightforward and generic. Your main concern is the granularity of the resources you create. In other words, resources can
@@ -14,13 +15,13 @@ In {{book.project.name}}, a resource defines a small set of information that is 
 +
 A human-readable and unique string describing this resource.
 
-[[_type]]
+[[_resource_create_type]]
 * *Type*
 +
 A string uniquely identifying the type of a set of one or more resources. The type is a _string_ used to group different resource instances.
 For example, the default type for the default resource that is automatically created is `urn:resource-server-name:resources:default`
 
-[[_uri]]
+[[_resource_create_uri]]
 * *URI*
 +
 A URI that provides the location/address for the resource. For HTTP resources, the URI
@@ -41,7 +42,7 @@ However, resources can also be associated with users, so you can create permissi
 
 === Managing Resources Remotely
 
-Resource management is also exposed through the link:../service/protection/protection-api.html[Protection API] to allow resource servers to remotely manage their resources.
+Resource management is also exposed through the <<fake/../../service/protection/protection-api.adoc#_service_protection_api, Protection API>> to allow resource servers to remotely manage their resources.
 
 When using the Protection API, resource servers can be implemented to manage resources owned by their users. In this case, you can
 specify the user identifier to configure a resource as belonging to a specific user.

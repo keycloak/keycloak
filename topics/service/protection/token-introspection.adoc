@@ -1,3 +1,4 @@
+[[_service_protection_token_introspection]]
 == Introspecting a Requesting Party Token
 
 Sometimes you might want to introspect a requesting party token (RPT) to check its validity or obtain the permissions within the token to enforce authorization decisions on the resource server side.
@@ -5,7 +6,7 @@ Sometimes you might want to introspect a requesting party token (RPT) to check i
 There are two main use cases where token introspection can help you:
 
 * When client applications need to query the token validity to obtain a new one with the same or additional permissions
-* When enforcing authorization decisions at the resource server side, especially when none of the built-in link:../../enforcer/overview.html[policy enforcers] fits your application
+* When enforcing authorization decisions at the resource server side, especially when none of the built-in <<fake/../../../enforcer/overview.adoc#_enforcer_overview, policy enforcers>> fits your application
 
 === Obtaining Information about a RPT
 
@@ -66,13 +67,13 @@ If the RPT is not active, this response is returned instead:
 
 === Do I Need to Invoke the Server Every Time I want to Introspect a RPT?
 
-No. Both link:../../service/authorization/authorization-api.html[Authorization] and link:../../service/entitlement/entitlement-api.html[Entitlement] APIs use the
+No. Both <<fake/../../../service/authorization/authorization-api.adoc#_service_authorization_api, Authorization>> and <<fake/../../../service/entitlement/entitlement-api.adoc#_service_entitlement_api, Entitlement>> APIs use the
  https://tools.ietf.org/html/rfc7519[JSON web token (JWT)] specification as the default format for RPTs.
 
 If you want to validate these tokens without a call to the remote introspection endpoint, you can decode the RPT and query for its validity locally. Once you decode the token,
 you can also use the permissions within the token to enforce authorization decisions.
 
-This is essentially what the link:../../enforcer/overview.html[policy enforcers] do. Be sure to:
+This is essentially what the <<fake/../../../enforcer/overview.adoc#_enforcer_overview, policy enforcers>> do. Be sure to:
 
 * Validate the signature of the RPT (based on the realm's public key)
 * Query for token validity based on its _exp_, _iat_, and _aud_ claims

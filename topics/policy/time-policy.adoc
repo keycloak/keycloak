@@ -1,3 +1,4 @@
+[[_policy_time]]
 == Time-Based Policy
 
 You can use this type of policy to define time conditions for your permissions.
@@ -49,6 +50,6 @@ Defines the minute that access must be granted. You can also specify a range of 
 +
 * *Logic*
 +
-The link:logic.html[Logic] of this policy to apply after the other conditions have been evaluated.
+The <<fake/../logic.adoc#_policy_logic, Logic>> of this policy to apply after the other conditions have been evaluated.
 
 Access is only granted if all conditions are satisfied. {{book.project.name}} will perform an _AND_ based on the outcome of each condition.

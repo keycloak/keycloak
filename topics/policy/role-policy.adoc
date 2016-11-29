@@ -1,8 +1,9 @@
+[[_policy_rbac]]
 == Role-Based Policy
 
 You can use this type of policy to define conditions for your permissions where a set of one or more roles is permitted to access an object.
 
-By default, roles added to this policy are not specified as required and the policy will grant access if the user requesting access has been granted any of these roles. However, you can specify a specific role as link:role-policy-required-role.adoc[required] if you want to enforce a specific role. You can also combine required and non-required roles, regardless of whether they are realm or client roles.
+By default, roles added to this policy are not specified as required and the policy will grant access if the user requesting access has been granted any of these roles. However, you can specify a specific role as <<fake/../role-policy-required-role.adoc#_policy_rbac_required, required>> if you want to enforce a specific role. You can also combine required and non-required roles, regardless of whether they are realm or client roles.
 
 Role policies can be useful when you need more restricted role-based access control (RBAC), where specific roles must be enforced to grant access to an object. For instance, you can enforce that a user must consent to allowing a client application (which is acting on the user's behalf) to access the user's resources. You can use {{book.project.name}} Client Scope Mapping to enable consent pages or even enforce clients to explicitly provide a scope when obtaining access tokens from a {{book.project.name}} server.
 
@@ -32,4 +33,4 @@ Specifies which *client* roles are permitted by this policy. To enable this fiel
 +
 * *Logic*
 +
-The link:logic.html[Logic] of this policy to apply after the other conditions have been evaluated.
+The <<fake/../logic.adoc#_policy_logic, Logic>> of this policy to apply after the other conditions have been evaluated.
