@@ -1,25 +1,26 @@
+[[_overview_architecture]]
 == Architecture
 
-image:../../images/authz-arch-overview.png[alt="Keycloak AuthZ Architecture Overview"]
+image:../../images/authz-arch-overview.png[alt="{{book.project.name}} AuthZ Architecture Overview"]
 
 From a design perspective, {{book.project.module}} is based on a well-defined set of authorization patterns providing these capabilities:
 
 * **Policy Administration Point (PAP)**
 +
 Provides a set of UIs based on the {{book.project.name}} Administration Console to manage resource servers, resources, scopes, permissions, and policies.
-Part of this is also accomplished remotely through the use of the link:../service/protection/protection-api.adoc[Protection API].
+Part of this is also accomplished remotely through the use of the <<fake/../../service/protection/protection-api.adoc#_service_protection_api, Protection API>>.
 +
 
 * **Policy Decision Point (PDP)**
 +
 Provides a distributable policy decision point to where authorization requests are sent and policies are evaluated accordingly with the permissions being requested. Part of this is also accomplished remotely through the use of the
-link:../service/authorization/authorization-api.adoc[Authorization] and link:../service/entitlement/entitlement-api.adoc[Entitlement] APIs.
+<<fake/../../service/authorization/authorization-api.adoc#_service_authorization_api, Authorization>> and <<fake/../../service/entitlement/entitlement-api.adoc#_service_entitlement_api, Entitlement>> APIs.
 +
 
 * **Policy Enforcement Point (PEP)**
 +
 Provides implementations for different environments to actually enforce authorization decisions at the resource server side.
-Keycloak provides some built-in link:../enforcer/overview.html[Policy Enforcers].
+{{book.project.name}} provides some built-in <<fake/../../enforcer/overview.adoc#_enforcer_overview, Policy Enforcers>>.
 +
 
 * **Policy Information Point (PIP)**
@@ -40,7 +41,7 @@ Three main processes define the necessary steps to understand how to use KC to e
 
 image:../../images/resource-mgmt-process.png[alt="Resource Management Overview"]
 
-First, you need to specify {{book.project.name}} what are you looking to protect, which usually represents a web application or a set of one or more services. For more information on resource servers see link:../overview/terminology.html[Terminology].
+First, you need to specify {{book.project.name}} what are you looking to protect, which usually represents a web application or a set of one or more services. For more information on resource servers see <<fake/../../overview/terminology.adoc#_overview_terminology, Terminology>>.
 
 Resource servers are managed using the {{book.project.name}} Administration Console. There you can enable any registered client application as a resource server and start managing the resources and scopes you want to protect.
 
@@ -50,7 +51,7 @@ A resource can be a web page, a RESTFul resource, a file in your file system, an
 
 For instance, you might have a _Bank Account_ resource that represents all banking accounts and use it to define the authorization policies that are common to all banking accounts. However, you might want to define specific policies for _Alice Account_ (a resource instance that belongs to a customer), where only the owner is allowed to access some information or perform an operation.
 
-Resources can be managed using the {{book.project.name}} Administration Console or the link:../service/protection/protection-api.adoc[Protection API]. In the latter case, resource servers are able to manage their resources remotely.
+Resources can be managed using the {{book.project.name}} Administration Console or the <<fake/../../service/protection/protection-api.adoc#_service_protection_api, Protection API>>. In the latter case, resource servers are able to manage their resources remotely.
 
 Scopes usually represent the actions that can be performed on a resource, but they are not limited to that. You can also use scopes to represent one or more attributes within a resource.
 
@@ -77,7 +78,7 @@ what you want to protect (resource or scope) and the policies that must be satis
 
 image:../../images/pep-pattern-diagram.png[alt="PEP Overview"]
 
-{{book.project.name}} provides some built-in link:../enforcer/overview.html[Policy Enforcers] implementations that you can use to protect your applications depending on the platform they are running on.
+{{book.project.name}} provides some built-in <<fake/../../enforcer/overview.adoc#_enforcer_overview, Policy Enforcers>> implementations that you can use to protect your applications depending on the platform they are running on.
 
 
 === Authorization Services
@@ -112,11 +113,11 @@ By default, Remote Resource Management is enabled. You can change that using the
 
 When using the UMA protocol, the issuance of Permission Tickets by the Protection API is an important part of the whole authorization process. As described in a subsequent section, they represent the permissions being requested by the client and that are sent to the server to obtain a final token with all permissions granted during the evaluation of the permissions and policies associated with the resources and scopes being requested.
 
-For more information, see link:../service/protection/protection-api.adoc[Protection API].
+For more information, see <<fake/../../service/protection/protection-api.adoc#_service_protection_api, Protection API>>.
 
 ==== Authorization API
 
-The Authorization API is also a https://docs.kantarainitiative.org/uma/rec-uma-core.html[UMA-compliant] endpoint providing a single operation that exchanges an Access Token and link:./terminology.adoc#_permission_ticket[Permission Ticket] with a Requesting Party Token (RPT).
+The Authorization API is also a https://docs.kantarainitiative.org/uma/rec-uma-core.html[UMA-compliant] endpoint providing a single operation that exchanges an Access Token and <<fake/.././terminology.adoc#_overview_terminology_permission_ticket, Permission Ticket>> with a Requesting Party Token (RPT).
 
 The RPT holds all permissions granted to a client and can be used to call a resource server to get access to its protected resources.
 
@@ -125,7 +126,7 @@ within a permission ticket.
 
 image:../../images/authz-calls.png[alt="Authorization API Overview"]
 
-For more information, see link:../service/authorization/authorization-api.adoc[Authorization API].
+For more information, see <<fake/../../service/authorization/authorization-api.adoc#_service_authorization_api, Authorization API>>.
 
 === Entitlement API
 
@@ -136,7 +137,7 @@ one or more resources.
 
 image:../../images/entitlement-calls.png[alt="Entitlement API Overview"]
 
-For more information see link:../service/entitlement/entitlement-api.adoc[Entitlement API].
+For more information see <<fake/../../service/entitlement/entitlement-api.adoc#_service_entitlement_api, Entitlement API>>.
 
 
 

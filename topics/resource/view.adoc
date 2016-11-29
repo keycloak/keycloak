@@ -1,3 +1,4 @@
+[[_resource_view]]
 === Viewing Resources
 
 On the *Resource* page, you see a list of the resources associated with a resource server.

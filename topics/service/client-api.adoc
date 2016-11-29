@@ -1,3 +1,4 @@
+[[_service_client_api]]
 == Authorization Client API
 
 If you are using Java, you can access all {{book.project.name}} {{book.project.module}} using a client API.
@@ -35,7 +36,7 @@ The name of the realm.
 
 * *auth-server-url* (required)
 +
-The base URL of the Keycloak server. All other Keycloak pages and REST service endpoints are derived from this. It is usually in the form https://host:port/auth. 
+The base URL of the {{book.project.name}} server. All other {{book.project.name}} pages and REST service endpoints are derived from this. It is usually in the form https://host:port/auth.
 
 * *resource* (required)
 +

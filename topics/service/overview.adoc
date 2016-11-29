@@ -1,3 +1,4 @@
+[[_service_overview]]
 == Authorization Services
 
 {{book.project.name}} {{book.project.module}} are based on OAuth2's User-Managed Access (UMA) Profile.

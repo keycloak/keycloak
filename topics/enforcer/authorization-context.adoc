@@ -1,3 +1,4 @@
+[[_enforcer_authorization_context]]
 == Obtaining the Authorization Context
 
 When policy enforcement is enabled, the permissions obtained from the server are available through `org.keycloak.AuthorizationContext`.

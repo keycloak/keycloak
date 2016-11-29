@@ -1,3 +1,4 @@
+[[_resource_server_enable_authorization]]
 == Enabling Authorization Services
 
 To turn your OIDC Client Application into a resource server and enable fine-grained authorization, click the *Authorization Enabled* switch to *ON* and click *Save*.
@@ -18,23 +19,23 @@ General settings for your resource server. More details about this page in this 
 
 * *Resource*
 +
-From this page, you can manage your application's link:../resource/overview.html[resources].
+From this page, you can manage your application's <<fake/../../resource/overview.adoc#_resource_overview, resources>>.
 
 * *Scope*
 +
-From this page, you can manage link:../resource/overview.html[scopes].
+From this page, you can manage <<fake/../../resource/overview.adoc#_resource_overview, scopes>>.
 
 * *Policies*
 +
-From this page, you can manage link:../policy/overview.html[authorization policies] and define the conditions that must be met to grant a permission.
+From this page, you can manage <<fake/../../policy/overview.adoc#_policy_overview, authorization policies>> and define the conditions that must be met to grant a permission.
 
 * *Permissions*
 +
-From this page, you can manage the link:../permission/overview.html[permissions] for your protected resources and scopes by linking them with the policies you created.
+From this page, you can manage the <<fake/../../permission/overview.adoc#_permission_overview, permissions>> for your protected resources and scopes by linking them with the policies you created.
 
 * *Evaluate*
 +
-From this page, you can link:../policy-evaluation-tool/overview.html[simulate authorization requests] and view the result of the evaluation of the permissions and authorization policies you have defined.
+From this page, you can <<fake/../../policy-evaluation-tool/overview.adoc#_policy_evaluation_overview, simulate authorization requests>> and view the result of the evaluation of the permissions and authorization policies you have defined.
 
 === Resource Server Settings
 

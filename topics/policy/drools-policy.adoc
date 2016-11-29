@@ -1,13 +1,14 @@
+[[_policy_drools]]
 == Rule-Based Policy
 
 With this type of policy you can define conditions for your permissions using http://www.drools.org[Drools], which is a rule evaluation environment. It is one of the _Rule-Based_ policy types
-supported by {{book.project.name}}, and provides flexibility to write any policy based on the link:evaluation-api.adoc[Evaluation API].
+supported by {{book.project.name}}, and provides flexibility to write any policy based on the <<fake/../evaluation-api.adoc#_policy_evaluation_api, Evaluation API>>.
 
-To create a new Drools-based policy, in the dropdown list in the right upper corner of the permission listing,
- select *Drools*.
+To create a new Rule-based policy, in the dropdown list in the right upper corner of the permission listing,
+ select *Rule*.
 
-.Add Drools Policy
-image:../../images/policy/create-drools.png[alt="Add Drools Policy"]
+.Add Rule Policy
+image:../../images/policy/create-drools.png[alt="Add Rule Policy"]
 
 === Configuration
 
@@ -50,7 +51,7 @@ Specifies an interval for scanning for artifact updates.
 +
 * *Logic*
 +
-The link:logic.html[Logic] of this policy to apply after the other conditions have been evaluated.
+The <<fake/../logic.adoc#_policy_logic, Logic>> of this policy to apply after the other conditions have been evaluated.
 
 === Examples
 
@@ -88,4 +89,4 @@ rule "Authorize Using Identity Information"
 end
 ```
 
-For more information about what you can access from the `org.keycloak.authorization.policy.evaluation.Evaluation` interface, see link:./evaluation-api.adoc[Evaluation API].
+For more information about what you can access from the `org.keycloak.authorization.policy.evaluation.Evaluation` interface, see <<fake/../evaluation-api.adoc#_policy_evaluation_api, Evaluation API>>.

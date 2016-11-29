@@ -1,3 +1,4 @@
+[[_policy_user]]
 == User-Based Policy
 
 You can use this type of policy to define conditions for your permissions where a set of one or more users is permitted to access an object.
@@ -24,4 +25,4 @@ Specifies which users are given access by this policy.
 +
 * *Logic*
 +
-The link:logic.html[Logic] of this policy to apply after the other conditions have been evaluated.
+The <<fake/../logic.adoc#_policy_logic, Logic>> of this policy to apply after the other conditions have been evaluated.

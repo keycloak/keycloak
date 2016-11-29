@@ -1,3 +1,4 @@
+[[_permission_create_resource]]
 == Creating Resource-based Permissions
 
 A resource-based permission defines a set of one or more resources to protect using a set of one or more authorization policies.
@@ -18,7 +19,7 @@ can identify them more easily.
 +
 A string containing details about this permission.
 
-[[_apply_resource_type]]
+[[_permission_create_resource_apply_resource_type]]
 * *Apply To Resource Type*
 +
 Specifies if the permission is applied to all resources with a given type. When selecting this field, you are prompted to enter the resource type to protect.
@@ -37,4 +38,4 @@ Defines a set of one or more policies to associate with a permission.
 
 * *Decision Strategy*
 +
-The link:decision-strategy.html[Decision Strategy] for this permission.
+The <<fake/../decision-strategy.adoc#_permission_decision_strategies, Decision Strategy>> for this permission.

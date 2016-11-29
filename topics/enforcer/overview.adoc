@@ -1,3 +1,4 @@
+[[_enforcer_overview]]
 == Policy Enforcers
 
 Policy Enforcement Point (PEP) is a design pattern and as such you can implement it in different ways. {{book.project.name}} provides all the necessary means

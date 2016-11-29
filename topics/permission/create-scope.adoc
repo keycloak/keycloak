@@ -1,3 +1,4 @@
+[[_permission_create_scope]]
 == Creating Scope-based Permissions
 
 A scope-based permission defines a set of one or more scopes to protect using a set of one or more authorization policies. Unlike resource-based permissions, you can use this permission type to create permissions not only for a resource, but also for the scopes associated with it, providing more granularity when defining the permissions that govern your resources and the actions that can be performed on them.
@@ -32,4 +33,4 @@ Defines a set of one or more policies to associate with a permission.
 
 * *Decision Strategy*
 +
-The link:decision-strategy.html[Decision Strategy] for this permission.
+The <<fake/../decision-strategy.adoc#_permission_decision_strategies, Decision Strategy>> for this permission.

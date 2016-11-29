@@ -1,3 +1,4 @@
+[[_service_authorization_api_aapi]]
 == Requesting Authorization Data and Token
 
 Client applications using the UMA protocol can use a specific endpoint to obtain a special security token called a requesting party token (RPT).
@@ -10,8 +11,8 @@ http://${host}:${port}/auth/realms/${realm_name}/authz/authorize
 
 When requesting an RPT, you need to provide two things:
 
-* A link:../protection/permission-api-papi.adoc[permission ticket] with the resources you want to access
-* The link:./whatis-obtain-aat.adoc[authorization API token (AAT)] (as a bearer token) representing a user's identity and his consent to access authorization data on his behalf.
+* A <<fake/../../protection/permission-api-papi.adoc#_service_protection_permission_api_papi, permission ticket>> with the resources you want to access
+* The <<fake/../whatis-obtain-aat.adoc#_service_authorization_aat, authorization API token (AAT)>> (as a bearer token) representing a user's identity and his consent to access authorization data on his behalf.
 
 ```bash
 curl -X POST

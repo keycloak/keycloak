@@ -1,3 +1,4 @@
+[[_service_authorization_api]]
 == Authorization API
 
 The Authorization API provides a UMA-compliant endpoint for obtaining authorization data from the server, where the authorization data represents the result of the evaluation

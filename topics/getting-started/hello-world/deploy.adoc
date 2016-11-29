@@ -1,3 +1,4 @@
+[[_getting_started_hello_world_deploy]]
 == Building, Deploying, and Testing Your Application
 
 Now that the *hello-world-authz-service* resource server (or client) is properly configured and authorization services are enabled, it can be deployed to the server.
@@ -8,19 +9,19 @@ You must first obtain the adapter configuration before building and deploying th
 
 To obtain the adapter configuration from the {{book.project.name}} Administration Console, complete the following steps. 
 
-1. Click *Clients*. In the client listing, click the *hello-world-authz-service* client application. The Client Details page opens.
-
+. Click *Clients*. In the client listing, click the *hello-world-authz-service* client application. The Client Details page opens.
++
 .Client Details
 image:../../../images/getting-started/hello-world/enable-authz.png[alt="Client Details"]
 
-2. Click the *Installation* tab. From the Format Option dropdown list, select *Keycloak OIDC JSON*. The adapter configuration is displayed in JSON format. Click *Download*.
-
+. Click the *Installation* tab. From the Format Option dropdown list, select *Keycloak OIDC JSON*. The adapter configuration is displayed in JSON format. Click *Download*.
++
 .Adapter Configuration
 image:../../../images/getting-started/hello-world/adapter-config.png[alt="Adapter Configuration"]
 
-3. Navigate to the *${KEYCLOAK_DEMO_SERVER_DIR}/examples/authz/hello-world-authz-service/src/main/webapp/WEB-INF* directory and locate the *keycloak.json* file. Replace its contents with the adapter configuration you obtained from step 2 and save the file.
+. Navigate to the *${KEYCLOAK_DEMO_SERVER_DIR}/examples/authz/hello-world-authz-service/src/main/webapp/WEB-INF* directory and locate the *keycloak.json* file. Replace its contents with the adapter configuration you obtained from step 2 and save the file.
 
-4. (optional) By default, the policy enforcer responds with a `403` status code when the user lacks permission to access protected resources on the resource server. However, you can also specify a redirection URL for unauthorized users. To specify a redirection URL, edit the *keycloak.json* file you updated in step 3 and replace the `policy-enforcer` configuration with the following:
+. (optional) By default, the policy enforcer responds with a `403` status code when the user lacks permission to access protected resources on the resource server. However, you can also specify a redirection URL for unauthorized users. To specify a redirection URL, edit the *keycloak.json* file you updated in step 3 and replace the `policy-enforcer` configuration with the following:
 
 ```json
 "policy-enforcer": {
@@ -50,11 +51,11 @@ Log in as *alice* using the password you specified for that user. After authenti
 .Hello World Authz Main Page
 image:../../../images/getting-started/hello-world/main-page.png[alt="Hello World Authz Main Page"]
 
-The link:../../resource-server/default-config.html[default settings] defined by {{book.project.name}} when you enable authorization services for a client application provide a simple
+The <<fake/../../../resource-server/default-config.adoc#_resource_server_default_config, default settings>> defined by {{book.project.name}} when you enable authorization services for a client application provide a simple
 policy that always grants access to the resources protected by this policy.
 
 You can start by changing the default permissions and policies and test how your application responds, or even create new policies using the different
-link:../../policy/overview.html[policy types] provided by {{book.project.name}}.
+<<fake/../../../policy/overview.adoc#_policy_overview, policy types>> provided by {{book.project.name}}.
 
 There are a plenty of things you can do now to test this application. For example, you can change the default policy by clicking the Authorization tab for the client, then `Policies` tab, then click on `Default Policy` in the list to allow you to change it as follows:
 
@@ -77,6 +78,6 @@ That re-enables access to the application as we are negating the result of that 
 There are additional things you can do, such as:
 
 * Create a scope, define a policy and permission for it, and test it on the application side. Can the user perform an action (or anything else represented by the scope you created)?
-* Create different types of policies such as link:../../policy/role-policy.adoc[role-based], link:../../policy/user-policy.adoc[user-based], link:../../policy/time-policy.adoc[time-based], link:../../policy/aggregated-policy.adoc[aggregated policies], or link:../../policy/drools-policy.adoc[Drools-based], and associate these policies with the `Default Permission`.
+* Create different types of policies such as <<fake/../../../policy/role-policy.adoc#_policy_rbac, role-based>>, <<fake/../../../policy/user-policy.adoc#_policy_user, user-based>>, <<fake/../../../policy/time-policy.adoc#_policy_time, time-based>>, <<fake/../../../policy/aggregated-policy.adoc#_policy_aggregated, aggregated policies>>, or <<fake/../../../policy/drools-policy.adoc#_policy_drools, rule-based>>, and associate these policies with the `Default Permission`.
 * Apply multiple policies to the `Default Permission` and test the behavior. For example, combine multiple policies and change the `Decision Strategy` accordingly.
-* For more information about how to view and test permissions inside your application see link:../../enforcer/authorization-context.adoc[Obtaining the Authorization Context]. 
+* For more information about how to view and test permissions inside your application see <<fake/../../../enforcer/authorization-context.adoc#_enforcer_authorization_context, Obtaining the Authorization Context>>.

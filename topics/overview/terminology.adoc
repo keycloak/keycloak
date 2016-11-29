@@ -1,3 +1,4 @@
+[[_overview_terminology]]
 == Terminology
 
 Before going further, it is important to understand these terms and concepts introduced by {{book.project.name}} {{book.project.module}}.
@@ -10,7 +11,7 @@ Resource servers usually rely on some kind of information to decide whether acce
 that information is usually carried in a security token, typically sent as a bearer token along with every request to the server. Web applications that rely on a session to
 authenticate users usually store that information in the user's session and retrieve it from there for each request.
 
-In Keycloak, any *confidential* client application can act as a resource server. This client's resources and their respective scopes are protected and governed by a set of authorization policies.
+In {{book.project.name}}, any *confidential* client application can act as a resource server. This client's resources and their respective scopes are protected and governed by a set of authorization policies.
 
 === Resource
 
@@ -50,7 +51,7 @@ but rather the conditions that must be satisfied for access to a given object (f
 Policies are strongly related to the different access control mechanisms (ACMs) that you can use to protect your resources.
 With policies, you can implement strategies for attribute-based access control (ABAC), role-based access control (RBAC), context-based access control, or any combination of these.
 
-Keycloak leverages the concept of policies and how you define them by providing the concept of aggregated policies, where you can build a "policy of policies" and still control the behavior of the evaluation.
+{{book.project.name}} leverages the concept of policies and how you define them by providing the concept of aggregated policies, where you can build a "policy of policies" and still control the behavior of the evaluation.
 Instead of writing one large policy with all the conditions that must be satisfied for access to a given resource, the policies implementation in {{book.project.name}} {{book.project.module}} follows the divide-and-conquer technique.
 That is, you can create individual policies, then reuse them with different permissions and build more complex policies by combining individual policies.
 
@@ -61,7 +62,7 @@ policy providers, and you can create your own policy types to support your speci
 
 {{book.project.name}} provides a SPI (Service Provider Interface) that you can use to plug in your own policy provider implementations.
 
-[[_permission_ticket]]
+[[_overview_terminology_permission_ticket]]
 === Permission Ticket
 
 A permission ticket is a special type of token defined by the https://docs.kantarainitiative.org/uma/rec-uma-core.html[OAuth2's User-Managed Access (UMA) Profile] specification that provides an opaque structure whose form is determined by the authorization server. This
@@ -71,4 +72,4 @@ In UMA, permission tickets are crucial to support person-to-person sharing and a
 
 In the UMA workflow, permission tickets are issued by the authorization server to a resource server, which returns the permission ticket to the client trying to access a protected resource. Once the client receives the ticket, it can make a request for an RPT (a final token holding authorization data) by sending the ticket back to the authorization server.
 
-For more information on permission tickets, see link:../service/authorization/authorization-api.html[Authorization API] and the https://docs.kantarainitiative.org/uma/rec-uma-core.html[UMA] specification.
+For more information on permission tickets, see <<fake/../../service/authorization/authorization-api.adoc#_service_authorization_api, Authorization API>> and the https://docs.kantarainitiative.org/uma/rec-uma-core.html[UMA] specification.

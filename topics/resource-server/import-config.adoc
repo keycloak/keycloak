@@ -1,3 +1,4 @@
+[[_resource_server_import_config]]
 == Exporting and Importing Configuration Files
 
 The configuration settings for a resource server (or client) can be exported and downloaded. You can also import an existing configuration file for a resource server. Importing and exporting a configuration file is helpful when you want to create an initial configuration for a resource server or to update an existing configuration. The configuration file contains definitions for:
@@ -10,13 +11,13 @@ The configuration settings for a resource server (or client) can be exported and
 
 To export a configuration file, complete the following steps:
 
-1. Navigate to the *Resource Server Settings* page.
-
+. Navigate to the *Resource Server Settings* page.
++
 .Resource Server Settings
 image:../../images/resource-server/authz-settings.png[alt="Resource Server Settings"]
 
-2. On this page, in the Export Settings section, click *Export*.
-
+. On this page, in the Export Settings section, click *Export*.
++
 .Export Settings
 image:../../images/resource-server/authz-export.png[alt="Export Settings"]
 

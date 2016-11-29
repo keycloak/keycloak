@@ -1,3 +1,4 @@
+[[_getting_started_overview]]
 == Getting Started
 
 All tutorials are based on the *{{book.project.name}} Demo Distribution*.
@@ -14,7 +15,7 @@ Ensure you have a {{book.project.name}} instance running; the default configurat
 Administration Console, a page similar to this one is displayed:
 
 .{{book.project.name}} Administration Console
-image:../../images/getting-started/kc-start-page.png[alt="Keycloak Administration Console"]
+image:../../images/getting-started/kc-start-page.png[alt="{{book.project.name}} Administration Console"]
 
 All source code for the getting started tutorials can be obtained from the demo distributions. The authorization-related examples
 are located at *${KEYCLOAK_DEMO_SERVER_DIR}/examples/authz*.
