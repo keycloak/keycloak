@@ -1,4 +1,4 @@
-= Summary
+= {{book.title}}
 
 . link:topics/overview.adoc[Overview]
 .. link:topics/overview/features.adoc[Features]
@@ -106,4 +106,3 @@
 {% if book.community %}
 . link:topics/MigrationFromOlderVersions.adoc[Migration from older versions]
 {% endif %}
-
