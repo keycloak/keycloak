@@ -3,28 +3,34 @@
 
 {{book.project.name}} provides a Node.js adapter built on top of https://github.com/senchalabs/connect[Connect] to protect server side JavaScript apps — the goal was to be flexible enough to integrate with frameworks like https://expressjs.com/[Express.js].
 
+{% if book.community %}
 The library can be downloaded directly from https://www.npmjs.com/package/keycloak-connect[ {{book.project.name}} organization] and the source is available at
 https://github.com/keycloak/keycloak-nodejs-connect[GitHub].
+{% endif %}
 
-To use the Node.js adapter you must first create a client for your application in the {{book.project.name}} Administration Console. The adapter supports public, confidential and bearer-only access type. Which one to choose depends on the use-case scenario.
+To use the Node.js adapter, first you must create a client for your application in the {{book.project.name}} Administration Console. The adapter supports public, confidential and bearer-only access type. Which one to choose depends on the use-case scenario.
 
-Once the client is created click on the `Installation` tab select `{{book.project.name}} OIDC JSON` for `Format Option` then click on `Download`. The downloaded `keycloak.json` file should be at the root folder. Exactly, like in https://github.com/keycloak/keycloak-nodejs-connect/tree/master/example[this example].
+Once the client is created click on the `Installation` tab select `{{book.project.name}} OIDC JSON` for `Format Option` then click on `Download`. The downloaded `keycloak.json` file should be at the root folder of your project.
 
-keycloak.json::
+==== Known issue
 
-Alongside the `example.js` lives `keycloak.json` obtained from our {{book.project.name}}
-admin console when we provisioned this app.
+Node.js adapter requires `realm-public-key` attribute and does not retrieve it automatically from {{book.project.name}}. Otherwise, your Node.js app won't start.
 
+In order to prevent any issues, go to your `Realm Settings` and `Keys`, copy the `Public Key` to your keycloak.json file adding `realm-public-key` attribute like the snippet below:
 
-    {
-      "realm": "example-realm",
-      "auth-server-url": "http://localhost:8080/auth",
-      "ssl-required": "external",
-      "resource": "example-app",
-      "credentials": {
-        "secret": "mysecret"
-      }
-    }
+[source,json]
+----
+{
+  "realm": "example-realm",
+  "realm-public-key": "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCrVrCuTtArbgaZzL1hvh0xtL5mc7o0NqPVnYXkLvgcwiC3BjLGw1tGEGoJaXDuSaRllobm53JBhjx33UNv+5z/UMG4kytBWxheNVKnL6GgqlNabMaFfPLPCF8kAgKnsi79NMo+n6KnSY8YeUmec/p2vjO2NjsSAVcWEQMVhJ31LwIDAQAB",
+  "auth-server-url": "http://localhost:8080/auth",
+  "ssl-required": "external",
+  "resource": "example-app",
+  "credentials": {
+    "secret": "mysecret"
+  }
+}
+----
 
 ==== Installation
 
@@ -32,9 +38,23 @@ Assuming you've already installed https://nodejs.org[Node.js], create a folder f
 
     mkdir myapp && cd myapp
 
-Use `npm init` command to create a `package.json` for your application. And now install the {{book.project.name}} connect adapter in the `myapp` folder, saving it in the dependencies list:
+Use `npm init` command to create a `package.json` for your application. Now add the {{book.project.name}} connect adapter in the dependencies list:
 
-    npm install --save keycloak-connect
+{% if book.community %}
+
+    dependencies": {
+        "keycloak-connect": "{{book.project.versionMvn}}"
+    }
+
+{% endif %}
+
+{% if book.product %}
+
+    dependencies": {
+        "keycloak-connect": "file://{{book.project.name}}.tgz"
+    }
+
+{% endif %}
 
 ==== Usage
 Instantiate a Keycloak class::
