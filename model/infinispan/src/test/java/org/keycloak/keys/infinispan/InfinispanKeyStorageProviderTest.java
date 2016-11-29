@@ -36,6 +36,7 @@ import org.infinispan.manager.DefaultCacheManager;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
@@ -44,6 +45,7 @@ import org.keycloak.keys.PublicKeyLoader;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
+@Ignore
 public class InfinispanKeyStorageProviderTest {
 
     private Map<String, AtomicInteger> counters = new ConcurrentHashMap<>();
