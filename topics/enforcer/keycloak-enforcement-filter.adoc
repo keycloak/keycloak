@@ -103,7 +103,7 @@ Specifies the paths to protect.
 The name of a resource on the server that is to be associated with a given path. When used in conjunction with a *path*, the policy enforcer ignores the resource's *URI* property and uses the path you provided instead.
 *** *path*
 +
-(required) A URI relative to the application's context path. If this option is specified, the policy enforcer queries the server for a resource with a *URI* with the same value. 
+(required) A URI relative to the application's context path. If this option is specified, the policy enforcer queries the server for a resource with a *URI* with the same value.
 Currently a very basic logic for path matching is supported. Examples of valid paths are:
 +
 **** Wildcards: `/*`
@@ -134,4 +134,3 @@ Specifies how policies are enforced.
 **** *DISABLED*
 +
 Disables the evaluation of policies for a path
-+
