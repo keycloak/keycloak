@@ -49,6 +49,7 @@ public class PasswordPolicyTest extends AbstractConsoleTest {
     public void testAddAndRemovePolicy() {
         passwordPolicyPage.navigateTo();
         passwordPolicyPage.addPolicy(DIGITS, 5);
+        assertAlertSuccess();
         passwordPolicyPage.removePolicy(DIGITS);
         assertAlertSuccess();
     }
