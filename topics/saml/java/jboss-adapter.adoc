@@ -15,6 +15,4 @@ To be able to secure WAR apps deployed on JBoss EAP, you must install and config
 {% endif %}
 
 You then provide a keycloak config, `/WEB-INF/keycloak-saml.xml` file in your WAR and change the auth-method to KEYCLOAK-SAML within web.xml.
-Both methods are described in this section. 
-
-
+Both methods are described in this section.
