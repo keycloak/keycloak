@@ -27,7 +27,7 @@
 ===== Node.js (server-side)
 * <<fake/../../oidc/nodejs-adapter.adoc#_nodejs_adapter,Node.js>>
 
-===== Apache Cordova
+===== JavaScript
 * <<fake/../../oidc/javascript-adapter.adoc#_javascript_adapter,JavaScript>>
 
 {% if book.community %}
@@ -76,4 +76,4 @@
 
 ===== Apache HTTP Server
 
-* https://github.com/UNINETT/mod_auth_mellon[mod_auth_mellon]
+* <<fake/../../saml/mod-auth-mellon.adoc#,mod_auth_mellon>>

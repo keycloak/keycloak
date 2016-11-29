@@ -1,5 +1,5 @@
-
 [[_jboss_adapter]]
+
 {% if book.community %}
 ==== JBoss EAP/Wildfly Adapter
 {% endif %}
@@ -112,7 +112,7 @@ is not running:
 [source]
 ----
 $ ./bin/jboss-cli.sh --file=adapter-install-offline.cli
-----    
+----
 
 If you are planning to add it manually you need to add the extension and subsystem definition to the server configuration:
 
@@ -146,7 +146,7 @@ If you need to be able to propagate the security context from the web tier to th
     ...
 ----
 
-For example, if you have a JAX-RS service that is an EJB within your WEB-INF/classes directory, you'll want to annotate it with the @SecurityDomain annotation as follows: 
+For example, if you have a JAX-RS service that is an EJB within your WEB-INF/classes directory, you'll want to annotate it with the @SecurityDomain annotation as follows:
 
 [source]
 ----
@@ -183,7 +183,7 @@ public class CustomerService {
 
 ===== Required Per WAR Configuration
 
-This section describes how to secure a WAR directly by adding config and editing files within your WAR package. 
+This section describes how to secure a WAR directly by adding config and editing files within your WAR package.
 
 The first thing you must do is create a `keycloak.json` adapter config file within the `WEB-INF` directory of your WAR.
 
@@ -241,7 +241,7 @@ Here's an example:
         <role-name>user</role-name>
     </security-role>
 </web-app>
-----        
+----
 
 ===== Securing WARs via Adapter Subsystem
 
@@ -272,10 +272,10 @@ This metadata is instead defined within server configuration (i.e. `standalone.x
 The `secure-deployment` `name` attribute identifies the WAR you want to secure.
 Its value is the `module-name` defined in `web.xml` with `.war` appended. The rest of the configuration corresponds pretty much one to one with the `keycloak.json` configuration options defined in <<fake/../java-adapter-config.adoc#_java_adapter_config,Java adapter configuration>>.
 
-The exception is the `credential` element. 
+The exception is the `credential` element.
 
 To make it easier for you, you can go to the {{book.project.name}} Administration Console and go to the Client/Installation tab of the application this WAR is aligned with.
-It provides an example XML file you can cut and paste. 
+It provides an example XML file you can cut and paste.
 
 If you have multiple deployments secured by the same realm you can share the realm configuration in a separate element. For example:
 
@@ -302,4 +302,4 @@ If you have multiple deployments secured by the same realm you can share the rea
         <bearer-only>true</bearer-only>
     </secure-deployment>
 </subsystem>
-----        
+----

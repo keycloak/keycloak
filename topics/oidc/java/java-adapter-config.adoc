@@ -38,7 +38,7 @@ This is what one might look like:
 ----
 
 You can use `${...}` enclosure for system property replacement. For example `${jboss.server.config.dir}` would be replaced by `/path/to/{{book.project.name}}`.
-Replacement of environment variables is also supported via the `env` prefix, e.g. `${env.MY_ENVIRONMENT_VARIABLE}`. 
+Replacement of environment variables is also supported via the `env` prefix, e.g. `${env.MY_ENVIRONMENT_VARIABLE}`.
 
 The initial config file can be obtained from the the admin console. This can be done by opening the admin console, select `Clients` from the menu and clicking
 on the corresponding client. Once the page for the client is opened click on the `Installation` tab and select `Keycloak OIDC JSON`.
@@ -118,6 +118,7 @@ expose-token::
   The default value is _false_.
 
 credentials::
+  Not required for public clients or where the client is "bearer-only."
   Specify the credentials of the application. This is an object notation where the key is the credential type and the value is the value of the credential type.
   Currently `password` and `jwt` is supported.
   This is _REQUIRED_.
@@ -148,7 +149,7 @@ truststore::
   Client making HTTPS requests need a way to verify the host of the server they are talking to.
   This is what the trustore does.
   The keystore contains one or more trusted host certificates or certificate authorities.
-  You can create this truststore by extracting the public certificate of the {{book.project.name}} server's SSL keystore. 
+  You can create this truststore by extracting the public certificate of the {{book.project.name}} server's SSL keystore.
   This is _REQUIRED_ unless `ssl-required` is `none` or `disable-trust-manager` is `true`.
 
 truststore-password::
