@@ -19,6 +19,7 @@ package org.keycloak.models;
 
 import org.keycloak.component.ComponentModel;
 import org.keycloak.provider.Provider;
+import org.keycloak.storage.user.UserBulkUpdateProvider;
 import org.keycloak.storage.user.UserLookupProvider;
 import org.keycloak.storage.user.UserQueryProvider;
 import org.keycloak.storage.user.UserRegistrationProvider;
@@ -33,7 +34,8 @@ import java.util.Set;
 public interface UserProvider extends Provider,
         UserLookupProvider,
         UserQueryProvider,
-        UserRegistrationProvider {
+        UserRegistrationProvider,
+        UserBulkUpdateProvider {
     // Note: The reason there are so many query methods here is for layering a cache on top of an persistent KeycloakSession
 
     public void addFederatedIdentity(RealmModel realm, UserModel user, FederatedIdentityModel socialLink);

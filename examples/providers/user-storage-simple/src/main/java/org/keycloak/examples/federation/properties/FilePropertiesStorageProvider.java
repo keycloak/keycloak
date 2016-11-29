@@ -94,11 +94,6 @@ public class FilePropertiesStorageProvider extends BasePropertiesStorageProvider
     }
 
     @Override
-    public void grantToAllUsers(RealmModel realm, RoleModel role) {
-        // unsupported
-    }
-
-    @Override
     public boolean updateCredential(RealmModel realm, UserModel user, CredentialInput input) {
         if (!(input instanceof UserCredentialModel)) return false;
         UserCredentialModel cred = (UserCredentialModel)input;
