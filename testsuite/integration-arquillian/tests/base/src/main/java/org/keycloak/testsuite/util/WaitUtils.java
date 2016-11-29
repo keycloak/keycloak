@@ -74,19 +74,21 @@ public final class WaitUtils {
     }
 
     public static void pause(long millis) {
-        log.info("Wait: " + millis + "ms");
-        try {
-            Thread.sleep(millis);
-        } catch (InterruptedException ex) {
-            Logger.getLogger(WaitUtils.class.getName()).log(Level.SEVERE, null, ex);
-            Thread.currentThread().interrupt();
+        if (millis > 0) {
+            log.info("Wait: " + millis + "ms");
+            try {
+                Thread.sleep(millis);
+            } catch (InterruptedException ex) {
+                Logger.getLogger(WaitUtils.class.getName()).log(Level.SEVERE, null, ex);
+                Thread.currentThread().interrupt();
+            }
         }
     }
 
     /**
      * Waits for page to finish any pending redirects, REST API requests etc.
-     * Because Keycloak's Admin Console is a single-page application, we need to take extra steps to ensure
-     * the page is fully loaded
+     * Because Keycloak's Admin Console is a single-page application, we need to
+     * take extra steps to ensure the page is fully loaded
      *
      * @param driver
      */
@@ -99,12 +101,11 @@ public final class WaitUtils {
             // Checks if the document is ready and asks AngularJS, if present, whether there are any REST API requests
             // in progress
             wait.until(javaScriptThrowsNoExceptions(
-                "if (document.readyState !== 'complete' " +
-                    "|| (typeof angular !== 'undefined' && angular.element(document.body).injector().get('$http').pendingRequests.length !== 0)) {" +
-                        "throw \"Not ready\";" +
-                "}"));
-        }
-        catch (TimeoutException e) {
+                    "if (document.readyState !== 'complete' "
+                    + "|| (typeof angular !== 'undefined' && angular.element(document.body).injector().get('$http').pendingRequests.length !== 0)) {"
+                    + "throw \"Not ready\";"
+                    + "}"));
+        } catch (TimeoutException e) {
             // Sometimes, for no obvious reason, the browser/JS doesn't set document.readyState to 'complete' correctly
             // but that's no reason to let the test fail; after the timeout the page is surely fully loaded
             log.warn("waitForPageToLoad time exceeded!");
