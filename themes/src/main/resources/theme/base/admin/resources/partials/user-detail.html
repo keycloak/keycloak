@@ -81,12 +81,14 @@
                 <div class="col-md-6">
                     <a href="{{federationLink}}">{{federationLinkName}}</a>
                 </div>
+                <kc-tooltip>{{:: 'user-link.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group clearfix block" data-ng-show="!create && user.origin">
                 <label class="col-md-2 control-label">{{:: 'user-origin-link' | translate}}</label>
                 <div class="col-md-6">
                     <a href="{{originLink}}">{{originName}}</a>
                 </div>
+                <kc-tooltip>{{:: 'user-origin.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group clearfix block">
                 <label class="col-md-2 control-label" for="emailVerified">{{:: 'email-verified' | translate}}</label>

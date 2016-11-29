@@ -184,53 +184,6 @@ module.factory('SubComponentTypesLoader', function(Loader, SubComponentTypes, $r
     return componentsLoader;
 });
 
-module.factory('UserFederationInstanceLoader', function(Loader, UserFederationInstances, $route, $q) {
-    return Loader.get(UserFederationInstances, function() {
-        return {
-            realm : $route.current.params.realm,
-            instance: $route.current.params.instance
-        }
-    });
-});
-
-module.factory('UserFederationFactoryLoader', function(Loader, UserFederationProviders, $route, $q) {
-    return Loader.get(UserFederationProviders, function() {
-        return {
-            realm : $route.current.params.realm,
-            provider: $route.current.params.provider
-        }
-    });
-});
-
-module.factory('UserFederationMapperTypesLoader', function(Loader, UserFederationMapperTypes, $route, $q) {
-    return Loader.get(UserFederationMapperTypes, function () {
-        return {
-            realm: $route.current.params.realm,
-            provider: $route.current.params.instance
-        }
-    });
-});
-
-module.factory('UserFederationMappersLoader', function(Loader, UserFederationMappers, $route, $q) {
-    return Loader.query(UserFederationMappers, function () {
-        return {
-            realm: $route.current.params.realm,
-            provider: $route.current.params.instance
-        }
-    });
-});
-
-module.factory('UserFederationMapperLoader', function(Loader, UserFederationMapper, $route, $q) {
-    return Loader.get(UserFederationMapper, function () {
-        return {
-            realm: $route.current.params.realm,
-            provider: $route.current.params.instance,
-            mapperId: $route.current.params.mapperId
-        }
-    });
-});
-
-
 module.factory('UserSessionStatsLoader', function(Loader, UserSessionStats, $route, $q) {
     return Loader.get(UserSessionStats, function() {
         return {
