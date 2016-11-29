@@ -19,6 +19,7 @@ package org.keycloak.services.resources;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
+
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.authentication.authenticators.broker.AbstractIdpAuthenticator;
@@ -30,6 +31,7 @@ import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.IdentityProviderFactory;
 import org.keycloak.broker.provider.IdentityProviderMapper;
+import org.keycloak.broker.saml.SAMLEndpoint;
 import org.keycloak.broker.social.SocialIdentityProvider;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.util.ObjectUtil;
@@ -54,8 +56,11 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.FormMessage;
 import org.keycloak.protocol.oidc.TokenManager;
+import org.keycloak.protocol.saml.SamlProtocol;
+import org.keycloak.protocol.saml.SamlService;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.saml.common.constants.GeneralConstants;
 import org.keycloak.services.ErrorPage;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ServicesLogger;
@@ -87,6 +92,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 
 import static org.keycloak.models.AccountRoles.MANAGE_ACCOUNT;
@@ -255,7 +262,12 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
     public Response authenticated(BrokeredIdentityContext context) {
         IdentityProviderModel identityProviderConfig = context.getIdpConfig();
 
-        ParsedCodeContext parsedCode = parseClientSessionCode(context.getCode());
+        final ParsedCodeContext parsedCode;
+        if (context.getContextData().get(SAMLEndpoint.SAML_IDP_INITIATED_CLIENT_ID) != null) {
+            parsedCode = samlIdpInitiatedSSO((String) context.getContextData().get(SAMLEndpoint.SAML_IDP_INITIATED_CLIENT_ID));
+        } else {
+            parsedCode = parseClientSessionCode(context.getCode());
+        }
         if (parsedCode.response != null) {
             return parsedCode.response;
         }
@@ -694,6 +706,53 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
         logger.debugf("Authorization code is not valid. Code: %s", code);
         Response staleCodeError = redirectToErrorPage(Messages.STALE_CODE);
         return ParsedCodeContext.response(staleCodeError);
+    }
+
+    /**
+     * If there is a client whose SAML IDP-initiated SSO URL name is set to the
+     * given {@code clientUrlName}, creates a fresh client session for that
+     * client and returns a {@link ParsedCodeContext} object with that session.
+     * Otherwise returns "client not found" response.
+     *
+     * @param clientUrlName
+     * @return see description
+     */
+    private ParsedCodeContext samlIdpInitiatedSSO(final String clientUrlName) {
+        event.event(EventType.LOGIN);
+        CacheControlUtil.noBackButtonCacheControlHeader();
+        Optional<ClientModel> oClient = this.realmModel.getClients().stream()
+          .filter(c -> Objects.equals(c.getAttribute(SamlProtocol.SAML_IDP_INITIATED_SSO_URL_NAME), clientUrlName))
+          .findFirst();
+
+        if (! oClient.isPresent()) {
+            event.error(Errors.CLIENT_NOT_FOUND);
+            return ParsedCodeContext.response(redirectToErrorPage(Messages.CLIENT_NOT_FOUND));
+        }
+
+        ClientSessionModel clientSession = SamlService.createClientSessionForIdpInitiatedSso(session, realmModel, oClient.get(), null);
+
+        return ParsedCodeContext.clientSessionCode(new ClientSessionCode(session, this.realmModel, clientSession));
+    }
+
+    /**
+     * Returns {@code true} if the client session is defined for the given code
+     * in the current session and for the current realm.
+     * Does <b>not</b> check the session validity. To obtain client session if
+     * and only if it exists and is valid, use {@link ClientSessionCode#parse}.
+     *
+     * @param code
+     * @return
+     */
+    protected boolean isClientSessionRegistered(String code) {
+        if (code == null) {
+            return false;
+        }
+
+        try {
+            return ClientSessionCode.getClientSession(code, this.session, this.realmModel) != null;
+        } catch (RuntimeException e) {
+            return false;
+        }
     }
 
     private Response checkAccountManagementFailedLinking(ClientSessionModel clientSession, String error, Object... parameters) {

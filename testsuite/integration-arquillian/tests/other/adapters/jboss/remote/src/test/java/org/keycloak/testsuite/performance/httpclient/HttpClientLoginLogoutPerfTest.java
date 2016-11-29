@@ -53,7 +53,7 @@ public class HttpClientLoginLogoutPerfTest extends HttpClientPerformanceTest {
 
     private static final Logger LOG = Logger.getLogger(HttpClientLoginLogoutPerfTest.class);
 
-    private static final String EXAMPLES = "Examples";
+    private static final String TEST_REALM = "Test";
 
     private String securedUrl;
     private String logoutUrl;
@@ -72,18 +72,18 @@ public class HttpClientLoginLogoutPerfTest extends HttpClientPerformanceTest {
 
     @Deployment(name = AppProfileJEE.DEPLOYMENT_NAME)
     private static WebArchive appProfileJEE() throws IOException {
-        return warDeployment("keycloak-quickstart-app-profile-jee-0.5-SNAPSHOT");
+        return exampleDeployment("keycloak-test-app-profile-jee");
     }
 
     @Override
     public void setDefaultPageUriParameters() {
         super.setDefaultPageUriParameters();
-        testRealmPage.setAuthRealm(EXAMPLES);
+        testRealmPage.setAuthRealm(TEST_REALM);
     }
 
     @Override
     public void addAdapterTestRealms(List<RealmRepresentation> testRealms) {
-        RealmRepresentation examplesRealm = loadRealm("/examples-realm.json");
+        RealmRepresentation examplesRealm = loadRealm("/test-realm.json");
         examplesRealm.setPasswordPolicy("hashIterations(" + PASSWORD_HASH_ITERATIONS + ")");
         testRealms.add(examplesRealm);
     }

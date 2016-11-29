@@ -18,6 +18,7 @@
 package org.keycloak.testsuite.client;
 
 import java.security.KeyPair;
+import java.security.KeyPairGenerator;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.Collections;
@@ -40,9 +41,14 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.adapters.authentication.JWTClientCredentialsProvider;
 import org.keycloak.client.registration.Auth;
 import org.keycloak.common.util.KeycloakUriBuilder;
+import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.constants.ServiceUrlConstants;
 import org.keycloak.jose.jwk.JSONWebKeySet;
+import org.keycloak.jose.jwk.JWK;
+import org.keycloak.jose.jwk.JWKBuilder;
 import org.keycloak.jose.jws.JWSBuilder;
+import org.keycloak.keys.PublicKeyStorageUtils;
+import org.keycloak.keys.loader.PublicKeyStorageManager;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
@@ -139,6 +145,16 @@ public class OIDCJwksClientRegistrationTest extends AbstractClientRegistrationTe
     // The "kid" is set manually to some custom value
     @Test
     public void createClientWithJWKS_customKid() throws Exception {
+        OIDCClientRepresentation response = createClientWithManuallySetKid("a1");
+
+        Map<String, String> generatedKeys = testingClient.testApp().oidcClientEndpoints().getKeysAsPem();
+
+        // Tries to authenticate client with privateKey JWT
+        assertAuthenticateClientSuccess(generatedKeys, response, "a1");
+    }
+
+
+    private OIDCClientRepresentation createClientWithManuallySetKid(String kid) throws Exception {
         OIDCClientRepresentation clientRep = createRep();
 
         clientRep.setGrantTypes(Collections.singletonList(OAuth2Constants.CLIENT_CREDENTIALS));
@@ -146,19 +162,83 @@ public class OIDCJwksClientRegistrationTest extends AbstractClientRegistrationTe
 
         // Generate keys for client
         TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
-        Map<String, String> generatedKeys = oidcClientEndpointsResource.generateKeys();
+        oidcClientEndpointsResource.generateKeys();
 
         JSONWebKeySet keySet = oidcClientEndpointsResource.getJwks();
 
         // Override kid with custom value
-        keySet.getKeys()[0].setKeyId("a1");
+        keySet.getKeys()[0].setKeyId(kid);
         clientRep.setJwks(keySet);
 
-        OIDCClientRepresentation response = reg.oidc().create(clientRep);
+        return reg.oidc().create(clientRep);
+    }
+
+
+    @Test
+    public void testTwoClientsWithSameKid() throws Exception {
+        // Create client with manually set "kid"
+        OIDCClientRepresentation response = createClientWithManuallySetKid("a1");
+
+
+        // Create client2
+        OIDCClientRepresentation clientRep2 = createRep();
+
+        clientRep2.setGrantTypes(Collections.singletonList(OAuth2Constants.CLIENT_CREDENTIALS));
+        clientRep2.setTokenEndpointAuthMethod(OIDCLoginProtocol.PRIVATE_KEY_JWT);
+
+        // Generate some random keys for client2
+        KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA");
+        generator.initialize(2048);
+        PublicKey client2PublicKey = generator.generateKeyPair().getPublic();
+
+        // Set client2 with manually set "kid" to be same like kid of client1 (but keys for both clients are different)
+        JSONWebKeySet keySet = new JSONWebKeySet();
+        keySet.setKeys(new JWK[]{JWKBuilder.create().kid("a1").rs256(client2PublicKey)});
+
+        clientRep2.setJwks(keySet);
+        clientRep2 = reg.oidc().create(clientRep2);
+
+
+        // Authenticate client1
+        Map<String, String> generatedKeys = testingClient.testApp().oidcClientEndpoints().getKeysAsPem();
+        assertAuthenticateClientSuccess(generatedKeys, response, "a1");
+
+        // Assert item in publicKey cache for client1
+        String expectedCacheKey = PublicKeyStorageUtils.getClientModelCacheKey(REALM_NAME, response.getClientId());
+        Assert.assertTrue(testingClient.testing().cache(InfinispanConnectionProvider.KEYS_CACHE_NAME).contains(expectedCacheKey));
+
+        // Assert it's not possible to authenticate as client2 with the same "kid" like client1
+        assertAuthenticateClientError(generatedKeys, clientRep2, "a1");
+    }
+
+
+    @Test
+    public void testPublicKeyCacheInvalidatedWhenUpdatingClient() throws Exception {
+        OIDCClientRepresentation response = createClientWithManuallySetKid("a1");
+
+        Map<String, String> generatedKeys = testingClient.testApp().oidcClientEndpoints().getKeysAsPem();
 
         // Tries to authenticate client with privateKey JWT
         assertAuthenticateClientSuccess(generatedKeys, response, "a1");
+
+        // Assert item in publicKey cache for client1
+        String expectedCacheKey = PublicKeyStorageUtils.getClientModelCacheKey(REALM_NAME, response.getClientId());
+        Assert.assertTrue(testingClient.testing().cache(InfinispanConnectionProvider.KEYS_CACHE_NAME).contains(expectedCacheKey));
+
+
+
+        // Update client with some bad JWKS_URI
+        response.setJwksUri("http://localhost:4321/non-existent");
+        reg.auth(Auth.token(response.getRegistrationAccessToken()))
+                .oidc().update(response);
+
+        // Assert item not any longer for client1
+        Assert.assertFalse(testingClient.testing().cache(InfinispanConnectionProvider.KEYS_CACHE_NAME).contains(expectedCacheKey));
+
+        // Assert it's not possible to authenticate as client1
+        assertAuthenticateClientError(generatedKeys, response, "a1");
     }
+
 
     @Test
     public void createClientWithJWKSURI() throws Exception {

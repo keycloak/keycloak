@@ -190,6 +190,15 @@ public abstract class AbstractJSConsoleExampleAdapterTest extends AbstractExampl
     }
 
     @Test
+    public void testCertEndpoint() {
+        logInAndInit("standard");
+        waitUntilElement(jsConsoleTestAppPage.getOutputElement()).text().contains("Init Success (Authenticated)");
+
+        jsConsoleTestAppPage.sendCertRequest();
+        waitUntilElement(jsConsoleTestAppPage.getOutputElement()).text().contains("Success");
+    }
+
+    @Test
     public void grantBrowserBasedApp() {
         testRealmPage.setAuthRealm(EXAMPLE);
         testRealmLoginPage.setAuthRealm(EXAMPLE);
@@ -323,6 +332,16 @@ public abstract class AbstractJSConsoleExampleAdapterTest extends AbstractExampl
     }
 
     @Test
+    public void implicitFlowCertEndpoint() {
+        setImplicitFlowForClient();
+        logInAndInit("implicit");
+        waitUntilElement(jsConsoleTestAppPage.getOutputElement()).text().contains("Init Success (Authenticated)");
+
+        jsConsoleTestAppPage.sendCertRequest();
+        waitUntilElement(jsConsoleTestAppPage.getOutputElement()).text().contains("Success");
+    }
+
+    @Test
     public void testBearerRequest() {
         jsConsoleTestAppPage.navigateTo();
         jsConsoleTestAppPage.init();
@@ -406,6 +425,7 @@ public abstract class AbstractJSConsoleExampleAdapterTest extends AbstractExampl
         jsConsoleTestAppPage.setFlow(flow);
         jsConsoleTestAppPage.init();
         jsConsoleTestAppPage.logIn();
+        waitUntilElement(By.xpath("//body")).is().present();
         testRealmLoginPage.form().login(user, "password");
         jsConsoleTestAppPage.setFlow(flow);
         jsConsoleTestAppPage.init();
