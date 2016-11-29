@@ -29,6 +29,9 @@ public abstract class AbstractSAMLFilterServletAdapterTest extends AbstractSAMLS
         salesPostSigPersistentServletPage.checkRoles(true);
         salesPostSigTransientServletPage.checkRoles(true);
         salesPostAssertionAndResponseSigPage.checkRoles(true);
+        employeeSigPostNoIdpKeyServletPage.checkRoles(true);
+        employeeSigRedirNoIdpKeyServletPage.checkRoles(true);
+        employeeSigRedirOptNoIdpKeyServletPage.checkRoles(true);
 
         //using endpoint instead of query param because we are not able to put query param to IDP initiated login
         employee2ServletPage.navigateTo();
@@ -54,6 +57,9 @@ public abstract class AbstractSAMLFilterServletAdapterTest extends AbstractSAMLS
         salesPostSigEmailServletPage.checkRoles(false);
         salesPostSigPersistentServletPage.checkRoles(false);
         salesPostSigTransientServletPage.checkRoles(false);
+        employeeSigPostNoIdpKeyServletPage.checkRoles(false);
+        employeeSigRedirNoIdpKeyServletPage.checkRoles(false);
+        employeeSigRedirOptNoIdpKeyServletPage.checkRoles(false);
     }
 
     @Test
