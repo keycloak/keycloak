@@ -146,7 +146,7 @@ public abstract class AbstractKeycloakTest {
         setDefaultPageUriParameters();
 
         driverSettings();
-        
+
         TestEventsLogger.setDriver(driver);
 
         if (!suiteContext.isAdminPasswordUpdated()) {

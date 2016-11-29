@@ -43,6 +43,10 @@ public class ContainerInfo {
         this.contextRoot = contextRoot;
     }
 
+    public boolean isUndertow() {
+        return getQualifier().toLowerCase().contains("undertow");
+    }
+
     public boolean isAS7() {
         return getQualifier().toLowerCase().contains("as7");
     }

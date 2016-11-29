@@ -126,7 +126,7 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
 
     @Deployment(name = CustomerPortal.DEPLOYMENT_NAME)
     protected static WebArchive customerPortal() {
-        return servletDeployment(CustomerPortal.DEPLOYMENT_NAME, CustomerServlet.class, ErrorServlet.class);
+        return servletDeployment(CustomerPortal.DEPLOYMENT_NAME, CustomerServlet.class, ErrorServlet.class, ServletTestUtils.class);
     }
 
     @Deployment(name = CustomerPortalNoConf.DEPLOYMENT_NAME)
@@ -156,7 +156,7 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
 
     @Deployment(name = InputPortal.DEPLOYMENT_NAME)
     protected static WebArchive inputPortal() {
-        return servletDeployment(InputPortal.DEPLOYMENT_NAME, "keycloak.json", InputServlet.class);
+        return servletDeployment(InputPortal.DEPLOYMENT_NAME, "keycloak.json", InputServlet.class, ServletTestUtils.class);
     }
 
     @Deployment(name = TokenMinTTLPage.DEPLOYMENT_NAME)
@@ -194,7 +194,7 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
 
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
         testRealmLoginPage.form().login("bburke@redhat.com", "password");
-        assertEquals(driver.getCurrentUrl(), inputPortal + "/secured/post");
+        assertCurrentUrlEquals(driver, inputPortal + "/secured/post");
         String pageSource = driver.getPageSource();
         assertTrue(pageSource.contains("parameter=hello"));
 
@@ -641,6 +641,8 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
         String value = "hello";
         Client client = ClientBuilder.newClient();
 
+        //pause(1000000);
+
         Response response = client.target(basicAuthPage
                 .setTemplateValues("mposolda", "password", value).buildUri()).request().get();
 
@@ -797,7 +799,8 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
 
         String serverLogPath = null;
 
-        if (System.getProperty("app.server").equals("wildfly") || System.getProperty("app.server").equals("eap6") || System.getProperty("app.server").equals("eap")) {
+        String appServer = System.getProperty("app.server");
+        if (appServer != null && (appServer.equals("wildfly") || appServer.equals("eap6") || appServer.equals("eap"))) {
             serverLogPath = System.getProperty("app.server.home") + "/standalone/log/server.log";
         }
 

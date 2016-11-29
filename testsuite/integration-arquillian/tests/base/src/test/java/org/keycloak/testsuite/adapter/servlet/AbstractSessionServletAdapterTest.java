@@ -144,7 +144,7 @@ public abstract class AbstractSessionServletAdapterTest extends AbstractServlets
         sessionPortalPage.navigateTo();
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
         testRealmLoginPage.form().login("bburke@redhat.com", "password");
-        assertEquals(driver.getCurrentUrl(), sessionPortalPage.toString());
+        assertCurrentUrlEquals(sessionPortalPage);
         String pageSource = driver.getPageSource();
         assertTrue(pageSource.contains("Counter=1"));
 
@@ -164,7 +164,7 @@ public abstract class AbstractSessionServletAdapterTest extends AbstractServlets
         
         // bburke should be still logged with original httpSession in our browser window
         sessionPortalPage.navigateTo();
-        assertEquals(driver.getCurrentUrl(), sessionPortalPage.toString());
+        assertCurrentUrlEquals(sessionPortalPage);
         String pageSource = driver.getPageSource();
         assertTrue(pageSource.contains("Counter=3"));
         String logoutUri = OIDCLoginProtocolService.logoutUrl(authServerPage.createUriBuilder())
@@ -186,7 +186,7 @@ public abstract class AbstractSessionServletAdapterTest extends AbstractServlets
         sessionPortalPage.navigateTo();
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
         login.form().login("bburke@redhat.com", "password");
-        assertEquals(driver.getCurrentUrl(), sessionPortalPage.toString());
+        assertCurrentUrlEquals(sessionPortalPage);
         String pageSource = driver.getPageSource();
         assertTrue(pageSource.contains("Counter=1"));
 
