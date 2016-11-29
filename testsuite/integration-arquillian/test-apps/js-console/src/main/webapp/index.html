@@ -43,6 +43,7 @@
     <button onclick="output(keycloak.createRegisterUrl())">Show Register URL</button>
     <button onclick="createBearerRequest()">Create Bearer Request</button>
     <button onclick="output(showTime())">Show current time</button>
+    <button onclick="cert()">Cert request</button>
     <input id="timeSkewInput"/>
     <button onclick="addToTimeSkew()">timeSkew offset</button>
     <button onclick="refreshTimeSkew()">refresh timeSkew</button>
@@ -212,6 +213,30 @@ TimeSkew: <div id="timeSkew"></div>
             }
         };
 
+        req.send();
+    }
+
+    function cert() {
+        var url = 'http://localhost:8180/auth/realms/example/protocol/openid-connect/certs';
+        if (window.location.href.indexOf("8543") > -1) {
+            url = url.replace("8180","8543");
+            url = url.replace("http","https");
+        }
+        var req = new XMLHttpRequest();
+        req.open('GET', url, true);
+        req.setRequestHeader('Accept', 'application/json');
+        req.setRequestHeader('Authorization', 'Bearer ' + keycloak.token);
+        req.onreadystatechange = function () {
+            if (req.readyState == 4) {
+                if (req.status == 200) {
+                    output('Success');
+                } else if (req.status == 403) {
+                    output('Forbidden');
+                } else if (req.status == 401) {
+                    output('Unauthorized');
+                }
+            }
+        };
         req.send();
     }
 
