@@ -19,7 +19,10 @@ package org.keycloak.testsuite.arquillian;
 
 import org.apache.tools.ant.DirectoryScanner;
 import org.jboss.arquillian.container.test.spi.client.deployment.ApplicationArchiveProcessor;
+import org.jboss.arquillian.core.api.InstanceProducer;
+import org.jboss.arquillian.core.api.annotation.Inject;
 import org.jboss.arquillian.test.spi.TestClass;
+import org.jboss.arquillian.test.spi.annotation.ClassScoped;
 import org.jboss.logging.Logger;
 import org.jboss.logging.Logger.Level;
 import org.jboss.shrinkwrap.api.Archive;
@@ -61,6 +64,10 @@ public class DeploymentArchiveProcessor implements ApplicationArchiveProcessor {
     public static final String ADAPTER_CONFIG_PATH_JS = "/keycloak.json";
     public static final String SAML_ADAPTER_CONFIG_PATH = "/WEB-INF/keycloak-saml.xml";
     public static final String JBOSS_DEPLOYMENT_XML_PATH = "/WEB-INF/jboss-deployment-structure.xml";
+
+    @Inject
+    @ClassScoped
+    private InstanceProducer<TestContext> testContextProducer;
 
     @Override
     public void process(Archive<?> archive, TestClass testClass) {
@@ -158,6 +165,12 @@ public class DeploymentArchiveProcessor implements ApplicationArchiveProcessor {
 
     public void addFilterDependencies(Archive<?> archive, TestClass testClass) {
         log.info("Adding filter dependencies to " + archive.getName());
+
+        TestContext testContext = testContextProducer.get();
+        if (testContext.getAppServerInfo().isUndertow()) {
+            return;
+        }
+
         String dependency = testClass.getAnnotation(UseServletFilter.class).filterDependency();
         ((WebArchive) archive).addAsLibraries(KeycloakDependenciesResolver.resolveDependencies((dependency + ":" + System.getProperty("project.version"))));
 

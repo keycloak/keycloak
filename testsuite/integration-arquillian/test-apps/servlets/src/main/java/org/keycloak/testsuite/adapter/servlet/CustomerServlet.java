@@ -18,6 +18,7 @@
 package org.keycloak.testsuite.adapter.servlet;
 
 import org.keycloak.KeycloakSecurityContext;
+import org.keycloak.common.util.UriUtils;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -50,13 +51,7 @@ public class CustomerServlet extends HttpServlet {
             
             //Clear principal form database-service by calling logout
             StringBuilder result = new StringBuilder();
-            String urlBase;
-
-            if (System.getProperty("app.server.ssl.required", "false").equals("true")) {
-                urlBase = System.getProperty("app.server.ssl.base.url", "https://localhost:8643");
-            } else {
-                urlBase = System.getProperty("app.server.base.url", "http://localhost:8280");
-            }
+            String urlBase = ServletTestUtils.getUrlBase(req);
 
             URL url = new URL(urlBase + "/customer-db/");
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -78,13 +73,7 @@ public class CustomerServlet extends HttpServlet {
 
         //try {
         StringBuilder result = new StringBuilder();
-        String urlBase;
-
-        if (System.getProperty("app.server.ssl.required", "false").equals("true")) {
-            urlBase = System.getProperty("app.server.ssl.base.url", "https://localhost:8643");
-        } else {
-            urlBase = System.getProperty("app.server.base.url", "http://localhost:8280");
-        }
+        String urlBase = ServletTestUtils.getUrlBase(req);
 
         URL url = new URL(urlBase + "/customer-db/");
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -114,4 +103,5 @@ public class CustomerServlet extends HttpServlet {
 //            client.close();
 //        }
     }
+
 }

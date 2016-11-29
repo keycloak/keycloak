@@ -40,6 +40,9 @@
         <exclude.client>-</exclude.client>
         <!--exclude cluster tests by default, enabled by 'auth-server-*-cluster' profiles in tests/pom.xml-->
         <exclude.cluster>**/cluster/**/*Test.java</exclude.cluster>
+
+        <!-- exclude undertow adapter tests. They can be added by -Dtest=org.keycloak.testsuite.adapter.undertow.**.*Test -->
+        <exclude.undertow.adapter>**/adapter/undertow/**/*Test.java</exclude.undertow.adapter>
     </properties>
     
     <dependencies>
@@ -103,6 +106,7 @@
                         <exclude>${exclude.account}</exclude>
                         <exclude>${exclude.client}</exclude>
                         <exclude>${exclude.cluster}</exclude>
+                        <exclude>${exclude.undertow.adapter}</exclude>
                     </excludes>
                 </configuration>
             </plugin>

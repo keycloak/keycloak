@@ -56,6 +56,11 @@ public class URLAssert {
                 currentUrlEqual(driver, page.toString()));
     }
 
+    public static void assertCurrentUrlEquals(WebDriver driver, final String url) {
+        assertTrue("Expected URL: " + url + "; actual: " + driver.getCurrentUrl(),
+                currentUrlEqual(driver, url));
+    }
+
     public static void assertCurrentUrlStartsWith(AbstractPage page) {
         assertCurrentUrlStartsWith(page.getDriver(), page.toString());
     }
