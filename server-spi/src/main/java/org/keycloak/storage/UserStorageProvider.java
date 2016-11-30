@@ -33,21 +33,22 @@ public interface UserStorageProvider extends Provider {
     void preRemove(RealmModel realm, RoleModel role);
 
     /**
-     * Optional type that can be by implementations to describe edit mode of federation storage
+     * Optional type that can be used by implementations to
+     * describe edit mode of user storage
      *
      */
     enum EditMode {
         /**
-         * federation storage is read-only
+         * user storage is read-only
          */
         READ_ONLY,
         /**
-         * federation storage is writable
+         * user storage is writable
          *
          */
         WRITABLE,
         /**
-         * updates to user are stored locally and not synced with federation storage.
+         * updates to user are stored locally and not synced with user storage.
          *
          */
         UNSYNCED

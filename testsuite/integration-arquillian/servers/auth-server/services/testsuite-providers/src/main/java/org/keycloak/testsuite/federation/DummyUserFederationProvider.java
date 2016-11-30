@@ -88,11 +88,6 @@ public class DummyUserFederationProvider implements UserStorageProvider,
     }
 
     @Override
-    public void grantToAllUsers(RealmModel realm, RoleModel role) {
-
-    }
-
-     @Override
     public void preRemove(RealmModel realm) {
 
     }

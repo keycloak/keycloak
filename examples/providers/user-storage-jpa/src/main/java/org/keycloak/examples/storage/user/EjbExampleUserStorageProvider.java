@@ -156,11 +156,6 @@ public class EjbExampleUserStorageProvider implements UserStorageProvider,
     }
 
     @Override
-    public void grantToAllUsers(RealmModel realm, RoleModel role) {
-
-    }
-
-    @Override
     public void onCache(RealmModel realm, CachedUserModel user, UserModel delegate) {
         String password = ((UserAdapter)delegate).getPassword();
         if (password != null) {

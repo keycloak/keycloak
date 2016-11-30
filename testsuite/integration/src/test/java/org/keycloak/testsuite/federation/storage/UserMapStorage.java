@@ -150,11 +150,6 @@ public class UserMapStorage implements UserLookupProvider, UserStorageProvider, 
     }
 
     @Override
-    public void grantToAllUsers(RealmModel realm, RoleModel role) {
-
-    }
-
-    @Override
     public void preRemove(RealmModel realm) {
 
     }

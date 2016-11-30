@@ -168,11 +168,6 @@ public class LDAPStorageProvider implements UserStorageProvider,
         return Collections.EMPTY_LIST;
     }
 
-    @Override
-    public void grantToAllUsers(RealmModel realm, RoleModel role) {
-
-    }
-
     public boolean synchronizeRegistrations() {
         return "true".equalsIgnoreCase(model.getConfig().getFirst(LDAPConstants.SYNC_REGISTRATIONS)) && editMode == UserStorageProvider.EditMode.WRITABLE;
     }

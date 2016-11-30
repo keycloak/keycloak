@@ -37,6 +37,7 @@ import org.keycloak.models.cache.CachedUserModel;
 import org.keycloak.models.cache.OnUserCache;
 import org.keycloak.storage.federated.UserFederatedStorageProvider;
 import org.keycloak.storage.user.ImportedUserValidation;
+import org.keycloak.storage.user.UserBulkUpdateProvider;
 import org.keycloak.storage.user.UserLookupProvider;
 import org.keycloak.storage.user.UserQueryProvider;
 import org.keycloak.storage.user.UserRegistrationProvider;
@@ -521,12 +522,11 @@ public class UserStorageManager implements UserProvider, OnUserCache {
 
     @Override
     public void grantToAllUsers(RealmModel realm, RoleModel role) {
-        // not federation-aware for now
-        List<UserRegistrationProvider> storageProviders = getStorageProviders(session, realm, UserRegistrationProvider.class);
-        LinkedList<UserRegistrationProvider> providers = new LinkedList<>();
+        List<UserBulkUpdateProvider> storageProviders = getStorageProviders(session, realm, UserBulkUpdateProvider.class);
+        LinkedList<UserBulkUpdateProvider> providers = new LinkedList<>();
         providers.add(localStorage());
         providers.addAll(storageProviders);
-        for (UserRegistrationProvider provider : providers) {
+        for (UserBulkUpdateProvider provider : providers) {
             provider.grantToAllUsers(realm, role);
         }
     }

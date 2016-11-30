@@ -18,17 +18,11 @@ package org.keycloak.storage.user;
 
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.UserModel;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public interface UserRegistrationProvider {
-
-    UserModel addUser(RealmModel realm, String username);
-
-    boolean removeUser(RealmModel realm, UserModel user);
-
-
+public interface UserBulkUpdateProvider {
+    void grantToAllUsers(RealmModel realm, RoleModel role);
 }
