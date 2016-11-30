@@ -17,14 +17,11 @@
 
 package org.keycloak.protocol.oidc.mappers;
 
-import org.keycloak.models.ClientSessionModel;
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.provider.ProviderConfigProperty;
-import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AddressClaimSet;
 import org.keycloak.representations.IDToken;
 
@@ -34,7 +31,6 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Set the 'name' claim to be first + last name.
  *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
@@ -43,26 +39,39 @@ public class AddressMapper extends AbstractOIDCProtocolMapper implements OIDCAcc
 
     private static final List<ProviderConfigProperty> configProperties = new ArrayList<ProviderConfigProperty>();
 
+    public static final String STREET = "street";
+
     static {
         OIDCAttributeMapperHelper.addIncludeInTokensConfig(configProperties, AddressMapper.class);
+
+        configProperties.add(createConfigProperty(STREET));
+        configProperties.add(createConfigProperty(AddressClaimSet.LOCALITY));
+        configProperties.add(createConfigProperty(AddressClaimSet.REGION));
+        configProperties.add(createConfigProperty(AddressClaimSet.POSTAL_CODE));
+        configProperties.add(createConfigProperty(AddressClaimSet.COUNTRY));
+        configProperties.add(createConfigProperty(AddressClaimSet.FORMATTED));
+    }
+
+    protected static ProviderConfigProperty createConfigProperty(String claimName) {
+        ProviderConfigProperty property = new ProviderConfigProperty();
+        property.setName(getModelPropertyName(claimName));
+        property.setLabel("addressClaim." + claimName + ".label");
+        property.setHelpText("addressClaim." + claimName + ".tooltip");
+        property.setType(ProviderConfigProperty.STRING_TYPE);
+        property.setDefaultValue(claimName);
+        return property;
+    }
+
+    public static String getModelPropertyName(String claimName) {
+        return "user.attribute." + claimName;
     }
 
     public static final String PROVIDER_ID = "oidc-address-mapper";
 
     public static ProtocolMapperModel createAddressMapper() {
-        Map<String, String> config;
-        ProtocolMapperModel address = new ProtocolMapperModel();
-        address.setName("address");
-        address.setProtocolMapper(PROVIDER_ID);
-        address.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-        address.setConsentRequired(true);
-        address.setConsentText("${address}");
-        config = new HashMap<String, String>();
-        config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true");
-        config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "true");
-        address.setConfig(config);
-        return address;
+        return createAddressMapper(true, true);
     }
+
     public static ProtocolMapperModel createAddressMapper(boolean idToken, boolean accessToken) {
         Map<String, String> config;
         ProtocolMapperModel address = new ProtocolMapperModel();
@@ -74,6 +83,14 @@ public class AddressMapper extends AbstractOIDCProtocolMapper implements OIDCAcc
         config = new HashMap<String, String>();
         config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, Boolean.toString(idToken));
         config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, Boolean.toString(accessToken));
+
+        config.put(getModelPropertyName(STREET), STREET);
+        config.put(getModelPropertyName(AddressClaimSet.LOCALITY), AddressClaimSet.LOCALITY);
+        config.put(getModelPropertyName(AddressClaimSet.REGION), AddressClaimSet.REGION);
+        config.put(getModelPropertyName(AddressClaimSet.POSTAL_CODE), AddressClaimSet.POSTAL_CODE);
+        config.put(getModelPropertyName(AddressClaimSet.COUNTRY), AddressClaimSet.COUNTRY);
+        config.put(getModelPropertyName(AddressClaimSet.FORMATTED), AddressClaimSet.FORMATTED);
+
         address.setConfig(config);
         return address;
     }
@@ -107,12 +124,24 @@ public class AddressMapper extends AbstractOIDCProtocolMapper implements OIDCAcc
     protected void setClaim(IDToken token, ProtocolMapperModel mappingModel, UserSessionModel userSession) {
         UserModel user = userSession.getUser();
         AddressClaimSet addressSet = new AddressClaimSet();
-        addressSet.setStreetAddress(user.getFirstAttribute("street"));
-        addressSet.setLocality(user.getFirstAttribute("locality"));
-        addressSet.setRegion(user.getFirstAttribute("region"));
-        addressSet.setPostalCode(user.getFirstAttribute("postal_code"));
-        addressSet.setCountry(user.getFirstAttribute("country"));
+        addressSet.setStreetAddress(getUserModelAttributeValue(user, mappingModel, STREET));
+        addressSet.setLocality(getUserModelAttributeValue(user, mappingModel, AddressClaimSet.LOCALITY));
+        addressSet.setRegion(getUserModelAttributeValue(user, mappingModel, AddressClaimSet.REGION));
+        addressSet.setPostalCode(getUserModelAttributeValue(user, mappingModel, AddressClaimSet.POSTAL_CODE));
+        addressSet.setCountry(getUserModelAttributeValue(user, mappingModel, AddressClaimSet.COUNTRY));
+        addressSet.setFormattedAddress(getUserModelAttributeValue(user, mappingModel, AddressClaimSet.FORMATTED));
         token.getOtherClaims().put("address", addressSet);
+    }
+
+    private String getUserModelAttributeValue(UserModel user, ProtocolMapperModel mappingModel, String claim) {
+        String modelPropertyName = getModelPropertyName(claim);
+        String userAttrName = mappingModel.getConfig().get(modelPropertyName);
+
+        if (userAttrName == null) {
+            userAttrName = claim;
+        }
+
+        return user.getFirstAttribute(userAttrName);
     }
 
 }
