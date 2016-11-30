@@ -1,5 +1,5 @@
-
 [[_fuse_adapter_camel]]
+
 ===== Apache Camel Application
 
 * You can secure your Apache camel endpoint using http://camel.apache.org/jetty.html[camel-jetty] component by adding securityHandler with `KeycloakJettyAuthenticator` and
@@ -152,4 +152,4 @@ This is an example that show how to do it while using Jetty engine, with referen
 
 </camelContext>
 
----
+----
