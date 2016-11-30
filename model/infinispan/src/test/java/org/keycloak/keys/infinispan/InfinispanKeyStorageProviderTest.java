@@ -45,7 +45,6 @@ import org.keycloak.keys.PublicKeyLoader;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-@Ignore
 public class InfinispanKeyStorageProviderTest {
 
     private Map<String, AtomicInteger> counters = new ConcurrentHashMap<>();
