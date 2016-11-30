@@ -56,8 +56,10 @@ import org.keycloak.theme.Theme;
 import org.keycloak.theme.ThemeProvider;
 
 import javax.ws.rs.GET;
+import javax.ws.rs.Produces;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Comparator;
@@ -83,6 +85,7 @@ public class ServerInfoAdminResource {
      * @return
      */
     @GET
+    @Produces(MediaType.APPLICATION_JSON)
     public ServerInfoRepresentation getInfo() {
         ServerInfoRepresentation info = new ServerInfoRepresentation();
         info.setSystemInfo(SystemInfoRepresentation.create(session.getKeycloakSessionFactory().getServerStartupTimestamp()));
