@@ -76,4 +76,4 @@
 
 ===== Apache HTTP Server
 
-* <<fake/../../saml/mod-auth-mellon.adoc#,mod_auth_mellon>>
+* <<fake/../../saml/mod-auth-mellon.adoc#_mod_auth_mellon,mod_auth_mellon>>
