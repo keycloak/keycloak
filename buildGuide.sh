@@ -27,13 +27,18 @@ while getopts "ht:" c
      esac
 done
 
+if [ ! -d target ]; then
+   echo "You must run 'python gitlab-conversion.py' to convert the content before you run this script."
+   exit
+fi
+
 # Remove the html and build directories and then recreate the html/images/ directory
-if [ -d html ]; then
-   rm -r html/
+if [ -d target/html ]; then
+   rm -r target/html/
 fi
 
 mkdir -p html
-cp -r ../../docs/topics/images/ html/
+cp -r target/images/ target/html/
 
 echo ""
 echo "********************************************"
@@ -41,8 +46,8 @@ echo " Building $CURRENT_GUIDE                "
 echo "********************************************"
 echo ""
 echo "Building an asciidoctor version of the $CURRENT_GUIDE"
-asciidoctor -t -dbook -a toc -o html/$CURRENT_GUIDE.html master.adoc
+asciidoctor -t -dbook -a toc -o target/html/$CURRENT_GUIDE.html target/master.adoc
 
 cd ..
 
-echo "View the guide here: " file://$CURRENT_DIRECTORY/html/$CURRENT_GUIDE.html
+echo "View the guide here: " file://$CURRENT_DIRECTORY/target/html/$CURRENT_GUIDE.html

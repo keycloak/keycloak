@@ -13,20 +13,14 @@ http://www.keycloak.org
 Follow the steps below to test that this documentation for the product build.
 
 . In a terminal, navigate to the root folder of this project source.
-. Convert the content by running the following Python command.
+. Run the following Python command to convert the content and put it in the the `target/` directory.
 +
 [source,options="nowrap"]
 ----
 $ python gitlab-conversion.py
 ----
-. This command puts the converted content in the `target/` directory.
-. Copy the `buildGuide.sh` script from the root of the project folder to the `target/` directory.
-+
-[source,options="nowrap"]
-----
-cp buildGuide.sh target/
-----
-. Navigate to the `target/` directory and build the documentation to be sure there are no errors.
+
+. Build the documentation to be sure there are no errors.
 +
 [source,options="nowrap"]
 ----
