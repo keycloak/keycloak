@@ -9,7 +9,7 @@ To unpack this file run the _unzip_ or _gunzip_ and _tar_ utilities. Throughout 
 the demo distribution is referenced as *${KEYCLOAK_DEMO_SERVER_DIR}*.
 
 [NOTE]
-This guide assumes that you are already familiar with {{book.project.name}} and that you are able to install and boot a {{book.project.name}} Server. For more information, see https://keycloak.gitbooks.io/getting-started-tutorials/content/[the Getting Started tutorials].
+This guide assumes that you are already familiar with {{book.project.name}} and that you are able to install and boot a {{book.project.name}} Server. For more information, see the {{book.external_link.keycloakgettingstarted.link}}[{{book.external_link.keycloakgettingstarted.name}}] tutorials.
 
 Ensure you have a {{book.project.name}} instance running; the default configuration is http://localhost:8080/auth[http://localhost:8080/auth]. After logging in to the
 Administration Console, a page similar to this one is displayed:

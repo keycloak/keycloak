@@ -17,6 +17,16 @@
       "name": "Keycloak",
       "version": "SNAPSHOT",
       "module": "Authorization Services"
+    },
+    "external_link": {
+      "keycloakjsadapter": {
+        "name": "JavaScript OpenID Connect Adapter",
+        "link": "https://keycloak.gitbooks.io/securing-client-applications-guide/content/topics/oidc/javascript-adapter.html"
+      },
+      "keycloakgettingstarted": {
+        "name": "Getting Started",
+        "link": "https://keycloak.gitbooks.io/getting-started-tutorials/content/"
+      }
     }
   }
 }
