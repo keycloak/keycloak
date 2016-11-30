@@ -118,10 +118,8 @@ expose-token::
   The default value is _false_.
 
 credentials::
-  Not required for public clients or where the client is "bearer-only."
   Specify the credentials of the application. This is an object notation where the key is the credential type and the value is the value of the credential type.
-  Currently `password` and `jwt` is supported.
-  This is _REQUIRED_.
+  Currently password and jwt is supported. This is _REQUIRED_ only for clients with 'Confidential' access type.
 
 connection-pool-size::
   Adapters will make separate HTTP invocations to the {{book.project.name}} server to turn an access code into an access token.
