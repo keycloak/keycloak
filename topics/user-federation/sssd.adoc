@@ -59,7 +59,7 @@ All you have to is to run the provisioning script available at {{book.project.na
 
 {% endif %}
 
-{% if book.community %}
+{% if book.product %}
 
 All you have to is to copy and run the provisioning script below:
 
