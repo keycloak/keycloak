@@ -111,14 +111,17 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
         testRealmPage.setAuthRealm(DEMO);
     }
 
-    protected void setAdapterAndServerTimeOffset(int timeOffset, String servletUri) {
+    protected void setAdapterAndServerTimeOffset(int timeOffset, String... servletUris) {
         setTimeOffset(timeOffset);
-        String timeOffsetUri = UriBuilder.fromUri(servletUri)
-                .queryParam(AdapterActionsFilter.TIME_OFFSET_PARAM, timeOffset)
-                .build().toString();
 
-        driver.navigate().to(timeOffsetUri);
-        WaitUtils.waitUntilElement(By.tagName("body")).is().visible();
+        for (String servletUri : servletUris) {
+            String timeOffsetUri = UriBuilder.fromUri(servletUri)
+                    .queryParam(AdapterActionsFilter.TIME_OFFSET_PARAM, timeOffset)
+                    .build().toString();
+
+            driver.navigate().to(timeOffsetUri);
+            WaitUtils.waitUntilElement(By.tagName("body")).is().visible();
+        }
     }
 
 }

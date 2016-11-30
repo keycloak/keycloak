@@ -27,17 +27,13 @@ import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.common.Version;
-import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.Time;
 import org.keycloak.constants.AdapterConstants;
-import org.keycloak.keys.KeyProvider;
-import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.VersionRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.adapter.AbstractServletsAdapterTest;
@@ -67,7 +63,6 @@ import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Form;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriBuilder;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
@@ -86,7 +81,6 @@ import static org.junit.Assert.assertTrue;
 import org.keycloak.testsuite.adapter.page.CustomerPortalNoConf;
 import static org.keycloak.testsuite.auth.page.AuthRealm.DEMO;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlEquals;
-import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWithLoginUrlOf;
 import static org.keycloak.testsuite.util.WaitUtils.pause;
 import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
@@ -141,7 +135,7 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
 
     @Deployment(name = CustomerDb.DEPLOYMENT_NAME)
     protected static WebArchive customerDb() {
-        return servletDeployment(CustomerDb.DEPLOYMENT_NAME, CustomerDatabaseServlet.class);
+        return servletDeployment(CustomerDb.DEPLOYMENT_NAME, AdapterActionsFilter.class, CustomerDatabaseServlet.class);
     }
 
     @Deployment(name = CustomerDbErrorPage.DEPLOYMENT_NAME)
@@ -215,97 +209,6 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
         String text = client.target(inputPortal + "/unsecured").request().post(Entity.form(form), String.class);
         assertTrue(text.contains("parameter=hello"));
         client.close();
-    }
-
-    @Test
-    public void testRealmKeyRotationWithNewKeyDownload() throws Exception {
-        // Login success first
-        tokenMinTTLPage.navigateTo();
-        testRealmLoginPage.form().waitForUsernameInputPresent();
-        assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
-        testRealmLoginPage.form().login("bburke@redhat.com", "password");
-        assertCurrentUrlEquals(tokenMinTTLPage);
-
-        AccessToken token = tokenMinTTLPage.getAccessToken();
-        Assert.assertEquals("bburke@redhat.com", token.getPreferredUsername());
-
-        // Logout
-        String logoutUri = OIDCLoginProtocolService.logoutUrl(authServerPage.createUriBuilder())
-                .queryParam(OAuth2Constants.REDIRECT_URI, tokenMinTTLPage.toString())
-                .build("demo").toString();
-        driver.navigate().to(logoutUri);
-
-        // Generate new realm key
-        String realmId = adminClient.realm(DEMO).toRepresentation().getId();
-        ComponentRepresentation keys = new ComponentRepresentation();
-        keys.setName("generated");
-        keys.setProviderType(KeyProvider.class.getName());
-        keys.setProviderId("rsa-generated");
-        keys.setParentId(realmId);
-        keys.setConfig(new MultivaluedHashMap<>());
-        keys.getConfig().putSingle("priority", "100");
-        Response response = adminClient.realm(DEMO).components().add(keys);
-        assertEquals(201, response.getStatus());
-        response.close();
-
-        String adapterActionsUrl = tokenMinTTLPage.toString() + "/unsecured/foo";
-        setAdapterAndServerTimeOffset(300, adapterActionsUrl);
-
-        // Try to login. Should work now due to realm key change
-        tokenMinTTLPage.navigateTo();
-        testRealmLoginPage.form().waitForUsernameInputPresent();
-        assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
-        testRealmLoginPage.form().login("bburke@redhat.com", "password");
-        assertCurrentUrlEquals(tokenMinTTLPage);
-        token = tokenMinTTLPage.getAccessToken();
-        Assert.assertEquals("bburke@redhat.com", token.getPreferredUsername());
-        driver.navigate().to(logoutUri);
-
-        // Revert public keys change
-        String timeOffsetUri = UriBuilder.fromUri(adapterActionsUrl)
-                .queryParam(AdapterActionsFilter.RESET_PUBLIC_KEY_PARAM, "true")
-                .build().toString();
-        driver.navigate().to(timeOffsetUri);
-        waitUntilElement(By.tagName("body")).is().visible();
-
-        setAdapterAndServerTimeOffset(0, adapterActionsUrl);
-    }
-
-    @Test
-    public void testClientWithJwksUri() throws Exception {
-        // Set client to bad JWKS URI
-        ClientResource clientResource = ApiUtil.findClientResourceByClientId(testRealmResource(), "secure-portal");
-        ClientRepresentation client = clientResource.toRepresentation();
-        OIDCAdvancedConfigWrapper wrapper = OIDCAdvancedConfigWrapper.fromClientRepresentation(client);
-        wrapper.setUseJwksUrl(true);
-        wrapper.setJwksUrl(securePortal + "/bad-jwks-url");
-        clientResource.update(client);
-
-        // Login should fail at the code-to-token
-        securePortal.navigateTo();
-        assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
-        testRealmLoginPage.form().login("bburke@redhat.com", "password");
-        String pageSource = driver.getPageSource();
-        assertCurrentUrlStartsWith(securePortal);
-        assertFalse(pageSource.contains("Bill Burke") && pageSource.contains("Stian Thorgersen"));
-
-        // Set client to correct JWKS URI
-        client = clientResource.toRepresentation();
-        wrapper = OIDCAdvancedConfigWrapper.fromClientRepresentation(client);
-        wrapper.setUseJwksUrl(true);
-        wrapper.setJwksUrl(securePortal + "/" + AdapterConstants.K_JWKS);
-        clientResource.update(client);
-
-        // Login to secure-portal should be fine now. Client keys downloaded from JWKS URI
-        securePortal.navigateTo();
-        assertCurrentUrlEquals(securePortal);
-        pageSource = driver.getPageSource();
-        assertTrue(pageSource.contains("Bill Burke") && pageSource.contains("Stian Thorgersen"));
-
-        // Logout
-        String logoutUri = OIDCLoginProtocolService.logoutUrl(authServerPage.createUriBuilder())
-                .queryParam(OAuth2Constants.REDIRECT_URI, securePortal.toString()).build("demo").toString();
-        driver.navigate().to(logoutUri);
     }
 
     @Test
