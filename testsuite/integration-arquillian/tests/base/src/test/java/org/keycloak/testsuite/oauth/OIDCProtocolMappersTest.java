@@ -29,7 +29,9 @@ import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ProtocolMappersResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.mappers.AddressMapper;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.AddressClaimSet;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
@@ -96,10 +98,12 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
 
             user.singleAttribute("street", "5 Yawkey Way");
             user.singleAttribute("locality", "Boston");
-            user.singleAttribute("region", "MA");
+            user.singleAttribute("region_some", "MA"); // Custom name for userAttribute name, which will be mapped to region
             user.singleAttribute("postal_code", "02115");
             user.singleAttribute("country", "USA");
+            user.singleAttribute("formatted", "6 Foo Street");
             user.singleAttribute("phone", "617-777-6666");
+
 
             List<String> departments = Arrays.asList("finance", "development");
             user.getAttributes().put("departments", departments);
@@ -108,6 +112,9 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
             ClientResource app = findClientResourceByClientId(adminClient.realm("test"), "test-app");
 
             ProtocolMapperRepresentation mapper = createAddressMapper(true, true);
+            mapper.getConfig().put(AddressMapper.getModelPropertyName(AddressClaimSet.REGION), "region_some");
+            mapper.getConfig().put(AddressMapper.getModelPropertyName(AddressClaimSet.COUNTRY), "country_some");
+            mapper.getConfig().remove(AddressMapper.getModelPropertyName(AddressClaimSet.POSTAL_CODE)); // Even if we remove protocolMapper config property, it should still default to postal_code
             app.getProtocolMappers().createMapper(mapper);
 
             ProtocolMapperRepresentation hard = createHardcodedClaim("hard", "hard", "coded", "String", false, null, true, true);
@@ -131,7 +138,8 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
             assertEquals(idToken.getAddress().getLocality(), "Boston");
             assertEquals(idToken.getAddress().getRegion(), "MA");
             assertEquals(idToken.getAddress().getPostalCode(), "02115");
-            assertEquals(idToken.getAddress().getCountry(), "USA");
+            assertNull(idToken.getAddress().getCountry()); // Null because we changed userAttribute name to "country_some", but user contains "country"
+            assertEquals(idToken.getAddress().getFormattedAddress(), "6 Foo Street");
             assertNotNull(idToken.getOtherClaims().get("home_phone"));
             assertEquals("617-777-6666", idToken.getOtherClaims().get("home_phone"));
             assertEquals("coded", idToken.getOtherClaims().get("hard"));
@@ -150,7 +158,8 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
             assertEquals(accessToken.getAddress().getLocality(), "Boston");
             assertEquals(accessToken.getAddress().getRegion(), "MA");
             assertEquals(accessToken.getAddress().getPostalCode(), "02115");
-            assertEquals(accessToken.getAddress().getCountry(), "USA");
+            assertNull(idToken.getAddress().getCountry()); // Null because we changed userAttribute name to "country_some", but user contains "country"
+            assertEquals(idToken.getAddress().getFormattedAddress(), "6 Foo Street");
             assertNotNull(accessToken.getOtherClaims().get("home_phone"));
             assertEquals("617-777-6666", accessToken.getOtherClaims().get("home_phone"));
             assertEquals("coded", accessToken.getOtherClaims().get("hard"));
