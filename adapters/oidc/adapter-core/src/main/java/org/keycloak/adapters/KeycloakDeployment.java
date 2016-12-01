@@ -329,6 +329,11 @@ public class KeycloakDeployment {
         this.notBefore = notBefore;
     }
 
+    public void updateNotBefore(int notBefore) {
+        this.notBefore = notBefore;
+        getPublicKeyLocator().reset(this);
+    }
+
     public boolean isAlwaysRefreshToken() {
         return alwaysRefreshToken;
     }

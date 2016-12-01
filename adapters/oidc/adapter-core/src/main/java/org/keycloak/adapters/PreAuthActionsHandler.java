@@ -155,7 +155,7 @@ public class PreAuthActionsHandler {
             } else {
                 log.debugf("logout of all sessions for application '%s'", action.getResource());
                 if (action.getNotBefore() > deployment.getNotBefore()) {
-                    deployment.setNotBefore(action.getNotBefore());
+                    deployment.updateNotBefore(action.getNotBefore());
                 }
                 userSessionManagement.logoutAll();
             }
@@ -177,7 +177,7 @@ public class PreAuthActionsHandler {
             }
             PushNotBeforeAction action = JsonSerialization.readValue(token.getContent(), PushNotBeforeAction.class);
             if (!validateAction(action)) return;
-            deployment.setNotBefore(action.getNotBefore());
+            deployment.updateNotBefore(action.getNotBefore());
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

@@ -34,4 +34,11 @@ public interface PublicKeyLocator {
      */
     PublicKey getPublicKey(String kid, KeycloakDeployment deployment);
 
+    /**
+     * Reset the state of locator (eg. clear the cached keys)
+     *
+     * @param deployment
+     */
+    void reset(KeycloakDeployment deployment);
+
 }

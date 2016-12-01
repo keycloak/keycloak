@@ -144,7 +144,7 @@ public class RefreshableKeycloakSecurityContext extends KeycloakSecurityContext 
         }
 
         if (response.getNotBeforePolicy() > deployment.getNotBefore()) {
-            deployment.setNotBefore(response.getNotBeforePolicy());
+            deployment.updateNotBefore(response.getNotBeforePolicy());
         }
 
         this.token = token;
