@@ -33,7 +33,8 @@ This is what one might look like:
    "client-keystore-password" : "geheim",
    "client-key-password" : "geheim",
    "token-minimum-time-to-live" : 10,
-   "min-time-between-jwks-requests" : 10
+   "min-time-between-jwks-requests" : 10,
+   "public-key-cache-ttl": 86400
 }
 ----
 
@@ -207,3 +208,10 @@ min-time-between-jwks-requests::
   Adapter will always try to download new public key when it recognize token with unknown `kid` . However it won't try it more
   than once per 10 seconds (by default). This is to avoid DoS when attacker sends lots of tokens with bad `kid` forcing adapter
   to send lots of requests to {{book.project.name}}.
+
+public-key-cache-ttl::
+  Amount of time, in seconds, specifying maximum interval between two requests to {{book.project.name}} to retrieve new public keys.
+  It is 86400 seconds (1 day) by default.
+  Adapter will always try to download new public key when it recognize token with unknown `kid` . If it recognize token with known `kid`, it will
+  just use the public key downloaded previously. However at least once per this configured interval (1 day by default) will be new
+  public key always downloaded even if the `kid` of token is already known.
