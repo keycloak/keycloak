@@ -29,7 +29,7 @@ versions of {{book.project.name}} it is planned that you will be able to configu
 
 ==== TOTP Configuration Options
 
-Hashing Algorithm::
+OTP Hashing Algorithm::
   Default is SHA1, more secure options are SHA256 and SHA512.
 Number of Digits::
   How many characters is the OTP?  Short means more user friendly as it is less the user has to type.  More means more security.
@@ -43,7 +43,7 @@ OTP Token Period::
 
 ==== HOTP Configuration Options
 
-Hashing Algorithm::
+OTP Hashing Algorithm::
   Default is SHA1, more secure options are SHA256 and SHA512.
 Number of Digits::
   How many characters is the OTP?  Short means more user friendly as it is less the user has to type.  More means more security.
@@ -53,5 +53,3 @@ Look Ahead Window::
   manually too many times by accident.  This value really should be increased to a value of 10 or so.
 Initial Counter::
   What is the value of the initial counter?
-
-

@@ -16,7 +16,7 @@ is only one active keypair. In the future as more signature algorithms are added
 
 To view all available keys select `All`. This will show all active, passive and disabled keys. A keypair can have the
 status `Active`, but still not be selected as the currently active keypair for the realm. The selected active pair which
-is used for signatures is selected based on the the first key provider sorted by priority that is able to provide an
+is used for signatures is selected based on the first key provider sorted by priority that is able to provide an
  active keypair.
 
 ==== Rotating keys
@@ -50,7 +50,7 @@ Click `Save` to add the new keys. This will generated a new keypair including a 
 Changing the priority for a provider will not cause the keys to be re-generated, but if you want to change the keysize
 you can edit the provider and new keys will be generated.
 
-==== Adding a existing keypair and certificate
+==== Adding an existing keypair and certificate
 
 To add a keypair and certificate obtained elsewhere select `Providers` and choose `rsa` from the dropdown. You can change
 the priority to make sure the new keypair becomes the active keypair.

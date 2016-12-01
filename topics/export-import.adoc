@@ -9,16 +9,16 @@ is triggered at server boot time  and its parameters are passed in via Java syst
 It is important to note that because import and export happens at server startup, no other actions should be taken on the server
 or the database while this happens.
 
-You can export/import your database either to: 
+You can export/import your database either to:
 
 * Directory on local filesystem
 * Single JSON file on your filesystem
 
 When importing using the directory strategy, note that the files need to follow the naming convention specified below.
-If you are importing files which were previously exported, the files already follow this convention. 
+If you are importing files which were previously exported, the files already follow this convention.
 
 * {REALM_NAME}-realm.json, such as "acme-roadrunner-affairs-realm.json" for the realm named "acme-roadrunner-affairs"
-* {REALM_NAME}-users-{INDEX}.json, such as "acme-roadrunner-affairs-users-0.json" for the first users file of the realm named "acme-roadrunner-affairs"        
+* {REALM_NAME}-users-{INDEX}.json, such as "acme-roadrunner-affairs-users-0.json" for the first users file of the realm named "acme-roadrunner-affairs"
 
 If you export to a directory, you can also specify the number of users that will be stored in each JSON file.
 
@@ -28,36 +28,36 @@ NOTE: If you have bigger amount of users in your database (500 or more), it's hi
       Default count of users per file (and transaction) is 50, which showed us best performance, but you have possibility to override (See below).
       Exporting to single file is using one transaction per whole export and one per whole import, which results in bad performance with large amount of users.
 
-To export into unencrypted directory you can use: 
+To export into unencrypted directory you can use:
 
 [source]
 ----
 
 bin/standalone.sh -Dkeycloak.migration.action=export
 -Dkeycloak.migration.provider=dir -Dkeycloak.migration.dir=<DIR TO EXPORT TO>
-----            
-And similarly for import just use `-Dkeycloak.migration.action=import` instead of `export` . 
-To export into single JSON file you can use: 
+----
+And similarly for import just use `-Dkeycloak.migration.action=import` instead of `export` .
+To export into single JSON file you can use:
 
 [source]
 ----
 bin/standalone.sh -Dkeycloak.migration.action=export
 -Dkeycloak.migration.provider=singleFile -Dkeycloak.migration.file=<FILE TO EXPORT TO>
-----        
-Here's an example of importing: 
+----
+Here's an example of importing:
 
 [source]
 ----
 bin/standalone.sh -Dkeycloak.migration.action=import
 -Dkeycloak.migration.provider=singleFile -Dkeycloak.migration.file=<FILE TO IMPORT>
 -Dkeycloak.migration.strategy=OVERWRITE_EXISTING
-----        
+----
 
-Other available options are: 
+Other available options are:
 
 -Dkeycloak.migration.realmName::
   This property is used if you want to export just one specified realm instead of all.
-  If not specified, then all realms will be exported. 
+  If not specified, then all realms will be exported.
 
 -Dkeycloak.migration.usersExportStrategy::
   This property is used to specify where users are exported.
@@ -65,11 +65,11 @@ Other available options are:
   * DIFFERENT_FILES - Users will be exported into different files according to the maximum number of users per file. This is default value.
   * SKIP - Exporting of users will be skipped completely.
   * REALM_FILE - All users will be exported to same file with the realm settings. (The result will be a file like "foo-realm.json" with both realm data and users.)
-  * SAME_FILE - All users will be exported to same file but different from the realm file. (The result will be a file like "foo-realm.json" with realm data and "foo-users.json" with users.)                        
+  * SAME_FILE - All users will be exported to same file but different from the realm file. (The result will be a file like "foo-realm.json" with realm data and "foo-users.json" with users.)
 
 -Dkeycloak.migration.usersPerFile::
   This property is used to specify the number of users per file (and also per DB transaction). It's 50 by default.
-  It's used only if usersExportStrategy is DIFFERENT_FILES 
+  It's used only if usersExportStrategy is DIFFERENT_FILES
 
 -Dkeycloak.migration.strategy::
   This property is used during import.
@@ -83,19 +83,19 @@ Other available options are:
 When importing realm files that weren't exported before, the option `keycloak.import` can be used.
 If more than one realm file needs to be imported, a comma separated list of file names can be specified.
 This is more appropriate than the cases before, as this will happen only after the master realm has been initialized.
-Examples: 
+Examples:
 
 * -Dkeycloak.import=/tmp/realm1.json
-* -Dkeycloak.import=/tmp/realm1.json,/tmp/realm2.json        
+* -Dkeycloak.import=/tmp/realm1.json,/tmp/realm2.json
 
 === Admin console export/import
 
 Import of most resources can be performed from the admin console.
-Exporting resources will be supported in future versions. 
+Exporting resources will be supported in future versions.
 
 The files created during a "startup" export can be used to import from the admin UI.
-This way, you can export from one realm and import to another realm.
-Or, you can export from one server and import to another. 
+This way, you can export from one realm and import to another realm. Note: The admin console import allows just one realm per file.
+Or, you can export from one server and import to another.
 
 WARNING: The admin console import allows you to "overwrite" resources if you choose.
-Use this feature with caution, especially on a production system. 
+Use this feature with caution, especially on a production system.

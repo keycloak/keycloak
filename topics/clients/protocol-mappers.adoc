@@ -29,7 +29,7 @@ image:../../{{book.images}}/mapper-config.png[]
 The best way to learn about a config option is to hover over its tooltip.  There are a few config options that
 are common to all mappers:
 
-Consent::
+Consent Required::
   If your client requires consent, this mapper will be displayed on the consent screen shown to the user.
 Consent Text::
   If your client requires consent and the `Consent` switch is on, this is the text that will be displayed by the user.
@@ -47,4 +47,3 @@ image:../../{{book.images}}/add-mapper.png[]
 
 Pick a `Mapper Type` from the list box.  If you hover over the tooltip, you'll see a description of what that mapper type does.
 Different config parameters will appear for different mapper types.
-

@@ -11,7 +11,7 @@ In order to create an identity provider click the `Identity Providers` left menu
 .Identity Providers
 image:../../{{book.images}}/identity-providers.png[]
 
-In the right hand drop down list box, choose the identity provider you want to add.  This will bring you to the
+In the drop down list box, choose the identity provider you want to add.  This will bring you to the
 configuration page for that identity provider type.
 
 .Add Identity Provider
@@ -36,7 +36,7 @@ Protocol-based::
   It makes it easy to configure and broker any identity provider based on these open standards.
 
 Although each type of identity provider has its own configuration options, all of them share some very common configuration.
-Regardless the identity provider you are creating, you'll see the following configuration options avaivable:
+Regardless the identity provider you are creating, you'll see the following configuration options available:
 
 .Common Configuration
 [cols="1,1", options="header"]
@@ -73,5 +73,3 @@ Regardless the identity provider you are creating, you'll see the following conf
 |Post Login Flow
 |Authentication flow that is triggered after the user finishes logging in with the external identity provider.
 |===
-
-

@@ -24,7 +24,5 @@ none::
   {{book.project.name}} does not require SSL.  This should really only be used in development when you are playing around with things and don't want to bother
   configuring SSL on your server.
 
-all::
+all requests::
   {{book.project.name}} requires SSL for all IP addresses.
-
-

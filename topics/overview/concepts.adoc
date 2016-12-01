@@ -21,7 +21,7 @@ roles::
 user role mapping::
   A user role mapping defines a mapping between a role and a user.  A user can be associated with zero or more roles.  This
   role mapping information can be encapsulated into tokens and assertions so that applications can decide access permissions on
-  various resources they manage
+  various resources they manage.
 composite roles::
   A composite role is a role that can be associated with other roles.  For example a `superuser` composite role could be associated with the
   `sales-admin` and `order-entry-admin` roles.  If a user is mapped to the `superuser` role they also inherit the `sales-admin` and `order-entry-admin` roles.
@@ -44,7 +44,7 @@ consent::
   information is requested of the user.  User can decide whether or not to grant the request.
 client templates::
   When a client is registered you need to enter configuration information about that client.  It is often useful to store a template
-  of this to make create new clients easier.  {{book.project.name}} provides the concept of a client template for this.
+  to make create new clients easier.  {{book.project.name}} provides the concept of a client template for this.
 client role::
   Clients can define roles that are specific to them.  This is basically a role namespace dedicated to the client.
 identity token::
