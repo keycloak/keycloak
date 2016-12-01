@@ -1,5 +1,5 @@
 [[_policy_user]]
-== User-Based Policy
+=== User-Based Policy
 
 You can use this type of policy to define conditions for your permissions where a set of one or more users is permitted to access an object.
 
@@ -8,7 +8,7 @@ To create a new user-based policy, select *User-Based* in the dropdown list in t
 .Add a User-Based Policy
 image:../../images/policy/create-user.png[alt="Add User-Based Policy"]
 
-=== Configuration
+==== Configuration
 
 * *Name*
 +

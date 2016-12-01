@@ -1,5 +1,5 @@
 [[_resource_server_enable_authorization]]
-== Enabling Authorization Services
+=== Enabling Authorization Services
 
 To turn your OIDC Client Application into a resource server and enable fine-grained authorization, click the *Authorization Enabled* switch to *ON* and click *Save*.
 
@@ -37,7 +37,7 @@ From this page, you can manage the <<fake/../../permission/overview.adoc#_permis
 +
 From this page, you can <<fake/../../policy-evaluation-tool/overview.adoc#_policy_evaluation_overview, simulate authorization requests>> and view the result of the evaluation of the permissions and authorization policies you have defined.
 
-=== Resource Server Settings
+==== Resource Server Settings
 
 On the Resource Server Settings page, you can configure the policy enforcement mode, allow remote resource management, and export the authorization configuration settings.
 

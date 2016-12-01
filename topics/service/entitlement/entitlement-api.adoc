@@ -1,5 +1,5 @@
 [[_service_entitlement_api]]
-== Entitlement API
+=== Entitlement API
 
 The Entitlement API provides a 1-legged protocol for obtaining authorization data from the server, where the authorization data
 represents the result of the evaluation of all permissions and authorization policies associated with the resources being requested.

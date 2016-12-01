@@ -1,5 +1,5 @@
 [[_service_protection_permission_api_papi]]
-== Managing Permission Requests
+=== Managing Permission Requests
 
 Resource servers using the UMA protocol can use a specific endpoint to manage permission requests. This endpoint provides a UMA-compliant flow for registering permission requests and obtaining a permission ticket.
 

@@ -1,5 +1,5 @@
 [[_policy_js]]
-== JavaScript-Based Policy
+=== JavaScript-Based Policy
 
 You can use this type of policy to define conditions for your permissions using JavaScript. It is one of the rule-based policy types
 supported by {{book.project.name}}, and provides flexibility to write any policy based on the <<fake/../evaluation-api.adoc#_policy_evaluation_api, Evaluation API>>.
@@ -9,7 +9,7 @@ To create a new JavaScript-based policy, select *JavaScript* in the dropdown lis
 .Add JavaScript Policy
 image:../../images/policy/create-js.png[alt="Add JavaScript Policy"]
 
-=== Configuration
+==== Configuration
 
 * *Name*
 +
@@ -28,7 +28,7 @@ The JavaScript code providing the conditions for this policy.
 +
 The <<fake/../logic.adoc#_policy_logic, Logic>> of this policy to apply after the other conditions have been evaluated.
 
-=== Examples
+==== Examples
 
 Here is a simple example of a JavaScript-based policy that uses attribute-based access control (ABAC) to define a condition based on an attribute
 obtained from the execution context:

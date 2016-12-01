@@ -1,5 +1,5 @@
 [[_policy_evaluation_api]]
-== Evaluation API
+=== Evaluation API
 
 When writing rule-based policies using JavaScript or JBoss Drools, {{book.project.name}} provides an Evaluation API that provides useful information to help determine whether a permission should be granted.
 
@@ -46,7 +46,7 @@ When processing an authorization request, {{book.project.name}} creates an `Eval
 
 Policies determine this by invoking the `grant()` or `deny()` methods on an `Evaluation` instance. By default, the state of the `Evaluation` instance is denied, which means that your policies must explicitly invoke the `grant()` method to indicate to the policy evaluation engine that permission should be granted.
 
-=== The Evaluation Context
+==== The Evaluation Context
 
 The evaluation context provides useful information to policies during their evaluation.
 

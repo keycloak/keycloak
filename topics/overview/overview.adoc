@@ -2,7 +2,7 @@
 == Overview
 
 {% if book.product %}
-{{book.project.module}} is a Technology Preview feature and is not fully supported. This feature is disabled by default.
+NOTE: {{book.project.module}} is a Technology Preview feature and is not fully supported. This feature is disabled by default.
 
 To enable {{book.project.module}} add the `standalone/configuration/profile.properties` file with the contents `profile=preview`
 or start the server with `-Dkeycloak.profile=preview` to enable all technology preview features.

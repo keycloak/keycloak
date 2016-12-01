@@ -1,5 +1,5 @@
 [[_service_protection_token_introspection]]
-== Introspecting a Requesting Party Token
+=== Introspecting a Requesting Party Token
 
 Sometimes you might want to introspect a requesting party token (RPT) to check its validity or obtain the permissions within the token to enforce authorization decisions on the resource server side.
 
@@ -8,7 +8,7 @@ There are two main use cases where token introspection can help you:
 * When client applications need to query the token validity to obtain a new one with the same or additional permissions
 * When enforcing authorization decisions at the resource server side, especially when none of the built-in <<fake/../../../enforcer/overview.adoc#_enforcer_overview, policy enforcers>> fits your application
 
-=== Obtaining Information about a RPT
+==== Obtaining Information about a RPT
 
 The token introspection is essentially a https://tools.ietf.org/html/rfc7662[OAuth2 token introspection]-compliant endpoint from which you can obtain information about a RPT.
 
@@ -65,7 +65,7 @@ If the RPT is not active, this response is returned instead:
 }
 ```
 
-=== Do I Need to Invoke the Server Every Time I want to Introspect a RPT?
+==== Do I Need to Invoke the Server Every Time I want to Introspect a RPT?
 
 No. Both <<fake/../../../service/authorization/authorization-api.adoc#_service_authorization_api, Authorization>> and <<fake/../../../service/entitlement/entitlement-api.adoc#_service_entitlement_api, Entitlement>> APIs use the
  https://tools.ietf.org/html/rfc7519[JSON web token (JWT)] specification as the default format for RPTs.
