@@ -110,7 +110,7 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
         return exampleDeployment(PhotozClientAuthzTestApp.DEPLOYMENT_NAME);
     }
 
-    @Deployment(name = RESOURCE_SERVER_ID, managed = false)
+    @Deployment(name = RESOURCE_SERVER_ID, managed = false, testable = false)
     public static WebArchive deploymentResourceServer() throws IOException {
         return exampleDeployment(RESOURCE_SERVER_ID);
     }
