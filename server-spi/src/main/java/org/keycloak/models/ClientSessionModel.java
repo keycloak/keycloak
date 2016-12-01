@@ -24,7 +24,6 @@ import java.util.Set;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public interface ClientSessionModel {
-    public static final String ACTION_SIGNATURE = "action_signature";
 
     public String getId();
     public RealmModel getRealm();
