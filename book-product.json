@@ -12,7 +12,7 @@
     "title": "Securing Applications and Services Guide",
     "project": {
       "name": "Red Hat Single Sign-On",
-      "version": "7.0.0",
+      "version": "7.1.0",
       "versionMvn": "1.9.8.Final-redhat-1"
     },
     "community": false,
@@ -20,7 +20,7 @@
     "images": "rhsso-images",
     "adminguide": {
       "name": "Server Administration Guide",
-      "link": "https://access.redhat.com/documentation/en/red-hat-single-sign-on/7.0/server-administration-guide/"
+      "link": "https://access.redhat.com/documentation/en/red-hat-single-sign-on/7.1-Beta/server-administration-guide/"
     }
   }
 }
