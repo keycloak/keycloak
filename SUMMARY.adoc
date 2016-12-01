@@ -99,3 +99,5 @@
  ... link:topics/enforcer/authorization-context.adoc[Obtaining the Authorization Context]
 
  ... link:topics/enforcer/js-adapter.adoc[JavaScript Integration]
+
+ ... link:topics/enforcer/https.adoc[Setting up TLS/HTTPS]
