@@ -38,6 +38,9 @@ public abstract class AbstractShowTokensPage extends AbstractPageWithInjectedUrl
     @FindBy(id = "refreshToken")
     private WebElement refreshToken;
 
+    @FindBy(id = "accessTokenString")
+    private WebElement accessTokenString;
+
 
     public AccessToken getAccessToken() {
         try {
@@ -51,13 +54,25 @@ public abstract class AbstractShowTokensPage extends AbstractPageWithInjectedUrl
         return null;
     }
 
+
     public RefreshToken getRefreshToken() {
         try {
             return JsonSerialization.readValue(refreshToken.getText(), RefreshToken.class);
         } catch (IOException e) {
             e.printStackTrace();
         } catch (NoSuchElementException nsee) {
-            log.warn("No idToken element found on the page");
+            log.warn("No refreshToken element found on the page");
+        }
+
+        return null;
+    }
+
+
+    public String getAccessTokenString() {
+        try {
+            return accessTokenString.getText();
+        } catch (NoSuchElementException nsee) {
+            log.warn("No accessTokenString element found on the page");
         }
 
         return null;

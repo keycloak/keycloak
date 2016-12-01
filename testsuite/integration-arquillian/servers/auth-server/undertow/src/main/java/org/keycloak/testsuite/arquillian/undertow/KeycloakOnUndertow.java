@@ -50,8 +50,8 @@ import javax.servlet.ServletException;
 
 import java.lang.reflect.Field;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class KeycloakOnUndertow implements DeployableContainer<KeycloakOnUndertowConfiguration> {
 
@@ -61,7 +61,7 @@ public class KeycloakOnUndertow implements DeployableContainer<KeycloakOnUnderto
     private KeycloakOnUndertowConfiguration configuration;
     private KeycloakSessionFactory sessionFactory;
 
-    Map<String, String> deployedArchivesToContextPath = new HashMap<>();
+    Map<String, String> deployedArchivesToContextPath = new ConcurrentHashMap<>();
 
     private DeploymentInfo createAuthServerDeploymentInfo() {
         ResteasyDeployment deployment = new ResteasyDeployment();

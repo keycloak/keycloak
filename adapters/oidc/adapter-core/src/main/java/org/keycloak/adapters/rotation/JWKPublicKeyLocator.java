@@ -25,7 +25,6 @@ import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.common.util.Time;
 import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.jose.jwk.JWK;
-import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.util.JWKSUtils;
 
 import java.security.PublicKey;
@@ -48,14 +47,14 @@ public class JWKPublicKeyLocator implements PublicKeyLocator {
     @Override
     public PublicKey getPublicKey(String kid, KeycloakDeployment deployment) {
         int minTimeBetweenRequests = deployment.getMinTimeBetweenJwksRequests();
+        int publicKeyCacheTtl = deployment.getPublicKeyCacheTtl();
+        int currentTime = Time.currentTime();
 
         // Check if key is in cache.
-        PublicKey publicKey = currentKeys.get(kid);
+        PublicKey publicKey = lookupCachedKey(publicKeyCacheTtl, currentTime, kid);
         if (publicKey != null) {
             return publicKey;
         }
-
-        int currentTime = Time.currentTime();
 
         // Check if we are allowed to send request
         if (currentTime > lastRequestTime + minTimeBetweenRequests) {
@@ -70,8 +69,17 @@ public class JWKPublicKeyLocator implements PublicKeyLocator {
             }
         }
 
-        return currentKeys.get(kid);
+        return lookupCachedKey(publicKeyCacheTtl, currentTime, kid);
 
+    }
+
+
+    private PublicKey lookupCachedKey(int publicKeyCacheTtl, int currentTime, String kid) {
+        if (lastRequestTime + publicKeyCacheTtl > currentTime) {
+            return currentKeys.get(kid);
+        } else {
+            return null;
+        }
     }
 
 

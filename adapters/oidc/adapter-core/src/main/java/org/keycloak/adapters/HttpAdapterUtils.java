@@ -46,14 +46,7 @@ public class HttpAdapterUtils {
             }
             InputStream is = entity.getContent();
             try {
-                ByteArrayOutputStream os = new ByteArrayOutputStream();
-                int c;
-                while ((c = is.read()) != -1) {
-                    os.write(c);
-                }
-                byte[] bytes = os.toByteArray();
-                String json = new String(bytes);
-                return JsonSerialization.readValue(json, clazz);
+                return JsonSerialization.readValue(is, clazz);
             } finally {
                 try {
                     is.close();

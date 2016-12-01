@@ -118,6 +118,13 @@
     ],
     "clients": [
         {
+            "clientId": "customer-db",
+            "enabled": true,
+            "adminUrl": "/customer-db",
+            "baseUrl": "/customer-db",
+            "bearerOnly": true
+        },
+        {
             "clientId": "customer-portal",
             "enabled": true,
             "adminUrl": "/customer-portal",

@@ -446,6 +446,16 @@ public class AdapterDeploymentContext {
         public int getMinTimeBetweenJwksRequests() {
             return delegate.getMinTimeBetweenJwksRequests();
         }
+
+        @Override
+        public int getPublicKeyCacheTtl() {
+            return delegate.getPublicKeyCacheTtl();
+        }
+
+        @Override
+        public void setPublicKeyCacheTtl(int publicKeyCacheTtl) {
+            delegate.setPublicKeyCacheTtl(publicKeyCacheTtl);
+        }
     }
 
     protected KeycloakUriBuilder getBaseBuilder(HttpFacade facade, String base) {

@@ -36,7 +36,8 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
         "client-keystore", "client-keystore-password", "client-key-password",
         "always-refresh-token",
         "register-node-at-startup", "register-node-period", "token-store", "principal-attribute",
-        "proxy-url", "turn-off-change-session-id-on-login", "token-minimum-time-to-live", "min-time-between-jwks-requests",
+        "proxy-url", "turn-off-change-session-id-on-login", "token-minimum-time-to-live",
+        "min-time-between-jwks-requests", "public-key-cache-ttl",
         "policy-enforcer"
 })
 public class AdapterConfig extends BaseAdapterConfig implements AdapterHttpClientConfig {
@@ -73,6 +74,8 @@ public class AdapterConfig extends BaseAdapterConfig implements AdapterHttpClien
     protected int tokenMinimumTimeToLive = 0;
     @JsonProperty("min-time-between-jwks-requests")
     protected int minTimeBetweenJwksRequests = 10;
+    @JsonProperty("public-key-cache-ttl")
+    protected int publicKeyCacheTtl = 86400; // 1 day
     @JsonProperty("policy-enforcer")
     protected PolicyEnforcerConfig policyEnforcerConfig;
 
@@ -232,5 +235,13 @@ public class AdapterConfig extends BaseAdapterConfig implements AdapterHttpClien
 
     public void setMinTimeBetweenJwksRequests(int minTimeBetweenJwksRequests) {
         this.minTimeBetweenJwksRequests = minTimeBetweenJwksRequests;
+    }
+
+    public int getPublicKeyCacheTtl() {
+        return publicKeyCacheTtl;
+    }
+
+    public void setPublicKeyCacheTtl(int publicKeyCacheTtl) {
+        this.publicKeyCacheTtl = publicKeyCacheTtl;
     }
 }

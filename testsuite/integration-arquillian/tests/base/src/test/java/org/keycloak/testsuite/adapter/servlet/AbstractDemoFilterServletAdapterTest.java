@@ -27,10 +27,4 @@ public abstract class AbstractDemoFilterServletAdapterTest extends AbstractDemoS
 
     }
 
-    @Test
-    @Override
-    @Ignore
-    public void testClientWithJwksUri() {
-
-    }
 }
