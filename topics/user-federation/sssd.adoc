@@ -137,7 +137,11 @@ If you don't have permission, please make sure that the user running {{book.proj
 
 ==== Enabling SSSD Federation Provider
 
-{{book.project.name}} uses DBus-Java under the covers to communicate at a low level with D-Bus which depends on  http://www.matthew.ath.cx/projects/java/[Unix Sockets Library]. There's a RPM for this library https://github.com/keycloak/libunix-dbus-java/releases[here]. Before installing it, make sure to check the RPM signature:
+{{book.project.name}} uses DBus-Java under the covers to communicate at a low level with D-Bus which depends on  http://www.matthew.ath.cx/projects/java/[Unix Sockets Library].
+
+{% if book.community %}
+
+There's a RPM for this library https://github.com/keycloak/libunix-dbus-java/releases[here]. Before installing it, make sure to check the RPM signature:
 
   $ rpm -K libunix-dbus-java-0.8.0-1.fc24.x86_64.rpm
   libunix-dbus-java-0.8.0-1.fc24.x86_64.rpm:
@@ -146,6 +150,17 @@ If you don't have permission, please make sure that the user running {{book.proj
     V4 RSA/SHA256 Signature, key ID 84dc9914: OK
     MD5 digest: OK (770c2e68d052cb4a4473e1e9fd8818cf)
   $ sudo yum install libunix-dbus-java-0.8.0-1.fc24.x86_64.rpm
+
+{% endif %}
+
+{% if book.product %}
+
+You have to install the RPM for this library, before enabling SSSD Federation provider:
+
+  $ sudo yum install rh-sso7-libunix-dbus-java.x86_64.rpm
+
+{% endif %}
+
 
 For authentication with PAM {{book.project.name}} uses JNA under the covers. Please make ensure you have this package installed:
   $ sudo yum install jna
