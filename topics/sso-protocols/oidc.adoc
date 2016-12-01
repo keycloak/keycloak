@@ -71,11 +71,11 @@ Here's a brief summary of the protocol:
 . {{book.project.name}} authenticates the user and creates an _identity_ and _access_ token.  {{book.project.name}}
   redirects back to the application using the callback URL provided earlier and additionally adding the _identity_ and
   _access_ tokens as query parameters in the callback URL.
-. The application extracts the the _identity_ and _access_ tokens from the callback URL.
+. The application extracts the _identity_ and _access_ tokens from the callback URL.
 
-===== Resource Owner Password Credentials Grant (Direct Grants)
+===== Resource Owner Password Credentials Grant (Direct Access Grants)
 
-This is referred to in the Admin Console as _Direct Grants_. This is used by REST clients that want to obtain a token on behalf of a user.  It is one HTTP POST request that contains
+This is referred to in the Admin Console as _Direct Access Grants_. This is used by REST clients that want to obtain a token on behalf of a user.  It is one HTTP POST request that contains
 the credentials of the user as well as the id of the client and the client's secret (if it is a confidential client).  The user's credentials
 are sent within form parameters.  The HTTP response contains
 _identity_, _access_, and _refresh_ tokens.
@@ -103,4 +103,3 @@ _/auth_:  i.e. $$https://localhost:8080/auth$$
   This is the URL endpoint for the User Info service described in the OIDC specification.
 
 In all of these replace _\{realm-name}_ with the name of the realm.
-
