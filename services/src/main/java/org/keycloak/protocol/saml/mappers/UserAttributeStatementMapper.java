@@ -80,10 +80,9 @@ public class UserAttributeStatementMapper extends AbstractSAMLProtocolMapper imp
     public void transformAttributeStatement(AttributeStatementType attributeStatement, ProtocolMapperModel mappingModel, KeycloakSession session, UserSessionModel userSession, ClientSessionModel clientSession) {
         UserModel user = userSession.getUser();
         String attributeName = mappingModel.getConfig().get(ProtocolMapperUtils.USER_ATTRIBUTE);
-        String attributeValue = KeycloakModelUtils.resolveFirstAttribute(user, attributeName);
-        if (attributeValue == null) return;
-        AttributeStatementHelper.addAttribute(attributeStatement, mappingModel, attributeValue);
-
+        List<String> attributeValues = KeycloakModelUtils.resolveAttribute(user, attributeName);
+        if (attributeValues.isEmpty()) return;
+        AttributeStatementHelper.addAttributes(attributeStatement, mappingModel, attributeValues);
     }
 
     public static ProtocolMapperModel createAttributeMapper(String name, String userAttribute,

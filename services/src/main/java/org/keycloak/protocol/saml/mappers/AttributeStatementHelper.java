@@ -52,6 +52,15 @@ public class AttributeStatementHelper {
         attributeStatement.addAttribute(new AttributeStatementType.ASTChoiceType(attribute));
     }
 
+    public static void addAttributes(AttributeStatementType attributeStatement, ProtocolMapperModel mappingModel,
+                                    List<String> attributeValues) {
+
+        AttributeType attribute = createAttributeType(mappingModel);
+        attributeValues.forEach(attribute::addAttributeValue);
+
+        attributeStatement.addAttribute(new AttributeStatementType.ASTChoiceType(attribute));
+    }
+
     public static AttributeType createAttributeType(ProtocolMapperModel mappingModel) {
         String attributeName = mappingModel.getConfig().get(SAML_ATTRIBUTE_NAME);
         AttributeType attribute = new AttributeType(attributeName);
