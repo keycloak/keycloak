@@ -1,0 +1,540 @@
+[[_user-storage]]
+== User Storage SPI
+
+The User Storage SPI allows you to write extensions to {{book.project.name}} to connect to external user databases and credential
+stores.  The built-in LDAP and ActiveDirectory support is an implementation of this SPI in action.  Out of the box,
+{{book.project.name}} uses its local database to create, update, and lookup users and validation credentials from.  Often though,
+organizations have existing external proprietary user databases that they cannot migrate to {{book.project.name}}'s data model.
+For those situations, Application developers can write implementations of the User Storage SPI to bridge between the external user store and the internal
+user object model that {{book.project.name}} uses to login users and manage them.
+
+When the {{book.project.name}} runtime needs to look up a user, like when a user is logging in, it performs a number of
+steps to locate the user.  It first looks to see if the user is in the user cache, if its there it uses that in-memory
+representation.  Then it looks for the user within {{book.project.name}} local database.  If its not there, it then
+loops through User Storage SPI provider implementations to perform the user query until one of them returns
+the user the runtime is looking for.  The provider queries the external user store for the user and maps the external data representation
+of the user to {{book.project.name}}'s user metamodel.
+
+User Storage SPI provider implementations can also perform complex criteria queries, perform CRUD operations on users,
+validate and manage credentials, or perform bulk updates of many users at once.  It all depends on the capabilities of
+the external store.
+
+User Storage SPI provider implementations are packaged and deployed similarly (and often are) to Java EE components.
+The are not enabled by default, but instead must be enabled and configured per realm under the `User Federation` tab
+in the administration console.
+
+===  Provider Interfaces
+
+When building an implementation of the User Storage SPI you have to define a provider class and a provider factory.
+Provider class instances are created per transaction by provider factories.
+Provider classes do all the heavy lifting of user lookup and other user operations.  They must implement the
+`org.keycloak.storage.UserStorageProvider` interface.
+
+[source,java]
+----
+package org.keycloak.storage;
+
+public interface UserStorageProvider extends Provider {
+
+
+    /**
+     * Callback when a realm is removed.  Implement this if, for example, you want to do some
+     * cleanup in your user storage when a realm is removed
+     *
+     * @param realm
+     */
+    default
+    void preRemove(RealmModel realm) {
+
+    }
+
+    /**
+     * Callback when a group is removed.  Allows you to do things like remove a user
+     * group mapping in your external store if appropriate
+     *
+     * @param realm
+     * @param group
+     */
+    default
+    void preRemove(RealmModel realm, GroupModel group) {
+
+    }
+
+    /**
+     * Callback when a role is removed.  Allows you to do things like remove a user
+     * role mapping in your external store if appropriate
+
+     * @param realm
+     * @param role
+     */
+    default
+    void preRemove(RealmModel realm, RoleModel role) {
+
+    }
+
+}
+----
+
+You may be thinking that the `UserStorageProvider` interface is pretty sparse?  You'll see later in this chapter that
+there are other mix-in interfaces your provider class may implement to support the meat of user integration.
+
+`UserStorageProvider` instances are created once per transaction.  When the transaction is complete, the
+`UserStorageProvider.close()` method is invoked and the instance is then garbage collections.  Instances are created
+by provider factories.  Provider factories implement the `org.keycloak.storage.UserStorageProviderFactory` interface.
+
+[source,java]
+----
+package org.keycloak.storage;
+
+/**
+ * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
+ * @version $Revision: 1 $
+ */
+public interface UserStorageProviderFactory<T extends UserStorageProvider> extends ComponentFactory<T, UserStorageProvider> {
+
+    /**
+     * This is the name of the provider and will be showed in the admin console as an option.
+     *
+     * @return
+     */
+    @Override
+    String getId();
+
+    /**
+     * called per Keycloak transaction.
+     *
+     * @param session
+     * @param model
+     * @return
+     */
+    T create(KeycloakSession session, ComponentModel model);
+...
+}
+----
+
+Provider factory classses must specify the concrete provider class as a template parameter when implementing the
+`UserStorageProviderFactory`.  This is a must as the runtime will introspect this class to scan for its capabilities
+(the other interfaces it implements).  So for example, if your provider class is named `FileProvider`, then the
+factory class should look like this:
+
+[source,java]
+----
+public class FileProviderFactory implements UserStorageProviderFactory<FileProvider> {
+
+    public String getId() { return "file-provider"; }
+
+    public FileProvider create(KeycloakSession session, ComponentModel model) {
+       ...
+    }
+----
+
+The `getId()` method returns the name of the User Storage provider.  This id will be displayed in the admin console's
+`UserFederation` page when you want to enable the provider for a specific realm.
+
+The `create()` method is responsible for allocating an instance of the provider class.  It takes a `org.keycloak.models.KeycloakSession`
+parameter.  This object can be used to lookup other information and metadata as well as provide access to various other
+components within the runtime.  The `ComponentModel` parameter represents how the provider was enabled and configured within
+a specific realm.  It contains the instance id of the enabled provider as well as any configuration you may have specified
+for it when you enabled through the admin console.
+
+The `UserStorageProviderFactory` has other capabilities as well which we will go over later in this chapter.
+
+=== Provider Capability Interfaces
+
+If you've examined the `UserStorageProvider` interface closely you may be scratching your head a bit because it does
+not define any methods for locating or managing users.  These methods are actually defined in other _capability_
+_interfaces_ depending on what scope of capabilities your external user store can provide and execute on.  For example,
+some external stores are read only and can only do simple queries and credential validation.  You will only be required to implement the
+_capability_ _interfaces_ for the features you are able to.  Here's a list of interfaces that you can implement:
+
+
+|===
+|SPI|Description
+
+|`org.keycloak.storage.user.UserLookupProvider`|This interface is required if you want to be able to login with users from this external store.  Most (all?) providers implement this interface.
+|`org.keycloak.storage.user.UserQueryProvider`|Defines complex queries that are used to locate one or more users.  You must implement this interface if you want to view and manager users from the administration console.
+|`org.keycloak.storage.user.UserRegistrationProvider`|Implement this interface if your provider supports adding and removing users.
+|`org.keycloak.storage.user.UserBulkUupdateProvider`|Implement this interface if your provider supports bulk update of a set of users.
+|`org.keycloak.credential.CredentialInputValidator`|Implement this interface if your provider can validate one or more different credential types.  (i.e. can validate a password)
+|`org.keycloak.credential.CredentialInputUpdater`|Implement this interface if your provider supports updating one more different credential types.
+
+
+=== Model Interfaces
+
+Most of the methods defined in the _capability_ _interfaces_ either return or are passed in representations of a user.  These representations are defined
+by the `org.keycloak.models.UserModel` interface.  App developers are required to implement this interface.  It provides
+ a mapping between the external user store and the user metamodel that {{book.project.name}} uses.
+
+[source,java]
+----
+package org.keycloak.models;
+
+public interface UserModel extends RoleMapperModel {
+    String getId();
+
+    String getUsername();
+    void setUsername(String username);
+
+    String getFirstName();
+    void setFirstName(String firstName);
+
+    String getLastName();
+    void setLastName(String lastName);
+
+    String getEmail();
+    void setEmail(String email);
+...
+}
+----
+
+`UserModel` implementations provide access to read and update metadata about the user including things like username, name, email,
+role and group mappings, as well as other arbitrary attributes.
+
+There are other model classes within the `org.keycloak.models` package the represent other parts of the {{book.project.name}}
+metamodel:  `RealmModel`, `RoleModel`, `GroupModel`, and `ClientModel`.
+
+==== Storage Ids
+
+One really import method of `UserModel` is the `getId()` method.  When implementing `UserModel` developers must be aware
+of the user id format.  The format must be
+
+----
+"f:" + component id + ":" + external id
+----
+
+The {{book.project.name}} runtime often has to lookup users by their user id.  The user id contains enough information
+so that the runtime does not have to query every single `UserStorageProvider` in the system to find the user.
+
+The component id is the id returned from `ComponentModel.getId()`.  The `ComponentModel` is passed in as a parameter
+when creating the provider class so you can get it from there.  The external id is information your provider class
+needs to find the user in the external store.  This is often a username or a uid.  For example, it might look something
+like this:
+
+----
+f:332a234e31234:wburke
+----
+
+When the runtime does a lookup by id, the id is parsed to obtain the component id.  The component id is used to
+locate the `UserStorageProvider` that was originally used to load the user.  That provider is then passed the id.
+The provider again parses the id to obtain the external id it will use to locate the user in external user storage.
+
+=== Packaging and Deployment
+
+User Storage providers are packaged in a jar and deployed or undeployed to the {{book.project.name}} runtime in the same exact
+way as you would deploy something in the JBoss/Wildfly application server.  You can either copy the jar directly to
+the `deploy/` directory if the server, or use the JBoss CLI to execute the deployment.  In order for {{book.project.name}}
+to recognize the provider, there's one special file you need to add to the jar: `META-INF/services/org.keycloak.storage.UserStorageProviderFactory`.
+This file must contain a line separated list of fully qualified classnames of use `UserStorageProviderFactory` implementation.
+
+----
+org.keycloak.examples.federation.properties.ClasspathPropertiesStorageFactory
+org.keycloak.examples.federation.properties.FilePropertiesStorageFactory
+----
+
+{{book.project.name}} supports hot deployment of these provider jars.  You'll also see later in this chapter that you can
+package within and as Java EE components.
+
+=== Simple Read Only, Lookup Only Example
+
+To illustrate the basics of implementing the User Storage SPI let's walk through a simple example.  In this chapter
+you'll see the implementation of a simple `UserStorageProvider` that looks up users in a simple property file.  The
+property file contains username and password definitions and is hardcoded to a specific location on the classpath.
+The provider will be able to lookup the user by id, and username and also be able to validate passwords.  Users that
+originate from this provider will be read only.
+
+==== Provider Class
+
+The first thing we will walk through is the `UserStorageProvider` class.
+
+[source,java]
+----
+public class PropertyFileUserStorageProvider implements
+        UserStorageProvider,
+        UserLookupProvider,
+        CredentialInputValidator,
+        CredentialInputUpdater
+{
+...
+}
+----
+
+Our provider class, `PropertyFileUserStorageProvider`, implements a bunch of interfaces.  It implements the
+`UserStorageProvider` as that is a base requirement of the SPI.  It implements the `UserLookupProvider` interface
+because we want to be able to login with users stored by this provider.  It implements the `CredentialInputValidator`
+interface because we want to be able to validate passwords entered in via the login screen.  Our property file
+is going to be read only.  We implement the `CredentialInputUpdater` because was want to post an error condition
+when the user's password is attempted to be updated.
+
+[source,java]
+----
+    protected KeycloakSession session;
+    protected Properties properties;
+    protected ComponentModel model;
+    // map of loaded users in this transaction
+    protected Map<String, UserModel> loadedUsers = new HashMap<>();
+
+    public PropertyFileUserStorageProvider(KeycloakSession session, ComponentModel model, Properties properties) {
+        this.session = session;
+        this.model = model;
+        this.properties = properties;
+    }
+----
+
+The constructor for this provider class is going to store the reference to the `KeycloakSession`, `ComponentModel`, and
+property file.  We'll use all of these later.  Also notice that there is a map of loaded users.  Whenever we find a user
+we will store it in this map so that we avoid recreating it again within the same transaction.  This is a good practice
+to do as many providers will need to do this (i.e. one that integrates with JPA).  Remember also that provider class
+instances are created once per transaction and are closed after the transaction completes.
+
+===== UserLookupProvider implementation
+
+[source,java]
+----
+    @Override
+    public UserModel getUserByUsername(String username, RealmModel realm) {
+        UserModel adapter = loadedUsers.get(username);
+        if (adapter == null) {
+            String password = properties.getProperty(username);
+            if (password != null) {
+                adapter = createAdapter(realm, username);
+                loadedUsers.put(username, adapter);
+            }
+        }
+        return adapter;
+    }
+
+    protected UserModel createAdapter(RealmModel realm, String username) {
+        return new AbstractUserAdapter(session, realm, model) {
+            @Override
+            public String getUsername() {
+                return username;
+            }
+        };
+    }
+
+    @Override
+    public UserModel getUserById(String id, RealmModel realm) {
+        StorageId storageId = new StorageId(id);
+        String username = storageId.getExternalId();
+        return getUserByUsername(username, realm);
+    }
+
+    @Override
+    public UserModel getUserByEmail(String email, RealmModel realm) {
+        return null;
+    }
+
+
+----
+
+The `getUserByUsername()`method is invoked by the {{book.project.name}} login page when a user logs in.  In our
+implementation we first check the `loadedUsers` map to see if the user has already been loaded within this transaction.
+If it hasn't been loaded we look in the property file for the username.   If it exists we create an implementation
+of `UserModel`, store it in `loadedUsers` for future reference and return this instance.
+
+The `createAdapter()` method uses the helper class `org.keycloak.storage.adapter.AbstractUserAdapter`.  This provides
+a base implementation for `UserModel`.  It automatically generates a user id based on the required storage id format
+using the username of the user as the external id.
+
+----
+"f:" + component id + ":" + username
+----
+
+Every get method of `AbstractUserAdapter` either returns null or empty collections.  However, methods that return
+role and group mappings will return the default roles and groups configured for the realm for every user.  Every set
+method of `AbstractUserAdapter` will throw a `org.keycloak.storage.ReadOnlyException`.  So if you attempt
+to modify the user in the admin console you will get an error.
+
+The `getUserById()` method parses the `id` parameter using the `org.keycloak.storage.StorageId' helper class.  The
+`StorageId.getExternalId()` method is invoked to obtain the username embeded in the `id` parameter.  The method
+then delegates to `getUserByUsername()`.
+
+Emails are not stored at all, so the `getUserByEmail() method
+
+===== CredentialInputValidator implementation
+
+Next let's look at the method implementations for `CredentialInputValidator`.
+
+[source,java]
+----
+    @Override
+    public boolean isConfiguredFor(RealmModel realm, UserModel user, String credentialType) {
+        String password = properties.getProperty(user.getUsername());
+        return credentialType.equals(CredentialModel.PASSWORD) && password != null;
+    }
+
+    @Override
+    public boolean supportsCredentialType(String credentialType) {
+        return credentialType.equals(CredentialModel.PASSWORD);
+    }
+
+    @Override
+    public boolean isValid(RealmModel realm, UserModel user, CredentialInput input) {
+        if (!supportsCredentialType(input.getType()) || !(input instanceof UserCredentialModel)) return false;
+
+        UserCredentialModel cred = (UserCredentialModel)input;
+        String password = properties.getProperty(user.getUsername());
+        if (password == null) return false;
+        return password.equals(cred.getValue());
+    }
+----
+
+The `isConfiguredFor()` method is called by the runtime to determine if a specific credential type is configured for
+the user.  This method checks to see that the password is set for the user.
+
+The `suportsCredentialType()` method returns whether validation is supported for a specific credential type.  We check
+to see if the credential type is `password`.
+
+The `isValid()` method is responsible for validating passwords.  The `CredentialInput` parameter is really just an abstract
+interface for all credential types.  We make sure that we support the credential type and also that it is an instance
+of `UserCredentialModel`.  When a user logs in through the login page, the plain text of the password input is put into
+an instance of `UserCredentialModel`.  The `isValid()` method checks this value against the plain text password stored
+in the properties file.  A return value of `true` means the password is valid.
+
+===== CredentialInputUpdater implementation
+
+As noted before, the only reason we implement the `CredentialInputUpdater` interface in this example is to forbid modifications of
+user passwords.  The reason we have to do this is because otherwise the runtime would allow the password to be overriden
+in {{book.project.name}} local storage. We'll talk more about this later in this chapter
+
+[source,java]
+----
+    @Override
+    public boolean updateCredential(RealmModel realm, UserModel user, CredentialInput input) {
+        if (input.getType().equals(CredentialModel.PASSWORD)) throw new ReadOnlyException("user is read only for this update");
+
+        return false;
+    }
+
+    @Override
+    public void disableCredentialType(RealmModel realm, UserModel user, String credentialType) {
+
+    }
+
+    @Override
+    public Set<String> getDisableableCredentialTypes(RealmModel realm, UserModel user) {
+        return Collections.EMPTY_SET;
+    }
+----
+
+The `updateCredential()` method just checks to see if the credential type is password.  If it is, a `ReadOnlyException`
+is thrown.
+
+==== Provider Factory implementation
+
+Now that the provider class is complete, we now turn our attention to the provider factory class.
+
+[source,java]
+----
+public class PropertyFileUserStorageProviderFactory implements UserStorageProviderFactory<PropertyFileUserStorageProvider> {
+
+    public static final String PROVIDER_NAME = "readonly-property-file";
+
+    @Override
+    public String getId() {
+        return PROVIDER_NAME;
+    }
+----
+
+First thing to notice is that when implementing the `UserStorageProviderFactory` class, you must pass in the concrete
+provider class implementation as a template parameter.  Here we specify the provider class we defined before: `PropertyFileUserStorageProvider`.
+
+WARNING: If you do not specify the template parameter, your provider will not function.  The runtime does class introspection
+         to determine the _capability interfaces_ that the provider implements.
+
+The `getId()` method identifies the factory in the runtime and will also be the string shown in the admin console when you want
+to enable a user storage provider for the realm.
+
+===== Initialization
+
+[source,java]
+----
+    private static final Logger logger = Logger.getLogger(PropertyFileUserStorageProviderFactory.class);
+    protected Properties properties = new Properties();
+
+    @Override
+    public void init(Config.Scope config) {
+        InputStream is = getClass().getClassLoader().getResourceAsStream("/users.properties");
+
+        if (is == null) {
+            logger.warn("Could not find users.properties in classpath");
+        } else {
+            try {
+                properties.load(is);
+            } catch (IOException ex) {
+                logger.error("Failed to load users.properties file", ex);
+            }
+        }
+    }
+
+    @Override
+    public PropertyFileUserStorageProvider create(KeycloakSession session, ComponentModel model) {
+        return new PropertyFileUserStorageProvider(session, model, properties);
+    }
+----
+
+The `UserStorageProviderFactory` interface has an optional `init()` method you can implement.  When {{book.project.name}}
+boots up, one and only one instance of each different provider factory.  Also at boot time, the `init()` method will
+be called on each one of these factory instances.  There's also a `postInit()` method you can implement as well.  After
+each factory's `init()` method is invoked, their `postInit()` methods will be called.
+
+In our `init()` method implementation, we find the property file containing our user declarations from the classpath.
+We then load the `properties` field with the username and password combinations stored there.
+
+The `Config.Scope` parameter is factory configuration that can be set up
+within `standalone.xml`, `standalone-ha.xml`, or `domain.xml`.
+See the link:{{book.installguide.link}}[{{book.installguide.name}}] for more details on
+where the `standalone.xml`, `standalone-ha.xml`, or `domain.xml` file lives.
+
+For example by adding the following to `standalone.xml`:
+
+[source,xml]
+----
+<spi name="storage">
+    <provider name="readonly-property-file" enabled="true">
+        <properties>
+            <property name="path" value="/other-users.properties"/>
+        </properties>
+    </provider>
+</spi>
+----
+
+We can specify the classpath of the user property file instead of hard coded it.
+Then you can retrieve the config in the `PropertyFileUserStorageProviderFactory.init()` :
+
+[source,java]
+----
+public void init(Config.Scope config) {
+    String path = config.get("path");
+    InputStream is = getClass().getClassLoader().getResourceAsStream(path);
+
+    ...
+}
+----
+
+===== Create method
+
+Our last step in creating the provider factory is the `create()` method.
+
+[source,java]
+----
+    @Override
+    public PropertyFileUserStorageProvider create(KeycloakSession session, ComponentModel model) {
+        return new PropertyFileUserStorageProvider(session, model, properties);
+    }
+----
+
+We simply allocate the `PropertyFileUserStorageProvider` class.  This create method will be called once per transaction.
+
+==== Packaging and Deployment
+
+
+
+
+
+
+
+
+
+
+
