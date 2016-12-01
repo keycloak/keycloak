@@ -37,4 +37,9 @@ public class HardcodedPublicKeyLocator implements PublicKeyLocator {
     public PublicKey getPublicKey(String kid, KeycloakDeployment deployment) {
         return publicKey;
     }
+
+    @Override
+    public void reset(KeycloakDeployment deployment) {
+
+    }
 }

@@ -57,20 +57,24 @@ public class JWKPublicKeyLocator implements PublicKeyLocator {
         }
 
         // Check if we are allowed to send request
-        if (currentTime > lastRequestTime + minTimeBetweenRequests) {
-            synchronized (this) {
-                currentTime = Time.currentTime();
-                if (currentTime > lastRequestTime + minTimeBetweenRequests) {
-                    sendRequest(deployment);
-                    lastRequestTime = currentTime;
-                } else {
-                    log.debugf("Won't send request to realm jwks url. Last request time was %d", lastRequestTime);
-                }
+        synchronized (this) {
+            currentTime = Time.currentTime();
+            if (currentTime > lastRequestTime + minTimeBetweenRequests) {
+                sendRequest(deployment);
+                lastRequestTime = currentTime;
+            } else {
+                log.debugf("Won't send request to realm jwks url. Last request time was %d", lastRequestTime);
             }
+
+            return lookupCachedKey(publicKeyCacheTtl, currentTime, kid);
         }
+    }
 
-        return lookupCachedKey(publicKeyCacheTtl, currentTime, kid);
 
+    @Override
+    public void reset(KeycloakDeployment deployment) {
+        sendRequest(deployment);
+        lastRequestTime = Time.currentTime();
     }
 
 

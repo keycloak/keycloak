@@ -357,7 +357,7 @@ public class OAuthRequestAuthenticator {
             return challenge(403, OIDCAuthenticationError.Reason.INVALID_TOKEN, null);
         }
         if (tokenResponse.getNotBeforePolicy() > deployment.getNotBefore()) {
-            deployment.setNotBefore(tokenResponse.getNotBeforePolicy());
+            deployment.updateNotBefore(tokenResponse.getNotBeforePolicy());
         }
         if (token.getIssuedAt() < deployment.getNotBefore()) {
             log.error("Stale token");

@@ -187,8 +187,6 @@ public class AbstractOIDCPublicKeyRotationAdapterTest extends AbstractServletsAd
     // KEYCLOAK-3824: Test for public-key-cache-ttl
     @Test
     public void testPublicKeyCacheTtl() {
-        driver.manage().timeouts().pageLoadTimeout(1000, TimeUnit.SECONDS);
-
         // increase accessTokenLifespan to 1200
         RealmRepresentation demoRealm = adminClient.realm(DEMO).toRepresentation();
         demoRealm.setAccessTokenLifespan(1200);
@@ -202,8 +200,10 @@ public class AbstractOIDCPublicKeyRotationAdapterTest extends AbstractServletsAd
         int status = invokeRESTEndpoint(accessTokenString);
         Assert.assertEquals(200, status);
 
-        // Invalidate realm public key
+        // Re-generate realm public key and remove the old key
+        String oldKeyId = getActiveKeyId();
         generateNewRealmKey();
+        adminClient.realm(DEMO).components().component(oldKeyId).remove();
 
         // Send REST request to the customer-db app. Should be still succcessfully authenticated as the JWKPublicKeyLocator cache is still valid
         status = invokeRESTEndpoint(accessTokenString);
@@ -225,6 +225,8 @@ public class AbstractOIDCPublicKeyRotationAdapterTest extends AbstractServletsAd
     // KEYCLOAK-3823: Test that sending notBefore policy invalidates JWKPublicKeyLocator cache
     @Test
     public void testPublicKeyCacheInvalidatedWhenPushedNotBefore() {
+        driver.manage().timeouts().pageLoadTimeout(1000, TimeUnit.SECONDS);
+
         // increase accessTokenLifespan to 1200
         RealmRepresentation demoRealm = adminClient.realm(DEMO).toRepresentation();
         demoRealm.setAccessTokenLifespan(1200);
@@ -234,19 +236,19 @@ public class AbstractOIDCPublicKeyRotationAdapterTest extends AbstractServletsAd
         loginToTokenMinTtlApp();
         String accessTokenString = tokenMinTTLPage.getAccessTokenString();
 
-        // Send REST request to customer-db app. I should be successfully authenticated
+        // Generate new realm public key
+        String oldKeyId = getActiveKeyId();
+        generateNewRealmKey();
+
+        // Send REST request to customer-db app. It should be successfully authenticated even that token is signed by the old key
         int status = invokeRESTEndpoint(accessTokenString);
         Assert.assertEquals(200, status);
 
-        // Invalidate realm public key
-        generateNewRealmKey();
+        // Remove the old realm key now
+        adminClient.realm(DEMO).components().component(oldKeyId).remove();
 
         // Set some offset to ensure pushing notBefore will pass
         setAdapterAndServerTimeOffset(130, customerDb.toString() + "/unsecured/foo", tokenMinTTLPage.toString() + "/unsecured/foo");
-
-        // Send REST request to the REST app. Should be still succcessfully authenticated as the JWKPublicKeyLocator cache is still valid
-        status = invokeRESTEndpoint(accessTokenString);
-        Assert.assertEquals(200, status);
 
         // Send notBefore policy from the realm
         demoRealm.setNotBefore(Time.currentTime() - 1);
@@ -281,9 +283,6 @@ public class AbstractOIDCPublicKeyRotationAdapterTest extends AbstractServletsAd
     private void generateNewRealmKey() {
         String realmId = adminClient.realm(DEMO).toRepresentation().getId();
 
-        String oldKeyId = adminClient.realm(DEMO).components().query(realmId, KeyProvider.class.getName())
-                .get(0).getId();
-
         ComponentRepresentation keys = new ComponentRepresentation();
         keys.setName("generated");
         keys.setProviderType(KeyProvider.class.getName());
@@ -294,9 +293,12 @@ public class AbstractOIDCPublicKeyRotationAdapterTest extends AbstractServletsAd
         Response response = adminClient.realm(DEMO).components().add(keys);
         assertEquals(201, response.getStatus());
         response.close();
+    }
 
-        // Remove original key
-        adminClient.realm(DEMO).components().component(oldKeyId).remove();
+    private String getActiveKeyId() {
+        String realmId = adminClient.realm(DEMO).toRepresentation().getId();
+        return adminClient.realm(DEMO).components().query(realmId, KeyProvider.class.getName())
+                .get(0).getId();
     }
 
 

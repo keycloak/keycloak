@@ -343,6 +343,12 @@ public class AdapterDeploymentContext {
         }
 
         @Override
+        public void updateNotBefore(int notBefore) {
+            delegate.setNotBefore(notBefore);
+            getPublicKeyLocator().reset(this);
+        }
+
+        @Override
         public void setExposeToken(boolean exposeToken) {
             delegate.setExposeToken(exposeToken);
         }
