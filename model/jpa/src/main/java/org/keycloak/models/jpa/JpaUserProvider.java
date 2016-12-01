@@ -405,6 +405,10 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
                 .setParameter("realmId", realm.getId())
                 .setParameter("link", linkId)
                 .executeUpdate();
+        num = em.createNamedQuery("deleteUserGroupMembershipsByRealmAndLink")
+                .setParameter("realmId", realm.getId())
+                .setParameter("link", linkId)
+                .executeUpdate();
         num = em.createNamedQuery("deleteUsersByRealmAndLink")
                 .setParameter("realmId", realm.getId())
                 .setParameter("link", linkId)
