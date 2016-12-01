@@ -13,6 +13,9 @@ If an admin detects a leak, they can logout all user sessions to invalidate thes
 Making sure refresh tokens always stay private to the client and are never transmitted ever is very important as well.
 
 If an access token or refresh token is compromised, the first thing you should do is go to the admin console and push a not-before revocation policy to all applications.
-This will enforce that any tokens issued prior to that date are now invalid.
+This will enforce that any tokens issued prior to that date are now invalid. Pushing new not-before policy will also ensure that application will be forced to download
+new public keys from {{book.project.name}}, hence it is also useful for the case, when you think that realm signing key was compromised.
+More info in the  <<fake/../../realms/keys.adoc#_realm_keys, keys chapter>>.
+
 You can also disable specific applications, clients, and users if you feel that any one of those entities is completely compromised.
 
