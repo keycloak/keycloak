@@ -1,5 +1,5 @@
 [[_policy_rbac]]
-== Role-Based Policy
+=== Role-Based Policy
 
 You can use this type of policy to define conditions for your permissions where a set of one or more roles is permitted to access an object.
 
@@ -12,7 +12,7 @@ To create a new role-based policy, select *Role-Based* in the dropdown list in t
 .Add Role-Based Policy
 image:../../images/policy/create-role.png[alt="Add Role-Based Policy"]
 
-=== Configuration
+==== Configuration
 
 * *Name*
 +

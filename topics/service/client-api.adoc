@@ -1,9 +1,9 @@
 [[_service_client_api]]
-== Authorization Client API
+=== Authorization Client API
 
 If you are using Java, you can access all {{book.project.name}} {{book.project.module}} using a client API.
 
-=== Maven Dependency
+==== Maven Dependency
 
 ```xml
 <dependencies>
@@ -15,7 +15,7 @@ If you are using Java, you can access all {{book.project.name}} {{book.project.m
 </dependencies>
 ```
 
-=== Configuration
+==== Configuration
 
 The client configuration is defined in a JSON file as follows:
 
@@ -45,7 +45,7 @@ The client-id of the application. Each application has a client-id that is used 
 * *credentials* (required)
 Specifies the credentials of the application. This is an object notation where the key is the credential type and the value is the value of the credential type. Currently only secret/password is supported. 
 
-=== Obtaining User Entitlements
+==== Obtaining User Entitlements
 
 Here is an example illustrating how to obtain user entitlements:
 
@@ -97,7 +97,7 @@ String rpt = response.getRpt();
 System.out.println("You got a RPT: " + rpt);
 ```
 
-=== Creating a Resource Using the Protection API
+==== Creating a Resource Using the Protection API
 
 ```java
 // create a new instance based on the configuration defined in keycloak-authz.json

@@ -1,5 +1,5 @@
 [[_resource_server_create_client]]
-== Creating a Client Application
+=== Creating a Client Application
 
 The first step to enable {{book.project.name}} {{book.project.module}} is to create the client application that you want to turn into a resource server. 
 

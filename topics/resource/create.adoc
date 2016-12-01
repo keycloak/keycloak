@@ -1,5 +1,5 @@
 [[_resource_create]]
-== Creating Resources
+=== Creating Resources
 
 Creating a resource is straightforward and generic. Your main concern is the granularity of the resources you create. In other words, resources can
 be created to represent a set of one or more resources and the way you define them is crucial to managing permissions.
@@ -31,16 +31,16 @@ is usually the relative path used to serve these resources.
 +
 One or more scopes to associate with the resource.
 
-=== Typed Resources
+==== Typed Resources
 
 The type field of a resource can be used to group different resources together, so they can be protected using a common set of permissions.
 
-=== Resource Owners
+==== Resource Owners
 Resources also have an owner. By default, resources are owned by the resource server.
 
 However, resources can also be associated with users, so you can create permissions based on the resource owner. For example, only the resource owner is allowed to delete or update a given resource.
 
-=== Managing Resources Remotely
+==== Managing Resources Remotely
 
 Resource management is also exposed through the <<fake/../../service/protection/protection-api.adoc#_service_protection_api, Protection API>> to allow resource servers to remotely manage their resources.
 

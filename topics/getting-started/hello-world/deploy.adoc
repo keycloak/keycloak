@@ -1,9 +1,9 @@
 [[_getting_started_hello_world_deploy]]
-== Building, Deploying, and Testing Your Application
+=== Building, Deploying, and Testing Your Application
 
 Now that the *hello-world-authz-service* resource server (or client) is properly configured and authorization services are enabled, it can be deployed to the server.
 
-=== Obtaining the Adapter Configuration
+==== Obtaining the Adapter Configuration
 
 You must first obtain the adapter configuration before building and deploying the application. 
 
@@ -31,7 +31,7 @@ image:../../../images/getting-started/hello-world/adapter-config.png[alt="Adapte
 
 This change specifies to the policy enforcer to redirect users to a `/hello-world-authz-service/error.jsp` page if a user does not have the necessary permissions to access a protected resource, rather than an unhelpful `403 Unauthorized` message.
 
-=== Building and Deploying the Application
+==== Building and Deploying the Application
 
 To build and deploy the application, navigate to the *${KEYCLOAK_DEMO_SERVER_DIR}/examples/authz/hello-world-authz-service/* directory and execute the following command:
 
@@ -39,7 +39,7 @@ To build and deploy the application, navigate to the *${KEYCLOAK_DEMO_SERVER_DIR
 mvn clean package wildfly:deploy
 ```
 
-=== Testing the Application
+==== Testing the Application
 
 If your application was successfully deployed you can access it at http://localhost:8080/hello-world-authz-service[http://localhost:8080/hello-world-authz-service]. The {{book.project.name}} Login page opens.
 
@@ -73,7 +73,7 @@ image:../../../images/getting-started/hello-world/access-denied-page.png[alt="Ac
 Let's fix that now, but instead of changing the `Default Policy` code we are going to change the `Logic` to `Negative` using the dropdown list below the policy code text area.
 That re-enables access to the application as we are negating the result of that policy, which is by default denying all requests for access. Again, before testing this change, be sure to log out and log in again.
 
-=== Next Steps
+==== Next Steps
 
 There are additional things you can do, such as:
 

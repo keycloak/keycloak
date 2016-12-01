@@ -1,5 +1,5 @@
 [[_getting_started_hello_world_enabling_authz_services]]
-== Enabling Authorization Services
+=== Enabling Authorization Services
 
 You can enable authorization services in an existing client application configured to use the OpenID Connect Protocol. You can also create a new client.
 

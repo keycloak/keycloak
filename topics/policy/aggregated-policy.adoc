@@ -1,5 +1,5 @@
 [[_policy_aggregated]]
-== Aggregated Policies
+=== Aggregated Policies
 
 As mentioned previously, {{book.project.name}} allows you to build a policy of policies, a concept referred to as policy aggregation. You can use policy aggregation to reuse existing policies to build more complex ones and keep your permissions even more decoupled from the policies that are evaluated during the processing of authorization requests.
 
@@ -16,7 +16,7 @@ You can create separate policies for both domain and network conditions and crea
 [NOTE]
 When creating aggregated policies, be mindful that you are not introducing a circular reference or dependency between policies. If a circular dependency is detected, you cannot create or update the policy.
 
-=== Configuration
+==== Configuration
 
 * *Name*
 +
@@ -39,7 +39,7 @@ The decision strategy for this permission.
 +
 The <<fake/../logic.adoc#_policy_logic, Logic>> of this policy to apply after the other conditions have been evaluated.
 
-=== Decision Strategy for Aggregated Policies
+==== Decision Strategy for Aggregated Policies
 
 When creating aggregated policies, you can also define the decision strategy that will be used to determine the final decision based on the outcome from each policy.
 

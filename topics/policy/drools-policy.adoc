@@ -1,5 +1,5 @@
 [[_policy_drools]]
-== Rule-Based Policy
+=== Rule-Based Policy
 
 With this type of policy you can define conditions for your permissions using http://www.drools.org[Drools], which is a rule evaluation environment. It is one of the _Rule-Based_ policy types
 supported by {{book.project.name}}, and provides flexibility to write any policy based on the <<fake/../evaluation-api.adoc#_policy_evaluation_api, Evaluation API>>.
@@ -10,7 +10,7 @@ To create a new Rule-based policy, in the dropdown list in the right upper corne
 .Add Rule Policy
 image:../../images/policy/create-drools.png[alt="Add Rule Policy"]
 
-=== Configuration
+==== Configuration
 
 * *Name*
 +
@@ -53,7 +53,7 @@ Specifies an interval for scanning for artifact updates.
 +
 The <<fake/../logic.adoc#_policy_logic, Logic>> of this policy to apply after the other conditions have been evaluated.
 
-=== Examples
+==== Examples
 
 Here is a simple example of a Drools-based policy that uses attribute-based access control (ABAC) to define a condition that evaluates to a GRANT
 only if the authenticated user is the owner of the requested resource:

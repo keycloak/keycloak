@@ -1,5 +1,5 @@
 [[_resource_server_default_config]]
-== Default Configuration
+=== Default Configuration
 
 When you create a resource server, {{book.project.name}} creates a default configuration for your newly created resource server.
 
@@ -41,6 +41,6 @@ image:../../images/resource-server/default-permission.png[alt="Default Permissio
 
 This permission is a <<fake/../../permission/create-resource.adoc#_permission_create_resource, resource-based permission>>, defining a set of one or more policies that are applied to all resources with a given type.
 
-== Changing the Default Configuration
+=== Changing the Default Configuration
 
 You can change the default configuration by removing the default resource, policy, or permission definitions and creating your own.

@@ -1,5 +1,5 @@
 [[_getting_started_hello_world_create_realm]]
-== Creating a Realm and a User
+=== Creating a Realm and a User
 
 The first step is to create a realm and a user in that realm. The realm consists of:
 

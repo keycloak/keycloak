@@ -1,4 +1,4 @@
-== Before You Start
+=== Before You Start
 
 This guide is based on the *{{book.project.name}} Demo Distribution*. Download the demo distribution before proceeding.
 

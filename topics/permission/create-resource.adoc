@@ -1,5 +1,5 @@
 [[_permission_create_resource]]
-== Creating Resource-based Permissions
+=== Creating Resource-based Permissions
 
 A resource-based permission defines a set of one or more resources to protect using a set of one or more authorization policies.
 
@@ -8,7 +8,7 @@ To create a new resource-based permission, select *Resource-based* in the dropdo
 .Add Resource-Based Permission
 image:../../images/permission/create-resource.png[alt="Add Resource-Based Permission"]
 
-=== Configuration
+==== Configuration
 
 * *Name*
 +

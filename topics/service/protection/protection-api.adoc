@@ -1,5 +1,5 @@
 [[_service_protection_api]]
-== Protection API
+=== Protection API
 
 The Protection API provides a UMA-compliant set of endpoints providing:
 

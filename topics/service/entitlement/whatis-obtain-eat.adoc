@@ -1,5 +1,5 @@
 [[_service_entitlement_whatis_obtain_eat]]
-== Entitlement API Tokens
+=== Entitlement API Tokens
 
 An entitlement API token (EAT) is a special OAuth2 access token with the scope *kc_entitlement*.
 
@@ -31,6 +31,6 @@ As a result, the server response is:
 }
 ```
 
-== About the kc_entitlement scope
+=== About the kc_entitlement scope
 
 The *kc_entitlement* scope can be created like any other _realm role_, or as a _client role_. Once created, grant this role to the users of your realm.
