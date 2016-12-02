@@ -1,5 +1,5 @@
 [[_enforcer_bearer]]
-=== Protecting a Stateless Service Using a Bearer Token
+==== Protecting a Stateless Service Using a Bearer Token
 
 If the adapter is configured with the `bearer-only` configuration option, the policy enforcer decides whether a request
 to access a protected resource is allowed or denied based on the permissions of the bearer token.
@@ -21,7 +21,7 @@ In this example, a *keycloak.json* file in your application is similar to the fo
 ...
 ```
 
-==== Authorization Response
+===== Authorization Response
 
 When a client tries to access a resource server with a bearer token that is lacking permissions to access a protected resource, the resource server
 responds with a *401* status code and a `WWW-Authenticate` header. The value of the `WWW-Authenticate` header depends on the authorization protocol
