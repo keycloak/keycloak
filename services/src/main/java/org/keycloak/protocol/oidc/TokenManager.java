@@ -38,6 +38,7 @@ import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeyManager;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.ModelException;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -130,15 +131,24 @@ public class TokenManager {
         if (TokenUtil.TOKEN_TYPE_OFFLINE.equals(oldToken.getType())) {
 
             UserSessionManager sessionManager = new UserSessionManager(session);
-            clientSession = sessionManager.findOfflineClientSession(realm, oldToken.getClientSession(), oldToken.getSessionState());
+            clientSession = sessionManager.findOfflineClientSession(realm, oldToken.getClientSession());
             if (clientSession != null) {
                 userSession = clientSession.getUserSession();
+
+                if (userSession == null) {
+                    throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Offline user session not found", "Offline user session not found");
+                }
+
+                String userSessionId = oldToken.getSessionState();
+                if (!userSessionId.equals(userSession.getId())) {
+                    throw new ModelException("User session don't match. Offline client session " + clientSession.getId() + ", It's user session " + userSession.getId() +
+                            "  Wanted user session: " + userSessionId);
+                }
 
                 // Revoke timeouted offline userSession
                 if (userSession.getLastSessionRefresh() < Time.currentTime() - realm.getOfflineSessionIdleTimeout()) {
                     sessionManager.revokeOfflineUserSession(userSession);
-                    userSession = null;
-                    clientSession = null;
+                    throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Offline user session not active", "Offline user session session not active");
                 }
             }
         } else {

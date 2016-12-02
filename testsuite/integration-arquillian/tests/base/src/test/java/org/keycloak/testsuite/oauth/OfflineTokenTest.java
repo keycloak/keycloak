@@ -285,7 +285,7 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
         oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
         oauth.clientId("offline-client");
         OAuthClient.AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("secret1", "test-user@localhost", "password");
-        tokenResponse.getErrorDescription();
+        Assert.assertNull(tokenResponse.getErrorDescription());
         AccessToken token = oauth.verifyToken(tokenResponse.getAccessToken());
         String offlineTokenString = tokenResponse.getRefreshToken();
         RefreshToken offlineToken = oauth.verifyRefreshToken(offlineTokenString);
