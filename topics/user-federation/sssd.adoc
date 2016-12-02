@@ -155,9 +155,10 @@ There's a RPM for this library https://github.com/keycloak/libunix-dbus-java/rel
 
 {% if book.product %}
 
-You have to install the RPM for this library, before enabling SSSD Federation provider:
+You have to install the RPM for this library and create a symbolic link, before enabling SSSD Federation provider:
 
   $ sudo yum install rh-sso7-libunix-dbus-java.x86_64.rpm
+  $ ln -s /opt/rh/rh-sso7/root/usr/lib64/libunix_dbus_java.so.0.0.8 /usr/lib64/
 
 {% endif %}
 
