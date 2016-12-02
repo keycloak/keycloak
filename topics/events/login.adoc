@@ -60,7 +60,7 @@ For all events there is a corresponding error event.
 
 ==== Event Listener
 
-Event listeners listen for events and perform an action based on that event.  There are two built in
+Event listeners listen for events and perform an action based on that event.  There are two built-in
 listeners that come with {{book.project.name}}: Logging Event Listener and Email Event Listener.
 
 The Logging Event Listener writes to a log file whenever an error event occurs and is enabled by default.
@@ -90,7 +90,7 @@ The Email Event Listener only supports the following events at the moment:
 To enable the Email Listener go to the `Config` tab and click on the `Event Listeners` field.  This will show a drop down list box
 where you can select email.
 
-You can exclude one or more events by editing the `standalone.xml`, `standalone-ha.xml`, or `domain.xml` 
+You can exclude one or more events by editing the `standalone.xml`, `standalone-ha.xml`, or `domain.xml`
 that comes with your distribution and adding for example:
 
 [source,xml]
@@ -104,8 +104,5 @@ that comes with your distribution and adding for example:
 </spi>
 ----
 
-See the link:{{book.installguide.link}}[{{book.installguide.name}}] for more details on 
+See the link:{{book.installguide.link}}[{{book.installguide.name}}] for more details on
 where the `standalone.xml`, `standalone-ha.xml`, or `domain.xml` file lives.
-
-
-
