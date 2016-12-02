@@ -867,6 +867,7 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, templates,
     $scope.samlForcePostBinding = false;
     $scope.samlForceNameIdFormat = false;
     $scope.disableAuthorizationTab = !client.authorizationServicesEnabled;
+    $scope.disableServiceAccountRolesTab = !client.serviceAccountsEnabled;
 
     function updateProperties() {
         if (!$scope.client.attributes) {
@@ -971,6 +972,8 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, templates,
 
         var attrVal2 = $scope.client.attributes['request.object.signature.alg'];
          $scope.requestObjectSignatureAlg = attrVal2==null ? 'any' : attrVal2;
+         
+        $scope.disableServiceAccountRolesTab = !client.serviceAccountsEnabled;
     }
 
     if (!$scope.create) {

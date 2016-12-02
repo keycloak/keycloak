@@ -39,7 +39,7 @@
             <kc-tooltip>{{:: 'installation.tooltip' | translate}}</kc-tooltip>
         </li>
 
-        <li ng-class="{active: path[4] == 'service-account-roles'}" data-ng-show="client.serviceAccountsEnabled && !(client.bearerOnly || client.publicClient)">
+        <li ng-class="{active: path[4] == 'service-account-roles'}" data-ng-show="!disableServiceAccountRolesTab && client.serviceAccountsEnabled && !(client.bearerOnly || client.publicClient)">
             <a href="#/realms/{{realm.realm}}/clients/{{client.id}}/service-account-roles">{{:: 'service-account-roles' | translate}}</a>
             <kc-tooltip>{{:: 'service-account-roles.tooltip' | translate}}</kc-tooltip>
         </li>
