@@ -972,8 +972,6 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, templates,
 
         var attrVal2 = $scope.client.attributes['request.object.signature.alg'];
          $scope.requestObjectSignatureAlg = attrVal2==null ? 'any' : attrVal2;
-         
-        $scope.disableServiceAccountRolesTab = !client.serviceAccountsEnabled;
     }
 
     if (!$scope.create) {
