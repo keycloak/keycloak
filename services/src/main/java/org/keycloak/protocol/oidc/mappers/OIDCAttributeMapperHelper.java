@@ -25,10 +25,9 @@ import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.IDToken;
 import org.keycloak.services.ServicesLogger;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -70,29 +69,78 @@ public class OIDCAttributeMapperHelper {
                     ServicesLogger.LOGGER.multipleValuesForMapper(attributeValue.toString(), mappingModel.getName());
                 }
 
-                attributeValue = valueAsList.get(0);
+                attributeValue = valueAsList;
             }
         }
 
         String type = mappingModel.getConfig().get(JSON_TYPE);
+        Object converted = convertToType(type, attributeValue);
+        return converted != null ? converted : attributeValue;
+    }
+
+    private static <X, T> List<T> transform(List<X> attributeValue, Function<X, T> mapper) {
+        return attributeValue.stream()
+                .filter(Objects::nonNull)
+                .map(mapper)
+                .collect(Collectors.toList());
+    }
+
+    private static Object convertToType(String type, Object attributeValue) {
         if (type == null) return attributeValue;
-        if (type.equals("boolean")) {
-            if (attributeValue instanceof Boolean) return attributeValue;
-            if (attributeValue instanceof String) return Boolean.valueOf((String)attributeValue);
-            throw new RuntimeException("cannot map type for token claim");
-        } else if (type.equals("String")) {
-            if (attributeValue instanceof String) return attributeValue;
-            return attributeValue.toString();
-        } else if (type.equals("long")) {
-            if (attributeValue instanceof Long) return attributeValue;
-            if (attributeValue instanceof String) return Long.valueOf((String)attributeValue);
-            throw new RuntimeException("cannot map type for token claim");
-        } else if (type.equals("int")) {
-            if (attributeValue instanceof Integer) return attributeValue;
-            if (attributeValue instanceof String) return Integer.valueOf((String)attributeValue);
-            throw new RuntimeException("cannot map type for token claim");
+        switch (type) {
+            case "boolean":
+                Boolean booleanObject = getBoolean(attributeValue);
+                if (booleanObject != null) return booleanObject;
+                if (attributeValue instanceof List) {
+                    return transform((List<Boolean>) attributeValue, OIDCAttributeMapperHelper::getBoolean);
+                }
+                throw new RuntimeException("cannot map type for token claim");
+            case "String":
+                if (attributeValue instanceof String) return attributeValue;
+                if (attributeValue instanceof List) {
+                    return transform((List<String>) attributeValue, OIDCAttributeMapperHelper::getString);
+                }
+                return attributeValue.toString();
+            case "long":
+                Long longObject = getLong(attributeValue);
+                if (longObject != null) return longObject;
+                if (attributeValue instanceof List) {
+                    return transform((List<Long>) attributeValue, OIDCAttributeMapperHelper::getLong);
+                }
+                throw new RuntimeException("cannot map type for token claim");
+            case "int":
+                Integer intObject = getInteger(attributeValue);
+                if (intObject != null) return intObject;
+                if (attributeValue instanceof List) {
+                    return transform((List<Integer>) attributeValue, OIDCAttributeMapperHelper::getInteger);
+                }
+                throw new RuntimeException("cannot map type for token claim");
+            default:
+                return null;
         }
-        return attributeValue;
+    }
+
+    private static String getString(Object attributeValue) {
+        return attributeValue.toString();
+    }
+
+
+    private static Long getLong(Object attributeValue) {
+        if (attributeValue instanceof Long) return (Long) attributeValue;
+        if (attributeValue instanceof String) return Long.valueOf((String) attributeValue);
+        return null;
+    }
+
+    private static Integer getInteger(Object attributeValue) {
+        if (attributeValue instanceof Integer) return (Integer) attributeValue;
+        if (attributeValue instanceof String) return Integer.valueOf((String) attributeValue);
+        return null;
+    }
+
+    private static Boolean getBoolean(Object attributeValue) {
+        if (attributeValue instanceof Boolean) return (Boolean) attributeValue;
+        if (attributeValue instanceof String) return Boolean.valueOf((String) attributeValue);
+        return null;
     }
 
     public static void mapClaim(IDToken token, ProtocolMapperModel mappingModel, Object attributeValue) {

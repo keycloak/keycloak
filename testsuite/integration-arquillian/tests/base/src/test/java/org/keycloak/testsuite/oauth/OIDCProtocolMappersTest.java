@@ -141,12 +141,12 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
             assertNull(idToken.getAddress().getCountry()); // Null because we changed userAttribute name to "country_some", but user contains "country"
             assertEquals(idToken.getAddress().getFormattedAddress(), "6 Foo Street");
             assertNotNull(idToken.getOtherClaims().get("home_phone"));
-            assertEquals("617-777-6666", idToken.getOtherClaims().get("home_phone"));
+            assertThat((List<String>) idToken.getOtherClaims().get("home_phone"), hasItems("617-777-6666"));
             assertEquals("coded", idToken.getOtherClaims().get("hard"));
             Map nested = (Map) idToken.getOtherClaims().get("nested");
             assertEquals("coded-nested", nested.get("hard"));
             nested = (Map) idToken.getOtherClaims().get("home");
-            assertEquals("617-777-6666", nested.get("phone"));
+            assertThat((List<String>) nested.get("phone"), hasItems("617-777-6666"));
             List<String> departments = (List<String>) idToken.getOtherClaims().get("department");
             assertEquals(2, departments.size());
             assertTrue(departments.contains("finance") && departments.contains("development"));
@@ -161,12 +161,12 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
             assertNull(idToken.getAddress().getCountry()); // Null because we changed userAttribute name to "country_some", but user contains "country"
             assertEquals(idToken.getAddress().getFormattedAddress(), "6 Foo Street");
             assertNotNull(accessToken.getOtherClaims().get("home_phone"));
-            assertEquals("617-777-6666", accessToken.getOtherClaims().get("home_phone"));
+            assertThat((List<String>) accessToken.getOtherClaims().get("home_phone"), hasItems("617-777-6666"));
             assertEquals("coded", accessToken.getOtherClaims().get("hard"));
             nested = (Map) accessToken.getOtherClaims().get("nested");
             assertEquals("coded-nested", nested.get("hard"));
             nested = (Map) accessToken.getOtherClaims().get("home");
-            assertEquals("617-777-6666", nested.get("phone"));
+            assertThat((List<String>) nested.get("phone"), hasItems("617-777-6666"));
             departments = (List<String>) idToken.getOtherClaims().get("department");
             assertEquals(2, departments.size());
             assertTrue(departments.contains("finance") && departments.contains("development"));
