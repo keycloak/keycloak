@@ -18,17 +18,17 @@ A theme can provide one or more types to customize different aspects of {{book.p
 
 === Configure Theme
 
-All theme types, except welcome, is configured through the `Admin Console`. To change the theme used for a realm open the `Admin Console`, select
+All theme types, except welcome, are configured through the `Admin Console`. To change the theme used for a realm open the `Admin Console`, select
 your realm from the drop-down box in the top left corner. Under `Realm Settings` click on `Themes`.
 
 NOTE: To set the theme for the `master` admin console you need to set the admin console theme for the `master` realm. To see the changes to the admin console
 refresh the page.
 
-To change the welcome theme you need to edit `standalone.xml`, `standalone-ha.xml`, or `domain.xml`.  
-See the link:{{book.installguide.link}}[{{book.installguide.name}}] for more details on 
+To change the welcome theme you need to edit `standalone.xml`, `standalone-ha.xml`, or `domain.xml`.
+See the link:{{book.installguide.link}}[{{book.installguide.name}}] for more details on
 where the `standalone.xml`, `standalone-ha.xml`, or `domain.xml` file lives.
 
-Add `welcomeTheme` to the theme element, for example: 
+Add `welcomeTheme` to the theme element, for example:
 
 [source,xml]
 ----
@@ -48,7 +48,7 @@ directly. Instead create your own theme that extends one of the bundle themes.
 
 === Creating a Theme
 
-A theme consists of: 
+A theme consists of:
 
 * HTML templates (http://freemarker.org[Freemarker Templates])
 * Images
@@ -78,7 +78,7 @@ restarting {{book.project.name}}. To do this edit `standalone.xml`. For `theme` 
 </theme>
 ----
 
-Remember to re-enable caching in production as it will significantly impact performance. 
+Remember to re-enable caching in production as it will significantly impact performance.
 
 To create a new theme start by creating a new directory in the `themes` directory. The name of the directory becomes the name of the theme. For example to
 create a theme called `mytheme` create the directory `themes/mytheme`.
@@ -98,7 +98,7 @@ import=common/keycloak
 You have now created a theme with support for the login type. To check that it works open the admin console. Select your realm and click on `Themes`.
 For `Login Theme` select `mytheme` and click `Save`. Then open the login page for the realm.
 
-You can do this either by login through your application or by opening the Account Management console (`/realms/{realm name}/account`). 
+You can do this either by login through your application or by opening the Account Management console (`/realms/{realm name}/account`).
 
 To see the effect of changing the parent theme, set `parent=keycloak` in `theme.properties` and refresh the login page.
 
@@ -204,7 +204,7 @@ For example to replace `Username` on the login form with `Your Username` for the
 usernameOrEmail=Your Username
 ----
 
-Within a message values like `{0}` and `{1}` are replaced with arguments when the message is used. For example `{0} in `Log in to {0}` is replaced with the name
+Within a message values like `{0}` and `{1}` are replaced with arguments when the message is used. For example {0} in `Log in to {0}` is replaced with the name
 of the realm.
 
 ==== Internationalization
@@ -331,7 +331,7 @@ To deploy `mytheme.zip` on Linux run:
 [source,bash]
 ----
 bin/jboss-cli.sh --command="module add --name=org.example.mytheme --resources=mytheme.zip"
-----            
+----
 
 On Windows run:
 
@@ -355,8 +355,8 @@ To manually create the module create the directory `modules/org/keycloak/example
 </module>
 ----
 
-You also need to register the module with {{book.project.name}}. This is done by editing `standalone.xml`, `standalone-ha.xml`, or `domain.xml`.  
-See the link:{{book.installguide.link}}[{{book.installguide.name}}] for more details on 
+You also need to register the module with {{book.project.name}}. This is done by editing `standalone.xml`, `standalone-ha.xml`, or `domain.xml`.
+See the link:{{book.installguide.link}}[{{book.installguide.name}}] for more details on
 where the `standalone.xml`, `standalone-ha.xml`, or `domain.xml` file lives.
 
 Then find the `theme` tag under `keycloak-server` subsystem and add the module to `theme/modules/module`. For example:
@@ -369,7 +369,7 @@ Then find the `theme` tag under `keycloak-server` subsystem and add the module t
         <module>org.example.mytheme</module>
     </modules>
 </theme>
-----     
+----
 
 If the server is running you need to restart the server after changing `standalone.xml`, `standalone-ha.xml`, or `domain.xml`.
 

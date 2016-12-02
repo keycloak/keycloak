@@ -12,17 +12,17 @@
     "title": "Server Developer Guide",
     "project": {
       "name": "Red Hat Single Sign-On",
-      "version": "7.0.0"
+      "version": "7.1.0"
     },
     "community": false,
     "product": true,
     "adminguide": {
       "name": "Server Administration Guide",
-      "link": "https://access.redhat.com/documentation/en/red-hat-single-sign-on/7.0/server-administration-guide/"
+      "link": "https://access.redhat.com/documentation/en/red-hat-single-sign-on/7.1-Beta/server-administration-guide/"
     },
     "clientguide": {
       "name": "Securing Applications and Services Guide",
-      "link": "https://access.redhat.com/documentation/en/red-hat-single-sign-on/7.0/securing-applications-and-services-guide/"
+      "link": "https://access.redhat.com/documentation/en/red-hat-single-sign-on/7.1-Beta/securing-applications-and-services-guide/"
 
     },
     "installguide": {
@@ -31,7 +31,7 @@
     },
     "apidocs": {
       "name": "API Documentation",
-      "link": "https://access.redhat.com/documentation/en/red-hat-single-sign-on/7.0/api-documentation/"
+      "link": "https://access.redhat.com/documentation/en/red-hat-single-sign-on/7.1-Beta/api-documentation/"
     }
   }
 }
