@@ -158,6 +158,10 @@ public class ClientResource {
             new ClientManager(new RealmManager(session)).enableServiceAccount(client);
         }
 
+        if (!rep.getClientId().equals(client.getClientId())) {
+            new ClientManager(new RealmManager(session)).clientIdChanged(client, rep.getClientId());
+        }
+
         RepresentationToModel.updateClient(rep, client);
 
         if (Profile.isPreviewEnabled()) {

@@ -232,14 +232,14 @@ public class ServiceAccountTest extends AbstractKeycloakTest {
         RefreshToken refreshToken = oauth.verifyRefreshToken(response.getRefreshToken());
         Assert.assertEquals("updated-client", accessToken.getOtherClaims().get(ServiceAccountConstants.CLIENT_ID));
 
-        // Username still same. Client ID changed
+        // Username updated after client ID changed
         events.expectClientLogin()
                 .client("updated-client")
                 .user(userId)
                 .session(accessToken.getSessionState())
                 .detail(Details.TOKEN_ID, accessToken.getId())
                 .detail(Details.REFRESH_TOKEN_ID, refreshToken.getId())
-                .detail(Details.USERNAME, ServiceAccountConstants.SERVICE_ACCOUNT_USER_PREFIX + "service-account-cl")
+                .detail(Details.USERNAME, ServiceAccountConstants.SERVICE_ACCOUNT_USER_PREFIX + "updated-client")
                 .assertEvent();
 
 
