@@ -80,7 +80,7 @@
 
    .. link:topics/service/authorization/authorization-api.adoc[Authorization API]
 
-      ... link:topics/service/authorization/whatis-obtain-aat.adoc[What is a AAT and How to Obtain It]
+      ... link:topics/service/authorization/whatis-obtain-aat.adoc[What is an AAT and How to Obtain It]
 
       ... link:topics/service/authorization/authorization-api-aapi.adoc[Requesting Authorization Data and Token]
 

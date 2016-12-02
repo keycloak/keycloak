@@ -1,5 +1,5 @@
 [[_service_authorization_aat]]
-=== What is a AAT and How to Obtain It
+==== What is an AAT and How to Obtain It
 
 An authorization API token (AAT) is a special OAuth2 access token with the scope *uma_authorization*. When you create a user, {{book.project.name}} automatically
 assigns the role _uma_authorization_ to the user. The _uma_authorization_ role is a default realm role.

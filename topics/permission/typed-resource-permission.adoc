@@ -1,5 +1,5 @@
 [[_permission_typed_resource]]
-=== Typed Resource Permission
+==== Typed Resource Permission
 
 Resource permissions can also be used to define policies that are to be applied to all resources with a given <<fake/../../resource/create.adoc#_resource_create_type, type>>. This form of resource-based permission can be useful when you have resources sharing common access requirements and constraints.
 
