@@ -28,6 +28,7 @@ import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.RoleMappingResource;
 import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.Constants;
@@ -845,6 +846,19 @@ public class UserTest extends AbstractAdminTest {
         assertAdminEvents.assertEvent("test", OperationType.DELETE, AdminEventPaths.userClientRoleMappingsPath(userId, clientUuid), Collections.singletonList(clientRoleRep), ResourceType.CLIENT_ROLE_MAPPING);
 
         assertNames(roles.clientLevel(clientUuid).listAll(), "client-composite");
+    }
+
+    @Test
+    public void defaultMaxResults() {
+        UsersResource users = adminClient.realms().realm("test").users();
+
+        for (int i = 0; i < 110; i++) {
+            users.create(UserBuilder.create().username("test-" + i).build()).close();
+        }
+
+        assertEquals(100, users.search("test", null, null).size());
+        assertEquals(105, users.search("test", 0, 105).size());
+        assertEquals(111, users.search("test", 0, 1000).size());
     }
 
     private void switchEditUsernameAllowedOn() {
