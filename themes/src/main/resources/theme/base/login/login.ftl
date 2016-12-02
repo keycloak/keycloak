@@ -16,7 +16,7 @@
                         <#if usernameEditDisabled??>
                             <input id="username" class="${properties.kcInputClass!}" name="username" value="${(login.username!'')?html}" type="text" disabled />
                         <#else>
-                            <input id="username" class="${properties.kcInputClass!}" name="username" value="${(login.username!'')?html}" type="text" autofocus />
+                            <input id="username" class="${properties.kcInputClass!}" name="username" value="${(login.username!'')?html}" type="text" autofocus autocomplete="off" />
                         </#if>
                     </div>
                 </div>
