@@ -19,8 +19,11 @@ package org.keycloak.testsuite.admin.group;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.keycloak.admin.client.resource.GroupResource;
+import org.keycloak.admin.client.resource.GroupsResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.RoleMappingResource;
+import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.Constants;
@@ -577,5 +580,29 @@ public class GroupTest extends AbstractGroupTest {
 
         assertThat(userClient.realms().findAll(),  // Any admin operation will do
           not(empty()));
+    }
+
+    @Test
+    public void defaultMaxResults() {
+        GroupsResource groups = adminClient.realms().realm("test").groups();
+        Response response = groups.add(GroupBuilder.create().name("test").build());
+        String groupId = ApiUtil.getCreatedId(response);
+        response.close();
+
+        GroupResource group = groups.group(groupId);
+
+        UsersResource users = adminClient.realms().realm("test").users();
+
+        for (int i = 0; i < 110; i++) {
+            Response r = users.create(UserBuilder.create().username("test-" + i).build());
+            String userId = ApiUtil.getCreatedId(r);
+            r.close();
+
+            users.get(userId).joinGroup(groupId);
+        }
+
+        assertEquals(100, group.members(null, null).size());
+        assertEquals(105, group.members(0, 105).size());
+        assertEquals(110, group.members(0, 1000).size());
     }
 }

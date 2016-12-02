@@ -20,8 +20,13 @@ package org.keycloak.testsuite.admin.event;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Test;
+import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.admin.client.resource.UsersResource;
+import org.keycloak.events.EventBuilder;
+import org.keycloak.events.EventType;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.testsuite.console.page.events.LoginEvents;
+import org.keycloak.testsuite.util.UserBuilder;
 
 import java.util.Arrays;
 import java.util.List;
@@ -126,6 +131,22 @@ public class LoginEventsTest extends AbstractEventTest {
 
         filteredEvents = testRealmResource().getEvents(Arrays.asList("LOGIN_ERROR"), null, null, null, null, null, null, null);
         assertEquals(2, filteredEvents.size());
+    }
+
+    @Test
+    public void defaultMaxResults() {
+        RealmResource realm = adminClient.realms().realm("test");
+        EventRepresentation event = new EventRepresentation();
+        event.setRealmId(realm.toRepresentation().getId());
+        event.setType(EventType.LOGIN.toString());
+
+        for (int i = 0; i < 110; i++) {
+            testingClient.testing("test").onEvent(event);
+        }
+
+        assertEquals(100, realm.getEvents(null, null, null, null, null, null, null, null).size());
+        assertEquals(105, realm.getEvents(null, null, null, null, null, null, 0, 105).size());
+        assertTrue(realm.getEvents(null, null, null, null, null, null, 0, 1000).size() >= 110);
     }
 
     /*
