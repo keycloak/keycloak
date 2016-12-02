@@ -157,7 +157,7 @@ _capability_ _interfaces_ for the features you are able to.  Here's a list of in
 |`org.keycloak.storage.user.UserBulkUupdateProvider`|Implement this interface if your provider supports bulk update of a set of users.
 |`org.keycloak.credential.CredentialInputValidator`|Implement this interface if your provider can validate one or more different credential types.  (i.e. can validate a password)
 |`org.keycloak.credential.CredentialInputUpdater`|Implement this interface if your provider supports updating one more different credential types.
-
+|===
 
 === Model Interfaces
 
