@@ -96,6 +96,7 @@ public class LoginActionsService {
     public static final String REQUIRED_ACTION = "required-action";
     public static final String FIRST_BROKER_LOGIN_PATH = "first-broker-login";
     public static final String POST_BROKER_LOGIN_PATH = "post-broker-login";
+    public static final String LAST_PROCESSED_CODE = "last_processed_code";
 
     private RealmModel realm;
 
@@ -323,14 +324,22 @@ public class LoginActionsService {
     public Response authenticate(@QueryParam("code") String code,
                                  @QueryParam("execution") String execution) {
         event.event(EventType.LOGIN);
-        Checks checks = new Checks();
-        if (!checks.verifyCode(code, ClientSessionModel.Action.AUTHENTICATE.name(), ClientSessionCode.ActionType.LOGIN)) {
-            return checks.response;
-        }
-        event.detail(Details.CODE_ID, code);
-        ClientSessionCode clientSessionCode = checks.clientCode;
-        ClientSessionModel clientSession = clientSessionCode.getClientSession();
 
+        ClientSessionModel clientSession = ClientSessionCode.getClientSession(code, session, realm);
+        if (clientSession != null && code.equals(clientSession.getNote(LAST_PROCESSED_CODE))) {
+            // Allow refresh of previous page
+        } else {
+            Checks checks = new Checks();
+            if (!checks.verifyCode(code, ClientSessionModel.Action.AUTHENTICATE.name(), ClientSessionCode.ActionType.LOGIN)) {
+                return checks.response;
+            }
+
+            ClientSessionCode clientSessionCode = checks.clientCode;
+            clientSession = clientSessionCode.getClientSession();
+        }
+
+        event.detail(Details.CODE_ID, code);
+        clientSession.setNote(LAST_PROCESSED_CODE, code);
         return processAuthentication(execution, clientSession, null);
     }
 
@@ -373,12 +382,21 @@ public class LoginActionsService {
     public Response authenticateForm(@QueryParam("code") String code,
                                      @QueryParam("execution") String execution) {
         event.event(EventType.LOGIN);
+
+        ClientSessionModel clientSession = ClientSessionCode.getClientSession(code, session, realm);
+        if (clientSession != null && code.equals(clientSession.getNote(LAST_PROCESSED_CODE))) {
+            // Post already processed (refresh) - ignore form post and return next form
+            request.getFormParameters().clear();
+            return authenticate(code, null);
+        }
+
         Checks checks = new Checks();
         if (!checks.verifyCode(code, ClientSessionModel.Action.AUTHENTICATE.name(), ClientSessionCode.ActionType.LOGIN)) {
             return checks.response;
         }
         final ClientSessionCode clientCode = checks.clientCode;
-        final ClientSessionModel clientSession = clientCode.getClientSession();
+        clientSession = clientCode.getClientSession();
+        clientSession.setNote(LAST_PROCESSED_CODE, code);
 
         return processAuthentication(execution, clientSession, null);
     }

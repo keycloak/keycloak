@@ -127,6 +127,26 @@ public class LoginTotpTest extends TestRealmKeycloakTest {
         events.expectLogin().assertEvent();
     }
 
+    // KEYCLOAK-3835
+    @Test
+    public void loginWithTotpRefreshTotpPage() throws Exception {
+        loginPage.open();
+        loginPage.login("test-user@localhost", "password");
+
+        Assert.assertTrue(loginTotpPage.isCurrent());
+
+        // Refresh TOTP page
+        driver.navigate().refresh();
+
+        System.out.println(driver.getPageSource());
+
+        loginTotpPage.login(totp.generateTOTP("totpSecret"));
+
+        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+
+        events.expectLogin().assertEvent();
+    }
+
     @Test
     public void loginWithTotpCancel() throws Exception {
         loginPage.open();
