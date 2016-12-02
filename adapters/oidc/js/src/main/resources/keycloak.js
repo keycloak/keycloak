@@ -846,14 +846,15 @@
                     kc.clearToken();
                 }
 
-                for (var i = loginIframe.callbackList.length - 1; i >= 0; --i) {
-                    var promise = loginIframe.callbackList[i];
+                var callbacks = loginIframe.callbackList.splice(0, loginIframe.callbackList.length);
+
+                for (var i = callbacks.length - 1; i >= 0; --i) {
+                    var promise = callbacks[i];
                     if (event.data == "unchanged") {
                         promise.setSuccess();
                     } else {
                         promise.setError();
                     }
-                    loginIframe.callbackList.splice(i, 1);
                 }
             };
 
