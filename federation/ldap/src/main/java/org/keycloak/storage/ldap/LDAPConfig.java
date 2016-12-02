@@ -127,6 +127,10 @@ public class LDAPConfig {
 
         return uuidAttrName;
     }
+    
+    public boolean isObjectGUID() {
+        return getUuidLDAPAttributeName().equalsIgnoreCase(LDAPConstants.OBJECT_GUID);
+    }
 
     public boolean isPagination() {
         String pagination = config.getFirst(LDAPConstants.PAGINATION);
