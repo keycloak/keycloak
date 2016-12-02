@@ -26,6 +26,7 @@ public class LDAPConstants {
 
     public static final String LDAP_PROVIDER = "ldap";
     public static final String MSAD_USER_ACCOUNT_CONTROL_MAPPER = "msad-user-account-control-mapper";
+    public static final String MSADLDS_USER_ACCOUNT_CONTROL_MAPPER = "msad-lds-user-account-control-mapper";
 
     public static final String VENDOR = "vendor";
     public static final String VENDOR_RHDS = "rhds";
@@ -93,6 +94,9 @@ public class LDAPConstants {
     public static final String GROUP_OF_UNIQUE_NAMES = "groupOfUniqueNames";
     public static final String USER_ACCOUNT_CONTROL = "userAccountControl";
     public static final String PWD_LAST_SET = "pwdLastSet";
+    public static final String MSDS_USER_ACCOUNT_DISABLED = "msDS-UserAccountDisabled";
+    public static final String MSDS_USER_PASSWORD_NOTREQD = "msDS-UserPasswordNotRequired";
+    public static final String MSDS_USER_PASSWORD_EXPIRED = "msDS-UserPasswordExpired"; // read-only
 
     public static final String COMMA = ",";
     public static final String EQUAL = "=";
