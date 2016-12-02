@@ -1,5 +1,5 @@
 [[_permission_create_resource]]
-=== Creating Resource-based Permissions
+=== Creating Resource-Based Permissions
 
 A resource-based permission defines a set of one or more resources to protect using a set of one or more authorization policies.
 

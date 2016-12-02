@@ -1,5 +1,5 @@
 [[_policy_evaluation_overview]]
-== Policy Evaluation Tool
+== Evaluating and Testing Policies
 
 When designing your policies, you can simulate authorization requests to test how your policies are being evaluated.
 

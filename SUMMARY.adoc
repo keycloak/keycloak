@@ -11,15 +11,15 @@
 
    .. link:topics/getting-started/hello-world/overview.adoc[Securing a Servlet Application]
 
-      ... link:topics/getting-started/hello-world/create-realm.adoc[Creating a Realm]
+      ... link:topics/getting-started/hello-world/create-realm.adoc[Creating a Realm and a User]
 
       ... link:topics/getting-started/hello-world/create-resource-server.adoc[Enabling Authorization Services]
 
-      ... link:topics/getting-started/hello-world/deploy.adoc[Build, Deploy, and Test]
+      ... link:topics/getting-started/hello-world/deploy.adoc[Build, Deploy, and Test Your Application]
 
    .. link:topics/example/overview.adoc[Examples]
- {% endif %} 
- 
+{% endif %}
+
  . link:topics/resource-server/overview.adoc[Managing Resource Servers]
 
    .. link:topics/resource-server/create-client.adoc[Creating a Client Application]
@@ -28,9 +28,9 @@
 
    .. link:topics/resource-server/default-config.adoc[Default Configuration]
 
-   .. link:topics/resource-server/import-config.adoc[Exporting and Importing Authorization Configuration]
+   .. link:topics/resource-server/import-config.adoc[Export and Import Authorization Configuration]
 
- . link:topics/resource/overview.adoc[Managing Resources]
+ . link:topics/resource/overview.adoc[Managing Resources and Scopes]
 
    .. link:topics/resource/view.adoc[Viewing Resources]
 
@@ -58,11 +58,11 @@
 
  . link:topics/permission/overview.adoc[Managing Permissions]
 
-   .. link:topics/permission/create-resource.adoc[Creating Resource-based Permissions]
+   .. link:topics/permission/create-resource.adoc[Creating Resource-Based Permissions]
 
       ... link:topics/permission/typed-resource-permission.adoc[Typed Resource Permissions]
 
-   .. link:topics/permission/create-scope.adoc[Creating Scope-based Permissions]
+   .. link:topics/permission/create-scope.adoc[Creating Scope-Based Permissions]
 
    .. link:topics/permission/decision-strategy.adoc[Policy Decision Strategies]
 

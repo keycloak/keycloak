@@ -1,5 +1,5 @@
 [[_resource_server_import_config]]
-=== Exporting and Importing Configuration Files
+=== Export and Import Authorization Configuration
 
 The configuration settings for a resource server (or client) can be exported and downloaded. You can also import an existing configuration file for a resource server. Importing and exporting a configuration file is helpful when you want to create an initial configuration for a resource server or to update an existing configuration. The configuration file contains definitions for:
 
