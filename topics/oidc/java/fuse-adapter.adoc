@@ -3,18 +3,18 @@
 ==== JBoss Fuse Adapter
 
 {% if book.product %}
-NOTE: JBoss Fuse is a Technology Preview feature and is not fully supported
+NOTE: JBoss Fuse is a Technology Preview feature and is not fully supported.
 {% endif %}
 
-Currently {{book.project.name}} supports securing your web applications running inside http://www.jboss.org/products/fuse/overview/[JBoss Fuse] .
+Currently {{book.project.name}} supports securing your web applications running inside http://developers.redhat.com/products/fuse/overview/[JBoss Fuse].
 
 {% if book.community %}
 It leverages <<fake/../jetty9-adapter.adoc#_jetty9_adapter,Jetty 9 adapter>> as {{book.fuseVersion}} is bundled with http://eclipse.org/jetty/[Jetty 9.2 server]
 under the covers and Jetty is used for running various kinds of web applications.
 {% endif %}
 
-WARNING: The only supported Fuse version is {{book.fuseVersion}} . If you use older Fuse versions, it's possible that some functionalities won't work correctly.
-Especially the http://hawt.io[Hawtio] integration won't work with older Fuse versions.
+WARNING: The only supported Fuse version is {{book.fuseVersion}}. If you use earlier versions of Fuse, it's possible that some functionalities won't work correctly.
+Especially the http://hawt.io[Hawtio] integration won't work with earlier versions of Fuse.
 
 What is supported for Fuse is:
 
