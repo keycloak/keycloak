@@ -42,17 +42,23 @@ Use `npm init` command to create a `package.json` for your application. Now add 
 
 {% if book.community %}
 
+[source,json,subs="attributes"]
+----
     dependencies": {
         "keycloak-connect": "{{book.project.versionMvn}}"
     }
+----
 
 {% endif %}
 
 {% if book.product %}
 
+[source,json,subs="attributes"]
+----
     dependencies": {
-        "keycloak-connect": "file://{{book.project.name}}.tgz"
+        "keycloak-connect": "file:rh-sso-{{book.project.version}}-nodejs-adapter.tgz"
     }
+----
 
 {% endif %}
 
