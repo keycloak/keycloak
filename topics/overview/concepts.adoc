@@ -56,7 +56,7 @@ assertion::
   Information about a user.  This usually pertains to an XML blob that is included in a SAML authentication response that
   provided identity metadata about an authenticated user.
 service account::
-  Each client has a built in service account which allows it to obtain an access token.
+  Each client has a built-in service account which allows it to obtain an access token.
 direct grant::
   A way for a client to obtain an access token on behalf of a user via a REST invocation.
 protocol mappers::

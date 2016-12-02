@@ -7,9 +7,9 @@ SPNEGO (Simple and Protected GSSAPI Negotiation Mechanism) is used to authentica
 has been authenticated when logging-in his session.
 For non-web cases or when ticket is not available during login, {{book.project.name}} also supports login with Kerberos username/password.
 
-A typical use case for web authentication is the following: 
+A typical use case for web authentication is the following:
 
-. User logs into his desktop (Such as a Windows machine in Active Directory domain or Linux machine with Kerberos integration enabled). 
+. User logs into his desktop (Such as a Windows machine in Active Directory domain or Linux machine with Kerberos integration enabled).
 . User then uses his browser (IE/Firefox/Chrome) to access a web application secured by {{book.project.name}}.
 . Application redirects to {{book.project.name}} login.
 . {{book.project.name}} renders HTML login screen together with status 401 and HTTP header `WWW-Authenticate: Negotiate`
@@ -23,58 +23,58 @@ A typical use case for web authentication is the following:
   The fact that {{book.project.name}} was authenticated through Kerberos is hidden from the application.
   So {{book.project.name}} acts as broker to Kerberos/SPNEGO login.
 
-For setup there are 3 main parts: 
+For setup there are 3 main parts:
 
-. Setup and configuration of Kerberos server (KDC) 
+. Setup and configuration of Kerberos server (KDC)
 . Setup and configuration of {{book.project.name}} server
-. Setup and configuration of client machines     
+. Setup and configuration of client machines
 
 ==== Setup of Kerberos server
 
 This is platform dependent.
 Exact steps depend on your OS and the Kerberos vendor you're going to use.
-Consult Windows Active Directory, MIT Kerberos and your OS documentation for how exactly to setup and configure Kerberos server. 
+Consult Windows Active Directory, MIT Kerberos and your OS documentation for how exactly to setup and configure Kerberos server.
 
-At least you will need to: 
+At least you will need to:
 
 * Add some user principals to your Kerberos database.
-  You can also integrate your Kerberos with LDAP, which means that user accounts will be provisioned from LDAP server. 
+  You can also integrate your Kerberos with LDAP, which means that user accounts will be provisioned from LDAP server.
 * Add service principal for "HTTP" service.
   For example if your {{book.project.name}} server will be running on `www.mydomain.org` you may need to add principal `HTTP/www.mydomain.org@MYDOMAIN.ORG`
   assuming that MYDOMAIN.ORG will be your Kerberos realm.
 +
 For example on MIT Kerberos you can run a "kadmin" session.
-If you are on the same machine where is MIT Kerberos, you can simply use the command: 
+If you are on the same machine where is MIT Kerberos, you can simply use the command:
 
 [source]
 ----
 sudo kadmin.local
-----                        
-Then add HTTP principal and export his key to a keytab file with the commands like: 
+----
+Then add HTTP principal and export his key to a keytab file with the commands like:
 
 [source]
 ----
 
 addprinc -randkey HTTP/www.mydomain.org@MYDOMAIN.ORG
 ktadd -k /tmp/http.keytab HTTP/www.mydomain.org@MYDOMAIN.ORG
-----                        
+----
 
 The Keytab file `/tmp/http.keytab` will need to be accessible on the host where {{book.project.name}} server will be running.
-        
+
 ==== Setup and configuration of {{book.project.name}} server
 
 You need to install a kerberos client on your machine.  This is also platform dependent.
 If you are on Fedora, Ubuntu or RHEL, you can install the package `freeipa-client`, which contains a Kerberos client and several other utilities.
 Configure the kerberos client (on linux it's in file `/etc/krb5.conf` ). You need to put your Kerberos realm and at least configure the HTTP domains your server will be running on.
-For the example realm MYDOMAIN.ORG you may configure the `domain_realm` section like this: 
+For the example realm MYDOMAIN.ORG you may configure the `domain_realm` section like this:
 
 [source]
 ----
 [domain_realm]
   .mydomain.org = MYDOMAIN.ORG
   mydomain.org = MYDOMAIN.ORG
-----             
-   
+----
+
 Next you need to export the keytab file with the HTTP principal and make sure the file is accessible to the process under which {{book.project.name}} server is running.
 For production, it's ideal if it's readable just by this process and not by someone else.
 For the MIT Kerberos example above, we already exported keytab to `/tmp/http.keytab` . If your KDC and {{book.project.name}} are running on same host,
@@ -107,7 +107,7 @@ Turning on the switch `Allow Kerberos authentication` will make {{book.project.n
 be imported into the {{book.project.name}} environment.
 
 If your Kerberos solution is not backed by an LDAP server, you have to use the `Kerberos` User Storage Federation Provider.  Go to the `User Federation`
-left menu item and select `Kerberos` from the right `Add provider` select box.
+left menu item and select `Kerberos` from the `Add provider` select box.
 
 .Kerberos User Storage Provider
 image:../../{{book.images}}/kerberos-provider.png[]
@@ -122,19 +122,19 @@ Additionally they need to enable SPNEGO login support in their browser.
 See link:http://www.microhowto.info/howto/configure_firefox_to_authenticate_using_spnego_and_kerberos.html[configuring Firefox for Kerberos] if you are using that browser.
 URI `.mydomain.org` must be allowed in the `network.negotiate-auth.trusted-uris` config option.
 
-In a Windows domain, clients usually don't need to configure anything special as IE is already able to participate in SPNEGO authentication for the Windows domain. 
+In a Windows domain, clients usually don't need to configure anything special as IE is already able to participate in SPNEGO authentication for the Windows domain.
 
 {% if book.community %}
 ==== Example setups
 
-For easier testing with Kerberos, we provided some example setups to test. 
+For easier testing with Kerberos, we provided some example setups to test.
 
 ===== {{book.project.name}} and FreeIPA docker image
 
 Once you install https://www.docker.com/[docker], you can run docker image with http://www.freeipa.org/[FreeIPA]         server installed.
 FreeIPA provides integrated security solution with MIT Kerberos and 389 LDAP server among other things . The image provides also {{book.project.name}}
 server configured with LDAP Federation provider and enabled SPNEGO/Kerberos authentication against the FreeIPA server.
-See details https://github.com/mposolda/keycloak-freeipa-docker/blob/master/README.md[here] . 
+See details https://github.com/mposolda/keycloak-freeipa-docker/blob/master/README.md[here] .
 
 ===== ApacheDS testing Kerberos server
 
@@ -192,6 +192,6 @@ WARNING: Credential delegation has some security implications so only use it if 
 
 If you have issues, we recommend that you enable additional logging to debug the problem:
 
-* Enable `Debug` flag in admin console for Kerberos or LDAP federation providers 
-* Enable TRACE logging for category `org.keycloak` in logging section of `standalone/configuration/standalone.xml` to receive more info `standalone/log/server.log`                    
-* Add system properties `-Dsun.security.krb5.debug=true` and `-Dsun.security.spnego.debug=true`                            
+* Enable `Debug` flag in admin console for Kerberos or LDAP federation providers
+* Enable TRACE logging for category `org.keycloak` in logging section of `standalone/configuration/standalone.xml` to receive more info `standalone/log/server.log`
+* Add system properties `-Dsun.security.krb5.debug=true` and `-Dsun.security.spnego.debug=true`

@@ -21,10 +21,10 @@ have the ability to modify user metadata.  Depending on your setup you may or ma
 READONLY::
   Username, email, first name, last name, and other mapped attributes will be unchangeable.
   {{book.project.name}} will show an error anytime anybody tries to update these fields.
-  Also, password updates will not be supported. 
+  Also, password updates will not be supported.
 
 WRITABLE::
-  Username, email, first name, last name, and other mapped attributes and passwords can all be updated and will be synchronized automatically with your LDAP store. 
+  Username, email, first name, last name, and other mapped attributes and passwords can all be updated and will be synchronized automatically with your LDAP store.
 
 UNSYNCED::
   Any changes to username, email, first name, last name, and passwords will be stored in {{book.project.name}} local storage.
@@ -34,13 +34,13 @@ UNSYNCED::
 ==== Other config options
 
 Console Display Name::
-  Name used when this provider is referenced in the admin console 
+  Name used when this provider is referenced in the admin console
 
 Priority::
-  The priority of this provider when looking up users or for adding registrations. 
+  The priority of this provider when looking up users or for adding registrations.
 
 Sync Registrations::
-  If a new user is added through a registration page or admin console, should the user be eligible to be synchronized to this provider? 
+  If a new user is added through a registration page or admin console, should the user be eligible to be synchronized to this provider?
 
 Allow Kerberos authentication::
   Enable Kerberos/SPNEGO authentication in realm with users data provisioned from LDAP.
@@ -91,8 +91,8 @@ then set up a periodic sync of changed users.  The configuration page for your L
 
 LDAP mappers are `listeners`, which are triggered by the LDAP Federation provider at various points, provide another extension point to LDAP integration.
 They are triggered when a user logs in via LDAP and needs to be imported, during {{book.project.name}} initiated registration, or when a user is queried from the Admin Console.
-When you create an LDAP Federation provider, {{book.project.name}} will automatically provide set of builtin `mappers` for this provider.
-You are free to change this set and create a new mapper or update/delete existing ones. 
+When you create an LDAP Federation provider, {{book.project.name}} will automatically provide set of built-in `mappers` for this provider.
+You are free to change this set and create a new mapper or update/delete existing ones.
 
 User Attribute Mapper::
   This allows you to specify which LDAP attribute is mapped to which attribute of {{book.project.name}} user.
@@ -101,7 +101,7 @@ User Attribute Mapper::
 
 FullName Mapper::
   This allows you to specify that the full name of the user, which is saved in some LDAP attribute (usually `cn` ) will be mapped to `firstName` and `lastname` attributes in the {{book.project.name}} database.
-  Having `cn` to contain full name of user is a common case for some LDAP deployments. 
+  Having `cn` to contain full name of user is a common case for some LDAP deployments.
 
 Role Mapper::
   This allows you to configure role mappings from LDAP into {{book.project.name}} role mappings.
@@ -129,5 +129,4 @@ MSAD User Account Mapper::
 
 By default, there is set of User Attribute mappers that map basic {{book.project.name}} user attributes like username, first name, lastname, and email to corresponding LDAP attributes.
 You are free to extend these and provide additional attribute mappings.
-Admin console provides tooltips, which should help with configuring the corresponding mappers. 
-
+Admin console provides tooltips, which should help with configuring the corresponding mappers.
