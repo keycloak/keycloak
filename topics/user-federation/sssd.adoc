@@ -141,7 +141,7 @@ If you don't have permission, please make sure that the user running {{book.proj
 
 {% if book.community %}
 
-There's a RPM for this library https://github.com/keycloak/libunix-dbus-java/releases[here]. Before installing it, make sure to check the RPM signature:
+There's an RPM for this library https://github.com/keycloak/libunix-dbus-java/releases[here]. Before installing it, make sure to check the RPM signature:
 
   $ rpm -K libunix-dbus-java-0.8.0-1.fc24.x86_64.rpm
   libunix-dbus-java-0.8.0-1.fc24.x86_64.rpm:
