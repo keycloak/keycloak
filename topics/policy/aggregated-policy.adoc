@@ -1,5 +1,5 @@
 [[_policy_aggregated]]
-=== Aggregated Policies
+=== Aggregated Policy
 
 As mentioned previously, {{book.project.name}} allows you to build a policy of policies, a concept referred to as policy aggregation. You can use policy aggregation to reuse existing policies to build more complex ones and keep your permissions even more decoupled from the policies that are evaluated during the processing of authorization requests.
 

@@ -1,5 +1,5 @@
 [[_service_client_api]]
-=== Authorization Client API
+=== Authorization Client Java API
 
 If you are using Java, you can access all {{book.project.name}} {{book.project.module}} using a client API.
 

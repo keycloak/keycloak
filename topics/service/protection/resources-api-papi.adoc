@@ -1,5 +1,5 @@
 [[_service_protection_resources_api]]
-=== Managing Resources Using the Protection API
+=== Managing Resources
 
 Resource servers can manage their resources remotely using a UMA-compliant endpoint.
 

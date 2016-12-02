@@ -1,5 +1,5 @@
 [[_getting_started_hello_world_deploy]]
-=== Building, Deploying, and Testing Your Application
+=== Build, Deploy, and Test Your Application
 
 Now that the *hello-world-authz-service* resource server (or client) is properly configured and authorization services are enabled, it can be deployed to the server.
 

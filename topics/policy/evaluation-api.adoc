@@ -1,5 +1,5 @@
 [[_policy_evaluation_api]]
-=== Evaluation API
+=== Policy Evaluation API
 
 When writing rule-based policies using JavaScript or JBoss Drools, {{book.project.name}} provides an Evaluation API that provides useful information to help determine whether a permission should be granted.
 
