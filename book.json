@@ -16,6 +16,7 @@
     },
     "community": true,
     "product": false,
+    "images": "keycloak-images",
     "adminguide": {
       "name": "Server Administration Guide",
       "link": "https://keycloak.gitbooks.io/server-adminstration-guide/content/"
