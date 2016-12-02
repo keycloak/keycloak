@@ -72,18 +72,8 @@ public class UserSessionManager {
     }
 
     // userSessionId is provided from offline token. It's used just to verify if it match the ID from clientSession representation
-    public ClientSessionModel findOfflineClientSession(RealmModel realm, String clientSessionId, String userSessionId) {
-        ClientSessionModel clientSession = kcSession.sessions().getOfflineClientSession(realm, clientSessionId);
-        if (clientSession == null) {
-            return null;
-        }
-
-        if (!userSessionId.equals(clientSession.getUserSession().getId())) {
-            throw new ModelException("User session don't match. Offline client session " + clientSession.getId() + ", It's user session " + clientSession.getUserSession().getId() +
-                    "  Wanted user session: " + userSessionId);
-        }
-
-        return clientSession;
+    public ClientSessionModel findOfflineClientSession(RealmModel realm, String clientSessionId) {
+        return kcSession.sessions().getOfflineClientSession(realm, clientSessionId);
     }
 
     public Set<ClientModel> findClientsWithOfflineToken(RealmModel realm, UserModel user) {
