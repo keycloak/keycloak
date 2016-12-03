@@ -100,7 +100,9 @@ public class ComponentResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
-    public List<ComponentRepresentation> getComponents(@QueryParam("parent") String parent, @QueryParam("type") String type) {
+    public List<ComponentRepresentation> getComponents(@QueryParam("parent") String parent,
+                                                       @QueryParam("type") String type,
+                                                       @QueryParam("name") String name) {
         auth.requireView();
         List<ComponentModel> components = Collections.EMPTY_LIST;
         if (parent == null && type == null) {
@@ -115,6 +117,7 @@ public class ComponentResource {
         }
         List<ComponentRepresentation> reps = new LinkedList<>();
         for (ComponentModel component : components) {
+            if (name != null && !name.equals(component.getName())) continue;
             ComponentRepresentation rep = ModelToRepresentation.toRepresentation(session, component, false);
             reps.add(rep);
         }

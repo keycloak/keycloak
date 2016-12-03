@@ -840,6 +840,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     public void removeIdentityProviderByAlias(String alias) {
         for (IdentityProviderEntity entity : realm.getIdentityProviders()) {
             if (entity.getAlias().equals(alias)) {
+                IdentityProviderModel model = entityToModel(entity);
                 realm.getIdentityProviders().remove(entity);
                 updateRealm();
 
@@ -852,7 +853,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
 
                     @Override
                     public IdentityProviderModel getRemovedIdentityProvider() {
-                        return entityToModel(entity);
+                        return model;
                     }
 
                     @Override

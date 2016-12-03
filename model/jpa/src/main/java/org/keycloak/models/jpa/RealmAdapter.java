@@ -1030,6 +1030,7 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
         for (IdentityProviderEntity entity : realm.getIdentityProviders()) {
             if (entity.getAlias().equals(alias)) {
 
+                IdentityProviderModel model = entityToModel(entity);
                 em.remove(entity);
                 em.flush();
 
@@ -1042,7 +1043,7 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
 
                     @Override
                     public IdentityProviderModel getRemovedIdentityProvider() {
-                        return entityToModel(entity);
+                        return model;
                     }
 
                     @Override
