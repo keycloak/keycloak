@@ -1,0 +1,21 @@
+
+=== Provider Capability Interfaces
+
+If you've examined the `UserStorageProvider` interface closely you may be scratching your head a bit because it does
+not define any methods for locating or managing users.  These methods are actually defined in other _capability_
+_interfaces_ depending on what scope of capabilities your external user store can provide and execute on.  For example,
+some external stores are read only and can only do simple queries and credential validation.  You will only be required to implement the
+_capability_ _interfaces_ for the features you are able to.  Here's a list of interfaces that you can implement:
+
+
+|===
+|SPI|Description
+
+|`org.keycloak.storage.user.UserLookupProvider`|This interface is required if you want to be able to login with users from this external store.  Most (all?) providers implement this interface.
+|`org.keycloak.storage.user.UserQueryProvider`|Defines complex queries that are used to locate one or more users.  You must implement this interface if you want to view and manager users from the administration console.
+|`org.keycloak.storage.user.UserRegistrationProvider`|Implement this interface if your provider supports adding and removing users.
+|`org.keycloak.storage.user.UserBulkUpdateProvider`|Implement this interface if your provider supports bulk update of a set of users.
+|`org.keycloak.credential.CredentialInputValidator`|Implement this interface if your provider can validate one or more different credential types.  (i.e. can validate a password)
+|`org.keycloak.credential.CredentialInputUpdater`|Implement this interface if your provider supports updating one more different credential types.
+|===
+
