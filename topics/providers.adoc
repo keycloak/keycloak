@@ -175,11 +175,28 @@ public class MyEventListenerProviderFactory implements EventListenerProviderFact
 
 === Registering provider implementations
 
-Keycloak can load provider implementations from JBoss Modules or directly from the file-system.
+There are two ways to register provider implementations.  The easiest way is to just throw your provider jar within
+the Keycloak `deploy/` directory.  Keycloak supports hot deployment as well in this scenario.  This is also the best
+solution.
+
+The alternative is not really recommended, but exists for legacy purposes as the Keycloak deployer didn't exist in
+previous versions of the project.  Keycloak can load provider implementations from JBoss Modules or directly from the file-system.
 Using Modules is recommended as you can control exactly what classes are available to your provider.
-Any providers loaded from the file-system uses a classloader with the Keycloak classloader as its parent. 
+Any providers loaded from the file-system uses a classloader with the Keycloak classloader as its parent.
+
+==== Using the Keycloak Deployer
+
+If you throw your provider jar within the Keycloak `deploy/` directory, your provider will automatically be deployed.
+Hot deployment works too.  Additionally, your provider jar works similarly to other components deployed in a JBoss/Wildfly
+environment in that they can use facilities like the `jboss-deployment-structure.xml` file.  This file allows you to
+set up dependencies on other components and load third-party jars and modules.
+
+Provider jars can also be contained within other deployable units like EARs and WARs.  Deploying with a EAR actually makes
+it really easy to use third party jars as you can just put these libraries in the EAR's `lib/` directory.
 
 ==== Register a provider using Modules
+
+WARNING: We don't recommend this approach.
 
 To register a provider using Modules first create a module.
 To do this you can either use the jboss-cli script or manually create a folder inside `KEYCLOAK_HOME/modules` and add your jar and a `module.xml`.
@@ -275,7 +292,83 @@ For example to disable the Infinispan user cache provider add:
 <spi name="userCache">
     <provider name="infinispan" enabled="false"/>
 </spi>
-----            
+----
+
+=== Leveraging Java EE
+
+The can be packaged within any Java EE component so long as you set up the `META-INF/services`
+file correctly to point to your providers.  For example, if your provider needs to use third party libraries, you
+can package up your provider within an ear and store these third pary libraries in the ear's `lib/` directory.
+Also note that provider jars can make use of the `jboss-deployment-structure.xml` file that EJBs, WARS, and EARs
+can use in a JBoss/Wildfly environment.  See the JBoss/Wildfly documentation for more details on this file.  It
+allows you to pull in external dependencies among other fine grain actions.
+
+`ProviderFactory` implementations are required to be plain java objects.  But, we also currently support
+implementing provider classes as Stateful EJBs.  TThis is how you would do it:
+
+[source,java]
+----
+@Stateful
+@Local(EjbExampleUserStorageProvider.class)
+public class EjbExampleUserStorageProvider implements UserStorageProvider,
+        UserLookupProvider,
+        UserRegistrationProvider,
+        UserQueryProvider,
+        CredentialInputUpdater,
+        CredentialInputValidator,
+        OnUserCache
+{
+    @PersistenceContext
+    protected EntityManager em;
+
+    protected ComponentModel model;
+    protected KeycloakSession session;
+
+    public void setModel(ComponentModel model) {
+        this.model = model;
+    }
+
+    public void setSession(KeycloakSession session) {
+        this.session = session;
+    }
+
+
+    @Remove
+    @Override
+    public void close() {
+    }
+...
+}
+----
+
+You have to define the `@Local` annotation and specify your provider class there.  If you don't do this, EJB will
+not proxy the provider instance correctly and your provider won't work.
+
+You must put the `@Remove` annotation on the `close()` method of your provider.  If you don't, the stateful bean
+will never be cleaned up and you may eventually see error messages.
+
+Implementations of `ProviderFactory` are required to be plain java objects.  Your factory class would
+perform a JNDI lookup of the Stateful EJB in its create() method.
+
+[source,java]
+----
+public class EjbExampleUserStorageProviderFactory
+        implements UserStorageProviderFactory<EjbExampleUserStorageProvider> {
+
+    @Override
+    public EjbExampleUserStorageProvider create(KeycloakSession session, ComponentModel model) {
+        try {
+            InitialContext ctx = new InitialContext();
+            EjbExampleUserStorageProvider provider = (EjbExampleUserStorageProvider)ctx.lookup(
+                     "java:global/user-storage-jpa-example/" + EjbExampleUserStorageProvider.class.getSimpleName());
+            provider.setModel(model);
+            provider.setSession(session);
+            return provider;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+----
 
 === Available SPIs
 

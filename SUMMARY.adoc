@@ -21,4 +21,5 @@
  .. link:topics/user-storage/augmenting.adoc[Augmenting External Storage]
  .. link:topics/user-storage/import.adoc[Import Implementation Strategy]
  .. link:topics/user-storage/cache.adoc[User Caches]
- .. link:topics/user-storage/javaee.adoc[Leveraging Java EE ]
+ .. link:topics/user-storage/javaee.adoc[Leveraging Java EE]
+ .. link:topics/user-storage/rest.adoc[REST Management API]
