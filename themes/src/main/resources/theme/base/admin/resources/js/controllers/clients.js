@@ -867,6 +867,7 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, templates,
     $scope.samlForcePostBinding = false;
     $scope.samlForceNameIdFormat = false;
     $scope.disableAuthorizationTab = !client.authorizationServicesEnabled;
+    $scope.disableServiceAccountRolesTab = !client.serviceAccountsEnabled;
 
     function updateProperties() {
         if (!$scope.client.attributes) {
