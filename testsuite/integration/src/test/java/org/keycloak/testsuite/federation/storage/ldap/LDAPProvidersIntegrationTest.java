@@ -149,6 +149,27 @@ public class LDAPProvidersIntegrationTest {
 //
 //    }
 
+    /**
+     * KEYCLOAK-3986
+     *
+     */
+    @Test
+    public void testSyncRegistrationOff() {
+        KeycloakSession session = keycloakRule.startSession();
+        try {
+            RealmManager manager = new RealmManager(session);
+            RealmModel appRealm = manager.getRealm("test");
+            UserStorageProviderModel newModel = new UserStorageProviderModel(ldapModel);
+            newModel.getConfig().putSingle(LDAPConstants.SYNC_REGISTRATIONS, "false");
+            appRealm.updateComponent(newModel);
+            UserModel newUser1 = session.users().addUser(appRealm, "newUser1");
+            Assert.assertNull(newUser1.getFederationLink());
+        } finally {
+            keycloakRule.stopSession(session, false);
+        }
+
+
+    }
 
     @Test
     public void caseInSensitiveImport() {
