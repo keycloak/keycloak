@@ -242,7 +242,7 @@ public class LDAPOperationManager {
     public String getFilterById(String id) {
         String filter = null;
 
-        if (this.config.isActiveDirectory()) {
+        if (this.config.isObjectGUID()) {
             final String strObjectGUID = "<GUID=" + id + ">";
 
             try {
@@ -458,8 +458,7 @@ public class LDAPOperationManager {
 
     public String decodeEntryUUID(final Object entryUUID) {
         String id;
-
-        if (this.config.isActiveDirectory() && entryUUID instanceof byte[]) {
+        if (this.config.isObjectGUID() && entryUUID instanceof byte[]) {
             id = LDAPUtil.decodeObjectGUID((byte[]) entryUUID);
         } else {
             id = entryUUID.toString();
@@ -516,7 +515,7 @@ public class LDAPOperationManager {
             }
         }
 
-        if (config.isActiveDirectory()) {
+        if (this.config.isObjectGUID()) {
             env.put("java.naming.ldap.attributes.binary", LDAPConstants.OBJECT_GUID);
         }
 

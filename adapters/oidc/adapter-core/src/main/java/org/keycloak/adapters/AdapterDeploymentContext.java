@@ -343,6 +343,12 @@ public class AdapterDeploymentContext {
         }
 
         @Override
+        public void updateNotBefore(int notBefore) {
+            delegate.setNotBefore(notBefore);
+            getPublicKeyLocator().reset(this);
+        }
+
+        @Override
         public void setExposeToken(boolean exposeToken) {
             delegate.setExposeToken(exposeToken);
         }
@@ -445,6 +451,16 @@ public class AdapterDeploymentContext {
         @Override
         public int getMinTimeBetweenJwksRequests() {
             return delegate.getMinTimeBetweenJwksRequests();
+        }
+
+        @Override
+        public int getPublicKeyCacheTtl() {
+            return delegate.getPublicKeyCacheTtl();
+        }
+
+        @Override
+        public void setPublicKeyCacheTtl(int publicKeyCacheTtl) {
+            delegate.setPublicKeyCacheTtl(publicKeyCacheTtl);
         }
     }
 

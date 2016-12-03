@@ -81,6 +81,7 @@ public class KeycloakDeployment {
     protected volatile int notBefore;
     protected int tokenMinimumTimeToLive;
     protected int minTimeBetweenJwksRequests;
+    protected int publicKeyCacheTtl;
     private PolicyEnforcer policyEnforcer;
 
     public KeycloakDeployment() {
@@ -328,6 +329,11 @@ public class KeycloakDeployment {
         this.notBefore = notBefore;
     }
 
+    public void updateNotBefore(int notBefore) {
+        this.notBefore = notBefore;
+        getPublicKeyLocator().reset(this);
+    }
+
     public boolean isAlwaysRefreshToken() {
         return alwaysRefreshToken;
     }
@@ -382,6 +388,14 @@ public class KeycloakDeployment {
 
     public void setMinTimeBetweenJwksRequests(int minTimeBetweenJwksRequests) {
         this.minTimeBetweenJwksRequests = minTimeBetweenJwksRequests;
+    }
+
+    public int getPublicKeyCacheTtl() {
+        return publicKeyCacheTtl;
+    }
+
+    public void setPublicKeyCacheTtl(int publicKeyCacheTtl) {
+        this.publicKeyCacheTtl = publicKeyCacheTtl;
     }
 
     public void setPolicyEnforcer(PolicyEnforcer policyEnforcer) {

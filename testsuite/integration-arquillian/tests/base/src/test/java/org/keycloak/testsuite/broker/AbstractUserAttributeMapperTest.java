@@ -238,7 +238,6 @@ public abstract class AbstractUserAttributeMapperTest extends AbstractBaseBroker
     }
 
     @Test
-    @Ignore("Unignore to test KEYCLOAK-3648")
     public void testBasicMappingMultipleValues() {
         testValueMapping(ImmutableMap.<String, List<String>>builder()
           .put(ATTRIBUTE_TO_MAP_NAME, ImmutableList.<String>builder().add("value 1").add("value 2").build())

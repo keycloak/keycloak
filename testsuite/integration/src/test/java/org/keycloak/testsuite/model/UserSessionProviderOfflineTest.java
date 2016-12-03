@@ -107,7 +107,7 @@ public class UserSessionProviderOfflineTest {
 
         // Assert all previously saved offline sessions found
         for (Map.Entry<String, String> entry : offlineSessions.entrySet()) {
-            Assert.assertTrue(sessionManager.findOfflineClientSession(realm, entry.getKey(), entry.getValue()) != null);
+            Assert.assertTrue(sessionManager.findOfflineClientSession(realm, entry.getKey()) != null);
 
             UserSessionModel offlineSession = session.sessions().getUserSession(realm, entry.getValue());
             boolean found = false;
@@ -187,7 +187,7 @@ public class UserSessionProviderOfflineTest {
 
         resetSession();
 
-        ClientSessionModel offlineClientSession = sessionManager.findOfflineClientSession(fooRealm, clientSession.getId(), userSession.getId());
+        ClientSessionModel offlineClientSession = sessionManager.findOfflineClientSession(fooRealm, clientSession.getId());
         Assert.assertEquals("foo-app", offlineClientSession.getClient().getClientId());
         Assert.assertEquals("user3", offlineClientSession.getUserSession().getUser().getUsername());
         Assert.assertEquals(offlineClientSession.getId(), offlineClientSession.getUserSession().getClientSessions().get(0).getId());
@@ -206,7 +206,7 @@ public class UserSessionProviderOfflineTest {
 
         // Assert nothing loaded
         fooRealm = session.realms().getRealm("foo");
-        Assert.assertNull(sessionManager.findOfflineClientSession(fooRealm, clientSession.getId(), userSession.getId()));
+        Assert.assertNull(sessionManager.findOfflineClientSession(fooRealm, clientSession.getId()));
         Assert.assertEquals(0, session.sessions().getOfflineSessionsCount(fooRealm, fooRealm.getClientByClientId("foo-app")));
 
         // Cleanup
@@ -338,7 +338,7 @@ public class UserSessionProviderOfflineTest {
 
         // Assert all previously saved offline sessions found
         for (Map.Entry<String, String> entry : offlineSessions.entrySet()) {
-            Assert.assertTrue(sessionManager.findOfflineClientSession(realm, entry.getKey(), entry.getValue()) != null);
+            Assert.assertTrue(sessionManager.findOfflineClientSession(realm, entry.getKey()) != null);
         }
 
         UserSessionModel session0 = session.sessions().getOfflineUserSession(realm, origSessions[0].getId());
@@ -379,9 +379,9 @@ public class UserSessionProviderOfflineTest {
         for (Map.Entry<String, String> entry : offlineSessions.entrySet()) {
             String userSessionId = entry.getValue();
             if (userSessionId.equals(session1.getId())) {
-                Assert.assertFalse(sessionManager.findOfflineClientSession(realm, entry.getKey(), userSessionId) != null);
+                Assert.assertFalse(sessionManager.findOfflineClientSession(realm, entry.getKey()) != null);
             } else {
-                Assert.assertTrue(sessionManager.findOfflineClientSession(realm, entry.getKey(), userSessionId) != null);
+                Assert.assertTrue(sessionManager.findOfflineClientSession(realm, entry.getKey()) != null);
             }
         }
         Assert.assertEquals(1, persister.getUserSessionsCount(true));
@@ -394,7 +394,7 @@ public class UserSessionProviderOfflineTest {
             resetSession();
 
             for (Map.Entry<String, String> entry : offlineSessions.entrySet()) {
-                Assert.assertTrue(sessionManager.findOfflineClientSession(realm, entry.getKey(), entry.getValue()) == null);
+                Assert.assertTrue(sessionManager.findOfflineClientSession(realm, entry.getKey()) == null);
             }
             Assert.assertEquals(0, persister.getUserSessionsCount(true));
 

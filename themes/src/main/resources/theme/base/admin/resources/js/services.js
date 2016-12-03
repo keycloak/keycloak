@@ -197,6 +197,9 @@ module.factory('ComponentUtils', function() {
     var utils = {};
 
     utils.addLastEmptyValueToMultivaluedLists = function(properties, config) {
+        if (!properties) {
+            return;
+        }
 
         for (var i=0 ; i<properties.length ; i++) {
             var prop = properties[i];

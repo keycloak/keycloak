@@ -23,10 +23,21 @@
 
     <module-name>customer-db</module-name>
 
+
+    <filter>
+        <filter-name>AdapterActionsFilter</filter-name>
+        <filter-class>org.keycloak.testsuite.adapter.filter.AdapterActionsFilter</filter-class>
+    </filter>
+
     <servlet>
         <servlet-name>Servlet</servlet-name>
         <servlet-class>org.keycloak.testsuite.adapter.servlet.CustomerDatabaseServlet</servlet-class>
     </servlet>
+
+    <filter-mapping>
+        <filter-name>AdapterActionsFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
 
     <servlet-mapping>
         <servlet-name>Servlet</servlet-name>
@@ -41,6 +52,12 @@
         <auth-constraint>
             <role-name>user</role-name>
         </auth-constraint>
+    </security-constraint>
+    <security-constraint>
+        <web-resource-collection>
+            <web-resource-name>Unsecured</web-resource-name>
+            <url-pattern>/unsecured/*</url-pattern>
+        </web-resource-collection>
     </security-constraint>
 
     <login-config>

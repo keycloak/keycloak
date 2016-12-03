@@ -76,7 +76,7 @@ public abstract class AbstractClaimMapper extends AbstractIdentityProviderMapper
         {
             // Search the OIDC UserInfo claim set (if any)
             JsonNode profileJsonNode = (JsonNode) context.getContextData().get(OIDCIdentityProvider.USER_INFO);
-            String value = AbstractJsonUserAttributeMapper.getJsonValue(profileJsonNode, claim);
+            Object value = AbstractJsonUserAttributeMapper.getJsonValue(profileJsonNode, claim);
             if (value != null) return value;
         }
         return null;

@@ -55,12 +55,13 @@ public class InfinispanPublicKeyStorageProvider implements PublicKeyStorageProvi
 
     private Set<String> invalidations = new HashSet<>();
 
+    private boolean transactionEnlisted = false;
+
     public InfinispanPublicKeyStorageProvider(KeycloakSession session, Cache<String, PublicKeysEntry> keys, Map<String, FutureTask<PublicKeysEntry>> tasksInProgress, int minTimeBetweenRequests) {
         this.session = session;
         this.keys = keys;
         this.tasksInProgress = tasksInProgress;
         this.minTimeBetweenRequests = minTimeBetweenRequests;
-        session.getTransactionManager().enlistAfterCompletion(getAfterTransaction());
     }
 
 
@@ -73,6 +74,11 @@ public class InfinispanPublicKeyStorageProvider implements PublicKeyStorageProvi
 
 
     void addInvalidation(String cacheKey) {
+        if (!transactionEnlisted) {
+            session.getTransactionManager().enlistAfterCompletion(getAfterTransaction());
+            transactionEnlisted = true;
+        }
+
         this.invalidations.add(cacheKey);
     }
 

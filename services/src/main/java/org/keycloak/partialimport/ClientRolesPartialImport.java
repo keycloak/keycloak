@@ -103,6 +103,11 @@ public class ClientRolesPartialImport {
             return;
         }
         RoleModel role = client.getRole(getName(roleRep));
+        if (role == null) {
+            // role might not exist if client was just created as part of the
+            // partial import
+            return;
+        }
         client.removeRole(role);
     }
 

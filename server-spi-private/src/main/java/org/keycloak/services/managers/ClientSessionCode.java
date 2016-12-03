@@ -18,22 +18,16 @@
 package org.keycloak.services.managers;
 
 import org.jboss.logging.Logger;
-import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.Time;
-import org.keycloak.jose.jws.Algorithm;
-import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.ClientTemplateModel;
-import org.keycloak.models.KeyManager;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
-import java.security.PublicKey;
-import java.security.Signature;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -42,6 +36,8 @@ import java.util.Set;
  * @version $Revision: 1 $
  */
 public class ClientSessionCode {
+
+    private static final String ACTIVE_CODE = "active_code";
 
     private static final Logger logger = Logger.getLogger(ClientSessionCode.class);
 
@@ -99,7 +95,7 @@ public class ClientSessionCode {
                 return result;
             }
 
-            if (!verifyCode(code, session, realm, result.clientSession)) {
+            if (!verifyCode(code, result.clientSession)) {
                 result.illegalHash = true;
                 return result;
             }
@@ -119,7 +115,7 @@ public class ClientSessionCode {
                 return null;
             }
 
-            if (!verifyCode(code, session, realm, clientSession)) {
+            if (!verifyCode(code, clientSession)) {
                 return null;
             }
 
@@ -215,7 +211,7 @@ public class ClientSessionCode {
     public String getCode() {
         String nextCode = (String) session.getAttribute(NEXT_CODE + "." + clientSession.getId());
         if (nextCode == null) {
-            nextCode = generateCode(session, realm, clientSession);
+            nextCode = generateCode(clientSession);
             session.setAttribute(NEXT_CODE + "." + clientSession.getId(), nextCode);
         } else {
             logger.debug("Code already generated for session, using code from session attributes");
@@ -223,30 +219,18 @@ public class ClientSessionCode {
         return nextCode;
     }
 
-    private static String generateCode(KeycloakSession session, RealmModel realm, ClientSessionModel clientSession) {
+    private static String generateCode(ClientSessionModel clientSession) {
         try {
-            KeyManager.ActiveKey keys = session.keys().getActiveKey(realm);
-
-            String secret = KeycloakModelUtils.generateSecret();
+            String actionId = KeycloakModelUtils.generateSecret();
 
             StringBuilder sb = new StringBuilder();
-            sb.append(secret);
+            sb.append(actionId);
             sb.append('.');
             sb.append(clientSession.getId());
 
             String code = sb.toString();
 
-            Signature signature = RSAProvider.getSignature(Algorithm.RS256);
-            signature.initSign(keys.getPrivateKey());
-            signature.update(code.getBytes("utf-8"));
-
-            sb = new StringBuilder();
-
-            sb.append(Base64Url.encode(signature.sign()));
-            sb.append('.');
-            sb.append(keys.getKid());
-
-            clientSession.setNote(ClientSessionModel.ACTION_SIGNATURE, sb.toString());
+            clientSession.setNote(ACTIVE_CODE, code);
 
             return code;
         } catch (Exception e) {
@@ -254,24 +238,17 @@ public class ClientSessionCode {
         }
     }
 
-    private static boolean verifyCode(String code, KeycloakSession session, RealmModel realm, ClientSessionModel clientSession) {
+    private static boolean verifyCode(String code, ClientSessionModel clientSession) {
         try {
-            String note = clientSession.getNote(ClientSessionModel.ACTION_SIGNATURE);
-            if (note == null) {
-                logger.debug("Action signature not found in client session");
+            String activeCode = clientSession.getNote(ACTIVE_CODE);
+            if (activeCode == null) {
+                logger.debug("Active code not found in client session");
                 return false;
             }
 
-            clientSession.removeNote(ClientSessionModel.ACTION_SIGNATURE);
+            clientSession.removeNote(ACTIVE_CODE);
 
-            String[] signed = note.split("\\.");
-
-            PublicKey publicKey = session.keys().getPublicKey(realm, signed[1]);
-
-            Signature verifier = RSAProvider.getSignature(Algorithm.RS256);
-            verifier.initVerify(publicKey);
-            verifier.update(code.getBytes("utf-8"));
-            return verifier.verify(Base64Url.decode(signed[0]));
+            return code.equals(activeCode);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

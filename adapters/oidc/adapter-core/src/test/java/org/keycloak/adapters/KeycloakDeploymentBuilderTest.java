@@ -69,6 +69,7 @@ public class KeycloakDeploymentBuilderTest {
         assertEquals("email", deployment.getPrincipalAttribute());
         assertEquals(10, deployment.getTokenMinimumTimeToLive());
         assertEquals(20, deployment.getMinTimeBetweenJwksRequests());
+        assertEquals(120, deployment.getPublicKeyCacheTtl());
     }
 
     @Test
@@ -78,6 +79,7 @@ public class KeycloakDeploymentBuilderTest {
 
         assertTrue(deployment.getPublicKeyLocator() instanceof JWKPublicKeyLocator);
         assertEquals(10, deployment.getMinTimeBetweenJwksRequests());
+        assertEquals(86400, deployment.getPublicKeyCacheTtl());
     }
 
     @Test

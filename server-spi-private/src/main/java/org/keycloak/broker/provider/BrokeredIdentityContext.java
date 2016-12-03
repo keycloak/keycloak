@@ -161,6 +161,10 @@ public class BrokeredIdentityContext {
         getContextData().put(Constants.USER_ATTRIBUTES_PREFIX + attributeName, list);
     }
 
+    public void setUserAttribute(String attributeName, List<String> attributeValues) {
+        getContextData().put(Constants.USER_ATTRIBUTES_PREFIX + attributeName, attributeValues);
+    }
+
     public String getUserAttribute(String attributeName) {
         List<String> userAttribute = (List<String>) getContextData().get(Constants.USER_ATTRIBUTES_PREFIX + attributeName);
         if (userAttribute == null || userAttribute.isEmpty()) {
