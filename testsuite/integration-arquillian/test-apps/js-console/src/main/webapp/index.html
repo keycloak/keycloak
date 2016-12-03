@@ -48,6 +48,7 @@
     <button onclick="addToTimeSkew()">timeSkew offset</button>
     <button onclick="refreshTimeSkew()">refresh timeSkew</button>
     <button onclick="sendBearerToKeycloak()">Bearer to keycloak</button>
+    <button onclick="createUser()">Create user</button>
 
 
     <select id="flowSelect">
@@ -238,6 +239,35 @@ TimeSkew: <div id="timeSkew"></div>
             }
         };
         req.send();
+    }
+
+    function createUser() {
+        var user = JSON.parse('{"emailVerified" : false, "enabled" : true, "username": "mhajas", "firstName" :"First", "lastName":"Last","email":"email@redhat.com", "attributes": {}}');
+
+        var url = "http://localhost:8180/auth/admin/realms/example/users";
+        if (window.location.href.indexOf("8543") > -1) {
+            url = url.replace("8180","8543");
+            url = url.replace("http","https");
+        }
+
+        var req = new XMLHttpRequest();
+        req.open("POST", url, true);
+        req.setRequestHeader('Accept', 'application/json');
+        req.setRequestHeader('Authorization', 'Bearer ' + keycloak.token);
+        req.setRequestHeader('Content-Type', 'application/json; charset=UTF-8');
+        req.onreadystatechange = function () {
+            if (req.readyState == 4) {
+                if (req.status == 201) {
+                    output("Response headers: " + req.getAllResponseHeaders().toLowerCase());
+                } else if (req.status == 403) {
+                    output('Forbidden');
+                } else if (req.status == 401) {
+                    output('Unauthorized');
+                }
+            }
+        };
+
+        req.send(JSON.stringify(user));
     }
 
     var keycloak;
