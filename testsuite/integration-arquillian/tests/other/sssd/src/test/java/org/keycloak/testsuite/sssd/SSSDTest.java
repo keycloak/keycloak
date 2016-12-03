@@ -2,27 +2,24 @@ package org.keycloak.testsuite.sssd;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.representations.idm.UserFederationProviderFactoryRepresentation;
-import org.keycloak.representations.idm.UserFederationProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.AccountPasswordPage;
 import org.keycloak.testsuite.pages.AccountUpdateProfilePage;
 import org.keycloak.testsuite.pages.LoginPage;
 
-import java.util.HashMap;
+import javax.ws.rs.core.Response;
 import java.util.List;
-import java.util.Map;
 
 public class SSSDTest extends AbstractKeycloakTest {
 
@@ -52,6 +49,8 @@ public class SSSDTest extends AbstractKeycloakTest {
     @Rule
     public AssertEvents events = new AssertEvents(this);
 
+    private String SSSDFederationID;
+
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         RealmRepresentation realm = new RealmRepresentation();
@@ -74,7 +73,9 @@ public class SSSDTest extends AbstractKeycloakTest {
         userFederation.setProviderType(UserStorageProvider.class.getName());
         userFederation.setProviderId(PROVIDER_NAME);
 
-        adminClient.realm(REALM_NAME).components().add(userFederation);
+        Response response = adminClient.realm(REALM_NAME).components().add(userFederation);
+        SSSDFederationID = ApiUtil.getCreatedId(response);
+        response.close();
     }
 
     @Test
@@ -119,6 +120,21 @@ public class SSSDTest extends AbstractKeycloakTest {
         Assert.assertTrue(profilePage.isCurrent());
         testUserGroups();
     }
+
+    @Test
+    public void testDeleteSSSDFederationProvider() {
+        log.debug("Testing correct password");
+
+        driver.navigate().to(getAccountUrl());
+        Assert.assertEquals("Browser should be on login page now", "Log in to " + REALM_NAME, driver.getTitle());
+        accountLoginPage.login(USERNAME, PASSWORD);
+        Assert.assertTrue(profilePage.isCurrent());
+        testUserGroups();
+        int componentsListSize = adminClient.realm(REALM_NAME).components().query().size();
+        adminClient.realm(REALM_NAME).components().component(SSSDFederationID).remove();
+        Assert.assertEquals(componentsListSize - 1, adminClient.realm(REALM_NAME).components().query().size());
+    }
+
 
     @Test
     public void changeReadOnlyProfile() throws Exception {
