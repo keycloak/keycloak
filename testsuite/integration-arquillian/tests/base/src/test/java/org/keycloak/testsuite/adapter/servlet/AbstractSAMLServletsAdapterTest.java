@@ -24,6 +24,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ProtocolMappersResource;
+import org.keycloak.admin.client.resource.RoleScopeResource;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.keys.Attributes;
@@ -35,6 +36,7 @@ import org.keycloak.protocol.saml.mappers.RoleListMapper;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.saml.BaseSAML2BindingBuilder;
 import org.keycloak.saml.SAML2ErrorResponseBuilder;
@@ -68,6 +70,7 @@ import org.keycloak.testsuite.auth.page.login.Login;
 import org.keycloak.testsuite.auth.page.login.SAMLIDPInitiatedLogin;
 import org.keycloak.testsuite.page.AbstractPage;
 import org.keycloak.testsuite.util.IOUtil;
+import org.keycloak.testsuite.util.UserBuilder;
 import org.openqa.selenium.By;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
@@ -94,9 +97,13 @@ import java.security.PublicKey;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.hamcrest.Matchers.*;
+import static org.junit.Assert.*;
+import static org.keycloak.representations.idm.CredentialRepresentation.PASSWORD;
+import static org.keycloak.testsuite.AbstractAuthTest.createUserRepresentation;
+import static org.keycloak.testsuite.admin.ApiUtil.createUserAndResetPasswordWithAdminClient;
 import static org.keycloak.testsuite.auth.page.AuthRealm.SAMLSERVLETDEMO;
 import static org.keycloak.testsuite.util.IOUtil.loadRealm;
 import static org.keycloak.testsuite.util.IOUtil.loadXML;
@@ -564,6 +571,48 @@ public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAd
     @Test
     public void salesPostSigTest() {
         testSuccessfulAndUnauthorizedLogin(salesPostSigServletPage, testRealmSAMLPostLoginPage);
+    }
+
+    @Test
+    // https://issues.jboss.org/browse/KEYCLOAK-3971
+    public void salesPostSigTestUnicodeCharacters() {
+        final String username = "ěščřžýáíRoàåéèíñòøöùüßÅÄÖÜ";
+        UserRepresentation user = UserBuilder
+          .edit(createUserRepresentation(username, "xyz@redhat.com", "ěščřžýáí", "RoàåéèíñòøöùüßÅÄÖÜ", true))
+          .addPassword(PASSWORD)
+          .build();
+        String userId = createUserAndResetPasswordWithAdminClient(testRealmResource(), user, PASSWORD);
+        final RoleScopeResource realmRoleRes = testRealmResource().users().get(userId).roles().realmLevel();
+        List<RoleRepresentation> availableRoles = realmRoleRes.listAvailable();
+        realmRoleRes.add(availableRoles.stream().filter(r -> r.getName().equalsIgnoreCase("manager")).collect(Collectors.toList()));
+
+        UserRepresentation storedUser = testRealmResource().users().get(userId).toRepresentation();
+
+        assertThat(storedUser, notNullValue());
+        assertThat("Database seems to be unable to store Unicode for username. Refer to KEYCLOAK-3439 and related issues.", storedUser.getUsername(), equalToIgnoringCase(username));
+
+        assertSuccessfulLogin(salesPostSigServletPage, user, testRealmSAMLPostLoginPage, "principal=" + storedUser.getUsername());
+    }
+
+    @Test
+    // https://issues.jboss.org/browse/KEYCLOAK-3971
+    public void employeeSigTestUnicodeCharacters() {
+        final String username = "ěščřžýáíRoàåéèíñòøöùüßÅÄÖÜ";
+        UserRepresentation user = UserBuilder
+          .edit(createUserRepresentation(username, "xyz@redhat.com", "ěščřžýáí", "RoàåéèíñòøöùüßÅÄÖÜ", true))
+          .addPassword(PASSWORD)
+          .build();
+        String userId = createUserAndResetPasswordWithAdminClient(testRealmResource(), user, PASSWORD);
+        final RoleScopeResource realmRoleRes = testRealmResource().users().get(userId).roles().realmLevel();
+        List<RoleRepresentation> availableRoles = realmRoleRes.listAvailable();
+        realmRoleRes.add(availableRoles.stream().filter(r -> r.getName().equalsIgnoreCase("manager")).collect(Collectors.toList()));
+
+        UserRepresentation storedUser = testRealmResource().users().get(userId).toRepresentation();
+
+        assertThat(storedUser, notNullValue());
+        assertThat("Database seems to be unable to store Unicode for username. Refer to KEYCLOAK-3439 and related issues.", storedUser.getUsername(), equalToIgnoringCase(username));
+
+        assertSuccessfulLogin(employeeSigServletPage, user, testRealmSAMLRedirectLoginPage, "principal=" + storedUser.getUsername());
     }
 
     @Test
