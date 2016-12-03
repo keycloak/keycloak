@@ -21,7 +21,6 @@ import org.freedesktop.dbus.DBusConnection;
 import org.freedesktop.dbus.Variant;
 import org.freedesktop.dbus.exceptions.DBusException;
 import org.freedesktop.sssd.infopipe.InfoPipe;
-import org.freedesktop.sssd.infopipe.User;
 import org.jboss.logging.Logger;
 
 import java.nio.file.Files;
@@ -38,17 +37,10 @@ import java.util.Vector;
  */
 public class Sssd {
 
-    public static User user() {
-        return SingletonHolder.USER_OBJECT;
-    }
-
-    public static InfoPipe infopipe() {
-        return SingletonHolder.INFOPIPE_OBJECT;
-    }
-
+    private static DBusConnection dBusConnection;
 
     public static void disconnect() {
-        SingletonHolder.DBUS_CONNECTION.disconnect();
+        dBusConnection.disconnect();
     }
 
     private String username;
@@ -59,22 +51,12 @@ public class Sssd {
 
     public Sssd(String username) {
         this.username = username;
-    }
-
-    private static final class SingletonHolder {
-        private static InfoPipe INFOPIPE_OBJECT;
-        private static User USER_OBJECT;
-        private static DBusConnection DBUS_CONNECTION;
-
-        static {
-            try {
-                DBUS_CONNECTION = DBusConnection.getConnection(DBusConnection.SYSTEM);
-                INFOPIPE_OBJECT = DBUS_CONNECTION.getRemoteObject(InfoPipe.BUSNAME, InfoPipe.OBJECTPATH, InfoPipe.class);
-                USER_OBJECT = DBUS_CONNECTION.getRemoteObject(InfoPipe.BUSNAME, User.OBJECTPATH, User.class);
-            } catch (DBusException e) {
-                logger.error("Failed to obtain D-Bus connection", e);
-            }
+        try {
+            dBusConnection = DBusConnection.getConnection(DBusConnection.SYSTEM);
+        } catch (DBusException e) {
+            e.printStackTrace();
         }
+
     }
 
     public static String getRawAttribute(Variant variant) {
@@ -91,7 +73,7 @@ public class Sssd {
         String[] attr = {"mail", "givenname", "sn", "telephoneNumber"};
         Map<String, Variant> attributes = null;
         try {
-            InfoPipe infoPipe = infopipe();
+            InfoPipe infoPipe = dBusConnection.getRemoteObject(InfoPipe.BUSNAME, InfoPipe.OBJECTPATH, InfoPipe.class);
             attributes = infoPipe.getUserAttributes(username, Arrays.asList(attr));
         } catch (Exception e) {
             throw new SSSDException("Failed to retrieve user's attributes. Check if SSSD service is active.");
@@ -103,7 +85,7 @@ public class Sssd {
     public List<String> getUserGroups() {
         List<String> userGroups;
         try {
-            InfoPipe infoPipe = Sssd.infopipe();
+            InfoPipe infoPipe = dBusConnection.getRemoteObject(InfoPipe.BUSNAME, InfoPipe.OBJECTPATH, InfoPipe.class);
             userGroups = infoPipe.getUserGroups(username);
         } catch (Exception e) {
             throw new SSSDException("Failed to retrieve user's groups from SSSD. Check if SSSD service is active.");
@@ -125,4 +107,5 @@ public class Sssd {
         }
         return sssdAvailable;
     }
+
 }
