@@ -1810,7 +1810,7 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
         em.createNamedQuery("deleteComponentConfigByComponent").setParameter("component", c).executeUpdate();
         em.flush();
         setConfig(component, c);
-        ComponentUtil.notifyCreated(session, this, component);
+        ComponentUtil.notifyUpdated(session, this, component);
 
 
     }
