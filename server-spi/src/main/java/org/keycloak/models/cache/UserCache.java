@@ -22,6 +22,8 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
 
 /**
+ * All these methods effect an entire cluster of Keycloak instances.
+ *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
@@ -39,5 +41,10 @@ public interface UserCache extends UserProvider {
      * @param realm
      */
     void evict(RealmModel realm);
+
+    /**
+     * Clear cache entirely.
+     *
+     */
     void clear();
 }

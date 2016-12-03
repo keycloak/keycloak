@@ -1,2 +1,2 @@
-org.keycloak.examples.federation.properties.ClasspathPropertiesStorageFactory
-org.keycloak.examples.federation.properties.FilePropertiesStorageFactory
+org.keycloak.examples.userstorage.readonly.PropertyFileUserStorageProviderFactory
+org.keycloak.examples.userstorage.writeable.PropertyFileUserStorageProviderFactory

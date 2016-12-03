@@ -285,7 +285,9 @@ public class UserStorageManager implements UserProvider, OnUserCache {
     protected List<UserModel> importValidation(RealmModel realm, List<UserModel> users) {
         List<UserModel> tmp = new LinkedList<>();
         for (UserModel user : users) {
-            tmp.add(importValidation(realm, user));
+            UserModel model = importValidation(realm, user);
+            if (model == null) continue;
+            tmp.add(model);
         }
         return tmp;
     }

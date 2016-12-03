@@ -1706,6 +1706,7 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
             }
         }
         updateRealm();
+        ComponentUtil.notifyUpdated(session, this, model);
 
     }
 

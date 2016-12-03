@@ -40,7 +40,7 @@ import java.util.Set;
  * of "f:" + providerId + ":" + getUsername().  UserModel properties like enabled, firstName, lastName, email, etc. are all
  * stored as attributes in federated storage.
  *
- * isEnabled() defaults to true if the ENABLED_ATTRIBUTE isn't set in federated
+ * isEnabled() defaults to true if the ENABLED_ATTRIBUTE isn't set in federated storage
  *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
@@ -116,6 +116,14 @@ public abstract class AbstractUserAdapterFederatedStorage implements UserModel {
         return true;
     }
 
+    /**
+     * Gets groups from federated storage and automatically appends default groups of realm.
+     * Also calls getGroupsInternal() method
+     * to pull group membership from provider.  Implementors can override that method
+     *
+     *
+     * @return
+     */
     @Override
     public Set<GroupModel> getGroups() {
         Set<GroupModel> set = new HashSet<>();
@@ -143,6 +151,14 @@ public abstract class AbstractUserAdapterFederatedStorage implements UserModel {
         return RoleUtils.isMember(roles, group);
     }
 
+    /**
+     * Gets role mappings from federated storage and automatically appends default roles.
+     * Also calls getRoleMappingsInternal() method
+     * to pull role mappings from provider.  Implementors can override that method
+     *
+     *
+     * @return
+     */
     @Override
     public Set<RoleModel> getRealmRoleMappings() {
         Set<RoleModel> roleMappings = getRoleMappings();
@@ -157,6 +173,14 @@ public abstract class AbstractUserAdapterFederatedStorage implements UserModel {
         return realmRoles;
     }
 
+    /**
+     * Gets role mappings from federated storage and automatically appends default roles.
+     * Also calls getRoleMappingsInternal() method
+     * to pull role mappings from provider.  Implementors can override that method
+     *
+     *
+     * @return
+     */
     @Override
     public Set<RoleModel> getClientRoleMappings(ClientModel app) {
         Set<RoleModel> roleMappings = getRoleMappings();
@@ -202,6 +226,13 @@ public abstract class AbstractUserAdapterFederatedStorage implements UserModel {
         return Collections.EMPTY_SET;
     }
 
+    /**
+     * Gets role mappings from federated storage and automatically appends default roles.
+     * Also calls getRoleMappingsInternal() method
+     * to pull role mappings from provider.  Implementors can override that method
+     *
+     * @return
+     */
     @Override
     public Set<RoleModel> getRoleMappings() {
         Set<RoleModel> set = new HashSet<>();
@@ -343,6 +374,12 @@ public abstract class AbstractUserAdapterFederatedStorage implements UserModel {
         return getFirstAttribute(FIRST_NAME_ATTRIBUTE);
     }
 
+    /**
+     * Stores as attribute in federated storage.
+     * FIRST_NAME_ATTRIBUTE
+     *
+     * @param firstName
+     */
     @Override
     public void setFirstName(String firstName) {
         setSingleAttribute(FIRST_NAME_ATTRIBUTE, firstName);
@@ -354,6 +391,12 @@ public abstract class AbstractUserAdapterFederatedStorage implements UserModel {
         return getFirstAttribute(LAST_NAME_ATTRIBUTE);
     }
 
+    /**
+     * Stores as attribute in federated storage.
+     * LAST_NAME_ATTRIBUTE
+     *
+     * @param lastName
+     */
     @Override
     public void setLastName(String lastName) {
         setSingleAttribute(LAST_NAME_ATTRIBUTE, lastName);
@@ -365,6 +408,12 @@ public abstract class AbstractUserAdapterFederatedStorage implements UserModel {
         return getFirstAttribute(EMAIL_ATTRIBUTE);
     }
 
+    /**
+     * Stores as attribute in federated storage.
+     * EMAIL_ATTRIBUTE
+     *
+     * @param email
+     */
     @Override
     public void setEmail(String email) {
         setSingleAttribute(EMAIL_ATTRIBUTE, email);
@@ -378,6 +427,12 @@ public abstract class AbstractUserAdapterFederatedStorage implements UserModel {
         else return Boolean.valueOf(val);
     }
 
+    /**
+     * Stores as attribute in federated storage.
+     * EMAIL_VERIFIED_ATTRIBUTE
+     *
+     * @param verified
+     */
     @Override
     public void setEmailVerified(boolean verified) {
         setSingleAttribute(EMAIL_VERIFIED_ATTRIBUTE, Boolean.toString(verified));

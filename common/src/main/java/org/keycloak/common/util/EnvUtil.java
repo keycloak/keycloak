@@ -21,6 +21,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
+ * Replaces any ${} strings with their corresponding system property.
+ *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
@@ -32,7 +34,7 @@ public final class EnvUtil {
     }
 
     /**
-     * Replaces any ${} strings with their corresponding environent variable.
+     * Replaces any ${} strings with their corresponding system property.
      *
      * @param val
      * @return
