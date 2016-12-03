@@ -9,6 +9,5 @@
  . link:topics/extensions.adoc[Extending Server]
  . link:topics/auth-spi.adoc[Authentication SPI]
  . link:topics/events.adoc[Event Listener SPI]
- . link:topics/user-federation.adoc[User Federation SPI]
- . link:topics/user-federation-mapper.adoc[User Federation Mapper SPI]
 {% endif %}
+ . link:topics/user-storage.adoc[User Storage SPI]

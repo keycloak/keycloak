@@ -16,6 +16,7 @@
     },
     "community": false,
     "product": true,
+    "images": "rhsso-images",
     "adminguide": {
       "name": "Server Administration Guide",
       "link": "https://access.redhat.com/documentation/en/red-hat-single-sign-on/7.1-Beta/server-administration-guide/"
