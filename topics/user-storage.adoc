@@ -154,7 +154,7 @@ _capability_ _interfaces_ for the features you are able to.  Here's a list of in
 |`org.keycloak.storage.user.UserLookupProvider`|This interface is required if you want to be able to login with users from this external store.  Most (all?) providers implement this interface.
 |`org.keycloak.storage.user.UserQueryProvider`|Defines complex queries that are used to locate one or more users.  You must implement this interface if you want to view and manager users from the administration console.
 |`org.keycloak.storage.user.UserRegistrationProvider`|Implement this interface if your provider supports adding and removing users.
-|`org.keycloak.storage.user.UserBulkUupdateProvider`|Implement this interface if your provider supports bulk update of a set of users.
+|`org.keycloak.storage.user.UserBulkUpdateProvider`|Implement this interface if your provider supports bulk update of a set of users.
 |`org.keycloak.credential.CredentialInputValidator`|Implement this interface if your provider can validate one or more different credential types.  (i.e. can validate a password)
 |`org.keycloak.credential.CredentialInputUpdater`|Implement this interface if your provider supports updating one more different credential types.
 |===
@@ -327,7 +327,7 @@ instances are created once per transaction and are closed after the transaction 
 
 ----
 
-The `getUserByUsername()`method is invoked by the {{book.project.name}} login page when a user logs in.  In our
+The `getUserByUsername()` method is invoked by the {{book.project.name}} login page when a user logs in.  In our
 implementation we first check the `loadedUsers` map to see if the user has already been loaded within this transaction.
 If it hasn't been loaded we look in the property file for the username.   If it exists we create an implementation
 of `UserModel`, store it in `loadedUsers` for future reference and return this instance.
@@ -426,7 +426,8 @@ Now that the provider class is complete, we now turn our attention to the provid
 
 [source,java]
 ----
-public class PropertyFileUserStorageProviderFactory implements UserStorageProviderFactory<PropertyFileUserStorageProvider> {
+public class PropertyFileUserStorageProviderFactory
+                 implements UserStorageProviderFactory<PropertyFileUserStorageProvider> {
 
     public static final String PROVIDER_NAME = "readonly-property-file";
 
@@ -579,7 +580,8 @@ inherits these methods from the `org.keycloak.component.ComponentFactory` interf
     List<ProviderConfigProperty> getConfigProperties();
 
     default
-    void validateConfiguration(KeycloakSession session, RealmModel realm, ComponentModel model) throws ComponentValidationException
+    void validateConfiguration(KeycloakSession session, RealmModel realm, ComponentModel model)
+            throws ComponentValidationException
     {
 
     }
@@ -607,7 +609,9 @@ file on disk.
 .PropertyFileUserStorageProviderFactory
 [source,java]
 ----
-public class PropertyFileUserStorageProviderFactory implements UserStorageProviderFactory<PropertyFileUserStorageProvider> {
+public class PropertyFileUserStorageProviderFactory
+                  implements UserStorageProviderFactory<PropertyFileUserStorageProvider> {
+
     protected static final List<ProviderConfigProperty> configMetadata;
 
     static {
@@ -687,6 +691,605 @@ Now that the configuration is enabled, you can set the `path` variable when you 
 
 .Configured Provider
 image:../{{book.images}}/storage-provider-with-config.png[]
+
+=== Registration and Query Capability interfaces
+
+One thing we have not done with our example is allow it to add and remove users or change passwords.  Users defined in our example are
+also not queryable or viewable in the admin console.  To add these enhancements, our example provider must implement
+the `UserQueryProvider` and `UserRegistrationProvider` interfaces.
+
+==== Implementing UserRegistrationProvider
+
+To implement adding and removing users from this particular store, we first have to be able to save our properties
+file to disk.
+
+.PropertyFileUserStorageProvider
+[source,java]
+----
+    public void save() {
+        String path = model.getConfig().getFirst("path");
+        path = EnvUtil.replace(path);
+        try {
+            FileOutputStream fos = new FileOutputStream(path);
+            properties.store(fos, "");
+            fos.close();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+----
+
+Then, the implementation of the `addUser()` and `removeUser()` methods becomes pretty simple.
+
+.PropertyFileUserStorageProvider
+[source,java]
+----
+    public static final String UNSET_PASSWORD="#$!-UNSET-PASSWORD";
+
+    @Override
+    public UserModel addUser(RealmModel realm, String username) {
+        synchronized (properties) {
+            properties.setProperty(username, UNSET_PASSWORD);
+            save();
+        }
+        return createAdapter(realm, username);
+    }
+
+    @Override
+    public boolean removeUser(RealmModel realm, UserModel user) {
+        synchronized (properties) {
+            if (properties.remove(user.getUsername()) == null) return false;
+            save();
+            return true;
+        }
+    }
+----
+
+Notice that when adding a user we set the password value of the property map to be `UNSET_PASSWORD`.  We do this as
+we can't have null values for a property in the property value.  We also have to modify the `CredentialInputValidator`
+methods to reflect this.
+
+.PropertyFileUserStorageProvider
+[source,java]
+----
+    @Override
+    public boolean isValid(RealmModel realm, UserModel user, CredentialInput input) {
+        if (!supportsCredentialType(input.getType()) || !(input instanceof UserCredentialModel)) return false;
+
+        UserCredentialModel cred = (UserCredentialModel)input;
+        String password = properties.getProperty(user.getUsername());
+        if (password == null || UNSET_PASSWORD.equals(password)) return false;
+        return password.equals(cred.getValue());
+    }
+----
+
+Since we can now save our property file, probably also makes sense to allow password updates.
+
+.PropertyFileUserStorageProvider
+[source,java]
+----
+    @Override
+    public boolean updateCredential(RealmModel realm, UserModel user, CredentialInput input) {
+        if (!(input instanceof UserCredentialModel)) return false;
+        if (!input.getType().equals(CredentialModel.PASSWORD)) return false;
+        UserCredentialModel cred = (UserCredentialModel)input;
+        synchronized (properties) {
+            properties.setProperty(user.getUsername(), cred.getValue());
+            save();
+        }
+        return true;
+    }
+----
+
+We can now also implement disabling a password too.
+
+.PropertyFileUserStorageProvider
+[source,java]
+----
+    @Override
+    public void disableCredentialType(RealmModel realm, UserModel user, String credentialType) {
+        if (!credentialType.equals(CredentialModel.PASSWORD)) return;
+        synchronized (properties) {
+            properties.setProperty(user.getUsername(), UNSET_PASSWORD);
+            save();
+        }
+
+    }
+
+    private static final Set<String> disableableTypes = new HashSet<>();
+
+    static {
+        disableableTypes.add(CredentialModel.PASSWORD);
+    }
+
+    @Override
+    public Set<String> getDisableableCredentialTypes(RealmModel realm, UserModel user) {
+
+        return disableableTypes;
+    }
+----
+
+With these methods implemented, you'll now be able to change and disable the password for the user in the admin console.
+
+==== Implementing UserQueryProvider
+
+Without implementing `UserQueryProvider` the admin console would not be able to view and manage users that were loaded
+by our example provider.  Let's look at implementing this interface.
+
+.PropertyFileUserStorageProvider
+[source,java]
+----
+    @Override
+    public int getUsersCount(RealmModel realm) {
+        return properties.size();
+    }
+
+    @Override
+    public List<UserModel> getUsers(RealmModel realm) {
+        return getUsers(realm, 0, Integer.MAX_VALUE);
+    }
+
+    @Override
+    public List<UserModel> getUsers(RealmModel realm, int firstResult, int maxResults) {
+        List<UserModel> users = new LinkedList<>();
+        int i = 0;
+        for (Object obj : properties.keySet()) {
+            if (i++ < firstResult) continue;
+            String username = (String)obj;
+            UserModel user = getUserByUsername(username, realm);
+            users.add(user);
+            if (users.size() >= maxResults) break;
+        }
+        return users;
+    }
+----
+
+The `getUser()` method simple iterates the key set of the property file delegating to `getuserByUsername` to load a user.
+Notice that we are indexing this call based on the `firstResult` and `maxResults` parameter.  If your external store
+doesn't support pagination, you'll have to do similar logic.
+
+.PropertyFileUserStorageProvider
+[source,java]
+----
+    @Override
+    public List<UserModel> searchForUser(String search, RealmModel realm) {
+        return searchForUser(search, realm, 0, Integer.MAX_VALUE);
+    }
+
+    @Override
+    public List<UserModel> searchForUser(String search, RealmModel realm, int firstResult, int maxResults) {
+        List<UserModel> users = new LinkedList<>();
+        int i = 0;
+        for (Object obj : properties.keySet()) {
+            String username = (String)obj;
+            if (!username.contains(search)) continue;
+            if (i++ < firstResult) continue;
+            UserModel user = getUserByUsername(username, realm);
+            users.add(user);
+            if (users.size() >= maxResults) break;
+        }
+        return users;
+    }
+----
+
+The first declaration of `searchForUser()` takes a string paraeter.  This is supposed to be a string that you use to
+search username and email attributes to find the user.  This string can be a substring which is why we use the `String.contains()`
+method when doing our search.
+
+.PropertyFileUserStorageProvider
+[source,java]
+----
+    @Override
+    public List<UserModel> searchForUser(Map<String, String> params, RealmModel realm) {
+        return searchForUser(params, realm, 0, Integer.MAX_VALUE);
+    }
+
+    @Override
+    public List<UserModel> searchForUser(Map<String, String> params, RealmModel realm, int firstResult, int maxResults) {
+        // only support searching by username
+        String usernameSearchString = params.get("username");
+        if (usernameSearchString == null) return Collections.EMPTY_LIST;
+        return searchForUser(usernameSearchString, realm, firstResult, maxResults);
+    }
+----
+
+The `searchForUser()` method that takes a `Map` parameter can search for a user based on first, last name, username, and email.
+We only store usernames, so we only search based on usernames.  We delegate to `searchForUser()` for this.
+
+
+.PropertyFileUserStorageProvider
+[source,java]
+----
+    @Override
+    public List<UserModel> getGroupMembers(RealmModel realm, GroupModel group, int firstResult, int maxResults) {
+        return Collections.EMPTY_LIST;
+    }
+
+    @Override
+    public List<UserModel> getGroupMembers(RealmModel realm, GroupModel group) {
+        return Collections.EMPTY_LIST;
+    }
+
+    @Override
+    public List<UserModel> searchForUserByUserAttribute(String attrName, String attrValue, RealmModel realm) {
+        return Collections.EMPTY_LIST;
+    }
+----
+
+We don't store and groups or attributes, so the other methods just return an empty list.
+
+=== Augmenting External Storage
+
+The `PropertyProfileUserStorageProvider` example is really limited.  While we will be able to login with users stored
+in a property file, we won't be able to do much else.  If users loaded by this provider need special role or group
+mappings to fully access particular applications there is no way for us to add additional role mappings to these users.
+You also can't modify or add additional important attributes like email, first and last name.
+
+For these types of situations, {{book.project.name}} allows you to augment your external store by storing extra information
+in {{book.project.name}}'s database.  This is called federated user storage and is encapsulated within the
+`org.keycloak.storage.federated.UserFederatedStorageProvider` class.
+
+.UserFederatedStorageProvider
+[source,java]
+----
+package org.keycloak.storage.federated;
+
+public interface UserFederatedStorageProvider extends Provider {
+
+    Set<GroupModel> getGroups(RealmModel realm, String userId);
+    void joinGroup(RealmModel realm, String userId, GroupModel group);
+    void leaveGroup(RealmModel realm, String userId, GroupModel group);
+    List<String> getMembership(RealmModel realm, GroupModel group, int firstResult, int max);
+
+...
+
+----
+
+The `UserFederatedStorageProvider` instance is available on the `KeycloakSession.userFederatedStorage()` method.
+It has all different kinds of methods for storing attributes, group and role mappings, different credential types,
+and required actions.  If your external store's datamodel  cannot support the full {{book.project.name}} feature
+set, then this service can fill in the gaps.
+
+{{book.project.name}} comes with a helper class `org.keycloak.storage.adapter.AbstractUserAdapterFederatedStorage`
+that will delegate every single `UserModel` method except get/set of username to user federated storage.  Override
+the methods you need to override to delegate to your external storage representations.  It is strongly
+suggested you read the javadoc of this class as it has smaller protected methods you may want to override.  Specifically
+surrounding group membership and role mappings.
+
+==== Augmentation Example
+
+In our `PropertyFileUserStorageProvider` example, we just need a simple change to our provider to use the
+`AbstractUserAdapterFederatedStorage`.
+
+.PropertyFileUserStorageProvider
+[source,java]
+----
+    protected UserModel createAdapter(RealmModel realm, String username) {
+        return new AbstractUserAdapterFederatedStorage(session, realm, model) {
+            @Override
+            public String getUsername() {
+                return username;
+            }
+
+            @Override
+            public void setUsername(String username) {
+                String pw = (String)properties.remove(username);
+                if (pw != null) {
+                    properties.put(username, pw);
+                    save();
+                }
+            }
+        };
+    }
+----
+
+We instead define an anonymous class implementation of  `AbstractUserAdapterFederatedStorage`.  The `setUsername()`
+method makes changes to the properties file and saves it.
+
+=== Import Implementation Strategy
+
+When implementing a user storage provider, there's another strategy you can take.  Instead of using user federated storage,
+you can create a user locally in the {{book.project.name}} built in user database and copy attributes from your external
+store into this local copy.  There are a bunch of advantages to this approach.
+
+* {{book.project.name}} basically becomes a persistence user cache for your external store.  Once the user is imported
+you'll no longer hit the external store thus taking load off of it.
+* If you are moving to {{book.project.name}} as your official user store and deprecating the old external store, you
+can slowly migrate applications to use {{book.project.name}}.  When all applications have been migrated, unlink the
+imported user, and retire the old legacy external store.
+
+There are some obvious disadvantages though to using an import strategy:
+
+* Looking up a user for the first time will require multiple updates to {{book.project.name}} database.  This can
+be a big performance loss under load and put a lot of strain on the {{book.project.name}} database.  The user federated
+storage approach will only store extra data as needed and may never be used depending on the capabilities of your external store.
+* With the import approach, you have to keep local keycloak storage and external storage in sync.  The User Storage SPI
+has capability interfaces that you can implement to support synchronization, but this can quickly become painful and messy.
+
+To implement the import strategy you simply check to see first if the user has been imported locally.  If so return the
+local user, if not create the user locally and import data from the external store.  You can also proxy the local user
+so that most changes are automatically synchronized.
+
+This will be a bit contrived, but we can extend our `PropertyFileUserStorageProvider` to take this approach.  We
+begin first by modifying the `createAdapter()` method.
+
+.PropertyFileUserStorageProvider
+[source.java]
+----
+    protected UserModel createAdapter(RealmModel realm, String username) {
+        UserModel local = session.userLocalStorage().getUserByUsername(username, realm);
+        if (local == null) {
+            local = session.userLocalStorage().addUser(realm, username);
+            local.setFederationLink(model.getId());
+        }
+        return new UserModelDelegate(local) {
+            @Override
+            public void setUsername(String username) {
+                String pw = (String)properties.remove(username);
+                if (pw != null) {
+                    properties.put(username, pw);
+                    save();
+                }
+                super.setUsername(username);
+            }
+        };
+    }
+----
+
+In this method we call the `KeycloakSession.userLocalStorage()` method to obtain a reference to local {{book.project.name}}
+user storage.  We see if the user is stored locally, if not, we add it locally.  Also note that we call
+`UserModel.setFederationLink()` and pass in the id of the `ComponentModel` of our provider.  This sets a link between
+the provider and the imported user.
+
+NOTE: When a user storage provider is removed, any user imported by it will also be removed.  This is one of the
+      purposes of calling `UserModel.setFederationLink()`.
+
+Another thing to note is that if a local user is linked, your storage provider will still be delegated to for methods
+that it implements from the `CredentialInputValidator` and `CredentialInputUpdater` interfaces.  Returning `false`
+from a validation or update will just result in {{book.project.name}} seeing if it can validate or update using
+local storage.
+
+Also notice that we are proxying the local user using the `org.keycloak.models.utils.UserModelDelegate' class.
+This class is an implementation of `UserModel`.  Every method just delegates to the `UserModel` it was instantiated with.
+We override the `setUsername()` method of this delegate class to synchronize automatically with the property file.
+For your providers, you can use this to _intercept_ other methods on the local `UserModel` to perform synchronization
+with your extern store.  For example, get methods could make sure that the local store is in sync.   Set methods
+keep external store in sync with local one.
+
+==== ImportedUserValidation Interface
+
+If you remember earlier in this chapter, we discussed how querying for a user worked.  Local storage is queried first,
+if the user is found there, then the query ends.  This is a problem for our above implementation as we want
+to proxy the local `UserModel` so that we can keep usernames in sync.  The User Storage SPI has a callback for whenever
+a linked local user is loaded from the local database.
+
+[source,java]
+----
+package org.keycloak.storage.user;
+public interface ImportedUserValidation {
+    /**
+     * If this method returns null, then the user in local storage will be removed
+     *
+     * @param realm
+     * @param user
+     * @return null if user no longer valid
+     */
+    UserModel validate(RealmModel realm, UserModel user);
+}
+----
+
+Whenever a linked local user is loaded, if the user storage provider class implements this interface, then the
+`validate()` method is called.  Here you can proxy the local user passed in as a parameter and return it.  That
+new `UserModel` will be used.  You can also optionally do a check to see if the user exists still in the external store.
+if `validate()` returns `null`, then the local user will be removed from the database.
+
+==== ImportSynchronization Interface
+
+With the import strategy you can see that it would be possible for the local user copy could get out of sync with
+external storage.  For example, maybe a user has been removed from the external store.  The User Storage SPI has
+an additional interface you can implement to deal with this.  `org.keycloak.storage.user.ImportSynchronization`.
+
+[source,java]
+----
+package org.keycloak.storage.user;
+
+public interface ImportSynchronization {
+    SynchronizationResult sync(KeycloakSessionFactory sessionFactory, String realmId, UserStorageProviderModel model);
+    SynchronizationResult syncSince(Date lastSync, KeycloakSessionFactory sessionFactory, String realmId, UserStorageProviderModel model);
+}
+----
+
+This interface is implemented by the provider factory.  Once this interface is implemented by the provider factory,
+the admin console management page for the provider will show additional options.  There is a button that will allow
+you to manually force a synchronization.  This invokes the `ImportSynchronization.sync()` method.  Also, some additional
+configuration options will show up that allow you to automatically schedule a synchronization.  Automatic syncs invoke
+the `syncSince()` method.
+
+=== User Caches
+
+When a user is loaded by id, username, or email queries it will be cached.  When a user is cached, it iterates through
+the entire `UserModel` interface and pulls this information to a local in-memory only cache.  In a cluster, this cache
+is still local, but it becomes an invalidation cache.  When a user is modified, it is evicted.  This eviction event
+is propagated to the entire cluster so that other nodes' user cache is also invalidated.
+
+==== Managing the user cache
+
+You can get access to the user cache by calling `KeycloakSession.userCache()`.
+
+[source,java]
+----
+/**
+ * All these methods effect an entire cluster of Keycloak instances.
+ *
+ * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
+ * @version $Revision: 1 $
+ */
+public interface UserCache extends UserProvider {
+    /**
+     * Evict user from cache.
+     *
+     * @param user
+     */
+    void evict(RealmModel realm, UserModel user);
+
+    /**
+     * Evict users of a specific realm
+     *
+     * @param realm
+     */
+    void evict(RealmModel realm);
+
+    /**
+     * Clear cache entirely.
+     *
+     */
+    void clear();
+}
+----
+
+There are methods for evicting a specific users, users contained in a specific realm, or the entire cache.
+
+==== OnUserCache Callback Interface
+
+You may want to cache additional information that is specific to your provider implementation.  The User Storage SPI
+has a callback whenever a user is cached: `org.keycloak.models.cache.OnUserCache`.
+
+[source,java]
+----
+public interface OnUserCache {
+    void onCache(RealmModel realm, CachedUserModel user, UserModel delegate);
+}
+----
+
+Your provider class should implement this interface if it wants this callback.  The `UserModel` delegate parameter
+is the `UserModel` instance returned by your provider.  The `CachedUserModel` is an expanded `UserModel` interface.
+This is the instance that is cached locally in local storage.
+
+[source,java]
+----
+public interface CachedUserModel extends UserModel {
+
+    /**
+     * Invalidates the cache for this user and returns a delegate that represents the actual data provider
+     *
+     * @return
+     */
+    UserModel getDelegateForUpdate();
+
+    boolean isMarkedForEviction();
+
+    /**
+     * Invalidate the cache for this model
+     *
+     */
+    void invalidate();
+
+    /**
+     * When was the model was loaded from database.
+     *
+     * @return
+     */
+    long getCacheTimestamp();
+
+    /**
+     * Returns a map that contains custom things that are cached along with this model.  You can write to this map.
+     *
+     * @return
+     */
+    ConcurrentHashMap getCachedWith();
+}
+----
+
+This `CachedUserModel` interface allows you to evict the user from cache and get the provider `UserModel` instance.
+The most interesting method is `getCachedWith()`.  This returns a map that allows you to cache additional information
+pertaining to the user.  For example, credentials are not part of the `UserModel` interface.  If you wanted to cache
+credentials in memory, you would implement `OnUserCache` and cache your user's credentials using the `getCachedWith()`
+method.
+
+==== Cache Policies
+
+Each configured user storage provider can specify unique cache policies.  Go to the admin console management page
+for your provider to see how to do this.
+
+=== Leveraging Java EE to Build User Storage Providers
+
+The user storage providers can be packaged within any Java EE component so long as you set up the `META-INF/services`
+file correctly to point to your providers.  For example, if your provider needs to use third party libraries, you
+can package up your provider within an ear and store these third pary libraries in the ear's `lib/` directory.
+Also note that provider jars can make use of the `jboss-deployment-structure.xml` file that EJBs, WARS, and EARs
+can use in a JBoss/Wildfly environment.  See the JBoss/Wildfly documentation for more details on this file.  It
+allows you to pull in external dependencies among other fine grain actions.
+
+Implementations of `UserStorageProviderFactory` are required to be plain java objects.  But, we also currently support
+implementing `UserStorageProvider` classes as Stateful EJBs.  This is especially useful if you want to use JPA
+to connect to a relational store.  This is how you would do it:
+
+[source,java]
+----
+@Stateful
+@Local(EjbExampleUserStorageProvider.class)
+public class EjbExampleUserStorageProvider implements UserStorageProvider,
+        UserLookupProvider,
+        UserRegistrationProvider,
+        UserQueryProvider,
+        CredentialInputUpdater,
+        CredentialInputValidator,
+        OnUserCache
+{
+    @PersistenceContext
+    protected EntityManager em;
+
+    protected ComponentModel model;
+    protected KeycloakSession session;
+
+    public void setModel(ComponentModel model) {
+        this.model = model;
+    }
+
+    public void setSession(KeycloakSession session) {
+        this.session = session;
+    }
+
+
+    @Remove
+    @Override
+    public void close() {
+    }
+...
+}
+----
+
+You have to define the `@Local` annotation and specify your provider class there.  If you don't do this, EJB will
+not proxy the user correctly and your provider won't work.
+
+You must put the `@Remove` annotation on the `close()` method of your provider.  If you don't, the stateful bean
+will never be cleaned up and you may eventually see error messages.
+
+Implementations of `UserStorageProviderFactory` are required to be plain java objects.  Your factory class would
+perform a JNDI lookup of the Stateful EJB in its create() method.
+
+[source,java]
+----
+public class EjbExampleUserStorageProviderFactory
+        implements UserStorageProviderFactory<EjbExampleUserStorageProvider> {
+
+    @Override
+    public EjbExampleUserStorageProvider create(KeycloakSession session, ComponentModel model) {
+        try {
+            InitialContext ctx = new InitialContext();
+            EjbExampleUserStorageProvider provider = (EjbExampleUserStorageProvider)ctx.lookup(
+                     "java:global/user-storage-jpa-example/" + EjbExampleUserStorageProvider.class.getSimpleName());
+            provider.setModel(model);
+            provider.setSession(session);
+            return provider;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+----
+
+
+
 
 
 
