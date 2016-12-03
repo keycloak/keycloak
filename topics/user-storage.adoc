@@ -1,4 +1,4 @@
-[[_user-storage]]
+[[_user-storage-spi]]
 == User Storage SPI
 
 The User Storage SPI allows you to write extensions to {{book.project.name}} to connect to external user databases and credential
