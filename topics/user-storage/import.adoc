@@ -69,6 +69,11 @@ For your providers, you can use this to _intercept_ other methods on the local `
 with your extern store.  For example, get methods could make sure that the local store is in sync.   Set methods
 keep external store in sync with local one.
 
+NOTE: If your provider is implementing the `UserRegistrationProvider` interface, your `removeUser()` method does not
+      need to remove the user from local storage.  The runtime will automatically perform this operation.  Also
+      note that `removeUser()` will be invoked before it is removed from local storage.
+
+
 ==== ImportedUserValidation Interface
 
 If you remember earlier in this chapter, we discussed how querying for a user worked.  Local storage is queried first,
