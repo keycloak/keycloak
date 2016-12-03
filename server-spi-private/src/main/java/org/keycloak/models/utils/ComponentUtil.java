@@ -89,5 +89,9 @@ public class ComponentUtil {
         ComponentFactory factory = getComponentFactory(session, model);
         factory.onCreate(session, realm, model);
     }
+    public static void notifyUpdated(KeycloakSession session, RealmModel realm, ComponentModel model) {
+        ComponentFactory factory = getComponentFactory(session, model);
+        factory.onUpdate(session, realm, model);
+    }
 
 }

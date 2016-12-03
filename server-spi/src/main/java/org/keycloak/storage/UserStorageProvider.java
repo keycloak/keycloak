@@ -28,9 +28,40 @@ import org.keycloak.provider.Provider;
 public interface UserStorageProvider extends Provider {
 
 
-    void preRemove(RealmModel realm);
-    void preRemove(RealmModel realm, GroupModel group);
-    void preRemove(RealmModel realm, RoleModel role);
+    /**
+     * Callback when a realm is removed.  Implement this if, for example, you want to do some
+     * cleanup in your user storage when a realm is removed
+     *
+     * @param realm
+     */
+    default
+    void preRemove(RealmModel realm) {
+
+    }
+
+    /**
+     * Callback when a group is removed.  Allows you to do things like remove a user
+     * group mapping in your external store if appropriate
+     *
+     * @param realm
+     * @param group
+     */
+    default
+    void preRemove(RealmModel realm, GroupModel group) {
+
+    }
+
+    /**
+     * Callback when a role is removed.  Allows you to do things like remove a user
+     * role mapping in your external store if appropriate
+
+     * @param realm
+     * @param role
+     */
+    default
+    void preRemove(RealmModel realm, RoleModel role) {
+
+    }
 
     /**
      * Optional type that can be used by implementations to

@@ -27,6 +27,8 @@ import java.util.Map;
 import java.util.Set;
 
 /**
+ * Delegation pattern.  Used to proxy UserModel implementations.
+ *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */

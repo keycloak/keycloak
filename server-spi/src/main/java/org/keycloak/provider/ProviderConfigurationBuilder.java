@@ -22,6 +22,9 @@ import java.util.LinkedList;
 import java.util.List;
 
 /**
+ * Builds a list of ProviderConfigProperty instances.
+ *
+ *
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class ProviderConfigurationBuilder {
@@ -58,6 +61,11 @@ public class ProviderConfigurationBuilder {
         return this;
     }
 
+    /**
+     * Create the list.
+     *
+     * @return
+     */
     public List<ProviderConfigProperty> build() {
         return properties;
     }
@@ -77,42 +85,94 @@ public class ProviderConfigurationBuilder {
             return this;
         }
 
+        /**
+         * Label that will be shown for this configuration property in the admin console
+         *
+         * @param label
+         * @return
+         */
         public ProviderConfigPropertyBuilder label(String label) {
             this.label = label;
             return this;
         }
 
+        /**
+         * Help text that will be shown for this configuration property in the admin console
+         * when you hover over the tooltip
+         *
+         * @param helpText
+         * @return
+         */
         public ProviderConfigPropertyBuilder helpText(String helpText) {
             this.helpText = helpText;
             return this;
         }
 
+        /**
+         * Property type.  i.e. boolean, string.
+         * @see ProviderConfigProperty
+         *
+         *
+         * @param type
+         * @return
+         */
         public ProviderConfigPropertyBuilder type(String type) {
             this.type = type;
             return this;
         }
 
+        /**
+         * Default value that will be shown when configuring this property for the first time
+         *
+         * @param defaultValue
+         * @return
+         */
         public ProviderConfigPropertyBuilder defaultValue(Object defaultValue) {
             this.defaultValue = defaultValue;
             return this;
         }
 
+        /**
+         * If configuring a list type, these are the options you can choose from.
+         *
+         * @param options
+         * @return
+         */
         public ProviderConfigPropertyBuilder options(String... options) {
             this.options = Arrays.asList(options);
             return this;
         }
 
+        /**
+         * If configuring a list type, these are the options you can choose from.
+         *
+         * @param options
+         * @return
+         */
         public ProviderConfigPropertyBuilder options(List<String> options) {
             this.options = options;
             return this;
         }
 
 
+        /**
+         * If turned on, this property is only writable and never readable.
+         * This is useful for things like passwords where you never want an admin
+         * to be able to see what the password is.
+         *
+         * @param secret
+         * @return
+         */
         public ProviderConfigPropertyBuilder secret(boolean secret) {
             this.secret = secret;
             return this;
         }
 
+        /**
+         * Add the current property, and start building the next one
+         *
+         * @return
+         */
         public ProviderConfigurationBuilder add() {
             ProviderConfigProperty property = new ProviderConfigProperty();
             property.setName(name);

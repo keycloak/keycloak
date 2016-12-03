@@ -22,6 +22,10 @@ import org.keycloak.models.UserModel;
 import java.util.List;
 
 /**
+ * Implentations of this interface can validate CredentialInput, i.e. verify a password.
+ * UserStorageProviders and CredentialProviders can implement this interface.
+ *
+ *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */

@@ -10,4 +10,5 @@ Login and go to the User Federation tab and you should now see your deployed pro
 Add the provider, save it, then any new user you create will be stored and in the custom store you implemented.  You
 can modify the example and hot deploy it using the above maven command again.
 
-This example uses the built in in-memory datasource that comes with keycloak: ExampleDS.
+This example uses the built in in-memory datasource that comes with keycloak: ExampleDS.  NOTE!!! You'll have
+to change this to be an xa datasource for this to work.

@@ -28,7 +28,7 @@ import org.keycloak.models.UserModel;
  */
 public interface ImportedUserValidation {
     /**
-     * If this method returns null, then the user storage in local storage will be removed
+     * If this method returns null, then the user in local storage will be removed
      *
      * @param realm
      * @param user

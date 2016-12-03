@@ -21,6 +21,9 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 
 /**
+ * Optional capability interface implemented by UserStorageProviders.
+ * Implement this interface if your provider supports adding and removing users.
+ *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
