@@ -154,6 +154,7 @@ public class KeycloakAuthenticationProcessingFilterTest {
         when(keycloakDeployment.getResourceName()).thenReturn("resource-name");
         when(keycloakDeployment.getStateCookieName()).thenReturn("kc-cookie");
         when(keycloakDeployment.getSslRequired()).thenReturn(SslRequired.NONE);
+        when(keycloakDeployment.isBearerOnly()).thenReturn(Boolean.FALSE);
         filter.attemptAuthentication(request, response);
 
         verify(response).setStatus(302);
