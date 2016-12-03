@@ -116,10 +116,11 @@ public class UserStorageManager implements UserProvider, OnUserCache {
 
     @Override
     public UserModel addUser(RealmModel realm, String username) {
-        UserRegistrationProvider registry = getFirstStorageProvider(session, realm, UserRegistrationProvider.class);
-        if (registry != null) {
-            return registry.addUser(realm, username);
+        for (UserRegistrationProvider provider : getStorageProviders(session, realm, UserRegistrationProvider.class)) {
+            UserModel user = provider.addUser(realm, username);
+            if (user != null) return user;
         }
+
         return localStorage().addUser(realm, username.toLowerCase());
     }
 

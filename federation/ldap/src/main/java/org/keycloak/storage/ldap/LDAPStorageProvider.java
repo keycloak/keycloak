@@ -174,8 +174,9 @@ public class LDAPStorageProvider implements UserStorageProvider,
 
     @Override
     public UserModel addUser(RealmModel realm, String username) {
-        if (editMode == UserStorageProvider.EditMode.READ_ONLY || editMode == UserStorageProvider.EditMode.UNSYNCED) throw new IllegalStateException("Registration is not supported by this ldap server");
-        if (!synchronizeRegistrations()) throw new IllegalStateException("Registration is not supported by this ldap server");
+        if (!synchronizeRegistrations()) {
+            return null;
+        }
         UserModel user = session.userLocalStorage().addUser(realm, username);
         user.setFederationLink(model.getId());
         LDAPObject ldapUser = LDAPUtils.addUserToLDAP(this, realm, user);
