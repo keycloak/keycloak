@@ -52,6 +52,10 @@ import java.util.Map;
  * </ol>
  * </p>
  * <p>
+ * Note that the {@code user} variable is only defined when the user was identified by a preceeding
+ * authentication step, e.g. by the {@link UsernamePasswordForm} authenticator.
+ * </p>
+ * <p>
  * Additional context information can be extracted from the {@code context} argument passed to the {@code authenticate(context)}
  * or {@code action(context)} function.
  * <p>
@@ -63,9 +67,10 @@ import java.util.Map;
  *
  *   function authenticate(context) {
  *
- *     LOG.info(script.name + " --> trace auth for: " + user.username);
+ *     var username = user ? user.username : "anonymous";
+ *     LOG.info(script.name + " --> trace auth for: " + username);
  *
- *     if (   user.username === "tester"
+ *     if (   username === "tester"
  *         && user.getAttribute("someAttribute")
  *         && user.getAttribute("someAttribute").contains("someValue")) {
  *
@@ -160,7 +165,7 @@ public class ScriptBasedAuthenticator implements Authenticator {
 
     @Override
     public boolean requiresUser() {
-        return true;
+        return false;
     }
 
     @Override
