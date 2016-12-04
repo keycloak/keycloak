@@ -9,7 +9,7 @@ You usually use this option if you are generating keys using `openssl` or simila
 [source,xml]
 ----
 <Keys>
-   <Key signing="true>
+   <Key signing="true">
       <PrivateKeyPem>
          2341251234AB31234==231BB998311222423522334
       </PrivateKeyPem>
