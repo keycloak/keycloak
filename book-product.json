@@ -17,8 +17,8 @@
       "name": "Red Hat Single Sign-On",
       "version": "7.0.0",
       "module": "Authorization Services",
-      "doc-base-url": "https://access.redhat.com/documentation/en/red-hat-single-sign-on/",
-      "doc-info-version-url": "7.0-Beta"
+      "doc_base_url": "https://access.redhat.com/documentation/en/red-hat-single-sign-on/",
+      "doc_info_version-url": "7.0-Beta"
     },
     "external_link": {
       "keycloakjsadapter": {
