@@ -420,7 +420,12 @@ public class LDAPStorageProvider implements UserStorageProvider,
 
         // Check here if user already exists
         String ldapUsername = LDAPUtils.getUsername(ldapUser, ldapIdentityStore.getConfig());
-        if (session.userLocalStorage().getUserByUsername(ldapUsername, realm) != null) {
+        UserModel user = session.userLocalStorage().getUserByUsername(ldapUsername, realm);
+        
+        if (user != null) {
+            LDAPUtils.checkUuid(ldapUser, ldapIdentityStore.getConfig());
+            // If email attribute mapper is set to "Always Read Value From LDAP" the user may be in Keycloak DB with an old email address
+            if (ldapUser.getUuid().equals(user.getFirstAttribute(LDAPConstants.LDAP_ID))) return user;
             throw new ModelDuplicateException("User with username '" + ldapUsername + "' already exists in Keycloak. It conflicts with LDAP user with email '" + email + "'");
         }
 
