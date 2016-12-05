@@ -78,7 +78,7 @@ keys will no longer be active and can only be used for verifying signatures.
 
 Locate the keypair in `Active` or `All` then click on the provider in the `Provider` column. This will take you to the
 configuration screen for the key provider for the keys. Click on `Enabled` to turn it `OFF`, then click on `Save`. The
-keys will no longer be active and can only be used for verifying signatures.
+keys will no longer be enabled.
 
 Alternatively, you can delete the provider from the `Providers` table.
 

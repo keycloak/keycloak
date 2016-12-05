@@ -34,7 +34,7 @@ realms::
 clients::
   Clients are entities that can request {{book.project.name}} to authenticate a user.  Most often, clients are applications and services that
   want to use {{book.project.name}} to secure themselves and provide a single sign-on solution.  Clients can also be entities that just want to request
-  identity information or an access token so that they can securely invoke other services on the network that are secured by {{book.project.name}}
+  identity information or an access token so that they can securely invoke other services on the network that are secured by {{book.project.name}}.
 client adapters::
   Client adapters are plugins that you install into your application environment to be able to communicate and be secured by {{book.project.name}}.  {{book.project.name}}
   has a number of adapters for different platforms that you can download.  There are also third-party adapters you can get for environments that we don't cover.

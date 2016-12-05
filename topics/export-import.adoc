@@ -94,8 +94,9 @@ Import of most resources can be performed from the admin console.
 Exporting resources will be supported in future versions.
 
 The files created during a "startup" export can be used to import from the admin UI.
-This way, you can export from one realm and import to another realm. Note: The admin console import allows just one realm per file.
-Or, you can export from one server and import to another.
+This way, you can export from one realm and import to another realm. Or, you can export from one server and import to another.
+Note: The admin console import allows just one realm per file.
+
 
 WARNING: The admin console import allows you to "overwrite" resources if you choose.
 Use this feature with caution, especially on a production system.
