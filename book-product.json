@@ -16,16 +16,18 @@
     "project": {
       "name": "Red Hat Single Sign-On",
       "version": "7.0.0",
-      "module": "Authorization Services"
+      "module": "Authorization Services",
+      "doc-base-url": "https://access.redhat.com/documentation/en/red-hat-single-sign-on/",
+      "doc-info-version-url": "7.0-Beta"
     },
     "external_link": {
       "keycloakjsadapter": {
         "name": "JavaScript OpenID Connect Adapter",
-        "link": "https://access.redhat.com/documentation/en/red-hat-single-sign-on/7.0/securing-applications-and-services-guide/securing-applications-and-services-guide#javascript_adapter"
+        "link": "/securing-applications-and-services-guide#javascript_adapter"
       },
       "keycloakgettingstarted": {
         "name": "Getting Started",
-        "link": "https://access.redhat.com/documentation/en/red-hat-single-sign-on/7.0/paged/getting-started-guide/"
+        "link": "/paged/getting-started-guide/"
       }
     }
   }
