@@ -2,7 +2,7 @@
 ==== JavaScript Integration
 
 The {{book.project.name}} Server comes with a JavaScript library you can use to interact with a resource server protected by a policy enforcer.
-This library is based on the {{book.external_link.keycloakjsadapter.link}}[{{book.project.name}} {{book.external_link.keycloakjsadapter.name}}], which can be integrated to allow your client to obtain permissions from a {{book.project.name}} Server.
+This library is based on the link:{{book.external_link.keycloakjsadapter.link}}[{{book.project.name}} {{book.external_link.keycloakjsadapter.name}}], which can be integrated to allow your client to obtain permissions from a {{book.project.name}} Server.
 
 You can obtain this library from a running a {{book.project.name}} Server instance by including the following `script` tag in your web page:
 
