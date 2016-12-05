@@ -42,7 +42,7 @@ This file contains configuration of the client application, which is used by JAA
 
 [source, subs="attributes"]
 ----
-features:addurl mvn:org.keycloak/keycloak-osgi-features/{{book.project.version}}/xml/features
+features:addurl mvn:org.keycloak/keycloak-osgi-features/{{book.project.versionMvn}}/xml/features
 features:install keycloak-jaas
 ----
 

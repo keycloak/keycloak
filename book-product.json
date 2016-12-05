@@ -13,7 +13,7 @@
     "project": {
       "name": "Red Hat Single Sign-On",
       "version": "7.1.0",
-      "versionMvn": "1.9.8.Final-redhat-1"
+      "versionMvn": "2.4.0.Final-redhat-1"
     },
     "community": false,
     "product": true,
@@ -21,6 +21,7 @@
     "adminguide": {
       "name": "Server Administration Guide",
       "link": "https://access.redhat.com/documentation/en/red-hat-single-sign-on/7.1-Beta/server-administration-guide/"
-    }
+    },
+    "fuseVersion": "JBoss Fuse 6.3.0 Rollup 1"
   }
 }
