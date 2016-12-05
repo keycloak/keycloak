@@ -35,6 +35,7 @@ import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.cache.CachedUserModel;
 import org.keycloak.models.cache.infinispan.UserAdapter;
+import org.keycloak.models.jpa.RealmAdapter;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.storage.StorageId;
@@ -92,7 +93,7 @@ public class BrokenUserStorageTest {
     public void testBootWithBadProviderId() throws Exception {
         KeycloakSession session = keycloakRule.startSession();
         // set this system property
-        System.setProperty("component.provider.exists.disabled", "true");
+        System.setProperty(RealmAdapter.COMPONENT_PROVIDER_EXISTS_DISABLED, "true");
         RealmModel realm = session.realms().getRealmByName("master");
         String masterId = realm.getId();
         UserStorageProviderModel model;
