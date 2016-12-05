@@ -320,6 +320,8 @@ public class SAMLParserUtil {
             return StaxParserUtil.getElementText(xmlEventReader);
         } else if(typeValue.contains(":base64Binary")){
             return StaxParserUtil.getElementText(xmlEventReader);
+        } else if(typeValue.contains(":boolean")){
+            return StaxParserUtil.getElementText(xmlEventReader);
         }
 
 
