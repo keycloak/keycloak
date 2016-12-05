@@ -22,6 +22,7 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Assert;
 import org.junit.Test;
+
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ProtocolMappersResource;
 import org.keycloak.admin.client.resource.RoleScopeResource;
@@ -71,6 +72,7 @@ import org.keycloak.testsuite.auth.page.login.SAMLIDPInitiatedLogin;
 import org.keycloak.testsuite.page.AbstractPage;
 import org.keycloak.testsuite.util.IOUtil;
 import org.keycloak.testsuite.util.UserBuilder;
+
 import org.openqa.selenium.By;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
@@ -104,6 +106,7 @@ import static org.junit.Assert.*;
 import static org.keycloak.representations.idm.CredentialRepresentation.PASSWORD;
 import static org.keycloak.testsuite.AbstractAuthTest.createUserRepresentation;
 import static org.keycloak.testsuite.admin.ApiUtil.createUserAndResetPasswordWithAdminClient;
+import static org.keycloak.testsuite.admin.Users.setPasswordFor;
 import static org.keycloak.testsuite.auth.page.AuthRealm.SAMLSERVLETDEMO;
 import static org.keycloak.testsuite.util.IOUtil.loadRealm;
 import static org.keycloak.testsuite.util.IOUtil.loadXML;
@@ -527,6 +530,14 @@ public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAd
         response.close();
 
         testSuccessfulAndUnauthorizedLogin(salesMetadataServletPage, testRealmSAMLPostLoginPage);
+    }
+
+    @Test
+    public void salesPostTestCompositeRoleForUser() {
+        UserRepresentation topGroupUser = createUserRepresentation("topGroupUser", "top@redhat.com", "", "", true);
+        setPasswordFor(topGroupUser, PASSWORD);
+
+        assertSuccessfulLogin(salesPostServletPage, topGroupUser, testRealmSAMLPostLoginPage, "principal=topgroupuser");
     }
 
     @Test

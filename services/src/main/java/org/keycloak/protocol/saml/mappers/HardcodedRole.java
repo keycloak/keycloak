@@ -35,12 +35,13 @@ import java.util.Map;
 public class HardcodedRole extends AbstractSAMLProtocolMapper {
     public static final String PROVIDER_ID = "saml-hardcode-role-mapper";
     public static final String ATTRIBUTE_VALUE = "attribute.value";
-    private static final List<ProviderConfigProperty> configProperties = new ArrayList<ProviderConfigProperty>();
+    private static final List<ProviderConfigProperty> configProperties = new ArrayList<>();
+    public static final String ROLE_ATTRIBUTE = "role";
 
     static {
         ProviderConfigProperty property;
         property = new ProviderConfigProperty();
-        property.setName("role");
+        property.setName(ROLE_ATTRIBUTE);
         property.setLabel("Role");
         property.setHelpText("Arbitrary role name you want to hardcode.  This role does not have to exist in current realm and can be just any string you need");
         property.setType(ProviderConfigProperty.ROLE_TYPE);
@@ -79,8 +80,8 @@ public class HardcodedRole extends AbstractSAMLProtocolMapper {
         mapper.setName(name);
         mapper.setProtocolMapper(mapperId);
         mapper.setProtocol(SamlProtocol.LOGIN_PROTOCOL);
-       Map<String, String> config = new HashMap<String, String>();
-        config.put("role", role);
+        Map<String, String> config = new HashMap<>();
+        config.put(ROLE_ATTRIBUTE, role);
         mapper.setConfig(config);
         return mapper;
 
