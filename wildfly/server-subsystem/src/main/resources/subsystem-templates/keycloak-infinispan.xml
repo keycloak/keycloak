@@ -25,7 +25,9 @@
     <supplement name="default">
         <replacement placeholder="CACHE-CONTAINERS">
             <cache-container name="keycloak" jndi-name="infinispan/Keycloak">
-                <local-cache name="realms"/>
+                <local-cache name="realms">
+                    <eviction max-entries="10000" strategy="LRU"/>
+                </local-cache>
                 <local-cache name="users">
                     <eviction max-entries="10000" strategy="LRU"/>
                 </local-cache>
@@ -92,7 +94,9 @@
         <replacement placeholder="CACHE-CONTAINERS">
             <cache-container name="keycloak" jndi-name="infinispan/Keycloak">
                 <transport lock-timeout="60000"/>
-                <local-cache name="realms"/>
+                <local-cache name="realms">
+                    <eviction max-entries="10000" strategy="LRU"/>
+                </local-cache>
                 <local-cache name="users">
                     <eviction max-entries="10000" strategy="LRU"/>
                 </local-cache>

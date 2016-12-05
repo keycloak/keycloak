@@ -27,7 +27,7 @@ public interface InfinispanConnectionProvider extends Provider {
 
     String REALM_CACHE_NAME = "realms";
     String REALM_REVISIONS_CACHE_NAME = "realmRevisions";
-    int REALM_REVISIONS_CACHE_DEFAULT_MAX = 10000;
+    int REALM_REVISIONS_CACHE_DEFAULT_MAX = 20000;
 
     String USER_CACHE_NAME = "users";
     String USER_REVISIONS_CACHE_NAME = "userRevisions";

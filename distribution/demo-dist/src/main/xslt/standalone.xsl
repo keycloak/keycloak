@@ -82,8 +82,12 @@
     <xsl:template match="//*[local-name()='subsystem' and starts-with(namespace-uri(), $inf)]">
         <xsl:copy>
             <cache-container name="keycloak" jndi-name="infinispan/Keycloak">
-                <local-cache name="realms"/>
-                <local-cache name="users"/>
+                <local-cache name="realms">
+                    <eviction max-entries="10000" strategy="LRU"/>
+                </local-cache>
+                <local-cache name="users">
+                    <eviction max-entries="10000" strategy="LRU"/>
+                </local-cache>
                 <local-cache name="sessions"/>
                 <local-cache name="offlineSessions"/>
                 <local-cache name="loginFailures"/>
