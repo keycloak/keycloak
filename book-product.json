@@ -28,7 +28,7 @@
     },
     "installguide": {
       "name": "Server Installation and Configuration Guide",
-      "link": "https://keycloak.gitbooks.io/server-installation-and-configuration/content/"
+      "link": "https://access.redhat.com/documentation/en/red-hat-single-sign-on/7.1-Beta/server-installation-and-configuration-guide/"
     },
     "apidocs": {
       "name": "API Documentation",
