@@ -21,6 +21,7 @@ import com.mongodb.DBObject;
 import com.mongodb.QueryBuilder;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.component.ComponentFactory;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.connections.mongo.api.context.MongoStoreInvocationContext;
 import org.keycloak.models.AuthenticationExecutionModel;
@@ -1675,10 +1676,27 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
         return model;
     }
 
+    /**
+     * This just exists for testing purposes
+     *
+     */
+    public static final String COMPONENT_PROVIDER_EXISTS_DISABLED = "component.provider.exists.disabled";
+
     @Override
     public ComponentModel importComponentModel(ComponentModel model) {
-        ComponentUtil.getComponentFactory(session, model).validateConfiguration(session, this, model);
+        ComponentFactory componentFactory = null;
+        try {
+            componentFactory = ComponentUtil.getComponentFactory(session, model);
+            if (componentFactory == null && System.getProperty(COMPONENT_PROVIDER_EXISTS_DISABLED) == null) {
+                throw new IllegalArgumentException("Invalid component type");
+            }
+            componentFactory.validateConfiguration(session, this, model);
+        } catch (Exception e) {
+            if (System.getProperty(COMPONENT_PROVIDER_EXISTS_DISABLED) == null) {
+                throw e;
+            }
 
+        }
         ComponentEntity entity = new ComponentEntity();
         if (model.getId() == null) {
             entity.setId(KeycloakModelUtils.generateId());
