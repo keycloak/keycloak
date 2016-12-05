@@ -53,7 +53,7 @@ your {{book.project.name}} environment. This file is used by the adapters on ser
 
 [source, subs="attributes"]
 ----
-features:addurl mvn:org.keycloak/keycloak-osgi-features/{{book.project.version}}/xml/features
+features:addurl mvn:org.keycloak/keycloak-osgi-features/{{book.project.versionMvn}}/xml/features
 features:install keycloak
 ----
 

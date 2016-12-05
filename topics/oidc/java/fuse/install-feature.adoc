@@ -31,7 +31,7 @@ org.ops4j.pax.url.mvn.repositories= \
 
 You need to start {{book.fuseVersion}} and then in the Karaf terminal you type this:
 
-[source]
+[source,subs="attributes"]
 ----
 features:addurl mvn:org.keycloak/keycloak-osgi-features/{{book.project.versionMvn}}/xml/features
 features:install keycloak
@@ -59,7 +59,7 @@ features:list | grep keycloak
 This is useful if you are offline and/or don't want to use maven for download jar files and other artifacts. Once you download ZIP bundle of {{book.project.name}} Fuse adapter,
 you will need to unzip it into the root directory of JBoss Fuse. This should install the dependencies under the `system` directory. Use this for {{book.fuseVersion}} :
 
-[source]
+[source,subs="attributes"]
 ----
 cd /path-to-fuse/jboss-fuse-6.3.0.redhat-198
 unzip -q /path-to-adapter-zip/keycloak-fuse-adapter-dist-{{book.project.versionMvn}}.zip
@@ -67,7 +67,7 @@ unzip -q /path-to-adapter-zip/keycloak-fuse-adapter-dist-{{book.project.versionM
 
 Feel free to overwrite all already existing jars. Once you unzip archive, you can start the Fuse and again run commands in fuse/karaf terminal
 
-[source]
+[source,subs="attributes"]
 ----
 features:addurl mvn:org.keycloak/keycloak-osgi-features/{{book.project.versionMvn}}/xml/features
 features:install keycloak
