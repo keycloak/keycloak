@@ -46,6 +46,7 @@ public class SamlIDPDescriptorClientInstallation implements ClientInstallationPr
     public static String getIDPDescriptorForClient(KeycloakSession session, RealmModel realm, ClientModel client, URI serverBaseUri) {
         SamlClient samlClient = new SamlClient(client);
         String idpEntityId = RealmsResource.realmBaseUrl(UriBuilder.fromUri(serverBaseUri)).build(realm.getName()).toString();
+        String bindUrl = RealmsResource.protocolUrl(UriBuilder.fromUri(serverBaseUri)).build(realm.getName(), SamlProtocol.LOGIN_PROTOCOL).toString();
         StringBuilder sb = new StringBuilder();
         sb.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
           + "<EntityDescriptor entityID=\"").append(idpEntityId).append("\"\n"
@@ -56,6 +57,17 @@ public class SamlIDPDescriptorClientInstallation implements ClientInstallationPr
           .append(samlClient.requiresClientSignature())
           .append("\"\n"
             + "      protocolSupportEnumeration=\"urn:oasis:names:tc:SAML:2.0:protocol\">\n");
+
+        // logout service
+        sb.append("      <SingleLogoutService\n"
+                + "         Binding=\"urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST\"\n"
+                + "         Location=\"").append(bindUrl).append("\" />\n");
+        if (! samlClient.forcePostBinding()) {
+            sb.append("      <SingleLogoutService\n"
+                    + "         Binding=\"urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect\"\n"
+                    + "         Location=\"").append(bindUrl).append("\" />\n");
+        }
+        // nameid format
         if (samlClient.forceNameIDFormat() && samlClient.getNameIDFormat() != null) {
             sb.append("   <NameIDFormat>").append(samlClient.getNameIDFormat()).append("</NameIDFormat>\n");
         } else {
@@ -64,7 +76,7 @@ public class SamlIDPDescriptorClientInstallation implements ClientInstallationPr
               + "   <NameIDFormat>urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified</NameIDFormat>\n"
               + "   <NameIDFormat>urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress</NameIDFormat>\n");
         }
-        String bindUrl = RealmsResource.protocolUrl(UriBuilder.fromUri(serverBaseUri)).build(realm.getName(), SamlProtocol.LOGIN_PROTOCOL).toString();
+        // sign on service
         sb.append("\n"
           + "      <SingleSignOnService Binding=\"urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST\"\n"
           + "         Location=\"").append(bindUrl).append("\" />\n");
@@ -73,15 +85,8 @@ public class SamlIDPDescriptorClientInstallation implements ClientInstallationPr
              + "         Location=\"").append(bindUrl).append("\" />\n");
 
         }
-        sb.append("      <SingleLogoutService\n"
-          + "         Binding=\"urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST\"\n"
-          + "         Location=\"").append(bindUrl).append("\" />\n");
-        if (! samlClient.forcePostBinding()) {
-            sb.append("      <SingleLogoutService\n"
-              + "         Binding=\"urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect\"\n"
-              + "         Location=\"").append(bindUrl).append("\" />\n");
-        }
 
+        // keys
         Set<KeyMetadata> keys = new TreeSet<>((o1, o2) -> o1.getStatus() == o2.getStatus() // Status can be only PASSIVE OR ACTIVE, push PASSIVE to end of list
           ? (int) (o2.getProviderPriority() - o1.getProviderPriority())
           : (o1.getStatus() == KeyMetadata.Status.PASSIVE ? 1 : -1));
