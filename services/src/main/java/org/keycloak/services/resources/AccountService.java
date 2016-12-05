@@ -788,7 +788,11 @@ public class AccountService extends AbstractSecuredLocalService {
             }
 
             if (referrerUri != null) {
-                return new String[]{referrerClient.getName(), referrerUri};
+                String referrerName = referrerClient.getName();
+                if (Validation.isBlank(referrerName)) {
+                    referrerName = referrer;
+                }
+                return new String[]{referrerName, referrerUri};
             }
         } else if (referrerUri != null) {
             referrerClient = realm.getClientByClientId(referrer);

@@ -16,16 +16,26 @@
  */
 package org.keycloak.testsuite.account;
 
+import static org.hamcrest.Matchers.containsInAnyOrder;
+
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+
+import javax.ws.rs.core.UriBuilder;
+
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.models.utils.TimeBasedOTP;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -52,13 +62,6 @@ import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
-
-import javax.ws.rs.core.UriBuilder;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-
-import static org.hamcrest.Matchers.*;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -826,6 +829,42 @@ public class AccountTest extends TestRealmKeycloakTest {
 
         driver.navigate().to(profilePage.getPath() + "?referrer=test-invalid&referrer_uri=http://localhost:8180/auth/realms/master/app/auth?test");
         Assert.assertTrue(profilePage.isCurrent());
+
+        events.clear();
+    }
+    
+    @Test
+    public void testReferrerLinkContents() {
+        RealmResource testRealm = testRealm();
+        List<ClientRepresentation> foundClients = testRealm.clients().findByClientId("named-test-app");
+        if (foundClients.isEmpty()) {
+            Assert.fail("Unable to find named-test-app");
+        }
+        ClientRepresentation namedClient = foundClients.get(0);
+        
+        driver.navigate().to(profilePage.getPath() + "?referrer=" + namedClient.getClientId());
+        loginPage.login("test-user@localhost", "password");
+        Assert.assertTrue(profilePage.isCurrent());
+        // When a client has a name provided, the name should be available to the back link
+        Assert.assertEquals("Back to " + namedClient.getName(), profilePage.getBackToApplicationLinkText());
+        Assert.assertEquals(namedClient.getBaseUrl(), profilePage.getBackToApplicationLinkHref());
+        
+        foundClients = testRealm.clients().findByClientId("test-app");
+        if (foundClients.isEmpty()) {
+            Assert.fail("Unable to find test-app");
+        }
+        ClientRepresentation namelessClient = foundClients.get(0);
+        
+        driver.navigate().to(profilePage.getPath() + "?referrer=" + namelessClient.getClientId());
+        Assert.assertTrue(profilePage.isCurrent());
+        // When a client has no name provided, the client-id should be available to the back link
+        Assert.assertEquals("Back to " + namelessClient.getClientId(), profilePage.getBackToApplicationLinkText());
+        Assert.assertEquals(namelessClient.getBaseUrl(), profilePage.getBackToApplicationLinkHref());
+
+        driver.navigate().to(profilePage.getPath() + "?referrer=test-invalid");
+        Assert.assertTrue(profilePage.isCurrent());
+        // When a client is invalid, the back link should not exist
+        Assert.assertNull(profilePage.getBackToApplicationLinkText());
 
         events.clear();
     }
