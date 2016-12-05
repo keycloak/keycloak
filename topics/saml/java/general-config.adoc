@@ -28,7 +28,7 @@ This is what one might look like:
         <PrincipalNameMapping policy="FROM_NAME_ID"/>
         <RoleIdentifiers>
             <Attribute name="Role"/>
-        </RoleMapping>
+        </RoleIdentifiers>
         <IDP entityID="idp"
              signaturesRequired="true">
         <SingleSignOnService requestBinding="POST"
