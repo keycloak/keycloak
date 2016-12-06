@@ -19,6 +19,7 @@ package org.keycloak.testsuite.admin.authentication;
 
 import org.junit.Assert;
 import org.junit.Test;
+
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.representations.idm.AuthenticationExecutionExportRepresentation;
@@ -31,6 +32,10 @@ import javax.ws.rs.core.Response;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import javax.ws.rs.core.Response.Status;
+
+import static org.hamcrest.Matchers.*;
+import static org.keycloak.testsuite.util.Matchers.*;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
@@ -195,7 +200,9 @@ public class FlowTest extends AbstractAuthenticationTest {
         // copy using existing alias as new name
         Response response = authMgmtResource.copy("browser", params);
         try {
-            Assert.assertEquals("Copy flow using the new alias of existing flow should fail", 409, response.getStatus());
+            Assert.assertThat("Copy flow using the new alias of existing flow should fail", response, statusCodeIs(Status.CONFLICT));
+            Assert.assertThat("Copy flow using the new alias of existing flow should fail", response, body(containsString("already exists")));
+            Assert.assertThat("Copy flow using the new alias of existing flow should fail", response, body(containsString("flow alias")));
         } finally {
             response.close();
         }
@@ -204,7 +211,7 @@ public class FlowTest extends AbstractAuthenticationTest {
         params.clear();
         response = authMgmtResource.copy("non-existent", params);
         try {
-            Assert.assertEquals("Copy non-existing flow", 404, response.getStatus());
+            Assert.assertThat("Copy non-existing flow", response, statusCodeIs(Status.NOT_FOUND));
         } finally {
             response.close();
         }
@@ -214,7 +221,7 @@ public class FlowTest extends AbstractAuthenticationTest {
         response = authMgmtResource.copy("browser", params);
         assertAdminEvents.assertEvent(REALM_NAME, OperationType.CREATE, AdminEventPaths.authCopyFlowPath("browser"), params, ResourceType.AUTH_FLOW);
         try {
-            Assert.assertEquals("Copy flow", 201, response.getStatus());
+            Assert.assertThat("Copy flow", response, statusCodeIs(Status.CREATED));
         } finally {
             response.close();
         }
