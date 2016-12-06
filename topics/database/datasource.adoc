@@ -4,7 +4,7 @@
 After declaring your JDBC driver, you  have to modify the existing datasource configuration that {{book.project.name}} uses
 to connect it to your new external database.  You'll do
 this within the same configuration file and XML block that you registered your JDBC driver in.  Here's an example
-that set's up the connection to your new database:
+that sets up the connection to your new database:
 
 .Declare Your JDBC Drivers
 [source,xml]

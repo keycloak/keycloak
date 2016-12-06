@@ -18,7 +18,7 @@ You can change the number of nodes that replicate a piece of data by change the 
 ...
 ----
 
-Here's we've changed it so at least two nodes will replicate one specific user login session.
+Here we've changed it so at least two nodes will replicate one specific user login session.
 
 TIP:  The number of owners recommended is really dependent on your deployment.  If you do not care if users are logged
       out when a node goes down, then one owner is good enough and you will avoid replication.
