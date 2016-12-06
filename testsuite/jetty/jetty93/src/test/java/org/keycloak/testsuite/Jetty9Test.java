@@ -96,6 +96,12 @@ public class Jetty9Test {
     }
 
     @Test
+    public void testLoginEncodedRedirectUri() throws Exception {
+        testStrategy.testLoginEncodedRedirectUri();
+    }
+
+
+    @Test
     public void testSavedPostRequest() throws Exception {
         testStrategy.testSavedPostRequest();
     }

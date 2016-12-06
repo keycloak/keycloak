@@ -19,6 +19,8 @@ package org.keycloak.testsuite.adapter;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.common.util.Encode;
+import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.services.managers.RealmManager;
@@ -96,6 +98,11 @@ public class AdapterTest {
         testStrategy.testLoginSSOMax();
 
         testStrategy.testLoginSSOAndLogout();
+    }
+
+    @Test
+    public void testLoginEncodedRedirectUri() throws Exception {
+        testStrategy.testLoginEncodedRedirectUri();
     }
 
     @Test

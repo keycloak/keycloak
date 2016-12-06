@@ -89,7 +89,7 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
     @GET
     public Response build() {
         MultivaluedMap<String, String> params = uriInfo.getQueryParameters();
-
+        String requestUri = uriInfo.getRequestUri().toString();
         String clientId = params.getFirst(OIDCLoginProtocol.CLIENT_ID_PARAM);
 
         checkSsl();

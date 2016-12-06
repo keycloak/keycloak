@@ -84,6 +84,12 @@ public class TomcatTest {
     }
 
     @Test
+    public void testLoginEncodedRedirectUri() throws Exception {
+        testStrategy.testLoginEncodedRedirectUri();
+    }
+
+
+    @Test
     public void testSavedPostRequest() throws Exception {
         testStrategy.testSavedPostRequest();
     }

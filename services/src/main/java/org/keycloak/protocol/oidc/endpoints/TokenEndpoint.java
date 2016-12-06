@@ -245,7 +245,8 @@ public class TokenEndpoint {
         event.session(userSession.getId());
 
         String redirectUri = clientSession.getNote(OIDCLoginProtocol.REDIRECT_URI_PARAM);
-        if (redirectUri != null && !redirectUri.equals(formParams.getFirst(OAuth2Constants.REDIRECT_URI))) {
+        String formParam = formParams.getFirst(OAuth2Constants.REDIRECT_URI);
+        if (redirectUri != null && !redirectUri.equals(formParam)) {
             event.error(Errors.INVALID_CODE);
             throw new ErrorResponseException(OAuthErrorException.INVALID_GRANT, "Incorrect redirect_uri", Response.Status.BAD_REQUEST);
         }
