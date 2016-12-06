@@ -212,7 +212,7 @@ public class GroupResource {
             throw new NotFoundException("Could not find group by id");
         }
 
-        firstResult = firstResult != null ? firstResult : -1;
+        firstResult = firstResult != null ? firstResult : 0;
         maxResults = maxResults != null ? maxResults : Constants.DEFAULT_MAX_RESULTS;
 
         List<UserRepresentation> results = new ArrayList<UserRepresentation>();

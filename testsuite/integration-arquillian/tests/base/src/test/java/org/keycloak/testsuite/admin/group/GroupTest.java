@@ -602,7 +602,9 @@ public class GroupTest extends AbstractGroupTest {
         }
 
         assertEquals(100, group.members(null, null).size());
+        assertEquals(100, group.members().size());
         assertEquals(105, group.members(0, 105).size());
         assertEquals(110, group.members(0, 1000).size());
+        assertEquals(110, group.members(-1, -2).size());
     }
 }

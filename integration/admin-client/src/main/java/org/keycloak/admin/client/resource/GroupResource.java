@@ -82,6 +82,18 @@ public interface GroupResource {
     /**
      * Get users
      * <p/>
+     * Returns a list of all users in group.
+     *
+     * @return  Returns a max size of 100 users
+     */
+    @GET
+    @NoCache
+    @Path("/members")
+    @Produces(MediaType.APPLICATION_JSON)
+    public List<UserRepresentation> members();
+    /**
+     * Get users
+     * <p/>
      * Returns a list of users, filtered according to query parameters
      *
      * @param firstResult Pagination offset

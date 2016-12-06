@@ -379,6 +379,8 @@ public class UserStorageManager implements UserProvider, OnUserCache {
 
     protected List<UserModel> query(PaginatedQuery pagedQuery, RealmModel realm, int firstResult, int maxResults) {
         if (maxResults == 0) return Collections.EMPTY_LIST;
+        if (firstResult < 0) firstResult = 0;
+        if (maxResults < 0) maxResults = Integer.MAX_VALUE - 1;
 
         List<UserQueryProvider> storageProviders = getStorageProviders(session, realm, UserQueryProvider.class);
         // we can skip rest of method if there are no storage providers
