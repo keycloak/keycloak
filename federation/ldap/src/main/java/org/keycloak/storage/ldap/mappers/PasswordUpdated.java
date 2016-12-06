@@ -17,6 +17,7 @@
 package org.keycloak.storage.ldap.mappers;
 
 import org.keycloak.credential.CredentialInput;
+import org.keycloak.models.ModelException;
 import org.keycloak.models.UserModel;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
 
@@ -25,5 +26,8 @@ import org.keycloak.storage.ldap.idm.model.LDAPObject;
  * @version $Revision: 1 $
  */
 public interface PasswordUpdated {
+
     void passwordUpdated(UserModel user, LDAPObject ldapUser, CredentialInput input);
+
+    void passwordUpdateFailed(UserModel user, LDAPObject ldapUser, CredentialInput input, ModelException exception) throws ModelException;
 }

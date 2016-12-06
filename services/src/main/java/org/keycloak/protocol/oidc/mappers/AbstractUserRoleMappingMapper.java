@@ -22,10 +22,9 @@ import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.utils.RoleUtils;
 import org.keycloak.representations.IDToken;
 
-import java.util.ArrayDeque;
-import java.util.Deque;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -54,7 +53,7 @@ abstract class AbstractUserRoleMappingMapper extends AbstractOIDCProtocolMapper 
           user.getGroups().stream()
             .flatMap(g -> groupAndItsParentsStream(g))
             .flatMap(g -> g.getRoleMappings().stream()))
-          .flatMap(role -> expandCompositeRolesStream(role));
+          .flatMap(RoleUtils::expandCompositeRolesStream);
     }
 
     /**
@@ -68,29 +67,6 @@ abstract class AbstractUserRoleMappingMapper extends AbstractOIDCProtocolMapper 
             sb.add(group);
             group = group.getParent();
         }
-        return sb.build();
-    }
-
-    /**
-     * Recursively expands composite roles into their composite.
-     * @param role
-     * @return Stream of containing all of the composite roles and their components.
-     */
-    private static Stream<RoleModel> expandCompositeRolesStream(RoleModel role) {
-        Stream.Builder<RoleModel> sb = Stream.builder();
-
-        Deque<RoleModel> stack = new ArrayDeque<>();
-        stack.add(role);
-
-        while (! stack.isEmpty()) {
-            RoleModel current = stack.pop();
-            sb.add(current);
-
-            if (current.isComposite()) {
-                stack.addAll(current.getComposites());
-            }
-        }
-
         return sb.build();
     }
 

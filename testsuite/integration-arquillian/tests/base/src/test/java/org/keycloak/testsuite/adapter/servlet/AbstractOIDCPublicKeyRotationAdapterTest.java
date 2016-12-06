@@ -72,7 +72,7 @@ import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class AbstractOIDCPublicKeyRotationAdapterTest extends AbstractServletsAdapterTest {
+public abstract class AbstractOIDCPublicKeyRotationAdapterTest extends AbstractServletsAdapterTest {
 
     @Page
     private SecurePortal securePortal;

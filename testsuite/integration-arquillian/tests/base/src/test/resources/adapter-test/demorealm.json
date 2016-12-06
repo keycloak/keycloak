@@ -49,6 +49,7 @@
                 { "type" : "password",
                     "value" : "password" }
             ],
+            "realmRoles": [ "realm-composite-role" ],
             "groups": [
                 "/top"
             ]
@@ -75,6 +76,14 @@
             {
                 "name": "admin",
                 "description": "Administrator privileges"
+            },
+            {
+                "name": "realm-composite-role",
+                "description": "Realm composite role containing user role",
+                "composite": true,
+                "composites": {
+                    "realm": ["user"]
+                }
             }
         ]
     },

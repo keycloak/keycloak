@@ -248,9 +248,9 @@ public class SamlService extends AuthorizationEndpointBase {
             String bindingType = getBindingType(requestAbstractType);
             if (samlClient.forcePostBinding())
                 bindingType = SamlProtocol.SAML_POST_BINDING;
-            String redirect = null;
+            String redirect;
             URI redirectUri = requestAbstractType.getAssertionConsumerServiceURL();
-            if (redirectUri != null && !"null".equals(redirectUri)) { // "null" is for testing purposes
+            if (redirectUri != null && ! "null".equals(redirectUri.toString())) { // "null" is for testing purposes
                 redirect = RedirectUtils.verifyRedirectUri(uriInfo, redirectUri.toString(), realm, client);
             } else {
                 if (bindingType.equals(SamlProtocol.SAML_POST_BINDING)) {
@@ -279,8 +279,9 @@ public class SamlService extends AuthorizationEndpointBase {
 
             // Handle NameIDPolicy from SP
             NameIDPolicyType nameIdPolicy = requestAbstractType.getNameIDPolicy();
-            if (nameIdPolicy != null && !samlClient.forceNameIDFormat()) {
-                String nameIdFormat = nameIdPolicy.getFormat().toString();
+            final URI nameIdFormatUri = nameIdPolicy == null ? null : nameIdPolicy.getFormat();
+            if (nameIdFormatUri != null && ! samlClient.forceNameIDFormat()) {
+                String nameIdFormat = nameIdFormatUri.toString();
                 // TODO: Handle AllowCreate too, relevant for persistent NameID.
                 if (isSupportedNameIdFormat(nameIdFormat)) {
                     clientSession.setNote(GeneralConstants.NAMEID_FORMAT, nameIdFormat);
@@ -345,7 +346,7 @@ public class SamlService extends AuthorizationEndpointBase {
             AuthenticationManager.AuthResult authResult = authManager.authenticateIdentityCookie(session, realm, false);
             if (authResult != null) {
                 String logoutBinding = getBindingType();
-                if ("true".equals(samlClient.forcePostBinding()))
+                if (samlClient.forcePostBinding())
                     logoutBinding = SamlProtocol.SAML_POST_BINDING;
                 boolean postBinding = Objects.equals(SamlProtocol.SAML_POST_BINDING, logoutBinding);
 

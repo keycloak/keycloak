@@ -50,7 +50,7 @@
         </addColumn>
         <sql>UPDATE COMPONENT_CONFIG SET VALUE_NEW = VALUE, VALUE = NULL</sql>
         <dropColumn tableName="COMPONENT_CONFIG" columnName="VALUE"/>
-        <renameColumn tableName="COMPONENT_CONFIG" oldColumnName="VALUE_NEW" newColumnName="VALUE"/>
+        <renameColumn tableName="COMPONENT_CONFIG" oldColumnName="VALUE_NEW" newColumnName="VALUE" columnDataType="NCLOB"/>
 <!--
         <modifyDataType tableName="COMPONENT_CONFIG" columnName="VALUE" newDataType="NVARCHAR(2000)"/>
 -->

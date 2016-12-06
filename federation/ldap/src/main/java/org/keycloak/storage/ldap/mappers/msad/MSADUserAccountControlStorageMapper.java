@@ -90,6 +90,11 @@ public class MSADUserAccountControlStorageMapper extends AbstractLDAPStorageMapp
     }
 
     @Override
+    public void passwordUpdateFailed(UserModel user, LDAPObject ldapUser, CredentialInput input, ModelException exception) {
+        throw processFailedPasswordUpdateException(exception);
+    }
+
+    @Override
     public UserModel proxy(LDAPObject ldapUser, UserModel delegate) {
         return new MSADUserModelDelegate(delegate, ldapUser);
     }

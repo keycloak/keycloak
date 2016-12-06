@@ -24,7 +24,8 @@ AuthenticationFlowError = Java.type("org.keycloak.authentication.AuthenticationF
  */
 function authenticate(context) {
 
-    LOG.info(script.name + " trace auth for: " + user.username);
+    var username = user ? user.username : "anonymous";
+    LOG.info(script.name + " trace auth for: " + username);
 
     var authShouldFail = false;
     if (authShouldFail) {

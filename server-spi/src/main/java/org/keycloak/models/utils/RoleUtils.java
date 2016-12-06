@@ -20,7 +20,11 @@ package org.keycloak.models.utils;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.RoleModel;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
+import java.util.HashSet;
 import java.util.Set;
+import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 /**
@@ -96,6 +100,35 @@ public class RoleUtils {
 
         return StreamSupport.stream(groups.spliterator(), false)
                 .anyMatch(group -> hasRoleFromGroup(group, targetRole, checkParentGroup));
+    }
+
+    /**
+     * Recursively expands composite roles into their composite.
+     * @param role
+     * @return Stream of containing all of the composite roles and their components.
+     */
+    public static Stream<RoleModel> expandCompositeRolesStream(RoleModel role) {
+        Stream.Builder<RoleModel> sb = Stream.builder();
+        Set<RoleModel> roles = new HashSet<>();
+
+        Deque<RoleModel> stack = new ArrayDeque<>();
+        stack.add(role);
+
+        while (! stack.isEmpty()) {
+            RoleModel current = stack.pop();
+            sb.add(current);
+
+            if (current.isComposite()) {
+                current.getComposites().stream()
+                  .filter(r -> ! roles.contains(r))
+                  .forEach(r -> {
+                    roles.add(r);
+                    stack.add(r);
+                  });
+            }
+        }
+
+        return sb.build();
     }
 
 }
