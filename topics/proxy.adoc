@@ -146,7 +146,7 @@ error-page::
 adapter-config::
   _REQUIRED._.
   Same configuration as any other {{book.project.name}} adapter.
-  See <<_adapter_config,Adapter Config>>                                        
+// See <<_adapter_config,Adapter Config>>                                        
 
 ==== Constraint Config
 
@@ -158,9 +158,11 @@ More specific constraints will take precedence over more general ones.
 
 pattern::
   URL pattern to match relative to the base-path of the application.
-  Must start with '/' _REQUIRED._.
+  Must start with '/' _REQUIRED._
   You may only have one wildcard and it must come at the end of the pattern.
-  Valid `/foo/bar/*` and  `/foo/*.txt`                                    Not valid: `/*/foo/*`. 
+  
+  * Valid: [x-]`/foo/bar/*` and  [x-]`/foo/*.txt`
+  * Not valid: [x-]`/*/foo/*`. 
 
 roles-allowed::
   Array of strings of roles allowed to access this url pattern. _OPTIONAL._. 
@@ -228,6 +230,7 @@ KEYCLOAK_NAME::
 KEYCLOAK_ACCESS_TOKEN::
   Send the access token in this header if the proxy was configured to send it.
   This token can be used to make bearer token requests.             Header field names can be configured using a map of `header-names` in configuration file: 
++
 [source]
 ----
 
