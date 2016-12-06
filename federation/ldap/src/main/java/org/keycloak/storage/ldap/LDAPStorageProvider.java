@@ -488,9 +488,20 @@ public class LDAPStorageProvider implements UserStorageProvider,
             UserCredentialModel cred = (UserCredentialModel)input;
             String password = cred.getValue();
             LDAPObject ldapUser = loadAndValidateUser(realm, user);
-            ldapIdentityStore.updatePassword(ldapUser, password);
-            if (updater != null) updater.passwordUpdated(user, ldapUser, input);
-            return true;
+
+            try {
+                ldapIdentityStore.updatePassword(ldapUser, password);
+                if (updater != null) updater.passwordUpdated(user, ldapUser, input);
+                return true;
+            } catch (ModelException me) {
+                if (updater != null) {
+                    updater.passwordUpdateFailed(user, ldapUser, input, me);
+                    return false;
+                } else {
+                    throw me;
+                }
+            }
+
         } else {
             return false;
         }
