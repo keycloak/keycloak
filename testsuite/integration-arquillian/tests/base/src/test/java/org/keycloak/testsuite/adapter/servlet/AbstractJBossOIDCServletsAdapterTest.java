@@ -24,7 +24,7 @@ public abstract class AbstractJBossOIDCServletsAdapterTest extends AbstractDemoS
 
     @Deployment(name = CustomerPortalSubsystem.DEPLOYMENT_NAME)
     protected static WebArchive customerPortalSubsystem() {
-        return servletDeployment(CustomerPortalSubsystem.DEPLOYMENT_NAME, CustomerServlet.class, ErrorServlet.class);
+        return servletDeployment(CustomerPortalSubsystem.DEPLOYMENT_NAME, CustomerServlet.class, ErrorServlet.class, ServletTestUtils.class);
     }
 
     @Deployment(name = ProductPortalSubsystem.DEPLOYMENT_NAME)
