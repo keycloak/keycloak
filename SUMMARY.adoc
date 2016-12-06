@@ -25,7 +25,7 @@
 .. link:topics/database/unicode-considerations.adoc[Unicode considerations]
 {% if book.community %}
 . link:topics/mongo.adoc[Mongo DB Setup]
-{% endif %} 
+{% endif %}
 . link:topics/network.adoc[Network Setup]
 .. link:topics/network/bind-address.adoc[Bind Addresses]
 .. link:topics/network/ports.adoc[Socket Port Bindings]
