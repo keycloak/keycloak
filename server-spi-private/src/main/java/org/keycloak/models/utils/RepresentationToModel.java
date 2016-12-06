@@ -1366,7 +1366,7 @@ public class RepresentationToModel {
         }
         if (userRep.getRequiredActions() != null) {
             for (String requiredAction : userRep.getRequiredActions()) {
-                user.addRequiredAction(UserModel.RequiredAction.valueOf(requiredAction));
+                user.addRequiredAction(UserModel.RequiredAction.valueOf(requiredAction.toUpperCase()));
             }
         }
         createCredentials(userRep, session, newRealm, user);

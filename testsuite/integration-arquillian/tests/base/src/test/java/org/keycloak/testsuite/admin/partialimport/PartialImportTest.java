@@ -197,6 +197,20 @@ public class PartialImportTest extends AbstractAuthTest {
         piRep.setUsers(users);
     }
 
+    private void addUsersWithTermsAndConditions() {
+        List<UserRepresentation> users = new ArrayList<>();
+        List<String> requiredActions = new ArrayList<>();
+        requiredActions.add("terms_and_conditions");
+
+        for (int i = 0; i < NUM_ENTITIES; i++) {
+            UserRepresentation user = createUserRepresentation(USER_PREFIX + i, USER_PREFIX + i + "@foo.com", "foo", "bar", true);
+            user.setRequiredActions(requiredActions);
+            users.add(user);
+        }
+
+        piRep.setUsers(users);
+    }
+
     private void addGroups() {
         List<GroupRepresentation> groups = new ArrayList<>();
 
@@ -279,6 +293,39 @@ public class PartialImportTest extends AbstractAuthTest {
 
         setFail();
         addUsers();
+
+        PartialImportResults results = doImport();
+        assertEquals(NUM_ENTITIES, results.getAdded());
+
+        // Need to do this way as admin events from partial import are unsorted
+        Set<String> userIds = new HashSet<>();
+        for (int i=0 ; i<NUM_ENTITIES ; i++) {
+            AdminEventRepresentation adminEvent = assertAdminEvents.poll();
+            Assert.assertEquals(realmId, adminEvent.getRealmId());
+            Assert.assertEquals(OperationType.CREATE.name(), adminEvent.getOperationType());
+            Assert.assertTrue(adminEvent.getResourcePath().startsWith("users/"));
+            String userId = adminEvent.getResourcePath().substring(6);
+            userIds.add(userId);
+        }
+
+        assertAdminEvents.assertEmpty();
+
+
+        for (PartialImportResult result : results.getResults()) {
+            String id = result.getId();
+            UserResource userRsc = testRealmResource().users().get(id);
+            UserRepresentation user = userRsc.toRepresentation();
+            assertTrue(user.getUsername().startsWith(USER_PREFIX));
+            Assert.assertTrue(userIds.contains(id));
+        }
+    }
+
+    @Test
+    public void testAddUsersWithTermsAndConditions() {
+        assertAdminEvents.clear();
+
+        setFail();
+        addUsersWithTermsAndConditions();
 
         PartialImportResults results = doImport();
         assertEquals(NUM_ENTITIES, results.getAdded());
