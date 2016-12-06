@@ -23,7 +23,7 @@
     "external_link": {
       "keycloakjsadapter": {
         "name": "JavaScript OpenID Connect Adapter",
-        "link": "/securing-applications-and-services-guide#javascript_adapter"
+        "link": "/single/securing-applications-and-services-guide#javascript_adapter"
       },
       "keycloakgettingstarted": {
         "name": "Getting Started",
