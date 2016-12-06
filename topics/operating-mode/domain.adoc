@@ -159,7 +159,7 @@ the load balancer server don't conflict with the authentication server instance 
 ----
     <servers>
         ...
-        <server name="server-one" group="auth-server-group">
+        <server name="server-one" group="auth-server-group" auto-start="true">
              <socket-bindings port-offset="150"/>
         </server>
     </servers>
@@ -173,15 +173,6 @@ The structure of these per server directories ends up looking like any other {{b
 
 .Working Directories
 image:../../{{book.images}}/domain-server-dir.png[]
-
-==== {{book.project.name}} JSON Configuration
-
-Unfortunately, there is no centralized way to manage the _keycloak.json_ file.  You'll have to manage a copy of this file
-in every server instance you deploy.  This file must exist in the _.../domain/servers/{SERVER NAME}/configuration directory._
-
-.JSON Configuration
-image:../../{{book.images}}/domain-json-config.png[]
-
 
 ==== Domain Boot Script
 
@@ -264,7 +255,7 @@ $ add-user.sh
  To represent the user add the following to the server-identities definition <secret value="bWdtdDEyMyE=" />
 ----
 
-NOTE: The add-user.sh does not add user to {{book.project.name}} server but to the underlying JBoss Enterprise Application Platform. The credentials used and generated in the above script are only for example purpose. Please use the ones generated on your system. 
+NOTE: The add-user.sh does not add user to {{book.project.name}} server but to the underlying JBoss Enterprise Application Platform. The credentials used and generated in the above script are only for example purpose. Please use the ones generated on your system.
 
 Now cut and paste the secret value into the _.../domain/configuration/host-slave.xml_ file as follows:
 
@@ -295,21 +286,3 @@ $ domain.sh --host-config=host-slave.xml
 ----
 
 To try it out, open your browser and go to http://localhost:8080/auth
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
