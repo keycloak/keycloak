@@ -196,7 +196,7 @@ public class LogoutEndpoint {
             event.error(Errors.INVALID_TOKEN);
             throw new ErrorResponseException(e.getError(), e.getDescription(), Response.Status.BAD_REQUEST);
         }
-        return Cors.add(request, Response.noContent()).auth().allowedOrigins(client).allowedMethods("POST").exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS).build();
+        return Cors.add(request, Response.noContent()).auth().allowedOrigins(uriInfo, client).allowedMethods("POST").exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS).build();
     }
 
     private void logout(UserSessionModel userSession) {
