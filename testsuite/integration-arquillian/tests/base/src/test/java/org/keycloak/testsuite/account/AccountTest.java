@@ -395,6 +395,7 @@ public class AccountTest extends TestRealmKeycloakTest {
     @Test
     public void changeProfile() throws Exception {
         setEditUsernameAllowed(false);
+        setRegistrationEmailAsUsername(false);
 
         profilePage.open();
         loginPage.login("test-user@localhost", "password");
@@ -463,9 +464,28 @@ public class AccountTest extends TestRealmKeycloakTest {
         setEditUsernameAllowed(true);
     }
 
+    @Test
+    public void changeProfileEmailAsUsernameEnabled() throws Exception {
+        setRegistrationEmailAsUsername(true);
+
+        profilePage.open();
+        loginPage.login("test-user@localhost", "password");
+        Assert.assertFalse(driver.findElements(By.id("username")).size() > 0);
+
+        // Revert
+        setRegistrationEmailAsUsername(false);
+
+    }
+
     private void setEditUsernameAllowed(boolean allowed) {
         RealmRepresentation testRealm = testRealm().toRepresentation();
         testRealm.setEditUsernameAllowed(allowed);
+        testRealm().update(testRealm);
+    }
+
+    private void setRegistrationEmailAsUsername(boolean allowed) {
+        RealmRepresentation testRealm = testRealm().toRepresentation();
+        testRealm.setRegistrationEmailAsUsername(allowed);
         testRealm().update(testRealm);
     }
 

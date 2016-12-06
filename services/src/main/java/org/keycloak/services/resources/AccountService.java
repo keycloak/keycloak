@@ -417,6 +417,15 @@ public class AccountService extends AbstractSecuredLocalService {
                 user.setEmailVerified(false);
                 event.clone().event(EventType.UPDATE_EMAIL).detail(Details.PREVIOUS_EMAIL, oldEmail).detail(Details.UPDATED_EMAIL, email).success();
             }
+
+            if (realm.isRegistrationEmailAsUsername()) {
+                UserModel existing = session.users().getUserByEmail(email, realm);
+                if (existing != null && !existing.getId().equals(user.getId())) {
+                    throw new ModelDuplicateException(Messages.USERNAME_EXISTS);
+                }
+                user.setUsername(email);
+            }
+
             setReferrerOnPage();
             return account.setSuccess(Messages.ACCOUNT_UPDATED).createResponse(AccountPages.ACCOUNT);
         } catch (ModelReadOnlyException roe) {
