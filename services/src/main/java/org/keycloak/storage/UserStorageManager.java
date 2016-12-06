@@ -74,17 +74,6 @@ public class UserStorageManager implements UserProvider, OnUserCache {
         return realm.getUserStorageProviders();
     }
 
-    public static <T> T getFirstStorageProvider(KeycloakSession session, RealmModel realm, Class<T> type) {
-        for (UserStorageProviderModel model : getStorageProviders(realm)) {
-            UserStorageProviderFactory factory = (UserStorageProviderFactory)session.getKeycloakSessionFactory().getProviderFactory(UserStorageProvider.class, model.getProviderId());
-
-            if (Types.supports(type, factory, UserStorageProviderFactory.class)) {
-                return type.cast(getStorageProviderInstance(session, model, factory));
-            }
-        }
-        return null;
-    }
-
     public static UserStorageProvider getStorageProviderInstance(KeycloakSession session, UserStorageProviderModel model, UserStorageProviderFactory factory) {
         UserStorageProvider instance = (UserStorageProvider)session.getAttribute(model.getId());
         if (instance != null) return instance;
@@ -99,6 +88,10 @@ public class UserStorageManager implements UserProvider, OnUserCache {
         List<T> list = new LinkedList<>();
         for (UserStorageProviderModel model : getStorageProviders(realm)) {
             UserStorageProviderFactory factory = (UserStorageProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(UserStorageProvider.class, model.getProviderId());
+            if (factory == null) {
+                logger.warnv("Configured UserStorageProvider {0} of provider id {1} does not exist in realm {2}", model.getName(), model.getProviderId(), realm.getName());
+                continue;
+            }
             if (Types.supports(type, factory, UserStorageProviderFactory.class)) {
                 list.add(type.cast(getStorageProviderInstance(session, model, factory)));
             }

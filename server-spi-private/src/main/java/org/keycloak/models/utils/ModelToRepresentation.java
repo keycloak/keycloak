@@ -750,6 +750,14 @@ public class ModelToRepresentation {
     }
 
     public static ComponentRepresentation toRepresentation(KeycloakSession session, ComponentModel component, boolean internal) {
+        ComponentRepresentation rep = toRepresentationWithoutConfig(component);
+        if (!internal) {
+            rep = StripSecretsUtils.strip(session, rep);
+        }
+        return rep;
+    }
+
+    public static ComponentRepresentation toRepresentationWithoutConfig(ComponentModel component) {
         ComponentRepresentation rep = new ComponentRepresentation();
         rep.setId(component.getId());
         rep.setName(component.getName());
@@ -758,9 +766,6 @@ public class ModelToRepresentation {
         rep.setSubType(component.getSubType());
         rep.setParentId(component.getParentId());
         rep.setConfig(new MultivaluedHashMap<>(component.getConfig()));
-        if (!internal) {
-            rep = StripSecretsUtils.strip(session, rep);
-        }
         return rep;
     }
 

@@ -118,7 +118,13 @@ public class ComponentResource {
         List<ComponentRepresentation> reps = new LinkedList<>();
         for (ComponentModel component : components) {
             if (name != null && !name.equals(component.getName())) continue;
-            ComponentRepresentation rep = ModelToRepresentation.toRepresentation(session, component, false);
+            ComponentRepresentation rep = null;
+            try {
+                rep = ModelToRepresentation.toRepresentation(session, component, false);
+            } catch (Exception e) {
+                logger.error("Failed to get component list for component model" + component.getName() + "of realm " + realm.getName());
+                rep = ModelToRepresentation.toRepresentationWithoutConfig(component);
+            }
             reps.add(rep);
         }
         return reps;
