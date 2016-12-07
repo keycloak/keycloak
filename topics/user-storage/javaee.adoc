@@ -76,3 +76,12 @@ public class EjbExampleUserStorageProviderFactory
     }
 ----
 
+This example also assumes that you've defined a JPA deployment in the same jar as the provider.  This means a `persistence.xml`
+file as well as any JPA `@Entity` classes.
+
+WARNING: When doing JPA any additional datasource you use must be an XA datasource.  The {{book.project.name}} datasource
+         is non-xa.  If you interact with two or more non-xa datasource in the same transaction, the server will barf with
+         an error message.  You can only have one non-xa resource in a single transaction.
+
+See the JBoss/Wildfly manual for more details on deploying an XA datasource.
+
