@@ -21,7 +21,6 @@ import liquibase.statement.core.DeleteStatement;
 import liquibase.statement.core.InsertStatement;
 import liquibase.structure.core.Table;
 import org.jboss.logging.Logger;
-import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.storage.UserStorageProvider;
 
@@ -57,7 +56,7 @@ public abstract class AbstractUserFedToComponent extends CustomKeycloakTask {
                                 .addColumnValue("REALM_ID", realmId)
                                 .addColumnValue("PARENT_ID", realmId)
                                 .addColumnValue("NAME", displayName)
-                                .addColumnValue("PROVIDER_ID", LDAPConstants.LDAP_PROVIDER)
+                                .addColumnValue("PROVIDER_ID", providerId)
                                 .addColumnValue("PROVIDER_TYPE", UserStorageProvider.class.getName());
 
                         statements.add(insertComponent);
