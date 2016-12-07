@@ -18,11 +18,11 @@
 
 <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
 
-     <changeSet author="bburke@redhat.com" id="2.4.1">
+     <changeSet author="bburke@redhat.com" id="2.5.0">
          <customChange class="org.keycloak.connections.jpa.updater.liquibase.custom.MigrateUserFedToComponent"/>
      </changeSet>
 
-    <changeSet author="hmlnarik@redhat.com" id="2.4.1-unicode-oracle">
+    <changeSet author="hmlnarik@redhat.com" id="2.5.0-unicode-oracle">
         <preConditions onSqlOutput="TEST" onFail="MARK_RAN">
             <dbms type="oracle" />
         </preConditions>
@@ -59,7 +59,7 @@
         <modifyDataType tableName="KEYCLOAK_ROLE" columnName="DESCRIPTION" newDataType="NVARCHAR(255)"/>
     </changeSet>
 
-    <changeSet author="hmlnarik@redhat.com" id="2.4.1-unicode-other-dbs">
+    <changeSet author="hmlnarik@redhat.com" id="2.5.0-unicode-other-dbs">
         <preConditions onSqlOutput="TEST" onFail="MARK_RAN">
             <not>
                 <dbms type="oracle" />

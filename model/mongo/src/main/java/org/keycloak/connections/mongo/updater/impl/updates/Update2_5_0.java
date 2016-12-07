@@ -19,20 +19,27 @@ package org.keycloak.connections.mongo.updater.impl.updates;
 
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
+import org.keycloak.provider.ProviderFactory;
+import org.keycloak.storage.UserStorageProvider;
+
+import java.util.List;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class Update2_4_1 extends AbstractMigrateUserFedToComponent {
+public class Update2_5_0 extends AbstractMigrateUserFedToComponent {
 
     @Override
     public String getId() {
-        return "2.4.1";
+        return "2.5.0";
     }
 
     @Override
     public void update(KeycloakSession session) {
-        portUserFedToComponent("kerberos");
+        List<ProviderFactory> factories = session.getKeycloakSessionFactory().getProviderFactories(UserStorageProvider.class);
+        for (ProviderFactory factory : factories) {
+            portUserFedToComponent(factory.getId());
+        }
     }
 
 }
