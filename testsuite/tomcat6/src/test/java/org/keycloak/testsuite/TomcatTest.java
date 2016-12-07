@@ -79,6 +79,10 @@ public class TomcatTest {
     public void testLoginSSOAndLogout() throws Exception {
         testStrategy.testLoginSSOAndLogout();
     }
+    @Test
+    public void testLoginEncodedRedirectUri() throws Exception {
+        testStrategy.testLoginEncodedRedirectUri();
+    }
 
     @Test
     public void testSavedPostRequest() throws Exception {

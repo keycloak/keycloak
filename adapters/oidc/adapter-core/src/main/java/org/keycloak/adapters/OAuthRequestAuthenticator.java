@@ -25,6 +25,7 @@ import org.keycloak.adapters.spi.AuthChallenge;
 import org.keycloak.adapters.spi.AuthOutcome;
 import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.common.VerificationException;
+import org.keycloak.common.util.Encode;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.common.util.UriUtils;
 import org.keycloak.constants.AdapterConstants;
@@ -169,7 +170,7 @@ public class OAuthRequestAuthenticator {
         KeycloakUriBuilder redirectUriBuilder = deployment.getAuthUrl().clone()
                 .queryParam(OAuth2Constants.RESPONSE_TYPE, OAuth2Constants.CODE)
                 .queryParam(OAuth2Constants.CLIENT_ID, deployment.getResourceName())
-                .queryParam(OAuth2Constants.REDIRECT_URI, url)
+                .queryParam(OAuth2Constants.REDIRECT_URI, Encode.encodeQueryParamAsIs(url)) // Need to encode uri ourselves as queryParam() will not encode % characters.
                 .queryParam(OAuth2Constants.STATE, state)
                 .queryParam("login", "true");
         if(loginHint != null && loginHint.length() > 0){
@@ -203,7 +204,7 @@ public class OAuthRequestAuthenticator {
 
     protected AuthChallenge loginRedirect() {
         final String state = getStateCode();
-        final String redirect = getRedirectUri(state);
+        final String redirect =  getRedirectUri(state);
         if (redirect == null) {
             return challenge(403, OIDCAuthenticationError.Reason.NO_REDIRECT_URI, null);
         }
