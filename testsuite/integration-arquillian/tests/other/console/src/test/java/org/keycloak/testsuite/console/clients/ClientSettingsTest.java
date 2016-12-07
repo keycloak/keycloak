@@ -22,6 +22,7 @@ import org.junit.Test;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.testsuite.console.page.clients.settings.ClientSettings;
 import org.keycloak.testsuite.util.Timer;
+import org.openqa.selenium.By;
 
 import javax.ws.rs.core.Response;
 import java.util.ArrayList;
@@ -32,7 +33,6 @@ import static org.keycloak.testsuite.auth.page.login.Login.OIDC;
 import static org.keycloak.testsuite.auth.page.login.Login.SAML;
 import static org.keycloak.testsuite.console.page.clients.settings.ClientSettingsForm.OidcAccessType.BEARER_ONLY;
 import static org.keycloak.testsuite.console.page.clients.settings.ClientSettingsForm.OidcAccessType.CONFIDENTIAL;
-import static org.keycloak.testsuite.console.page.clients.settings.ClientSettingsForm.SAMLClientSettingsForm.*;
 import static org.keycloak.testsuite.util.WaitUtils.pause;
 
 /**
@@ -107,6 +107,28 @@ public class ClientSettingsTest extends AbstractClientTest {
         ClientRepresentation found = findClientByClientId(newClient.getClientId());
         assertNotNull("Client " + newClient.getClientId() + " was not found.", found);
         assertClientSettingsEqual(newClient, found);
+    }
+    
+    //KEYCLOAK-4022
+    @Test
+    public void testOIDCConfidentialServiceAccountRolesTab() {
+        newClient = createClientRep("oidc-service-account-tab", OIDC);
+        createClient(newClient);
+        
+        newClient.setRedirectUris(TEST_REDIRECT_URIs);
+        newClient.setPublicClient(false);
+        
+        clientSettingsPage.form().setAccessType(CONFIDENTIAL);
+        clientSettingsPage.form().setServiceAccountsEnabled(true);
+        assertTrue(clientSettingsPage.form().isServiceAccountsEnabled());
+        //check if Service Account Roles tab is not present
+        assertFalse(clientSettingsPage.tabs().isServiceAccountRolesDisplayed());
+        
+        clientSettingsPage.form().setRedirectUris(TEST_REDIRECT_URIs);
+        clientSettingsPage.form().save();
+        
+        //should be there now
+        assertTrue(clientSettingsPage.tabs().getTabs().findElement(By.linkText("Service Account Roles")).isDisplayed());
     }
     
     @Test
