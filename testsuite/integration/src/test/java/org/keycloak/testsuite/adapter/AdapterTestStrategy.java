@@ -228,7 +228,7 @@ public class AdapterTestStrategy extends ExternalResource {
         Assert.assertTrue(driver.getCurrentUrl().startsWith(LOGIN_URL));
         loginPage.login("bburke@redhat.com", "password");
         System.out.println("Current url: " + driver.getCurrentUrl());
-        Assert.assertEquals(driver.getCurrentUrl(), APP_SERVER_BASE_URL + "/product-portal?encodeTest=a%3Cb");
+        Assert.assertEquals(driver.getCurrentUrl(), APP_SERVER_BASE_URL + "/product-portal" + slash + "?encodeTest=a%3Cb");
         String pageSource = driver.getPageSource();
         System.out.println(pageSource);
         Assert.assertTrue(pageSource.contains("iPhone"));
