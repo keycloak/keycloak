@@ -36,7 +36,7 @@ This specifies an alpha-numeric string that will be used as the client identifie
 *Name*
 
 This is the display name for the client whenever it is displayed in a {{book.project.name}} UI screen.  You can localize
-the value of this field by setting up a replacement string value i.e. $\{myapp}.  See the link:{{book.developerguide.link}}[{{book.developerguide.name}}]
+the value of this field by setting up a replacement string value i.e. $\{myapp}.  See the link:{{book.project.doc_base_url}}{{book.project.doc_info_version_url}}{{book.developerguide.link}}[{{book.developerguide.name}}]
 for more information.
 
 *Description*
@@ -104,7 +104,7 @@ If this is on, clients are allowed to use the OIDC <<fake/../../sso-protocols/oi
 For {{book.project.name}} specific client adapters, this is the callback endpoint for the client.  The {{book.project.name}}
 server will use this URI to make callbacks like pushing revocation policies, performing backchannel logout, and other
 administrative operations.  For {{book.project.name}} servlet adapters, this can be the root URL of the servlet application.
-See link:{{book.adapterguide.link}}[{{book.adapterguide.name}}] for more information.
+For more information see link:{{book.project.doc_base_url}}{{book.project.doc_info_version_url}}{{book.adapterguide.link}}[{{book.adapterguide.name}}].
 
 *Web Origins*
 
@@ -118,7 +118,7 @@ This protocol exists to protect against XSS, CSRF and other JavaScript-based att
 `Web Origins` setting for the client are embedded within the access token sent to the client application.  The client
 application can then use this information to decide whether or not to allow a CORS request to be invoked on it.  This is
 an extension to the OIDC protocol so only {{book.project.name}} client adapters support this feature.
-See link:{{book.adapterguide.link}}[{{book.adapterguide.name}}] for more information.
+See link:{{book.project.doc_base_url}}{{book.project.doc_info_version_url}}{{book.adapterguide.link}}[{{book.adapterguide.name}}] for more information.
 
 To fill in the `Web Origins` data, enter in a base URL and click the + sign to add.  Click the - sign next to URLs you want to remove.
 Remember that you still have to click the `Save` button!

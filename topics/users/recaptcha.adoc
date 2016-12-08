@@ -33,5 +33,5 @@ values of both the `X-Frame-Options` and `Content-Security-Policy` headers.
 image:../../{{book.images}}/security-headers.png[]
 
 Once you do this, reCAPTCHA should show up on your registration page.  You may want to edit _register.ftl_ in your login
-theme to muck around with the placement and styling of the reCAPTCHA button.  See the link:{{book.developerguide.link}}[{{book.developerguide.name}}]
+theme to muck around with the placement and styling of the reCAPTCHA button.  See the link:{{book.project.doc_base_url}}{{book.project.doc_info_version_url}}{{book.developerguide.link}}[{{book.developerguide.name}}]
 for more information on extending and creating themes.

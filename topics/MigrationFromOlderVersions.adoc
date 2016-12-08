@@ -37,7 +37,7 @@ tags under the keycloak subsystem.  Before migration, your keycloak subsystem sh
 </subsystem>
 ----
 
-The jboss-cli tool is discussed in detail in link:{{book.installguide.link}}[{{book.installguide.name}}].
+The jboss-cli tool is discussed in detail in link:{{book.project.doc_base_url}}{{book.project.doc_info_version_url}}{{book.installguide.link}}[{{book.installguide.name}}].
 
 ==== migrate-json in Standalone Mode
 

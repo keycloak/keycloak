@@ -104,5 +104,5 @@ that comes with your distribution and adding for example:
 </spi>
 ----
 
-See the link:{{book.installguide.link}}[{{book.installguide.name}}] for more details on
+See the link:{{book.project.doc_base_url}}{{book.project.doc_info_version_url}}{{book.installguide.link}}[{{book.installguide.name}}] for more details on
 where the `standalone.xml`, `standalone-ha.xml`, or `domain.xml` file lives.
