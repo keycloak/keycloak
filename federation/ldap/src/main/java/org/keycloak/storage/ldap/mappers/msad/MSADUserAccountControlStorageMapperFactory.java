@@ -56,7 +56,7 @@ public class MSADUserAccountControlStorageMapperFactory extends AbstractLDAPStor
     }
 
     @Override
-    protected AbstractLDAPStorageMapper createMapper(ComponentModel mapperModel, LDAPStorageProvider federationProvider, RealmModel realm) {
-        return new MSADUserAccountControlStorageMapper(mapperModel, federationProvider, realm);
+    protected AbstractLDAPStorageMapper createMapper(ComponentModel mapperModel, LDAPStorageProvider federationProvider) {
+        return new MSADUserAccountControlStorageMapper(mapperModel, federationProvider);
     }
 }

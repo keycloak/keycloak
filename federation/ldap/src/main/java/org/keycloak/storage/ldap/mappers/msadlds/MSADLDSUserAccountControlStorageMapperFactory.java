@@ -57,7 +57,7 @@ public class MSADLDSUserAccountControlStorageMapperFactory extends AbstractLDAPS
     }
 
     @Override
-    protected AbstractLDAPStorageMapper createMapper(ComponentModel mapperModel, LDAPStorageProvider federationProvider, RealmModel realm) {
-        return new MSADLDSUserAccountControlStorageMapper(mapperModel, federationProvider, realm);
+    protected AbstractLDAPStorageMapper createMapper(ComponentModel mapperModel, LDAPStorageProvider federationProvider) {
+        return new MSADLDSUserAccountControlStorageMapper(mapperModel, federationProvider);
     }
 }

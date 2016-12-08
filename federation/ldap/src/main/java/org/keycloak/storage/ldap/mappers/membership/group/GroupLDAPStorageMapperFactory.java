@@ -200,8 +200,8 @@ public class GroupLDAPStorageMapperFactory extends AbstractLDAPStorageMapperFact
     }
 
     @Override
-    protected AbstractLDAPStorageMapper createMapper(ComponentModel mapperModel, LDAPStorageProvider federationProvider, RealmModel realm) {
-        return new GroupLDAPStorageMapper(mapperModel, federationProvider, realm, this);
+    protected AbstractLDAPStorageMapper createMapper(ComponentModel mapperModel, LDAPStorageProvider federationProvider) {
+        return new GroupLDAPStorageMapper(mapperModel, federationProvider, this);
     }
 
     protected UserRolesRetrieveStrategy getUserGroupsRetrieveStrategy(String strategyKey) {

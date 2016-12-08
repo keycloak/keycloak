@@ -64,7 +64,7 @@ public class LDAPUtils {
         List<ComponentModel> sortedMappers = ldapProvider.sortMappersAsc(federationMappers);
         for (ComponentModel mapperModel : sortedMappers) {
             LDAPStorageMapper ldapMapper = ldapProvider.getMapper(mapperModel);
-            ldapMapper.onRegisterUserToLDAP(mapperModel, ldapProvider, ldapUser, user, realm);
+            ldapMapper.onRegisterUserToLDAP(ldapUser, user, realm);
         }
 
         LDAPUtils.computeAndSetDn(ldapConfig, ldapUser);

@@ -147,19 +147,17 @@ public class UserStorageProviderResource {
         if (parentModel == null) throw new NotFoundException("Parent model not found");
         ComponentModel mapperModel = realm.getComponent(mapperId);
         if (mapperModel == null) throw new NotFoundException("Mapper model not found");
-        LDAPStorageMapper mapper = session.getProvider(LDAPStorageMapper.class, mapperModel);
-        ProviderFactory factory = session.getKeycloakSessionFactory().getProviderFactory(UserStorageProvider.class, parentModel.getProviderId());
 
-        LDAPStorageProviderFactory providerFactory = (LDAPStorageProviderFactory)factory;
-        LDAPStorageProvider federationProvider = providerFactory.create(session, parentModel);
+        LDAPStorageProvider ldapProvider = (LDAPStorageProvider) session.getProvider(UserStorageProvider.class, parentModel);
+        LDAPStorageMapper mapper = session.getProvider(LDAPStorageMapper.class, mapperModel);
 
         ServicesLogger.LOGGER.syncingDataForMapper(mapperModel.getName(), mapperModel.getProviderId(), direction);
 
         SynchronizationResult syncResult;
         if ("fedToKeycloak".equals(direction)) {
-            syncResult = mapper.syncDataFromFederationProviderToKeycloak(mapperModel, federationProvider, session, realm);
+            syncResult = mapper.syncDataFromFederationProviderToKeycloak(realm);
         } else if ("keycloakToFed".equals(direction)) {
-            syncResult = mapper.syncDataFromKeycloakToFederationProvider(mapperModel, federationProvider, session, realm);
+            syncResult = mapper.syncDataFromKeycloakToFederationProvider(realm);
         } else {
             throw new BadRequestException("Unknown direction: " + direction);
         }

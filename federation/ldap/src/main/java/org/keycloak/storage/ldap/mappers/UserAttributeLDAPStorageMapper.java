@@ -81,12 +81,12 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
     public static final String ALWAYS_READ_VALUE_FROM_LDAP = "always.read.value.from.ldap";
     public static final String IS_MANDATORY_IN_LDAP = "is.mandatory.in.ldap";
 
-    public UserAttributeLDAPStorageMapper(ComponentModel mapperModel, LDAPStorageProvider ldapProvider, RealmModel realm) {
-        super(mapperModel, ldapProvider, realm);
+    public UserAttributeLDAPStorageMapper(ComponentModel mapperModel, LDAPStorageProvider ldapProvider) {
+        super(mapperModel, ldapProvider);
     }
 
     @Override
-    public void onImportUserFromLDAP(LDAPObject ldapUser, UserModel user, boolean isCreate) {
+    public void onImportUserFromLDAP(LDAPObject ldapUser, UserModel user, RealmModel realm, boolean isCreate) {
         String userModelAttrName = mapperModel.getConfig().getFirst(USER_MODEL_ATTRIBUTE);
         String ldapAttrName = mapperModel.getConfig().getFirst(LDAP_ATTRIBUTE);
 
@@ -113,7 +113,7 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
     }
 
     @Override
-    public void onRegisterUserToLDAP(LDAPObject ldapUser, UserModel localUser) {
+    public void onRegisterUserToLDAP(LDAPObject ldapUser, UserModel localUser, RealmModel realm) {
         String userModelAttrName = mapperModel.getConfig().getFirst(USER_MODEL_ATTRIBUTE);
         String ldapAttrName = mapperModel.getConfig().getFirst(LDAP_ATTRIBUTE);
         boolean isMandatoryInLdap = parseBooleanParameter(mapperModel, IS_MANDATORY_IN_LDAP);
@@ -172,7 +172,7 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
     }
 
     @Override
-    public UserModel proxy(final LDAPObject ldapUser, UserModel delegate) {
+    public UserModel proxy(final LDAPObject ldapUser, UserModel delegate, RealmModel realm) {
         final String userModelAttrName = mapperModel.getConfig().getFirst(USER_MODEL_ATTRIBUTE);
         final String ldapAttrName = mapperModel.getConfig().getFirst(LDAP_ATTRIBUTE);
         boolean isAlwaysReadValueFromLDAP = parseBooleanParameter(mapperModel, ALWAYS_READ_VALUE_FROM_LDAP);

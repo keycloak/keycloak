@@ -147,7 +147,7 @@ public class LDAPGroupMapperSyncTest {
             LDAPUtils.addMember(ldapProvider, MembershipType.DN, LDAPConstants.MEMBER, group12, group1, true);
 
             try {
-                new GroupLDAPStorageMapperFactory().create(session, mapperModel).syncDataFromFederationProviderToKeycloak(mapperModel, ldapProvider, session, realm);
+                new GroupLDAPStorageMapperFactory().create(session, mapperModel).syncDataFromFederationProviderToKeycloak(realm);
                 Assert.fail("Not expected group sync to pass");
             } catch (ModelException expected) {
                 Assert.assertTrue(expected.getMessage().contains("Recursion detected"));
@@ -157,7 +157,7 @@ public class LDAPGroupMapperSyncTest {
             LDAPTestUtils.updateGroupMapperConfigOptions(mapperModel, GroupMapperConfig.PRESERVE_GROUP_INHERITANCE, "false");
             realm.updateComponent(mapperModel);
 
-            new GroupLDAPStorageMapperFactory().create(session, mapperModel).syncDataFromFederationProviderToKeycloak(mapperModel, ldapProvider, session, realm);
+            new GroupLDAPStorageMapperFactory().create(session, mapperModel).syncDataFromFederationProviderToKeycloak(realm);
 
             // Assert groups are imported to keycloak. All are at top level
             GroupModel kcGroup1 = KeycloakModelUtils.findGroupByPath(realm, "/group1");
@@ -206,7 +206,7 @@ public class LDAPGroupMapperSyncTest {
             GroupLDAPStorageMapper groupMapper = LDAPTestUtils.getGroupMapper(mapperModel, ldapProvider, realm);
 
             // Sync groups with inheritance
-            SynchronizationResult syncResult = new GroupLDAPStorageMapperFactory().create(session, mapperModel).syncDataFromFederationProviderToKeycloak(mapperModel, ldapProvider, session, realm);
+            SynchronizationResult syncResult = new GroupLDAPStorageMapperFactory().create(session, mapperModel).syncDataFromFederationProviderToKeycloak(realm);
             LDAPTestUtils.assertSyncEquals(syncResult, 3, 0, 0, 0);
 
             // Assert groups are imported to keycloak including their inheritance from LDAP
@@ -232,7 +232,7 @@ public class LDAPGroupMapperSyncTest {
             ldapProvider.getLdapIdentityStore().update(group12);
 
             // Sync and assert groups updated
-            syncResult = new GroupLDAPStorageMapperFactory().create(session, mapperModel).syncDataFromFederationProviderToKeycloak(mapperModel, ldapProvider, session, realm);
+            syncResult = new GroupLDAPStorageMapperFactory().create(session, mapperModel).syncDataFromFederationProviderToKeycloak(realm);
             LDAPTestUtils.assertSyncEquals(syncResult, 0, 3, 0, 0);
 
             // Assert attributes changed in keycloak
@@ -254,7 +254,7 @@ public class LDAPGroupMapperSyncTest {
             LDAPStorageProvider ldapProvider = LDAPTestUtils.getLdapProvider(session, ldapModel);
 
             // Sync groups with inheritance
-            SynchronizationResult syncResult = new GroupLDAPStorageMapperFactory().create(session, mapperModel).syncDataFromFederationProviderToKeycloak(mapperModel, ldapProvider, session, realm);
+            SynchronizationResult syncResult = new GroupLDAPStorageMapperFactory().create(session, mapperModel).syncDataFromFederationProviderToKeycloak(realm);
             LDAPTestUtils.assertSyncEquals(syncResult, 3, 0, 0, 0);
 
             // Assert groups are imported to keycloak including their inheritance from LDAP
@@ -271,7 +271,7 @@ public class LDAPGroupMapperSyncTest {
             realm.moveGroup(model2, kcGroup1);
 
             // Sync groups again from LDAP. Nothing deleted
-            syncResult = new GroupLDAPStorageMapperFactory().create(session, mapperModel).syncDataFromFederationProviderToKeycloak(mapperModel, ldapProvider, session, realm);
+            syncResult = new GroupLDAPStorageMapperFactory().create(session, mapperModel).syncDataFromFederationProviderToKeycloak(realm);
             LDAPTestUtils.assertSyncEquals(syncResult, 0, 3, 0, 0);
 
             Assert.assertNotNull(KeycloakModelUtils.findGroupByPath(realm, "/group1/group11"));
@@ -284,7 +284,7 @@ public class LDAPGroupMapperSyncTest {
             realm.updateComponent(mapperModel);
 
             // Sync groups again from LDAP. Assert LDAP non-existing groups deleted
-            syncResult = new GroupLDAPStorageMapperFactory().create(session, mapperModel).syncDataFromFederationProviderToKeycloak(mapperModel, ldapProvider, session, realm);
+            syncResult = new GroupLDAPStorageMapperFactory().create(session, mapperModel).syncDataFromFederationProviderToKeycloak(realm);
             Assert.assertEquals(3, syncResult.getUpdated());
             Assert.assertTrue(syncResult.getRemoved() == 2);
 
@@ -317,7 +317,7 @@ public class LDAPGroupMapperSyncTest {
             LDAPTestUtils.removeAllLDAPUsers(ldapProvider, realm);
             LDAPObject johnLdap = LDAPTestUtils.addLDAPUser(ldapProvider, realm, "johnkeycloak", "John", "Doe", "john@email.org", null, "1234");
             LDAPTestUtils.updateLDAPPassword(ldapProvider, johnLdap, "Password1");
-            groupMapper.addGroupMappingInLDAP("group11", johnLdap);
+            groupMapper.addGroupMappingInLDAP(realm, "group11", johnLdap);
 
             // Assert groups not yet imported to Keycloak DB
             Assert.assertNull(KeycloakModelUtils.findGroupByPath(realm, "/group1"));

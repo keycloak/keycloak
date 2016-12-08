@@ -114,7 +114,7 @@ public class FullNameLDAPStorageMapperFactory extends AbstractLDAPStorageMapperF
     }
 
     @Override
-    protected AbstractLDAPStorageMapper createMapper(ComponentModel mapperModel, LDAPStorageProvider federationProvider, RealmModel realm) {
-        return new FullNameLDAPStorageMapper(mapperModel, federationProvider, realm);
+    protected AbstractLDAPStorageMapper createMapper(ComponentModel mapperModel, LDAPStorageProvider federationProvider) {
+        return new FullNameLDAPStorageMapper(mapperModel, federationProvider);
     }
 }

@@ -182,7 +182,7 @@ public class DefaultKeycloakSession implements KeycloakSession {
 
     @Override
     public <T extends Provider> T getProvider(Class<T> clazz, ComponentModel componentModel) {
-        String modelId = componentModel.getProviderType() + "::" + componentModel.getId();
+        String modelId = componentModel.getId();
 
         Object found = getAttribute(modelId);
         if (found != null) {
