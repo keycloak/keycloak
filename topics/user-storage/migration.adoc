@@ -1,0 +1,95 @@
+
+=== Migratring from Old User Federation SPI
+
+NOTE:  You do not need to read this chapter if you have not implemented a provider using the old (and removed)
+       User Federation SPI
+
+Keycloak had an older User Federation SPI in Keycloak 2.4.0 and earlier.  RH-SSO 7.0, although unsupported, also had
+this older SPI available as well.  This older User Federation SPI has been removed in Keycloak 2.5.0 and RH-SSO 7.1.
+If you have written a provider with this older SPI, this chapter discusses some strategies you can use to port it.
+
+
+==== Import vs. Non-Import
+
+The old User Federation SPI required you to create a local copy of a user in the {{book.project.name}}'s database
+and import information from your exteral store to the local copy.  This is no longer a requirement.  You can still
+port your old provider as-is, but you should consider whether a non-import strategy might be a better approach.
+
+Advantages of Import Strategy:
+
+* {{book.project.name}} basically becomes a persistence user cache for your external store.  Once the user is imported
+you'll no longer hit the external store thus taking load off of it.
+* If you are moving to {{book.project.name}} as your official user store and deprecating the old external store, you
+can slowly migrate applications to use {{book.project.name}}.  When all applications have been migrated, unlink the
+imported user, and retire the old legacy external store.
+
+There are some obvious disadvantages though to using an import strategy:
+
+* Looking up a user for the first time will require multiple updates to {{book.project.name}} database.  This can
+be a big performance loss under load and put a lot of strain on the {{book.project.name}} database.  The user federated
+storage approach will only store extra data as needed and may never be used depending on the capabilities of your external store.
+* With the import approach, you have to keep local keycloak storage and external storage in sync.  The User Storage SPI
+has capability interfaces that you can implement to support synchronization, but this can quickly become painful and messy.
+
+==== UserFederationProvider vs. UserStorageProvider
+
+The first thing to notice is that `UserFederationProvider` was a complete interface.  You just implemented every method
+in this interface.  `UserStorageProvider` instead has broken up this interface into multiple capability interfaces that
+you implement as needed.
+
+`UserFederationProvider.getUserByUsername()` and `getUserByEmail()` have exact equivalents in the new SPI.  The difference
+between the two is how you import.  If you are going to continue with an import strategy, you no longer call
+`KeycloakSession.userStorage().addUser()' to create the user locally.  Instead you call `KeycloakSession.userLocalStorage().addUser()`.
+The `userStorage()` method no longer exists.
+
+The `UserFederationProvider.validateAndProxy()` method has been moved to an optional capability interface, `ImportedUserValidation`.
+You'll want to implement this interface if you are porting your old provider as-is.
+Also note that in the old SPI, this method was called every time the user was accessed, even if the local user is in the cache.
+In the new SPI, this method is only called when the local user is loaded from local storage.  If the local user is cached,
+then the `ImportedUserValidation.validate()` method is not called at all.
+
+The `UserFederationProvider.isValid()` method no longer exists in the new model.
+
+The `UserFederationProvider` methods `synchronizeRegistrations()`, `registerUser()`, and `removeUser()` methods have been
+moved to the `UserRegistrationProvider` capability interface.  This new interface is optional to implement so if your
+provider does not support creating and removing users, you don't have to implement it.  If your old provider had switch
+to toggle support for registering new users, this would be supported in the new SPI be returning `null` from
+`UserRegistrationProvider.addUser()` if the provider doesn't support adding users.
+
+The older `UserFederationProvider` methods centered around credentials are now encapsulated in the `CredentialInputValidator`
+and `CredentialInputUpdater` interfaces, which are also optional to implement depending on if you support validating or
+updating credentials.  Credential management used to exist in `UserModel` methods.  These also have been moved to the
+`CredentialInputValidator` and `CredentialInputUpdater` interfaces.
+One thing to note that if you do not implement the `CredentialInputUpdater` interface, then
+any credentials provided by your provider may be overridden locally in {{book.project.name}} storage.  So if you want
+your credentials to be read-only, you should implement the `CredentialInputUpdater.updateCredential()` method and
+return a `ReadOnlyException`.
+
+The `UserFederationProvider` query methods like `searchByAttributes()` and `getGroupMembers()` are now encapsulated
+in an optional interface `UserQueryProvider`.  If you do not implement this interface, then users will not be viewable
+in the admin console.  You'll still be able to login though.
+
+==== UserFederationProviderFactory vs. UserStorageProviderFactory
+
+The synchronization methods in the old SPI are now encapsulated within an optional `ImportSynchronization` interface.
+If you have implemented synchronization logic, then have your new `UserStorageProviderFactory` implement the
+`ImportSynchronization` interface.
+
+==== Upgrading to new Model
+
+The User Storage SPI instances are stored in a completely different set of relational tables or Mongo schema.  {{book.project.name}}
+automatically runs a migration script.  If any older User Federation providers are deployed for a realm, they will be converted
+to the new storage model as is, including the `id` of the data.  This migration will only happen if there exists a User Storage provider
+with the same provider id (i.e. "ldap", "kerberos") as the old User Federation provider.
+
+So, knowing this there are different approaches you can take.
+
+. You can remove the old provider in your old {{book.project.name}} deployment.  This will remove all local linked copies
+  of imported users.  Then, when you upgrade {{book.project.name}}, just deploy and configure your new provider for your realm.
+. The second option is to write your new provider making sure it has the same provider id: `UserStorageProviderFactory.getId()`.
+  Make sure this provider is in the `deploy/` directory of the new {{book.project.name}} installation.  Boot the server, and have
+  the built-in migration script convert from the old data model to the new data model.  In this case all your old linked imported
+  users will work and be the same.
+
+If you have decided to get rid of the import strategy and rewrite your User Storage provider, we suggest that you remove the old provider
+before upgrading {{book.project.name}}.  This will remove linked local imported copies of any user you imported.

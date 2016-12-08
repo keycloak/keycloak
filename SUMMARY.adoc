@@ -23,3 +23,4 @@
  .. link:topics/user-storage/cache.adoc[User Caches]
  .. link:topics/user-storage/javaee.adoc[Leveraging Java EE]
  .. link:topics/user-storage/rest.adoc[REST Management API]
+ .. link:topics/user-storage/migration.adoc[Migratring from Old User Federation SPI]
