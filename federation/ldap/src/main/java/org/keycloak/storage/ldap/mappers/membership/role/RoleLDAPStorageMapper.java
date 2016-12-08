@@ -58,8 +58,8 @@ public class RoleLDAPStorageMapper extends AbstractLDAPStorageMapper implements 
     private final RoleMapperConfig config;
     private final RoleLDAPStorageMapperFactory factory;
 
-    public RoleLDAPStorageMapper(ComponentModel mapperModel, LDAPStorageProvider ldapProvider, RealmModel realm, RoleLDAPStorageMapperFactory factory) {
-        super(mapperModel, ldapProvider, realm);
+    public RoleLDAPStorageMapper(ComponentModel mapperModel, LDAPStorageProvider ldapProvider, RoleLDAPStorageMapperFactory factory) {
+        super(mapperModel, ldapProvider);
         this.config = new RoleMapperConfig(mapperModel);
         this.factory = factory;
     }
@@ -77,7 +77,7 @@ public class RoleLDAPStorageMapper extends AbstractLDAPStorageMapper implements 
 
 
     @Override
-    public void onImportUserFromLDAP(LDAPObject ldapUser, UserModel user, boolean isCreate) {
+    public void onImportUserFromLDAP(LDAPObject ldapUser, UserModel user, RealmModel realm, boolean isCreate) {
         LDAPGroupMapperMode mode = config.getMode();
 
         // For now, import LDAP role mappings just during create
@@ -90,7 +90,7 @@ public class RoleLDAPStorageMapper extends AbstractLDAPStorageMapper implements 
             for (LDAPObject ldapRole : ldapRoles) {
                 String roleName = ldapRole.getAttributeAsString(roleNameAttr);
 
-                RoleContainerModel roleContainer = getTargetRoleContainer();
+                RoleContainerModel roleContainer = getTargetRoleContainer(realm);
                 RoleModel role = roleContainer.getRole(roleName);
 
                 if (role == null) {
@@ -104,13 +104,13 @@ public class RoleLDAPStorageMapper extends AbstractLDAPStorageMapper implements 
     }
 
     @Override
-    public void onRegisterUserToLDAP(LDAPObject ldapUser, UserModel localUser) {
+    public void onRegisterUserToLDAP(LDAPObject ldapUser, UserModel localUser, RealmModel realm) {
     }
 
 
     // Sync roles from LDAP to Keycloak DB
     @Override
-    public SynchronizationResult syncDataFromFederationProviderToKeycloak() {
+    public SynchronizationResult syncDataFromFederationProviderToKeycloak(RealmModel realm) {
         SynchronizationResult syncResult = new SynchronizationResult() {
 
             @Override
@@ -126,7 +126,7 @@ public class RoleLDAPStorageMapper extends AbstractLDAPStorageMapper implements 
         LDAPQuery ldapRoleQuery = createRoleQuery();
         List<LDAPObject> ldapRoles = LDAPUtils.loadAllLDAPObjects(ldapRoleQuery, ldapProvider);
 
-        RoleContainerModel roleContainer = getTargetRoleContainer();
+        RoleContainerModel roleContainer = getTargetRoleContainer(realm);
         String rolesRdnAttr = config.getRoleNameLdapAttribute();
         for (LDAPObject ldapRole : ldapRoles) {
             String roleName = ldapRole.getAttributeAsString(rolesRdnAttr);
@@ -146,7 +146,7 @@ public class RoleLDAPStorageMapper extends AbstractLDAPStorageMapper implements 
 
     // Sync roles from Keycloak back to LDAP
     @Override
-    public SynchronizationResult syncDataFromKeycloakToFederationProvider() {
+    public SynchronizationResult syncDataFromKeycloakToFederationProvider(RealmModel realm) {
         SynchronizationResult syncResult = new SynchronizationResult() {
 
             @Override
@@ -175,7 +175,7 @@ public class RoleLDAPStorageMapper extends AbstractLDAPStorageMapper implements 
         }
 
 
-        RoleContainerModel roleContainer = getTargetRoleContainer();
+        RoleContainerModel roleContainer = getTargetRoleContainer(realm);
         Set<RoleModel> keycloakRoles = roleContainer.getRoles();
 
         for (RoleModel keycloakRole : keycloakRoles) {
@@ -220,7 +220,7 @@ public class RoleLDAPStorageMapper extends AbstractLDAPStorageMapper implements 
         return ldapQuery;
     }
 
-    protected RoleContainerModel getTargetRoleContainer() {
+    protected RoleContainerModel getTargetRoleContainer(RealmModel realm) {
         boolean realmRolesMapping = config.isRealmRolesMapping();
         if (realmRolesMapping) {
             return realm;
@@ -273,14 +273,14 @@ public class RoleLDAPStorageMapper extends AbstractLDAPStorageMapper implements 
     }
 
     @Override
-    public UserModel proxy(LDAPObject ldapUser, UserModel delegate) {
+    public UserModel proxy(LDAPObject ldapUser, UserModel delegate, RealmModel realm) {
         final LDAPGroupMapperMode mode = config.getMode();
 
         // For IMPORT mode, all operations are performed against local DB
         if (mode == LDAPGroupMapperMode.IMPORT) {
             return delegate;
         } else {
-            return new LDAPRoleMappingsUserDelegate(delegate, ldapUser);
+            return new LDAPRoleMappingsUserDelegate(realm, delegate, ldapUser);
         }
     }
 
@@ -295,16 +295,18 @@ public class RoleLDAPStorageMapper extends AbstractLDAPStorageMapper implements 
 
     public class LDAPRoleMappingsUserDelegate extends UserModelDelegate {
 
+        private final RealmModel realm;
         private final LDAPObject ldapUser;
         private final RoleContainerModel roleContainer;
 
         // Avoid loading role mappings from LDAP more times per-request
         private Set<RoleModel> cachedLDAPRoleMappings;
 
-        public LDAPRoleMappingsUserDelegate(UserModel user, LDAPObject ldapUser) {
+        public LDAPRoleMappingsUserDelegate(RealmModel realm, UserModel user, LDAPObject ldapUser) {
             super(user);
+            this.realm = realm;
             this.ldapUser = ldapUser;
-            this.roleContainer = getTargetRoleContainer();
+            this.roleContainer = getTargetRoleContainer(realm);
         }
 
         @Override

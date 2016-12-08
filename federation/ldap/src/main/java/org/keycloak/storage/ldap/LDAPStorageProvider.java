@@ -152,7 +152,7 @@ public class LDAPStorageProvider implements UserStorageProvider,
         List<ComponentModel> sortedMappers = sortMappersAsc(mappers);
         for (ComponentModel mapperModel : sortedMappers) {
             LDAPStorageMapper ldapMapper = getMapper(mapperModel);
-            proxied = ldapMapper.proxy(mapperModel, this, ldapObject, proxied, realm);
+            proxied = ldapMapper.proxy(ldapObject, proxied, realm);
         }
 
         return proxied;
@@ -283,7 +283,7 @@ public class LDAPStorageProvider implements UserStorageProvider,
         List<ComponentModel> sortedMappers = sortMappersAsc(mappers);
         for (ComponentModel mapperModel : sortedMappers) {
             LDAPStorageMapper ldapMapper = getMapper(mapperModel);
-            List<UserModel> users = ldapMapper.getGroupMembers(mapperModel, this, realm, group, firstResult, maxResults);
+            List<UserModel> users = ldapMapper.getGroupMembers(realm, group, firstResult, maxResults);
 
             // Sufficient for now
             if (users.size() > 0) {
@@ -387,7 +387,7 @@ public class LDAPStorageProvider implements UserStorageProvider,
                 logger.tracef("Using mapper %s during import user from LDAP", mapperModel);
             }
             LDAPStorageMapper ldapMapper = getMapper(mapperModel);
-            ldapMapper.onImportUserFromLDAP(mapperModel, this, ldapUser, imported, realm, true);
+            ldapMapper.onImportUserFromLDAP(ldapUser, imported, realm, true);
         }
 
         String userDN = ldapUser.getDn().toString();
@@ -469,7 +469,7 @@ public class LDAPStorageProvider implements UserStorageProvider,
                         logger.tracef("Using mapper %s during import user from LDAP", mapperModel);
                     }
                     LDAPStorageMapper ldapMapper = getMapper(mapperModel);
-                    processed = processed || ldapMapper.onAuthenticationFailure(mapperModel, this, ldapUser, user, ae, realm);
+                    processed = processed || ldapMapper.onAuthenticationFailure(ldapUser, user, ae, realm);
                 }
                 return processed;
             }

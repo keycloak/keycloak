@@ -43,12 +43,12 @@ public class FullNameLDAPStorageMapper extends AbstractLDAPStorageMapper {
     public static final String WRITE_ONLY = "write.only";
 
 
-    public FullNameLDAPStorageMapper(ComponentModel mapperModel, LDAPStorageProvider ldapProvider, RealmModel realm) {
-        super(mapperModel, ldapProvider, realm);
+    public FullNameLDAPStorageMapper(ComponentModel mapperModel, LDAPStorageProvider ldapProvider) {
+        super(mapperModel, ldapProvider);
     }
 
     @Override
-    public void onImportUserFromLDAP(LDAPObject ldapUser, UserModel user, boolean isCreate) {
+    public void onImportUserFromLDAP(LDAPObject ldapUser, UserModel user, RealmModel realm, boolean isCreate) {
         if (isWriteOnly()) {
             return;
         }
@@ -72,7 +72,7 @@ public class FullNameLDAPStorageMapper extends AbstractLDAPStorageMapper {
     }
 
     @Override
-    public void onRegisterUserToLDAP(LDAPObject ldapUser, UserModel localUser) {
+    public void onRegisterUserToLDAP(LDAPObject ldapUser, UserModel localUser, RealmModel realm) {
         String ldapFullNameAttrName = getLdapFullNameAttrName();
         String fullName = getFullName(localUser.getFirstName(), localUser.getLastName());
         ldapUser.setSingleAttribute(ldapFullNameAttrName, fullName);
@@ -83,7 +83,7 @@ public class FullNameLDAPStorageMapper extends AbstractLDAPStorageMapper {
     }
 
     @Override
-    public UserModel proxy(LDAPObject ldapUser, UserModel delegate) {
+    public UserModel proxy(LDAPObject ldapUser, UserModel delegate, RealmModel realm) {
         if (ldapProvider.getEditMode() == UserStorageProvider.EditMode.WRITABLE && !isReadOnly()) {
 
 

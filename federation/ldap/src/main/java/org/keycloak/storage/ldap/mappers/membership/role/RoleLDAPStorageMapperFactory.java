@@ -194,8 +194,8 @@ public class RoleLDAPStorageMapperFactory extends AbstractLDAPStorageMapperFacto
     }
 
     @Override
-    protected AbstractLDAPStorageMapper createMapper(ComponentModel mapperModel, LDAPStorageProvider federationProvider, RealmModel realm) {
-        return new RoleLDAPStorageMapper(mapperModel, federationProvider, realm, this);
+    protected AbstractLDAPStorageMapper createMapper(ComponentModel mapperModel, LDAPStorageProvider federationProvider) {
+        return new RoleLDAPStorageMapper(mapperModel, federationProvider, this);
     }
 
     protected UserRolesRetrieveStrategy getUserRolesRetrieveStrategy(String strategyKey) {

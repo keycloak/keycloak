@@ -72,7 +72,7 @@ public class HardcodedLDAPRoleStorageMapperFactory extends AbstractLDAPStorageMa
     }
 
     @Override
-    protected AbstractLDAPStorageMapper createMapper(ComponentModel mapperModel, LDAPStorageProvider federationProvider, RealmModel realm) {
-        return new HardcodedLDAPRoleStorageMapper(mapperModel, federationProvider, realm);
+    protected AbstractLDAPStorageMapper createMapper(ComponentModel mapperModel, LDAPStorageProvider federationProvider) {
+        return new HardcodedLDAPRoleStorageMapper(mapperModel, federationProvider);
     }
 }

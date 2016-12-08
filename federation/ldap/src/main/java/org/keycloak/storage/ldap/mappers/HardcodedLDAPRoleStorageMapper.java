@@ -41,8 +41,8 @@ public class HardcodedLDAPRoleStorageMapper extends AbstractLDAPStorageMapper {
 
     public static final String ROLE = "role";
 
-    public HardcodedLDAPRoleStorageMapper(ComponentModel mapperModel, LDAPStorageProvider ldapProvider, RealmModel realm) {
-        super(mapperModel, ldapProvider, realm);
+    public HardcodedLDAPRoleStorageMapper(ComponentModel mapperModel, LDAPStorageProvider ldapProvider) {
+        super(mapperModel, ldapProvider);
     }
 
     @Override
@@ -50,14 +50,14 @@ public class HardcodedLDAPRoleStorageMapper extends AbstractLDAPStorageMapper {
     }
 
     @Override
-    public UserModel proxy(LDAPObject ldapUser, UserModel delegate) {
+    public UserModel proxy(LDAPObject ldapUser, UserModel delegate, RealmModel realm) {
         return new UserModelDelegate(delegate) {
 
             @Override
             public Set<RoleModel> getRealmRoleMappings() {
                 Set<RoleModel> roles = super.getRealmRoleMappings();
 
-                RoleModel role = getRole();
+                RoleModel role = getRole(realm);
                 if (role != null && role.getContainer().equals(realm)) {
                     roles.add(role);
                 }
@@ -69,7 +69,7 @@ public class HardcodedLDAPRoleStorageMapper extends AbstractLDAPStorageMapper {
             public Set<RoleModel> getClientRoleMappings(ClientModel app) {
                 Set<RoleModel> roles = super.getClientRoleMappings(app);
 
-                RoleModel role = getRole();
+                RoleModel role = getRole(realm);
                 if (role != null && role.getContainer().equals(app)) {
                     roles.add(role);
                 }
@@ -79,14 +79,14 @@ public class HardcodedLDAPRoleStorageMapper extends AbstractLDAPStorageMapper {
 
             @Override
             public boolean hasRole(RoleModel role) {
-                return super.hasRole(role) || role.equals(getRole());
+                return super.hasRole(role) || role.equals(getRole(realm));
             }
 
             @Override
             public Set<RoleModel> getRoleMappings() {
                 Set<RoleModel> roles = super.getRoleMappings();
 
-                RoleModel role = getRole();
+                RoleModel role = getRole(realm);
                 if (role != null) {
                     roles.add(role);
                 }
@@ -96,7 +96,7 @@ public class HardcodedLDAPRoleStorageMapper extends AbstractLDAPStorageMapper {
 
             @Override
             public void deleteRoleMapping(RoleModel role) {
-                if (role.equals(getRole())) {
+                if (role.equals(getRole(realm))) {
                     throw new ModelException("Not possible to delete role. It's hardcoded by LDAP mapper");
                 } else {
                     super.deleteRoleMapping(role);
@@ -106,16 +106,16 @@ public class HardcodedLDAPRoleStorageMapper extends AbstractLDAPStorageMapper {
     }
 
     @Override
-    public void onRegisterUserToLDAP(LDAPObject ldapUser, UserModel localUser) {
+    public void onRegisterUserToLDAP(LDAPObject ldapUser, UserModel localUser, RealmModel realm) {
 
     }
 
     @Override
-    public void onImportUserFromLDAP(LDAPObject ldapUser, UserModel user, boolean isCreate) {
+    public void onImportUserFromLDAP(LDAPObject ldapUser, UserModel user, RealmModel realm, boolean isCreate) {
 
     }
 
-    private RoleModel getRole() {
+    private RoleModel getRole(RealmModel realm) {
         String roleName = mapperModel.getConfig().getFirst(HardcodedLDAPRoleStorageMapper.ROLE);
         RoleModel role = KeycloakModelUtils.getRoleFromString(realm, roleName);
         if (role == null) {
