@@ -883,6 +883,99 @@ module.controller('ResourceServerPolicyUserDetailCtrl', function($scope, $route,
     }, realm, client, $scope);
 });
 
+module.controller('ResourceServerPolicyClientDetailCtrl', function($scope, $route, realm, client, PolicyController, Client) {
+    PolicyController.onInit({
+        getPolicyType : function() {
+            return "client";
+        },
+
+        onInit : function() {
+            $scope.clientsUiSelect = {
+                minimumInputLength: 1,
+                delay: 500,
+                allowClear: true,
+                query: function (query) {
+                    var data = {results: []};
+                    if ('' == query.term.trim()) {
+                        query.callback(data);
+                        return;
+                    }
+                    Client.query({realm: $route.current.params.realm, search: query.term.trim(), max: 20}, function(response) {
+                        data.results = response;
+                        query.callback(data);
+                    });
+                },
+                formatResult: function(object, container, query) {
+                    return object.clientId;
+                }
+            };
+
+            $scope.selectedClients = [];
+
+            $scope.selectClient = function(client) {
+                if (!client || !client.id) {
+                    return;
+                }
+
+                $scope.selectedClient = null;
+
+                for (var i = 0; i < $scope.selectedClients.length; i++) {
+                    if ($scope.selectedClients[i].id == client.id) {
+                        return;
+                    }
+                }
+
+                $scope.selectedClients.push(client);
+            }
+
+            $scope.removeFromList = function(list, index) {
+                list.splice(index, 1);
+            }
+        },
+
+        onInitUpdate : function(policy) {
+            var selectedClients = [];
+
+            if (policy.config.clients) {
+                var clients = eval(policy.config.clients);
+
+                for (var i = 0; i < clients.length; i++) {
+                    Client.get({realm: $route.current.params.realm, client: clients[i]}, function(data) {
+                        selectedClients.push(data);
+                        $scope.selectedClients = angular.copy(selectedClients);
+                    });
+                }
+            }
+
+            $scope.$watch('selectedClients', function() {
+                if (!angular.equals($scope.selectedClients, selectedClients)) {
+                    $scope.changed = true;
+                }
+            }, true);
+        },
+
+        onUpdate : function() {
+            var clients = [];
+
+            for (var i = 0; i < $scope.selectedClients.length; i++) {
+                clients.push($scope.selectedClients[i].id);
+            }
+
+            $scope.policy.config.clients = JSON.stringify(clients);
+        },
+
+        onCreate : function() {
+            var clients = [];
+
+            for (var i = 0; i < $scope.selectedClients.length; i++) {
+                clients.push($scope.selectedClients[i].id);
+            }
+
+            $scope.policy.config.clients = JSON.stringify(clients);
+        }
+    }, realm, client, $scope);
+});
+
 module.controller('ResourceServerPolicyRoleDetailCtrl', function($scope, $route, realm, client, Client, ClientRole, PolicyController, Role, RoleById) {
     PolicyController.onInit({
         getPolicyType : function() {
