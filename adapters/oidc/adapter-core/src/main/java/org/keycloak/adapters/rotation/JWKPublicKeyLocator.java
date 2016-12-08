@@ -63,7 +63,7 @@ public class JWKPublicKeyLocator implements PublicKeyLocator {
                 sendRequest(deployment);
                 lastRequestTime = currentTime;
             } else {
-                log.debugf("Won't send request to realm jwks url. Last request time was %d", lastRequestTime);
+                log.debug("Won't send request to realm jwks url. Last request time was " + lastRequestTime);
             }
 
             return lookupCachedKey(publicKeyCacheTtl, currentTime, kid);
@@ -89,7 +89,7 @@ public class JWKPublicKeyLocator implements PublicKeyLocator {
 
     private void sendRequest(KeycloakDeployment deployment) {
         if (log.isTraceEnabled()) {
-            log.tracef("Going to send request to retrieve new set of realm public keys for client %s", deployment.getResourceName());
+            log.trace("Going to send request to retrieve new set of realm public keys for client " + deployment.getResourceName());
         }
 
         HttpGet getMethod = new HttpGet(deployment.getJwksUrl());
@@ -99,7 +99,7 @@ public class JWKPublicKeyLocator implements PublicKeyLocator {
             Map<String, PublicKey> publicKeys = JWKSUtils.getKeysForUse(jwks, JWK.Use.SIG);
 
             if (log.isDebugEnabled()) {
-                log.debugf("Realm public keys successfully retrieved for client %s. New kids: %s", deployment.getResourceName(), publicKeys.keySet().toString());
+                log.debug("Realm public keys successfully retrieved for client " +  deployment.getResourceName() + ". New kids: " + publicKeys.keySet().toString());
             }
 
             // Update current keys
