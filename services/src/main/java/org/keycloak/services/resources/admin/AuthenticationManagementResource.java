@@ -986,6 +986,7 @@ public class AuthenticationManagementResource {
     @Path("config")
     @POST
     @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
     public Response createAuthenticatorConfig(AuthenticatorConfigRepresentation rep) {
         auth.requireManage();
 
