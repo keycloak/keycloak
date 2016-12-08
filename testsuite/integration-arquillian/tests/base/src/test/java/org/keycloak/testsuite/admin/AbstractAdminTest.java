@@ -83,7 +83,6 @@ public abstract class AbstractAdminTest extends TestRealmKeycloakTest  {
     }
 
     // old testsuite expects this realm to be removed at the end of the test
-    // not sure if it really matters
     @After
     public void after() {
         for (RealmRepresentation r : adminClient.realms().findAll()) {

@@ -77,6 +77,7 @@ import java.util.Set;
  * @version $Revision: 1 $
  */
 public class AuthenticationManager {
+    public static final String SET_REDIRECT_URI_AFTER_REQUIRED_ACTIONS= "SET_REDIRECT_URI_AFTER_REQUIRED_ACTIONS";
     public static final String END_AFTER_REQUIRED_ACTIONS = "END_AFTER_REQUIRED_ACTIONS";
 
     // userSession note with authTime (time when authentication flow including requiredActions was finished)
@@ -469,9 +470,17 @@ public class AuthenticationManager {
 
     public static Response finishedRequiredActions(KeycloakSession session, UserSessionModel userSession, ClientSessionModel clientSession, ClientConnection clientConnection, HttpRequest request, UriInfo uriInfo, EventBuilder event) {
         if (clientSession.getNote(END_AFTER_REQUIRED_ACTIONS) != null) {
-            Response response = session.getProvider(LoginFormsProvider.class)
-                    .setAttribute("skipLink", true)
-                    .setSuccess(Messages.ACCOUNT_UPDATED)
+            LoginFormsProvider infoPage = session.getProvider(LoginFormsProvider.class)
+                    .setSuccess(Messages.ACCOUNT_UPDATED);
+            if (clientSession.getNote(SET_REDIRECT_URI_AFTER_REQUIRED_ACTIONS) != null) {
+                if (clientSession.getRedirectUri() != null) {
+                    infoPage.setAttribute("pageRedirectUri", clientSession.getRedirectUri());
+                }
+
+            } else {
+                infoPage.setAttribute("skipLink", true);
+            }
+            Response response = infoPage
                     .createInfoPage();
             session.sessions().removeUserSession(session.getContext().getRealm(), userSession);
             return response;

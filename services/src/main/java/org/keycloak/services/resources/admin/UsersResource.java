@@ -836,8 +836,9 @@ public class UsersResource {
      * Send a update account email to the user
      *
      * An email contains a link the user can click to perform a set of required actions.
-     * The redirectUri and clientId parameters are optional. The default for the
-     * redirect is the account client.
+     * The redirectUri and clientId parameters are optional. If no redirect is given, then there will
+     * be no link back to click after actions have completed.  Redirect uri must be a valid uri for the
+     * particular clientId.
      *
      * @param id User is
      * @param redirectUri Redirect uri
@@ -866,6 +867,10 @@ public class UsersResource {
         ClientSessionModel clientSession = createClientSession(user, redirectUri, clientId);
         for (String action : actions) {
             clientSession.addRequiredAction(action);
+        }
+        if (redirectUri != null) {
+            clientSession.setNote(AuthenticationManager.SET_REDIRECT_URI_AFTER_REQUIRED_ACTIONS, "true");
+
         }
         ClientSessionCode accessCode = new ClientSessionCode(session, realm, clientSession);
         accessCode.setAction(ClientSessionModel.Action.EXECUTE_ACTIONS.name());
@@ -933,15 +938,13 @@ public class UsersResource {
                 ErrorResponse.error(clientId + " not enabled", Response.Status.BAD_REQUEST));
         }
 
-        String redirect;
+        String redirect = null;
         if (redirectUri != null) {
             redirect = RedirectUtils.verifyRedirectUri(uriInfo, redirectUri, realm, client);
             if (redirect == null) {
                 throw new WebApplicationException(
                     ErrorResponse.error("Invalid redirect uri.", Response.Status.BAD_REQUEST));
             }
-        } else {
-            redirect = Urls.accountBase(uriInfo.getBaseUri()).path("/").build(realm.getName()).toString();
         }
 
 
