@@ -37,7 +37,7 @@ Client ID::
 
 Name::
   This is the display name for the client whenever it is displayed in a {{book.project.name}} UI screen.  You can localize
-  the value of this field by setting up a replacement string value i.e. $\{myapp}.  See the link:{{book.developerguide.link}}[{{book.developerguide.name}}]
+  the value of this field by setting up a replacement string value i.e. $\{myapp}.  See the link:{{book.project.doc_base_url}}{{book.project.doc_info_version_url}}{{book.developerguide.link}}[{{book.developerguide.name}}]
   for more information.
 
 Description::

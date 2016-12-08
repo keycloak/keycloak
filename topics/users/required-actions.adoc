@@ -39,5 +39,5 @@ Simply click the checkbox in the `Default Action` column of the required actions
 Many organizations have a requirement that when a new user logs in for the first time, they need to agree to the terms and conditions
 of the website.  {{book.project.name}} has this functionality implemented as a required action, but it requires some configuration.  For one, you
 have to go to the `Required Actions` tab described earlier and enable the `Terms and Conditions` action.  You must also edit the
-_terms.ftl_ file in the _base_ login theme.  See the link:{{book.developerguide.link}}[{{book.developerguide.name}}] for more information on extending and
+_terms.ftl_ file in the _base_ login theme.  See the link:{{book.project.doc_base_url}}{{book.project.doc_info_version_url}}{{book.developerguide.link}}[{{book.developerguide.name}}] for more information on extending and
 creating themes.
