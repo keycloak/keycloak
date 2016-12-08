@@ -155,7 +155,7 @@ public class LDAPQuery {
         List<ComponentModel> sortedMappers = ldapFedProvider.sortMappersAsc(mappers);
         for (ComponentModel mapperModel : sortedMappers) {
             LDAPStorageMapper fedMapper = ldapFedProvider.getMapper(mapperModel);
-            fedMapper.beforeLDAPQuery(mapperModel, this);
+            fedMapper.beforeLDAPQuery(this);
         }
 
         List<LDAPObject> result = new ArrayList<LDAPObject>();

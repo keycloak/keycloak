@@ -52,8 +52,8 @@ public class MSADLDSUserAccountControlStorageMapper extends AbstractLDAPStorageM
     private static final Pattern AUTH_EXCEPTION_REGEX = Pattern.compile(".*AcceptSecurityContext error, data ([0-9a-f]*), v.*");
     private static final Pattern AUTH_INVALID_NEW_PASSWORD = Pattern.compile("(?s).*problem 1005 \\(CONSTRAINT_ATT_TYPE\\), data [0-9a-f]*, Att 23 \\(userPassword\\).*");
 
-    public MSADLDSUserAccountControlStorageMapper(ComponentModel mapperModel, LDAPStorageProvider ldapProvider, RealmModel realm) {
-        super(mapperModel, ldapProvider, realm);
+    public MSADLDSUserAccountControlStorageMapper(ComponentModel mapperModel, LDAPStorageProvider ldapProvider) {
+        super(mapperModel, ldapProvider);
         ldapProvider.setUpdater(this);
     }
 
@@ -94,22 +94,22 @@ public class MSADLDSUserAccountControlStorageMapper extends AbstractLDAPStorageM
     }
 
     @Override
-    public UserModel proxy(LDAPObject ldapUser, UserModel delegate) {
+    public UserModel proxy(LDAPObject ldapUser, UserModel delegate, RealmModel realm) {
         return new MSADUserModelDelegate(delegate, ldapUser);
     }
 
     @Override
-    public void onRegisterUserToLDAP(LDAPObject ldapUser, UserModel localUser) {
+    public void onRegisterUserToLDAP(LDAPObject ldapUser, UserModel localUser, RealmModel realm) {
 
     }
 
     @Override
-    public void onImportUserFromLDAP(LDAPObject ldapUser, UserModel user, boolean isCreate) {
+    public void onImportUserFromLDAP(LDAPObject ldapUser, UserModel user, RealmModel realm, boolean isCreate) {
 
     }
 
     @Override
-    public boolean onAuthenticationFailure(LDAPObject ldapUser, UserModel user, AuthenticationException ldapException) {
+    public boolean onAuthenticationFailure(LDAPObject ldapUser, UserModel user, AuthenticationException ldapException, RealmModel realm) {
         String exceptionMessage = ldapException.getMessage();
         Matcher m = AUTH_EXCEPTION_REGEX.matcher(exceptionMessage);
         if (m.matches()) {

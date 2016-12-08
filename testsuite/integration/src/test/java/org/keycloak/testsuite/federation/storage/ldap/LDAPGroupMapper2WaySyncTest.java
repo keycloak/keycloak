@@ -115,7 +115,7 @@ public class LDAPGroupMapper2WaySyncTest {
             realm.updateComponent(mapperModel);
 
             // Sync from Keycloak into LDAP
-            SynchronizationResult syncResult = new GroupLDAPStorageMapperFactory().create(session, mapperModel).syncDataFromKeycloakToFederationProvider(mapperModel, ldapProvider, session, realm);
+            SynchronizationResult syncResult = new GroupLDAPStorageMapperFactory().create(session, mapperModel).syncDataFromKeycloakToFederationProvider(realm);
             LDAPTestUtils.assertSyncEquals(syncResult, 4, 0, 0, 0);
         } finally {
             keycloakRule.stopSession(session, true);
@@ -143,7 +143,7 @@ public class LDAPGroupMapper2WaySyncTest {
             LDAPStorageProvider ldapProvider = LDAPTestUtils.getLdapProvider(session, ldapModel);
 
             // Sync from LDAP back into Keycloak
-            SynchronizationResult syncResult = new GroupLDAPStorageMapperFactory().create(session, mapperModel).syncDataFromFederationProviderToKeycloak(mapperModel, ldapProvider, session, realm);
+            SynchronizationResult syncResult = new GroupLDAPStorageMapperFactory().create(session, mapperModel).syncDataFromFederationProviderToKeycloak(realm);
             LDAPTestUtils.assertSyncEquals(syncResult, 4, 0, 0, 0);
 
             // Assert groups are imported to keycloak. All are at top level
@@ -179,7 +179,7 @@ public class LDAPGroupMapper2WaySyncTest {
             realm.updateComponent(mapperModel);
 
             // Sync from Keycloak into LDAP
-            SynchronizationResult syncResult = new GroupLDAPStorageMapperFactory().create(session, mapperModel).syncDataFromKeycloakToFederationProvider(mapperModel, ldapProvider, session, realm);
+            SynchronizationResult syncResult = new GroupLDAPStorageMapperFactory().create(session, mapperModel).syncDataFromKeycloakToFederationProvider(realm);
             LDAPTestUtils.assertSyncEquals(syncResult, 4, 0, 0, 0);
         } finally {
             keycloakRule.stopSession(session, true);
@@ -207,7 +207,7 @@ public class LDAPGroupMapper2WaySyncTest {
             LDAPStorageProvider ldapProvider = LDAPTestUtils.getLdapProvider(session, ldapModel);
 
             // Sync from LDAP back into Keycloak
-            SynchronizationResult syncResult = new GroupLDAPStorageMapperFactory().create(session, mapperModel).syncDataFromFederationProviderToKeycloak(mapperModel, ldapProvider, session, realm);
+            SynchronizationResult syncResult = new GroupLDAPStorageMapperFactory().create(session, mapperModel).syncDataFromFederationProviderToKeycloak(realm);
             LDAPTestUtils.assertSyncEquals(syncResult, 4, 0, 0, 0);
 
             // Assert groups are imported to keycloak. All are at top level
@@ -242,7 +242,7 @@ public class LDAPGroupMapper2WaySyncTest {
         LDAPTestUtils.createLDAPGroup(session, realm, ldapModel, "group3");
 
         // Sync and assert our group is still in LDAP
-        SynchronizationResult syncResult = new GroupLDAPStorageMapperFactory().create(session, mapperModel).syncDataFromKeycloakToFederationProvider(mapperModel, ldapProvider, session, realm);
+        SynchronizationResult syncResult = new GroupLDAPStorageMapperFactory().create(session, mapperModel).syncDataFromKeycloakToFederationProvider(realm);
         LDAPTestUtils.assertSyncEquals(syncResult, 0, 4, 0, 0);
         Assert.assertNotNull(LDAPTestUtils.getGroupMapper(mapperModel, ldapProvider, realm).loadLDAPGroupByName("group3"));
 
@@ -251,7 +251,7 @@ public class LDAPGroupMapper2WaySyncTest {
         realm.updateComponent(mapperModel);
 
         // Sync and assert group removed from LDAP
-        syncResult = new GroupLDAPStorageMapperFactory().create(session, mapperModel).syncDataFromKeycloakToFederationProvider(mapperModel, ldapProvider, session, realm);
+        syncResult = new GroupLDAPStorageMapperFactory().create(session, mapperModel).syncDataFromKeycloakToFederationProvider(realm);
         LDAPTestUtils.assertSyncEquals(syncResult, 0, 4, 1, 0);
         Assert.assertNull(LDAPTestUtils.getGroupMapper(mapperModel, ldapProvider, realm).loadLDAPGroupByName("group3"));
     }

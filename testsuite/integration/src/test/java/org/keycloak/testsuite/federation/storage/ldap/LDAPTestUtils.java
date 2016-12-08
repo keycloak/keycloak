@@ -238,11 +238,11 @@ public class LDAPTestUtils {
         ComponentModel mapperModel = getSubcomponentByName(realm, providerModel, "realmRolesMapper");
         RoleLDAPStorageMapper roleMapper = getRoleMapper(mapperModel, ldapProvider, realm);
 
-        roleMapper.syncDataFromFederationProviderToKeycloak();
+        roleMapper.syncDataFromFederationProviderToKeycloak(realm);
 
         mapperModel = getSubcomponentByName(realm, providerModel, "financeRolesMapper");
         roleMapper = getRoleMapper(mapperModel, ldapProvider, realm);
-        roleMapper.syncDataFromFederationProviderToKeycloak();
+        roleMapper.syncDataFromFederationProviderToKeycloak(realm);
     }
 
     public static void removeAllLDAPUsers(LDAPStorageProvider ldapProvider, RealmModel realm) {
@@ -296,11 +296,11 @@ public class LDAPTestUtils {
     }
 
     public static GroupLDAPStorageMapper getGroupMapper(ComponentModel mapperModel, LDAPStorageProvider ldapProvider, RealmModel realm) {
-        return new GroupLDAPStorageMapper(mapperModel, ldapProvider, realm, new GroupLDAPStorageMapperFactory());
+        return new GroupLDAPStorageMapper(mapperModel, ldapProvider, new GroupLDAPStorageMapperFactory());
     }
 
     public static RoleLDAPStorageMapper getRoleMapper(ComponentModel mapperModel, LDAPStorageProvider ldapProvider, RealmModel realm) {
-        return new RoleLDAPStorageMapper(mapperModel, ldapProvider, realm, new RoleLDAPStorageMapperFactory());
+        return new RoleLDAPStorageMapper(mapperModel, ldapProvider, new RoleLDAPStorageMapperFactory());
     }
 
 

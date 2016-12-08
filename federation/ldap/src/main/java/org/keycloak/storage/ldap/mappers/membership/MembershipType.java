@@ -68,8 +68,7 @@ public enum MembershipType {
         }
 
         @Override
-        public List<UserModel> getGroupMembers(GroupLDAPStorageMapper groupMapper, LDAPObject ldapGroup, int firstResult, int maxResults) {
-            RealmModel realm = groupMapper.getRealm();
+        public List<UserModel> getGroupMembers(RealmModel realm, GroupLDAPStorageMapper groupMapper, LDAPObject ldapGroup, int firstResult, int maxResults) {
             LDAPStorageProvider ldapProvider = groupMapper.getLdapProvider();
             CommonLDAPGroupMapperConfig config = groupMapper.getConfig();
 
@@ -134,7 +133,7 @@ public enum MembershipType {
         }
 
         @Override
-        public List<UserModel> getGroupMembers(GroupLDAPStorageMapper groupMapper, LDAPObject ldapGroup, int firstResult, int maxResults) {
+        public List<UserModel> getGroupMembers(RealmModel realm, GroupLDAPStorageMapper groupMapper, LDAPObject ldapGroup, int firstResult, int maxResults) {
             String memberAttrName = groupMapper.getConfig().getMembershipLdapAttribute();
             Set<String> memberUids = LDAPUtils.getExistingMemberships(memberAttrName, ldapGroup);
 
@@ -146,12 +145,12 @@ public enum MembershipType {
             int max = Math.min(memberUids.size(), firstResult + maxResults);
             uids = uids.subList(firstResult, max);
 
-            return groupMapper.getLdapProvider().loadUsersByUsernames(uids, groupMapper.getRealm());
+            return groupMapper.getLdapProvider().loadUsersByUsernames(uids, realm);
         }
 
     };
 
     public abstract Set<LDAPDn> getLDAPSubgroups(GroupLDAPStorageMapper groupMapper, LDAPObject ldapGroup);
 
-    public abstract List<UserModel> getGroupMembers(GroupLDAPStorageMapper groupMapper, LDAPObject ldapGroup, int firstResult, int maxResults);
+    public abstract List<UserModel> getGroupMembers(RealmModel realm, GroupLDAPStorageMapper groupMapper, LDAPObject ldapGroup, int firstResult, int maxResults);
 }

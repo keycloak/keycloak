@@ -360,12 +360,12 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
 
             @Override
             public void run(KeycloakSession session) {
-                LDAPStorageProvider ldapProvider = (LDAPStorageProvider)session.getProvider(UserStorageProvider.class, model);
                 RealmModel realm = session.realms().getRealm(realmId);
+                session.getProvider(UserStorageProvider.class, model);
                 List<ComponentModel> mappers = realm.getComponents(model.getId(), LDAPStorageMapper.class.getName());
                 for (ComponentModel mapperModel : mappers) {
                     LDAPStorageMapper ldapMapper = session.getProvider(LDAPStorageMapper.class, mapperModel);
-                    SynchronizationResult syncResult = ldapMapper.syncDataFromFederationProviderToKeycloak(mapperModel, ldapProvider, session, realm);
+                    SynchronizationResult syncResult = ldapMapper.syncDataFromFederationProviderToKeycloak(realm);
                     if (syncResult.getAdded() > 0 || syncResult.getUpdated() > 0 || syncResult.getRemoved() > 0 || syncResult.getFailed() > 0) {
                         logger.infof("Sync of federation mapper '%s' finished. Status: %s", mapperModel.getName(), syncResult.toString());
                     }
@@ -461,7 +461,7 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
                                 List<ComponentModel> sortedMappers = ldapFedProvider.sortMappersDesc(federationMappers);
                                 for (ComponentModel mapperModel : sortedMappers) {
                                     LDAPStorageMapper ldapMapper = ldapFedProvider.getMapper(mapperModel);
-                                    ldapMapper.onImportUserFromLDAP(mapperModel, ldapFedProvider, ldapUser, currentUser, currentRealm, false);
+                                    ldapMapper.onImportUserFromLDAP(ldapUser, currentUser, currentRealm, false);
                                 }
 
                                 logger.debugf("Updated user from LDAP: %s", currentUser.getUsername());
