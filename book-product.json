@@ -12,7 +12,9 @@
     "title": "Server Developer Guide",
     "project": {
       "name": "Red Hat Single Sign-On",
-      "version": "7.1.0"
+      "version": "7.1.0",
+      "doc_base_url": "https://access.redhat.com/documentation/en/red-hat-single-sign-on/",
+      "doc_info_version_url": "7.1-Beta"
     },
     "community": false,
     "product": true,
