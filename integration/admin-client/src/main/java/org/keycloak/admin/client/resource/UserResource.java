@@ -98,13 +98,32 @@ public interface UserResource {
     @Deprecated
     public void resetPasswordEmail(@QueryParam("client_id") String clientId);
 
+    /**
+     * Sends an email to the user with a link within it.  If they click on the link they will be asked to perform some actions
+     * i.e. reset password, update profile, etc.
+     *
+     *
+     * @param actions
+     */
     @PUT
     @Path("execute-actions-email")
     public void executeActionsEmail(List<String> actions);
 
+    /**
+     * Sends an email to the user with a link within it.  If they click on the link they will be asked to perform some actions
+     * i.e. reset password, update profile, etc.
+     *
+     * If redirectUri is not null, then you must specify a client id.  This will set the URI you want the flow to link
+     * to after the email link is clicked and actions completed.  If both parameters are null, then no page is linked to
+     * at the end of the flow.
+     *
+     * @param clientId
+     * @param redirectUri
+     * @param actions
+     */
     @PUT
     @Path("execute-actions-email")
-    public void executeActionsEmail(@QueryParam("client_id") String clientId, List<String> actions);
+    public void executeActionsEmail(@QueryParam("client_id") String clientId, @QueryParam("redirect_uri") String redirectUri, List<String> actions);
 
     @PUT
     @Path("send-verify-email")

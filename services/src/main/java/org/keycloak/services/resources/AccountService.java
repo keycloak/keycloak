@@ -486,6 +486,7 @@ public class AccountService extends AbstractSecuredLocalService {
 
     @Path("revoke-grant")
     @POST
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     public Response processRevokeGrant(final MultivaluedMap<String, String> formData) {
         if (auth == null) {
             return login("applications");
