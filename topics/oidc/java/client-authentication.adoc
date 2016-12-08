@@ -39,7 +39,7 @@ will download new keys when it sees the token signed by unknown `kid` (Key ID).
 ** Upload the client's public key or certificate - either in PEM format, in JWK format or from keystore. With this option, public key is hardcoded and
 needs to be changed anytime when client generates new keypair.
 You can even generate your own keystore from {{book.project.name}} admin console if you don't have your own ready.
-See {{book.adminguide.link}}[{{book.adminguide.name}}] for more details of setup in {{book.project.name}} admin console.
+See {{book.project.doc_base_url}}{{book.project.doc_info_version_url}}{{book.adminguide.link}}[{{book.adminguide.name}}] for more details of setup in {{book.project.name}} admin console.
 
 For setup on adapter's side you need to have something like this in your `keycloak.json` file:
 

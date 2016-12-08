@@ -22,7 +22,7 @@
     "images": "rhsso-images",
     "adminguide": {
       "name": "Server Administration Guide",
-      "link": "https://access.redhat.com/documentation/en/red-hat-single-sign-on/7.1-Beta/server-administration-guide/"
+      "link": "/single/server-administration-guide/"
     },
     "fuseVersion": "JBoss Fuse 6.3.0 Rollup 1"
   }
