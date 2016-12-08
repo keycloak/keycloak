@@ -21,20 +21,20 @@
     "images": "rhsso-images",
     "adminguide": {
       "name": "Server Administration Guide",
-      "link": "https://access.redhat.com/documentation/en/red-hat-single-sign-on/7.1-Beta/server-administration-guide/"
+      "link": "/single/server-administration-guide/"
     },
     "clientguide": {
       "name": "Securing Applications and Services Guide",
-      "link": "https://access.redhat.com/documentation/en/red-hat-single-sign-on/7.1-Beta/securing-applications-and-services-guide/"
+      "link": "/single/securing-applications-and-services-guide/"
 
     },
     "installguide": {
       "name": "Server Installation and Configuration Guide",
-      "link": "https://access.redhat.com/documentation/en/red-hat-single-sign-on/7.1-Beta/server-installation-and-configuration-guide/"
+      "link": "/single/server-installation-and-configuration-guide/"
     },
     "apidocs": {
       "name": "API Documentation",
-      "link": "https://access.redhat.com/documentation/en/red-hat-single-sign-on/7.1-Beta/api-documentation/"
+      "link": "/single/api-documentation/"
     }
   }
 }

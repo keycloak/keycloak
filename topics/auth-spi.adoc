@@ -755,7 +755,7 @@ In other words, add your custom authenticator after the "Send Reset Email" authe
 
 First Broker Login flow is used during first login with some identity provider.
 Term `First Login` means that there is not yet existing {{book.project.name}} account linked with the particular authenticated identity provider account.
-More details about this flow are in the `Identity Brokering` chapter in link:{{book.adminguide.link}}[{{book.adminguide.name}}] .
+For more details about this flow see the `Identity Brokering` chapter in link:{{book.project.doc_base_url}}{{book.project.doc_info_version_url}}{{book.adminguide.link}}[{{book.adminguide.name}}] .
 
 [[_client_authentication]]
 === Authentication of clients
@@ -766,7 +766,7 @@ to the {{book.project.name}} server (like the request for exchange code to acces
 But the client authentication can be also used directly by you during `Direct Access grants` (represented by OAuth2 `Resource Owner Password Credentials Flow`)
 or during `Service account` authentication (represented by OAuth2 `Client Credentials Flow`).
 
-See link:{{book.clientguide.link}}[{{book.clientguide.name}}] for more details about {{book.project.name}} adapter and OAuth2 flows.
+For more details about {{book.project.name}} adapter and OAuth2 flows see link:{{book.project.doc_base_url}}{{book.project.doc_info_version_url}}{{book.clientguide.link}}[{{book.clientguide.name}}].
 
 ==== Default implementations
 
