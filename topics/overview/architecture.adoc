@@ -29,7 +29,7 @@ Being based on {{book.project.name}} Authentication Server, you can obtain attri
 
 ==== The Authorization Process
 
-Three main processes define the necessary steps to understand how to use KC to enable fine-grained authorization to your applications:
+Three main processes define the necessary steps to understand how to use {{book.project.name}} to enable fine-grained authorization to your applications:
 
 * *Resource Management*
 * *Permission and Policy Management*
