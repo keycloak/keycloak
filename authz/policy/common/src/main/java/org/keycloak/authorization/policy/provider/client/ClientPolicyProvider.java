@@ -18,11 +18,11 @@ public class ClientPolicyProvider implements PolicyProvider {
     @Override
     public void evaluate(Evaluation evaluation) {
         EvaluationContext context = evaluation.getContext();
-        String[] clientIds = getClients(this.policy);
+        String[] clients = getClients(this.policy);
 
-        if (clientIds.length > 0) {
-            for (String clientId : clientIds) {
-                if (context.getIdentity().getId().equals(clientId)) {
+        if (clients.length > 0) {
+            for (String client : clients) {
+                if (context.getAttributes().containsValue("kc.client.id", client)) {
                     evaluation.grant();
                     return;
                 }
