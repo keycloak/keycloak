@@ -26,6 +26,7 @@ import org.keycloak.federation.kerberos.CommonKerberosConfig;
 import org.keycloak.federation.kerberos.impl.KerberosServerSubjectAuthenticator;
 import org.keycloak.federation.kerberos.impl.KerberosUsernamePasswordAuthenticator;
 import org.keycloak.federation.kerberos.impl.SPNEGOAuthenticator;
+import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.KeycloakSessionTask;
@@ -36,6 +37,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
+import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderFactory;
 import org.keycloak.storage.UserStorageProviderModel;
@@ -52,6 +54,7 @@ import org.keycloak.storage.ldap.mappers.UserAttributeLDAPStorageMapperFactory;
 import org.keycloak.storage.ldap.mappers.msad.MSADUserAccountControlStorageMapperFactory;
 import org.keycloak.storage.user.ImportSynchronization;
 import org.keycloak.storage.user.SynchronizationResult;
+import org.keycloak.utils.CredentialHelper;
 
 import java.util.Date;
 import java.util.List;
@@ -318,7 +321,17 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
             mapperModel = KeycloakModelUtils.createComponentModel("MSAD account controls", model.getId(), MSADUserAccountControlStorageMapperFactory.PROVIDER_ID,LDAPStorageMapper.class.getName());
             realm.addComponentModel(mapperModel);
         }
+        checkKerberosCredential(session, realm, model);
     }
+
+    @Override
+    public void onUpdate(KeycloakSession session, RealmModel realm, ComponentModel model) {
+        checkKerberosCredential(session, realm, model);
+
+    }
+
+
+
 
     @Override
     public SynchronizationResult sync(KeycloakSessionFactory sessionFactory, String realmId, UserStorageProviderModel model) {
@@ -521,4 +534,15 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
     protected KerberosUsernamePasswordAuthenticator createKerberosUsernamePasswordAuthenticator(CommonKerberosConfig kerberosConfig) {
         return new KerberosUsernamePasswordAuthenticator(kerberosConfig);
     }
-}
+
+    public static boolean checkKerberosCredential(KeycloakSession session, RealmModel realm, ComponentModel model) {
+        String allowKerberosCfg = model.getConfig().getFirst(KerberosConstants.ALLOW_KERBEROS_AUTHENTICATION);
+        if (Boolean.valueOf(allowKerberosCfg)) {
+            CredentialHelper.setOrReplaceAuthenticationRequirement(session, realm, CredentialRepresentation.KERBEROS,
+                    AuthenticationExecutionModel.Requirement.ALTERNATIVE, AuthenticationExecutionModel.Requirement.DISABLED);
+            return true;
+        }
+        return false;
+    }
+
+ }

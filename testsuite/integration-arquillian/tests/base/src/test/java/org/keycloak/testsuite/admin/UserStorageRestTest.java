@@ -17,13 +17,255 @@
 
 package org.keycloak.testsuite.admin;
 
-import org.junit.Ignore;
+import org.junit.Test;
+import org.keycloak.common.constants.KerberosConstants;
+import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
+import org.keycloak.models.AuthenticationExecutionModel;
+import org.keycloak.models.LDAPConstants;
+import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
+import org.keycloak.representations.idm.ComponentRepresentation;
+import org.keycloak.storage.UserStorageProvider;
+import org.keycloak.testsuite.Assert;
+import org.keycloak.testsuite.admin.authentication.AbstractAuthenticationTest;
+import org.keycloak.testsuite.util.AdminEventPaths;
+
+import javax.ws.rs.BadRequestException;
+import javax.ws.rs.core.Response;
+import java.util.List;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-@Ignore
 public class UserStorageRestTest extends AbstractAdminTest {
+    private AuthenticationExecutionInfoRepresentation findKerberosExecution() {
+        AuthenticationExecutionInfoRepresentation kerberosExecution = null;
+        List<AuthenticationExecutionInfoRepresentation> executionReps = realm.flows().getExecutions("browser");
+        kerberosExecution = AbstractAuthenticationTest.findExecutionByProvider("auth-spnego", executionReps);
+
+        Assert.assertNotNull(kerberosExecution);
+        return kerberosExecution;
+    }
+
+    private String createComponent(ComponentRepresentation rep) {
+        Response resp = realm.components().add(rep);
+        Assert.assertEquals(201, resp.getStatus());
+        resp.close();
+        String id = ApiUtil.getCreatedId(resp);
+
+        assertAdminEvents.clear();
+        return id;
+    }
+
+    private void removeComponent(String id) {
+        realm.components().component(id).remove();
+        assertAdminEvents.clear();
+    }
+
+    private void assertFederationProvider(ComponentRepresentation rep, String id, String displayName, String providerId,
+                                          String... config) {
+        Assert.assertEquals(id, rep.getId());
+        Assert.assertEquals(displayName, rep.getName());
+        Assert.assertEquals(providerId, rep.getProviderId());
+
+        Assert.assertMultivaluedMap(rep.getConfig(), config);
+    }
+
+
+    @Test
+    public void testKerberosAuthenticatorEnabledAutomatically() {
+        // Assert kerberos authenticator DISABLED
+        AuthenticationExecutionInfoRepresentation kerberosExecution = findKerberosExecution();
+        Assert.assertEquals(kerberosExecution.getRequirement(), AuthenticationExecutionModel.Requirement.DISABLED.toString());
+
+        // create LDAP provider with kerberos
+        ComponentRepresentation ldapRep = new ComponentRepresentation();
+        ldapRep.setName("ldap2");
+        ldapRep.setProviderId("ldap");
+        ldapRep.setProviderType(UserStorageProvider.class.getName());
+        ldapRep.setConfig(new MultivaluedHashMap<>());
+        ldapRep.getConfig().putSingle("priority", Integer.toString(2));
+        ldapRep.getConfig().putSingle(KerberosConstants.ALLOW_KERBEROS_AUTHENTICATION, "true");
+
+        String id = createComponent(ldapRep);
+
+        // Assert kerberos authenticator ALTERNATIVE
+        kerberosExecution = findKerberosExecution();
+        Assert.assertEquals(kerberosExecution.getRequirement(), AuthenticationExecutionModel.Requirement.ALTERNATIVE.toString());
+
+        // Switch kerberos authenticator to DISABLED
+        kerberosExecution.setRequirement(AuthenticationExecutionModel.Requirement.DISABLED.toString());
+        realm.flows().updateExecutions("browser", kerberosExecution);
+        assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, AdminEventPaths.authUpdateExecutionPath("browser"), kerberosExecution, ResourceType.AUTH_EXECUTION);
+
+        // update LDAP provider with kerberos
+        ldapRep = realm.components().component(id).toRepresentation();
+        realm.components().component(id).update(ldapRep);
+        assertAdminEvents.clear();
+
+        // Assert kerberos authenticator ALTERNATIVE
+        kerberosExecution = findKerberosExecution();
+        Assert.assertEquals(kerberosExecution.getRequirement(), AuthenticationExecutionModel.Requirement.ALTERNATIVE.toString());
+
+        // Cleanup
+        kerberosExecution.setRequirement(AuthenticationExecutionModel.Requirement.DISABLED.toString());
+        realm.flows().updateExecutions("browser", kerberosExecution);
+        assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, AdminEventPaths.authUpdateExecutionPath("browser"), kerberosExecution, ResourceType.AUTH_EXECUTION);
+        removeComponent(id);
+    }
+
+    @Test
+    public void testKerberosAuthenticatorChangedOnlyIfDisabled() {
+        // Change kerberos to REQUIRED
+        AuthenticationExecutionInfoRepresentation kerberosExecution = findKerberosExecution();
+        kerberosExecution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED.toString());
+        realm.flows().updateExecutions("browser", kerberosExecution);
+        assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, AdminEventPaths.authUpdateExecutionPath("browser"), kerberosExecution, ResourceType.AUTH_EXECUTION);
+
+        // create LDAP provider with kerberos
+        ComponentRepresentation ldapRep = new ComponentRepresentation();
+        ldapRep.setName("ldap2");
+        ldapRep.setProviderId("ldap");
+        ldapRep.setProviderType(UserStorageProvider.class.getName());
+        ldapRep.setConfig(new MultivaluedHashMap<>());
+        ldapRep.getConfig().putSingle("priority", Integer.toString(2));
+        ldapRep.getConfig().putSingle(KerberosConstants.ALLOW_KERBEROS_AUTHENTICATION, "true");
+
+        String id = createComponent(ldapRep);
+
+
+        // Assert kerberos authenticator still REQUIRED
+        kerberosExecution = findKerberosExecution();
+        Assert.assertEquals(kerberosExecution.getRequirement(), AuthenticationExecutionModel.Requirement.REQUIRED.toString());
+
+        // update LDAP provider with kerberos
+        ldapRep = realm.components().component(id).toRepresentation();
+        realm.components().component(id).update(ldapRep);
+        assertAdminEvents.clear();
+
+        // Assert kerberos authenticator still REQUIRED
+        kerberosExecution = findKerberosExecution();
+        Assert.assertEquals(kerberosExecution.getRequirement(), AuthenticationExecutionModel.Requirement.REQUIRED.toString());
+
+        // Cleanup
+        kerberosExecution.setRequirement(AuthenticationExecutionModel.Requirement.DISABLED.toString());
+        realm.flows().updateExecutions("browser", kerberosExecution);
+        assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, AdminEventPaths.authUpdateExecutionPath("browser"), kerberosExecution, ResourceType.AUTH_EXECUTION);
+        removeComponent(id);
+
+    }
+
+    @Test
+    public void testValidateAndCreateLdapProvider() {
+        // Invalid filter
+
+        ComponentRepresentation ldapRep = new ComponentRepresentation();
+        ldapRep.setName("ldap2");
+        ldapRep.setProviderId("ldap");
+        ldapRep.setProviderType(UserStorageProvider.class.getName());
+        ldapRep.setConfig(new MultivaluedHashMap<>());
+        ldapRep.getConfig().putSingle("priority", Integer.toString(2));
+        ldapRep.getConfig().putSingle(LDAPConstants.CUSTOM_USER_SEARCH_FILTER, "dc=something");
+
+        Response resp = realm.components().add(ldapRep);
+        Assert.assertEquals(400, resp.getStatus());
+        resp.close();
+
+        // Invalid filter
+        ldapRep.getConfig().putSingle(LDAPConstants.CUSTOM_USER_SEARCH_FILTER, "(dc=something");
+        resp = realm.components().add(ldapRep);
+        Assert.assertEquals(400, resp.getStatus());
+        resp.close();
+
+        // Invalid filter
+        ldapRep.getConfig().putSingle(LDAPConstants.CUSTOM_USER_SEARCH_FILTER, "dc=something)");
+        resp = realm.components().add(ldapRep);
+        Assert.assertEquals(400, resp.getStatus());
+        resp.close();
+
+        // Assert nothing created so far
+        Assert.assertTrue(realm.components().query(realmId, UserStorageProvider.class.getName()).isEmpty());
+        assertAdminEvents.assertEmpty();
+
+
+        // Valid filter. Creation success
+        ldapRep.getConfig().putSingle(LDAPConstants.CUSTOM_USER_SEARCH_FILTER, "(dc=something)");
+        String id1 = createComponent(ldapRep);
+
+        // Missing filter is ok too. Creation success
+        ComponentRepresentation ldapRep2 = new ComponentRepresentation();
+        ldapRep2.setName("ldap3");
+        ldapRep2.setProviderId("ldap");
+        ldapRep2.setProviderType(UserStorageProvider.class.getName());
+        ldapRep2.setConfig(new MultivaluedHashMap<>());
+        ldapRep2.getConfig().putSingle("priority", Integer.toString(2));
+        ldapRep2.getConfig().putSingle(LDAPConstants.BIND_DN, "cn=manager");
+        ldapRep2.getConfig().putSingle(LDAPConstants.BIND_CREDENTIAL, "password");
+        String id2 = createComponent(ldapRep2);
+
+        // Assert both providers created
+        List<ComponentRepresentation> providerInstances = realm.components().query(realmId, UserStorageProvider.class.getName());
+        Assert.assertEquals(providerInstances.size(), 2);
+
+        // Cleanup
+        removeComponent(id1);
+        removeComponent(id2);
+    }
+
+    @Test
+    public void testUpdateProvider() {
+        ComponentRepresentation ldapRep = new ComponentRepresentation();
+        ldapRep.setName("ldap2");
+        ldapRep.setProviderId("ldap");
+        ldapRep.setProviderType(UserStorageProvider.class.getName());
+        ldapRep.setConfig(new MultivaluedHashMap<>());
+        ldapRep.getConfig().putSingle("priority", Integer.toString(2));
+        ldapRep.getConfig().putSingle(LDAPConstants.BIND_DN, "cn=manager");
+        ldapRep.getConfig().putSingle(LDAPConstants.BIND_CREDENTIAL, "password");
+        String id = createComponent(ldapRep);
+
+        // Assert update with invalid filter should fail
+        ldapRep = realm.components().component(id).toRepresentation();
+        ldapRep.getConfig().putSingle(LDAPConstants.CUSTOM_USER_SEARCH_FILTER, "(dc=something2");
+        ldapRep.getConfig().putSingle(LDAPConstants.BIND_DN, "cn=manager-updated");
+        try {
+            realm.components().component(id).update(ldapRep);
+            Assert.fail("Not expected to successfull update");
+        } catch (BadRequestException bre) {
+            // Expected
+        }
+
+        // Assert nothing was updated
+        assertFederationProvider(realm.components().component(id).toRepresentation(), id, "ldap2", "ldap", LDAPConstants.BIND_DN, "cn=manager", LDAPConstants.BIND_CREDENTIAL, "**********");
+
+        // Change filter to be valid
+        ldapRep.getConfig().putSingle(LDAPConstants.CUSTOM_USER_SEARCH_FILTER, "(dc=something2)");
+        realm.components().component(id).update(ldapRep);
+        assertAdminEvents.clear();
+
+        // Assert updated successfully
+        ldapRep = realm.components().component(id).toRepresentation();
+        assertFederationProvider(ldapRep, id, "ldap2", "ldap", LDAPConstants.BIND_DN, "cn=manager-updated", LDAPConstants.BIND_CREDENTIAL, "**********",
+                LDAPConstants.CUSTOM_USER_SEARCH_FILTER, "(dc=something2)");
+
+        // Assert update displayName
+        ldapRep.setName("ldap2");
+        realm.components().component(id).update(ldapRep);
+
+        assertFederationProvider(realm.components().component(id).toRepresentation(), id, "ldap2", "ldap",LDAPConstants.BIND_DN, "cn=manager-updated", LDAPConstants.BIND_CREDENTIAL, "**********",
+                LDAPConstants.CUSTOM_USER_SEARCH_FILTER, "(dc=something2)");
+
+
+
+        // Cleanup
+        removeComponent(id);
+    }
+
+
+
+
+
 /*
     @Test
     public void testProviderFactories() {
@@ -102,190 +344,10 @@ public class UserStorageRestTest extends AbstractAdminTest {
     }
 
 
-    @Test
-    public void testValidateAndCreateLdapProvider() {
-        // Invalid filter
-        UserFederationProviderRepresentation ldapRep = UserFederationProviderBuilder.create()
-                .displayName("ldap1")
-                .providerName("ldap")
-                .priority(1)
-                .configProperty(LDAPConstants.CUSTOM_USER_SEARCH_FILTER, "dc=something")
-                .build();
-        Response resp = userFederation().create(ldapRep);
-        Assert.assertEquals(400, resp.getStatus());
-        resp.close();
-
-        // Invalid filter
-        ldapRep.getConfig().put(LDAPConstants.CUSTOM_USER_SEARCH_FILTER, "(dc=something");
-        resp = userFederation().create(ldapRep);
-        Assert.assertEquals(400, resp.getStatus());
-        resp.close();
-
-        // Invalid filter
-        ldapRep.getConfig().put(LDAPConstants.CUSTOM_USER_SEARCH_FILTER, "dc=something)");
-        resp = userFederation().create(ldapRep);
-        Assert.assertEquals(400, resp.getStatus());
-        resp.close();
-
-        // Assert nothing created so far
-        Assert.assertTrue(userFederation().getProviderInstances().isEmpty());
-        assertAdminEvents.assertEmpty();
-
-
-        // Valid filter. Creation success
-        ldapRep.getConfig().put(LDAPConstants.CUSTOM_USER_SEARCH_FILTER, "(dc=something)");
-        String id1 = createUserFederationProvider(ldapRep);
-
-        // Missing filter is ok too. Creation success
-        UserFederationProviderRepresentation ldapRep2 = UserFederationProviderBuilder.create()
-                .displayName("ldap2")
-                .providerName("ldap")
-                .priority(2)
-                .configProperty(LDAPConstants.BIND_DN, "cn=manager")
-                .configProperty(LDAPConstants.BIND_CREDENTIAL, "password")
-                .build();
-        String id2 = createUserFederationProvider(ldapRep2);
-
-        // Assert both providers created
-        List<UserFederationProviderRepresentation> providerInstances = userFederation().getProviderInstances();
-        Assert.assertEquals(providerInstances.size(), 2);
-        assertFederationProvider(providerInstances.get(0), id1, "ldap1", "ldap", 1, -1, -1, -1, LDAPConstants.CUSTOM_USER_SEARCH_FILTER, "(dc=something)");
-        assertFederationProvider(providerInstances.get(1), id2, "ldap2", "ldap", 2, -1, -1, -1, LDAPConstants.BIND_DN, "cn=manager", LDAPConstants.BIND_CREDENTIAL, "password");
-
-        // Cleanup
-        removeUserFederationProvider(id1);
-        removeUserFederationProvider(id2);
-    }
-
-
-    @Test
-    public void testUpdateProvider() {
-        UserFederationProviderRepresentation ldapRep = UserFederationProviderBuilder.create()
-                .providerName("ldap")
-                .priority(2)
-                .configProperty(LDAPConstants.BIND_DN, "cn=manager")
-                .configProperty(LDAPConstants.BIND_CREDENTIAL, "password")
-                .build();
-        String id = createUserFederationProvider(ldapRep);
-        assertFederationProvider(userFederation().get(id).toRepresentation(), id, id, "ldap", 2, -1, -1, -1, LDAPConstants.BIND_DN, "cn=manager", LDAPConstants.BIND_CREDENTIAL, "password");
-
-        // Assert update with invalid filter should fail
-        ldapRep = userFederation().get(id).toRepresentation();
-        ldapRep.setDisplayName("");
-        ldapRep.getConfig().put(LDAPConstants.CUSTOM_USER_SEARCH_FILTER, "(dc=something2");
-        ldapRep.getConfig().put(LDAPConstants.BIND_DN, "cn=manager-updated");
-        try {
-            userFederation().get(id).update(ldapRep);
-            Assert.fail("Not expected to successfull update");
-        } catch (BadRequestException bre) {
-            // Expected
-        }
-
-        // Assert nothing was updated
-        assertFederationProvider(userFederation().get(id).toRepresentation(), id, id, "ldap", 2, -1, -1, -1, LDAPConstants.BIND_DN, "cn=manager", LDAPConstants.BIND_CREDENTIAL, "password");
-
-        // Change filter to be valid
-        ldapRep.getConfig().put(LDAPConstants.CUSTOM_USER_SEARCH_FILTER, "(dc=something2)");
-        userFederation().get(id).update(ldapRep);
-        assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, AdminEventPaths.userFederationResourcePath(id), ldapRep, ResourceType.USER_FEDERATION_PROVIDER);
-
-        // Assert updated successfully
-        ldapRep = userFederation().get(id).toRepresentation();
-        assertFederationProvider(ldapRep, id, id, "ldap", 2, -1, -1, -1, LDAPConstants.BIND_DN, "cn=manager-updated", LDAPConstants.BIND_CREDENTIAL, "password",
-                LDAPConstants.CUSTOM_USER_SEARCH_FILTER, "(dc=something2)");
-
-        // Assert update displayName
-        ldapRep.setDisplayName("ldap2");
-        userFederation().get(id).update(ldapRep);
-        assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, AdminEventPaths.userFederationResourcePath(id), ldapRep, ResourceType.USER_FEDERATION_PROVIDER);
-
-        assertFederationProvider(userFederation().get(id).toRepresentation(), id, "ldap2", "ldap", 2, -1, -1, -1, LDAPConstants.BIND_DN, "cn=manager-updated", LDAPConstants.BIND_CREDENTIAL, "password",
-                LDAPConstants.CUSTOM_USER_SEARCH_FILTER, "(dc=something2)");
 
 
 
-        // Cleanup
-        removeUserFederationProvider(id);
-    }
 
-
-    @Test
-    public void testKerberosAuthenticatorEnabledAutomatically() {
-        // Assert kerberos authenticator DISABLED
-        AuthenticationExecutionInfoRepresentation kerberosExecution = findKerberosExecution();
-        Assert.assertEquals(kerberosExecution.getRequirement(), AuthenticationExecutionModel.Requirement.DISABLED.toString());
-
-        // create LDAP provider with kerberos
-        UserFederationProviderRepresentation ldapRep = UserFederationProviderBuilder.create()
-                .displayName("ldap2")
-                .providerName("ldap")
-                .priority(2)
-                .configProperty(KerberosConstants.ALLOW_KERBEROS_AUTHENTICATION, "true")
-                .build();
-        String id = createUserFederationProvider(ldapRep);
-
-        // Assert kerberos authenticator ALTERNATIVE
-        kerberosExecution = findKerberosExecution();
-        Assert.assertEquals(kerberosExecution.getRequirement(), AuthenticationExecutionModel.Requirement.ALTERNATIVE.toString());
-
-        // Switch kerberos authenticator to DISABLED
-        kerberosExecution.setRequirement(AuthenticationExecutionModel.Requirement.DISABLED.toString());
-        realm.flows().updateExecutions("browser", kerberosExecution);
-        assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, AdminEventPaths.authUpdateExecutionPath("browser"), kerberosExecution, ResourceType.AUTH_EXECUTION);
-
-        // update LDAP provider with kerberos
-        ldapRep = userFederation().get(id).toRepresentation();
-        userFederation().get(id).update(ldapRep);
-        assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, AdminEventPaths.userFederationResourcePath(id), ldapRep, ResourceType.USER_FEDERATION_PROVIDER);
-
-        // Assert kerberos authenticator ALTERNATIVE
-        kerberosExecution = findKerberosExecution();
-        Assert.assertEquals(kerberosExecution.getRequirement(), AuthenticationExecutionModel.Requirement.ALTERNATIVE.toString());
-
-        // Cleanup
-        kerberosExecution.setRequirement(AuthenticationExecutionModel.Requirement.DISABLED.toString());
-        realm.flows().updateExecutions("browser", kerberosExecution);
-        assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, AdminEventPaths.authUpdateExecutionPath("browser"), kerberosExecution, ResourceType.AUTH_EXECUTION);
-        removeUserFederationProvider(id);
-    }
-
-    @Test
-    public void testKerberosAuthenticatorChangedOnlyIfDisabled() {
-        // Change kerberos to REQUIRED
-        AuthenticationExecutionInfoRepresentation kerberosExecution = findKerberosExecution();
-        kerberosExecution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED.toString());
-        realm.flows().updateExecutions("browser", kerberosExecution);
-        assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, AdminEventPaths.authUpdateExecutionPath("browser"), kerberosExecution, ResourceType.AUTH_EXECUTION);
-
-        // create LDAP provider with kerberos
-        UserFederationProviderRepresentation ldapRep = UserFederationProviderBuilder.create()
-                .displayName("ldap2")
-                .providerName("ldap")
-                .priority(2)
-                .configProperty(KerberosConstants.ALLOW_KERBEROS_AUTHENTICATION, "true")
-                .build();
-        String id = createUserFederationProvider(ldapRep);
-
-        // Assert kerberos authenticator still REQUIRED
-        kerberosExecution = findKerberosExecution();
-        Assert.assertEquals(kerberosExecution.getRequirement(), AuthenticationExecutionModel.Requirement.REQUIRED.toString());
-
-        // update LDAP provider with kerberos
-        ldapRep = userFederation().get(id).toRepresentation();
-        userFederation().get(id).update(ldapRep);
-        assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, AdminEventPaths.userFederationResourcePath(id), ldapRep, ResourceType.USER_FEDERATION_PROVIDER);
-
-        // Assert kerberos authenticator still REQUIRED
-        kerberosExecution = findKerberosExecution();
-        Assert.assertEquals(kerberosExecution.getRequirement(), AuthenticationExecutionModel.Requirement.REQUIRED.toString());
-
-        // Cleanup
-        kerberosExecution.setRequirement(AuthenticationExecutionModel.Requirement.DISABLED.toString());
-        realm.flows().updateExecutions("browser", kerberosExecution);
-        assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, AdminEventPaths.authUpdateExecutionPath("browser"), kerberosExecution, ResourceType.AUTH_EXECUTION);
-        removeUserFederationProvider(id);
-
-    }
 
 
     @Test (expected = NotFoundException.class)
@@ -342,20 +404,6 @@ public class UserStorageRestTest extends AbstractAdminTest {
     }
 
 
-    private String createUserFederationProvider(UserFederationProviderRepresentation rep) {
-        Response resp = userFederation().create(rep);
-        Assert.assertEquals(201, resp.getStatus());
-        resp.close();
-        String federationProviderId = ApiUtil.getCreatedId(resp);
-
-        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.userFederationResourcePath(federationProviderId), rep, ResourceType.USER_FEDERATION_PROVIDER);
-        return federationProviderId;
-    }
-
-    private void removeUserFederationProvider(String id) {
-        userFederation().get(id).remove();
-        assertAdminEvents.assertEvent(realmId, OperationType.DELETE, AdminEventPaths.userFederationResourcePath(id), ResourceType.USER_FEDERATION_PROVIDER);
-    }
 
     private void assertFederationProvider(UserFederationProviderRepresentation rep, String id, String displayName, String providerName,
                                           int priority, int fullSyncPeriod, int changeSyncPeriod, int lastSync,
@@ -372,13 +420,5 @@ public class UserStorageRestTest extends AbstractAdminTest {
     }
 
 
-    private AuthenticationExecutionInfoRepresentation findKerberosExecution() {
-        AuthenticationExecutionInfoRepresentation kerberosExecution = null;
-        List<AuthenticationExecutionInfoRepresentation> executionReps = realm.flows().getExecutions("browser");
-        kerberosExecution = AbstractAuthenticationTest.findExecutionByProvider("auth-spnego", executionReps);
-
-        Assert.assertNotNull(kerberosExecution);
-        return kerberosExecution;
-    }
     */
 }

@@ -24,14 +24,18 @@ import org.keycloak.component.ComponentModel;
 import org.keycloak.federation.kerberos.impl.KerberosServerSubjectAuthenticator;
 import org.keycloak.federation.kerberos.impl.KerberosUsernamePasswordAuthenticator;
 import org.keycloak.federation.kerberos.impl.SPNEGOAuthenticator;
+import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.LDAPConstants;
+import org.keycloak.models.RealmModel;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
+import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderFactory;
 import org.keycloak.storage.UserStorageProviderModel;
+import org.keycloak.utils.CredentialHelper;
 
 import java.util.List;
 
@@ -139,4 +143,17 @@ public class KerberosFederationProviderFactory implements UserStorageProviderFac
     protected KerberosUsernamePasswordAuthenticator createKerberosUsernamePasswordAuthenticator(CommonKerberosConfig kerberosConfig) {
         return new KerberosUsernamePasswordAuthenticator(kerberosConfig);
     }
+
+    @Override
+    public void onCreate(KeycloakSession session, RealmModel realm, ComponentModel model) {
+        CredentialHelper.setOrReplaceAuthenticationRequirement(session, realm, CredentialRepresentation.KERBEROS,
+                AuthenticationExecutionModel.Requirement.ALTERNATIVE, AuthenticationExecutionModel.Requirement.DISABLED);
+    }
+
+    @Override
+    public void onUpdate(KeycloakSession session, RealmModel realm, ComponentModel model) {
+        CredentialHelper.setOrReplaceAuthenticationRequirement(session, realm, CredentialRepresentation.KERBEROS,
+                AuthenticationExecutionModel.Requirement.ALTERNATIVE, AuthenticationExecutionModel.Requirement.DISABLED);
+    }
+
 }
