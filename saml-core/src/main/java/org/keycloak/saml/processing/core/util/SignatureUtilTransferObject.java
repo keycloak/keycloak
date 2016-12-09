@@ -33,7 +33,7 @@ public class SignatureUtilTransferObject {
 
     private Document documentToBeSigned;
 
-    private String keyId;
+    private String keyName;
 
     private KeyPair keyPair;
 
@@ -115,11 +115,11 @@ public class SignatureUtilTransferObject {
         this.x509Certificate = x509Certificate;
     }
 
-    public String getKeyId() {
-        return keyId;
+    public String getKeyName() {
+        return keyName;
     }
 
-    public void setKeyId(String keyId) {
-        this.keyId = keyId;
+    public void setKeyName(String keyName) {
+        this.keyName = keyName;
     }
 }

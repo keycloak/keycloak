@@ -302,11 +302,12 @@ public class SAMLEndpoint {
             boolean postBinding = config.isPostBindingResponse();
             if (config.isWantAuthnRequestsSigned()) {
                 KeyManager.ActiveKey keys = session.keys().getActiveKey(realm);
-                binding.signWith(keys.getKid(), keys.getPrivateKey(), keys.getPublicKey(), keys.getCertificate())
+                String keyName = config.getXmlSigKeyInfoKeyNameTransformer().getKeyName(keys.getKid(), keys.getCertificate());
+                binding.signWith(keyName, keys.getPrivateKey(), keys.getPublicKey(), keys.getCertificate())
                         .signatureAlgorithm(provider.getSignatureAlgorithm())
                         .signDocument();
                 if (! postBinding && config.isAddExtensionsElementWithKeyInfo()) {    // Only include extension if REDIRECT binding and signing whole SAML protocol message
-                    builder.addExtension(new KeycloakKeySamlExtensionGenerator(keys.getKid()));
+                    builder.addExtension(new KeycloakKeySamlExtensionGenerator(keyName));
                 }
             }
             try {

@@ -107,11 +107,12 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
 
                 KeyPair keypair = new KeyPair(keys.getPublicKey(), keys.getPrivateKey());
 
-                binding.signWith(keys.getKid(), keypair);
+                String keyName = getConfig().getXmlSigKeyInfoKeyNameTransformer().getKeyName(keys.getKid(), keys.getCertificate());
+                binding.signWith(keyName, keypair);
                 binding.signatureAlgorithm(getSignatureAlgorithm());
                 binding.signDocument();
                 if (! postBinding && getConfig().isAddExtensionsElementWithKeyInfo()) {    // Only include extension if REDIRECT binding and signing whole SAML protocol message
-                    authnRequestBuilder.addExtension(new KeycloakKeySamlExtensionGenerator(keys.getKid()));
+                    authnRequestBuilder.addExtension(new KeycloakKeySamlExtensionGenerator(keyName));
                 }
             }
 
@@ -205,7 +206,8 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
                 .relayState(userSession.getId());
         if (getConfig().isWantAuthnRequestsSigned()) {
             KeyManager.ActiveKey keys = session.keys().getActiveKey(realm);
-            binding.signWith(keys.getKid(), keys.getPrivateKey(), keys.getPublicKey(), keys.getCertificate())
+            String keyName = getConfig().getXmlSigKeyInfoKeyNameTransformer().getKeyName(keys.getKid(), keys.getCertificate());
+            binding.signWith(keyName, keys.getPrivateKey(), keys.getPublicKey(), keys.getCertificate())
                     .signatureAlgorithm(getSignatureAlgorithm())
                     .signDocument();
         }
