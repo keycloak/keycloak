@@ -276,7 +276,7 @@ public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAd
 
     @Deployment(name = InputPortal.DEPLOYMENT_NAME)
     protected static WebArchive inputPortal() {
-        return samlServletDeployment(InputPortal.DEPLOYMENT_NAME, "input-portal/WEB-INF/web.xml" , InputServlet.class);
+        return samlServletDeployment(InputPortal.DEPLOYMENT_NAME, "input-portal/WEB-INF/web.xml" , InputServlet.class, ServletTestUtils.class);
     }
 
     @Deployment(name = SalesPost2Servlet.DEPLOYMENT_NAME)
@@ -538,6 +538,9 @@ public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAd
         setPasswordFor(topGroupUser, PASSWORD);
 
         assertSuccessfulLogin(salesPostServletPage, topGroupUser, testRealmSAMLPostLoginPage, "principal=topgroupuser");
+
+        salesPostServletPage.logout();
+        checkLoggedOut(salesPostServletPage, testRealmSAMLPostLoginPage);
     }
 
     @Test
@@ -603,6 +606,9 @@ public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAd
         assertThat("Database seems to be unable to store Unicode for username. Refer to KEYCLOAK-3439 and related issues.", storedUser.getUsername(), equalToIgnoringCase(username));
 
         assertSuccessfulLogin(salesPostSigServletPage, user, testRealmSAMLPostLoginPage, "principal=" + storedUser.getUsername());
+
+        salesPostSigServletPage.logout();
+        checkLoggedOut(salesPostSigServletPage, testRealmSAMLPostLoginPage);
     }
 
     @Test
@@ -624,6 +630,9 @@ public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAd
         assertThat("Database seems to be unable to store Unicode for username. Refer to KEYCLOAK-3439 and related issues.", storedUser.getUsername(), equalToIgnoringCase(username));
 
         assertSuccessfulLogin(employeeSigServletPage, user, testRealmSAMLRedirectLoginPage, "principal=" + storedUser.getUsername());
+
+        employeeSigServletPage.logout();
+        checkLoggedOut(employeeSigServletPage, testRealmSAMLRedirectLoginPage);
     }
 
     @Test

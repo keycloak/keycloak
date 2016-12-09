@@ -18,7 +18,6 @@
 package org.keycloak.testsuite.adapter.servlet;
 
 import org.junit.Assert;
-import org.keycloak.common.util.UriUtils;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
