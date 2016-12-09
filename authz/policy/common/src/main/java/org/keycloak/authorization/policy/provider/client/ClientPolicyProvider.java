@@ -1,18 +1,23 @@
 package org.keycloak.authorization.policy.provider.client;
 
+import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.policy.evaluation.Evaluation;
 import org.keycloak.authorization.policy.evaluation.EvaluationContext;
 import org.keycloak.authorization.policy.provider.PolicyProvider;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.RealmModel;
 
 import static org.keycloak.authorization.policy.provider.client.ClientPolicyProviderFactory.getClients;
 
 public class ClientPolicyProvider implements PolicyProvider {
 
     private final Policy policy;
+    private final AuthorizationProvider authorization;
 
-    public ClientPolicyProvider(Policy policy) {
+    public ClientPolicyProvider(Policy policy, AuthorizationProvider authorization) {
         this.policy = policy;
+        this.authorization = authorization;
     }
 
     @Override
@@ -22,7 +27,8 @@ public class ClientPolicyProvider implements PolicyProvider {
 
         if (clients.length > 0) {
             for (String client : clients) {
-                if (context.getAttributes().containsValue("kc.client.id", client)) {
+                ClientModel clientModel = getCurrentRealm().getClientById(client);
+                if (context.getAttributes().containsValue("kc.client.id", clientModel.getClientId())) {
                     evaluation.grant();
                     return;
                 }
@@ -33,5 +39,9 @@ public class ClientPolicyProvider implements PolicyProvider {
     @Override
     public void close() {
 
+    }
+
+    private RealmModel getCurrentRealm() {
+        return this.authorization.getKeycloakSession().getContext().getRealm();
     }
 }

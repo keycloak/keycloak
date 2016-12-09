@@ -392,7 +392,7 @@ public class ResourcePermissionManagementTest extends AbstractPhotozAdminTest {
 
             List<String> clientIds = new ArrayList<>();
             for (ClientModel client : allowedClients) {
-                clientIds.add(client.getClientId());
+                clientIds.add(client.getId());
             }
 
             String[] clients = clientIds.toArray(new String[clientIds.size()]);

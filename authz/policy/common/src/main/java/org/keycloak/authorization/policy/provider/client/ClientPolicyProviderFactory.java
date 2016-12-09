@@ -32,7 +32,7 @@ public class ClientPolicyProviderFactory implements PolicyProviderFactory {
 
     @Override
     public PolicyProvider create(Policy policy, AuthorizationProvider authorization) {
-        return new ClientPolicyProvider(policy);
+        return new ClientPolicyProvider(policy, authorization);
     }
 
     @Override
