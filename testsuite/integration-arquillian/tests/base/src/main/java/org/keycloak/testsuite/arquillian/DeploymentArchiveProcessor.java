@@ -174,16 +174,6 @@ public class DeploymentArchiveProcessor implements ApplicationArchiveProcessor {
         String dependency = testClass.getAnnotation(UseServletFilter.class).filterDependency();
         ((WebArchive) archive).addAsLibraries(KeycloakDependenciesResolver.resolveDependencies((dependency + ":" + System.getProperty("project.version"))));
 
-        try {
-            Document jbossXmlDoc = loadXML(archive.get(JBOSS_DEPLOYMENT_XML_PATH).getAsset().openStream());
-            removeNodeByAttributeValue(jbossXmlDoc, "dependencies", "module", "name", "org.keycloak.keycloak-saml-core");
-            removeNodeByAttributeValue(jbossXmlDoc, "dependencies", "module", "name", "org.keycloak.keycloak-adapter-spi");
-            archive.add(new StringAsset((documentToString(jbossXmlDoc))), JBOSS_DEPLOYMENT_XML_PATH);
-        } catch (TransformerException e) {
-            log.error("Can't transform document to String");
-            throw new RuntimeException(e);
-        }
-
     }
 
     protected void modifyWebXml(Archive<?> archive, TestClass testClass) {
