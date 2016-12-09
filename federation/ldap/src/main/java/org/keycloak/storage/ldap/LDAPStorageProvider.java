@@ -43,6 +43,7 @@ import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
 import org.keycloak.storage.ldap.idm.query.Condition;
+import org.keycloak.storage.ldap.idm.query.EscapeStrategy;
 import org.keycloak.storage.ldap.idm.query.internal.LDAPQuery;
 import org.keycloak.storage.ldap.idm.query.internal.LDAPQueryConditionsBuilder;
 import org.keycloak.storage.ldap.idm.store.ldap.LDAPIdentityStore;
@@ -312,17 +313,27 @@ public class LDAPStorageProvider implements UserStorageProvider,
 
         List<LDAPObject> results = new ArrayList<LDAPObject>();
         if (attributes.containsKey(UserModel.USERNAME)) {
-            LDAPObject user = loadLDAPUserByUsername(realm, attributes.get(UserModel.USERNAME));
-            if (user != null) {
-                results.add(user);
-            }
+            LDAPQuery ldapQuery = LDAPUtils.createQueryForUserSearch(this, realm);
+            LDAPQueryConditionsBuilder conditionsBuilder = new LDAPQueryConditionsBuilder();
+
+            // Mapper should replace "username" in parameter name with correct LDAP mapped attribute
+            Condition usernameCondition = conditionsBuilder.equal(UserModel.USERNAME, attributes.get(UserModel.USERNAME), EscapeStrategy.NON_ASCII_CHARS_ONLY);
+            ldapQuery.addWhereCondition(usernameCondition);
+
+            List<LDAPObject> ldapObjects = ldapQuery.getResultList();
+            results.addAll(ldapObjects);
         }
 
         if (attributes.containsKey(UserModel.EMAIL)) {
-            LDAPObject user = queryByEmail(realm, attributes.get(UserModel.EMAIL));
-            if (user != null) {
-                results.add(user);
-            }
+            LDAPQuery ldapQuery = LDAPUtils.createQueryForUserSearch(this, realm);
+            LDAPQueryConditionsBuilder conditionsBuilder = new LDAPQueryConditionsBuilder();
+
+            // Mapper should replace "email" in parameter name with correct LDAP mapped attribute
+            Condition emailCondition = conditionsBuilder.equal(UserModel.EMAIL, attributes.get(UserModel.EMAIL), EscapeStrategy.NON_ASCII_CHARS_ONLY);
+            ldapQuery.addWhereCondition(emailCondition);
+
+            List<LDAPObject> ldapObjects = ldapQuery.getResultList();
+            results.addAll(ldapObjects);
         }
 
         if (attributes.containsKey(UserModel.FIRST_NAME) || attributes.containsKey(UserModel.LAST_NAME)) {
@@ -331,10 +342,10 @@ public class LDAPStorageProvider implements UserStorageProvider,
 
             // Mapper should replace parameter with correct LDAP mapped attributes
             if (attributes.containsKey(UserModel.FIRST_NAME)) {
-                ldapQuery.addWhereCondition(conditionsBuilder.equal(UserModel.FIRST_NAME, attributes.get(UserModel.FIRST_NAME)));
+                ldapQuery.addWhereCondition(conditionsBuilder.equal(UserModel.FIRST_NAME, attributes.get(UserModel.FIRST_NAME), EscapeStrategy.NON_ASCII_CHARS_ONLY));
             }
             if (attributes.containsKey(UserModel.LAST_NAME)) {
-                ldapQuery.addWhereCondition(conditionsBuilder.equal(UserModel.LAST_NAME, attributes.get(UserModel.LAST_NAME)));
+                ldapQuery.addWhereCondition(conditionsBuilder.equal(UserModel.LAST_NAME, attributes.get(UserModel.LAST_NAME), EscapeStrategy.NON_ASCII_CHARS_ONLY));
             }
 
             List<LDAPObject> ldapObjects = ldapQuery.getResultList();
@@ -405,7 +416,7 @@ public class LDAPStorageProvider implements UserStorageProvider,
         LDAPQueryConditionsBuilder conditionsBuilder = new LDAPQueryConditionsBuilder();
 
         // Mapper should replace "email" in parameter name with correct LDAP mapped attribute
-        Condition emailCondition = conditionsBuilder.equal(UserModel.EMAIL, email);
+        Condition emailCondition = conditionsBuilder.equal(UserModel.EMAIL, email, EscapeStrategy.DEFAULT);
         ldapQuery.addWhereCondition(emailCondition);
 
         return ldapQuery.getFirstResult();
@@ -624,7 +635,7 @@ public class LDAPStorageProvider implements UserStorageProvider,
         LDAPQueryConditionsBuilder conditionsBuilder = new LDAPQueryConditionsBuilder();
 
         String usernameMappedAttribute = this.ldapIdentityStore.getConfig().getUsernameLdapAttribute();
-        Condition usernameCondition = conditionsBuilder.equal(usernameMappedAttribute, username);
+        Condition usernameCondition = conditionsBuilder.equal(usernameMappedAttribute, username, EscapeStrategy.DEFAULT);
         ldapQuery.addWhereCondition(usernameCondition);
 
         LDAPObject ldapUser = ldapQuery.getFirstResult();
@@ -636,7 +647,7 @@ public class LDAPStorageProvider implements UserStorageProvider,
     }
 
     public LDAPStorageMapper getMapper(ComponentModel mapperModel) {
-        LDAPStorageMapper ldapMapper = (LDAPStorageMapper) getSession().getProvider(LDAPStorageMapper.class, mapperModel);
+        LDAPStorageMapper ldapMapper = getSession().getProvider(LDAPStorageMapper.class, mapperModel);
         if (ldapMapper == null) {
             throw new ModelException("Can't find mapper type with ID: " + mapperModel.getProviderId());
         }

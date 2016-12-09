@@ -171,7 +171,7 @@ public class LDAPGroupMapperSyncTest {
             Assert.assertEquals("group12 - description", kcGroup12.getFirstAttribute(descriptionAttrName));
 
             // Cleanup - remove recursive mapping in LDAP
-            LDAPUtils.deleteMember(ldapProvider, MembershipType.DN, LDAPConstants.MEMBER, group12, group1, true);
+            LDAPUtils.deleteMember(ldapProvider, MembershipType.DN, LDAPConstants.MEMBER, group12, group1);
 
         } finally {
             keycloakRule.stopSession(session, false);

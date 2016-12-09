@@ -88,7 +88,7 @@ public class LDAPDn {
      */
     public String getFirstRdn() {
         Entry firstEntry = entries.getFirst();
-        return firstEntry.attrName + "=" + firstEntry.attrValue;
+        return firstEntry.attrName + "=" + unescapeValue(firstEntry.attrValue);
     }
 
     /**
@@ -104,7 +104,13 @@ public class LDAPDn {
      */
     public String getFirstRdnAttrValue() {
         Entry firstEntry = entries.getFirst();
-        return firstEntry.attrValue;
+        String dnEscaped = firstEntry.attrValue;
+        return unescapeValue(dnEscaped);
+    }
+
+    private String unescapeValue(String escaped) {
+        // Something needed to handle non-String types?
+        return Rdn.unescapeValue(escaped).toString();
     }
 
     /**

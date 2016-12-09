@@ -24,6 +24,7 @@ import org.keycloak.storage.ldap.LDAPConfig;
 import org.keycloak.storage.ldap.idm.model.LDAPDn;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
 import org.keycloak.storage.ldap.idm.query.Condition;
+import org.keycloak.storage.ldap.idm.query.EscapeStrategy;
 import org.keycloak.storage.ldap.idm.query.internal.EqualCondition;
 import org.keycloak.storage.ldap.idm.query.internal.LDAPQuery;
 import org.keycloak.storage.ldap.idm.store.IdentityStore;
@@ -408,7 +409,10 @@ public class LDAPIdentityStore implements IdentityStore {
         try {
             // we need this to retrieve the entry's identifier from the ldap server
             String uuidAttrName = getConfig().getUuidLDAPAttributeName();
-            List<SearchResult> search = this.operationManager.search(ldapObject.getDn().toString(), "(" + ldapObject.getDn().getFirstRdn() + ")", Arrays.asList(uuidAttrName), SearchControls.OBJECT_SCOPE);
+
+            String rdn = ldapObject.getDn().getFirstRdn();
+            String filter = "(" + EscapeStrategy.DEFAULT.escape(rdn) + ")";
+            List<SearchResult> search = this.operationManager.search(ldapObject.getDn().toString(), filter, Arrays.asList(uuidAttrName), SearchControls.OBJECT_SCOPE);
             Attribute id = search.get(0).getAttributes().get(getConfig().getUuidLDAPAttributeName());
 
             if (id == null) {
