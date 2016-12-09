@@ -32,6 +32,7 @@ public interface SamlConfigAttributes {
     String SAML_FORCE_NAME_ID_FORMAT_ATTRIBUTE = "saml_force_name_id_format";
     String SAML_SERVER_SIGNATURE = "saml.server.signature";
     String SAML_SERVER_SIGNATURE_KEYINFO_EXT = "saml.server.signature.keyinfo.ext";
+    String SAML_SERVER_SIGNATURE_KEYINFO_KEY_NAME_TRANSFORMER = "saml.server.signature.keyinfo.xmlSigKeyInfoKeyNameTransformer";
     String SAML_FORCE_POST_BINDING = "saml.force.post.binding";
     String SAML_ASSERTION_SIGNATURE = "saml.assertion.signature";
     String SAML_ENCRYPT = "saml.encrypt";

@@ -21,6 +21,7 @@ import org.keycloak.models.ClientConfigResolver;
 import org.keycloak.models.ClientModel;
 import org.keycloak.saml.SignatureAlgorithm;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
+import org.keycloak.saml.common.util.XmlKeyInfoKeyNameTransformer;
 
 /**
  * Configuration of a SAML-enabled client.
@@ -29,6 +30,8 @@ import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
  * @version $Revision: 1 $
  */
 public class SamlClient extends ClientConfigResolver {
+
+    public static final XmlKeyInfoKeyNameTransformer DEFAULT_XML_KEY_INFO_KEY_NAME_TRANSFORMER = XmlKeyInfoKeyNameTransformer.KEY_ID;
 
     public SamlClient(ClientModel client) {
         super(client);
@@ -196,6 +199,23 @@ public class SamlClient extends ClientConfigResolver {
     public void setClientEncryptingPrivateKey(String val) {
         client.setAttribute(SamlConfigAttributes.SAML_ENCRYPTION_PRIVATE_KEY_ATTRIBUTE, val);
 
+    }
+
+    /**
+     * Always returns non-{@code null} result.
+     * @return Configured ransformer of {@link #DEFAULT_XML_KEY_INFO_KEY_NAME_TRANSFORMER} if not set.
+     */
+    public XmlKeyInfoKeyNameTransformer getXmlSigKeyInfoKeyNameTransformer() {
+        return XmlKeyInfoKeyNameTransformer.from(
+          client.getAttribute(SamlConfigAttributes.SAML_SERVER_SIGNATURE_KEYINFO_KEY_NAME_TRANSFORMER),
+          DEFAULT_XML_KEY_INFO_KEY_NAME_TRANSFORMER);
+    }
+
+    public void setXmlSigKeyInfoKeyNameTransformer(XmlKeyInfoKeyNameTransformer xmlSigKeyInfoKeyNameTransformer) {
+        client.setAttribute(SamlConfigAttributes.SAML_SERVER_SIGNATURE_KEYINFO_KEY_NAME_TRANSFORMER,
+          xmlSigKeyInfoKeyNameTransformer == null
+            ? null
+            : xmlSigKeyInfoKeyNameTransformer.name());
     }
 
 }
