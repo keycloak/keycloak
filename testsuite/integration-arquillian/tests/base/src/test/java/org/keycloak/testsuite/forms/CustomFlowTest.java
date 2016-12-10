@@ -22,9 +22,12 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.admin.client.resource.AuthenticationManagementResource;
 import org.keycloak.authentication.AuthenticationFlow;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
+import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.RefreshToken;
@@ -34,13 +37,16 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.pages.RegisterPage;
+import org.keycloak.testsuite.pages.TermsAndConditionsPage;
 import org.keycloak.testsuite.rest.representation.AuthenticatorState;
+import org.keycloak.testsuite.util.AdminEventPaths;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.ExecutionBuilder;
 import org.keycloak.testsuite.util.FlowBuilder;
@@ -48,7 +54,14 @@ import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmRepUtil;
 import org.keycloak.testsuite.util.UserBuilder;
 
+import javax.ws.rs.core.Response;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import static org.junit.Assert.assertEquals;
+import static org.keycloak.testsuite.util.Matchers.statusCodeIs;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -172,12 +185,66 @@ public class CustomFlowTest extends AbstractFlowTest {
     protected ErrorPage errorPage;
 
     @Page
+    protected TermsAndConditionsPage termsPage;
+
+
+    @Page
     protected LoginPasswordUpdatePage updatePasswordPage;
 
     @Page
     protected RegisterPage registerPage;
 
     private static String userId;
+
+    /**
+     * KEYCLOAK-3506
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testRequiredAfterAlternative() throws Exception {
+        AuthenticationManagementResource authMgmtResource = testRealm().flows();
+        Map<String, String> params = new HashMap();
+        String flowAlias = "Browser Flow With Extra";
+        params.put("newName", flowAlias);
+        Response response = authMgmtResource.copy("browser", params);
+        String flowId = null;
+        try {
+            Assert.assertThat("Copy flow", response, statusCodeIs(Response.Status.CREATED));
+            AuthenticationFlowRepresentation newFlow = findFlowByAlias(flowAlias);
+            flowId = newFlow.getId();
+        } finally {
+            response.close();
+        }
+
+        AuthenticationExecutionRepresentation execution = ExecutionBuilder.create()
+                .parentFlow(flowId)
+                .requirement(AuthenticationExecutionModel.Requirement.REQUIRED.toString())
+                .authenticator(ClickThroughAuthenticator.PROVIDER_ID)
+                .priority(10)
+                .authenticatorFlow(false)
+                .build();
+        testRealm().flows().addExecution(execution);
+
+        RealmRepresentation rep = testRealm().toRepresentation();
+        rep.setBrowserFlow(flowAlias);
+        testRealm().update(rep);
+        rep = testRealm().toRepresentation();
+        Assert.assertEquals(flowAlias, rep.getBrowserFlow());
+
+        loginPage.open();
+        String url = driver.getCurrentUrl();
+        // test to make sure we aren't skipping anything
+        loginPage.login("test-user@localhost", "bad-password");
+        Assert.assertTrue(loginPage.isCurrent());
+        loginPage.login("test-user@localhost", "password");
+        Assert.assertTrue(termsPage.isCurrent());
+
+
+
+
+
+    }
 
     @Test
     public void loginSuccess() {

@@ -73,7 +73,14 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
             }
             if (model.isAuthenticatorFlow()) {
                 AuthenticationFlow authenticationFlow = processor.createFlowExecution(model.getFlowId(), model);
-                return authenticationFlow.processAction(actionExecution);
+                Response flowChallenge = authenticationFlow.processAction(actionExecution);
+                if (flowChallenge == null) {
+                    processor.getClientSession().setExecutionStatus(model.getId(), ClientSessionModel.ExecutionStatus.SUCCESS);
+                    if (model.isAlternative()) alternativeSuccessful = true;
+                    return processFlow();
+                } else {
+                   return flowChallenge;
+                }
             } else if (model.getId().equals(actionExecution)) {
                 AuthenticatorFactory factory = (AuthenticatorFactory) processor.getSession().getKeycloakSessionFactory().getProviderFactory(Authenticator.class, model.getAuthenticator());
                 if (factory == null) {
