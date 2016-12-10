@@ -166,6 +166,8 @@ public class ProvidersTest extends AbstractAuthenticationTest {
                 "Will also set it if execution is OPTIONAL and the OTP is currently configured for it.");
         addProviderInfo(result, "reset-password", "Reset Password", "Sets the Update Password required action if execution is REQUIRED.  " +
                 "Will also set it if execution is OPTIONAL and the password is currently configured for it.");
+        addProviderInfo(result, "testsuite-dummy-click-through", "Testsuite Dummy Click Thru",
+                "Testsuite Dummy authenticator.  User needs to click through the page to continue.");
         addProviderInfo(result, "testsuite-dummy-passthrough", "Testsuite Dummy Pass Thru",
                 "Testsuite Dummy authenticator.  Just passes through and is hardcoded to a specific user");
         addProviderInfo(result, "testsuite-dummy-registration", "Testsuite Dummy Pass Thru",

@@ -153,14 +153,14 @@ public interface AbstractAuthenticationFlowContext {
     void challenge(Response challenge);
 
     /**
-     * Sends the challenge back to the HTTP client irregardless of the current executionr equirement
+     * Sends the challenge back to the HTTP client irregardless of the current executionr requirement
      *
      * @param challenge
      */
     void forceChallenge(Response challenge);
 
     /**
-     * Same behavior as challenge(), but the error count in brute force attack detection will be incremented.
+     * Same behavior as forceChallenge(), but the error count in brute force attack detection will be incremented.
      * For example, if a user enters in a bad password, the user is directed to try again, but Keycloak will keep track
      * of how many failures have happened.
      *
