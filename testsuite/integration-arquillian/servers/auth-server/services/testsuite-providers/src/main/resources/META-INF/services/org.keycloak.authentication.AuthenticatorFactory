@@ -17,3 +17,4 @@
 
 org.keycloak.testsuite.forms.PassThroughAuthenticator
 org.keycloak.testsuite.forms.PassThroughRegistration
+org.keycloak.testsuite.forms.ClickThroughAuthenticator
