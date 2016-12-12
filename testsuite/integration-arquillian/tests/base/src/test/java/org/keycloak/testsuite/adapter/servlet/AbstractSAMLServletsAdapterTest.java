@@ -31,6 +31,8 @@ import org.keycloak.common.util.PemUtils;
 import org.keycloak.keys.Attributes;
 import org.keycloak.keys.KeyProvider;
 import org.keycloak.keys.RsaKeyProviderFactory;
+import org.keycloak.protocol.saml.SamlClient;
+import org.keycloak.protocol.saml.SamlConfigAttributes;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.protocol.saml.mappers.AttributeStatementHelper;
 import org.keycloak.protocol.saml.mappers.RoleListMapper;
@@ -42,6 +44,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.saml.BaseSAML2BindingBuilder;
 import org.keycloak.saml.SAML2ErrorResponseBuilder;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
+import org.keycloak.saml.common.util.XmlKeyInfoKeyNameTransformer;
 import org.keycloak.testsuite.adapter.AbstractServletsAdapterTest;
 import org.keycloak.testsuite.adapter.page.BadAssertionSalesPostSig;
 import org.keycloak.testsuite.adapter.page.BadClientSalesPostSigServlet;
@@ -71,6 +74,7 @@ import org.keycloak.testsuite.auth.page.login.Login;
 import org.keycloak.testsuite.auth.page.login.SAMLIDPInitiatedLogin;
 import org.keycloak.testsuite.page.AbstractPage;
 import org.keycloak.testsuite.util.IOUtil;
+import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
 
 import org.openqa.selenium.By;
@@ -439,10 +443,11 @@ public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAd
         testSuccessfulAndUnauthorizedLogin(employeeSigServletPage, testRealmSAMLRedirectLoginPage);
     }
 
+    private static final KeyPair NEW_KEY_PAIR = KeyUtils.generateRsaKeyPair(1024);
+    private static final String NEW_KEY_PRIVATE_KEY_PEM = PemUtils.encodeKey(NEW_KEY_PAIR.getPrivate());
+
     private PublicKey createKeys(String priority) throws Exception {
-        KeyPair keyPair = KeyUtils.generateRsaKeyPair(1024);
-        String privateKeyPem = PemUtils.encodeKey(keyPair.getPrivate());
-        PublicKey publicKey = keyPair.getPublic();
+        PublicKey publicKey = NEW_KEY_PAIR.getPublic();
 
         ComponentRepresentation rep = new ComponentRepresentation();
         rep.setName("mycomponent");
@@ -452,7 +457,7 @@ public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAd
 
         org.keycloak.common.util.MultivaluedHashMap config = new org.keycloak.common.util.MultivaluedHashMap();
         config.addFirst("priority", priority);
-        config.addFirst(Attributes.PRIVATE_KEY_KEY, privateKeyPem);
+        config.addFirst(Attributes.PRIVATE_KEY_KEY, NEW_KEY_PRIVATE_KEY_PEM);
         rep.setConfig(config);
 
         testRealmResource().components().add(rep);
@@ -493,7 +498,49 @@ public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAd
     }
 
     @Test
+    public void employeeSigPostNoIdpKeyTestNoKeyNameInKeyInfo() throws Exception {
+        RealmRepresentation r = testRealmResource().toRepresentation();
+        r.getAttributes().put(SamlConfigAttributes.SAML_SERVER_SIGNATURE_KEYINFO_KEY_NAME_TRANSFORMER, XmlKeyInfoKeyNameTransformer.NONE.name());
+        testRotatedKeysPropagated(employeeSigPostNoIdpKeyServletPage, testRealmSAMLPostLoginPage);
+    }
+
+    @Test
+    public void employeeSigPostNoIdpKeyTestCertSubjectAsKeyNameInKeyInfo() throws Exception {
+        RealmRepresentation r = testRealmResource().toRepresentation();
+        r.getAttributes().put(SamlConfigAttributes.SAML_SERVER_SIGNATURE_KEYINFO_KEY_NAME_TRANSFORMER, XmlKeyInfoKeyNameTransformer.CERT_SUBJECT.name());
+        testRotatedKeysPropagated(employeeSigPostNoIdpKeyServletPage, testRealmSAMLPostLoginPage);
+    }
+
+    @Test
+    public void employeeSigPostNoIdpKeyTestKeyIdAsKeyNameInKeyInfo() throws Exception {
+        RealmRepresentation r = testRealmResource().toRepresentation();
+        r.getAttributes().put(SamlConfigAttributes.SAML_SERVER_SIGNATURE_KEYINFO_KEY_NAME_TRANSFORMER, XmlKeyInfoKeyNameTransformer.KEY_ID.name());
+        testRotatedKeysPropagated(employeeSigPostNoIdpKeyServletPage, testRealmSAMLPostLoginPage);
+    }
+
+    @Test
     public void employeeSigRedirNoIdpKeyTest() throws Exception {
+        testRotatedKeysPropagated(employeeSigRedirNoIdpKeyServletPage, testRealmSAMLRedirectLoginPage);
+    }
+
+    @Test
+    public void employeeSigRedirNoIdpKeyTestNoKeyNameInKeyInfo() throws Exception {
+        RealmRepresentation r = testRealmResource().toRepresentation();
+        r.getAttributes().put(SamlConfigAttributes.SAML_SERVER_SIGNATURE_KEYINFO_KEY_NAME_TRANSFORMER, XmlKeyInfoKeyNameTransformer.NONE.name());
+        testRotatedKeysPropagated(employeeSigRedirNoIdpKeyServletPage, testRealmSAMLRedirectLoginPage);
+    }
+
+    @Test
+    public void employeeSigRedirNoIdpKeyTestCertSubjectAsKeyNameInKeyInfo() throws Exception {
+        RealmRepresentation r = testRealmResource().toRepresentation();
+        r.getAttributes().put(SamlConfigAttributes.SAML_SERVER_SIGNATURE_KEYINFO_KEY_NAME_TRANSFORMER, XmlKeyInfoKeyNameTransformer.CERT_SUBJECT.name());
+        testRotatedKeysPropagated(employeeSigRedirNoIdpKeyServletPage, testRealmSAMLRedirectLoginPage);
+    }
+
+    @Test
+    public void employeeSigRedirNoIdpKeyTestKeyIdAsKeyNameInKeyInfo() throws Exception {
+        RealmRepresentation r = testRealmResource().toRepresentation();
+        r.getAttributes().put(SamlConfigAttributes.SAML_SERVER_SIGNATURE_KEYINFO_KEY_NAME_TRANSFORMER, XmlKeyInfoKeyNameTransformer.KEY_ID.name());
         testRotatedKeysPropagated(employeeSigRedirNoIdpKeyServletPage, testRealmSAMLRedirectLoginPage);
     }
 

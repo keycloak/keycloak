@@ -837,6 +837,11 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, templates,
         "transient",
         "persistent"
     ];
+    $scope.xmlKeyNameTranformers = [
+        "NONE",
+        "KEY_ID",
+        "CERT_SUBJECT"
+    ];
 
     $scope.canonicalization = [
         {name: "EXCLUSIVE", value:  "http://www.w3.org/2001/10/xml-exc-c14n#"  },
@@ -866,6 +871,7 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, templates,
     $scope.samlEncrypt = false;
     $scope.samlForcePostBinding = false;
     $scope.samlForceNameIdFormat = false;
+    $scope.samlXmlKeyNameTranformer = $scope.xmlKeyNameTranformers[1];
     $scope.disableAuthorizationTab = !client.authorizationServicesEnabled;
     $scope.disableServiceAccountRolesTab = !client.serviceAccountsEnabled;
     $scope.disableCredentialsTab = client.publicClient;
@@ -917,6 +923,13 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, templates,
             } else {
                 $scope.samlServerSignatureEnableKeyInfoExtension = false;
             }
+        }
+        if ($scope.client.attributes['saml.server.signature.keyinfo.xmlSigKeyInfoKeyNameTransformer'] === 'NONE') {
+            $scope.samlXmlKeyNameTranformer = $scope.xmlKeyNameTranformers[0];
+        } else if ($scope.client.attributes['saml.server.signature.keyinfo.xmlSigKeyInfoKeyNameTransformer'] === 'KEY_ID') {
+            $scope.samlXmlKeyNameTranformer = $scope.xmlKeyNameTranformers[1];
+        } else if ($scope.client.attributes['saml.server.signature.keyinfo.xmlSigKeyInfoKeyNameTransformer'] === 'CERT_SUBJECT') {
+            $scope.samlXmlKeyNameTranformer = $scope.xmlKeyNameTranformers[2];
         }
         if ($scope.client.attributes["saml.assertion.signature"]) {
             if ($scope.client.attributes["saml.assertion.signature"] == "true") {
@@ -1035,6 +1048,10 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, templates,
 
     $scope.changeNameIdFormat = function() {
         $scope.client.attributes['saml_name_id_format'] = $scope.nameIdFormat;
+    };
+
+    $scope.changeSamlSigKeyNameTranformer = function() {
+        $scope.client.attributes['saml.server.signature.keyinfo.xmlSigKeyInfoKeyNameTransformer'] = $scope.samlXmlKeyNameTranformer;
     };
 
     $scope.changeUserInfoSignedResponseAlg = function() {
