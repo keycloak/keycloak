@@ -1,29 +1,27 @@
 [[_create-realm]]
 
-=== Create a New Realm
+=== Creating a New Realm
 
-Login to the {{book.project.name}} Admin Console using the account you created in the
+To create a new realm, complete the following steps:
+
+. Log in to the {{book.project.name}} Admin Console using the account you created in the
 <<fake/../../first-boot.adoc#_install-boot, Install and Boot>> tutorial.
 
 Admin Console Link::
   http://localhost:8080/auth/admin/
 
-Place the mouse over the top left corner drop down menu that is titled with `Master`.  If you are logged in the master realm
-this drop down menu lists all the realms created.  The last entry of this drop down menu is always `Add Realm`.  Click
-this to add a realm.
-
+. In the top left corner dropdown menu that is titled `Master`, click *Add Realm*.  If you are logged in to the master realm this dropdown menu lists all the realms created. The Add Realm page opens. 
++
 .Add Realm Menu
 image:../../{{book.images}}/add-realm-menu.png[]
 
-This menu option will bring you to the `Add Realm` page.  You will be creating a brand new realm from scratch so
-enter in `demo` for the realm name and click `Create`.
-
+. You will be creating a brand new realm from scratch so
+type `demo` for the realm name and click `Create`.
++
 .Create Realm
 image:../../{{book.images}}/create-realm.png[]
 
-After creating the realm you are brought back to the main Admin Console page. The current realm will now be set to
-`demo`.  You can switch between managing the `master` realm and the realm you just created by doing a mouseover on the
-top left corner drop down menu.
+After creating the realm the main Admin Console page opens. The current realm is now set to `demo`. You can switch between managing the `master` realm and the realm you just created by clicking the top left corner dropdown menu.
 
 
 
