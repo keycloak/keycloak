@@ -1,9 +1,9 @@
-=== Simple Read Only, Lookup Example
+=== Simple Read-Only, Lookup Example
 
 To illustrate the basics of implementing the User Storage SPI let's walk through a simple example.  In this chapter
-you'll see the implementation of a simple `UserStorageProvider` that looks up users in a simple property file.  The
+you'll see the implementation of a simple `UserStorageProvider` that looks up users in a simple property file. The
 property file contains username and password definitions and is hardcoded to a specific location on the classpath.
-The provider will be able to lookup the user by id, and username and also be able to validate passwords.  Users that
+The provider will be able to lookup the user by id and username and also be able to validate passwords. Users that
 originate from this provider will be read only.
 
 ==== Provider Class
@@ -22,11 +22,11 @@ public class PropertyFileUserStorageProvider implements
 }
 ----
 
-Our provider class, `PropertyFileUserStorageProvider`, implements a bunch of interfaces.  It implements the
-`UserStorageProvider` as that is a base requirement of the SPI.  It implements the `UserLookupProvider` interface
+Our provider class, `PropertyFileUserStorageProvider`, implements a bunch of interfaces. It implements the
+`UserStorageProvider` as that is a base requirement of the SPI. It implements the `UserLookupProvider` interface
 because we want to be able to login with users stored by this provider.  It implements the `CredentialInputValidator`
-interface because we want to be able to validate passwords entered in via the login screen.  Our property file
-is going to be read only.  We implement the `CredentialInputUpdater` because was want to post an error condition
+interface because we want to be able to validate passwords entered in via the login screen. Our property file
+is going to be read only. We implement the `CredentialInputUpdater` because was want to post an error condition
 when the user's password is attempted to be updated.
 
 [source,java]
@@ -45,9 +45,9 @@ when the user's password is attempted to be updated.
 ----
 
 The constructor for this provider class is going to store the reference to the `KeycloakSession`, `ComponentModel`, and
-property file.  We'll use all of these later.  Also notice that there is a map of loaded users.  Whenever we find a user
-we will store it in this map so that we avoid recreating it again within the same transaction.  This is a good practice
-to do as many providers will need to do this (i.e. one that integrates with JPA).  Remember also that provider class
+property file. We'll use all of these later. Also notice that there is a map of loaded users. Whenever we find a user
+we will store it in this map so that we avoid recreating it again within the same transaction. This is a good practice
+to do as many providers will need to do this (i.e., one that integrates with JPA). Remember also that provider class
 instances are created once per transaction and are closed after the transaction completes.
 
 ===== UserLookupProvider implementation
