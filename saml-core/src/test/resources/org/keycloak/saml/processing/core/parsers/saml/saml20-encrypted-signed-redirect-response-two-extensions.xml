@@ -2,7 +2,9 @@
     <saml:Issuer xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion">http://localhost:8081/auth/realms/saml-demo</saml:Issuer>
     <samlp:Extensions>
         <kckey:KeyInfo xmlns:kckey="urn:keycloak:ext:key:1.0" MessageSigningKeyId="FJ86GcF3jTbNLOco4NvZkUCIUmfYCqoqtOQeMfbhNlE"/>
-        <what:ever xmlns:what="urn:keycloak:ext:what:1.0" what="ever"/>
+        <what:ever xmlns:what="urn:keycloak:ext:what:1.0" what="ever">
+            <nested><element>text contents</element></nested>
+        </what:ever>
     </samlp:Extensions>
     <samlp:Status>
         <samlp:StatusCode Value="urn:oasis:names:tc:SAML:2.0:status:Success"/>
