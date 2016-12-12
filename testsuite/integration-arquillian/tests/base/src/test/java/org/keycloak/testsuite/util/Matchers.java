@@ -16,12 +16,11 @@
  */
 package org.keycloak.testsuite.util;
 
-import org.keycloak.testsuite.util.matchers.ResponseBodyMatcher;
-import org.keycloak.testsuite.util.matchers.ResponseHeaderMatcher;
-import org.keycloak.testsuite.util.matchers.ResponseStatusCodeMatcher;
+import org.keycloak.testsuite.util.matchers.*;
 
 import java.util.Map;
 import javax.ws.rs.core.Response;
+import org.apache.http.HttpResponse;
 import org.hamcrest.Matcher;
 
 /**
@@ -49,6 +48,15 @@ public class Matchers {
     }
 
     /**
+     * Matcher on HTTP status code of a {@link Response} instance (HttpClient variant).
+     * @param matcher
+     * @return
+     */
+    public static Matcher<HttpResponse> statusCodeHC(Matcher<? extends Number> matcher) {
+        return new HttpResponseStatusCodeMatcher(matcher);
+    }
+
+    /**
      * Matches when the HTTP status code of a {@link Response} instance is equal to the given code.
      * @param expectedStatusCode
      * @return
@@ -58,12 +66,30 @@ public class Matchers {
     }
 
     /**
+     * Matches when the HTTP status code of a {@link Response} instance is equal to the given code (HttpClient variant).
+     * @param expectedStatusCode
+     * @return
+     */
+    public static Matcher<HttpResponse> statusCodeIsHC(Response.Status expectedStatusCode) {
+        return new HttpResponseStatusCodeMatcher(org.hamcrest.Matchers.is(expectedStatusCode.getStatusCode()));
+    }
+
+    /**
      * Matches when the HTTP status code of a {@link Response} instance is equal to the given code.
      * @param expectedStatusCode
      * @return
      */
     public static Matcher<Response> statusCodeIs(int expectedStatusCode) {
         return new ResponseStatusCodeMatcher(org.hamcrest.Matchers.is(expectedStatusCode));
+    }
+
+    /**
+     * Matches when the HTTP status code of a {@link Response} instance is equal to the given code (HttpClient variant).
+     * @param expectedStatusCode
+     * @return
+     */
+    public static Matcher<HttpResponse> statusCodeIsHC(int expectedStatusCode) {
+        return new HttpResponseStatusCodeMatcher(org.hamcrest.Matchers.is(expectedStatusCode));
     }
 
     /**

@@ -243,7 +243,7 @@ public class SAML2Request {
      *
      * @throws ConfigurationException
      */
-    public LogoutRequestType createLogoutRequest(String issuer) throws ConfigurationException {
+    public static LogoutRequestType createLogoutRequest(String issuer) throws ConfigurationException {
         LogoutRequestType lrt = new LogoutRequestType(IDGenerator.create("ID_"), XMLTimeUtil.getIssueInstant());
 
         // Create an issuer
@@ -266,7 +266,7 @@ public class SAML2Request {
      * @throws ParsingException
      * @throws ConfigurationException
      */
-    public Document convert(RequestAbstractType rat) throws ProcessingException, ConfigurationException, ParsingException {
+    public static Document convert(RequestAbstractType rat) throws ProcessingException, ConfigurationException, ParsingException {
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
 
         SAMLRequestWriter writer = new SAMLRequestWriter(StaxUtil.getXMLStreamWriter(bos));
@@ -290,7 +290,7 @@ public class SAML2Request {
      * @throws ParsingException
      * @throws ConfigurationException
      */
-    public Document convert(ResponseType responseType) throws ProcessingException, ParsingException, ConfigurationException {
+    public static Document convert(ResponseType responseType) throws ProcessingException, ParsingException, ConfigurationException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         SAMLResponseWriter writer = new SAMLResponseWriter(StaxUtil.getXMLStreamWriter(baos));
         writer.write(responseType);
@@ -307,7 +307,7 @@ public class SAML2Request {
      *
      * @throws ProcessingException
      */
-    public void marshall(RequestAbstractType requestType, OutputStream os) throws ProcessingException {
+    public static void marshall(RequestAbstractType requestType, OutputStream os) throws ProcessingException {
         SAMLRequestWriter samlRequestWriter = new SAMLRequestWriter(StaxUtil.getXMLStreamWriter(os));
         if (requestType instanceof AuthnRequestType) {
             samlRequestWriter.write((AuthnRequestType) requestType);
@@ -325,7 +325,7 @@ public class SAML2Request {
      *
      * @throws ProcessingException
      */
-    public void marshall(RequestAbstractType requestType, Writer writer) throws ProcessingException {
+    public static void marshall(RequestAbstractType requestType, Writer writer) throws ProcessingException {
         SAMLRequestWriter samlRequestWriter = new SAMLRequestWriter(StaxUtil.getXMLStreamWriter(writer));
         if (requestType instanceof AuthnRequestType) {
             samlRequestWriter.write((AuthnRequestType) requestType);
