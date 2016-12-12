@@ -31,5 +31,9 @@ fi
 
 if [ $1 == "adapter" ]; then
     mvn test -B -f testsuite/integration-arquillian/tests/other/adapters
+    mvn test -B -f testsuite/jetty
+    mvn test -B -f testsuite/tomcat6
+    mvn test -B -f testsuite/tomcat7
+    mvn test -B -f testsuite/tomcat8
 fi
 
