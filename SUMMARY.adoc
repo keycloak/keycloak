@@ -25,11 +25,11 @@
       ... link:topics/oidc/java/jetty8-adapter.adoc[Jetty 8.1.x Adapter]
       ... link:topics/oidc/java/spring-boot-adapter.adoc[Spring Boot Adapter]
       ... link:topics/oidc/java/spring-security-adapter.adoc[Spring Security Adapter]
-      {% endif %}  
+      {% endif %}
       {% if book.community %}
       ... link:topics/oidc/java/servlet-filter-adapter.adoc[Java Servlet Filter Adapter]
       ... link:topics/oidc/java/jaas.adoc[JAAS plugin]
-      {% endif %}  
+      {% endif %}
       ... link:topics/oidc/java/adapter-context.adoc[Security Context]
       ... link:topics/oidc/java/adapter_error_handling.adoc[Error Handling]
       ... link:topics/oidc/java/logout.adoc[Logout]
@@ -61,7 +61,7 @@
  .... link:topics/saml/java/general-config/idp_singlelogoutservice_subelement.adoc[IDP SingleLogoutService sub element]
  .... link:topics/saml/java/general-config/idp_keys_subelement.adoc[IDP Keys subelement]
  .... link:topics/saml/java/general-config/idp_httpclient_subelement.adoc[IDP HttpClient subelement]
- ... link:topics/saml/java/jboss-adapter.adoc[JBoss EAP/Wildfly Adapter]
+ ... link:topics/saml/java/saml-jboss-adapter.adoc[JBoss EAP/Wildfly Adapter]
  .... link:topics/saml/java/jboss-adapter/jboss_adapter_installation.adoc[Adapter Installation]
  .... link:topics/saml/java/jboss-adapter/required_per_war_configuration.adoc[Per WAR Configuration]
  .... link:topics/saml/java/jboss-adapter/securing_wars.adoc[Securing WARs via SAML Subsystem]
@@ -77,7 +77,7 @@
  {% endif %}
  {% if book.community %}
  ... link:topics/saml/java/servlet-filter-adapter.adoc[Java Servlet Filter Adapter]
- {% endif %}  
+ {% endif %}
  ... link:topics/saml/java/idp-registration.adoc[Registering with an IDP]
  ... link:topics/saml/java/logout.adoc[Logout]
  ... link:topics/saml/java/assertion-api.adoc[Obtaining Assertion Attributes]
