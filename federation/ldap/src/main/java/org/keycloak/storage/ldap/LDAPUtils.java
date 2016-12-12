@@ -189,9 +189,8 @@ public class LDAPUtils {
      * @param memberAttrName usually 'member'
      * @param ldapParent role or group
      * @param ldapChild usually user (or child group or child role)
-     * @param sendLDAPUpdateRequest if true, the method will send LDAP update request too. Otherwise it will skip it
      */
-    public static void deleteMember(LDAPStorageProvider ldapProvider, MembershipType membershipType, String memberAttrName, LDAPObject ldapParent, LDAPObject ldapChild, boolean sendLDAPUpdateRequest) {
+    public static void deleteMember(LDAPStorageProvider ldapProvider, MembershipType membershipType, String memberAttrName, LDAPObject ldapParent, LDAPObject ldapChild) {
         Set<String> memberships = getExistingMemberships(memberAttrName, ldapParent);
 
         String userMembership = getMemberValueOfChildObject(ldapChild, membershipType);

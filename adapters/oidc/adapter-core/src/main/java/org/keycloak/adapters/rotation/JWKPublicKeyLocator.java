@@ -73,8 +73,10 @@ public class JWKPublicKeyLocator implements PublicKeyLocator {
 
     @Override
     public void reset(KeycloakDeployment deployment) {
-        sendRequest(deployment);
-        lastRequestTime = Time.currentTime();
+        synchronized (this) {
+            sendRequest(deployment);
+            lastRequestTime = Time.currentTime();
+        }
     }
 
 

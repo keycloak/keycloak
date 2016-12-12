@@ -19,6 +19,7 @@ package org.keycloak.storage.ldap.idm.query.internal;
 
 import org.keycloak.models.ModelException;
 import org.keycloak.storage.ldap.idm.query.Condition;
+import org.keycloak.storage.ldap.idm.query.EscapeStrategy;
 import org.keycloak.storage.ldap.idm.query.Sort;
 
 /**
@@ -27,7 +28,11 @@ import org.keycloak.storage.ldap.idm.query.Sort;
 public class LDAPQueryConditionsBuilder {
 
     public Condition equal(String parameter, Object value) {
-        return new EqualCondition(parameter, value);
+        return new EqualCondition(parameter, value, EscapeStrategy.DEFAULT);
+    }
+
+    public Condition equal(String parameter, Object value, EscapeStrategy escapeStrategy) {
+        return new EqualCondition(parameter, value, escapeStrategy);
     }
 
     public Condition greaterThan(String paramName, Object x) {
