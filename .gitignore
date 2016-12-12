@@ -48,3 +48,7 @@ catalog.xml
 #########
 target
 
+# ccutil build directory #
+##########################
+build/
+

@@ -67,9 +67,9 @@
 
 ===== Java
 
-* <<fake/../../saml/java/jboss-adapter.adoc#_jboss_adapter,JBoss EAP>>
+* <<fake/../../saml/java/saml-jboss-adapter.adoc#_saml_jboss_adapter,JBoss EAP>>
 {% if book.community %}
-* <<fake/../../saml/java/jboss-adapter.adoc#_jboss_adapter,WildFly>>
+* <<fake/../../saml/java/saml-jboss-adapter.adoc#_saml_jboss_adapter,WildFly>>
 * <<fake/../../saml/java/tomcat-adapter.adoc#_tomcat_adapter,Tomcat>>
 * <<fake/../../saml/java/jetty-adapter.adoc#_jetty_saml_adapter,Jetty>>
 {% endif %}

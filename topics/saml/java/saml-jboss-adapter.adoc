@@ -1,4 +1,4 @@
-[[_saml-jboss-adapter]]
+[[_saml_jboss_adapter]]
 
 {% if book.community %}
 ==== JBoss EAP/Wildfly Adapter
