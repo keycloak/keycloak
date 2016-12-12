@@ -1,5 +1,5 @@
 
-=== Install the Client Adapter
+=== Installing the Client Adapter
 
 Download the {{book.appServer}} distribution and unzip
 it into a directory on your machine.
@@ -31,7 +31,7 @@ $ ./jboss-cli.sh --file=adapter-install-offline.cli
 ----
 
 This script will make the appropriate edits to the _.../standalone/configuration/standalone.xml_ file of your app
-server distribution.  Finally, just boot the application server.
+server distribution.  Finally, boot the application server.
 
 .Linux/Unix
 [source]

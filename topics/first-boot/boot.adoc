@@ -1,5 +1,5 @@
 
-=== Boot the Server
+=== Booting the Server
 
 To boot the {{book.project.name}} server, go to the _bin/_ directory of the server distribution.
 

@@ -1,31 +1,32 @@
 [[_create-new-user]]
 
-=== Create a New User
+=== Creating a New User
 
-In this section you are going to create a new user in the `demo` realm as well as a temporary password for that account.
-The first step is to click on the `Users` in the left menu bar.
+To create a new user in the `demo` realm as well as a temporary password for that account, complete the following steps:
 
+. In the left menu bar click *Users*. The user list page opens.
++
 .Users
 image:../../{{book.images}}/users.png[]
 
-This menu option brings you to the user list page.  On the right side of the empty user list, you should see an `Add User`
-button.  Click that to start creating your new user.
+. On the right side of the empty user list, click *Add User*.
 
++
 .Add User
 image:../../{{book.images}}/add-user.png[]
 
-The only required field is `Username`.  Click save.  This will bring you to the management page for your new user.
+. The only required field is `Username`.  When you are finished, click *Save*.  The management page for your new user opens.
 
-The next step is to define a temporary password for your new user.  Click on the `Credentials` tab to bring you to
-the page that will allow you to do this.
-
+. The next step is to define a temporary password for your new user. Click the *Credentials* tab.
++
 .Set Temporary Password
 image:../../{{book.images}}/credentials.png[]
 
-Enter a new password and retype it within the `Password Confirmation` field.  Once you do this a red `Reset Password`
-button should reappear.  Clicking on that will reset the user's password to the new one you specified.  Please note that
-this is a temporary password and the user will be required to change it after they first log in.  You can make it permanent
-by flipping the `Temporary` switch from `On` to `Off` before you click the `Reset Password` button.
+. Type a new password and confirm it. A red *Reset Password* button is displayed.
+. Click *Reset Password* to reset the user password to the new one you specified.  
+
+NOTE: This password is temporary and the user will be required to change it after first login. You can make it permanent
+by flipping the *Temporary* switch from *On* to *Off* before clicking *Reset Password*.
 
 
 

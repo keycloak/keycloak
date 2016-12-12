@@ -2,7 +2,7 @@
 === Before You Start
 
 Before you can participate in this tutorial, you need to complete the installation of {{book.project.name}} and create the
-initial admin user as shown in the <<fake/../../first-boot.adoc#_install-boot, Install and Boot>> tutorial.  There is one
+initial admin user as shown in the <<fake/../../first-boot.adoc#_install-boot, Installing and Booting>> tutorial.  There is one
 caveat to this.  You have to run a separate {{book.appServer}} instance on the same machine as the
 {{book.project.name}} server.  This separate instance will run your Java Servlet application.  Because of this you will
 have to run the {{book.project.name}} under a different port so that there are no port conflicts when running on the

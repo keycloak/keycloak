@@ -1,25 +1,26 @@
 
-=== Configure Subsystem
+=== Configuring the Subsystem
 
-Now that you have copied the XML template from the `Installation` tab, you need to paste this into the _standalone.xml_ file
-that lives in the _standalone/configuration_ directory of the application server instance your application is deployed on.
-Open this file and search for the following text:
+Now that you have copied the XML template from the Installation page, you need to paste this into the _standalone.xml_ file
+that resides in the _standalone/configuration_ directory of the application server instance on which your application is deployed.
 
+. Open the standalone/configuration/standalone.xml file and search for the following text:
++
 [source,xml]
 ----
 <subsystem xmlns="urn:jboss:domain:keycloak:1.1"/>
 ----
 
-Modify this a little bit to prepare it for pasting in your template from the `Installation` tab.
-
+. Modify this to prepare it for pasting in your template from the Installation page:
++
 [source,xml]
 ----
 <subsystem xmlns="urn:jboss:domain:keycloak:1.1">
 </subsystem>
 ----
 
-Within the `subsystem` element, paste in the template.  It will look something like this:
-
+. Within the <subsystem> element, paste in the template. It will look something like this:
++
 [source,xml]
 ----
 <subsystem xmlns="urn:jboss:domain:keycloak:1.1">
@@ -33,8 +34,8 @@ Within the `subsystem` element, paste in the template.  It will look something l
 </subsystem>
 ----
 
-Change the `WAR MODULE NAME` text to be `vanilla` as follows:
-
+. Change the *WAR MODULE NAME* text to *vanilla* as follows:
++
 [source,xml]
 ----
 <subsystem xmlns="urn:jboss:domain:keycloak:1.1">
@@ -43,7 +44,8 @@ Change the `WAR MODULE NAME` text to be `vanilla` as follows:
 </subsystem>
 ----
 
-Reboot your application's server and now when you visit http://localhost:8080/vanilla and hit the login button, you should
-get the {{book.project.name}} login page. You can log in using the user you created in the <<fake/../../first-realm/user.adoc#_create-new-user, Create New User>> chapter.
+. Reboot your application server.  
+
+. Go to http://localhost:8080/vanilla and click *login*. The {{book.project.name}} login page opens. You can log in using the user you created in the <<fake/../../first-realm/user.adoc#_create-new-user, Creating a New User>> chapter.
 
 
