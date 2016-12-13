@@ -80,6 +80,7 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
     public static final String READ_ONLY = "read.only";
     public static final String ALWAYS_READ_VALUE_FROM_LDAP = "always.read.value.from.ldap";
     public static final String IS_MANDATORY_IN_LDAP = "is.mandatory.in.ldap";
+    public static final String IS_BINARY_ATTRIBUTE = "is.binary.attribute";
 
     public UserAttributeLDAPStorageMapper(ComponentModel mapperModel, LDAPStorageProvider ldapProvider) {
         super(mapperModel, ldapProvider);
@@ -89,6 +90,12 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
     public void onImportUserFromLDAP(LDAPObject ldapUser, UserModel user, RealmModel realm, boolean isCreate) {
         String userModelAttrName = mapperModel.getConfig().getFirst(USER_MODEL_ATTRIBUTE);
         String ldapAttrName = mapperModel.getConfig().getFirst(LDAP_ATTRIBUTE);
+
+        // We won't update binary attributes to Keycloak DB. They might be too big
+        boolean isBinaryAttribute = mapperModel.get(IS_BINARY_ATTRIBUTE, false);
+        if (isBinaryAttribute) {
+            return;
+        }
 
         Property<Object> userModelProperty = userModelProperties.get(userModelAttrName.toLowerCase());
 
@@ -177,6 +184,7 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
         final String ldapAttrName = mapperModel.getConfig().getFirst(LDAP_ATTRIBUTE);
         boolean isAlwaysReadValueFromLDAP = parseBooleanParameter(mapperModel, ALWAYS_READ_VALUE_FROM_LDAP);
         final boolean isMandatoryInLdap = parseBooleanParameter(mapperModel, IS_MANDATORY_IN_LDAP);
+        final boolean isBinaryAttribute = parseBooleanParameter(mapperModel, IS_BINARY_ATTRIBUTE);
 
         // For writable mode, we want to propagate writing of attribute to LDAP as well
         if (ldapProvider.getEditMode() == UserStorageProvider.EditMode.WRITABLE && !isReadOnly()) {
@@ -185,20 +193,23 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
 
                 @Override
                 public void setSingleAttribute(String name, String value) {
-                    setLDAPAttribute(name, value);
-                    super.setSingleAttribute(name, value);
+                    if (setLDAPAttribute(name, value)) {
+                        super.setSingleAttribute(name, value);
+                    }
                 }
 
                 @Override
                 public void setAttribute(String name, List<String> values) {
-                    setLDAPAttribute(name, values);
-                    super.setAttribute(name, values);
+                    if (setLDAPAttribute(name, values)) {
+                        super.setAttribute(name, values);
+                    }
                 }
 
                 @Override
                 public void removeAttribute(String name) {
-                    setLDAPAttribute(name, null);
-                    super.removeAttribute(name);
+                    if ( setLDAPAttribute(name, null)) {
+                        super.removeAttribute(name);
+                    }
                 }
 
                 @Override
@@ -221,10 +232,10 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
                     super.setFirstName(firstName);
                 }
 
-                protected void setLDAPAttribute(String modelAttrName, Object value) {
+                protected boolean setLDAPAttribute(String modelAttrName, Object value) {
                     if (modelAttrName.equalsIgnoreCase(userModelAttrName)) {
-                        if (logger.isTraceEnabled()) {
-                            logger.tracef("Pushing user attribute to LDAP. username: %s, Model attribute name: %s, LDAP attribute name: %s, Attribute value: %s", getUsername(), modelAttrName, ldapAttrName, value);
+                        if (UserAttributeLDAPStorageMapper.logger.isTraceEnabled()) {
+                            UserAttributeLDAPStorageMapper.logger.tracef("Pushing user attribute to LDAP. username: %s, Model attribute name: %s, LDAP attribute name: %s, Attribute value: %s", getUsername(), modelAttrName, ldapAttrName, value);
                         }
 
                         ensureTransactionStarted();
@@ -245,7 +256,53 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
                                 ldapUser.setAttribute(ldapAttrName, new LinkedHashSet<>(asList));
                             }
                         }
+
+                        if (isBinaryAttribute) {
+                            UserAttributeLDAPStorageMapper.logger.debugf("Skip writing model attribute '%s' to DB for user '%s' as it is mapped to binary LDAP attribute.", userModelAttrName, getUsername());
+                            return false;
+                        } else {
+                            return true;
+                        }
                     }
+
+                    return true;
+                }
+
+            };
+
+        } else if (isBinaryAttribute) {
+
+            delegate = new UserModelDelegate(delegate) {
+
+                @Override
+                public void setSingleAttribute(String name, String value) {
+                    if (name.equalsIgnoreCase(userModelAttrName)) {
+                        logSkipDBWrite();
+                    } else {
+                        super.setSingleAttribute(name, value);
+                    }
+                }
+
+                @Override
+                public void setAttribute(String name, List<String> values) {
+                    if (name.equalsIgnoreCase(userModelAttrName)) {
+                        logSkipDBWrite();
+                    } else {
+                        super.setAttribute(name, values);
+                    }
+                }
+
+                @Override
+                public void removeAttribute(String name) {
+                    if (name.equalsIgnoreCase(userModelAttrName)) {
+                        logSkipDBWrite();
+                    } else {
+                        super.removeAttribute(name);
+                    }
+                }
+
+                private void logSkipDBWrite() {
+                    logger.debugf("Skip writing model attribute '%s' to DB for user '%s' as it is mapped to binary LDAP attribute", userModelAttrName, getUsername());
                 }
 
             };

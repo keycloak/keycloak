@@ -23,6 +23,16 @@
 
     <module-name>ldap-portal</module-name>
 
+    <servlet>
+        <servlet-name>Picture</servlet-name>
+        <servlet-class>org.keycloak.example.ldap.LDAPPictureServlet</servlet-class>
+    </servlet>
+
+    <servlet-mapping>
+        <servlet-name>Picture</servlet-name>
+        <url-pattern>/picture/*</url-pattern>
+    </servlet-mapping>
+
     <security-constraint>
         <web-resource-collection>
             <web-resource-name>LDAPApp</web-resource-name>

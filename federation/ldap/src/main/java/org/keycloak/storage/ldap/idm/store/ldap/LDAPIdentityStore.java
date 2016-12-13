@@ -18,6 +18,7 @@
 package org.keycloak.storage.ldap.idm.store.ldap;
 
 import org.jboss.logging.Logger;
+import org.keycloak.common.util.Base64;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.ModelException;
 import org.keycloak.storage.ldap.LDAPConfig;
@@ -40,6 +41,8 @@ import javax.naming.directory.DirContext;
 import javax.naming.directory.ModificationItem;
 import javax.naming.directory.SearchControls;
 import javax.naming.directory.SearchResult;
+
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -323,8 +326,15 @@ public class LDAPIdentityStore implements IdentityStore {
                     Set<String> attrValues = new LinkedHashSet<>();
                     NamingEnumeration<?> enumm = ldapAttribute.getAll();
                     while (enumm.hasMoreElements()) {
-                        String attrVal = enumm.next().toString().trim();
-                        attrValues.add(attrVal);
+                        Object val = enumm.next();
+
+                        if (val instanceof byte[]) { // byte[]
+                            String attrVal = Base64.encodeBytes((byte[]) val);
+                            attrValues.add(attrVal);
+                        } else { // String
+                            String attrVal = val.toString().trim();
+                            attrValues.add(attrVal);
+                        }
                     }
 
                     if (ldapAttributeName.equalsIgnoreCase(LDAPConstants.OBJECT_CLASS)) {
@@ -377,7 +387,18 @@ public class LDAPIdentityStore implements IdentityStore {
                     if (val == null || val.toString().trim().length() == 0) {
                         val = LDAPConstants.EMPTY_ATTRIBUTE_VALUE;
                     }
-                    attr.add(val);
+
+                    if (getConfig().getBinaryAttributeNames().contains(attrName)) {
+                        // Binary attribute
+                        try {
+                            byte[] bytes = Base64.decode(val);
+                            attr.add(bytes);
+                        } catch (IOException ioe) {
+                            logger.warnf("Wasn't able to Base64 decode the attribute value. Ignoring attribute update. LDAP DN: %s, Attribute: %s, Attribute value: %s" + ldapObject.getDn(), attrName, attrValue);
+                        }
+                    } else {
+                        attr.add(val);
+                    }
                 }
 
                 entryAttributes.put(attr);

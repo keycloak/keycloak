@@ -43,9 +43,15 @@
         <h2>ID Token - other claims</h2>
 <%
     for (Map.Entry<String, Object> claim : idToken.getOtherClaims().entrySet()) {
+        if (!claim.getKey().equals("profile_picture")) {
 %>
         <p><b><%= claim.getKey() %>: </b><%= claim.getValue().toString() %>
 <%
+        } else {
+%>
+        <p><b>Profile picture: </b><img src="/ldap-portal/picture" />
+<%
+        }
     }
 %>
         <hr />
