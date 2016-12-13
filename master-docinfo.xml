@@ -1,10 +1,10 @@
-<productname>Red Hat Single Sign-On</productname>
-<productnumber>7.1-Beta</productnumber>
-<subtitle>Server Administration Guide</subtitle>
-<title>Server Administration Guide</title>
-<release>7.1-Beta</release>
+<productname>{book_project_name}</productname>
+<productnumber>{book_project_doc_info_version_url}</productnumber>
+<subtitle>For Use with {book_project_name} {book_project_doc_info_version_url}</subtitle>
+<title>{book_title}</title>
+<release>{doc_info_version_url}</release>
 <abstract>
-	    <para>This guide consists of information for administrators for configuring Red Hat Single Sign-On 7.1-Beta</para>
+	    <para>This guide consists of information for administrators to configure {book_project_name} {book_project_doc_info_version_url}</para>
     </abstract>
 <authorgroup>
     <orgname>Red Hat Customer Content Services</orgname>
