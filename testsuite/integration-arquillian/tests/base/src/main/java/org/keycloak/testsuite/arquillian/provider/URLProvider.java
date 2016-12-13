@@ -74,7 +74,7 @@ public class URLProvider extends URLResourceProvider {
         }
 
         try {
-            if (System.getProperty("app.server","").startsWith("eap6")) {
+            if (System.getProperty("app.server.management.protocol","").equals("remote")) {
                 if (url == null) {
                     url = new URL("http://localhost:8080/");
                 }
