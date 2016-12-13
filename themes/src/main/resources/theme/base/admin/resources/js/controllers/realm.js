@@ -764,11 +764,17 @@ module.controller('RealmIdentityProviderCtrl', function($scope, $filter, $upload
             "RSA_SHA512",
             "DSA_SHA1"
         ];
+        $scope.xmlKeyNameTranformers = [
+            "NONE",
+            "KEY_ID",
+            "CERT_SUBJECT"
+        ];
         if (instance && instance.alias) {
 
         } else {
             $scope.identityProvider.config.nameIDPolicyFormat = $scope.nameIdFormats[0].format;
             $scope.identityProvider.config.signatureAlgorithm = $scope.signatureAlgorithms[1];
+            $scope.identityProvider.config.samlXmlKeyNameTranformer = $scope.xmlKeyNameTranformers[1];
         }
     }
 

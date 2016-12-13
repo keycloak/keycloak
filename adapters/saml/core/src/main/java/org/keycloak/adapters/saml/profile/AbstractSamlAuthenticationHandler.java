@@ -571,12 +571,8 @@ public abstract class AbstractSamlAuthenticationHandler implements SamlAuthentic
                 key = locator.getKey(keyId);
                 boolean keyLocated = key != null;
 
-                if (validateRedirectBindingSignatureForKey(sigAlg, rawQueryBytes, decodedSignature, key)) {
-                    return true;
-                }
-
                 if (keyLocated) {
-                    return false;
+                    return validateRedirectBindingSignatureForKey(sigAlg, rawQueryBytes, decodedSignature, key);
                 }
             } catch (KeyManagementException ex) {
             }
