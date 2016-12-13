@@ -24,6 +24,7 @@ import org.keycloak.storage.UserStorageProvider;
 import javax.naming.directory.SearchControls;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 
@@ -34,6 +35,7 @@ import java.util.Set;
 public class LDAPConfig {
 
     private final MultivaluedHashMap<String, String> config;
+    private final Set<String> binaryAttributeNames = new HashSet<>();
 
     public LDAPConfig(MultivaluedHashMap<String, String> config) {
         this.config = config;
@@ -183,5 +185,40 @@ public class LDAPConfig {
         } else {
             return UserStorageProvider.EditMode.valueOf(editModeString);
         }
+    }
+
+    public void addBinaryAttribute(String attrName) {
+        binaryAttributeNames.add(attrName);
+    }
+
+    public Set<String> getBinaryAttributeNames() {
+        return binaryAttributeNames;
+    }
+
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == this) return true;
+        if (!(obj instanceof LDAPConfig)) return false;
+
+        LDAPConfig that = (LDAPConfig) obj;
+
+        if (!config.equals(that.config)) return false;
+        if (!binaryAttributeNames.equals(that.binaryAttributeNames)) return false;
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        return config.hashCode() * 13 + binaryAttributeNames.hashCode();
+    }
+
+    @Override
+    public String toString() {
+        MultivaluedHashMap<String, String> copy = new MultivaluedHashMap<String, String>(config);
+        copy.remove(LDAPConstants.BIND_CREDENTIAL);
+        return new StringBuilder(copy.toString())
+                .append(", binaryAttributes: ").append(binaryAttributeNames)
+                .toString();
     }
 }
