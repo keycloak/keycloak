@@ -42,6 +42,14 @@ You must define the SAML configuration options as well.  They basically describe
 |Signature Algorithm
 |If `Want AuthnRequests Signed` is on, then you can also pick the signature algorithm to use.
 
+|SAML Signature Key Name
+|Signed SAML documents sent via POST binding contain identification of signing key in `KeyName`
+ element. This by default contains {{book.project.name}} key ID. However various external SAML IDPs might
+ expect a different key name or no key name at all. This switch controls whether `KeyName`
+ contains key ID (option `KEY_ID`), subject from certificate corresponding to the realm key
+ (option `CERT_SUBJECT` - expected for instance by Microsoft Active Directory Federation
+ Services), or that the key name hint is completely omitted from the SAML message (option `NONE`).
+
 |Force Authentication
 |Indicates that the user will be forced to enter in their credentials at the external IDP even if they are already logged in.
 

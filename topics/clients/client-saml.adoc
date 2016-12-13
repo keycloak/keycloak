@@ -77,6 +77,14 @@ Sign Assertions::
 Signature Algorithm::
   Choose between a variety of algorithms for signing SAML documents.
 
+SAML Signature Key Name::
+  Signed SAML documents sent via POST binding contain identification of signing key in `KeyName`
+  element. This by default contains {{book.project.name}} key ID. However various vendors might
+  expect a different key name or no key name at all. This switch controls whether `KeyName`
+  contains key ID (option `KEY_ID`), subject from certificate corresponding to the realm key
+  (option `CERT_SUBJECT` - expected for instance by Microsoft Active Directory Federation
+  Services), or that the key name hint is completely omitted from the SAML message (option `NONE`).
+
 Canonicalization Method::
   Canonicalization method for XML signatures.
 
