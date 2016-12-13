@@ -47,8 +47,7 @@ public class ValidateUsername extends AbstractDirectGrantAuthenticator {
 
     @Override
     public void authenticate(AuthenticationFlowContext context) {
-        MultivaluedMap<String, String> inputData = context.getHttpRequest().getDecodedFormParameters();
-        String username = inputData.getFirst(AuthenticationManager.FORM_USERNAME);
+        String username = retrieveUsername(context);
         if (username == null) {
             context.getEvent().error(Errors.USER_NOT_FOUND);
             Response challengeResponse = errorResponse(Response.Status.UNAUTHORIZED.getStatusCode(), "invalid_request", "Missing parameter: username");
@@ -153,5 +152,10 @@ public class ValidateUsername extends AbstractDirectGrantAuthenticator {
     @Override
     public String getId() {
         return PROVIDER_ID;
+    }
+ 
+    protected String retrieveUsername(AuthenticationFlowContext context) {
+        MultivaluedMap<String, String> inputData = context.getHttpRequest().getDecodedFormParameters();
+        return inputData.getFirst(AuthenticationManager.FORM_USERNAME);
     }
 }
