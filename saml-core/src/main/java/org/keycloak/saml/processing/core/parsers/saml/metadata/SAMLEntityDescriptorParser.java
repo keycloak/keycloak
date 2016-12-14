@@ -400,7 +400,8 @@ public class SAMLEntityDescriptorParser extends AbstractDescriptorParser impleme
                 startElement = StaxParserUtil.getNextStartElement(xmlEventReader);
                 LocalizedNameType localName = getLocalizedName(xmlEventReader, startElement);
                 org.addOrganizationDisplayName(localName);
-            } else if (JBossSAMLConstants.ORGANIZATION_URL.get().equals(localPart)) {
+            } else if (JBossSAMLConstants.ORGANIZATION_URL.get().equals(localPart) ||
+              (JBossSAMLConstants.ORGANIZATION_URL_ALT.get().equals(localPart))) {
                 startElement = StaxParserUtil.getNextStartElement(xmlEventReader);
                 Attribute lang = startElement.getAttributeByName(new QName(JBossSAMLURIConstants.XML.get(), "lang"));
                 String langVal = StaxParserUtil.getAttributeValue(lang);
