@@ -23,7 +23,7 @@
         <version>2.5.0.Final-SNAPSHOT</version>
     </parent>
 
-    <name>Authenticator Example</name>
+    <name>REST Example</name>
     <description/>
     <modelVersion>4.0.0</modelVersion>
 
