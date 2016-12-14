@@ -25,6 +25,7 @@ import org.junit.Test;
 import org.junit.rules.RuleChain;
 import org.junit.rules.TestRule;
 import org.junit.runners.MethodSorters;
+import org.keycloak.authentication.authenticators.browser.SpnegoAuthenticator;
 import org.keycloak.common.constants.KerberosConstants;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.federation.kerberos.CommonKerberosConfig;
@@ -45,6 +46,8 @@ import org.keycloak.utils.CredentialHelper;
 import javax.ws.rs.core.Response;
 import java.net.URL;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Test of KerberosFederationProvider (Kerberos not backed by LDAP)
@@ -188,6 +191,59 @@ public class KerberosStandaloneTest extends AbstractKerberosTest {
             keycloakRule.stopSession(session, true);
         }
     }
+
+    /**
+     * KEYCLOAK-3451
+     *
+     * Test that if there is no User Storage Provider that can handle kerberos we can still login
+     *
+     * @throws Exception
+     */
+    @Test
+    public void noProvider() throws Exception {
+        KeycloakSession session = keycloakRule.startSession();
+        try {
+            RealmModel realm = session.realms().getRealm("test");
+            realm.removeComponent(kerberosModel);
+        } finally {
+            keycloakRule.stopSession(session, true);
+        }
+        /*
+         To do this we do a valid kerberos login.  The authenticator will obtain a valid token, but there will
+         be no user storage provider that can process it.  This means we should be on the login page.
+         We do this through a JAX-RS client request.  We extract the action URL from the login page, and stuff it
+         into selenium then just perform a regular login.
+         */
+        Response spnegoResponse = spnegoLogin("hnelson", "secret");
+        String context = spnegoResponse.readEntity(String.class);
+        spnegoResponse.close();
+        Pattern pattern = Pattern.compile("action=\"([^\"]+)\"");
+        Matcher m = pattern.matcher(context);
+        Assert.assertTrue(m.find());
+        String url = m.group(1);
+        driver.navigate().to(url);
+        Assert.assertTrue(loginPage.isCurrent());
+        loginPage.login("test-user@localhost", "password");
+        String pageSource = driver.getPageSource();
+        Assert.assertTrue(pageSource.contains("Kerberos Test") && pageSource.contains("Kerberos servlet secured content"));
+
+
+        events.clear();
+        session = keycloakRule.startSession();
+        try {
+            RealmModel realm = session.realms().getRealm("test");
+            realm.addComponentModel(kerberosModel);
+        } finally {
+            keycloakRule.stopSession(session, true);
+        }
+
+
+
+
+    }
+
+
+
 
 
 }

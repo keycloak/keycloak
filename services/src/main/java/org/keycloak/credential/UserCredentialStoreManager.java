@@ -146,7 +146,7 @@ public class UserCredentialStoreManager implements UserCredentialManager, OnUser
     protected <T> List<T> getCredentialProviders(RealmModel realm, Class<T> type) {
         List<T> list = new LinkedList<T>();
         for (ProviderFactory f : session.getKeycloakSessionFactory().getProviderFactories(CredentialProvider.class)) {
-            if (!Types.supports(CredentialInputUpdater.class, f, CredentialProviderFactory.class)) continue;
+            if (!Types.supports(type, f, CredentialProviderFactory.class)) continue;
             list.add((T)session.getProvider(CredentialProvider.class, f.getId()));
         }
         return list;
