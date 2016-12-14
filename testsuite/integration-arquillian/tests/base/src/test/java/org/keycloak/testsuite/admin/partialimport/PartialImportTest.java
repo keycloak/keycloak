@@ -56,6 +56,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
 
 /**
  * Tests for the partial import endpoint in admin client.  Also tests the
@@ -590,4 +591,23 @@ public class PartialImportTest extends AbstractAuthTest {
         assertEquals(NUM_ENTITIES * NUM_RESOURCE_TYPES, results.getOverwritten());
     }
 
+    //KEYCLOAK-3042
+    @Test
+    public void testOverwriteExistingClientWithRoles() {
+        setOverwrite();
+
+        ClientRepresentation client = adminClient.realm(MASTER).clients().findByClientId("broker").get(0);
+        List<RoleRepresentation> clientRoles = adminClient.realm(MASTER).clients().get(client.getId()).roles().list();
+        
+        Map<String, List<RoleRepresentation>> clients = new HashMap<>();
+        clients.put(client.getClientId(), clientRoles);
+        
+        RolesRepresentation roles = new RolesRepresentation();
+        roles.setClient(clients);
+        
+        piRep.setClients(Arrays.asList(client));
+        piRep.setRoles(roles);
+                
+        doImport();
+    }
 }
