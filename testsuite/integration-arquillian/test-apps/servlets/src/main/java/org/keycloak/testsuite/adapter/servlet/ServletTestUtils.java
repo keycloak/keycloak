@@ -45,4 +45,12 @@ public class ServletTestUtils {
 
         return urlBase;
     }
+
+    public static String getAuthServerUrlBase() {
+        if (System.getProperty("auth.server.ssl.required", "false").equals("true")) {
+            return System.getProperty("auth.server.ssl.base.url", "https://localhost:8543");
+        }
+
+        return System.getProperty("auth.server.base.url");
+    }
 }
