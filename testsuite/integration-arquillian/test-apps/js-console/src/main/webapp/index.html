@@ -191,7 +191,7 @@ TimeSkew: <div id="timeSkew"></div>
 
     function sendBearerToKeycloak() {
         var url = 'http://localhost:8180/auth/admin/realms/example/roles';
-        if (window.location.href.indexOf("8543") > -1) {
+        if (window.location.href.indexOf("8643") > -1) {
             url = url.replace("8180","8543");
             url = url.replace("http","https");
         }
@@ -218,7 +218,7 @@ TimeSkew: <div id="timeSkew"></div>
 
     function cert() {
         var url = 'http://localhost:8180/auth/realms/example/protocol/openid-connect/certs';
-        if (window.location.href.indexOf("8543") > -1) {
+        if (window.location.href.indexOf("8643") > -1) {
             url = url.replace("8180","8543");
             url = url.replace("http","https");
         }
@@ -244,7 +244,7 @@ TimeSkew: <div id="timeSkew"></div>
         var user = JSON.parse('{"emailVerified" : false, "enabled" : true, "username": "mhajas", "firstName" :"First", "lastName":"Last","email":"email@redhat.com", "attributes": {}}');
 
         var url = "http://localhost:8180/auth/admin/realms/example/users";
-        if (window.location.href.indexOf("8543") > -1) {
+        if (window.location.href.indexOf("8643") > -1) {
             url = url.replace("8180","8543");
             url = url.replace("http","https");
         }

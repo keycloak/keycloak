@@ -322,7 +322,7 @@ public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAd
 
     @Deployment(name = EmployeeServlet.DEPLOYMENT_NAME)
     protected static WebArchive employeeServlet() {
-        return samlServletDeployment(EmployeeServlet.DEPLOYMENT_NAME, "employee/WEB-INF/web.xml", SamlSPFacade.class);
+        return samlServletDeployment(EmployeeServlet.DEPLOYMENT_NAME, "employee/WEB-INF/web.xml", SamlSPFacade.class, ServletTestUtils.class);
     }
 
     @Override

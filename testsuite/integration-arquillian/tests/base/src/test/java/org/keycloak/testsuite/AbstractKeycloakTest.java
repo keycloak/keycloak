@@ -19,14 +19,19 @@ package org.keycloak.testsuite;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.http.ssl.SSLContexts;
+import org.h2.util.IOUtils;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.common.util.Time;
+import org.keycloak.testsuite.adapter.AbstractServletsAdapterTest;
 import org.keycloak.testsuite.arquillian.TestContext;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
@@ -77,6 +82,7 @@ import org.openqa.selenium.WebDriver;
 import static org.keycloak.testsuite.admin.Users.setPasswordFor;
 import static org.keycloak.testsuite.auth.page.AuthRealm.ADMIN;
 import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
+import static org.keycloak.testsuite.util.IOUtil.PROJECT_BUILD_DIRECTORY;
 
 /**
  *
@@ -134,8 +140,12 @@ public abstract class AbstractKeycloakTest {
     public void beforeAbstractKeycloakTest() throws Exception {
         SSLContext ssl = null;
         if ("true".equals(System.getProperty("auth.server.ssl.required"))) {
-            ssl = getSSLContextWithTrustore(new File("src/test/resources/keystore/keycloak.truststore"), "secret");
+            File trustore = new File(PROJECT_BUILD_DIRECTORY, "dependency/keystore/keycloak.truststore");
+            ssl = getSSLContextWithTrustore(trustore, "secret");
+
+            System.setProperty("javax.net.ssl.trustStore", trustore.getAbsolutePath());
         }
+
         adminClient = Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth",
                 MASTER, ADMIN, ADMIN, Constants.ADMIN_CLI_CLIENT_ID, null, ssl);
 
