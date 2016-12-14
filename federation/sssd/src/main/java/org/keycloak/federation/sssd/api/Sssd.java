@@ -96,8 +96,8 @@ public class Sssd {
     public static boolean isAvailable() {
         boolean sssdAvailable = false;
         try {
-            Path path = Paths.get("/etc/sssd");
-            if (!Files.exists(path)) {
+            final boolean isLinux = System.getProperty("os.name").toLowerCase().contains("linux");
+            if (!isLinux) {
                 logger.debugv("SSSD is not available in your system. Federation provider will be disabled.");
             } else {
                 sssdAvailable = true;
