@@ -1096,6 +1096,8 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, templates,
             }
             $scope.client.publicClient = false;
             $scope.client.serviceAccountsEnabled = true;
+        } else if ($scope.client.bearerOnly) {
+            $scope.client.serviceAccountsEnabled = false;
         }
     }
 

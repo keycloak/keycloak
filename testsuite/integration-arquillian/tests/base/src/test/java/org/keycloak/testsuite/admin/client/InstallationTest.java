@@ -35,17 +35,28 @@ import static org.hamcrest.Matchers.*;
 public class InstallationTest extends AbstractClientTest {
 
     private static final String OIDC_NAME = "oidcInstallationClient";
+    private static final String OIDC_NAME_BEARER_ONLY_NAME = "oidcInstallationClientBearerOnly";
+    private static final String OIDC_NAME_BEARER_ONLY_WITH_AUTHZ_NAME = "oidcInstallationClientBearerOnlyWithAuthz";
     private static final String SAML_NAME = "samlInstallationClient";
 
     private ClientResource oidcClient;
     private String oidcClientId;
+    private ClientResource oidcBearerOnlyClient;
+    private String oidcBearerOnlyClientId;
+    private ClientResource oidcBearerOnlyClientWithAuthz;
+    private String oidcBearerOnlyClientWithAuthzId;
     private ClientResource samlClient;
     private String samlClientId;
 
     @Before
     public void createClients() {
         oidcClientId = createOidcClient(OIDC_NAME);
+        oidcBearerOnlyClientId = createOidcBearerOnlyClient(OIDC_NAME_BEARER_ONLY_NAME);
+        oidcBearerOnlyClientWithAuthzId = createOidcBearerOnlyClientWithAuthz(OIDC_NAME_BEARER_ONLY_WITH_AUTHZ_NAME);
+
         oidcClient = findClientResource(OIDC_NAME);
+        oidcBearerOnlyClient = findClientResource(OIDC_NAME_BEARER_ONLY_NAME);
+        oidcBearerOnlyClientWithAuthz = findClientResource(OIDC_NAME_BEARER_ONLY_WITH_AUTHZ_NAME);
 
         samlClientId = createSamlClient(SAML_NAME);
         samlClient = findClientResource(SAML_NAME);
@@ -54,6 +65,8 @@ public class InstallationTest extends AbstractClientTest {
     @After
     public void tearDown() {
         removeClient(oidcClientId);
+        removeClient(oidcBearerOnlyClientId);
+        removeClient(oidcBearerOnlyClientWithAuthzId);
         removeClient(samlClientId);
     }
 
@@ -76,6 +89,25 @@ public class InstallationTest extends AbstractClientTest {
     public void testOidcJson() {
         String json = oidcClient.getInstallationProvider("keycloak-oidc-keycloak-json");
         assertOidcInstallationConfig(json);
+    }
+
+    @Test
+    public void testOidcBearerOnlyJson() {
+        String json = oidcBearerOnlyClient.getInstallationProvider("keycloak-oidc-keycloak-json");
+        assertOidcInstallationConfig(json);
+        assertThat(json, containsString("bearer-only"));
+        assertThat(json, not(containsString("public-client")));
+        assertThat(json, not(containsString("credentials")));
+    }
+
+    @Test
+    public void testOidcBearerOnlyWithAuthzJson() {
+        String json = oidcBearerOnlyClientWithAuthz.getInstallationProvider("keycloak-oidc-keycloak-json");
+        assertOidcInstallationConfig(json);
+        assertThat(json, containsString("bearer-only"));
+        assertThat(json, not(containsString("public-client")));
+        assertThat(json, containsString("credentials"));
+        assertThat(json, containsString("secret"));
     }
 
     private void assertOidcInstallationConfig(String config) {

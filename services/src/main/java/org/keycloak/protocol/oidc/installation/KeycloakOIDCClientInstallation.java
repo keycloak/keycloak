@@ -87,7 +87,7 @@ public class KeycloakOIDCClientInstallation implements ClientInstallationProvide
             return false;
         }
 
-        if (client.isBearerOnly() && client.getNodeReRegistrationTimeout() <= 0) {
+        if (client.isBearerOnly() && !client.isServiceAccountsEnabled() && client.getNodeReRegistrationTimeout() <= 0) {
             return false;
         }
 

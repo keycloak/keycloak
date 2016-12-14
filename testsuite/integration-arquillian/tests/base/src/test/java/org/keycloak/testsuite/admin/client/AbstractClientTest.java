@@ -84,12 +84,32 @@ public abstract class AbstractClientTest extends AbstractAuthTest {
     }
 
     protected String createOidcClient(String name) {
+        return createClient(createOidcClientRep(name));
+    }
+
+    protected String createOidcBearerOnlyClient(String name) {
+        ClientRepresentation clientRep = createOidcClientRep(name);
+        clientRep.setBearerOnly(Boolean.TRUE);
+        clientRep.setPublicClient(Boolean.FALSE);
+        return createClient(clientRep);
+    }
+
+    protected String createOidcBearerOnlyClientWithAuthz(String name) {
+        ClientRepresentation clientRep = createOidcClientRep(name);
+        clientRep.setBearerOnly(Boolean.TRUE);
+        clientRep.setPublicClient(Boolean.FALSE);
+        clientRep.setAuthorizationServicesEnabled(Boolean.TRUE);
+        clientRep.setServiceAccountsEnabled(Boolean.TRUE);
+        return createClient(clientRep);
+    }
+
+    protected ClientRepresentation createOidcClientRep(String name) {
         ClientRepresentation clientRep = new ClientRepresentation();
         clientRep.setClientId(name);
         clientRep.setName(name);
         clientRep.setRootUrl("foo");
-        clientRep.setProtocol("openid-connect");
-        return createClient(clientRep);
+        clientRep.setProtocol("openid-connect"); 
+        return clientRep;
     }
 
     protected String createSamlClient(String name) {
