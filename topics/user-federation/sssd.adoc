@@ -14,6 +14,9 @@ image:../../{{book.images}}/keycloak-sssd-freeipa-integration-overview.png[]
 
 Most of the communication between {{book.project.name}} and SSSD happens through read-only D-Bus interfaces. For this reason, the only way to provision and update users is changing it at FreeIPA/IdM admin's interface. By default, it is set up only to import username, e-mail, first name, and last name — just like the LDAP federation provider.
 
+[CAUTION]
+Groups and roles and automatically registered, but not synchronized, so any changes made by the Keycloak administrator directly in Keycloak is not synchronized with SSSD.
+
 Because it's easy to forget some configuration detail, let's go through some steps, to make sure that everything is alright.
 
 ==== FreeIPA/IdM server
@@ -100,8 +103,6 @@ fi
 
 ----
 {% endif %}
-
-
 
 This script do the proper changes to `/etc/sssd/sssd.conf`:
 
