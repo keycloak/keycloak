@@ -264,7 +264,7 @@ public class RequiredActionEmailVerificationTest extends TestRealmKeycloakTest {
                 .clearDetails()
                 .assertEvent();
 
-        String badKeyURL = KeycloakUriBuilder.fromUri(resendEmailLink).queryParam("key", "foo").build().toString();
+        String badKeyURL = KeycloakUriBuilder.fromUri(resendEmailLink).replaceQueryParam("key", "foo").build().toString();
         driver.navigate().to(badKeyURL);
 
         events.expectRequiredAction(EventType.VERIFY_EMAIL_ERROR)
@@ -275,6 +275,37 @@ public class RequiredActionEmailVerificationTest extends TestRealmKeycloakTest {
                 .clearDetails()
                 .assertEvent();
     }
+
+    @Test
+    public void verifyEmailBadCode() throws IOException, MessagingException {
+        loginPage.open();
+        loginPage.login("test-user@localhost", "password");
+
+        Assert.assertTrue(verifyEmailPage.isCurrent());
+
+        Assert.assertEquals(1, greenMail.getReceivedMessages().length);
+
+        MimeMessage message = greenMail.getReceivedMessages()[0];
+
+        String verificationUrl = getPasswordResetEmailLink(message);
+
+        verificationUrl = KeycloakUriBuilder.fromUri(verificationUrl).replaceQueryParam("code", "foo").build().toString();
+
+        events.poll();
+
+        driver.navigate().to(verificationUrl.trim());
+
+        assertEquals("The link you clicked is a old stale link and is no longer valid. Maybe you have already verified your email?", errorPage.getError());
+
+        events.expectRequiredAction(EventType.VERIFY_EMAIL_ERROR)
+                .error(Errors.INVALID_CODE)
+                .client((String)null)
+                .user((String)null)
+                .session((String)null)
+                .clearDetails()
+                .assertEvent();
+    }
+
 
     public static String getPasswordResetEmailLink(MimeMessage message) throws IOException, MessagingException {
     	Multipart multipart = (Multipart) message.getContent();
