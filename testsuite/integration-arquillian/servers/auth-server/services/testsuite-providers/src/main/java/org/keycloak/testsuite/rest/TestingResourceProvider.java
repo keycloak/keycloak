@@ -20,6 +20,7 @@ package org.keycloak.testsuite.rest;
 import org.infinispan.Cache;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.BadRequestException;
+import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.Time;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
@@ -631,6 +632,14 @@ public class TestingResourceProvider implements RealmResourceProvider {
         }
 
         return reps;
+    }
+
+    @GET
+    @Path("/component")
+    @Produces(MediaType.APPLICATION_JSON)
+    public MultivaluedHashMap<String, String> getComponentConfig(@QueryParam("componentId") String componentId) {
+        RealmModel realm = session.getContext().getRealm();
+        return realm.getComponent(componentId).getConfig();
     }
 
     @GET

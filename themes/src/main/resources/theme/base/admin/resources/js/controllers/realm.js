@@ -1126,6 +1126,14 @@ module.controller('RealmKeysProvidersCtrl', function($scope, Realm, realm, $http
         type: 'org.keycloak.keys.KeyProvider'
     }, function(data) {
         $scope.instances = data;
+
+        for (var i = 0; i < $scope.instances.length; i++) {
+            for (var j = 0; j < $scope.providers.length; j++) {
+                if ($scope.providers[j].id === $scope.instances[i].providerId) {
+                    $scope.instances[i].provider = $scope.providers[j];
+                }
+            }
+        }
     });
 
     $scope.addProvider = function(provider) {

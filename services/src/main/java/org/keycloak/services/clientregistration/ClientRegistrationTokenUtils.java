@@ -75,7 +75,7 @@ public class ClientRegistrationTokenUtils {
             return TokenVerification.error(new RuntimeException("Invalid token", e));
         }
 
-        PublicKey publicKey = session.keys().getPublicKey(realm, input.getHeader().getKeyId());
+        PublicKey publicKey = session.keys().getRsaPublicKey(realm, input.getHeader().getKeyId());
 
         if (!RSAProvider.verify(input, publicKey)) {
             return TokenVerification.error(new RuntimeException("Failed verify token"));
@@ -115,7 +115,7 @@ public class ClientRegistrationTokenUtils {
         jwt.issuer(issuer);
         jwt.audience(issuer);
 
-        KeyManager.ActiveKey keys = session.keys().getActiveKey(realm);
+        KeyManager.ActiveRsaKey keys = session.keys().getActiveRsaKey(realm);
 
         String token = new JWSBuilder().kid(keys.getKid()).jsonContent(jwt).rsa256(keys.getPrivateKey());
         return token;

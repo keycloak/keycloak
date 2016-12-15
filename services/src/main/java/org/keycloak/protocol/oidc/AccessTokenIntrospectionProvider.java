@@ -56,7 +56,7 @@ public class AccessTokenIntrospectionProvider implements TokenIntrospectionProvi
                 RSATokenVerifier verifier = RSATokenVerifier.create(token)
                         .realmUrl(Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName()));
 
-                PublicKey publicKey = session.keys().getPublicKey(realm, verifier.getHeader().getKeyId());
+                PublicKey publicKey = session.keys().getRsaPublicKey(realm, verifier.getHeader().getKeyId());
                 if (publicKey == null) {
                     valid = false;
                 } else {
@@ -96,7 +96,7 @@ public class AccessTokenIntrospectionProvider implements TokenIntrospectionProvi
             RSATokenVerifier verifier = RSATokenVerifier.create(token)
                     .realmUrl(Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName()));
 
-            PublicKey publicKey = session.keys().getPublicKey(realm, verifier.getHeader().getKeyId());
+            PublicKey publicKey = session.keys().getRsaPublicKey(realm, verifier.getHeader().getKeyId());
             verifier.publicKey(publicKey);
 
             return verifier.verify().getToken();

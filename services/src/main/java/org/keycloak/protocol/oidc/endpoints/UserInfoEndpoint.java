@@ -132,7 +132,7 @@ public class UserInfoEndpoint {
             RSATokenVerifier verifier = RSATokenVerifier.create(tokenString)
                     .realmUrl(Urls.realmIssuer(uriInfo.getBaseUri(), realm.getName()));
             String kid = verifier.getHeader().getKeyId();
-            verifier.publicKey(session.keys().getPublicKey(realm, kid));
+            verifier.publicKey(session.keys().getRsaPublicKey(realm, kid));
             token = verifier.verify().getToken();
         } catch (VerificationException e) {
             event.error(Errors.INVALID_TOKEN);
@@ -194,7 +194,7 @@ public class UserInfoEndpoint {
             claims.put("aud", audience);
 
             Algorithm signatureAlg = cfg.getUserInfoSignedResponseAlg();
-            PrivateKey privateKey = session.keys().getActiveKey(realm).getPrivateKey();
+            PrivateKey privateKey = session.keys().getActiveRsaKey(realm).getPrivateKey();
 
             String signedUserInfo = new JWSBuilder()
                     .jsonContent(claims)

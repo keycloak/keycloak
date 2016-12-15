@@ -15,13 +15,33 @@
  * limitations under the License.
  */
 
-package org.keycloak.provider;
+package org.keycloak.keys;
+
+import java.security.PublicKey;
+import java.security.cert.Certificate;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public interface Provider {
+public class RsaKeyMetadata extends KeyMetadata {
 
-    void close();
+    private PublicKey publicKey;
+    private Certificate certificate;
+
+    public PublicKey getPublicKey() {
+        return publicKey;
+    }
+
+    public void setPublicKey(PublicKey publicKey) {
+        this.publicKey = publicKey;
+    }
+
+    public Certificate getCertificate() {
+        return certificate;
+    }
+
+    public void setCertificate(Certificate certificate) {
+        this.certificate = certificate;
+    }
 
 }

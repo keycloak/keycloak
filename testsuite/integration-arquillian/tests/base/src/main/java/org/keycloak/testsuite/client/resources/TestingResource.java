@@ -18,6 +18,7 @@
 package org.keycloak.testsuite.client.resources;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
+import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
@@ -251,4 +252,8 @@ public interface TestingResource {
     @Produces(MediaType.APPLICATION_JSON)
     Map<String, String> getIdentityProviderConfig(@QueryParam("alias") String alias);
 
+    @GET
+    @Path("/component")
+    @Produces(MediaType.APPLICATION_JSON)
+    MultivaluedHashMap<String, String> getComponentConfig(@QueryParam("componentId") String componentId);
 }

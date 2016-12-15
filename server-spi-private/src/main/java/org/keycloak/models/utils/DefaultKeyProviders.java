@@ -39,6 +39,22 @@ public class DefaultKeyProviders {
         generated.setConfig(config);
 
         realm.addComponentModel(generated);
+
+        createSecretProvider(realm);
+    }
+
+    public static void createSecretProvider(RealmModel realm) {
+        ComponentModel generated = new ComponentModel();
+        generated.setName("hmac-generated");
+        generated.setParentId(realm.getId());
+        generated.setProviderId("hmac-generated");
+        generated.setProviderType(KeyProvider.class.getName());
+
+        MultivaluedHashMap<String, String> config = new MultivaluedHashMap<>();
+        config.putSingle("priority", "100");
+        generated.setConfig(config);
+
+        realm.addComponentModel(generated);
     }
 
     public static void createProviders(RealmModel realm, String privateKeyPem, String certificatePem) {
@@ -57,6 +73,8 @@ public class DefaultKeyProviders {
         rsa.setConfig(config);
 
         realm.addComponentModel(rsa);
+
+        createSecretProvider(realm);
     }
 
 }

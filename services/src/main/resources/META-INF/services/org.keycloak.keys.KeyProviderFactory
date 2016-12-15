@@ -15,6 +15,7 @@
 # limitations under the License.
 #
 
+org.keycloak.keys.GeneratedHmacKeyProviderFactory
 org.keycloak.keys.GeneratedRsaKeyProviderFactory
 org.keycloak.keys.JavaKeystoreKeyProviderFactory
-org.keycloak.keys.RsaKeyProviderFactory
+org.keycloak.keys.ImportedRsaKeyProviderFactory

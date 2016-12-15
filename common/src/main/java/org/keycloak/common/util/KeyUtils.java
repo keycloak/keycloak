@@ -17,6 +17,8 @@
 
 package org.keycloak.common.util;
 
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 import java.security.Key;
 import java.security.KeyFactory;
 import java.security.KeyPair;
@@ -36,6 +38,10 @@ public class KeyUtils {
     private static final String DEFAULT_MESSAGE_DIGEST = "SHA-256";
 
     private KeyUtils() {
+    }
+
+    public static SecretKey loadSecretKey(String secret) {
+        return new SecretKeySpec(secret.getBytes(), "HmacSHA256");
     }
 
     public static KeyPair generateRsaKeyPair(int keysize) {

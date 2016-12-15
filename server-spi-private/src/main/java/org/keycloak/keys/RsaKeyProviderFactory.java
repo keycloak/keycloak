@@ -15,13 +15,21 @@
  * limitations under the License.
  */
 
-package org.keycloak.provider;
+package org.keycloak.keys;
+
+import org.keycloak.jose.jws.AlgorithmType;
+
+import java.util.Collections;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public interface Provider {
+public interface RsaKeyProviderFactory extends KeyProviderFactory {
 
-    void close();
+    @Override
+    default Map<String, Object> getTypeMetadata() {
+        return Collections.singletonMap("algorithmType", AlgorithmType.RSA);
+    }
 
 }

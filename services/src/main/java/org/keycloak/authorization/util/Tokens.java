@@ -57,7 +57,7 @@ public class Tokens {
     public static boolean verifySignature(KeycloakSession keycloakSession, RealmModel realm, String token) {
         try {
             JWSInput jws = new JWSInput(token);
-            PublicKey publicKey = keycloakSession.keys().getPublicKey(realm, jws.getHeader().getKeyId());
+            PublicKey publicKey = keycloakSession.keys().getRsaPublicKey(realm, jws.getHeader().getKeyId());
             return RSAProvider.verify(jws, publicKey);
         } catch (Exception e) {
             throw new ErrorResponseException("invalid_signature", "Unexpected error while validating signature.", Status.INTERNAL_SERVER_ERROR);
