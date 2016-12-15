@@ -1489,6 +1489,26 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'LDAPUserStorageCtrl'
         })
+        .when('/create/user-storage/:realm/providers/kerberos', {
+            templateUrl : resourceUrl + '/partials/user-storage-kerberos.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                instance : function() {
+                    return {
+
+                    };
+                },
+                providerId : function($route) {
+                    return "kerberos";
+                },
+                serverInfo : function(ServerInfoLoader) {
+                    return ServerInfoLoader();
+                }
+            },
+            controller : 'GenericUserStorageCtrl'
+        })
         .when('/create/user-storage/:realm/providers/:provider', {
             templateUrl : resourceUrl + '/partials/user-storage-generic.html',
             resolve : {
@@ -1526,6 +1546,24 @@ module.config([ '$routeProvider', function($routeProvider) {
                 }
             },
             controller : 'LDAPUserStorageCtrl'
+        })
+        .when('/realms/:realm/user-storage/providers/kerberos/:componentId', {
+            templateUrl : resourceUrl + '/partials/user-storage-kerberos.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                instance : function(ComponentLoader) {
+                    return ComponentLoader();
+                },
+                providerId : function($route) {
+                    return "kerberos";
+                },
+                serverInfo : function(ServerInfoLoader) {
+                    return ServerInfoLoader();
+                }
+            },
+            controller : 'GenericUserStorageCtrl'
         })
         .when('/realms/:realm/user-storage/providers/:provider/:componentId', {
             templateUrl : resourceUrl + '/partials/user-storage-generic.html',
