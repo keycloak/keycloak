@@ -22,6 +22,7 @@ import org.keycloak.dom.xmlsec.w3.xmldsig.RSAKeyValueType;
 import org.keycloak.dom.xmlsec.w3.xmldsig.SignatureType;
 import org.keycloak.saml.common.PicketLinkLogger;
 import org.keycloak.saml.common.PicketLinkLoggerFactory;
+import org.keycloak.saml.common.constants.GeneralConstants;
 import org.keycloak.saml.common.constants.JBossSAMLConstants;
 import org.keycloak.saml.common.constants.WSTrustConstants;
 import org.keycloak.saml.common.exceptions.ParsingException;
@@ -572,7 +573,7 @@ public class XMLSignatureUtil {
 
         try {
             CertificateFactory cf = CertificateFactory.getInstance("X.509");
-            ByteArrayInputStream bais = new ByteArrayInputStream(derFormattedString.getBytes());
+            ByteArrayInputStream bais = new ByteArrayInputStream(derFormattedString.getBytes(GeneralConstants.SAML_CHARSET));
 
             while (bais.available() > 0) {
                 cert = (X509Certificate) cf.generateCertificate(bais);
@@ -603,7 +604,7 @@ public class XMLSignatureUtil {
                 Element childElement = (Element) node;
                 String tag = childElement.getLocalName();
 
-                byte[] text = childElement.getTextContent().getBytes();
+                byte[] text = childElement.getTextContent().getBytes(GeneralConstants.SAML_CHARSET);
 
                 if (WSTrustConstants.XMLDSig.P.equals(tag)) {
                     dsa.setP(text);
@@ -644,7 +645,7 @@ public class XMLSignatureUtil {
                 Element childElement = (Element) node;
                 String tag = childElement.getLocalName();
 
-                byte[] text = childElement.getTextContent().getBytes();
+                byte[] text = childElement.getTextContent().getBytes(GeneralConstants.SAML_CHARSET);
 
                 if (WSTrustConstants.XMLDSig.MODULUS.equals(tag)) {
                     rsa.setModulus(text);
@@ -674,8 +675,8 @@ public class XMLSignatureUtil {
             byte[] exponent = pubKey.getPublicExponent().toByteArray();
 
             RSAKeyValueType rsaKeyValue = new RSAKeyValueType();
-            rsaKeyValue.setModulus(Base64.encodeBytes(modulus).getBytes());
-            rsaKeyValue.setExponent(Base64.encodeBytes(exponent).getBytes());
+            rsaKeyValue.setModulus(Base64.encodeBytes(modulus).getBytes(GeneralConstants.SAML_CHARSET));
+            rsaKeyValue.setExponent(Base64.encodeBytes(exponent).getBytes(GeneralConstants.SAML_CHARSET));
             return rsaKeyValue;
         } else if (key instanceof DSAPublicKey) {
             DSAPublicKey pubKey = (DSAPublicKey) key;
@@ -685,10 +686,10 @@ public class XMLSignatureUtil {
             byte[] Y = pubKey.getY().toByteArray();
 
             DSAKeyValueType dsaKeyValue = new DSAKeyValueType();
-            dsaKeyValue.setP(Base64.encodeBytes(P).getBytes());
-            dsaKeyValue.setQ(Base64.encodeBytes(Q).getBytes());
-            dsaKeyValue.setG(Base64.encodeBytes(G).getBytes());
-            dsaKeyValue.setY(Base64.encodeBytes(Y).getBytes());
+            dsaKeyValue.setP(Base64.encodeBytes(P).getBytes(GeneralConstants.SAML_CHARSET));
+            dsaKeyValue.setQ(Base64.encodeBytes(Q).getBytes(GeneralConstants.SAML_CHARSET));
+            dsaKeyValue.setG(Base64.encodeBytes(G).getBytes(GeneralConstants.SAML_CHARSET));
+            dsaKeyValue.setY(Base64.encodeBytes(Y).getBytes(GeneralConstants.SAML_CHARSET));
             return dsaKeyValue;
         }
         throw logger.unsupportedType(key.toString());

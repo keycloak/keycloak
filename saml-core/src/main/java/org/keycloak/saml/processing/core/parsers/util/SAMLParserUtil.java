@@ -34,6 +34,7 @@ import org.keycloak.dom.xmlsec.w3.xmldsig.X509CertificateType;
 import org.keycloak.dom.xmlsec.w3.xmldsig.X509DataType;
 import org.keycloak.saml.common.PicketLinkLogger;
 import org.keycloak.saml.common.PicketLinkLoggerFactory;
+import org.keycloak.saml.common.constants.GeneralConstants;
 import org.keycloak.saml.common.constants.JBossSAMLConstants;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.common.constants.WSTrustConstants;
@@ -42,6 +43,7 @@ import org.keycloak.saml.common.util.StaxParserUtil;
 import org.keycloak.saml.common.util.StringUtil;
 import org.keycloak.saml.processing.core.saml.v2.util.SignatureUtil;
 import org.keycloak.saml.processing.core.saml.v2.util.XMLTimeUtil;
+
 import org.w3c.dom.Element;
 
 import javax.xml.datatype.XMLGregorianCalendar;
@@ -98,7 +100,7 @@ public class SAMLParserUtil {
 
                 X509CertificateType cert = new X509CertificateType();
                 String certValue = StaxParserUtil.getElementText(xmlEventReader);
-                cert.setEncodedCertificate(certValue.getBytes());
+                cert.setEncodedCertificate(certValue.getBytes(GeneralConstants.SAML_CHARSET));
                 x509.add(cert);
 
                 EndElement endElement = StaxParserUtil.getNextEndElement(xmlEventReader);
@@ -151,11 +153,11 @@ public class SAMLParserUtil {
             if (tag.equals(WSTrustConstants.XMLDSig.MODULUS)) {
                 startElement = StaxParserUtil.getNextStartElement(xmlEventReader);
                 String text = StaxParserUtil.getElementText(xmlEventReader);
-                rsaKeyValue.setModulus(text.getBytes());
+                rsaKeyValue.setModulus(text.getBytes(GeneralConstants.SAML_CHARSET));
             } else if (tag.equals(WSTrustConstants.XMLDSig.EXPONENT)) {
                 startElement = StaxParserUtil.getNextStartElement(xmlEventReader);
                 String text = StaxParserUtil.getElementText(xmlEventReader);
-                rsaKeyValue.setExponent(text.getBytes());
+                rsaKeyValue.setExponent(text.getBytes(GeneralConstants.SAML_CHARSET));
             } else
                 throw logger.parserUnknownTag(tag, startElement.getLocation());
         }

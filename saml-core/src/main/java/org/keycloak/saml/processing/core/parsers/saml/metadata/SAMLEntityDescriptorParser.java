@@ -37,6 +37,7 @@ import org.keycloak.dom.saml.v2.metadata.SPSSODescriptorType;
 import org.keycloak.dom.xmlsec.w3.xmlenc.EncryptionMethodType;
 import org.keycloak.saml.common.PicketLinkLogger;
 import org.keycloak.saml.common.PicketLinkLoggerFactory;
+import org.keycloak.saml.common.constants.GeneralConstants;
 import org.keycloak.saml.common.constants.JBossSAMLConstants;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.common.exceptions.ParsingException;
@@ -44,6 +45,7 @@ import org.keycloak.saml.common.parsers.ParserNamespaceSupport;
 import org.keycloak.saml.common.util.StaxParserUtil;
 import org.keycloak.saml.processing.core.parsers.util.SAMLParserUtil;
 import org.keycloak.saml.processing.core.saml.v2.util.XMLTimeUtil;
+
 import org.w3c.dom.Element;
 
 import javax.xml.namespace.QName;
@@ -476,7 +478,7 @@ public class SAMLEntityDescriptorParser extends AbstractDescriptorParser impleme
                 keySize = BigInteger.valueOf(Long.valueOf(StaxParserUtil.getElementText(xmlEventReader)));
             } else if ("OAEPparams".equals(localPart)) {
                 startElement = StaxParserUtil.getNextStartElement(xmlEventReader);
-                OAEPparams = StaxParserUtil.getElementText(xmlEventReader).getBytes();
+                OAEPparams = StaxParserUtil.getElementText(xmlEventReader).getBytes(GeneralConstants.SAML_CHARSET);
             } else {
                 throw logger.parserUnknownTag(localPart, startElement.getLocation());
             }

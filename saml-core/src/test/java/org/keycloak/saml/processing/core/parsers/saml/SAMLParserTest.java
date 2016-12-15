@@ -16,6 +16,8 @@
  */
 package org.keycloak.saml.processing.core.parsers.saml;
 
+import org.keycloak.dom.saml.v2.assertion.AssertionType;
+import org.keycloak.dom.saml.v2.assertion.NameIDType;
 import org.keycloak.dom.saml.v2.metadata.EntityDescriptorType;
 
 import java.io.InputStream;
@@ -27,8 +29,6 @@ import static org.hamcrest.CoreMatchers.*;
 import org.keycloak.dom.saml.v2.protocol.LogoutRequestType;
 import org.keycloak.dom.saml.v2.protocol.ResponseType;
 
-import java.io.IOException;
-import java.util.Scanner;
 import org.junit.Before;
 import org.w3c.dom.Element;
 
@@ -105,6 +105,38 @@ public class SAMLParserTest {
 
             assertThat(resp.getAssertions(), not(nullValue()));
             assertThat(resp.getAssertions().size(), is(1));
+        }
+    }
+
+    @Test
+    public void testSaml20AuthnResponseNonAsciiNameDefaultUtf8() throws Exception {
+        try (InputStream st = SAMLParserTest.class.getResourceAsStream("KEYCLOAK-3971-utf-8-no-header-authnresponse.xml")) {
+            Object parsedObject = parser.parse(st);
+            assertThat(parsedObject, instanceOf(ResponseType.class));
+
+            ResponseType rt = (ResponseType) parsedObject;
+            assertThat(rt.getAssertions().size(), is(1));
+            final AssertionType assertion = rt.getAssertions().get(0).getAssertion();
+            assertThat(assertion.getSubject().getSubType().getBaseID(), instanceOf(NameIDType.class));
+
+            NameIDType nameId = (NameIDType) assertion.getSubject().getSubType().getBaseID();
+            assertThat(nameId.getValue(), is("roàåאבčéèíñòøöùüßåäöü汉字"));
+        }
+    }
+
+    @Test
+    public void testSaml20AuthnResponseNonAsciiNameDefaultLatin2() throws Exception {
+        try (InputStream st = SAMLParserTest.class.getResourceAsStream("KEYCLOAK-3971-8859-2-in-header-authnresponse.xml")) {
+            Object parsedObject = parser.parse(st);
+            assertThat(parsedObject, instanceOf(ResponseType.class));
+
+            ResponseType rt = (ResponseType) parsedObject;
+            assertThat(rt.getAssertions().size(), is(1));
+            final AssertionType assertion = rt.getAssertions().get(0).getAssertion();
+            assertThat(assertion.getSubject().getSubType().getBaseID(), instanceOf(NameIDType.class));
+
+            NameIDType nameId = (NameIDType) assertion.getSubject().getSubType().getBaseID();
+            assertThat(nameId.getValue(), is("ročéíöüßäöü"));
         }
     }
 
