@@ -39,6 +39,7 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserManager;
+import org.keycloak.models.cache.UserCache;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
@@ -138,6 +139,9 @@ public class LDAPStorageProvider implements UserStorageProvider,
 
     protected UserModel proxy(RealmModel realm, UserModel local, LDAPObject ldapObject) {
         UserModel proxied = local;
+
+        checkDNChanged(realm, local, ldapObject);
+
         switch (editMode) {
             case READ_ONLY:
                 proxied = new ReadonlyLDAPUserModelDelegate(local, this);
@@ -157,6 +161,20 @@ public class LDAPStorageProvider implements UserStorageProvider,
         }
 
         return proxied;
+    }
+
+    private void checkDNChanged(RealmModel realm, UserModel local, LDAPObject ldapObject) {
+        String dnFromDB = local.getFirstAttribute(LDAPConstants.LDAP_ENTRY_DN);
+        String ldapDn = ldapObject.getDn().toString();
+        if (!ldapDn.equals(dnFromDB)) {
+            logger.debugf("Updated LDAP DN of user '%s' to '%s'", local.getUsername(), ldapDn);
+            local.setSingleAttribute(LDAPConstants.LDAP_ENTRY_DN, ldapDn);
+
+            UserCache userCache = session.userCache();
+            if (userCache != null) {
+                userCache.evict(realm, local);
+            }
+        }
     }
 
     @Override
@@ -183,7 +201,6 @@ public class LDAPStorageProvider implements UserStorageProvider,
         LDAPObject ldapUser = LDAPUtils.addUserToLDAP(this, realm, user);
         LDAPUtils.checkUuid(ldapUser, ldapIdentityStore.getConfig());
         user.setSingleAttribute(LDAPConstants.LDAP_ID, ldapUser.getUuid());
-        user.setSingleAttribute(LDAPConstants.LDAP_ENTRY_DN, ldapUser.getDn().toString());
 
         return proxy(realm, user, ldapUser);
     }
@@ -404,7 +421,6 @@ public class LDAPStorageProvider implements UserStorageProvider,
         String userDN = ldapUser.getDn().toString();
         imported.setFederationLink(model.getId());
         imported.setSingleAttribute(LDAPConstants.LDAP_ID, ldapUser.getUuid());
-        imported.setSingleAttribute(LDAPConstants.LDAP_ENTRY_DN, userDN);
 
         logger.debugf("Imported new user from LDAP to Keycloak DB. Username: [%s], Email: [%s], LDAP_ID: [%s], LDAP Entry DN: [%s]", imported.getUsername(), imported.getEmail(),
                 ldapUser.getUuid(), userDN);
