@@ -21,38 +21,43 @@
     "images": "rhsso-images",
     "appserver": {
       "name": "JBoss EAP",
-      "version": "7",
+      "version": "7.0",
+      "doc_base_url": "https://access.redhat.com/documentation/en/red-hat-jboss-enterprise-application-platform/",
+      "develdoc": {
+        "name": "JBoss EAP Development Guide",
+        "link": "/single/development-guide"
+      },
       "admindoc": {
         "name": "JBoss EAP Configuration Guide",
-        "link": "https://access.redhat.com/documentation/en/red-hat-jboss-enterprise-application-platform/7.0/configuration-guide/configuration-guide"
+        "link": "/single/configuration-guide"
       },
-      "datasource": {
-        "name": "JBoss EAP Configuration Guide",
-        "link": "https://access.redhat.com/documentation/en/red-hat-jboss-enterprise-application-platform/7.0/configuration-guide/chapter-13-datasource-management"
+      "datasource_ref": {
+        "name": "Datasource Management",
+        "link": "/single/configuration-guide/#datasource_management"
       },
-      "network": {
-        "name": "JBoss EAP Configuration Guide",
-        "link": "https://access.redhat.com/documentation/en/red-hat-jboss-enterprise-application-platform/7.0/configuration-guide/chapter-4-network-and-port-configuration"
+      "network_ref": {
+        "name": "Network and Port Configuration",
+        "link": "/single/configuration-guide/#network_and_port_configuration"
       },
-      "socket": {
-        "name": "JBoss EAP Configuration Guide",
-        "link": "https://access.redhat.com/documentation/en/red-hat-jboss-enterprise-application-platform/7.0/configuration-guide/chapter-4-network-and-port-configuration"
+      "socket_ref": {
+        "name": "Socket Binding",
+        "link": "/single/configuration-guide/#socket_bindings"
       },
-      "loadbalancer": {
-        "name": "JBoss EAP Configuration Guide",
-        "link": "https://access.redhat.com/documentation/en/red-hat-jboss-enterprise-application-platform/7.0/configuration-guide/chapter-21-configuring-high-availability"
+      "loadbalancer_ref": {
+        "name": "Configuring High Availability",
+        "link": "/single/configuration-guide/#configuring_high_availability"
       },
-      "jgroups": {
-        "name": "JBoss EAP Configuration Guide",
-        "link": "https://access.redhat.com/documentation/en/red-hat-jboss-enterprise-application-platform/7.0/configuration-guide/chapter-21-configuring-high-availability#cluster_communication_jgroups"
+      "jgroups_ref": {
+        "name": "Cluster Communication with JGroups",
+        "link": "/single/configuration-guide/#cluster_communication_jgroups"
       },
-      "caching": {
-        "name": "JBoss EAP Configuration Guide",
-        "link": "https://access.redhat.com/documentation/en/red-hat-jboss-enterprise-application-platform/7.0/configuration-guide/chapter-21-configuring-high-availability#infinispan"
+      "caching_ref": {
+        "name": "Infinispan",
+        "link": "/single/configuration-guide/#infinispan"
       },
-      "jpa": {
-        "name": "JBoss EAP Development Guide",
-        "link": "https://access.redhat.com/documentation/en/red-hat-jboss-enterprise-application-platform/7.0/development-guide/chapter-13-hibernate"
+      "jpa_ref": {
+        "name": "Hibernate",
+        "link": "/single/development-guide/#hibernate"
       }
     },
     "developerguide": {

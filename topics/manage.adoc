@@ -46,9 +46,5 @@ connect
 
 You may be thinking to yourself, "I didn't enter in any username or password!".  If you run `jboss-cli` on the same machine
 as your running standalone server or domain controller and your account has appropriate file permissions, you do not have
-to setup or enter in a admin username and password.  See the link:{{book.appserver.admindoc.link}}[{{book.appserver.admindoc.name}}]
+to setup or enter in a admin username and password.  See the link:{{book.appserver.doc_base_url}}{{book.appserver.version}}{{book.appserver.admindoc.link}}[{{book.appserver.admindoc.name}}]
 for more details on how to make things more secure if you are uncomfortable with that setup.
-
-
-
-

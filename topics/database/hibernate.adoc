@@ -1,9 +1,9 @@
 
 === Database Configuration
 
-The configuration for this component lies in the `standalone.xml`, `standalone-ha.xml`, or `domain.xml` file 
-in your distribution.  The location of this file 
-depends on your <<fake/../../operating-mode.adoc#_operating-mode, operating mode>>. 
+The configuration for this component lies in the `standalone.xml`, `standalone-ha.xml`, or `domain.xml` file
+in your distribution.  The location of this file
+depends on your <<fake/../../operating-mode.adoc#_operating-mode, operating mode>>.
 
 .Database Config
 [source,xml]
@@ -34,10 +34,10 @@ driverDialect::
 
 initializeEmpty::
   Initialize database if empty. If set to false the database has to be manually initialized. If you want to manually initialize the database set migrationStrategy to `manual` which will create a file with SQL commands to initialize the database. Defaults to true.
-  
+
 migrationStrategy::
   Strategy to use to migrate database. Valid values are `update`, `manual` and `validate`. Update will automatically migrate the database schema. Manual will export the required changes to a file with SQL commands that you can manually execute on the database. Validate will simply check if the database is up-to-date.
-  
+
 migrationExport::
   Path for where to write manual database initialization/migration file.
 
@@ -54,5 +54,4 @@ globalStatsInterval::
 schema::
   Specify the database schema to use
 
-NOTE:  All these configuration switches and more are described in the link:{{book.appserver.jpa.link}}[{{book.appserver.jpa.name}}].
-
+NOTE:  These configuration switches and more are described in link:{{book.appserver.doc_base_url}}{{book.appserver.version}}{{book.appserver.jpa_ref.link}}[{{book.appserver.jpa_ref.name}}] in the _{{book.appserver.develdoc.name}}_.

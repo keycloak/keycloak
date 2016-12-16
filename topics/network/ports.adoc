@@ -55,6 +55,4 @@ to the `server-group` definitions you can see what `socket-binding-group` is use
     </server-groups>
 ----
 
-NOTE:  There's a lot more nifty options when setting up `socket-binding-group` definitions.  See the link:{{book.appserver.socket.link}}[the socket binding group]
-       chapter of the {{book.appserver.socket.name}}.
-
+NOTE:  There are many more options available when setting up `socket-binding-group` definitions.  For more information, see link:{{book.appserver.doc_base_url}}{{book.appserver.version}}{{book.appserver.socket_ref.link}}[{{book.appserver.socket_ref.name}}] in the _{{book.appserver.admindoc.name}}_.

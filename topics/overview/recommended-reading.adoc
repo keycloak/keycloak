@@ -5,4 +5,4 @@
 This guide only covers basics for infrastructure-level configuration.  It is highly recommended that you peruse the documentation
 for {{book.appserver.name}} and its sub projects. Here is the link to the documentation:
 
-* link:{{book.appserver.admindoc.link}}[{{book.appserver.admindoc.name}}]
+* link:{{book.appserver.doc_base_url}}{{book.appserver.version}}{{book.appserver.admindoc.link}}[{{book.appserver.admindoc.name}}]
