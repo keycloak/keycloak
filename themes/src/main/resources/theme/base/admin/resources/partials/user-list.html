@@ -13,9 +13,10 @@
                             <div class="input-group-addon">
                                     <i class="fa fa-search" id="userSearch" data-ng-click="firstPage()"></i>
                             </div>
+                            <input name="queryExact" id="queryExact"  ng-model="query.exact" onoffswitch on-text="{{:: 'exact' | translate}}" off-text="{{:: 'fuzzy' | translate}}"/>
                         </div>
                     </div>
-                    <button id="viewAllUsers" class="btn btn-default" ng-click="query.search = null; firstPage()">{{:: 'view-all-users' | translate}}</button>
+                    <button id="viewAllUsers" class="btn btn-default" ng-click="query.search = null; query.exact = false; firstPage()">{{:: 'view-all-users' | translate}}</button>
 
                     <div class="pull-right" data-ng-show="access.manageUsers">
                         <button data-ng-click="unlockUsers()" class="btn btn-default">{{:: 'unlock-users' | translate}}</button>

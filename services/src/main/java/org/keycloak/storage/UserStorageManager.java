@@ -438,15 +438,15 @@ public class UserStorageManager implements UserProvider, OnUserCache {
     }
 
     @Override
-    public List<UserModel> searchForUser(String search, RealmModel realm) {
-        return searchForUser(search, realm, 0, Integer.MAX_VALUE - 1);
+    public List<UserModel> searchForUser(String search, RealmModel realm, boolean exact) {
+        return searchForUser(search, realm, 0, Integer.MAX_VALUE - 1, exact);
     }
 
     @Override
-    public List<UserModel> searchForUser(String search, RealmModel realm, int firstResult, int maxResults) {
+    public List<UserModel> searchForUser(String search, RealmModel realm, int firstResult, int maxResults, boolean exact) {
         List<UserModel> results = query((provider, first, max) -> {
             if (provider instanceof UserQueryProvider) {
-                return ((UserQueryProvider)provider).searchForUser(search, realm, first, max);
+                return ((UserQueryProvider)provider).searchForUser(search, realm, first, max, exact);
 
             }
             return Collections.EMPTY_LIST;
@@ -456,16 +456,16 @@ public class UserStorageManager implements UserProvider, OnUserCache {
     }
 
     @Override
-    public List<UserModel> searchForUser(Map<String, String> attributes, RealmModel realm) {
-        List<UserModel> results = searchForUser(attributes, realm, 0, Integer.MAX_VALUE - 1);
+    public List<UserModel> searchForUser(Map<String, String> attributes, RealmModel realm, boolean exact) {
+        List<UserModel> results = searchForUser(attributes, realm, 0, Integer.MAX_VALUE - 1, exact);
         return importValidation(realm, results);
     }
 
     @Override
-    public List<UserModel> searchForUser(Map<String, String> attributes, RealmModel realm, int firstResult, int maxResults) {
+    public List<UserModel> searchForUser(Map<String, String> attributes, RealmModel realm, int firstResult, int maxResults, boolean exact) {
         List<UserModel> results = query((provider, first, max) -> {
             if (provider instanceof UserQueryProvider) {
-                return ((UserQueryProvider)provider).searchForUser(attributes, realm, first, max);
+                return ((UserQueryProvider)provider).searchForUser(attributes, realm, first, max, exact);
 
             }
             return Collections.EMPTY_LIST;

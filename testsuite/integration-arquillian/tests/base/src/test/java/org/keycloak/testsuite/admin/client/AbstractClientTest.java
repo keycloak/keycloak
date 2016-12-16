@@ -72,7 +72,7 @@ public abstract class AbstractClientTest extends AbstractAuthTest {
     // returns UserRepresentation retrieved from server, with all fields, including id
     protected UserRepresentation getFullUserRep(String userName) {
         // the search returns all users who has userName contained in their username.
-        List<UserRepresentation> results = testRealmResource().users().search(userName, null, null, null, null, null);
+        List<UserRepresentation> results = testRealmResource().users().search(userName, null, null, null, null, null, false);
         UserRepresentation result = null;
         for (UserRepresentation user : results) {
             if (userName.equals(user.getUsername())) {

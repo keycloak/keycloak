@@ -108,7 +108,7 @@ public class GroupMappersTest extends AbstractGroupTest {
     public void testGroupMappers() throws Exception {
         RealmResource realm = adminClient.realms().realm("test");
         {
-            UserRepresentation user = realm.users().search("topGroupUser", -1, -1).get(0);
+            UserRepresentation user = realm.users().search("topGroupUser", -1, -1, false).get(0);
 
             AccessToken token = login(user.getUsername(), "test-app", "password", user.getId());
             Assert.assertTrue(token.getRealmAccess().getRoles().contains("user"));
@@ -119,7 +119,7 @@ public class GroupMappersTest extends AbstractGroupTest {
             Assert.assertEquals("true", token.getOtherClaims().get("topAttribute"));
         }
         {
-            UserRepresentation user = realm.users().search("level2GroupUser", -1, -1).get(0);
+            UserRepresentation user = realm.users().search("level2GroupUser", -1, -1, false).get(0);
 
             AccessToken token = login(user.getUsername(), "test-app", "password", user.getId());
             Assert.assertTrue(token.getRealmAccess().getRoles().contains("user"));

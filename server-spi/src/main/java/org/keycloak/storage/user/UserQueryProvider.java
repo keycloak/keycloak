@@ -49,7 +49,11 @@ public interface UserQueryProvider {
      * @param realm
      * @return
      */
-    List<UserModel> searchForUser(String search, RealmModel realm);
+    default List<UserModel> searchForUser(String search, RealmModel realm){
+        return searchForUser(search, realm, false);
+    }
+
+    List<UserModel> searchForUser(String search, RealmModel realm, boolean exact);
 
     /**
      * Search for users with username, email or first + last name that is like search string.
@@ -64,7 +68,11 @@ public interface UserQueryProvider {
      * @param maxResults
      * @return
      */
-    List<UserModel> searchForUser(String search, RealmModel realm, int firstResult, int maxResults);
+    default List<UserModel> searchForUser(String search, RealmModel realm, int firstResult, int maxResults){
+        return searchForUser(search, realm, firstResult, maxResults, false);
+    }
+
+    List<UserModel> searchForUser(String search, RealmModel realm, int firstResult, int maxResults, boolean exact);
 
     /**
      * Search for user by parameter.  Valid parameters are:
@@ -82,7 +90,11 @@ public interface UserQueryProvider {
      * @param realm
      * @return
      */
-    List<UserModel> searchForUser(Map<String, String> params, RealmModel realm);
+    default List<UserModel> searchForUser(Map<String, String> params, RealmModel realm){
+        return searchForUser(params, realm);
+    }
+
+    List<UserModel> searchForUser(Map<String, String> params, RealmModel realm, boolean exact);
 
     /**
      * Search for user by parameter.  Valid parameters are:
@@ -101,7 +113,11 @@ public interface UserQueryProvider {
      * @param maxResults
      * @return
      */
-    List<UserModel> searchForUser(Map<String, String> params, RealmModel realm, int firstResult, int maxResults);
+    default List<UserModel> searchForUser(Map<String, String> params, RealmModel realm, int firstResult, int maxResults){
+        return searchForUser(params, realm, firstResult, maxResults);
+    }
+
+    List<UserModel> searchForUser(Map<String, String> params, RealmModel realm, int firstResult, int maxResults, boolean exact);
 
     /**
      * Get users that belong to a specific group.  Implementations do not have to search in UserFederatedStorageProvider

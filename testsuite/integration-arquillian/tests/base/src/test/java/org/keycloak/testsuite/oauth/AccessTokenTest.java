@@ -705,7 +705,7 @@ public class AccessTokenTest extends AbstractKeycloakTest {
         realmRole2 = realm.roles().get("realm-test-role2").toRepresentation();
 
 
-        List<UserRepresentation> users = realm.users().search("test-user@localhost", -1, -1);
+        List<UserRepresentation> users = realm.users().search("test-user@localhost", -1, -1, false);
         assertEquals(1, users.size());
         UserRepresentation user = users.get(0);
 

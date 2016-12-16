@@ -147,18 +147,27 @@ public class PropertyFileUserStorageProvider implements
     // UserQueryProvider method implementations
 
     @Override
-    public List<UserModel> searchForUser(String search, RealmModel realm) {
-        return searchForUser(search, realm, 0, Integer.MAX_VALUE);
+    public List<UserModel> searchForUser(String search, RealmModel realm, boolean exact) {
+        return searchForUser(search, realm, 0, Integer.MAX_VALUE, exact);
     }
 
     @Override
-    public List<UserModel> searchForUser(String search, RealmModel realm, int firstResult, int maxResults) {
+    public List<UserModel> searchForUser(String search, RealmModel realm, int firstResult, int maxResults, boolean exact) {
         List<UserModel> users = new LinkedList<>();
         int i = 0;
         for (Object obj : properties.keySet()) {
             String username = (String)obj;
-            if (!username.contains(search)) continue;
-            if (i++ < firstResult) continue;
+
+            if(exact && !username.equals(search)){
+                continue;
+            }
+
+            if (!exact && !username.contains(search)){
+                continue;
+            }
+            if (i++ < firstResult){
+                continue;
+            }
             UserModel user = getUserByUsername(username, realm);
             users.add(user);
             if (users.size() >= maxResults) break;
@@ -167,16 +176,16 @@ public class PropertyFileUserStorageProvider implements
     }
 
     @Override
-    public List<UserModel> searchForUser(Map<String, String> params, RealmModel realm) {
-        return searchForUser(params, realm, 0, Integer.MAX_VALUE);
+    public List<UserModel> searchForUser(Map<String, String> params, RealmModel realm, boolean exact) {
+        return searchForUser(params, realm, 0, Integer.MAX_VALUE, exact);
     }
 
     @Override
-    public List<UserModel> searchForUser(Map<String, String> params, RealmModel realm, int firstResult, int maxResults) {
+    public List<UserModel> searchForUser(Map<String, String> params, RealmModel realm, int firstResult, int maxResults, boolean exact) {
         // only support searching by username
         String usernameSearchString = params.get("username");
         if (usernameSearchString == null) return Collections.EMPTY_LIST;
-        return searchForUser(usernameSearchString, realm, firstResult, maxResults);
+        return searchForUser(usernameSearchString, realm, firstResult, maxResults, exact);
     }
 
     @Override

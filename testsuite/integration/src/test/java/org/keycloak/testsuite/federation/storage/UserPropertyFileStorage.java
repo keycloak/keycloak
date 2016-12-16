@@ -153,7 +153,7 @@ public class UserPropertyFileStorage implements UserLookupProvider, UserStorageP
     }
 
     @Override
-    public List<UserModel> searchForUser(Map<String, String> attributes, RealmModel realm) {
+    public List<UserModel> searchForUser(Map<String, String> attributes, RealmModel realm, boolean exact) {
         return Collections.EMPTY_LIST;
     }
 
@@ -172,29 +172,36 @@ public class UserPropertyFileStorage implements UserLookupProvider, UserStorageP
     }
 
     @Override
-    public List<UserModel> searchForUser(String search, RealmModel realm, int firstResult, int maxResults) {
+    public List<UserModel> searchForUser(String search, RealmModel realm, int firstResult, int maxResults, boolean exact) {
         if (maxResults == 0) return Collections.EMPTY_LIST;
         List<UserModel> users = new LinkedList<>();
         int count = 0;
         for (Object un : userPasswords.keySet()) {
             String username = (String)un;
-            if (username.contains(search)) {
-                if (count++ < firstResult) {
-                    continue;
-                }
-                users.add(createUser(realm, username));
-                if (users.size() + 1 > maxResults) break;
+
+            if(exact && !username.equals(search)){
+                continue;
             }
+
+            if(!exact && !username.contains(search)){
+                continue;
+            }
+
+            if (count++ < firstResult) {
+                continue;
+            }
+            users.add(createUser(realm, username));
+            if (users.size() + 1 > maxResults) break;
         }
         return users;
     }
 
     @Override
-    public List<UserModel> searchForUser(Map<String, String> attributes, RealmModel realm, int firstResult, int maxResults) {
+    public List<UserModel> searchForUser(Map<String, String> attributes, RealmModel realm, int firstResult, int maxResults, boolean exact) {
         if (attributes.size() != 1) return Collections.EMPTY_LIST;
         String username = attributes.get(UserModel.USERNAME);
         if (username == null) return Collections.EMPTY_LIST;
-        return searchForUser(username, realm, firstResult, maxResults);
+        return searchForUser(username, realm, firstResult, maxResults, exact);
     }
 
     @Override
@@ -208,7 +215,7 @@ public class UserPropertyFileStorage implements UserLookupProvider, UserStorageP
     }
 
     @Override
-    public List<UserModel> searchForUser(String search, RealmModel realm) {
+    public List<UserModel> searchForUser(String search, RealmModel realm, boolean exact) {
         return getUsers(realm, 0, Integer.MAX_VALUE - 1);
     }
 

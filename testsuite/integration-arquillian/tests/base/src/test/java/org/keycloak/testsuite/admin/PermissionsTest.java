@@ -160,7 +160,7 @@ public class PermissionsTest extends AbstractKeycloakTest {
 
     @Override
     public void afterAbstractKeycloakTest() {
-        for (UserRepresentation u : adminClient.realm("master").users().search("permissions-test-master-", 0, 100)) {
+        for (UserRepresentation u : adminClient.realm("master").users().search("permissions-test-master-", 0, 100, false)) {
             adminClient.realm("master").users().get(u.getId()).remove();
         }
 
@@ -1280,7 +1280,7 @@ public class PermissionsTest extends AbstractKeycloakTest {
         }, Resource.USER, true);
         invoke(new Invocation() {
             public void invoke(RealmResource realm) {
-                realm.users().search("foo", 0, 1);
+                realm.users().search("foo", 0, 1, false);
             }
         }, Resource.USER, false);
         invoke(new Invocation() {

@@ -118,7 +118,7 @@ public class ApiUtil {
 
     public static UserRepresentation findUserByUsername(RealmResource realm, String username) {
         UserRepresentation user = null;
-        List<UserRepresentation> ur = realm.users().search(username, null, null);
+        List<UserRepresentation> ur = realm.users().search(username, null, null, false);
         if (ur.size() == 1) {
             user = ur.get(0);
         }

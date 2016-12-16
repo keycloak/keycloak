@@ -33,20 +33,27 @@ import java.util.List;
 
 public interface UsersResource {
 
+    //TODO change langauge level to Java 8 and use default message to bridge API
+    // or accept breaking existing clients...
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     List<UserRepresentation> search(@QueryParam("username") String username,
-                                           @QueryParam("firstName") String firstName,
-                                           @QueryParam("lastName") String lastName,
-                                             @QueryParam("email") String email,
-                                             @QueryParam("first") Integer firstResult,
-                                             @QueryParam("max") Integer maxResults);
+                                    @QueryParam("firstName") String firstName,
+                                    @QueryParam("lastName") String lastName,
+                                    @QueryParam("email") String email,
+                                    @QueryParam("first") Integer firstResult,
+                                    @QueryParam("max") Integer maxResults,
+                                    @QueryParam("exact") Boolean exact
+                                    );
 
+    //TODO change langauge level to Java 8 and use default message to bridge API
+    // or accept breaking existing clients...
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     List<UserRepresentation> search(@QueryParam("search") String search,
-                                           @QueryParam("first") Integer firstResult,
-                                           @QueryParam("max") Integer maxResults);
+                                    @QueryParam("first") Integer firstResult,
+                                    @QueryParam("max") Integer maxResults,
+                                    @QueryParam("exact") Boolean exact);
 
     @POST
     @Consumes(MediaType.APPLICATION_JSON)

@@ -721,7 +721,7 @@ public class AdapterTestStrategy extends ExternalResource {
 
         // logout mposolda with admin client
         Keycloak keycloakAdmin = Keycloak.getInstance(AUTH_SERVER_URL, "master", "admin", "admin", Constants.ADMIN_CLI_CLIENT_ID);
-        UserRepresentation mposolda = keycloakAdmin.realm("demo").users().search("mposolda", null, null, null, null, null).get(0);
+        UserRepresentation mposolda = keycloakAdmin.realm("demo").users().search("mposolda", null, null, null, null, null, false).get(0);
         keycloakAdmin.realm("demo").users().get(mposolda.getId()).logout();
 
         // bburke should be still logged with original httpSession in our browser window

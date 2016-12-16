@@ -244,12 +244,12 @@ public class LDAPStorageProvider implements UserStorageProvider,
     }
 
     @Override
-    public List<UserModel> searchForUser(String search, RealmModel realm) {
-        return searchForUser(search, realm, 0, Integer.MAX_VALUE - 1);
+    public List<UserModel> searchForUser(String search, RealmModel realm, boolean exact) {
+        return searchForUser(search, realm, 0, Integer.MAX_VALUE - 1, exact);
     }
 
     @Override
-    public List<UserModel> searchForUser(String search, RealmModel realm, int firstResult, int maxResults) {
+    public List<UserModel> searchForUser(String search, RealmModel realm, int firstResult, int maxResults, boolean exact) {
         Map<String, String> attributes = new HashMap<String, String>();
         int spaceIndex = search.lastIndexOf(' ');
         if (spaceIndex > -1) {
@@ -264,19 +264,19 @@ public class LDAPStorageProvider implements UserStorageProvider,
             attributes.put(UserModel.LAST_NAME, search.trim());
             attributes.put(UserModel.USERNAME, search.trim().toLowerCase());
         }
-        return searchForUser(attributes, realm, firstResult, maxResults);
+        return searchForUser(attributes, realm, firstResult, maxResults, exact);
     }
 
     @Override
-    public List<UserModel> searchForUser(Map<String, String> params, RealmModel realm) {
-        return searchForUser(params, realm, 0, Integer.MAX_VALUE - 1);
+    public List<UserModel> searchForUser(Map<String, String> params, RealmModel realm, boolean exact) {
+        return searchForUser(params, realm, 0, Integer.MAX_VALUE - 1, exact);
     }
 
     @Override
-    public List<UserModel> searchForUser(Map<String, String> params, RealmModel realm, int firstResult, int maxResults) {
+    public List<UserModel> searchForUser(Map<String, String> params, RealmModel realm, int firstResult, int maxResults, boolean exact) {
         List<UserModel> searchResults =new LinkedList<UserModel>();
 
-        List<LDAPObject> ldapUsers = searchLDAP(realm, params, maxResults + firstResult);
+        List<LDAPObject> ldapUsers = searchLDAP(realm, params, maxResults + firstResult, exact);
         int counter = 0;
         for (LDAPObject ldapUser : ldapUsers) {
             if (counter++ < firstResult) continue;
@@ -326,7 +326,9 @@ public class LDAPStorageProvider implements UserStorageProvider,
         return result;
     }
 
-    protected List<LDAPObject> searchLDAP(RealmModel realm, Map<String, String> attributes, int maxResults) {
+    protected List<LDAPObject> searchLDAP(RealmModel realm, Map<String, String> attributes, int maxResults, boolean exact) {
+
+        //TODO handle exact vs. !exact LDAP searches, currently only exact searches are supported
 
         List<LDAPObject> results = new ArrayList<LDAPObject>();
         if (attributes.containsKey(UserModel.USERNAME)) {

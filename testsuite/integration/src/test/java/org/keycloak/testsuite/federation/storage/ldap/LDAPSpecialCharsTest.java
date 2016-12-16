@@ -123,7 +123,7 @@ public class LDAPSpecialCharsTest {
 
     @Test
     public void test01_userSearch() {
-        List<UserRepresentation> users = adminClient.realm("test").users().search("j*", 0, 10);
+        List<UserRepresentation> users = adminClient.realm("test").users().search("j*", 0, 10, false);
         Assert.assertEquals(3, users.size());
 
         List<String> usernames = users.stream().map((UserRepresentation user) -> {

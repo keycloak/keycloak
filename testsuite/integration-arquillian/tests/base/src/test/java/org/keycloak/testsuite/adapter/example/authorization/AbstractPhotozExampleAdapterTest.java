@@ -350,7 +350,7 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
             assertFalse(this.clientPage.wasDenied());
 
             UsersResource usersResource = realmsResouce().realm(REALM_NAME).users();
-            List<UserRepresentation> users = usersResource.search("alice", null, null, null, null, null);
+            List<UserRepresentation> users = usersResource.search("alice", null, null, null, null, null, false);
 
             assertFalse(users.isEmpty());
 
@@ -389,7 +389,7 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
             assertFalse(this.clientPage.wasDenied());
 
             UsersResource usersResource = realmsResouce().realm(REALM_NAME).users();
-            List<UserRepresentation> users = usersResource.search("alice", null, null, null, null, null);
+            List<UserRepresentation> users = usersResource.search("alice", null, null, null, null, null, false);
 
             assertFalse(users.isEmpty());
 
