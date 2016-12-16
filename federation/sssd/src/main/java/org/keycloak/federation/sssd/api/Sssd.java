@@ -17,15 +17,13 @@
 
 package org.keycloak.federation.sssd.api;
 
+import cx.ath.matthew.LibraryLoader;
 import org.freedesktop.dbus.DBusConnection;
 import org.freedesktop.dbus.Variant;
 import org.freedesktop.dbus.exceptions.DBusException;
 import org.freedesktop.sssd.infopipe.InfoPipe;
 import org.jboss.logging.Logger;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -52,7 +50,8 @@ public class Sssd {
     public Sssd(String username) {
         this.username = username;
         try {
-            dBusConnection = DBusConnection.getConnection(DBusConnection.SYSTEM);
+            if (LibraryLoader.load().succeed())
+                dBusConnection = DBusConnection.getConnection(DBusConnection.SYSTEM);
         } catch (DBusException e) {
             e.printStackTrace();
         }
@@ -96,14 +95,20 @@ public class Sssd {
     public static boolean isAvailable() {
         boolean sssdAvailable = false;
         try {
-            Path path = Paths.get("/etc/sssd");
-            if (!Files.exists(path)) {
-                logger.debugv("SSSD is not available in your system. Federation provider will be disabled.");
+            if (LibraryLoader.load().succeed()) {
+                DBusConnection connection = DBusConnection.getConnection(DBusConnection.SYSTEM);
+                InfoPipe infoPipe = connection.getRemoteObject(InfoPipe.BUSNAME, InfoPipe.OBJECTPATH, InfoPipe.class);
+
+                if (infoPipe.ping("PING") == null || infoPipe.ping("PING").isEmpty()) {
+                    logger.debugv("SSSD is not available in your system. Federation provider will be disabled.");
+                } else {
+                    sssdAvailable = true;
+                }
             } else {
-                sssdAvailable = true;
+                logger.debugv("The RPM libunix-dbus-java is not installed. SSSD Federation provider will be disabled.");
             }
         } catch (Exception e) {
-            logger.error("SSSD check failed", e);
+            logger.debugv("SSSD is not available in your system. Federation provider will be disabled.", e);
         }
         return sssdAvailable;
     }
