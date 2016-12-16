@@ -49,6 +49,7 @@ import org.keycloak.saml.processing.core.parsers.saml.SAMLParser;
 import org.keycloak.saml.processing.core.saml.v2.writers.SAMLAssertionWriter;
 import org.keycloak.saml.processing.core.util.JAXPValidationUtil;
 import org.keycloak.saml.processing.core.util.XMLEncryptionUtil;
+
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -62,7 +63,9 @@ import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+
 import org.keycloak.rotation.HardcodedKeyLocator;
+import org.keycloak.saml.common.constants.GeneralConstants;
 
 /**
  * Utility to deal with assertions
@@ -87,7 +90,7 @@ public class AssertionUtil {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         SAMLAssertionWriter writer = new SAMLAssertionWriter(StaxUtil.getXMLStreamWriter(baos));
         writer.write(assertion);
-        return new String(baos.toByteArray());
+        return new String(baos.toByteArray(), GeneralConstants.SAML_CHARSET);
     }
 
     /**

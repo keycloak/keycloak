@@ -27,9 +27,11 @@ import org.keycloak.dom.xmlsec.w3.xmldsig.X509DataType;
 import org.keycloak.saml.common.ErrorCodes;
 import org.keycloak.saml.common.PicketLinkLogger;
 import org.keycloak.saml.common.PicketLinkLoggerFactory;
+import org.keycloak.saml.common.constants.GeneralConstants;
 import org.keycloak.saml.common.constants.WSTrustConstants;
 import org.keycloak.saml.common.exceptions.ProcessingException;
 import org.keycloak.saml.common.util.StaxUtil;
+
 import org.w3c.dom.Element;
 
 import javax.xml.stream.XMLStreamWriter;
@@ -77,7 +79,7 @@ public class StaxWriterUtil {
                 X509CertificateType cert = (X509CertificateType) obj;
                 StaxUtil.writeStartElement(writer, WSTrustConstants.XMLDSig.DSIG_PREFIX, WSTrustConstants.XMLDSig.X509CERT,
                         WSTrustConstants.XMLDSig.DSIG_NS);
-                StaxUtil.writeCharacters(writer, new String(cert.getEncodedCertificate()));
+                StaxUtil.writeCharacters(writer, new String(cert.getEncodedCertificate(), GeneralConstants.SAML_CHARSET));
                 StaxUtil.writeEndElement(writer);
             }
             StaxUtil.writeEndElement(writer);
@@ -105,13 +107,13 @@ public class StaxWriterUtil {
         // write the rsa key modulus.
         byte[] modulus = type.getModulus();
         StaxUtil.writeStartElement(writer, prefix, WSTrustConstants.XMLDSig.MODULUS, WSTrustConstants.DSIG_NS);
-        StaxUtil.writeCharacters(writer, new String(modulus));
+        StaxUtil.writeCharacters(writer, new String(modulus, GeneralConstants.SAML_CHARSET));
         StaxUtil.writeEndElement(writer);
 
         // write the rsa key exponent.
         byte[] exponent = type.getExponent();
         StaxUtil.writeStartElement(writer, prefix, WSTrustConstants.XMLDSig.EXPONENT, WSTrustConstants.DSIG_NS);
-        StaxUtil.writeCharacters(writer, new String(exponent));
+        StaxUtil.writeCharacters(writer, new String(exponent, GeneralConstants.SAML_CHARSET));
         StaxUtil.writeEndElement(writer);
 
         StaxUtil.writeEndElement(writer);
@@ -126,37 +128,37 @@ public class StaxWriterUtil {
         byte[] p = type.getP();
         if (p != null) {
             StaxUtil.writeStartElement(writer, prefix, WSTrustConstants.XMLDSig.P, WSTrustConstants.DSIG_NS);
-            StaxUtil.writeCharacters(writer, new String(p));
+            StaxUtil.writeCharacters(writer, new String(p, GeneralConstants.SAML_CHARSET));
             StaxUtil.writeEndElement(writer);
         }
         byte[] q = type.getQ();
         if (q != null) {
             StaxUtil.writeStartElement(writer, prefix, WSTrustConstants.XMLDSig.Q, WSTrustConstants.DSIG_NS);
-            StaxUtil.writeCharacters(writer, new String(q));
+            StaxUtil.writeCharacters(writer, new String(q, GeneralConstants.SAML_CHARSET));
             StaxUtil.writeEndElement(writer);
         }
         byte[] g = type.getG();
         if (g != null) {
             StaxUtil.writeStartElement(writer, prefix, WSTrustConstants.XMLDSig.G, WSTrustConstants.DSIG_NS);
-            StaxUtil.writeCharacters(writer, new String(g));
+            StaxUtil.writeCharacters(writer, new String(g, GeneralConstants.SAML_CHARSET));
             StaxUtil.writeEndElement(writer);
         }
         byte[] y = type.getY();
         if (y != null) {
             StaxUtil.writeStartElement(writer, prefix, WSTrustConstants.XMLDSig.Y, WSTrustConstants.DSIG_NS);
-            StaxUtil.writeCharacters(writer, new String(y));
+            StaxUtil.writeCharacters(writer, new String(y, GeneralConstants.SAML_CHARSET));
             StaxUtil.writeEndElement(writer);
         }
         byte[] seed = type.getSeed();
         if (seed != null) {
             StaxUtil.writeStartElement(writer, prefix, WSTrustConstants.XMLDSig.SEED, WSTrustConstants.DSIG_NS);
-            StaxUtil.writeCharacters(writer, new String(seed));
+            StaxUtil.writeCharacters(writer, new String(seed, GeneralConstants.SAML_CHARSET));
             StaxUtil.writeEndElement(writer);
         }
         byte[] pgen = type.getPgenCounter();
         if (pgen != null) {
             StaxUtil.writeStartElement(writer, prefix, WSTrustConstants.XMLDSig.PGEN_COUNTER, WSTrustConstants.DSIG_NS);
-            StaxUtil.writeCharacters(writer, new String(pgen));
+            StaxUtil.writeCharacters(writer, new String(pgen, GeneralConstants.SAML_CHARSET));
             StaxUtil.writeEndElement(writer);
         }
 

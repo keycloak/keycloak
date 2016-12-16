@@ -79,7 +79,7 @@ public class RedirectBindingSignatureUtil {
         String urlEncodedRelayState = null;
 
         if (isNotNull(relayState))
-            urlEncodedRelayState = URLEncoder.encode(relayState, "UTF-8");
+            urlEncodedRelayState = URLEncoder.encode(relayState, GeneralConstants.SAML_CHARSET_NAME);
 
         byte[] sigValue = computeSignature(GeneralConstants.SAML_REQUEST_KEY, urlEncodedRequest, urlEncodedRelayState,
                 signingKey);
@@ -113,7 +113,7 @@ public class RedirectBindingSignatureUtil {
 
         String urlEncodedRelayState = null;
         if (isNotNull(relayState))
-            urlEncodedRelayState = URLEncoder.encode(relayState, "UTF-8");
+            urlEncodedRelayState = URLEncoder.encode(relayState, GeneralConstants.SAML_CHARSET_NAME);
 
         byte[] sigValue = computeSignature(GeneralConstants.SAML_RESPONSE_KEY, urlEncodedResponse, urlEncodedRelayState,
                 signingKey);
@@ -234,7 +234,7 @@ public class RedirectBindingSignatureUtil {
         addParameter(sb, GeneralConstants.SAML_SIG_ALG_REQUEST_KEY,
                 RedirectBindingSignatureUtil.getTokenValue(queryString, GeneralConstants.SAML_SIG_ALG_REQUEST_KEY));
 
-        return SignatureUtil.validate(sb.toString().getBytes("UTF-8"), sigValue, validatingKey);
+        return SignatureUtil.validate(sb.toString().getBytes(GeneralConstants.SAML_CHARSET), sigValue, validatingKey);
     }
 
     private static boolean isRequestQueryString(String queryString) {
@@ -257,7 +257,7 @@ public class RedirectBindingSignatureUtil {
         String algo = signingKey.getAlgorithm();
         String sigAlg = SignatureUtil.getXMLSignatureAlgorithmURI(algo);
 
-        sigAlg = URLEncoder.encode(sigAlg, "UTF-8");
+        sigAlg = URLEncoder.encode(sigAlg, GeneralConstants.SAML_CHARSET_NAME);
 
         addParameter(sb, GeneralConstants.SAML_SIG_ALG_REQUEST_KEY, sigAlg);
 
@@ -291,7 +291,7 @@ public class RedirectBindingSignatureUtil {
         // SigAlg
         String sigAlg = SignatureUtil.getXMLSignatureAlgorithmURI(sigAlgo);
 
-        sigAlg = URLEncoder.encode(sigAlg, "UTF-8");
+        sigAlg = URLEncoder.encode(sigAlg, GeneralConstants.SAML_CHARSET_NAME);
 
         addParameter(sb, GeneralConstants.SAML_SIG_ALG_REQUEST_KEY, sigAlg);
 

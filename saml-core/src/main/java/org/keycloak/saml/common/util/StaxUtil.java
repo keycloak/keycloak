@@ -75,7 +75,7 @@ public class StaxUtil {
     public static XMLEventWriter getXMLEventWriter(final OutputStream outStream) throws ProcessingException {
         XMLOutputFactory xmlOutputFactory = getXMLOutputFactory();
         try {
-            return xmlOutputFactory.createXMLEventWriter(outStream, "UTF-8");
+            return xmlOutputFactory.createXMLEventWriter(outStream, GeneralConstants.SAML_CHARSET_NAME);
         } catch (XMLStreamException e) {
             throw logger.processingError(e);
         }
@@ -93,7 +93,7 @@ public class StaxUtil {
     public static XMLStreamWriter getXMLStreamWriter(final OutputStream outStream) throws ProcessingException {
         XMLOutputFactory xmlOutputFactory = getXMLOutputFactory();
         try {
-            return xmlOutputFactory.createXMLStreamWriter(outStream, "UTF-8");
+            return xmlOutputFactory.createXMLStreamWriter(outStream, GeneralConstants.SAML_CHARSET_NAME);
         } catch (XMLStreamException e) {
             throw logger.processingError(e);
         }

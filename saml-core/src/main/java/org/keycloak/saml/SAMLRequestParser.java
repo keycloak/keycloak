@@ -18,9 +18,11 @@
 package org.keycloak.saml;
 
 import org.jboss.logging.Logger;
+
 import org.keycloak.common.util.StreamUtil;
 import org.keycloak.saml.common.PicketLinkLogger;
 import org.keycloak.saml.common.PicketLinkLoggerFactory;
+import org.keycloak.saml.common.constants.GeneralConstants;
 import org.keycloak.saml.processing.api.saml.v2.request.SAML2Request;
 import org.keycloak.saml.processing.api.saml.v2.response.SAML2Response;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
@@ -45,13 +47,13 @@ public class SAMLRequestParser {
         if (log.isDebugEnabled()) {
             String message = null;
             try {
-                message = StreamUtil.readString(is);
+                message = StreamUtil.readString(is, GeneralConstants.SAML_CHARSET);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
             log.debug("SAML Redirect Binding");
             log.debug(message);
-            is = new ByteArrayInputStream(message.getBytes());
+            is = new ByteArrayInputStream(message.getBytes(GeneralConstants.SAML_CHARSET));
 
         }
         SAML2Request saml2Request = new SAML2Request();
@@ -69,7 +71,7 @@ public class SAMLRequestParser {
         InputStream is;
         byte[] samlBytes = PostBindingUtil.base64Decode(samlMessage);
         if (log.isDebugEnabled()) {
-            String str = new String(samlBytes);
+            String str = new String(samlBytes, GeneralConstants.SAML_CHARSET);
             log.debug("SAML POST Binding");
             log.debug(str);
         }
@@ -92,7 +94,7 @@ public class SAMLRequestParser {
 
     public static SAMLDocumentHolder parseResponseDocument(byte[] samlBytes) {
         if (log.isDebugEnabled()) {
-            String str = new String(samlBytes);
+            String str = new String(samlBytes, GeneralConstants.SAML_CHARSET);
             log.debug(str);
         }
         InputStream is = new ByteArrayInputStream(samlBytes);
@@ -111,13 +113,13 @@ public class SAMLRequestParser {
         if (log.isDebugEnabled()) {
             String message = null;
             try {
-                message = StreamUtil.readString(is);
+                message = StreamUtil.readString(is, GeneralConstants.SAML_CHARSET);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
             log.debug("SAML Redirect Binding");
             log.debug(message);
-            is = new ByteArrayInputStream(message.getBytes());
+            is = new ByteArrayInputStream(message.getBytes(GeneralConstants.SAML_CHARSET));
 
         }
         SAML2Response response = new SAML2Response();
