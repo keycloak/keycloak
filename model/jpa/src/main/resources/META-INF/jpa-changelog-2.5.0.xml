@@ -22,6 +22,8 @@
          <customChange class="org.keycloak.connections.jpa.updater.liquibase.custom.MigrateUserFedToComponent"/>
 
          <addUniqueConstraint columnNames="NAME,PARENT_GROUP,REALM_ID" constraintName="SIBLING_NAMES" tableName="KEYCLOAK_GROUP"/>
+
+         <modifyDataType tableName="OFFLINE_USER_SESSION" columnName="USER_ID" newDataType="VARCHAR(255)"/>
      </changeSet>
 
     <changeSet author="hmlnarik@redhat.com" id="2.5.0-unicode-oracle">
