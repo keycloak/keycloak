@@ -57,7 +57,7 @@ public class DefaultEmailSenderProvider implements EmailSenderProvider {
     public void send(RealmModel realm, UserModel user, String subject, String textBody, String htmlBody) throws EmailException {
         Transport transport = null;
         try {
-            String address = user.getEmail();
+            String address = retrieveEmailAddress(user);
             Map<String, String> config = realm.getSmtpConfig();
 
             Properties props = new Properties();
@@ -135,6 +135,10 @@ public class DefaultEmailSenderProvider implements EmailSenderProvider {
                 }
             }
         }
+    }
+    
+    protected String retrieveEmailAddress(UserModel user) {
+        return user.getEmail();
     }
 
     private void setupTruststore(Properties props) throws NoSuchAlgorithmException, KeyManagementException {

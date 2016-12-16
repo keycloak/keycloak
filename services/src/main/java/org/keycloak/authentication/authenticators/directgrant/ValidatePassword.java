@@ -43,9 +43,7 @@ public class ValidatePassword extends AbstractDirectGrantAuthenticator {
 
     @Override
     public void authenticate(AuthenticationFlowContext context) {
-        MultivaluedMap<String, String> inputData = context.getHttpRequest().getDecodedFormParameters();
-        List<UserCredentialModel> credentials = new LinkedList<>();
-        String password = inputData.getFirst(CredentialRepresentation.PASSWORD);
+        String password = retrievePassword(context);
         boolean valid = context.getSession().userCredentialManager().isValid(context.getRealm(), context.getUser(), UserCredentialModel.password(password));
         if (!valid) {
             context.getEvent().user(context.getUser());
@@ -117,5 +115,10 @@ public class ValidatePassword extends AbstractDirectGrantAuthenticator {
     @Override
     public String getId() {
         return PROVIDER_ID;
+    }
+
+    protected String retrievePassword(AuthenticationFlowContext context) {
+        MultivaluedMap<String, String> inputData = context.getHttpRequest().getDecodedFormParameters();
+        return inputData.getFirst(CredentialRepresentation.PASSWORD);
     }
 }
