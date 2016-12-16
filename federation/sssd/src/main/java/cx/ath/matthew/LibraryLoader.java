@@ -21,7 +21,14 @@ package cx.ath.matthew;
  */
 public class LibraryLoader {
 
-    private static final String[] PATHS = {"/usr/lib/", "/usr/lib64/", "/usr/local/lib/", "/opt/local/lib/"};
+    private static final String[] PATHS = {
+            "/opt/rh/rh-sso7/root/lib/",
+            "/opt/rh/rh-sso7/root/lib64/",
+            "/usr/lib/",
+            "/usr/lib64/",
+            "/usr/local/lib/",
+            "/opt/local/lib/"
+    };
     private static final String LIBRARY_NAME = "libunix_dbus_java";
     private static final String VERSION = "0.0.8";
     private static boolean loadSucceeded;
