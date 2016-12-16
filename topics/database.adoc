@@ -15,9 +15,5 @@ The top layered technology for persistence is Hibernate JPA.  This is a object t
 Objects to relational data.  Most deployments of {{book.project.name}} will never have to touch the configuration aspects
 of Hibernate, but we will discuss how that is done if you run into that rare circumstance.
 
-NOTE:  Datasource configuration is covered much more thoroughly within the link:{{book.appserver.datasource.link}}[the datasource configuration chapter]
-       of the {{book.appserver.admindoc.name}}.
-
-
-
-
+NOTE:  Datasource configuration is covered much more thoroughly in link:{{book.appserver.doc_base_url}}{{book.appserver.version}}{{book.appserver.datasource_ref.link}}[{{book.appserver.datasource_ref.name}}]
+       in the _{{book.appserver.admindoc.name}}_.

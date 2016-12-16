@@ -22,7 +22,7 @@ image:../../{{book.images}}/standalone-ha-config-file.png[]
 
 WARNING: Any changes you make to this file while the server is running will not take effect and may even be overwritten
       by the server.  Instead use the the command line scripting or the web console of {{book.appserver.name}}.  See
-      the link:{{book.appserver.admindoc.link}}[{{book.appserver.admindoc.name}}] for more information.
+      the link:{{book.appserver.doc_base_url}}{{book.appserver.version}}{{book.appserver.admindoc.link}}[{{book.appserver.admindoc.name}}] for more information.
 
 ==== Standalone Clustered Boot Script
 

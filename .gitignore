@@ -49,3 +49,7 @@ catalog.xml
 #########
 target
 
+# Test build
+############
+build/
+

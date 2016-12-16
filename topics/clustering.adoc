@@ -14,6 +14,4 @@ Picking an operation mode and configuring a shared database have been discussed 
 we'll discuss setting up a load balancer and supplying a private network.  We'll also discuss some issues that you need
 to be aware of when booting up a host in the cluster.
 
-Note:  It is possible to cluster {{book.project.name}} without IP Multicast, but this topic is beyond the
-       scope of this guide.  Please see the link:{{book.appserver.jgroups.link}}[JGroups] chapter of the {{book.appserver.jgroups.name}}.
-
+NOTE:  It is possible to cluster {{book.project.name}} without IP Multicast, but this topic is beyond the scope of this guide.  For more information, see link:{{book.appserver.doc_base_url}}{{book.appserver.version}}{{book.appserver.jgroups_ref.link}}[{{book.appserver.jgroups_ref.name}}] in the _{{book.appserver.admindoc.name}}_.

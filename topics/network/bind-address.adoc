@@ -50,5 +50,4 @@ $ domain.sh -Djboss.bind.address=192.168.0.5
 The `-b` is just a shorthand notation for this command.  So, you can either change the bind address value directly in the profile config, or change it on the command line when
 you boot up.
 
-NOTE:  There's a lot more nifty options when setting up `interface` definitions.  See the link:{{book.appserver.network.link}}[the network interface]
-       chapter of the {{book.appserver.network.name}}.
+NOTE:  There are many more options available when setting up `interface` definitions. For more information, see link:{{book.appserver.doc_base_url}}{{book.appserver.version}}{{book.appserver.network_ref.link}}[{{book.appserver.network_ref.name}}] in the _{{book.appserver.admindoc.name}}_.

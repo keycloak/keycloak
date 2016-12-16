@@ -195,9 +195,4 @@ of the master host.
 
 ==== Configuring Other Load Balancers
 
-The link:{{book.appserver.loadbalancer.link}}[the load balancer] chapter of the {{book.appserver.loadbalancer.name}}
-has information on using some other software based load balancers that may help you.
-
-
-
-
+See link:{{book.appserver.doc_base_url}}{{book.appserver.version}}{{book.appserver.loadbalancer_ref.link}}[{{book.appserver.loadbalancer_ref.name}}] in the _{{book.appserver.admindoc.name}}_ for information how to use other software-based load balancers.
