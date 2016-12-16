@@ -56,7 +56,7 @@ public class OIDCAttributeMapperHelper {
 
         if (attributeValue instanceof List) {
             List<Object> valueAsList = (List<Object>) attributeValue;
-            if (valueAsList.size() == 0) return null;
+            if (valueAsList.isEmpty()) return null;
 
             if (isMultivalued(mappingModel)) {
                 List<Object> result = new ArrayList<>();
@@ -69,7 +69,7 @@ public class OIDCAttributeMapperHelper {
                     ServicesLogger.LOGGER.multipleValuesForMapper(attributeValue.toString(), mappingModel.getName());
                 }
 
-                attributeValue = valueAsList;
+                attributeValue = valueAsList.get(0);
             }
         }
 
