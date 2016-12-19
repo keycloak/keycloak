@@ -2,6 +2,7 @@ package org.keycloak.testsuite.console.federation;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Test;
+import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserFederationProviderRepresentation;
 import org.keycloak.testsuite.console.AbstractConsoleTest;
@@ -34,8 +35,9 @@ public class KerberosUserFederationTest extends AbstractConsoleTest {
 		createKerberosUserProvider.form().setUpdateProfileFirstLogin(true);
 		createKerberosUserProvider.form().save();
 		assertAlertSuccess();
-		RealmRepresentation realm = testRealmResource().toRepresentation();
-		UserFederationProviderRepresentation ufpr = realm.getUserFederationProviders().get(0);
+
+        ComponentRepresentation ufpr = testRealmResource().components()
+                .query(null, "org.keycloak.storage.UserStorageProvider").get(0);
 		assertKerberosSetings(ufpr, "KEYCLOAK.ORG", "HTTP/localhost@KEYCLOAK.ORG", "http.keytab", "true", "true", "true");
 	}
 
@@ -64,12 +66,12 @@ public class KerberosUserFederationTest extends AbstractConsoleTest {
 		assertAlertSuccess();
 	}
 
-	private void assertKerberosSetings(UserFederationProviderRepresentation ufpr, String kerberosRealm, String serverPrincipal, String keyTab, String debug, String useKerberosForPasswordAuthentication, String updateProfileFirstLogin) {
-		assertEquals(kerberosRealm, ufpr.getConfig().get("kerberosRealm"));
-		assertEquals(serverPrincipal, ufpr.getConfig().get("serverPrincipal"));
-		assertEquals(keyTab, ufpr.getConfig().get("keyTab"));
-		assertEquals(debug, ufpr.getConfig().get("debug"));
-		assertEquals(useKerberosForPasswordAuthentication, ufpr.getConfig().get("allowKerberosAuthentication"));
-		assertEquals(updateProfileFirstLogin, ufpr.getConfig().get("updateProfileFirstLogin"));
+	private void assertKerberosSetings(ComponentRepresentation ufpr, String kerberosRealm, String serverPrincipal, String keyTab, String debug, String useKerberosForPasswordAuthentication, String updateProfileFirstLogin) {
+		assertEquals(kerberosRealm, ufpr.getConfig().get("kerberosRealm").get(0));
+		assertEquals(serverPrincipal, ufpr.getConfig().get("serverPrincipal").get(0));
+		assertEquals(keyTab, ufpr.getConfig().get("keyTab").get(0));
+		assertEquals(debug, ufpr.getConfig().get("debug").get(0));
+		assertEquals(useKerberosForPasswordAuthentication, ufpr.getConfig().get("allowPasswordAuthentication").get(0));
+		assertEquals(updateProfileFirstLogin, ufpr.getConfig().get("updateProfileFirstLogin").get(0));
 	}
 }

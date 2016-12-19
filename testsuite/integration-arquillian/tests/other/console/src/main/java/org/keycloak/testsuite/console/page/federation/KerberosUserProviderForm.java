@@ -54,7 +54,6 @@ public class KerberosUserProviderForm extends Form {
     }
 
     public void setKerberosRealmInput(String kerberosRealm) {
-        waitUntilElement(By.id("kerberosRealm")).is().present();
         setInputValue(kerberosRealmInput, kerberosRealm);
     }
 
@@ -75,7 +74,6 @@ public class KerberosUserProviderForm extends Form {
     }
 
     public void selectEditMode(String mode) {
-        waitUntilElement(By.id("editMode")).is().present();
         editModeSelect.selectByVisibleText(mode);
     }
 
