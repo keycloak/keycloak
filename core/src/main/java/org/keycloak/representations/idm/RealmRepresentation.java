@@ -54,6 +54,8 @@ public class RealmRepresentation {
     protected Boolean registrationEmailAsUsername;
     protected Boolean rememberMe;
     protected Boolean verifyEmail;
+    protected Boolean loginWithEmailAllowed;
+    protected Boolean duplicateEmailsAllowed;
     protected Boolean resetPasswordAllowed;
     protected Boolean editUsernameAllowed;
 
@@ -417,6 +419,22 @@ public class RealmRepresentation {
 
     public void setVerifyEmail(Boolean verifyEmail) {
         this.verifyEmail = verifyEmail;
+    }
+    
+    public Boolean isLoginWithEmailAllowed() {
+        return loginWithEmailAllowed;
+    }
+
+    public void setLoginWithEmailAllowed(Boolean loginWithEmailAllowed) {
+        this.loginWithEmailAllowed = loginWithEmailAllowed;
+    }
+    
+    public Boolean isDuplicateEmailsAllowed() {
+        return duplicateEmailsAllowed;
+    }
+
+    public void setDuplicateEmailsAllowed(Boolean duplicateEmailsAllowed) {
+        this.duplicateEmailsAllowed = duplicateEmailsAllowed;
     }
 
     public Boolean isResetPasswordAllowed() {

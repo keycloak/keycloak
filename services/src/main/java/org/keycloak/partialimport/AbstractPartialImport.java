@@ -42,7 +42,7 @@ public abstract class AbstractPartialImport<T> implements PartialImport<T> {
     public abstract String getName(T resourceRep);
     public abstract String getModelId(RealmModel realm, KeycloakSession session, T resourceRep);
     public abstract boolean exists(RealmModel realm, KeycloakSession session, T resourceRep);
-    public abstract String existsMessage(T resourceRep);
+    public abstract String existsMessage(RealmModel realm, T resourceRep);
     public abstract ResourceType getResourceType();
     public abstract void remove(RealmModel realm, KeycloakSession session, T resourceRep);
     public abstract void create(RealmModel realm, KeycloakSession session, T resourceRep);
@@ -59,7 +59,7 @@ public abstract class AbstractPartialImport<T> implements PartialImport<T> {
                 switch (partialImportRep.getPolicy()) {
                     case SKIP: toSkip.add(resourceRep); break;
                     case OVERWRITE: toOverwrite.add(resourceRep); break;
-                    default: throw existsError(existsMessage(resourceRep));
+                    default: throw existsError(existsMessage(realm, resourceRep));
                 }
             }
         }

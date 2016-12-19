@@ -62,12 +62,12 @@ public class RegisterTest extends TestRealmKeycloakTest {
     }
 
     @Test
-    public void registerExistingUser() {
+    public void registerExistingUsernameForbidden() {
         loginPage.open();
         loginPage.clickRegister();
         registerPage.assertCurrent();
 
-        registerPage.register("firstName", "lastName", "registerExistingUser@email", "test-user@localhost", "password", "password");
+        registerPage.register("firstName", "lastName", "registerExistingUser@email", "roleRichUser", "password", "password");
 
         registerPage.assertCurrent();
         assertEquals("Username already exists.", registerPage.getError());
@@ -80,9 +80,56 @@ public class RegisterTest extends TestRealmKeycloakTest {
         assertEquals("", registerPage.getPassword());
         assertEquals("", registerPage.getPasswordConfirm());
 
-        events.expectRegister("test-user@localhost", "registerExistingUser@email")
+        events.expectRegister("roleRichUser", "registerExistingUser@email")
                 .removeDetail(Details.EMAIL)
                 .user((String) null).error("username_in_use").assertEvent();
+    }
+ 
+    @Test
+    public void registerExistingEmailForbidden() {
+        loginPage.open();
+        loginPage.clickRegister();
+        registerPage.assertCurrent();
+
+        registerPage.register("firstName", "lastName", "test-user@localhost", "registerExistingUser", "password", "password");
+
+        registerPage.assertCurrent();
+        assertEquals("Email already exists.", registerPage.getError());
+
+        // assert form keeps form fields on error
+        assertEquals("firstName", registerPage.getFirstName());
+        assertEquals("lastName", registerPage.getLastName());
+        assertEquals("", registerPage.getEmail());
+        assertEquals("registerExistingUser", registerPage.getUsername());
+        assertEquals("", registerPage.getPassword());
+        assertEquals("", registerPage.getPasswordConfirm());
+
+        events.expectRegister("registerExistingUser", "registerExistingUser@email")
+                .removeDetail(Details.EMAIL)
+                .user((String) null).error("email_in_use").assertEvent();
+    }
+ 
+    @Test
+    public void registerExistingEmailAllowed() {
+        setDuplicateEmailsAllowed(true);
+                
+        loginPage.open();
+        loginPage.clickRegister();
+        registerPage.assertCurrent();
+
+        registerPage.register("firstName", "lastName", "test-user@localhost", "registerExistingEmailUser", "password", "password");
+
+        assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+
+        String userId = events.expectRegister("registerExistingEmailUser", "test-user@localhost").assertEvent().getUserId();
+        events.expectLogin().detail("username", "registerexistingemailuser").user(userId).assertEvent();
+
+        UserRepresentation user = getUser(userId);
+        Assert.assertNotNull(user);
+        assertEquals("registerexistingemailuser", user.getUsername());
+        assertEquals("test-user@localhost", user.getEmail());
+        assertEquals("firstName", user.getFirstName());
+        assertEquals("lastName", user.getLastName());
     }
 
     @Test
@@ -396,6 +443,12 @@ public class RegisterTest extends TestRealmKeycloakTest {
         RealmRepresentation realm = testRealm().toRepresentation();
         realm.setRegistrationEmailAsUsername(value);
         testRealm().update(realm);
+    }
+    
+    private void setDuplicateEmailsAllowed(boolean allowed) {
+        RealmRepresentation testRealm = testRealm().toRepresentation();
+        testRealm.setDuplicateEmailsAllowed(allowed);
+        testRealm().update(testRealm);
     }
 
 }

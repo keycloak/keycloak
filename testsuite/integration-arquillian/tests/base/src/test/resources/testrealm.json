@@ -100,6 +100,22 @@
       "clientRoles": {
         "test-app-scope": [ "test-app-allowed-by-scope", "test-app-disallowed-by-scope" ]
       }
+    },
+    {
+      "username" : "non-duplicate-email-user",
+      "enabled": true,
+      "email" : "non-duplicate-email-user@localhost",
+      "firstName": "Brian",
+      "lastName": "Cohen",
+      "credentials" : [
+        { "type" : "password",
+          "value" : "password" }
+      ],
+      "realmRoles": ["user", "offline_access"],
+      "clientRoles": {
+        "test-app": [ "customer-user" ],
+        "account": [ "view-profile", "manage-account" ]
+      }
     }
   ],
   "scopeMappings": [

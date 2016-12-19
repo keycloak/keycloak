@@ -29,13 +29,6 @@ import org.keycloak.connections.mongo.api.context.MongoStoreInvocationContext;
 @MongoCollection(collectionName = "users")
 public class MongoUserEntity extends UserEntity implements MongoIdentifiableEntity {
 
-    public String getEmailIndex() {
-        return getEmail() != null ? getRealmId() + "//" + getEmail() : null;
-    }
-
-    public void setEmailIndex(String ignored) {
-    }
-
     @Override
     public void afterRemove(MongoStoreInvocationContext context) {
         // Remove all consents of this user

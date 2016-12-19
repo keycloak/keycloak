@@ -292,6 +292,8 @@ public class ModelToRepresentation {
         rep.setAdminEventsDetailsEnabled(realm.isAdminEventsDetailsEnabled());
 
         rep.setVerifyEmail(realm.isVerifyEmail());
+        rep.setLoginWithEmailAllowed(realm.isLoginWithEmailAllowed());
+        rep.setDuplicateEmailsAllowed(realm.isDuplicateEmailsAllowed());
         rep.setResetPasswordAllowed(realm.isResetPasswordAllowed());
         rep.setEditUsernameAllowed(realm.isEditUsernameAllowed());
         rep.setRevokeRefreshToken(realm.isRevokeRefreshToken());

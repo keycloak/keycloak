@@ -37,6 +37,8 @@ public class RealmEntity extends AbstractIdentifiableEntity {
     protected boolean registrationEmailAsUsername;
     private boolean rememberMe;
     private boolean verifyEmail;
+    private boolean loginWithEmailAllowed;
+    private boolean duplicateEmailsAllowed;
     private boolean resetPasswordAllowed;
     private String passwordPolicy;
 
@@ -185,6 +187,22 @@ public class RealmEntity extends AbstractIdentifiableEntity {
 
     public void setVerifyEmail(boolean verifyEmail) {
         this.verifyEmail = verifyEmail;
+    }
+    
+    public boolean isLoginWithEmailAllowed() {
+        return loginWithEmailAllowed;
+    }
+
+    public void setLoginWithEmailAllowed(boolean loginWithEmailAllowed) {
+        this.loginWithEmailAllowed = loginWithEmailAllowed;
+    }
+    
+    public boolean isDuplicateEmailsAllowed() {
+        return duplicateEmailsAllowed;
+    }
+
+    public void setDuplicateEmailsAllowed(boolean duplicateEmailsAllowed) {
+        this.duplicateEmailsAllowed = duplicateEmailsAllowed;
     }
 
     public boolean isResetPasswordAllowed() {

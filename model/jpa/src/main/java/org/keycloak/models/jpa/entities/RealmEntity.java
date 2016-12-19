@@ -73,6 +73,10 @@ public class RealmEntity {
     protected boolean verifyEmail;
     @Column(name="RESET_PASSWORD_ALLOWED")
     protected boolean resetPasswordAllowed;
+    @Column(name="LOGIN_WITH_EMAIL_ALLOWED")
+    protected boolean loginWithEmailAllowed;
+    @Column(name="DUPLICATE_EMAILS_ALLOWED")
+    protected boolean duplicateEmailsAllowed;
     @Column(name="REMEMBER_ME")
     protected boolean rememberMe;
 
@@ -286,6 +290,22 @@ public class RealmEntity {
 
     public void setVerifyEmail(boolean verifyEmail) {
         this.verifyEmail = verifyEmail;
+    }
+    
+    public boolean isLoginWithEmailAllowed() {
+        return loginWithEmailAllowed;
+    }
+
+    public void setLoginWithEmailAllowed(boolean loginWithEmailAllowed) {
+        this.loginWithEmailAllowed = loginWithEmailAllowed;
+    }
+    
+    public boolean isDuplicateEmailsAllowed() {
+        return duplicateEmailsAllowed;
+    }
+
+    public void setDuplicateEmailsAllowed(boolean duplicateEmailsAllowed) {
+        this.duplicateEmailsAllowed = duplicateEmailsAllowed;
     }
 
     public boolean isResetPasswordAllowed() {

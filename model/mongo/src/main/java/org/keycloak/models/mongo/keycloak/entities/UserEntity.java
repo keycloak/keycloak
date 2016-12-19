@@ -31,6 +31,7 @@ public class UserEntity extends AbstractIdentifiableEntity {
     private String firstName;
     private String lastName;
     private String email;
+    private String emailIndex;
     private boolean emailVerified;
     private boolean enabled;
 
@@ -82,9 +83,23 @@ public class UserEntity extends AbstractIdentifiableEntity {
     public String getEmail() {
         return email;
     }
-
+    
+    @Deprecated // called upon deserialization only
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    public void setEmail(String email, boolean allowDuplicate) {
+        this.email = email;
+        this.emailIndex = email == null || allowDuplicate ? null : getRealmId() + "//" + email;
+    }
+    
+    public void setEmailIndex(String index) {
+        this.emailIndex = index;
+    }
+    
+    public String getEmailIndex() {
+        return emailIndex;
     }
 
     public boolean isEmailVerified() {

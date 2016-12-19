@@ -549,6 +549,12 @@ public class AccountTest extends TestRealmKeycloakTest {
         testRealm().update(testRealm);
     }
 
+    private void setDuplicateEmailsAllowed(boolean allowed) {
+        RealmRepresentation testRealm = testRealm().toRepresentation();
+        testRealm.setDuplicateEmailsAllowed(allowed);
+        testRealm().update(testRealm);
+    }
+
     @Test
     public void changeUsername() {
         // allow to edit the username in realm
@@ -659,7 +665,7 @@ public class AccountTest extends TestRealmKeycloakTest {
 
     // KEYCLOAK-1534
     @Test
-    public void changeEmailToExisting() {
+    public void changeEmailToExistingForbidden() {
         profilePage.open();
         loginPage.login("test-user@localhost", "password");
 
@@ -692,6 +698,24 @@ public class AccountTest extends TestRealmKeycloakTest {
         // Change email and other things to original values
         profilePage.updateProfile("Tom", "Brady", "test-user@localhost");
         events.expectAccount(EventType.UPDATE_PROFILE).assertEvent();
+    }
+ 
+    @Test
+    public void changeEmailToExistingAllowed() {
+        setDuplicateEmailsAllowed(true); 
+        
+        profilePage.open();
+        loginPage.login("test-user@localhost", "password");
+
+        events.expectLogin().client("account").detail(Details.REDIRECT_URI, ACCOUNT_REDIRECT).assertEvent();
+
+        Assert.assertEquals("test-user@localhost", profilePage.getUsername());
+        Assert.assertEquals("test-user@localhost", profilePage.getEmail());
+
+        // Change to the email, which some other user has
+        profilePage.updateProfile("New first", "New last", "test-user-no-access@localhost");
+
+        Assert.assertEquals("Your account has been updated.", profilePage.getSuccess());
     }
 
     @Test

@@ -73,7 +73,7 @@ public class RealmRolesPartialImport extends AbstractPartialImport<RoleRepresent
     }
 
     @Override
-    public String existsMessage(RoleRepresentation roleRep) {
+    public String existsMessage(RealmModel realm, RoleRepresentation roleRep) {
         return "Realm role '" + getName(roleRep) + "' already exists.";
     }
 
