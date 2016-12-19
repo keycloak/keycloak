@@ -46,8 +46,12 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -77,7 +81,7 @@ public class ResourcePermissionManagementTest extends AbstractPhotozAdminTest {
         PolicyRepresentation permission = response.readEntity(PolicyRepresentation.class);
 
         onAuthorizationSession(authorizationProvider -> {
-            Policy policyModel = authorizationProvider.getStoreFactory().getPolicyStore().findById(permission.getId());
+            Policy policyModel = authorizationProvider.getStoreFactory().getPolicyStore().findById(permission.getId(), resourceServer.getId());
 
             assertNotNull(policyModel);
             assertEquals(permission.getId(), policyModel.getId());
@@ -357,7 +361,7 @@ public class ResourcePermissionManagementTest extends AbstractPhotozAdminTest {
         PolicyRepresentation permission = response.readEntity(PolicyRepresentation.class);
 
         onAuthorizationSession(authorizationProvider -> {
-            Policy policyModel = authorizationProvider.getStoreFactory().getPolicyStore().findById(permission.getId());
+            Policy policyModel = authorizationProvider.getStoreFactory().getPolicyStore().findById(permission.getId(), resourceServer.getId());
 
             assertNotNull(policyModel);
             assertEquals(permission.getId(), policyModel.getId());
@@ -430,7 +434,8 @@ public class ResourcePermissionManagementTest extends AbstractPhotozAdminTest {
 
         config.put("defaultResourceType",  albumResource.getType());
 
-        String applyPolicies = JsonSerialization.writeValueAsString(new String[]{this.anyUserPolicy.getId(), this.administrationPolicy.getId()});
+        String[] associatedPolicies = {this.anyUserPolicy.getId(), this.administrationPolicy.getId()};
+        String applyPolicies = JsonSerialization.writeValueAsString(associatedPolicies);
 
         config.put("applyPolicies", applyPolicies);
 
@@ -443,14 +448,15 @@ public class ResourcePermissionManagementTest extends AbstractPhotozAdminTest {
         PolicyRepresentation permission = response.readEntity(PolicyRepresentation.class);
 
         onAuthorizationSession(authorizationProvider -> {
-            Policy policyModel = authorizationProvider.getStoreFactory().getPolicyStore().findById(permission.getId());
+            Policy policyModel = authorizationProvider.getStoreFactory().getPolicyStore().findById(permission.getId(), resourceServer.getId());
 
             assertNotNull(policyModel);
             assertEquals(permission.getId(), policyModel.getId());
             assertEquals(permission.getName(), policyModel.getName());
             assertEquals(permission.getType(), policyModel.getType());
             assertTrue(permission.getConfig().containsValue(albumResource.getType()));
-            assertTrue(permission.getConfig().containsValue(applyPolicies));
+            assertTrue(policyModel.getAssociatedPolicies().stream().map(Policy::getId).collect(Collectors.toList()).containsAll(Arrays.asList(associatedPolicies)));
+
             assertEquals(resourceServer.getId(), policyModel.getResourceServer().getId());
         });
 

@@ -16,7 +16,9 @@ module.factory('ResourceServerResource', function($resource) {
         rsrid : '@rsrid'
     }, {
         'update' : {method : 'PUT'},
-        'search' : {url: authUrl + '/admin/realms/:realm/clients/:client/authz/resource-server/resource/search', method : 'GET'}
+        'search' : {url: authUrl + '/admin/realms/:realm/clients/:client/authz/resource-server/resource/search', method : 'GET'},
+        'scopes' : {url: authUrl + '/admin/realms/:realm/clients/:client/authz/resource-server/resource/:rsrid/scopes', method : 'GET', isArray: true},
+        'permissions' : {url: authUrl + '/admin/realms/:realm/clients/:client/authz/resource-server/resource/:rsrid/permissions', method : 'GET', isArray: true}
     });
 });
 
@@ -27,7 +29,9 @@ module.factory('ResourceServerScope', function($resource) {
         id : '@id'
     }, {
         'update' : {method : 'PUT'},
-        'search' : {url: authUrl + '/admin/realms/:realm/clients/:client/authz/resource-server/scope/search', method : 'GET'}
+        'search' : {url: authUrl + '/admin/realms/:realm/clients/:client/authz/resource-server/scope/search', method : 'GET'},
+        'resources' : {url: authUrl + '/admin/realms/:realm/clients/:client/authz/resource-server/scope/:id/resources', method : 'GET', isArray: true},
+        'permissions' : {url: authUrl + '/admin/realms/:realm/clients/:client/authz/resource-server/scope/:id/permissions', method : 'GET', isArray: true},
     });
 });
 
@@ -38,7 +42,11 @@ module.factory('ResourceServerPolicy', function($resource) {
         id : '@id'
     }, {
         'update' : {method : 'PUT'},
-        'search' : {url: authUrl + '/admin/realms/:realm/clients/:client/authz/resource-server/policy/search', method : 'GET'}
+        'search' : {url: authUrl + '/admin/realms/:realm/clients/:client/authz/resource-server/policy/search', method : 'GET'},
+        'associatedPolicies' : {url: authUrl + '/admin/realms/:realm/clients/:client/authz/resource-server/policy/:id/associatedPolicies', method : 'GET', isArray: true},
+        'dependentPolicies' : {url: authUrl + '/admin/realms/:realm/clients/:client/authz/resource-server/policy/:id/dependentPolicies', method : 'GET', isArray: true},
+        'scopes' : {url: authUrl + '/admin/realms/:realm/clients/:client/authz/resource-server/policy/:id/scopes', method : 'GET', isArray: true},
+        'resources' : {url: authUrl + '/admin/realms/:realm/clients/:client/authz/resource-server/policy/:id/resources', method : 'GET', isArray: true}
     });
 });
 

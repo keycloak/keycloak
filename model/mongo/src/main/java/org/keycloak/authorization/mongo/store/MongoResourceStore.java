@@ -70,7 +70,7 @@ public class MongoResourceStore implements ResourceStore {
     }
 
     @Override
-    public Resource findById(String id) {
+    public Resource findById(String id, String resourceServerId) {
         ResourceEntity entity = getMongoStore().loadEntity(ResourceEntity.class, id, getInvocationContext());
 
         if (entity == null) {
@@ -81,13 +81,14 @@ public class MongoResourceStore implements ResourceStore {
     }
 
     @Override
-    public List<Resource> findByOwner(String ownerId) {
+    public List<Resource> findByOwner(String ownerId, String resourceServerId) {
         DBObject query = new QueryBuilder()
+                .and("resourceServerId").is(resourceServerId)
                 .and("owner").is(ownerId)
                 .get();
 
         return getMongoStore().loadEntities(ResourceEntity.class, query, getInvocationContext()).stream()
-                .map(scope -> findById(scope.getId())).collect(toList());
+                .map(scope -> findById(scope.getId(), resourceServerId)).collect(toList());
     }
 
     @Override
@@ -97,7 +98,7 @@ public class MongoResourceStore implements ResourceStore {
                 .get();
 
         return getMongoStore().loadEntities(ResourceEntity.class, query, getInvocationContext()).stream()
-                .map(scope -> findById(scope.getId())).collect(toList());
+                .map(scope -> findById(scope.getId(), resourceServerId)).collect(toList());
     }
 
     @Override
@@ -116,39 +117,41 @@ public class MongoResourceStore implements ResourceStore {
         DBObject sort = new BasicDBObject("name", 1);
 
         return getMongoStore().loadEntities(ResourceEntity.class, queryBuilder.get(), sort, firstResult, maxResult, invocationContext).stream()
-                .map(scope -> findById(scope.getId())).collect(toList());
+                .map(scope -> findById(scope.getId(), resourceServerId)).collect(toList());
     }
 
     @Override
-    public List<Resource> findByScope(String... id) {
+    public List<Resource> findByScope(List<String> id, String resourceServerId) {
         DBObject query = new QueryBuilder()
+                .and("resourceServerId").is(resourceServerId)
                 .and("scopes").in(id)
                 .get();
 
         return getMongoStore().loadEntities(ResourceEntity.class, query, getInvocationContext()).stream()
-                .map(policyEntity -> findById(policyEntity.getId()))
+                .map(policyEntity -> findById(policyEntity.getId(), resourceServerId))
                 .collect(toList());
     }
 
     @Override
     public Resource findByName(String name, String resourceServerId) {
         DBObject query = new QueryBuilder()
-                .and("name").is(name)
                 .and("resourceServerId").is(resourceServerId)
+                .and("name").is(name)
                 .get();
 
         return getMongoStore().loadEntities(ResourceEntity.class, query, getInvocationContext()).stream()
-                .map(policyEntity -> findById(policyEntity.getId())).findFirst().orElse(null);
+                .map(policyEntity -> findById(policyEntity.getId(), resourceServerId)).findFirst().orElse(null);
     }
 
     @Override
-    public List<Resource> findByType(String type) {
+    public List<Resource> findByType(String type, String resourceServerId) {
         DBObject query = new QueryBuilder()
+                .and("resourceServerId").is(resourceServerId)
                 .and("type").is(type)
                 .get();
 
         return getMongoStore().loadEntities(ResourceEntity.class, query, getInvocationContext()).stream()
-                .map(policyEntity -> findById(policyEntity.getId()))
+                .map(policyEntity -> findById(policyEntity.getId(), resourceServerId))
                 .collect(toList());
     }
 

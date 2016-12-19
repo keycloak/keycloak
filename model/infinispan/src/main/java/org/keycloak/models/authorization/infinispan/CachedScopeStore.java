@@ -18,6 +18,11 @@
 
 package org.keycloak.models.authorization.infinispan;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+
 import org.infinispan.Cache;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
@@ -27,11 +32,7 @@ import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.authorization.infinispan.InfinispanStoreFactoryProvider.CacheTransaction;
 import org.keycloak.models.authorization.infinispan.entities.CachedScope;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
+import org.keycloak.models.cache.authorization.CachedStoreFactoryProvider;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -39,6 +40,7 @@ import java.util.Map.Entry;
 public class CachedScopeStore implements ScopeStore {
 
     private static final String SCOPE_ID_CACHE_PREFIX = "scp-id-";
+    private static final String SCOPE_NAME_CACHE_PREFIX = "scp-name-";
 
     private final Cache<String, List> cache;
     private final KeycloakSession session;
@@ -46,11 +48,12 @@ public class CachedScopeStore implements ScopeStore {
     private ScopeStore delegate;
     private StoreFactory storeFactory;
 
-    public CachedScopeStore(KeycloakSession session, CacheTransaction transaction) {
+    public CachedScopeStore(KeycloakSession session, CacheTransaction transaction, StoreFactory storeFactory) {
         this.session = session;
         this.transaction = transaction;
         InfinispanConnectionProvider provider = session.getProvider(InfinispanConnectionProvider.class);
         this.cache = provider.getCache(InfinispanConnectionProvider.AUTHORIZATION_CACHE_NAME);
+        this.storeFactory = storeFactory;
     }
 
     @Override
@@ -65,16 +68,23 @@ public class CachedScopeStore implements ScopeStore {
     @Override
     public void delete(String id) {
         getDelegate().delete(id);
-        this.transaction.whenCommit(() -> cache.remove(getCacheKeyForScope(id)));
+        this.transaction.whenCommit(() -> {
+            List<CachedScope> scopes = cache.remove(getCacheKeyForScope(id));
+
+            if (scopes != null) {
+                CachedScope entry = scopes.get(0);
+                cache.remove(getCacheKeyForScopeName(entry.getName(), entry.getResourceServerId()));
+            }
+        });
     }
 
     @Override
-    public Scope findById(String id) {
+    public Scope findById(String id, String resourceServerId) {
         String cacheKeyForScope = getCacheKeyForScope(id);
         List<CachedScope> cached = this.cache.get(cacheKeyForScope);
 
         if (cached == null) {
-            Scope scope = getDelegate().findById(id);
+            Scope scope = getDelegate().findById(id, resourceServerId);
 
             if (scope != null) {
                 return createAdapter(updateScopeCache(scope));
@@ -88,26 +98,21 @@ public class CachedScopeStore implements ScopeStore {
 
     @Override
     public Scope findByName(String name, String resourceServerId) {
-        for (Entry entry : this.cache.entrySet()) {
-            String cacheKey = (String) entry.getKey();
+        String cacheKeyForScope = getCacheKeyForScopeName(name, resourceServerId);
+        List<String> cached = this.cache.get(cacheKeyForScope);
 
-            if (cacheKey.startsWith(SCOPE_ID_CACHE_PREFIX)) {
-                List<CachedScope> cache = (List<CachedScope>) entry.getValue();
-                CachedScope scope = cache.get(0);
+        if (cached == null) {
+            Scope scope = getDelegate().findByName(name, resourceServerId);
 
-                if (scope.getResourceServerId().equals(resourceServerId) && scope.getName().equals(name)) {
-                    return findById(scope.getId());
-                }
+            if (scope != null) {
+                cache.put(cacheKeyForScope, Arrays.asList(scope.getId()));
+                return findById(scope.getId(), resourceServerId);
             }
+
+            return null;
         }
 
-        Scope scope = getDelegate().findByName(name, resourceServerId);
-
-        if (scope != null) {
-            return findById(updateScopeCache(scope).getId());
-        }
-
-        return null;
+        return findById(cached.get(0), resourceServerId);
     }
 
     @Override
@@ -124,6 +129,10 @@ public class CachedScopeStore implements ScopeStore {
         return SCOPE_ID_CACHE_PREFIX + id;
     }
 
+    private String getCacheKeyForScopeName(String name, String resourceServerId) {
+        return SCOPE_NAME_CACHE_PREFIX + name + "-" + resourceServerId;
+    }
+
     private ScopeStore getDelegate() {
         if (this.delegate == null) {
             this.delegate = getStoreFactory().getScopeStore();
@@ -133,10 +142,6 @@ public class CachedScopeStore implements ScopeStore {
     }
 
     private StoreFactory getStoreFactory() {
-        if (this.storeFactory == null) {
-            this.storeFactory = session.getProvider(StoreFactory.class);
-        }
-
         return this.storeFactory;
     }
 
@@ -174,19 +179,26 @@ public class CachedScopeStore implements ScopeStore {
 
             @Override
             public ResourceServer getResourceServer() {
-                return getStoreFactory().getResourceServerStore().findById(cached.getResourceServerId());
+                return getCachedStoreFactory().getResourceServerStore().findById(cached.getResourceServerId());
             }
 
             private Scope getDelegateForUpdate() {
                 if (this.updated == null) {
-                    this.updated = getDelegate().findById(getId());
+                    this.updated = getDelegate().findById(getId(), cached.getResourceServerId());
                     if (this.updated == null) throw new IllegalStateException("Not found in database");
-                    transaction.whenCommit(() -> cache.remove(getCacheKeyForScope(getId())));
+                    transaction.whenCommit(() -> {
+                        cache.remove(getCacheKeyForScope(getId()));
+                        getCachedStoreFactory().getPolicyStore().notifyChange(updated);
+                    });
                 }
 
                 return this.updated;
             }
         };
+    }
+
+    private CachedStoreFactoryProvider getCachedStoreFactory() {
+        return session.getProvider(CachedStoreFactoryProvider.class);
     }
 
     private CachedScope updateScopeCache(Scope scope) {

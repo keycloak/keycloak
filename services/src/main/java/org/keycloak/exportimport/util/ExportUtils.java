@@ -17,18 +17,27 @@
 
 package org.keycloak.exportimport.util;
 
-import com.fasterxml.jackson.core.JsonEncoding;
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
+import static org.keycloak.models.utils.ModelToRepresentation.toRepresentation;
+
+import java.io.IOException;
+import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.AuthorizationProviderFactory;
 import org.keycloak.authorization.model.Policy;
+import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
+import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.store.PolicyStore;
-import org.keycloak.authorization.store.ResourceStore;
-import org.keycloak.authorization.store.ScopeStore;
 import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.common.Version;
 import org.keycloak.common.util.Base64;
@@ -63,20 +72,11 @@ import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.util.JsonSerialization;
-
-import java.io.IOException;
-import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import static org.keycloak.models.utils.ModelToRepresentation.toRepresentation;
+import com.fasterxml.jackson.core.JsonEncoding;
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -295,7 +295,6 @@ public class ExportUtils {
                         rep.getOwner().setId(null);
                     }
                     rep.setId(null);
-                    rep.setPolicies(null);
                     rep.getScopes().forEach(scopeRepresentation -> {
                         scopeRepresentation.setId(null);
                         scopeRepresentation.setIconUri(null);
@@ -338,10 +337,9 @@ public class ExportUtils {
         RealmModel realm = authorizationProvider.getRealm();
         StoreFactory storeFactory = authorizationProvider.getStoreFactory();
         try {
-            PolicyRepresentation rep = toRepresentation(policy, authorizationProvider);
+            PolicyRepresentation rep = toRepresentation(policy);
 
             rep.setId(null);
-            rep.setDependentPolicies(null);
 
             Map<String, String> config = rep.getConfig();
 
@@ -363,20 +361,18 @@ public class ExportUtils {
                 config.put("users", JsonSerialization.writeValueAsString(userIds.stream().map(userId -> userManager.getUserById(userId, realm).getUsername()).collect(Collectors.toList())));
             }
 
-            String scopes = config.get("scopes");
+            Set<Scope> scopes = policy.getScopes();
 
-            if (scopes != null && !scopes.isEmpty()) {
-                ScopeStore scopeStore = storeFactory.getScopeStore();
-                List<String> scopeIds = JsonSerialization.readValue(scopes, List.class);
-                config.put("scopes", JsonSerialization.writeValueAsString(scopeIds.stream().map(scopeId -> scopeStore.findById(scopeId).getName()).collect(Collectors.toList())));
+            if (!scopes.isEmpty()) {
+                List<String> scopeNames = scopes.stream().map(Scope::getName).collect(Collectors.toList());
+                config.put("scopes", JsonSerialization.writeValueAsString(scopeNames));
             }
 
-            String policyResources = config.get("resources");
+            Set<Resource> policyResources = policy.getResources();
 
-            if (policyResources != null && !policyResources.isEmpty()) {
-                ResourceStore resourceStore = storeFactory.getResourceStore();
-                List<String> resourceIds = JsonSerialization.readValue(policyResources, List.class);
-                config.put("resources", JsonSerialization.writeValueAsString(resourceIds.stream().map(resourceId -> resourceStore.findById(resourceId).getName()).collect(Collectors.toList())));
+            if (!policyResources.isEmpty()) {
+                List<String> resourceNames = scopes.stream().map(Scope::getName).collect(Collectors.toList());
+                config.put("resources", JsonSerialization.writeValueAsString(resourceNames));
             }
 
             Set<Policy> associatedPolicies = policy.getAssociatedPolicies();
@@ -384,8 +380,6 @@ public class ExportUtils {
             if (!associatedPolicies.isEmpty()) {
                 config.put("applyPolicies", JsonSerialization.writeValueAsString(associatedPolicies.stream().map(associated -> associated.getName()).collect(Collectors.toList())));
             }
-
-            rep.setAssociatedPolicies(null);
 
             return rep;
         } catch (Exception e) {

@@ -32,7 +32,7 @@ public interface PolicyProviderFactory extends ProviderFactory<PolicyProvider> {
 
     String getGroup();
 
-    PolicyProvider create(Policy policy, AuthorizationProvider authorization);
+    PolicyProvider create(AuthorizationProvider authorization);
 
     PolicyProviderAdminService getAdminResource(ResourceServer resourceServer);
 }

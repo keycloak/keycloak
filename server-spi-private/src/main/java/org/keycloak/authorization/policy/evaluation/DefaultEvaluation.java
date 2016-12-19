@@ -18,6 +18,7 @@
 
 package org.keycloak.authorization.policy.evaluation;
 
+import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.Decision;
 import org.keycloak.authorization.Decision.Effect;
 import org.keycloak.authorization.model.Policy;
@@ -34,37 +35,29 @@ public class DefaultEvaluation implements Evaluation {
     private final Decision decision;
     private final Policy policy;
     private final Policy parentPolicy;
+    private final AuthorizationProvider authorizationProvider;
     private Effect effect;
 
-    public DefaultEvaluation(ResourcePermission permission, EvaluationContext executionContext, Policy parentPolicy, Policy policy, Decision decision) {
+    public DefaultEvaluation(ResourcePermission permission, EvaluationContext executionContext, Policy parentPolicy, Policy policy, Decision decision, AuthorizationProvider authorizationProvider) {
         this.permission = permission;
         this.executionContext = executionContext;
         this.parentPolicy = parentPolicy;
         this.policy = policy;
         this.decision = decision;
+        this.authorizationProvider = authorizationProvider;
     }
 
-    /**
-     * Returns the {@link ResourcePermission} to be evaluated.
-     *
-     * @return the permission to be evaluated
-     */
+    @Override
     public ResourcePermission getPermission() {
         return this.permission;
     }
 
-    /**
-     * Returns the {@link org.keycloak.authorization.permission.evaluator.PermissionEvaluator}. Which provides access to the whole evaluation runtime context.
-     *
-     * @return the evaluation context
-     */
+    @Override
     public EvaluationContext getContext() {
         return this.executionContext;
     }
 
-    /**
-     * Grants all the requested permissions to the caller.
-     */
+    @Override
     public void grant() {
         if (policy != null && Logic.NEGATIVE.equals(policy.getLogic())) {
             this.effect = Effect.DENY;
@@ -75,6 +68,7 @@ public class DefaultEvaluation implements Evaluation {
         this.decision.onDecision(this);
     }
 
+    @Override
     public void deny() {
         if (policy != null && Logic.NEGATIVE.equals(policy.getLogic())) {
             this.effect = Effect.PERMIT;
@@ -85,8 +79,14 @@ public class DefaultEvaluation implements Evaluation {
         this.decision.onDecision(this);
     }
 
+    @Override
     public Policy getPolicy() {
         return this.policy;
+    }
+
+    @Override
+    public AuthorizationProvider getAuthorizationProvider() {
+        return authorizationProvider;
     }
 
     public Policy getParentPolicy() {

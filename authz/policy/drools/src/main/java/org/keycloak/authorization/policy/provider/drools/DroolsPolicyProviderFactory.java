@@ -1,5 +1,9 @@
 package org.keycloak.authorization.policy.provider.drools;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.keycloak.Config;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.Policy;
@@ -9,16 +13,9 @@ import org.keycloak.authorization.policy.provider.PolicyProviderAdminService;
 import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.utils.PostMigrationEvent;
-import org.keycloak.provider.ProviderEvent;
-import org.keycloak.provider.ProviderEventListener;
-import org.keycloak.provider.ProviderFactory;
 import org.kie.api.KieServices;
 import org.kie.api.KieServices.Factory;
 import org.kie.api.runtime.KieContainer;
-
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -26,7 +23,15 @@ import java.util.Map;
 public class DroolsPolicyProviderFactory implements PolicyProviderFactory {
 
     private KieServices ks;
-    private final Map<String, DroolsPolicy> containers = new HashMap<>();
+    private final Map<String, DroolsPolicy> containers = Collections.synchronizedMap(new HashMap<>());
+    private DroolsPolicyProvider provider = new DroolsPolicyProvider(policy -> {
+        if (!containers.containsKey(policy.getId())) {
+            synchronized (containers) {
+                update(policy);
+            }
+        }
+        return containers.get(policy.getId());
+    });
 
     @Override
     public String getName() {
@@ -39,12 +44,8 @@ public class DroolsPolicyProviderFactory implements PolicyProviderFactory {
     }
 
     @Override
-    public PolicyProvider create(Policy policy, AuthorizationProvider authorization) {
-        if (!this.containers.containsKey(policy.getId())) {
-            update(policy);
-        }
-
-        return new DroolsPolicyProvider(this.containers.get(policy.getId()));
+    public PolicyProvider create(AuthorizationProvider authorization) {
+        return provider;
     }
 
     @Override
@@ -64,19 +65,6 @@ public class DroolsPolicyProviderFactory implements PolicyProviderFactory {
 
     @Override
     public void postInit(KeycloakSessionFactory factory) {
-        factory.register(new ProviderEventListener() {
-
-            @Override
-            public void onEvent(ProviderEvent event) {
-                // Ensure the initialization is done after DB upgrade is finished
-                if (event instanceof PostMigrationEvent) {
-                    ProviderFactory<AuthorizationProvider> providerFactory = factory.getProviderFactory(AuthorizationProvider.class);
-                    AuthorizationProvider authorization = providerFactory.create(factory.create());
-                    authorization.getStoreFactory().getPolicyStore().findByType(getId()).forEach(DroolsPolicyProviderFactory.this::update);
-                }
-            }
-
-        });
     }
 
     @Override

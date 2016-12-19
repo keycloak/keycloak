@@ -57,7 +57,7 @@ public class ScopeManagementTest extends AbstractPhotozAdminTest {
         ScopeRepresentation scope = response.readEntity(ScopeRepresentation.class);
 
         onAuthorizationSession(authorizationProvider -> {
-            Scope scopeModel = authorizationProvider.getStoreFactory().getScopeStore().findById(scope.getId());
+            Scope scopeModel = authorizationProvider.getStoreFactory().getScopeStore().findById(scope.getId(), resourceServer.getId());
 
             assertNotNull(scopeModel);
             assertEquals(scope.getId(), scopeModel.getId());
@@ -86,7 +86,7 @@ public class ScopeManagementTest extends AbstractPhotozAdminTest {
         ScopeRepresentation scope = response.readEntity(ScopeRepresentation.class);
 
         onAuthorizationSession(authorizationProvider -> {
-            Scope scopeModel = authorizationProvider.getStoreFactory().getScopeStore().findById(scope.getId());
+            Scope scopeModel = authorizationProvider.getStoreFactory().getScopeStore().findById(scope.getId(), resourceServer.getId());
 
             assertNotNull(scopeModel);
             assertEquals(scope.getId(), scopeModel.getId());
@@ -138,7 +138,7 @@ public class ScopeManagementTest extends AbstractPhotozAdminTest {
         assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
 
         onAuthorizationSession(authorizationProvider -> {
-            Scope scopeModel = authorizationProvider.getStoreFactory().getScopeStore().findById(scope.getId());
+            Scope scopeModel = authorizationProvider.getStoreFactory().getScopeStore().findById(scope.getId(), resourceServer.getId());
 
             assertNull(scopeModel);
         });

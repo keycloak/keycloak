@@ -17,13 +17,13 @@
  */
 package org.keycloak.authorization.policy.provider.time;
 
-import org.keycloak.authorization.model.Policy;
-import org.keycloak.authorization.policy.evaluation.Evaluation;
-import org.keycloak.authorization.policy.provider.PolicyProvider;
-
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
+
+import org.keycloak.authorization.model.Policy;
+import org.keycloak.authorization.policy.evaluation.Evaluation;
+import org.keycloak.authorization.policy.provider.PolicyProvider;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -32,51 +32,51 @@ public class TimePolicyProvider implements PolicyProvider {
 
     static String DEFAULT_DATE_PATTERN = "yyyy-MM-dd hh:mm:ss";
 
-    private final Policy policy;
     private final SimpleDateFormat dateFormat;
     private final Date currentDate;
 
-    public TimePolicyProvider(Policy policy) {
-        this.policy = policy;
+    public TimePolicyProvider() {
         this.dateFormat = new SimpleDateFormat(DEFAULT_DATE_PATTERN);
         this.currentDate = new Date();
     }
 
     @Override
     public void evaluate(Evaluation evaluation) {
+        Policy policy = evaluation.getPolicy();
+
         try {
-            String notBefore = this.policy.getConfig().get("nbf");
-            if (notBefore != null) {
+            String notBefore = policy.getConfig().get("nbf");
+            if (notBefore != null && !"".equals(notBefore)) {
                 if (this.currentDate.before(this.dateFormat.parse(format(notBefore)))) {
                     evaluation.deny();
                     return;
                 }
             }
 
-            String notOnOrAfter = this.policy.getConfig().get("noa");
-            if (notOnOrAfter != null) {
+            String notOnOrAfter = policy.getConfig().get("noa");
+            if (notOnOrAfter != null && !"".equals(notOnOrAfter)) {
                 if (this.currentDate.after(this.dateFormat.parse(format(notOnOrAfter)))) {
                     evaluation.deny();
                     return;
                 }
             }
 
-            if (isInvalid(Calendar.DAY_OF_MONTH, "dayMonth")
-                    || isInvalid(Calendar.MONTH, "month")
-                    || isInvalid(Calendar.YEAR, "year")
-                    || isInvalid(Calendar.HOUR_OF_DAY, "hour")
-                    || isInvalid(Calendar.MINUTE, "minute")) {
+            if (isInvalid(Calendar.DAY_OF_MONTH, "dayMonth", policy)
+                    || isInvalid(Calendar.MONTH, "month", policy)
+                    || isInvalid(Calendar.YEAR, "year", policy)
+                    || isInvalid(Calendar.HOUR_OF_DAY, "hour", policy)
+                    || isInvalid(Calendar.MINUTE, "minute", policy)) {
                 evaluation.deny();
                 return;
             }
 
             evaluation.grant();
         } catch (Exception e) {
-            throw new RuntimeException("Could not evaluate time-based policy [" + this.policy.getName() + "].", e);
+            throw new RuntimeException("Could not evaluate time-based policy [" + policy.getName() + "].", e);
         }
     }
 
-    private boolean isInvalid(int timeConstant, String configName) {
+    private boolean isInvalid(int timeConstant, String configName, Policy policy) {
         Calendar calendar = Calendar.getInstance();
 
         calendar.setTime(this.currentDate);
@@ -87,9 +87,9 @@ public class TimePolicyProvider implements PolicyProvider {
             dateField++;
         }
 
-        String start = this.policy.getConfig().get(configName);
+        String start = policy.getConfig().get(configName);
         if (start != null) {
-            String end = this.policy.getConfig().get(configName + "End");
+            String end = policy.getConfig().get(configName + "End");
             if (end != null) {
                 if (dateField < Integer.parseInt(start)  || dateField > Integer.parseInt(end)) {
                     return true;

@@ -68,7 +68,7 @@ public class ResourceAdapter extends AbstractMongoAdapter<ResourceEntity> implem
     @Override
     public List<Scope> getScopes() {
         return getMongoEntity().getScopes().stream()
-                .map(id -> authorizationProvider.getStoreFactory().getScopeStore().findById(id))
+                .map(id -> authorizationProvider.getStoreFactory().getScopeStore().findById(id, getResourceServer().getId()))
                 .collect(toList());
     }
 

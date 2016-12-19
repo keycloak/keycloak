@@ -36,7 +36,7 @@ public class RealmSynchronizer implements Synchronizer<RealmRemovedEvent> {
         StoreFactory storeFactory = authorizationProvider.getStoreFactory();
 
         event.getRealm().getClients().forEach(clientModel -> {
-            ResourceServer resourceServer = storeFactory.getResourceServerStore().findByClient(clientModel.getClientId());
+            ResourceServer resourceServer = storeFactory.getResourceServerStore().findByClient(clientModel.getId());
 
             if (resourceServer != null) {
                 String id = resourceServer.getId();

@@ -53,9 +53,10 @@ public interface PolicyStore {
      * Returns a {@link Policy} with the given <code>id</code>
      *
      * @param id the identifier of the policy
+     * @param resourceServerId the resource server id
      * @return a policy with the given identifier.
      */
-    Policy findById(String id);
+    Policy findById(String id, String resourceServerId);
 
     /**
      * Returns a {@link Policy} with the given <code>name</code>
@@ -87,9 +88,10 @@ public interface PolicyStore {
      * Returns a list of {@link Policy} associated with a {@link org.keycloak.authorization.core.model.Resource} with the given <code>resourceId</code>.
      *
      * @param resourceId the identifier of a resource
+     * @param resourceServerId the resource server id
      * @return a list of policies associated with the given resource
      */
-    List<Policy> findByResource(String resourceId);
+    List<Policy> findByResource(String resourceId, String resourceServerId);
 
     /**
      * Returns a list of {@link Policy} associated with a {@link org.keycloak.authorization.core.model.Resource} with the given <code>type</code>.
@@ -113,15 +115,26 @@ public interface PolicyStore {
      * Returns a list of {@link Policy} with the given <code>type</code>.
      *
      * @param type the type of the policy
+     * @param resourceServerId the resource server id
      * @return a list of policies with the given type
      */
-    List<Policy> findByType(String type);
+    List<Policy> findByType(String type, String resourceServerId);
 
     /**
      * Returns a list of {@link Policy} that depends on another policy with the given <code>id</code>.
      *
      * @param id the id of the policy to query its dependents
+     * @param resourceServerId the resource server id
      * @return a list of policies that depends on the a policy with the given identifier
      */
-    List<Policy> findDependentPolicies(String id);
+    List<Policy> findDependentPolicies(String id, String resourceServerId);
+
+    /**
+     * Notify this store about changes to data associated with policies. E.g.: resources and scopes..
+     *
+     * TODO: need a better strategy to handle cross-references between stores, specially in cases where the store is caching data. Use some event-based solution here.
+     *
+     * @param cached
+     */
+    default void notifyChange(Object cached) {}
 }

@@ -16,15 +16,20 @@
  */
 package org.keycloak.admin.client.resource;
 
-import org.jboss.resteasy.annotations.cache.NoCache;
-import org.keycloak.representations.idm.authorization.PolicyRepresentation;
+import java.util.List;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
+
+import org.jboss.resteasy.annotations.cache.NoCache;
+import org.keycloak.representations.idm.authorization.PolicyRepresentation;
+import org.keycloak.representations.idm.authorization.ResourceRepresentation;
+import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -42,4 +47,28 @@ public interface PolicyResource {
 
     @DELETE
     void remove();
+
+    @Path("/associatedPolicies")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @NoCache
+    List<PolicyRepresentation> associatedPolicies();
+
+    @Path("/dependentPolicies")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @NoCache
+    List<PolicyRepresentation> dependentPolicies();
+
+    @Path("/scopes")
+    @GET
+    @Produces("application/json")
+    @NoCache
+    List<ScopeRepresentation> scopes();
+
+    @Path("/resources")
+    @GET
+    @Produces("application/json")
+    @NoCache
+    List<ResourceRepresentation> resources();
 }

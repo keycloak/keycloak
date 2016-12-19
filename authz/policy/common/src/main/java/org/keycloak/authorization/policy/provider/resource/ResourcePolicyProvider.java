@@ -17,7 +17,6 @@
  */
 package org.keycloak.authorization.policy.provider.resource;
 
-import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.policy.evaluation.Evaluation;
 import org.keycloak.authorization.policy.provider.PolicyProvider;
 
@@ -26,7 +25,7 @@ import org.keycloak.authorization.policy.provider.PolicyProvider;
  */
 public class ResourcePolicyProvider implements PolicyProvider {
 
-    public ResourcePolicyProvider(Policy policy) {
+    public ResourcePolicyProvider() {
 
     }
 

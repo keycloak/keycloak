@@ -17,11 +17,16 @@
 
 package org.keycloak.authorization.store.syncronization;
 
+import java.util.function.Consumer;
+
 import org.keycloak.authorization.AuthorizationProvider;
+import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.store.PolicyStore;
+import org.keycloak.authorization.store.ResourceServerStore;
 import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.UserRemovedEvent;
 import org.keycloak.provider.ProviderFactory;
@@ -39,17 +44,25 @@ public class UserSynchronizer implements Synchronizer<UserRemovedEvent> {
         UserModel userModel = event.getUser();
         ResourceStore resourceStore = storeFactory.getResourceStore();
         PolicyStore policyStore = storeFactory.getPolicyStore();
+        ResourceServerStore resourceServerStore = storeFactory.getResourceServerStore();
+        RealmModel realm = event.getRealm();
 
-        resourceStore.findByOwner(userModel.getId()).forEach(resource -> {
-            String resourceId = resource.getId();
-            policyStore.findByResource(resourceId).forEach(policy -> {
-                if (policy.getResources().size() == 1) {
-                    policyStore.delete(policy.getId());
-                } else {
-                    policy.removeResource(resource);
-                }
-            });
-            resourceStore.delete(resourceId);
+        realm.getClients().forEach(clientModel -> {
+            ResourceServer resourceServer = resourceServerStore.findByClient(clientModel.getId());
+
+            if (resourceServer != null) {
+                resourceStore.findByOwner(userModel.getId(), resourceServer.getId()).forEach(resource -> {
+                    String resourceId = resource.getId();
+                    policyStore.findByResource(resourceId, resourceServer.getId()).forEach(policy -> {
+                        if (policy.getResources().size() == 1) {
+                            policyStore.delete(policy.getId());
+                        } else {
+                            policy.removeResource(resource);
+                        }
+                    });
+                    resourceStore.delete(resourceId);
+                });
+            }
         });
     }
 }

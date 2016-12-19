@@ -39,9 +39,7 @@
                 <label class="col-md-2 control-label" for="reqActions">{{:: 'authz-resources' | translate}} <span class="required">*</span></label>
 
                 <div class="col-md-6">
-                    <select ui-select2="{ minimumInputLength: 1}" id="reqActions" data-ng-model="policy.config.resources" data-placeholder="{{:: 'authz-select-resource' | translate}}..." multiple data-ng-required="!policy.config.default">
-                        <option ng-repeat="resource in resources" value="{{resource._id}}" ng-selected="true">{{resource.name}}</option>
-                    </select>
+                    <input type="hidden" ui-select2="resourcesUiSelect" id="reqActions" data-ng-model="policy.config.resources" data-placeholder="{{:: 'authz-select-resource' | translate}}..." data-ng-required="!policy.config.default"/>
                 </div>
                 <kc-tooltip>{{:: 'authz-permission-resource-resource.tooltip' | translate}}</kc-tooltip>
             </div>
@@ -58,9 +56,7 @@
                 <label class="col-md-2 control-label" for="reqActions">{{:: 'authz-policy-apply-policy' | translate}} <span class="required">*</span></label>
 
                 <div class="col-md-6">
-                    <select ui-select2 id="reqActions" data-ng-model="policy.config.applyPolicies" data-placeholder="{{:: 'authz-select-a-policy' | translate}}..." multiple required>
-                        <option ng-repeat="policy in policies" value="{{policy.id}}" ng-selected="true">{{policy.name}}</option>
-                    </select>
+                    <input type="hidden" ui-select2="policiesUiSelect" id="reqActions" data-ng-model="policy.config.applyPolicies" data-placeholder="{{:: 'authz-select-a-policy' | translate}}..." multiple required />
                 </div>
 
                 <kc-tooltip>{{:: 'authz-policy-apply-policy.tooltip' | translate}}</kc-tooltip>
