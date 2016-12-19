@@ -36,6 +36,11 @@ public class KerberosRule extends LDAPRule {
     private final String configLocation;
 
     public KerberosRule(String configLocation) {
+        this(configLocation, null);
+    }
+
+    public KerberosRule(String configLocation, LDAPRuleCondition condition) {
+        super(condition);
         this.configLocation = configLocation;
 
         // Global kerberos configuration

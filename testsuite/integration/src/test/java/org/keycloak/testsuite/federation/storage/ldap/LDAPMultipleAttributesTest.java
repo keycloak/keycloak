@@ -56,6 +56,7 @@ import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -66,7 +67,15 @@ public class LDAPMultipleAttributesTest {
     protected String APP_SERVER_BASE_URL = "http://localhost:8081";
     protected String LOGIN_URL = OIDCLoginProtocolService.authUrl(UriBuilder.fromUri(APP_SERVER_BASE_URL + "/auth")).build("test").toString();
 
-    private static LDAPRule ldapRule = new LDAPRule();
+
+    // Skip this test on MSAD due to lack of supported user multivalued attributes
+    private static LDAPRule ldapRule = new LDAPRule((Map<String, String> ldapConfig) -> {
+
+        String vendor = ldapConfig.get(LDAPConstants.VENDOR);
+        return (vendor.equals(LDAPConstants.VENDOR_ACTIVE_DIRECTORY));
+
+    });
+
 
     private static ComponentModel ldapModel = null;
 
