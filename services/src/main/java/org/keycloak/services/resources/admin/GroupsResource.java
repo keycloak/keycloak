@@ -39,6 +39,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.net.URI;
 import java.util.List;
+import org.keycloak.services.ErrorResponse;
 
 /**
  * @author Bill Burke
@@ -102,6 +103,12 @@ public class GroupsResource {
     public Response addTopLevelGroup(GroupRepresentation rep) {
         auth.requireManage();
 
+        for (GroupModel group : realm.getGroups()) {
+            if (group.getName().equals(rep.getName())) {
+                return ErrorResponse.exists("Top level group named '" + rep.getName() + "' already exists.");
+            }
+        }
+        
         GroupModel child = null;
         Response.ResponseBuilder builder = Response.status(204);
         if (rep.getId() != null) {
