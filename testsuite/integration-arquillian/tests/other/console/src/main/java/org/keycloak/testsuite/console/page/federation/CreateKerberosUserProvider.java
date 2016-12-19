@@ -13,7 +13,7 @@ public class CreateKerberosUserProvider extends AdminConsoleCreate {
     private KerberosUserProviderForm form;
 
     public CreateKerberosUserProvider() {
-        setEntity("user-federation");
+        setEntity("user-storage");
     }
 
     @Override
