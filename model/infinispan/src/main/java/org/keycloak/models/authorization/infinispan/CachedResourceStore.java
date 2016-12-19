@@ -310,12 +310,7 @@ public class CachedResourceStore implements ResourceStore {
             return Collections.emptyList();
         }
 
-        return cached.stream().map(new Function<CachedResource, Resource>() {
-            @Override
-            public Resource apply(CachedResource cached) {
-                return findById(cached.getId(), cached.getResourceServerId());
-            }
-        }).collect(Collectors.toList());
+        return cached.stream().map(this::createAdapter).collect(Collectors.toList());
     }
 
     private void invalidateCache(String resourceServerId) {

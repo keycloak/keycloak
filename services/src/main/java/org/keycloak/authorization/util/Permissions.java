@@ -61,8 +61,8 @@ public final class Permissions {
         StoreFactory storeFactory = authorization.getStoreFactory();
         ResourceStore resourceStore = storeFactory.getResourceStore();
 
-        resourceStore.findByOwner(resourceServer.getClientId(), resourceServer.getId()).stream().forEach(resource -> permissions.addAll(createResourcePermissions(resource, resource.getScopes().stream().map(Scope::getName).collect(Collectors.toSet()), authorization)));
-        resourceStore.findByOwner(identity.getId(), resourceServer.getId()).stream().forEach(resource -> permissions.addAll(createResourcePermissions(resource, resource.getScopes().stream().map(Scope::getName).collect(Collectors.toSet()), authorization)));
+        resourceStore.findByOwner(resourceServer.getClientId(), resourceServer.getId()).stream().forEach(resource -> permissions.addAll(createResourcePermissionsWithScopes(resource, resource.getScopes(), authorization)));
+        resourceStore.findByOwner(identity.getId(), resourceServer.getId()).stream().forEach(resource -> permissions.addAll(createResourcePermissionsWithScopes(resource, resource.getScopes(), authorization)));
 
         return permissions;
     }
@@ -101,6 +101,32 @@ public final class Permissions {
 
                 return byName;
             }).collect(Collectors.toList());
+        }
+
+        permissions.add(new ResourcePermission(resource, scopes, resource.getResourceServer()));
+
+        return permissions;
+    }
+
+    public static List<ResourcePermission> createResourcePermissionsWithScopes(Resource resource, List<Scope> scopes, AuthorizationProvider authorization) {
+        List<ResourcePermission> permissions = new ArrayList<>();
+        String type = resource.getType();
+        ResourceServer resourceServer = resource.getResourceServer();
+
+        // check if there is a typed resource whose scopes are inherited by the resource being requested. In this case, we assume that parent resource
+        // is owned by the resource server itself
+        if (type != null && !resource.getOwner().equals(resourceServer.getClientId())) {
+            StoreFactory storeFactory = authorization.getStoreFactory();
+            ResourceStore resourceStore = storeFactory.getResourceStore();
+            resourceStore.findByType(type, resourceServer.getId()).forEach(resource1 -> {
+                if (resource1.getOwner().equals(resourceServer.getClientId())) {
+                    for (Scope typeScope : resource1.getScopes()) {
+                        if (!scopes.contains(typeScope)) {
+                            scopes.add(typeScope);
+                        }
+                    }
+                }
+            });
         }
 
         permissions.add(new ResourcePermission(resource, scopes, resource.getResourceServer()));

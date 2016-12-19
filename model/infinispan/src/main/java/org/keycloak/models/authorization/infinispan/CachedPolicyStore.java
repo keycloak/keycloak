@@ -419,7 +419,7 @@ public class CachedPolicyStore implements PolicyStore {
             List<Policy> result = provider.get();
 
             if (result.isEmpty()) {
-                return null;
+                return Collections.emptyList();
             }
 
             return result.stream().map(policy -> new CachedPolicy(policy)).collect(Collectors.toList());
@@ -429,11 +429,6 @@ public class CachedPolicyStore implements PolicyStore {
             return Collections.emptyList();
         }
 
-        return cached.stream().map(new Function<CachedPolicy, Policy>() {
-            @Override
-            public Policy apply(CachedPolicy cachedPolicy) {
-                return findById(cachedPolicy.getId(), cachedPolicy.getResourceServerId());
-            }
-        }).collect(Collectors.toList());
+        return cached.stream().map(cachedPolicy -> createAdapter(cachedPolicy)).collect(Collectors.toList());
     }
 }
