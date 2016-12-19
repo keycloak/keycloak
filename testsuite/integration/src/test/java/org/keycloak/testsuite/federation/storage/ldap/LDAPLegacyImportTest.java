@@ -69,6 +69,7 @@ import org.openqa.selenium.WebDriver;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 
@@ -80,7 +81,11 @@ import static org.junit.Assert.assertEquals;
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class LDAPLegacyImportTest {
 
-    private static LDAPRule ldapRule = new LDAPRule();
+    // This test is executed just for the embedded LDAP server
+    private static LDAPRule ldapRule = new LDAPRule((Map<String, String> ldapConfig) -> {
+        String connectionURL = ldapConfig.get(LDAPConstants.CONNECTION_URL);
+        return !"ldap://localhost:10389".equals(connectionURL);
+    });
 
     private static ComponentModel ldapModel = null;
 
