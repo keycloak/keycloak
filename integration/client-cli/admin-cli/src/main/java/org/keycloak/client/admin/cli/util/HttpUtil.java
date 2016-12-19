@@ -308,7 +308,7 @@ public class HttpUtil {
     }
 
     public static String composeResourceUrl(String adminRoot, String realm, String uri) {
-        if (!uri.startsWith("http:")) {
+        if (!uri.startsWith("http:") && !uri.startsWith("https:")) {
             if ("realms".equals(uri) || uri.startsWith("realms/")) {
                 uri = normalize(adminRoot) + uri;
             } else if ("serverinfo".equals(uri)) {
