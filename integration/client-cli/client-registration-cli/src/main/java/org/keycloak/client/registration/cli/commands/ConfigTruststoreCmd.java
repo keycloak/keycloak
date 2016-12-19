@@ -1,3 +1,19 @@
+/*
+ * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.keycloak.client.registration.cli.commands;
 
 import org.jboss.aesh.cl.CommandDefinition;
@@ -153,7 +169,7 @@ public class ConfigTruststoreCmd extends AbstractAuthOptionsCmd implements Comma
     public static String usage() {
         StringWriter sb = new StringWriter();
         PrintWriter out = new PrintWriter(sb);
-        out.println("Usage: " + CMD + " config truststore [TRUSTSTORE | --delete] [--trustpass PASSWOD] [ARGUMENTS]");
+        out.println("Usage: " + CMD + " config truststore [TRUSTSTORE | --delete] [--trustpass PASSWORD] [ARGUMENTS]");
         out.println();
         out.println("Command to configure a global truststore to use when using https to connect to Keycloak server.");
         out.println();
@@ -174,7 +190,7 @@ public class ConfigTruststoreCmd extends AbstractAuthOptionsCmd implements Comma
         out.println("Specify a truststore - you will be prompted for truststore password every time it is used:");
         out.println("  " + PROMPT + " " + CMD + " config truststore " + OS_ARCH.path("~/.keycloak/truststore.jks"));
         out.println();
-        out.println("Specify a truststore, and password - truststore will automatically without prompting for password:");
+        out.println("Specify a truststore, and password - truststore will automatically be used without prompting for password:");
         out.println("  " + PROMPT + " " + CMD + " config truststore --storepass " + OS_ARCH.envVar("PASSWORD") + " " + OS_ARCH.path("~/.keycloak/truststore.jks"));
         out.println();
         out.println("Remove truststore configuration:");

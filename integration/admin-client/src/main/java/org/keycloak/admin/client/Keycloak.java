@@ -43,18 +43,22 @@ import static org.keycloak.OAuth2Constants.PASSWORD;
 public class Keycloak {
     private final Config config;
     private final TokenManager tokenManager;
+    private String authToken;
     private final ResteasyWebTarget target;
     private final ResteasyClient client;
 
-    Keycloak(String serverUrl, String realm, String username, String password, String clientId, String clientSecret, String grantType, ResteasyClient resteasyClient) {
+    Keycloak(String serverUrl, String realm, String username, String password, String clientId, String clientSecret, String grantType, ResteasyClient resteasyClient, String authtoken) {
         config = new Config(serverUrl, realm, username, password, clientId, clientSecret, grantType);
         client = resteasyClient != null ? resteasyClient : new ResteasyClientBuilder().connectionPoolSize(10).build();
-
-        tokenManager = new TokenManager(config, client);
+        authToken = authtoken;
+        tokenManager = authtoken == null ? new TokenManager(config, client) : null;
 
         target = client.target(config.getServerUrl());
+        target.register(newAuthFilter());
+    }
 
-        target.register(new BearerAuthFilter(tokenManager));
+    private BearerAuthFilter newAuthFilter() {
+        return authToken != null ? new BearerAuthFilter(authToken) : new BearerAuthFilter(tokenManager);
     }
 
     public static Keycloak getInstance(String serverUrl, String realm, String username, String password, String clientId, String clientSecret, SSLContext sslContext) {
@@ -63,15 +67,19 @@ public class Keycloak {
                 .hostnameVerification(ResteasyClientBuilder.HostnameVerificationPolicy.WILDCARD)
                 .connectionPoolSize(10).build();
 
-        return new Keycloak(serverUrl, realm, username, password, clientId, clientSecret, PASSWORD, client);
+        return new Keycloak(serverUrl, realm, username, password, clientId, clientSecret, PASSWORD, client, null);
     }
 
     public static Keycloak getInstance(String serverUrl, String realm, String username, String password, String clientId, String clientSecret) {
-        return new Keycloak(serverUrl, realm, username, password, clientId, clientSecret, PASSWORD, null);
+        return new Keycloak(serverUrl, realm, username, password, clientId, clientSecret, PASSWORD, null, null);
     }
 
     public static Keycloak getInstance(String serverUrl, String realm, String username, String password, String clientId) {
-        return new Keycloak(serverUrl, realm, username, password, clientId, null, PASSWORD, null);
+        return new Keycloak(serverUrl, realm, username, password, clientId, null, PASSWORD, null, null);
+    }
+
+    public static Keycloak getInstance(String serverUrl, String realm, String clientId, String authtoken) {
+        return new Keycloak(serverUrl, realm, null, null, clientId, null, PASSWORD, null, null);
     }
 
     public RealmsResource realms() {
@@ -100,7 +108,7 @@ public class Keycloak {
      * @return
      */
     public <T> T proxy(Class<T> proxyClass, URI absoluteURI) {
-        return client.target(absoluteURI).register(new BearerAuthFilter(tokenManager)).proxy(proxyClass);
+        return client.target(absoluteURI).register(newAuthFilter()).proxy(proxyClass);
     }
 
     /**

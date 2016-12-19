@@ -1,4 +1,4 @@
-package org.keycloak.testsuite.cli;
+package org.keycloak.testsuite.cli.exec;
 
 /**
  * @author <a href="mailto:marko.strukelj@gmail.com">Marko Strukelj</a>
