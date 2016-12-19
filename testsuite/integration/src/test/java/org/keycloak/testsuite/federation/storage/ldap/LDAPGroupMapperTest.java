@@ -111,8 +111,8 @@ public class LDAPGroupMapperTest {
             LDAPObject group12 = LDAPTestUtils.createLDAPGroup(manager.getSession(), appRealm, ldapModel, "group12", descriptionAttrName, "group12 - description");
             LDAPObject groupSpecialCharacters = LDAPTestUtils.createLDAPGroup(manager.getSession(), appRealm, ldapModel, "group-spec,ia*l_characžter)s", descriptionAttrName, "group-special-characters");
 
-            LDAPUtils.addMember(ldapFedProvider, MembershipType.DN, LDAPConstants.MEMBER, group1, group11, false);
-            LDAPUtils.addMember(ldapFedProvider, MembershipType.DN, LDAPConstants.MEMBER, group1, group12, true);
+            LDAPUtils.addMember(ldapFedProvider, MembershipType.DN, LDAPConstants.MEMBER, "not-used", group1, group11, false);
+            LDAPUtils.addMember(ldapFedProvider, MembershipType.DN, LDAPConstants.MEMBER, "not-used", group1, group12, true);
 
             // Sync LDAP groups to Keycloak DB
             ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(appRealm, ldapModel, "groupsMapper");
@@ -366,14 +366,14 @@ public class LDAPGroupMapperTest {
 
             // 2 - Add one existing user rob to LDAP group
             LDAPObject jamesLdap = ldapProvider.loadLDAPUserByUsername(appRealm, "jameskeycloak");
-            LDAPUtils.addMember(ldapProvider, MembershipType.DN, LDAPConstants.MEMBER, group2, jamesLdap, false);
+            LDAPUtils.addMember(ldapProvider, MembershipType.DN, LDAPConstants.MEMBER, "not-used", group2, jamesLdap, false);
 
             // 3 - Add non-existing user to LDAP group
             LDAPDn nonExistentDn = LDAPDn.fromString(ldapProvider.getLdapIdentityStore().getConfig().getUsersDn());
             nonExistentDn.addFirst(jamesLdap.getRdnAttributeName(), "nonexistent");
             LDAPObject nonExistentLdapUser = new LDAPObject();
             nonExistentLdapUser.setDn(nonExistentDn);
-            LDAPUtils.addMember(ldapProvider, MembershipType.DN, LDAPConstants.MEMBER, group2, nonExistentLdapUser, true);
+            LDAPUtils.addMember(ldapProvider, MembershipType.DN, LDAPConstants.MEMBER, "not-used", group2, nonExistentLdapUser, true);
 
             // 4 - Check group members. Just existing user rob should be present
             groupMapper.syncDataFromFederationProviderToKeycloak(appRealm);

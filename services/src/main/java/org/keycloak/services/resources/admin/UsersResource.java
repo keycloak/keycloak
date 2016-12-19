@@ -233,6 +233,7 @@ public class UsersResource {
             if (session.getTransactionManager().isActive()) {
                 session.getTransactionManager().setRollbackOnly();
             }
+            logger.warn("Could not create user", me);
             return ErrorResponse.exists("Could not create user");
         }
     }

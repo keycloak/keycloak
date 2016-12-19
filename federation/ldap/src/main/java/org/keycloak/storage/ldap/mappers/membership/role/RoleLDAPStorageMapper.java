@@ -27,6 +27,7 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.RoleUtils;
 import org.keycloak.models.utils.UserModelDelegate;
+import org.keycloak.storage.ldap.LDAPConfig;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
 import org.keycloak.storage.ldap.LDAPUtils;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
@@ -252,11 +253,14 @@ public class RoleLDAPStorageMapper extends AbstractLDAPStorageMapper implements 
             ldapRole = createLDAPRole(roleName);
         }
 
-        LDAPUtils.addMember(ldapProvider, config.getMembershipTypeLdapAttribute(), config.getMembershipLdapAttribute(), ldapRole, ldapUser, true);
+        String membershipUserAttrName = getMembershipUserLdapAttribute();
+
+        LDAPUtils.addMember(ldapProvider, config.getMembershipTypeLdapAttribute(), config.getMembershipLdapAttribute(), membershipUserAttrName, ldapRole, ldapUser, true);
     }
 
     public void deleteRoleMappingInLDAP(LDAPObject ldapUser, LDAPObject ldapRole) {
-        LDAPUtils.deleteMember(ldapProvider, config.getMembershipTypeLdapAttribute(), config.getMembershipLdapAttribute(), ldapRole, ldapUser);
+        String membershipUserAttrName = getMembershipUserLdapAttribute();
+        LDAPUtils.deleteMember(ldapProvider, config.getMembershipTypeLdapAttribute(), config.getMembershipLdapAttribute(), membershipUserAttrName, ldapRole, ldapUser);
     }
 
     public LDAPObject loadLDAPRoleByName(String roleName) {
@@ -269,7 +273,9 @@ public class RoleLDAPStorageMapper extends AbstractLDAPStorageMapper implements 
     protected List<LDAPObject> getLDAPRoleMappings(LDAPObject ldapUser) {
         String strategyKey = config.getUserRolesRetrieveStrategy();
         UserRolesRetrieveStrategy strategy = factory.getUserRolesRetrieveStrategy(strategyKey);
-        return strategy.getLDAPRoleMappings(this, ldapUser);
+
+        LDAPConfig ldapConfig = ldapProvider.getLdapIdentityStore().getConfig();
+        return strategy.getLDAPRoleMappings(this, ldapUser, ldapConfig);
     }
 
     @Override
@@ -291,6 +297,11 @@ public class RoleLDAPStorageMapper extends AbstractLDAPStorageMapper implements 
         strategy.beforeUserLDAPQuery(query);
     }
 
+
+    protected String getMembershipUserLdapAttribute() {
+        LDAPConfig ldapConfig = ldapProvider.getLdapIdentityStore().getConfig();
+        return config.getMembershipUserLdapAttribute(ldapConfig);
+    }
 
 
     public class LDAPRoleMappingsUserDelegate extends UserModelDelegate {
@@ -422,8 +433,12 @@ public class RoleLDAPStorageMapper extends AbstractLDAPStorageMapper implements 
                 LDAPQuery ldapQuery = createRoleQuery();
                 LDAPQueryConditionsBuilder conditionsBuilder = new LDAPQueryConditionsBuilder();
                 Condition roleNameCondition = conditionsBuilder.equal(config.getRoleNameLdapAttribute(), role.getName());
-                String membershipUserAttr = LDAPUtils.getMemberValueOfChildObject(ldapUser, config.getMembershipTypeLdapAttribute());
+
+                String membershipUserAttrName = getMembershipUserLdapAttribute();
+                String membershipUserAttr = LDAPUtils.getMemberValueOfChildObject(ldapUser, config.getMembershipTypeLdapAttribute(), membershipUserAttrName);
+
                 Condition membershipCondition = conditionsBuilder.equal(config.getMembershipLdapAttribute(), membershipUserAttr);
+
                 ldapQuery.addWhereCondition(roleNameCondition).addWhereCondition(membershipCondition);
                 LDAPObject ldapRole = ldapQuery.getFirstResult();
 

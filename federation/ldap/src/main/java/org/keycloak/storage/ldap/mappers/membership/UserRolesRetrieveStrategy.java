@@ -19,6 +19,7 @@ package org.keycloak.storage.ldap.mappers.membership;
 
 
 import org.keycloak.models.LDAPConstants;
+import org.keycloak.storage.ldap.LDAPConfig;
 import org.keycloak.storage.ldap.LDAPUtils;
 import org.keycloak.storage.ldap.idm.model.LDAPDn;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
@@ -39,7 +40,7 @@ import java.util.Set;
 public interface UserRolesRetrieveStrategy {
 
 
-    List<LDAPObject> getLDAPRoleMappings(CommonLDAPGroupMapper roleOrGroupMapper, LDAPObject ldapUser);
+    List<LDAPObject> getLDAPRoleMappings(CommonLDAPGroupMapper roleOrGroupMapper, LDAPObject ldapUser, LDAPConfig ldapConfig);
 
     void beforeUserLDAPQuery(LDAPQuery query);
 
@@ -52,11 +53,12 @@ public interface UserRolesRetrieveStrategy {
     class LoadRolesByMember implements UserRolesRetrieveStrategy {
 
         @Override
-        public List<LDAPObject> getLDAPRoleMappings(CommonLDAPGroupMapper roleOrGroupMapper, LDAPObject ldapUser) {
+        public List<LDAPObject> getLDAPRoleMappings(CommonLDAPGroupMapper roleOrGroupMapper, LDAPObject ldapUser, LDAPConfig ldapConfig) {
             LDAPQuery ldapQuery = roleOrGroupMapper.createLDAPGroupQuery();
             String membershipAttr = roleOrGroupMapper.getConfig().getMembershipLdapAttribute();
 
-            String userMembership = LDAPUtils.getMemberValueOfChildObject(ldapUser, roleOrGroupMapper.getConfig().getMembershipTypeLdapAttribute());
+            String membershipUserAttrName = roleOrGroupMapper.getConfig().getMembershipUserLdapAttribute(ldapConfig);
+            String userMembership = LDAPUtils.getMemberValueOfChildObject(ldapUser, roleOrGroupMapper.getConfig().getMembershipTypeLdapAttribute(), membershipUserAttrName);
 
             Condition membershipCondition = getMembershipCondition(membershipAttr, userMembership);
             ldapQuery.addWhereCondition(membershipCondition);
@@ -79,7 +81,7 @@ public interface UserRolesRetrieveStrategy {
     class GetRolesFromUserMemberOfAttribute implements UserRolesRetrieveStrategy {
 
         @Override
-        public List<LDAPObject> getLDAPRoleMappings(CommonLDAPGroupMapper roleOrGroupMapper, LDAPObject ldapUser) {
+        public List<LDAPObject> getLDAPRoleMappings(CommonLDAPGroupMapper roleOrGroupMapper, LDAPObject ldapUser, LDAPConfig ldapConfig) {
             Set<String> memberOfValues = ldapUser.getAttributeAsSet(LDAPConstants.MEMBER_OF);
             if (memberOfValues == null) {
                 return Collections.emptyList();
