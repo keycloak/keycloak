@@ -34,7 +34,6 @@ import org.keycloak.models.KeyManager;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.protocol.oidc.utils.JWKSHttpUtils;
 import org.keycloak.representations.KeyStoreConfig;
 import org.keycloak.representations.idm.CertificateRepresentation;
 import org.keycloak.services.ErrorResponseException;
@@ -374,8 +373,8 @@ public class ClientAttributeCertificateResource {
 
             if (config.isRealmCertificate() == null || config.isRealmCertificate().booleanValue()) {
                 KeyManager keys = session.keys();
-                String kid = keys.getActiveKey(realm).getKid();
-                Certificate certificate = keys.getCertificate(realm, kid);
+                String kid = keys.getActiveRsaKey(realm).getKid();
+                Certificate certificate = keys.getRsaCertificate(realm, kid);
                 String certificateAlias = config.getRealmAlias();
                 if (certificateAlias == null) certificateAlias = realm.getName();
                 keyStore.setCertificateEntry(certificateAlias, certificate);

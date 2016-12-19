@@ -131,7 +131,7 @@ public class AbstractPermissionService {
     }
 
     private String createPermissionTicket(List<ResourceRepresentation> resources) {
-        KeyManager.ActiveKey keys = this.authorization.getKeycloakSession().keys().getActiveKey(this.authorization.getRealm());
+        KeyManager.ActiveRsaKey keys = this.authorization.getKeycloakSession().keys().getActiveRsaKey(this.authorization.getRealm());
         return new JWSBuilder().kid(keys.getKid()).jsonContent(new PermissionTicket(resources, this.resourceServer.getId(), this.identity.getAccessToken()))
                 .rsa256(keys.getPrivateKey());
     }

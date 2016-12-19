@@ -18,6 +18,7 @@
 package org.keycloak.keys;
 
 import org.keycloak.component.ComponentModel;
+import org.keycloak.jose.jws.AlgorithmType;
 import org.keycloak.models.RealmModel;
 
 import java.security.KeyPair;
@@ -30,7 +31,7 @@ import java.util.List;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public abstract class AbstractRsaKeyProvider implements KeyProvider {
+public abstract class AbstractRsaKeyProvider implements RsaKeyProvider {
 
     private final boolean enabled;
 
@@ -77,11 +78,11 @@ public abstract class AbstractRsaKeyProvider implements KeyProvider {
     }
 
     @Override
-    public final List<KeyMetadata> getKeyMetadata() {
+    public final List<RsaKeyMetadata> getKeyMetadata() {
         String kid = keys.getKid();
         PublicKey publicKey = keys.getKeyPair().getPublic();
         if (kid != null && publicKey != null) {
-            KeyMetadata k = new KeyMetadata();
+            RsaKeyMetadata k = new RsaKeyMetadata();
             k.setProviderId(model.getId());
             k.setProviderPriority(model.get(Attributes.PRIORITY_KEY, 0l));
             k.setKid(kid);
@@ -92,7 +93,6 @@ public abstract class AbstractRsaKeyProvider implements KeyProvider {
             } else {
                 k.setStatus(KeyMetadata.Status.DISABLED);
             }
-            k.setType(KeyMetadata.Type.RSA);
             k.setPublicKey(publicKey);
             k.setCertificate(keys.getCertificate());
             return Collections.singletonList(k);

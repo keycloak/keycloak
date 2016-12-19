@@ -44,6 +44,13 @@ public interface Attributes {
     ProviderConfigProperty CERTIFICATE_PROPERTY = new ProviderConfigProperty(CERTIFICATE_KEY, "X509 Certificate", "X509 Certificate encoded in PEM format", FILE_TYPE, null);
 
     String KEY_SIZE_KEY = "keySize";
-    ProviderConfigProperty KEY_SIZE_PROPERTY = new ProviderConfigProperty(KEY_SIZE_KEY, "Keysize", "Size for the generated keys (1024, 2048 or 4096)", LIST_TYPE, "2048", "1024", "2048", "4096");
+    ProviderConfigProperty KEY_SIZE_PROPERTY = new ProviderConfigProperty(KEY_SIZE_KEY, "Key size", "Size for the generated keys", LIST_TYPE, "2048", "1024", "2048", "4096");
+
+    String KID_KEY = "kid";
+
+    String SECRET_KEY = "secret";
+
+    String SECRET_SIZE_KEY = "secretSize";
+    ProviderConfigProperty SECRET_SIZE_PROPERTY = new ProviderConfigProperty(SECRET_SIZE_KEY, "Secret size", "Size in bytes for the generated secret", LIST_TYPE, "32", "32", "64", "128", "256", "512");
 
 }

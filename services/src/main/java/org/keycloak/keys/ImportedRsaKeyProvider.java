@@ -31,9 +31,9 @@ import java.security.cert.X509Certificate;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class RsaKeyProvider extends AbstractRsaKeyProvider {
+public class ImportedRsaKeyProvider extends AbstractRsaKeyProvider {
 
-    public RsaKeyProvider(RealmModel realm, ComponentModel model) {
+    public ImportedRsaKeyProvider(RealmModel realm, ComponentModel model) {
         super(realm, model);
     }
 

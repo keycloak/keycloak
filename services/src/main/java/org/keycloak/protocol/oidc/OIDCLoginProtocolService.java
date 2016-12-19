@@ -26,6 +26,7 @@ import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKBuilder;
 import org.keycloak.keys.KeyMetadata;
+import org.keycloak.keys.RsaKeyMetadata;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.endpoints.AuthorizationEndpoint;
@@ -187,11 +188,11 @@ public class OIDCLoginProtocolService {
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     public Response certs() {
-        List<KeyMetadata> publicKeys = session.keys().getKeys(realm, false);
+        List<RsaKeyMetadata> publicKeys = session.keys().getRsaKeys(realm, false);
         JWK[] keys = new JWK[publicKeys.size()];
 
         int i = 0;
-        for (KeyMetadata k : publicKeys) {
+        for (RsaKeyMetadata k : publicKeys) {
             keys[i++] = JWKBuilder.create().kid(k.getKid()).rs256(k.getPublicKey());
         }
 

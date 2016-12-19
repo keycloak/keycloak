@@ -15,13 +15,11 @@
  * limitations under the License.
  */
 
-package org.keycloak.provider;
+package org.keycloak.keys;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public interface Provider {
-
-    void close();
+public class HmacKeyMetadata extends KeyMetadata {
 
 }

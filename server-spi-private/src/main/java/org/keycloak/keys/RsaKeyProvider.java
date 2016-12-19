@@ -28,26 +28,33 @@ import java.util.List;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public interface KeyProvider<T extends KeyMetadata> extends Provider {
+public interface RsaKeyProvider extends KeyProvider<RsaKeyMetadata> {
+
+    default AlgorithmType getType() {
+        return AlgorithmType.RSA;
+    }
 
     /**
-     * Returns the algorithm type the keys can be used for
+     * Return the private key for the active keypair, or <code>null</code> if no active key is available.
      *
      * @return
      */
-    AlgorithmType getType();
+    PrivateKey getPrivateKey();
 
     /**
-     * Return the KID for the active keypair, or <code>null</code> if no active key is available.
+     * Return the public key for the specified kid, or <code>null</code> if the kid is unknown.
      *
+     * @param kid
      * @return
      */
-    String getKid();
+    PublicKey getPublicKey(String kid);
 
     /**
-     * Return metadata about all keypairs held by the provider
+     * Return the certificate for the specified kid, or <code>null</code> if the kid is unknown.
+     *
+     * @param kid
      * @return
      */
-    List<T> getKeyMetadata();
+    X509Certificate getCertificate(String kid);
 
 }

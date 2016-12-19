@@ -19,6 +19,7 @@ package org.keycloak.protocol.saml.installation;
 
 import org.keycloak.Config;
 import org.keycloak.common.util.PemUtils;
+import org.keycloak.keys.RsaKeyMetadata;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -87,11 +88,11 @@ public class SamlIDPDescriptorClientInstallation implements ClientInstallationPr
         }
 
         // keys
-        Set<KeyMetadata> keys = new TreeSet<>((o1, o2) -> o1.getStatus() == o2.getStatus() // Status can be only PASSIVE OR ACTIVE, push PASSIVE to end of list
+        Set<RsaKeyMetadata> keys = new TreeSet<>((o1, o2) -> o1.getStatus() == o2.getStatus() // Status can be only PASSIVE OR ACTIVE, push PASSIVE to end of list
           ? (int) (o2.getProviderPriority() - o1.getProviderPriority())
           : (o1.getStatus() == KeyMetadata.Status.PASSIVE ? 1 : -1));
-        keys.addAll(session.keys().getKeys(realm, false));
-        for (KeyMetadata key : keys) {
+        keys.addAll(session.keys().getRsaKeys(realm, false));
+        for (RsaKeyMetadata key : keys) {
             addKeyInfo(sb, key, KeyTypes.SIGNING.value());
         }
 
@@ -100,7 +101,7 @@ public class SamlIDPDescriptorClientInstallation implements ClientInstallationPr
         return sb.toString();
     }
 
-    private static void addKeyInfo(StringBuilder target, KeyMetadata key, String purpose) {
+    private static void addKeyInfo(StringBuilder target, RsaKeyMetadata key, String purpose) {
         if (key == null) {
             return;
         }

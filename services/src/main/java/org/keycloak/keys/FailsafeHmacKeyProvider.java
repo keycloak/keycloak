@@ -20,38 +20,36 @@ package org.keycloak.keys;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.Time;
+import org.keycloak.models.utils.KeycloakModelUtils;
 
-import java.security.KeyPair;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.security.cert.X509Certificate;
+import javax.crypto.SecretKey;
 import java.util.Collections;
 import java.util.List;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class FailsafeRsaKeyProvider implements RsaKeyProvider {
+public class FailsafeHmacKeyProvider implements HmacKeyProvider {
 
-    private static final Logger logger = Logger.getLogger(FailsafeRsaKeyProvider.class);
+    private static final Logger logger = Logger.getLogger(FailsafeHmacKeyProvider.class);
 
     private static String KID;
 
-    private static KeyPair KEY_PAIR;
+    private static SecretKey KEY;
 
     private static long EXPIRES;
 
-    private KeyPair keyPair;
+    private SecretKey key;
 
     private String kid;
 
-    public FailsafeRsaKeyProvider() {
+    public FailsafeHmacKeyProvider() {
         logger.errorv("No active keys found, using failsafe provider, please login to admin console to add keys. Clustering is not supported.");
 
-        synchronized (FailsafeRsaKeyProvider.class) {
+        synchronized (FailsafeHmacKeyProvider.class) {
             if (EXPIRES < Time.currentTime()) {
-                KEY_PAIR = KeyUtils.generateRsaKeyPair(2048);
-                KID = KeyUtils.createKeyId(KEY_PAIR.getPublic());
+                KEY = KeyUtils.loadSecretKey(KeycloakModelUtils.generateSecret(32));
+                KID = KeycloakModelUtils.generateId();
                 EXPIRES = Time.currentTime() + 60 * 10;
 
                 if (EXPIRES > 0) {
@@ -60,7 +58,7 @@ public class FailsafeRsaKeyProvider implements RsaKeyProvider {
             }
 
             kid = KID;
-            keyPair = KEY_PAIR;
+            key = KEY;
         }
     }
 
@@ -70,22 +68,17 @@ public class FailsafeRsaKeyProvider implements RsaKeyProvider {
     }
 
     @Override
-    public PrivateKey getPrivateKey() {
-        return keyPair.getPrivate();
+    public SecretKey getSecretKey() {
+        return key;
     }
 
     @Override
-    public PublicKey getPublicKey(String kid) {
-        return kid.equals(this.kid) ? keyPair.getPublic() : null;
+    public SecretKey getSecretKey(String kid) {
+        return kid.equals(this.kid) ? key : null;
     }
 
     @Override
-    public X509Certificate getCertificate(String kid) {
-        return null;
-    }
-
-    @Override
-    public List<RsaKeyMetadata> getKeyMetadata() {
+    public List<HmacKeyMetadata> getKeyMetadata() {
         return Collections.emptyList();
     }
 

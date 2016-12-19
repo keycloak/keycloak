@@ -28,14 +28,13 @@ import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.keys.Attributes;
+import org.keycloak.keys.GeneratedHmacKeyProviderFactory;
 import org.keycloak.keys.KeyProvider;
-import org.keycloak.keys.RsaKeyProviderFactory;
-import org.keycloak.representations.UserInfo;
+import org.keycloak.keys.ImportedRsaKeyProviderFactory;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.KeysMetadataRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.pages.AppPage;
@@ -237,12 +236,24 @@ public class KeyRotationTest extends AbstractKeycloakTest {
         ComponentRepresentation rep = new ComponentRepresentation();
         rep.setName("mycomponent");
         rep.setParentId("test");
-        rep.setProviderId(RsaKeyProviderFactory.ID);
+        rep.setProviderId(ImportedRsaKeyProviderFactory.ID);
         rep.setProviderType(KeyProvider.class.getName());
 
         org.keycloak.common.util.MultivaluedHashMap config = new org.keycloak.common.util.MultivaluedHashMap();
         config.addFirst("priority", priority);
         config.addFirst(Attributes.PRIVATE_KEY_KEY, privateKeyPem);
+        rep.setConfig(config);
+
+        adminClient.realm("test").components().add(rep);
+
+        rep = new ComponentRepresentation();
+        rep.setName("mycomponent2");
+        rep.setParentId("test");
+        rep.setProviderId(GeneratedHmacKeyProviderFactory.ID);
+        rep.setProviderType(KeyProvider.class.getName());
+
+        config = new org.keycloak.common.util.MultivaluedHashMap();
+        config.addFirst("priority", priority);
         rep.setConfig(config);
 
         adminClient.realm("test").components().add(rep);
@@ -259,13 +270,16 @@ public class KeyRotationTest extends AbstractKeycloakTest {
     }
 
     private void dropKeys(String priority) {
+        int r = 0;
         for (ComponentRepresentation c : adminClient.realm("test").components().query("test", KeyProvider.class.getName())) {
             if (c.getConfig().getFirst("priority").equals(priority)) {
                 adminClient.realm("test").components().component(c.getId()).remove();
-                return;
+                r++;
             }
         }
-        throw new RuntimeException("Failed to find keys1");
+        if (r != 2) {
+            throw new RuntimeException("Failed to find keys1");
+        }
     }
 
     private void assertUserInfo(String token, int expectedStatus) {

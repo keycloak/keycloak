@@ -15,13 +15,16 @@
  * limitations under the License.
  */
 
-package org.keycloak.provider;
+package org.keycloak.jose.jws;
 
 /**
- * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
+ * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
+ * @version $Revision: 1 $
  */
-public interface Provider {
+public enum AlgorithmType {
 
-    void close();
+    RSA,
+    HMAC,
+    ECDSA
 
 }

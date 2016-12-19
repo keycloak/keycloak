@@ -30,8 +30,7 @@ import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.keys.Attributes;
 import org.keycloak.keys.KeyProvider;
-import org.keycloak.keys.RsaKeyProviderFactory;
-import org.keycloak.protocol.saml.SamlClient;
+import org.keycloak.keys.ImportedRsaKeyProviderFactory;
 import org.keycloak.protocol.saml.SamlConfigAttributes;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.protocol.saml.mappers.AttributeStatementHelper;
@@ -452,7 +451,7 @@ public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAd
         ComponentRepresentation rep = new ComponentRepresentation();
         rep.setName("mycomponent");
         rep.setParentId("demo");
-        rep.setProviderId(RsaKeyProviderFactory.ID);
+        rep.setProviderId(ImportedRsaKeyProviderFactory.ID);
         rep.setProviderType(KeyProvider.class.getName());
 
         org.keycloak.common.util.MultivaluedHashMap config = new org.keycloak.common.util.MultivaluedHashMap();
