@@ -22,6 +22,7 @@ import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.AuthorizationService;
 import org.keycloak.common.ClientConnection;
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.ClientModel;
@@ -264,7 +265,7 @@ public class RealmsResource {
 
     @Path("{realm}/authz")
     public Object getAuthorizationService(@PathParam("realm") String name) {
-        ProfileHelper.requirePreview();
+        ProfileHelper.requireFeature(Profile.Feature.AUTHORIZATION);
 
         init(name);
         AuthorizationProvider authorization = this.session.getProvider(AuthorizationProvider.class);

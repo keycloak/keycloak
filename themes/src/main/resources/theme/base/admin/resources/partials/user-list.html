@@ -31,7 +31,7 @@
             <th class="w-15">{{:: 'email' | translate}}</th>
             <th class="w-15">{{:: 'last-name' | translate}}</th>
             <th class="w-15">{{:: 'first-name' | translate}}</th>
-            <th colspan="{{access.impersonation == true ? '3' : '2'}}">{{:: 'actions' | translate}}</th>
+            <th colspan="{{serverInfo.profileInfo.disabledFeatures.indexOf('IMPERSONATION') == -1 && access.impersonation == true ? '3' : '2'}}">{{:: 'actions' | translate}}</th>
         </tr>
         </thead>
         <tfoot data-ng-show="users && (users.length >= query.max || query.first > 0)">
@@ -53,7 +53,7 @@
             <td class="clip">{{user.lastName}}</td>
             <td class="clip">{{user.firstName}}</td>
             <td class="kc-action-cell" kc-open="/realms/{{realm.realm}}/users/{{user.id}}">{{:: 'edit' | translate}}</td>
-            <td data-ng-show="access.impersonation" class="kc-action-cell" data-ng-click="impersonate(user.id)">{{:: 'impersonate' | translate}}</td>
+            <td data-ng-show="serverInfo.profileInfo.disabledFeatures.indexOf('IMPERSONATION') == -1 && access.impersonation" class="kc-action-cell" data-ng-click="impersonate(user.id)">{{:: 'impersonate' | translate}}</td>
             <td data-ng-show="access.manageUsers" class="kc-action-cell" data-ng-click="removeUser(user)">{{:: 'delete' | translate}}</td>
         </tr>
         <tr data-ng-show="!users || users.length == 0">

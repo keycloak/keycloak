@@ -27,9 +27,9 @@ import javax.ws.rs.core.Response;
  */
 public class ProfileHelper {
 
-    public static void requirePreview() {
-        if (!Profile.isPreviewEnabled()) {
-            throw new WebApplicationException("Feature not available in current profile", Response.Status.NOT_IMPLEMENTED);
+    public static void requireFeature(Profile.Feature feature) {
+        if (!Profile.isFeatureEnabled(feature)) {
+            throw new WebApplicationException("Feature not enabled", Response.Status.NOT_IMPLEMENTED);
         }
     }
 

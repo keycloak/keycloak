@@ -164,7 +164,7 @@ public class ClientResource {
 
         RepresentationToModel.updateClient(rep, client);
 
-        if (Profile.isPreviewEnabled()) {
+        if (Profile.isFeatureEnabled(Profile.Feature.AUTHORIZATION)) {
             if (TRUE.equals(rep.getAuthorizationServicesEnabled())) {
                 authorization().enable();
             } else {
@@ -190,7 +190,7 @@ public class ClientResource {
 
         ClientRepresentation representation = ModelToRepresentation.toRepresentation(client);
 
-        if (Profile.isPreviewEnabled()) {
+        if (Profile.isFeatureEnabled(Profile.Feature.AUTHORIZATION)) {
             representation.setAuthorizationServicesEnabled(authorization().isEnabled());
         }
 
@@ -577,7 +577,7 @@ public class ClientResource {
 
     @Path("/authz")
     public AuthorizationService authorization() {
-        ProfileHelper.requirePreview();
+        ProfileHelper.requireFeature(Profile.Feature.AUTHORIZATION);
 
         AuthorizationService resource = new AuthorizationService(this.session, this.client, this.auth);
 
