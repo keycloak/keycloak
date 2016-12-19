@@ -276,7 +276,7 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
     @Override
     public void setEmail(String email) {
         email = KeycloakModelUtils.toLowerCaseSafe(email);
-        user.setEmail(email);
+        user.setEmail(email, realm.isDuplicateEmailsAllowed());
     }
 
     @Override

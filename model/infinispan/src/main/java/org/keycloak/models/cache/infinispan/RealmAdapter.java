@@ -306,6 +306,30 @@ public class RealmAdapter implements CachedRealmModel {
     }
 
     @Override
+    public boolean isLoginWithEmailAllowed() {
+        if (isUpdated()) return updated.isLoginWithEmailAllowed();
+        return cached.isLoginWithEmailAllowed();
+    }
+
+    @Override
+    public void setLoginWithEmailAllowed(boolean loginWithEmailAllowed) {
+        getDelegateForUpdate();
+        updated.setLoginWithEmailAllowed(loginWithEmailAllowed);
+    }
+    
+    @Override
+    public boolean isDuplicateEmailsAllowed() {
+        if (isUpdated()) return updated.isDuplicateEmailsAllowed();
+        return cached.isDuplicateEmailsAllowed();
+    }
+
+    @Override
+    public void setDuplicateEmailsAllowed(boolean duplicateEmailsAllowed) {
+        getDelegateForUpdate();
+        updated.setDuplicateEmailsAllowed(duplicateEmailsAllowed);
+    }
+
+    @Override
     public boolean isResetPasswordAllowed() {
         if (isUpdated()) return updated.isResetPasswordAllowed();
         return cached.isResetPasswordAllowed();

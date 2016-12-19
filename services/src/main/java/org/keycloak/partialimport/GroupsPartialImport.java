@@ -59,7 +59,7 @@ public class GroupsPartialImport extends AbstractPartialImport<GroupRepresentati
     }
 
     @Override
-    public String existsMessage(GroupRepresentation groupRep) {
+    public String existsMessage(RealmModel realm, GroupRepresentation groupRep) {
         return "Group '" + groupRep.getPath() + "' already exists";
     }
 

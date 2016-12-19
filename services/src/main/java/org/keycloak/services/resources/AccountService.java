@@ -400,7 +400,7 @@ public class AccountService extends AbstractSecuredLocalService {
             String email = formData.getFirst("email");
             String oldEmail = user.getEmail();
             boolean emailChanged = oldEmail != null ? !oldEmail.equals(email) : email != null;
-            if (emailChanged) {
+            if (emailChanged && !realm.isDuplicateEmailsAllowed()) {
                 UserModel existing = session.users().getUserByEmail(email, realm);
                 if (existing != null && !existing.getId().equals(user.getId())) {
                     throw new ModelDuplicateException(Messages.EMAIL_EXISTS);
@@ -419,9 +419,11 @@ public class AccountService extends AbstractSecuredLocalService {
             }
 
             if (realm.isRegistrationEmailAsUsername()) {
-                UserModel existing = session.users().getUserByEmail(email, realm);
-                if (existing != null && !existing.getId().equals(user.getId())) {
-                    throw new ModelDuplicateException(Messages.USERNAME_EXISTS);
+                if (!realm.isDuplicateEmailsAllowed()) {
+                    UserModel existing = session.users().getUserByEmail(email, realm);
+                    if (existing != null && !existing.getId().equals(user.getId())) {
+                        throw new ModelDuplicateException(Messages.USERNAME_EXISTS);
+                    }
                 }
                 user.setUsername(email);
             }

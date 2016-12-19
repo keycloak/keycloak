@@ -188,14 +188,14 @@ public final class KeycloakModelUtils {
     }
 
     /**
-     * Try to find user by username or email
+     * Try to find user by username or email for authentication
      *
      * @param realm    realm
      * @param username username or email of user
      * @return found user
      */
     public static UserModel findUserByNameOrEmail(KeycloakSession session, RealmModel realm, String username) {
-        if (username.indexOf('@') != -1) {
+        if (realm.isLoginWithEmailAllowed() && username.indexOf('@') != -1) {
             UserModel user = session.users().getUserByEmail(username, realm);
             if (user != null) {
                 return user;

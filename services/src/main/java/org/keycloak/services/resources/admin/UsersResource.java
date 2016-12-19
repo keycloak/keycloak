@@ -208,7 +208,7 @@ public class UsersResource {
         if (session.users().getUserByUsername(rep.getUsername(), realm) != null) {
             return ErrorResponse.exists("User exists with same username");
         }
-        if (rep.getEmail() != null && session.users().getUserByEmail(rep.getEmail(), realm) != null) {
+        if (rep.getEmail() != null && !realm.isDuplicateEmailsAllowed() && session.users().getUserByEmail(rep.getEmail(), realm) != null) {
             return ErrorResponse.exists("User exists with same email");
         }
 

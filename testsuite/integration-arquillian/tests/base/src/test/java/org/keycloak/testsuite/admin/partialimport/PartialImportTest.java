@@ -87,6 +87,7 @@ public class PartialImportTest extends AbstractAuthTest {
     public void initAdminEvents() {
         RealmRepresentation realmRep = RealmBuilder.edit(testRealmResource().toRepresentation()).testEventListener().build();
         realmId = realmRep.getId();
+        realmRep.setDuplicateEmailsAllowed(false);
         adminClient.realm(realmRep.getRealm()).update(realmRep);
 
         piRep = new PartialImportRepresentation();
@@ -319,6 +320,40 @@ public class PartialImportTest extends AbstractAuthTest {
             assertTrue(user.getUsername().startsWith(USER_PREFIX));
             Assert.assertTrue(userIds.contains(id));
         }
+    }
+
+    @Test
+    public void testAddUsersWithDuplicateEmailsForbidden() {
+        assertAdminEvents.clear();
+
+        setFail();
+        addUsers();
+        
+        UserRepresentation user = createUserRepresentation(USER_PREFIX + 999, USER_PREFIX + 1 + "@foo.com", "foo", "bar", true);
+        piRep.getUsers().add(user);
+
+        Response response = testRealmResource().partialImport(piRep);
+        assertEquals(409, response.getStatus());
+    }
+    
+    @Test
+    public void testAddUsersWithDuplicateEmailsAllowed() {
+        
+        RealmRepresentation realmRep = new RealmRepresentation();
+        realmRep.setDuplicateEmailsAllowed(true);
+        adminClient.realm(realmId).update(realmRep);
+                
+        assertAdminEvents.clear();
+
+        setFail();
+        addUsers();
+        doImport();
+        
+        UserRepresentation user = createUserRepresentation(USER_PREFIX + 999, USER_PREFIX + 1 + "@foo.com", "foo", "bar", true);
+        piRep.setUsers(Arrays.asList(user));
+        
+        PartialImportResults results = doImport();
+        assertEquals(1, results.getAdded());
     }
 
     @Test

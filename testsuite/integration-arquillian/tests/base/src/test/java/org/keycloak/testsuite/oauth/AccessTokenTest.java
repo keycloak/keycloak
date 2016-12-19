@@ -93,6 +93,7 @@ import static org.keycloak.testsuite.admin.ApiUtil.findUserByUsername;
 import static org.keycloak.testsuite.admin.ApiUtil.findUserByUsernameId;
 import static org.keycloak.testsuite.util.OAuthClient.AUTH_SERVER_ROOT;
 import static org.keycloak.testsuite.util.ProtocolMapperUtil.createRoleNameMapper;
+import org.openqa.selenium.By;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -134,6 +135,13 @@ public class AccessTokenTest extends AbstractKeycloakTest {
 
         testRealms.add(realm);
 
+    }
+    
+    @Test
+    public void loginFormUsernameOrEmailLabel() throws Exception {
+        oauth.openLoginForm();
+        
+        assertEquals("Username or email", driver.findElement(By.xpath("//label[@for='username']")).getText());
     }
 
     @Test

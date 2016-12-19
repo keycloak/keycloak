@@ -34,9 +34,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.RequiredCredentialModel;
 
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -61,6 +58,8 @@ public class CachedRealm extends AbstractExtendableRevisioned {
     protected boolean registrationEmailAsUsername;
     protected boolean rememberMe;
     protected boolean verifyEmail;
+    protected boolean loginWithEmailAllowed;
+    protected boolean duplicateEmailsAllowed;
     protected boolean resetPasswordAllowed;
     protected boolean identityFederationEnabled;
     protected boolean editUsernameAllowed;
@@ -150,6 +149,8 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         registrationEmailAsUsername = model.isRegistrationEmailAsUsername();
         rememberMe = model.isRememberMe();
         verifyEmail = model.isVerifyEmail();
+        loginWithEmailAllowed = model.isLoginWithEmailAllowed();
+        duplicateEmailsAllowed = model.isDuplicateEmailsAllowed();
         resetPasswordAllowed = model.isResetPasswordAllowed();
         identityFederationEnabled = model.isIdentityFederationEnabled();
         editUsernameAllowed = model.isEditUsernameAllowed();
@@ -339,6 +340,14 @@ public class CachedRealm extends AbstractExtendableRevisioned {
 
     public boolean isVerifyEmail() {
         return verifyEmail;
+    }
+    
+    public boolean isLoginWithEmailAllowed() {
+        return loginWithEmailAllowed;
+    }
+    
+    public boolean isDuplicateEmailsAllowed() {
+        return duplicateEmailsAllowed;
     }
 
     public boolean isResetPasswordAllowed() {

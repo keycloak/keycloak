@@ -60,6 +60,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
+import org.keycloak.models.mongo.keycloak.entities.UserEntity;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -111,13 +112,13 @@ public class MongoUserProvider implements UserProvider, UserCredentialStore {
                 .and("email").is(email.toLowerCase())
                 .and("realmId").is(realm.getId())
                 .get();
-        MongoUserEntity user = getMongoStore().loadSingleEntity(MongoUserEntity.class, query, invocationContext);
+        List<MongoUserEntity> users = getMongoStore().loadEntities(MongoUserEntity.class, query, invocationContext);
 
-        if (user == null) {
-            return null;
-        } else {
-            return new UserAdapter(session, realm, user, invocationContext);
-        }
+        if (users.isEmpty()) return null;
+        
+        ensureEmailConstraint(users, realm);
+        
+        return new UserAdapter(session, realm, users.get(0), invocationContext);
     }
 
     @Override
@@ -816,5 +817,27 @@ public class MongoUserProvider implements UserProvider, UserCredentialStore {
         }
         if (update) getMongoStore().updateEntity(mongoUser, invocationContext);
         return credModel;
+    }
+
+    // Could override this to provide a custom behavior.
+    protected void ensureEmailConstraint(List<MongoUserEntity> users, RealmModel realm) {
+        MongoUserEntity user = users.get(0);
+        
+        if (users.size() > 1) {
+            // Realm settings have been changed from allowing duplicate emails to not allowing them
+            // but duplicates haven't been removed.
+            throw new ModelDuplicateException("Multiple users with email '" + user.getEmail() + "' exist in Keycloak.");
+        }
+        
+        if (realm.isDuplicateEmailsAllowed()) {
+            return;
+        }
+     
+        if (user.getEmail() != null && user.getEmailIndex() == null) {
+            // Realm settings have been changed from allowing duplicate emails to not allowing them.
+            // We need to update the email index to reflect this change in the user entities.
+            user.setEmail(user.getEmail(), false);
+            getMongoStore().updateEntity(user, invocationContext);
+        }  
     }
 }

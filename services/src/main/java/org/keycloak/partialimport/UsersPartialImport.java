@@ -60,10 +60,12 @@ public class UsersPartialImport extends AbstractPartialImport<UserRepresentation
         String userName = user.getUsername();
         if (userName != null) {
             return session.users().getUserByUsername(userName, realm).getId();
-        } else {
+        } else if (!realm.isDuplicateEmailsAllowed()) {
             String email = user.getEmail();
             return session.users().getUserByEmail(email, realm).getId();
         }
+        
+        return null;
     }
 
     @Override
@@ -76,13 +78,13 @@ public class UsersPartialImport extends AbstractPartialImport<UserRepresentation
     }
 
     private boolean userEmailExists(RealmModel realm, KeycloakSession session, UserRepresentation user) {
-        return (user.getEmail() != null) &&
+        return (user.getEmail() != null) && !realm.isDuplicateEmailsAllowed() &&
                (session.users().getUserByEmail(user.getEmail(), realm) != null);
     }
 
     @Override
-    public String existsMessage(UserRepresentation user) {
-        if (user.getEmail() == null) {
+    public String existsMessage(RealmModel realm, UserRepresentation user) {
+        if (user.getEmail() == null || !realm.isDuplicateEmailsAllowed()) {
             return "User with user name " + getName(user) + " already exists.";
         }
 
@@ -97,12 +99,13 @@ public class UsersPartialImport extends AbstractPartialImport<UserRepresentation
     @Override
     public void remove(RealmModel realm, KeycloakSession session, UserRepresentation user) {
         UserModel userModel = session.users().getUserByUsername(user.getUsername(), realm);
-        if (userModel == null) {
+        if (userModel == null && !realm.isDuplicateEmailsAllowed()) {
             userModel = session.users().getUserByEmail(user.getEmail(), realm);
         }
-
-        boolean success = new UserManager(session).removeUser(realm, userModel);
-        if (!success) throw new RuntimeException("Unable to overwrite user " + getName(user));
+        if (userModel != null) {
+            boolean success = new UserManager(session).removeUser(realm, userModel);
+            if (!success) throw new RuntimeException("Unable to overwrite user " + getName(user));
+        }
     }
 
     @Override

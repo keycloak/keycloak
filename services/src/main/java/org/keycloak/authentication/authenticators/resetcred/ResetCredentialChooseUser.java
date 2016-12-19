@@ -80,10 +80,11 @@ public class ResetCredentialChooseUser implements Authenticator, AuthenticatorFa
             context.failureChallenge(AuthenticationFlowError.INVALID_USER, challenge);
             return;
         }
-
-        UserModel user = context.getSession().users().getUserByUsername(username, context.getRealm());
-        if (user == null && username.contains("@")) {
-            user =  context.getSession().users().getUserByEmail(username, context.getRealm());
+        
+        RealmModel realm = context.getRealm();
+        UserModel user = context.getSession().users().getUserByUsername(username, realm);
+        if (user == null && realm.isLoginWithEmailAllowed() && username.contains("@")) {
+            user =  context.getSession().users().getUserByEmail(username, realm);
         }
 
         context.getClientSession().setNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME, username);

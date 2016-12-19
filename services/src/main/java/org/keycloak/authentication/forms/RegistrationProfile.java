@@ -83,7 +83,7 @@ public class RegistrationProfile implements FormAction, FormActionFactory {
             emailValid = false;
         }
 
-        if (emailValid && context.getSession().users().getUserByEmail(email, context.getRealm()) != null) {
+        if (emailValid && !context.getRealm().isDuplicateEmailsAllowed() && context.getSession().users().getUserByEmail(email, context.getRealm()) != null) {
             eventError = Errors.EMAIL_IN_USE;
             formData.remove(Validation.FIELD_EMAIL);
             context.getEvent().detail(Details.EMAIL, email);

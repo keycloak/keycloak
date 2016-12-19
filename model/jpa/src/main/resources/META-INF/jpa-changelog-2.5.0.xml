@@ -96,5 +96,16 @@
         <addUniqueConstraint columnNames="NAME,CLIENT_REALM_CONSTRAINT" constraintName="UK_J3RWUVD56ONTGSUHOGM184WW2-2" tableName="KEYCLOAK_ROLE"/>
         <modifyDataType tableName="KEYCLOAK_ROLE" columnName="DESCRIPTION" newDataType="NVARCHAR(255)"/>
     </changeSet>
+    
+    <changeSet author="slawomir@dabek.name" id="2.5.0-duplicate-email-support">
+        <addColumn tableName="REALM">
+            <column name="LOGIN_WITH_EMAIL_ALLOWED" type="BOOLEAN" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+            <column name="DUPLICATE_EMAILS_ALLOWED" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
 
 </databaseChangeLog>

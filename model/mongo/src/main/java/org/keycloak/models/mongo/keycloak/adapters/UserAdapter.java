@@ -124,8 +124,7 @@ public class UserAdapter extends AbstractMongoAdapter<MongoUserEntity> implement
     @Override
     public void setEmail(String email) {
         email = KeycloakModelUtils.toLowerCaseSafe(email);
-
-        user.setEmail(email);
+        user.setEmail(email, realm.isDuplicateEmailsAllowed());
         updateUser();
     }
 

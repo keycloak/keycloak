@@ -55,7 +55,7 @@ public class IdentityProvidersPartialImport extends AbstractPartialImport<Identi
     }
 
     @Override
-    public String existsMessage(IdentityProviderRepresentation idpRep) {
+    public String existsMessage(RealmModel realm, IdentityProviderRepresentation idpRep) {
         return "Identity Provider '" + getName(idpRep) + "' already exists.";
     }
 
