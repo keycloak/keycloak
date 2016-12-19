@@ -108,6 +108,13 @@ bearer-only::
   This is _OPTIONAL_.
   The default value is _false_.
 
+autodetect-bearer-only::
+  This should be set to __true__ if your application serves both a web application and web services (e.g. SOAP or REST).  
+  It allows you to redirect unauthenticated users of the web application to the Keycloak login page,
+  but send an HTTP `401` status code to unauthenticated SOAP or REST clients instead as they would not understand a redirect to the login page.
+  Keycloak auto-detects SOAP or REST clients based on typical headers like `X-Requested-With`, `SOAPAction` or `Accept`.
+  The default value is _false_.
+
 enable-basic-auth::
   This tells the adapter to also support basic authentication. If this option is enabled, then _secret_ must also be provided.
   This is _OPTIONAL_.
