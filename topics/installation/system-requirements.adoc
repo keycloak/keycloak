@@ -13,4 +13,6 @@ These are the requirements to run the {{book.project.name}} authentication serve
 * Network multicast support on your machine if you want to run in a cluster.  {{book.project.name}} can
  be clustered without multicast, but this requires a bunch of configuration changes.  Please see
  the <<fake/../../clustering.adoc#_clustering,clustering>> section of this guide for more information.
-
+* On Linux, it is recommended to use `/dev/urandom` as a source of random data to prevent {{book.project.name}} hanging due to lack of available
+  entropy, unless `/dev/random` usage is mandated by your security policy. To achieve that on Oracle JDK 8 and OpenJDK 8, set the `java.security.egd`
+  system property on startup to `file:/dev/urandom`.
