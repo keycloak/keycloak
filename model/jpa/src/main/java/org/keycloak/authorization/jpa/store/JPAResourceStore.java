@@ -104,6 +104,16 @@ public class JPAResourceStore implements ResourceStore {
     }
 
     @Override
+    public List<Resource> findByUri(String uri, String resourceServerId) {
+        Query query = entityManager.createQuery("from ResourceEntity where resourceServer.id = :serverId and uri = :uri");
+
+        query.setParameter("uri", uri);
+        query.setParameter("serverId", resourceServerId);
+
+        return query.getResultList();
+    }
+
+    @Override
     public List findByResourceServer(String resourceServerId) {
         Query query = entityManager.createQuery("from ResourceEntity where resourceServer.id = :serverId");
 
