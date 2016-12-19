@@ -90,11 +90,6 @@ public class GroupMapperConfig extends CommonLDAPGroupMapperConfig {
         return AbstractLDAPStorageMapper.parseBooleanParameter(mapperModel, PRESERVE_GROUP_INHERITANCE);
     }
 
-    public String getMembershipLdapAttribute() {
-        String membershipAttrName = mapperModel.getConfig().getFirst(MEMBERSHIP_LDAP_ATTRIBUTE);
-        return membershipAttrName!=null ? membershipAttrName : LDAPConstants.MEMBER;
-    }
-
     public Collection<String> getGroupObjectClasses(LDAPStorageProvider ldapProvider) {
         String objectClasses = mapperModel.getConfig().getFirst(GROUP_OBJECT_CLASSES);
         if (objectClasses == null) {

@@ -57,7 +57,7 @@ public enum MembershipType {
         protected Set<LDAPDn> getLDAPMembersWithParent(LDAPObject ldapGroup, String membershipLdapAttribute, LDAPDn requiredParentDn) {
             Set<String> allMemberships = LDAPUtils.getExistingMemberships(membershipLdapAttribute, ldapGroup);
 
-            // Filter and keep just groups
+            // Filter and keep just descendants of requiredParentDn
             Set<LDAPDn> result = new HashSet<>();
             for (String membership : allMemberships) {
                 LDAPDn childDn = LDAPDn.fromString(membership);
@@ -135,6 +135,9 @@ public enum MembershipType {
 
         @Override
         public List<UserModel> getGroupMembers(RealmModel realm, GroupLDAPStorageMapper groupMapper, LDAPObject ldapGroup, int firstResult, int maxResults) {
+            LDAPStorageProvider ldapProvider = groupMapper.getLdapProvider();
+            LDAPConfig ldapConfig = ldapProvider.getLdapIdentityStore().getConfig();
+
             String memberAttrName = groupMapper.getConfig().getMembershipLdapAttribute();
             Set<String> memberUids = LDAPUtils.getExistingMemberships(memberAttrName, ldapGroup);
 
@@ -146,7 +149,34 @@ public enum MembershipType {
             int max = Math.min(memberUids.size(), firstResult + maxResults);
             uids = uids.subList(firstResult, max);
 
-            return groupMapper.getLdapProvider().loadUsersByUsernames(uids, realm);
+            String membershipUserAttrName = groupMapper.getConfig().getMembershipUserLdapAttribute(ldapConfig);
+
+            List<String> usernames;
+            if (membershipUserAttrName.equals(ldapConfig.getUsernameLdapAttribute())) {
+                usernames = uids; // Optimized version. No need to
+            } else {
+                usernames = new LinkedList<>();
+
+                LDAPQuery query = LDAPUtils.createQueryForUserSearch(ldapProvider, realm);
+                LDAPQueryConditionsBuilder conditionsBuilder = new LDAPQueryConditionsBuilder();
+
+                Condition[] orSubconditions = new Condition[uids.size()];
+                int index = 0;
+                for (String memberUid : uids) {
+                    Condition condition = conditionsBuilder.equal(membershipUserAttrName, memberUid, EscapeStrategy.DEFAULT);
+                    orSubconditions[index] = condition;
+                    index++;
+                }
+                Condition orCondition = conditionsBuilder.orCondition(orSubconditions);
+                query.addWhereCondition(orCondition);
+                List<LDAPObject> ldapUsers = query.getResultList();
+                for (LDAPObject ldapUser : ldapUsers) {
+                    String username = LDAPUtils.getUsername(ldapUser, ldapConfig);
+                    usernames.add(username);
+                }
+            }
+
+            return groupMapper.getLdapProvider().loadUsersByUsernames(usernames, realm);
         }
 
     };

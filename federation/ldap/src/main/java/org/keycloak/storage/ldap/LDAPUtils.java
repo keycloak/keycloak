@@ -153,11 +153,12 @@ public class LDAPUtils {
      * @param ldapProvider
      * @param membershipType how is 'member' attribute saved (full DN or just uid)
      * @param memberAttrName usually 'member'
+     * @param memberChildAttrName used just if membershipType is UID. Usually 'uid'
      * @param ldapParent role or group
      * @param ldapChild usually user (or child group or child role)
      * @param sendLDAPUpdateRequest if true, the method will send LDAP update request too. Otherwise it will skip it
      */
-    public static void addMember(LDAPStorageProvider ldapProvider, MembershipType membershipType, String memberAttrName, LDAPObject ldapParent, LDAPObject ldapChild, boolean sendLDAPUpdateRequest) {
+    public static void addMember(LDAPStorageProvider ldapProvider, MembershipType membershipType, String memberAttrName, String memberChildAttrName, LDAPObject ldapParent, LDAPObject ldapChild, boolean sendLDAPUpdateRequest) {
 
         Set<String> memberships = getExistingMemberships(memberAttrName, ldapParent);
 
@@ -171,7 +172,7 @@ public class LDAPUtils {
             }
         }
 
-        String membership = getMemberValueOfChildObject(ldapChild, membershipType);
+        String membership = getMemberValueOfChildObject(ldapChild, membershipType, memberChildAttrName);
 
         memberships.add(membership);
         ldapParent.setAttribute(memberAttrName, memberships);
@@ -187,13 +188,14 @@ public class LDAPUtils {
      * @param ldapProvider
      * @param membershipType how is 'member' attribute saved (full DN or just uid)
      * @param memberAttrName usually 'member'
+     * @param memberChildAttrName used just if membershipType is UID. Usually 'uid'
      * @param ldapParent role or group
      * @param ldapChild usually user (or child group or child role)
      */
-    public static void deleteMember(LDAPStorageProvider ldapProvider, MembershipType membershipType, String memberAttrName, LDAPObject ldapParent, LDAPObject ldapChild) {
+    public static void deleteMember(LDAPStorageProvider ldapProvider, MembershipType membershipType, String memberAttrName, String memberChildAttrName, LDAPObject ldapParent, LDAPObject ldapChild) {
         Set<String> memberships = getExistingMemberships(memberAttrName, ldapParent);
 
-        String userMembership = getMemberValueOfChildObject(ldapChild, membershipType);
+        String userMembership = getMemberValueOfChildObject(ldapChild, membershipType, memberChildAttrName);
 
         memberships.remove(userMembership);
 
@@ -222,10 +224,14 @@ public class LDAPUtils {
     }
 
     /**
-     * Get value to be used as attribute 'member' in some parent ldapObject
+     * Get value to be used as attribute 'member' or 'memberUid' in some parent ldapObject
      */
-    public static String getMemberValueOfChildObject(LDAPObject ldapUser, MembershipType membershipType) {
-        return membershipType == MembershipType.DN ? ldapUser.getDn().toString() : ldapUser.getAttributeAsString(ldapUser.getRdnAttributeName());
+    public static String getMemberValueOfChildObject(LDAPObject ldapUser, MembershipType membershipType, String memberChildAttrName) {
+        if (membershipType == MembershipType.DN) {
+            return ldapUser.getDn().toString();
+        } else {
+            return ldapUser.getAttributeAsString(memberChildAttrName);
+        }
     }
 
 

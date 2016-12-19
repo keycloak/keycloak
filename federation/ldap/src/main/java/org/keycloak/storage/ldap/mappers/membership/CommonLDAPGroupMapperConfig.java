@@ -20,6 +20,7 @@ package org.keycloak.storage.ldap.mappers.membership;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.ModelException;
+import org.keycloak.storage.ldap.LDAPConfig;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -34,6 +35,9 @@ public abstract class CommonLDAPGroupMapperConfig {
 
     // See docs for MembershipType enum
     public static final String MEMBERSHIP_ATTRIBUTE_TYPE = "membership.attribute.type";
+
+    // Used just for membershipType=UID. Name of LDAP attribute on user, which is used for membership mappings. Usually it will be "uid"
+    public static final String MEMBERSHIP_USER_LDAP_ATTRIBUTE = "membership.user.ldap.attribute";
 
     // See docs for Mode enum
     public static final String MODE = "mode";
@@ -56,6 +60,11 @@ public abstract class CommonLDAPGroupMapperConfig {
     public MembershipType getMembershipTypeLdapAttribute() {
         String membershipType = mapperModel.getConfig().getFirst(MEMBERSHIP_ATTRIBUTE_TYPE);
         return (membershipType!=null && !membershipType.isEmpty()) ? Enum.valueOf(MembershipType.class, membershipType) : MembershipType.DN;
+    }
+
+    public String getMembershipUserLdapAttribute(LDAPConfig ldapConfig) {
+        String membershipUserAttrName = mapperModel.getConfig().getFirst(MEMBERSHIP_USER_LDAP_ATTRIBUTE);
+        return membershipUserAttrName!=null ? membershipUserAttrName : ldapConfig.getUsernameLdapAttribute();
     }
 
     public LDAPGroupMapperMode getMode() {
