@@ -77,8 +77,11 @@ public class CachedPolicyStore implements PolicyStore {
         Policy policy = getDelegate().create(name, type, getStoreFactory().getResourceServerStore().findById(resourceServer.getId()));
         String id = policy.getId();
 
-        this.transaction.whenCommit(() -> {
+        this.transaction.whenRollback(() -> {
             cache.remove(getCacheKeyForPolicy(id));
+        });
+
+        this.transaction.whenCommit(() -> {
             invalidateCache(resourceServer.getId());
         });
 
@@ -88,6 +91,9 @@ public class CachedPolicyStore implements PolicyStore {
     @Override
     public void delete(String id) {
         Policy policy = findById(id, null);
+        if (policy == null) {
+            return;
+        }
         ResourceServer resourceServer = policy.getResourceServer();
         getDelegate().delete(id);
         this.transaction.whenCommit(() -> {
@@ -384,6 +390,9 @@ public class CachedPolicyStore implements PolicyStore {
                     transaction.whenCommit(() -> {
                         cache.remove(getCacheKeyForPolicy(getId()));
                         invalidateCache(cached.getResourceServerId());
+                    });
+                    transaction.whenRollback(() -> {
+                        cache.remove(getCacheKeyForPolicy(getId()));
                     });
                 }
 

@@ -92,6 +92,17 @@ public class MongoResourceStore implements ResourceStore {
     }
 
     @Override
+    public List<Resource> findByUri(String uri, String resourceServerId) {
+        DBObject query = new QueryBuilder()
+                .and("resourceServerId").is(resourceServerId)
+                .and("uri").is(uri)
+                .get();
+
+        return getMongoStore().loadEntities(ResourceEntity.class, query, getInvocationContext()).stream()
+                .map(scope -> findById(scope.getId(), resourceServerId)).collect(toList());
+    }
+
+    @Override
     public List findByResourceServer(String resourceServerId) {
         DBObject query = new QueryBuilder()
                 .and("resourceServerId").is(resourceServerId)

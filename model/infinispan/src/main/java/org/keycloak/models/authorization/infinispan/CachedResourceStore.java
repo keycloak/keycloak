@@ -62,6 +62,7 @@ public class CachedResourceStore implements ResourceStore {
         this.transaction = transaction;
         cacheKeys = new ArrayList<>();
         cacheKeys.add("findByOwner");
+        cacheKeys.add("findByUri");
         this.storeFactory = storeFactory;
     }
 
@@ -71,7 +72,11 @@ public class CachedResourceStore implements ResourceStore {
 
         this.transaction.whenRollback(() -> {
             cache.remove(getCacheKeyForResource(resource.getId()));
+        });
+
+        this.transaction.whenCommit(() -> {
             invalidateCache(resourceServer.getId());
+            getCachedStoreFactory().getPolicyStore().notifyChange(resource);
         });
 
         return createAdapter(new CachedResource(resource));
@@ -80,6 +85,9 @@ public class CachedResourceStore implements ResourceStore {
     @Override
     public void delete(String id) {
         Resource resource = findById(id, null);
+        if (resource == null) {
+            return;
+        }
         ResourceServer resourceServer = resource.getResourceServer();
         getDelegate().delete(id);
         this.transaction.whenCommit(() -> {
@@ -91,6 +99,7 @@ public class CachedResourceStore implements ResourceStore {
             }
 
             invalidateCache(resourceServer.getId());
+            getCachedStoreFactory().getPolicyStore().notifyChange(resource);
         });
     }
 
@@ -115,6 +124,11 @@ public class CachedResourceStore implements ResourceStore {
     @Override
     public List<Resource> findByOwner(String ownerId, String resourceServerId) {
         return cacheResult(new StringBuilder("findByOwner").append(resourceServerId).append(ownerId).toString(), () -> getDelegate().findByOwner(ownerId, resourceServerId));
+    }
+
+    @Override
+    public List<Resource> findByUri(String uri, String resourceServerId) {
+        return cacheResult(new StringBuilder("findByUri").append(resourceServerId).append(uri).toString(), () -> getDelegate().findByUri(uri, resourceServerId));
     }
 
     @Override
@@ -268,10 +282,13 @@ public class CachedResourceStore implements ResourceStore {
                 if (this.updated == null) {
                     this.updated = getDelegate().findById(getId(), cached.getResourceServerId());
                     if (this.updated == null) throw new IllegalStateException("Not found in database");
-                    transaction.whenRollback(() -> {
+                    transaction.whenCommit(() -> {
                         cache.remove(getCacheKeyForResource(cached.getId()));
                         invalidateCache(cached.getResourceServerId());
-                        getCachedStoreFactory().getPolicyStore().notifyChange(cached);
+                        getCachedStoreFactory().getPolicyStore().notifyChange(updated);
+                    });
+                    transaction.whenRollback(() -> {
+                        cache.remove(getCacheKeyForResource(cached.getId()));
                     });
                 }
 

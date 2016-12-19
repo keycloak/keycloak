@@ -75,7 +75,7 @@ public class JPAScopeStore implements ScopeStore {
             return null;
         }
 
-        if (true) {
+        if (resourceServerId == null) {
             return entityManager.find(ScopeEntity.class, id);
         }
 

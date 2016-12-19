@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.infinispan.Cache;
+import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.store.ScopeStore;
@@ -61,12 +62,19 @@ public class CachedScopeStore implements ScopeStore {
         Scope scope = getDelegate().create(name, getStoreFactory().getResourceServerStore().findById(resourceServer.getId()));
 
         this.transaction.whenRollback(() -> cache.remove(getCacheKeyForScope(scope.getId())));
+        this.transaction.whenCommit(() -> {
+            getCachedStoreFactory().getPolicyStore().notifyChange(scope);
+        });
 
         return createAdapter(new CachedScope(scope));
     }
 
     @Override
     public void delete(String id) {
+        Scope scope = findById(id, null);
+        if (scope == null) {
+            return;
+        }
         getDelegate().delete(id);
         this.transaction.whenCommit(() -> {
             List<CachedScope> scopes = cache.remove(getCacheKeyForScope(id));
@@ -75,6 +83,8 @@ public class CachedScopeStore implements ScopeStore {
                 CachedScope entry = scopes.get(0);
                 cache.remove(getCacheKeyForScopeName(entry.getName(), entry.getResourceServerId()));
             }
+
+            getCachedStoreFactory().getPolicyStore().notifyChange(scope);
         });
     }
 
@@ -189,6 +199,9 @@ public class CachedScopeStore implements ScopeStore {
                     transaction.whenCommit(() -> {
                         cache.remove(getCacheKeyForScope(getId()));
                         getCachedStoreFactory().getPolicyStore().notifyChange(updated);
+                    });
+                    transaction.whenRollback(() -> {
+                        cache.remove(getCacheKeyForScope(cached.getId()));
                     });
                 }
 
