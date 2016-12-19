@@ -20,6 +20,7 @@
 
      <changeSet author="bburke@redhat.com" id="2.5.0">
          <customChange class="org.keycloak.connections.jpa.updater.liquibase.custom.MigrateUserFedToComponent"/>
+         <modifyDataType tableName="OFFLINE_USER_SESSION" columnName="USER_ID" newDataType="VARCHAR(255)"/>
      </changeSet>
 
     <changeSet author="hmlnarik@redhat.com" id="2.5.0-unicode-oracle">
@@ -58,7 +59,7 @@
         <modifyDataType tableName="KEYCLOAK_ROLE" columnName="NAME" newDataType="NVARCHAR(255)"/>
         <modifyDataType tableName="KEYCLOAK_ROLE" columnName="DESCRIPTION" newDataType="NVARCHAR(255)"/>
     </changeSet>
-
+    
     <changeSet author="hmlnarik@redhat.com" id="2.5.0-unicode-other-dbs">
         <preConditions onSqlOutput="TEST" onFail="MARK_RAN">
             <not>
