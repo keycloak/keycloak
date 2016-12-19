@@ -18,6 +18,10 @@
 
 package org.keycloak.authorization.policy.provider.user;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.keycloak.Config;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.Policy;
@@ -26,20 +30,21 @@ import org.keycloak.authorization.policy.provider.PolicyProvider;
 import org.keycloak.authorization.policy.provider.PolicyProviderAdminService;
 import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
 import org.keycloak.authorization.store.PolicyStore;
+import org.keycloak.authorization.store.ResourceServerStore;
+import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.UserRemovedEvent;
 import org.keycloak.util.JsonSerialization;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 public class UserPolicyProviderFactory implements PolicyProviderFactory {
+
+    private UserPolicyProvider provider = new UserPolicyProvider();
 
     @Override
     public String getName() {
@@ -52,8 +57,8 @@ public class UserPolicyProviderFactory implements PolicyProviderFactory {
     }
 
     @Override
-    public PolicyProvider create(Policy policy, AuthorizationProvider authorization) {
-        return new UserPolicyProvider(policy);
+    public PolicyProvider create(AuthorizationProvider authorization) {
+        return provider;
     }
 
     @Override
@@ -77,29 +82,40 @@ public class UserPolicyProviderFactory implements PolicyProviderFactory {
             if (event instanceof UserRemovedEvent) {
                 KeycloakSession keycloakSession = ((UserRemovedEvent) event).getKeycloakSession();
                 AuthorizationProvider provider = keycloakSession.getProvider(AuthorizationProvider.class);
-                PolicyStore policyStore = provider.getStoreFactory().getPolicyStore();
+                StoreFactory storeFactory = provider.getStoreFactory();
+                PolicyStore policyStore = storeFactory.getPolicyStore();
                 UserModel removedUser = ((UserRemovedEvent) event).getUser();
+                RealmModel realm = ((UserRemovedEvent) event).getRealm();
+                ResourceServerStore resourceServerStore = storeFactory.getResourceServerStore();
+                realm.getClients().forEach(clientModel -> {
+                    ResourceServer resourceServer = resourceServerStore.findByClient(clientModel.getId());
 
-                policyStore.findByType(getId()).forEach(policy -> {
-                    List<String> users = new ArrayList<>();
+                    if (resourceServer != null) {
+                        policyStore.findByType(getId(), resourceServer.getId()).forEach(policy -> {
+                            List<String> users = new ArrayList<>();
 
-                    for (String userId : getUsers(policy)) {
-                        if (!userId.equals(removedUser.getId())) {
-                            users.add(userId);
-                        }
-                    }
+                            for (String userId : getUsers(policy)) {
+                                if (!userId.equals(removedUser.getId())) {
+                                    users.add(userId);
+                                }
+                            }
 
-                    try {
-                        if (users.isEmpty()) {
-                            policyStore.findDependentPolicies(policy.getId()).forEach(dependentPolicy -> {
-                                dependentPolicy.removeAssociatedPolicy(policy);
-                            });
-                            policyStore.delete(policy.getId());
-                        } else {
-                            policy.getConfig().put("users", JsonSerialization.writeValueAsString(users));
-                        }
-                    } catch (IOException e) {
-                        throw new RuntimeException("Error while synchronizing users with policy [" + policy.getName() + "].", e);
+                            try {
+                                if (users.isEmpty()) {
+                                    policyStore.findDependentPolicies(policy.getId(), resourceServer.getId()).forEach(dependentPolicy -> {
+                                        dependentPolicy.removeAssociatedPolicy(policy);
+                                        if (dependentPolicy.getAssociatedPolicies().isEmpty()) {
+                                            policyStore.delete(dependentPolicy.getId());
+                                        }
+                                    });
+                                    policyStore.delete(policy.getId());
+                                } else {
+                                    policy.getConfig().put("users", JsonSerialization.writeValueAsString(users));
+                                }
+                            } catch (IOException e) {
+                                throw new RuntimeException("Error while synchronizing users with policy [" + policy.getName() + "].", e);
+                            }
+                        });
                     }
                 });
             }

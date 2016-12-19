@@ -32,12 +32,7 @@
                 <label class="col-md-2 control-label" for="reqActions">{{:: 'authz-resource' | translate}}</label>
 
                 <div class="col-md-6">
-                    <select class="form-control" id="reqActions"
-                            ng-model="policy.config.resources"
-                            ng-change="resolveScopes(policy)"
-                            data-ng-options="resource._id as resource.name for resource in resources">
-                        <option value="">{{:: 'authz-any-resource' | translate}}...</option>
-                    </select>
+                    <input type="hidden" ui-select2="resourcesUiSelect" data-ng-change="selectResource()" id="reqActions" data-ng-model="policy.config.resources" data-placeholder="{{:: 'authz-any-resource' | translate}}..." />
                 </div>
                 <kc-tooltip>{{:: 'authz-permission-scope-resource.tooltip' | translate}}</kc-tooltip>
             </div>
@@ -45,25 +40,19 @@
                 <label class="col-md-2 control-label" for="reqActions">{{:: 'authz-scopes' | translate}} <span class="required">*</span></label>
 
                 <div class="col-md-6">
-                    <select ui-select2 id="reqActions"
+                    <select ui-select2 id="reqActions2"
                             data-ng-model="policy.config.scopes"
                             data-placeholder="{{:: 'authz-any-scope' | translate}}..." multiple
-                            data-ng-required="policy.config.resources != ''"
-                            data-ng-options="scope.id as scope.name for scope in scopes track by scope.id"/>
+                            data-ng-required="policy.config.resources != null"
+                            data-ng-options="scope.id as scope.name for scope in policy.config.resources.scopes track by scope.id"/>
                 </div>
-
                 <kc-tooltip>{{:: 'authz-permission-scope-scope.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group clearfix" data-ng-show="!policy.config.resources">
                 <label class="col-md-2 control-label" for="reqActions">{{:: 'authz-scopes' | translate}} <span class="required">*</span></label>
 
                 <div class="col-md-6">
-                    <select ui-select2="{ minimumInputLength: 1}" id="reqActions"
-                            data-ng-model="policy.config.scopes"
-                            data-placeholder="{{:: 'authz-any-scope' | translate}}..." multiple
-                            data-ng-required="policy.config.resources == ''"
-                            data-ng-options="scope.id as scope.name for scope in scopes track by scope.id"/>
-                    </select>
+                    <input type="hidden" ui-select2="scopesUiSelect" id="reqActions" data-ng-model="policy.config.scopes" data-placeholder="{{:: 'authz-any-scope' | translate}}..." multiple data-ng-required="policy.config.resources == null" />
                 </div>
                 <kc-tooltip>{{:: 'authz-permission-scope-scope.tooltip' | translate}}</kc-tooltip>
             </div>
@@ -71,9 +60,7 @@
                 <label class="col-md-2 control-label" for="reqActions">{{:: 'authz-policy-apply-policy' | translate}} <span class="required">*</span></label>
 
                 <div class="col-md-6">
-                    <select ui-select2 id="reqActions" data-ng-model="policy.config.applyPolicies" data-placeholder="{{:: 'authz-select-a-policy' | translate}}..." multiple required>
-                        <option ng-repeat="policy in policies" value="{{policy.id}}" ng-selected="true">{{policy.name}}</option>
-                    </select>
+                    <input type="hidden" ui-select2="policiesUiSelect" id="reqActions" data-ng-model="policy.config.applyPolicies" data-placeholder="{{:: 'authz-select-a-policy' | translate}}..." multiple required />
                 </div>
 
                 <kc-tooltip>{{:: 'authz-policy-apply-policy.tooltip' | translate}}</kc-tooltip>
@@ -95,7 +82,6 @@
             </div>
             <input type="hidden" data-ng-model="policy.type"/>
         </fieldset>
-
         <div class="form-group" data-ng-show="access.manageAuthorization">
             <div class="col-md-10 col-md-offset-2">
                 <button kc-save data-ng-disabled="!changed">{{:: 'save' | translate}}</button>

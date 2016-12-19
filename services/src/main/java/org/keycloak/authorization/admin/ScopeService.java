@@ -26,6 +26,8 @@ import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.models.Constants;
+import org.keycloak.representations.idm.authorization.PolicyRepresentation;
+import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.resources.admin.RealmAuth;
@@ -41,6 +43,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
+
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -85,7 +88,7 @@ public class ScopeService {
         this.auth.requireManage();
         scope.setId(id);
         StoreFactory storeFactory = authorization.getStoreFactory();
-        Scope model = storeFactory.getScopeStore().findById(scope.getId());
+        Scope model = storeFactory.getScopeStore().findById(scope.getId(), resourceServer.getId());
 
         if (model == null) {
             return Response.status(Status.NOT_FOUND).build();
@@ -101,13 +104,13 @@ public class ScopeService {
     public Response delete(@PathParam("id") String id) {
         this.auth.requireManage();
         StoreFactory storeFactory = authorization.getStoreFactory();
-        List<Resource> resources = storeFactory.getResourceStore().findByScope(id);
+        List<Resource> resources = storeFactory.getResourceStore().findByScope(Arrays.asList(id), resourceServer.getId());
 
         if (!resources.isEmpty()) {
             return ErrorResponse.exists("Scopes can not be removed while associated with resources.");
         }
 
-        Scope scope = storeFactory.getScopeStore().findById(id);
+        Scope scope = storeFactory.getScopeStore().findById(id, resourceServer.getId());
 
         if (scope == null) {
             return Response.status(Status.NOT_FOUND).build();
@@ -134,13 +137,60 @@ public class ScopeService {
     @Produces("application/json")
     public Response findById(@PathParam("id") String id) {
         this.auth.requireView();
-        Scope model = this.authorization.getStoreFactory().getScopeStore().findById(id);
+        Scope model = this.authorization.getStoreFactory().getScopeStore().findById(id, resourceServer.getId());
 
         if (model == null) {
             return Response.status(Status.NOT_FOUND).build();
         }
 
         return Response.ok(toRepresentation(model, this.authorization)).build();
+    }
+
+    @Path("{id}/resources")
+    @GET
+    @Produces("application/json")
+    public Response getResources(@PathParam("id") String id) {
+        this.auth.requireView();
+        StoreFactory storeFactory = this.authorization.getStoreFactory();
+        Scope model = storeFactory.getScopeStore().findById(id, resourceServer.getId());
+
+        if (model == null) {
+            return Response.status(Status.NOT_FOUND).build();
+        }
+
+        return Response.ok(storeFactory.getResourceStore().findByScope(Arrays.asList(model.getId()), resourceServer.getId()).stream().map(resource -> {
+            ResourceRepresentation representation = new ResourceRepresentation();
+
+            representation.setId(resource.getId());
+            representation.setName(resource.getName());
+
+            return representation;
+        }).collect(Collectors.toList())).build();
+    }
+
+    @Path("{id}/permissions")
+    @GET
+    @Produces("application/json")
+    public Response getPermissions(@PathParam("id") String id) {
+        this.auth.requireView();
+        StoreFactory storeFactory = this.authorization.getStoreFactory();
+        Scope model = storeFactory.getScopeStore().findById(id, resourceServer.getId());
+
+        if (model == null) {
+            return Response.status(Status.NOT_FOUND).build();
+        }
+
+        PolicyStore policyStore = storeFactory.getPolicyStore();
+
+        return Response.ok(policyStore.findByScopeIds(Arrays.asList(model.getId()), resourceServer.getId()).stream().map(policy -> {
+            PolicyRepresentation representation = new PolicyRepresentation();
+
+            representation.setId(policy.getId());
+            representation.setName(policy.getName());
+            representation.setType(policy.getType());
+
+            return representation;
+        }).collect(Collectors.toList())).build();
     }
 
     @Path("/search")
@@ -166,20 +216,31 @@ public class ScopeService {
 
     @GET
     @Produces("application/json")
-    public Response findAll(@QueryParam("name") String name,
+    public Response findAll(@QueryParam("scopeId") String id,
+                            @QueryParam("name") String name,
+                            @QueryParam("deep") Boolean deep,
                             @QueryParam("first") Integer firstResult,
                             @QueryParam("max") Integer maxResult) {
         this.auth.requireView();
 
+        if (deep == null) {
+            deep = true;
+        }
+
         Map<String, String[]> search = new HashMap<>();
+
+        if (id != null && !"".equals(id.trim())) {
+            search.put("id", new String[] {id});
+        }
 
         if (name != null && !"".equals(name.trim())) {
             search.put("name", new String[] {name});
         }
 
+        Boolean finalDeep = deep;
         return Response.ok(
                 this.authorization.getStoreFactory().getScopeStore().findByResourceServer(search, this.resourceServer.getId(), firstResult != null ? firstResult : -1, maxResult != null ? maxResult : Constants.DEFAULT_MAX_RESULTS).stream()
-                        .map(scope -> toRepresentation(scope, this.authorization))
+                        .map(scope -> toRepresentation(scope, this.authorization, finalDeep))
                         .collect(Collectors.toList()))
                 .build();
     }

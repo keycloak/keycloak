@@ -124,21 +124,21 @@ public class PolicyAdapter extends AbstractMongoAdapter<PolicyEntity> implements
     @Override
     public Set<Policy> getAssociatedPolicies() {
         return getMongoEntity().getAssociatedPolicies().stream()
-                .map((Function<String, Policy>) id -> authorizationProvider.getStoreFactory().getPolicyStore().findById(id))
+                .map((Function<String, Policy>) id -> authorizationProvider.getStoreFactory().getPolicyStore().findById(id, getMongoEntity().getResourceServerId()))
                 .collect(Collectors.toSet());
     }
 
     @Override
     public Set<Resource> getResources() {
         return getMongoEntity().getResources().stream()
-                .map((Function<String, Resource>) id -> authorizationProvider.getStoreFactory().getResourceStore().findById(id))
+                .map((Function<String, Resource>) id -> authorizationProvider.getStoreFactory().getResourceStore().findById(id, getMongoEntity().getResourceServerId()))
                 .collect(Collectors.toSet());
     }
 
     @Override
     public Set<Scope> getScopes() {
         return getMongoEntity().getScopes().stream()
-                .map((Function<String, Scope>) id -> authorizationProvider.getStoreFactory().getScopeStore().findById(id))
+                .map((Function<String, Scope>) id -> authorizationProvider.getStoreFactory().getScopeStore().findById(id, getMongoEntity().getResourceServerId()))
                 .collect(Collectors.toSet());
     }
 

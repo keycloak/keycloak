@@ -53,7 +53,7 @@ public class ResourceManagementTest extends AbstractPhotozAdminTest {
         ResourceRepresentation resource = response.readEntity(ResourceRepresentation.class);
 
         onAuthorizationSession(authorizationProvider -> {
-            Resource resourceModel = authorizationProvider.getStoreFactory().getResourceStore().findById(resource.getId());
+            Resource resourceModel = authorizationProvider.getStoreFactory().getResourceStore().findById(resource.getId(), resourceServer.getId());
 
             assertNotNull(resourceModel);
             assertEquals(resource.getId(), resourceModel.getId());
@@ -89,7 +89,7 @@ public class ResourceManagementTest extends AbstractPhotozAdminTest {
         ResourceRepresentation resource = response.readEntity(ResourceRepresentation.class);
 
         onAuthorizationSession(authorizationProvider -> {
-            Resource resourceModel = authorizationProvider.getStoreFactory().getResourceStore().findById(resource.getId());
+            Resource resourceModel = authorizationProvider.getStoreFactory().getResourceStore().findById(resource.getId(), resourceServer.getId());
 
             assertNotNull(resourceModel);
             assertEquals(resource.getId(), resourceModel.getId());
@@ -147,7 +147,7 @@ public class ResourceManagementTest extends AbstractPhotozAdminTest {
         assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
 
         onAuthorizationSession(authorizationProvider -> {
-            Resource resourceModel = authorizationProvider.getStoreFactory().getResourceStore().findById(resource.getId());
+            Resource resourceModel = authorizationProvider.getStoreFactory().getResourceStore().findById(resource.getId(), resourceServer.getId());
 
             assertNull(resourceModel);
         });

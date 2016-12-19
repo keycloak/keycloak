@@ -17,31 +17,33 @@
  */
 package org.keycloak.authorization.policy.provider.js;
 
+import java.util.function.Supplier;
+
+import javax.script.ScriptEngine;
+import javax.script.ScriptException;
+
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.policy.evaluation.Evaluation;
 import org.keycloak.authorization.policy.provider.PolicyProvider;
-
-import javax.script.ScriptEngine;
-import javax.script.ScriptEngineManager;
-import javax.script.ScriptException;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 public class JSPolicyProvider implements PolicyProvider {
 
-    private final Policy policy;
+    private Supplier<ScriptEngine> engineProvider;
 
-    public JSPolicyProvider(Policy policy) {
-        this.policy = policy;
+    public JSPolicyProvider(Supplier<ScriptEngine> engineProvider) {
+        this.engineProvider = engineProvider;
     }
 
     @Override
     public void evaluate(Evaluation evaluation) {
-        ScriptEngineManager manager = new ScriptEngineManager();
-        ScriptEngine engine = manager.getEngineByName("nashorn");
+        ScriptEngine engine = engineProvider.get();
 
         engine.put("$evaluation", evaluation);
+
+        Policy policy = evaluation.getPolicy();
 
         try {
             engine.eval(policy.getConfig().get("code"));

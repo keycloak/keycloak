@@ -17,7 +17,6 @@
  */
 package org.keycloak.authorization.policy.provider.scope;
 
-import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.policy.evaluation.Evaluation;
 import org.keycloak.authorization.policy.provider.PolicyProvider;
 
@@ -25,12 +24,6 @@ import org.keycloak.authorization.policy.provider.PolicyProvider;
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 public class ScopePolicyProvider implements PolicyProvider {
-
-    private final Policy policy;
-
-    public ScopePolicyProvider(Policy policy) {
-        this.policy = policy;
-    }
 
     @Override
     public void evaluate(Evaluation evaluation) {

@@ -57,7 +57,7 @@ public class ScopeEntity implements Scope {
     @Column(name = "ICON_URI")
     private String iconUri;
 
-    @ManyToOne(optional = false)
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "RESOURCE_SERVER_ID")
     private ResourceServerEntity resourceServer;
 

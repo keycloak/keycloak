@@ -18,14 +18,20 @@
 
 package org.keycloak.authorization;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.Executor;
+
 import org.keycloak.Config;
+import org.keycloak.authorization.policy.provider.PolicyProvider;
+import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
 import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.cache.authorization.CachedStoreFactoryProvider;
-
-import java.util.concurrent.Executor;
+import org.keycloak.provider.ProviderFactory;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -33,6 +39,7 @@ import java.util.concurrent.Executor;
 public class DefaultAuthorizationProviderFactory implements AuthorizationProviderFactory {
 
     private Executor scheduler;
+    private Map<String, PolicyProviderFactory> policyProviderFactories;
 
     @Override
     public AuthorizationProvider create(KeycloakSession session) {
@@ -54,6 +61,7 @@ public class DefaultAuthorizationProviderFactory implements AuthorizationProvide
 
     @Override
     public void postInit(KeycloakSessionFactory factory) {
+        policyProviderFactories = configurePolicyProviderFactories(factory);
     }
 
     @Override
@@ -74,6 +82,21 @@ public class DefaultAuthorizationProviderFactory implements AuthorizationProvide
             storeFactory = session.getProvider(StoreFactory.class);
         }
 
-        return new AuthorizationProvider(session, realm, storeFactory);
+        return new AuthorizationProvider(session, realm, storeFactory, policyProviderFactories);
     }
+
+    private Map<String, PolicyProviderFactory> configurePolicyProviderFactories(KeycloakSessionFactory keycloakSessionFactory) {
+        List<ProviderFactory> providerFactories = keycloakSessionFactory.getProviderFactories(PolicyProvider.class);
+
+        if (providerFactories.isEmpty()) {
+            throw new RuntimeException("Could not find any policy provider.");
+        }
+
+        HashMap<String, PolicyProviderFactory> providers = new HashMap<>();
+
+        providerFactories.forEach(providerFactory -> providers.put(providerFactory.getId(), (PolicyProviderFactory) providerFactory));
+
+        return providers;
+    }
+
 }

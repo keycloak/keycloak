@@ -2,7 +2,6 @@ package org.keycloak.authorization.policy.provider.time;
 
 import org.keycloak.Config;
 import org.keycloak.authorization.AuthorizationProvider;
-import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.policy.provider.PolicyProvider;
 import org.keycloak.authorization.policy.provider.PolicyProviderAdminService;
@@ -15,6 +14,8 @@ import org.keycloak.models.KeycloakSessionFactory;
  */
 public class TimePolicyProviderFactory implements PolicyProviderFactory {
 
+    private TimePolicyProvider provider = new TimePolicyProvider();
+
     @Override
     public String getName() {
         return "Time";
@@ -26,8 +27,8 @@ public class TimePolicyProviderFactory implements PolicyProviderFactory {
     }
 
     @Override
-    public PolicyProvider create(Policy policy, AuthorizationProvider authorization) {
-        return new TimePolicyProvider(policy);
+    public PolicyProvider create(AuthorizationProvider authorization) {
+        return provider;
     }
 
     @Override

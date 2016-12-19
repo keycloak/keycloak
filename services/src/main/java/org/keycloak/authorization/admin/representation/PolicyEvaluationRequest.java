@@ -22,6 +22,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.keycloak.representations.idm.authorization.ResourceRepresentation;
+
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
@@ -82,42 +84,7 @@ public class PolicyEvaluationRequest {
         this.entitlements = entitlements;
     }
 
-    public static class Resource {
-        private String id;
-        private String name;
-        private String type;
-        private Set<String> scopes;
+    public static class Resource extends ResourceRepresentation {
 
-        public String getId() {
-            return this.id;
-        }
-
-        public void setId(String id) {
-            this.id = id;
-        }
-
-        public String getName() {
-            return this.name;
-        }
-
-        public void setName(String name) {
-            this.name = name;
-        }
-
-        public String getType() {
-            return type;
-        }
-
-        public void setType(final String type) {
-            this.type = type;
-        }
-
-        public Set<String> getScopes() {
-            return scopes;
-        }
-
-        public void setScopes(final Set<String> scopes) {
-            this.scopes = scopes;
-        }
     }
 }

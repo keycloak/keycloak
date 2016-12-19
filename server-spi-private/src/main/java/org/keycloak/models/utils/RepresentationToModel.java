@@ -1898,7 +1898,7 @@ public class RepresentationToModel {
 
             if (roles != null && !roles.isEmpty()) {
                 try {
-                    List<Map> rolesMap = JsonSerialization.readValue(roles, List.class);
+                    List<Map> rolesMap = (List<Map>)JsonSerialization.readValue(roles, List.class);
                     config.put("roles", JsonSerialization.writeValueAsString(rolesMap.stream().map(roleConfig -> {
                         String roleName = roleConfig.get("id").toString();
                         String clientId = null;
@@ -1950,7 +1950,7 @@ public class RepresentationToModel {
 
             if (users != null && !users.isEmpty()) {
                 try {
-                    List<String> usersMap = JsonSerialization.readValue(users, List.class);
+                    List<String> usersMap = (List<String>) JsonSerialization.readValue(users, List.class);
                     config.put("users", JsonSerialization.writeValueAsString(usersMap.stream().map(userId -> {
                         UserModel user = session.users().getUserByUsername(userId, realm);
 
@@ -1974,12 +1974,12 @@ public class RepresentationToModel {
             if (scopes != null && !scopes.isEmpty()) {
                 try {
                     ScopeStore scopeStore = storeFactory.getScopeStore();
-                    List<String> scopesMap = JsonSerialization.readValue(scopes, List.class);
+                    List<String> scopesMap = (List<String>) JsonSerialization.readValue(scopes, List.class);
                     config.put("scopes", JsonSerialization.writeValueAsString(scopesMap.stream().map(scopeName -> {
                         Scope newScope = scopeStore.findByName(scopeName, resourceServer.getId());
 
                         if (newScope == null) {
-                            newScope = scopeStore.findById(scopeName);
+                            newScope = scopeStore.findById(scopeName, resourceServer.getId());
                         }
 
                         if (newScope == null) {
@@ -1999,21 +1999,18 @@ public class RepresentationToModel {
                 ResourceStore resourceStore = storeFactory.getResourceStore();
                 try {
                     List<String> resources = JsonSerialization.readValue(policyResources, List.class);
-                    config.put("resources", JsonSerialization.writeValueAsString(resources.stream().map(new Function<String, String>() {
-                        @Override
-                        public String apply(String resourceName) {
-                            Resource resource = resourceStore.findByName(resourceName, resourceServer.getId());
+                    config.put("resources", JsonSerialization.writeValueAsString(resources.stream().map(resourceName -> {
+                        Resource resource = resourceStore.findByName(resourceName, resourceServer.getId());
 
-                            if (resource == null) {
-                                resource = resourceStore.findById(resourceName);
-                            }
-
-                            if (resource == null) {
-                                throw new RuntimeException("Resource with name [" + resourceName + "] not defined.");
-                            }
-
-                            return resource.getId();
+                        if (resource == null) {
+                            resource = resourceStore.findById(resourceName, resourceServer.getId());
                         }
+
+                        if (resource == null) {
+                            throw new RuntimeException("Resource with name [" + resourceName + "] not defined.");
+                        }
+
+                        return resource.getId();
                     }).collect(Collectors.toList())));
                 } catch (Exception e) {
                     throw new RuntimeException("Error while exporting policy [" + policyRepresentation.getName() + "].", e);
@@ -2025,12 +2022,12 @@ public class RepresentationToModel {
             if (applyPolicies != null && !applyPolicies.isEmpty()) {
                 PolicyStore policyStore = storeFactory.getPolicyStore();
                 try {
-                    List<String> policies = JsonSerialization.readValue(applyPolicies, List.class);
+                    List<String> policies = (List<String>) JsonSerialization.readValue(applyPolicies, List.class);
                     config.put("applyPolicies", JsonSerialization.writeValueAsString(policies.stream().map(policyName -> {
                         Policy policy = policyStore.findByName(policyName, resourceServer.getId());
 
                         if (policy == null) {
-                            policy = policyStore.findById(policyName);
+                            policy = policyStore.findById(policyName, resourceServer.getId());
                         }
 
                         if (policy == null) {
@@ -2062,7 +2059,7 @@ public class RepresentationToModel {
         Policy existing;
 
         if (policy.getId() != null) {
-            existing = policyStore.findById(policy.getId());
+            existing = policyStore.findById(policy.getId(), resourceServer.getId());
         } else {
             existing = policyStore.findByName(policy.getName(), resourceServer.getId());
         }
@@ -2119,7 +2116,14 @@ public class RepresentationToModel {
                     }
                 }
                 if (!hasScope) {
-                    policy.addScope(storeFactory.getScopeStore().findById(scopeId));
+                    ResourceServer resourceServer = policy.getResourceServer();
+                    Scope scope = storeFactory.getScopeStore().findById(scopeId, resourceServer.getId());
+
+                    if (scope == null) {
+                        storeFactory.getScopeStore().findByName(scopeId, resourceServer.getId());
+                    }
+
+                    policy.addScope(scope);
                 }
             }
 
@@ -2135,6 +2139,8 @@ public class RepresentationToModel {
                     policy.removeScope(scopeModel);
                 }
             }
+
+            policy.getConfig().remove("scopes");
         }
     }
 
@@ -2164,7 +2170,7 @@ public class RepresentationToModel {
 
 
                 if (!hasPolicy) {
-                    Policy associatedPolicy = policyStore.findById(policyId);
+                    Policy associatedPolicy = policyStore.findById(policyId, resourceServer.getId());
 
                     if (associatedPolicy == null) {
                         associatedPolicy = policyStore.findByName(policyId, resourceServer.getId());
@@ -2186,6 +2192,8 @@ public class RepresentationToModel {
                     policy.removeAssociatedPolicy(policyModel);;
                 }
             }
+
+            policy.getConfig().remove("applyPolicies");
         }
     }
 
@@ -2210,7 +2218,7 @@ public class RepresentationToModel {
                     }
                 }
                 if (!hasResource && !"".equals(resourceId)) {
-                    policy.addResource(storeFactory.getResourceStore().findById(resourceId));
+                    policy.addResource(storeFactory.getResourceStore().findById(resourceId, policy.getResourceServer().getId()));
                 }
             }
 
@@ -2227,6 +2235,8 @@ public class RepresentationToModel {
                     policy.removeResource(resourceModel);
                 }
             }
+
+            policy.getConfig().remove("resources");
         }
     }
 
@@ -2235,7 +2245,7 @@ public class RepresentationToModel {
         Resource existing;
 
         if (resource.getId() != null) {
-            existing = resourceStore.findById(resource.getId());
+            existing = resourceStore.findById(resource.getId(), resourceServer.getId());
         } else {
             existing = resourceStore.findByName(resource.getName(), resourceServer.getId());
         }
@@ -2286,7 +2296,7 @@ public class RepresentationToModel {
         Scope existing;
 
         if (scope.getId() != null) {
-            existing = scopeStore.findById(scope.getId());
+            existing = scopeStore.findById(scope.getId(), resourceServer.getId());
         } else {
             existing = scopeStore.findByName(scope.getName(), resourceServer.getId());
         }

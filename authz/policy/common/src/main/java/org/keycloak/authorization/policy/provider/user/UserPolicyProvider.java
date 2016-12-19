@@ -29,16 +29,11 @@ import static org.keycloak.authorization.policy.provider.user.UserPolicyProvider
  */
 public class UserPolicyProvider implements PolicyProvider {
 
-    private final Policy policy;
-
-    public UserPolicyProvider(Policy policy) {
-        this.policy = policy;
-    }
-
     @Override
     public void evaluate(Evaluation evaluation) {
+        Policy policy = evaluation.getPolicy();
         EvaluationContext context = evaluation.getContext();
-        String[] userIds = getUsers(this.policy);
+        String[] userIds = getUsers(policy);
 
         if (userIds.length > 0) {
             for (String userId : userIds) {

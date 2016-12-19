@@ -28,6 +28,12 @@
                                 </select>
                             </div>
                         </div>
+                        <div class="input-group">
+                            <select class="form-control search" data-ng-model="detailsFilter" data-ng-change="searchQuery();">
+                                <option value="" selected>Hide Details</option>
+                                <option value="true">Show Details</option>
+                            </select>
+                        </div>
                         <div class="pull-right">
                             <select class="form-control" ng-model="policyType"
                                     ng-options="p.name for p in policyProviders track by p.type"
@@ -42,7 +48,7 @@
                 <th>{{:: 'name' | translate}}</th>
                 <th>{{:: 'description' | translate}}</th>
                 <th>{{:: 'type' | translate}}</th>
-                <th>{{:: 'authz-associated-policies' | translate}}</th>
+                <th>{{:: 'actions' | translate}}</th>
             </tr>
         </thead>
         <tfoot data-ng-show="policies && (policies.length >= query.max || query.first > 0)">
@@ -52,22 +58,48 @@
                     <button data-ng-click="firstPage()" class="first" ng-disabled="query.first == 0">{{:: 'first-page' | translate}}</button>
                     <button data-ng-click="previousPage()" class="prev" ng-disabled="query.first == 0">{{:: 'previous-page' | translate}}</button>
                     <button data-ng-click="nextPage()" class="next" ng-disabled="policies.length < query.max">{{:: 'next-page' | translate}}</button>
+                    <select class="first" data-ng-model="query.max"
+                            ng-options="size for size in listSizes" data-ng-change="firstPage()">
+                    </select>
                 </div>
             </td>
         </tr>
         </tfoot>
         <tbody>
-            <tr ng-repeat="policy in policies | filter: {name: search.name, type: search.type} | orderBy:'name'">
+            <tr ng-repeat-start="policy in policies | filter: {name: search.name, type: search.type} | orderBy:'name'">
                 <td><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server/permission/{{policy.type}}/{{policy.id}}">{{policy.name}}</a></td>
                 <td>{{policy.description}}</td>
                 <td>{{policy.type}}</td>
-                <td>
-                    <span data-ng-show="!policy.associatedPolicies.length">{{:: 'authz-no-policy-assigned' | translate}}</span>
-                    <span data-ng-show="policy.associatedPolicies.length > 0">
-                        <span ng-repeat="policy in policy.associatedPolicies">
-                            <a href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server/policy/{{policy.type}}/{{policy.id}}">{{policy.name}}</a>{{$last ? '' : ', '}}
-                        </span>
-                    </span>
+                <td ng-if="!policy.details.loaded" class="kc-action-cell" data-ng-click="showDetails(policy);">
+                    {{:: 'authz-show-details' | translate}}
+                </td>
+                <td ng-if="policy.details.loaded" class="kc-action-cell" data-ng-click="showDetails(policy);">
+                    {{:: 'authz-hide-details' | translate}}
+                </td>
+            </tr>
+            <tr ng-if="policy.details && policy.details.loaded" ng-repeat-end="">
+                <td colspan="4">
+                    <div id="details">
+                        <table class="table kc-authz-table-expanded table-striped">
+                            <thead>
+                            <tr>
+                                <th>Associated Permissions</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr>
+                                <td>
+                                    <span data-ng-show="policy.associatedPolicies && !policy.associatedPolicies.length">{{:: 'authz-no-permission-assigned' | translate}}</span>
+                                    <ul ng-repeat="dep in policy.associatedPolicies" data-ng-show="policy.associatedPolicies.length > 0">
+                                        <li>
+                                            <a href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server/policy/{{dep.type}}/{{dep.id}}">{{dep.name}}</a>
+                                        </li>
+                                    </ul>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </td>
             </tr>
             <tr data-ng-show="(policies | filter:search).length == 0">

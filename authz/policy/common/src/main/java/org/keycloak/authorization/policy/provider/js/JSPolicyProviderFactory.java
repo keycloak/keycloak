@@ -1,8 +1,12 @@
 package org.keycloak.authorization.policy.provider.js;
 
+import java.util.function.Supplier;
+
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
+
 import org.keycloak.Config;
 import org.keycloak.authorization.AuthorizationProvider;
-import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.policy.provider.PolicyProvider;
 import org.keycloak.authorization.policy.provider.PolicyProviderAdminService;
@@ -15,6 +19,13 @@ import org.keycloak.models.KeycloakSessionFactory;
  */
 public class JSPolicyProviderFactory implements PolicyProviderFactory {
 
+    private JSPolicyProvider provider = new JSPolicyProvider(new Supplier<ScriptEngine>() {
+        @Override
+        public ScriptEngine get() {
+            return new ScriptEngineManager().getEngineByName("nashorn");
+        }
+    });
+
     @Override
     public String getName() {
         return "JavaScript";
@@ -26,8 +37,8 @@ public class JSPolicyProviderFactory implements PolicyProviderFactory {
     }
 
     @Override
-    public PolicyProvider create(Policy policy, AuthorizationProvider authorization) {
-        return new JSPolicyProvider(policy);
+    public PolicyProvider create(AuthorizationProvider authorization) {
+        return provider;
     }
 
     @Override

@@ -19,7 +19,6 @@ package org.keycloak.authorization.policy.provider.aggregated;
 
 import org.keycloak.Config;
 import org.keycloak.authorization.AuthorizationProvider;
-import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.policy.provider.PolicyProvider;
 import org.keycloak.authorization.policy.provider.PolicyProviderAdminService;
@@ -32,6 +31,8 @@ import org.keycloak.models.KeycloakSessionFactory;
  */
 public class AggregatePolicyProviderFactory implements PolicyProviderFactory {
 
+    private AggregatePolicyProvider provider = new AggregatePolicyProvider();
+
     @Override
     public String getName() {
         return "Aggregated";
@@ -43,8 +44,8 @@ public class AggregatePolicyProviderFactory implements PolicyProviderFactory {
     }
 
     @Override
-    public PolicyProvider create(Policy policy, AuthorizationProvider authorization) {
-        return new AggregatePolicyProvider(policy, authorization);
+    public PolicyProvider create(AuthorizationProvider authorization) {
+        return provider;
     }
 
     @Override
