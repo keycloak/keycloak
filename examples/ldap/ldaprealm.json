@@ -129,7 +129,7 @@
           "config" : {
             "Claim JSON Type" : "String",
             "user.attribute" : "picture",
-            "claim.name" : "profile_picture",
+            "claim.name" : "picture",
             "multivalued": "false",
             "id.token.claim" : "true",
             "access.token.claim" : "true"

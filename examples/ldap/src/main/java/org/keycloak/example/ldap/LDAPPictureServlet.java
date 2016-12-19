@@ -45,23 +45,14 @@ public class LDAPPictureServlet extends HttpServlet {
         KeycloakSecurityContext securityContext = (KeycloakSecurityContext) req.getAttribute(KeycloakSecurityContext.class.getName());
         IDToken idToken = securityContext.getIdToken();
 
-        // TODO: Use idToken.getPicture() instead
-        Object profilePicture = idToken.getOtherClaims().get("profile_picture");
+        String profilePicture = idToken.getPicture();
 
         if (profilePicture != null) {
-            String base64EncodedPicture = getBase64EncodedPicture(profilePicture);
-            byte[] decodedPicture = Base64.decode(base64EncodedPicture);
+            byte[] decodedPicture = Base64.decode(profilePicture);
             outputStream.write(decodedPicture);
         }
 
         outputStream.flush();
     }
 
-    private String getBase64EncodedPicture(Object profilePicture) {
-        if (profilePicture instanceof List) {
-            return ((List) profilePicture).get(0).toString();
-        } else {
-            return profilePicture.toString();
-        }
-    }
 }

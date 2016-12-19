@@ -17,7 +17,10 @@
 
 package org.keycloak.testsuite.rule;
 
-import org.junit.rules.ExternalResource;
+import org.jboss.logging.Logger;
+import org.junit.rules.TestRule;
+import org.junit.runner.Description;
+import org.junit.runners.model.Statement;
 import org.keycloak.testsuite.federation.ldap.LDAPTestConfiguration;
 import org.keycloak.util.ldap.LDAPEmbeddedServer;
 
@@ -25,28 +28,76 @@ import java.util.Map;
 import java.util.Properties;
 
 /**
+ * This rule handles:
+ * - Reading of LDAP configuration from properties file
+ * - Eventually start+stop of LDAP embedded server.
+ * - Eventually allows to ignore the test if particular condition is not met. This allows to run specific tests just for some LDAP vendors
+ *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class LDAPRule extends ExternalResource {
+public class LDAPRule implements TestRule {
+
+    private static final Logger logger = Logger.getLogger(LDAPRule.class);
 
     public static final String LDAP_CONNECTION_PROPERTIES_LOCATION = "ldap/ldap-connection.properties";
 
     protected LDAPTestConfiguration ldapTestConfiguration;
     protected LDAPEmbeddedServer ldapEmbeddedServer;
 
+    private final LDAPRuleCondition condition;
+
+
+    public LDAPRule() {
+        this(null);
+    }
+
+    public LDAPRule(LDAPRuleCondition condition) {
+        this.condition = condition;
+    }
+
+
     @Override
-    protected void before() throws Throwable {
+    public Statement apply(Statement base, Description description) {
+        return new Statement() {
+
+            @Override
+            public void evaluate() throws Throwable {
+                boolean skipTest = before();
+
+                if (skipTest) {
+                    logger.infof("Skip %s due to LDAPRuleCondition not met", description.getDisplayName());
+                    return;
+                }
+
+                try {
+                    base.evaluate();
+                } finally {
+                    after();
+                }
+            }
+        };
+    }
+
+
+    // Return true if test should be skipped
+    protected boolean before() throws Throwable {
         String connectionPropsLocation = getConnectionPropertiesLocation();
         ldapTestConfiguration = LDAPTestConfiguration.readConfiguration(connectionPropsLocation);
+
+        if (condition != null && condition.skipTest(ldapTestConfiguration.getLDAPConfig())) {
+            return true;
+        }
 
         if (ldapTestConfiguration.isStartEmbeddedLdapLerver()) {
             ldapEmbeddedServer = createServer();
             ldapEmbeddedServer.init();
             ldapEmbeddedServer.start();
         }
+
+        return false;
     }
 
-    @Override
+
     protected void after() {
         try {
             if (ldapEmbeddedServer != null) {
@@ -77,5 +128,13 @@ public class LDAPRule extends ExternalResource {
 
     public int getSleepTime() {
         return ldapTestConfiguration.getSleepTime();
+    }
+
+
+    // Allows to skip particular LDAP test just under specific conditions (eg. some test running just on Active Directory)
+    public interface LDAPRuleCondition {
+
+        boolean skipTest(Map<String, String> ldapConfig);
+
     }
 }

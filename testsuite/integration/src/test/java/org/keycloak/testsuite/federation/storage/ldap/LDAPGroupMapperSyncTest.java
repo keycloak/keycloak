@@ -104,8 +104,8 @@ public class LDAPGroupMapperSyncTest {
             LDAPObject group11 = LDAPTestUtils.createLDAPGroup(manager.getSession(), appRealm, ldapModel, "group11");
             LDAPObject group12 = LDAPTestUtils.createLDAPGroup(manager.getSession(), appRealm, ldapModel, "group12", descriptionAttrName, "group12 - description");
 
-            LDAPUtils.addMember(ldapFedProvider, MembershipType.DN, LDAPConstants.MEMBER, group1, group11, false);
-            LDAPUtils.addMember(ldapFedProvider, MembershipType.DN, LDAPConstants.MEMBER, group1, group12, true);
+            LDAPUtils.addMember(ldapFedProvider, MembershipType.DN, LDAPConstants.MEMBER, "not-used", group1, group11, false);
+            LDAPUtils.addMember(ldapFedProvider, MembershipType.DN, LDAPConstants.MEMBER, "not-used", group1, group12, true);
         }
     });
 
@@ -144,7 +144,7 @@ public class LDAPGroupMapperSyncTest {
             // Add recursive group mapping to LDAP. Check that sync with preserve group inheritance will fail
             LDAPObject group1 = groupMapper.loadLDAPGroupByName("group1");
             LDAPObject group12 = groupMapper.loadLDAPGroupByName("group12");
-            LDAPUtils.addMember(ldapProvider, MembershipType.DN, LDAPConstants.MEMBER, group12, group1, true);
+            LDAPUtils.addMember(ldapProvider, MembershipType.DN, LDAPConstants.MEMBER, "not-used", group12, group1, true);
 
             try {
                 new GroupLDAPStorageMapperFactory().create(session, mapperModel).syncDataFromFederationProviderToKeycloak(realm);
@@ -171,7 +171,7 @@ public class LDAPGroupMapperSyncTest {
             Assert.assertEquals("group12 - description", kcGroup12.getFirstAttribute(descriptionAttrName));
 
             // Cleanup - remove recursive mapping in LDAP
-            LDAPUtils.deleteMember(ldapProvider, MembershipType.DN, LDAPConstants.MEMBER, group12, group1);
+            LDAPUtils.deleteMember(ldapProvider, MembershipType.DN, LDAPConstants.MEMBER, "not-used", group12, group1);
 
         } finally {
             keycloakRule.stopSession(session, false);
