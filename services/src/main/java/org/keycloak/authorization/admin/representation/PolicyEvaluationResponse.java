@@ -64,7 +64,7 @@ public class PolicyEvaluationResponse {
         AccessToken accessToken = identity.getAccessToken();
         AccessToken.Authorization authorizationData = new AccessToken.Authorization();
 
-        authorizationData.setPermissions(Permissions.permits(results, authorization, resourceServer.getId()));
+        authorizationData.setPermissions(Permissions.allPermits(results, authorization, resourceServer));
         accessToken.setAuthorization(authorizationData);
 
         response.rpt = accessToken;

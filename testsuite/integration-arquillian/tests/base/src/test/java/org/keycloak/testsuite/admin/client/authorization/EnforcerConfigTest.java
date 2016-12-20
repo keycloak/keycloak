@@ -27,6 +27,7 @@ import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.ProfileAssume;
 
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.keycloak.testsuite.util.IOUtil.loadRealm;
@@ -49,8 +50,8 @@ public class EnforcerConfigTest extends AbstractKeycloakTest {
     public void testMultiplePathsWithSameName() throws Exception{
         KeycloakDeployment deployment = KeycloakDeploymentBuilder.build(getClass().getResourceAsStream("/authorization-test/enforcer-config-paths-same-name.json"));
         PolicyEnforcer policyEnforcer = deployment.getPolicyEnforcer();
-        List<PolicyEnforcerConfig.PathConfig> paths = policyEnforcer.getPaths();
+        Map<String, PolicyEnforcerConfig.PathConfig> paths = policyEnforcer.getPaths();
         assertEquals(1, paths.size());
-        assertEquals(4, paths.get(0).getMethods().size());
+        assertEquals(4, paths.values().iterator().next().getMethods().size());
     }
 }

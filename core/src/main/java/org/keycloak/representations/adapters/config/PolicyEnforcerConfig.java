@@ -112,7 +112,7 @@ public class PolicyEnforcerConfig {
     public void setOnDenyRedirectTo(String onDenyRedirectTo) {
         this.onDenyRedirectTo = onDenyRedirectTo;
     }
-    
+
     public static class PathConfig {
 
         private String name;
