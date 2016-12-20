@@ -45,11 +45,11 @@ public class ConfigurationValidationHelper {
         checkSingle(property.getName(), property.getLabel(), required);
 
         String value = model.getConfig().getFirst(property.getName());
-        if (value != null && !property.options.contains(value)) {
+        if (value != null && !property.getOptions().contains(value)) {
             StringBuilder options = new StringBuilder();
             int i = 1;
-            for (String o : property.options) {
-                if (i == property.options.size()) {
+            for (String o : property.getOptions()) {
+                if (i == property.getOptions().size()) {
                     options.append(" or ");
                 } else if (i > 1) {
                     options.append(", ");
@@ -57,7 +57,7 @@ public class ConfigurationValidationHelper {
                 options.append(o);
                 i++;
             }
-            throw new ComponentValidationException("''{0}'' should be {1}", property.label, options.toString());
+            throw new ComponentValidationException("''{0}'' should be {1}", property.getLabel(), options.toString());
         }
 
         return this;
