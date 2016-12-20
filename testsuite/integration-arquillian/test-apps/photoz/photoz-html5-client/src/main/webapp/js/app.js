@@ -62,7 +62,16 @@ module.controller('TokenCtrl', function ($scope, Identity) {
     }
 
     $scope.requestEntitlements = function () {
-        Identity.authorization.entitlement('photoz-restful-api').then(function (rpt) {});
+        Identity.authorization.entitlement('photoz-restful-api').then(function (rpt) {
+            document.getElementById("output").innerHTML = JSON.stringify(jwt_decode(rpt), null, '  ');
+        });
+    }
+    
+    $scope.requestEntitlement = function () {
+        var param={"permissions" : [{"resource_set_name" : "Album Resource"}]};
+        Identity.authorization.entitlement('photoz-restful-api', param).then(function (rpt) {
+            document.getElementById("output").innerHTML = JSON.stringify(jwt_decode(rpt), null, '  ');
+        });
     }
 
     $scope.Identity = Identity;
