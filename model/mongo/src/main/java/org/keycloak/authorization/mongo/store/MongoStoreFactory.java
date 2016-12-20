@@ -25,6 +25,7 @@ import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.authorization.store.ScopeStore;
 import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.connections.mongo.api.context.MongoStoreInvocationContext;
+import org.keycloak.models.KeycloakSession;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -32,31 +33,35 @@ import org.keycloak.connections.mongo.api.context.MongoStoreInvocationContext;
 public class MongoStoreFactory implements StoreFactory {
 
     private final MongoStoreInvocationContext invocationContext;
-    private final AuthorizationProvider authorizationProvider;
+    private final KeycloakSession session;
 
-    public MongoStoreFactory(MongoStoreInvocationContext invocationContext, AuthorizationProvider authorizationProvider) {
+    public MongoStoreFactory(MongoStoreInvocationContext invocationContext, KeycloakSession session) {
         this.invocationContext = invocationContext;
-        this.authorizationProvider = authorizationProvider;
+        this.session = session;
     }
 
     @Override
     public PolicyStore getPolicyStore() {
-        return new MongoPolicyStore(this.invocationContext, this.authorizationProvider);
+        return new MongoPolicyStore(this.invocationContext, getAuthorizationProvider());
     }
 
     @Override
     public ResourceServerStore getResourceServerStore() {
-        return new MongoResourceServerStore(this.invocationContext, this.authorizationProvider);
+        return new MongoResourceServerStore(this.invocationContext, getAuthorizationProvider());
     }
 
     @Override
     public ResourceStore getResourceStore() {
-        return new MongoResourceStore(this.invocationContext, this.authorizationProvider);
+        return new MongoResourceStore(this.invocationContext, getAuthorizationProvider());
     }
 
     @Override
     public ScopeStore getScopeStore() {
-        return new MongoScopeStore(this.invocationContext, this.authorizationProvider);
+        return new MongoScopeStore(this.invocationContext, getAuthorizationProvider());
+    }
+
+    private AuthorizationProvider getAuthorizationProvider() {
+        return session.getProvider(AuthorizationProvider.class);
     }
 
     @Override
