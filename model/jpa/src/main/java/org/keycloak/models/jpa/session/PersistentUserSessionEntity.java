@@ -50,7 +50,7 @@ public class PersistentUserSessionEntity {
     @Column(name = "REALM_ID", length = 36)
     protected String realmId;
 
-    @Column(name="USER_ID", length = 36)
+    @Column(name="USER_ID", length = 255)
     protected String userId;
 
     @Column(name = "LAST_SESSION_REFRESH")
