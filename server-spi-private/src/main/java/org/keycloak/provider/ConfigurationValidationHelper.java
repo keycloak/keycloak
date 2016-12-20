@@ -41,6 +41,28 @@ public class ConfigurationValidationHelper {
         return checkInt(property.getName(), property.getLabel(), required);
     }
 
+    public ConfigurationValidationHelper checkList(ProviderConfigProperty property, boolean required) throws ComponentValidationException {
+        checkSingle(property.getName(), property.getLabel(), required);
+
+        String value = model.getConfig().getFirst(property.getName());
+        if (value != null && !property.getOptions().contains(value)) {
+            StringBuilder options = new StringBuilder();
+            int i = 1;
+            for (String o : property.getOptions()) {
+                if (i == property.getOptions().size()) {
+                    options.append(" or ");
+                } else if (i > 1) {
+                    options.append(", ");
+                }
+                options.append(o);
+                i++;
+            }
+            throw new ComponentValidationException("''{0}'' should be {1}", property.getLabel(), options.toString());
+        }
+
+        return this;
+    }
+
     public ConfigurationValidationHelper checkInt(String key, String label, boolean required) throws ComponentValidationException {
         checkSingle(key, label, required);
 

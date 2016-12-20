@@ -119,7 +119,7 @@ public class IdpCreateUserIfUniqueAuthenticator extends AbstractIdpAuthenticator
     // Could be overriden to detect duplication based on other criterias (firstName, lastName, ...)
     protected ExistingUserInfo checkExistingUser(AuthenticationFlowContext context, String username, SerializedBrokeredIdentityContext serializedCtx, BrokeredIdentityContext brokerContext) {
 
-        if (brokerContext.getEmail() != null) {
+        if (brokerContext.getEmail() != null && !context.getRealm().isDuplicateEmailsAllowed()) {
             UserModel existingUser = context.getSession().users().getUserByEmail(brokerContext.getEmail(), context.getRealm());
             if (existingUser != null) {
                 return new ExistingUserInfo(existingUser.getId(), UserModel.EMAIL, existingUser.getEmail());

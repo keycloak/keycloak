@@ -56,7 +56,7 @@ public class ClientsPartialImport extends AbstractPartialImport<ClientRepresenta
     }
 
     @Override
-    public String existsMessage(ClientRepresentation clientRep) {
+    public String existsMessage(RealmModel realm, ClientRepresentation clientRep) {
         return "Client id '" + getName(clientRep) + "' already exists";
     }
 

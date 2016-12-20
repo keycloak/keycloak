@@ -3,8 +3,7 @@ package org.keycloak.testsuite.console.federation;
 import org.apache.commons.configuration.ConfigurationException;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Test;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.representations.idm.UserFederationProviderRepresentation;
+import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.testsuite.console.AbstractConsoleTest;
 import org.keycloak.testsuite.console.page.federation.CreateLdapUserProvider;
 import org.keycloak.util.ldap.LDAPEmbeddedServer;
@@ -53,12 +52,13 @@ public class LdapUserFederationTest extends AbstractConsoleTest {
         createLdapUserProvider.form().save();
         assertAlertSuccess();
 
-        RealmRepresentation realm = testRealmResource().toRepresentation();
-        UserFederationProviderRepresentation ufpr = realm.getUserFederationProviders().get(0);
-        assertLdapProviderSetting(ufpr, "ldap", 0, WRITABLE, "false", "ad", "1", "true", "true", "false");
+        ComponentRepresentation ufpr = testRealmResource().components()
+                .query(null, "org.keycloak.storage.UserStorageProvider").get(0);
+
+        assertLdapProviderSetting(ufpr, "ldap", "0", WRITABLE, "false", "ad", "1", "true", "true", "false");
         assertLdapBasicMapping(ufpr, "cn", "cn", "objectGUID", "person, organizationalPerson, user",
                 "ou=People,dc=keycloak,dc=org");
-        assertLdapSyncSetings(ufpr, "1000", 0, 0);
+        assertLdapSyncSetings(ufpr, "1000", "-1", "-1");
         assertLdapKerberosSetings(ufpr, "KEYCLOAK.ORG", "HTTP/localhost@KEYCLOAK.ORG", "http.keytab", "true", "false");
     }
 
@@ -75,12 +75,13 @@ public class LdapUserFederationTest extends AbstractConsoleTest {
         createLdapUserProvider.form().save();
         assertAlertSuccess();
 
-        RealmRepresentation realm = testRealmResource().toRepresentation();
-        UserFederationProviderRepresentation ufpr = realm.getUserFederationProviders().get(0);
-        assertLdapProviderSetting(ufpr, "ldap", 0, READ_ONLY, "false", "rhds", "1", "true", "true", "true");
+        ComponentRepresentation ufpr = testRealmResource().components()
+                .query(null, "org.keycloak.storage.UserStorageProvider").get(0);
+
+        assertLdapProviderSetting(ufpr, "ldap", "0", READ_ONLY, "false", "rhds", "1", "true", "true", "true");
         assertLdapBasicMapping(ufpr, "uid", "uid", "nsuniqueid", "inetOrgPerson, organizationalPerson",
                 "ou=People,dc=keycloak,dc=org");
-        assertLdapSyncSetings(ufpr, "1000", 0, 0);
+        assertLdapSyncSetings(ufpr, "1000", "-1", "-1");
     }
 
     @Test
@@ -175,44 +176,44 @@ public class LdapUserFederationTest extends AbstractConsoleTest {
         assertTrue("Vendors list doesn't match", vendorsExpected.containsAll(vendorsActual));
     }
 
-    private void assertLdapProviderSetting(UserFederationProviderRepresentation ufpr, String name, int priority,
+    private void assertLdapProviderSetting(ComponentRepresentation ufpr, String name, String priority,
             String editMode, String syncRegistrations, String vendor, String searchScope, String connectionPooling,
             String pagination, String enableAccountAfterPasswordUpdate) {
-        assertEquals(name, ufpr.getDisplayName());
-        assertEquals(priority, ufpr.getPriority());
-        assertEquals(editMode, ufpr.getConfig().get("editMode"));
-        assertEquals(syncRegistrations, ufpr.getConfig().get("syncRegistrations"));
-        assertEquals(vendor, ufpr.getConfig().get("vendor"));
-        assertEquals(searchScope, ufpr.getConfig().get("searchScope"));
-        assertEquals(connectionPooling, ufpr.getConfig().get("connectionPooling"));
-        assertEquals(pagination, ufpr.getConfig().get("pagination"));
+        assertEquals(name, ufpr.getName());
+        assertEquals(priority, ufpr.getConfig().get("priority").get(0));
+        assertEquals(editMode, ufpr.getConfig().get("editMode").get(0));
+        assertEquals(syncRegistrations, ufpr.getConfig().get("syncRegistrations").get(0));
+        assertEquals(vendor, ufpr.getConfig().get("vendor").get(0));
+        assertEquals(searchScope, ufpr.getConfig().get("searchScope").get(0));
+        assertEquals(connectionPooling, ufpr.getConfig().get("connectionPooling").get(0));
+        assertEquals(pagination, ufpr.getConfig().get("pagination").get(0));
 //        assertEquals(enableAccountAfterPasswordUpdate, ufpr.getConfig().get("userAccountControlsAfterPasswordUpdate"));
     }
 
-    private void assertLdapBasicMapping(UserFederationProviderRepresentation ufpr, String usernameLdapAttribute,
+    private void assertLdapBasicMapping(ComponentRepresentation ufpr, String usernameLdapAttribute,
             String rdnLdapAttr, String uuidLdapAttr, String userObjectClasses, String userDN) {
-        assertEquals(usernameLdapAttribute, ufpr.getConfig().get("usernameLDAPAttribute"));
-        assertEquals(rdnLdapAttr, ufpr.getConfig().get("rdnLDAPAttribute"));
-        assertEquals(uuidLdapAttr, ufpr.getConfig().get("uuidLDAPAttribute"));
-        assertEquals(userObjectClasses, ufpr.getConfig().get("userObjectClasses"));
-        assertEquals(userDN, ufpr.getConfig().get("usersDn"));
+        assertEquals(usernameLdapAttribute, ufpr.getConfig().get("usernameLDAPAttribute").get(0));
+        assertEquals(rdnLdapAttr, ufpr.getConfig().get("rdnLDAPAttribute").get(0));
+        assertEquals(uuidLdapAttr, ufpr.getConfig().get("uuidLDAPAttribute").get(0));
+        assertEquals(userObjectClasses, ufpr.getConfig().get("userObjectClasses").get(0));
+        assertEquals(userDN, ufpr.getConfig().get("usersDn").get(0));
     }
 
-    private void assertLdapKerberosSetings(UserFederationProviderRepresentation ufpr, String kerberosRealm,
+    private void assertLdapKerberosSetings(ComponentRepresentation ufpr, String kerberosRealm,
             String serverPrincipal, String keyTab, String debug, String useKerberosForPasswordAuthentication) {
-        assertEquals(kerberosRealm, ufpr.getConfig().get("kerberosRealm"));
-        assertEquals(serverPrincipal, ufpr.getConfig().get("serverPrincipal"));
-        assertEquals(keyTab, ufpr.getConfig().get("keyTab"));
-        assertEquals(debug, ufpr.getConfig().get("debug"));
+        assertEquals(kerberosRealm, ufpr.getConfig().get("kerberosRealm").get(0));
+        assertEquals(serverPrincipal, ufpr.getConfig().get("serverPrincipal").get(0));
+        assertEquals(keyTab, ufpr.getConfig().get("keyTab").get(0));
+        assertEquals(debug, ufpr.getConfig().get("debug").get(0));
         assertEquals(useKerberosForPasswordAuthentication,
-                ufpr.getConfig().get("useKerberosForPasswordAuthentication"));
+                ufpr.getConfig().get("useKerberosForPasswordAuthentication").get(0));
     }
 
-    private void assertLdapSyncSetings(UserFederationProviderRepresentation ufpr, String batchSize,
-            int periodicFullSync, int periodicChangedUsersSync) {
-        assertEquals(batchSize, ufpr.getConfig().get("batchSizeForSync"));
-        assertEquals(periodicFullSync, ufpr.getFullSyncPeriod());
-        assertEquals(periodicChangedUsersSync, ufpr.getChangedSyncPeriod());
+    private void assertLdapSyncSetings(ComponentRepresentation ufpr, String batchSize,
+            String periodicFullSync, String periodicChangedUsersSync) {
+        assertEquals(batchSize, ufpr.getConfig().get("batchSizeForSync").get(0));
+        assertEquals(periodicFullSync, ufpr.getConfig().get("fullSyncPeriod").get(0));
+        assertEquals(periodicChangedUsersSync, ufpr.getConfig().get("changedSyncPeriod").get(0));
     }
 
     private LDAPEmbeddedServer startEmbeddedLdapServer() throws Exception {

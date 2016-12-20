@@ -16,14 +16,14 @@
  */
 package org.keycloak.representations.idm.authorization;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 import java.net.URI;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
-import java.util.function.Predicate;
+
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * <p>One or more resources that the resource server manages as a set of protected resources.
@@ -159,23 +159,22 @@ public class ResourceRepresentation {
         this.owner = owner;
     }
 
-    public List<PolicyRepresentation> getPolicies() {
-        return this.policies;
-    }
-
-    public void setPolicies(List<PolicyRepresentation> policies) {
-        this.policies = policies;
-    }
-
-    <T> T test(Predicate<T> t) {
-        return null;
-    }
-
     public void setTypedScopes(List<ScopeRepresentation> typedScopes) {
         this.typedScopes = typedScopes;
     }
 
     public List<ScopeRepresentation> getTypedScopes() {
         return typedScopes;
+    }
+
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        ResourceRepresentation scope = (ResourceRepresentation) o;
+        return Objects.equals(getName(), scope.getName());
+    }
+
+    public int hashCode() {
+        return Objects.hash(getName());
     }
 }

@@ -220,6 +220,7 @@ public class RealmManager implements RealmImporter {
         realm.setFailureFactor(30);
         realm.setSslRequired(SslRequired.EXTERNAL);
         realm.setOTPPolicy(OTPPolicy.DEFAULT_POLICY);
+        realm.setLoginWithEmailAllowed(true);
 
         realm.setEventsListeners(Collections.singleton("jboss-logging"));
 

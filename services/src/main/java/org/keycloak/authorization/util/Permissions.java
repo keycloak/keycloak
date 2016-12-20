@@ -18,9 +18,18 @@
 
 package org.keycloak.authorization.util;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.Decision.Effect;
 import org.keycloak.authorization.identity.Identity;
+import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
@@ -30,16 +39,6 @@ import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.authorization.store.ScopeStore;
 import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.representations.idm.authorization.Permission;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -62,8 +61,8 @@ public final class Permissions {
         StoreFactory storeFactory = authorization.getStoreFactory();
         ResourceStore resourceStore = storeFactory.getResourceStore();
 
-        resourceStore.findByOwner(resourceServer.getClientId()).stream().forEach(resource -> permissions.addAll(createResourcePermissions(resource, resource.getScopes().stream().map(Scope::getName).collect(Collectors.toSet()), authorization)));
-        resourceStore.findByOwner(identity.getId()).stream().forEach(resource -> permissions.addAll(createResourcePermissions(resource, resource.getScopes().stream().map(Scope::getName).collect(Collectors.toSet()), authorization)));
+        resourceStore.findByOwner(resourceServer.getClientId(), resourceServer.getId()).stream().forEach(resource -> permissions.addAll(createResourcePermissionsWithScopes(resource, resource.getScopes(), authorization)));
+        resourceStore.findByOwner(identity.getId(), resourceServer.getId()).stream().forEach(resource -> permissions.addAll(createResourcePermissionsWithScopes(resource, resource.getScopes(), authorization)));
 
         return permissions;
     }
@@ -81,7 +80,7 @@ public final class Permissions {
             if (type != null && !resource.getOwner().equals(resourceServer.getClientId())) {
                 StoreFactory storeFactory = authorization.getStoreFactory();
                 ResourceStore resourceStore = storeFactory.getResourceStore();
-                resourceStore.findByType(type).forEach(resource1 -> {
+                resourceStore.findByType(type, resourceServer.getId()).forEach(resource1 -> {
                     if (resource1.getOwner().equals(resourceServer.getClientId())) {
                         for (Scope typeScope : resource1.getScopes()) {
                             if (!scopes.contains(typeScope)) {
@@ -95,78 +94,141 @@ public final class Permissions {
             ScopeStore scopeStore = authorization.getStoreFactory().getScopeStore();
             scopes = requestedScopes.stream().map(scopeName -> {
                 Scope byName = scopeStore.findByName(scopeName, resource.getResourceServer().getId());
+
+                if (byName == null) {
+                    throw new RuntimeException("Invalid scope [" + scopeName + "].");
+                }
+
                 return byName;
             }).collect(Collectors.toList());
         }
 
-        if (scopes.isEmpty()) {
-            permissions.add(new ResourcePermission(resource, Collections.emptyList(), resource.getResourceServer()));
-        } else {
-            for (Scope scope : scopes) {
-                permissions.add(new ResourcePermission(resource, Arrays.asList(scope), resource.getResourceServer()));
-            }
-        }
+        permissions.add(new ResourcePermission(resource, scopes, resource.getResourceServer()));
 
         return permissions;
     }
 
-    public static List<Permission> allPermits(List<Result> evaluation, AuthorizationProvider authorizationProvider) {
+    public static List<ResourcePermission> createResourcePermissionsWithScopes(Resource resource, List<Scope> scopes, AuthorizationProvider authorization) {
+        List<ResourcePermission> permissions = new ArrayList<>();
+        String type = resource.getType();
+        ResourceServer resourceServer = resource.getResourceServer();
+
+        // check if there is a typed resource whose scopes are inherited by the resource being requested. In this case, we assume that parent resource
+        // is owned by the resource server itself
+        if (type != null && !resource.getOwner().equals(resourceServer.getClientId())) {
+            StoreFactory storeFactory = authorization.getStoreFactory();
+            ResourceStore resourceStore = storeFactory.getResourceStore();
+            resourceStore.findByType(type, resourceServer.getId()).forEach(resource1 -> {
+                if (resource1.getOwner().equals(resourceServer.getClientId())) {
+                    for (Scope typeScope : resource1.getScopes()) {
+                        if (!scopes.contains(typeScope)) {
+                            scopes.add(typeScope);
+                        }
+                    }
+                }
+            });
+        }
+
+        permissions.add(new ResourcePermission(resource, scopes, resource.getResourceServer()));
+
+        return permissions;
+    }
+
+    public static List<Permission> allPermits(List<Result> evaluation, AuthorizationProvider authorizationProvider, ResourceServer resourceServer) {
         Map<String, Permission> permissions = new HashMap<>();
 
         for (Result evaluationResult : evaluation) {
             ResourcePermission permission = evaluationResult.getPermission();
-            Set<String> scopes = permission.getScopes().stream().map(Scope::getName).collect(Collectors.toSet());
+
+            // if overall decision was a DENY, check for scope-based policies for a PERMIT
+            if (evaluationResult.getEffect().equals(Effect.DENY)) {
+                for (Result.PolicyResult result : evaluationResult.getResults()) {
+                    Policy policy = result.getPolicy();
+
+                    if ("scope".equals(policy.getType())) {
+                        Set<Resource> resources = policy.getResources();
+
+                        if (Effect.PERMIT.equals(result.getStatus())) {
+                            List<Scope> scopes = policy.getScopes().stream().collect(Collectors.toList());
+
+                            if (!resources.isEmpty()) {
+                                resources.forEach(resource -> grantPermission(authorizationProvider, permissions, new ResourcePermission(resource, scopes, policy.getResourceServer()), resourceServer.getId()));
+                            } else {
+                                grantPermission(authorizationProvider, permissions, new ResourcePermission(permission.getResource(), scopes, policy.getResourceServer()), resourceServer.getId());
+                            }
+                        }
+                    }
+                }
+                continue;
+            }
+
+            grantPermission(authorizationProvider, permissions, permission, resourceServer.getId());
+        }
+
+        return permissions.values().stream().collect(Collectors.toList());
+    }
+
+    public static List<Permission> permits(List<Result> evaluation, AuthorizationProvider authorizationProvider, String resourceServer) {
+        Map<String, Permission> permissions = new HashMap<>();
+
+        for (Result evaluationResult : evaluation) {
+            ResourcePermission permission = evaluationResult.getPermission();
 
             if (evaluationResult.getEffect().equals(Effect.DENY)) {
                 continue;
             }
 
-            List<Resource> resources = new ArrayList<>();
-            Resource resource = permission.getResource();
-
-            if (resource != null) {
-                resources.add(resource);
-            } else {
-                List<Scope> permissionScopes = permission.getScopes();
-
-                if (!permissionScopes.isEmpty()) {
-                    ResourceStore resourceStore = authorizationProvider.getStoreFactory().getResourceStore();
-                    resources.addAll(resourceStore.findByScope(permissionScopes.stream().map(Scope::getId).collect(Collectors.toList()).toArray(new String[permissionScopes.size()])));
-                }
-            }
-
-            if (!resources.isEmpty()) {
-                for (Resource allowedResource : resources) {
-                    String resourceId = allowedResource.getId();
-                    String resourceName = allowedResource.getName();
-                    Permission evalPermission = permissions.get(allowedResource.getId());
-
-                    if (evalPermission == null) {
-                        evalPermission = new Permission(resourceId, resourceName, scopes);
-                        permissions.put(resourceId, evalPermission);
-                    }
-
-                    if (scopes != null && !scopes.isEmpty()) {
-                        Set<String> finalScopes = evalPermission.getScopes();
-
-                        if (finalScopes == null) {
-                            finalScopes = new HashSet();
-                            evalPermission.setScopes(finalScopes);
-                        }
-
-                        for (String scopeName : scopes) {
-                            if (!finalScopes.contains(scopeName)) {
-                                finalScopes.add(scopeName);
-                            }
-                        }
-                    }
-                }
-            } else {
-                Permission scopePermission = new Permission(null, null, scopes);
-                permissions.put(scopePermission.toString(), scopePermission);
-            }
+            grantPermission(authorizationProvider, permissions, permission, resourceServer);
         }
 
         return permissions.values().stream().collect(Collectors.toList());
+    }
+
+    private static void grantPermission(AuthorizationProvider authorizationProvider, Map<String, Permission> permissions, ResourcePermission permission, String resourceServer) {
+        List<Resource> resources = new ArrayList<>();
+        Resource resource = permission.getResource();
+        Set<String> scopes = permission.getScopes().stream().map(Scope::getName).collect(Collectors.toSet());
+
+        if (resource != null) {
+            resources.add(resource);
+        } else {
+            List<Scope> permissionScopes = permission.getScopes();
+
+            if (!permissionScopes.isEmpty()) {
+                ResourceStore resourceStore = authorizationProvider.getStoreFactory().getResourceStore();
+                resources.addAll(resourceStore.findByScope(permissionScopes.stream().map(Scope::getId).collect(Collectors.toList()), resourceServer));
+            }
+        }
+
+        if (!resources.isEmpty()) {
+            for (Resource allowedResource : resources) {
+                String resourceId = allowedResource.getId();
+                String resourceName = allowedResource.getName();
+                Permission evalPermission = permissions.get(allowedResource.getId());
+
+                if (evalPermission == null) {
+                    evalPermission = new Permission(resourceId, resourceName, scopes);
+                    permissions.put(resourceId, evalPermission);
+                }
+
+                if (scopes != null && !scopes.isEmpty()) {
+                    Set<String> finalScopes = evalPermission.getScopes();
+
+                    if (finalScopes == null) {
+                        finalScopes = new HashSet();
+                        evalPermission.setScopes(finalScopes);
+                    }
+
+                    for (String scopeName : scopes) {
+                        if (!finalScopes.contains(scopeName)) {
+                            finalScopes.add(scopeName);
+                        }
+                    }
+                }
+            }
+        } else {
+            Permission scopePermission = new Permission(null, null, scopes);
+            permissions.put(scopePermission.toString(), scopePermission);
+        }
     }
 }

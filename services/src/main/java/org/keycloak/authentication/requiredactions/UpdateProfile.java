@@ -104,16 +104,18 @@ public class UpdateProfile implements RequiredActionProvider, RequiredActionFact
         boolean emailChanged = oldEmail != null ? !oldEmail.equals(email) : email != null;
 
         if (emailChanged) {
-            UserModel userByEmail = session.users().getUserByEmail(email, realm);
+            if (!realm.isDuplicateEmailsAllowed()) {
+                UserModel userByEmail = session.users().getUserByEmail(email, realm);
 
-            // check for duplicated email
-            if (userByEmail != null && !userByEmail.getId().equals(user.getId())) {
-                Response challenge = context.form()
-                        .setError(Messages.EMAIL_EXISTS)
-                        .setFormData(formData)
-                        .createResponse(UserModel.RequiredAction.UPDATE_PROFILE);
-                context.challenge(challenge);
-                return;
+                // check for duplicated email
+                if (userByEmail != null && !userByEmail.getId().equals(user.getId())) {
+                    Response challenge = context.form()
+                            .setError(Messages.EMAIL_EXISTS)
+                            .setFormData(formData)
+                            .createResponse(UserModel.RequiredAction.UPDATE_PROFILE);
+                    context.challenge(challenge);
+                    return;
+                }
             }
 
             user.setEmail(email);

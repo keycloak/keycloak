@@ -18,6 +18,7 @@ package org.keycloak.saml.processing.web.util;
 
 import org.keycloak.saml.common.PicketLinkLogger;
 import org.keycloak.saml.common.PicketLinkLoggerFactory;
+import org.keycloak.saml.common.constants.GeneralConstants;
 import org.keycloak.saml.common.util.Base64;
 
 import java.io.ByteArrayInputStream;
@@ -42,7 +43,7 @@ public class PostBindingUtil {
      * @return
      */
     public static String base64Encode(String stringToEncode) throws IOException {
-        return Base64.encodeBytes(stringToEncode.getBytes("UTF-8"), Base64.DONT_BREAK_LINES);
+        return Base64.encodeBytes(stringToEncode.getBytes(GeneralConstants.SAML_CHARSET), Base64.DONT_BREAK_LINES);
     }
 
     /**

@@ -146,7 +146,6 @@ public class NodejsAdapterTest extends AbstractAuthTest {
 
     // KEYCLOAK-3284
     @Test
-    @Ignore // to be enabled when KEYCLOAK-3284 is fixed
     public void sessionTest() {
         nodejsExamplePage.clickLogin();
         testRealmLoginPage.form().login(USER, PASSWORD);

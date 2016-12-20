@@ -19,6 +19,7 @@ package org.keycloak.testsuite.adapter.servlet;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import javax.ws.rs.core.Response;
@@ -41,6 +42,7 @@ import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.StreamUtil;
 import org.keycloak.common.util.Time;
 import org.keycloak.constants.AdapterConstants;
+import org.keycloak.jose.jws.AlgorithmType;
 import org.keycloak.keys.KeyProvider;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
@@ -48,6 +50,7 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.adapters.action.GlobalRequestResult;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
+import org.keycloak.representations.idm.KeysMetadataRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.adapter.AbstractServletsAdapterTest;
 import org.keycloak.testsuite.adapter.filter.AdapterActionsFilter;
@@ -58,9 +61,7 @@ import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.util.URLAssert;
 import org.openqa.selenium.By;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 import static org.keycloak.testsuite.auth.page.AuthRealm.DEMO;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlEquals;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
@@ -201,9 +202,9 @@ public abstract class AbstractOIDCPublicKeyRotationAdapterTest extends AbstractS
         Assert.assertEquals(200, status);
 
         // Re-generate realm public key and remove the old key
-        String oldKeyId = getActiveKeyId();
+        String oldActiveKeyProviderId = getActiveKeyProvider();
         generateNewRealmKey();
-        adminClient.realm(DEMO).components().component(oldKeyId).remove();
+        adminClient.realm(DEMO).components().component(oldActiveKeyProviderId).remove();
 
         // Send REST request to the customer-db app. Should be still succcessfully authenticated as the JWKPublicKeyLocator cache is still valid
         status = invokeRESTEndpoint(accessTokenString);
@@ -237,7 +238,8 @@ public abstract class AbstractOIDCPublicKeyRotationAdapterTest extends AbstractS
         String accessTokenString = tokenMinTTLPage.getAccessTokenString();
 
         // Generate new realm public key
-        String oldKeyId = getActiveKeyId();
+        String oldActiveKeyProviderId = getActiveKeyProvider();
+
         generateNewRealmKey();
 
         // Send REST request to customer-db app. It should be successfully authenticated even that token is signed by the old key
@@ -245,7 +247,7 @@ public abstract class AbstractOIDCPublicKeyRotationAdapterTest extends AbstractS
         Assert.assertEquals(200, status);
 
         // Remove the old realm key now
-        adminClient.realm(DEMO).components().component(oldKeyId).remove();
+        adminClient.realm(DEMO).components().component(oldActiveKeyProviderId).remove();
 
         // Set some offset to ensure pushing notBefore will pass
         setAdapterAndServerTimeOffset(130, customerDb.toString() + "/unsecured/foo", tokenMinTTLPage.toString() + "/unsecured/foo");
@@ -295,12 +297,16 @@ public abstract class AbstractOIDCPublicKeyRotationAdapterTest extends AbstractS
         response.close();
     }
 
-    private String getActiveKeyId() {
-        String realmId = adminClient.realm(DEMO).toRepresentation().getId();
-        return adminClient.realm(DEMO).components().query(realmId, KeyProvider.class.getName())
-                .get(0).getId();
+    private String getActiveKeyProvider() {
+        KeysMetadataRepresentation keyMetadata = adminClient.realm(DEMO).keys().getKeyMetadata();
+        String activeKid = keyMetadata.getActive().get(AlgorithmType.RSA.name());
+        for (KeysMetadataRepresentation.KeyMetadataRepresentation rep : keyMetadata.getKeys()) {
+            if (rep.getKid().equals(activeKid)) {
+                return rep.getProviderId();
+            }
+        }
+        return null;
     }
-
 
     private int invokeRESTEndpoint(String accessTokenString) {
 

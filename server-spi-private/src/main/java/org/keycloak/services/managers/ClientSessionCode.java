@@ -126,9 +126,13 @@ public class ClientSessionCode {
     }
 
     public static ClientSessionModel getClientSession(String code, KeycloakSession session, RealmModel realm) {
-        String[] parts = code.split("\\.");
-        String id = parts[1];
-        return session.sessions().getClientSession(realm, id);
+        try {
+            String[] parts = code.split("\\.");
+            String id = parts[1];
+            return session.sessions().getClientSession(realm, id);
+        } catch (ArrayIndexOutOfBoundsException e) {
+            return null;
+        }
     }
 
     public ClientSessionModel getClientSession() {

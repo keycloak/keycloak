@@ -109,7 +109,7 @@ public class ResourceService {
     }
 
     private Set<String> findAll() {
-        Response response = this.resourceManager.find(null, null, null, null, null, -1, -1);
+        Response response = this.resourceManager.find(null, null, null, null, null, null, true, -1, -1);
         List<ResourceRepresentation> resources = (List<ResourceRepresentation>) response.getEntity();
         return resources.stream().map(ResourceRepresentation::getId).collect(Collectors.toSet());
     }
@@ -132,25 +132,23 @@ public class ResourceService {
 
 
                 if ("name".equals(filterType)) {
-                    resources.addAll(storeFactory.getResourceStore().findByResourceServer(this.resourceServer.getId()).stream().filter(description -> filterValue == null || filterValue.equals(description.getName())).collect(Collectors.toSet()).stream()
-                            .map(resource -> ModelToRepresentation.toRepresentation(resource, this.resourceServer, authorization))
-                            .collect(Collectors.toList()));
+                    resources.add(ModelToRepresentation.toRepresentation(storeFactory.getResourceStore().findByName(filterValue, this.resourceServer.getId()), resourceServer, authorization));
                 } else if ("type".equals(filterType)) {
                     resources.addAll(storeFactory.getResourceStore().findByResourceServer(this.resourceServer.getId()).stream().filter(description -> filterValue == null || filterValue.equals(description.getType())).collect(Collectors.toSet()).stream()
                             .map(resource -> ModelToRepresentation.toRepresentation(resource, this.resourceServer, authorization))
                             .collect(Collectors.toList()));
                 } else if ("uri".equals(filterType)) {
-                    resources.addAll(storeFactory.getResourceStore().findByResourceServer(this.resourceServer.getId()).stream().filter(description -> filterValue == null || filterValue.equals(description.getUri())).collect(Collectors.toSet()).stream()
+                    resources.addAll(storeFactory.getResourceStore().findByUri(filterValue, this.resourceServer.getId()).stream()
                             .map(resource -> ModelToRepresentation.toRepresentation(resource, this.resourceServer, authorization))
                             .collect(Collectors.toList()));
                 } else if ("owner".equals(filterType)) {
-                    resources.addAll(storeFactory.getResourceStore().findByResourceServer(this.resourceServer.getId()).stream().filter(description -> filterValue == null || filterValue.equals(description.getOwner())).collect(Collectors.toSet()).stream()
+                    resources.addAll(storeFactory.getResourceStore().findByOwner(filterValue, this.resourceServer.getId()).stream()
                             .map(resource -> ModelToRepresentation.toRepresentation(resource, this.resourceServer, authorization))
                             .collect(Collectors.toList()));
                 }
             }
         } else {
-            resources = storeFactory.getResourceStore().findByOwner(identity.getId()).stream()
+            resources = storeFactory.getResourceStore().findByOwner(identity.getId(), resourceServer.getId()).stream()
                     .map(resource -> ModelToRepresentation.toRepresentation(resource, this.resourceServer, authorization))
                     .collect(Collectors.toSet());
         }

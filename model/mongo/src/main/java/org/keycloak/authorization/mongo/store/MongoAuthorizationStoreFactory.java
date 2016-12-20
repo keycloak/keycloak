@@ -32,8 +32,7 @@ public class MongoAuthorizationStoreFactory implements AuthorizationStoreFactory
     @Override
     public StoreFactory  create(KeycloakSession session) {
         MongoConnectionProvider connection = session.getProvider(MongoConnectionProvider.class);
-        AuthorizationProvider provider = session.getProvider(AuthorizationProvider.class);
-        return new MongoStoreFactory(connection.getInvocationContext(), provider);
+        return new MongoStoreFactory(connection.getInvocationContext(), session);
     }
 
     @Override

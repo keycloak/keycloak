@@ -382,7 +382,7 @@ public class SamlProtocol implements LoginProtocol {
 
         Document samlDocument = null;
         KeyManager keyManager = session.keys();
-        KeyManager.ActiveKey keys = keyManager.getActiveKey(realm);
+        KeyManager.ActiveRsaKey keys = keyManager.getActiveRsaKey(realm);
         boolean postBinding = isPostBinding(clientSession);
         String keyName = samlClient.getXmlSigKeyInfoKeyNameTransformer().getKeyName(keys.getKid(), keys.getCertificate());
 
@@ -518,7 +518,7 @@ public class SamlProtocol implements LoginProtocol {
                 String bindingUri = getLogoutServiceUrl(uriInfo, client, SAML_REDIRECT_BINDING);
                 SAML2LogoutRequestBuilder logoutBuilder = createLogoutRequest(bindingUri, clientSession, client);
                 if (samlClient.requiresRealmSignature() && samlClient.addExtensionsElementWithKeyInfo()) {
-                    KeyManager.ActiveKey keys = session.keys().getActiveKey(realm);
+                    KeyManager.ActiveRsaKey keys = session.keys().getActiveRsaKey(realm);
                     String keyName = samlClient.getXmlSigKeyInfoKeyNameTransformer().getKeyName(keys.getKid(), keys.getCertificate());
                     logoutBuilder.addExtension(new KeycloakKeySamlExtensionGenerator(keyName));
                 }
@@ -561,7 +561,7 @@ public class SamlProtocol implements LoginProtocol {
             if (canonicalization != null) {
                 binding.canonicalizationMethod(canonicalization);
             }
-            KeyManager.ActiveKey keys = session.keys().getActiveKey(realm);
+            KeyManager.ActiveRsaKey keys = session.keys().getActiveRsaKey(realm);
             XmlKeyInfoKeyNameTransformer transformer = XmlKeyInfoKeyNameTransformer.from(
               userSession.getNote(SAML_SERVER_SIGNATURE_KEYINFO_KEY_NAME_TRANSFORMER),
               SamlClient.DEFAULT_XML_KEY_INFO_KEY_NAME_TRANSFORMER);
@@ -668,7 +668,7 @@ public class SamlProtocol implements LoginProtocol {
     private JaxrsSAML2BindingBuilder createBindingBuilder(SamlClient samlClient) {
         JaxrsSAML2BindingBuilder binding = new JaxrsSAML2BindingBuilder();
         if (samlClient.requiresRealmSignature()) {
-            KeyManager.ActiveKey keys = session.keys().getActiveKey(realm);
+            KeyManager.ActiveRsaKey keys = session.keys().getActiveRsaKey(realm);
             String keyName = samlClient.getXmlSigKeyInfoKeyNameTransformer().getKeyName(keys.getKid(), keys.getCertificate());
             binding.signatureAlgorithm(samlClient.getSignatureAlgorithm()).signWith(keyName, keys.getPrivateKey(), keys.getPublicKey(), keys.getCertificate()).signDocument();
         }

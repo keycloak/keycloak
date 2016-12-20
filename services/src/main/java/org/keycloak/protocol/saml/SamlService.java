@@ -36,6 +36,7 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
+import org.keycloak.keys.RsaKeyMetadata;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeyManager;
@@ -416,7 +417,7 @@ public class SamlService extends AuthorizationEndpointBase {
             boolean postBinding = SamlProtocol.SAML_POST_BINDING.equals(logoutBinding);
             if (samlClient.requiresRealmSignature()) {
                 SignatureAlgorithm algorithm = samlClient.getSignatureAlgorithm();
-                KeyManager.ActiveKey keys = session.keys().getActiveKey(realm);
+                KeyManager.ActiveRsaKey keys = session.keys().getActiveRsaKey(realm);
                 binding.signatureAlgorithm(algorithm).signWith(keys.getKid(), keys.getPrivateKey(), keys.getPublicKey(), keys.getCertificate()).signDocument();
                 if (! postBinding && samlClient.addExtensionsElementWithKeyInfo()) {    // Only include extension if REDIRECT binding and signing whole SAML protocol message
                     builder.addExtension(new KeycloakKeySamlExtensionGenerator(keys.getKid()));
@@ -567,18 +568,18 @@ public class SamlService extends AuthorizationEndpointBase {
         props.put("idp.sso.HTTP-Redirect", RealmsResource.protocolUrl(uriInfo).build(realm.getName(), SamlProtocol.LOGIN_PROTOCOL).toString());
         props.put("idp.sls.HTTP-POST", RealmsResource.protocolUrl(uriInfo).build(realm.getName(), SamlProtocol.LOGIN_PROTOCOL).toString());
         StringBuilder keysString = new StringBuilder();
-        Set<KeyMetadata> keys = new TreeSet<>((o1, o2) -> o1.getStatus() == o2.getStatus() // Status can be only PASSIVE OR ACTIVE, push PASSIVE to end of list
+        Set<RsaKeyMetadata> keys = new TreeSet<>((o1, o2) -> o1.getStatus() == o2.getStatus() // Status can be only PASSIVE OR ACTIVE, push PASSIVE to end of list
           ? (int) (o2.getProviderPriority() - o1.getProviderPriority())
           : (o1.getStatus() == KeyMetadata.Status.PASSIVE ? 1 : -1));
-        keys.addAll(session.keys().getKeys(realm, false));
-        for (KeyMetadata key : keys) {
+        keys.addAll(session.keys().getRsaKeys(realm, false));
+        for (RsaKeyMetadata key : keys) {
             addKeyInfo(keysString, key, KeyTypes.SIGNING.value());
         }
         props.put("idp.signing.certificates", keysString.toString());
         return StringPropertyReplacer.replaceProperties(template, props);
     }
 
-    private static void addKeyInfo(StringBuilder target, KeyMetadata key, String purpose) {
+    private static void addKeyInfo(StringBuilder target, RsaKeyMetadata key, String purpose) {
         if (key == null) {
             return;
         }

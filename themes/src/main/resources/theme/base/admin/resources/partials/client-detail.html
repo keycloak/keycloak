@@ -110,7 +110,7 @@
                     <input ng-model="client.serviceAccountsEnabled" name="serviceAccountsEnabled" id="serviceAccountsEnabled" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
                 </div>
             </div>
-            <div class="form-group" data-ng-show="serverInfo.profileInfo.previewEnabled && protocol == 'openid-connect'">
+            <div class="form-group" data-ng-show="serverInfo.profileInfo.disabledFeatures.indexOf('AUTHORIZATION') == -1 && protocol == 'openid-connect'">
                 <label class="col-md-2 control-label" for="authorizationServicesEnabled">{{:: 'authz-authorization-services-enabled' | translate}}</label>
                 <kc-tooltip>{{:: 'authz-authorization-services-enabled.tooltip' | translate}}</kc-tooltip>
                 <div class="col-md-6">
@@ -157,6 +157,19 @@
                     </div>
                 </div>
                 <kc-tooltip>{{:: 'signature-algorithm.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group clearfix block" data-ng-show="(samlAssertionSignature || samlServerSignature) && protocol == 'saml'">
+                <label class="col-md-2 control-label" for="samlSigKeyNameTranformer">{{:: 'saml-signature-keyName-transformer' | translate}}</label>
+                <div class="col-sm-6">
+                    <div>
+                        <select class="form-control" id="xmlKeyNameTranformer"
+                                ng-change="changeSamlSigKeyNameTranformer()"
+                                ng-model="samlXmlKeyNameTranformer"
+                                ng-options="alg for alg in xmlKeyNameTranformers">
+                        </select>
+                    </div>
+                </div>
+                <kc-tooltip>{{:: 'saml-signature-keyName-transformer.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group" data-ng-show="(samlAssertionSignature || samlServerSignature) && protocol == 'saml'">
                 <label class="col-md-2 control-label" for="canonicalization">{{:: 'canonicalization-method' | translate}}</label>

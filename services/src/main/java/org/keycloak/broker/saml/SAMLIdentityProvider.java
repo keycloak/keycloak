@@ -30,6 +30,7 @@ import org.keycloak.dom.saml.v2.assertion.NameIDType;
 import org.keycloak.dom.saml.v2.assertion.SubjectType;
 import org.keycloak.dom.saml.v2.protocol.ResponseType;
 import org.keycloak.events.EventBuilder;
+import org.keycloak.keys.RsaKeyMetadata;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.KeyManager;
@@ -103,7 +104,7 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
             boolean postBinding = getConfig().isPostBindingAuthnRequest();
 
             if (getConfig().isWantAuthnRequestsSigned()) {
-                KeyManager.ActiveKey keys = session.keys().getActiveKey(realm);
+                KeyManager.ActiveRsaKey keys = session.keys().getActiveRsaKey(realm);
 
                 KeyPair keypair = new KeyPair(keys.getPublicKey(), keys.getPrivateKey());
 
@@ -205,7 +206,7 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
         JaxrsSAML2BindingBuilder binding = new JaxrsSAML2BindingBuilder()
                 .relayState(userSession.getId());
         if (getConfig().isWantAuthnRequestsSigned()) {
-            KeyManager.ActiveKey keys = session.keys().getActiveKey(realm);
+            KeyManager.ActiveRsaKey keys = session.keys().getActiveRsaKey(realm);
             String keyName = getConfig().getXmlSigKeyInfoKeyNameTransformer().getKeyName(keys.getKid(), keys.getCertificate());
             binding.signWith(keyName, keys.getPrivateKey(), keys.getPublicKey(), keys.getCertificate())
                     .signatureAlgorithm(getSignatureAlgorithm())
@@ -236,18 +237,18 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
         String nameIDPolicyFormat = getConfig().getNameIDPolicyFormat();
 
         StringBuilder keysString = new StringBuilder();
-        Set<KeyMetadata> keys = new TreeSet<>((o1, o2) -> o1.getStatus() == o2.getStatus() // Status can be only PASSIVE OR ACTIVE, push PASSIVE to end of list
+        Set<RsaKeyMetadata> keys = new TreeSet<>((o1, o2) -> o1.getStatus() == o2.getStatus() // Status can be only PASSIVE OR ACTIVE, push PASSIVE to end of list
           ? (int) (o2.getProviderPriority() - o1.getProviderPriority())
           : (o1.getStatus() == KeyMetadata.Status.PASSIVE ? 1 : -1));
-        keys.addAll(session.keys().getKeys(realm, false));
-        for (KeyMetadata key : keys) {
+        keys.addAll(session.keys().getRsaKeys(realm, false));
+        for (RsaKeyMetadata key : keys) {
             addKeyInfo(keysString, key, KeyTypes.SIGNING.value());
         }
         String descriptor = SPMetadataDescriptor.getSPDescriptor(authnBinding, endpoint, endpoint, wantAuthnRequestsSigned, entityId, nameIDPolicyFormat, keysString.toString());
         return Response.ok(descriptor, MediaType.APPLICATION_XML_TYPE).build();
     }
 
-    private static void addKeyInfo(StringBuilder target, KeyMetadata key, String purpose) {
+    private static void addKeyInfo(StringBuilder target, RsaKeyMetadata key, String purpose) {
         if (key == null) {
             return;
         }

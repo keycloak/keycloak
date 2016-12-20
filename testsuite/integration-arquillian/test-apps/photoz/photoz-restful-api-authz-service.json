@@ -47,7 +47,7 @@
       "logic": "POSITIVE",
       "decisionStrategy": "UNANIMOUS",
       "config": {
-        "mavenArtifactVersion": "2.1.0-SNAPSHOT",
+        "mavenArtifactVersion": "2.5.0.Final-SNAPSHOT",
         "mavenArtifactId": "photoz-authz-policy",
         "sessionName": "MainOwnerSession",
         "mavenArtifactGroupId": "org.keycloak.testsuite",

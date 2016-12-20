@@ -77,7 +77,7 @@ public class AbstractPermissionService {
 
             if (!resourceNotProvider) {
                 if (resourceSetId != null) {
-                    resource = storeFactory.getResourceStore().findById(resourceSetId);
+                    resource = storeFactory.getResourceStore().findById(resourceSetId, resourceServer.getId());
                 } else {
                     resource = storeFactory.getResourceStore().findByName(resourceSetName, this.resourceServer.getId());
                 }
@@ -113,7 +113,7 @@ public class AbstractPermissionService {
                     }
                 }
 
-                for (Resource baseResource : authorization.getStoreFactory().getResourceStore().findByType(resource.getType())) {
+                for (Resource baseResource : authorization.getStoreFactory().getResourceStore().findByType(resource.getType(), resourceServer.getId())) {
                     if (baseResource.getOwner().equals(resource.getResourceServer().getClientId())) {
                         for (Scope baseScope : baseResource.getScopes()) {
                             if (baseScope.getName().equals(scopeName)) {
@@ -131,7 +131,7 @@ public class AbstractPermissionService {
     }
 
     private String createPermissionTicket(List<ResourceRepresentation> resources) {
-        KeyManager.ActiveKey keys = this.authorization.getKeycloakSession().keys().getActiveKey(this.authorization.getRealm());
+        KeyManager.ActiveRsaKey keys = this.authorization.getKeycloakSession().keys().getActiveRsaKey(this.authorization.getRealm());
         return new JWSBuilder().kid(keys.getKid()).jsonContent(new PermissionTicket(resources, this.resourceServer.getId(), this.identity.getAccessToken()))
                 .rsa256(keys.getPrivateKey());
     }

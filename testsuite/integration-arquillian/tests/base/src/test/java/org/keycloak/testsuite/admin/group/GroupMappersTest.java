@@ -34,9 +34,6 @@ import org.keycloak.representations.idm.UserRepresentation;
 
 import java.util.*;
 
-import static org.hamcrest.CoreMatchers.hasItems;
-import static org.hamcrest.MatcherAssert.assertThat;
-
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
@@ -119,7 +116,7 @@ public class GroupMappersTest extends AbstractGroupTest {
             Assert.assertNotNull(groups);
             Assert.assertTrue(groups.size() == 1);
             Assert.assertEquals("topGroup", groups.get(0));
-            Assert.assertEquals(Collections.singletonList("true"), token.getOtherClaims().get("topAttribute"));
+            Assert.assertEquals("true", token.getOtherClaims().get("topAttribute"));
         }
         {
             UserRepresentation user = realm.users().search("level2GroupUser", -1, -1).get(0);
@@ -132,8 +129,8 @@ public class GroupMappersTest extends AbstractGroupTest {
             Assert.assertNotNull(groups);
             Assert.assertTrue(groups.size() == 1);
             Assert.assertEquals("level2group", groups.get(0));
-            Assert.assertEquals(Collections.singletonList("true"), token.getOtherClaims().get("topAttribute"));
-            Assert.assertEquals(Collections.singletonList("true"), token.getOtherClaims().get("level2Attribute"));
+            Assert.assertEquals("true", token.getOtherClaims().get("topAttribute"));
+            Assert.assertEquals("true", token.getOtherClaims().get("level2Attribute"));
         }
     }
 }

@@ -53,9 +53,7 @@ public class ValidateOTP extends AbstractDirectGrantAuthenticator {
             }
             return;
         }
-        MultivaluedMap<String, String> inputData = context.getHttpRequest().getDecodedFormParameters();
-        List<UserCredentialModel> credentials = new LinkedList<>();
-        String otp = inputData.getFirst(CredentialRepresentation.TOTP);
+        String otp = retrieveOTP(context);
         if (otp == null) {
             if (context.getUser() != null) {
                 context.getEvent().user(context.getUser());
@@ -141,5 +139,10 @@ public class ValidateOTP extends AbstractDirectGrantAuthenticator {
     @Override
     public String getId() {
         return PROVIDER_ID;
+    }
+    
+    protected String retrieveOTP(AuthenticationFlowContext context) {
+        MultivaluedMap<String, String> inputData = context.getHttpRequest().getDecodedFormParameters();
+        return inputData.getFirst(CredentialRepresentation.TOTP);
     }
 }

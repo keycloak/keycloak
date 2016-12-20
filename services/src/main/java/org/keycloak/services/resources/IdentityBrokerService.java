@@ -898,7 +898,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
     }
 
     private Response corsResponse(Response response, ClientModel clientModel) {
-        return Cors.add(this.request, Response.fromResponse(response)).auth().allowedOrigins(clientModel).build();
+        return Cors.add(this.request, Response.fromResponse(response)).auth().allowedOrigins(uriInfo, clientModel).build();
     }
 
     private void fireErrorEvent(String message, Throwable throwable) {

@@ -287,7 +287,7 @@ public class TokenManager {
     public RefreshToken toRefreshToken(KeycloakSession session, RealmModel realm, String encodedRefreshToken) throws JWSInputException, OAuthErrorException {
         JWSInput jws = new JWSInput(encodedRefreshToken);
 
-        if (!RSAProvider.verify(jws, session.keys().getPublicKey(realm, jws.getHeader().getKeyId()))) {
+        if (!RSAProvider.verify(jws, session.keys().getRsaPublicKey(realm, jws.getHeader().getKeyId()))) {
             throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Invalid refresh token");
         }
 
@@ -298,7 +298,7 @@ public class TokenManager {
         try {
             JWSInput jws = new JWSInput(encodedIDToken);
             IDToken idToken;
-            if (!RSAProvider.verify(jws, session.keys().getPublicKey(realm, jws.getHeader().getKeyId()))) {
+            if (!RSAProvider.verify(jws, session.keys().getRsaPublicKey(realm, jws.getHeader().getKeyId()))) {
                 throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Invalid IDToken");
             }
             idToken = jws.readJsonContent(IDToken.class);
@@ -626,8 +626,8 @@ public class TokenManager {
     }
 
     public String encodeToken(KeycloakSession session, RealmModel realm, Object token) {
-        KeyManager.ActiveKey activeKey = session.keys().getActiveKey(realm);
-        return new JWSBuilder().type(JWT).kid(activeKey.getKid()).jsonContent(token).sign(jwsAlgorithm, activeKey.getPrivateKey());
+        KeyManager.ActiveRsaKey activeRsaKey = session.keys().getActiveRsaKey(realm);
+        return new JWSBuilder().type(JWT).kid(activeRsaKey.getKid()).jsonContent(token).sign(jwsAlgorithm, activeRsaKey.getPrivateKey());
     }
 
     public AccessTokenResponseBuilder responseBuilder(RealmModel realm, ClientModel client, EventBuilder event, KeycloakSession session, UserSessionModel userSession, ClientSessionModel clientSession) {
@@ -734,7 +734,7 @@ public class TokenManager {
 
 
         public AccessTokenResponse build() {
-            KeyManager.ActiveKey activeKey = session.keys().getActiveKey(realm);
+            KeyManager.ActiveRsaKey activeRsaKey = session.keys().getActiveRsaKey(realm);
 
             if (accessToken != null) {
                 event.detail(Details.TOKEN_ID, accessToken.getId());
@@ -751,7 +751,7 @@ public class TokenManager {
 
             AccessTokenResponse res = new AccessTokenResponse();
             if (accessToken != null) {
-                String encodedToken = new JWSBuilder().type(JWT).kid(activeKey.getKid()).jsonContent(accessToken).sign(jwsAlgorithm, activeKey.getPrivateKey());
+                String encodedToken = new JWSBuilder().type(JWT).kid(activeRsaKey.getKid()).jsonContent(accessToken).sign(jwsAlgorithm, activeRsaKey.getPrivateKey());
                 res.setToken(encodedToken);
                 res.setTokenType("bearer");
                 res.setSessionState(accessToken.getSessionState());
@@ -769,11 +769,11 @@ public class TokenManager {
             }
 
             if (idToken != null) {
-                String encodedToken = new JWSBuilder().type(JWT).kid(activeKey.getKid()).jsonContent(idToken).sign(jwsAlgorithm, activeKey.getPrivateKey());
+                String encodedToken = new JWSBuilder().type(JWT).kid(activeRsaKey.getKid()).jsonContent(idToken).sign(jwsAlgorithm, activeRsaKey.getPrivateKey());
                 res.setIdToken(encodedToken);
             }
             if (refreshToken != null) {
-                String encodedToken = new JWSBuilder().type(JWT).kid(activeKey.getKid()).jsonContent(refreshToken).sign(jwsAlgorithm, activeKey.getPrivateKey());
+                String encodedToken = new JWSBuilder().type(JWT).kid(activeRsaKey.getKid()).jsonContent(refreshToken).sign(jwsAlgorithm, activeRsaKey.getPrivateKey());
                 res.setRefreshToken(encodedToken);
                 if (refreshToken.getExpiration() != 0) {
                     res.setRefreshExpiresIn(refreshToken.getExpiration() - Time.currentTime());

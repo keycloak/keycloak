@@ -400,6 +400,55 @@ public class AdapterTestStrategy extends ExternalResource {
         Time.setOffset(0);
     }
 
+    public void testAutodetectBearerOnly() throws Exception {
+        Client client = ClientBuilder.newClient();
+
+        // Do not redirect client to login page if it's an XHR
+        WebTarget target = client.target(APP_SERVER_BASE_URL + "/product-portal-autodetect-bearer-only");
+        Response response = target.request().header("X-Requested-With", "XMLHttpRequest").get();
+        Assert.assertEquals(401, response.getStatus());
+        response.close();
+
+        // Do not redirect client to login page if it's a partial Faces request
+        response = target.request().header("Faces-Request", "partial/ajax").get();
+        Assert.assertEquals(401, response.getStatus());
+        response.close();
+        
+        // Do not redirect client to login page if it's a SOAP request
+        response = target.request().header("SOAPAction", "").get();
+        Assert.assertEquals(401, response.getStatus());
+        response.close();
+
+        // Do not redirect client to login page if Accept header is missing
+        response = target.request().get();
+        Assert.assertEquals(401, response.getStatus());
+        response.close();
+
+        // Do not redirect client to login page if client does not understand HTML reponses
+        response = target.request().header(HttpHeaders.ACCEPT, "application/json,text/xml").get();
+        Assert.assertEquals(401, response.getStatus());
+        response.close();
+
+        // Redirect client to login page if it's not an XHR
+        response = target.request().header("X-Requested-With", "Dont-Know").header(HttpHeaders.ACCEPT, "*/*").get();
+        Assert.assertEquals(302, response.getStatus());
+        Assert.assertTrue(response.getHeaderString(HttpHeaders.LOCATION).contains("response_type=code"));
+        response.close();
+
+        // Redirect client to login page if client explicitely understands HTML responses
+        response = target.request().header(HttpHeaders.ACCEPT, "text/html,application/xhtml+xml,application/xml;q=0.9").get();
+        Assert.assertEquals(302, response.getStatus());
+        Assert.assertTrue(response.getHeaderString(HttpHeaders.LOCATION).contains("response_type=code"));
+        response.close();
+
+        // Redirect client to login page if client understands all response types
+        response = target.request().header(HttpHeaders.ACCEPT, "*/*").get();
+        Assert.assertEquals(302, response.getStatus());
+        Assert.assertTrue(response.getHeaderString(HttpHeaders.LOCATION).contains("response_type=code"));
+        response.close();
+        client.close();
+    }
+
     /**
      * KEYCLOAK-518
      * @throws Exception

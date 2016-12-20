@@ -18,7 +18,6 @@ package org.keycloak.testsuite.authorization;
 
 import org.keycloak.Config;
 import org.keycloak.authorization.AuthorizationProvider;
-import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.policy.evaluation.Evaluation;
 import org.keycloak.authorization.policy.provider.PolicyProvider;
@@ -43,8 +42,8 @@ public class TestPolicyProviderFactory implements PolicyProviderFactory {
     }
 
     @Override
-    public PolicyProvider create(Policy policy, AuthorizationProvider authorization) {
-        return new TestPolicyProvider(policy, authorization);
+    public PolicyProvider create(AuthorizationProvider authorization) {
+        return new TestPolicyProvider(authorization);
     }
 
     @Override
@@ -79,11 +78,9 @@ public class TestPolicyProviderFactory implements PolicyProviderFactory {
 
     private class TestPolicyProvider implements PolicyProvider {
 
-        private final Policy policy;
         private final AuthorizationProvider authorization;
 
-        public TestPolicyProvider(Policy policy, AuthorizationProvider authorization) {
-            this.policy = policy;
+        public TestPolicyProvider(AuthorizationProvider authorization) {
             this.authorization = authorization;
         }
 

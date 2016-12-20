@@ -23,6 +23,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.jose.jws.AlgorithmType;
 import org.keycloak.keys.JavaKeystoreKeyProviderFactory;
 import org.keycloak.keys.KeyMetadata;
 import org.keycloak.keys.KeyProvider;
@@ -103,7 +104,7 @@ public class JavaKeystoreKeyProviderTest extends AbstractKeycloakTest {
         KeysMetadataRepresentation.KeyMetadataRepresentation key = keys.getKeys().get(0);
 
         assertEquals(id, key.getProviderId());
-        assertEquals(KeyMetadata.Type.RSA.name(), key.getType());
+        assertEquals(AlgorithmType.RSA.name(), key.getType());
         assertEquals(priority, key.getProviderPriority());
         assertEquals(PUBLIC_KEY, key.getPublicKey());
         assertEquals(CERTIFICATE, key.getCertificate());

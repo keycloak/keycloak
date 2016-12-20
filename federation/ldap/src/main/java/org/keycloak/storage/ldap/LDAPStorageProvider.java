@@ -39,6 +39,7 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserManager;
+import org.keycloak.models.cache.UserCache;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
@@ -138,6 +139,9 @@ public class LDAPStorageProvider implements UserStorageProvider,
 
     protected UserModel proxy(RealmModel realm, UserModel local, LDAPObject ldapObject) {
         UserModel proxied = local;
+
+        checkDNChanged(realm, local, ldapObject);
+
         switch (editMode) {
             case READ_ONLY:
                 proxied = new ReadonlyLDAPUserModelDelegate(local, this);
@@ -157,6 +161,20 @@ public class LDAPStorageProvider implements UserStorageProvider,
         }
 
         return proxied;
+    }
+
+    private void checkDNChanged(RealmModel realm, UserModel local, LDAPObject ldapObject) {
+        String dnFromDB = local.getFirstAttribute(LDAPConstants.LDAP_ENTRY_DN);
+        String ldapDn = ldapObject.getDn().toString();
+        if (!ldapDn.equals(dnFromDB)) {
+            logger.debugf("Updated LDAP DN of user '%s' to '%s'", local.getUsername(), ldapDn);
+            local.setSingleAttribute(LDAPConstants.LDAP_ENTRY_DN, ldapDn);
+
+            UserCache userCache = session.userCache();
+            if (userCache != null) {
+                userCache.evict(realm, local);
+            }
+        }
     }
 
     @Override

@@ -391,3 +391,12 @@ h1 i {
     margin-left: 2%;
     width: 25%;
 }
+
+table.kc-authz-table-expanded {
+    margin-top: 0px !important;
+}
+
+.no-gutter > [class*='col-'] {
+    padding-right:0!important;
+    padding-left:0!important;
+}

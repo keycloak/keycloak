@@ -17,20 +17,13 @@
 
 package org.keycloak.keys;
 
-import java.security.PublicKey;
-import java.security.cert.Certificate;
-
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class KeyMetadata {
+public abstract class KeyMetadata {
 
     public enum Status {
         ACTIVE, PASSIVE, DISABLED
-    }
-
-    public enum Type {
-        RSA
     }
 
     private String providerId;
@@ -39,11 +32,6 @@ public class KeyMetadata {
     private String kid;
 
     private Status status;
-
-    private Type type;
-
-    private PublicKey publicKey;
-    private Certificate certificate;
 
     public String getProviderId() {
         return providerId;
@@ -75,30 +63,6 @@ public class KeyMetadata {
 
     public void setStatus(Status status) {
         this.status = status;
-    }
-
-    public Type getType() {
-        return type;
-    }
-
-    public void setType(Type type) {
-        this.type = type;
-    }
-
-    public PublicKey getPublicKey() {
-        return publicKey;
-    }
-
-    public void setPublicKey(PublicKey publicKey) {
-        this.publicKey = publicKey;
-    }
-
-    public Certificate getCertificate() {
-        return certificate;
-    }
-
-    public void setCertificate(Certificate certificate) {
-        this.certificate = certificate;
     }
 
 }

@@ -515,8 +515,17 @@ public class LDAPOperationManager {
             }
         }
 
+        StringBuilder binaryAttrsBuilder = new StringBuilder();
         if (this.config.isObjectGUID()) {
-            env.put("java.naming.ldap.attributes.binary", LDAPConstants.OBJECT_GUID);
+            binaryAttrsBuilder.append(LDAPConstants.OBJECT_GUID).append(" ");
+        }
+        for (String attrName : config.getBinaryAttributeNames()) {
+            binaryAttrsBuilder.append(attrName).append(" ");
+        }
+
+        String binaryAttrs = binaryAttrsBuilder.toString().trim();
+        if (!binaryAttrs.isEmpty()) {
+            env.put("java.naming.ldap.attributes.binary", binaryAttrs);
         }
 
         if (logger.isDebugEnabled()) {

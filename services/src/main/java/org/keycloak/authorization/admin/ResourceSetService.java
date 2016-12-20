@@ -32,8 +32,10 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
+import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceOwnerRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
+import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.resources.admin.RealmAuth;
 
@@ -48,10 +50,15 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
+
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static org.keycloak.models.utils.ModelToRepresentation.toRepresentation;
@@ -127,7 +134,7 @@ public class ResourceSetService {
         resource.setId(id);
         StoreFactory storeFactory = this.authorization.getStoreFactory();
         ResourceStore resourceStore = storeFactory.getResourceStore();
-        Resource model = resourceStore.findById(resource.getId());
+        Resource model = resourceStore.findById(resource.getId(), resourceServer.getId());
 
         if (model == null) {
             return Response.status(Status.NOT_FOUND).build();
@@ -143,14 +150,14 @@ public class ResourceSetService {
     public Response delete(@PathParam("id") String id) {
         requireManage();
         StoreFactory storeFactory = authorization.getStoreFactory();
-        Resource resource = storeFactory.getResourceStore().findById(id);
+        Resource resource = storeFactory.getResourceStore().findById(id, resourceServer.getId());
 
         if (resource == null) {
             return Response.status(Status.NOT_FOUND).build();
         }
 
         PolicyStore policyStore = storeFactory.getPolicyStore();
-        List<Policy> policies = policyStore.findByResource(id);
+        List<Policy> policies = policyStore.findByResource(id, resourceServer.getId());
 
         for (Policy policyModel : policies) {
             if (policyModel.getResources().size() == 1) {
@@ -172,13 +179,93 @@ public class ResourceSetService {
     public Response findById(@PathParam("id") String id) {
         requireView();
         StoreFactory storeFactory = authorization.getStoreFactory();
-        Resource model = storeFactory.getResourceStore().findById(id);
+        Resource model = storeFactory.getResourceStore().findById(id, resourceServer.getId());
 
         if (model == null) {
             return Response.status(Status.NOT_FOUND).build();
         }
 
-        return Response.ok(toRepresentation(model, this.resourceServer, authorization)).build();
+        return Response.ok(toRepresentation(model, this.resourceServer, authorization, true)).build();
+    }
+
+    @Path("{id}/scopes")
+    @GET
+    @NoCache
+    @Produces("application/json")
+    public Response getScopes(@PathParam("id") String id) {
+        requireView();
+        StoreFactory storeFactory = authorization.getStoreFactory();
+        Resource model = storeFactory.getResourceStore().findById(id, resourceServer.getId());
+
+        if (model == null) {
+            return Response.status(Status.NOT_FOUND).build();
+        }
+
+        List<ScopeRepresentation> scopes = model.getScopes().stream().map(scope -> {
+            ScopeRepresentation representation = new ScopeRepresentation();
+
+            representation.setId(scope.getId());
+            representation.setName(scope.getName());
+
+            return representation;
+        }).collect(Collectors.toList());
+
+        if (model.getType() != null) {
+            ResourceStore resourceStore = authorization.getStoreFactory().getResourceStore();
+            for (Resource typed : resourceStore.findByType(model.getType(), resourceServer.getId())) {
+                if (typed.getOwner().equals(resourceServer.getClientId()) && !typed.getId().equals(model.getId())) {
+                    scopes.addAll(typed.getScopes().stream().map(model1 -> {
+                        ScopeRepresentation scope = new ScopeRepresentation();
+                        scope.setId(model1.getId());
+                        scope.setName(model1.getName());
+                        String iconUri = model1.getIconUri();
+                        if (iconUri != null) {
+                            scope.setIconUri(iconUri);
+                        }
+                        return scope;
+                    }).filter(scopeRepresentation -> !scopes.contains(scopeRepresentation)).collect(Collectors.toList()));
+                }
+            }
+        }
+
+        return Response.ok(scopes).build();
+    }
+
+    @Path("{id}/permissions")
+    @GET
+    @NoCache
+    @Produces("application/json")
+    public Response getPermissions(@PathParam("id") String id) {
+        requireView();
+        StoreFactory storeFactory = authorization.getStoreFactory();
+        Resource model = storeFactory.getResourceStore().findById(id, resourceServer.getId());
+
+        if (model == null) {
+            return Response.status(Status.NOT_FOUND).build();
+        }
+
+        PolicyStore policyStore = authorization.getStoreFactory().getPolicyStore();
+        Set<Policy> policies = new HashSet<>();
+
+        policies.addAll(policyStore.findByResource(model.getId(), resourceServer.getId()));
+        policies.addAll(policyStore.findByResourceType(model.getType(), resourceServer.getId()));
+        policies.addAll(policyStore.findByScopeIds(model.getScopes().stream().map(scope -> scope.getId()).collect(Collectors.toList()), resourceServer.getId()));
+
+        List<PolicyRepresentation> representation = new ArrayList<>();
+
+        for (Policy policyModel : policies) {
+            PolicyRepresentation policy = new PolicyRepresentation();
+
+            policy.setId(policyModel.getId());
+            policy.setName(policyModel.getName());
+            policy.setType(policyModel.getType());
+
+            if (!representation.contains(policy)) {
+                representation.add(policy);
+            }
+        }
+
+        return Response.ok(representation).build();
     }
 
     @Path("/search")
@@ -205,17 +292,28 @@ public class ResourceSetService {
     @GET
     @NoCache
     @Produces("application/json")
-    public Response find(@QueryParam("name") String name,
+    public Response find(@QueryParam("_id") String id,
+                            @QueryParam("name") String name,
                             @QueryParam("uri") String uri,
                             @QueryParam("owner") String owner,
                             @QueryParam("type") String type,
                             @QueryParam("scope") String scope,
+                            @QueryParam("deep") Boolean deep,
                             @QueryParam("first") Integer firstResult,
                             @QueryParam("max") Integer maxResult) {
         requireView();
+
         StoreFactory storeFactory = authorization.getStoreFactory();
 
+        if (deep == null) {
+            deep = true;
+        }
+
         Map<String, String[]> search = new HashMap<>();
+
+        if (id != null && !"".equals(id.trim())) {
+            search.put("id", new String[] {id});
+        }
 
         if (name != null && !"".equals(name.trim())) {
             search.put("name", new String[] {name});
@@ -260,9 +358,10 @@ public class ResourceSetService {
             search.put("scope", scopes.stream().map(Scope::getId).toArray(String[]::new));
         }
 
+        Boolean finalDeep = deep;
         return Response.ok(
                 storeFactory.getResourceStore().findByResourceServer(search, this.resourceServer.getId(), firstResult != null ? firstResult : -1, maxResult != null ? maxResult : Constants.DEFAULT_MAX_RESULTS).stream()
-                        .map(resource -> toRepresentation(resource, this.resourceServer, authorization))
+                        .map(resource -> toRepresentation(resource, resourceServer, authorization, finalDeep))
                         .collect(Collectors.toList()))
                 .build();
     }

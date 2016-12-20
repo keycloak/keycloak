@@ -27,7 +27,7 @@
     <table class="table table-striped table-bordered">
         <thead>
         <tr ng-show="providers.length > 0 && access.manageRealm">
-            <th colspan="6" class="kc-table-actions">
+            <th colspan="7" class="kc-table-actions">
                 <div class="pull-right">
                     <div>
                         <select class="form-control" ng-model="selectedProvider"
@@ -40,6 +40,7 @@
             </th>
         </tr>
         <tr data-ng-show="instances && instances.length > 0">
+            <th>{{:: 'type' | translate}}</th>
             <th>{{:: 'name' | translate}}</th>
             <th>{{:: 'id' | translate}}</th>
             <th>{{:: 'provider' | translate}}</th>
@@ -49,6 +50,7 @@
         </thead>
         <tbody>
         <tr ng-repeat="instance in instances">
+            <td>{{instance.provider.metadata.algorithmType}}</td>
             <td>{{instance.name}}</td>
             <td><a href="#/realms/{{realm.realm}}/keys/providers/{{instance.providerId}}/{{instance.id}}">{{instance.id}}</a></td>
             <td>{{instance.providerId}}</td>

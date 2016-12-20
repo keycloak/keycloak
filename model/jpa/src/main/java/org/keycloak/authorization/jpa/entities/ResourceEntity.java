@@ -67,7 +67,7 @@ public class ResourceEntity implements Resource {
     @Column(name = "OWNER")
     private String owner;
 
-    @ManyToOne(optional = false)
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "RESOURCE_SERVER_ID")
     private ResourceServerEntity resourceServer;
 

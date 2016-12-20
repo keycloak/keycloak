@@ -54,7 +54,13 @@ public class PhotozClientAuthzTestApp extends AbstractPageWithInjectedUrl {
 
     @FindBy(xpath = "//a[@ng-click = 'Identity.logout()']")
     WebElement signOutButton;
-
+    
+    @FindBy(id = "entitlement")
+    WebElement entitlement;
+    
+    @FindBy(id = "entitlements")
+    WebElement entitlements;
+    
     public void createAlbum(String name) {
         navigateTo();
         this.driver.findElement(By.id("create-album")).click();
@@ -83,6 +89,16 @@ public class PhotozClientAuthzTestApp extends AbstractPageWithInjectedUrl {
 
     public void logOut() {
         signOutButton.click(); // Sometimes doesn't work in PhantomJS!
+        pause(WAIT_AFTER_OPERATION);
+    }
+    
+    public void requestEntitlement() {
+        entitlement.click();
+        pause(WAIT_AFTER_OPERATION);
+    }
+    
+    public void requestEntitlements() {
+        entitlements.click();
         pause(WAIT_AFTER_OPERATION);
     }
 

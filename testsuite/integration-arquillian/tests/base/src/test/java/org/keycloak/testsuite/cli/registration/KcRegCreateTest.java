@@ -19,7 +19,7 @@ import static org.keycloak.testsuite.cli.KcRegExec.execute;
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
-public class KcRegCreateTest extends AbstractCliTest {
+public class KcRegCreateTest extends AbstractRegCliTest {
 
     @Test
     public void testCreateWithRealmOverride() throws IOException {

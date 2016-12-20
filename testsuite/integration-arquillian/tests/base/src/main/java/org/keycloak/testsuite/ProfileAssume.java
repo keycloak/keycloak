@@ -26,11 +26,11 @@ import org.keycloak.common.Profile;
 public class ProfileAssume {
 
     public static void assumePreview() {
-        Assume.assumeTrue("Ignoring test as community/preview profile is not enabled", Profile.isPreviewEnabled());
+        Assume.assumeTrue("Ignoring test as community/preview profile is not enabled", !Profile.getName().equals("product"));
     }
 
     public static void assumePreviewDisabled() {
-        Assume.assumeFalse("Ignoring test as community/preview profile is enabled", Profile.isPreviewEnabled());
+        Assume.assumeFalse("Ignoring test as community/preview profile is enabled", !Profile.getName().equals("product"));
     }
 
 }

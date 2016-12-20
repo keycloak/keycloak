@@ -35,9 +35,11 @@ import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -62,7 +64,7 @@ public class PolicyEvaluationResponse {
         AccessToken accessToken = identity.getAccessToken();
         AccessToken.Authorization authorizationData = new AccessToken.Authorization();
 
-        authorizationData.setPermissions(Permissions.allPermits(results, authorization));
+        authorizationData.setPermissions(Permissions.allPermits(results, authorization, resourceServer));
         accessToken.setAuthorization(authorizationData);
 
         response.rpt = accessToken;
@@ -80,7 +82,12 @@ public class PolicyEvaluationResponse {
             resultsRep.add(rep);
 
             if (result.getPermission().getResource() != null) {
-                rep.setResource(ModelToRepresentation.toRepresentation(result.getPermission().getResource(), resourceServer, authorization));
+                ResourceRepresentation resource = new ResourceRepresentation();
+
+                resource.setId(result.getPermission().getResource().getId());
+                resource.setName(result.getPermission().getResource().getName());
+
+                rep.setResource(resource);
             } else {
                 ResourceRepresentation resource = new ResourceRepresentation();
 
@@ -89,7 +96,14 @@ public class PolicyEvaluationResponse {
                 rep.setResource(resource);
             }
 
-            rep.setScopes(result.getPermission().getScopes().stream().map(scope -> ModelToRepresentation.toRepresentation(scope, authorization)).collect(Collectors.toList()));
+            rep.setScopes(result.getPermission().getScopes().stream().map(scope -> {
+                ScopeRepresentation representation = new ScopeRepresentation();
+
+                representation.setId(scope.getId());
+                representation.setName(scope.getName());
+
+                return representation;
+            }).collect(Collectors.toList()));
 
             List<PolicyResultRepresentation> policies = new ArrayList<>();
 
@@ -100,7 +114,7 @@ public class PolicyEvaluationResponse {
             rep.setPolicies(policies);
         }
 
-        resultsRep.sort((o1, o2) -> o1.getResource().getName().compareTo(o2.getResource().getName()));
+        resultsRep.sort(Comparator.comparing(o -> o.getResource().getName()));
 
         Map<String, EvaluationResultRepresentation> groupedResults = new HashMap<>();
 
@@ -127,17 +141,29 @@ public class PolicyEvaluationResponse {
             List<ScopeRepresentation> currentScopes = evaluationResultRepresentation.getScopes();
 
             if (currentScopes != null) {
+                List<ScopeRepresentation> allowedScopes = result.getAllowedScopes();
                 for (ScopeRepresentation scope : currentScopes) {
                     if (!scopes.contains(scope)) {
                         scopes.add(scope);
                     }
                     if (evaluationResultRepresentation.getStatus().equals(Effect.PERMIT)) {
-                        List<ScopeRepresentation> allowedScopes = result.getAllowedScopes();
                         if (!allowedScopes.contains(scope)) {
                             allowedScopes.add(scope);
                         }
+                    } else {
+                        evaluationResultRepresentation.getPolicies().forEach(new Consumer<PolicyResultRepresentation>() {
+                            @Override
+                            public void accept(PolicyResultRepresentation policyResultRepresentation) {
+                                if (policyResultRepresentation.getStatus().equals(Effect.PERMIT)) {
+                                    if (!allowedScopes.contains(scope)) {
+                                        allowedScopes.add(scope);
+                                    }
+                                }
+                            }
+                        });
                     }
                 }
+                result.setAllowedScopes(allowedScopes);
             }
 
             if (resource.getId() != null) {
@@ -160,18 +186,14 @@ public class PolicyEvaluationResponse {
                 }
 
                 if (policy.getStatus().equals(Effect.DENY)) {
-                    Policy policyModel = authorization.getStoreFactory().getPolicyStore().findById(policy.getPolicy().getId());
+                    Policy policyModel = authorization.getStoreFactory().getPolicyStore().findById(policy.getPolicy().getId(), resourceServer.getId());
                     for (ScopeRepresentation scope : policyModel.getScopes().stream().map(scopeModel -> ModelToRepresentation.toRepresentation(scopeModel, authorization)).collect(Collectors.toList())) {
-                        if (!policy.getScopes().contains(scope)) {
+                        if (!policy.getScopes().contains(scope) && policyModel.getScopes().stream().filter(policyScope -> policyScope.getId().equals(scope.getId())).findFirst().isPresent()) {
+                            result.getAllowedScopes().remove(scope);
                             policy.getScopes().add(scope);
                         }
                     }
-                    for (ScopeRepresentation scope : currentScopes) {
-                        if (!policy.getScopes().contains(scope)) {
-                            policy.getScopes().add(scope);
-                        }
-                    }
-                }
+                } else {}
             }
         });
 
@@ -183,7 +205,14 @@ public class PolicyEvaluationResponse {
     private static PolicyResultRepresentation toRepresentation(PolicyResult policy, AuthorizationProvider authorization) {
         PolicyResultRepresentation policyResultRep = new PolicyResultRepresentation();
 
-        policyResultRep.setPolicy(ModelToRepresentation.toRepresentation(policy.getPolicy(), authorization));
+        PolicyRepresentation representation = new PolicyRepresentation();
+
+        representation.setId(policy.getPolicy().getId());
+        representation.setName(policy.getPolicy().getName());
+        representation.setType(policy.getPolicy().getType());
+        representation.setDecisionStrategy(policy.getPolicy().getDecisionStrategy());
+
+        policyResultRep.setPolicy(representation);
         policyResultRep.setStatus(policy.getStatus());
         policyResultRep.setAssociatedPolicies(policy.getAssociatedPolicies().stream().map(result -> toRepresentation(result, authorization)).collect(Collectors.toList()));
 

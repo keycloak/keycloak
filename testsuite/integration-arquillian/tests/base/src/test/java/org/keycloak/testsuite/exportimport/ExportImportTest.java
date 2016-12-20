@@ -99,9 +99,9 @@ public class ExportImportTest extends AbstractExportImportTest {
 
         testRealmExportImport();
 
-        // There should be 3 files in target directory (1 realm, 3 user)
+        // There should be 3 files in target directory (1 realm, 4 user)
         File[] files = new File(targetDirPath).listFiles();
-        assertEquals(4, files.length);
+        assertEquals(5, files.length);
     }
 
     @Test

@@ -72,6 +72,12 @@ public class AdapterTest {
                     .name("product-portal").contextPath("/product-portal")
                     .servletClass(ProductServlet.class).adapterConfigPath(url.getPath())
                     .role("user").deployApplication();
+           
+            url = getClass().getResource("/adapter-test/product-autodetect-bearer-only-keycloak.json");
+            createApplicationDeployment()
+                    .name("product-portal-autodetect-bearer-only").contextPath("/product-portal-autodetect-bearer-only")
+                    .servletClass(ProductServlet.class).adapterConfigPath(url.getPath())
+                    .role("user").deployApplication();
 
             // Test that replacing system properties works for adapters
             System.setProperty("app.server.base.url", "http://localhost:8081");
@@ -147,6 +153,11 @@ public class AdapterTest {
     @Test
     public void testNullBearerTokenCustomErrorPage() throws Exception {
         testStrategy.testNullBearerTokenCustomErrorPage();
+    }
+
+    @Test
+    public void testAutodetectBearerOnly() throws Exception {
+        testStrategy.testAutodetectBearerOnly();
     }
 
     @Test

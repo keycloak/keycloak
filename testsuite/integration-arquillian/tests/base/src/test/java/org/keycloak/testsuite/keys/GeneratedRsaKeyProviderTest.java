@@ -22,6 +22,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.PemUtils;
+import org.keycloak.jose.jws.AlgorithmType;
 import org.keycloak.keys.GeneratedRsaKeyProviderFactory;
 import org.keycloak.keys.KeyMetadata;
 import org.keycloak.keys.KeyProvider;
@@ -45,7 +46,7 @@ import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class RsaGeneratedKeyProviderTest extends AbstractKeycloakTest {
+public class GeneratedRsaKeyProviderTest extends AbstractKeycloakTest {
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
@@ -74,16 +75,15 @@ public class RsaGeneratedKeyProviderTest extends AbstractKeycloakTest {
         String id = ApiUtil.getCreatedId(response);
 
         ComponentRepresentation createdRep = adminClient.realm("test").components().component(id).toRepresentation();
-        assertEquals(2, createdRep.getConfig().size());
+        assertEquals(1, createdRep.getConfig().size());
         assertEquals(Long.toString(priority), createdRep.getConfig().getFirst("priority"));
-        assertEquals("2048", createdRep.getConfig().getFirst("keySize"));
 
         KeysMetadataRepresentation keys = adminClient.realm("test").keys().getKeyMetadata();
 
         KeysMetadataRepresentation.KeyMetadataRepresentation key = keys.getKeys().get(0);
 
         assertEquals(id, key.getProviderId());
-        assertEquals(KeyMetadata.Type.RSA.name(), key.getType());
+        assertEquals(AlgorithmType.RSA.name(), key.getType());
         assertEquals(priority, key.getProviderPriority());
         assertEquals(2048, ((RSAPublicKey) PemUtils.decodePublicKey(keys.getKeys().get(0).getPublicKey())).getModulus().bitLength());
     }
@@ -109,7 +109,7 @@ public class RsaGeneratedKeyProviderTest extends AbstractKeycloakTest {
         KeysMetadataRepresentation.KeyMetadataRepresentation key = keys.getKeys().get(0);
 
         assertEquals(id, key.getProviderId());
-        assertEquals(KeyMetadata.Type.RSA.name(), key.getType());
+        assertEquals(AlgorithmType.RSA.name(), key.getType());
         assertEquals(priority, key.getProviderPriority());
         assertEquals(4096, ((RSAPublicKey) PemUtils.decodePublicKey(keys.getKeys().get(0).getPublicKey())).getModulus().bitLength());
     }
@@ -177,7 +177,7 @@ public class RsaGeneratedKeyProviderTest extends AbstractKeycloakTest {
         rep.getConfig().putSingle("keySize", "1234");
 
         Response response = adminClient.realm("test").components().add(rep);
-        assertErrror(response, "Keysize should be 1024, 2048 or 4096");
+        assertErrror(response, "'Key size' should be 1024, 2048 or 4096");
     }
 
     protected void assertErrror(Response response, String error) {

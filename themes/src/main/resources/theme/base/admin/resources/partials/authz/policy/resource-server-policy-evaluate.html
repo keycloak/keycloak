@@ -172,14 +172,7 @@
                         <label class="col-md-2 control-label" for="reqActions">{{:: 'authz-resources' | translate}} <span class="required">*</span></label>
 
                         <div class="col-md-6">
-                            <select ui-select2="{ minimumInputLength: 1, allowClear:true }"
-                                    ng-model="newResource._id"
-                                    data-placeholder="Select a resource..."
-                                    data-ng-required="!applyResourceType && authzRequest.resources.length == 0 && !authzRequest.entitlements"
-                                    data-ng-click="resolveScopes()"
-                                    ng-options="resource._id as resource.name for resource in resources track by resource._id">
-                                <option value=""></option>
-                            </select>
+                            <input type="hidden" ui-select2="resourcesUiSelect" id="reqActions3" data-ng-change="resolveScopes()" data-ng-model="newResource" data-placeholder="{{:: 'authz-select-resource' | translate}}..." data-ng-required="!applyResourceType && authzRequest.resources.length == 0 && !authzRequest.entitlements" />
                         </div>
                         <kc-tooltip>{{:: 'authz-permission-resource-resource.tooltip' | translate}}</kc-tooltip>
                     </div>
@@ -199,12 +192,7 @@
                         <label class="col-md-2 control-label" for="newResource.scopes">{{:: 'authz-scopes' | translate}}</label>
 
                         <div class="col-md-6">
-                            <select ui-select2="{ minimumInputLength: 1}"
-                                    id="newResource.scopes"
-                                    multiple
-                                    data-ng-model="newResource.scopes"
-                                    data-placeholder="{{:: 'authz-select-scope' | translate}}..."
-                                    data-ng-options="scope.name as scope.name for scope in scopes track by scope.name"/>
+                            <input type="hidden" ui-select2="scopesUiSelect" id="reqActions" data-ng-model="newScopes" data-placeholder="{{:: 'authz-any-scope' | translate}}..." multiple />
                         </div>
 
                         <kc-tooltip>{{:: 'authz-permission-scope-scope.tooltip' | translate}}</kc-tooltip>
@@ -215,7 +203,7 @@
                         <div class="col-md-6">
                             <select ui-select2
                                     id="newResource.scopes"
-                                    data-ng-model="newResource.scopes"
+                                    data-ng-model="newScopes"
                                     data-placeholder="{{:: 'authz-any-scope' | translate}}..." multiple>
                                 <option ng-repeat="scope in scopes" value="{{scope.name}}">{{scope.name}}</option>
                             </select>
@@ -246,11 +234,11 @@
                                         <td>{{resource.name ? resource.name : 'authz-evaluation-any-resource-with-scopes' | translate}}</td>
                                         <td>
                                             <span data-ng-show="!resource.scopes.length">{{:: 'authz-any-scope' | translate}}.</span>
-                                        <span data-ng-show="resource.scopes.length > 0">
-                                            <span ng-repeat="scope in resource.scopes">
-                                                {{scope}} {{$last ? '' : ', '}}
+                                            <span data-ng-show="resource.scopes.length > 0">
+                                                <span ng-repeat="scope in resource.scopes">
+                                                    {{scope.name ? scope.name : scope}} {{$last ? '' : ', '}}
+                                                </span>
                                             </span>
-                                        </span>
                                         </td>
                                         <td class="kc-action-cell">
                                             <button class="btn btn-default btn-block btn-sm"

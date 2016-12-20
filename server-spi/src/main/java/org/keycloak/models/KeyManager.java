@@ -17,8 +17,10 @@
 
 package org.keycloak.models;
 
-import org.keycloak.keys.KeyMetadata;
+import org.keycloak.keys.HmacKeyMetadata;
+import org.keycloak.keys.RsaKeyMetadata;
 
+import javax.crypto.SecretKey;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.Certificate;
@@ -30,21 +32,27 @@ import java.util.List;
  */
 public interface KeyManager {
 
-    ActiveKey getActiveKey(RealmModel realm);
+    ActiveRsaKey getActiveRsaKey(RealmModel realm);
 
-    PublicKey getPublicKey(RealmModel realm, String kid);
+    PublicKey getRsaPublicKey(RealmModel realm, String kid);
 
-    Certificate getCertificate(RealmModel realm,  String kid);
+    Certificate getRsaCertificate(RealmModel realm, String kid);
 
-    List<KeyMetadata> getKeys(RealmModel realm, boolean includeDisabled);
+    List<RsaKeyMetadata> getRsaKeys(RealmModel realm, boolean includeDisabled);
 
-    class ActiveKey {
+    ActiveHmacKey getActiveHmacKey(RealmModel realm);
+
+    SecretKey getHmacSecretKey(RealmModel realm, String kid);
+
+    List<HmacKeyMetadata> getHmacKeys(RealmModel realm, boolean includeDisabled);
+
+    class ActiveRsaKey {
         private final String kid;
         private final PrivateKey privateKey;
         private final PublicKey publicKey;
         private final X509Certificate certificate;
 
-        public ActiveKey(String kid, PrivateKey privateKey, PublicKey publicKey, X509Certificate certificate) {
+        public ActiveRsaKey(String kid, PrivateKey privateKey, PublicKey publicKey, X509Certificate certificate) {
             this.kid = kid;
             this.privateKey = privateKey;
             this.publicKey = publicKey;
@@ -65,6 +73,24 @@ public interface KeyManager {
 
         public X509Certificate getCertificate() {
             return certificate;
+        }
+    }
+
+    class ActiveHmacKey {
+        private final String kid;
+        private final SecretKey secretKey;
+
+        public ActiveHmacKey(String kid, SecretKey secretKey) {
+            this.kid = kid;
+            this.secretKey = secretKey;
+        }
+
+        public String getKid() {
+            return kid;
+        }
+
+        public SecretKey getSecretKey() {
+            return secretKey;
         }
     }
 

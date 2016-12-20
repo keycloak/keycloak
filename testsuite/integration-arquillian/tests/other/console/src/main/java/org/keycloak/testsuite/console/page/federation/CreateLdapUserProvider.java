@@ -13,7 +13,7 @@ public class CreateLdapUserProvider extends AdminConsoleCreate {
     private LdapUserProviderForm form;
 
     public CreateLdapUserProvider() {
-        setEntity("user-federation");
+        setEntity("user-storage");
     }
 
     @Override

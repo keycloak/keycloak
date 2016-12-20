@@ -19,7 +19,7 @@ package org.keycloak.adapters.authorization;
 
 import org.keycloak.representations.adapters.config.PolicyEnforcerConfig.PathConfig;
 
-import java.util.List;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -28,10 +28,16 @@ class PathMatcher {
 
     private static final String ANY_RESOURCE_PATTERN = "/*";
 
-    PathConfig matches(final String requestedUri, List<PathConfig> paths) {
+    PathConfig matches(final String requestedUri, Map<String, PathConfig> paths) {
+        PathConfig pathConfig = paths.get(requestedUri);
+
+        if (pathConfig != null) {
+            return pathConfig;
+        }
+
         PathConfig actualConfig = null;
 
-        for (PathConfig entry : paths) {
+        for (PathConfig entry : paths.values()) {
             String protectedUri = entry.getPath();
             String selectedUri = null;
 

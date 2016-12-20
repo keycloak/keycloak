@@ -66,7 +66,7 @@ public class JPAResourceStore implements ResourceStore {
 
     @Override
     public void delete(String id) {
-        Resource resource = findById(id);
+        Resource resource = entityManager.find(ResourceEntity.class, id);
 
         resource.getScopes().clear();
 
@@ -76,19 +76,39 @@ public class JPAResourceStore implements ResourceStore {
     }
 
     @Override
-    public Resource findById(String id) {
+    public Resource findById(String id, String resourceServerId) {
         if (id == null) {
             return null;
         }
+
+        if (resourceServerId == null) {
+            return entityManager.find(ResourceEntity.class, id);
+        }
+
+        Query query = entityManager.createQuery("from ResourceEntity where resourceServer.id = :serverId and id = :id");
+
+        query.setParameter("serverId", resourceServerId);
+        query.setParameter("id", id);
 
         return entityManager.find(ResourceEntity.class, id);
     }
 
     @Override
-    public List<Resource> findByOwner(String ownerId) {
-        Query query = entityManager.createQuery("from ResourceEntity where owner = :ownerId");
+    public List<Resource> findByOwner(String ownerId, String resourceServerId) {
+        Query query = entityManager.createQuery("from ResourceEntity where resourceServer.id = :serverId and owner = :ownerId");
 
         query.setParameter("ownerId", ownerId);
+        query.setParameter("serverId", resourceServerId);
+
+        return query.getResultList();
+    }
+
+    @Override
+    public List<Resource> findByUri(String uri, String resourceServerId) {
+        Query query = entityManager.createQuery("from ResourceEntity where resourceServer.id = :serverId and uri = :uri");
+
+        query.setParameter("uri", uri);
+        query.setParameter("serverId", resourceServerId);
 
         return query.getResultList();
     }
@@ -112,7 +132,9 @@ public class JPAResourceStore implements ResourceStore {
         predicates.add(builder.equal(root.get("resourceServer").get("id"), resourceServerId));
 
         attributes.forEach((name, value) -> {
-            if ("scope".equals(name)) {
+            if ("id".equals(name)) {
+                predicates.add(root.get(name).in(value));
+            } else if ("scope".equals(name)) {
                 predicates.add(root.join("scopes").get("id").in(value));
             } else {
                 predicates.add(builder.like(builder.lower(root.get(name)), "%" + value[0].toLowerCase() + "%"));
@@ -134,10 +156,11 @@ public class JPAResourceStore implements ResourceStore {
     }
 
     @Override
-    public List<Resource> findByScope(String... id) {
-        Query query = entityManager.createQuery("select r from ResourceEntity r inner join r.scopes s where s.id in (:scopeIds)");
+    public List<Resource> findByScope(List<String> id, String resourceServerId) {
+        Query query = entityManager.createQuery("select r from ResourceEntity r inner join r.scopes s where r.resourceServer.id = :serverId and (s.resourceServer.id = :serverId and s.id in (:scopeIds))");
 
-        query.setParameter("scopeIds", Arrays.asList(id));
+        query.setParameter("scopeIds", id);
+        query.setParameter("serverId", resourceServerId);
 
         return query.getResultList();
     }
@@ -159,10 +182,11 @@ public class JPAResourceStore implements ResourceStore {
     }
 
     @Override
-    public List<Resource> findByType(String type) {
-        Query query = entityManager.createQuery("from ResourceEntity where type = :type");
+    public List<Resource> findByType(String type, String resourceServerId) {
+        Query query = entityManager.createQuery("from ResourceEntity r where r.resourceServer.id = :serverId and type = :type");
 
         query.setParameter("type", type);
+        query.setParameter("serverId", resourceServerId);
 
         return query.getResultList();
     }

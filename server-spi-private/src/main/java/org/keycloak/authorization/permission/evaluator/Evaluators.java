@@ -18,13 +18,12 @@
 
 package org.keycloak.authorization.permission.evaluator;
 
+import java.util.List;
+import java.util.concurrent.Executor;
+
 import org.keycloak.authorization.permission.ResourcePermission;
 import org.keycloak.authorization.policy.evaluation.DefaultPolicyEvaluator;
 import org.keycloak.authorization.policy.evaluation.EvaluationContext;
-import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
-
-import java.util.List;
-import java.util.concurrent.Executor;
 
 /**
  * A factory for the different {@link PermissionEvaluator} implementations.
@@ -33,12 +32,10 @@ import java.util.concurrent.Executor;
  */
 public final class Evaluators {
 
-    private final List<PolicyProviderFactory> policyProviderFactories;
     private final DefaultPolicyEvaluator policyEvaluator;
     private final Executor scheduler;
 
-    public Evaluators(List<PolicyProviderFactory> policyProviderFactories, DefaultPolicyEvaluator policyEvaluator, Executor scheduler) {
-        this.policyProviderFactories = policyProviderFactories;
+    public Evaluators(DefaultPolicyEvaluator policyEvaluator, Executor scheduler) {
         this.policyEvaluator = policyEvaluator;
         this.scheduler = scheduler;
     }

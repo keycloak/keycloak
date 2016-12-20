@@ -25,6 +25,7 @@ import org.keycloak.dom.saml.v2.protocol.RequestAbstractType;
 import org.keycloak.dom.saml.v2.protocol.ResponseType;
 import org.keycloak.saml.common.PicketLinkLogger;
 import org.keycloak.saml.common.PicketLinkLoggerFactory;
+import org.keycloak.saml.common.constants.GeneralConstants;
 import org.keycloak.saml.common.constants.JBossSAMLConstants;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.common.exceptions.ConfigurationException;
@@ -39,6 +40,7 @@ import org.keycloak.saml.processing.core.saml.v2.util.XMLTimeUtil;
 import org.keycloak.saml.processing.core.saml.v2.writers.SAMLRequestWriter;
 import org.keycloak.saml.processing.core.saml.v2.writers.SAMLResponseWriter;
 import org.keycloak.saml.processing.core.util.JAXPValidationUtil;
+
 import org.w3c.dom.Document;
 
 import javax.xml.datatype.XMLGregorianCalendar;
@@ -274,7 +276,7 @@ public class SAML2Request {
             writer.write((LogoutRequestType) rat);
         }
 
-        return DocumentUtil.getDocument(new String(bos.toByteArray()));
+        return DocumentUtil.getDocument(new String(bos.toByteArray(), GeneralConstants.SAML_CHARSET));
     }
 
     /**

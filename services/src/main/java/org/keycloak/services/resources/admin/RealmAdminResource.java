@@ -302,6 +302,7 @@ public class RealmAdminResource {
                 }
             }
 
+            boolean wasDuplicateEmailsAllowed = realm.isDuplicateEmailsAllowed();
             RepresentationToModel.updateRealm(rep, realm, session);
 
             // Refresh periodic sync tasks for configured federationProviders
@@ -312,6 +313,12 @@ public class RealmAdminResource {
             }
 
             adminEvent.operation(OperationType.UPDATE).representation(StripSecretsUtils.strip(rep)).success();
+            
+            if (rep.isDuplicateEmailsAllowed() != null && rep.isDuplicateEmailsAllowed() != wasDuplicateEmailsAllowed) {
+                UserCache cache = session.getProvider(UserCache.class);
+                if (cache != null) cache.clear();
+            }
+            
             return Response.noContent().build();
         } catch (PatternSyntaxException e) {
             return ErrorResponse.error("Specified regex pattern(s) is invalid.", Response.Status.BAD_REQUEST);

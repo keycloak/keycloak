@@ -23,10 +23,6 @@ import org.keycloak.provider.ProviderEvent;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
 
-import java.security.Key;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.security.cert.X509Certificate;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -149,6 +145,14 @@ public interface RealmModel extends RoleContainerModel {
     boolean isVerifyEmail();
 
     void setVerifyEmail(boolean verifyEmail);
+    
+    boolean isLoginWithEmailAllowed();
+
+    void setLoginWithEmailAllowed(boolean loginWithEmailAllowed);
+    
+    boolean isDuplicateEmailsAllowed();
+
+    void setDuplicateEmailsAllowed(boolean duplicateEmailsAllowed);
 
     boolean isResetPasswordAllowed();
 

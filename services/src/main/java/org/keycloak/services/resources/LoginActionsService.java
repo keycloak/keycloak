@@ -715,14 +715,15 @@ public class LoginActionsService {
             String keyFromSession = null;
             if (code != null) {
                 clientSession = ClientSessionCode.getClientSession(code, session, realm);
-                keyFromSession = clientSession.getNote(Constants.VERIFY_EMAIL_KEY);
+                keyFromSession = clientSession != null ? clientSession.getNote(Constants.VERIFY_EMAIL_KEY) : null;
             }
 
-            if (clientSession == null || !key.equals(keyFromSession)) {
+            if (!key.equals(keyFromSession)) {
                 ServicesLogger.LOGGER.invalidKeyForEmailVerification();
                 event.error(Errors.INVALID_CODE);
                 throw new WebApplicationException(ErrorPage.error(session, Messages.STALE_VERIFY_EMAIL_LINK));
             }
+
             clientSession.removeNote(Constants.VERIFY_EMAIL_KEY);
 
             Checks checks = new Checks();

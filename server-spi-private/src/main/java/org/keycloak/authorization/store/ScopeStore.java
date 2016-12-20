@@ -53,17 +53,17 @@ public interface ScopeStore {
      * Returns a {@link Scope} with the given <code>id</code>
      *
      * @param id the identifier of the scope
-     *
+     * @param resourceServerId the resource server id
      * @return a scope with the given identifier.
      */
-    Scope findById(String id);
+    Scope findById(String id, String resourceServerId);
 
     /**
      * Returns a {@link Scope} with the given <code>name</code>
      *
      * @param name the name of the scope
      *
-     * @param resourceServerId
+     * @param resourceServerId the resource server id
      * @return a scope with the given name.
      */
     Scope findByName(String name, String resourceServerId);

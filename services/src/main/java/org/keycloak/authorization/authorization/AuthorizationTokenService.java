@@ -110,7 +110,7 @@ public class AuthorizationTokenService {
         authorization.evaluators().from(createPermissions(ticket, authorizationRequest, authorization), evaluationContext).evaluate(new DecisionResultCollector() {
             @Override
             public void onComplete(List<Result> results) {
-                List<Permission> entitlements = Permissions.allPermits(results, authorization);
+                List<Permission> entitlements = Permissions.permits(results, authorization, ticket.getResourceServerId());
 
                 if (entitlements.isEmpty()) {
                     HashMap<Object, Object> error = new HashMap<>();
@@ -144,7 +144,7 @@ public class AuthorizationTokenService {
             Resource resource;
 
             if (requestedResource.getId() != null) {
-                resource = storeFactory.getResourceStore().findById(requestedResource.getId());
+                resource = storeFactory.getResourceStore().findById(requestedResource.getId(), ticket.getResourceServerId());
             } else {
                 resource = storeFactory.getResourceStore().findByName(requestedResource.getName(), ticket.getResourceServerId());
             }
@@ -171,7 +171,7 @@ public class AuthorizationTokenService {
                     }
 
                     return scope.getId();
-                }).filter(s -> s != null).collect(Collectors.toList()).toArray(new String[requestedScopes.size()])));
+                }).filter(s -> s != null).collect(Collectors.toList()), ticket.getResourceServerId()));
 
                 for (Resource resource1 : resources) {
                     permissionsToEvaluate.put(resource1.getId(), collect);
@@ -204,7 +204,7 @@ public class AuthorizationTokenService {
 
                     if (permissions != null) {
                         permissions.forEach(permission -> {
-                            Resource resourcePermission = storeFactory.getResourceStore().findById(permission.getResourceSetId());
+                            Resource resourcePermission = storeFactory.getResourceStore().findById(permission.getResourceSetId(), ticket.getResourceServerId());
 
                             if (resourcePermission != null) {
                                 Set<String> scopes = permissionsToEvaluate.get(resourcePermission.getId());
@@ -240,7 +240,7 @@ public class AuthorizationTokenService {
                         }).collect(Collectors.toList());
                         return Arrays.asList(new ResourcePermission(null, scopes, resourceServer)).stream();
                     } else {
-                        Resource entryResource = storeFactory.getResourceStore().findById(key);
+                        Resource entryResource = storeFactory.getResourceStore().findById(key, resourceServer.getId());
                         return Permissions.createResourcePermissions(entryResource, entry.getValue(), authorization).stream();
                     }
                 }).collect(Collectors.toList());

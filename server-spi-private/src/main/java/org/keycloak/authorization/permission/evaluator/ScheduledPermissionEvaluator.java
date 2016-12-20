@@ -17,10 +17,9 @@
  */
 package org.keycloak.authorization.permission.evaluator;
 
-import org.keycloak.authorization.Decision;
-
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
+
+import org.keycloak.authorization.Decision;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -38,6 +37,6 @@ class ScheduledPermissionEvaluator implements PermissionEvaluator {
 
     @Override
     public void evaluate(Decision decision) {
-        CompletableFuture.runAsync(() -> publisher.evaluate(decision), scheduler);
+        publisher.evaluate(decision);
     }
 }

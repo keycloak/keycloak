@@ -17,8 +17,10 @@
 
 package org.keycloak.connections.mongo.updater.impl.updates;
 
+import com.mongodb.BasicDBObject;
+import com.mongodb.DBCollection;
+import com.mongodb.DBCursor;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.LDAPConstants;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.storage.UserStorageProvider;
 
@@ -39,6 +41,16 @@ public class Update2_5_0 extends AbstractMigrateUserFedToComponent {
         List<ProviderFactory> factories = session.getKeycloakSessionFactory().getProviderFactories(UserStorageProvider.class);
         for (ProviderFactory factory : factories) {
             portUserFedToComponent(factory.getId());
+        }
+        
+        DBCollection realms = db.getCollection("realms");
+        try (DBCursor realmsCursor = realms.find()) {
+            while (realmsCursor.hasNext()) {
+                BasicDBObject realm = (BasicDBObject) realmsCursor.next();
+                realm.append("loginWithEmailAllowed", true);
+                realm.append("duplicateEmailsAllowed", false);
+                realms.save(realm);
+            }
         }
     }
 

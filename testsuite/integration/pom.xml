@@ -591,32 +591,5 @@
             </build>
         </profile>
 
-        <!-- Ldap profiles -->
-        <profile>
-            <activation>
-                <property>
-                    <name>ldap.vendor</name>
-                    <value>msad</value>
-                </property>
-            </activation>
-            <id>msad</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-surefire-plugin</artifactId>
-                        <configuration>
-                            <includes>
-                                <include>org/keycloak/testsuite/federation/ldap/base/**</include>
-                            </includes>
-                            <excludes>
-                                <exclude>**/LDAPMultipleAttributesTest.java</exclude>
-                            </excludes>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-
     </profiles>
 </project>

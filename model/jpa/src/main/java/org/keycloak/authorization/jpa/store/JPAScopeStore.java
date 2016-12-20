@@ -17,12 +17,9 @@
  */
 package org.keycloak.authorization.jpa.store;
 
-import org.keycloak.authorization.jpa.entities.ResourceServerEntity;
-import org.keycloak.authorization.jpa.entities.ScopeEntity;
-import org.keycloak.authorization.model.ResourceServer;
-import org.keycloak.authorization.model.Scope;
-import org.keycloak.authorization.store.ScopeStore;
-import org.keycloak.models.utils.KeycloakModelUtils;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
@@ -31,9 +28,13 @@ import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+
+import org.keycloak.authorization.jpa.entities.ResourceServerEntity;
+import org.keycloak.authorization.jpa.entities.ScopeEntity;
+import org.keycloak.authorization.model.ResourceServer;
+import org.keycloak.authorization.model.Scope;
+import org.keycloak.authorization.store.ScopeStore;
+import org.keycloak.models.utils.KeycloakModelUtils;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -61,12 +62,30 @@ public class JPAScopeStore implements ScopeStore {
 
     @Override
     public void delete(String id) {
-        this.entityManager.remove(findById(id));
+        Scope scope = entityManager.find(ScopeEntity.class, id);
+
+        if (scope != null) {
+            this.entityManager.remove(scope);
+        }
     }
 
     @Override
-    public Scope findById(String id) {
+    public Scope findById(String id, String resourceServerId) {
+        if (id == null) {
+            return null;
+        }
+
+        if (resourceServerId == null) {
+            return entityManager.find(ScopeEntity.class, id);
+        }
+
+        Query query = entityManager.createQuery("from ScopeEntity where resourceServer.id = :serverId and id = :id");
+
+        query.setParameter("serverId", resourceServerId);
+        query.setParameter("id", id);
+
         return entityManager.find(ScopeEntity.class, id);
+
     }
 
     @Override
@@ -74,8 +93,8 @@ public class JPAScopeStore implements ScopeStore {
         try {
             Query query = entityManager.createQuery("select s from ScopeEntity s inner join s.resourceServer rs where rs.id = :resourceServerId and name = :name");
 
-            query.setParameter("name", name);
             query.setParameter("resourceServerId", resourceServerId);
+            query.setParameter("name", name);
 
             return (Scope) query.getSingleResult();
         } catch (NoResultException nre) {
@@ -102,7 +121,11 @@ public class JPAScopeStore implements ScopeStore {
         predicates.add(builder.equal(root.get("resourceServer").get("id"), resourceServerId));
 
         attributes.forEach((name, value) -> {
-            predicates.add(builder.like(builder.lower(root.get(name)), "%" + value[0].toLowerCase() + "%"));
+            if ("id".equals(name)) {
+                predicates.add(root.get(name).in(value));
+            } else {
+                predicates.add(builder.like(builder.lower(root.get(name)), "%" + value[0].toLowerCase() + "%"));
+            }
         });
 
         querybuilder.where(predicates.toArray(new Predicate[predicates.size()])).orderBy(builder.asc(root.get("name")));

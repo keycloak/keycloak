@@ -161,6 +161,18 @@
                 </div>
                 <kc-tooltip>{{:: 'signature-algorithm.tooltip' | translate}}</kc-tooltip>
             </div>
+            <div class="form-group clearfix block" data-ng-show="identityProvider.config.wantAuthnRequestsSigned == 'true'">
+                <label class="col-md-2 control-label" for="samlSigKeyNameTranformer">{{:: 'saml-signature-keyName-transformer' | translate}}</label>
+                <div class="col-md-6">
+                    <div>
+                        <select class="form-control" id="samlSigKeyNameTranformer"
+                                ng-model="identityProvider.config.xmlSigKeyInfoKeyNameTransformer"
+                                ng-options="xmlKeyNameTranformer for xmlKeyNameTranformer in xmlKeyNameTranformers">
+                        </select>
+                    </div>
+                </div>
+                <kc-tooltip>{{:: 'saml-signature-keyName-transformer.tooltip' | translate}}</kc-tooltip>
+            </div>
             <div class="form-group">
                 <label class="col-md-2 control-label" for="forceAuthn">{{:: 'force-authentication' | translate}}</label>
                 <div class="col-md-6">

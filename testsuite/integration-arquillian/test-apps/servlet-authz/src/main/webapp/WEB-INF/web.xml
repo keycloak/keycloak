@@ -13,16 +13,8 @@
 		</web-resource-collection>
 		<auth-constraint>
 			<role-name>user</role-name>
-		</auth-constraint>
-	</security-constraint>
-
-	<security-constraint>
-		<web-resource-collection>
-			<web-resource-name>All Resources</web-resource-name>
-			<url-pattern>/*</url-pattern>
-		</web-resource-collection>
-		<auth-constraint>
 			<role-name>admin</role-name>
+			<role-name>user_premium</role-name>
 		</auth-constraint>
 	</security-constraint>
 
@@ -37,6 +29,10 @@
 
 	<security-role>
 		<role-name>user</role-name>
+	</security-role>
+
+	<security-role>
+		<role-name>user_premium</role-name>
 	</security-role>
 
 	<error-page>

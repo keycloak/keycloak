@@ -1323,6 +1323,11 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-admin-cli</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-client-cli-dist</artifactId>
                 <version>${project.version}</version>
                 <type>zip</type>

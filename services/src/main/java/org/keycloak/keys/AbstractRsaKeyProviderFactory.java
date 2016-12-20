@@ -27,7 +27,7 @@ import org.keycloak.provider.ProviderConfigurationBuilder;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public abstract class AbstractRsaKeyProviderFactory implements KeyProviderFactory {
+public abstract class AbstractRsaKeyProviderFactory implements RsaKeyProviderFactory {
 
     public final static ProviderConfigurationBuilder configurationBuilder() {
         return ProviderConfigurationBuilder.create()

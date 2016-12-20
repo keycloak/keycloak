@@ -16,6 +16,8 @@
  */
 package org.keycloak.saml.processing.api.util;
 
+import org.keycloak.saml.common.constants.GeneralConstants;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -62,7 +64,7 @@ public class DeflateUtil {
      * @throws IOException
      */
     public static byte[] encode(String message) throws IOException {
-        return encode(message.getBytes());
+        return encode(message.getBytes(GeneralConstants.SAML_CHARSET));
     }
 
     /**

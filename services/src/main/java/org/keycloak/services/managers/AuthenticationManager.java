@@ -19,7 +19,7 @@ package org.keycloak.services.managers;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 import org.jboss.resteasy.spi.HttpRequest;
-import org.keycloak.RSATokenVerifier;
+import org.keycloak.TokenVerifier;
 import org.keycloak.authentication.RequiredActionContext;
 import org.keycloak.authentication.RequiredActionContextResult;
 import org.keycloak.authentication.RequiredActionFactory;
@@ -33,6 +33,7 @@ import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.forms.login.LoginFormsProvider;
+import org.keycloak.jose.jws.AlgorithmType;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
@@ -58,6 +59,7 @@ import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.services.util.CookieHelper;
 import org.keycloak.services.util.P3PHelper;
 
+import javax.crypto.SecretKey;
 import javax.ws.rs.core.Cookie;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MultivaluedMap;
@@ -113,12 +115,12 @@ public class AuthenticationManager {
             if (cookie == null) return;
             String tokenString = cookie.getValue();
 
-            RSATokenVerifier verifier = RSATokenVerifier.create(tokenString).realmUrl(Urls.realmIssuer(uriInfo.getBaseUri(), realm.getName())).checkActive(false).checkTokenType(false);
+            TokenVerifier verifier = TokenVerifier.create(tokenString).realmUrl(Urls.realmIssuer(uriInfo.getBaseUri(), realm.getName())).checkActive(false).checkTokenType(false);
 
             String kid = verifier.getHeader().getKeyId();
-            PublicKey publicKey = session.keys().getPublicKey(realm, kid);
+            SecretKey secretKey = session.keys().getHmacSecretKey(realm, kid);
 
-            AccessToken token = verifier.publicKey(publicKey).verify().getToken();
+            AccessToken token = verifier.secretKey(secretKey).verify().getToken();
             UserSessionModel cookieSession = session.sessions().getUserSession(realm, token.getSessionState());
             if (cookieSession == null || !cookieSession.getId().equals(userSession.getId())) return;
             expireIdentityCookie(realm, uriInfo, connection);
@@ -337,14 +339,14 @@ public class AuthenticationManager {
     }
 
     protected static String encodeToken(KeycloakSession session, RealmModel realm, Object token) {
-        KeyManager.ActiveKey activeKey = session.keys().getActiveKey(realm);
+        KeyManager.ActiveHmacKey activeKey = session.keys().getActiveHmacKey(realm);
 
         logger.tracef("Encoding token with kid '%s'", activeKey.getKid());
 
         String encodedToken = new JWSBuilder()
                 .kid(activeKey.getKid())
                 .jsonContent(token)
-                .rsa256(activeKey.getPrivateKey());
+                .hmac256(activeKey.getSecretKey());
         return encodedToken;
     }
 
@@ -691,15 +693,25 @@ public class AuthenticationManager {
     protected static AuthResult verifyIdentityToken(KeycloakSession session, RealmModel realm, UriInfo uriInfo, ClientConnection connection, boolean checkActive, boolean checkTokenType,
                                                     String tokenString, HttpHeaders headers) {
         try {
-            RSATokenVerifier verifier = RSATokenVerifier.create(tokenString).realmUrl(Urls.realmIssuer(uriInfo.getBaseUri(), realm.getName())).checkActive(checkActive).checkTokenType(checkTokenType);
+            TokenVerifier verifier = TokenVerifier.create(tokenString).realmUrl(Urls.realmIssuer(uriInfo.getBaseUri(), realm.getName())).checkActive(checkActive).checkTokenType(checkTokenType);
             String kid = verifier.getHeader().getKeyId();
+            AlgorithmType algorithmType = verifier.getHeader().getAlgorithm().getType();
 
-            PublicKey publicKey = session.keys().getPublicKey(realm, kid);
-            if (publicKey == null) {
-                logger.debugf("Identity cookie signed with unknown kid '%s'", kid);
-                return null;
+            if (AlgorithmType.RSA.equals(algorithmType)) {
+                PublicKey publicKey = session.keys().getRsaPublicKey(realm, kid);
+                if (publicKey == null) {
+                    logger.debugf("Identity cookie signed with unknown kid '%s'", kid);
+                    return null;
+                }
+                verifier.publicKey(publicKey);
+            } else if (AlgorithmType.HMAC.equals(algorithmType)) {
+                SecretKey secretKey = session.keys().getHmacSecretKey(realm, kid);
+                if (secretKey == null) {
+                    logger.debugf("Identity cookie signed with unknown kid '%s'", kid);
+                    return null;
+                }
+                verifier.secretKey(secretKey);
             }
-            verifier.publicKey(publicKey);
 
             AccessToken token = verifier.verify().getToken();
             if (checkActive) {

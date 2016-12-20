@@ -37,8 +37,10 @@ public abstract class DecisionResultCollector implements Decision<DefaultEvaluat
 
     @Override
     public void onDecision(DefaultEvaluation evaluation) {
-        if (evaluation.getParentPolicy() != null) {
-            results.computeIfAbsent(evaluation.getPermission(), Result::new).policy(evaluation.getParentPolicy()).policy(evaluation.getPolicy()).setStatus(evaluation.getEffect());
+        Policy parentPolicy = evaluation.getParentPolicy();
+
+        if (parentPolicy != null) {
+            results.computeIfAbsent(evaluation.getPermission(), Result::new).policy(parentPolicy).policy(evaluation.getPolicy()).setStatus(evaluation.getEffect());
         } else {
             results.computeIfAbsent(evaluation.getPermission(), Result::new).setStatus(evaluation.getEffect());
         }

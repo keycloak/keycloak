@@ -48,7 +48,9 @@ import org.keycloak.storage.ldap.idm.query.internal.LDAPQueryConditionsBuilder;
 import org.keycloak.storage.ldap.idm.store.ldap.LDAPIdentityStore;
 import org.keycloak.storage.ldap.mappers.FullNameLDAPStorageMapper;
 import org.keycloak.storage.ldap.mappers.FullNameLDAPStorageMapperFactory;
+import org.keycloak.storage.ldap.mappers.LDAPConfigDecorator;
 import org.keycloak.storage.ldap.mappers.LDAPStorageMapper;
+import org.keycloak.storage.ldap.mappers.LDAPStorageMapperFactory;
 import org.keycloak.storage.ldap.mappers.UserAttributeLDAPStorageMapper;
 import org.keycloak.storage.ldap.mappers.UserAttributeLDAPStorageMapperFactory;
 import org.keycloak.storage.ldap.mappers.msad.MSADUserAccountControlStorageMapperFactory;
@@ -57,7 +59,9 @@ import org.keycloak.storage.user.SynchronizationResult;
 import org.keycloak.utils.CredentialHelper;
 
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -179,9 +183,29 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
 
     @Override
     public LDAPStorageProvider create(KeycloakSession session, ComponentModel model) {
-        LDAPIdentityStore ldapIdentityStore = this.ldapStoreRegistry.getLdapStore(model);
+        Map<ComponentModel, LDAPConfigDecorator> configDecorators = getLDAPConfigDecorators(session, model);
+
+        LDAPIdentityStore ldapIdentityStore = this.ldapStoreRegistry.getLdapStore(model, configDecorators);
         return new LDAPStorageProvider(this, session, model, ldapIdentityStore);
     }
+
+
+    // Check if it's some performance overhead to create this map in every request. But probably not...
+    protected Map<ComponentModel, LDAPConfigDecorator> getLDAPConfigDecorators(KeycloakSession session, ComponentModel ldapModel) {
+        RealmModel realm = session.realms().getRealm(ldapModel.getParentId());
+        List<ComponentModel> mapperComponents = realm.getComponents(ldapModel.getId(), LDAPStorageMapper.class.getName());
+
+        Map<ComponentModel, LDAPConfigDecorator> result = new HashMap<>();
+        for (ComponentModel mapperModel : mapperComponents) {
+            LDAPStorageMapperFactory mapperFactory = (LDAPStorageMapperFactory) session.getKeycloakSessionFactory().getProviderFactory(LDAPStorageMapper.class, mapperModel.getProviderId());
+            if (mapperFactory instanceof LDAPConfigDecorator) {
+                result.put(mapperModel, (LDAPConfigDecorator) mapperFactory);
+            }
+        }
+
+        return result;
+    }
+
 
     @Override
     public void validateConfiguration(KeycloakSession session, RealmModel realm, ComponentModel config) throws ComponentValidationException {

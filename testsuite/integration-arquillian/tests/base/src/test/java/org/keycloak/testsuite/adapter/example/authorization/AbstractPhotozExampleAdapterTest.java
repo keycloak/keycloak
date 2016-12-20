@@ -609,6 +609,27 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
             this.deployer.undeploy(RESOURCE_SERVER_ID);
         }
     }
+    
+    //KEYCLOAK-3777
+    @Test
+    public void testEntitlementRequest() {
+        try {
+            this.deployer.deploy(RESOURCE_SERVER_ID);
+            
+            clientPage.navigateTo();
+            loginToClientPage("admin", "admin");
+
+            clientPage.requestEntitlements();
+            assertTrue(driver.getPageSource().contains("urn:photoz.com:scopes:album:admin:manage"));
+            
+            clientPage.requestEntitlement();
+            String pageSource = driver.getPageSource();
+            assertTrue(pageSource.contains("urn:photoz.com:scopes:album:view"));
+            assertFalse(pageSource.contains("urn:photoz.com:scopes:album:admin:manage"));
+        } finally {
+            this.deployer.undeploy(RESOURCE_SERVER_ID);
+        }
+    }
 
     private void importResourceServerSettings() throws FileNotFoundException {
         getAuthorizationResource().importSettings(loadJson(new FileInputStream(new File(TEST_APPS_HOME_DIR + "/photoz/photoz-restful-api-authz-service.json")), ResourceServerRepresentation.class));

@@ -20,6 +20,9 @@
 
      <changeSet author="bburke@redhat.com" id="2.5.0">
          <customChange class="org.keycloak.connections.jpa.updater.liquibase.custom.MigrateUserFedToComponent"/>
+
+         <addUniqueConstraint columnNames="NAME,PARENT_GROUP,REALM_ID" constraintName="SIBLING_NAMES" tableName="KEYCLOAK_GROUP"/>
+
          <modifyDataType tableName="OFFLINE_USER_SESSION" columnName="USER_ID" newDataType="VARCHAR(255)"/>
      </changeSet>
 
@@ -59,7 +62,7 @@
         <modifyDataType tableName="KEYCLOAK_ROLE" columnName="NAME" newDataType="NVARCHAR(255)"/>
         <modifyDataType tableName="KEYCLOAK_ROLE" columnName="DESCRIPTION" newDataType="NVARCHAR(255)"/>
     </changeSet>
-    
+
     <changeSet author="hmlnarik@redhat.com" id="2.5.0-unicode-other-dbs">
         <preConditions onSqlOutput="TEST" onFail="MARK_RAN">
             <not>
@@ -96,6 +99,17 @@
         <modifyDataType tableName="KEYCLOAK_ROLE" columnName="NAME" newDataType="NVARCHAR(255)"/>
         <addUniqueConstraint columnNames="NAME,CLIENT_REALM_CONSTRAINT" constraintName="UK_J3RWUVD56ONTGSUHOGM184WW2-2" tableName="KEYCLOAK_ROLE"/>
         <modifyDataType tableName="KEYCLOAK_ROLE" columnName="DESCRIPTION" newDataType="NVARCHAR(255)"/>
+    </changeSet>
+    
+    <changeSet author="slawomir@dabek.name" id="2.5.0-duplicate-email-support">
+        <addColumn tableName="REALM">
+            <column name="LOGIN_WITH_EMAIL_ALLOWED" type="BOOLEAN" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+            <column name="DUPLICATE_EMAILS_ALLOWED" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
     </changeSet>
 
 </databaseChangeLog>

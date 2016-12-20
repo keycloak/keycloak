@@ -17,6 +17,27 @@
  */
 package org.keycloak.authorization.admin;
 
+import static java.util.Arrays.asList;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import javax.ws.rs.Consumes;
+import javax.ws.rs.POST;
+import javax.ws.rs.Produces;
+import javax.ws.rs.container.AsyncResponse;
+import javax.ws.rs.container.Suspended;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.Response;
+
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.admin.representation.PolicyEvaluationRequest;
@@ -46,28 +67,9 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.protocol.oidc.mappers.OIDCAccessTokenMapper;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.services.Urls;
 import org.keycloak.services.resources.admin.RealmAuth;
-
-import javax.ws.rs.Consumes;
-import javax.ws.rs.POST;
-import javax.ws.rs.Produces;
-import javax.ws.rs.container.AsyncResponse;
-import javax.ws.rs.container.Suspended;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.Response;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import static java.util.Arrays.asList;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -144,39 +146,34 @@ public class PolicyEvaluationService {
     private List<ResourcePermission> createPermissions(PolicyEvaluationRequest representation, EvaluationContext evaluationContext, AuthorizationProvider authorization) {
         List<PolicyEvaluationRequest.Resource> resources = representation.getResources();
         return resources.stream().flatMap((Function<PolicyEvaluationRequest.Resource, Stream<ResourcePermission>>) resource -> {
-            Set<String> givenScopes = resource.getScopes();
+            StoreFactory storeFactory = authorization.getStoreFactory();
+            if (resource == null) {
+                resource = new PolicyEvaluationRequest.Resource();
+            }
+
+            Set<ScopeRepresentation> givenScopes = resource.getScopes();
 
             if (givenScopes == null) {
                 givenScopes = new HashSet();
             }
 
-            StoreFactory storeFactory = authorization.getStoreFactory();
+            Set<String> scopeNames = givenScopes.stream().map(ScopeRepresentation::getName).collect(Collectors.toSet());
 
             if (resource.getId() != null) {
-                Resource resourceModel = storeFactory.getResourceStore().findById(resource.getId());
-                return Permissions.createResourcePermissions(resourceModel, givenScopes, authorization).stream();
+                Resource resourceModel = storeFactory.getResourceStore().findById(resource.getId(), resourceServer.getId());
+                return Permissions.createResourcePermissions(resourceModel, scopeNames, authorization).stream();
             } else if (resource.getType() != null) {
-                Set<String> finalGivenScopes = givenScopes;
-                return storeFactory.getResourceStore().findByType(resource.getType()).stream().flatMap(resource1 -> Permissions.createResourcePermissions(resource1, finalGivenScopes, authorization).stream());
+                return storeFactory.getResourceStore().findByType(resource.getType(), resourceServer.getId()).stream().flatMap(resource1 -> Permissions.createResourcePermissions(resource1, scopeNames, authorization).stream());
             } else {
                 ScopeStore scopeStore = storeFactory.getScopeStore();
-                List<Scope> scopes = givenScopes.stream().map(scopeName -> scopeStore.findByName(scopeName, this.resourceServer.getId())).collect(Collectors.toList());
-                List<ResourcePermission> collect = scopes.stream().map(scope -> new ResourcePermission(null, asList(scope), resourceServer)).collect(Collectors.toList());
+                List<Scope> scopes = scopeNames.stream().map(scopeName -> scopeStore.findByName(scopeName, this.resourceServer.getId())).collect(Collectors.toList());
+                List<ResourcePermission> collect = new ArrayList<ResourcePermission>();
 
-                if (scopes.isEmpty()) {
-                    scopes = scopeStore.findByResourceServer(resourceServer.getId());
+                if (!scopes.isEmpty()) {
+                    collect.addAll(scopes.stream().map(scope -> new ResourcePermission(null, asList(scope), resourceServer)).collect(Collectors.toList()));
+                } else {
+                    collect.addAll(Permissions.all(resourceServer, evaluationContext.getIdentity(), authorization));
                 }
-
-                for (Scope scope : scopes) {
-                    collect.addAll(storeFactory.getResourceStore().findByScope(scope.getId()).stream().map(resource12 -> new ResourcePermission(resource12, asList(scope), resourceServer)).collect(Collectors.toList()));
-                }
-
-                collect.addAll(storeFactory.getResourceStore().findByResourceServer(resourceServer.getId()).stream().map(new Function<Resource, ResourcePermission>() {
-                    @Override
-                    public ResourcePermission apply(Resource resource) {
-                        return new ResourcePermission(resource, resource.getScopes(), resourceServer);
-                    }
-                }).collect(Collectors.toList()));
 
                 return collect.stream();
             }

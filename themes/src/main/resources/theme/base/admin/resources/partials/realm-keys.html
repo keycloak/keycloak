@@ -13,8 +13,7 @@
             <th>{{:: 'type' | translate}}</th>
             <th>{{:: 'kid' | translate}}</th>
             <th>{{:: 'provider' | translate}}</th>
-            <th>{{:: 'publicKey' | translate}}</th>
-            <th>{{:: 'certificate' | translate}}</th>
+            <th colspan="2">{{:: 'publicKeys' | translate}}</th>
         </tr>
         </thead>
         <tbody>
@@ -23,11 +22,10 @@
             <td>{{key.kid}}</td>
             <td><a href="#/realms/{{realm.realm}}/keys/providers/{{key.provider.providerId}}/{{key.provider.id}}">{{key.provider.name}}</a></td>
 
-            <td data-ng-show="key.publicKey" class="kc-action-cell" data-ng-click="viewKey(key.publicKey)">{{:: 'view' | translate}}</td>
-            <td data-ng-hide="key.publicKey"></td>
+            <td data-ng-show="key.type === 'RSA'" class="kc-action-cell" data-ng-click="viewKey(key.publicKey)">{{:: 'publicKey' | translate}}</td>
+            <td data-ng-show="key.type === 'RSA'" class="kc-action-cell" data-ng-click="viewKey(key.certificate)">{{:: 'certificate' | translate}}</td>
 
-            <td data-ng-show="key.certificate" class="kc-action-cell" data-ng-click="viewKey(key.certificate)">{{:: 'view' | translate}}</td>
-            <td data-ng-hide="key.certificate"></td>
+            <td data-ng-show="key.type !== 'RSA'" colspan="2"></td>
         </tr>
         </tbody>
     </table>

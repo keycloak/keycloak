@@ -764,11 +764,17 @@ module.controller('RealmIdentityProviderCtrl', function($scope, $filter, $upload
             "RSA_SHA512",
             "DSA_SHA1"
         ];
+        $scope.xmlKeyNameTranformers = [
+            "NONE",
+            "KEY_ID",
+            "CERT_SUBJECT"
+        ];
         if (instance && instance.alias) {
 
         } else {
             $scope.identityProvider.config.nameIDPolicyFormat = $scope.nameIdFormats[0].format;
             $scope.identityProvider.config.signatureAlgorithm = $scope.signatureAlgorithms[1];
+            $scope.identityProvider.config.samlXmlKeyNameTranformer = $scope.xmlKeyNameTranformers[1];
         }
     }
 
@@ -1120,6 +1126,14 @@ module.controller('RealmKeysProvidersCtrl', function($scope, Realm, realm, $http
         type: 'org.keycloak.keys.KeyProvider'
     }, function(data) {
         $scope.instances = data;
+
+        for (var i = 0; i < $scope.instances.length; i++) {
+            for (var j = 0; j < $scope.providers.length; j++) {
+                if ($scope.providers[j].id === $scope.instances[i].providerId) {
+                    $scope.instances[i].provider = $scope.providers[j];
+                }
+            }
+        }
     });
 
     $scope.addProvider = function(provider) {

@@ -74,11 +74,14 @@ public class RoleLDAPStorageMapperFactory extends AbstractLDAPStorageMapperFacto
     private static List<ProviderConfigProperty> getProps(ComponentModel parent) {
         String roleObjectClasses = LDAPConstants.GROUP_OF_NAMES;
         String mode = LDAPGroupMapperMode.LDAP_ONLY.toString();
+        String membershipUserAttribute = LDAPConstants.UID;
         if (parent != null) {
             LDAPConfig config = new LDAPConfig(parent.getConfig());
             roleObjectClasses = config.isActiveDirectory() ? LDAPConstants.GROUP : LDAPConstants.GROUP_OF_NAMES;
             mode = config.getEditMode() == UserStorageProvider.EditMode.WRITABLE ? LDAPGroupMapperMode.LDAP_ONLY.toString() : LDAPGroupMapperMode.READ_ONLY.toString();
+            membershipUserAttribute = config.getUsernameLdapAttribute();
         }
+
         return ProviderConfigurationBuilder.create()
                     .property().name(RoleMapperConfig.ROLES_DN)
                                .label("LDAP Roles DN")
@@ -99,7 +102,8 @@ public class RoleLDAPStorageMapperFactory extends AbstractLDAPStorageMapperFacto
                                .add()
                     .property().name(RoleMapperConfig.MEMBERSHIP_LDAP_ATTRIBUTE)
                                .label("Membership LDAP Attribute")
-                               .helpText("Name of LDAP attribute on role, which is used for membership mappings. Usually it will be 'member' ")
+                               .helpText("Name of LDAP attribute on role, which is used for membership mappings. Usually it will be 'member' ." +
+                                       "However when 'Membership Attribute Type' is 'UID' then 'Membership LDAP Attribute' could be typically 'memberUid' .")
                                .type(ProviderConfigProperty.STRING_TYPE)
                                .defaultValue(LDAPConstants.MEMBER)
                                .add()
@@ -111,6 +115,14 @@ public class RoleLDAPStorageMapperFactory extends AbstractLDAPStorageMapperFacto
                                .options(MEMBERSHIP_TYPES)
                                .defaultValue(MembershipType.DN.toString())
                                .add()
+                    .property().name(RoleMapperConfig.MEMBERSHIP_USER_LDAP_ATTRIBUTE)
+                                .label("Membership User LDAP Attribute")
+                                .helpText("Used just if Membership Attribute Type is UID. It is name of LDAP attribute on user, which is used for membership mappings. Usually it will be 'uid' . For example if value of " +
+                                        "'Membership User LDAP Attribute' is 'uid' and " +
+                                        " LDAP group has  'memberUid: john', then it is expected that particular LDAP user will have attribute 'uid: john' .")
+                                .type(ProviderConfigProperty.STRING_TYPE)
+                                .defaultValue(membershipUserAttribute)
+                                .add()
                     .property().name(RoleMapperConfig.ROLES_LDAP_FILTER)
                                .label("LDAP Filter")
                                .helpText("LDAP Filter adds additional custom filter to the whole query for retrieve LDAP roles. Leave this empty if no additional filtering is needed and you want to retrieve all roles from LDAP. Otherwise make sure that filter starts with '(' and ends with ')'")

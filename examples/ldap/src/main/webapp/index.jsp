@@ -37,6 +37,9 @@
         <p><b>Full Name: </b><%=idToken.getName()%></p>
         <p><b>First: </b><%=idToken.getGivenName()%></p>
         <p><b>Last: </b><%=idToken.getFamilyName()%></p>
+        <% if (idToken.getPicture() != null) { %>
+            <p><b>Profile picture: </b><img src='/ldap-portal/picture' /></p>
+        <% } %>
         <hr />
 
 

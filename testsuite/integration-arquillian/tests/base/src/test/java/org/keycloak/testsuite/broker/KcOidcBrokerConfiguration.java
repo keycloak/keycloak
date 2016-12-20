@@ -87,7 +87,7 @@ public class KcOidcBrokerConfiguration implements BrokerConfiguration {
         userAttrMapperConfig.put(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true");
         userAttrMapperConfig.put(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "true");
         userAttrMapperConfig.put(OIDCAttributeMapperHelper.INCLUDE_IN_USERINFO, "true");
-//        userAttrMapperConfig.put(ProtocolMapperUtils.MULTIVALUED, "true");
+        userAttrMapperConfig.put(ProtocolMapperUtils.MULTIVALUED, "true");
 
         client.setProtocolMappers(Arrays.asList(emailMapper, userAttrMapper));
 

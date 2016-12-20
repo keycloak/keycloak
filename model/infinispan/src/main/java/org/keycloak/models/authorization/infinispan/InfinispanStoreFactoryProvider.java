@@ -22,6 +22,7 @@ import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.authorization.store.ResourceServerStore;
 import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.authorization.store.ScopeStore;
+import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakTransaction;
 import org.keycloak.models.cache.authorization.CachedStoreFactoryProvider;
@@ -36,31 +37,41 @@ public class InfinispanStoreFactoryProvider implements CachedStoreFactoryProvide
 
     private final KeycloakSession session;
     private final CacheTransaction transaction;
+    private final StoreFactory storeFactory;
+    private final CachedResourceStore resourceStore;
+    private final CachedScopeStore scopeStore;
+    private final CachedPolicyStore policyStore;
+    private ResourceServerStore resourceServerStore;
 
     InfinispanStoreFactoryProvider(KeycloakSession delegate) {
         this.session = delegate;
         this.transaction = new CacheTransaction();
         this.session.getTransactionManager().enlistAfterCompletion(transaction);
+        storeFactory = this.session.getProvider(StoreFactory.class);
+        resourceStore = new CachedResourceStore(this.session, this.transaction, storeFactory);
+        resourceServerStore = new CachedResourceServerStore(this.session, this.transaction, storeFactory);
+        scopeStore = new CachedScopeStore(this.session, this.transaction, storeFactory);
+        policyStore = new CachedPolicyStore(this.session, this.transaction, storeFactory);
     }
 
     @Override
     public ResourceStore getResourceStore() {
-        return new CachedResourceStore(this.session, this.transaction);
+        return resourceStore;
     }
 
     @Override
     public ResourceServerStore getResourceServerStore() {
-        return new CachedResourceServerStore(this.session, this.transaction);
+        return resourceServerStore;
     }
 
     @Override
     public ScopeStore getScopeStore() {
-        return new CachedScopeStore(this.session, this.transaction);
+        return scopeStore;
     }
 
     @Override
     public PolicyStore getPolicyStore() {
-        return new CachedPolicyStore(this.session, this.transaction);
+        return policyStore;
     }
 
     @Override

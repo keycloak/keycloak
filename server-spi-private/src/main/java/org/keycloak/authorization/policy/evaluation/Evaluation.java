@@ -18,6 +18,8 @@
 
 package org.keycloak.authorization.policy.evaluation;
 
+import org.keycloak.authorization.AuthorizationProvider;
+import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.permission.ResourcePermission;
 
 /**
@@ -41,6 +43,15 @@ public interface Evaluation {
      * @return the evaluation context
      */
     EvaluationContext getContext();
+
+    /**
+     * Returns the {@link Policy}. being evaluated.
+     *
+     * @return the evaluation context
+     */
+    Policy getPolicy();
+
+    AuthorizationProvider getAuthorizationProvider();
 
     /**
      * Grants the requested permission to the caller.

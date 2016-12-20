@@ -47,9 +47,7 @@
                 <label class="col-md-2 control-label" for="reqActions">{{:: 'authz-scopes' | translate}}</label>
 
                 <div class="col-md-6">
-                    <select ui-select2 id="reqActions" ng-model="resource.scopes" data-placeholder="{{:: 'authz-select-scope' | translate}}..." multiple>
-                        <option ng-repeat="scope in scopes" value="{{scope.name}}" ng-selected="true">{{scope.name}}</option>
-                    </select>
+                    <input type="hidden" ui-select2="scopesUiSelect" id="reqActions" data-ng-model="resource.scopes" data-placeholder="{{:: 'authz-select-scope' | translate}}..." multiple/>
                 </div>
 
                 <kc-tooltip>{{:: 'authz-resource-scopes.tooltip' | translate}}</kc-tooltip>

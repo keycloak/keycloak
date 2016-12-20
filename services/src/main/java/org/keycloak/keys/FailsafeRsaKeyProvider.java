@@ -31,7 +31,7 @@ import java.util.List;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class FailsafeRsaKeyProvider implements KeyProvider {
+public class FailsafeRsaKeyProvider implements RsaKeyProvider {
 
     private static final Logger logger = Logger.getLogger(FailsafeRsaKeyProvider.class);
 
@@ -85,7 +85,7 @@ public class FailsafeRsaKeyProvider implements KeyProvider {
     }
 
     @Override
-    public List<KeyMetadata> getKeyMetadata() {
+    public List<RsaKeyMetadata> getKeyMetadata() {
         return Collections.emptyList();
     }
 

@@ -27,6 +27,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RoleUtils;
 import org.keycloak.models.utils.UserModelDelegate;
+import org.keycloak.storage.ldap.LDAPConfig;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
 import org.keycloak.storage.ldap.LDAPUtils;
 import org.keycloak.storage.ldap.idm.model.LDAPDn;
@@ -450,11 +451,13 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
         LDAPObject ldapGroup = ldapGroupsMap.get(kcGroup.getName());
         Set<LDAPDn> toRemoveSubgroupsDNs = getLDAPSubgroups(ldapGroup);
 
+        String membershipUserLdapAttrName = getMembershipUserLdapAttribute(); // Not applicable for groups, but needs to be here
+
         // Add LDAP subgroups, which are KC subgroups
         Set<GroupModel> kcSubgroups = kcGroup.getSubGroups();
         for (GroupModel kcSubgroup : kcSubgroups) {
             LDAPObject ldapSubgroup = ldapGroupsMap.get(kcSubgroup.getName());
-            LDAPUtils.addMember(ldapProvider, MembershipType.DN, config.getMembershipLdapAttribute(), ldapGroup, ldapSubgroup, false);
+            LDAPUtils.addMember(ldapProvider, MembershipType.DN, config.getMembershipLdapAttribute(), membershipUserLdapAttrName, ldapGroup, ldapSubgroup, false);
             toRemoveSubgroupsDNs.remove(ldapSubgroup.getDn());
         }
 
@@ -462,7 +465,7 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
         for (LDAPDn toRemoveDN : toRemoveSubgroupsDNs) {
             LDAPObject fakeGroup = new LDAPObject();
             fakeGroup.setDn(toRemoveDN);
-            LDAPUtils.deleteMember(ldapProvider, MembershipType.DN, config.getMembershipLdapAttribute(), ldapGroup, fakeGroup);
+            LDAPUtils.deleteMember(ldapProvider, MembershipType.DN, config.getMembershipLdapAttribute(), membershipUserLdapAttrName, ldapGroup, fakeGroup);
         }
 
         // Update group to LDAP
@@ -497,17 +500,22 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
             ldapGroup = loadLDAPGroupByName(groupName);
         }
 
-        LDAPUtils.addMember(ldapProvider, config.getMembershipTypeLdapAttribute(), config.getMembershipLdapAttribute(), ldapGroup, ldapUser, true);
+        String membershipUserLdapAttrName = getMembershipUserLdapAttribute();
+
+        LDAPUtils.addMember(ldapProvider, config.getMembershipTypeLdapAttribute(), config.getMembershipLdapAttribute(), membershipUserLdapAttrName, ldapGroup, ldapUser, true);
     }
 
     public void deleteGroupMappingInLDAP(LDAPObject ldapUser, LDAPObject ldapGroup) {
-        LDAPUtils.deleteMember(ldapProvider, config.getMembershipTypeLdapAttribute(), config.getMembershipLdapAttribute(), ldapGroup, ldapUser);
+        String membershipUserLdapAttrName = getMembershipUserLdapAttribute();
+        LDAPUtils.deleteMember(ldapProvider, config.getMembershipTypeLdapAttribute(), config.getMembershipLdapAttribute(), membershipUserLdapAttrName, ldapGroup, ldapUser);
     }
 
     protected List<LDAPObject> getLDAPGroupMappings(LDAPObject ldapUser) {
         String strategyKey = config.getUserGroupsRetrieveStrategy();
         UserRolesRetrieveStrategy strategy = factory.getUserGroupsRetrieveStrategy(strategyKey);
-        return strategy.getLDAPRoleMappings(this, ldapUser);
+
+        LDAPConfig ldapConfig = ldapProvider.getLdapIdentityStore().getConfig();
+        return strategy.getLDAPRoleMappings(this, ldapUser, ldapConfig);
     }
 
     @Override
@@ -552,6 +560,12 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
                 }
             }
         }
+    }
+
+
+    protected String getMembershipUserLdapAttribute() {
+        LDAPConfig ldapConfig = ldapProvider.getLdapIdentityStore().getConfig();
+        return config.getMembershipUserLdapAttribute(ldapConfig);
     }
 
 
@@ -604,8 +618,11 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
             LDAPQuery ldapQuery = createGroupQuery();
             LDAPQueryConditionsBuilder conditionsBuilder = new LDAPQueryConditionsBuilder();
             Condition roleNameCondition = conditionsBuilder.equal(config.getGroupNameLdapAttribute(), group.getName());
-            String membershipUserAttr = LDAPUtils.getMemberValueOfChildObject(ldapUser, config.getMembershipTypeLdapAttribute());
+
+            String membershipUserLdapAttrName = getMembershipUserLdapAttribute();
+            String membershipUserAttr = LDAPUtils.getMemberValueOfChildObject(ldapUser, config.getMembershipTypeLdapAttribute(), membershipUserLdapAttrName);
             Condition membershipCondition = conditionsBuilder.equal(config.getMembershipLdapAttribute(), membershipUserAttr);
+
             ldapQuery.addWhereCondition(roleNameCondition).addWhereCondition(membershipCondition);
             LDAPObject ldapGroup = ldapQuery.getFirstResult();
 

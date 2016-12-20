@@ -22,9 +22,11 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
+import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -50,6 +52,7 @@ import org.keycloak.testsuite.util.IdentityProviderBuilder;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
+
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 
@@ -363,33 +366,90 @@ public class AccountTest extends TestRealmKeycloakTest {
         events.expectAccount(EventType.UPDATE_PASSWORD).assertEvent();
     }
 
-    @Test
-    public void changePasswordWithPasswordHistoryPolicy() {
-        setPasswordPolicy("passwordHistory(2)");
+     private void assertChangePasswordSucceeds(String currentPassword, String newPassword) {
+        changePasswordPage.changePassword(currentPassword, newPassword, newPassword);
+        Assert.assertEquals("Your password has been updated.", profilePage.getSuccess());
+        events.expectAccount(EventType.UPDATE_PASSWORD).assertEvent();
+    }
+
+     private void assertChangePasswordFails(String currentPassword, String newPassword) {
+        changePasswordPage.changePassword(currentPassword, newPassword, newPassword);
+        Assert.assertThat(profilePage.getError(), containsString("Invalid password: must not be equal to any of last"));
+        events.expectAccount(EventType.UPDATE_PASSWORD_ERROR).error(Errors.PASSWORD_REJECTED).assertEvent();
+    }
+
+   @Test
+    public void changePasswordWithPasswordHistoryPolicyThreePasswords() {
+        setPasswordPolicy(PasswordPolicy.PASSWORD_HISTORY_ID + "(3)");
 
         changePasswordPage.open();
         loginPage.login("test-user@localhost", "password");
         events.expectLogin().client("account").detail(Details.REDIRECT_URI, ACCOUNT_REDIRECT + "?path=password").assertEvent();
 
-        changePasswordPage.changePassword("password", "password", "password");
-        Assert.assertEquals("Invalid password: must not be equal to any of last 2 passwords.", profilePage.getError());
-        events.expectAccount(EventType.UPDATE_PASSWORD_ERROR).error(Errors.PASSWORD_REJECTED).assertEvent();
+        assertChangePasswordFails   ("password",  "password");  // current: password
+        assertChangePasswordSucceeds("password",  "password1"); // current: password
 
-        changePasswordPage.changePassword("password", "password1", "password1");
-        Assert.assertEquals("Your password has been updated.", profilePage.getSuccess());
-        events.expectAccount(EventType.UPDATE_PASSWORD).assertEvent();
+        assertChangePasswordFails   ("password1", "password");  // current: password1, history: password
+        assertChangePasswordFails   ("password1", "password1"); // current: password1, history: password
+        assertChangePasswordSucceeds("password1", "password2"); // current: password1, history: password
 
-        changePasswordPage.changePassword("password1", "password", "password");
-        Assert.assertEquals("Invalid password: must not be equal to any of last 2 passwords.", profilePage.getError());
-        events.expectAccount(EventType.UPDATE_PASSWORD_ERROR).error(Errors.PASSWORD_REJECTED).assertEvent();
+        assertChangePasswordFails   ("password2", "password");  // current: password2, history: password, password1
+        assertChangePasswordFails   ("password2", "password1"); // current: password2, history: password, password1
+        assertChangePasswordFails   ("password2", "password2"); // current: password2, history: password, password1
+        assertChangePasswordSucceeds("password2", "password3"); // current: password2, history: password, password1
 
-        changePasswordPage.changePassword("password1", "password1", "password1");
-        Assert.assertEquals("Invalid password: must not be equal to any of last 2 passwords.", profilePage.getError());
-        events.expectAccount(EventType.UPDATE_PASSWORD_ERROR).error(Errors.PASSWORD_REJECTED).assertEvent();
+        assertChangePasswordSucceeds("password3", "password");  // current: password3, history: password1, password2
+    }
 
-        changePasswordPage.changePassword("password1", "password2", "password2");
-        Assert.assertEquals("Your password has been updated.", profilePage.getSuccess());
-        events.expectAccount(EventType.UPDATE_PASSWORD).assertEvent();
+    @Test
+    public void changePasswordWithPasswordHistoryPolicyTwoPasswords() {
+        setPasswordPolicy(PasswordPolicy.PASSWORD_HISTORY_ID + "(2)");
+
+        changePasswordPage.open();
+        loginPage.login("test-user@localhost", "password");
+        events.expectLogin().client("account").detail(Details.REDIRECT_URI, ACCOUNT_REDIRECT + "?path=password").assertEvent();
+
+        assertChangePasswordFails   ("password",  "password");  // current: password
+        assertChangePasswordSucceeds("password",  "password1"); // current: password
+
+        assertChangePasswordFails   ("password1", "password");  // current: password1, history: password
+        assertChangePasswordFails   ("password1", "password1"); // current: password1, history: password
+        assertChangePasswordSucceeds("password1", "password2"); // current: password1, history: password
+
+        assertChangePasswordFails   ("password2", "password1"); // current: password2, history: password1
+        assertChangePasswordFails   ("password2", "password2"); // current: password2, history: password1
+        assertChangePasswordSucceeds("password2", "password");  // current: password2, history: password1
+    }
+
+    @Test
+    public void changePasswordWithPasswordHistoryPolicyOnePwds() {
+        // One password means only the active password is checked
+        setPasswordPolicy(PasswordPolicy.PASSWORD_HISTORY_ID + "(1)");
+
+        changePasswordPage.open();
+        loginPage.login("test-user@localhost", "password");
+        events.expectLogin().client("account").detail(Details.REDIRECT_URI, ACCOUNT_REDIRECT + "?path=password").assertEvent();
+
+        assertChangePasswordFails   ("password",  "password");  // current: password
+        assertChangePasswordSucceeds("password",  "password1"); // current: password
+
+        assertChangePasswordFails   ("password1", "password1"); // current: password1
+        assertChangePasswordSucceeds("password1", "password");  // current: password1
+    }
+
+    @Test
+    public void changePasswordWithPasswordHistoryPolicyZeroPwdsInHistory() {
+        setPasswordPolicy(PasswordPolicy.PASSWORD_HISTORY_ID + "(0)");
+
+        changePasswordPage.open();
+        loginPage.login("test-user@localhost", "password");
+        events.expectLogin().client("account").detail(Details.REDIRECT_URI, ACCOUNT_REDIRECT + "?path=password").assertEvent();
+
+        assertChangePasswordFails   ("password",  "password");  // current: password
+        assertChangePasswordSucceeds("password",  "password1"); // current: password
+
+        assertChangePasswordFails   ("password1", "password1"); // current: password1
+        assertChangePasswordSucceeds("password1", "password");  // current: password1
     }
 
     @Test
@@ -486,6 +546,12 @@ public class AccountTest extends TestRealmKeycloakTest {
     private void setRegistrationEmailAsUsername(boolean allowed) {
         RealmRepresentation testRealm = testRealm().toRepresentation();
         testRealm.setRegistrationEmailAsUsername(allowed);
+        testRealm().update(testRealm);
+    }
+
+    private void setDuplicateEmailsAllowed(boolean allowed) {
+        RealmRepresentation testRealm = testRealm().toRepresentation();
+        testRealm.setDuplicateEmailsAllowed(allowed);
         testRealm().update(testRealm);
     }
 
@@ -599,7 +665,7 @@ public class AccountTest extends TestRealmKeycloakTest {
 
     // KEYCLOAK-1534
     @Test
-    public void changeEmailToExisting() {
+    public void changeEmailToExistingForbidden() {
         profilePage.open();
         loginPage.login("test-user@localhost", "password");
 
@@ -632,6 +698,24 @@ public class AccountTest extends TestRealmKeycloakTest {
         // Change email and other things to original values
         profilePage.updateProfile("Tom", "Brady", "test-user@localhost");
         events.expectAccount(EventType.UPDATE_PROFILE).assertEvent();
+    }
+ 
+    @Test
+    public void changeEmailToExistingAllowed() {
+        setDuplicateEmailsAllowed(true); 
+        
+        profilePage.open();
+        loginPage.login("test-user@localhost", "password");
+
+        events.expectLogin().client("account").detail(Details.REDIRECT_URI, ACCOUNT_REDIRECT).assertEvent();
+
+        Assert.assertEquals("test-user@localhost", profilePage.getUsername());
+        Assert.assertEquals("test-user@localhost", profilePage.getEmail());
+
+        // Change to the email, which some other user has
+        profilePage.updateProfile("New first", "New last", "test-user-no-access@localhost");
+
+        Assert.assertEquals("Your account has been updated.", profilePage.getSuccess());
     }
 
     @Test

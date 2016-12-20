@@ -301,7 +301,7 @@ public class SAMLEndpoint {
                         .relayState(relayState);
             boolean postBinding = config.isPostBindingResponse();
             if (config.isWantAuthnRequestsSigned()) {
-                KeyManager.ActiveKey keys = session.keys().getActiveKey(realm);
+                KeyManager.ActiveRsaKey keys = session.keys().getActiveRsaKey(realm);
                 String keyName = config.getXmlSigKeyInfoKeyNameTransformer().getKeyName(keys.getKid(), keys.getCertificate());
                 binding.signWith(keyName, keys.getPrivateKey(), keys.getPublicKey(), keys.getCertificate())
                         .signatureAlgorithm(provider.getSignatureAlgorithm())
@@ -332,7 +332,7 @@ public class SAMLEndpoint {
         protected Response handleLoginResponse(String samlResponse, SAMLDocumentHolder holder, ResponseType responseType, String relayState, String clientId) {
 
             try {
-                KeyManager.ActiveKey keys = session.keys().getActiveKey(realm);
+                KeyManager.ActiveRsaKey keys = session.keys().getActiveRsaKey(realm);
                 AssertionType assertion = AssertionUtil.getAssertion(responseType, keys.getPrivateKey());
                 SubjectType subject = assertion.getSubject();
                 SubjectType.STSubType subType = subject.getSubType();

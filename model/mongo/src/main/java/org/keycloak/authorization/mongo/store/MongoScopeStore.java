@@ -69,7 +69,7 @@ public class MongoScopeStore implements ScopeStore {
     }
 
     @Override
-    public Scope findById(String id) {
+    public Scope findById(String id, String resourceServerId) {
         ScopeEntity entity = getMongoStore().loadEntity(ScopeEntity.class, id, getInvocationContext());
 
         if (entity == null) {
@@ -87,7 +87,7 @@ public class MongoScopeStore implements ScopeStore {
                 .get();
 
         return getMongoStore().loadEntities(ScopeEntity.class, query, getInvocationContext()).stream()
-                .map(scope -> findById(scope.getId())).findFirst().orElse(null);
+                .map(scope -> findById(scope.getId(), scope.getResourceServerId())).findFirst().orElse(null);
     }
 
     @Override
@@ -97,7 +97,7 @@ public class MongoScopeStore implements ScopeStore {
                 .get();
 
         return getMongoStore().loadEntities(ScopeEntity.class, query, getInvocationContext()).stream()
-                .map(policyEntity -> findById(policyEntity.getId()))
+                .map(scope -> findById(scope.getId(), scope.getResourceServerId()))
                 .collect(toList());
     }
 
@@ -113,7 +113,7 @@ public class MongoScopeStore implements ScopeStore {
         DBObject sort = new BasicDBObject("name", 1);
 
         return getMongoStore().loadEntities(ScopeEntity.class, queryBuilder.get(), sort, firstResult, maxResult, invocationContext).stream()
-                .map(scope -> findById(scope.getId())).collect(toList());
+                .map(scope -> findById(scope.getId(), scope.getResourceServerId())).collect(toList());
     }
 
     private MongoStoreInvocationContext getInvocationContext() {

@@ -115,17 +115,18 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
             mapper.getConfig().put(AddressMapper.getModelPropertyName(AddressClaimSet.REGION), "region_some");
             mapper.getConfig().put(AddressMapper.getModelPropertyName(AddressClaimSet.COUNTRY), "country_some");
             mapper.getConfig().remove(AddressMapper.getModelPropertyName(AddressClaimSet.POSTAL_CODE)); // Even if we remove protocolMapper config property, it should still default to postal_code
-            app.getProtocolMappers().createMapper(mapper);
+            app.getProtocolMappers().createMapper(mapper).close();
 
             ProtocolMapperRepresentation hard = createHardcodedClaim("hard", "hard", "coded", "String", false, null, true, true);
-            app.getProtocolMappers().createMapper(hard);
-            app.getProtocolMappers().createMapper(createHardcodedClaim("hard-nested", "nested.hard", "coded-nested", "String", false, null, true, true));
-            app.getProtocolMappers().createMapper(createClaimMapper("custom phone", "phone", "home_phone", "String", true, "", true, true, false));
-            app.getProtocolMappers().createMapper(createClaimMapper("nested phone", "phone", "home.phone", "String", true, "", true, true, false));
-            app.getProtocolMappers().createMapper(createClaimMapper("departments", "departments", "department", "String", true, "", true, true, true));
-            app.getProtocolMappers().createMapper(createHardcodedRole("hard-realm", "hardcoded"));
-            app.getProtocolMappers().createMapper(createHardcodedRole("hard-app", "app.hardcoded"));
-            app.getProtocolMappers().createMapper(createRoleNameMapper("rename-app-role", "test-app.customer-user", "realm-user"));
+            app.getProtocolMappers().createMapper(hard).close();
+            app.getProtocolMappers().createMapper(createHardcodedClaim("hard-nested", "nested.hard", "coded-nested", "String", false, null, true, true)).close();
+            app.getProtocolMappers().createMapper(createClaimMapper("custom phone", "phone", "home_phone", "String", true, "", true, true, true)).close();
+            app.getProtocolMappers().createMapper(createClaimMapper("nested phone", "phone", "home.phone", "String", true, "", true, true, true)).close();
+            app.getProtocolMappers().createMapper(createClaimMapper("departments", "departments", "department", "String", true, "", true, true, true)).close();
+            app.getProtocolMappers().createMapper(createClaimMapper("firstDepartment", "departments", "firstDepartment", "String", true, "", true, true, false)).close();
+            app.getProtocolMappers().createMapper(createHardcodedRole("hard-realm", "hardcoded")).close();
+            app.getProtocolMappers().createMapper(createHardcodedRole("hard-app", "app.hardcoded")).close();
+            app.getProtocolMappers().createMapper(createRoleNameMapper("rename-app-role", "test-app.customer-user", "realm-user")).close();
         }
 
         {
@@ -147,9 +148,13 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
             assertEquals("coded-nested", nested.get("hard"));
             nested = (Map) idToken.getOtherClaims().get("home");
             assertThat((List<String>) nested.get("phone"), hasItems("617-777-6666"));
+
             List<String> departments = (List<String>) idToken.getOtherClaims().get("department");
-            assertEquals(2, departments.size());
-            assertTrue(departments.contains("finance") && departments.contains("development"));
+            assertThat(departments, containsInAnyOrder("finance", "development"));
+
+            Object firstDepartment = idToken.getOtherClaims().get("firstDepartment");
+            assertThat(firstDepartment, instanceOf(String.class));
+            assertThat(firstDepartment, is("finance"));   // Has to be the first item
 
             AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
             assertEquals(accessToken.getName(), "Tom Brady");
@@ -186,6 +191,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
                         || model.getName().equals("hard-nested")
                         || model.getName().equals("custom phone")
                         || model.getName().equals("departments")
+                        || model.getName().equals("firstDepartment")
                         || model.getName().equals("nested phone")
                         || model.getName().equals("rename-app-role")
                         || model.getName().equals("hard-realm")

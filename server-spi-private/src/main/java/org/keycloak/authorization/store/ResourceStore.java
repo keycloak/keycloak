@@ -53,7 +53,7 @@ public interface ResourceStore {
      * @param id the identifier of an existing resource instance
      * @return the resource instance with the given identifier or null if no instance was found
      */
-    Resource findById(String id);
+    Resource findById(String id, String resourceServerId);
 
     /**
      * Finds all {@link Resource} instances with the given {@code ownerId}.
@@ -61,7 +61,15 @@ public interface ResourceStore {
      * @param ownerId the identifier of the owner
      * @return a list with all resource instances owned by the given owner
      */
-    List<Resource> findByOwner(String ownerId);
+    List<Resource> findByOwner(String ownerId, String resourceServerId);
+
+    /**
+     * Finds all {@link Resource} instances with the given uri.
+     *
+     * @param ownerId the identifier of the owner
+     * @return a list with all resource instances owned by the given owner
+     */
+    List<Resource> findByUri(String uri, String resourceServerId);
 
     /**
      * Finds all {@link Resource} instances associated with a given resource server.
@@ -86,7 +94,7 @@ public interface ResourceStore {
      * @param id one or more scope identifiers
      * @return a list of resources associated with the given scope(s)
      */
-    List<Resource> findByScope(String... id);
+    List<Resource> findByScope(List<String> id, String resourceServerId);
 
     /**
      * Find a {@link Resource} by its name.
@@ -103,5 +111,5 @@ public interface ResourceStore {
      * @param type the type of the resource
      * @return a list of resources with the given type
      */
-    List<Resource> findByType(String type);
+    List<Resource> findByType(String type, String resourceServerId);
 }

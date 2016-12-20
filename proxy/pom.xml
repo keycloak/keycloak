@@ -23,7 +23,7 @@
         <version>2.5.0.Final-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
-    <name>Model Parent</name>
+    <name>Keycloak Proxy</name>
     <description/>
     <modelVersion>4.0.0</modelVersion>
 

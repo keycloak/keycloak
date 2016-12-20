@@ -376,7 +376,7 @@ public class DocumentUtil {
             throw logger.processingError(e);
         }
 
-        return new String(baos.toByteArray());
+        return new String(baos.toByteArray(), GeneralConstants.SAML_CHARSET);
     }
 
     /**

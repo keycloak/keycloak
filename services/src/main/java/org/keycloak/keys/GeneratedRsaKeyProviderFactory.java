@@ -53,26 +53,16 @@ public class GeneratedRsaKeyProviderFactory extends AbstractRsaKeyProviderFactor
 
     @Override
     public KeyProvider create(KeycloakSession session, ComponentModel model) {
-        return new RsaKeyProvider(session.getContext().getRealm(), model);
+        return new ImportedRsaKeyProvider(session.getContext().getRealm(), model);
     }
 
     @Override
     public void validateConfiguration(KeycloakSession session, RealmModel realm, ComponentModel model) throws ComponentValidationException {
         super.validateConfiguration(session, realm, model);
 
-        ConfigurationValidationHelper.check(model)
-                .checkInt(Attributes.KEY_SIZE_PROPERTY, false);
+        ConfigurationValidationHelper.check(model).checkList(Attributes.KEY_SIZE_PROPERTY, false);
 
-        int size;
-        if (!model.contains(Attributes.KEY_SIZE_KEY)) {
-            size = 2048;
-            model.put(Attributes.KEY_SIZE_KEY, size);
-        } else {
-            size = model.get(Attributes.KEY_SIZE_KEY, 2048);
-            if (size != 1024 && size != 2048 && size != 4096) {
-                throw new ComponentValidationException("Keysize should be 1024, 2048 or 4096");
-            }
-        }
+        int size = model.get(Attributes.KEY_SIZE_KEY, 2048);
 
         if (!(model.contains(Attributes.PRIVATE_KEY_KEY) && model.contains(Attributes.CERTIFICATE_KEY))) {
             generateKeys(realm, model, size);

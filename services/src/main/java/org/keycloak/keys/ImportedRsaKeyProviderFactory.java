@@ -33,13 +33,12 @@ import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.Certificate;
-import java.security.cert.X509Certificate;
 import java.util.List;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class RsaKeyProviderFactory extends AbstractRsaKeyProviderFactory {
+public class ImportedRsaKeyProviderFactory extends AbstractRsaKeyProviderFactory {
 
     public static final String ID = "rsa";
 
@@ -52,7 +51,7 @@ public class RsaKeyProviderFactory extends AbstractRsaKeyProviderFactory {
 
     @Override
     public KeyProvider create(KeycloakSession session, ComponentModel model) {
-        return new RsaKeyProvider(session.getContext().getRealm(), model);
+        return new ImportedRsaKeyProvider(session.getContext().getRealm(), model);
     }
 
     @Override

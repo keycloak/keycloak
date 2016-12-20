@@ -18,6 +18,12 @@
 
 package org.keycloak.authorization;
 
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.Executor;
+import java.util.function.Supplier;
+
 import org.keycloak.authorization.permission.evaluator.Evaluators;
 import org.keycloak.authorization.policy.evaluation.DefaultPolicyEvaluator;
 import org.keycloak.authorization.policy.provider.PolicyProvider;
@@ -26,11 +32,6 @@ import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.provider.Provider;
-import org.keycloak.provider.ProviderFactory;
-
-import java.util.List;
-import java.util.concurrent.Executor;
-import java.util.stream.Collectors;
 
 /**
  * <p>The main contract here is the creation of {@link org.keycloak.authorization.permission.evaluator.PermissionEvaluator} instances.  Usually
@@ -62,22 +63,22 @@ public final class AuthorizationProvider implements Provider {
 
     private final DefaultPolicyEvaluator policyEvaluator;
     private final Executor scheduller;
-    private final StoreFactory storeFactory;
-    private final List<PolicyProviderFactory> policyProviderFactories;
+    private final Supplier<StoreFactory> storeFactory;
+    private final Map<String, PolicyProviderFactory> policyProviderFactories;
     private final KeycloakSession keycloakSession;
     private final RealmModel realm;
 
-    public AuthorizationProvider(KeycloakSession session, RealmModel realm, StoreFactory storeFactory, Executor scheduller) {
+    public AuthorizationProvider(KeycloakSession session, RealmModel realm, Supplier<StoreFactory> storeFactory, Map<String, PolicyProviderFactory> policyProviderFactories, Executor scheduller) {
         this.keycloakSession = session;
         this.realm = realm;
         this.storeFactory = storeFactory;
         this.scheduller = scheduller;
-        this.policyProviderFactories = configurePolicyProviderFactories(session);
-        this.policyEvaluator = new DefaultPolicyEvaluator(this, this.policyProviderFactories);
+        this.policyProviderFactories = policyProviderFactories;
+        this.policyEvaluator = new DefaultPolicyEvaluator(this);
     }
 
-    public AuthorizationProvider(KeycloakSession session, RealmModel realm, StoreFactory storeFactory) {
-        this(session, realm, storeFactory, Runnable::run);
+    public AuthorizationProvider(KeycloakSession session, RealmModel realm, StoreFactory storeFactory, Map<String, PolicyProviderFactory> policyProviderFactories) {
+        this(session, realm, () -> storeFactory, policyProviderFactories, Runnable::run);
     }
 
     /**
@@ -87,7 +88,7 @@ public final class AuthorizationProvider implements Provider {
      * @return a {@link Evaluators} instance
      */
     public Evaluators evaluators() {
-        return new Evaluators(this.policyProviderFactories, this.policyEvaluator, this.scheduller);
+        return new Evaluators(this.policyEvaluator, this.scheduller);
     }
 
     /**
@@ -96,7 +97,7 @@ public final class AuthorizationProvider implements Provider {
      * @return the {@link StoreFactory}
      */
     public StoreFactory getStoreFactory() {
-        return this.storeFactory;
+        return this.storeFactory.get();
     }
 
     /**
@@ -104,8 +105,8 @@ public final class AuthorizationProvider implements Provider {
      *
      * @return a {@link List} containing all registered {@link PolicyProviderFactory}
      */
-    public List<PolicyProviderFactory> getProviderFactories() {
-        return this.policyProviderFactories;
+    public Collection<PolicyProviderFactory> getProviderFactories() {
+        return this.policyProviderFactories.values();
     }
 
     /**
@@ -116,7 +117,24 @@ public final class AuthorizationProvider implements Provider {
      * @return a {@link PolicyProviderFactory} with the given <code>type</code>
      */
     public <F extends PolicyProviderFactory> F getProviderFactory(String type) {
-        return (F) getProviderFactories().stream().filter(policyProviderFactory -> policyProviderFactory.getId().equals(type)).findFirst().orElse(null);
+        return (F) policyProviderFactories.get(type);
+    }
+
+    /**
+     * Returns a {@link PolicyProviderFactory} given a <code>type</code>.
+     *
+     * @param type the type of the policy provider
+     * @param <F> the expected type of the provider
+     * @return a {@link PolicyProvider} with the given <code>type</code>
+     */
+    public <P extends PolicyProvider> P getProvider(String type) {
+        PolicyProviderFactory policyProviderFactory = policyProviderFactories.get(type);
+
+        if (policyProviderFactory == null) {
+            return null;
+        }
+
+        return (P) policyProviderFactory.create(this);
     }
 
     public KeycloakSession getKeycloakSession() {
@@ -125,16 +143,6 @@ public final class AuthorizationProvider implements Provider {
 
     public RealmModel getRealm() {
         return realm;
-    }
-
-    private List<PolicyProviderFactory> configurePolicyProviderFactories(KeycloakSession session) {
-        List<ProviderFactory> providerFactories = session.getKeycloakSessionFactory().getProviderFactories(PolicyProvider.class);
-
-        if (providerFactories.isEmpty()) {
-            throw new RuntimeException("Could not find any policy provider.");
-        }
-
-        return providerFactories.stream().map(providerFactory -> (PolicyProviderFactory) providerFactory).collect(Collectors.toList());
     }
 
     @Override

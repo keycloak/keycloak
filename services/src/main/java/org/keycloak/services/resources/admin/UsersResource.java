@@ -23,6 +23,7 @@ import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.common.ClientConnection;
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.email.EmailException;
@@ -70,6 +71,7 @@ import org.keycloak.models.UserManager;
 import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.services.resources.AccountService;
 import org.keycloak.services.validation.Validation;
+import org.keycloak.utils.ProfileHelper;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -182,8 +184,10 @@ public class UsersResource {
         } catch (ModelReadOnlyException re) {
             return ErrorResponse.exists("User is read only!");
         } catch (ModelException me) {
+            logger.warn("Could not update user!", me);
             return ErrorResponse.exists("Could not update user!");
-        } catch (Exception me) { // JPA may be committed by JTA which can't 
+        } catch (Exception me) { // JPA
+            logger.warn("Could not update user!", me);// may be committed by JTA which can't
             return ErrorResponse.exists("Could not update user!");
         }
     }
@@ -206,7 +210,7 @@ public class UsersResource {
         if (session.users().getUserByUsername(rep.getUsername(), realm) != null) {
             return ErrorResponse.exists("User exists with same username");
         }
-        if (rep.getEmail() != null && session.users().getUserByEmail(rep.getEmail(), realm) != null) {
+        if (rep.getEmail() != null && !realm.isDuplicateEmailsAllowed() && session.users().getUserByEmail(rep.getEmail(), realm) != null) {
             return ErrorResponse.exists("User exists with same email");
         }
 
@@ -231,6 +235,7 @@ public class UsersResource {
             if (session.getTransactionManager().isActive()) {
                 session.getTransactionManager().setRollbackOnly();
             }
+            logger.warn("Could not create user", me);
             return ErrorResponse.exists("Could not create user");
         }
     }
@@ -316,6 +321,8 @@ public class UsersResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     public Map<String, Object> impersonate(final @PathParam("id") String id) {
+        ProfileHelper.requireFeature(Profile.Feature.IMPERSONATION);
+
         auth.init(RealmAuth.Resource.IMPERSONATION);
         auth.requireManage();
 

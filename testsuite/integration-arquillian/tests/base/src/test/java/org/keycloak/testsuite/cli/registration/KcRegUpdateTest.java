@@ -18,7 +18,7 @@ import static org.keycloak.testsuite.cli.KcRegExec.execute;
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
-public class KcRegUpdateTest extends AbstractCliTest {
+public class KcRegUpdateTest extends AbstractRegCliTest {
 
 
     @Test

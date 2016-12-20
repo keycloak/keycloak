@@ -33,7 +33,6 @@
         <dependency>
             <groupId>org.jboss.aesh</groupId>
             <artifactId>aesh</artifactId>
-            <version>0.66.10</version>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>

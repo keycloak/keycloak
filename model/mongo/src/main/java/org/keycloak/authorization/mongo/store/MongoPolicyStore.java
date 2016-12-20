@@ -70,7 +70,7 @@ public class MongoPolicyStore implements PolicyStore {
     }
 
     @Override
-    public Policy findById(String id) {
+    public Policy findById(String id, String resourceServerId) {
         PolicyEntity entity = getMongoStore().loadEntity(PolicyEntity.class, id, getInvocationContext());
 
         if (entity == null) {
@@ -89,7 +89,7 @@ public class MongoPolicyStore implements PolicyStore {
                 .get();
 
         return getMongoStore().loadEntities(PolicyEntity.class, query, getInvocationContext()).stream()
-                .map(policyEntity -> findById(policyEntity.getId())).findFirst().orElse(null);
+                .map(policyEntity -> findById(policyEntity.getId(), resourceServerId)).findFirst().orElse(null);
     }
 
     @Override
@@ -99,7 +99,7 @@ public class MongoPolicyStore implements PolicyStore {
                 .get();
 
         return getMongoStore().loadEntities(PolicyEntity.class, query, getInvocationContext()).stream()
-                .map(policyEntity -> findById(policyEntity.getId()))
+                .map(policyEntity -> findById(policyEntity.getId(), resourceServerId))
                 .collect(toList());
     }
 
@@ -125,17 +125,18 @@ public class MongoPolicyStore implements PolicyStore {
         DBObject sort = new BasicDBObject("name", 1);
 
         return getMongoStore().loadEntities(PolicyEntity.class, queryBuilder.get(), sort, firstResult, maxResult, invocationContext).stream()
-                .map(policy -> findById(policy.getId())).collect(toList());
+                .map(policy -> findById(policy.getId(), resourceServerId)).collect(toList());
     }
 
     @Override
-    public List<Policy> findByResource(String resourceId) {
+    public List<Policy> findByResource(String resourceId, String resourceServerId) {
         DBObject query = new QueryBuilder()
+                .and("resourceServerId").is(resourceServerId)
                 .and("resources").is(resourceId)
                 .get();
 
         return getMongoStore().loadEntities(PolicyEntity.class, query, getInvocationContext()).stream()
-                .map(policyEntity -> findById(policyEntity.getId()))
+                .map(policyEntity -> findById(policyEntity.getId(), resourceServerId))
                 .collect(toList());
     }
 
@@ -150,7 +151,7 @@ public class MongoPolicyStore implements PolicyStore {
                     String defaultResourceType = policyEntity.getConfig().get("defaultResourceType");
                     return defaultResourceType != null && defaultResourceType.equals(resourceType);
                 })
-                .map(policyEntity -> findById(policyEntity.getId()))
+                .map(policyEntity -> findById(policyEntity.getId(), resourceServerId))
                 .collect(toList());
     }
 
@@ -162,29 +163,31 @@ public class MongoPolicyStore implements PolicyStore {
                 .get();
 
         return getMongoStore().loadEntities(PolicyEntity.class, query, getInvocationContext()).stream()
-                .map(policyEntity -> findById(policyEntity.getId()))
+                .map(policyEntity -> findById(policyEntity.getId(), resourceServerId))
                 .collect(toList());
     }
 
     @Override
-    public List<Policy> findByType(String type) {
+    public List<Policy> findByType(String type, String resourceServerId) {
         DBObject query = new QueryBuilder()
+                .and("resourceServerId").is(resourceServerId)
                 .and("type").is(type)
                 .get();
 
         return getMongoStore().loadEntities(PolicyEntity.class, query, getInvocationContext()).stream()
-                .map(policyEntity -> findById(policyEntity.getId()))
+                .map(policyEntity -> findById(policyEntity.getId(), resourceServerId))
                 .collect(toList());
     }
 
     @Override
-    public List<Policy> findDependentPolicies(String policyId) {
+    public List<Policy> findDependentPolicies(String policyId, String resourceServerId) {
         DBObject query = new QueryBuilder()
+                .and("resourceServerId").is(resourceServerId)
                 .and("associatedPolicies").is(policyId)
                 .get();
 
         return getMongoStore().loadEntities(PolicyEntity.class, query, getInvocationContext()).stream()
-                .map(policyEntity -> findById(policyEntity.getId()))
+                .map(policyEntity -> findById(policyEntity.getId(), resourceServerId))
                 .collect(toList());
     }
 
