@@ -379,7 +379,7 @@ public class ExportImportUtil {
         Assert.assertNotNull(linked);
         Assert.assertEquals("my-service-user", linked.getUsername());
         
-        if (Profile.isPreviewEnabled()) {
+        if (Profile.isFeatureEnabled(Profile.Feature.AUTHORIZATION)) {
             assertAuthorizationSettings(realmRsc);
         }
     }

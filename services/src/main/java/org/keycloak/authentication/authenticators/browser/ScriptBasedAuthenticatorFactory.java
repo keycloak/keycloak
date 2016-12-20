@@ -153,6 +153,6 @@ public class ScriptBasedAuthenticatorFactory implements AuthenticatorFactory, En
 
     @Override
     public boolean isSupported() {
-        return Profile.isPreviewEnabled();
+        return Profile.isFeatureEnabled(Profile.Feature.SCRIPTS);
     }
 }

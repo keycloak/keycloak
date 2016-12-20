@@ -16,7 +16,11 @@
         </tr>
         <tr>
             <td width="20%">{{:: 'server-profile' | translate}}</td>
-            <td>{{serverInfo.profileInfo.name}}</td>
+            <td>{{serverInfo.profileInfo.name | capitalize}}</td>
+        </tr>
+        <tr data-ng-if="serverInfo.profileInfo.disabledFeatures.length > 0">
+            <td width="20%">{{:: 'server-disabled' | translate}}</td>
+            <td>{{serverInfo.profileInfo.disabledFeatures.join(', ').toLowerCase() | capitalize}}</td>
         </tr>
         <tr>
             <td>{{:: 'server-time' | translate}}</td>

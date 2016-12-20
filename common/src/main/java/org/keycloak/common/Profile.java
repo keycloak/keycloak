@@ -19,7 +19,14 @@ package org.keycloak.common;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -27,43 +34,87 @@ import java.util.Properties;
  */
 public class Profile {
 
-    private enum ProfileValue {
-        PRODUCT, PREVIEW, COMMUNITY
+    public enum Feature {
+        AUTHORIZATION, IMPERSONATION, SCRIPTS
     }
 
-    private static ProfileValue value = load();
+    private enum ProfileValue {
+        PRODUCT(Feature.AUTHORIZATION, Feature.SCRIPTS),
+        PREVIEW,
+        COMMUNITY;
 
-    static ProfileValue load() {
-        String profile = null;
+        private List<Feature> disabled;
+
+        ProfileValue() {
+            this.disabled = Collections.emptyList();
+        }
+
+        ProfileValue(Feature... disabled) {
+            this.disabled = Arrays.asList(disabled);
+        }
+    }
+
+    private static final Profile CURRENT = new Profile();
+
+    private final ProfileValue profile;
+
+    private final Set<Feature> disabledFeatures = new HashSet<>();
+
+    private Profile() {
         try {
-            profile = System.getProperty("keycloak.profile");
-            if (profile == null) {
-                String jbossServerConfigDir = System.getProperty("jboss.server.config.dir");
-                if (jbossServerConfigDir != null) {
-                    File file = new File(jbossServerConfigDir, "profile.properties");
-                    if (file.isFile()) {
-                        Properties props = new Properties();
-                        props.load(new FileInputStream(file));
-                        profile = props.getProperty("profile");
+            Properties props = new Properties();
+
+            String jbossServerConfigDir = System.getProperty("jboss.server.config.dir");
+            if (jbossServerConfigDir != null) {
+                File file = new File(jbossServerConfigDir, "profile.properties");
+                if (file.isFile()) {
+                    props.load(new FileInputStream(file));
+                }
+            }
+
+            if (System.getProperties().containsKey("keycloak.profile")) {
+                props.setProperty("profile", System.getProperty("keycloak.profile"));
+            }
+
+            for (String k : System.getProperties().stringPropertyNames()) {
+                if (k.startsWith("keycloak.profile.feature.")) {
+                    props.put(k.replace("keycloak.profile.feature.", "feature."), System.getProperty(k));
+                }
+            }
+
+            if (props.containsKey("profile")) {
+                profile = ProfileValue.valueOf(props.getProperty("profile").toUpperCase());
+            } else {
+                profile = ProfileValue.valueOf(Version.DEFAULT_PROFILE.toUpperCase());
+            }
+
+            disabledFeatures.addAll(profile.disabled);
+
+            for (String k : props.stringPropertyNames()) {
+                if (k.startsWith("feature.")) {
+                    Feature f = Feature.valueOf(k.replace("feature.", "").toUpperCase());
+                    if (props.get(k).equals("enabled")) {
+                        disabledFeatures.remove(f);
+                    } else if (props.get(k).equals("disabled")) {
+                        disabledFeatures.add(f);
                     }
                 }
             }
         } catch (Exception e) {
-        }
-
-        if (profile == null) {
-            return ProfileValue.valueOf(Version.DEFAULT_PROFILE.toUpperCase());
-        } else {
-            return ProfileValue.valueOf(profile.toUpperCase());
+            throw new RuntimeException(e);
         }
     }
 
     public static String getName() {
-        return value.name().toLowerCase();
+        return CURRENT.profile.name().toLowerCase();
     }
 
-    public static boolean isPreviewEnabled() {
-        return value.ordinal() >= ProfileValue.PREVIEW.ordinal();
+    public static Set<Feature> getDisabledFeatures() {
+        return CURRENT.disabledFeatures;
+    }
+
+    public static boolean isFeatureEnabled(Feature feature) {
+        return !CURRENT.disabledFeatures.contains(feature);
     }
 
 }
