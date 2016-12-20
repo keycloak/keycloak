@@ -54,33 +54,33 @@ public class KeycloakAdapterPolicyEnforcer extends AbstractPolicyEnforcer {
         int retry = 2;
         AccessToken original = accessToken;
 
-        while (retry > 0) {
-            if (super.isAuthorized(pathConfig, requiredScopes, accessToken, httpFacade)) {
-                return true;
-            }
+        if (super.isAuthorized(pathConfig, requiredScopes, accessToken, httpFacade)) {
+            return true;
+        }
 
-            accessToken = requestAuthorizationToken(pathConfig, requiredScopes, httpFacade);
+        accessToken = requestAuthorizationToken(pathConfig, requiredScopes, httpFacade);
 
-            if (accessToken == null) {
-                return false;
-            }
+        if (accessToken == null) {
+            return false;
+        }
 
-            AccessToken.Authorization authorization = original.getAuthorization();
+        AccessToken.Authorization authorization = original.getAuthorization();
 
-            if (authorization == null) {
-                authorization = new AccessToken.Authorization();
-                authorization.setPermissions(new ArrayList<Permission>());
-            }
+        if (authorization == null) {
+            authorization = new AccessToken.Authorization();
+            authorization.setPermissions(new ArrayList<Permission>());
+        }
 
-            AccessToken.Authorization newAuthorization = accessToken.getAuthorization();
+        AccessToken.Authorization newAuthorization = accessToken.getAuthorization();
 
-            if (newAuthorization != null) {
-                authorization.getPermissions().addAll(newAuthorization.getPermissions());
-            }
+        if (newAuthorization != null) {
+            authorization.getPermissions().addAll(newAuthorization.getPermissions());
+        }
 
-            original.setAuthorization(authorization);
+        original.setAuthorization(authorization);
 
-            retry--;
+        if (super.isAuthorized(pathConfig, requiredScopes, accessToken, httpFacade)) {
+            return true;
         }
 
         return false;

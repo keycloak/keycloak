@@ -34,8 +34,10 @@ import org.keycloak.representations.idm.authorization.Permission;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -48,7 +50,7 @@ public class PolicyEnforcer {
     private final KeycloakDeployment deployment;
     private final AuthzClient authzClient;
     private final PolicyEnforcerConfig enforcerConfig;
-    private final List<PathConfig> paths;
+    private final Map<String, PathConfig> paths;
 
     public PolicyEnforcer(KeycloakDeployment deployment, AdapterConfig adapterConfig) {
         this.deployment = deployment;
@@ -58,7 +60,7 @@ public class PolicyEnforcer {
 
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("Initialization complete. Path configurations:");
-            for (PathConfig pathConfig : this.paths) {
+            for (PathConfig pathConfig : this.paths.values()) {
                 LOGGER.debug(pathConfig);
             }
         }
@@ -96,15 +98,19 @@ public class PolicyEnforcer {
         return authzClient;
     }
 
-    public List<PathConfig> getPaths() {
-        return Collections.unmodifiableList(paths);
+    public Map<String, PathConfig> getPaths() {
+        return paths;
+    }
+
+    void addPath(PathConfig pathConfig) {
+        paths.put(pathConfig.getPath(), pathConfig);
     }
 
     KeycloakDeployment getDeployment() {
         return deployment;
     }
 
-    private List<PathConfig> configurePaths(ProtectedResource protectedResource, PolicyEnforcerConfig enforcerConfig) {
+    private Map<String, PathConfig> configurePaths(ProtectedResource protectedResource, PolicyEnforcerConfig enforcerConfig) {
         boolean loadPathsFromServer = true;
 
         for (PathConfig pathConfig : enforcerConfig.getPaths()) {
@@ -123,8 +129,8 @@ public class PolicyEnforcer {
         }
     }
 
-    private List<PathConfig> configureDefinedPaths(ProtectedResource protectedResource, PolicyEnforcerConfig enforcerConfig) {
-        List<PathConfig> paths = new ArrayList<>();
+    private Map<String, PathConfig> configureDefinedPaths(ProtectedResource protectedResource, PolicyEnforcerConfig enforcerConfig) {
+        Map<String, PathConfig> paths = Collections.synchronizedMap(new HashMap<String, PathConfig>());
 
         for (PathConfig pathConfig : enforcerConfig.getPaths()) {
             Set<String> search;
@@ -172,7 +178,7 @@ public class PolicyEnforcer {
 
             PathConfig existingPath = null;
 
-            for (PathConfig current : paths) {
+            for (PathConfig current : paths.values()) {
                 if (current.getId().equals(pathConfig.getId()) && current.getPath().equals(pathConfig.getPath())) {
                     existingPath = current;
                     break;
@@ -180,7 +186,7 @@ public class PolicyEnforcer {
             }
 
             if (existingPath == null) {
-                paths.add(pathConfig);
+                paths.put(pathConfig.getPath(), pathConfig);
             } else {
                 existingPath.getMethods().addAll(pathConfig.getMethods());
                 existingPath.getScopes().addAll(pathConfig.getScopes());
@@ -190,23 +196,24 @@ public class PolicyEnforcer {
         return paths;
     }
 
-    private List<PathConfig> configureAllPathsForResourceServer(ProtectedResource protectedResource) {
+    private Map<String, PathConfig> configureAllPathsForResourceServer(ProtectedResource protectedResource) {
         LOGGER.info("Querying the server for all resources associated with this application.");
-        List<PathConfig> paths = new ArrayList<>();
+        Map<String, PathConfig> paths = Collections.synchronizedMap(new HashMap<String, PathConfig>());
 
         for (String id : protectedResource.findAll()) {
             RegistrationResponse response = protectedResource.findById(id);
             ResourceRepresentation resourceDescription = response.getResourceDescription();
 
             if (resourceDescription.getUri() != null) {
-                paths.add(createPathConfig(resourceDescription));
+                PathConfig pathConfig = createPathConfig(resourceDescription);
+                paths.put(pathConfig.getPath(), pathConfig);
             }
         }
 
         return paths;
     }
 
-    private PathConfig createPathConfig(ResourceRepresentation resourceDescription) {
+    static PathConfig createPathConfig(ResourceRepresentation resourceDescription) {
         PathConfig pathConfig = new PathConfig();
 
         pathConfig.setId(resourceDescription.getId());

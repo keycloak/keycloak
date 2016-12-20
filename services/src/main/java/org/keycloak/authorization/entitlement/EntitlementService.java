@@ -179,7 +179,7 @@ public class EntitlementService {
 
                 @Override
                 protected void onComplete(List<Result> results) {
-                    List<Permission> entitlements = Permissions.allPermits(results, authorization, resourceServer);
+                    List<Permission> entitlements = Permissions.permits(results, authorization, resourceServer.getId());
 
                     if (entitlements.isEmpty()) {
                         HashMap<Object, Object> error = new HashMap<>();

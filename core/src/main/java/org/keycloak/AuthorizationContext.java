@@ -24,6 +24,7 @@ import org.keycloak.representations.idm.authorization.Permission;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -31,10 +32,10 @@ import java.util.List;
 public class AuthorizationContext {
 
     private final AccessToken authzToken;
-    private final List<PathConfig> paths;
+    private final Map<String, PathConfig> paths;
     private boolean granted;
 
-    public AuthorizationContext(AccessToken authzToken, List<PathConfig> paths) {
+    public AuthorizationContext(AccessToken authzToken, Map<String, PathConfig> paths) {
         this.authzToken = authzToken;
         this.paths = paths;
         this.granted = true;
@@ -57,7 +58,7 @@ public class AuthorizationContext {
         }
 
         for (Permission permission : authorization.getPermissions()) {
-            for (PathConfig pathHolder : this.paths) {
+            for (PathConfig pathHolder : this.paths.values()) {
                 if (pathHolder.getName().equals(resourceName)) {
                     if (pathHolder.getId().equals(permission.getResourceSetId())) {
                         if (permission.getScopes().contains(scopeName)) {
@@ -83,7 +84,7 @@ public class AuthorizationContext {
         }
 
         for (Permission permission : authorization.getPermissions()) {
-            for (PathConfig pathHolder : this.paths) {
+            for (PathConfig pathHolder : this.paths.values()) {
                 if (pathHolder.getName().equals(resourceName)) {
                     if (pathHolder.getId().equals(permission.getResourceSetId())) {
                         return true;
