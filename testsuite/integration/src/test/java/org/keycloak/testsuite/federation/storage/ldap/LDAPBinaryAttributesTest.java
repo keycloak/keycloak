@@ -206,19 +206,8 @@ public class LDAPBinaryAttributesTest {
             // Expected
         }
 
-
-        // Try to update him with some bad value for jpegPhoto. It will fail
-        try {
-            joe.getAttributes().remove("someOtherPhoto");
-            joe.getAttributes().put(LDAPConstants.JPEG_PHOTO, Arrays.asList("foobar"));
-            adminClient.realm("test").users().get(joe.getId()).update(joe);
-            Assert.fail("Not expected to successfully update user");
-        } catch (ClientErrorException cee) {
-            // Expected
-        }
-
-
         // Remove jpegPhoto attribute and assert it was successfully removed
+        joe.getAttributes().remove("someOtherPhoto");
         joe.getAttributes().remove(LDAPConstants.JPEG_PHOTO);
         adminClient.realm("test").users().get(joe.getId()).update(joe);
         getUserAndAssertPhoto("joephoto", false);
