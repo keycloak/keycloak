@@ -17,6 +17,7 @@
 .. link:topics/config-subsystem/configure-spi-providers.adoc[Configure SPI Providers]
 .. link:topics/config-subsystem/start-cli.adoc[Start CLI]
 .. link:topics/config-subsystem/cli-recipes.adoc[CLI Recipes]
+. link:topics/profiles.adoc[Profiles]
 . link:topics/database.adoc[Relational Database Setup]
 .. link:topics/database/checklist.adoc[Setup Checklist]
 .. link:topics/database/jdbc.adoc[JDBC Setup]

@@ -1,0 +1,74 @@
+[[_app_server_cli]]
+
+== Profiles
+
+{% if book.community %}
+{{book.project.name}} has a single profile, community, that enables all features by default, including features that
+are considered less mature. It is however possible to disable individual features.
+{% endif %}
+
+{% if book.product %}
+{{book.project.name}} has two profiles, product and preview. The product profile is enabled by default, which disables
+some tech preview features. To enable the features you can either switch to the preview profile or enable individual
+features.
+
+To enable the preview profile start the server with:
+
+[source]
+----
+bin/standalone.sh|bat -Dkeycloak.profile=preview
+----
+
+You can set this permanently by creating the file `standalone/configuration/profile.properties`
+(or `domain/servers/server-one/configuration/profile.properties` for `server-one` in domain mode). Add the following to
+the file:
+
+[source]
+----
+profile=preview
+----
+{% endif %}
+
+The features that can be enabled and disabled are:
+
+* Authorization - authorization services
+* Impersonation - ability for admins to impersonate users
+* Script - write custom authenticators using JavaScript
+
+{% if book.product %}
+The product profile disables authorization and script.
+{% endif %}
+
+To disable a specific feature start the server with:
+
+[source]
+----
+bin/standalone.sh|bat -Dkeycloak.profile.feature.<feature name>=disabled
+----
+
+For example to disable Impersonation use `-Dkeycloak.profile.feature.impersonation=disabled`.
+
+You can set this permanently in the `profile.properties` file by adding:
+
+[source]
+----
+feature.impersonation=disabled
+----
+
+{% if book.product %}
+To enable a specific feature without enabling the full preview profile you can start the server with:
+
+[source]
+----
+bin/standalone.sh|bat -Dkeycloak.profile.feature.<feature name>=enabled`
+----
+
+For example to enable Authorization Services use `-Dkeycloak.profile.feature.authorization=enabled`.
+
+You can set this permanently in the `profile.properties` file by adding:
+
+[source]
+----
+feature.authorization=enabled
+----
+{% endif %}
