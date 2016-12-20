@@ -17,6 +17,10 @@
  */
 package org.keycloak.adapters.authorization;
 
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
+
 import org.jboss.logging.Logger;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.OIDCHttpFacade;
@@ -34,10 +38,6 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.adapters.config.PolicyEnforcerConfig.PathConfig;
 import org.keycloak.representations.idm.authorization.Permission;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Set;
-
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
@@ -51,7 +51,6 @@ public class KeycloakAdapterPolicyEnforcer extends AbstractPolicyEnforcer {
 
     @Override
     protected boolean isAuthorized(PathConfig pathConfig, Set<String> requiredScopes, AccessToken accessToken, OIDCHttpFacade httpFacade) {
-        int retry = 2;
         AccessToken original = accessToken;
 
         if (super.isAuthorized(pathConfig, requiredScopes, accessToken, httpFacade)) {
@@ -79,11 +78,7 @@ public class KeycloakAdapterPolicyEnforcer extends AbstractPolicyEnforcer {
 
         original.setAuthorization(authorization);
 
-        if (super.isAuthorized(pathConfig, requiredScopes, accessToken, httpFacade)) {
-            return true;
-        }
-
-        return false;
+        return super.isAuthorized(pathConfig, requiredScopes, accessToken, httpFacade);
     }
 
     @Override
@@ -108,7 +103,7 @@ public class KeycloakAdapterPolicyEnforcer extends AbstractPolicyEnforcer {
             KeycloakDeployment deployment = getPolicyEnforcer().getDeployment();
 
             if (getEnforcerConfig().getUserManagedAccess() != null) {
-                LOGGER.debug("Obtaining authorization for  authenticated user.");
+                LOGGER.debug("Obtaining authorization for authenticated user.");
                 PermissionRequest permissionRequest = new PermissionRequest();
 
                 permissionRequest.setResourceSetId(pathConfig.getId());
@@ -136,12 +131,14 @@ public class KeycloakAdapterPolicyEnforcer extends AbstractPolicyEnforcer {
                     permissionRequest.setResourceSetId(pathConfig.getId());
                     permissionRequest.setResourceSetName(pathConfig.getName());
                     permissionRequest.setScopes(new HashSet<>(pathConfig.getScopes()));
+                    LOGGER.debugf("Sending entitlements request: resource_set_id [%s], resource_set_name [%s], scopes [%s].", permissionRequest.getResourceSetId(), permissionRequest.getResourceSetName(), permissionRequest.getScopes());
                     request.addPermission(permissionRequest);
                     EntitlementResponse authzResponse = authzClient.entitlement(accessToken).get(authzClient.getConfiguration().getClientId(), request);
                     return AdapterRSATokenVerifier.verifyToken(authzResponse.getRpt(), deployment);
                 }
             }
         } catch (AuthorizationDeniedException e) {
+            LOGGER.debug("Authorization denied", e);
             return null;
         } catch (Exception e) {
             throw new RuntimeException("Unexpected error during authorization request.", e);
