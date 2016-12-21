@@ -99,11 +99,13 @@ public abstract class AbstractAuthorizationTest {
     }
 
     protected Invocation.Builder newClient(ClientModel client, String authzRelativePath) {
+        String targetUrl = AUTH_SERVER_ROOT + "/admin/realms/" + TEST_REALM_NAME + "/clients/" + client.getId() + "/authz" + authzRelativePath;
+
         return ClientBuilder.newClient()
                 .register((ClientRequestFilter) requestContext -> {
                     AccessTokenResponse accessToken = adminClient.tokenManager().getAccessToken();
                     requestContext.getHeaders().add("Authorization", "Bearer " + accessToken.getToken());
-                }).target(AUTH_SERVER_ROOT + "/admin/realms/" + TEST_REALM_NAME + "/clients/" + client.getId() + "/authz" + authzRelativePath).request();
+                }).target(targetUrl).request();
     }
 
     protected ClientModel getClientByClientId(String clientId) {
