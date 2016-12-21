@@ -21,6 +21,7 @@ package org.keycloak.models.authorization.infinispan;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -53,7 +54,7 @@ public class CachedResourceStore implements ResourceStore {
     private final List<String> cacheKeys;
     private StoreFactory storeFactory;
     private ResourceStore delegate;
-    private final Cache<String, List<CachedResource>> cache;
+    private final Cache<String, Map<String, List<CachedResource>>> cache;
 
     public CachedResourceStore(KeycloakSession session, CacheTransaction transaction, StoreFactory storeFactory) {
         this.session = session;
@@ -63,6 +64,7 @@ public class CachedResourceStore implements ResourceStore {
         cacheKeys = new ArrayList<>();
         cacheKeys.add("findByOwner");
         cacheKeys.add("findByUri");
+        cacheKeys.add("findByName");
         this.storeFactory = storeFactory;
     }
 
@@ -71,12 +73,11 @@ public class CachedResourceStore implements ResourceStore {
         Resource resource = getDelegate().create(name, getStoreFactory().getResourceServerStore().findById(resourceServer.getId()), owner);
 
         this.transaction.whenRollback(() -> {
-            cache.remove(getCacheKeyForResource(resource.getId()));
+            resolveResourceServerCache(resourceServer.getId()).remove(getCacheKeyForResource(resource.getId()));
         });
 
         this.transaction.whenCommit(() -> {
             invalidateCache(resourceServer.getId());
-            getCachedStoreFactory().getPolicyStore().notifyChange(resource);
         });
 
         return createAdapter(new CachedResource(resource));
@@ -84,35 +85,29 @@ public class CachedResourceStore implements ResourceStore {
 
     @Override
     public void delete(String id) {
-        Resource resource = findById(id, null);
+        Resource resource = getDelegate().findById(id, null);
         if (resource == null) {
             return;
         }
         ResourceServer resourceServer = resource.getResourceServer();
         getDelegate().delete(id);
         this.transaction.whenCommit(() -> {
-            List<CachedResource> resources = cache.remove(getCacheKeyForResource(id));
-
-            if (resources != null) {
-                CachedResource entry = resources.get(0);
-                cache.remove(getCacheKeyForResourceName(entry.getName(), entry.getResourceServerId()));
-            }
-
             invalidateCache(resourceServer.getId());
-            getCachedStoreFactory().getPolicyStore().notifyChange(resource);
         });
     }
 
     @Override
     public Resource findById(String id, String resourceServerId) {
         String cacheKeyForResource = getCacheKeyForResource(id);
-        List<CachedResource> cached = this.cache.get(cacheKeyForResource);
+        List<CachedResource> cached = resolveResourceServerCache(resourceServerId).get(cacheKeyForResource);
 
         if (cached == null) {
             Resource resource = getDelegate().findById(id, resourceServerId);
 
             if (resource != null) {
-                return createAdapter(updateResourceCache(resource));
+                CachedResource cachedResource = new CachedResource(resource);
+                resolveResourceServerCache(resourceServerId).put(cacheKeyForResource, Arrays.asList(cachedResource));
+                return createAdapter(cachedResource);
             }
 
             return null;
@@ -123,12 +118,12 @@ public class CachedResourceStore implements ResourceStore {
 
     @Override
     public List<Resource> findByOwner(String ownerId, String resourceServerId) {
-        return cacheResult(new StringBuilder("findByOwner").append(resourceServerId).append(ownerId).toString(), () -> getDelegate().findByOwner(ownerId, resourceServerId));
+        return cacheResult(resourceServerId, new StringBuilder("findByOwner").append(ownerId).toString(), () -> getDelegate().findByOwner(ownerId, resourceServerId));
     }
 
     @Override
     public List<Resource> findByUri(String uri, String resourceServerId) {
-        return cacheResult(new StringBuilder("findByUri").append(resourceServerId).append(uri).toString(), () -> getDelegate().findByUri(uri, resourceServerId));
+        return cacheResult(resourceServerId, new StringBuilder("findByUri").append(uri).toString(), () -> getDelegate().findByUri(uri, resourceServerId));
     }
 
     @Override
@@ -149,13 +144,14 @@ public class CachedResourceStore implements ResourceStore {
     @Override
     public Resource findByName(String name, String resourceServerId) {
         String cacheKeyForResource = getCacheKeyForResourceName(name, resourceServerId);
-        List<CachedResource> cached = this.cache.get(cacheKeyForResource);
+        List<CachedResource> cached = resolveResourceServerCache(resourceServerId).get(cacheKeyForResource);
 
         if (cached == null) {
             Resource resource = getDelegate().findByName(name, resourceServerId);
 
             if (resource != null) {
-                cache.put(cacheKeyForResource, Arrays.asList(new CachedResource(resource)));
+                invalidateCache(resourceServerId);
+                resolveResourceServerCache(resourceServerId).put(cacheKeyForResource, Arrays.asList(new CachedResource(resource)));
                 return findById(resource.getId(), resourceServerId);
             }
 
@@ -280,15 +276,14 @@ public class CachedResourceStore implements ResourceStore {
 
             private Resource getDelegateForUpdate() {
                 if (this.updated == null) {
-                    this.updated = getDelegate().findById(getId(), cached.getResourceServerId());
+                    String resourceServerId = cached.getResourceServerId();
+                    this.updated = getDelegate().findById(getId(), resourceServerId);
                     if (this.updated == null) throw new IllegalStateException("Not found in database");
                     transaction.whenCommit(() -> {
-                        cache.remove(getCacheKeyForResource(cached.getId()));
-                        invalidateCache(cached.getResourceServerId());
-                        getCachedStoreFactory().getPolicyStore().notifyChange(updated);
+                        invalidateCache(resourceServerId);
                     });
                     transaction.whenRollback(() -> {
-                        cache.remove(getCacheKeyForResource(cached.getId()));
+                        resolveResourceServerCache(resourceServerId).remove(getCacheKeyForResource(cached.getId()));
                     });
                 }
 
@@ -301,19 +296,8 @@ public class CachedResourceStore implements ResourceStore {
         return session.getProvider(CachedStoreFactoryProvider.class);
     }
 
-    private CachedResource updateResourceCache(Resource resource) {
-        CachedResource cached = new CachedResource(resource);
-        List cache = new ArrayList<>();
-
-        cache.add(cached);
-
-        this.cache.put(getCacheKeyForResource(resource.getId()), cache);
-
-        return cached;
-    }
-
-    private List<Resource> cacheResult(String key, Supplier<List<Resource>> provider) {
-        List<CachedResource> cached = cache.computeIfAbsent(key, (Function<String, List<CachedResource>>) o -> {
+    private List<Resource> cacheResult(String resourceServerId, String key, Supplier<List<Resource>> provider) {
+        List<CachedResource> cached = resolveResourceServerCache(resourceServerId).computeIfAbsent(key, (Function<String, List<CachedResource>>) o -> {
             List<Resource> result = provider.get();
 
             if (result.isEmpty()) {
@@ -327,10 +311,20 @@ public class CachedResourceStore implements ResourceStore {
             return Collections.emptyList();
         }
 
-        return cached.stream().map(this::createAdapter).collect(Collectors.toList());
+        List<Resource> adapters = new ArrayList<>();
+
+        for (CachedResource resource : cached) {
+            adapters.add(createAdapter(resource));
+        }
+
+        return adapters;
     }
 
     private void invalidateCache(String resourceServerId) {
-        cacheKeys.forEach(cacheKey -> cache.keySet().stream().filter(key -> key.startsWith(cacheKey + resourceServerId)).forEach(cache::remove));
+        cache.remove(resourceServerId);
+    }
+
+    private Map<String, List<CachedResource>> resolveResourceServerCache(String id) {
+        return cache.computeIfAbsent(id, key -> new HashMap<>());
     }
 }
