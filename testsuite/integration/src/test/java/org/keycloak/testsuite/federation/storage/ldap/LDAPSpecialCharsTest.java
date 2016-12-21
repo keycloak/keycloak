@@ -124,18 +124,22 @@ public class LDAPSpecialCharsTest {
     @Test
     public void test01_userSearch() {
         List<UserRepresentation> users = adminClient.realm("test").users().search("j*", 0, 10);
-        Assert.assertEquals(3, users.size());
 
-        List<String> usernames = users.stream().map((UserRepresentation user) -> {
+        assertContainsUsername(users, "jamees,key*cložak)ppp");
+        assertContainsUsername(users, "jameskeycloak");
+        assertContainsUsername(users, "johnkeycloak");
+    }
 
-            return user.getUsername();
+    private void assertContainsUsername(List<UserRepresentation> users, String username) {
+        boolean found = users.stream().filter((UserRepresentation user) -> {
 
-        }).collect(Collectors.toList());
-        Collections.sort(usernames);
+            return username.equals(user.getUsername());
 
-        Assert.assertEquals("jamees,key*cložak)ppp", usernames.get(0));
-        Assert.assertEquals("jameskeycloak", usernames.get(1));
-        Assert.assertEquals("johnkeycloak", usernames.get(2));
+        }).findFirst().isPresent();
+
+        if (!found) {
+            Assert.fail("Username " + username + " not found in the list");
+        }
     }
 
 
