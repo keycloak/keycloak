@@ -286,7 +286,7 @@ public class BruteForceTest extends TestRealmKeycloakTest {
 
     @Test
     public void testEmail() throws Exception {
-        String userId = adminClient.realm("test").users().search("user2", null, null, null, 0, 1).get(0).getId();
+        String userId = adminClient.realm("test").users().search("user2", null, null, null, 0, 1, false).get(0).getId();
 
         loginSuccess("user2@localhost");
         loginInvalidPassword("user2@localhost");

@@ -588,15 +588,19 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
     }
 
     @Override
-    public List<UserModel> searchForUser(String search, RealmModel realm) {
-        return searchForUser(search, realm, -1, -1);
+    public List<UserModel> searchForUser(String search, RealmModel realm, boolean exact) {
+        return searchForUser(search, realm, -1, -1, exact);
     }
 
     @Override
-    public List<UserModel> searchForUser(String search, RealmModel realm, int firstResult, int maxResults) {
+    public List<UserModel> searchForUser(String search, RealmModel realm, int firstResult, int maxResults, boolean exact) {
         TypedQuery<UserEntity> query = em.createNamedQuery("searchForUser", UserEntity.class);
         query.setParameter("realmId", realm.getId());
-        query.setParameter("search", "%" + search.toLowerCase() + "%");
+        if(exact){
+            query.setParameter("search", search.toLowerCase());
+        } else {
+            query.setParameter("search", "%" + search.toLowerCase() + "%");
+        }
         if (firstResult != -1) {
             query.setFirstResult(firstResult);
         }
@@ -610,12 +614,12 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
     }
 
     @Override
-    public List<UserModel> searchForUser(Map<String, String> attributes, RealmModel realm) {
-        return searchForUser(attributes, realm, -1, -1);
+    public List<UserModel> searchForUser(Map<String, String> attributes, RealmModel realm, boolean exact) {
+        return searchForUser(attributes, realm, -1, -1, exact);
     }
 
     @Override
-    public List<UserModel> searchForUser(Map<String, String> attributes, RealmModel realm, int firstResult, int maxResults) {
+    public List<UserModel> searchForUser(Map<String, String> attributes, RealmModel realm, int firstResult, int maxResults, boolean exact) {
         StringBuilder builder = new StringBuilder("select u from UserEntity u where u.realmId = :realmId");
         for (Map.Entry<String, String> entry : attributes.entrySet()) {
             String attribute = null;
@@ -633,9 +637,19 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
                 attribute = "lower(u.email)";
                 parameterName = JpaUserProvider.EMAIL;
             }
-            if (attribute == null) continue;
+            if (attribute == null){
+                continue;
+            }
             builder.append(" and ");
-            builder.append(attribute).append(" like :").append(parameterName);
+
+            builder.append(attribute);
+
+            if (exact) {
+                builder.append(" = ");
+            } else {
+                builder.append(" like ");
+            }
+            builder.append(':').append(parameterName);
         }
         builder.append(" order by u.username");
         String q = builder.toString();
@@ -652,8 +666,11 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
             } else if (entry.getKey().equalsIgnoreCase(UserModel.EMAIL)) {
                 parameterName = JpaUserProvider.EMAIL;
             }
-            if (parameterName == null) continue;
-            query.setParameter(parameterName, "%" + entry.getValue().toLowerCase() + "%");
+            if (parameterName == null){
+                continue;
+            }
+            String parameterValue = exact ? entry.getValue().toLowerCase() : "%" + entry.getValue().toLowerCase() + "%";
+            query.setParameter(parameterName, parameterValue);
         }
         if (firstResult != -1) {
             query.setFirstResult(firstResult);

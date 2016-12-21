@@ -159,7 +159,7 @@ public abstract class AbstractSessionServletAdapterTest extends AbstractServlets
         loginAndCheckSession(driver, testRealmLoginPage);
 
         // logout mposolda with admin client
-        UserRepresentation mposolda = testRealmResource().users().search("mposolda", null, null, null, null, null).get(0);
+        UserRepresentation mposolda = testRealmResource().users().search("mposolda", null, null, null, null, null, false).get(0);
         testRealmResource().users().get(mposolda.getId()).logout();
         
         // bburke should be still logged with original httpSession in our browser window

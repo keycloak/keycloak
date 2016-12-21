@@ -94,7 +94,7 @@ public class MigrationTest extends AbstractKeycloakTest {
                 "master-realm", "master-test-client", "Migration-realm");
         String id = masterRealm.clients().findByClientId("master-test-client").get(0).getId();
         assertNames(masterRealm.clients().get(id).roles().list(), "master-test-client-role");
-        assertNames(masterRealm.users().search("", 0, 5), "admin", "master-test-user");
+        assertNames(masterRealm.users().search("", 0, 5, false), "admin", "master-test-user");
         assertNames(masterRealm.groups().groups(), "master-test-group");
         
         //migrationRealm
@@ -102,7 +102,7 @@ public class MigrationTest extends AbstractKeycloakTest {
         assertNames(migrationRealm.clients().findAll(), "account", "admin-cli", "broker", "migration-test-client", "realm-management", "security-admin-console");
         String id2 = migrationRealm.clients().findByClientId("migration-test-client").get(0).getId();
         assertNames(migrationRealm.clients().get(id2).roles().list(), "migration-test-client-role");
-        assertNames(migrationRealm.users().search("", 0, 5), "migration-test-user");
+        assertNames(migrationRealm.users().search("", 0, 5, false), "migration-test-user");
         assertNames(migrationRealm.groups().groups(), "migration-test-group");
     }
     

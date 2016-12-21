@@ -305,7 +305,7 @@ public class OIDCPairwiseClientRegistrationTest extends AbstractClientRegistrati
         String tokenUserId = accessToken.getSubject();
 
         // Assert public client has same subject like userId
-        UserRepresentation user = realmsResouce().realm("test").users().search("test-user", 0, 1).get(0);
+        UserRepresentation user = realmsResouce().realm("test").users().search("test-user", 0, 1, false).get(0);
         Assert.assertEquals(user.getId(), tokenUserId);
 
         // Create pairwise client

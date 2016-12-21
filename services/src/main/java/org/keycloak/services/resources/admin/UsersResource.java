@@ -669,16 +669,18 @@ public class UsersResource {
                                              @QueryParam("email") String email,
                                              @QueryParam("username") String username,
                                              @QueryParam("first") Integer firstResult,
-                                             @QueryParam("max") Integer maxResults) {
+                                             @QueryParam("max") Integer maxResults,
+                                             @QueryParam("exact") Boolean exact) {
         auth.requireView();
 
         firstResult = firstResult != null ? firstResult : -1;
         maxResults = maxResults != null ? maxResults : Constants.DEFAULT_MAX_RESULTS;
+        exact = exact != null ? exact : false;
 
         List<UserRepresentation> results = new ArrayList<UserRepresentation>();
         List<UserModel> userModels;
         if (search != null) {
-            userModels = session.users().searchForUser(search.trim(), realm, firstResult, maxResults);
+            userModels = session.users().searchForUser(search.trim(), realm, firstResult, maxResults, exact);
         } else if (last != null || first != null || email != null || username != null) {
             Map<String, String> attributes = new HashMap<String, String>();
             if (last != null) {
@@ -693,7 +695,7 @@ public class UsersResource {
             if (username != null) {
                 attributes.put(UserModel.USERNAME, username);
             }
-            userModels = session.users().searchForUser(attributes, realm, firstResult, maxResults);
+            userModels = session.users().searchForUser(attributes, realm, firstResult, maxResults, exact);
         } else {
             userModels = session.users().getUsers(realm, firstResult, maxResults, false);
         }

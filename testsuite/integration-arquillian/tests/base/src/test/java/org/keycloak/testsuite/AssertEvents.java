@@ -386,7 +386,7 @@ public class AssertEvents implements TestRule {
     }
 
     private UserRepresentation getUser(String username) {
-        List<UserRepresentation> users = context.adminClient.realm(DEFAULT_REALM).users().search(username, null, null, null, 0, 1);
+        List<UserRepresentation> users = context.adminClient.realm(DEFAULT_REALM).users().search(username, null, null, null, 0, 1, false);
         return users.isEmpty() ? null : users.get(0);
     }
 

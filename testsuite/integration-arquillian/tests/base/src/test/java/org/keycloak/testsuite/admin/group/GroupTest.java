@@ -267,7 +267,7 @@ public class GroupTest extends AbstractGroupTest {
         assertEquals(1, level3Group.getRealmRoles().size());
         assertTrue(level3Group.getRealmRoles().contains("level3Role"));
 
-        UserRepresentation user = realm.users().search("direct-login", -1, -1).get(0);
+        UserRepresentation user = realm.users().search("direct-login", -1, -1, false).get(0);
         realm.users().get(user.getId()).joinGroup(level3Group.getId());
         assertAdminEvents.assertEvent("test", OperationType.CREATE, AdminEventPaths.userGroupPath(user.getId(), level3Group.getId()), ResourceType.GROUP_MEMBERSHIP);
 

@@ -259,14 +259,18 @@ public class EjbExampleUserStorageProvider implements UserStorageProvider,
     }
 
     @Override
-    public List<UserModel> searchForUser(String search, RealmModel realm) {
-        return searchForUser(search, realm, -1, -1);
+    public List<UserModel> searchForUser(String search, RealmModel realm, boolean exact) {
+        return searchForUser(search, realm, -1, -1, exact);
     }
 
     @Override
-    public List<UserModel> searchForUser(String search, RealmModel realm, int firstResult, int maxResults) {
+    public List<UserModel> searchForUser(String search, RealmModel realm, int firstResult, int maxResults, boolean exact) {
         TypedQuery<UserEntity> query = em.createNamedQuery("searchForUser", UserEntity.class);
-        query.setParameter("search", "%" + search.toLowerCase() + "%");
+        if (exact) {
+            query.setParameter("search", search.toLowerCase());
+        } else {
+            query.setParameter("search", "%" + search.toLowerCase() + "%");
+        }
         if (firstResult != -1) {
             query.setFirstResult(firstResult);
         }
@@ -280,12 +284,12 @@ public class EjbExampleUserStorageProvider implements UserStorageProvider,
     }
 
     @Override
-    public List<UserModel> searchForUser(Map<String, String> params, RealmModel realm) {
+    public List<UserModel> searchForUser(Map<String, String> params, RealmModel realm, boolean exact) {
         return Collections.EMPTY_LIST;
     }
 
     @Override
-    public List<UserModel> searchForUser(Map<String, String> params, RealmModel realm, int firstResult, int maxResults) {
+    public List<UserModel> searchForUser(Map<String, String> params, RealmModel realm, int firstResult, int maxResults, boolean exact) {
         return Collections.EMPTY_LIST;
     }
 

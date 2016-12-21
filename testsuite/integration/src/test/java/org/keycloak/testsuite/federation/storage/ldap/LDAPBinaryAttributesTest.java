@@ -270,7 +270,7 @@ public class LDAPBinaryAttributesTest {
 
 
     private UserRepresentation getUserAndAssertPhoto(String username, boolean isPhotoExpected) {
-        List<UserRepresentation> johns = adminClient.realm("test").users().search(username, 0, 10);
+        List<UserRepresentation> johns = adminClient.realm("test").users().search(username, 0, 10, false);
         Assert.assertEquals(1, johns.size());
         UserRepresentation john = johns.get(0);
         Assert.assertEquals(username, john.getUsername());

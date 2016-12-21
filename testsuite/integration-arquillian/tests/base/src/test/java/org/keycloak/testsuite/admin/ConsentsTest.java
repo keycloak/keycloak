@@ -251,7 +251,7 @@ public class ConsentsTest extends AbstractKeycloakTest {
         UsersResource consumerUsers = adminClient.realm(consumerRealmName()).users();
         Assert.assertTrue("There must be at least one user", consumerUsers.count() > 0);
 
-        List<UserRepresentation> users = consumerUsers.search("", 0, 5);
+        List<UserRepresentation> users = consumerUsers.search("", 0, 5, false);
 
         UserRepresentation foundUser = null;
         for (UserRepresentation user : users) {
@@ -266,7 +266,7 @@ public class ConsentsTest extends AbstractKeycloakTest {
 
         // get user with the same username from provider realm
         RealmResource providerRealm = adminClient.realm(providerRealmName());
-        users = providerRealm.users().search(null, foundUser.getFirstName(), foundUser.getLastName(), null, 0, 1);
+        users = providerRealm.users().search(null, foundUser.getFirstName(), foundUser.getLastName(), null, 0, 1, false);
         Assert.assertEquals("Same user should be in provider realm", 1, users.size());
 
         String userId = users.get(0).getId();

@@ -41,6 +41,8 @@ import java.util.Set;
 import static org.junit.Assert.assertNotNull;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.exportimport.Strategy;
+import org.keycloak.representations.idm.UserRepresentation;
+
 import static org.keycloak.testsuite.Assert.assertNames;
 import static org.keycloak.testsuite.migration.MigrationTest.MIGRATION;
 
@@ -99,12 +101,14 @@ public class LegacyImportTest extends AbstractExportImportTest {
             assertNames(imported.clients().findAll(), "account", "admin-cli", "broker", "migration-test-client", "realm-management", "security-admin-console");
             String id = imported.clients().findByClientId("migration-test-client").get(0).getId();
             assertNames(imported.clients().get(id).roles().list(), "migration-test-client-role");
-            assertNames(imported.users().search("", 0, 5), "migration-test-user");
+            assertNames(imported.users().search("", 0, 5, false), "migration-test-user");
             assertNames(imported.groups().groups(), "migration-test-group");
         } finally {
             removeRealm(MIGRATION);
         }
     }
+
+
 
     //KEYCLOAK-1982
     @Test

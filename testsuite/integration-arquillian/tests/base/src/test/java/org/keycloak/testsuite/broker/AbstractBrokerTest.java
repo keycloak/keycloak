@@ -104,7 +104,7 @@ public abstract class AbstractBrokerTest extends AbstractBaseBrokerTest {
         int userCount = consumerUsers.count();
         Assert.assertTrue("There must be at least one user", userCount > 0);
 
-        List<UserRepresentation> users = consumerUsers.search("", 0, userCount);
+        List<UserRepresentation> users = consumerUsers.search("", 0, userCount, false);
 
         boolean isUserFound = false;
         for (UserRepresentation user : users) {

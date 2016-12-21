@@ -596,23 +596,23 @@ public class UserCacheSession implements UserCache {
     }
 
     @Override
-    public List<UserModel> searchForUser(String search, RealmModel realm) {
-        return getDelegate().searchForUser(search, realm);
+    public List<UserModel> searchForUser(String search, RealmModel realm, boolean exact) {
+        return getDelegate().searchForUser(search, realm, exact);
     }
 
     @Override
-    public List<UserModel> searchForUser(String search, RealmModel realm, int firstResult, int maxResults) {
-        return getDelegate().searchForUser(search, realm, firstResult, maxResults);
+    public List<UserModel> searchForUser(String search, RealmModel realm, int firstResult, int maxResults, boolean exact) {
+        return getDelegate().searchForUser(search, realm, firstResult, maxResults, exact);
     }
 
     @Override
-    public List<UserModel> searchForUser(Map<String, String> attributes, RealmModel realm) {
-        return getDelegate().searchForUser(attributes, realm);
+    public List<UserModel> searchForUser(Map<String, String> attributes, RealmModel realm, boolean exact) {
+        return getDelegate().searchForUser(attributes, realm, exact);
     }
 
     @Override
-    public List<UserModel> searchForUser(Map<String, String> attributes, RealmModel realm, int firstResult, int maxResults) {
-        return getDelegate().searchForUser(attributes, realm, firstResult, maxResults);
+    public List<UserModel> searchForUser(Map<String, String> attributes, RealmModel realm, int firstResult, int maxResults, boolean exact) {
+        return getDelegate().searchForUser(attributes, realm, firstResult, maxResults, exact);
     }
 
     @Override

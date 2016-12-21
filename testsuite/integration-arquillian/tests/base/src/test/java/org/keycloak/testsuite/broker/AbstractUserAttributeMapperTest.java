@@ -100,7 +100,7 @@ public abstract class AbstractUserAttributeMapperTest extends AbstractBaseBroker
         int userCount = consumerUsers.count();
         assertThat("There must be at least one user", userCount, greaterThan(0));
 
-        List<UserRepresentation> users = consumerUsers.search("", 0, userCount);
+        List<UserRepresentation> users = consumerUsers.search("", 0, userCount, false);
 
         for (UserRepresentation user : users) {
             if (user.getUsername().equals(userName) && user.getEmail().equals(email)) {

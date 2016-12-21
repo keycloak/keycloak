@@ -423,7 +423,7 @@ public abstract class AbstractJSConsoleExampleAdapterTest extends AbstractExampl
 
         UsersResource userResource = testRealmResource().users();
 
-        List<UserRepresentation> users = userResource.search("mhajas", 0, 1);
+        List<UserRepresentation> users = userResource.search("mhajas", 0, 1, false);
         assertEquals("There should be created user mhajas", 1, users.size());
         waitUntilElement(jsConsoleTestAppPage.getOutputElement()).text()
                 .contains("location: " + authServerContextRootPage.toString() + "/auth/admin/realms/" + EXAMPLE + "/users/" + users.get(0).getId());

@@ -45,7 +45,7 @@ public abstract class TestRealmKeycloakTest extends AbstractKeycloakTest {
     }
 
     protected UserRepresentation findUser(String userNameOrEmail) {
-        List<UserRepresentation> repList = testRealm().users().search(userNameOrEmail, -1, -1);
+        List<UserRepresentation> repList = testRealm().users().search(userNameOrEmail, -1, -1, false);
         if (repList.size() != 1) throw new IllegalStateException("User search expected one result. Found " + repList.size() + " users.");
         return repList.get(0);
     }

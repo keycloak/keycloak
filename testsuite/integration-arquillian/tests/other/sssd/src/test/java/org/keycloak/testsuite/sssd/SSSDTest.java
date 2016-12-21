@@ -165,7 +165,7 @@ public class SSSDTest extends AbstractKeycloakTest {
     private void testUserGroups() {
         log.debug("Testing user groups");
 
-        List<UserRepresentation> users = adminClient.realm(REALM_NAME).users().search(USERNAME, 0, 1);
+        List<UserRepresentation> users = adminClient.realm(REALM_NAME).users().search(USERNAME, 0, 1, false);
 
         Assert.assertTrue("There must be at least one user", users.size() > 0);
         Assert.assertEquals("Exactly our test user", USERNAME, users.get(0).getUsername());

@@ -212,7 +212,7 @@ public class OIDCKeycloakServerBrokerWithConsentTest extends AbstractIdentityPro
 
         // Revoke consent
         RealmResource brokeredRealm = keycloak2.realm("realm-with-oidc-identity-provider");
-        List<UserRepresentation> users = brokeredRealm.users().search("test-user", 0, 1);
+        List<UserRepresentation> users = brokeredRealm.users().search("test-user", 0, 1, false);
         brokeredRealm.users().get(users.get(0).getId()).revokeConsent("broker-app");
     }
 

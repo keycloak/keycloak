@@ -52,6 +52,7 @@ import org.keycloak.models.utils.UserModelDelegate;
 import org.keycloak.storage.UserStorageProvider;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -211,13 +212,13 @@ public class MongoUserProvider implements UserProvider, UserCredentialStore {
     }
 
     @Override
-    public List<UserModel> searchForUser(String search, RealmModel realm) {
-        return searchForUser(search, realm, -1, -1);
+    public List<UserModel> searchForUser(String search, RealmModel realm, boolean exact) {
+        return searchForUser(search, realm, -1, -1, exact);
     }
 
     @Override
     public List<UserModel>
-    searchForUser(String search, RealmModel realm, int firstResult, int maxResults) {
+    searchForUser(String search, RealmModel realm, int firstResult, int maxResults, boolean exact) {
         search = search.trim();
         Pattern caseInsensitivePattern = Pattern.compile("(?i:" + search + ")");
 
@@ -228,29 +229,56 @@ public class MongoUserProvider implements UserProvider, UserCredentialStore {
         if (spaceInd != -1) {
             String firstName = search.substring(0, spaceInd);
             String lastName = search.substring(spaceInd + 1);
-            Pattern firstNamePattern = Pattern.compile("(?i:" + firstName + "$)");
-            Pattern lastNamePattern = Pattern.compile("(?i:^" + lastName + ")");
-            nameBuilder = new QueryBuilder().and(
-                    new QueryBuilder().put("firstName").regex(firstNamePattern).get(),
-                    new QueryBuilder().put("lastName").regex(lastNamePattern).get()
+
+            if(exact){
+                nameBuilder = new QueryBuilder().and(
+                  new QueryBuilder().put("firstName").is(firstName).get(),
+                  new QueryBuilder().put("lastName").is(lastName).get()
+                );
+            } else {
+
+                Pattern firstNamePattern = Pattern.compile("(?i:" + firstName + "$)");
+                Pattern lastNamePattern = Pattern.compile("(?i:^" + lastName + ")");
+                nameBuilder = new QueryBuilder().and(
+                  new QueryBuilder().put("firstName").regex(firstNamePattern).get(),
+                  new QueryBuilder().put("lastName").regex(lastNamePattern).get()
+                );
+            }
+        } else {
+
+            if (exact){
+                nameBuilder = new QueryBuilder().or(
+                  new QueryBuilder().put("firstName").is(search).get(),
+                  new QueryBuilder().put("lastName").is(search).get()
+                );
+            } else {
+                // Case when we have search without spaces like "foo". The firstName OR lastName could be "foo" (everything case-insensitive)
+                nameBuilder = new QueryBuilder().or(
+                  new QueryBuilder().put("firstName").regex(caseInsensitivePattern).get(),
+                  new QueryBuilder().put("lastName").regex(caseInsensitivePattern).get()
+                );
+            }
+        }
+
+        QueryBuilder userQueryPart = new QueryBuilder();
+        if (exact) {
+            userQueryPart.or(
+              new QueryBuilder().put("username").is(search).get(),
+              new QueryBuilder().put("email").is(search).get(),
+              nameBuilder.get()
             );
         } else {
-            // Case when we have search without spaces like "foo". The firstName OR lastName could be "foo" (everything case-insensitive)
-            nameBuilder = new QueryBuilder().or(
-                    new QueryBuilder().put("firstName").regex(caseInsensitivePattern).get(),
-                    new QueryBuilder().put("lastName").regex(caseInsensitivePattern).get()
+            userQueryPart.or(
+              new QueryBuilder().put("username").regex(caseInsensitivePattern).get(),
+              new QueryBuilder().put("email").regex(caseInsensitivePattern).get(),
+              nameBuilder.get()
             );
         }
 
         QueryBuilder builder = new QueryBuilder().and(
                 new QueryBuilder().and("realmId").is(realm.getId()).get(),
                 new QueryBuilder().and("serviceAccountClientLink").is(null).get(),
-                new QueryBuilder().or(
-                        new QueryBuilder().put("username").regex(caseInsensitivePattern).get(),
-                        new QueryBuilder().put("email").regex(caseInsensitivePattern).get(),
-                        nameBuilder.get()
-
-                ).get()
+                userQueryPart.get()
         );
 
         DBObject sort = new BasicDBObject("username", 1);
@@ -260,28 +288,25 @@ public class MongoUserProvider implements UserProvider, UserCredentialStore {
     }
 
     @Override
-    public List<UserModel> searchForUser(Map<String, String> attributes, RealmModel realm) {
-        return searchForUser(attributes, realm, -1, -1);
+    public List<UserModel> searchForUser(Map<String, String> attributes, RealmModel realm, boolean exact) {
+        return searchForUser(attributes, realm, -1, -1, exact);
     }
 
     @Override
-    public List<UserModel> searchForUser(Map<String, String> attributes, RealmModel realm, int firstResult, int maxResults) {
+    public List<UserModel> searchForUser(Map<String, String> attributes, RealmModel realm, int firstResult, int maxResults, boolean exact) {
         QueryBuilder queryBuilder = new QueryBuilder()
                 .and("realmId").is(realm.getId());
 
-        for (Map.Entry<String, String> entry : attributes.entrySet()) {
-            if (entry.getKey().equalsIgnoreCase(UserModel.USERNAME)) {
-                queryBuilder.and(UserModel.USERNAME).regex(Pattern.compile(".*" + entry.getValue() + ".*", Pattern.CASE_INSENSITIVE));
-            } else if (entry.getKey().equalsIgnoreCase(UserModel.FIRST_NAME)) {
-                queryBuilder.and(UserModel.FIRST_NAME).regex(Pattern.compile(".*" + entry.getValue() + ".*", Pattern.CASE_INSENSITIVE));
+        List<String> attributeNames = Arrays.asList(UserModel.USERNAME, UserModel.FIRST_NAME, UserModel.LAST_NAME, UserModel.EMAIL);
 
-            } else if (entry.getKey().equalsIgnoreCase(UserModel.LAST_NAME)) {
-                queryBuilder.and(UserModel.LAST_NAME).regex(Pattern.compile(".*" + entry.getValue() + ".*", Pattern.CASE_INSENSITIVE));
-
-            } else if (entry.getKey().equalsIgnoreCase(UserModel.EMAIL)) {
-                queryBuilder.and(UserModel.EMAIL).regex(Pattern.compile(".*" + entry.getValue() + ".*", Pattern.CASE_INSENSITIVE));
+        attributes.entrySet().stream().filter(attrEntry -> attributeNames.contains(attrEntry.getKey())).forEach(attrEntry -> {
+            queryBuilder.and(attrEntry.getKey());
+            if (exact){
+                queryBuilder.is(attrEntry.getValue());
+            } else {
+                queryBuilder.regex(Pattern.compile(".*" + attrEntry.getValue() + ".*", Pattern.CASE_INSENSITIVE));
             }
-        }
+        });
 
         DBObject sort = new BasicDBObject("username", 1);
 

@@ -41,7 +41,7 @@ public class ActionUtil {
     }
 
     public static UserRepresentation findUserWithAdminClient(Keycloak adminClient, String username) {
-        return adminClient.realm("test").users().search(username, null, null, null, 0, 1).get(0);
+        return adminClient.realm("test").users().search(username, null, null, null, 0, 1, false).get(0);
     }
 
     public static void addRequiredActionForUser(RealmRepresentation testRealm, String userName, String action) {

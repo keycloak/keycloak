@@ -237,10 +237,10 @@ public class UserTest extends AbstractAdminTest {
     public void searchByEmail() {
         createUsers();
 
-        List<UserRepresentation> users = realm.users().search(null, null, null, "user1@localhost", null, null);
+        List<UserRepresentation> users = realm.users().search(null, null, null, "user1@localhost", null, null, false);
         assertEquals(1, users.size());
 
-        users = realm.users().search(null, null, null, "@localhost", null, null);
+        users = realm.users().search(null, null, null, "@localhost", null, null, false);
         assertEquals(9, users.size());
     }
 
@@ -248,10 +248,10 @@ public class UserTest extends AbstractAdminTest {
     public void searchByUsername() {
         createUsers();
 
-        List<UserRepresentation> users = realm.users().search("username1", null, null, null, null, null);
+        List<UserRepresentation> users = realm.users().search("username1", null, null, null, null, null, false);
         assertEquals(1, users.size());
 
-        users = realm.users().search("user", null, null, null, null, null);
+        users = realm.users().search("user", null, null, null, null, null, false);
         assertEquals(9, users.size());
     }
 
@@ -259,13 +259,13 @@ public class UserTest extends AbstractAdminTest {
     public void search() {
         createUsers();
 
-        List<UserRepresentation> users = realm.users().search("username1", null, null);
+        List<UserRepresentation> users = realm.users().search("username1", null, null, false);
         assertEquals(1, users.size());
 
-        users = realm.users().search("first1", null, null);
+        users = realm.users().search("first1", null, null, false);
         assertEquals(1, users.size());
 
-        users = realm.users().search("last", null, null);
+        users = realm.users().search("last", null, null, false);
         assertEquals(9, users.size());
     }
 
@@ -298,21 +298,21 @@ public class UserTest extends AbstractAdminTest {
     public void searchPaginated() {
         createUsers();
 
-        List<UserRepresentation> users = realm.users().search("username", 0, 1);
+        List<UserRepresentation> users = realm.users().search("username", 0, 1, false);
         assertEquals(1, users.size());
         assertEquals("username1", users.get(0).getUsername());
 
-        users = realm.users().search("username", 5, 2);
+        users = realm.users().search("username", 5, 2, false);
         assertEquals(2, users.size());
         assertEquals("username6", users.get(0).getUsername());
         assertEquals("username7", users.get(1).getUsername());
 
-        users = realm.users().search("username", 7, 20);
+        users = realm.users().search("username", 7, 20, false);
         assertEquals(2, users.size());
         assertEquals("username8", users.get(0).getUsername());
         assertEquals("username9", users.get(1).getUsername());
 
-        users = realm.users().search("username", 0, 20);
+        users = realm.users().search("username", 0, 20, false);
         assertEquals(9, users.size());
     }
 
@@ -922,9 +922,9 @@ public class UserTest extends AbstractAdminTest {
             users.create(UserBuilder.create().username("test-" + i).build()).close();
         }
 
-        assertEquals(100, users.search("test", null, null).size());
-        assertEquals(105, users.search("test", 0, 105).size());
-        assertEquals(111, users.search("test", 0, 1000).size());
+        assertEquals(100, users.search("test", null, null, false).size());
+        assertEquals(105, users.search("test", 0, 105, false).size());
+        assertEquals(111, users.search("test", 0, 1000, false).size());
     }
 
     private void switchEditUsernameAllowedOn() {

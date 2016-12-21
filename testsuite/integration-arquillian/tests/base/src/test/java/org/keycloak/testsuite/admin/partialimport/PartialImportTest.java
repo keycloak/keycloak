@@ -115,7 +115,7 @@ public class PartialImportTest extends AbstractAuthTest {
 
     @Before
     public void removeUsers() {
-        List<UserRepresentation> toRemove = testRealmResource().users().search(USER_PREFIX, 0, NUM_ENTITIES);
+        List<UserRepresentation> toRemove = testRealmResource().users().search(USER_PREFIX, 0, NUM_ENTITIES, false);
         for (UserRepresentation user : toRemove) {
             testRealmResource().users().get(user.getId()).remove();
         }

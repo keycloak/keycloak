@@ -85,7 +85,7 @@ public class UserTotpTest extends TestRealmKeycloakTest {
 
         Assert.assertTrue(driver.getPageSource().contains("pficon-delete"));
 
-        List<UserRepresentation> users = adminClient.realms().realm("test").users().search("test-user@localhost", null, null, null, 0, 1);
+        List<UserRepresentation> users = adminClient.realms().realm("test").users().search("test-user@localhost", null, null, null, 0, 1, false);
         String userId = users.get(0).getId();
         testingClient.testing().clearAdminEventQueue();
         adminClient.realms().realm("test").users().get(userId).removeTotp();

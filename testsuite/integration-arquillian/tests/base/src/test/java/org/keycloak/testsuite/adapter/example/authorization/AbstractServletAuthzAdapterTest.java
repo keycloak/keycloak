@@ -213,7 +213,7 @@ public abstract class AbstractServletAuthzAdapterTest extends AbstractExampleAda
             onlyAlicePolicy.setType("user");
             HashMap<String, String> config = new HashMap<>();
             UsersResource usersResource = realmsResouce().realm(REALM_NAME).users();
-            List<UserRepresentation> users = usersResource.search("alice", null, null, null, null, null);
+            List<UserRepresentation> users = usersResource.search("alice", null, null, null, null, null, false);
 
             assertFalse(users.isEmpty());
 
@@ -250,7 +250,7 @@ public abstract class AbstractServletAuthzAdapterTest extends AbstractExampleAda
 
             RealmResource realmResource = realmsResouce().realm(REALM_NAME);
             UsersResource usersResource = realmResource.users();
-            List<UserRepresentation> users = usersResource.search("jdoe", null, null, null, null, null);
+            List<UserRepresentation> users = usersResource.search("jdoe", null, null, null, null, null, false);
 
             assertFalse(users.isEmpty());
 

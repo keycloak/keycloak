@@ -100,6 +100,7 @@ public class LDAPConstants {
     public static final String MSDS_USER_PASSWORD_EXPIRED = "msDS-UserPasswordExpired"; // read-only
 
     public static final String COMMA = ",";
+    public static final String STAR = "*";
     public static final String EQUAL = "=";
     public static final String EMPTY_ATTRIBUTE_VALUE = " ";
     public static final String EMPTY_MEMBER_ATTRIBUTE_VALUE = "cn=empty-membership-placeholder";

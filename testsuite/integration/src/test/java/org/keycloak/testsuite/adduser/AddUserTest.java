@@ -104,7 +104,7 @@ public class AddUserTest {
 
             RealmResource realm = keycloak.realm("master");
 
-            List<UserRepresentation> users = realm.users().search("addusertest-admin", null, null, null, null, null);
+            List<UserRepresentation> users = realm.users().search("addusertest-admin", null, null, null, null, null, false);
             assertEquals(1, users.size());
 
             UserRepresentation created = users.get(0);

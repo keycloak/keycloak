@@ -109,7 +109,7 @@ public class KcSamlIdPInitiatedSsoTest extends AbstractKeycloakTest {
         int userCount = consumerUsers.count();
         Assert.assertTrue("There must be at least one user", userCount > 0);
 
-        List<UserRepresentation> users = consumerUsers.search("", 0, userCount);
+        List<UserRepresentation> users = consumerUsers.search("", 0, userCount, false);
 
         boolean isUserFound = users.stream().anyMatch(user -> user.getUsername().equals("mytest") && user.getEmail().equals("test@localhost"));
         Assert.assertTrue("There must be user " + "mytest" + " in realm " + REALM_CONS_NAME, isUserFound);
