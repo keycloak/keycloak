@@ -33,7 +33,7 @@ public class CachedStoreFactorySpi implements Spi {
 
     @Override
     public String getName() {
-        return "authz-fached-store-factory";
+        return "authorizationCache";
     }
 
     @Override
