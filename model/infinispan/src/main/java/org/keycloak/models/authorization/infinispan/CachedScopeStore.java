@@ -18,13 +18,12 @@
 
 package org.keycloak.models.authorization.infinispan;
 
-import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.infinispan.Cache;
-import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.store.ScopeStore;
@@ -43,7 +42,7 @@ public class CachedScopeStore implements ScopeStore {
     private static final String SCOPE_ID_CACHE_PREFIX = "scp-id-";
     private static final String SCOPE_NAME_CACHE_PREFIX = "scp-name-";
 
-    private final Cache<String, List> cache;
+    private final Cache<String, Map<String, List<CachedScope>>> cache;
     private final KeycloakSession session;
     private final CacheTransaction transaction;
     private ScopeStore delegate;
@@ -61,9 +60,9 @@ public class CachedScopeStore implements ScopeStore {
     public Scope create(String name, ResourceServer resourceServer) {
         Scope scope = getDelegate().create(name, getStoreFactory().getResourceServerStore().findById(resourceServer.getId()));
 
-        this.transaction.whenRollback(() -> cache.remove(getCacheKeyForScope(scope.getId())));
+        this.transaction.whenRollback(() -> resolveResourceServerCache(resourceServer.getId()).remove(getCacheKeyForScope(scope.getId())));
         this.transaction.whenCommit(() -> {
-            getCachedStoreFactory().getPolicyStore().notifyChange(scope);
+            invalidateCache(resourceServer.getId());
         });
 
         return createAdapter(new CachedScope(scope));
@@ -71,33 +70,29 @@ public class CachedScopeStore implements ScopeStore {
 
     @Override
     public void delete(String id) {
-        Scope scope = findById(id, null);
+        Scope scope = getDelegate().findById(id, null);
         if (scope == null) {
             return;
         }
+        ResourceServer resourceServer = scope.getResourceServer();
         getDelegate().delete(id);
         this.transaction.whenCommit(() -> {
-            List<CachedScope> scopes = cache.remove(getCacheKeyForScope(id));
-
-            if (scopes != null) {
-                CachedScope entry = scopes.get(0);
-                cache.remove(getCacheKeyForScopeName(entry.getName(), entry.getResourceServerId()));
-            }
-
-            getCachedStoreFactory().getPolicyStore().notifyChange(scope);
+            invalidateCache(resourceServer.getId());
         });
     }
 
     @Override
     public Scope findById(String id, String resourceServerId) {
         String cacheKeyForScope = getCacheKeyForScope(id);
-        List<CachedScope> cached = this.cache.get(cacheKeyForScope);
+        List<CachedScope> cached = resolveResourceServerCache(resourceServerId).get(cacheKeyForScope);
 
         if (cached == null) {
             Scope scope = getDelegate().findById(id, resourceServerId);
 
             if (scope != null) {
-                return createAdapter(updateScopeCache(scope));
+                CachedScope cachedScope = new CachedScope(scope);
+                resolveResourceServerCache(resourceServerId).put(cacheKeyForScope, Arrays.asList(cachedScope));
+                return createAdapter(cachedScope);
             }
 
             return null;
@@ -108,21 +103,21 @@ public class CachedScopeStore implements ScopeStore {
 
     @Override
     public Scope findByName(String name, String resourceServerId) {
-        String cacheKeyForScope = getCacheKeyForScopeName(name, resourceServerId);
-        List<String> cached = this.cache.get(cacheKeyForScope);
+        String cacheKeyForScope = getCacheKeyForScopeName(name);
+        List<CachedScope> cached = resolveResourceServerCache(resourceServerId).get(cacheKeyForScope);
 
         if (cached == null) {
             Scope scope = getDelegate().findByName(name, resourceServerId);
 
             if (scope != null) {
-                cache.put(cacheKeyForScope, Arrays.asList(scope.getId()));
+                resolveResourceServerCache(resourceServerId).put(cacheKeyForScope, Arrays.asList(new CachedScope(scope)));
                 return findById(scope.getId(), resourceServerId);
             }
 
             return null;
         }
 
-        return findById(cached.get(0), resourceServerId);
+        return createAdapter(cached.get(0));
     }
 
     @Override
@@ -139,8 +134,8 @@ public class CachedScopeStore implements ScopeStore {
         return SCOPE_ID_CACHE_PREFIX + id;
     }
 
-    private String getCacheKeyForScopeName(String name, String resourceServerId) {
-        return SCOPE_NAME_CACHE_PREFIX + name + "-" + resourceServerId;
+    private String getCacheKeyForScopeName(String name) {
+        return SCOPE_NAME_CACHE_PREFIX + name;
     }
 
     private ScopeStore getDelegate() {
@@ -197,11 +192,11 @@ public class CachedScopeStore implements ScopeStore {
                     this.updated = getDelegate().findById(getId(), cached.getResourceServerId());
                     if (this.updated == null) throw new IllegalStateException("Not found in database");
                     transaction.whenCommit(() -> {
-                        cache.remove(getCacheKeyForScope(getId()));
-                        getCachedStoreFactory().getPolicyStore().notifyChange(updated);
+                        invalidateCache(cached.getResourceServerId());
                     });
                     transaction.whenRollback(() -> {
-                        cache.remove(getCacheKeyForScope(cached.getId()));
+                        resolveResourceServerCache(cached.getResourceServerId()).remove(getCacheKeyForScope(cached.getId()));
+                        resolveResourceServerCache(cached.getResourceServerId()).remove(getCacheKeyForScopeName(cached.getName()));
                     });
                 }
 
@@ -214,15 +209,11 @@ public class CachedScopeStore implements ScopeStore {
         return session.getProvider(CachedStoreFactoryProvider.class);
     }
 
-    private CachedScope updateScopeCache(Scope scope) {
-        CachedScope cached = new CachedScope(scope);
+    private void invalidateCache(String resourceServerId) {
+        cache.remove(resourceServerId);
+    }
 
-        List cache = new ArrayList();
-
-        cache.add(cached);
-
-        this.transaction.whenCommit(() -> this.cache.put(getCacheKeyForScope(scope.getId()), cache));
-
-        return cached;
+    private Map<String, List<CachedScope>> resolveResourceServerCache(String id) {
+        return cache.computeIfAbsent(id, key -> new HashMap<>());
     }
 }

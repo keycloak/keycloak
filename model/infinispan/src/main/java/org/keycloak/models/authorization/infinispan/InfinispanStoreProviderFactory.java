@@ -56,6 +56,6 @@ public class InfinispanStoreProviderFactory implements CachedStoreProviderFactor
 
     @Override
     public boolean isSupported() {
-        return false;
+        return true;
     }
 }

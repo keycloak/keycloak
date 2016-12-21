@@ -67,9 +67,6 @@
                     <button data-ng-click="firstPage()" class="first" ng-disabled="query.first == 0">{{:: 'first-page' | translate}}</button>
                     <button data-ng-click="previousPage()" class="prev" ng-disabled="query.first == 0">{{:: 'previous-page' | translate}}</button>
                     <button data-ng-click="nextPage()" class="next" ng-disabled="resources.length < query.max">{{:: 'next-page' | translate}}</button>
-                    <select class="first" data-ng-model="query.max"
-                            ng-options="size for size in listSizes" data-ng-change="firstPage()">
-                    </select>
                 </div>
             </td>
         </tr>
