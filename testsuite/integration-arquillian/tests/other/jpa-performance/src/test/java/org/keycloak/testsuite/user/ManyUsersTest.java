@@ -98,7 +98,7 @@ public class ManyUsersTest extends AbstractUserTest {
         if (CREATE_OBJECTS) {
 
             // Assuming default groups and required action already created
-            if (realmResource().getDefaultGroups().size() == 0) {
+            if (realmResource().getDefaultGroups().isEmpty()) {
                 log.infof("Creating default groups 'group1' and 'group2'.");
                 setDefaultGroup("group1");
                 setDefaultGroup("group2");
@@ -121,20 +121,17 @@ public class ManyUsersTest extends AbstractUserTest {
         realmResource().addDefaultGroup(groupId);
     }
 
-
-
     @After
     public void after() {
         realmTimer.clearStats(true, true, false);
         usersTimer.clearStats();
     }
 
-
     @Override
     public UserRepresentation createUser(UsersResource users, UserRepresentation user) {
         // Add some additional attributes to user
         if (CREATE_OBJECTS) {
-            Map<String, Object> attrs = new HashMap<>();
+            Map<String, List<String>> attrs = new HashMap<>();
             attrs.put("attr1", Collections.singletonList("val1"));
             attrs.put("attr2", Collections.singletonList("val2"));
             user.setAttributes(attrs);
@@ -245,6 +242,12 @@ public class ManyUsersTest extends AbstractUserTest {
             log.info("Deleted users: " + i + " / " + users.size());
         }
         realmTimer.reset();
+    }
+
+    private void createRealm(String REALM) {
+        RealmRepresentation rep = new RealmRepresentation();
+        rep.setRealm(REALM);
+        adminClient.realms().create(rep);
     }
 
 }
