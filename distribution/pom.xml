@@ -41,6 +41,7 @@
         <module>server-dist</module>
         <module>server-overlay</module>
         <module>feature-packs</module>
+        <module>server-config-migration</module>
     </modules>
 
     <profiles>
