@@ -78,6 +78,7 @@ public class MigrationTest extends AbstractKeycloakTest {
         testMigrationTo2_1_0();
         testMigrationTo2_2_0();
         testMigrationTo2_3_0();
+        testMigrationTo2_5_0();
     }
     
     @Test
@@ -85,6 +86,7 @@ public class MigrationTest extends AbstractKeycloakTest {
     public void migration2_2_1Test() {
         testMigratedData();
         testMigrationTo2_3_0();
+        testMigrationTo2_5_0();
     }
     
     private void testMigratedData() {
@@ -133,6 +135,13 @@ public class MigrationTest extends AbstractKeycloakTest {
      */
     private void testMigrationTo2_3_0() {
         testUpdateProtocolMappers(masterRealm, migrationRealm);
+    }
+    
+    private void testMigrationTo2_5_0() {
+        //TODO org.keycloak.migration.migrators.MigrateTo2_5_0
+        
+        //https://github.com/keycloak/keycloak/pull/3630
+        testDuplicateEmailSupport(masterRealm, migrationRealm);
     }
     
     private void testAuthorizationServices(RealmResource... realms) {
@@ -212,6 +221,14 @@ public class MigrationTest extends AbstractKeycloakTest {
         if (protocolMapper.getConfig().get("id.token.claim") != null) {
             assertEquals("ProtocolMapper's config should contain key 'userinfo.token.claim'.", 
                     protocolMapper.getConfig().get("id.token.claim"), protocolMapper.getConfig().get("userinfo.token.claim"));
+        }
+    }
+    
+    private void testDuplicateEmailSupport(RealmResource... realms) {
+        for (RealmResource realm : realms) {
+            RealmRepresentation rep = realm.toRepresentation();
+            assertTrue("LoginWithEmailAllowed should be enabled.", rep.isLoginWithEmailAllowed());
+            assertFalse("DuplicateEmailsAllowed should be disabled.", rep.isDuplicateEmailsAllowed());
         }
     }
 }
