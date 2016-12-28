@@ -80,6 +80,9 @@ public class ClientTemplateEntity {
     @Column(name="SERVICE_ACCOUNTS_ENABLED")
     private boolean serviceAccountsEnabled;
 
+    @Column(name="PROOF_KEY_FOR_CODE_EXCHANGE_REQUIRED")
+    private boolean proofKeyForCodeExchangeRequired;
+
     @Column(name="FRONTCHANNEL_LOGOUT")
     private boolean frontchannelLogout;
     @Column(name="PUBLIC_CLIENT")
@@ -93,6 +96,9 @@ public class ClientTemplateEntity {
     @Column(name="VALUE", length = 2048)
     @CollectionTable(name="CLIENT_TEMPLATE_ATTRIBUTES", joinColumns={ @JoinColumn(name="TEMPLATE_ID") })
     protected Map<String, String> attributes = new HashMap<String, String>();
+
+    public ClientTemplateEntity() {
+    }
 
     public RealmEntity getRealm() {
         return realm;
@@ -196,6 +202,14 @@ public class ClientTemplateEntity {
 
     public void setServiceAccountsEnabled(boolean serviceAccountsEnabled) {
         this.serviceAccountsEnabled = serviceAccountsEnabled;
+    }
+
+    public boolean isProofKeyForCodeExchangeRequired() {
+        return proofKeyForCodeExchangeRequired;
+    }
+
+    public void setProofKeyForCodeExchangeRequired(boolean proofKeyForCodeExchangeRequired) {
+        this.proofKeyForCodeExchangeRequired = proofKeyForCodeExchangeRequired;
     }
 
     public boolean isFrontchannelLogout() {

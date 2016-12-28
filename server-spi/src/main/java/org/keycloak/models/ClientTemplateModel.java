@@ -67,6 +67,7 @@ public interface ClientTemplateModel extends ProtocolMapperContainerModel, Scope
     boolean isServiceAccountsEnabled();
     void setServiceAccountsEnabled(boolean serviceAccountsEnabled);
 
-
+    boolean isProofKeyForCodeExchangeRequired();
+    void setProofKeyForCodeExchangeRequired(boolean proofKeyForCodeExchangeRequired);
 
 }

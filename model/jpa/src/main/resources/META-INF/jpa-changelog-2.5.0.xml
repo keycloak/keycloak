@@ -119,4 +119,17 @@
          <addUniqueConstraint columnNames="REALM_ID,PARENT_GROUP,NAME" constraintName="SIBLING_NAMES" tableName="KEYCLOAK_GROUP"/>
     </changeSet>
 
+    <changeSet author="w@willsr.com" id="2.5.0-pkce-support">
+        <addColumn tableName="CLIENT">
+            <column name="PROOF_KEY_FOR_CODE_EXCHANGE_REQUIRED" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+        <addColumn tableName="CLIENT_TEMPLATE">
+            <column name="PROOF_KEY_FOR_CODE_EXCHANGE_REQUIRED" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
 </databaseChangeLog>

@@ -53,6 +53,8 @@ public class OIDCLoginProtocol implements LoginProtocol {
 
     public static final String LOGIN_PROTOCOL = "openid-connect";
     public static final String STATE_PARAM = "state";
+    public static final String CODE_CHALLENGE_PARAM = "code_challenge";
+    public static final String CODE_CHALLENGE_METHOD_PARAM = "code_challenge_method";
     public static final String LOGOUT_STATE_PARAM = "OIDC_LOGOUT_STATE_PARAM";
     public static final String SCOPE_PARAM = "scope";
     public static final String CODE_PARAM = "code";

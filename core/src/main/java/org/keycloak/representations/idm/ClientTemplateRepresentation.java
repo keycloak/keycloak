@@ -40,6 +40,7 @@ public class ClientTemplateRepresentation {
     protected Boolean implicitFlowEnabled;
     protected Boolean directAccessGrantsEnabled;
     protected Boolean serviceAccountsEnabled;
+    protected Boolean proofKeyForCodeExchangeRequired;
     protected Boolean publicClient;
     protected Boolean frontchannelLogout;
     protected Map<String, String> attributes;
@@ -141,6 +142,14 @@ public class ClientTemplateRepresentation {
 
     public void setServiceAccountsEnabled(Boolean serviceAccountsEnabled) {
         this.serviceAccountsEnabled = serviceAccountsEnabled;
+    }
+
+    public Boolean isProofKeyForCodeExchangeRequired() {
+        return proofKeyForCodeExchangeRequired;
+    }
+
+    public void setProofKeyForCodeExchangeRequired(Boolean proofKeyForCodeExchangeRequired) {
+        this.proofKeyForCodeExchangeRequired = proofKeyForCodeExchangeRequired;
     }
 
     public Boolean isPublicClient() {

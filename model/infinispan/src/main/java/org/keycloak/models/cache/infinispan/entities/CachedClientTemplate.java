@@ -46,6 +46,7 @@ public class CachedClientTemplate extends AbstractRevisioned implements InRealm 
     private boolean implicitFlowEnabled;
     private boolean directAccessGrantsEnabled;
     private boolean serviceAccountsEnabled;
+    private boolean proofKeyForCodeExchangeRequired;
     private Set<String> scope = new HashSet<>();
     private Set<ProtocolMapperModel> protocolMappers = new HashSet<ProtocolMapperModel>();
     private Map<String, String> attributes = new HashMap<>();
@@ -72,6 +73,7 @@ public class CachedClientTemplate extends AbstractRevisioned implements InRealm 
         implicitFlowEnabled = model.isImplicitFlowEnabled();
         directAccessGrantsEnabled = model.isDirectAccessGrantsEnabled();
         serviceAccountsEnabled = model.isServiceAccountsEnabled();
+        proofKeyForCodeExchangeRequired = model.isProofKeyForCodeExchangeRequired();
     }
 
     public String getName() {
@@ -131,6 +133,10 @@ public class CachedClientTemplate extends AbstractRevisioned implements InRealm 
 
     public boolean isServiceAccountsEnabled() {
         return serviceAccountsEnabled;
+    }
+
+    public boolean isProofKeyForCodeExchangeRequired() {
+        return proofKeyForCodeExchangeRequired;
     }
 
     public Map<String, String> getAttributes() {

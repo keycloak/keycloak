@@ -568,6 +568,18 @@ public class ClientAdapter implements ClientModel {
     }
 
     @Override
+    public boolean isProofKeyForCodeExchangeRequired() {
+        if (isUpdated()) return updated.isProofKeyForCodeExchangeRequired();
+        return cached.isProofKeyForCodeExchangeRequired();
+    }
+
+    @Override
+    public void setProofKeyForCodeExchangeRequired(boolean proofKeyForCodeExchangeRequired) {
+        getDelegateForUpdate();
+        updated.setProofKeyForCodeExchangeRequired(proofKeyForCodeExchangeRequired);
+    }
+
+    @Override
     public RoleModel getRole(String name) {
         for (RoleModel role : getRoles()) {
             if (role.getName().equals(name)) return role;

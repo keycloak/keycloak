@@ -132,6 +132,9 @@ public interface ClientModel extends RoleContainerModel,  ProtocolMapperContaine
     boolean isServiceAccountsEnabled();
     void setServiceAccountsEnabled(boolean serviceAccountsEnabled);
 
+    boolean isProofKeyForCodeExchangeRequired();
+    void setProofKeyForCodeExchangeRequired(boolean proofKeyForCodeExchangeRequired);
+
     RealmModel getRealm();
 
     ClientTemplateModel getClientTemplate();

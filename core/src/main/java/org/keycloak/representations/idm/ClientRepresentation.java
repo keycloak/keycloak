@@ -49,6 +49,7 @@ public class ClientRepresentation {
     protected Boolean implicitFlowEnabled;
     protected Boolean directAccessGrantsEnabled;
     protected Boolean serviceAccountsEnabled;
+    protected Boolean proofKeyForCodeExchangeRequired;
     protected Boolean authorizationServicesEnabled;
     @Deprecated
     protected Boolean directGrantsOnly;
@@ -242,6 +243,15 @@ public class ClientRepresentation {
     public void setServiceAccountsEnabled(Boolean serviceAccountsEnabled) {
         this.serviceAccountsEnabled = serviceAccountsEnabled;
     }
+
+    public Boolean isProofKeyForCodeExchangeRequired() {
+        return proofKeyForCodeExchangeRequired;
+    }
+
+    public void setProofKeyForCodeExchangeRequired(Boolean proofKeyForCodeExchangeRequired) {
+        this.proofKeyForCodeExchangeRequired = proofKeyForCodeExchangeRequired;
+    }
+
 
     public Boolean getAuthorizationServicesEnabled() {
         if (authorizationSettings != null) {

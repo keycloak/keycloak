@@ -401,6 +401,15 @@ public class ClientTemplateAdapter implements ClientTemplateModel , JpaModel<Cli
         entity.setServiceAccountsEnabled(serviceAccountsEnabled);
     }
 
+    @Override
+    public boolean isProofKeyForCodeExchangeRequired() {
+        return entity.isProofKeyForCodeExchangeRequired();
+    }
+
+    @Override
+    public void setProofKeyForCodeExchangeRequired(boolean proofKeyForCodeExchangeRequired) {
+        entity.setProofKeyForCodeExchangeRequired(proofKeyForCodeExchangeRequired);
+    }
 
 
     @Override

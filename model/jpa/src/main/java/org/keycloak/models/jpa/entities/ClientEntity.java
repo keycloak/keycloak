@@ -155,6 +155,9 @@ public class ClientEntity {
     @Column(name="SERVICE_ACCOUNTS_ENABLED")
     private boolean serviceAccountsEnabled;
 
+    @Column(name="PROOF_KEY_FOR_CODE_EXCHANGE_REQUIRED")
+    private boolean proofKeyForCodeExchangeRequired;
+
     @Column(name="NODE_REREG_TIMEOUT")
     private int nodeReRegistrationTimeout;
 
@@ -406,6 +409,14 @@ public class ClientEntity {
 
     public void setServiceAccountsEnabled(boolean serviceAccountsEnabled) {
         this.serviceAccountsEnabled = serviceAccountsEnabled;
+    }
+
+    public boolean isProofKeyForCodeExchangeRequired() {
+        return proofKeyForCodeExchangeRequired;
+    }
+
+    public void setProofKeyForCodeExchangeRequired(boolean proofKeyForCodeExchangeRequired) {
+        this.proofKeyForCodeExchangeRequired = proofKeyForCodeExchangeRequired;
     }
 
     public int getNodeReRegistrationTimeout() {

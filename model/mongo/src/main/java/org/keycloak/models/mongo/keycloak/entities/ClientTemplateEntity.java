@@ -38,6 +38,7 @@ public class ClientTemplateEntity extends AbstractIdentifiableEntity {
     protected boolean implicitFlowEnabled;
     protected boolean directAccessGrantsEnabled;
     protected boolean serviceAccountsEnabled;
+    protected boolean proofKeyForCodeExchangeRequired;
     protected boolean publicClient;
     protected boolean frontchannelLogout;
     protected List<String> scopeIds = new ArrayList<>();
@@ -146,6 +147,14 @@ public class ClientTemplateEntity extends AbstractIdentifiableEntity {
 
     public void setServiceAccountsEnabled(boolean serviceAccountsEnabled) {
         this.serviceAccountsEnabled = serviceAccountsEnabled;
+    }
+
+    public boolean isProofKeyForCodeExchangeRequired() {
+        return proofKeyForCodeExchangeRequired;
+    }
+
+    public void setProofKeyForCodeExchangeRequired(boolean proofKeyForCodeExchangeRequired) {
+        this.proofKeyForCodeExchangeRequired = proofKeyForCodeExchangeRequired;
     }
 
     public boolean isPublicClient() {

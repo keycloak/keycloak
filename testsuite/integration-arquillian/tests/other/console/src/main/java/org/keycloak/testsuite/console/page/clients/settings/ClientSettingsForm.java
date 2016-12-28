@@ -49,6 +49,9 @@ public class ClientSettingsForm extends CreateClientForm {
     @FindBy(xpath = ".//div[@class='onoffswitch' and ./input[@id='serviceAccountsEnabled']]")
     private OnOffSwitch serviceAccountsEnabledSwitch;
 
+    @FindBy(xpath = ".//div[@class='onoffswitch' and ./input[@id='proofKeyForCodeExchangeRequired']]")
+    private OnOffSwitch proofKeyForCodeExchangeRequiredSwitch;
+
     @FindBy(id = "newRedirectUri")
     private WebElement newRedirectUriInput;
     @FindBy(xpath = ".//button[contains(@data-ng-click,'addRedirectUri')]")
@@ -212,6 +215,14 @@ public class ClientSettingsForm extends CreateClientForm {
 
     public void setServiceAccountsEnabled(boolean serviceAccountsEnabled) {
         serviceAccountsEnabledSwitch.setOn(serviceAccountsEnabled);
+    }
+
+    public boolean isProofKeyForCodeExchangeRequired() {
+        return proofKeyForCodeExchangeRequiredSwitch.isOn();
+    }
+
+    public void setProofKeyForCodeExchangeRequired(boolean proofKeyForCodeExchangeRequired) {
+        proofKeyForCodeExchangeRequiredSwitch.setOn(proofKeyForCodeExchangeRequired);
     }
     
     public class SAMLClientSettingsForm extends Form {

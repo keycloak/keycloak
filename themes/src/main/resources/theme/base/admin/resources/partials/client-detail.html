@@ -89,6 +89,13 @@
                     <input ng-model="client.standardFlowEnabled" name="standardFlowEnabled" id="standardFlowEnabled" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
                 </div>
             </div>
+            <div class="form-group" data-ng-show="client.standardFlowEnabled && client.publicClient">
+                <label class="col-md-2 control-label" for="proofKeyForCodeExchangeRequired">{{:: 'proof-key-code-exchange-required' | translate}}</label>
+                <kc-tooltip>{{:: 'proof-key-code-exchange-required.tooltip' | translate}}</kc-tooltip>
+                <div class="col-md-6">
+                    <input ng-model="client.proofKeyForCodeExchangeRequired" name="proofKeyForCodeExchangeRequired" id="proofKeyForCodeExchangeRequired" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
+                </div>
+            </div>
             <div class="form-group" data-ng-show="protocol == 'openid-connect' && !client.bearerOnly">
                 <label class="col-md-2 control-label" for="implicitFlowEnabled">{{:: 'implicit-flow-enabled' | translate}}</label>
                 <kc-tooltip>{{:: 'implicit-flow-enabled.tooltip' | translate}}</kc-tooltip>
