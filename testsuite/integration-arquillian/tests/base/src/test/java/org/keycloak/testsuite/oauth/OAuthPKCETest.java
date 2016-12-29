@@ -1,37 +1,26 @@
 package org.keycloak.testsuite.oauth;
 
 import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.OAuthErrorException;
 import org.keycloak.common.util.Base64Url;
-import org.keycloak.events.Details;
-import org.keycloak.events.Errors;
-import org.keycloak.models.Constants;
-import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.testsuite.pages.ErrorPage;
-import org.keycloak.testsuite.util.*;
+import org.keycloak.testsuite.util.OAuthClient;
 
-import javax.ws.rs.core.UriBuilder;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
-import static org.keycloak.testsuite.util.OAuthClient.APP_ROOT;
 
 /**
  * @author <a href="mailto:w@willsr.com">Will Russell</a>
