@@ -63,6 +63,7 @@ import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
@@ -106,7 +107,6 @@ public class TokenEndpoint {
     private String grantType;
 
     private static final String HASH_ALGORITHM = "SHA-256";
-    private static final String VERIFIER_CHARSET = "US-ASCII";
 
     public TokenEndpoint(TokenManager tokenManager, RealmModel realm, EventBuilder event) {
         this.tokenManager = tokenManager;
@@ -279,19 +279,15 @@ public class TokenEndpoint {
 
         if (codeChallenge != null && codeChallengeMethod != null){
             if (codeChallengeMethod.equals(OAuth2Constants.CHALLENGE_S256)){
-                MessageDigest sha256;
-                try {
-                    sha256 = MessageDigest.getInstance(HASH_ALGORITHM);
-                } catch (NoSuchAlgorithmException e) {
-                    throw new IllegalStateException(e.getMessage(), e);
-                }
 
                 String hashedCodeVerifier;
                 try {
-                    hashedCodeVerifier = Base64Url.encode(sha256.digest(codeVerifier.getBytes(VERIFIER_CHARSET)));
-                } catch (UnsupportedEncodingException e) {
-                    throw new IllegalStateException(e.getMessage(), e);
+                    MessageDigest sha256 = MessageDigest.getInstance(HASH_ALGORITHM);
+                    hashedCodeVerifier = Base64Url.encode(sha256.digest(codeVerifier.getBytes(StandardCharsets.US_ASCII)));
+                } catch (NoSuchAlgorithmException e) {
+                    throw new RuntimeException("invalid message digest algorithm");
                 }
+
                 if (!codeChallenge.equals(hashedCodeVerifier)){
                     event.error(Errors.INVALID_CODE);
                     throw new ErrorResponseException(OAuthErrorException.INVALID_GRANT, "Incorrect code_verifier", Response.Status.BAD_REQUEST);
