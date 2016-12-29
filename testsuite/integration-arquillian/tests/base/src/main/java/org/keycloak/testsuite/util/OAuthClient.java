@@ -109,6 +109,12 @@ public class OAuthClient {
 
     private String requestUri;
 
+    private String codeChallenge;
+
+    private String codeChallengeMethod;
+
+    private String codeVerifier;
+
     private Map<String, PublicKey> publicKeys = new HashMap<>();
 
     public void init(Keycloak adminClient, WebDriver driver) {
@@ -128,6 +134,9 @@ public class OAuthClient {
         nonce = null;
         request = null;
         requestUri = null;
+        codeChallenge = null;
+        codeChallengeMethod = null;
+        codeVerifier = null;
     }
 
     public AuthorizationEndpointResponse doLogin(String username, String password) {
@@ -181,6 +190,10 @@ public class OAuthClient {
 
             if (clientSessionHost != null) {
                 parameters.add(new BasicNameValuePair(AdapterConstants.CLIENT_SESSION_HOST, clientSessionHost));
+            }
+
+            if (codeVerifier != null) {
+                parameters.add(new BasicNameValuePair(OAuth2Constants.CODE_VERIFIER, codeVerifier));
             }
 
             UrlEncodedFormEntity formEntity = null;
@@ -545,6 +558,15 @@ public class OAuthClient {
         if (requestUri != null) {
             b.queryParam(OIDCLoginProtocol.REQUEST_URI_PARAM, requestUri);
         }
+
+        if (codeChallenge != null) {
+            b.queryParam(OAuth2Constants.CODE_CHALLENGE, codeChallenge);
+        }
+
+        if (codeChallengeMethod != null) {
+            b.queryParam(OAuth2Constants.CODE_CHALLENGE_METHOD, codeChallengeMethod);
+        }
+
         return b.build(realm).toString();
     }
 
@@ -663,6 +685,21 @@ public class OAuthClient {
         return this;
     }
 
+    public OAuthClient codeChallenge(String codeChallenge) {
+        this.codeChallenge = codeChallenge;
+        return this;
+    }
+
+    public OAuthClient codeChallengeMethod(String codeChallengeMethod) {
+        this.codeChallengeMethod = codeChallengeMethod;
+        return this;
+    }
+
+    public OAuthClient codeVerifier(String codeVerifier) {
+        this.codeVerifier = codeVerifier;
+        return this;
+    }
+
     public String getRealm() {
         return realm;
     }
@@ -678,6 +715,7 @@ public class OAuthClient {
         // Just during OIDC implicit or hybrid flow
         private String accessToken;
         private String idToken;
+
 
         public AuthorizationEndpointResponse(OAuthClient client) {
             boolean fragment;

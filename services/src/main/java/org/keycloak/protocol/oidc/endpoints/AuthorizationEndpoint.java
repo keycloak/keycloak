@@ -290,17 +290,17 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
     private void checkCodeChallenge() {
 
         if (client.isProofKeyForCodeExchangeRequired() && request.getCodeChallenge() == null) {
+            event.error(Errors.INVALID_CODE_CHALLENGE);
             throw new ErrorPageException(session, Messages.MISSING_PARAMETER, OIDCLoginProtocol.CODE_CHALLENGE_PARAM);
         }
 
         if (request.getCodeChallenge() != null){
-            // Default Code Challenge Method: plain
             String codeChallengeMethod = OAuth2Constants.CHALLENGE_PLAIN;
             String codeChallengeMethodParam = request.getCodeChallengeMethod();
 
             if (codeChallengeMethodParam != null) {
                 if (!codeChallengeMethodParam.equals(OAuth2Constants.CHALLENGE_PLAIN) && !codeChallengeMethodParam.equals(OAuth2Constants.CHALLENGE_S256)) {
-                    // challenge method not supported
+                    event.error(Errors.INVALID_CODE_CHALLENGE_METHOD);
                     throw new ErrorPageException(session, Messages.INVALID_PARAMETER, OIDCLoginProtocol.CODE_CHALLENGE_METHOD_PARAM);
                 }
                 codeChallengeMethod = codeChallengeMethodParam;

@@ -43,6 +43,8 @@ public interface Errors {
     String EMAIL_IN_USE = "email_in_use";
 
     String INVALID_REDIRECT_URI = "invalid_redirect_uri";
+    String INVALID_CODE_CHALLENGE = "invalid_code_challenge";
+    String INVALID_CODE_CHALLENGE_METHOD = "invalid_code_challenge_method";
     String INVALID_CODE = "invalid_code";
     String INVALID_TOKEN = "invalid_token";
     String INVALID_SAML_RESPONSE = "invalid_saml_response";
