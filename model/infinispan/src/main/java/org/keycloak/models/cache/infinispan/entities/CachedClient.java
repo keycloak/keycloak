@@ -64,7 +64,6 @@ public class CachedClient extends AbstractRevisioned implements InRealm {
     protected boolean implicitFlowEnabled;
     protected boolean directAccessGrantsEnabled;
     protected boolean serviceAccountsEnabled;
-    protected boolean proofKeyForCodeExchangeRequired;
     protected int nodeReRegistrationTimeout;
     protected Map<String, Integer> registeredNodes;
     protected String clientTemplate;
@@ -107,7 +106,7 @@ public class CachedClient extends AbstractRevisioned implements InRealm {
         implicitFlowEnabled = model.isImplicitFlowEnabled();
         directAccessGrantsEnabled = model.isDirectAccessGrantsEnabled();
         serviceAccountsEnabled = model.isServiceAccountsEnabled();
-        proofKeyForCodeExchangeRequired = model.isProofKeyForCodeExchangeRequired();
+
         nodeReRegistrationTimeout = model.getNodeReRegistrationTimeout();
         registeredNodes = new TreeMap<>(model.getRegisteredNodes());
         if (model.getClientTemplate() != null) {
@@ -232,10 +231,6 @@ public class CachedClient extends AbstractRevisioned implements InRealm {
 
     public boolean isServiceAccountsEnabled() {
         return serviceAccountsEnabled;
-    }
-
-    public boolean isProofKeyForCodeExchangeRequired() {
-        return proofKeyForCodeExchangeRequired;
     }
 
     public int getNodeReRegistrationTimeout() {

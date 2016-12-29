@@ -11,14 +11,15 @@ import org.keycloak.common.util.Base64Url;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.models.Constants;
+import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.testsuite.pages.ErrorPage;
-import org.keycloak.testsuite.util.ClientManager;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.*;
 
 import javax.ws.rs.core.UriBuilder;
 import java.io.IOException;
@@ -30,6 +31,7 @@ import java.util.List;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
+import static org.keycloak.testsuite.util.OAuthClient.APP_ROOT;
 
 /**
  * @author <a href="mailto:w@willsr.com">Will Russell</a>
@@ -51,19 +53,10 @@ public class OAuthPKCETest extends AbstractKeycloakTest {
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         RealmRepresentation realmRepresentation = loadJson(getClass().getResourceAsStream("/testrealm.json"), RealmRepresentation.class);
         testRealms.add(realmRepresentation);
-
-        //TODO: add additional realm for PKCE Required
     }
 
     @Before
     public void clientConfiguration() {
-        ClientManager.realm(adminClient.realm("test")).clientId("test-app").directAccessGrant(true);
-        /*
-         * Configure the default client ID. Seems like OAuthClient is keeping the state of clientID
-         * For example: If some test case configure oauth.clientId("sample-public-client"), other tests
-         * will fail and the clientID will always be "sample-public-client
-         * @see AccessTokenTest#testAuthorizationNegotiateHeaderIgnored()
-         */
         oauth.clientId("test-app");
         oauth.responseType(OAuth2Constants.CODE);
         oauth.responseMode(null);
@@ -71,7 +64,6 @@ public class OAuthPKCETest extends AbstractKeycloakTest {
 
     @Test
     public void invalidCodeChallengeMethod() throws IOException {
-
         oauth.codeChallenge("test");
         oauth.codeChallengeMethod("MD5");
 
@@ -82,7 +74,6 @@ public class OAuthPKCETest extends AbstractKeycloakTest {
 
     @Test
     public void codeChallengePlain() throws Exception {
-
         oauth.codeChallenge("test");
         oauth.doLogin("test-user@localhost", "password");
         EventRepresentation loginEvent = events.expectLogin().assertEvent();
@@ -96,7 +87,6 @@ public class OAuthPKCETest extends AbstractKeycloakTest {
 
     @Test
     public void codeChallengeSHA256() throws Exception {
-
         String codeChallenge = "test";
         MessageDigest sha256 = MessageDigest.getInstance("SHA-256");
         String codeChallengeHashed = Base64Url.encode(sha256.digest(codeChallenge.getBytes(StandardCharsets.US_ASCII)));
@@ -115,7 +105,6 @@ public class OAuthPKCETest extends AbstractKeycloakTest {
 
     @Test
     public void invalidCodeVerifierPlain() throws Exception {
-
         oauth.codeChallenge("test");
         oauth.doLogin("test-user@localhost", "password");
         EventRepresentation loginEvent = events.expectLogin().assertEvent();
@@ -130,9 +119,9 @@ public class OAuthPKCETest extends AbstractKeycloakTest {
 
     @Test
     public void invalidCodeVerifierSHA256() throws Exception {
-
         oauth.codeChallenge("test");
         oauth.codeChallengeMethod("S256");
+
         oauth.doLogin("test-user@localhost", "password");
         EventRepresentation loginEvent = events.expectLogin().assertEvent();
 
@@ -146,8 +135,8 @@ public class OAuthPKCETest extends AbstractKeycloakTest {
 
     @Test
     public void missingCodeVerifier() throws Exception {
-
         oauth.codeChallenge("test");
+
         oauth.doLogin("test-user@localhost", "password");
         EventRepresentation loginEvent = events.expectLogin().assertEvent();
 

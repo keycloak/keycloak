@@ -51,7 +51,6 @@ public class ClientEntity extends AbstractIdentifiableEntity {
     protected boolean implicitFlowEnabled;
     protected boolean directAccessGrantsEnabled;
     protected boolean serviceAccountsEnabled;
-    protected boolean proofKeyForCodeExchangeRequired;
     protected int nodeReRegistrationTimeout;
 
     // We are using names of defaultRoles (not ids)
@@ -297,14 +296,6 @@ public class ClientEntity extends AbstractIdentifiableEntity {
 
     public void setServiceAccountsEnabled(boolean serviceAccountsEnabled) {
         this.serviceAccountsEnabled = serviceAccountsEnabled;
-    }
-
-    public boolean isProofKeyForCodeExchangeRequired() {
-        return proofKeyForCodeExchangeRequired;
-    }
-
-    public void setProofKeyForCodeExchangeRequired(boolean proofKeyForCodeExchangeRequired) {
-        this.proofKeyForCodeExchangeRequired = proofKeyForCodeExchangeRequired;
     }
 
     public List<String> getDefaultRoles() {

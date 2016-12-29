@@ -269,11 +269,6 @@ public class TokenEndpoint {
         }
 
         String codeVerifier = formParams.getFirst(OAuth2Constants.CODE_VERIFIER);
-        if (client.isProofKeyForCodeExchangeRequired() && codeVerifier == null) {
-            event.error(Errors.INVALID_CODE);
-            throw new ErrorResponseException(OAuthErrorException.INVALID_GRANT, "Missing parameter: code_verifier", Response.Status.BAD_REQUEST);
-        }
-
         String codeChallenge = clientSession.getNote(OIDCLoginProtocol.CODE_CHALLENGE_PARAM);
         String codeChallengeMethod = clientSession.getNote(OIDCLoginProtocol.CODE_CHALLENGE_METHOD_PARAM);
 

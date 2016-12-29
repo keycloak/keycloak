@@ -288,12 +288,6 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
     }
 
     private void checkCodeChallenge() {
-
-        if (client.isProofKeyForCodeExchangeRequired() && request.getCodeChallenge() == null) {
-            event.error(Errors.INVALID_CODE_CHALLENGE);
-            throw new ErrorPageException(session, Messages.MISSING_PARAMETER, OIDCLoginProtocol.CODE_CHALLENGE_PARAM);
-        }
-
         if (request.getCodeChallenge() != null){
             String codeChallengeMethod = OAuth2Constants.CHALLENGE_PLAIN;
             String codeChallengeMethodParam = request.getCodeChallengeMethod();

@@ -527,7 +527,6 @@ public class ModelToRepresentation {
         rep.setImplicitFlowEnabled(clientModel.isImplicitFlowEnabled());
         rep.setDirectAccessGrantsEnabled(clientModel.isDirectAccessGrantsEnabled());
         rep.setServiceAccountsEnabled(clientModel.isServiceAccountsEnabled());
-        rep.setProofKeyForCodeExchangeRequired(clientModel.isProofKeyForCodeExchangeRequired());
         rep.setSurrogateAuthRequired(clientModel.isSurrogateAuthRequired());
         rep.setRootUrl(clientModel.getRootUrl());
         rep.setBaseUrl(clientModel.getBaseUrl());

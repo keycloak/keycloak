@@ -578,17 +578,6 @@ public class ClientAdapter extends AbstractMongoAdapter<MongoClientEntity> imple
     }
 
     @Override
-    public boolean isProofKeyForCodeExchangeRequired() {
-        return getMongoEntity().isProofKeyForCodeExchangeRequired();
-    }
-
-    @Override
-    public void setProofKeyForCodeExchangeRequired(boolean proofKeyForCodeExchangeRequired) {
-        getMongoEntity().setProofKeyForCodeExchangeRequired(proofKeyForCodeExchangeRequired);
-        updateMongoEntity();
-    }
-
-    @Override
     public RoleModel getRole(String name) {
         return session.realms().getClientRole(realm, this, name);
     }

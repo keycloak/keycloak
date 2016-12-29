@@ -339,17 +339,7 @@ public class ClientTemplateAdapter implements ClientTemplateModel {
         updated.setServiceAccountsEnabled(serviceAccountsEnabled);
     }
 
-    @Override
-    public boolean isProofKeyForCodeExchangeRequired() {
-        if (isUpdated()) return updated.isProofKeyForCodeExchangeRequired();
-        return cached.isProofKeyForCodeExchangeRequired();
-    }
 
-    @Override
-    public void setProofKeyForCodeExchangeRequired(boolean proofKeyForCodeExchangeRequired) {
-        getDelegateForUpdate();
-        updated.setProofKeyForCodeExchangeRequired(proofKeyForCodeExchangeRequired);
-    }
 
 
     @Override

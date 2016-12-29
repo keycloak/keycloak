@@ -398,17 +398,6 @@ public class ClientTemplateAdapter extends AbstractMongoAdapter<MongoClientTempl
         updateMongoEntity();
     }
 
-    @Override
-    public boolean isProofKeyForCodeExchangeRequired() {
-        return getMongoEntity().isProofKeyForCodeExchangeRequired();
-    }
-
-    @Override
-    public void setProofKeyForCodeExchangeRequired(boolean proofKeyForCodeExchangeRequired) {
-        getMongoEntity().setProofKeyForCodeExchangeRequired(proofKeyForCodeExchangeRequired);
-        updateMongoEntity();
-    }
-
 
     @Override
     public boolean equals(Object o) {

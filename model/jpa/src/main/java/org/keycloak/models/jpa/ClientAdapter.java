@@ -622,16 +622,6 @@ public class ClientAdapter implements ClientModel, JpaModel<ClientEntity> {
     }
 
     @Override
-    public boolean isProofKeyForCodeExchangeRequired() {
-        return entity.isProofKeyForCodeExchangeRequired();
-    }
-
-    @Override
-    public void setProofKeyForCodeExchangeRequired(boolean proofKeyForCodeExchangeRequired) {
-        entity.setProofKeyForCodeExchangeRequired(proofKeyForCodeExchangeRequired);
-    }
-
-    @Override
     public RoleModel getRole(String name) {
         return session.realms().getClientRole(realm, this, name);
     }
