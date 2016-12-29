@@ -73,6 +73,8 @@ public abstract class AbstractRequestCmd extends AbstractAuthOptionsCmd {
 
     String file;
 
+    String body;
+
     String fields;
 
     boolean printHeaders;
@@ -210,6 +212,10 @@ public abstract class AbstractRequestCmd extends AbstractAuthOptionsCmd {
             throw new IllegalArgumentException("Options --merge and --no-merge are mutually exclusive");
         }
 
+        if (body != null && file != null) {
+            throw new IllegalArgumentException("Options --body and --file are mutually exclusive");
+        }
+
         if (file == null && attrs.size() > 0 && !noMerge) {
             mergeMode = true;
         }
@@ -222,17 +228,17 @@ public abstract class AbstractRequestCmd extends AbstractAuthOptionsCmd {
         // see if Content-Type header is explicitly set to non-json value
         Header ctype = headers.get("content-type");
 
-        InputStream body = null;
+        InputStream content = null;
 
         CmdStdinContext<JsonNode> ctx = new CmdStdinContext<>();
 
         if (file != null) {
             if (ctype != null && !"application/json".equals(ctype.getValue())) {
                 if ("-".equals(file)) {
-                    body = System.in;
+                    content = System.in;
                 } else {
                     try {
-                        body = new BufferedInputStream(new FileInputStream(file));
+                        content = new BufferedInputStream(new FileInputStream(file));
                     } catch (FileNotFoundException e) {
                         throw new RuntimeException("File not found: " + file);
                     }
@@ -240,6 +246,8 @@ public abstract class AbstractRequestCmd extends AbstractAuthOptionsCmd {
             } else {
                 ctx = parseFileOrStdin(file);
             }
+        } else if (body != null) {
+            content = new ByteArrayInputStream(body.getBytes(Charset.forName("utf-8")));
         }
 
         ConfigData config = loadConfig();
@@ -304,15 +312,15 @@ public abstract class AbstractRequestCmd extends AbstractAuthOptionsCmd {
         }
 
         if (attrs.size() > 0) {
-            if (body != null) {
+            if (content != null) {
                 throw new RuntimeException("Can't set attributes on content of type other than application/json");
             }
 
             ctx = mergeAttributes(ctx, MAPPER.createObjectNode(), attrs);
         }
 
-        if (body == null && ctx.getContent() != null) {
-            body = new ByteArrayInputStream(ctx.getContent().getBytes(Charset.forName("utf-8")));
+        if (content == null && ctx.getContent() != null) {
+            content = new ByteArrayInputStream(ctx.getContent().getBytes(Charset.forName("utf-8")));
         }
 
         ReturnFields returnFields = null;
@@ -322,7 +330,7 @@ public abstract class AbstractRequestCmd extends AbstractAuthOptionsCmd {
         }
 
         // make sure content type is set
-        if (body != null) {
+        if (content != null) {
             headers.addIfMissing("Content-Type", "application/json");
         }
 
@@ -339,7 +347,7 @@ public abstract class AbstractRequestCmd extends AbstractAuthOptionsCmd {
 
         HeadersBodyStatus response;
         try {
-            response = HttpUtil.doRequest(httpVerb, resourceUrl, new HeadersBody(headers, body));
+            response = HttpUtil.doRequest(httpVerb, resourceUrl, new HeadersBody(headers, content));
         } catch (IOException e) {
             throw new RuntimeException("HTTP request error: " + e.getMessage(), e);
         }
