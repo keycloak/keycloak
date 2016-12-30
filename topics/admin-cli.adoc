@@ -454,18 +454,6 @@ For example:
     $ kcadm.sh get-roles -r demorealm --cclientid realm-management
 
 
-Alternatively, you can use `get` but it may not be as convenient. First, you need to find an `id` of the client you're interested in - use `get`
-to list available clients, for example:
-
-    $ kcadm.sh get clients -r demorealm --fields id,clientId
-
-Then use client's `id` attribute to construct an endpoint uri for listing client roles - `clients/ID/roles`.
-
-For example:
-
-    $ kcadm.sh get clients/a95b6af3-0bdc-4878-ae2e-6d61a4eca9a0/roles -r demorealm
-
-
 
 Getting a specific realm role::
 
@@ -481,7 +469,7 @@ Alternatively, use special `get-roles` command, passing it role `name` (via `--r
 
 For example:
 
-   $ kcadm.sh get-role -r demorealm --rolename user
+   $ kcadm.sh get-roles -r demorealm --rolename user
 
 
 
@@ -493,15 +481,6 @@ and passing it either role `name` (via `--rolename` option) or 'id' (via --rolei
 For example:
 
     $ kcadm.sh get-roles -r demorealm --cclientid realm-management --rolename manage-clients
-
-
-Alternatively, use client's `id`, and role `name` to construct an endpoint uri for a specific client role - `clients/ID/roles/ROLE_NAME`
-
-For example:
-
-    $ kcadm.sh get clients/a95b6af3-0bdc-4878-ae2e-6d61a4eca9a0/roles/editor -r demorealm
-
-Where `editor` is the `name` of the role we're interested in.
 
 
 Updating a realm role::
@@ -530,6 +509,94 @@ Deleting a client role::
 Use `delete` operation with the same endpoint uri as for getting a specific client role. For example:
 
     $ kcadm.sh delete clients/a95b6af3-0bdc-4878-ae2e-6d61a4eca9a0/roles/editor -r demorealm
+
+
+Listing assigned, available and effective realm roles for a composite role::
+
+There is a dedicated `get-roles` command to simplify listing of both realm and client roles. It is an extension of `get` command thus it behaves
+like `get` command with additional semantics for listing roles.
+
+To list *assigned* realm roles for the composite role you can specify the target composite role by either `name` (via --rname option) or `id` (via --rid option).
+
+For example:
+
+    $ kcadm.sh get-roles -r demorealm --rname testrole
+
+
+To list *effective* realm roles, use additional `--effective` option.
+
+For example:
+
+    $ kcadm.sh get-roles -r demorealm --rname testrole --effective
+
+
+To list realm roles that can still be added to the composite role, use `--available` option instead.
+
+For example:
+
+    $ kcadm.sh get-roles -r demorealm --rname testrole --available
+
+
+Listing assigned, available, and effective client roles for a composite role::
+
+You can again use `get-roles` command to simplify listing of roles.
+
+To list *assigned* client roles for the composite role you can specify the target composite role by either `name` (via --rname option)
+or `id` (via --rid option), and client by either `clientId` (via --cclientid option) or `id` (via --cid option).
+
+For example:
+
+    $ kcadm.sh get-roles -r demorealm --rname testrole --cclientid realm-management
+
+
+To list *effective* realm roles, use additional `--effective` option.
+
+For example:
+
+    $ kcadm.sh get-roles -r demorealm --rname testrole --cclientid realm-management --effective
+
+
+To list realm roles that can still be added to the target composite role, use `--available` option instead.
+
+For example:
+
+    $ kcadm.sh get-roles -r demorealm --rname testrole --cclientid realm-management --available
+
+
+Adding realm roles to a composite role::
+
+There is a dedicated `add-roles` command that can be used for adding both realm roles, and client roles.
+
+For example, to add 'user' role to composite role 'testrole' :
+
+    $ kcadm.sh add-roles --rname testrole --rolename user -r demorealm
+
+
+Removing realm roles from a composite role::
+
+There is a dedicated `remove-roles` command that can be used to remove both realm roles, and client roles.
+
+For example, to remove 'user' role from target composite role 'testrole':
+
+    $ kcadm.sh remove-roles --rname testrole --rolename user -r demorealm
+
+
+Adding client roles to a composite role::
+
+There is a dedicated `add-realm` operation that can be used for adding both realm roles, and client roles.
+
+For example, to add to `testrole` composite role two roles defined on client `realm-management` - `create-client` role and `view-users` role:
+
+    $ kcadm.sh add-roles -r demorealm --rname testrole --cclientid realm-management --rolename create-client --rolename view-users
+
+
+Removing client roles from a composite role::
+
+There is a dedicated `remove-realm` operation that can be used for removing both realm roles, and client roles.
+
+For example, to remove from `testrole` composite role two roles defined on client `realm management` - `create-client` role and `view-users` role:
+
+    $ kcadm.sh remove-roles -r demorealm --rname testrole --cclientid realm-management --rolename create-client --rolename view-users
 
 
 === Client operations
@@ -612,7 +679,7 @@ It's also possible to filter users by `username`, `firstName`, `lastName`, or `e
     $ kcadm.sh get users -r demorealm -q email=google.com
     $ kcadm.sh get users -r demorealm -q username=testuser
 
-Note that filtering doesn't use exact matching. For example, the above would match the value of `username` attribute against '*testuser*' pattern.
+Note that filtering doesn't use exact matching. For example, the above would match the value of `username` attribute against '\*testuser*' pattern.
 
 You can also filter across multiple attributes by specifying multiple `-q` options, which would return only users
 that match condition for all the attributes.
@@ -692,30 +759,6 @@ For example:
     $ kcadm.sh get-roles -r demorealm --uusername testuser --available
 
 
-
-Alternatively, you can also list roles by using `get` command.
-
-To list *assigned* realm roles for the user use user's `id` to construct an endpoint uri - users/USER_ID/role-mappings/realm.
-
-For example:
-
-    $ kcadm.sh get users/b544f379-5fc4-49e5-8a8d-5cfb71f46f53/role-mappings/realm
-
-
-To list *effective* realm roles, append `/composite` to the previous endpoint uri - users/USER_ID/role-mappings/realm/composite.
-
-For example:
-
-    $ kcadm.sh get users/b544f379-5fc4-49e5-8a8d-5cfb71f46f53/role-mappings/realm/composite
-
-To list realm roles that can still be added to the user, append `/available` instead - users/USER_ID/role-mappings/realm/available.
-
-For example:
-
-    $ kcadm.sh get users/b544f379-5fc4-49e5-8a8d-5cfb71f46f53/role-mappings/realm/available
-
-
-
 Listing assigned, available, and effective client roles for a user::
 
 You can again use `get-roles` command to simplify listing of roles.
@@ -742,72 +785,23 @@ For example:
     $ kcadm.sh get-roles -r demorealm --uusername testuser --cclientid realm-management --available
 
 
-
-Alternatively, you can also list roles by using `get` command.
-
-To list *assigned* client roles for the user use user's `id` and client's `id` to construct an endpoint uri - users/USER_ID/role-mappings/clients/ID.
-
-For example:
-
-    $ kcadm.sh get -r demorealm users/c9c73648-9af4-4394-bc01-1c4a98a5c52f/role-mappings/clients/70521f64-f3f2-4091-b2b6-9498a71fdaf5
-
-To list *effective* client roles, append `/composite` to the previous endpoint uri - users/USER_ID/role-mappings/clients/ID/composite.
-
-For example:
-
-    $ kcadm.sh get -r demorealm users/c9c73648-9af4-4394-bc01-1c4a98a5c52f/role-mappings/clients/70521f64-f3f2-4091-b2b6-9498a71fdaf5/composite
-
-To list client roles that can still be added to the user, append `/available` instead - users/USER_ID/role-mappings/clients/ID/available.
-
-For example:
-
-    $ kcadm.sh get -r demorealm users/c9c73648-9af4-4394-bc01-1c4a98a5c52f/role-mappings/clients/70521f64-f3f2-4091-b2b6-9498a71fdaf5/available
-
-
-
 Adding realm roles to a user::
 
-There is a dedicated `add-role` command that can be used for adding both realm roles, and client roles.
+There is a dedicated `add-roles` command that can be used for adding both realm roles, and client roles.
 
 For example, to add 'user' role to user 'testuser' :
 
-    $ kcadm.sh add-role --username testuser --rolename user -r demorealm
-
-Alternatively, to add a realm role to the user use user's `id` to construct an endpoint uri - `users/USER_ID/role-mapping/realm`
-
-Then use `create` operation against that endpoint uri, and send it a list of JSON objects each representing a role to add,
-by having the same `id` attribute as any of available realm roles, and a matching `name` attribute:
-
-    $ kcadm.sh create users/c9c73648-9af4-4394-bc01-1c4a98a5c52f/role-mappings/realm -r demorealm -f - << EOF
-    [{ "id": "63944125-1824-44cd-bb26-3eefa140e5b0", "name": "user"}]
-    EOF
-
-Or on Windows:
-
-    c:\> echo [{ "id": "63944125-1824-44cd-bb26-3eefa140e5b0", "name": "user"}] | create users/c9c73648-9af4-4394-bc01-1c4a98a5c52f/role-mappings/realm -r demorealm -f -
+    $ kcadm.sh add-roles --username testuser --rolename user -r demorealm
 
 
 Removing realm roles from a user::
 
-There is a dedicated `remove-role` command that can be used to remove both realm roles, and client roles.
+There is a dedicated `remove-roles` command that can be used to remove both realm roles, and client roles.
 
 For example, to remove 'user' role from user 'testuser':
 
-    $ kcadm.sh remove-role --username testuser --rolename user -r demorealm
+    $ kcadm.sh remove-roles --username testuser --rolename user -r demorealm
 
-
-Alternatively, to remove realm roles from the user use user's `id` to construct the same endpoint uri as for adding roles - `users/USER_ID/role-mapping/realm`
-
-Then use `delete` operation rather than `create` against that endpoint uri, and send it a list of JSON objects each representing a role to add,
-by having the same `id` attribute as any of current realm roles, and a matching `name` attribute:
-
-    $ kcadm.sh delete users/c9c73648-9af4-4394-bc01-1c4a98a5c52f/role-mappings/realm -r demorealm -f - << EOF
-    [{ "id": "63944125-1824-44cd-bb26-3eefa140e5b0", "name": "user"}]
-    EOF
-
-Or on Windows:
-
-    c:\> echo [{ "id": "63944125-1824-44cd-bb26-3eefa140e5b0", "name": "user"}] | delete users/c9c73648-9af4-4394-bc01-1c4a98a5c52f/role-mappings/realm -r demorealm -f -
 
 Adding client roles to a user::
 
@@ -815,20 +809,7 @@ There is a dedicated `add-realm` operation that can be used for adding both real
 
 For example, to add to user `testuser` two roles defined on client `realm management` - `create-client` role and `view-users` role:
 
-    $ kcadm.sh add-role -r demorealm --uusername testuser --cclientid realm-management --rolename create-client --rolename view-users
-
-
-Alternatively, to add a client role to the user, use user's `id` and client's `id` to construct an endpoint uri - `users/USER_ID/role-mapping/clients/ID`
-
-Then use `create` operation against that endpoint uri and send it a list of JSON objects each representing a role to add,
-by having the same `id` attribute as any of available client roles, and a matching `name` attribute:
-
-    $ kcadm.sh create users/c9c73648-9af4-4394-bc01-1c4a98a5c52f/role-mappings/clients/70521f64-f3f2-4091-b2b6-9498a71fdaf5 -r demorealm -f - << EOF
-    [
-      { "id": "12f80d1c-c861-4056-ac6b-27276e2966ec", "name": "create-client"},
-      { "id": "ce2e4694-1c9c-40f8-a0af-dea32a9984dc", "name": "view-users"}
-    ]
-    EOF
+    $ kcadm.sh add-roles -r demorealm --uusername testuser --cclientid realm-management --rolename create-client --rolename view-users
 
 
 Removing client roles from a user::
@@ -837,20 +818,7 @@ There is a dedicated `remove-realm` operation that can be used for removing both
 
 For example, to remove from user `testuser` two roles defined on client `realm management` - `create-client` role and `view-users` role:
 
-    $ kcadm.sh remove-role -r demorealm --uusername testuser --cclientid realm-management --rolename create-client --rolename view-users
-
-
-Alternatively, to remove client roles from the user use user's `id` and client's `id` to construct the same endpoint uri as for adding client roles -  `users/USER_ID/role-mapping/clients/ID`
-
-Then use `delete` operation rather than `create` against that endpoint uri, and send it a list of JSON objects each representing a role to add,
-by having the same `id` attribute as any of current client roles, and a matching `name` attribute:
-
-    $ kcadm.sh delete users/c9c73648-9af4-4394-bc01-1c4a98a5c52f/role-mappings/clients/70521f64-f3f2-4091-b2b6-9498a71fdaf5 -r demorealm -f - << EOF
-    [
-      { "id": "12f80d1c-c861-4056-ac6b-27276e2966ec", "name": "create-client"},
-      { "id": "ce2e4694-1c9c-40f8-a0af-dea32a9984dc", "name": "view-users"}
-    ]
-    EOF
+    $ kcadm.sh remove-roles -r demorealm --uusername testuser --cclientid realm-management --rolename create-client --rolename view-users
 
 
 Listing user's sessions::
@@ -925,6 +893,24 @@ Use `delete` operation with the same endpoint uri as for getting a specific grou
     $ kcadm.sh delete groups/51204821-0580-46db-8f2d-27106c6b5ded -r demorealm
 
 
+Creating a sub-group::
+
+Find 'id' of the parent group - by listing groups for example. Use that `id` to construct an endpoint uri - groups/GROUP_ID/children:
+
+For example:
+
+    $ kcadm.sh create groups/51204821-0580-46db-8f2d-27106c6b5ded/children -r demorealm -s name=SubGroup
+
+
+Moving a group under another group::
+
+Find 'id' of existing parent group, and of existing child group. Use parent group's `id` to construct and endpoint uri - groups/PARENT_GROUP_ID/children.
+
+Make 'create' operation against this endpoint, and pass child group `id` as JSON body. For example:
+
+    $ kcadm.sh create groups/51204821-0580-46db-8f2d-27106c6b5ded/children -r demorealm -s id=08d410c6-d585-4059-bb07-54dcb92c5094
+
+
 Get groups for specific user::
 
 To get user's membership in groups, use user's `id` to compose a resource URI - `users/USER_ID/groups`
@@ -980,30 +966,6 @@ For example:
     $ kcadm.sh get-roles -r demorealm --gname Group --available
 
 
-
-Alternatively, you can also list roles by using `get` command.
-
-To list *assigned* realm roles for the group use group's `id` to construct an endpoint uri - `groups/GROUP_ID/role-mappings/realm`.
-
-For example:
-
-    $ kcadm.sh get groups/914e0cae-cae7-457a-bdf8-41eb92b6a94e/role-mappings/realm
-
-
-To list *effective* realm roles, append `/composite` to the previous endpoint uri - `groups/GROUP_ID/role-mappings/realm/composite`.
-
-For example:
-
-    $ kcadm.sh get groups/914e0cae-cae7-457a-bdf8-41eb92b6a94e/role-mappings/realm/composite
-
-To list realm roles that can still be added to the group, append `/available` instead - `groups/GROUP_ID/role-mappings/realm/available`.
-
-For example:
-
-    $ kcadm.sh get groups/914e0cae-cae7-457a-bdf8-41eb92b6a94e/role-mappings/realm/available
-
-
-
 Listing assigned, available, and effective client roles for a group::
 
 A dedicated 'get-roles' command can be used to list for both realm roles and client roles.
@@ -1028,30 +990,6 @@ To list realm roles that can still be added to the group, use `--available` opti
 For example:
 
     $ kcadm.sh get-roles -r demorealm --gname Group --cclientid realm-management --available
-
-
-
-Alternatively, you can also list roles by using `get` command.
-
-To list *assigned* client roles for the group use group's `id` and client's `id` to construct an endpoint uri - `groups/GROUP_ID/role-mappings/clients/ID`.
-
-For example:
-
-    $ kcadm.sh get -r demorealm groups/914e0cae-cae7-457a-bdf8-41eb92b6a94e/role-mappings/clients/70521f64-f3f2-4091-b2b6-9498a71fdaf5
-
-To list *effective* client roles, append `/composite` to the previous endpoint uri - `groups/GROUP_ID/role-mappings/clients/ID/composite`.
-
-For example:
-
-    $ kcadm.sh get -r demorealm groups/914e0cae-cae7-457a-bdf8-41eb92b6a94e/role-mappings/clients/70521f64-f3f2-4091-b2b6-9498a71fdaf5/composite
-
-To list client roles that can still be added to the user, append `/available` instead - `groups/GROUP_ID/role-mappings/clients/ID/available`.
-
-For example:
-
-    $ kcadm.sh get -r demorealm groups/914e0cae-cae7-457a-bdf8-41eb92b6a94e/role-mappings/clients/70521f64-f3f2-4091-b2b6-9498a71fdaf5/available
-
-
 
 
 === Identity Providers operations
@@ -1227,7 +1165,7 @@ Perform `get` operation against `testLDAPConnection` endpoint. Provide query par
 
 For example:
 
-    $ kcadm.sh get testLDAPConnection --filter action=testConnection --filter bindCredential=secret --filter bindDn=uid=admin,ou=system --filter connectionUrl=ldap://localhost:10389 --filter useTruststoreSpi=ldapsOnly
+    $ kcadm.sh get testLDAPConnection -q action=testConnection -q bindCredential=secret -q bindDn=uid=admin,ou=system -q connectionUrl=ldap://localhost:10389 -q useTruststoreSpi=ldapsOnly
 
 
 Test LDAP user storage authentication::
@@ -1236,7 +1174,7 @@ Perform `get` operation against `testLDAPConnection` endpoint. Provide query par
 
 For example:
 
-    $ kcadm.sh get testLDAPConnection --filter action=testAuthentication --filter bindCredential=secret --filter bindDn=uid=admin,ou=system --filter connectionUrl=ldap://localhost:10389 --filter useTruststoreSpi=ldapsOnly
+    $ kcadm.sh get testLDAPConnection -q action=testAuthentication -q bindCredential=secret -q bindDn=uid=admin,ou=system -q connectionUrl=ldap://localhost:10389 -q useTruststoreSpi=ldapsOnly
 
 
 
@@ -1269,7 +1207,7 @@ Set `providerId` attribute to `user-attribute-ldap-mapper`.
 
 For example:
 
-    $ kcadm.sh create components -r demorealm -s name=user-attribute-ldap-mapper -s providerId=user-attribute-ldap-mapper -s providerType=org.keycloak.storage.ldap.mappers.LDAPStorageMapper -s parentId=b7c63d02-b62a-4fc1-977c-947d6a09e1ea -s 'config.user.model.attribute=["email"]' -s 'config.ldap.attribute=["mail"]' -s 'config.read.only=["false"]' -s 'config.always.read.value.from.ldap=["false"]' -s 'config.is.mandatory.in.ldap=["false"]'
+    $ kcadm.sh create components -r demorealm -s name=user-attribute-ldap-mapper -s providerId=user-attribute-ldap-mapper -s providerType=org.keycloak.storage.ldap.mappers.LDAPStorageMapper -s parentId=b7c63d02-b62a-4fc1-977c-947d6a09e1ea -s 'config."user.model.attribute"=["email"]' -s 'config."ldap.attribute"=["mail"]' -s 'config."read.only"=["false"]' -s 'config."always.read.value.from.ldap"=["false"]' -s 'config."is.mandatory.in.ldap"=["false"]'
 
 
 Adding a group LDAP mapper::
@@ -1279,7 +1217,7 @@ Set `providerId` attribute to `group-ldap-mapper`.
 
 For example:
 
-    $ kcadm.sh create components -r demorealm -s name=group-ldap-mapper -s providerId=group-ldap-mapper -s providerType=org.keycloak.storage.ldap.mappers.LDAPStorageMapper -s parentId=b7c63d02-b62a-4fc1-977c-947d6a09e1ea -s config.groups.dn=[] -s 'config.group.name.ldap.attribute=["cn"]' -s 'config.group.object.classes=["groupOfNames"]' -s 'config.preserve.group.inheritance=["true"]' -s 'config.membership.ldap.attribute=["member"]' -s 'config.membership.attribute.type=["DN"]' -s 'config.groups.ldap.filter=[]' -s 'config.mode=["LDAP_ONLY"]' -s 'config.user.roles.retrieve.strategy=["LOAD_GROUPS_BY_MEMBER_ATTRIBUTE"]' -s 'config.mapped.group.attributes=["admins-group"]' -s 'config.drop.non.existing.groups.during.sync=["false"]' -s 'config.roles=["admins"]' -s 'config.groups=["admins-group"]' -s 'config.group=[]' -s 'config.preserve=["true"]' -s 'config.membership=["member"]'
+    $ kcadm.sh create components -r demorealm -s name=group-ldap-mapper -s providerId=group-ldap-mapper -s providerType=org.keycloak.storage.ldap.mappers.LDAPStorageMapper -s parentId=b7c63d02-b62a-4fc1-977c-947d6a09e1ea -s 'config."groups.dn"=[]' -s 'config."group.name.ldap.attribute"=["cn"]' -s 'config."group.object.classes"=["groupOfNames"]' -s 'config."preserve.group.inheritance"=["true"]' -s 'config."membership.ldap.attribute"=["member"]' -s 'config."membership.attribute.type"=["DN"]' -s 'config."groups.ldap.filter"=[]' -s 'config.mode=["LDAP_ONLY"]' -s 'config."user.roles.retrieve.strategy"=["LOAD_GROUPS_BY_MEMBER_ATTRIBUTE"]' -s 'config."mapped.group.attributes"=["admins-group"]' -s 'config."drop.non.existing.groups.during.sync"=["false"]' -s 'config.roles=["admins"]' -s 'config.groups=["admins-group"]' -s 'config.group=[]' -s 'config.preserve=["true"]' -s 'config.membership=["member"]'
 
 
 Adding a full name LDAP mapper::
@@ -1289,7 +1227,7 @@ Set `providerId` attribute to `full-name-ldap-mapper`.
 
 For example:
 
-    $ kcadm.sh create components -r demorealm -s name=full-name-ldap-mapper -s providerId=full-name-ldap-mapper -s providerType=org.keycloak.storage.ldap.mappers.LDAPStorageMapper -s parentId=b7c63d02-b62a-4fc1-977c-947d6a09e1ea -s 'config.ldap.full.name.attribute=["cn"]' -s 'config.read.only=["false"]' -s 'config.write.only=["true"]'
+    $ kcadm.sh create components -r demorealm -s name=full-name-ldap-mapper -s providerId=full-name-ldap-mapper -s providerType=org.keycloak.storage.ldap.mappers.LDAPStorageMapper -s parentId=b7c63d02-b62a-4fc1-977c-947d6a09e1ea -s 'config."ldap.full.name.attribute"=["cn"]' -s 'config."read.only"=["false"]' -s 'config."write.only"=["true"]'
 
 
 
