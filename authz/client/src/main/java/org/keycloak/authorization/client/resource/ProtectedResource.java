@@ -48,6 +48,16 @@ public class ProtectedResource {
         }
     }
 
+    public void update(ResourceRepresentation resource) {
+        try {
+            this.http.<RegistrationResponse>put("/authz/protection/resource_set/" + resource.getId())
+                    .authorizationBearer(this.pat)
+                    .json(JsonSerialization.writeValueAsBytes(resource)).execute();
+        } catch (Exception e) {
+            throw new RuntimeException("Could not create resource.", e);
+        }
+    }
+
     public RegistrationResponse findById(String id) {
         try {
             return this.http.<RegistrationResponse>get("/authz/protection/resource_set/" + id)

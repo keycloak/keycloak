@@ -91,7 +91,10 @@
       "serviceAccountClientId": "photoz-restful-api",
       "realmRoles": [
         "uma_protection"
-      ]
+      ],
+      "clientRoles": {
+        "photoz-restful-api" : ["uma_protection"]
+      }
     }
   ],
   "roles": {

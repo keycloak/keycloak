@@ -17,6 +17,7 @@
  */
 package org.keycloak.authorization.protection.resource.representation;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.net.URI;
@@ -38,6 +39,8 @@ public class UmaResourceRepresentation {
     private String name;
     private String uri;
     private String type;
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     private Set<UmaScopeRepresentation> scopes;
 
     @JsonProperty("icon_uri")

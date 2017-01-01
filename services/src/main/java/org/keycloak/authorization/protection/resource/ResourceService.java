@@ -17,9 +17,27 @@
  */
 package org.keycloak.authorization.protection.resource;
 
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
+
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.admin.ResourceSetService;
 import org.keycloak.authorization.identity.Identity;
+import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.protection.resource.representation.UmaResourceRepresentation;
 import org.keycloak.authorization.protection.resource.representation.UmaScopeRepresentation;
@@ -29,21 +47,6 @@ import org.keycloak.representations.idm.authorization.ResourceOwnerRepresentatio
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.services.ErrorResponseException;
-
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -72,6 +75,21 @@ public class ResourceService {
 
         if (response.getEntity() instanceof ResourceRepresentation) {
             return Response.status(Status.CREATED).entity(toUmaRepresentation((ResourceRepresentation) response.getEntity())).build();
+        }
+
+        return response;
+    }
+
+    @Path("{id}")
+    @PUT
+    @Consumes("application/json")
+    @Produces("application/json")
+    public Response update(@PathParam("id") String id, UmaResourceRepresentation representation) {
+        ResourceRepresentation resource = toResourceRepresentation(representation);
+        Response response = this.resourceManager.update(id, resource);
+
+        if (response.getEntity() instanceof ResourceRepresentation) {
+            return Response.noContent().build();
         }
 
         return response;
@@ -132,7 +150,11 @@ public class ResourceService {
 
 
                 if ("name".equals(filterType)) {
-                    resources.add(ModelToRepresentation.toRepresentation(storeFactory.getResourceStore().findByName(filterValue, this.resourceServer.getId()), resourceServer, authorization));
+                    Resource resource = storeFactory.getResourceStore().findByName(filterValue, this.resourceServer.getId());
+
+                    if (resource != null) {
+                        resources.add(ModelToRepresentation.toRepresentation(resource, resourceServer, authorization));
+                    }
                 } else if ("type".equals(filterType)) {
                     resources.addAll(storeFactory.getResourceStore().findByResourceServer(this.resourceServer.getId()).stream().filter(description -> filterValue == null || filterValue.equals(description.getType())).collect(Collectors.toSet()).stream()
                             .map(resource -> ModelToRepresentation.toRepresentation(resource, this.resourceServer, authorization))
