@@ -21,17 +21,16 @@ import org.keycloak.common.util.UriUtils;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oidc.utils.WebOriginsUtils;
 import org.keycloak.services.util.CacheControlUtil;
 import org.keycloak.services.util.P3PHelper;
+import org.keycloak.utils.MediaType;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.io.InputStream;
@@ -55,12 +54,12 @@ public class LoginStatusIframeEndpoint {
     }
 
     @GET
-    @Produces(MediaType.TEXT_HTML)
+    @Produces(MediaType.TEXT_HTML_UTF_8)
     public Response getLoginStatusIframe() {
         InputStream resource = getClass().getClassLoader().getResourceAsStream("login-status-iframe.html");
         if (resource != null) {
             P3PHelper.addP3PHeader(session);
-            return Response.ok(resource).type(MediaType.TEXT_HTML_TYPE).cacheControl(CacheControlUtil.getDefaultCacheControl()).build();
+            return Response.ok(resource).cacheControl(CacheControlUtil.getDefaultCacheControl()).build();
         } else {
             return Response.status(Response.Status.NOT_FOUND).build();
         }
