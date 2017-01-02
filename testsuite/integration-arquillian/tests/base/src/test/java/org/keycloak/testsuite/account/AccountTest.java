@@ -36,7 +36,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.resources.AccountService;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.TestRealmKeycloakTest;
+import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.drone.Different;
 import org.keycloak.testsuite.pages.AccountApplicationsPage;
@@ -69,7 +69,7 @@ import static org.hamcrest.Matchers.*;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
  */
-public class AccountTest extends TestRealmKeycloakTest {
+public class AccountTest extends AbstractTestRealmKeycloakTest {
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {

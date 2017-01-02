@@ -20,7 +20,7 @@ package org.keycloak.testsuite.client;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.TestRealmKeycloakTest;
+import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.RealmBuilder;
 
@@ -33,7 +33,7 @@ import static org.junit.Assert.assertEquals;
 /**
  * @author <a href="mailto:thomas.darimont@gmail.com">Thomas Darimont</a>
  */
-public class ClientRedirectTest extends TestRealmKeycloakTest {
+public class ClientRedirectTest extends AbstractTestRealmKeycloakTest {
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {

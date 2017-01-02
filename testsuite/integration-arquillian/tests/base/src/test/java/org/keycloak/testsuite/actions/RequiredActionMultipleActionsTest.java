@@ -25,7 +25,7 @@ import org.keycloak.events.EventType;
 import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.TestRealmKeycloakTest;
+import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.LoginPage;
@@ -35,7 +35,7 @@ import org.keycloak.testsuite.pages.LoginUpdateProfileEditUsernameAllowedPage;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class RequiredActionMultipleActionsTest extends TestRealmKeycloakTest {
+public class RequiredActionMultipleActionsTest extends AbstractTestRealmKeycloakTest {
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
