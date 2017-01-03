@@ -164,7 +164,6 @@
                 <configuration>
                     <skip>false</skip>
                     <jbossHome>${jbossHome}</jbossHome>
-                    <javaOpts>-Djboss.socket.binding.port-offset=1000</javaOpts> <!-- ignored on domain -->
                     <port>10990</port>
                 </configuration>
                 
@@ -181,6 +180,7 @@
                         </goals>
                         <configuration>
                             <serverConfig>standalone-1.8.1.xml</serverConfig>
+                            <javaOpts>-Djboss.socket.binding.port-offset=1000</javaOpts>
                             <execute-commands>
                                 <scripts>
                                     <script>${jbossHome}/bin/migrate-standalone.cli</script>
@@ -198,6 +198,7 @@
                         </goals>
                         <configuration>
                             <serverConfig>standalone-1.8.1.xml</serverConfig>
+                            <javaOpts>-Djboss.socket.binding.port-offset=1000</javaOpts>
                             <execute-commands>
                                 <commands>
                                     <command>echo Reading subsystems for migrated standalone-1.8.1.xml</command>
@@ -216,6 +217,7 @@
                         </goals>
                         <configuration>
                             <serverConfig>standalone.xml</serverConfig>
+                            <javaOpts>-Djboss.socket.binding.port-offset=1000</javaOpts>
                             <execute-commands>
                                 <commands>
                                     <command>echo Reading subsystems for master standalone.xml</command>
@@ -236,6 +238,7 @@
                         </goals>
                         <configuration>
                             <serverConfig>standalone-ha-1.8.1.xml</serverConfig>
+                            <javaOpts>-Djboss.socket.binding.port-offset=1000</javaOpts>
                             <execute-commands>
                                 <scripts>
                                     <script>${jbossHome}/bin/migrate-standalone-ha.cli</script>
@@ -253,6 +256,7 @@
                         </goals>
                         <configuration>
                             <serverConfig>standalone-ha-1.8.1.xml</serverConfig>
+                            <javaOpts>-Djboss.socket.binding.port-offset=1000</javaOpts>
                             <execute-commands>
                                 <commands>
                                     <command>echo Reading subsystems for migrated standalone-ha-1.8.1.xml</command>
@@ -271,6 +275,7 @@
                         </goals>
                         <configuration>
                             <serverConfig>standalone-ha.xml</serverConfig>
+                            <javaOpts>-Djboss.socket.binding.port-offset=1000</javaOpts>
                             <execute-commands>
                                 <commands>
                                     <command>echo Reading subsystems for master standalone-ha.xml</command>
