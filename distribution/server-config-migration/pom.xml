@@ -180,7 +180,9 @@
                         </goals>
                         <configuration>
                             <serverConfig>standalone-1.8.1.xml</serverConfig>
-                            <javaOpts>-Djboss.socket.binding.port-offset=1000</javaOpts>
+                            <java-opts>
+                                <java-opt>-Djboss.socket.binding.port-offset=1000</java-opt>
+                            </java-opts>
                             <execute-commands>
                                 <scripts>
                                     <script>${jbossHome}/bin/migrate-standalone.cli</script>
@@ -198,7 +200,9 @@
                         </goals>
                         <configuration>
                             <serverConfig>standalone-1.8.1.xml</serverConfig>
-                            <javaOpts>-Djboss.socket.binding.port-offset=1000</javaOpts>
+                            <java-opts>
+                                <java-opt>-Djboss.socket.binding.port-offset=1000</java-opt>
+                            </java-opts>
                             <execute-commands>
                                 <commands>
                                     <command>echo Reading subsystems for migrated standalone-1.8.1.xml</command>
@@ -217,7 +221,9 @@
                         </goals>
                         <configuration>
                             <serverConfig>standalone.xml</serverConfig>
-                            <javaOpts>-Djboss.socket.binding.port-offset=1000</javaOpts>
+                            <java-opts>
+                                <java-opt>-Djboss.socket.binding.port-offset=1000</java-opt>
+                            </java-opts>
                             <execute-commands>
                                 <commands>
                                     <command>echo Reading subsystems for master standalone.xml</command>
@@ -238,7 +244,9 @@
                         </goals>
                         <configuration>
                             <serverConfig>standalone-ha-1.8.1.xml</serverConfig>
-                            <javaOpts>-Djboss.socket.binding.port-offset=1000</javaOpts>
+                            <java-opts>
+                                <java-opt>-Djboss.socket.binding.port-offset=1000</java-opt>
+                            </java-opts>
                             <execute-commands>
                                 <scripts>
                                     <script>${jbossHome}/bin/migrate-standalone-ha.cli</script>
@@ -256,7 +264,9 @@
                         </goals>
                         <configuration>
                             <serverConfig>standalone-ha-1.8.1.xml</serverConfig>
-                            <javaOpts>-Djboss.socket.binding.port-offset=1000</javaOpts>
+                            <java-opts>
+                                <java-opt>-Djboss.socket.binding.port-offset=1000</java-opt>
+                            </java-opts>
                             <execute-commands>
                                 <commands>
                                     <command>echo Reading subsystems for migrated standalone-ha-1.8.1.xml</command>
@@ -275,7 +285,9 @@
                         </goals>
                         <configuration>
                             <serverConfig>standalone-ha.xml</serverConfig>
-                            <javaOpts>-Djboss.socket.binding.port-offset=1000</javaOpts>
+                            <java-opts>
+                                <java-opt>-Djboss.socket.binding.port-offset=1000</java-opt>
+                            </java-opts>
                             <execute-commands>
                                 <commands>
                                     <command>echo Reading subsystems for master standalone-ha.xml</command>
@@ -302,7 +314,11 @@
                             <!-- finding keycloak-server.json.  Normally, that would be uploaded using   -->
                             <!-- a file=<localfile> parameter.                                           -->
                             <!-- Ports are set to avoid conflicts with other server instances.           -->
-                            <javaOpts>-Djboss.management.http.port=10990,-Djboss.management.native.port=10999,-Djboss.server.config.dir=${jbossHome}/domain/configuration/</javaOpts>
+                            <java-opts>
+                                <java-opt>-Djboss.management.http.port=10990</java-opt>
+                                <java-opt>-Djboss.management.native.port=10999</java-opt>
+                                <java-opt>-Djboss.server.config.dir=${jbossHome}/domain/configuration/</java-opt>
+                            </java-opts>
                             <execute-commands>
                                 <scripts>
                                     <script>${jbossHome}/bin/migrate-domain.cli</script>
@@ -322,7 +338,10 @@
                             <serverType>DOMAIN</serverType>
                             <domainConfig>domain-1.8.1.xml</domainConfig>
                             <serverArgs>--host-config=host-master-1.8.1.xml</serverArgs>
-                            <javaOpts>-Djboss.management.http.port=10990,-Djboss.management.native.port=10999</javaOpts>
+                            <java-opts>
+                                <java-opt>-Djboss.management.http.port=10990</java-opt>
+                                <java-opt>-Djboss.management.native.port=10999</java-opt>
+                            </java-opts>
                             <execute-commands>
                                 <commands>
                                     <command>echo Reading subsystems for migrated domain-1.8.1.xml</command>
@@ -343,7 +362,10 @@
                         <configuration>
                             <serverType>DOMAIN</serverType>
                             <domainConfig>domain.xml</domainConfig>
-                            <javaOpts>-Djboss.management.http.port=10990,-Djboss.management.native.port=10999</javaOpts>
+                            <java-opts>
+                                <java-opt>-Djboss.management.http.port=10990</java-opt>
+                                <java-opt>-Djboss.management.native.port=10999</java-opt>
+                            </java-opts>
                             <serverArgs>--host-config=host-master.xml</serverArgs>
                             <execute-commands>
                                 <commands>
