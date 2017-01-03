@@ -245,7 +245,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
 
             if (!getConfig().isDisableUserInfoService()) {
                 String userInfoUrl = getUserInfoUrl();
-                if (userInfoUrl != null && (id == null || name == null || preferredUsername == null || email == null)) {
+                if (userInfoUrl != null && !userInfoUrl.isEmpty() && (id == null || name == null || preferredUsername == null || email == null)) {
                     SimpleHttp request = JsonSimpleHttp.doGet(userInfoUrl)
                             .header("Authorization", "Bearer " + accessToken);
                     JsonNode userInfo = JsonSimpleHttp.asJson(request);
