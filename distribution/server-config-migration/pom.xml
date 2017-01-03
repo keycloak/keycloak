@@ -309,7 +309,9 @@
                         <configuration>
                             <serverType>DOMAIN</serverType>
                             <domainConfig>domain-1.8.1.xml</domainConfig>
-                            <serverArgs>--host-config=host-master-1.8.1.xml</serverArgs>
+                            <server-args>
+                                <server-arg>--host-config=host-master-1.8.1.xml</server-arg>
+                            </server-args>
                             <!-- jboss.server.config.dir is set to trick the migrate-json operation into -->
                             <!-- finding keycloak-server.json.  Normally, that would be uploaded using   -->
                             <!-- a file=<localfile> parameter.                                           -->
@@ -337,7 +339,9 @@
                         <configuration>
                             <serverType>DOMAIN</serverType>
                             <domainConfig>domain-1.8.1.xml</domainConfig>
-                            <serverArgs>--host-config=host-master-1.8.1.xml</serverArgs>
+                            <server-args>
+                                <server-arg>--host-config=host-master-1.8.1.xml</server-arg>
+                            </server-args>
                             <java-opts>
                                 <java-opt>-Djboss.management.http.port=10990</java-opt>
                                 <java-opt>-Djboss.management.native.port=10999</java-opt>
@@ -366,7 +370,9 @@
                                 <java-opt>-Djboss.management.http.port=10990</java-opt>
                                 <java-opt>-Djboss.management.native.port=10999</java-opt>
                             </java-opts>
-                            <serverArgs>--host-config=host-master.xml</serverArgs>
+                            <server-args>
+                                <server-arg>--host-config=host-master.xml</server-arg>
+                            </server-args>
                             <execute-commands>
                                 <commands>
                                     <command>echo Reading subsystems for master domain.xml</command>
