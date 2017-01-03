@@ -29,7 +29,7 @@ import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.TestRealmKeycloakTest;
+import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.admin.AbstractAdminTest;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
@@ -48,7 +48,7 @@ import static org.junit.Assert.assertTrue;
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public abstract class AbstractOIDCResponseTypeTest extends TestRealmKeycloakTest {
+public abstract class AbstractOIDCResponseTypeTest extends AbstractTestRealmKeycloakTest {
 
     // Harcoded for now
     Algorithm jwsAlgorithm = Algorithm.RS256;
