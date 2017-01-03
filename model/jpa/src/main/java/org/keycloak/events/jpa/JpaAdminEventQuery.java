@@ -111,7 +111,7 @@ public class JpaAdminEventQuery implements AdminEventQuery {
     @Override
     public AdminEventQuery resourcePath(String resourcePath) {
         Expression<String> rPath = root.get("resourcePath");
-        predicates.add(cb.like(rPath, "%"+resourcePath+"%"));
+        predicates.add(cb.like(rPath, resourcePath.replace('*', '%')));
         return this;
     }
 

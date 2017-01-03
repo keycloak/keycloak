@@ -81,11 +81,11 @@ public interface AdminEventQuery {
     AdminEventQuery resourceType(ResourceType ... resourceTypes);
 
     /**
-     * Search by resource path. Supports wildcards <code>*</code> and <code>**</code>. For example:
+     * Search by resource path. Supports wildcard <code>*</code>. For example:
      * <ul>
      * <li><b>*&#47;master</b> - matches 'realms/master'</li>
-     * <li><b>**&#47;00d4b16f</b> - matches 'realms/master/clients/00d4b16f'</li>
-     * <li><b>realms&#47;master&#47;**</b> - matches anything under 'realms/master'</li>
+     * <li><b>realms/master&#47;*&#47;00d4b16f</b> - matches 'realms/master/clients/00d4b16f'</li>
+     * <li><b>realms&#47;master&#47;*</b> - matches anything under 'realms/master'</li>
      * </ul>
      *
      * @param resourcePath
