@@ -178,6 +178,11 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
+    public void resetPasswordWithSpacesInUsername() throws IOException, MessagingException {
+        resetPassword(" login-test ");
+    }
+
+    @Test
     public void resetPasswordCancelChangeUser() throws IOException, MessagingException {
         loginPage.open();
         loginPage.resetPassword();
@@ -224,7 +229,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
 
         events.expectRequiredAction(EventType.SEND_RESET_PASSWORD)
                 .user(userId)
-                .detail(Details.USERNAME, username)
+                .detail(Details.USERNAME, username.trim())
                 .detail(Details.EMAIL, "login@test.com")
                 .session((String)null)
                 .assertEvent();
@@ -241,11 +246,11 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
 
         updatePasswordPage.changePassword("resetPassword", "resetPassword");
 
-        String sessionId = events.expectRequiredAction(EventType.UPDATE_PASSWORD).user(userId).detail(Details.USERNAME, username).assertEvent().getSessionId();
+        String sessionId = events.expectRequiredAction(EventType.UPDATE_PASSWORD).user(userId).detail(Details.USERNAME, username.trim()).assertEvent().getSessionId();
 
         assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        events.expectLogin().user(userId).detail(Details.USERNAME, username).session(sessionId).assertEvent();
+        events.expectLogin().user(userId).detail(Details.USERNAME, username.trim()).session(sessionId).assertEvent();
 
         oauth.openLogout();
 
