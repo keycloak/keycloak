@@ -239,15 +239,10 @@ public class StaxParserUtil {
      * @return
      */
     public static XMLEventReader getXMLEventReader(InputStream is) {
-        XMLInputFactory xmlInputFactory = null;
+        XMLInputFactory xmlInputFactory;
         XMLEventReader xmlEventReader = null;
         try {
-            xmlInputFactory = getXMLInputFactory();
-            xmlInputFactory.setProperty(XMLInputFactory.IS_REPLACING_ENTITY_REFERENCES, Boolean.TRUE);
-            xmlInputFactory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, Boolean.FALSE);
-            xmlInputFactory.setProperty(XMLInputFactory.IS_NAMESPACE_AWARE, Boolean.TRUE);
-            xmlInputFactory.setProperty(XMLInputFactory.IS_COALESCING, Boolean.TRUE);
-
+            xmlInputFactory = XML_INPUT_FACTORY.get();
             xmlEventReader = xmlInputFactory.createXMLEventReader(is);
         } catch (Exception ex) {
             throw new RuntimeException(ex);
@@ -518,6 +513,13 @@ public class StaxParserUtil {
             throw new RuntimeException(logger.parserExpectedEndTag("</" + tag + ">.  Found </" + elementTag + ">"));
     }
 
+    private static final ThreadLocal<XMLInputFactory> XML_INPUT_FACTORY = new ThreadLocal<XMLInputFactory>() {
+        @Override
+        protected XMLInputFactory initialValue() {
+            return getXMLInputFactory();
+        }
+    };
+
     private static XMLInputFactory getXMLInputFactory() {
         boolean tccl_jaxp = SystemPropertiesUtil.getSystemProperty(GeneralConstants.TCCL_JAXP, "false")
                 .equalsIgnoreCase("true");
@@ -526,7 +528,14 @@ public class StaxParserUtil {
             if (tccl_jaxp) {
                 SecurityActions.setTCCL(StaxParserUtil.class.getClassLoader());
             }
-            return XMLInputFactory.newInstance();
+            XMLInputFactory xmlInputFactory = XMLInputFactory.newInstance();
+
+            xmlInputFactory.setProperty(XMLInputFactory.IS_REPLACING_ENTITY_REFERENCES, Boolean.TRUE);
+            xmlInputFactory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, Boolean.FALSE);
+            xmlInputFactory.setProperty(XMLInputFactory.IS_NAMESPACE_AWARE, Boolean.TRUE);
+            xmlInputFactory.setProperty(XMLInputFactory.IS_COALESCING, Boolean.TRUE);
+
+            return xmlInputFactory;
         } finally {
             if (tccl_jaxp) {
                 SecurityActions.setTCCL(prevTCCL);
