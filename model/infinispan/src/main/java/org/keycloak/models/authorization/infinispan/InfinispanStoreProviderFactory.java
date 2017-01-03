@@ -23,11 +23,12 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.cache.authorization.CachedStoreFactoryProvider;
 import org.keycloak.models.cache.authorization.CachedStoreProviderFactory;
+import org.keycloak.provider.EnvironmentDependentProviderFactory;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-public class InfinispanStoreProviderFactory implements CachedStoreProviderFactory {
+public class InfinispanStoreProviderFactory implements CachedStoreProviderFactory, EnvironmentDependentProviderFactory {
     @Override
     public CachedStoreFactoryProvider create(KeycloakSession session) {
         return new InfinispanStoreFactoryProvider(session);
@@ -51,5 +52,10 @@ public class InfinispanStoreProviderFactory implements CachedStoreProviderFactor
     @Override
     public String getId() {
         return "infinispan-authz-store-factory";
+    }
+
+    @Override
+    public boolean isSupported() {
+        return true;
     }
 }

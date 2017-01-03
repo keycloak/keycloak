@@ -168,7 +168,7 @@ public class JPAPolicyStore implements PolicyStore {
 
     @Override
     public List<Policy> findByResourceType(final String resourceType, String resourceServerId) {
-        Query query = getEntityManager().createQuery("select p from PolicyEntity p inner join p.config c where p.resourceServer.id = :serverId and KEY(c) = 'defaultResourceType' and c = :type");
+        Query query = getEntityManager().createQuery("select p from PolicyEntity p inner join p.config c where p.resourceServer.id = :serverId and KEY(c) = 'defaultResourceType' and c like :type");
 
         query.setParameter("serverId", resourceServerId);
         query.setParameter("type", resourceType);

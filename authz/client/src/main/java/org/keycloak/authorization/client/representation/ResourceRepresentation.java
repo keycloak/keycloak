@@ -115,6 +115,9 @@ public class ResourceRepresentation {
     }
 
     public Set<ScopeRepresentation> getScopes() {
+        if (this.scopes == null) {
+            this.scopes = Collections.emptySet();
+        }
         return Collections.unmodifiableSet(this.scopes);
     }
 

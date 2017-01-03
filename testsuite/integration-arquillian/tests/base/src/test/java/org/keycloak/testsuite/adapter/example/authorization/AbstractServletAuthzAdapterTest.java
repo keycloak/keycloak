@@ -267,6 +267,21 @@ public abstract class AbstractServletAuthzAdapterTest extends AbstractExampleAda
             this.deployer.undeploy(RESOURCE_SERVER_ID);
         }
     }
+    
+    //KEYCLOAK-3830
+    @Test
+    public void testAccessPublicResource() throws Exception {
+        try {
+            this.deployer.deploy(RESOURCE_SERVER_ID);
+            
+            driver.navigate().to(getResourceServerUrl() + "/public-html.html");
+            WaitUtils.waitForPageToLoad(driver);
+            assertTrue(hasText("This is public resource that should be accessible without login."));
+            
+        } finally {
+            this.deployer.undeploy(RESOURCE_SERVER_ID);
+        }
+    }
 
     private boolean hasLink(String text) {
         return getLink(text) != null;

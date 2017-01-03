@@ -39,6 +39,7 @@ public class AuthorizationClientExample {
         obtainEntitlementsForResource();
         obtainAllEntitlements();
         createResource();
+        updateResource();
         introspectRequestingPartyToken();
     }
 
@@ -107,6 +108,34 @@ public class AuthorizationClientExample {
         ResourceRepresentation resource = resourceClient.findById(resourceId).getResourceDescription();
 
         System.out.println(resource);
+    }
+
+    private static void updateResource() {
+        // create a new instance based on the configuration defined in keycloak-authz.json
+        AuthzClient authzClient = AuthzClient.create();
+
+        // create a new resource representation with the information we want
+        ResourceRepresentation resource = new ResourceRepresentation();
+
+        resource.setName("New Resource");
+
+        ProtectedResource resourceClient = authzClient.protection().resource();
+        Set<String> existingResource = resourceClient.findByFilter("name=" + resource.getName());
+
+        if (existingResource.isEmpty()) {
+            createResource();
+        }
+
+        resource.setId(existingResource.iterator().next());
+        resource.setUri("Changed URI");
+
+        // update the resource on the server
+        resourceClient.update(resource);
+
+        // query the resource using its newly generated id
+        ResourceRepresentation existing = resourceClient.findById(resource.getId()).getResourceDescription();
+
+        System.out.println(existing);
     }
 
     private static void obtainEntitlementsForResource() {

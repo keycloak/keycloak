@@ -21,8 +21,6 @@
      <changeSet author="bburke@redhat.com" id="2.5.0">
          <customChange class="org.keycloak.connections.jpa.updater.liquibase.custom.MigrateUserFedToComponent"/>
 
-         <addUniqueConstraint columnNames="NAME,PARENT_GROUP,REALM_ID" constraintName="SIBLING_NAMES" tableName="KEYCLOAK_GROUP"/>
-
          <modifyDataType tableName="OFFLINE_USER_SESSION" columnName="USER_ID" newDataType="VARCHAR(255)"/>
      </changeSet>
 
@@ -110,6 +108,15 @@
                 <constraints nullable="false"/>
             </column>
         </addColumn>
+    </changeSet>
+
+    <changeSet author="hmlnarik@redhat.com" id="2.5.0-unique-group-names">
+        <preConditions onSqlOutput="TEST" onFail="MARK_RAN">
+            <not>
+                <dbms type="db2" /> <!-- exclude DB2 as it requires all fields to be non-NULL for unique constraints -->
+            </not>
+        </preConditions>
+         <addUniqueConstraint columnNames="REALM_ID,PARENT_GROUP,NAME" constraintName="SIBLING_NAMES" tableName="KEYCLOAK_GROUP"/>
     </changeSet>
 
 </databaseChangeLog>

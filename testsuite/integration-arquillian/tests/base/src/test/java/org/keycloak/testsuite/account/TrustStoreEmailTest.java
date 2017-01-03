@@ -21,7 +21,7 @@ import org.junit.After;
 import org.junit.Test;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.TestRealmKeycloakTest;
+import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.auth.page.account.AccountManagement;
 import org.keycloak.testsuite.auth.page.login.OIDCLogin;
@@ -39,7 +39,7 @@ import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
  *
  * @author fkiss
  */
-public class TrustStoreEmailTest extends TestRealmKeycloakTest {
+public class TrustStoreEmailTest extends AbstractTestRealmKeycloakTest {
 
     @Page
     protected OIDCLogin testRealmLoginPage;

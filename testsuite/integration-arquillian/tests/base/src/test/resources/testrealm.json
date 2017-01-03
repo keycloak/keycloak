@@ -320,6 +320,17 @@
         "/test-app-authz/*"
       ],
       "secret": "secret"
+    },
+    {
+      "clientId": "named-test-app",
+      "name": "My Named Test App",
+      "enabled": true,
+      "baseUrl": "http://localhost:8180/namedapp/base",
+      "redirectUris": [
+        "http://localhost:8180/namedapp/base/*"
+      ],
+      "adminUrl": "http://localhost:8180/namedapp/base/admin",
+      "secret": "password"
     }
   ],
   "roles" : {

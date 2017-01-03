@@ -51,6 +51,10 @@ public class Http {
         return method(RequestBuilder.post().setUri(this.serverConfiguration.getIssuer() + path));
     }
 
+    public <R> HttpMethod<R> put(String path) {
+        return method(RequestBuilder.put().setUri(this.serverConfiguration.getIssuer() + path));
+    }
+
     public <R> HttpMethod<R> delete(String path) {
         return method(RequestBuilder.delete().setUri(this.serverConfiguration.getIssuer() + path));
     }

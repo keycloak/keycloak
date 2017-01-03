@@ -12,12 +12,12 @@ env:
     - MAVEN_SKIP_RC=true
     - MAVEN_OPTS="-Xms512m -Xmx2048m"
   matrix:
-    - TESTS=old
     - TESTS=group1
     - TESTS=group2
     - TESTS=group3
     - TESTS=group4
     - TESTS=adapter
+    - TESTS=old
 
 jdk:
   - oraclejdk8

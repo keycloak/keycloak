@@ -89,7 +89,11 @@ public abstract class AbstractPhotozAdminTest extends AbstractAuthorizationTest 
             StoreFactory storeFactory = authorizationProvider.getStoreFactory();
             ResourceServerStore resourceServerStore = storeFactory.getResourceServerStore();
 
-            return resourceServerStore.create(getClientByClientId("photoz-restful-api").getId());
+            ResourceServer resourceServer = resourceServerStore.create(getClientByClientId("photoz-restful-api").getId());
+
+            resourceServer.setAllowRemoteResourceManagement(true);
+
+            return resourceServer;
         });
     }
 
