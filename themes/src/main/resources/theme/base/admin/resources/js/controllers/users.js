@@ -1228,7 +1228,7 @@ module.controller('LDAPUserStorageCtrl', function($scope, $location, Notificatio
 
     $scope.cancel = function() {
         if ($scope.create) {
-            $location.url("/realms/" + realm.realm + "/user-storage");
+            $location.url("/realms/" + realm.realm + "/user-federation");
         } else {
             $route.reload();
         }
