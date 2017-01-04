@@ -376,7 +376,7 @@ public class SAML2Response {
         SAMLParser samlParser = new SAMLParser();
         JAXPValidationUtil.checkSchemaValidation(samlDocument);
 
-        return (EncryptedAssertionType) samlParser.parse(DocumentUtil.getNodeAsStream(samlDocument));
+        return (EncryptedAssertionType) samlParser.parse(samlDocument);
 
     }
 
@@ -398,7 +398,7 @@ public class SAML2Response {
 
         SAMLParser samlParser = new SAMLParser();
         JAXPValidationUtil.checkSchemaValidation(samlDocument);
-        return (AssertionType) samlParser.parse(DocumentUtil.getNodeAsStream(samlDocument));
+        return (AssertionType) samlParser.parse(samlDocument);
     }
 
     /**
@@ -429,7 +429,7 @@ public class SAML2Response {
         SAMLParser samlParser = new SAMLParser();
         JAXPValidationUtil.checkSchemaValidation(samlResponseDocument);
 
-        ResponseType responseType = (ResponseType) samlParser.parse(DocumentUtil.getNodeAsStream(samlResponseDocument));
+        ResponseType responseType = (ResponseType) samlParser.parse(samlResponseDocument);
 
         samlDocumentHolder = new SAMLDocumentHolder(responseType, samlResponseDocument);
         return responseType;
@@ -460,8 +460,7 @@ public class SAML2Response {
         SAMLParser samlParser = new SAMLParser();
         JAXPValidationUtil.checkSchemaValidation(samlResponseDocument);
 
-        InputStream responseStream = DocumentUtil.getNodeAsStream(samlResponseDocument);
-        SAML2Object responseType = (SAML2Object) samlParser.parse(responseStream);
+        SAML2Object responseType = (SAML2Object) samlParser.parse(samlResponseDocument);
 
         samlDocumentHolder = new SAMLDocumentHolder(responseType, samlResponseDocument);
         return responseType;

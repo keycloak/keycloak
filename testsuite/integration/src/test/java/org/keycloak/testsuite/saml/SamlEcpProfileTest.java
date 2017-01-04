@@ -146,7 +146,7 @@ public class SamlEcpProfileTest {
 
         assertNotNull(samlResponse);
 
-        ResponseType responseType = (ResponseType) new SAMLParser().parse(DocumentUtil.getNodeAsStream(samlResponse));
+        ResponseType responseType = (ResponseType) new SAMLParser().parse(samlResponse);
         StatusCodeType statusCode = responseType.getStatus().getStatusCode();
 
         assertEquals(statusCode.getValue().toString(), JBossSAMLURIConstants.STATUS_SUCCESS.get());
@@ -229,7 +229,7 @@ public class SamlEcpProfileTest {
 
         assertNotNull(samlResponse);
 
-        StatusResponseType responseType = (StatusResponseType) new SAMLParser().parse(DocumentUtil.getNodeAsStream(samlResponse));
+        StatusResponseType responseType = (StatusResponseType) new SAMLParser().parse(samlResponse);
         StatusCodeType statusCode = responseType.getStatus().getStatusCode();
 
         assertNotEquals(statusCode.getStatusCode().getValue().toString(), JBossSAMLURIConstants.STATUS_SUCCESS.get());

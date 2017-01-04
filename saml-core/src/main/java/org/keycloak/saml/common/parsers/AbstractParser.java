@@ -33,6 +33,9 @@ import javax.xml.stream.events.Characters;
 import javax.xml.stream.events.XMLEvent;
 import javax.xml.stream.util.EventReaderDelegate;
 import java.io.InputStream;
+import javax.xml.transform.Source;
+import javax.xml.transform.dom.DOMSource;
+import org.w3c.dom.Node;
 
 /**
  * Base class for parsers
@@ -49,28 +52,28 @@ public abstract class AbstractParser implements ParserNamespaceSupport {
         protected XMLInputFactory initialValue() {
             return getXMLInputFactory();
         }
-    };
 
-    /**
-     * Get the JAXP {@link XMLInputFactory}
-     *
-     * @return
-     */
-    private static XMLInputFactory getXMLInputFactory() {
-        boolean tccl_jaxp = SystemPropertiesUtil.getSystemProperty(GeneralConstants.TCCL_JAXP, "false")
-                .equalsIgnoreCase("true");
-        ClassLoader prevTCCL = SecurityActions.getTCCL();
-        try {
-            if (tccl_jaxp) {
-                SecurityActions.setTCCL(AbstractParser.class.getClassLoader());
-            }
-            return XMLInputFactory.newInstance();
-        } finally {
-            if (tccl_jaxp) {
-                SecurityActions.setTCCL(prevTCCL);
+        /**
+         * Get the JAXP {@link XMLInputFactory}
+         *
+         * @return
+         */
+        private XMLInputFactory getXMLInputFactory() {
+            boolean tccl_jaxp = SystemPropertiesUtil.getSystemProperty(GeneralConstants.TCCL_JAXP, "false")
+                    .equalsIgnoreCase("true");
+            ClassLoader prevTCCL = SecurityActions.getTCCL();
+            try {
+                if (tccl_jaxp) {
+                    SecurityActions.setTCCL(AbstractParser.class.getClassLoader());
+                }
+                return XMLInputFactory.newInstance();
+            } finally {
+                if (tccl_jaxp) {
+                    SecurityActions.setTCCL(prevTCCL);
+                }
             }
         }
-    }
+    };
 
     /**
      * Parse an InputStream for payload
@@ -87,11 +90,35 @@ public abstract class AbstractParser implements ParserNamespaceSupport {
         return parse(xmlEventReader);
     }
 
+    public Object parse(Source source) throws ParsingException {
+        XMLEventReader xmlEventReader = createEventReader(source);
+        return parse(xmlEventReader);
+    }
+
+    public Object parse(Node node) throws ParsingException {
+        return parse(new DOMSource(node));
+    }
+
     public XMLEventReader createEventReader(InputStream configStream) throws ParsingException {
         if (configStream == null)
             throw logger.nullArgumentError("InputStream");
 
         XMLEventReader xmlEventReader = StaxParserUtil.getXMLEventReader(configStream);
+
+        try {
+            xmlEventReader = filterWhitespaces(xmlEventReader);
+        } catch (XMLStreamException e) {
+            throw logger.parserException(e);
+        }
+
+        return xmlEventReader;
+    }
+
+    public XMLEventReader createEventReader(Source source) throws ParsingException {
+        if (source == null)
+            throw logger.nullArgumentError("Source");
+
+        XMLEventReader xmlEventReader = StaxParserUtil.getXMLEventReader(source);
 
         try {
             xmlEventReader = filterWhitespaces(xmlEventReader);

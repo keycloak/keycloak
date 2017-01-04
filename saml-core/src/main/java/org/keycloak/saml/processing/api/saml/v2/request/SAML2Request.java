@@ -165,7 +165,7 @@ public class SAML2Request {
 
         SAMLParser samlParser = new SAMLParser();
         JAXPValidationUtil.checkSchemaValidation(samlDocument);
-        SAML2Object requestType = (SAML2Object) samlParser.parse(DocumentUtil.getNodeAsStream(samlDocument));
+        SAML2Object requestType = (SAML2Object) samlParser.parse(samlDocument);
 
         samlDocumentHolder = new SAMLDocumentHolder(requestType, samlDocument);
         return requestType;
@@ -192,7 +192,7 @@ public class SAML2Request {
 
         SAMLParser samlParser = new SAMLParser();
         JAXPValidationUtil.checkSchemaValidation(samlDocument);
-        RequestAbstractType requestType = (RequestAbstractType) samlParser.parse(DocumentUtil.getNodeAsStream(samlDocument));
+        RequestAbstractType requestType = (RequestAbstractType) samlParser.parse(samlDocument);
 
         samlDocumentHolder = new SAMLDocumentHolder(requestType, samlDocument);
         return requestType;
@@ -220,7 +220,7 @@ public class SAML2Request {
         SAMLParser samlParser = new SAMLParser();
         JAXPValidationUtil.checkSchemaValidation(samlDocument);
 
-        AuthnRequestType requestType = (AuthnRequestType) samlParser.parse(DocumentUtil.getNodeAsStream(samlDocument));
+        AuthnRequestType requestType = (AuthnRequestType) samlParser.parse(samlDocument);
         samlDocumentHolder = new SAMLDocumentHolder(requestType, samlDocument);
         return requestType;
     }
