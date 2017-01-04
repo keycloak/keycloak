@@ -9,8 +9,14 @@ was <<fake/../../operating-mode/domain.adoc#_clustered-domain-example, Clustered
 ==== Identifying Client IP Addresses
 
 A few features in {{book.project.name}} rely on the fact that the remote
-address of the HTTP client connecting to the authentication server is the real IP address of the client machine.  This can
-be problematic when you have a reverse proxy or loadbalancer in front of your {{book.project.name}} authentication server.
+address of the HTTP client connecting to the authentication server is the real IP address of the client machine. Examples include:
+
+* Event logs - a failed login attempt would be logged with the wrong source IP address
+* SSL required - if the SSL required is set to external (the default) it should require SSL for all external requests
+* Authentication flows - a custom authentication flow that uses the IP address to for example show OTP only for external requests
+* Dynamic Client Registration
+
+This can be problematic when you have a reverse proxy or loadbalancer in front of your {{book.project.name}} authentication server.
 The usual setup is that you have a frontend proxy sitting on a public network that load balances and forwards requests
 to backend {{book.project.name}} server instances located in a private network.  There is some extra configuration you have to do in this scenario
 so that the actual client IP address is forwarded to and processed by the {{book.project.name}} server instances.  Specifically:
