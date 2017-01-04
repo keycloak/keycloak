@@ -21,6 +21,7 @@ import org.keycloak.saml.common.PicketLinkLogger;
 import org.keycloak.saml.common.PicketLinkLoggerFactory;
 import org.keycloak.saml.common.constants.GeneralConstants;
 import org.keycloak.saml.common.exceptions.ParsingException;
+import org.keycloak.saml.common.util.SecurityActions;
 import org.keycloak.saml.common.util.StaxParserUtil;
 import org.keycloak.saml.common.util.SystemPropertiesUtil;
 
@@ -32,8 +33,6 @@ import javax.xml.stream.events.Characters;
 import javax.xml.stream.events.XMLEvent;
 import javax.xml.stream.util.EventReaderDelegate;
 import java.io.InputStream;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 
 /**
  * Base class for parsers
@@ -45,23 +44,30 @@ public abstract class AbstractParser implements ParserNamespaceSupport {
 
     protected static final PicketLinkLogger logger = PicketLinkLoggerFactory.getLogger();
 
+    private static final ThreadLocal<XMLInputFactory> XML_INPUT_FACTORY = new ThreadLocal<XMLInputFactory>() {
+        @Override
+        protected XMLInputFactory initialValue() {
+            return getXMLInputFactory();
+        }
+    };
+
     /**
      * Get the JAXP {@link XMLInputFactory}
      *
      * @return
      */
-    protected XMLInputFactory getXMLInputFactory() {
+    private static XMLInputFactory getXMLInputFactory() {
         boolean tccl_jaxp = SystemPropertiesUtil.getSystemProperty(GeneralConstants.TCCL_JAXP, "false")
                 .equalsIgnoreCase("true");
-        ClassLoader prevTCCL = getTCCL();
+        ClassLoader prevTCCL = SecurityActions.getTCCL();
         try {
             if (tccl_jaxp) {
-                setTCCL(getClass().getClassLoader());
+                SecurityActions.setTCCL(AbstractParser.class.getClassLoader());
             }
             return XMLInputFactory.newInstance();
         } finally {
             if (tccl_jaxp) {
-                setTCCL(prevTCCL);
+                SecurityActions.setTCCL(prevTCCL);
             }
         }
     }
@@ -96,33 +102,8 @@ public abstract class AbstractParser implements ParserNamespaceSupport {
         return xmlEventReader;
     }
 
-    private ClassLoader getTCCL() {
-        if (System.getSecurityManager() != null) {
-            return AccessController.doPrivileged(new PrivilegedAction<ClassLoader>() {
-                public ClassLoader run() {
-                    return Thread.currentThread().getContextClassLoader();
-                }
-            });
-        } else {
-            return Thread.currentThread().getContextClassLoader();
-        }
-    }
-
-    private void setTCCL(final ClassLoader paramCl) {
-        if (System.getSecurityManager() != null) {
-            AccessController.doPrivileged(new PrivilegedAction<Void>() {
-                public Void run() {
-                    Thread.currentThread().setContextClassLoader(paramCl);
-                    return null;
-                }
-            });
-        } else {
-            Thread.currentThread().setContextClassLoader(paramCl);
-        }
-    }
-
     protected XMLEventReader filterWhitespaces(XMLEventReader xmlEventReader) throws XMLStreamException {
-        XMLInputFactory xmlInputFactory = getXMLInputFactory();
+        XMLInputFactory xmlInputFactory = XML_INPUT_FACTORY.get();
 
         xmlEventReader = xmlInputFactory.createFilteredReader(xmlEventReader, new EventFilter() {
             public boolean accept(XMLEvent xmlEvent) {
