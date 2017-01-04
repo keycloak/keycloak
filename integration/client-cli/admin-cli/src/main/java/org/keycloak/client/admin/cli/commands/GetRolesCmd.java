@@ -57,10 +57,10 @@ public class GetRolesCmd extends GetCmd {
     @Option(name = "cid", description = "Target client's 'id'")
     String cid;
 
-    @Option(name = "rolename", description = "Target role's 'name'")
+    @Option(name = "rname", description = "Composite role's 'name'")
     String rname;
 
-    @Option(name = "roleid", description = "Target role's 'id'")
+    @Option(name = "rid", description = "Composite role's 'id'")
     String rid;
 
     @Option(name = "gname", description = "Target group's 'name'")
@@ -71,6 +71,12 @@ public class GetRolesCmd extends GetCmd {
 
     @Option(name = "gid", description = "Target group's 'id'")
     String gid;
+
+    @Option(name = "rolename", description = "Target role's 'name'")
+    String rolename;
+
+    @Option(name = "roleid", description = "Target role's 'id'")
+    String roleid;
 
     @Option(name = "available", description = "List only available roles", hasValue = false)
     boolean available;
@@ -108,8 +114,12 @@ public class GetRolesCmd extends GetCmd {
             throw new IllegalArgumentException("Incompatible options: --gid, --gname and --gpath are mutually exclusive");
         }
 
-        if (rid != null && rname != null) {
+        if (roleid != null && rolename != null) {
             throw new IllegalArgumentException("Incompatible options: --roleid and --rolename are mutually exclusive");
+        }
+
+        if (rid != null && rname != null) {
+            throw new IllegalArgumentException("Incompatible options: --rid and --rname are mutually exclusive");
         }
 
         if (cid != null && cclientid != null) {
@@ -118,6 +128,22 @@ public class GetRolesCmd extends GetCmd {
 
         if (isUserSpecified() && isGroupSpecified()) {
             throw new IllegalArgumentException("Incompatible options: --uusername / --uid can't be used at the same time as --gname / --gid / --gpath");
+        }
+
+        if (isUserSpecified() && isCompositeRoleSpecified()) {
+            throw new IllegalArgumentException("Incompatible options: --uusername / --uid can't be used at the same time as --rname / --rid");
+        }
+
+        if (isGroupSpecified() && isCompositeRoleSpecified()) {
+            throw new IllegalArgumentException("Incompatible options: --rname / --rid can't be used at the same time as --gname / --gid / --gpath");
+        }
+
+        if (all && effective) {
+            throw new IllegalArgumentException("Incompatible options: --all can't be used at the same time as --effective");
+        }
+
+        if (all && available) {
+            throw new IllegalArgumentException("Incompatible options: --all can't be used at the same time as --available");
         }
 
         super.processOptions(commandInvocation);
@@ -167,7 +193,7 @@ public class GetRolesCmd extends GetCmd {
                 } else if (effective) {
                     super.url = composeResourceUrl(adminRoot, realm, "users/" + uid + "/role-mappings/realm/composite");
                 } else {
-                    super.url = composeResourceUrl(adminRoot, realm, "users/" + uid + "/role-mappings/realm");
+                    super.url = composeResourceUrl(adminRoot, realm, "users/" + uid + (all ? "/role-mappings" : "/role-mappings/realm"));
                 }
             }
         } else if (isGroupSpecified()) {
@@ -195,9 +221,35 @@ public class GetRolesCmd extends GetCmd {
                 } else if (effective) {
                     super.url = composeResourceUrl(adminRoot, realm, "groups/" + gid + "/role-mappings/realm/composite");
                 } else {
-                    super.url = composeResourceUrl(adminRoot, realm, "groups/" + gid + "/role-mappings/realm");
+                    super.url = composeResourceUrl(adminRoot, realm, "groups/" + gid + (all ? "/role-mappings" : "/role-mappings/realm"));
                 }
             }
+        } else if (isCompositeRoleSpecified()) {
+            String uri = rname != null ? "roles/" + rname : "roles-by-id/" + rid;
+
+            if (isClientSpecified()) {
+                if (cid == null) {
+                    cid = ClientOperations.getIdFromClientId(adminRoot, realm, auth, cclientid);
+                }
+                if (available) {
+                    throw new IllegalArgumentException("Option --available not supported with composite roles. Try '" + CMD + " get-roles --cid " + cid + "' for full list of client roles for that client");
+                }
+                if (effective) {
+                    throw new IllegalArgumentException("Option --effective not supported with composite roles.");
+                }
+                uri += "/composites/clients/" + cid;
+            } else {
+                if (available) {
+                    throw new IllegalArgumentException("Option --available not supported with composite roles. Try '" + CMD + " get-roles' for full list of realm roles");
+                }
+                if (effective) {
+                    throw new IllegalArgumentException("Option --effective not supported with composite roles.");
+                }
+
+                uri += all ? "/composites" : "/composites/realm";
+            }
+            super.url = composeResourceUrl(adminRoot, realm, uri);
+
         } else if (isClientSpecified()) {
             if (cid == null) {
                 cid = ClientOperations.getIdFromClientId(adminRoot, realm, auth, cclientid);
@@ -205,10 +257,10 @@ public class GetRolesCmd extends GetCmd {
 
             if (isRoleSpecified()) {
                 // get specific client role
-                if (rname == null) {
-                    rname = RoleOperations.getClientRoleNameFromId(adminRoot, realm, auth, cid, rid);
+                if (rolename == null) {
+                    rolename = RoleOperations.getClientRoleNameFromId(adminRoot, realm, auth, cid, roleid);
                 }
-                super.url = composeResourceUrl(adminRoot, realm, "clients/" + cid + "/roles/" + rname);
+                super.url = composeResourceUrl(adminRoot, realm, "clients/" + cid + "/roles/" + rolename);
             } else {
                 // list defined client roles
                 super.url = composeResourceUrl(adminRoot, realm, "clients/" + cid + "/roles");
@@ -216,10 +268,10 @@ public class GetRolesCmd extends GetCmd {
         } else {
             if (isRoleSpecified()) {
                 // get specific realm role
-                if (rname == null) {
-                    rname = RoleOperations.getClientRoleNameFromId(adminRoot, realm, auth, cid, rid);
+                if (rolename == null) {
+                    rolename = RoleOperations.getClientRoleNameFromId(adminRoot, realm, auth, cid, roleid);
                 }
-                super.url = composeResourceUrl(adminRoot, realm, "roles/" + rname);
+                super.url = composeResourceUrl(adminRoot, realm, "roles/" + rolename);
             } else {
                 // list defined realm roles
                 super.url = composeResourceUrl(adminRoot, realm, "roles");
@@ -230,7 +282,7 @@ public class GetRolesCmd extends GetCmd {
     }
 
     private boolean isRoleSpecified() {
-        return rid != null || rname != null;
+        return roleid != null || rolename != null;
     }
 
     private boolean isClientSpecified() {
@@ -239,6 +291,10 @@ public class GetRolesCmd extends GetCmd {
 
     private boolean isGroupSpecified() {
         return gid != null || gname != null || gpath != null;
+    }
+
+    private boolean isCompositeRoleSpecified() {
+        return rid != null || rname != null;
     }
 
     private boolean isUserSpecified() {
@@ -261,10 +317,11 @@ public class GetRolesCmd extends GetCmd {
         StringWriter sb = new StringWriter();
         PrintWriter out = new PrintWriter(sb);
         out.println("Usage: " + CMD + " get-roles [--cclientid CLIENT_ID | --cid ID] [ARGUMENTS]");
-        out.println("Usage: " + CMD + " get-roles (--uusername USERNAME | --uid ID) [--cclientid CLIENT_ID | --cid ID] [--available | --effective] (ARGUMENTS)");
-        out.println("Usage: " + CMD + " get-roles (--gname NAME | --gpath PATH | --gid ID) [--cclientid CLIENT_ID | --cid ID] [--available | --effective] [ARGUMENTS]");
+        out.println("       " + CMD + " get-roles (--uusername USERNAME | --uid ID) [--cclientid CLIENT_ID | --cid ID] [--available | --effective | --all] (ARGUMENTS)");
+        out.println("       " + CMD + " get-roles (--gname NAME | --gpath PATH | --gid ID) [--cclientid CLIENT_ID | --cid ID] [--available | --effective | --all] [ARGUMENTS]");
+        out.println("       " + CMD + " get-roles (--rname ROLE_NAME | --rid ROLE_ID) [--cclientid CLIENT_ID | --cid ID] [--available | --effective | --all] [ARGUMENTS]");
         out.println();
-        out.println("Command to list realm or client roles on a realm, user or group.");
+        out.println("Command to list realm or client roles of a realm, a user, a group or a composite role.");
         out.println();
         out.println("Use `" + CMD + " config credentials` to establish an authenticated session, or use CREDENTIALS OPTIONS");
         out.println("to perform one time authentication.");
@@ -272,11 +329,13 @@ public class GetRolesCmd extends GetCmd {
         out.println("If client is specified using --cclientid or --cid then client roles are listed, otherwise realm roles are listed.");
         out.println("If user is specified using --uusername or --uid then roles are listed for a specific user.");
         out.println("If group is specified using --gname, --gpath or --gid then roles are listed for a specific group.");
-        out.println("If neither user nor group is specified then defined roles are listed for a realm or specific client");
+        out.println("If composite role is specified --rname or --rid then roles are listed for a specific composite role.");
+        out.println("If neither user nor group, nor composite role is specified then defined roles are listed for a realm or specific client.");
         out.println("If role is specified using --rolename or --roleid then only that specific role is returned.");
         out.println("If --available is specified, then only roles not yet added to the target user or group are returned.");
         out.println("If --effective is specified, then roles added to the target user or group are transitively resolved and a full");
-        out.println("set of roles in effect for that user or group is returned.");
+        out.println("set of roles in effect for that user, group or composite role is returned.");
+        out.println("If --all is specified, then client roles for all clients are returned in addition to realm roles.");
         out.println();
         out.println("Arguments:");
         out.println();
@@ -297,10 +356,15 @@ public class GetRolesCmd extends GetCmd {
         out.println("                              to use --gid, or --gpath to specify the target group");
         out.println("    --gpath                   Group's 'path' attribute");
         out.println("    --gid                     Group's 'id' attribute");
+        out.println("    --rname                   Composite role's 'name' attribute");
+        out.println("    --rid                     Composite role's 'id' attribute");
         out.println("    --cclientid               Client's 'clientId' attribute");
         out.println("    --cid                     Client's 'id' attribute");
         out.println("    --rolename                Role's 'name' attribute");
         out.println("    --roleid                  Role's 'id' attribute");
+        out.println("    --available               Return available roles - those that can still be added");
+        out.println("    --effective               Return effective roles - transitively taking composite roles into account");
+        out.println("    --all                     Return all client roles in addition to realm roles");
         out.println("    -a, --admin-root URL      URL of Admin REST endpoint root if not default - e.g. http://localhost:8080/auth/admin");
         out.println("    -r, --target-realm REALM  Target realm to issue requests against if not the one authenticated against");
         out.println();

@@ -23,8 +23,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.keycloak.client.admin.cli.util.HttpUtil.composeResourceUrl;
+import static org.keycloak.client.admin.cli.util.HttpUtil.doDeleteJSON;
 import static org.keycloak.client.admin.cli.util.HttpUtil.doGetJSON;
+import static org.keycloak.client.admin.cli.util.HttpUtil.doPostJSON;
 import static org.keycloak.client.admin.cli.util.HttpUtil.getAttrForType;
+import static org.keycloak.client.admin.cli.util.HttpUtil.getIdForType;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
@@ -33,6 +36,28 @@ public class RoleOperations {
 
     public static class LIST_OF_ROLES extends ArrayList<RoleRepresentation>{};
     public static class LIST_OF_NODES extends ArrayList<ObjectNode>{};
+
+    public static String getIdFromRoleName(String adminRoot, String realm, String auth, String rname) {
+        return getIdForType(adminRoot, realm, auth, "roles", "name", rname);
+    }
+
+    public static void addRealmRoles(String rootUrl, String realm, String auth, String roleid, List<?> roles) {
+        String resourceUrl = composeResourceUrl(rootUrl, realm, "roles-by-id/" + roleid + "/composites");
+        doPostJSON(resourceUrl, auth, roles);
+    }
+
+    public static void addClientRoles(String rootUrl, String realm, String auth, String roleid, List<?> roles) {
+        addRealmRoles(rootUrl, realm, auth, roleid, roles);
+    }
+
+    public static void removeRealmRoles(String rootUrl, String realm, String auth, String roleid, List<?> roles) {
+        String resourceUrl = composeResourceUrl(rootUrl, realm, "roles-by-id/" + roleid + "/composites");
+        doDeleteJSON(resourceUrl, auth, roles);
+    }
+
+    public static void removeClientRoles(String rootUrl, String realm, String auth, String roleid, List<?> roles) {
+        removeRealmRoles(rootUrl, realm, auth, roleid, roles);
+    }
 
     public static String getRoleNameFromId(String adminRoot, String realm, String auth, String rid) {
         return getAttrForType(adminRoot, realm, auth, "roles", "id", rid, "name");

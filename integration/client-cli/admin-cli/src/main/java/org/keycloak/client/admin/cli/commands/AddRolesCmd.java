@@ -67,6 +67,12 @@ public class AddRolesCmd extends AbstractAuthOptionsCmd {
     @Option(name = "gid", description = "Target group's 'id'")
     String gid;
 
+    @Option(name = "rname", description = "Composite role's 'name'")
+    String rname;
+
+    @Option(name = "rid", description = "Composite role's 'id'")
+    String rid;
+
     @Option(name = "cclientid", description = "Target client's 'clientId'")
     String cclientid;
 
@@ -116,19 +122,31 @@ public class AddRolesCmd extends AbstractAuthOptionsCmd {
             }
 
             if (roleNames.isEmpty() && roleIds.isEmpty()) {
-                throw new IllegalArgumentException("No role specified. Use --rolename or --roleid to specify roles");
+                throw new IllegalArgumentException("No role to add specified. Use --rolename or --roleid to specify roles to add");
             }
 
             if (cid != null && cclientid != null) {
                 throw new IllegalArgumentException("Incompatible options: --cid and --cclientid are mutually exclusive");
             }
 
+            if (rid != null && rname != null) {
+                throw new IllegalArgumentException("Incompatible options: --rid and --rname are mutually exclusive");
+            }
+
             if (isUserSpecified() && isGroupSpecified()) {
                 throw new IllegalArgumentException("Incompatible options: --uusername / --uid can't be used at the same time as --gname / --gid / --gpath");
             }
 
-            if (!isUserSpecified() && !isGroupSpecified()) {
-                throw new IllegalArgumentException("No user nor group specified. Use --uusername / --uid to specify user or --gname / --gid / --gpath to specify group");
+            if (isUserSpecified() && isCompositeRoleSpecified()) {
+                throw new IllegalArgumentException("Incompatible options: --uusername / --uid can't be used at the same time as --rname / --rid");
+            }
+
+            if (isGroupSpecified() && isCompositeRoleSpecified()) {
+                throw new IllegalArgumentException("Incompatible options: --rname / --rid can't be used at the same time as --gname / --gid / --gpath");
+            }
+
+            if (!isUserSpecified() && !isGroupSpecified() && !isCompositeRoleSpecified()) {
+                throw new IllegalArgumentException("No user nor group nor composite role specified. Use --uusername / --uid to specify user or --gname / --gid / --gpath to specify group or --rname / --rid to specify a composite role");
             }
 
 
@@ -204,9 +222,32 @@ public class AddRolesCmd extends AbstractAuthOptionsCmd {
                     GroupOperations.addRealmRoles(adminRoot, realm, auth, gid, new ArrayList<>(rolesToAdd));
                 }
 
-            } else {
+            } else if (isCompositeRoleSpecified()) {
+                if (rid == null) {
+                    rid = RoleOperations.getIdFromRoleName(adminRoot, realm, auth, rname);
+                }
+                if (isClientSpecified()) {
+                    // list client roles for a composite role
+                    if (cid == null) {
+                        cid = ClientOperations.getIdFromClientId(adminRoot, realm, auth, cclientid);
+                    }
 
-                throw new IllegalArgumentException("No user nor group specified. Use --uusername / --uid to specify user or --gname / --gid / --gpath to specify group");
+                    List<ObjectNode> roles = RoleOperations.getClientRoles(adminRoot, realm, cid, auth);
+                    Set<ObjectNode> rolesToAdd = getRoleRepresentations(roleNames, roleIds, new LocalSearch(roles));
+
+                    // now add all the roles
+                    RoleOperations.addClientRoles(adminRoot, realm, auth, rid, new ArrayList<>(rolesToAdd));
+
+                } else {
+                    Set<ObjectNode> rolesToAdd = getRoleRepresentations(roleNames, roleIds,
+                            new LocalSearch(RoleOperations.getRealmRolesAsNodes(adminRoot, realm, auth)));
+
+                    // now add all the roles
+                    RoleOperations.addRealmRoles(adminRoot, realm, auth, rid, new ArrayList<>(rolesToAdd));
+                }
+
+            } else {
+                throw new IllegalArgumentException("No user nor group, nor composite role specified. Use --uusername / --uid to specify user or --gname / --gid / --gpath to specify group or --rname / --rid to specify a composite role");
             }
 
             return CommandResult.SUCCESS;
@@ -257,6 +298,9 @@ public class AddRolesCmd extends AbstractAuthOptionsCmd {
         return uid != null || uusername != null;
     }
 
+    private boolean isCompositeRoleSpecified() {
+        return rid != null || rname != null;
+    }
 
     @Override
     protected boolean nothingToDo() {
@@ -275,9 +319,10 @@ public class AddRolesCmd extends AbstractAuthOptionsCmd {
         StringWriter sb = new StringWriter();
         PrintWriter out = new PrintWriter(sb);
         out.println("Usage: " + CMD + " add-roles (--uusername USERNAME | --uid ID) [--cclientid CLIENT_ID | --cid ID] (--rolename NAME | --roleid ID)+ [ARGUMENTS]");
-        out.println("Usage: " + CMD + " add-roles (--gname NAME | --gpath PATH | --gid ID) [--cclientid CLIENT_ID | --cid ID] (--rolename NAME | --roleid ID)+ [ARGUMENTS]");
+        out.println("       " + CMD + " add-roles (--gname NAME | --gpath PATH | --gid ID) [--cclientid CLIENT_ID | --cid ID] (--rolename NAME | --roleid ID)+ [ARGUMENTS]");
+        out.println("       " + CMD + " add-roles (--rname ROLE_NAME | --rid ROLE_ID) [--cclientid CLIENT_ID | --cid ID] (--rolename NAME | --roleid ID)+ [ARGUMENTS]");
         out.println();
-        out.println("Command to add realm or client roles to a user or group.");
+        out.println("Command to add realm or client roles to a user, a group or a composite role.");
         out.println();
         out.println("Use `" + CMD + " config credentials` to establish an authenticated session, or use CREDENTIALS OPTIONS");
         out.println("to perform one time authentication.");
@@ -285,7 +330,8 @@ public class AddRolesCmd extends AbstractAuthOptionsCmd {
         out.println("If client is specified using --cclientid or --cid then roles to add are client roles, otherwise they are realm roles.");
         out.println("Either a user, or a group needs to be specified. If user is specified using --uusername or --uid then roles are added");
         out.println("to a specific user. If group is specified using --gname, --gpath or --gid then roles are added to a specific group.");
-        out.println("One or more roles have to be specified using --rolename or --roleid so that they are added to a group or a user.");
+        out.println("If composite role is specified using --rname or --rid then roles are added to a specific composite role.");
+        out.println("One or more roles have to be specified using --rolename or --roleid so that they are added to a group, a user or a composite role.");
         out.println();
         out.println("Arguments:");
         out.println();
@@ -306,6 +352,8 @@ public class AddRolesCmd extends AbstractAuthOptionsCmd {
         out.println("                          to use --gid, or --gpath to specify the target group");
         out.println("    --gpath               Group's 'path' attribute");
         out.println("    --gid                 Group's 'id' attribute");
+        out.println("    --rname               Composite role's 'name' attribute");
+        out.println("    --rid                 Composite role's 'id' attribute");
         out.println("    --cclientid           Client's 'clientId' attribute");
         out.println("    --cid                 Client's 'id' attribute");
         out.println("    --rolename            Role's 'name' attribute");

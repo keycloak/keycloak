@@ -26,6 +26,7 @@ import java.io.StringWriter;
 import static org.keycloak.client.admin.cli.util.ConfigUtil.DEFAULT_CONFIG_FILE_STRING;
 import static org.keycloak.client.admin.cli.util.OsUtil.CMD;
 import static org.keycloak.client.admin.cli.util.OsUtil.EOL;
+import static org.keycloak.client.admin.cli.util.OsUtil.OS_ARCH;
 import static org.keycloak.client.admin.cli.util.OsUtil.PROMPT;
 
 /**
@@ -36,6 +37,9 @@ public class UpdateCmd extends AbstractRequestCmd {
 
     @Option(shortName = 'f', name = "file", description = "Read object from file or standard input if FILENAME is set to '-'")
     String file;
+
+    @Option(shortName = 'b', name = "body", description = "JSON object to be sent as-is or used as a template")
+    String body;
 
     @Option(shortName = 'F', name = "fields", description = "A pattern specifying which attributes of JSON response body to actually display as result - causes mismatch with Content-Length header")
     String fields;
@@ -63,6 +67,7 @@ public class UpdateCmd extends AbstractRequestCmd {
     void initOptions() {
         // set options on parent
         super.file = file;
+        super.body = body;
         super.fields = fields;
         super.printHeaders = printHeaders;
         super.returnId = false;
@@ -76,7 +81,7 @@ public class UpdateCmd extends AbstractRequestCmd {
 
     @Override
     protected boolean nothingToDo() {
-        return noOptions() && file == null && (args == null || args.size() == 0);
+        return noOptions() && file == null && body == null && (args == null || args.size() == 0);
     }
 
     protected String suggestHelp() {
@@ -117,6 +122,7 @@ public class UpdateCmd extends AbstractRequestCmd {
         out.println("              NAME+=VALUE     Add item VALUE to list attribute NAME");
         out.println("    -d, --delete NAME         Remove a specific attribute NAME from JSON request body");
         out.println("    -f, --file FILENAME       Read object from file or standard input if FILENAME is set to '-'");
+        out.println("    -b, --body CONTENT        Content to be sent as-is or used as a JSON object template");
         out.println("    -q, --query NAME=VALUE    Add to request URI a NAME query parameter with value VALUE");
         out.println("    -h, --header NAME=VALUE   Set request header NAME to VALUE");
         out.println("    -m, --merge               Merge new values with existing configuration on the server");
@@ -150,7 +156,11 @@ public class UpdateCmd extends AbstractRequestCmd {
         out.println("  " + PROMPT + " " + CMD + " update realms/demorealm -s registrationAllowed=true");
         out.println();
         out.println("Update a client by overwriting existing configuration using local file as a template (replace ID with client's 'id'):");
-        out.println("  " + PROMPT + " " + CMD + " update clients/ID -f new_my_client.json -s 'redirectUris=[\"http://localhost:8080/myapp/*\"]'");
+        if (OS_ARCH.isWindows()) {
+            out.println("  " + PROMPT + " " + CMD + " update clients/ID -f new_my_client.json -s \"redirectUris=[\\\"http://localhost:8080/myapp/*\\\"]\"");
+        } else {
+            out.println("  " + PROMPT + " " + CMD + " update clients/ID -f new_my_client.json -s 'redirectUris=[\"http://localhost:8080/myapp/*\"]'");
+        }
         out.println();
         out.println("Update client by fetching current configuration from server and merging with specified changes (replace ID with client's 'id'):");
         out.println("  " + PROMPT + " " + CMD + " update clients/ID -f new_my_client.json -s enabled=true --merge");
