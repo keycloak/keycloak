@@ -68,6 +68,7 @@
                 ${adapter.test.props}
                 ${migration.import.properties}
                 ${auth.server.profile}
+                ${auth.server.feature}
             </property>
             <property name="javaVmArguments">
                 ${auth.server.memory.settings}
