@@ -2218,7 +2218,13 @@ public class RepresentationToModel {
                     }
                 }
                 if (!hasResource && !"".equals(resourceId)) {
-                    policy.addResource(storeFactory.getResourceStore().findById(resourceId, policy.getResourceServer().getId()));
+                    Resource resource = storeFactory.getResourceStore().findById(resourceId, policy.getResourceServer().getId());
+
+                    if (resource == null) {
+                        throw new RuntimeException("Resource [" + resourceId + "] not found.");
+                    }
+
+                    policy.addResource(resource);
                 }
             }
 

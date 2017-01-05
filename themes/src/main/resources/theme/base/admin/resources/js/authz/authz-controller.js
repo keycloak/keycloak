@@ -890,7 +890,12 @@ module.controller('ResourceServerPolicyResourceDetailCtrl', function($scope, $ro
         },
 
         onUpdate : function() {
-            $scope.policy.config.resources = JSON.stringify([$scope.policy.config.resources._id]);
+            if ($scope.policy.config.resources && $scope.policy.config.resources._id) {
+                $scope.policy.config.resources = JSON.stringify([$scope.policy.config.resources._id]);
+            } else {
+                delete $scope.policy.config.resources
+            }
+
             var policies = [];
 
             for (i = 0; i < $scope.policy.config.applyPolicies.length; i++) {
@@ -920,7 +925,11 @@ module.controller('ResourceServerPolicyResourceDetailCtrl', function($scope, $ro
         },
 
         onCreate : function() {
-            $scope.policy.config.resources = JSON.stringify([$scope.policy.config.resources._id]);
+            if ($scope.policy.config.resources && $scope.policy.config.resources._id) {
+                $scope.policy.config.resources = JSON.stringify([$scope.policy.config.resources._id]);
+            } else {
+                delete $scope.policy.config.resources
+            }
 
             var policies = [];
 
