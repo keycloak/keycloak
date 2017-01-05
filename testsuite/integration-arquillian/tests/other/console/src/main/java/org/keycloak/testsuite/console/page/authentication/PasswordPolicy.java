@@ -50,7 +50,9 @@ public class PasswordPolicy extends Authentication {
 
     public void removePolicy(Type policy) {
         getPolicyRow(policy).findElement(By.cssSelector("td.kc-action-cell")).click();
-        primaryButton.click();
+        if (primaryButton.isEnabled()) {
+            primaryButton.click();
+        }
         waitForPageToLoad(driver);
     }
 
@@ -60,7 +62,9 @@ public class PasswordPolicy extends Authentication {
 
     public void editPolicy(Type policy, String value) {
         setPolicyValue(policy, value);
-        primaryButton.click();
+        if (primaryButton.isEnabled()) {
+            primaryButton.click();
+        }
         waitForPageToLoad(driver);
     }
 
