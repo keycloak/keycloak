@@ -125,7 +125,7 @@ public class UserCredentialStoreManager implements UserCredentialManager, OnUser
 
         if (toValidate.isEmpty()) return true;
 
-        List<CredentialInputValidator> credentialProviders = getCredentialProviders(realm, CredentialInputValidator.class);
+        List<CredentialInputValidator> credentialProviders = getCredentialProviders(session, realm, CredentialInputValidator.class);
         for (CredentialInputValidator validator : credentialProviders) {
             validate(realm, user, toValidate, validator);
 
@@ -143,7 +143,7 @@ public class UserCredentialStoreManager implements UserCredentialManager, OnUser
         }
     }
 
-    protected <T> List<T> getCredentialProviders(RealmModel realm, Class<T> type) {
+    public static <T> List<T> getCredentialProviders(KeycloakSession session, RealmModel realm, Class<T> type) {
         List<T> list = new LinkedList<T>();
         for (ProviderFactory f : session.getKeycloakSessionFactory().getProviderFactories(CredentialProvider.class)) {
             if (!Types.supports(type, f, CredentialProviderFactory.class)) continue;
@@ -173,7 +173,7 @@ public class UserCredentialStoreManager implements UserCredentialManager, OnUser
             }
         }
 
-        List<CredentialInputUpdater> credentialProviders = getCredentialProviders(realm, CredentialInputUpdater.class);
+        List<CredentialInputUpdater> credentialProviders = getCredentialProviders(session, realm, CredentialInputUpdater.class);
         for (CredentialInputUpdater updater : credentialProviders) {
             if (!updater.supportsCredentialType(input.getType())) continue;
             if (updater.updateCredential(realm, user, input)) return;
@@ -201,7 +201,7 @@ public class UserCredentialStoreManager implements UserCredentialManager, OnUser
 
         }
 
-        List<CredentialInputUpdater> credentialProviders = getCredentialProviders(realm, CredentialInputUpdater.class);
+        List<CredentialInputUpdater> credentialProviders = getCredentialProviders(session, realm, CredentialInputUpdater.class);
         for (CredentialInputUpdater updater : credentialProviders) {
             if (!updater.supportsCredentialType(credentialType)) continue;
             updater.disableCredentialType(realm, user, credentialType);
@@ -231,7 +231,7 @@ public class UserCredentialStoreManager implements UserCredentialManager, OnUser
 
         }
 
-        List<CredentialInputUpdater> credentialProviders = getCredentialProviders(realm, CredentialInputUpdater.class);
+        List<CredentialInputUpdater> credentialProviders = getCredentialProviders(session, realm, CredentialInputUpdater.class);
         for (CredentialInputUpdater updater : credentialProviders) {
             types.addAll(updater.getDisableableCredentialTypes(realm, user));
         }
@@ -264,7 +264,7 @@ public class UserCredentialStoreManager implements UserCredentialManager, OnUser
 
     @Override
     public boolean isConfiguredLocally(RealmModel realm, UserModel user, String type) {
-        List<CredentialInputValidator> credentialProviders = getCredentialProviders(realm, CredentialInputValidator.class);
+        List<CredentialInputValidator> credentialProviders = getCredentialProviders(session, realm, CredentialInputValidator.class);
         for (CredentialInputValidator validator : credentialProviders) {
             if (validator.supportsCredentialType(type) && validator.isConfiguredFor(realm, user, type)) {
                 return true;
@@ -284,7 +284,7 @@ public class UserCredentialStoreManager implements UserCredentialManager, OnUser
             }
         }
 
-        list = getCredentialProviders(realm, CredentialAuthentication.class);
+        list = getCredentialProviders(session, realm, CredentialAuthentication.class);
         for (CredentialAuthentication auth : list) {
             if (auth.supportsCredentialAuthenticationFor(input.getType())) {
                 CredentialValidationOutput output = auth.authenticate(realm, input);
@@ -297,7 +297,7 @@ public class UserCredentialStoreManager implements UserCredentialManager, OnUser
 
     @Override
     public void onCache(RealmModel realm, CachedUserModel user, UserModel delegate) {
-        List<OnUserCache> credentialProviders = getCredentialProviders(realm, OnUserCache.class);
+        List<OnUserCache> credentialProviders = getCredentialProviders(session, realm, OnUserCache.class);
         for (OnUserCache validator : credentialProviders) {
             validator.onCache(realm, user, delegate);
         }

@@ -24,6 +24,8 @@ import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.common.util.Time;
 import org.keycloak.component.ComponentModel;
+import org.keycloak.credential.CredentialAuthentication;
+import org.keycloak.credential.UserCredentialStoreManager;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -135,6 +137,19 @@ public class UserStorageTest {
     //@Test
     public void testIDE() throws Exception {
         Thread.sleep(100000000);
+    }
+
+    /**
+     * KEYCLOAK-4013
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testCast() throws Exception {
+        KeycloakSession session = keycloakRule.startSession();
+        List<CredentialAuthentication> list = UserCredentialStoreManager.getCredentialProviders(session, null, CredentialAuthentication.class);
+        keycloakRule.stopSession(session, true);
+
     }
 
     @Test
