@@ -148,6 +148,9 @@ allow-any-hostname::
   This seting may be useful in test environments This is _OPTIONAL_.
   The default value is `false`.
 
+proxy-url::
+  The URL for the HTTP proxy if one is used.
+
 truststore::
   The value is the file path to a keystore file.
   If you prefix the path with `classpath:`, then the truststore will be obtained from the deployment's classpath instead.
