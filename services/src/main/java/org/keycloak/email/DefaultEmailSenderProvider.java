@@ -17,6 +17,7 @@
 
 package org.keycloak.email;
 
+import com.sun.mail.smtp.SMTPMessage;
 import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -25,15 +26,17 @@ import org.keycloak.services.ServicesLogger;
 import org.keycloak.truststore.HostnameVerificationPolicy;
 import org.keycloak.truststore.JSSETruststoreConfigurator;
 
+import javax.mail.Address;
 import javax.mail.MessagingException;
 import javax.mail.Multipart;
 import javax.mail.Session;
 import javax.mail.Transport;
+import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeBodyPart;
-import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMultipart;
 import javax.net.ssl.SSLSocketFactory;
+import java.io.UnsupportedEncodingException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Date;
@@ -91,6 +94,10 @@ public class DefaultEmailSenderProvider implements EmailSenderProvider {
             props.setProperty("mail.smtp.connectiontimeout", "10000");
 
             String from = config.get("from");
+            String fromDisplayName = config.get("fromDisplayName");
+            String replyTo = config.get("replyTo");
+            String replyToDisplayName = config.get("replyToDisplayName");
+            String envelopeFrom = config.get("envelopeFrom");
 
             Session session = Session.getInstance(props);
 
@@ -108,8 +115,17 @@ public class DefaultEmailSenderProvider implements EmailSenderProvider {
                 multipart.addBodyPart(htmlPart);
             }
 
-            MimeMessage msg = new MimeMessage(session);
-            msg.setFrom(new InternetAddress(from));
+            SMTPMessage msg = new SMTPMessage(session);
+            msg.setFrom(toInternetAddress(from, fromDisplayName));
+
+            msg.setReplyTo(new Address[]{toInternetAddress(from, fromDisplayName)});
+            if (replyTo != null) {
+                msg.setReplyTo(new Address[]{toInternetAddress(replyTo, replyToDisplayName)});
+            }
+            if (envelopeFrom != null) {
+                msg.setEnvelopeFrom(envelopeFrom);
+            }
+
             msg.setHeader("To", address);
             msg.setSubject(subject, "utf-8");
             msg.setContent(multipart);
@@ -135,6 +151,13 @@ public class DefaultEmailSenderProvider implements EmailSenderProvider {
                 }
             }
         }
+    }
+
+    protected InternetAddress toInternetAddress(String email, String displayName) throws UnsupportedEncodingException, AddressException {
+        if (displayName == null || "".equals(displayName.trim())) {
+            return new InternetAddress(email);
+        }
+        return new InternetAddress(email, displayName, "utf-8");
     }
     
     protected String retrieveEmailAddress(UserModel user) {

@@ -13,7 +13,11 @@
   "smtpServer": {
     "from": "auto@keycloak.org",
     "host": "localhost",
-    "port":"3025"
+    "port":"3025",
+    "fromDisplayName": "Keycloak SSO",
+    "replyTo":"reply-to@keycloak.org",
+    "replyToDisplayName": "Keycloak no-reply",
+    "envelopeFrom": "auto+bounces@keycloak.org"
   },
   "users" : [
     {
