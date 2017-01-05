@@ -196,13 +196,6 @@ public class InitialFlowsTest extends AbstractAuthenticationTest {
         addExecInfo(execs, "Reset OTP", "reset-otp", false, 0, 3, OPTIONAL, null, new String[]{REQUIRED, OPTIONAL, DISABLED});
         expected.add(new FlowExecutions(flow, execs));
 
-        flow = newFlow("saml ecp", "SAML ECP Profile Authentication Flow", "basic-flow", true, true);
-        addExecExport(flow, null, false, "http-basic-authenticator", false, null, REQUIRED, 10);
-
-        execs = new LinkedList<>();
-        addExecInfo(execs, "HTTP Basic Authentication", "http-basic-authenticator", false, 0, 0, REQUIRED, null, new String[]{});
-        expected.add(new FlowExecutions(flow, execs));
-
         return expected;
     }
 

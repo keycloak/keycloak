@@ -195,7 +195,10 @@ public class SendUsernameServlet {
         output += "<br /> friendlyAttribute email: " + principal.getFriendlyAttribute("email");
         output += "<br /> phone: " + principal.getAttribute("phone");
         output += "<br /> friendlyAttribute phone: " + principal.getFriendlyAttribute("phone");
-        output += "<br /> hardcoded-attribute: " + principal.getAttribute("hardcoded-attribute");
+        output += "<br /> hardcoded-attribute: ";
+        for (String attr : principal.getAttributes("hardcoded-attribute")) {
+            output += attr + ",";
+        }
 
         return output;
     }

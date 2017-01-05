@@ -57,9 +57,9 @@ public class AdminEventTest extends AbstractEventTest {
         return testRealmResource().getAdminEvents();
     }
 
-    private void createUser(String username) {
+    private String createUser(String username) {
         UserRepresentation user = createUserRepresentation(username, username + "@foo.com", "foo", "bar", true);
-        ApiUtil.createUserWithAdminClient(testRealmResource(), user);
+        return ApiUtil.createUserWithAdminClient(testRealmResource(), user);
     }
 
     private void updateRealm() {

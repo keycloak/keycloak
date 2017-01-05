@@ -34,8 +34,11 @@ import static org.keycloak.client.admin.cli.util.OsUtil.PROMPT;
 @CommandDefinition(name = "create", description = "Command to create new resources")
 public class CreateCmd extends AbstractRequestCmd {
 
-    @Option(shortName = 'f', name = "file", description = "Read object from file or standard input if FILENAME is set to '-'", hasValue = true)
+    @Option(shortName = 'f', name = "file", description = "Read object from file or standard input if FILENAME is set to '-'")
     String file;
+
+    @Option(shortName = 'b', name = "body", description = "JSON object to be sent as-is or used as a template")
+    String body;
 
     @Option(shortName = 'F', name = "fields", description = "A pattern specifying which attributes of JSON response body to actually display as result - causes mismatch with Content-Length header", hasValue = true)
     String fields;
@@ -59,6 +62,7 @@ public class CreateCmd extends AbstractRequestCmd {
     void initOptions() {
         // set options on parent
         super.file = file;
+        super.body = body;
         super.fields = fields;
         super.printHeaders = printHeaders;
         super.returnId = returnId;
@@ -69,7 +73,7 @@ public class CreateCmd extends AbstractRequestCmd {
 
     @Override
     protected boolean nothingToDo() {
-        return noOptions() && file == null && (args == null || args.size() == 0);
+        return noOptions() && file == null && body == null && (args == null || args.size() == 0);
     }
 
     protected String suggestHelp() {
@@ -109,6 +113,7 @@ public class CreateCmd extends AbstractRequestCmd {
         out.println("    -s, --set NAME=VALUE      Set a specific attribute NAME to a specified value VALUE");
         out.println("    -d, --delete NAME         Remove a specific attribute NAME from JSON request body");
         out.println("    -f, --file FILENAME       Read object from file or standard input if FILENAME is set to '-'");
+        out.println("    -b, --body CONTENT        Content to be sent as-is or used as a JSON object template");
         out.println("    -q, --query NAME=VALUE    Add to request URI a NAME query parameter with value VALUE");
         out.println("    -h, --header NAME=VALUE   Set request header NAME to VALUE");
         out.println();
@@ -153,8 +158,19 @@ public class CreateCmd extends AbstractRequestCmd {
             out.println("  EOF");
         }
         out.println();
+        out.println("Create a new group using configuration JSON passed as 'body' argument:");
+        if (OS_ARCH.isWindows()) {
+            out.println("  " + PROMPT + " " + CMD + " create groups -r demorealm -b \"{ \\\"name\\\": \\\"Admins\\\" }\"");
+        } else {
+            out.println("  " + PROMPT + " " + CMD + " create groups -r demorealm -b '{ \"name\": \"Admins\" }'");
+        }
+        out.println();
         out.println("Create a client using file as a template, and override some attributes - return an 'id' of new client:");
-        out.println("  " + PROMPT + " " + CMD + " create clients -r demorealm -f my_client.json -s clientId=my_client2 -s 'redirectUris=[\"http://localhost:8980/myapp/*\"]' -i");
+        if (OS_ARCH.isWindows()) {
+            out.println("  " + PROMPT + " " + CMD + " create clients -r demorealm -f my_client.json -s clientId=my_client2 -s \"redirectUris=[\\\"http://localhost:8980/myapp/*\\\"]\" -i");
+        } else {
+            out.println("  " + PROMPT + " " + CMD + " create clients -r demorealm -f my_client.json -s clientId=my_client2 -s 'redirectUris=[\"http://localhost:8980/myapp/*\"]' -i");
+        }
         out.println();
         out.println("Create a new client role for client my_client in realm 'demorealm' (replace ID with output of previous example command):");
         out.println("  " + PROMPT + " " + CMD + " create clients/ID/roles -r demorealm -s name=client_role");

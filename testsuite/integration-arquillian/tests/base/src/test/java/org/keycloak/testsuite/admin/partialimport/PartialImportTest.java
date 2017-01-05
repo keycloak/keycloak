@@ -133,7 +133,7 @@ public class PartialImportTest extends AbstractAuthTest {
     public void removeClients() {
         List<ClientRepresentation> toRemove = testRealmResource().clients().findAll();
         for (ClientRepresentation client : toRemove) {
-            if (client.getName().startsWith(CLIENT_PREFIX)) {
+            if (client.getName() != null && client.getName().startsWith(CLIENT_PREFIX)) {
                 testRealmResource().clients().get(client.getId()).remove();
             }
         }

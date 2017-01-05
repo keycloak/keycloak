@@ -47,7 +47,7 @@ export class KeycloakHttp extends Http {
             result.subscribe((response) => {
                 observer.next(response);
                 observer.complete();
-            });
+            }, (err) => observer.error(err));
         });
 
         return <Observable<Response>>Observable

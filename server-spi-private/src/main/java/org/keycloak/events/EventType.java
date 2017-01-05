@@ -68,6 +68,7 @@ public enum EventType {
     REMOVE_TOTP_ERROR(true),
 
     REVOKE_GRANT(true),
+    REVOKE_GRANT_ERROR(true),
 
     SEND_VERIFY_EMAIL(true),
     SEND_VERIFY_EMAIL_ERROR(true),
@@ -78,9 +79,12 @@ public enum EventType {
     RESET_PASSWORD(true),
     RESET_PASSWORD_ERROR(true),
 
+    INVALID_SIGNATURE(false),
     INVALID_SIGNATURE_ERROR(false),
     REGISTER_NODE(false),
+    REGISTER_NODE_ERROR(false),
     UNREGISTER_NODE(false),
+    UNREGISTER_NODE_ERROR(false),
 
     USER_INFO_REQUEST(false),
     USER_INFO_REQUEST_ERROR(false),
@@ -96,6 +100,7 @@ public enum EventType {
     IDENTITY_PROVIDER_RETRIEVE_TOKEN(false),
     IDENTITY_PROVIDER_RETRIEVE_TOKEN_ERROR(false),
     IMPERSONATE(true),
+    IMPERSONATE_ERROR(true),
     CUSTOM_REQUIRED_ACTION(true),
     CUSTOM_REQUIRED_ACTION_ERROR(true),
     EXECUTE_ACTIONS(true),
