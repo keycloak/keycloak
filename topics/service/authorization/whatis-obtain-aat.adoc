@@ -5,7 +5,7 @@ An authorization API token (AAT) is a special OAuth2 access token with the scope
 assigns the role _uma_authorization_ to the user. The _uma_authorization_ role is a default realm role.
 
 .Default Role uma_authorization
-image:../../../images/service/rs-uma-authorization-role.png[alt="Default Role uma_authorization "]
+image:../../../{{book.images}}/service/rs-uma-authorization-role.png[alt="Default Role uma_authorization "]
 
 An AAT enables a client application to query the server for user permissions.
 

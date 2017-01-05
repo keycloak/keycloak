@@ -6,7 +6,7 @@ A resource-based permission defines a set of one or more resources to protect us
 To create a new resource-based permission, select *Resource-based* in the dropdown list in the upper right corner of the permission listing.
 
 .Add Resource-Based Permission
-image:../../images/permission/create-resource.png[alt="Add Resource-Based Permission"]
+image:../../{{book.images}}/permission/create-resource.png[alt="Add Resource-Based Permission"]
 
 ==== Configuration
 

@@ -7,7 +7,7 @@ be created to represent a set of one or more resources and the way you define th
 To create a new resource, click *Create* in the right upper corner of the resource listing.
 
 .Add Resource
-image:../../images/resource/create.png[alt="Add Resource"]
+image:../../{{book.images}}/resource/create.png[alt="Add Resource"]
 
 In {{book.project.name}}, a resource defines a small set of information that is common to different types of resources, such as:
 

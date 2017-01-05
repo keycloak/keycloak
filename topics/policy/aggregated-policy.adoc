@@ -6,7 +6,7 @@ As mentioned previously, {{book.project.name}} allows you to build a policy of p
 To create a new aggregated policy, select *Aggregated* in the dropdown list located in the right upper corner of the permission listing.
 
 .Add an Aggregated Policy
-image:../../images/policy/create-aggregated.png[alt="Add Aggregated Policy"]
+image:../../{{book.images}}/policy/create-aggregated.png[alt="Add Aggregated Policy"]
 
 Let's suppose you have a resource called _Confidential Resource_ that can be accessed only by users from the _keycloak.org_ domain and from a certain range of IP addresses.
 You can create a single policy with both conditions. However, you want to reuse the domain part of this policy to apply to permissions that operates regardless of the originating network.

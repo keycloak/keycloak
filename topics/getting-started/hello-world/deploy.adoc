@@ -12,12 +12,12 @@ To obtain the adapter configuration from the {{book.project.name}} Administratio
 . Click *Clients*. In the client listing, click the *hello-world-authz-service* client application. The Client Details page opens.
 +
 .Client Details
-image:../../../images/getting-started/hello-world/enable-authz.png[alt="Client Details"]
+image:../../../{{book.images}}/getting-started/hello-world/enable-authz.png[alt="Client Details"]
 
 . Click the *Installation* tab. From the Format Option dropdown list, select *Keycloak OIDC JSON*. The adapter configuration is displayed in JSON format. Click *Download*.
 +
 .Adapter Configuration
-image:../../../images/getting-started/hello-world/adapter-config.png[alt="Adapter Configuration"]
+image:../../../{{book.images}}/getting-started/hello-world/adapter-config.png[alt="Adapter Configuration"]
 
 . Navigate to the *${KEYCLOAK_DEMO_SERVER_DIR}/examples/authz/hello-world-authz-service/src/main/webapp/WEB-INF* directory and locate the *keycloak.json* file. Replace its contents with the adapter configuration you obtained from step 2 and save the file.
 
@@ -44,12 +44,12 @@ mvn clean package wildfly:deploy
 If your application was successfully deployed you can access it at http://localhost:8080/hello-world-authz-service[http://localhost:8080/hello-world-authz-service]. The {{book.project.name}} Login page opens.
 
 .Login Page
-image:../../../images/getting-started/hello-world/login-page.png[alt="Login Page"]
+image:../../../{{book.images}}/getting-started/hello-world/login-page.png[alt="Login Page"]
 
 Log in as *alice* using the password you specified for that user. After authenticating, the following page is displayed:
 
 .Hello World Authz Main Page
-image:../../../images/getting-started/hello-world/main-page.png[alt="Hello World Authz Main Page"]
+image:../../../{{book.images}}/getting-started/hello-world/main-page.png[alt="Hello World Authz Main Page"]
 
 The <<fake/../../../resource-server/default-config.adoc#_resource_server_default_config, default settings>> defined by {{book.project.name}} when you enable authorization services for a client application provide a simple
 policy that always grants access to the resources protected by this policy.
@@ -68,7 +68,7 @@ $evaluation.deny();
 
 Now, log out of the demo application and log in again. You can no longer access the application.
 
-image:../../../images/getting-started/hello-world/access-denied-page.png[alt="Access Denied Page"]
+image:../../../{{book.images}}/getting-started/hello-world/access-denied-page.png[alt="Access Denied Page"]
 
 Let's fix that now, but instead of changing the `Default Policy` code we are going to change the `Logic` to `Negative` using the dropdown list below the policy code text area.
 That re-enables access to the application as we are negating the result of that policy, which is by default denying all requests for access. Again, before testing this change, be sure to log out and log in again.

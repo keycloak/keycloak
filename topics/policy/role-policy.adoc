@@ -10,7 +10,7 @@ Role policies can be useful when you need more restricted role-based access cont
 To create a new role-based policy, select *Role-Based* in the dropdown list in the upper right corner of the permission listing.
 
 .Add Role-Based Policy
-image:../../images/policy/create-role.png[alt="Add Role-Based Policy"]
+image:../../{{book.images}}/policy/create-role.png[alt="Add Role-Based Policy"]
 
 ==== Configuration
 
