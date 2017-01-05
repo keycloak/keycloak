@@ -12,7 +12,7 @@ To create a realm and a user complete the following steps:
 . Create a realm with a name *hello-world-authz*. Once created, a page similar to the following is displayed:
 +
 .Realm hello-world-authz
-image:../../../images/getting-started/hello-world/create-realm.png[alt="Realm hello-world-authz"]
+image:../../../{{book.images}}/getting-started/hello-world/create-realm.png[alt="Realm hello-world-authz"]
 
 . Create a user for your newly created realm. Click *Users*. The user list page opens.
 
@@ -21,12 +21,12 @@ image:../../../images/getting-started/hello-world/create-realm.png[alt="Realm he
 . Complete the fields as shown in the screenshot below to create a new user with the username of *alice* and then click *Save*.
 +
 .Add User
-image:../../../images/getting-started/hello-world/create-user.png[alt="Add User"]
+image:../../../{{book.images}}/getting-started/hello-world/create-user.png[alt="Add User"]
 
 . Set a password for the *alice* user by clicking the *Credentials* tab.
 +
 .Set User Password
-image:../../../images/getting-started/hello-world/reset-user-pwd.png[alt="Set User Password"]
+image:../../../{{book.images}}/getting-started/hello-world/reset-user-pwd.png[alt="Set User Password"]
 
 . Complete the *New Password* and *Password Confirmation* fields with a password and click the *Temporary* switch to *OFF*.
 

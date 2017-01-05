@@ -8,7 +8,7 @@ To create a new Rule-based policy, in the dropdown list in the right upper corne
  select *Rule*.
 
 .Add Rule Policy
-image:../../images/policy/create-drools.png[alt="Add Rule Policy"]
+image:../../{{book.images}}/policy/create-drools.png[alt="Add Rule Policy"]
 
 ==== Configuration
 

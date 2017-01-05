@@ -4,12 +4,12 @@
 To turn your OIDC Client Application into a resource server and enable fine-grained authorization, click the *Authorization Enabled* switch to *ON* and click *Save*.
 
 .Enabling Authorization Services
-image:../../images/resource-server/client-enable-authz.png[alt="Enabling Authorization Services"]
+image:../../{{book.images}}/resource-server/client-enable-authz.png[alt="Enabling Authorization Services"]
 
 A new Authorization tab is displayed for this client. Click the *Authorization* tab and a page similar to the following is displayed:
 
 .Resource Server Settings
-image:../../images/resource-server/authz-settings.png[alt="Resource Server Settings"]
+image:../../{{book.images}}/resource-server/authz-settings.png[alt="Resource Server Settings"]
 
 The Authorization tab contains additional sub-tabs covering the different steps that you must follow to actually protect your application's resources. Each tab is covered separately by a specific topic in this documentation. But here is a quick description about each one:
 

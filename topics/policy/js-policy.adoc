@@ -7,7 +7,7 @@ supported by {{book.project.name}}, and provides flexibility to write any policy
 To create a new JavaScript-based policy, select *JavaScript* in the dropdown list in the upper right corner of the permission listing.
 
 .Add JavaScript Policy
-image:../../images/policy/create-js.png[alt="Add JavaScript Policy"]
+image:../../{{book.images}}/policy/create-js.png[alt="Add JavaScript Policy"]
 
 ==== Configuration
 

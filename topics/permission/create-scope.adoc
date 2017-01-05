@@ -6,7 +6,7 @@ A scope-based permission defines a set of one or more scopes to protect using a 
 To create a new scope-based permission, select *Scope-based* in the dropdown list in the upper right corner of the permission listing.
 
 .Add Scope-Based Permission
-image:../../images/permission/create-scope.png[alt="Add Scope-Based Permission"]
+image:../../{{book.images}}/permission/create-scope.png[alt="Add Scope-Based Permission"]
 
 ==== Configuration
 
