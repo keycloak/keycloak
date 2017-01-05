@@ -122,7 +122,6 @@ public class StaxParserUtil {
      */
     public static String getAttributeValue(Attribute attribute) {
         String str = trim(attribute.getValue());
-        str = StringUtil.getSystemPropertyAsString(str);
         return str;
     }
 
@@ -224,7 +223,6 @@ public class StaxParserUtil {
         String str = null;
         try {
             str = xmlEventReader.getElementText().trim();
-            str = StringUtil.getSystemPropertyAsString(str);
         } catch (XMLStreamException e) {
             throw logger.parserException(e);
         }
