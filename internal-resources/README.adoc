@@ -1,0 +1,3 @@
+= Documentation : internal-resources/
+
+The `internal-resources/` directory contains internal reference documentation written for use by the documentation team.
