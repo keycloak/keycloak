@@ -1717,7 +1717,7 @@ module.controller('RealmAdminEventsModalCtrl', function($scope, $filter, event) 
     $scope.event = event;
 });
 
-module.controller('RealmBruteForceCtrl', function($scope, Realm, realm, $http, $location, Dialog, Notifications, TimeUnit) {
+module.controller('RealmBruteForceCtrl', function($scope, Realm, realm, $http, $location, Dialog, Notifications, TimeUnit, $route) {
     console.log('RealmBruteForceCtrl');
 
     $scope.realm = realm;
@@ -1780,8 +1780,7 @@ module.controller('RealmBruteForceCtrl', function($scope, Realm, realm, $http, $
     };
 
     $scope.reset = function() {
-        $scope.realm = angular.copy(oldCopy);
-        $scope.changed = false;
+        $route.reload();
     };
 });
 
