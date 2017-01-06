@@ -18,7 +18,9 @@
 package org.keycloak.federation.kerberos;
 
 import org.keycloak.common.constants.KerberosConstants;
+import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
+import org.keycloak.representations.idm.ComponentRepresentation;
 
 import java.util.Map;
 
@@ -29,31 +31,39 @@ import java.util.Map;
  */
 public abstract class CommonKerberosConfig {
 
-    protected ComponentModel componentModel;
+    protected MultivaluedHashMap<String, String> userStorageConfig;
 
     public CommonKerberosConfig(ComponentModel componentModel) {
-        this.componentModel = componentModel;
+        this.userStorageConfig = componentModel.getConfig();
+    }
+
+    public CommonKerberosConfig(ComponentRepresentation componentRep) {
+        this.userStorageConfig = componentRep.getConfig();
+    }
+
+    protected MultivaluedHashMap<String, String> getConfig() {
+        return userStorageConfig;
     }
 
     // Should be always true for KerberosFederationProvider
     public boolean isAllowKerberosAuthentication() {
-        return Boolean.valueOf(componentModel.getConfig().getFirst(KerberosConstants.ALLOW_KERBEROS_AUTHENTICATION));
+        return Boolean.valueOf(getConfig().getFirst(KerberosConstants.ALLOW_KERBEROS_AUTHENTICATION));
     }
 
     public String getKerberosRealm() {
-        return componentModel.getConfig().getFirst(KerberosConstants.KERBEROS_REALM);
+        return getConfig().getFirst(KerberosConstants.KERBEROS_REALM);
     }
 
     public String getServerPrincipal() {
-        return componentModel.getConfig().getFirst(KerberosConstants.SERVER_PRINCIPAL);
+        return getConfig().getFirst(KerberosConstants.SERVER_PRINCIPAL);
     }
 
     public String getKeyTab() {
-        return componentModel.getConfig().getFirst(KerberosConstants.KEYTAB);
+        return getConfig().getFirst(KerberosConstants.KEYTAB);
     }
 
     public boolean isDebug() {
-        return Boolean.valueOf(componentModel.getConfig().getFirst(KerberosConstants.DEBUG));
+        return Boolean.valueOf(getConfig().getFirst(KerberosConstants.DEBUG));
     }
 
 

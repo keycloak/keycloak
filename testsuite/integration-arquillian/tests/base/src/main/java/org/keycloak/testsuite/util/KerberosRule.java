@@ -15,16 +15,16 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.rule;
-
-import org.jboss.logging.Logger;
-import org.keycloak.testsuite.federation.ldap.LDAPTestConfiguration;
-import org.keycloak.util.ldap.KerberosEmbeddedServer;
-import org.keycloak.util.ldap.LDAPEmbeddedServer;
+package org.keycloak.testsuite.util;
 
 import java.io.File;
 import java.net.URL;
 import java.util.Properties;
+
+import org.jboss.logging.Logger;
+import org.keycloak.testsuite.client.resources.TestingResource;
+import org.keycloak.util.ldap.KerberosEmbeddedServer;
+import org.keycloak.util.ldap.LDAPEmbeddedServer;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -36,18 +36,24 @@ public class KerberosRule extends LDAPRule {
     private final String configLocation;
 
     public KerberosRule(String configLocation) {
-        this(configLocation, null);
-    }
-
-    public KerberosRule(String configLocation, LDAPRuleCondition condition) {
-        super(condition);
         this.configLocation = configLocation;
 
         // Global kerberos configuration
+        String krb5ConfPath = getKrb5ConfPath();
+        System.setProperty("java.security.krb5.conf", krb5ConfPath);
+    }
+
+    private String getKrb5ConfPath() {
         URL krb5ConfURL = LDAPTestConfiguration.class.getResource("/kerberos/test-krb5.conf");
         String krb5ConfPath = new File(krb5ConfURL.getFile()).getAbsolutePath();
         log.info("Krb5.conf file location is: " + krb5ConfPath);
+        return krb5ConfPath;
+    }
+
+    public void setKrb5ConfPath(TestingResource testingResource) {
+        String krb5ConfPath = getKrb5ConfPath();
         System.setProperty("java.security.krb5.conf", krb5ConfPath);
+        testingResource.setKrb5ConfFile(krb5ConfPath); // Needs to set it on wildfly server too
     }
 
     @Override
@@ -62,5 +68,9 @@ public class KerberosRule extends LDAPRule {
         defaultProperties.setProperty(LDAPEmbeddedServer.PROPERTY_LDIF_FILE, "classpath:kerberos/users-kerberos.ldif");
 
         return new KerberosEmbeddedServer(defaultProperties);
+    }
+
+    public boolean isCaseSensitiveLogin() {
+        return ldapTestConfiguration.isCaseSensitiveLogin();
     }
 }

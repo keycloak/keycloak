@@ -256,4 +256,9 @@ public interface TestingResource {
     @Path("/component")
     @Produces(MediaType.APPLICATION_JSON)
     MultivaluedHashMap<String, String> getComponentConfig(@QueryParam("componentId") String componentId);
+
+    @PUT
+    @Path("/set-krb5-conf-file")
+    @Consumes(MediaType.APPLICATION_JSON)
+    void setKrb5ConfFile(@QueryParam("krb5-conf-file") String krb5ConfFile);
 }

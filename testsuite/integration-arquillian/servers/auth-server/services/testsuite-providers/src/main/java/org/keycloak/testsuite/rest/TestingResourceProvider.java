@@ -82,6 +82,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.keycloak.exportimport.ExportImportConfig.PROVIDER;
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
@@ -654,6 +656,13 @@ public class TestingResourceProvider implements RealmResourceProvider {
     @Produces(MediaType.APPLICATION_JSON)
     public Map<String, String> getIdentityProviderConfig(@QueryParam("alias") String alias) {
         return session.getContext().getRealm().getIdentityProviderByAlias(alias).getConfig();
+    }
+
+    @PUT
+    @Path("/set-krb5-conf-file")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public void setKrb5ConfFile(@QueryParam("krb5-conf-file") String krb5ConfFile) {
+        System.setProperty("java.security.krb5.conf", krb5ConfFile);
     }
 
     private RealmModel getRealmByName(String realmName) {
