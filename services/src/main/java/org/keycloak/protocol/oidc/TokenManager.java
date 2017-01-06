@@ -316,6 +316,21 @@ public class TokenManager {
         }
     }
 
+    public IDToken verifyIDTokenSignature(KeycloakSession session, RealmModel realm, String encodedIDToken) throws OAuthErrorException {
+        try {
+            JWSInput jws = new JWSInput(encodedIDToken);
+            IDToken idToken;
+            if (!RSAProvider.verify(jws, session.keys().getRsaPublicKey(realm, jws.getHeader().getKeyId()))) {
+                throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Invalid IDToken");
+            }
+            idToken = jws.readJsonContent(IDToken.class);
+
+            return idToken;
+        } catch (JWSInputException e) {
+            throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Invalid IDToken", e);
+        }
+    }
+
     public AccessToken createClientAccessToken(KeycloakSession session, Set<RoleModel> requestedRoles, RealmModel realm, ClientModel client, UserModel user, UserSessionModel userSession, ClientSessionModel clientSession) {
         AccessToken token = initToken(realm, client, user, userSession, clientSession, session.getContext().getUri());
         for (RoleModel role : requestedRoles) {

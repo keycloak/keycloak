@@ -755,7 +755,7 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
         parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ASSERTION_TYPE, OAuth2Constants.CLIENT_ASSERTION_TYPE_JWT));
         parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ASSERTION, signedJwt));
 
-        return sendRequest(oauth.getLogoutUrl(null, null), parameters);
+        return sendRequest(oauth.getLogoutUrl().build(), parameters);
     }
 
     private OAuthClient.AccessTokenResponse doClientCredentialsGrantRequest(String signedJwt) throws Exception {
