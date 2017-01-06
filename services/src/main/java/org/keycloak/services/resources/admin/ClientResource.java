@@ -154,8 +154,12 @@ public class ClientResource {
     }
 
     public void updateClientFromRep(ClientRepresentation rep, ClientModel client, KeycloakSession session) throws ModelDuplicateException {
-        if (TRUE.equals(rep.isServiceAccountsEnabled()) && !client.isServiceAccountsEnabled()) {
-            new ClientManager(new RealmManager(session)).enableServiceAccount(client);
+        if (TRUE.equals(rep.isServiceAccountsEnabled())) {
+            UserModel serviceAccount = this.session.users().getServiceAccount(client);
+
+            if (serviceAccount == null) {
+                new ClientManager(new RealmManager(session)).enableServiceAccount(client);
+            }
         }
 
         if (!rep.getClientId().equals(client.getClientId())) {

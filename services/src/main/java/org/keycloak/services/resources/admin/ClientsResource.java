@@ -16,20 +16,26 @@
  */
 package org.keycloak.services.resources.admin;
 
+import static java.lang.Boolean.TRUE;
+
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
+import org.keycloak.authorization.admin.AuthorizationService;
+import org.keycloak.common.Profile;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.managers.ClientManager;
+import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.validation.ClientValidator;
 import org.keycloak.services.validation.PairwiseClientValidator;
 import org.keycloak.services.validation.ValidationMessages;
@@ -93,7 +99,17 @@ public class ClientsResource {
             boolean view = auth.hasView();
             for (ClientModel clientModel : clientModels) {
                 if (view) {
-                    rep.add(ModelToRepresentation.toRepresentation(clientModel));
+                    ClientRepresentation representation = ModelToRepresentation.toRepresentation(clientModel);
+
+                    if (Profile.isFeatureEnabled(Profile.Feature.AUTHORIZATION)) {
+                        AuthorizationService authorizationService = getAuthorizationService(clientModel);
+
+                        if (authorizationService.isEnabled()) {
+                            representation.setAuthorizationServicesEnabled(true);
+                        }
+                    }
+
+                    rep.add(representation);
                 } else {
                     ClientRepresentation client = new ClientRepresentation();
                     client.setId(clientModel.getId());
@@ -109,6 +125,10 @@ public class ClientsResource {
             }
         }
         return rep;
+    }
+
+    private AuthorizationService getAuthorizationService(ClientModel clientModel) {
+        return new AuthorizationService(session, clientModel, auth);
     }
 
     /**
@@ -137,6 +157,20 @@ public class ClientsResource {
 
         try {
             ClientModel clientModel = ClientManager.createClient(session, realm, rep, true);
+
+            if (TRUE.equals(rep.isServiceAccountsEnabled())) {
+                UserModel serviceAccount = session.users().getServiceAccount(clientModel);
+
+                if (serviceAccount == null) {
+                    new ClientManager(new RealmManager(session)).enableServiceAccount(clientModel);
+                }
+            }
+
+            if (Profile.isFeatureEnabled(Profile.Feature.AUTHORIZATION)) {
+                if (TRUE.equals(rep.getAuthorizationServicesEnabled())) {
+                    getAuthorizationService(clientModel).enable();
+                }
+            }
 
             adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo, clientModel.getId()).representation(rep).success();
 
