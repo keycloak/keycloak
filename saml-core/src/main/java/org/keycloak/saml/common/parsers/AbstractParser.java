@@ -21,6 +21,7 @@ import org.keycloak.saml.common.PicketLinkLogger;
 import org.keycloak.saml.common.PicketLinkLoggerFactory;
 import org.keycloak.saml.common.constants.GeneralConstants;
 import org.keycloak.saml.common.exceptions.ParsingException;
+import org.keycloak.saml.common.util.SecurityActions;
 import org.keycloak.saml.common.util.StaxParserUtil;
 import org.keycloak.saml.common.util.SystemPropertiesUtil;
 
@@ -32,8 +33,9 @@ import javax.xml.stream.events.Characters;
 import javax.xml.stream.events.XMLEvent;
 import javax.xml.stream.util.EventReaderDelegate;
 import java.io.InputStream;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
+import javax.xml.transform.Source;
+import javax.xml.transform.dom.DOMSource;
+import org.w3c.dom.Node;
 
 /**
  * Base class for parsers
@@ -45,26 +47,33 @@ public abstract class AbstractParser implements ParserNamespaceSupport {
 
     protected static final PicketLinkLogger logger = PicketLinkLoggerFactory.getLogger();
 
-    /**
-     * Get the JAXP {@link XMLInputFactory}
-     *
-     * @return
-     */
-    protected XMLInputFactory getXMLInputFactory() {
-        boolean tccl_jaxp = SystemPropertiesUtil.getSystemProperty(GeneralConstants.TCCL_JAXP, "false")
-                .equalsIgnoreCase("true");
-        ClassLoader prevTCCL = getTCCL();
-        try {
-            if (tccl_jaxp) {
-                setTCCL(getClass().getClassLoader());
-            }
-            return XMLInputFactory.newInstance();
-        } finally {
-            if (tccl_jaxp) {
-                setTCCL(prevTCCL);
+    private static final ThreadLocal<XMLInputFactory> XML_INPUT_FACTORY = new ThreadLocal<XMLInputFactory>() {
+        @Override
+        protected XMLInputFactory initialValue() {
+            return getXMLInputFactory();
+        }
+
+        /**
+         * Get the JAXP {@link XMLInputFactory}
+         *
+         * @return
+         */
+        private XMLInputFactory getXMLInputFactory() {
+            boolean tccl_jaxp = SystemPropertiesUtil.getSystemProperty(GeneralConstants.TCCL_JAXP, "false")
+                    .equalsIgnoreCase("true");
+            ClassLoader prevTCCL = SecurityActions.getTCCL();
+            try {
+                if (tccl_jaxp) {
+                    SecurityActions.setTCCL(AbstractParser.class.getClassLoader());
+                }
+                return XMLInputFactory.newInstance();
+            } finally {
+                if (tccl_jaxp) {
+                    SecurityActions.setTCCL(prevTCCL);
+                }
             }
         }
-    }
+    };
 
     /**
      * Parse an InputStream for payload
@@ -79,6 +88,15 @@ public abstract class AbstractParser implements ParserNamespaceSupport {
     public Object parse(InputStream configStream) throws ParsingException {
         XMLEventReader xmlEventReader = createEventReader(configStream);
         return parse(xmlEventReader);
+    }
+
+    public Object parse(Source source) throws ParsingException {
+        XMLEventReader xmlEventReader = createEventReader(source);
+        return parse(xmlEventReader);
+    }
+
+    public Object parse(Node node) throws ParsingException {
+        return parse(new DOMSource(node));
     }
 
     public XMLEventReader createEventReader(InputStream configStream) throws ParsingException {
@@ -96,33 +114,23 @@ public abstract class AbstractParser implements ParserNamespaceSupport {
         return xmlEventReader;
     }
 
-    private ClassLoader getTCCL() {
-        if (System.getSecurityManager() != null) {
-            return AccessController.doPrivileged(new PrivilegedAction<ClassLoader>() {
-                public ClassLoader run() {
-                    return Thread.currentThread().getContextClassLoader();
-                }
-            });
-        } else {
-            return Thread.currentThread().getContextClassLoader();
-        }
-    }
+    public XMLEventReader createEventReader(Source source) throws ParsingException {
+        if (source == null)
+            throw logger.nullArgumentError("Source");
 
-    private void setTCCL(final ClassLoader paramCl) {
-        if (System.getSecurityManager() != null) {
-            AccessController.doPrivileged(new PrivilegedAction<Void>() {
-                public Void run() {
-                    Thread.currentThread().setContextClassLoader(paramCl);
-                    return null;
-                }
-            });
-        } else {
-            Thread.currentThread().setContextClassLoader(paramCl);
+        XMLEventReader xmlEventReader = StaxParserUtil.getXMLEventReader(source);
+
+        try {
+            xmlEventReader = filterWhitespaces(xmlEventReader);
+        } catch (XMLStreamException e) {
+            throw logger.parserException(e);
         }
+
+        return xmlEventReader;
     }
 
     protected XMLEventReader filterWhitespaces(XMLEventReader xmlEventReader) throws XMLStreamException {
-        XMLInputFactory xmlInputFactory = getXMLInputFactory();
+        XMLInputFactory xmlInputFactory = XML_INPUT_FACTORY.get();
 
         xmlEventReader = xmlInputFactory.createFilteredReader(xmlEventReader, new EventFilter() {
             public boolean accept(XMLEvent xmlEvent) {

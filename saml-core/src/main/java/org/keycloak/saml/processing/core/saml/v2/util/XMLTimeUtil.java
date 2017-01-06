@@ -51,15 +51,11 @@ public class XMLTimeUtil {
      *
      * @throws org.keycloak.saml.common.exceptions.ConfigurationException
      */
-    public static XMLGregorianCalendar add(XMLGregorianCalendar value, long milis) throws ConfigurationException {
+    public static XMLGregorianCalendar add(XMLGregorianCalendar value, long milis) {
         XMLGregorianCalendar newVal = (XMLGregorianCalendar) value.clone();
 
         Duration duration;
-        try {
-            duration = newDatatypeFactory().newDuration(milis);
-        } catch (DatatypeConfigurationException e) {
-            throw logger.configurationError(e);
-        }
+        duration = DATATYPE_FACTORY.get().newDuration(milis);
         newVal.add(duration);
         return newVal;
     }
@@ -74,7 +70,7 @@ public class XMLTimeUtil {
      *
      * @throws ConfigurationException
      */
-    public static XMLGregorianCalendar subtract(XMLGregorianCalendar value, long milis) throws ConfigurationException {
+    public static XMLGregorianCalendar subtract(XMLGregorianCalendar value, long milis) {
         if (milis < 0)
             throw logger.invalidArgumentError("milis should be a positive value");
         return add(value, -1 * milis);
@@ -91,14 +87,10 @@ public class XMLTimeUtil {
      *
      * @throws ConfigurationException
      */
-    public static XMLGregorianCalendar getIssueInstant(String timezone) throws ConfigurationException {
+    public static XMLGregorianCalendar getIssueInstant(String timezone) {
         TimeZone tz = TimeZone.getTimeZone(timezone);
         DatatypeFactory dtf;
-        try {
-            dtf = newDatatypeFactory();
-        } catch (DatatypeConfigurationException e) {
-            throw logger.configurationError(e);
-        }
+        dtf = DATATYPE_FACTORY.get();
 
         GregorianCalendar gc = new GregorianCalendar(tz);
         XMLGregorianCalendar xgc = dtf.newXMLGregorianCalendar(gc);
@@ -188,13 +180,7 @@ public class XMLTimeUtil {
             PicketLinkLoggerFactory.getLogger().nullArgumentError("duration time");
         }
 
-        DatatypeFactory factory = null;
-
-        try {
-            factory = newDatatypeFactory();
-        } catch (DatatypeConfigurationException e) {
-            throw logger.parserError(e);
-        }
+        DatatypeFactory factory = DATATYPE_FACTORY.get();
 
         try {
             // checks if it is a ISO 8601 period. If not it must be a numeric value.
@@ -218,15 +204,20 @@ public class XMLTimeUtil {
      * @throws ParsingException
      */
     public static XMLGregorianCalendar parse(String timeString) throws ParsingException {
-        DatatypeFactory factory = null;
-        try {
-            factory = newDatatypeFactory();
-        } catch (DatatypeConfigurationException e) {
-            throw logger.parserError(e);
-        }
+        DatatypeFactory factory = DATATYPE_FACTORY.get();
         return factory.newXMLGregorianCalendar(timeString);
     }
 
+    private static final ThreadLocal<DatatypeFactory> DATATYPE_FACTORY = new ThreadLocal<DatatypeFactory>() {
+        @Override
+        protected DatatypeFactory initialValue() {
+            try {
+                return newDatatypeFactory();
+            } catch (DatatypeConfigurationException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    };
 
     /**
      * Create a new {@link DatatypeFactory}
@@ -235,7 +226,7 @@ public class XMLTimeUtil {
      *
      * @throws DatatypeConfigurationException
      */
-    public static DatatypeFactory newDatatypeFactory() throws DatatypeConfigurationException {
+    private static DatatypeFactory newDatatypeFactory() throws DatatypeConfigurationException {
         boolean tccl_jaxp = SystemPropertiesUtil.getSystemProperty(GeneralConstants.TCCL_JAXP, "false")
                 .equalsIgnoreCase("true");
         ClassLoader prevTCCL = SecurityActions.getTCCL();
