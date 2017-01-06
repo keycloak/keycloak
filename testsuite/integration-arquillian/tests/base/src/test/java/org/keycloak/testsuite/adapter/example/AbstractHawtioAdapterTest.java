@@ -1,6 +1,7 @@
 package org.keycloak.testsuite.adapter.example;
 
 import org.jboss.arquillian.graphene.page.Page;
+import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -27,14 +28,19 @@ public abstract class AbstractHawtioAdapterTest extends AbstractExampleAdapterTe
     }
 
     @Test
-    @Ignore //Waiting for PATCH-1446
-    public void hawtioTest() {
+    public void hawtioLoginAndLogoutTest() {
         testRealmLoginPage.setAuthRealm(DEMO);
+
         hawtioPage.navigateTo();
         assertCurrentUrlStartsWith(testRealmLoginPage);
         testRealmLoginPage.form().login("root", "password");
 
         assertCurrentUrlStartsWith(hawtioPage.getDriver(), hawtioPage.toString() + "/welcome");
 
+        hawtioPage.logout();
+        assertCurrentUrlStartsWith(testRealmLoginPage);
+
+        hawtioPage.navigateTo();
+        assertCurrentUrlStartsWith(testRealmLoginPage);
     }
 }

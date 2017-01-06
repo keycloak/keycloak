@@ -9,4 +9,6 @@ cd $JBOSS_HOME
 java -jar $FUSE_INSTALLER_NAME
 rm $FUSE_INSTALLER_NAME
 
+mv standalone/deployments/hawtio*.war standalone/deployments/hawtio.war
+
 exit 0
