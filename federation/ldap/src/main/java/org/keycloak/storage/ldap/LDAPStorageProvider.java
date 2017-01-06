@@ -637,7 +637,10 @@ public class LDAPStorageProvider implements UserStorageProvider,
                     logger.warnf("User with username [%s] aready exists and is linked to provider [%s] but is not valid. Stale LDAP_ID on local user is: %s",
                             username,  model.getName(), user.getFirstAttribute(LDAPConstants.LDAP_ID));
                     logger.warn("Will re-create user");
-                    session.userCache().evict(realm, user);
+                    UserCache userCache = session.userCache();
+                    if (userCache != null) {
+                        userCache.evict(realm, user);
+                    }
                     new UserManager(session).removeUser(realm, user, session.userLocalStorage());
                 }
             }

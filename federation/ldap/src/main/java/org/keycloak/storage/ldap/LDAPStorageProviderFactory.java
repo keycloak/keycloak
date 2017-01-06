@@ -34,6 +34,7 @@ import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.cache.UserCache;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
@@ -532,7 +533,10 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
                             if (username != null) {
                                 UserModel existing = session.userLocalStorage().getUserByUsername(username, currentRealm);
                                 if (existing != null) {
-                                    session.userCache().evict(currentRealm, existing);
+                                    UserCache userCache = session.userCache();
+                                    if (userCache != null) {
+                                        userCache.evict(currentRealm, existing);
+                                    }
                                     session.userLocalStorage().removeUser(currentRealm, existing);
                                 }
                             }

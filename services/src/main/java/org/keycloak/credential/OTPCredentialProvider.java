@@ -25,6 +25,7 @@ import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.cache.CachedUserModel;
 import org.keycloak.models.cache.OnUserCache;
+import org.keycloak.models.cache.UserCache;
 import org.keycloak.models.utils.HmacOTP;
 import org.keycloak.models.utils.TimeBasedOTP;
 
@@ -102,7 +103,10 @@ public class OTPCredentialProvider implements CredentialProvider, CredentialInpu
         } else {
             getCredentialStore().updateCredential(realm, user, model);
         }
-        session.userCache().evict(realm, user);
+        UserCache userCache = session.userCache();
+        if (userCache != null) {
+            userCache.evict(realm, user);
+        }
         return true;
 
 
@@ -138,7 +142,10 @@ public class OTPCredentialProvider implements CredentialProvider, CredentialInpu
 
         }
         if (disableTOTP || disableHOTP) {
-            session.userCache().evict(realm, user);
+            UserCache userCache = session.userCache();
+            if (userCache != null) {
+                userCache.evict(realm, user);
+            }
         }
     }
 
