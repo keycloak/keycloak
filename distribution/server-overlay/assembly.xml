@@ -84,7 +84,7 @@
             <outputDirectory></outputDirectory>
         </fileSet>
         <fileSet>
-            <directory>src/main/cli</directory>
+            <directory>${project.build.directory}/cli</directory>
             <includes>
                 <include>*.cli</include>
             </includes>
@@ -106,11 +106,6 @@
             <source>${project.build.directory}/unpacked/keycloak-${project.version}/bin/add-user-keycloak.bat</source>
             <outputDirectory>bin</outputDirectory>
             <destName>add-user-keycloak.bat</destName>
-        </file>
-        <file>
-            <source>${project.build.directory}/cli/default-keycloak-subsys-config.cli</source>
-            <outputDirectory>bin</outputDirectory>
-            <destName>default-keycloak-subsys-config.cli</destName>
         </file>
     </files>
 
