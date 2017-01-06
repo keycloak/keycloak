@@ -74,8 +74,15 @@ public class ResourceServerService {
 
     public void create() {
         this.auth.requireManage();
+
+        UserModel serviceAccount = this.session.users().getServiceAccount(client);
+
+        if (serviceAccount == null) {
+            throw new RuntimeException("Client does not have a service account.");
+        }
+
         this.resourceServer = this.authorization.getStoreFactory().getResourceServerStore().create(this.client.getId());
-        createDefaultRoles();
+        createDefaultRoles(serviceAccount);
         createDefaultPermission(createDefaultResource(), createDefaultPolicy());
     }
 
@@ -215,14 +222,12 @@ public class ResourceServerService {
         return defaultResource;
     }
 
-    private void createDefaultRoles() {
+    private void createDefaultRoles(UserModel serviceAccount) {
         RoleModel umaProtectionRole = client.getRole(Constants.AUTHZ_UMA_PROTECTION);
 
         if (umaProtectionRole == null) {
             umaProtectionRole = client.addRole(Constants.AUTHZ_UMA_PROTECTION);
         }
-
-        UserModel serviceAccount = this.session.users().getServiceAccount(client);
 
         if (!serviceAccount.hasRole(umaProtectionRole)) {
             serviceAccount.grantRole(umaProtectionRole);
