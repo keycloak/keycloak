@@ -119,9 +119,9 @@ For more information, see <<fake/../../service/protection/protection-api.adoc#_s
 
 The Authorization API is also a https://docs.kantarainitiative.org/uma/rec-uma-core.html[UMA-compliant] endpoint providing a single operation that exchanges an Access Token and <<fake/.././terminology.adoc#_overview_terminology_permission_ticket, Permission Ticket>> with a Requesting Party Token (RPT).
 
-The RPT holds all permissions granted to a client and can be used to call a resource server to get access to its protected resources.
+The RPT contains all permissions granted to a client and can be used to call a resource server to get access to its protected resources.
 
-When asking a RPT you can also provide a previously issued RPT. In this case, the resulting RPT will consist of the union of the permissions from the previously RPT and the new ones
+When requesting an RPT you can also provide a previously issued RPT. In this case, the resulting RPT will consist of the union of the permissions from the previous RPT and the new ones
 within a permission ticket.
 
 image:../../images/authz-calls.png[alt="Authorization API Overview"]
