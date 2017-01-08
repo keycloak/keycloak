@@ -59,6 +59,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.util.IOUtil.loadJson;
 import static org.keycloak.testsuite.util.IOUtil.loadRealm;
+import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -136,6 +137,22 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
 
             resources = getAuthorizationResource().resources().resources();
             assertTrue(resources.stream().filter(resource -> resource.getOwner().getName().equals("alice")).collect(Collectors.toList()).isEmpty());
+        } finally {
+            this.deployer.undeploy(RESOURCE_SERVER_ID);
+        }
+    }
+
+    @Test
+    public void createAlbumWithInvalidUser() {
+        try {
+            this.deployer.deploy(RESOURCE_SERVER_ID);
+
+            loginToClientPage("alice", "alice");
+
+            clientPage.createAlbumWithInvalidUser("Alice Family Album");
+
+            waitUntilElement(clientPage.getOutput()).text().not().contains("Request was successful");
+            waitUntilElement(clientPage.getOutput()).text().contains("Could not register protected resource");
         } finally {
             this.deployer.undeploy(RESOURCE_SERVER_ID);
         }

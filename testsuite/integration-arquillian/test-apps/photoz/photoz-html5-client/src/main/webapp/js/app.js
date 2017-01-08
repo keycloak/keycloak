@@ -88,6 +88,16 @@ module.controller('AlbumCtrl', function ($scope, $http, $routeParams, $location,
             $location.path('/');
         });
     };
+
+    $scope.createWithInvalidUser = function () {
+        var newAlbum = new Album($scope.album);
+        newAlbum.$save({user: 'invalidUser'}, function (data) {
+            document.getElementById("output").innerHTML = 'Request was successful'
+        },
+        function (response) {
+            document.getElementById("output").innerHTML = response.data;
+        });
+    };
 });
 
 module.controller('ProfileCtrl', function ($scope, $http, $routeParams, $location, Profile) {
