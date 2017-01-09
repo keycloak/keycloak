@@ -14,24 +14,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.transaction;
+package org.keycloak.connections.jpa;
 
-import org.keycloak.models.KeycloakSession;
+import org.keycloak.provider.ExceptionConverter;
 
-import javax.transaction.TransactionManager;
+import javax.persistence.PersistenceException;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class JtaRegistration {
+public class JpaExceptionConverter implements ExceptionConverter {
+    @Override
+    public Throwable convert(Throwable e) {
+        if (!(e instanceof PersistenceException)) return null;
+        return PersistenceExceptionConverter.convert(e.getCause() != null ? e.getCause() : e);
+    }
 
-
-
-    public void begin(KeycloakSession session) {
-        TransactionManager tm = session.getProvider(JtaTransactionManagerLookup.class).getTransactionManager();
-        if (tm == null) return;
-
-        session.getTransactionManager().enlist(new JtaTransactionWrapper(tm));
+    @Override
+    public String getId() {
+        return "jpa";
     }
 }

@@ -20,6 +20,7 @@ package org.keycloak.partialimport;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
+import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.PartialImportRepresentation;
 import org.keycloak.services.ErrorResponse;
@@ -90,7 +91,7 @@ public class PartialImportManager {
         if (session.getTransactionManager().isActive()) {
             try {
                 session.getTransactionManager().commit();
-            } catch (ModelDuplicateException e) {
+            } catch (ModelException e) {
                 return ErrorResponse.exists(e.getLocalizedMessage());
             }
         }

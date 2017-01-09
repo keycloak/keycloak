@@ -17,8 +17,12 @@
 package org.keycloak.transaction;
 
 import org.jboss.logging.Logger;
+import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.KeycloakTransaction;
+import org.keycloak.provider.ExceptionConverter;
+import org.keycloak.provider.ProviderFactory;
 
+import javax.transaction.RollbackException;
 import javax.transaction.Status;
 import javax.transaction.Transaction;
 import javax.transaction.TransactionManager;
@@ -33,9 +37,11 @@ public class JtaTransactionWrapper implements KeycloakTransaction {
     protected Transaction ut;
     protected Transaction suspended;
     protected Exception ended;
+    protected KeycloakSessionFactory factory;
 
-    public JtaTransactionWrapper(TransactionManager tm) {
+    public JtaTransactionWrapper(KeycloakSessionFactory factory, TransactionManager tm) {
         this.tm = tm;
+        this.factory = factory;
         try {
 
             suspended = tm.suspend();
@@ -49,6 +55,32 @@ public class JtaTransactionWrapper implements KeycloakTransaction {
         }
     }
 
+    public void handleException(Throwable e) {
+        if (e instanceof RollbackException) {
+            e = e.getCause() != null ? e.getCause() : e;
+        }
+
+        for (ProviderFactory factory : this.factory.getProviderFactories(ExceptionConverter.class)) {
+            ExceptionConverter converter = (ExceptionConverter)factory;
+            Throwable throwable = converter.convert(e);
+            if (throwable == null) continue;
+            if (throwable instanceof RuntimeException) {
+                throw (RuntimeException)throwable;
+            } else {
+                throw new RuntimeException(throwable);
+            }
+        }
+
+        if (e instanceof RuntimeException) {
+            throw (RuntimeException)e;
+        } else {
+            throw new RuntimeException(e);
+        }
+
+
+
+    }
+
     @Override
     public void begin() {
     }
@@ -59,7 +91,7 @@ public class JtaTransactionWrapper implements KeycloakTransaction {
             logger.debug("JtaTransactionWrapper  commit");
             tm.commit();
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            handleException(e);
         } finally {
             end();
         }
@@ -71,7 +103,7 @@ public class JtaTransactionWrapper implements KeycloakTransaction {
             logger.debug("JtaTransactionWrapper rollback");
             tm.rollback();
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            handleException(e);
         } finally {
             end();
         }
@@ -83,7 +115,7 @@ public class JtaTransactionWrapper implements KeycloakTransaction {
         try {
             tm.setRollbackOnly();
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            handleException(e);
         }
     }
 
@@ -92,8 +124,9 @@ public class JtaTransactionWrapper implements KeycloakTransaction {
         try {
             return tm.getStatus() == Status.STATUS_MARKED_ROLLBACK;
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            handleException(e);
         }
+        return false;
     }
 
     @Override
@@ -101,8 +134,9 @@ public class JtaTransactionWrapper implements KeycloakTransaction {
         try {
             return tm.getStatus() == Status.STATUS_ACTIVE;
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            handleException(e);
         }
+        return false;
     }
     /*
 

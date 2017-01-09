@@ -95,7 +95,7 @@ public class DefaultKeycloakTransactionManager implements KeycloakTransactionMan
             if (jtaLookup != null) {
                 TransactionManager tm = jtaLookup.getTransactionManager();
                 if (tm != null) {
-                   enlist(new JtaTransactionWrapper(tm));
+                   enlist(new JtaTransactionWrapper(session.getKeycloakSessionFactory(), tm));
                 }
             }
         }
