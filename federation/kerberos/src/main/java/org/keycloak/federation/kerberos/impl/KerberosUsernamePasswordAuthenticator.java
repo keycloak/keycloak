@@ -99,7 +99,12 @@ public class KerberosUsernamePasswordAuthenticator {
     }
 
     protected void checkKerberosServerAvailable(LoginException le) {
-        if (le.getMessage().contains("Port Unreachable")) {
+        String message = le.getMessage().toUpperCase();
+        if (message.contains("PORT UNREACHABLE") ||
+            message.contains("CANNOT LOCATE") ||
+            message.contains("CANNOT CONTACT") ||
+            message.contains("CANNOT FIND") ||
+            message.contains("UNKNOWN ERROR")) {
             throw new ModelException("Kerberos unreachable", le);
         }
     }
