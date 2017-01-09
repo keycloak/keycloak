@@ -85,7 +85,7 @@ public interface UserQueryProvider {
     List<UserModel> searchForUser(Map<String, String> params, RealmModel realm);
 
     /**
-     * Search for user by parameter.  Valid parameters are:
+     * Search for user by parameter.    Valid parameters are:
      * "first" - first name
      * "last" - last name
      * "email" - email
