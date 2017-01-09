@@ -24,6 +24,8 @@ import org.keycloak.saml.common.constants.JBossSAMLConstants;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.common.exceptions.ConfigurationException;
 import org.keycloak.saml.common.exceptions.ParsingException;
+import org.keycloak.saml.common.exceptions.ProcessingException;
+
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
@@ -47,6 +49,7 @@ import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
 import java.io.InputStream;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Utility for the stax based parser
@@ -122,7 +125,6 @@ public class StaxParserUtil {
      */
     public static String getAttributeValue(Attribute attribute) {
         String str = trim(attribute.getValue());
-        str = StringUtil.getSystemPropertyAsString(str);
         return str;
     }
 
@@ -224,7 +226,6 @@ public class StaxParserUtil {
         String str = null;
         try {
             str = xmlEventReader.getElementText().trim();
-            str = StringUtil.getSystemPropertyAsString(str);
         } catch (XMLStreamException e) {
             throw logger.parserException(e);
         }
@@ -248,6 +249,34 @@ public class StaxParserUtil {
             throw new RuntimeException(ex);
         }
         return xmlEventReader;
+    }
+
+    private static AtomicBoolean XML_EVENT_READER_ON_SOURCE_SUPPORTED = new AtomicBoolean(true);
+
+    /**
+     * Get the XML event reader
+     *
+     * @param source
+     *
+     * @return
+     */
+    public static XMLEventReader getXMLEventReader(Source source) {
+        XMLInputFactory xmlInputFactory = XML_INPUT_FACTORY.get();
+        try {
+            if (XML_EVENT_READER_ON_SOURCE_SUPPORTED.get()) {
+                try {
+                    // The following method is optional per specification
+                    return xmlInputFactory.createXMLEventReader(source);
+                } catch (UnsupportedOperationException ex) {
+                    XML_EVENT_READER_ON_SOURCE_SUPPORTED.set(false);
+                    return getXMLEventReader(source);
+                }
+            } else {
+                return getXMLEventReader(DocumentUtil.getSourceAsStream(source));
+            }
+        } catch (ConfigurationException | ProcessingException | XMLStreamException ex) {
+            throw new RuntimeException(ex);
+        }
     }
 
     /**

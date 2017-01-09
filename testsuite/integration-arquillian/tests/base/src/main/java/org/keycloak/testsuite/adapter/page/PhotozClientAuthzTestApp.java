@@ -53,21 +53,32 @@ public class PhotozClientAuthzTestApp extends AbstractPageWithInjectedUrl {
     protected ConsentPage consentPage;
 
     @FindBy(xpath = "//a[@ng-click = 'Identity.logout()']")
-    WebElement signOutButton;
+    private WebElement signOutButton;
     
     @FindBy(id = "entitlement")
-    WebElement entitlement;
+    private WebElement entitlement;
     
     @FindBy(id = "entitlements")
-    WebElement entitlements;
+    private WebElement entitlements;
+
+    @FindBy(id = "output")
+    private WebElement output;
     
     public void createAlbum(String name) {
+        createAlbum(name, "save-album");
+    }
+
+    public void createAlbum(String name, String buttonId) {
         navigateTo();
         this.driver.findElement(By.id("create-album")).click();
         Form.setInputValue(this.driver.findElement(By.id("album.name")), name);
         pause(200); // We need to wait a bit for the form to "accept" the input (otherwise it registers the input as empty)
-        this.driver.findElement(By.id("save-album")).click();
+        this.driver.findElement(By.id(buttonId)).click();
         pause(WAIT_AFTER_OPERATION);
+    }
+
+    public void createAlbumWithInvalidUser(String name) {
+        createAlbum(name, "save-album-invalid");
     }
 
     @Override
@@ -135,6 +146,10 @@ public class PhotozClientAuthzTestApp extends AbstractPageWithInjectedUrl {
         waitForPageToLoad(driver);
         driver.navigate().refresh(); // This is sometimes necessary for loading the new policy settings
         pause(WAIT_AFTER_OPERATION);
+    }
+
+    public WebElement getOutput() {
+        return output;
     }
 
     @Override

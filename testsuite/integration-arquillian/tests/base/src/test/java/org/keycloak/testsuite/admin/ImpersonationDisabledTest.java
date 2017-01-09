@@ -15,39 +15,41 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.admin.client.authorization;
+package org.keycloak.testsuite.admin;
 
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.keycloak.testsuite.ProfileAssume;
-import org.keycloak.testsuite.admin.client.AbstractClientTest;
 
 import javax.ws.rs.ServerErrorException;
 import javax.ws.rs.core.Response;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
+import org.junit.Assume;
+import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 
 /**
- * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
+ * @author <a href="mailto:vramik@redhat.com">Vlastislav Ramik</a>
  */
-public class AuthorizationDisabledInPreviewTest extends AbstractClientTest {
+public class ImpersonationDisabledTest extends AbstractAdminTest {
 
     @BeforeClass
     public static void enabled() {
-        ProfileAssume.assumePreviewDisabled();
+        Assume.assumeTrue("impersonation".equals(System.getProperty("feature.name")) 
+                && "disabled".equals(System.getProperty("feature.value")));
     }
 
     @Test
-    public void testAuthzServicesRemoved() {
-        String id = testRealmResource().clients().findAll().get(0).getId();
+    public void testImpersonationDisabled() {
+        String impersonatedUserId = adminClient.realm(TEST).users().search("test-user@localhost", 0, 1).get(0).getId();
+        
         try {
-            testRealmResource().clients().get(id).authorization().getSettings();
+            adminClient.realms().realm("test").users().get(impersonatedUserId).impersonate();
         } catch (ServerErrorException e) {
             assertEquals(Response.Status.NOT_IMPLEMENTED.getStatusCode(), e.getResponse().getStatus());
             return;
         }
-        fail("Feature Authorization should be disabled.");
+        fail("Feature impersonation should be disabled.");
     }
 
 }

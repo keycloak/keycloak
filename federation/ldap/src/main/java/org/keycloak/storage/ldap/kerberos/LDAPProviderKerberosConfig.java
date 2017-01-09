@@ -20,6 +20,7 @@ package org.keycloak.storage.ldap.kerberos;
 import org.keycloak.common.constants.KerberosConstants;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.federation.kerberos.CommonKerberosConfig;
+import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
 
 /**
@@ -33,7 +34,11 @@ public class LDAPProviderKerberosConfig extends CommonKerberosConfig {
         super(componentModel);
     }
 
+    public LDAPProviderKerberosConfig(ComponentRepresentation componentRep) {
+        super(componentRep);
+    }
+
     public boolean isUseKerberosForPasswordAuthentication() {
-        return Boolean.valueOf(componentModel.getConfig().getFirst(KerberosConstants.USE_KERBEROS_FOR_PASSWORD_AUTHENTICATION));
+        return Boolean.valueOf(getConfig().getFirst(KerberosConstants.USE_KERBEROS_FOR_PASSWORD_AUTHENTICATION));
     }
 }

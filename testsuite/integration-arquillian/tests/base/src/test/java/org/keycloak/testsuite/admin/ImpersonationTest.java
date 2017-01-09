@@ -47,6 +47,8 @@ import javax.ws.rs.core.Response;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import org.junit.Assume;
+import org.junit.BeforeClass;
 
 /**
  * Tests Undertow Adapter
@@ -79,6 +81,12 @@ public class ImpersonationTest extends AbstractKeycloakTest {
         realm.user(UserBuilder.create().username("bad-impersonator").password("password").role(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.MANAGE_USERS));
 
         testRealms.add(realm.build());
+    }
+    
+    @BeforeClass
+    public static void enabled() {
+        Assume.assumeFalse("impersonation".equals(System.getProperty("feature.name")) 
+                && "disabled".equals(System.getProperty("feature.value")));
     }
 
     @Test

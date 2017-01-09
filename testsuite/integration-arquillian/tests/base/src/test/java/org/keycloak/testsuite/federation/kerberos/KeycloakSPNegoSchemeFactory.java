@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.federation;
+package org.keycloak.testsuite.federation.kerberos;
 
 import org.apache.http.auth.AuthScheme;
 import org.apache.http.auth.Credentials;

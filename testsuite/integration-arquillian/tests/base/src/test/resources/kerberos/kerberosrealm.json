@@ -37,7 +37,8 @@
             "adminUrl": "/kerberos-portal/logout",
             "baseUrl": "/kerberos-portal",
             "redirectUris": [
-                "/kerberos-portal/*"
+                "/kerberos-portal/*",
+                "/auth/realms/master/app/*"
             ],
             "secret": "password"
         }

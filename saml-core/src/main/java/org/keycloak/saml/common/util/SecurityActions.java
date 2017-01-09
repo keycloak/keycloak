@@ -26,7 +26,7 @@ import java.security.PrivilegedAction;
  * @author Anil.Saldhana@redhat.com
  * @since Dec 9, 2008
  */
-class SecurityActions {
+public class SecurityActions {
 
     /**
      * <p> Loads a {@link Class} using the <code>fullQualifiedName</code> supplied. This method tries first to load from
@@ -186,7 +186,7 @@ class SecurityActions {
      *
      * @return
      */
-    static ClassLoader getTCCL() {
+    public static ClassLoader getTCCL() {
         if (System.getSecurityManager() != null) {
             return AccessController.doPrivileged(new PrivilegedAction<ClassLoader>() {
                 public ClassLoader run() {
@@ -203,7 +203,7 @@ class SecurityActions {
      *
      * @param paramCl
      */
-    static void setTCCL(final ClassLoader paramCl) {
+    public static void setTCCL(final ClassLoader paramCl) {
         if (System.getSecurityManager() != null) {
             AccessController.doPrivileged(new PrivilegedAction<Void>() {
                 public Void run() {

@@ -64,6 +64,7 @@
         
         <auth.server.remote>false</auth.server.remote>
         <auth.server.profile/>
+        <auth.server.feature/>
     
         <adapter.test.props/>
         <migration.import.properties/>
@@ -165,6 +166,7 @@
                             <auth.server.adapter.impl.class>${auth.server.adapter.impl.class}</auth.server.adapter.impl.class>
                             
                             <auth.server.profile>${auth.server.profile}</auth.server.profile>
+                            <auth.server.feature>${auth.server.feature}</auth.server.feature>
                             
                             <frontend.console.output>${frontend.console.output}</frontend.console.output>
                             <backends.console.output>${backend.console.output}</backends.console.output>
@@ -261,6 +263,41 @@
             <properties>
                 <auth.server.profile>-Dkeycloak.profile=${keycloak.profile}</auth.server.profile>
             </properties>
+        </profile>
+
+        <!--
+            profile that enables/disables specified feature, for more details see 
+            https://keycloak.gitbooks.io/server-installation-and-configuration/content/topics/profiles.html 
+        -->
+        <profile>
+            <id>auth-server-enable-disable-feature</id>
+            <properties>
+                <auth.server.feature>-Dkeycloak.profile.feature.${feature.name}=${feature.value}</auth.server.feature>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-enforcer-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>enforce</goal>
+                                </goals>
+                                <configuration>
+                                    <rules>
+                                        <requireProperty>
+                                            <property>feature.name</property>
+                                        </requireProperty>
+                                        <requireProperty>
+                                            <property>feature.value</property>
+                                        </requireProperty>
+                                    </rules>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
         </profile>
 
         <profile>

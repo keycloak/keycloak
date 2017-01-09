@@ -84,9 +84,9 @@ public class LDAPTestConfiguration {
         DEFAULT_VALUES.put(KerberosConstants.ALLOW_KERBEROS_AUTHENTICATION, "false");
         DEFAULT_VALUES.put(KerberosConstants.KERBEROS_REALM, "KEYCLOAK.ORG");
         DEFAULT_VALUES.put(KerberosConstants.SERVER_PRINCIPAL, "HTTP/localhost@KEYCLOAK.ORG");
-        URL keytabUrl = LDAPTestConfiguration.class.getResource("/kerberos/http.keytab");
-        String keyTabPath = new File(keytabUrl.getFile()).getAbsolutePath();
-        DEFAULT_VALUES.put(KerberosConstants.KEYTAB, keyTabPath);
+//        URL keytabUrl = LDAPTestConfiguration.class.getResource("/kerberos/http.keytab");
+//        String keyTabPath = new File(keytabUrl.getFile()).getAbsolutePath();
+//        DEFAULT_VALUES.put(KerberosConstants.KEYTAB, keyTabPath);
         DEFAULT_VALUES.put(KerberosConstants.DEBUG, "true");
         DEFAULT_VALUES.put(KerberosConstants.ALLOW_PASSWORD_AUTHENTICATION, "true");
         DEFAULT_VALUES.put(KerberosConstants.UPDATE_PROFILE_FIRST_LOGIN, "true");

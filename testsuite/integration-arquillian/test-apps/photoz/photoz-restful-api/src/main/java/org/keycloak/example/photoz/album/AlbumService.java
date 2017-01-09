@@ -22,6 +22,7 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
@@ -54,17 +55,18 @@ public class AlbumService {
 
     @POST
     @Consumes("application/json")
-    public Response create(Album newAlbum) {
+    public Response create(Album newAlbum, @QueryParam("user") String username) {
         newAlbum.setId(++nextId);
 
-        Principal userPrincipal = request.getUserPrincipal();
+        if (username == null) {
+            username = request.getUserPrincipal().getName();
+        }
 
-        newAlbum.setUserId(userPrincipal.getName());
-
+        newAlbum.setUserId(username);
         Query queryDuplicatedAlbum = this.entityManager.createQuery("from Album where name = :name and userId = :userId");
 
         queryDuplicatedAlbum.setParameter("name", newAlbum.getName());
-        queryDuplicatedAlbum.setParameter("userId", userPrincipal.getName());
+        queryDuplicatedAlbum.setParameter("userId", username);
 
         if (!queryDuplicatedAlbum.getResultList().isEmpty()) {
             throw new ErrorResponse("Name [" + newAlbum.getName() + "] already taken. Choose another one.", Status.CONFLICT);
