@@ -750,14 +750,15 @@ public class RealmAdminResource {
     @NoCache
     public Response testLDAPConnection(@QueryParam("action") String action, @QueryParam("connectionUrl") String connectionUrl,
                                        @QueryParam("bindDn") String bindDn, @QueryParam("bindCredential") String bindCredential,
-                                       @QueryParam("useTruststoreSpi") String useTruststoreSpi, @QueryParam("componentId") String componentId) {
+                                       @QueryParam("useTruststoreSpi") String useTruststoreSpi, @QueryParam("connectionTimeout") String connectionTimeout,
+                                       @QueryParam("componentId") String componentId) {
         auth.init(RealmAuth.Resource.REALM).requireManage();
 
         if (componentId != null && bindCredential.equals(ComponentRepresentation.SECRET_VALUE)) {
             bindCredential = realm.getComponent(componentId).getConfig().getFirst(LDAPConstants.BIND_CREDENTIAL);
         }
 
-        boolean result = new LDAPConnectionTestManager().testLDAP(action, connectionUrl, bindDn, bindCredential, useTruststoreSpi);
+        boolean result = new LDAPConnectionTestManager().testLDAP(action, connectionUrl, bindDn, bindCredential, useTruststoreSpi, connectionTimeout);
         return result ? Response.noContent().build() : ErrorResponse.error("LDAP test error", Response.Status.BAD_REQUEST);
     }
 

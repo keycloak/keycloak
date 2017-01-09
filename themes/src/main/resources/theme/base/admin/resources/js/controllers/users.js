@@ -1262,6 +1262,7 @@ module.controller('LDAPUserStorageCtrl', function($scope, $location, Notificatio
             bindDn: ldapConfig.bindDn,
             bindCredential: ldapConfig.bindCredential,
             useTruststoreSpi: ldapConfig.useTruststoreSpi,
+            connectionTimeout: ldapConfig.connectionTimeout,
             componentId: instance.id
         };
     };

@@ -177,7 +177,7 @@ public interface RealmResource {
     @NoCache
     Response testLDAPConnection(@QueryParam("action") String action, @QueryParam("connectionUrl") String connectionUrl,
                                 @QueryParam("bindDn") String bindDn, @QueryParam("bindCredential") String bindCredential,
-                                @QueryParam("useTruststoreSpi") String useTruststoreSpi);
+                                @QueryParam("useTruststoreSpi") String useTruststoreSpi, @QueryParam("connectionTimeout") String connectionTimeout);
 
     @Path("clear-realm-cache")
     @POST

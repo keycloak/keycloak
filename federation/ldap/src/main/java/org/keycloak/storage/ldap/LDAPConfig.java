@@ -109,6 +109,14 @@ public class LDAPConfig {
         return config.getFirst(LDAPConstants.CONNECTION_POOLING);
     }
 
+    public String getConnectionTimeout() {
+        return config.getFirst(LDAPConstants.CONNECTION_TIMEOUT);
+    }
+
+    public String getReadTimeout() {
+        return config.getFirst(LDAPConstants.READ_TIMEOUT);
+    }
+
     public Properties getAdditionalConnectionProperties() {
         // not supported for now
         return null;

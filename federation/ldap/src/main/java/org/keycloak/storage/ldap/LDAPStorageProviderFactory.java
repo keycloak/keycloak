@@ -145,6 +145,12 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
                 .type(ProviderConfigProperty.BOOLEAN_TYPE)
                 .defaultValue("true")
                 .add()
+                .property().name(LDAPConstants.CONNECTION_TIMEOUT)
+                .type(ProviderConfigProperty.STRING_TYPE)
+                .add()
+                .property().name(LDAPConstants.READ_TIMEOUT)
+                .type(ProviderConfigProperty.STRING_TYPE)
+                .add()
                 .property().name(LDAPConstants.PAGINATION)
                 .type(ProviderConfigProperty.BOOLEAN_TYPE)
                 .defaultValue("true")
@@ -212,6 +218,25 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
         LDAPConfig cfg = new LDAPConfig(config.getConfig());
         String customFilter = cfg.getCustomUserSearchFilter();
         LDAPUtils.validateCustomLdapFilter(customFilter);
+
+        String connectionTimeout = cfg.getConnectionTimeout();
+        if (connectionTimeout != null && !connectionTimeout.isEmpty()) {
+            try {
+                Long.parseLong(connectionTimeout);
+            } catch (NumberFormatException nfe) {
+                throw new ComponentValidationException("ldapErrorConnectionTimeoutNotNumber");
+            }
+        }
+
+        String readTimeout = cfg.getReadTimeout();
+        if (readTimeout != null && !readTimeout.isEmpty()) {
+            try {
+                Long.parseLong(readTimeout);
+            } catch (NumberFormatException nfe) {
+                throw new ComponentValidationException("ldapErrorReadTimeoutNotNumber");
+            }
+        }
+
     }
 
     @Override
