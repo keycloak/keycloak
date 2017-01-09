@@ -25,9 +25,7 @@ import java.util.regex.Pattern;
 
 import javax.ws.rs.core.Response;
 
-import org.junit.After;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.keycloak.common.constants.KerberosConstants;
@@ -37,6 +35,7 @@ import org.keycloak.federation.kerberos.KerberosConfig;
 import org.keycloak.federation.kerberos.KerberosFederationProviderFactory;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.testsuite.util.KerberosRule;
@@ -156,6 +155,31 @@ public class KerberosStandaloneTest extends AbstractKerberosTest {
 
         events.clear();
         testRealmResource().components().add(kerberosProvider);
+    }
+
+
+    /**
+     * KEYCLOAK-4178
+     *
+     * Assert it's handled when kerberos realm is unreachable
+     *
+     * @throws Exception
+     */
+    @Test
+    public void handleUnknownKerberosRealm() throws Exception {
+        // Switch kerberos realm to "unavailable"
+        List<ComponentRepresentation> reps = testRealmResource().components().query("test", UserStorageProvider.class.getName());
+        org.keycloak.testsuite.Assert.assertEquals(1, reps.size());
+        ComponentRepresentation kerberosProvider = reps.get(0);
+        kerberosProvider.getConfig().putSingle(KerberosConstants.KERBEROS_REALM, "unavailable");
+        testRealmResource().components().component(kerberosProvider.getId()).update(kerberosProvider);
+
+        // Try register new user and assert it failed
+        UserRepresentation john = new UserRepresentation();
+        john.setUsername("john");
+        Response response = testRealmResource().users().create(john);
+        Assert.assertEquals(500, response.getStatus());
+        response.close();
     }
 
 }
