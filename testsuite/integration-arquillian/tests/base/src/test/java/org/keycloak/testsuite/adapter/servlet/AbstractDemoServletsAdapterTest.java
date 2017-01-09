@@ -24,6 +24,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
+
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.common.Version;
@@ -38,14 +39,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.adapter.AbstractServletsAdapterTest;
 import org.keycloak.testsuite.adapter.filter.AdapterActionsFilter;
-import org.keycloak.testsuite.adapter.page.BasicAuth;
-import org.keycloak.testsuite.adapter.page.CustomerDb;
-import org.keycloak.testsuite.adapter.page.CustomerDbErrorPage;
-import org.keycloak.testsuite.adapter.page.CustomerPortal;
-import org.keycloak.testsuite.adapter.page.InputPortal;
-import org.keycloak.testsuite.adapter.page.ProductPortal;
-import org.keycloak.testsuite.adapter.page.SecurePortal;
-import org.keycloak.testsuite.adapter.page.TokenMinTTLPage;
+import org.keycloak.testsuite.adapter.page.*;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.auth.page.account.Applications;
 import org.keycloak.testsuite.auth.page.login.OAuthGrant;
@@ -53,6 +47,7 @@ import org.keycloak.testsuite.console.page.events.Config;
 import org.keycloak.testsuite.console.page.events.LoginEvents;
 import org.keycloak.testsuite.util.URLUtils;
 import org.keycloak.util.BasicAuthHelper;
+
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 
@@ -73,12 +68,13 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import org.keycloak.testsuite.adapter.page.CustomerPortalNoConf;
+import static org.junit.Assert.*;
+
+import org.keycloak.testsuite.util.Matchers;
+
+import javax.ws.rs.core.Response.Status;
+
+import static org.hamcrest.Matchers.*;
 import static org.keycloak.testsuite.auth.page.AuthRealm.DEMO;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlEquals;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWithLoginUrlOf;
@@ -97,6 +93,8 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
     private CustomerPortalNoConf customerPortalNoConf;
     @Page
     private SecurePortal securePortal;
+    @Page
+    private SecurePortalWithCustomSessionConfig securePortalWithCustomSessionConfig;
     @Page
     private CustomerDb customerDb;
     @Page
@@ -131,6 +129,11 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
     @Deployment(name = SecurePortal.DEPLOYMENT_NAME)
     protected static WebArchive securePortal() {
         return servletDeployment(SecurePortal.DEPLOYMENT_NAME, CallAuthenticatedServlet.class);
+    }
+
+    @Deployment(name = SecurePortalWithCustomSessionConfig.DEPLOYMENT_NAME)
+    protected static WebArchive securePortalWithCustomSessionConfig() {
+        return servletDeployment(SecurePortalWithCustomSessionConfig.DEPLOYMENT_NAME, CallAuthenticatedServlet.class);
     }
 
     @Deployment(name = CustomerDb.DEPLOYMENT_NAME)
@@ -479,6 +482,27 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
     }
 
+    @Test
+    public void testAuthenticatedWithCustomSessionConfig() {
+        // test login to customer-portal which does a bearer request to customer-db
+        securePortalWithCustomSessionConfig.navigateTo();
+        assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
+        testRealmLoginPage.form().login("bburke@redhat.com", "password");
+        assertCurrentUrlEquals(securePortalWithCustomSessionConfig);
+
+        assertThat("Cookie CUSTOM_JSESSION_ID_NAME should exist", driver.manage().getCookieNamed("CUSTOM_JSESSION_ID_NAME"), notNullValue());
+
+        String pageSource = driver.getPageSource();
+        assertTrue(pageSource.contains("Bill Burke") && pageSource.contains("Stian Thorgersen"));
+        // test logout
+        String logoutUri = OIDCLoginProtocolService.logoutUrl(authServerPage.createUriBuilder())
+                .queryParam(OAuth2Constants.REDIRECT_URI, securePortalWithCustomSessionConfig.toString()).build("demo").toString();
+        driver.navigate().to(logoutUri);
+        assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
+        securePortalWithCustomSessionConfig.navigateTo();
+        assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
+    }
+
     // Tests "token-minimum-time-to-live" adapter configuration option
     @Test
     public void testTokenMinTTL() {
@@ -549,23 +573,19 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
         Response response = client.target(basicAuthPage
                 .setTemplateValues("mposolda", "password", value).buildUri()).request().get();
 
-        assertEquals(200, response.getStatus());
+        assertThat(response, Matchers.statusCodeIs(Status.OK));
         assertEquals(value, response.readEntity(String.class));
         response.close();
 
         response = client.target(basicAuthPage
                 .setTemplateValues("invalid-user", "password", value).buildUri()).request().get();
-        assertEquals(401, response.getStatus());
-        String readResponse = response.readEntity(String.class);
-        assertTrue(readResponse.contains("Unauthorized") || readResponse.contains("Status 401"));
-        response.close();
+        assertThat(response, Matchers.statusCodeIs(Status.UNAUTHORIZED));
+        assertThat(response, Matchers.body(anyOf(containsString("Unauthorized"), containsString("Status 401"))));
 
         response = client.target(basicAuthPage
                 .setTemplateValues("admin", "invalid-password", value).buildUri()).request().get();
-        assertEquals(401, response.getStatus());
-        readResponse = response.readEntity(String.class);
-        assertTrue(readResponse.contains("Unauthorized") || readResponse.contains("Status 401"));
-        response.close();
+        assertThat(response, Matchers.statusCodeIs(Status.UNAUTHORIZED));
+        assertThat(response, Matchers.body(anyOf(containsString("Unauthorized"), containsString("Status 401"))));
 
         client.close();
     }
