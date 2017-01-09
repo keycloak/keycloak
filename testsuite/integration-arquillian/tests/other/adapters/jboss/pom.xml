@@ -156,6 +156,12 @@
             </modules>
         </profile>
         <profile>
+            <id>app-server-remote</id>
+            <modules>
+                <module>remote</module>
+            </modules>
+        </profile>
+        <profile>
             <id>app-server-eap6-fuse</id>
             <modules>
                 <module>eap6-fuse</module>
