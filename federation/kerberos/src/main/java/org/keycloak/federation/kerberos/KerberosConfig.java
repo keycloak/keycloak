@@ -20,6 +20,7 @@ package org.keycloak.federation.kerberos;
 import org.keycloak.common.constants.KerberosConstants;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.LDAPConstants;
+import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.storage.UserStorageProvider.EditMode;
 
 /**
@@ -33,8 +34,12 @@ public class KerberosConfig extends CommonKerberosConfig {
         super(component);
     }
 
+    public KerberosConfig(ComponentRepresentation component) {
+        super(component);
+    }
+
     public EditMode getEditMode() {
-        String editModeString = componentModel.getConfig().getFirst(LDAPConstants.EDIT_MODE);
+        String editModeString = getConfig().getFirst(LDAPConstants.EDIT_MODE);
         if (editModeString == null) {
             return EditMode.UNSYNCED;
         } else {
@@ -43,11 +48,11 @@ public class KerberosConfig extends CommonKerberosConfig {
     }
 
     public boolean isAllowPasswordAuthentication() {
-        return Boolean.valueOf(componentModel.getConfig().getFirst(KerberosConstants.ALLOW_PASSWORD_AUTHENTICATION));
+        return Boolean.valueOf(getConfig().getFirst(KerberosConstants.ALLOW_PASSWORD_AUTHENTICATION));
     }
 
     public boolean isUpdateProfileFirstLogin() {
-        return Boolean.valueOf(componentModel.getConfig().getFirst(KerberosConstants.UPDATE_PROFILE_FIRST_LOGIN));
+        return Boolean.valueOf(getConfig().getFirst(KerberosConstants.UPDATE_PROFILE_FIRST_LOGIN));
     }
 
 }

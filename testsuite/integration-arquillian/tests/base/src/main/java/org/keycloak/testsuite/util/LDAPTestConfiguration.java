@@ -28,6 +28,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -88,7 +89,7 @@ public class LDAPTestConfiguration {
         DEFAULT_VALUES.put(KerberosConstants.ALLOW_KERBEROS_AUTHENTICATION, "false");
         DEFAULT_VALUES.put(KerberosConstants.KERBEROS_REALM, "KEYCLOAK.ORG");
         DEFAULT_VALUES.put(KerberosConstants.SERVER_PRINCIPAL, "HTTP/localhost@KEYCLOAK.ORG");
-        String keyTabPath =  getResource("http.keytab");
+        String keyTabPath =  getResource("/kerberos/http.keytab");
         DEFAULT_VALUES.put(KerberosConstants.KEYTAB, keyTabPath);
         DEFAULT_VALUES.put(KerberosConstants.DEBUG, "true");
         DEFAULT_VALUES.put(KerberosConstants.ALLOW_PASSWORD_AUTHENTICATION, "true");
@@ -102,8 +103,10 @@ public class LDAPTestConfiguration {
         return ldapTestConfiguration;
     }
     
-    public static String getResource(String resourceName) {
-        return new File(PROJECT_BUILD_DIRECTORY, "dependency/kerberos/" + resourceName).getAbsolutePath();
+    public static String getResource(String resourcePath) {
+        URL urlPath = LDAPTestConfiguration.class.getResource(resourcePath);
+        String absolutePath = new File(urlPath.getFile()).getAbsolutePath();
+        return absolutePath;
     }
 
     protected void loadConnectionProperties(String connectionPropertiesLocation) {
