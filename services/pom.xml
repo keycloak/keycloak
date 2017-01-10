@@ -270,6 +270,7 @@
                                     <outputDir>${project.build.directory}/apidocs-rest/asciidoc/</outputDir>
                                     <config>
                                         <swagger2markup.markupLanguage>ASCIIDOC</swagger2markup.markupLanguage>
+                                        <swagger2markup.pathsGroupedBy>TAGS</swagger2markup.pathsGroupedBy>
                                     </config>
                                 </configuration>
                             </execution>

@@ -47,6 +47,7 @@ import javax.ws.rs.core.UriInfo;
 /**
  * Base resource class for managing one particular client of a realm.
  *
+ * @resource Client Templates
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */

@@ -65,6 +65,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
+ * @resource Identity Providers
  * @author Pedro Igor
  */
 public class IdentityProviderResource {

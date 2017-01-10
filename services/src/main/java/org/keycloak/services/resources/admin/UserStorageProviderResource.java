@@ -48,6 +48,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
+ * @resource User Storage Provider
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
