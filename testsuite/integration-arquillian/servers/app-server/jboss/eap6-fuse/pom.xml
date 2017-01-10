@@ -23,7 +23,7 @@
 
         <fuse.installer.groupId>com.redhat.fuse.eap</fuse.installer.groupId>
         <fuse.installer.artifactId>fuse-eap-installer</fuse.installer.artifactId>
-        <fuse.installer.version>6.3.0.redhat-187</fuse.installer.version>
+        <fuse.installer.version>6.3.0.redhat-224</fuse.installer.version>
 
         <app.server.oidc.adapter.artifactId>keycloak-eap6-adapter-dist</app.server.oidc.adapter.artifactId>
     </properties>
