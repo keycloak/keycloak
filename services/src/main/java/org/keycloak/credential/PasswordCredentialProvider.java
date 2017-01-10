@@ -27,6 +27,7 @@ import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.cache.CachedUserModel;
 import org.keycloak.models.cache.OnUserCache;
+import org.keycloak.models.cache.UserCache;
 import org.keycloak.policy.PasswordPolicyManagerProvider;
 import org.keycloak.policy.PolicyError;
 
@@ -96,7 +97,10 @@ public class PasswordCredentialProvider implements CredentialProvider, Credentia
         newPassword.setCreatedDate(createdDate);
         hash.encode(cred.getValue(), policy, newPassword);
         getCredentialStore().createCredential(realm, user, newPassword);
-        session.userCache().evict(realm, user);
+        UserCache userCache = session.userCache();
+        if (userCache != null) {
+            userCache.evict(realm, user);
+        }
         return true;
     }
 
@@ -205,7 +209,10 @@ public class PasswordCredentialProvider implements CredentialProvider, Credentia
 
         hash.encode(cred.getValue(), policy, password);
         getCredentialStore().updateCredential(realm, user, password);
-        session.userCache().evict(realm, user);
+        UserCache userCache = session.userCache();
+        if (userCache != null) {
+            userCache.evict(realm, user);
+        }
 
         return true;
     }

@@ -36,6 +36,7 @@ import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
+import org.keycloak.models.cache.UserCache;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.storage.UserStorageProviderModel;
@@ -315,7 +316,10 @@ public class LDAPSyncTest {
             // Remove all users from model
             for (UserModel user : session.userLocalStorage().getUsers(testRealm, true)) {
                 System.out.println("trying to delete user: " + user.getUsername());
-                session.userCache().evict(testRealm, user);
+                UserCache userCache = session.userCache();
+                if (userCache != null) {
+                    userCache.evict(testRealm, user);
+                }
                 session.userLocalStorage().removeUser(testRealm, user);
             }
 

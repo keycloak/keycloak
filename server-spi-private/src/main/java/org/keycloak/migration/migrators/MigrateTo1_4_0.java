@@ -24,6 +24,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.cache.UserCache;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.models.utils.DefaultRequiredActions;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -81,7 +82,10 @@ public class MigrateTo1_4_0 implements Migration {
             email = KeycloakModelUtils.toLowerCaseSafe(email);
             if (email != null && !email.equals(user.getEmail())) {
                 user.setEmail(email);
-                session.userCache().evict(realm, user);
+                UserCache userCache = session.userCache();
+                if (userCache != null) {
+                    userCache.evict(realm, user);
+                }
             }
         }
     }
