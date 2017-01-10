@@ -35,7 +35,7 @@ public class LDAPConnectionTestManager {
     public static final String TEST_CONNECTION = "testConnection";
     public static final String TEST_AUTHENTICATION = "testAuthentication";
 
-    public boolean testLDAP(String action, String connectionUrl, String bindDn, String bindCredential, String useTruststoreSpi) {
+    public boolean testLDAP(String action, String connectionUrl, String bindDn, String bindCredential, String useTruststoreSpi, String connectionTimeout) {
         if (!TEST_CONNECTION.equals(action) && !TEST_AUTHENTICATION.equals(action)) {
             ServicesLogger.LOGGER.unknownAction(action);
             return false;
@@ -69,6 +69,10 @@ public class LDAPConnectionTestManager {
             }
 
             LDAPConstants.setTruststoreSpiIfNeeded(useTruststoreSpi, connectionUrl, env);
+
+            if (connectionTimeout != null && !connectionTimeout.isEmpty()) {
+                env.put("com.sun.jndi.ldap.connect.timeout", connectionTimeout);
+            }
 
             ldapContext = new InitialLdapContext(env, null);
             return true;

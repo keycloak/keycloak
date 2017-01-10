@@ -507,6 +507,16 @@ public class LDAPOperationManager {
             env.put("com.sun.jndi.ldap.connect.pool", connectionPooling);
         }
 
+        String connectionTimeout = config.getConnectionTimeout();
+        if (connectionTimeout != null && !connectionTimeout.isEmpty()) {
+            env.put("com.sun.jndi.ldap.connect.timeout", connectionTimeout);
+        }
+
+        String readTimeout = config.getReadTimeout();
+        if (readTimeout != null && !readTimeout.isEmpty()) {
+            env.put("com.sun.jndi.ldap.read.timeout", readTimeout);
+        }
+
         // Just dump the additional properties
         Properties additionalProperties = this.config.getAdditionalConnectionProperties();
         if (additionalProperties != null) {

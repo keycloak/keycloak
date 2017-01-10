@@ -187,6 +187,20 @@
                 <kc-tooltip>{{:: 'ldap.connection-pooling.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group clearfix">
+                <label class="col-md-2 control-label" for="connectionTimeout">{{:: 'ldap-connection-timeout' | translate}}</label>
+                <div class="col-md-6">
+                    <input class="form-control" id="connectionTimeout" type="text" ng-model="instance.config['connectionTimeout'][0]" placeholder="{{:: 'ldap-connection-timeout' | translate}}">
+                </div>
+                <kc-tooltip>{{:: 'ldap.connection-timeout.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group clearfix">
+                <label class="col-md-2 control-label" for="readTimeout">{{:: 'ldap-read-timeout' | translate}}</label>
+                <div class="col-md-6">
+                    <input class="form-control" id="readTimeout" type="text" ng-model="instance.config['readTimeout'][0]" placeholder="{{:: 'ldap-read-timeout' | translate}}">
+                </div>
+                <kc-tooltip>{{:: 'ldap.read-timeout.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group clearfix">
                 <label class="col-md-2 control-label" for="pagination">{{:: 'pagination' | translate}}</label>
                 <div class="col-md-6">
                     <input ng-model="instance.config['pagination'][0]" name="pagination" id="pagination" onoffswitchvalue on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />

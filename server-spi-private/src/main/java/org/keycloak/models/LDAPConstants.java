@@ -57,6 +57,8 @@ public class LDAPConstants {
 
     public static final String SEARCH_SCOPE = "searchScope";
     public static final String CONNECTION_POOLING = "connectionPooling";
+    public static final String CONNECTION_TIMEOUT = "connectionTimeout";
+    public static final String READ_TIMEOUT = "readTimeout";
     public static final String PAGINATION = "pagination";
 
     public static final String EDIT_MODE = "editMode";

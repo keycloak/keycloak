@@ -271,7 +271,7 @@ public class PermissionsTest extends AbstractKeycloakTest {
 
         invoke(new InvocationWithResponse() {
             public void invoke(RealmResource realm, AtomicReference<Response> response) {
-                response.set(realm.testLDAPConnection("nosuch", "nosuch", "nosuch", "nosuch", "nosuch"));
+                response.set(realm.testLDAPConnection("nosuch", "nosuch", "nosuch", "nosuch", "nosuch", "nosuch"));
             }
         }, Resource.REALM, true);
 
