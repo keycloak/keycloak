@@ -31,7 +31,7 @@
     <description />
 
     <properties>
-        <version.swagger.doclet>1.0.5</version.swagger.doclet>
+        <version.swagger.doclet>1.1.2</version.swagger.doclet>
         <maven.compiler.target>1.8</maven.compiler.target>
         <maven.compiler.source>1.8</maven.compiler.source>
     </properties>
@@ -205,6 +205,16 @@
                     <url>http://jcenter.bintray.com</url>
                 </repository>
             </repositories>
+            <pluginRepositories>
+                <pluginRepository>
+                    <snapshots>
+                        <enabled>false</enabled>
+                    </snapshots>
+                    <id>central</id>
+                    <name>bintray</name>
+                    <url>http://jcenter.bintray.com</url>
+                </pluginRepository>
+            </pluginRepositories>
 
             <build>
                 <plugins>
@@ -244,29 +254,23 @@
                     </plugin>
 
                     <plugin>
-                        <groupId>com.redowlanalytics</groupId>
+                        <groupId>io.github.swagger2markup</groupId>
                         <artifactId>swagger2markup-maven-plugin</artifactId>
-                        <version>0.7.1</version>
-
-                        <dependencies>
-                            <dependency>
-                                <groupId>io.github.robwin</groupId>
-                                <artifactId>swagger2markup</artifactId>
-                                <version>0.7.1</version>
-                            </dependency>
-                        </dependencies>
+                        <version>1.1.0</version>
 
                         <executions>
                             <execution>
                                 <id>gen-asciidoc</id>
                                 <phase>process-resources</phase>
                                 <goals>
-                                    <goal>process-swagger</goal>
+                                    <goal>convertSwagger2markup</goal>
                                 </goals>
                                 <configuration>
-                                    <inputDirectory>${project.basedir}/target/apidocs-rest/swagger/apidocs</inputDirectory>
-                                    <outputDirectory>${project.basedir}/target/apidocs-rest/asciidoc</outputDirectory>
-                                    <markupLanguage>asciidoc</markupLanguage>
+                                    <swaggerInput>${project.build.directory}/apidocs-rest/swagger/apidocs/service.json</swaggerInput>
+                                    <outputDir>${project.build.directory}/apidocs-rest/asciidoc/</outputDir>
+                                    <config>
+                                        <swagger2markup.markupLanguage>ASCIIDOC</swagger2markup.markupLanguage>
+                                    </config>
                                 </configuration>
                             </execution>
                         </executions>
@@ -275,7 +279,7 @@
                     <plugin>
                         <groupId>org.asciidoctor</groupId>
                         <artifactId>asciidoctor-maven-plugin</artifactId>
-                        <version>1.5.2</version>
+                        <version>1.5.3</version>
                         <executions>
                             <execution>
                                 <id>generate-docs</id>
