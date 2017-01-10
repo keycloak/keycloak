@@ -28,6 +28,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
+import java.security.MessageDigest;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -252,7 +253,7 @@ public class ClientSessionCode {
 
             clientSession.removeNote(ACTIVE_CODE);
 
-            return code.equals(activeCode);
+            return MessageDigest.isEqual(code.getBytes(), activeCode.getBytes());
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
