@@ -153,7 +153,7 @@
                     processCallback(callback, initPromise);
                     return;
                 } else if (initOptions) {
-                    if (initOptions.token || initOptions.refreshToken) {
+                    if (initOptions.refreshToken) {
                         setToken(initOptions.token, initOptions.refreshToken, initOptions.idToken);
 
                         if (loginIframe.enable) {
@@ -379,7 +379,7 @@
         kc.updateToken = function(minValidity) {
             var promise = createPromise();
 
-            if (!kc.tokenParsed || !kc.refreshToken) {
+            if (!kc.refreshToken) {
                 promise.setError();
                 return promise.promise;
             }
@@ -388,14 +388,10 @@
 
             var exec = function() {
                 var refreshToken = false;
-                if (kc.timeSkew == -1) {
-                    console.info('Skew ' + kc.timeSkew);
-                    refreshToken = true;
-                    console.info('[KEYCLOAK] Refreshing token: time skew not set');
-                } else if (minValidity == -1) {
+                if (minValidity == -1) {
                     refreshToken = true;
                     console.info('[KEYCLOAK] Refreshing token: forced refresh');
-                } else if (kc.isTokenExpired(minValidity)) {
+                } else if (!kc.tokenParsed || kc.isTokenExpired(minValidity)) {
                     refreshToken = true;
                     console.info('[KEYCLOAK] Refreshing token: token expired');
                 }
@@ -638,49 +634,6 @@
                 kc.tokenTimeoutHandle = null;
             }
 
-            if (token) {
-                kc.token = token;
-                kc.tokenParsed = decodeToken(token);
-                var sessionId = kc.realm + '/' + kc.tokenParsed.sub;
-                if (kc.tokenParsed.session_state) {
-                    sessionId = sessionId + '/' + kc.tokenParsed.session_state;
-                }
-                kc.sessionId = sessionId;
-                kc.authenticated = true;
-                kc.subject = kc.tokenParsed.sub;
-                kc.realmAccess = kc.tokenParsed.realm_access;
-                kc.resourceAccess = kc.tokenParsed.resource_access;
-
-                if (timeLocal) {
-                    kc.timeSkew = Math.floor(timeLocal / 1000) - kc.tokenParsed.iat;
-                    console.info('[KEYCLOAK] Estimated time difference between browser and server is ' + kc.timeSkew + ' seconds');
-                } else {
-                    kc.timeSkew = -1;
-                }
-
-                if (kc.onTokenExpired) {
-                    if (kc.timeSkew == -1) {
-                        kc.onTokenExpired();
-                    } else {
-                        var expiresIn = (kc.tokenParsed['exp'] - (new Date().getTime() / 1000) + kc.timeSkew) * 1000;
-                        if (expiresIn <= 0) {
-                            kc.onTokenExpired();
-                        } else {
-                            kc.tokenTimeoutHandle = setTimeout(kc.onTokenExpired, expiresIn);
-                        }
-                    }
-                }
-
-            } else {
-                delete kc.token;
-                delete kc.tokenParsed;
-                delete kc.subject;
-                delete kc.realmAccess;
-                delete kc.resourceAccess;
-
-                kc.authenticated = false;
-            }
-
             if (refreshToken) {
                 kc.refreshToken = refreshToken;
                 kc.refreshTokenParsed = decodeToken(refreshToken);
@@ -695,6 +648,48 @@
             } else {
                 delete kc.idToken;
                 delete kc.idTokenParsed;
+            }
+
+            if (token) {
+                kc.token = token;
+                kc.tokenParsed = decodeToken(token);
+
+                var sessionId = kc.realm + '/' + kc.tokenParsed.sub;
+                if (kc.tokenParsed.session_state) {
+                    sessionId = sessionId + '/' + kc.tokenParsed.session_state;
+                }
+                kc.sessionId = sessionId;
+                kc.authenticated = true;
+                kc.subject = kc.tokenParsed.sub;
+                kc.realmAccess = kc.tokenParsed.realm_access;
+                kc.resourceAccess = kc.tokenParsed.resource_access;
+
+                if (timeLocal) {
+                    kc.timeSkew = Math.floor(timeLocal / 1000) - kc.tokenParsed.iat;
+                    console.info('[KEYCLOAK] Estimated time difference between browser and server is ' + kc.timeSkew + ' seconds');
+
+                    if (kc.onTokenExpired) {
+                        var expiresIn = (kc.tokenParsed['exp'] - (new Date().getTime() / 1000) + kc.timeSkew) * 1000;
+                        console.info('[KEYCLOAK] Token expires in ' + Math.round(expiresIn / 1000) + ' s');
+                        if (expiresIn <= 0) {
+                            kc.onTokenExpired();
+                        } else {
+                            kc.tokenTimeoutHandle = setTimeout(kc.onTokenExpired, expiresIn);
+                        }
+                    }
+                } else {
+                    kc.updateToken(-1);
+                }
+            } else if (refreshToken) {
+                kc.updateToken(-1);
+            } else {
+                delete kc.token;
+                delete kc.tokenParsed;
+                delete kc.subject;
+                delete kc.realmAccess;
+                delete kc.resourceAccess;
+
+                kc.authenticated = false;
             }
         }
 
