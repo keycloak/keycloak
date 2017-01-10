@@ -164,6 +164,16 @@ The version specific section below will mention if any changes are required to a
 
 === Version specific migration
 
+==== Migrating to 2.5.0
+
+===== Changes to the infinispan caches
+
+The `realms` cache defined in the infinispan subsystem in `standalone.xml` or `standalone-ha.xml` configuration file, now has the eviction with the 10000 records by default.
+This is the same default like the `users` cache.
+
+Also the `authorization` cache now doesn't have any eviction on it by default.
+
+
 ==== Migrating to 2.4.0
 
 ===== Server SPI split into Server SPI and Sever SPI Private
@@ -203,6 +213,12 @@ to use `realm-public-key` option in adapter configuration anymore.
 Note this option is still supported, but it may be useful just if you really want to have hardcoded public key in your adapter configuration
 and never download the public key from Keycloak. In theory, one reason for this can be to avoid man-in-the-middle attack if you have untrusted network between adapter and Keycloak,
 however in that case, it is much better option to use HTTPS, which will secure all the requests between adapter and Keycloak.
+
+===== Added infinispan cache `keys`
+
+In this release, we added new cache `keys` to the infinispan subsystem, which is defined in `standalone.xml` or `standalone-ha.xml` configuration file.
+It has also some eviction and expiration defined. This cache is internally used for caching the external public keys of the entities
+trusted by the server (Identity providers or clients, which uses authentication with signed JWT).
 
 ==== Migrating to 2.2.0
 
