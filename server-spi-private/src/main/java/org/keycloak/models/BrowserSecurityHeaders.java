@@ -37,7 +37,7 @@ public class BrowserSecurityHeaders {
 
         Map<String, String> dh = new HashMap<>();
         dh.put("xFrameOptions", "SAMEORIGIN");
-        dh.put("contentSecurityPolicy", "frame-src 'self'");
+        dh.put("contentSecurityPolicy", "child-src 'self'");
         dh.put("xContentTypeOptions", "nosniff");
 
         defaultHeaders = Collections.unmodifiableMap(dh);
