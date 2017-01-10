@@ -1,7 +1,7 @@
 == Migration from older versions
 
 To upgrade to a new version of Keycloak first download and install the new version of Keycloak. Once the new version
-is installed migrate the database, keycloak-server.json, providers, themes and applications to the new applications.
+is installed migrate the config files, database, keycloak-server.json, providers, themes and applications to the new applications.
 
 This chapter contains some general migration details which are applicable to all versions. There are instructions for
 migration that is only applicable to a specific release. If you are upgrading from a very old version you need to go
@@ -11,6 +11,35 @@ It's highly recommended that you backup your database prior to upgrading Keycloa
 
 Migration from a candidate release (CR) to a Final release is not supported. We do however recommend that you test
 migration for a CR so we can resolve any potential issues before the Final is released.
+
+=== Migration of config files using migration scripts
+As part of your migration, you should use your old versions of config files `standalone.xml`, `standalone-ha.xml`, and/or `domain.xml`.
+These files typically contain configuration that is unique to your own environment.  So, the first thing to do as part
+of a migration is to copy those files to the new Keycloak server installation, replacing the default versions.
+
+If migrating from Keycloak version 2.1.0 or older, you should also copy `keycloak-server.json` to `standalone/configuration`
+and/or `domain/configuration`.
+
+There will be configuration in those config files that pertains to Keycloak, which will need to be upgraded.  For that,
+you should run one of the upgrade scripts.  They are `migrate-standalone.cli`, `migrate-standalone-ha.cli`, and `migrate-domain.cli`.
+
+The server should not be running when you execute a migration script.
+
+.Example for running migrate-standalone.cli
+[source]
+----
+$ .../bin/jboss-cli.sh --file=migrate-standalone.cli
+----
+
+If you are migrating `keycloak-server.json`, this will also be migrated as needed.  If you prefer,
+you can migrate `keycloak-server.json` beforehand using the instructions in the next section.
+
+One thing to note is that the migration scripts only work for Keycloak versions 1.8.1 forward.  If migrating an older
+version you will need to manually upgrade your config files to at least be 1.8.1 compliant.
+
+Lastly, you may want to examine the contents of the scripts before running.  They show exactly what will be changed
+for each version.  They also have values at the top of the script that you may need to change based on your
+environment.
 
 === Migrate and convert keycloak-server.json
 
@@ -22,7 +51,7 @@ if this file is in `standalone/configuration/keycloak-server.json`, but it is hi
 you convert to using standalone.xml, standalone-ha.xml, or domain.xml for configuration. We may soon remove
 support for keycloak-server.json.
 
-To convert your keycloak-server.json, you will use a new jboss-cli operation called `migrate-json`.
+To convert your keycloak-server.json, you will use a jboss-cli operation called `migrate-json`.
 It is recommended that you run this operation while the server is not running.
 
 The `migrate-json` operation assumes you are migrating with an xml configuration file from an old version.  For example,
