@@ -186,7 +186,7 @@ Any providers loaded from the file-system uses a classloader with the Keycloak c
 
 ==== Using the Keycloak Deployer
 
-If you throw your provider jar within the Keycloak `deploy/` directory, your provider will automatically be deployed.
+If you copy your provider jar to the Keycloak `deploy/` directory, your provider will automatically be deployed.
 Hot deployment works too.  Additionally, your provider jar works similarly to other components deployed in a JBoss/Wildfly
 environment in that they can use facilities like the `jboss-deployment-structure.xml` file.  This file allows you to
 set up dependencies on other components and load third-party jars and modules.
