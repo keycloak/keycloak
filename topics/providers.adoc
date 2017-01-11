@@ -238,7 +238,7 @@ This is done by editing the keycloak-server subsystem section of
 
 ==== Register a provider using file-system
 
-To register your provider simply copy the JAR including the ProviderFactory and Provider classes and the provider configuration file to server's root `providers` directory. 
+To register your provider simply copy the JAR including the ProviderFactory and Provider classes and the service configuration file to server's root `providers` directory. 
 
 You can also define multiple provider class-path if you want to create isolated class-loaders.
 To do this edit `standalone.xml`, `standalone-ha.xml`, or `domain.xml` and add more classpath entries to the providers element.
