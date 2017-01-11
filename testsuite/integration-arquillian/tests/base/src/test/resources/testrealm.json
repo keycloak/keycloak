@@ -331,6 +331,17 @@
       ],
       "adminUrl": "http://localhost:8180/namedapp/base/admin",
       "secret": "password"
+    },
+    {
+      "clientId": "var-named-test-app",
+      "name": "Test App Named - ${client_account}",
+      "enabled": true,
+      "baseUrl": "http://localhost:8180/varnamedapp/base",
+      "redirectUris": [
+        "http://localhost:8180/varnamedapp/base/*"
+      ],
+      "adminUrl": "http://localhost:8180/varnamedapp/base/admin",
+      "secret": "password"
     }
   ],
   "roles" : {
