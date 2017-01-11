@@ -196,8 +196,6 @@ it really easy to use third party jars as you can just put these libraries in th
 
 ==== Register a provider using Modules
 
-WARNING: We don't recommend this approach.
-
 To register a provider using Modules first create a module.
 To do this you can either use the jboss-cli script or manually create a folder inside `KEYCLOAK_HOME/modules` and add your jar and a `module.xml`.
 For example to add the event listener sysout example provider using the `jboss-cli` script execute: 
