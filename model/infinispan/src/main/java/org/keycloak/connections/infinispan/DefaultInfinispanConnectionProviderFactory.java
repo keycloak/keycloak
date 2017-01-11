@@ -164,9 +164,16 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
                 throw new RuntimeException("Invalid value for sessionsMode");
             }
 
-            sessionConfigBuilder.clustering().hash()
-                    .numOwners(config.getInt("sessionsOwners", 2))
-                    .numSegments(config.getInt("sessionsSegments", 60)).build();
+            int l1Lifespan = config.getInt("l1Lifespan", 600000);
+            boolean l1Enabled = l1Lifespan > 0;
+            sessionConfigBuilder.clustering()
+                    .hash()
+                        .numOwners(config.getInt("sessionsOwners", 2))
+                        .numSegments(config.getInt("sessionsSegments", 60))
+                    .l1()
+                        .enabled(l1Enabled)
+                        .lifespan(l1Lifespan)
+                    .build();
         }
 
         Configuration sessionCacheConfiguration = sessionConfigBuilder.build();

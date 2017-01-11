@@ -47,6 +47,7 @@ public class TestsuiteCLI {
             AbstractOfflineCacheCommand.GetCommand.class,
             AbstractOfflineCacheCommand.GetMultipleCommand.class,
             AbstractOfflineCacheCommand.GetLocalCommand.class,
+            AbstractOfflineCacheCommand.SizeLocalCommand.class,
             AbstractOfflineCacheCommand.RemoveCommand.class,
             AbstractOfflineCacheCommand.SizeCommand.class,
             AbstractOfflineCacheCommand.ListCommand.class,
