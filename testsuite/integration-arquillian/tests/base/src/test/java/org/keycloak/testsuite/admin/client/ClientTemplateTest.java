@@ -19,6 +19,7 @@ package org.keycloak.testsuite.admin.client;
 
 import org.junit.Assert;
 import org.junit.Test;
+
 import org.keycloak.admin.client.resource.ClientTemplatesResource;
 import org.keycloak.admin.client.resource.RoleMappingResource;
 import org.keycloak.events.admin.OperationType;
@@ -34,6 +35,7 @@ import org.keycloak.representations.idm.MappingsRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.util.AdminEventPaths;
+import org.keycloak.testsuite.util.Matchers;
 
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.NotFoundException;
@@ -43,8 +45,10 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import javax.ws.rs.*;
+import javax.ws.rs.core.Response.Status;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -148,6 +152,34 @@ public class ClientTemplateTest extends AbstractClientTest {
 
         // Remove template1
         clientTemplates().get(template1Id).remove();
+    }
+
+
+    @Test
+    public void testRenameTemplate() {
+        // Create two templates
+        ClientTemplateRepresentation template1Rep = new ClientTemplateRepresentation();
+        template1Rep.setName("template1");
+        template1Rep.setDescription("template1-desc");
+        template1Rep.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+        template1Rep.setFullScopeAllowed(true);
+        createTemplate(template1Rep);
+
+        ClientTemplateRepresentation template2Rep = new ClientTemplateRepresentation();
+        template2Rep.setName("template2");
+        template2Rep.setDescription("template2-desc");
+        template2Rep.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+        template2Rep.setFullScopeAllowed(true);
+        String template2Id = createTemplate(template2Rep);
+
+        // Test updating
+        template2Rep.setName("template1");
+
+        try {
+            clientTemplates().get(template2Id).update(template2Rep);
+        } catch (ClientErrorException ex) {
+            assertThat(ex.getResponse(), Matchers.statusCodeIs(Status.CONFLICT));
+        }
     }
 
 
