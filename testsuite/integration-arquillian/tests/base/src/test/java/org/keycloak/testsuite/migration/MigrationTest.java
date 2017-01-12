@@ -19,9 +19,14 @@ package org.keycloak.testsuite.migration;
 import java.util.HashSet;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.common.constants.KerberosConstants;
+import org.keycloak.component.PrioritizedComponentModel;
 import org.keycloak.keys.KeyProvider;
+import org.keycloak.models.LDAPConstants;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.storage.UserStorageProvider;
+import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.arquillian.migration.Migration;
 
@@ -55,7 +60,9 @@ import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
 public class MigrationTest extends AbstractKeycloakTest {
 
     public static final String MIGRATION = "Migration";
+    public static final String MIGRATION2 = "Migration2";
     private RealmResource migrationRealm;
+    private RealmResource migrationRealm2;
     private RealmResource masterRealm;
         
     @Override
@@ -66,6 +73,7 @@ public class MigrationTest extends AbstractKeycloakTest {
     @Before
     public void beforeMigrationTest() {
         migrationRealm = adminClient.realms().realm(MIGRATION);
+        migrationRealm2 = adminClient.realms().realm(MIGRATION2);
         masterRealm = adminClient.realms().realm(MASTER);
         
         //add migration realm to testRealmReps to make the migration removed after test
@@ -81,6 +89,7 @@ public class MigrationTest extends AbstractKeycloakTest {
         testMigrationTo2_2_0();
         testMigrationTo2_3_0();
         testMigrationTo2_5_0();
+        testLdapKerberosMigration_2_5_0();
     }
     
     @Test
@@ -95,7 +104,7 @@ public class MigrationTest extends AbstractKeycloakTest {
         //master realm
         assertNames(masterRealm.roles().list(), "offline_access", "uma_authorization", "create-realm", "master-test-realm-role", "admin");
         assertNames(masterRealm.clients().findAll(), "admin-cli", "security-admin-console", "broker", "account", 
-                "master-realm", "master-test-client", "Migration-realm");
+                "master-realm", "master-test-client", "Migration-realm", "Migration2-realm");
         String id = masterRealm.clients().findByClientId("master-test-client").get(0).getId();
         assertNames(masterRealm.clients().get(id).roles().list(), "master-test-client-role");
         assertNames(masterRealm.users().search("", 0, 5), "admin", "master-test-user");
@@ -170,6 +179,40 @@ public class MigrationTest extends AbstractKeycloakTest {
         
         //https://github.com/keycloak/keycloak/pull/3630
         testDuplicateEmailSupport(masterRealm, migrationRealm);
+    }
+
+    private void testLdapKerberosMigration_2_5_0() {
+        RealmRepresentation realmRep = migrationRealm2.toRepresentation();
+        List<ComponentRepresentation> components = migrationRealm2.components().query(realmRep.getId(), UserStorageProvider.class.getName());
+        assertEquals(2, components.size());
+        boolean testedLdap = false;
+        boolean testedKerberos = false;
+
+        for (ComponentRepresentation component : components) {
+            if (component.getName().equals("ldap-provider")) {
+                assertEquals("2", component.getConfig().getFirst(PrioritizedComponentModel.PRIORITY));
+                assertEquals("READ_ONLY", component.getConfig().getFirst(LDAPConstants.EDIT_MODE));
+                assertEquals("true", component.getConfig().getFirst(LDAPConstants.SYNC_REGISTRATIONS));
+                assertEquals(LDAPConstants.VENDOR_RHDS, component.getConfig().getFirst(LDAPConstants.VENDOR));
+                assertEquals("uid", component.getConfig().getFirst(LDAPConstants.USERNAME_LDAP_ATTRIBUTE));
+                assertEquals("uid", component.getConfig().getFirst(LDAPConstants.RDN_LDAP_ATTRIBUTE));
+                assertEquals("nsuniqueid", component.getConfig().getFirst(LDAPConstants.UUID_LDAP_ATTRIBUTE));
+                assertEquals("inetOrgPerson, organizationalPerson", component.getConfig().getFirst(LDAPConstants.USER_OBJECT_CLASSES));
+                assertEquals("http://localhost", component.getConfig().getFirst(LDAPConstants.CONNECTION_URL));
+                assertEquals("dn", component.getConfig().getFirst(LDAPConstants.USERS_DN));
+                assertEquals(LDAPConstants.AUTH_TYPE_NONE, component.getConfig().getFirst(LDAPConstants.AUTH_TYPE));
+                assertEquals("true", component.getConfig().getFirst(KerberosConstants.ALLOW_KERBEROS_AUTHENTICATION));
+                assertEquals("realm", component.getConfig().getFirst(KerberosConstants.KERBEROS_REALM));
+                assertEquals("principal", component.getConfig().getFirst(KerberosConstants.SERVER_PRINCIPAL));
+                assertEquals("keytab", component.getConfig().getFirst(KerberosConstants.KEYTAB));
+                testedLdap = true;
+            } else if (component.getName().equals("kerberos-provider")) {
+                assertEquals("3", component.getConfig().getFirst(PrioritizedComponentModel.PRIORITY));
+                assertEquals("realm", component.getConfig().getFirst(KerberosConstants.KERBEROS_REALM));
+                assertEquals("principal", component.getConfig().getFirst(KerberosConstants.SERVER_PRINCIPAL));
+                assertEquals("keytab", component.getConfig().getFirst(KerberosConstants.KEYTAB));
+            }
+        }
     }
     
     private void testAuthorizationServices(RealmResource... realms) {
