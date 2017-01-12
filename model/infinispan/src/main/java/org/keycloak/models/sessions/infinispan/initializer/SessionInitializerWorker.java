@@ -60,7 +60,7 @@ public class SessionInitializerWorker implements DistributedCallable<String, Ser
 
         KeycloakSessionFactory sessionFactory = workCache.getAdvancedCache().getComponentRegistry().getComponent(KeycloakSessionFactory.class);
         if (sessionFactory == null) {
-            log.warnf("KeycloakSessionFactory not yet set in cache. Worker skipped");
+            log.debugf("KeycloakSessionFactory not yet set in cache. Worker skipped");
             return InfinispanUserSessionInitializer.WorkerResult.create(segment, false);
         }
 

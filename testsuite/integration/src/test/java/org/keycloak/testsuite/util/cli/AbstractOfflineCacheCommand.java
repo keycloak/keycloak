@@ -223,4 +223,18 @@ public abstract class AbstractOfflineCacheCommand extends AbstractCommand {
         }
     }
 
+
+    public static class SizeLocalCommand extends AbstractOfflineCacheCommand {
+
+        @Override
+        public String getName() {
+            return "sizeLocal";
+        }
+
+        @Override
+        protected void doRunCacheCommand(KeycloakSession session, Cache<String, SessionEntity> cache) {
+            log.info("Size local: " + cache.getAdvancedCache().withFlags(Flag.CACHE_MODE_LOCAL).size());
+        }
+    }
+
 }

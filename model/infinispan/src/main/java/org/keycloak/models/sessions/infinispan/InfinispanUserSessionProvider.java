@@ -19,6 +19,7 @@ package org.keycloak.models.sessions.infinispan;
 
 import org.infinispan.Cache;
 import org.infinispan.CacheStream;
+import org.infinispan.context.Flag;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.ClientInitialAccessModel;
@@ -291,6 +292,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
 
     @Override
     public void removeExpired(RealmModel realm) {
+        log.debugf("Removing expired sessions");
         removeExpiredUserSessions(realm);
         removeExpiredClientSessions(realm);
         removeExpiredOfflineUserSessions(realm);
@@ -302,9 +304,13 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         int expired = Time.currentTime() - realm.getSsoSessionMaxLifespan();
         int expiredRefresh = Time.currentTime() - realm.getSsoSessionIdleTimeout();
 
-        Iterator<Map.Entry<String, SessionEntity>> itr = sessionCache.entrySet().stream().filter(UserSessionPredicate.create(realm.getId()).expired(expired, expiredRefresh)).iterator();
+        // Each cluster node cleanups just local sessions, which are those owned by himself (+ few more taking l1 cache into account)
+        Iterator<Map.Entry<String, SessionEntity>> itr = sessionCache.getAdvancedCache().withFlags(Flag.CACHE_MODE_LOCAL)
+                .entrySet().stream().filter(UserSessionPredicate.create(realm.getId()).expired(expired, expiredRefresh)).iterator();
 
+        int counter = 0;
         while (itr.hasNext()) {
+            counter++;
             UserSessionEntity entity = (UserSessionEntity) itr.next().getValue();
             tx.remove(sessionCache, entity.getId());
 
@@ -314,23 +320,38 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
                 }
             }
         }
+
+        log.debugf("Removed %d expired user sessions for realm '%s'", counter, realm.getName());
     }
 
     private void removeExpiredClientSessions(RealmModel realm) {
         int expiredDettachedClientSession = Time.currentTime() - RealmInfoUtil.getDettachedClientSessionLifespan(realm);
 
-        Iterator<Map.Entry<String, SessionEntity>> itr = sessionCache.entrySet().stream().filter(ClientSessionPredicate.create(realm.getId()).expiredRefresh(expiredDettachedClientSession).requireNullUserSession()).iterator();
+        // Each cluster node cleanups just local sessions, which are those owned by himself (+ few more taking l1 cache into account)
+        Iterator<Map.Entry<String, SessionEntity>> itr = sessionCache.getAdvancedCache().withFlags(Flag.CACHE_MODE_LOCAL)
+                .entrySet().stream().filter(ClientSessionPredicate.create(realm.getId()).expiredRefresh(expiredDettachedClientSession).requireNullUserSession()).iterator();
+
+        int counter = 0;
         while (itr.hasNext()) {
+            counter++;
             tx.remove(sessionCache, itr.next().getKey());
         }
+
+        log.debugf("Removed %d expired client sessions for realm '%s'", counter, realm.getName());
     }
 
     private void removeExpiredOfflineUserSessions(RealmModel realm) {
         UserSessionPersisterProvider persister = session.getProvider(UserSessionPersisterProvider.class);
         int expiredOffline = Time.currentTime() - realm.getOfflineSessionIdleTimeout();
 
-        Iterator<Map.Entry<String, SessionEntity>> itr = offlineSessionCache.entrySet().stream().filter(UserSessionPredicate.create(realm.getId()).expired(null, expiredOffline)).iterator();
+        // Each cluster node cleanups just local sessions, which are those owned by himself (+ few more taking l1 cache into account)
+        UserSessionPredicate predicate = UserSessionPredicate.create(realm.getId()).expired(null, expiredOffline);
+        Iterator<Map.Entry<String, SessionEntity>> itr = offlineSessionCache.getAdvancedCache().withFlags(Flag.CACHE_MODE_LOCAL)
+                .entrySet().stream().filter(predicate).iterator();
+
+        int counter = 0;
         while (itr.hasNext()) {
+            counter++;
             UserSessionEntity entity = (UserSessionEntity) itr.next().getValue();
             tx.remove(offlineSessionCache, entity.getId());
 
@@ -340,22 +361,32 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
                 tx.remove(offlineSessionCache, clientSessionId);
             }
         }
+
+        log.debugf("Removed %d expired offline user sessions for realm '%s'", counter, realm.getName());
     }
 
     private void removeExpiredOfflineClientSessions(RealmModel realm) {
         UserSessionPersisterProvider persister = session.getProvider(UserSessionPersisterProvider.class);
         int expiredOffline = Time.currentTime() - realm.getOfflineSessionIdleTimeout();
 
-        Iterator<String> itr = offlineSessionCache.entrySet().stream().filter(ClientSessionPredicate.create(realm.getId()).expiredRefresh(expiredOffline)).map(Mappers.sessionId()).iterator();
+        // Each cluster node cleanups just local sessions, which are those owned by himself (+ few more taking l1 cache into account)
+        Iterator<String> itr = offlineSessionCache.getAdvancedCache().withFlags(Flag.CACHE_MODE_LOCAL)
+                .entrySet().stream().filter(ClientSessionPredicate.create(realm.getId()).expiredRefresh(expiredOffline)).map(Mappers.sessionId()).iterator();
+
+        int counter = 0;
         while (itr.hasNext()) {
+            counter++;
             String sessionId = itr.next();
             tx.remove(offlineSessionCache, sessionId);
             persister.removeClientSession(sessionId, true);
         }
+
+        log.debugf("Removed %d expired offline client sessions for realm '%s'", counter, realm.getName());
     }
 
     private void removeExpiredClientInitialAccess(RealmModel realm) {
-        Iterator<String> itr = sessionCache.entrySet().stream().filter(ClientInitialAccessPredicate.create(realm.getId()).expired(Time.currentTime())).map(Mappers.sessionId()).iterator();
+        Iterator<String> itr = sessionCache.getAdvancedCache().withFlags(Flag.CACHE_MODE_LOCAL)
+                .entrySet().stream().filter(ClientInitialAccessPredicate.create(realm.getId()).expired(Time.currentTime())).map(Mappers.sessionId()).iterator();
         while (itr.hasNext()) {
             tx.remove(sessionCache, itr.next());
         }
