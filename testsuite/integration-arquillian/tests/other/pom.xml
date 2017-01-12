@@ -38,7 +38,7 @@
 
     <modules>
         <module>adapters</module>
-        <!--<module>sssd</module>-->
+        <module>sssd</module>
     </modules>
 
     <build>
