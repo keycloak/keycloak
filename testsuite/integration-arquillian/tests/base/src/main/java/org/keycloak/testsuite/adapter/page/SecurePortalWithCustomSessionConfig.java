@@ -15,21 +15,29 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.adapter.undertow.servlet;
+package org.keycloak.testsuite.adapter.page;
 
-import org.keycloak.testsuite.adapter.servlet.AbstractDemoFilterServletAdapterTest;
-import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
+import org.jboss.arquillian.container.test.api.OperateOnDeployment;
+import org.jboss.arquillian.test.api.ArquillianResource;
+import org.keycloak.testsuite.page.AbstractPageWithInjectedUrl;
 
-import org.junit.Ignore;
+import java.net.URL;
 
 /**
- * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
+ *
+ * @author tkyjovsk
  */
-@AppServerContainer("auth-server-undertow")
-public class UndertowDemoFilterServletAdapterTest extends AbstractDemoFilterServletAdapterTest {
-    @Ignore
+public class SecurePortalWithCustomSessionConfig extends AbstractPageWithInjectedUrl {
+
+    public static final String DEPLOYMENT_NAME = "secure-portal-with-custom-session-config";
+
+    @ArquillianResource
+    @OperateOnDeployment(DEPLOYMENT_NAME)
+    private URL url;
+
     @Override
-    public void testAuthenticatedWithCustomSessionConfig() {
-        // Undertow deployment ignores session cookie settings in web.xml, see org.keycloak.testsuite.arquillian.undertow.SimpleWebXmlParser class
+    public URL getInjectedUrl() {
+        return url;
     }
+
 }
