@@ -69,6 +69,13 @@ was compromised, it is obviously good to update your keys, but it's also good to
 
 |Validating Public Key
 |Applicable if `Use JWKS URL` is off. Here is the public key in PEM format that must be used to verify external IDP signatures.
+
+|Validating Public Key Id
+|Applicable if `Use JWKS URL` is off. This field specifies ID of the public key in PEM format. This config value is optional. As there is no standard way
+ for computing key ID from key, various external identity providers might use different algorithm from {{book.project.name}}. If the value of this field
+ is not specified, the validating public key specified above is used for all requests regardless of key ID sent by external IDP. When set, value of this
+ field serves as key ID used by {{book.project.name}} for validating signatures from such providers and must match the key ID specified by the IDP.
+
 |===
 
 You can also import all this configuration data by providing a URL or file that points to OpenID Provider Metadata (see OIDC Discovery specification).
