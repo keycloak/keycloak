@@ -39,7 +39,7 @@ public interface RoleMappingResource {
     @Path("realm")
     public RoleScopeResource realmLevel();
 
-    @Path("clients/{clientId}")
-    public RoleScopeResource clientLevel(@PathParam("clientId") String clientId);
+    @Path("clients/{clientUUID}")
+    public RoleScopeResource clientLevel(@PathParam("clientUUID") String clientUUID);
 
 }
