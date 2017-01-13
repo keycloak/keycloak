@@ -245,9 +245,9 @@ public class SamlProtocol implements LoginProtocol {
         String logoutPostUrl = client.getAttribute(SAML_SINGLE_LOGOUT_SERVICE_URL_POST_ATTRIBUTE);
         String logoutRedirectUrl = client.getAttribute(SAML_SINGLE_LOGOUT_SERVICE_URL_REDIRECT_ATTRIBUTE);
 
-        if (logoutPostUrl == null) {
+        if (logoutPostUrl == null || logoutPostUrl.trim().isEmpty()) {
             // if we don't have a redirect uri either, return true and default to the admin url + POST binding
-            if (logoutRedirectUrl == null)
+            if (logoutRedirectUrl == null || logoutRedirectUrl.trim().isEmpty())
                 return true;
             return false;
         }
@@ -262,7 +262,7 @@ public class SamlProtocol implements LoginProtocol {
         if (SAML_POST_BINDING.equals(bindingType))
             return true;
 
-        if (logoutRedirectUrl == null)
+        if (logoutRedirectUrl == null || logoutRedirectUrl.trim().isEmpty())
             return true; // we don't have a redirect binding url, so use post binding
 
         return false; // redirect binding
