@@ -1,0 +1,8 @@
+config:edit org.apache.karaf.shell
+config:propset sshRealm keycloak
+config:update
+system-property -p hawtio.roles admin,user
+system-property -p hawtio.keycloakEnabled true
+system-property -p hawtio.realm keycloak
+system-property -p hawtio.keycloakClientConfig \$\{karaf.base\}/etc/keycloak-hawtio-client.json
+system-property -p hawtio.rolePrincipalClasses org.keycloak.adapters.jaas.RolePrincipal,org.apache.karaf.jaas.boot.principal.RolePrincipal
