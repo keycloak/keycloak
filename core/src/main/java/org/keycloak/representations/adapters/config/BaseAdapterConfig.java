@@ -32,7 +32,7 @@ import java.util.Map;
 @JsonPropertyOrder({"realm", "realm-public-key", "auth-server-url", "ssl-required",
         "resource", "public-client", "credentials",
         "use-resource-role-mappings",
-        "enable-cors", "cors-max-age", "cors-allowed-methods",
+        "enable-cors", "cors-max-age", "cors-allowed-methods", "cors-exposed-headers",
         "expose-token", "bearer-only", "autodetect-bearer-only", "enable-basic-auth"})
 public class BaseAdapterConfig extends BaseRealmConfig {
     @JsonProperty("resource")

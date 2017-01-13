@@ -73,6 +73,7 @@ public class KeycloakDeployment {
     protected int corsMaxAge = -1;
     protected String corsAllowedHeaders;
     protected String corsAllowedMethods;
+    protected String corsExposedHeaders;
     protected boolean exposeToken;
     protected boolean alwaysRefreshToken;
     protected boolean registerNodeAtStartup;
@@ -84,6 +85,8 @@ public class KeycloakDeployment {
     protected int minTimeBetweenJwksRequests;
     protected int publicKeyCacheTtl;
     private PolicyEnforcer policyEnforcer;
+
+    protected boolean containerErrorPage = true;
 
     public KeycloakDeployment() {
     }
@@ -413,5 +416,21 @@ public class KeycloakDeployment {
 
     public PolicyEnforcer getPolicyEnforcer() {
         return policyEnforcer;
+    }
+
+    public boolean isContainerErrorPage() {
+        return containerErrorPage;
+    }
+
+    public void setContainerErrorPage(boolean containerErrorPage) {
+        this.containerErrorPage = containerErrorPage;
+    }
+
+    public String getCorsExposedHeaders() {
+        return corsExposedHeaders;
+    }
+
+    public void setCorsExposedHeaders(String corsExposedHeaders) {
+        this.corsExposedHeaders = corsExposedHeaders;
     }
 }
