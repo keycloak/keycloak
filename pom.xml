@@ -428,15 +428,6 @@
                 <version>${google.zxing.version}</version>
             </dependency>
 
-            <!-- Authorization Drools Policy Provider -->
-            <dependency>
-                <groupId>org.drools</groupId>
-                <artifactId>drools-bom</artifactId>
-                <type>pom</type>
-                <version>${version.org.drools}</version>
-                <scope>import</scope>
-            </dependency>
-
             <!-- Email Test Servers -->
             <dependency>
                 <groupId>com.icegreen</groupId>
