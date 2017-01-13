@@ -62,6 +62,7 @@ public class DefaultClientRegistrationProvider extends AbstractClientRegistratio
     @PUT
     @Path("{clientId}")
     @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
     public Response updateDefault(@PathParam("clientId") String clientId, ClientRepresentation client) {
         DefaultClientRegistrationContext context = new DefaultClientRegistrationContext(session, client, this);
         client = update(clientId, context);
