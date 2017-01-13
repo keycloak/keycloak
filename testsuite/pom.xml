@@ -57,6 +57,7 @@
         <module>tomcat8</module>
         <module>jetty</module>
         <module>integration-arquillian</module>
+        <module>server-config-migration</module>
     </modules>
         
 </project>
