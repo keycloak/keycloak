@@ -59,7 +59,7 @@ public abstract class AbstractFuseExampleAdapterTest extends AbstractExampleAdap
 
     @Override
     public void addAdapterTestRealms(List<RealmRepresentation> testRealms) {
-        RealmRepresentation fuseRealm = loadRealm(new File(EXAMPLES_HOME_DIR + "/fuse/testrealm.json"));
+        RealmRepresentation fuseRealm = loadRealm(new File(EXAMPLES_HOME_DIR + "/fuse/demorealm.json"));
         testRealms.add(fuseRealm);
     }
 

@@ -40,6 +40,15 @@
                 <scope>import</scope>
                 <version>${version.jboss-integration-platform}</version>
             </dependency>
+
+            <!-- Authorization Drools Policy Provider -->
+            <dependency>
+                <groupId>org.drools</groupId>
+                <artifactId>drools-bom</artifactId>
+                <type>pom</type>
+                <version>${version.org.drools}</version>
+                <scope>import</scope>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
