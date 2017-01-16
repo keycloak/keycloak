@@ -104,6 +104,9 @@ public class ClientTemplateResource {
 
         try {
             RepresentationToModel.updateClientTemplate(rep, template);
+            if (session.getTransactionManager().isActive()) {
+                session.getTransactionManager().commit();
+            }
             adminEvent.operation(OperationType.UPDATE).resourcePath(uriInfo).representation(rep).success();
             return Response.noContent().build();
         } catch (ModelDuplicateException e) {
