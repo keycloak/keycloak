@@ -40,6 +40,7 @@ import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserManager;
 import org.keycloak.models.cache.UserCache;
+import org.keycloak.models.credential.PasswordUserCredentialModel;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
@@ -49,9 +50,10 @@ import org.keycloak.storage.ldap.idm.query.internal.LDAPQuery;
 import org.keycloak.storage.ldap.idm.query.internal.LDAPQueryConditionsBuilder;
 import org.keycloak.storage.ldap.idm.store.ldap.LDAPIdentityStore;
 import org.keycloak.storage.ldap.kerberos.LDAPProviderKerberosConfig;
-import org.keycloak.storage.ldap.mappers.LDAPMappersComparator;
+import org.keycloak.storage.ldap.mappers.LDAPOperationDecorator;
 import org.keycloak.storage.ldap.mappers.LDAPStorageMapper;
-import org.keycloak.storage.ldap.mappers.PasswordUpdated;
+import org.keycloak.storage.ldap.mappers.LDAPStorageMapperManager;
+import org.keycloak.storage.ldap.mappers.PasswordUpdateCallback;
 import org.keycloak.storage.user.ImportedUserValidation;
 import org.keycloak.storage.user.UserLookupProvider;
 import org.keycloak.storage.user.UserQueryProvider;
@@ -59,7 +61,6 @@ import org.keycloak.storage.user.UserRegistrationProvider;
 
 import javax.naming.AuthenticationException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -89,7 +90,8 @@ public class LDAPStorageProvider implements UserStorageProvider,
     protected LDAPIdentityStore ldapIdentityStore;
     protected EditMode editMode;
     protected LDAPProviderKerberosConfig kerberosConfig;
-    protected PasswordUpdated updater;
+    protected PasswordUpdateCallback updater;
+    protected LDAPStorageMapperManager mapperManager;
 
     protected final Set<String> supportedCredentialTypes = new HashSet<>();
 
@@ -100,6 +102,7 @@ public class LDAPStorageProvider implements UserStorageProvider,
         this.ldapIdentityStore = ldapIdentityStore;
         this.kerberosConfig = new LDAPProviderKerberosConfig(model);
         this.editMode = ldapIdentityStore.getConfig().getEditMode();
+        this.mapperManager = new LDAPStorageMapperManager(this);
 
         supportedCredentialTypes.add(UserCredentialModel.PASSWORD);
         if (kerberosConfig.isAllowKerberosAuthentication()) {
@@ -107,7 +110,7 @@ public class LDAPStorageProvider implements UserStorageProvider,
         }
     }
 
-    public void setUpdater(PasswordUpdated updater) {
+    public void setUpdater(PasswordUpdateCallback updater) {
         this.updater = updater;
     }
 
@@ -125,6 +128,10 @@ public class LDAPStorageProvider implements UserStorageProvider,
 
     public ComponentModel getModel() {
         return model;
+    }
+
+    public LDAPStorageMapperManager getMapperManager() {
+        return mapperManager;
     }
 
     @Override
@@ -154,9 +161,9 @@ public class LDAPStorageProvider implements UserStorageProvider,
         }
 
         List<ComponentModel> mappers = realm.getComponents(model.getId(), LDAPStorageMapper.class.getName());
-        List<ComponentModel> sortedMappers = sortMappersAsc(mappers);
+        List<ComponentModel> sortedMappers = mapperManager.sortMappersAsc(mappers);
         for (ComponentModel mapperModel : sortedMappers) {
-            LDAPStorageMapper ldapMapper = getMapper(mapperModel);
+            LDAPStorageMapper ldapMapper = mapperManager.getMapper(mapperModel);
             proxied = ldapMapper.proxy(ldapObject, proxied, realm);
         }
 
@@ -299,9 +306,9 @@ public class LDAPStorageProvider implements UserStorageProvider,
     @Override
     public List<UserModel> getGroupMembers(RealmModel realm, GroupModel group, int firstResult, int maxResults) {
         List<ComponentModel> mappers = realm.getComponents(model.getId(), LDAPStorageMapper.class.getName());
-        List<ComponentModel> sortedMappers = sortMappersAsc(mappers);
+        List<ComponentModel> sortedMappers = mapperManager.sortMappersAsc(mappers);
         for (ComponentModel mapperModel : sortedMappers) {
-            LDAPStorageMapper ldapMapper = getMapper(mapperModel);
+            LDAPStorageMapper ldapMapper = mapperManager.getMapper(mapperModel);
             List<UserModel> users = ldapMapper.getGroupMembers(realm, group, firstResult, maxResults);
 
             // Sufficient for now
@@ -410,12 +417,12 @@ public class LDAPStorageProvider implements UserStorageProvider,
         imported.setEnabled(true);
 
         List<ComponentModel> mappers = realm.getComponents(model.getId(), LDAPStorageMapper.class.getName());
-        List<ComponentModel> sortedMappers = sortMappersDesc(mappers);
+        List<ComponentModel> sortedMappers = mapperManager.sortMappersDesc(mappers);
         for (ComponentModel mapperModel : sortedMappers) {
             if (logger.isTraceEnabled()) {
                 logger.tracef("Using mapper %s during import user from LDAP", mapperModel);
             }
-            LDAPStorageMapper ldapMapper = getMapper(mapperModel);
+            LDAPStorageMapper ldapMapper = mapperManager.getMapper(mapperModel);
             ldapMapper.onImportUserFromLDAP(ldapUser, imported, realm, true);
         }
 
@@ -492,12 +499,12 @@ public class LDAPStorageProvider implements UserStorageProvider,
             } catch (AuthenticationException ae) {
                 boolean processed = false;
                 List<ComponentModel> mappers = realm.getComponents(model.getId(), LDAPStorageMapper.class.getName());
-                List<ComponentModel> sortedMappers = sortMappersDesc(mappers);
+                List<ComponentModel> sortedMappers = mapperManager.sortMappersDesc(mappers);
                 for (ComponentModel mapperModel : sortedMappers) {
                     if (logger.isTraceEnabled()) {
                         logger.tracef("Using mapper %s during import user from LDAP", mapperModel);
                     }
-                    LDAPStorageMapper ldapMapper = getMapper(mapperModel);
+                    LDAPStorageMapper ldapMapper = mapperManager.getMapper(mapperModel);
                     processed = processed || ldapMapper.onAuthenticationFailure(ldapUser, user, ae, realm);
                 }
                 return processed;
@@ -508,23 +515,29 @@ public class LDAPStorageProvider implements UserStorageProvider,
 
     @Override
     public boolean updateCredential(RealmModel realm, UserModel user, CredentialInput input) {
-        if (!CredentialModel.PASSWORD.equals(input.getType()) || ! (input instanceof UserCredentialModel)) return false;
+        if (!CredentialModel.PASSWORD.equals(input.getType()) || ! (input instanceof PasswordUserCredentialModel)) return false;
         if (editMode == UserStorageProvider.EditMode.READ_ONLY) {
             throw new ModelReadOnlyException("Federated storage is not writable");
 
         } else if (editMode == UserStorageProvider.EditMode.WRITABLE) {
             LDAPIdentityStore ldapIdentityStore = getLdapIdentityStore();
-            UserCredentialModel cred = (UserCredentialModel)input;
+            PasswordUserCredentialModel cred = (PasswordUserCredentialModel)input;
             String password = cred.getValue();
             LDAPObject ldapUser = loadAndValidateUser(realm, user);
 
             try {
-                ldapIdentityStore.updatePassword(ldapUser, password);
-                if (updater != null) updater.passwordUpdated(user, ldapUser, input);
+                LDAPOperationDecorator operationDecorator = null;
+                if (updater != null) {
+                    operationDecorator = updater.beforePasswordUpdate(user, ldapUser, cred);
+                }
+
+                ldapIdentityStore.updatePassword(ldapUser, password, operationDecorator);
+
+                if (updater != null) updater.passwordUpdated(user, ldapUser, cred);
                 return true;
             } catch (ModelException me) {
                 if (updater != null) {
-                    updater.passwordUpdateFailed(user, ldapUser, input, me);
+                    updater.passwordUpdateFailed(user, ldapUser, cred, me);
                     return false;
                 } else {
                     throw me;
@@ -665,24 +678,6 @@ public class LDAPStorageProvider implements UserStorageProvider,
         }
 
         return ldapUser;
-    }
-
-    public LDAPStorageMapper getMapper(ComponentModel mapperModel) {
-        LDAPStorageMapper ldapMapper = getSession().getProvider(LDAPStorageMapper.class, mapperModel);
-        if (ldapMapper == null) {
-            throw new ModelException("Can't find mapper type with ID: " + mapperModel.getProviderId());
-        }
-
-        return ldapMapper;
-    }
-
-
-    public List<ComponentModel> sortMappersAsc(Collection<ComponentModel> mappers) {
-        return LDAPMappersComparator.sortAsc(getLdapIdentityStore().getConfig(), mappers);
-    }
-
-    protected List<ComponentModel> sortMappersDesc(Collection<ComponentModel> mappers) {
-        return LDAPMappersComparator.sortDesc(getLdapIdentityStore().getConfig(), mappers);
     }
 
 

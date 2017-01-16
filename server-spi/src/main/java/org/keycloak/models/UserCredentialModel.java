@@ -19,7 +19,10 @@ package org.keycloak.models;
 
 import org.keycloak.credential.CredentialInput;
 import org.keycloak.credential.CredentialModel;
+import org.keycloak.models.credential.PasswordUserCredentialModel;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -43,15 +46,24 @@ public class UserCredentialModel implements CredentialInput {
     protected String device;
     protected String algorithm;
 
+    // Additional context informations
+    protected Map<String, Object> notes = new HashMap<>();
+
     public UserCredentialModel() {
     }
 
-    public static UserCredentialModel password(String password) {
-        UserCredentialModel model = new UserCredentialModel();
+    public static PasswordUserCredentialModel password(String password) {
+        return password(password, false);
+    }
+
+    public static PasswordUserCredentialModel password(String password, boolean adminRequest) {
+        PasswordUserCredentialModel model = new PasswordUserCredentialModel();
         model.setType(PASSWORD);
         model.setValue(password);
+        model.setAdminRequest(adminRequest);
         return model;
     }
+
     public static UserCredentialModel passwordToken(String passwordToken) {
         UserCredentialModel model = new UserCredentialModel();
         model.setType(PASSWORD_TOKEN);
@@ -135,5 +147,17 @@ public class UserCredentialModel implements CredentialInput {
 
     public void setAlgorithm(String algorithm) {
         this.algorithm = algorithm;
+    }
+
+    public void setNote(String key, String value) {
+        this.notes.put(key, value);
+    }
+
+    public void removeNote(String key) {
+        this.notes.remove(key);
+    }
+
+    public Object getNote(String key) {
+        return this.notes.get(key);
     }
 }

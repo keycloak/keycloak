@@ -14,20 +14,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.keycloak.storage.ldap.mappers;
 
-import org.keycloak.credential.CredentialInput;
-import org.keycloak.models.ModelException;
-import org.keycloak.models.UserModel;
-import org.keycloak.storage.ldap.idm.model.LDAPObject;
+import javax.naming.NamingException;
+import javax.naming.ldap.LdapContext;
+
+import org.keycloak.storage.ldap.idm.store.ldap.LDAPOperationManager;
 
 /**
- * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
- * @version $Revision: 1 $
+ * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public interface PasswordUpdated {
+public interface LDAPOperationDecorator {
 
-    void passwordUpdated(UserModel user, LDAPObject ldapUser, CredentialInput input);
+    void beforeLDAPOperation(LdapContext ldapContext, LDAPOperationManager.LdapOperation ldapOperation) throws NamingException;
 
-    void passwordUpdateFailed(UserModel user, LDAPObject ldapUser, CredentialInput input, ModelException exception) throws ModelException;
 }

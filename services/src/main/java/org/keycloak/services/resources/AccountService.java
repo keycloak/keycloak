@@ -650,7 +650,7 @@ public class AccountService extends AbstractSecuredLocalService {
         }
 
         try {
-            session.userCredentialManager().updateCredential(realm, user, UserCredentialModel.password(passwordNew));
+            session.userCredentialManager().updateCredential(realm, user, UserCredentialModel.password(passwordNew, false));
         } catch (ModelReadOnlyException mre) {
             setReferrerOnPage();
             errorEvent.error(Errors.NOT_ALLOWED);

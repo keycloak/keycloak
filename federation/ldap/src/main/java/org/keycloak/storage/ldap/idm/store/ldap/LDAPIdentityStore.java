@@ -29,6 +29,7 @@ import org.keycloak.storage.ldap.idm.query.EscapeStrategy;
 import org.keycloak.storage.ldap.idm.query.internal.EqualCondition;
 import org.keycloak.storage.ldap.idm.query.internal.LDAPQuery;
 import org.keycloak.storage.ldap.idm.store.IdentityStore;
+import org.keycloak.storage.ldap.mappers.LDAPOperationDecorator;
 
 import javax.naming.AuthenticationException;
 import javax.naming.NamingEnumeration;
@@ -205,7 +206,7 @@ public class LDAPIdentityStore implements IdentityStore {
     }
 
     @Override
-    public void updatePassword(LDAPObject user, String password) {
+    public void updatePassword(LDAPObject user, String password, LDAPOperationDecorator passwordUpdateDecorator) {
         String userDN = user.getDn().toString();
 
         if (logger.isDebugEnabled()) {
@@ -213,7 +214,7 @@ public class LDAPIdentityStore implements IdentityStore {
         }
 
         if (getConfig().isActiveDirectory()) {
-            updateADPassword(userDN, password);
+            updateADPassword(userDN, password, passwordUpdateDecorator);
         } else {
             ModificationItem[] mods = new ModificationItem[1];
 
@@ -222,7 +223,7 @@ public class LDAPIdentityStore implements IdentityStore {
 
                 mods[0] = new ModificationItem(DirContext.REPLACE_ATTRIBUTE, mod0);
 
-                operationManager.modifyAttribute(userDN, mod0);
+                operationManager.modifyAttributes(userDN, mods, passwordUpdateDecorator);
             } catch (ModelException me) {
                 throw me;
             } catch (Exception e) {
@@ -232,7 +233,7 @@ public class LDAPIdentityStore implements IdentityStore {
     }
 
 
-    private void updateADPassword(String userDN, String password) {
+    private void updateADPassword(String userDN, String password, LDAPOperationDecorator passwordUpdateDecorator) {
         try {
             // Replace the "unicdodePwd" attribute with a new value
             // Password must be both Unicode and a quoted string
@@ -244,7 +245,7 @@ public class LDAPIdentityStore implements IdentityStore {
             List<ModificationItem> modItems = new ArrayList<ModificationItem>();
             modItems.add(new ModificationItem(DirContext.REPLACE_ATTRIBUTE, unicodePwd));
 
-            operationManager.modifyAttributes(userDN, modItems.toArray(new ModificationItem[] {}));
+            operationManager.modifyAttributes(userDN, modItems.toArray(new ModificationItem[] {}), passwordUpdateDecorator);
         } catch (ModelException me) {
             throw me;
         } catch (Exception e) {
