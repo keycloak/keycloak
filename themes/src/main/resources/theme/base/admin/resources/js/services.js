@@ -1210,11 +1210,6 @@ module.factory('TimeUnit', function() {
         }
     }
 
-    t.convert = function(time, from, to) {
-        var seconds = t.toSeconds(time, from);
-        return t.toUnit(seconds, to);
-    }
-
     return t;
 });
 

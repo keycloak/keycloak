@@ -1532,9 +1532,6 @@ module.controller('ClientClusteringCtrl', function($scope, client, Client, Clien
 
     $scope.client.nodeReRegistrationTimeoutUnit = TimeUnit.autoUnit(client.nodeReRegistrationTimeout);
     $scope.client.nodeReRegistrationTimeout = TimeUnit.toUnit(client.nodeReRegistrationTimeout, $scope.client.nodeReRegistrationTimeoutUnit);
-    $scope.$watch('client.nodeReRegistrationTimeoutUnit', function(to, from) {
-        $scope.client.nodeReRegistrationTimeout = TimeUnit.convert($scope.client.nodeReRegistrationTimeout, from, to);
-    });
 
     $scope.save = function() {
         var clientCopy = angular.copy($scope.client);
