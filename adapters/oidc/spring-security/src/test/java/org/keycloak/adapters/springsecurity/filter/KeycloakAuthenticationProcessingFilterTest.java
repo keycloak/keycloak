@@ -244,6 +244,6 @@ public class KeycloakAuthenticationProcessingFilterTest {
     }
 
     private void setAuthorizationHeader(MockHttpServletRequest request, String scheme) {
-      request.addHeader(KeycloakAuthenticationProcessingFilter.AUTHORIZATION_HEADER, scheme + " " + UUID.randomUUID().toString());
+        request.addHeader(KeycloakAuthenticationProcessingFilter.AUTHORIZATION_HEADER, scheme + " " + UUID.randomUUID().toString());
     }
 }
