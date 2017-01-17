@@ -205,6 +205,24 @@
                 "defaultScope": "email profile",
                 "backchannelSupported": "true"
             }
+        },
+        {
+            "alias" : "kc-oidc-idp-hidden",
+            "providerId" : "keycloak-oidc",
+            "enabled": true,
+            "storeToken" : true,
+            "addReadTokenRoleOnCreate": true,
+            "config": {
+                "clientId": "broker-app",
+                "clientSecret": "secret",
+                "authorizationUrl": "http://localhost:8082/auth/realms/realm-with-oidc-idp-hidden/protocol/openid-connect/auth",
+                "tokenUrl": "http://localhost:8082/auth/realms/realm-with-oidc-idp-hidden/protocol/openid-connect/token",
+                "userInfoUrl": "http://localhost:8082/auth/realms/realm-with-oidc-idp-hidden/protocol/openid-connect/userinfo",
+                "logoutUrl": "http://localhost:8082/auth/realms/realm-with-oidc-idp-hidden/protocol/openid-connect/logout",
+                "defaultScope": "email profile",
+                "backchannelSupported": "true",
+                "hideOnLoginPage": true
+            }
         }
     ],
     "identityProviderMappers": [
