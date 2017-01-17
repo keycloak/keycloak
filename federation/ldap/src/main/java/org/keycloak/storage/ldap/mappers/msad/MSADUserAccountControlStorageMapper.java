@@ -24,13 +24,15 @@ import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.credential.PasswordUserCredentialModel;
 import org.keycloak.models.utils.UserModelDelegate;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
 import org.keycloak.storage.ldap.idm.query.internal.LDAPQuery;
 import org.keycloak.storage.ldap.mappers.AbstractLDAPStorageMapper;
-import org.keycloak.storage.ldap.mappers.PasswordUpdated;
+import org.keycloak.storage.ldap.mappers.LDAPOperationDecorator;
+import org.keycloak.storage.ldap.mappers.PasswordUpdateCallback;
 
 import javax.naming.AuthenticationException;
 import java.util.HashSet;
@@ -44,12 +46,14 @@ import java.util.regex.Pattern;
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class MSADUserAccountControlStorageMapper extends AbstractLDAPStorageMapper implements PasswordUpdated {
+public class MSADUserAccountControlStorageMapper extends AbstractLDAPStorageMapper implements PasswordUpdateCallback {
+
+    public static final String LDAP_PASSWORD_POLICY_HINTS_ENABLED = "ldap.password.policy.hints.enabled";
 
     private static final Logger logger = Logger.getLogger(MSADUserAccountControlStorageMapper.class);
 
     private static final Pattern AUTH_EXCEPTION_REGEX = Pattern.compile(".*AcceptSecurityContext error, data ([0-9a-f]*), v.*");
-    private static final Pattern AUTH_INVALID_NEW_PASSWORD = Pattern.compile(".*error code ([0-9a-f]+) .*WILL_NOT_PERFORM.*");
+    private static final Pattern AUTH_INVALID_NEW_PASSWORD = Pattern.compile(".*ERROR CODE ([0-9A-F]+) - ([0-9A-F]+): .*WILL_NOT_PERFORM.*");
 
     public MSADUserAccountControlStorageMapper(ComponentModel mapperModel, LDAPStorageProvider ldapProvider) {
         super(mapperModel, ldapProvider);
@@ -70,7 +74,18 @@ public class MSADUserAccountControlStorageMapper extends AbstractLDAPStorageMapp
     }
 
     @Override
-    public void passwordUpdated(UserModel user, LDAPObject ldapUser, CredentialInput input) {
+    public LDAPOperationDecorator beforePasswordUpdate(UserModel user, LDAPObject ldapUser, PasswordUserCredentialModel password) {
+        // Not apply policies if password is reset by admin (not by user himself)
+        if (password.isAdminRequest()) {
+            return null;
+        }
+
+        boolean applyDecorator = mapperModel.get(LDAP_PASSWORD_POLICY_HINTS_ENABLED, false);
+        return applyDecorator ? new LDAPServerPolicyHintsDecorator() : null;
+    }
+
+    @Override
+    public void passwordUpdated(UserModel user, LDAPObject ldapUser, PasswordUserCredentialModel password) {
         logger.debugf("Going to update userAccountControl for ldap user '%s' after successful password update", ldapUser.getDn().toString());
 
         // Normally it's read-only
@@ -90,7 +105,7 @@ public class MSADUserAccountControlStorageMapper extends AbstractLDAPStorageMapp
     }
 
     @Override
-    public void passwordUpdateFailed(UserModel user, LDAPObject ldapUser, CredentialInput input, ModelException exception) {
+    public void passwordUpdateFailed(UserModel user, LDAPObject ldapUser, PasswordUserCredentialModel password, ModelException exception) {
         throw processFailedPasswordUpdateException(exception);
     }
 
@@ -148,12 +163,17 @@ public class MSADUserAccountControlStorageMapper extends AbstractLDAPStorageMapp
         }
 
         String exceptionMessage = e.getCause().getMessage().replace('\n', ' ');
+        logger.debugf("Failed to update password in Active Directory. Exception message: %s", exceptionMessage);
+        exceptionMessage = exceptionMessage.toUpperCase();
+
         Matcher m = AUTH_INVALID_NEW_PASSWORD.matcher(exceptionMessage);
         if (m.matches()) {
             String errorCode = m.group(1);
-            if (errorCode.equals("53")) {
-                ModelException me = new ModelException("invalidPasswordRegexPatternMessage", e);
-                me.setParameters(new Object[]{"passwordConstraintViolation"});
+            String errorCode2 = m.group(2);
+
+            // 52D corresponds to ERROR_PASSWORD_RESTRICTION. See https://msdn.microsoft.com/en-us/library/windows/desktop/ms681385(v=vs.85).aspx
+            if ((errorCode.equals("53")) && errorCode2.endsWith("52D")) {
+                ModelException me = new ModelException("invalidPasswordGenericMessage", e);
                 return me;
             }
         }

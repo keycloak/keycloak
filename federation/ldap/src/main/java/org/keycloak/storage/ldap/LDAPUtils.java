@@ -61,9 +61,9 @@ public class LDAPUtils {
         ldapUser.setObjectClasses(ldapConfig.getUserObjectClasses());
 
         List<ComponentModel> federationMappers = realm.getComponents(ldapProvider.getModel().getId(), LDAPStorageMapper.class.getName());
-        List<ComponentModel> sortedMappers = ldapProvider.sortMappersAsc(federationMappers);
+        List<ComponentModel> sortedMappers = ldapProvider.getMapperManager().sortMappersAsc(federationMappers);
         for (ComponentModel mapperModel : sortedMappers) {
-            LDAPStorageMapper ldapMapper = ldapProvider.getMapper(mapperModel);
+            LDAPStorageMapper ldapMapper = ldapProvider.getMapperManager().getMapper(mapperModel);
             ldapMapper.onRegisterUserToLDAP(ldapUser, user, realm);
         }
 

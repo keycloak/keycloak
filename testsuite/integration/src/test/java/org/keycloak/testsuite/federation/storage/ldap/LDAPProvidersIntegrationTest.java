@@ -715,7 +715,7 @@ public class LDAPProvidersIntegrationTest {
 
             }
             try {
-                UserCredentialModel cred = UserCredentialModel.password("PoopyPoop1");
+                UserCredentialModel cred = UserCredentialModel.password("PoopyPoop1", true);
                 session.userCredentialManager().updateCredential(appRealm, user, cred);
                 Assert.fail("should fail");
             } catch (ModelReadOnlyException e) {
@@ -856,7 +856,7 @@ public class LDAPProvidersIntegrationTest {
             Assert.assertNotNull(user.getFederationLink());
             Assert.assertEquals(user.getFederationLink(), ldapModel.getId());
 
-            UserCredentialModel cred = UserCredentialModel.password("Candycand1");
+            UserCredentialModel cred = UserCredentialModel.password("Candycand1", true);
             session.userCredentialManager().updateCredential(appRealm, user, cred);
             CredentialModel userCredentialValueModel = session.userCredentialManager().getStoredCredentialsByType(appRealm, user, CredentialModel.PASSWORD).get(0);
             Assert.assertEquals(UserCredentialModel.PASSWORD, userCredentialValueModel.getType());

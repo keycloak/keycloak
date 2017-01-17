@@ -128,7 +128,7 @@ public class LDAPTestUtils {
     }
 
     public static void updateLDAPPassword(LDAPStorageProvider ldapProvider, LDAPObject ldapUser, String password) {
-        ldapProvider.getLdapIdentityStore().updatePassword(ldapUser, password);
+        ldapProvider.getLdapIdentityStore().updatePassword(ldapUser, password, null);
 
         // Enable MSAD user through userAccountControls
         if (ldapProvider.getLdapIdentityStore().getConfig().isActiveDirectory()) {

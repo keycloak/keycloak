@@ -49,6 +49,7 @@ import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserLoginFailureModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.credential.PasswordUserCredentialModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -776,7 +777,7 @@ public class UsersResource {
             throw new BadRequestException("Empty password not allowed");
         }
 
-        UserCredentialModel cred = RepresentationToModel.convertCredential(pass);
+        UserCredentialModel cred = UserCredentialModel.password(pass.getValue(), true);
         try {
             session.userCredentialManager().updateCredential(realm, user, cred);
         } catch (IllegalStateException ise) {

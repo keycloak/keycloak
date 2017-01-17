@@ -521,9 +521,9 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
 
                                 // Update keycloak user
                                 List<ComponentModel> federationMappers = currentRealm.getComponents(fedModel.getId(), LDAPStorageMapper.class.getName());
-                                List<ComponentModel> sortedMappers = ldapFedProvider.sortMappersDesc(federationMappers);
+                                List<ComponentModel> sortedMappers = ldapFedProvider.getMapperManager().sortMappersDesc(federationMappers);
                                 for (ComponentModel mapperModel : sortedMappers) {
-                                    LDAPStorageMapper ldapMapper = ldapFedProvider.getMapper(mapperModel);
+                                    LDAPStorageMapper ldapMapper = ldapFedProvider.getMapperManager().getMapper(mapperModel);
                                     ldapMapper.onImportUserFromLDAP(ldapUser, currentUser, currentRealm, false);
                                 }
 
