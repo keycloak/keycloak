@@ -164,7 +164,11 @@ public class BearerTokenRequestAuthenticator {
                 OIDCAuthenticationError error = new OIDCAuthenticationError(reason, description);
                 facade.getRequest().setError(error);
                 facade.getResponse().addHeader("WWW-Authenticate", challenge);
-                facade.getResponse().sendError(401);
+                if (deployment.isContainerErrorPage()) {
+                    facade.getResponse().sendError(401);
+                } else {
+                    facade.getResponse().setStatus(401);
+                }
                 return true;
             }
         };
