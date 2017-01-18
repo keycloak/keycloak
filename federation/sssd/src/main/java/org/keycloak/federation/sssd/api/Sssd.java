@@ -23,6 +23,7 @@ import org.freedesktop.dbus.Variant;
 import org.freedesktop.dbus.exceptions.DBusException;
 import org.freedesktop.sssd.infopipe.InfoPipe;
 import org.jboss.logging.Logger;
+import org.keycloak.models.UserModel;
 
 import java.util.Arrays;
 import java.util.List;
@@ -68,20 +69,7 @@ public class Sssd {
         return null;
     }
 
-    public Map<String, Variant> getUserAttributes() {
-        String[] attr = {"mail", "givenname", "sn", "telephoneNumber"};
-        Map<String, Variant> attributes = null;
-        try {
-            InfoPipe infoPipe = dBusConnection.getRemoteObject(InfoPipe.BUSNAME, InfoPipe.OBJECTPATH, InfoPipe.class);
-            attributes = infoPipe.getUserAttributes(username, Arrays.asList(attr));
-        } catch (Exception e) {
-            throw new SSSDException("Failed to retrieve user's attributes. Check if SSSD service is active.");
-        }
-
-        return attributes;
-    }
-
-    public List<String> getUserGroups() {
+    public List<String> getGroups() {
         List<String> userGroups;
         try {
             InfoPipe infoPipe = dBusConnection.getRemoteObject(InfoPipe.BUSNAME, InfoPipe.OBJECTPATH, InfoPipe.class);
@@ -113,4 +101,70 @@ public class Sssd {
         return sssdAvailable;
     }
 
+    public User getUser() {
+
+        String[] attr = {"mail", "givenname", "sn", "telephoneNumber"};
+        User user = null;
+        try {
+            InfoPipe infoPipe = dBusConnection.getRemoteObject(InfoPipe.BUSNAME, InfoPipe.OBJECTPATH, InfoPipe.class);
+            user = new User(infoPipe.getUserAttributes(username, Arrays.asList(attr)));
+        } catch (Exception e) {
+            throw new SSSDException("Failed to retrieve user's attributes. Check if SSSD service is active.");
+        }
+        return user;
+    }
+
+    public class User {
+
+        private final String email;
+        private final String firstName;
+        private final String lastName;
+
+        public User(Map<String, Variant> userAttributes) {
+            this.email = getRawAttribute(userAttributes.get("mail"));
+            this.firstName = getRawAttribute(userAttributes.get("givenname"));
+            this.lastName = getRawAttribute(userAttributes.get("sn"));
+
+        }
+
+        public String getEmail() {
+            return email;
+        }
+
+        public String getFirstName() {
+            return firstName;
+        }
+
+        public String getLastName() {
+            return lastName;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (o == null) return false;
+
+            UserModel userModel = (UserModel) o;
+            if (firstName != null && !firstName.equals(userModel.getFirstName())) {
+                return false;
+            }
+            if (lastName != null && !lastName.equals(userModel.getLastName())) {
+                return false;
+            }
+            if (email != null) {
+                return email.equals(userModel.getEmail());
+            }
+            if (email != userModel.getEmail()) {
+                return false;
+            }
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = email != null ? email.hashCode() : 0;
+            result = 31 * result + (firstName != null ? firstName.hashCode() : 0);
+            result = 31 * result + (lastName != null ? lastName.hashCode() : 0);
+            return result;
+        }
+    }
 }

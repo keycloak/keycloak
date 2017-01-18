@@ -30,7 +30,9 @@ public class SSSDTest extends AbstractKeycloakTest {
     private static final String USERNAME = "emily";
     private static final String PASSWORD = "emily123";
     private static final String DISABLED_USER = "david";
-    private static final String DISABLED_USER_PASSWORD = "emily123";
+    private static final String DISABLED_USER_PASSWORD = "david123";
+    private static final String NO_EMAIL_USER = "bart";
+    private static final String NO_EMAIL_USER_PASSWORD = "bart123";
 
     private static final String DEFINITELY_NOT_PASSWORD = "not" + PASSWORD;
 
@@ -102,12 +104,12 @@ public class SSSDTest extends AbstractKeycloakTest {
 
     @Test
     public void testAdmin() {
-        log.debug("Testing wrong password for user " + ADMIN_USERNAME);
+        log.debug("Testing password for user " + ADMIN_USERNAME);
 
         driver.navigate().to(getAccountUrl());
         Assert.assertEquals("Browser should be on login page now", "Log in to " + REALM_NAME, driver.getTitle());
         accountLoginPage.login(ADMIN_USERNAME, ADMIN_PASSWORD);
-        Assert.assertEquals("Unexpected error when handling authentication request to identity provider.", accountLoginPage.getInstruction());
+        Assert.assertTrue(profilePage.isCurrent());
     }
 
     @Test
@@ -119,6 +121,16 @@ public class SSSDTest extends AbstractKeycloakTest {
         accountLoginPage.login(USERNAME, PASSWORD);
         Assert.assertTrue(profilePage.isCurrent());
         testUserGroups();
+    }
+
+    @Test
+    public void testExistingUserWithNoEmailLogIn() {
+        log.debug("Testing correct password, but no e-mail provided");
+
+        driver.navigate().to(getAccountUrl());
+        Assert.assertEquals("Browser should be on login page now", "Log in to " + REALM_NAME, driver.getTitle());
+        accountLoginPage.login(NO_EMAIL_USER, NO_EMAIL_USER_PASSWORD);
+        Assert.assertTrue(profilePage.isCurrent());
     }
 
     @Test

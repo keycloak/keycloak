@@ -22,6 +22,7 @@ import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.ModelException;
 import org.keycloak.storage.ldap.LDAPConfig;
 import org.keycloak.storage.ldap.idm.query.internal.LDAPQuery;
+import org.keycloak.storage.ldap.mappers.LDAPOperationDecorator;
 
 import javax.naming.AuthenticationException;
 import javax.naming.Binding;
@@ -81,7 +82,7 @@ public class LDAPOperationManager {
      */
     public void modifyAttribute(String dn, Attribute attribute) {
         ModificationItem[] mods = new ModificationItem[]{new ModificationItem(DirContext.REPLACE_ATTRIBUTE, attribute)};
-        modifyAttributes(dn, mods);
+        modifyAttributes(dn, mods, null);
     }
 
     /**
@@ -101,7 +102,7 @@ public class LDAPOperationManager {
                 modItems.add(modItem);
             }
 
-            modifyAttributes(dn, modItems.toArray(new ModificationItem[] {}));
+            modifyAttributes(dn, modItems.toArray(new ModificationItem[] {}), null);
         } catch (NamingException ne) {
             throw new ModelException("Could not modify attributes on entry from DN [" + dn + "]", ne);
         }
@@ -119,7 +120,7 @@ public class LDAPOperationManager {
      */
     public void removeAttribute(String dn, Attribute attribute) {
         ModificationItem[] mods = new ModificationItem[]{new ModificationItem(DirContext.REMOVE_ATTRIBUTE, attribute)};
-        modifyAttributes(dn, mods);
+        modifyAttributes(dn, mods, null);
     }
 
     /**
@@ -132,7 +133,7 @@ public class LDAPOperationManager {
      */
     public void addAttribute(String dn, Attribute attribute) {
         ModificationItem[] mods = new ModificationItem[]{new ModificationItem(DirContext.ADD_ATTRIBUTE, attribute)};
-        modifyAttributes(dn, mods);
+        modifyAttributes(dn, mods, null);
     }
 
     /**
@@ -379,7 +380,7 @@ public class LDAPOperationManager {
         }
     }
 
-    public void modifyAttributes(final String dn, final ModificationItem[] mods) {
+    public void modifyAttributes(final String dn, final ModificationItem[] mods, LDAPOperationDecorator decorator) {
         try {
             if (logger.isTraceEnabled()) {
                 logger.tracef("Modifying attributes for entry [%s]: [", dn);
@@ -405,7 +406,7 @@ public class LDAPOperationManager {
                     context.modifyAttributes(dn, mods);
                     return null;
                 }
-            });
+            }, decorator);
         } catch (NamingException e) {
             throw new ModelException("Could not modify attribute for DN [" + dn + "]", e);
         }
@@ -546,13 +547,19 @@ public class LDAPOperationManager {
     }
 
     private <R> R execute(LdapOperation<R> operation) throws NamingException {
+        return execute(operation, null);
+    }
+
+    private <R> R execute(LdapOperation<R> operation, LDAPOperationDecorator decorator) throws NamingException {
         LdapContext context = null;
 
         try {
             context = createLdapContext();
+            if (decorator != null) {
+                decorator.beforeLDAPOperation(context, operation);
+            }
+
             return operation.execute(context);
-        } catch (NamingException ne) {
-            throw ne;
         } finally {
             if (context != null) {
                 try {
@@ -564,7 +571,7 @@ public class LDAPOperationManager {
         }
     }
 
-    private interface LdapOperation<R> {
+    public interface LdapOperation<R> {
         R execute(LdapContext context) throws NamingException;
     }
 

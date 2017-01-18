@@ -85,6 +85,11 @@ public class FullNameLDAPStorageMapperFactory extends AbstractLDAPStorageMapperF
     }
 
     @Override
+    public List<ProviderConfigProperty> getConfigProperties(RealmModel realm, ComponentModel parent) {
+        return getConfigProps(parent);
+    }
+
+    @Override
     public String getId() {
         return PROVIDER_ID;
     }

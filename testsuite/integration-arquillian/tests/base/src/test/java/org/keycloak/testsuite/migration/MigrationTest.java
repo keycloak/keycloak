@@ -25,13 +25,15 @@ import org.keycloak.keys.KeyProvider;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.storage.UserStorageProvider;
-import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.arquillian.migration.Migration;
 
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
+
 import org.junit.Before;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.RoleResource;
@@ -47,6 +49,7 @@ import org.keycloak.representations.idm.ClientTemplateRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
+
 import static org.keycloak.testsuite.Assert.assertEquals;
 import static org.keycloak.testsuite.Assert.assertFalse;
 import static org.keycloak.testsuite.Assert.assertNames;
@@ -61,8 +64,10 @@ public class MigrationTest extends AbstractKeycloakTest {
 
     public static final String MIGRATION = "Migration";
     public static final String MIGRATION2 = "Migration2";
+    public static final String MIGRATION3 = "authorization";
     private RealmResource migrationRealm;
     private RealmResource migrationRealm2;
+    private RealmResource migrationRealm3;
     private RealmResource masterRealm;
         
     @Override
@@ -74,6 +79,7 @@ public class MigrationTest extends AbstractKeycloakTest {
     public void beforeMigrationTest() {
         migrationRealm = adminClient.realms().realm(MIGRATION);
         migrationRealm2 = adminClient.realms().realm(MIGRATION2);
+        migrationRealm3 = adminClient.realms().realm(MIGRATION3);
         masterRealm = adminClient.realms().realm(MASTER);
         
         //add migration realm to testRealmReps to make the migration removed after test
@@ -95,11 +101,11 @@ public class MigrationTest extends AbstractKeycloakTest {
     @Test
     @Migration(versionFrom = "2.2.1.Final")
     public void migration2_2_1Test() {
-        testMigratedData();
         testMigrationTo2_3_0();
         testMigrationTo2_5_0();
+        testMigrationTo2_5_1();
     }
-    
+
     private void testMigratedData() {
         //master realm
         assertNames(masterRealm.roles().list(), "offline_access", "uma_authorization", "create-realm", "master-test-realm-role", "admin");
@@ -181,6 +187,10 @@ public class MigrationTest extends AbstractKeycloakTest {
         testDuplicateEmailSupport(masterRealm, migrationRealm);
     }
 
+    private void testMigrationTo2_5_1() {
+        testDroolsToRulesPolicyTypeMigration();
+    }
+
     private void testLdapKerberosMigration_2_5_0() {
         RealmRepresentation realmRep = migrationRealm2.toRepresentation();
         List<ComponentRepresentation> components = migrationRealm2.components().query(realmRep.getId(), UserStorageProvider.class.getName());
@@ -213,6 +223,20 @@ public class MigrationTest extends AbstractKeycloakTest {
                 assertEquals("keytab", component.getConfig().getFirst(KerberosConstants.KEYTAB));
             }
         }
+    }
+
+    private void testDroolsToRulesPolicyTypeMigration() {
+        List<ClientRepresentation> client = migrationRealm3.clients().findByClientId("photoz-restful-api");
+
+        assertEquals(1, client.size());
+
+        ClientRepresentation representation = client.get(0);
+
+        List<PolicyRepresentation> policies = migrationRealm3.clients().get(representation.getId()).authorization().policies().policies();
+
+        List<PolicyRepresentation> migratedRulesPolicies = policies.stream().filter(policyRepresentation -> "rules".equals(policyRepresentation.getType())).collect(Collectors.toList());
+
+        assertEquals(1, migratedRulesPolicies.size());
     }
     
     private void testAuthorizationServices(RealmResource... realms) {

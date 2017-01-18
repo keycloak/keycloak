@@ -15,21 +15,18 @@
  * limitations under the License.
  */
 
-package org.freedesktop.sssd.infopipe;
+package org.keycloak.storage.ldap.mappers;
 
-import org.freedesktop.dbus.DBusInterface;
-import org.freedesktop.dbus.DBusInterfaceName;
-import org.freedesktop.dbus.DBusMemberName;
+import javax.naming.NamingException;
+import javax.naming.ldap.LdapContext;
+
+import org.keycloak.storage.ldap.idm.store.ldap.LDAPOperationManager;
 
 /**
- * @author <a href="mailto:bruno@abstractj.org">Bruno Oliveira</a>.
+ * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-@DBusInterfaceName("org.freedesktop.sssd.infopipe.Users")
-public interface User extends DBusInterface {
+public interface LDAPOperationDecorator {
 
-    String OBJECTPATH = "/org/freedesktop/sssd/infopipe/Users";
-
-    @DBusMemberName("FindByCertificate")
-    DBusInterface findByCertificate(String pem_cert);
+    void beforeLDAPOperation(LdapContext ldapContext, LDAPOperationManager.LdapOperation ldapOperation) throws NamingException;
 
 }

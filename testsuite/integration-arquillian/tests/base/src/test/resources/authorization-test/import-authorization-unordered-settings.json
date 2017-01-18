@@ -54,7 +54,7 @@
     {
       "name": "Only Owner Policy",
       "description": "Defines that only the resource owner is allowed to do something",
-      "type": "drools",
+      "type": "rules",
       "logic": "POSITIVE",
       "decisionStrategy": "UNANIMOUS",
       "config": {

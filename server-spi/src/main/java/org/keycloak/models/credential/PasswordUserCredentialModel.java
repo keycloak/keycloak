@@ -14,20 +14,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.storage.ldap.mappers;
 
-import org.keycloak.credential.CredentialInput;
-import org.keycloak.models.ModelException;
-import org.keycloak.models.UserModel;
-import org.keycloak.storage.ldap.idm.model.LDAPObject;
+package org.keycloak.models.credential;
+
+import org.keycloak.models.UserCredentialModel;
 
 /**
- * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
- * @version $Revision: 1 $
+ * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public interface PasswordUpdated {
+public class PasswordUserCredentialModel extends UserCredentialModel {
 
-    void passwordUpdated(UserModel user, LDAPObject ldapUser, CredentialInput input);
+    // True if we have password-update request triggered by admin, not by user himself
+    private static final String ADMIN_REQUEST = "adminRequest";
 
-    void passwordUpdateFailed(UserModel user, LDAPObject ldapUser, CredentialInput input, ModelException exception) throws ModelException;
+    public boolean isAdminRequest() {
+        Boolean b = (Boolean) this.notes.get(ADMIN_REQUEST);
+        return b!=null && b;
+    }
+
+    public void setAdminRequest(boolean adminRequest) {
+        this.notes.put(ADMIN_REQUEST, adminRequest);
+    }
 }
