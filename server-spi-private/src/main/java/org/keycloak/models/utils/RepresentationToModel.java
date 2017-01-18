@@ -24,6 +24,7 @@ import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
+import org.keycloak.authorization.policy.provider.PolicyProvider;
 import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.authorization.store.ResourceServerStore;
 import org.keycloak.authorization.store.ResourceStore;
@@ -2055,6 +2056,19 @@ public class RepresentationToModel {
     }
 
     public static Policy toModel(PolicyRepresentation policy, ResourceServer resourceServer, AuthorizationProvider authorization) {
+        String type = policy.getType();
+        PolicyProvider provider = authorization.getProvider(type);
+
+        if (provider == null) {
+            //TODO: temporary, remove this check on future versions as drools type is now deprecated
+            if ("drools".equalsIgnoreCase(type)) {
+                type = "rules";
+            }
+            if (authorization.getProvider(type) == null) {
+                throw new RuntimeException("Unknown polucy type [" + type + "]. Could not find a provider for this type.");
+            }
+        }
+
         PolicyStore policyStore = authorization.getStoreFactory().getPolicyStore();
         Policy existing;
 
@@ -2078,7 +2092,7 @@ public class RepresentationToModel {
             return existing;
         }
 
-        Policy model = policyStore.create(policy.getName(), policy.getType(), resourceServer);
+        Policy model = policyStore.create(policy.getName(), type, resourceServer);
 
         model.setDescription(policy.getDescription());
         model.setDecisionStrategy(policy.getDecisionStrategy());

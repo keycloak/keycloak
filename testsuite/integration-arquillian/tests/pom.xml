@@ -489,7 +489,7 @@
         <profile>
             <id>auth-server-migration</id>
             <properties>
-                <migration.import.file>src/test/resources/migration-test/migration-realm-${migrated.auth.server.version}.json</migration.import.file>
+                <migration.import.file>target/test-classes/migration-test/migration-realm-${migrated.auth.server.version}.json</migration.import.file>
                 <migration.import.props.previous>
                     -Dkeycloak.migration.action=import 
                     -Dkeycloak.migration.provider=singleFile
@@ -572,7 +572,7 @@
                 </property>
             </activation>
             <properties>
-                <migration.import.file>src/test/resources/migration-test/migration-realm-${migrated.auth.server.version}.json</migration.import.file>
+                <migration.import.file>target/test-classes/migration-test/migration-realm-${migrated.auth.server.version}.json</migration.import.file>
                 <migration.import.properties>
                     -Dkeycloak.migration.action=import 
                     -Dkeycloak.migration.provider=singleFile
@@ -621,7 +621,7 @@
                 </property>
             </activation>
             <properties>
-                <migration.import.file>src/test/resources/migration-test/migration-realm-${migrated.version.import.file.suffix}.json</migration.import.file>
+                <migration.import.file>target/test-classes/migration-test/migration-realm-${migrated.version.import.file.suffix}.json</migration.import.file>
             </properties>
         </profile>
       

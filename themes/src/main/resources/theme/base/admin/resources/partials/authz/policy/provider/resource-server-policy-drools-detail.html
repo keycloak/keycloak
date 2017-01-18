@@ -6,7 +6,7 @@
         <li><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server">{{:: 'authz-authorization' | translate}}</a></li>
         <li><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server/policy">{{:: 'authz-policies' | translate}}</a></li>
         <li data-ng-show="create">{{:: 'authz-add-drools-policy' | translate}}</li>
-        <li data-ng-hide="create">Drools</li>
+        <li data-ng-hide="create">Rules</li>
         <li data-ng-hide="create">{{originalPolicy.name}}</li>
     </ol>
 
