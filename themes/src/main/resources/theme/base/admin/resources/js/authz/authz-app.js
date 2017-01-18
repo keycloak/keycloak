@@ -175,7 +175,7 @@ module.config(['$routeProvider', function ($routeProvider) {
             }
         },
         controller: 'ResourceServerPolicyCtrl'
-    }).when('/realms/:realm/clients/:client/authz/resource-server/policy/drools/create', {
+    }).when('/realms/:realm/clients/:client/authz/resource-server/policy/rules/create', {
         templateUrl: resourceUrl + '/partials/authz/policy/provider/resource-server-policy-drools-detail.html',
         resolve: {
             realm: function (RealmLoader) {
@@ -186,7 +186,7 @@ module.config(['$routeProvider', function ($routeProvider) {
             }
         },
         controller: 'ResourceServerPolicyDroolsDetailCtrl'
-    }).when('/realms/:realm/clients/:client/authz/resource-server/policy/drools/:id', {
+    }).when('/realms/:realm/clients/:client/authz/resource-server/policy/rules/:id', {
         templateUrl: resourceUrl + '/partials/authz/policy/provider/resource-server-policy-drools-detail.html',
         resolve: {
             realm: function (RealmLoader) {

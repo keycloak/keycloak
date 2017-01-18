@@ -56,7 +56,7 @@ public class MigrationModelManager {
         new MigrateTo2_1_0(),
         new MigrateTo2_2_0(),
         new MigrateTo2_3_0(),
-        new MigrateTo2_5_0(),
+        new MigrateTo2_5_0()
     };
 
     public static void migrate(KeycloakSession session) {

@@ -82,7 +82,7 @@
                         <table class="table kc-authz-table-expanded table-striped">
                             <thead>
                             <tr>
-                                <th>Dependent Permissions</th>
+                                <th>Dependent Permissions and Policies</th>
                             </tr>
                             </thead>
                             <tbody>
@@ -91,7 +91,7 @@
                                     <span data-ng-show="policy.dependentPolicies && !policy.dependentPolicies.length">{{:: 'authz-no-permission-assigned' | translate}}</span>
                                     <ul ng-repeat="dep in policy.dependentPolicies" data-ng-show="policy.dependentPolicies.length > 0">
                                         <li>
-                                            <a href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server/permission/{{dep.type}}/{{dep.id}}">{{dep.name}}</a>
+                                            <a href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server/{{dep.type == 'scope' || dep.type == 'resource' ? 'permission' : 'policy'}}/{{dep.type}}/{{dep.id}}">{{dep.name}}</a>
                                         </li>
                                     </ul>
                                 </td>

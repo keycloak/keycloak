@@ -35,7 +35,7 @@ public class DroolsPolicyProviderFactory implements PolicyProviderFactory {
 
     @Override
     public String getName() {
-        return "Rule";
+        return "Rules";
     }
 
     @Override
@@ -75,7 +75,7 @@ public class DroolsPolicyProviderFactory implements PolicyProviderFactory {
 
     @Override
     public String getId() {
-        return "drools";
+        return "rules";
     }
 
     void update(Policy policy) {
