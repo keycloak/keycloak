@@ -111,6 +111,42 @@ public class OAuthClient {
 
     private Map<String, PublicKey> publicKeys = new HashMap<>();
 
+    public class LogoutUrlBuilder {
+        private final UriBuilder b = OIDCLoginProtocolService.logoutUrl(UriBuilder.fromUri(baseUrl));
+
+        public LogoutUrlBuilder idTokenHint(String idTokenHint) {
+            if (idTokenHint != null) {
+                b.queryParam("id_token_hint", idTokenHint);
+            }
+            return this;
+        }
+
+        public LogoutUrlBuilder postLogoutRedirectUri(String redirectUri) {
+            if (redirectUri != null) {
+                b.queryParam("post_logout_redirect_uri", redirectUri);
+            }
+            return this;
+        }
+
+        public LogoutUrlBuilder redirectUri(String redirectUri) {
+            if (redirectUri != null) {
+                b.queryParam(OAuth2Constants.REDIRECT_URI, redirectUri);
+            }
+            return this;
+        }
+
+        public LogoutUrlBuilder sessionState(String sessionState) {
+            if (sessionState != null) {
+                b.queryParam("session_state", sessionState);
+            }
+            return this;
+        }
+
+        public String build() {
+            return b.build(realm).toString();
+        }
+    }
+
     public void init(Keycloak adminClient, WebDriver driver) {
         this.adminClient = adminClient;
         this.driver = driver;
@@ -341,10 +377,10 @@ public class OAuthClient {
     }
 
 
-    public HttpResponse doLogout(String refreshToken, String clientSecret) throws IOException {
+    public CloseableHttpResponse doLogout(String refreshToken, String clientSecret) throws IOException {
         CloseableHttpClient client = new DefaultHttpClient();
         try {
-            HttpPost post = new HttpPost(getLogoutUrl(null, null));
+            HttpPost post = new HttpPost(getLogoutUrl().build());
 
             List<NameValuePair> parameters = new LinkedList<NameValuePair>();
             if (refreshToken != null) {
@@ -558,15 +594,8 @@ public class OAuthClient {
         return b.build(realm).toString();
     }
 
-    public String getLogoutUrl(String redirectUri, String sessionState) {
-        UriBuilder b = OIDCLoginProtocolService.logoutUrl(UriBuilder.fromUri(baseUrl));
-        if (redirectUri != null) {
-            b.queryParam(OAuth2Constants.REDIRECT_URI, redirectUri);
-        }
-        if (sessionState != null) {
-            b.queryParam("session_state", sessionState);
-        }
-        return b.build(realm).toString();
+    public LogoutUrlBuilder getLogoutUrl() {
+        return new LogoutUrlBuilder();
     }
 
     public String getResourceOwnerPasswordCredentialGrantUrl() {
