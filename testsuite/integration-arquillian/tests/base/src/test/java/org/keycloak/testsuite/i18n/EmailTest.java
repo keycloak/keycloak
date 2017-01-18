@@ -83,7 +83,7 @@ public class EmailTest extends AbstractI18NTest {
 
     @Test
     public void restPasswordEmailGerman() throws IOException, MessagingException {
-        ProfileAssume.assumePreview();
+        ProfileAssume.assumeCommunity();
         
         changeUserLocale("de");
 

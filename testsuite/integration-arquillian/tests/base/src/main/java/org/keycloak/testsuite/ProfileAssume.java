@@ -33,4 +33,7 @@ public class ProfileAssume {
         Assume.assumeFalse("Ignoring test as community/preview profile is enabled", !Profile.getName().equals("product"));
     }
 
+    public static void assumeCommunity() {
+        Assume.assumeTrue("Ignoring test as community profile is not enabled", Profile.getName().equals("community"));
+    }
 }
