@@ -16,6 +16,9 @@
  */
 package org.keycloak.testsuite.util;
 
+import org.apache.http.client.protocol.HttpClientContext;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.saml.BaseSAML2BindingBuilder;
@@ -107,6 +110,40 @@ public class SamlClient {
             }
 
             @Override
+            public HttpPost createSamlPostUnsignedRequest(URI samlEndpoint, String relayState, Document samlRequest) {
+                HttpPost post = new HttpPost(samlEndpoint);
+
+                List<NameValuePair> parameters = new LinkedList<>();
+
+                try {
+                    parameters.add(
+                            new BasicNameValuePair(GeneralConstants.SAML_RESPONSE_KEY,
+                                    new BaseSAML2BindingBuilder()
+                                            .postBinding(samlRequest)
+                                            .encoded())
+                    );
+                } catch (IOException | ConfigurationException | ProcessingException ex) {
+                    throw new RuntimeException(ex);
+                }
+
+                if (relayState != null) {
+                    parameters.add(new BasicNameValuePair(GeneralConstants.RELAY_STATE, relayState));
+                }
+
+                UrlEncodedFormEntity formEntity;
+
+                try {
+                    formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
+                } catch (UnsupportedEncodingException e) {
+                    throw new RuntimeException(e);
+                }
+
+                post.setEntity(formEntity);
+
+                return post;
+            }
+
+            @Override
             public URI getBindingUri() {
                 return URI.create(JBossSAMLURIConstants.SAML_HTTP_POST_BINDING.get());
             }
@@ -138,11 +175,17 @@ public class SamlClient {
             public URI getBindingUri() {
                 return URI.create(JBossSAMLURIConstants.SAML_HTTP_REDIRECT_BINDING.get());
             }
+
+            @Override
+            public HttpUriRequest createSamlPostUnsignedRequest(URI samlEndpoint, String relayState, Document samlRequest) {
+                return null;
+            }
         };
 
         public abstract SAMLDocumentHolder extractResponse(CloseableHttpResponse response) throws IOException;
         public abstract HttpUriRequest createSamlRequest(URI samlEndpoint, String relayState, Document samlRequest);
         public abstract URI getBindingUri();
+        public abstract HttpUriRequest createSamlPostUnsignedRequest(URI samlEndpoint, String relayState, Document samlRequest);
     }
 
     public static class RedirectStrategyWithSwitchableFollowRedirect extends LaxRedirectStrategy {
@@ -260,6 +303,48 @@ public class SamlClient {
             return loginReq;
         } catch (ConfigurationException ex) {
             throw new RuntimeException(ex);
+        }
+    }
+
+    /**
+     * Send request for login form and then login using user param
+     * @param user
+     * @param samlEndpoint
+     * @param samlRequest
+     * @param relayState
+     * @param requestBinding
+     * @param expectedResponseBinding
+     * @return
+     */
+    public static SAMLDocumentHolder login(UserRepresentation user, URI samlEndpoint,
+                                           Document samlRequest, String relayState, Binding requestBinding, Binding expectedResponseBinding) {
+        CloseableHttpResponse response = null;
+        SamlClient.RedirectStrategyWithSwitchableFollowRedirect strategy = new SamlClient.RedirectStrategyWithSwitchableFollowRedirect();
+        try (CloseableHttpClient client = HttpClientBuilder.create().setRedirectStrategy(strategy).build()) {
+            HttpClientContext context = HttpClientContext.create();
+
+            HttpUriRequest post = requestBinding.createSamlRequest(samlEndpoint, relayState, samlRequest);
+            response = client.execute(post, context);
+
+            assertThat(response, statusCodeIsHC(Response.Status.OK));
+            String loginPageText = EntityUtils.toString(response.getEntity(), "UTF-8");
+            response.close();
+
+            assertThat(loginPageText, containsString("login"));
+
+            HttpUriRequest loginRequest = handleLoginPage(user, loginPageText);
+
+            strategy.setRedirectable(false);
+            response = client.execute(loginRequest, context);
+
+            return expectedResponseBinding.extractResponse(response);
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        } finally {
+            if (response != null) {
+                EntityUtils.consumeQuietly(response.getEntity());
+                try { response.close(); } catch (IOException ex) { }
+            }
         }
     }
 

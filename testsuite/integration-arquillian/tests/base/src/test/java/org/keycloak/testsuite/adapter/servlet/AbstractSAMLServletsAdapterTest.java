@@ -17,6 +17,13 @@
 
 package org.keycloak.testsuite.adapter.servlet;
 
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpUriRequest;
+import org.apache.http.client.protocol.HttpClientContext;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.util.EntityUtils;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
@@ -28,10 +35,12 @@ import org.keycloak.admin.client.resource.ProtocolMappersResource;
 import org.keycloak.admin.client.resource.RoleScopeResource;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.PemUtils;
+import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
 import org.keycloak.keys.Attributes;
 import org.keycloak.keys.KeyProvider;
 import org.keycloak.keys.ImportedRsaKeyProviderFactory;
 import org.keycloak.protocol.saml.SamlConfigAttributes;
+import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.protocol.saml.mappers.AttributeStatementHelper;
 import org.keycloak.protocol.saml.mappers.RoleListMapper;
@@ -44,6 +53,9 @@ import org.keycloak.saml.BaseSAML2BindingBuilder;
 import org.keycloak.saml.SAML2ErrorResponseBuilder;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.common.util.XmlKeyInfoKeyNameTransformer;
+import org.keycloak.saml.processing.api.saml.v2.request.SAML2Request;
+import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
+import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.testsuite.adapter.AbstractServletsAdapterTest;
 import org.keycloak.testsuite.adapter.page.BadAssertionSalesPostSig;
 import org.keycloak.testsuite.adapter.page.BadClientSalesPostSigServlet;
@@ -73,11 +85,12 @@ import org.keycloak.testsuite.auth.page.login.Login;
 import org.keycloak.testsuite.auth.page.login.SAMLIDPInitiatedLogin;
 import org.keycloak.testsuite.page.AbstractPage;
 import org.keycloak.testsuite.util.IOUtil;
-import org.keycloak.testsuite.util.RealmBuilder;
+import org.keycloak.testsuite.util.SamlClient;
 import org.keycloak.testsuite.util.UserBuilder;
 
 import org.openqa.selenium.By;
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 import javax.ws.rs.client.Client;
@@ -87,6 +100,8 @@ import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Form;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriBuilder;
+import javax.ws.rs.core.UriBuilderException;
 import javax.xml.XMLConstants;
 import javax.xml.transform.Source;
 import javax.xml.transform.stream.StreamSource;
@@ -107,13 +122,15 @@ import java.util.stream.Collectors;
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.*;
 import static org.keycloak.representations.idm.CredentialRepresentation.PASSWORD;
-import static org.keycloak.testsuite.AbstractAuthTest.createUserRepresentation;
 import static org.keycloak.testsuite.admin.ApiUtil.createUserAndResetPasswordWithAdminClient;
 import static org.keycloak.testsuite.admin.Users.setPasswordFor;
 import static org.keycloak.testsuite.auth.page.AuthRealm.SAMLSERVLETDEMO;
 import static org.keycloak.testsuite.util.IOUtil.loadRealm;
 import static org.keycloak.testsuite.util.IOUtil.loadXML;
 import static org.keycloak.testsuite.util.IOUtil.modifyDocElementAttribute;
+import static org.keycloak.testsuite.util.Matchers.bodyHC;
+import static org.keycloak.testsuite.util.Matchers.statusCodeIsHC;
+import static org.keycloak.testsuite.util.SamlClient.login;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
 import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 
@@ -963,6 +980,61 @@ public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAd
         Response response = target.request().header(HttpHeaders.AUTHORIZATION, "Bearer " + adminClient.tokenManager().getAccessToken().getToken()).get();
         validateXMLWithSchema(response.readEntity(String.class), "/adapter-test/keycloak-saml/metadata-schema/saml-schema-metadata-2.0.xsd");
         response.close();
+    }
+
+    @Test
+    //KEYCLOAK-4020
+    public void testBooleanAttribute() throws Exception {
+        AuthnRequestType req = SamlClient.createLoginRequestDocument("http://localhost:8081/employee2/", getAppServerSamlEndpoint(employee2ServletPage).toString(), getAuthServerSamlEndpoint(SAMLSERVLETDEMO));
+        Document doc = SAML2Request.convert(req);
+
+        SAMLDocumentHolder res = login(bburkeUser, getAuthServerSamlEndpoint(SAMLSERVLETDEMO), doc, null, SamlClient.Binding.POST, SamlClient.Binding.POST);
+        Document responseDoc = res.getSamlDocument();
+
+        Element attribute = responseDoc.createElement("saml:Attribute");
+        attribute.setAttribute("Name", "boolean-attribute");
+        attribute.setAttribute("NameFormat", "urn:oasis:names:tc:SAML:2.0:attrname-format:basic");
+
+        Element attributeValue = responseDoc.createElement("saml:AttributeValue");
+        attributeValue.setAttribute("xmlns:xs", "http://www.w3.org/2001/XMLSchema");
+        attributeValue.setAttribute("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance");
+        attributeValue.setAttribute("xsi:type", "xs:boolean");
+        attributeValue.setTextContent("true");
+
+        attribute.appendChild(attributeValue);
+        IOUtil.appendChildInDocument(responseDoc, "samlp:Response/saml:Assertion/saml:AttributeStatement", attribute);
+
+        CloseableHttpResponse response = null;
+        try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
+            HttpClientContext context = HttpClientContext.create();
+
+            HttpUriRequest post = SamlClient.Binding.POST.createSamlPostUnsignedRequest(getAppServerSamlEndpoint(employee2ServletPage), null, responseDoc);
+            response = client.execute(post, context);
+            assertThat(response, statusCodeIsHC(Response.Status.FOUND));
+            response.close();
+
+            HttpGet get = new HttpGet(employee2ServletPage.toString() + "/getAttributes");
+            response = client.execute(get);
+            assertThat(response, statusCodeIsHC(Response.Status.OK));
+            assertThat(response, bodyHC(containsString("boolean-attribute: true")));
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        } finally {
+            if (response != null) {
+                EntityUtils.consumeQuietly(response.getEntity());
+                try { response.close(); } catch (IOException ex) { }
+            }
+        }
+    }
+
+    private URI getAuthServerSamlEndpoint(String realm) throws IllegalArgumentException, UriBuilderException {
+        return RealmsResource
+                .protocolUrl(UriBuilder.fromUri(getAuthServerRoot()))
+                .build(realm, SamlProtocol.LOGIN_PROTOCOL);
+    }
+
+    private URI getAppServerSamlEndpoint(SAMLServlet page) throws IllegalArgumentException, UriBuilderException {
+        return UriBuilder.fromPath(page.toString()).path("/saml").build();
     }
 
     private void validateXMLWithSchema(String xml, String schemaFileName) throws SAXException, IOException {
