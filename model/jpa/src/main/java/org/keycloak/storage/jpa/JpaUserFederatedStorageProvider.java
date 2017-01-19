@@ -17,6 +17,7 @@
 package org.keycloak.storage.jpa;
 
 import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.common.util.Time;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.credential.UserCredentialStore;
@@ -259,6 +260,9 @@ public class JpaUserFederatedStorageProvider implements
         consentEntity.setClientId(clientId);
         consentEntity.setRealmId(realm.getId());
         consentEntity.setStorageProviderId(new StorageId(userId).getProviderId());
+        long currentTime = Time.currentTimeMillis();
+        consentEntity.setCreatedDate(currentTime);
+        consentEntity.setLastUpdatedDate(currentTime);
         em.persist(consentEntity);
         em.flush();
 
@@ -335,6 +339,8 @@ public class JpaUserFederatedStorageProvider implements
             throw new ModelException("Client with id " + entity.getClientId() + " is not available");
         }
         UserConsentModel model = new UserConsentModel(client);
+        model.setCreatedDate(entity.getCreatedDate());
+        model.setLastUpdatedDate(entity.getLastUpdatedDate());
 
         Collection<FederatedUserConsentRoleEntity> grantedRoleEntities = entity.getGrantedRoles();
         if (grantedRoleEntities != null) {
@@ -403,6 +409,8 @@ public class JpaUserFederatedStorageProvider implements
             grantedRoleEntities.remove(toRemove);
             em.remove(toRemove);
         }
+
+        consentEntity.setLastUpdatedDate(Time.currentTimeMillis());
 
         em.flush();
     }

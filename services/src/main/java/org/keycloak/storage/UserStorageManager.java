@@ -301,6 +301,7 @@ public class UserStorageManager implements UserProvider, OnUserCache, OnCreateCo
             return importValidation(realm, user);
         }
         UserLookupProvider provider = (UserLookupProvider)getStorageProvider(session, realm, storageId.getProviderId());
+        if (provider == null) return null;
         return provider.getUserById(id, realm);
     }
 
