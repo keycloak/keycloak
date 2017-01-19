@@ -326,6 +326,54 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
+    public void testPermanentLockout() throws Exception {
+        RealmRepresentation realm = testRealm().toRepresentation();
+
+        try {
+            // arrange
+            realm.setPermanentLockout(true);
+            testRealm().update(realm);
+
+            // act
+            loginInvalidPassword();
+            loginInvalidPassword();
+
+            // assert
+            expectPermanentlyDisabled();
+            Assert.assertFalse(adminClient.realm("test").users().search("test-user@localhost", 0, 1).get(0).isEnabled());
+        } finally {
+            realm.setPermanentLockout(false);
+            testRealm().update(realm);
+            UserRepresentation user = adminClient.realm("test").users().search("test-user@localhost", 0, 1).get(0);
+            user.setEnabled(true);
+            updateUser(user);
+        }
+    }
+
+    @Test
+    public void testResetLoginFailureCount() throws Exception {
+        RealmRepresentation realm = testRealm().toRepresentation();
+
+        try {
+            // arrange
+            realm.setPermanentLockout(true);
+            testRealm().update(realm);
+
+            // act
+            loginInvalidPassword();
+            loginSuccess();
+            loginInvalidPassword();
+            loginSuccess();
+
+            // assert
+            Assert.assertTrue(adminClient.realm("test").users().search("test-user@localhost", 0, 1).get(0).isEnabled());
+        } finally {
+            realm.setPermanentLockout(false);
+            testRealm().update(realm);
+        }
+    }
+
+    @Test
     public void testNonExistingAccounts() throws Exception {
 
         loginInvalidPassword("non-existent-user");
@@ -352,6 +400,27 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
                 .error(Errors.USER_TEMPORARILY_DISABLED)
                 .detail(Details.USERNAME, username)
                 .removeDetail(Details.CONSENT);
+        if (userId != null) {
+            event.user(userId);
+        }
+        event.assertEvent();
+    }
+
+    public void expectPermanentlyDisabled() throws Exception {
+        expectPermanentlyDisabled("test-user@localhost", null);
+    }
+
+    public void expectPermanentlyDisabled(String username, String userId) throws Exception {
+        loginPage.open();
+        loginPage.login(username, "password");
+
+        loginPage.assertCurrent();
+        Assert.assertEquals("Account is disabled, contact admin.", loginPage.getError());
+        ExpectedEvent event = events.expectLogin()
+            .session((String) null)
+            .error(Errors.USER_DISABLED)
+            .detail(Details.USERNAME, username)
+            .removeDetail(Details.CONSENT);
         if (userId != null) {
             event.user(userId);
         }

@@ -279,6 +279,16 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
     }
 
     @Override
+    public boolean isPermanentLockout() {
+        return getAttribute("permanentLockout", false);
+    }
+
+    @Override
+    public void setPermanentLockout(final boolean val) {
+        setAttribute("permanentLockout", val);
+    }
+
+    @Override
     public int getMaxFailureWaitSeconds() {
         return getAttribute("maxFailureWaitSeconds", 0);
     }
