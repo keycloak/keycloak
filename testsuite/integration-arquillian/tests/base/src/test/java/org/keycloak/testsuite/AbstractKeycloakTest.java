@@ -19,6 +19,7 @@ package org.keycloak.testsuite;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.http.ssl.SSLContexts;
+
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.common.util.Time;
 import org.keycloak.testsuite.arquillian.TestContext;
@@ -48,6 +49,7 @@ import org.jboss.logging.Logger;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.runner.RunWith;
+
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.AuthenticationManagementResource;
 import org.keycloak.admin.client.resource.RealmResource;
@@ -72,6 +74,9 @@ import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.TestEventsLogger;
 import org.keycloak.testsuite.util.WaitUtils;
+
+import java.net.*;
+import javax.ws.rs.*;
 import org.openqa.selenium.WebDriver;
 
 import static org.keycloak.testsuite.admin.Users.setPasswordFor;
@@ -182,8 +187,11 @@ public abstract class AbstractKeycloakTest {
     }
 
     protected void deleteAllCookiesForRealm(Account realmAccountPage) {
-        // masterRealmPage.navigateTo();
-        realmAccountPage.navigateTo(); // Because IE webdriver freezes when loading a JSON page (realm page), we need to use this alternative
+        URL url = realmAccountPage.getInjectedUrl();
+        if (url != null && ! driver.getCurrentUrl().startsWith(url.toString())) {
+            // masterRealmPage.navigateTo();
+            realmAccountPage.navigateTo(); // Because IE webdriver freezes when loading a JSON page (realm page), we need to use this alternative
+        }
         log.info("deleting cookies in '" + realmAccountPage.getAuthRealm() + "' realm");
         driver.manage().deleteAllCookies();
     }
@@ -246,15 +254,15 @@ public abstract class AbstractKeycloakTest {
 
     public void importRealm(RealmRepresentation realm) {
         log.debug("importing realm: " + realm.getRealm());
-        try { // TODO - figure out a way how to do this without try-catch
-            RealmResource realmResource = adminClient.realms().realm(realm.getRealm());
-            RealmRepresentation rRep = realmResource.toRepresentation();
+        try {
+            adminClient.realms().create(realm);
+        } catch (ClientErrorException ex) {
             log.debug("realm already exists on server, re-importing");
+            RealmResource realmResource = adminClient.realms().realm(realm.getRealm());
             realmResource.remove();
-        } catch (NotFoundException nfe) {
-            // expected when realm does not exist
+
+            adminClient.realms().create(realm);
         }
-        adminClient.realms().create(realm);
     }
 
     public void removeRealm(String realmName) {
