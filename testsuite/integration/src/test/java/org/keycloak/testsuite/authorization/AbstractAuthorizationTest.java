@@ -18,10 +18,13 @@
 
 package org.keycloak.testsuite.authorization;
 
+import org.junit.Assume;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.authorization.AuthorizationProvider;
+import org.keycloak.common.Profile;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
@@ -51,6 +54,11 @@ public abstract class AbstractAuthorizationTest {
 
     private Keycloak adminClient;
 
+    @BeforeClass
+    public static void enabled() {
+        Assume.assumeTrue("Ignoring test as community/preview profile is not enabled", !Profile.getName().equals("product"));
+    }
+    
     @Before
     public void onBefore() {
         adminClient = Keycloak.getInstance(AUTH_SERVER_ROOT, MASTER, ADMIN, ADMIN, Constants.ADMIN_CLI_CLIENT_ID);
