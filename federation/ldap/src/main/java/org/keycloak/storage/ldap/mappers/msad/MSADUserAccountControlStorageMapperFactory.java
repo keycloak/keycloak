@@ -48,7 +48,7 @@ public class MSADUserAccountControlStorageMapperFactory extends AbstractLDAPStor
         return ProviderConfigurationBuilder.create()
                 .property().name(MSADUserAccountControlStorageMapper.LDAP_PASSWORD_POLICY_HINTS_ENABLED)
                 .label("Password Policy Hints Enabled")
-                .helpText("Applicable just for writable MSAD. If on, then updating password in MSAD will use LDAP_SERVER_POLICY_HINTS_OID " +
+                .helpText("Applicable just for writable MSAD. If on, then updating password of MSAD user will use LDAP_SERVER_POLICY_HINTS_OID " +
                         "extension, which means that advanced MSAD password policies like 'password history' or 'minimal password age' will be applied. This extension works just for MSAD 2008 R2 or newer.")
                 .type(ProviderConfigProperty.BOOLEAN_TYPE)
                 .defaultValue("false")

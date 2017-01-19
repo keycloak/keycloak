@@ -17,6 +17,7 @@
 
 package org.keycloak.testsuite.federation.storage.ldap;
 
+import org.jboss.logging.Logger;
 import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.FixMethodOrder;
@@ -73,6 +74,8 @@ import static org.junit.Assert.assertEquals;
  */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class LDAPProvidersIntegrationTest {
+
+    private static final Logger log = Logger.getLogger(LDAPProvidersIntegrationTest.class);
 
     private static LDAPRule ldapRule = new LDAPRule();
 
@@ -388,6 +391,10 @@ public class LDAPProvidersIntegrationTest {
             Assert.assertNotNull(user);
             Assert.assertNotNull(user.getFederationLink());
             Assert.assertEquals(user.getFederationLink(), ldapModel.getId());
+            Assert.assertEquals("registerusersuccess2", user.getUsername());
+            Assert.assertEquals("firstName", user.getFirstName());
+            Assert.assertEquals("lastName", user.getLastName());
+            Assert.assertTrue(user.isEnabled());
         } finally {
             keycloakRule.stopSession(session, false);
         }
