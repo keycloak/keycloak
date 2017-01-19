@@ -61,6 +61,11 @@ public class ClientBuilder {
         return this;
     }
 
+    public ClientBuilder consentRequired(boolean consentRequired) {
+        rep.setConsentRequired(consentRequired);
+        return this;
+    }
+
     public ClientBuilder publicClient() {
         rep.setPublicClient(true);
         return this;

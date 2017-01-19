@@ -54,7 +54,7 @@ public class KcSamlBrokerConfiguration implements BrokerConfiguration {
     public List<ClientRepresentation> createProviderClients(SuiteContext suiteContext) {
         ClientRepresentation client = new ClientRepresentation();
 
-        client.setClientId(getAuthRoot(suiteContext) + "/auth/realms/" + REALM_CONS_NAME);
+        client.setClientId(getIDPClientIdInProviderRealm(suiteContext));
         client.setEnabled(true);
         client.setProtocol(IDP_SAML_PROVIDER_ID);
         client.setRedirectUris(Collections.singletonList(
@@ -154,6 +154,11 @@ public class KcSamlBrokerConfiguration implements BrokerConfiguration {
     @Override
     public String consumerRealmName() {
         return REALM_CONS_NAME;
+    }
+
+    @Override
+    public String getIDPClientIdInProviderRealm(SuiteContext suiteContext) {
+        return getAuthRoot(suiteContext) + "/auth/realms/" + consumerRealmName();
     }
 
     @Override
