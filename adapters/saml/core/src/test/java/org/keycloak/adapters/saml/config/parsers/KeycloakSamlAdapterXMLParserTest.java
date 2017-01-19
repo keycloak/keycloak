@@ -37,7 +37,7 @@ import org.keycloak.saml.common.exceptions.ParsingException;
  */
 public class KeycloakSamlAdapterXMLParserTest {
 
-    private static final String CURRENT_XSD_LOCATION = "/schema/keycloak_saml_adapter_1_7.xsd";
+    private static final String CURRENT_XSD_LOCATION = "/schema/keycloak_saml_adapter_1_8.xsd";
 
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
@@ -88,6 +88,7 @@ public class KeycloakSamlAdapterXMLParserTest {
         SP sp = config.getSps().get(0);
         assertEquals("sp", sp.getEntityID());
         assertEquals("EXTERNAL", sp.getSslPolicy());
+        assertEquals("assertionConsumerServiceUrl", sp.getAssertionConsumerServiceUrl());
         assertEquals("format", sp.getNameIDPolicyFormat());
         assertTrue(sp.isForceAuthentication());
         assertTrue(sp.isIsPassive());
