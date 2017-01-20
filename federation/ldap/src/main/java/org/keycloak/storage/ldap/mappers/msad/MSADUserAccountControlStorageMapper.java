@@ -33,6 +33,7 @@ import org.keycloak.storage.ldap.idm.query.internal.LDAPQuery;
 import org.keycloak.storage.ldap.mappers.AbstractLDAPStorageMapper;
 import org.keycloak.storage.ldap.mappers.LDAPOperationDecorator;
 import org.keycloak.storage.ldap.mappers.PasswordUpdateCallback;
+import org.keycloak.storage.ldap.mappers.TxAwareLDAPUserModelDelegate;
 
 import javax.naming.AuthenticationException;
 import java.util.HashSet;
@@ -101,7 +102,7 @@ public class MSADUserAccountControlStorageMapper extends AbstractLDAPStorageMapp
             control.remove(UserAccountControl.ACCOUNTDISABLE);
         }
 
-        updateUserAccountControl(ldapUser, control);
+        updateUserAccountControl(true, ldapUser, control);
     }
 
     @Override
@@ -187,23 +188,26 @@ public class MSADUserAccountControlStorageMapper extends AbstractLDAPStorageMapp
         return new UserAccountControl(longValue);
     }
 
-    // Update user in LDAP
-    protected void updateUserAccountControl(LDAPObject ldapUser, UserAccountControl accountControl) {
+    // Update user in LDAP if "updateInLDAP" is true. Otherwise it is assumed that LDAP update will be called at the end of transaction
+    protected void updateUserAccountControl(boolean updateInLDAP, LDAPObject ldapUser, UserAccountControl accountControl) {
         String userAccountControlValue = String.valueOf(accountControl.getValue());
         logger.debugf("Updating userAccountControl of user '%s' to value '%s'", ldapUser.getDn().toString(), userAccountControlValue);
 
         ldapUser.setSingleAttribute(LDAPConstants.USER_ACCOUNT_CONTROL, userAccountControlValue);
-        ldapProvider.getLdapIdentityStore().update(ldapUser);
+
+        if (updateInLDAP) {
+            ldapProvider.getLdapIdentityStore().update(ldapUser);
+        }
     }
 
 
 
-    public class MSADUserModelDelegate extends UserModelDelegate {
+    public class MSADUserModelDelegate extends TxAwareLDAPUserModelDelegate {
 
         private final LDAPObject ldapUser;
 
         public MSADUserModelDelegate(UserModel delegate, LDAPObject ldapUser) {
-            super(delegate);
+            super(delegate, ldapProvider, ldapUser);
             this.ldapUser = ldapUser;
         }
 
@@ -235,7 +239,9 @@ public class MSADUserAccountControlStorageMapper extends AbstractLDAPStorageMapp
                     control.add(UserAccountControl.ACCOUNTDISABLE);
                 }
 
-                updateUserAccountControl(ldapUser, control);
+                ensureTransactionStarted();
+
+                updateUserAccountControl(false, ldapUser, control);
             }
         }
 
@@ -257,7 +263,8 @@ public class MSADUserAccountControlStorageMapper extends AbstractLDAPStorageMapp
                 ldapUser.removeReadOnlyAttributeName(LDAPConstants.PWD_LAST_SET);
 
                 ldapUser.setSingleAttribute(LDAPConstants.PWD_LAST_SET, "0");
-                ldapProvider.getLdapIdentityStore().update(ldapUser);
+
+                ensureTransactionStarted();
             }
         }
 
@@ -283,7 +290,8 @@ public class MSADUserAccountControlStorageMapper extends AbstractLDAPStorageMapp
                     ldapUser.removeReadOnlyAttributeName(LDAPConstants.PWD_LAST_SET);
 
                     ldapUser.setSingleAttribute(LDAPConstants.PWD_LAST_SET, "-1");
-                    ldapProvider.getLdapIdentityStore().update(ldapUser);
+
+                    ensureTransactionStarted();
                 }
             }
         }

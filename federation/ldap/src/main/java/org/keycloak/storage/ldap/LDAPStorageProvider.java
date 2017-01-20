@@ -92,6 +92,7 @@ public class LDAPStorageProvider implements UserStorageProvider,
     protected LDAPProviderKerberosConfig kerberosConfig;
     protected PasswordUpdateCallback updater;
     protected LDAPStorageMapperManager mapperManager;
+    protected LDAPStorageUserManager userManager;
 
     protected final Set<String> supportedCredentialTypes = new HashSet<>();
 
@@ -103,6 +104,7 @@ public class LDAPStorageProvider implements UserStorageProvider,
         this.kerberosConfig = new LDAPProviderKerberosConfig(model);
         this.editMode = ldapIdentityStore.getConfig().getEditMode();
         this.mapperManager = new LDAPStorageMapperManager(this);
+        this.userManager = new LDAPStorageUserManager(this);
 
         supportedCredentialTypes.add(UserCredentialModel.PASSWORD);
         if (kerberosConfig.isAllowKerberosAuthentication()) {
@@ -134,6 +136,11 @@ public class LDAPStorageProvider implements UserStorageProvider,
         return mapperManager;
     }
 
+    public LDAPStorageUserManager getUserManager() {
+        return userManager;
+    }
+
+
     @Override
     public UserModel validate(RealmModel realm, UserModel local) {
         LDAPObject ldapObject = loadAndValidateUser(realm, local);
@@ -145,6 +152,11 @@ public class LDAPStorageProvider implements UserStorageProvider,
     }
 
     protected UserModel proxy(RealmModel realm, UserModel local, LDAPObject ldapObject) {
+        UserModel existing = userManager.getManagedProxiedUser(local.getId());
+        if (existing != null) {
+            return existing;
+        }
+
         UserModel proxied = local;
 
         checkDNChanged(realm, local, ldapObject);
@@ -166,6 +178,8 @@ public class LDAPStorageProvider implements UserStorageProvider,
             LDAPStorageMapper ldapMapper = mapperManager.getMapper(mapperModel);
             proxied = ldapMapper.proxy(ldapObject, proxied, realm);
         }
+
+        userManager.setManagedProxiedUser(proxied, ldapObject);
 
         return proxied;
     }
@@ -227,6 +241,8 @@ public class LDAPStorageProvider implements UserStorageProvider,
         }
 
         ldapIdentityStore.remove(ldapObject);
+        userManager.removeManagedUserEntry(user.getId());
+
         return true;
     }
 
@@ -385,6 +401,11 @@ public class LDAPStorageProvider implements UserStorageProvider,
      * @return ldapUser corresponding to local user or null if user is no longer in LDAP
      */
     protected LDAPObject loadAndValidateUser(RealmModel realm, UserModel local) {
+        LDAPObject existing = userManager.getManagedLDAPUser(local.getId());
+        if (existing != null) {
+            return existing;
+        }
+
         LDAPObject ldapUser = loadLDAPUserByUsername(realm, local.getUsername());
         if (ldapUser == null) {
             return null;
