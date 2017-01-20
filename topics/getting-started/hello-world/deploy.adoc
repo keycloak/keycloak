@@ -1,7 +1,28 @@
 [[_getting_started_hello_world_deploy]]
 === Build, Deploy, and Test Your Application
 
-Now that the *hello-world-authz-service* resource server (or client) is properly configured and authorization services are enabled, it can be deployed to the server.
+Now that the *app-authz-vanilla* resource server (or client) is properly configured and authorization services are enabled, it can be deployed to the server.
+
+The project and code for the application you are going to deploy is available in link:{{book.quickstartRepo}}[Red Hat Developers GitHub].  You will need the following
+installed on your machine and available in your PATH before you can continue:
+
+* Java JDK 8
+* Apache Maven 3.1.1 or higher
+* Git
+
+You can obtain the code by cloning the repository at {{book.quickstartRepo}}. Use the branch matching the version of Red Hat Single Sign-On in use. Follow these steps to download the code.
+
+.Clone Project
+[source, subs="attributes"]
+----
+$ git clone {{book.quickstartRepo}}
+----
+
+The application we are about to build and deploy is located at
+
+----
+$ cd redhat-sso-quickstarts/app-authz-jee-vanilla
+----
 
 ==== Obtaining the Adapter Configuration
 
@@ -9,7 +30,7 @@ You must first obtain the adapter configuration before building and deploying th
 
 To obtain the adapter configuration from the {{book.project.name}} Administration Console, complete the following steps. 
 
-. Click *Clients*. In the client listing, click the *hello-world-authz-service* client application. The Client Details page opens.
+. Click *Clients*. In the client listing, click the *app-authz-vanilla* client application. The Client Details page opens.
 +
 .Client Details
 image:../../../{{book.images}}/getting-started/hello-world/enable-authz.png[alt="Client Details"]
@@ -19,29 +40,30 @@ image:../../../{{book.images}}/getting-started/hello-world/enable-authz.png[alt=
 .Adapter Configuration
 image:../../../{{book.images}}/getting-started/hello-world/adapter-config.png[alt="Adapter Configuration"]
 
-. Navigate to the *${KEYCLOAK_DEMO_SERVER_DIR}/examples/authz/hello-world-authz-service/src/main/webapp/WEB-INF* directory and locate the *keycloak.json* file. Replace its contents with the adapter configuration you obtained from step 2 and save the file.
+. Move the file `keycloak.json` to the `app-authz-jee-vanilla/config` directory.
 
 . (optional) By default, the policy enforcer responds with a `403` status code when the user lacks permission to access protected resources on the resource server. However, you can also specify a redirection URL for unauthorized users. To specify a redirection URL, edit the *keycloak.json* file you updated in step 3 and replace the `policy-enforcer` configuration with the following:
 
 ```json
 "policy-enforcer": {
-    "on-deny-redirect-to" : "/hello-world-authz-service/error.jsp"
+    "on-deny-redirect-to" : "/app-authz-vanilla/error.jsp"
   }
 ```
 
-This change specifies to the policy enforcer to redirect users to a `/hello-world-authz-service/error.jsp` page if a user does not have the necessary permissions to access a protected resource, rather than an unhelpful `403 Unauthorized` message.
+This change specifies to the policy enforcer to redirect users to a `/app-authz-vanilla/error.jsp` page if a user does not have the necessary permissions to access a protected resource, rather than an unhelpful `403 Unauthorized` message.
 
 ==== Building and Deploying the Application
 
-To build and deploy the application, navigate to the *${KEYCLOAK_DEMO_SERVER_DIR}/examples/authz/hello-world-authz-service/* directory and execute the following command:
+To build and deploy the application execute the following command:
 
 ```bash
-mvn clean package wildfly:deploy
+$ cd redhat-sso-quickstarts/app-authz-jee-vanilla
+$ mvn clean package wildfly:deploy
 ```
 
 ==== Testing the Application
 
-If your application was successfully deployed you can access it at http://localhost:8080/hello-world-authz-service[http://localhost:8080/hello-world-authz-service]. The {{book.project.name}} Login page opens.
+If your application was successfully deployed you can access it at http://localhost:8080/app-authz-vanilla[http://localhost:8080/app-authz-vanilla]. The {{book.project.name}} Login page opens.
 
 .Login Page
 image:../../../{{book.images}}/getting-started/hello-world/login-page.png[alt="Login Page"]

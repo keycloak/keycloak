@@ -6,7 +6,6 @@
 
    .. link:topics/overview/terminology.adoc[Terminology]
 
-{% if book.community %}
  . link:topics/getting-started/overview.adoc[Getting Started]
 
    .. link:topics/getting-started/hello-world/overview.adoc[Securing a Servlet Application]
@@ -16,7 +15,7 @@
       ... link:topics/getting-started/hello-world/create-resource-server.adoc[Enabling Authorization Services]
 
       ... link:topics/getting-started/hello-world/deploy.adoc[Build, Deploy, and Test Your Application]
-
+{% if book.community %}
    .. link:topics/example/overview.adoc[Examples]
 {% endif %}
 

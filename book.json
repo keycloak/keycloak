@@ -13,6 +13,8 @@
     "community": true,
     "product": false,
     "images": "keycloak-images",
+    "appServer": "WildFly 10",
+    "quickstartRepo": "https://github.com/redhat-developer/redhat-sso-quickstarts",
     "project": {
       "name": "Keycloak",
       "version": "SNAPSHOT",
@@ -28,6 +30,14 @@
       "keycloakgettingstarted": {
         "name": "Getting Started",
         "link": "/getting-started-tutorials/content/"
+      },
+      "keycloakinstallingandboot": {
+        "name": "Installing and Boot",
+        "link": "/getting-started-tutorials/content/topics/first-boot.html"
+      },
+      "keycloakinstallclientadapter": {
+        "name": "Installing the Client Adapter",
+        "link": "/getting-started-tutorials/content/topics/secure-jboss-app/install-client-adapter.html"
       }
     }
   }
