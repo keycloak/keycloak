@@ -75,7 +75,7 @@ public class FullNameLDAPStorageMapper extends AbstractLDAPStorageMapper {
     @Override
     public void onRegisterUserToLDAP(LDAPObject ldapUser, UserModel localUser, RealmModel realm) {
         String ldapFullNameAttrName = getLdapFullNameAttrName();
-        String fullName = getFullName(localUser.getFirstName(), localUser.getLastName());
+        String fullName = getFullNameForWriteToLDAP(localUser.getFirstName(), localUser.getLastName(), localUser.getUsername());
         ldapUser.setSingleAttribute(ldapFullNameAttrName, fullName);
 
         if (isReadOnly()) {
@@ -103,7 +103,7 @@ public class FullNameLDAPStorageMapper extends AbstractLDAPStorageMapper {
                 }
 
                 private void setFullNameToLDAPObject() {
-                    String fullName = getFullName(getFirstName(), getLastName());
+                    String fullName = getFullNameForWriteToLDAP(getFirstName(), getLastName(), getUsername());
                     if (logger.isTraceEnabled()) {
                         logger.tracef("Pushing full name attribute to LDAP. Full name: %s", fullName);
                     }
@@ -177,16 +177,22 @@ public class FullNameLDAPStorageMapper extends AbstractLDAPStorageMapper {
         return ldapFullNameAttrName == null ? LDAPConstants.CN : ldapFullNameAttrName;
     }
 
-    protected String getFullName(String firstName, String lastName) {
-        if (firstName != null && lastName != null) {
+    protected String getFullNameForWriteToLDAP(String firstName, String lastName, String username) {
+        if (!isBlank(firstName) && !isBlank(lastName)) {
             return firstName + " " + lastName;
-        } else if (firstName != null) {
+        } else if (!isBlank(firstName)) {
             return firstName;
-        } else if (lastName != null) {
+        } else if (!isBlank(lastName)) {
             return lastName;
+        } else if (isFallbackToUsername()) {
+            return username;
         } else {
             return LDAPConstants.EMPTY_ATTRIBUTE_VALUE;
         }
+    }
+
+    private boolean isBlank(String attr) {
+        return attr == null || attr.trim().isEmpty();
     }
 
     private boolean isReadOnly() {
@@ -195,5 +201,12 @@ public class FullNameLDAPStorageMapper extends AbstractLDAPStorageMapper {
 
     private boolean isWriteOnly() {
         return parseBooleanParameter(mapperModel, WRITE_ONLY);
+    }
+
+
+    // Used just in case that we have Writable LDAP and fullName is mapped to "cn", which is used as RDN (this typically happens only on MSAD)
+    private boolean isFallbackToUsername() {
+        String rdnLdapAttrConfig = getLdapProvider().getLdapIdentityStore().getConfig().getRdnLdapAttribute();
+        return !isReadOnly() && getLdapFullNameAttrName().equalsIgnoreCase(rdnLdapAttrConfig);
     }
 }
