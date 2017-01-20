@@ -17,7 +17,9 @@
 
 package org.keycloak.broker.oidc.mappers;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import org.keycloak.broker.oidc.KeycloakOIDCIdentityProvider;
+import org.keycloak.broker.oidc.OIDCIdentityProvider;
 import org.keycloak.broker.provider.AbstractIdentityProviderMapper;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.models.IdentityProviderMapperModel;
@@ -70,6 +72,12 @@ public abstract class AbstractClaimMapper extends AbstractIdentityProviderMapper
                 if (value != null) return value;
             }
 
+        }
+        {
+            // Search the OIDC UserInfo claim set (if any)
+            JsonNode profileJsonNode = (JsonNode) context.getContextData().get(OIDCIdentityProvider.USER_INFO);
+            Object value = AbstractJsonUserAttributeMapper.getJsonValue(profileJsonNode, claim);
+            if (value != null) return value;
         }
         return null;
     }

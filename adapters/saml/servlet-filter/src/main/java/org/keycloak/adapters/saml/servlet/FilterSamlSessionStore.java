@@ -18,19 +18,18 @@
 package org.keycloak.adapters.saml.servlet;
 
 import org.jboss.logging.Logger;
+import org.keycloak.adapters.saml.SamlSession;
+import org.keycloak.adapters.saml.SamlSessionStore;
 import org.keycloak.adapters.saml.SamlUtil;
+import org.keycloak.adapters.servlet.FilterSessionStore;
 import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.adapters.spi.KeycloakAccount;
 import org.keycloak.adapters.spi.SessionIdMapper;
-import org.keycloak.adapters.saml.SamlSession;
-import org.keycloak.adapters.saml.SamlSessionStore;
-import org.keycloak.adapters.servlet.FilterSessionStore;
 import org.keycloak.common.util.KeycloakUriBuilder;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletRequestWrapper;
 import javax.servlet.http.HttpSession;
-
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;

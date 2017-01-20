@@ -119,6 +119,21 @@
             "id.token.claim" : "true",
             "access.token.claim" : "true"
           }
+        },
+        {
+          "protocolMapper" : "oidc-usermodel-attribute-mapper",
+          "protocol" : "openid-connect",
+          "name" : "picture",
+          "consentText" : "Picture",
+          "consentRequired" : true,
+          "config" : {
+            "Claim JSON Type" : "String",
+            "user.attribute" : "picture",
+            "claim.name" : "picture",
+            "multivalued": "false",
+            "id.token.claim" : "true",
+            "access.token.claim" : "true"
+          }
         }
       ]
     }
@@ -245,6 +260,19 @@
         "is.mandatory.in.ldap" : "false",
         "read.only" : "false",
         "always.read.value.from.ldap" : "false"
+      }
+    },
+    {
+      "name" : "picture",
+      "federationMapperType" : "user-attribute-ldap-mapper",
+      "federationProviderDisplayName" : "ldap-apacheds",
+      "config" : {
+        "ldap.attribute" : "jpegPhoto",
+        "user.model.attribute" : "picture",
+        "is.mandatory.in.ldap" : "false",
+        "read.only" : "false",
+        "always.read.value.from.ldap" : "true",
+        "is.binary.attribute" : "true"
       }
     },
     {

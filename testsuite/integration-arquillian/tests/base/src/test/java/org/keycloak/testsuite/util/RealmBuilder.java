@@ -19,13 +19,14 @@ package org.keycloak.testsuite.util;
 
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.RolesRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.events.EventsListenerProviderFactory;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
-import org.keycloak.representations.idm.RolesRepresentation;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -66,9 +67,15 @@ public class RealmBuilder {
     public RealmBuilder roles(RolesBuilder roles) {
         return roles(roles.build());
     }
-    
+
     public RealmBuilder roles(RolesRepresentation roles) {
         rep.setRoles(roles);
+        return this;
+    }
+
+    public RealmBuilder events() {
+        rep.setEventsEnabled(true);
+        rep.setEnabledEventTypes(Collections.<String>emptyList()); // enables all types
         return this;
     }
 
@@ -125,8 +132,23 @@ public class RealmBuilder {
         return this;
     }
 
+    public RealmBuilder notBefore(int i) {
+        rep.setNotBefore(i);
+        return this;
+    }
+
     public RealmBuilder otpLookAheadWindow(int i) {
         rep.setOtpPolicyLookAheadWindow(i);
+        return this;
+    }
+
+    public RealmBuilder bruteForceProtected(boolean bruteForceProtected) {
+        rep.setBruteForceProtected(bruteForceProtected);
+        return this;
+    }
+
+    public RealmBuilder failureFactor(int failureFactor) {
+        rep.setFailureFactor(failureFactor);
         return this;
     }
 
@@ -152,6 +174,11 @@ public class RealmBuilder {
 
     public RealmBuilder otpInitialCounter(int i) {
         rep.setOtpPolicyInitialCounter(i);
+        return this;
+    }
+
+    public RealmBuilder passwordPolicy(String passwordPolicy) {
+        rep.setPasswordPolicy(passwordPolicy);
         return this;
     }
 

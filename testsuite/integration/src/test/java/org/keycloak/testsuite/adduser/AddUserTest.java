@@ -26,9 +26,13 @@ import org.junit.rules.TemporaryFolder;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
-import org.keycloak.hash.Pbkdf2PasswordHashProvider;
+import org.keycloak.credential.hash.Pbkdf2PasswordHashProvider;
 import org.keycloak.models.Constants;
-import org.keycloak.representations.idm.*;
+import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.KeycloakServer;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.wildfly.adduser.AddUser;
@@ -38,7 +42,10 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.List;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.fail;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -107,7 +114,7 @@ public class AddUserTest {
 
             List<RoleRepresentation> realmRoles = userResource.roles().realmLevel().listAll();
 
-            assertRoles(realmRoles, "admin", "offline_access");
+            assertRoles(realmRoles, "admin", "offline_access", Constants.AUTHZ_UMA_AUTHORIZATION);
 
             List<ClientRepresentation> clients = realm.clients().findAll();
             String accountId = null;

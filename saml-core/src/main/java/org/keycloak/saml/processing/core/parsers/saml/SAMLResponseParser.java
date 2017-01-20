@@ -16,17 +16,17 @@
  */
 package org.keycloak.saml.processing.core.parsers.saml;
 
-import org.keycloak.saml.common.constants.JBossSAMLConstants;
-import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
-import org.keycloak.saml.common.exceptions.ParsingException;
-import org.keycloak.saml.common.parsers.ParserNamespaceSupport;
-import org.keycloak.saml.common.util.StaxParserUtil;
 import org.keycloak.dom.saml.v2.assertion.AssertionType;
 import org.keycloak.dom.saml.v2.assertion.EncryptedAssertionType;
 import org.keycloak.dom.saml.v2.assertion.NameIDType;
 import org.keycloak.dom.saml.v2.protocol.ResponseType;
 import org.keycloak.dom.saml.v2.protocol.ResponseType.RTChoiceType;
 import org.keycloak.dom.saml.v2.protocol.StatusResponseType;
+import org.keycloak.saml.common.constants.JBossSAMLConstants;
+import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
+import org.keycloak.saml.common.exceptions.ParsingException;
+import org.keycloak.saml.common.parsers.ParserNamespaceSupport;
+import org.keycloak.saml.common.util.StaxParserUtil;
 import org.w3c.dom.Element;
 
 import javax.xml.namespace.QName;
@@ -71,6 +71,9 @@ public class SAMLResponseParser extends SAMLStatusResponseTypeParser implements 
             } else if (JBossSAMLConstants.ASSERTION.get().equals(elementName)) {
                 SAMLAssertionParser assertionParser = new SAMLAssertionParser();
                 response.addAssertion(new RTChoiceType((AssertionType) assertionParser.parse(xmlEventReader)));
+            } else if (JBossSAMLConstants.EXTENSIONS.get().equals(elementName)) {
+                SAMLExtensionsParser extensionsParser = new SAMLExtensionsParser();
+                response.setExtensions(extensionsParser.parse(xmlEventReader));
             } else if (JBossSAMLConstants.STATUS.get().equals(elementName)) {
                 response.setStatus(parseStatus(xmlEventReader));
             } else if (JBossSAMLConstants.ENCRYPTED_ASSERTION.get().equals(elementName)) {

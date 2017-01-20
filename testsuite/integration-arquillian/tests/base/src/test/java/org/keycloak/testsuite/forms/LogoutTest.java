@@ -16,25 +16,29 @@
  */
 package org.keycloak.testsuite.forms;
 
+import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.events.Details;
+import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
 
 import java.io.IOException;
-import org.jboss.arquillian.graphene.page.Page;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.TestRealmKeycloakTest;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertTrue;
+import org.keycloak.testsuite.auth.page.account.AccountManagement;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
  */
-public class LogoutTest extends TestRealmKeycloakTest {
+public class LogoutTest extends AbstractTestRealmKeycloakTest {
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
@@ -44,6 +48,9 @@ public class LogoutTest extends TestRealmKeycloakTest {
 
     @Page
     protected LoginPage loginPage;
+
+    @Page
+    protected AccountManagement accountManagementPage;
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
@@ -59,7 +66,7 @@ public class LogoutTest extends TestRealmKeycloakTest {
 
         String redirectUri = AppPage.baseUrl + "?logout";
 
-        String logoutUrl = oauth.getLogoutUrl(redirectUri, null);
+        String logoutUrl = oauth.getLogoutUrl().redirectUri(redirectUri).build();
         driver.navigate().to(logoutUrl);
 
         events.expectLogout(sessionId).detail(Details.REDIRECT_URI, redirectUri).assertEvent();
@@ -82,7 +89,7 @@ public class LogoutTest extends TestRealmKeycloakTest {
 
         String sessionId = events.expectLogin().assertEvent().getSessionId();
 
-        String logoutUrl = oauth.getLogoutUrl(null, sessionId);
+        String logoutUrl = oauth.getLogoutUrl().sessionState(sessionId).build();
         driver.navigate().to(logoutUrl);
 
         events.expectLogout(sessionId).removeDetail(Details.REDIRECT_URI).assertEvent();
@@ -111,7 +118,7 @@ public class LogoutTest extends TestRealmKeycloakTest {
         events.expectLogin().session(sessionId).removeDetail(Details.USERNAME).assertEvent();
 
          //  Logout session 1 by redirect
-        driver.navigate().to(oauth.getLogoutUrl(AppPage.baseUrl, null));
+        driver.navigate().to(oauth.getLogoutUrl().redirectUri(AppPage.baseUrl).build());
         events.expectLogout(sessionId).detail(Details.REDIRECT_URI, AppPage.baseUrl).assertEvent();
 
          // Check session 1 not logged-in
@@ -126,6 +133,71 @@ public class LogoutTest extends TestRealmKeycloakTest {
         // Check session 3 logged-in
         oauth.openLoginForm();
         events.expectLogin().session(sessionId3).removeDetail(Details.USERNAME).assertEvent();
+    }
+
+    //KEYCLOAK-2741
+    @Test
+    public void logoutWithRememberMe() {
+        setRememberMe(true);
+        
+        try {
+            loginPage.open();
+            assertFalse(loginPage.isRememberMeChecked());
+            loginPage.setRememberMe(true);
+            assertTrue(loginPage.isRememberMeChecked());
+            loginPage.login("test-user@localhost", "password");
+
+            String sessionId = events.expectLogin().assertEvent().getSessionId();
+
+            // Expire session
+            testingClient.testing().removeUserSession("test", sessionId);
+
+            // Assert rememberMe checked and username/email prefilled
+            loginPage.open();
+            assertTrue(loginPage.isRememberMeChecked());
+            assertEquals("test-user@localhost", loginPage.getUsername());
+
+            loginPage.login("test-user@localhost", "password");
+            
+            //log out
+            appPage.openAccount();
+            accountManagementPage.signOut();
+            // Assert rememberMe not checked nor username/email prefilled
+            assertTrue(loginPage.isCurrent());
+            assertFalse(loginPage.isRememberMeChecked());
+            assertNotEquals("test-user@localhost", loginPage.getUsername());
+        } finally {
+            setRememberMe(false);
+        }
+    }
+    
+    private void setRememberMe(boolean enabled) {
+        RealmRepresentation rep = adminClient.realm("test").toRepresentation();
+        rep.setRememberMe(enabled);
+        adminClient.realm("test").update(rep);
+    }
+
+    @Test
+    public void logoutSessionWhenLoggedOutByAdmin() {
+        loginPage.open();
+        loginPage.login("test-user@localhost", "password");
+        assertTrue(appPage.isCurrent());
+
+        String sessionId = events.expectLogin().assertEvent().getSessionId();
+
+        adminClient.realm("test").logoutAll();
+
+        String logoutUrl = oauth.getLogoutUrl().sessionState(sessionId).build();
+        driver.navigate().to(logoutUrl);
+
+        assertEquals(logoutUrl, driver.getCurrentUrl());
+
+        loginPage.open();
+        loginPage.login("test-user@localhost", "password");
+        assertTrue(appPage.isCurrent());
+
+        String sessionId2 = events.expectLogin().assertEvent().getSessionId();
+        assertNotEquals(sessionId, sessionId2);
     }
 
 }

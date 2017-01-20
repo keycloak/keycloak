@@ -16,9 +16,11 @@
  */
 package org.keycloak.services.resources.admin;
 
+import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
@@ -28,7 +30,6 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.services.ErrorResponseException;
-import org.keycloak.services.ServicesLogger;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -39,10 +40,10 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
-
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
@@ -52,7 +53,7 @@ import java.util.Set;
  * @version $Revision: 1 $
  */
 public class ClientRoleMappingsResource {
-    protected static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    protected static final Logger logger = Logger.getLogger(ClientRoleMappingsResource.class);
 
     protected KeycloakSession session;
     protected RealmModel realm;
@@ -69,7 +70,7 @@ public class ClientRoleMappingsResource {
         this.auth = auth;
         this.user = user;
         this.client = client;
-        this.adminEvent = adminEvent;
+        this.adminEvent = adminEvent.resource(ResourceType.CLIENT_ROLE_MAPPING);
     }
 
     /**
@@ -196,12 +197,15 @@ public class ClientRoleMappingsResource {
 
         if (roles == null) {
             Set<RoleModel> roleModels = user.getClientRoleMappings(client);
+            roles = new LinkedList<>();
+
             for (RoleModel roleModel : roleModels) {
-                if (!(roleModel.getContainer() instanceof ClientModel)) {
+                if (roleModel.getContainer() instanceof ClientModel) {
                     ClientModel client = (ClientModel) roleModel.getContainer();
                     if (!client.getId().equals(this.client.getId())) continue;
                 }
                 user.deleteRoleMapping(roleModel);
+                roles.add(ModelToRepresentation.toRepresentation(roleModel));
             }
 
         } else {
@@ -220,6 +224,7 @@ public class ClientRoleMappingsResource {
                 }
             }
         }
+
         adminEvent.operation(OperationType.DELETE).resourcePath(uriInfo).representation(roles).success();
     }
 }

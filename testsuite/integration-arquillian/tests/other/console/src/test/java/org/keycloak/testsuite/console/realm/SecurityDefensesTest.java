@@ -26,12 +26,13 @@ import org.keycloak.testsuite.console.page.users.UserAttributes;
 import org.keycloak.testsuite.console.page.users.Users;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
+
+import static org.junit.Assert.*;
 import static org.keycloak.representations.idm.CredentialRepresentation.PASSWORD;
 import static org.keycloak.testsuite.admin.Users.setPasswordFor;
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
 import static org.keycloak.testsuite.util.WaitUtils.*;
-import static org.junit.Assert.*;
 
 /**
  * @author Filip Kiss
@@ -73,7 +74,7 @@ public class SecurityDefensesTest extends AbstractRealmTest {
 
     @Test
     public void maxLoginFailuresTest() throws InterruptedException {
-        final short secondsToWait = 3;
+        final short secondsToWait = 10; // For slower browsers/webdrivers (like IE) we need higher value
         final short maxLoginFailures = 2;
 
         bruteForceDetectionPage.form().setProtectionEnabled(true);
@@ -89,7 +90,7 @@ public class SecurityDefensesTest extends AbstractRealmTest {
 
     @Test
     public void quickLoginCheck() throws InterruptedException {
-        final short secondsToWait = 3;
+        final short secondsToWait = 10;
 
         bruteForceDetectionPage.form().setProtectionEnabled(true);
         bruteForceDetectionPage.form().setMaxLoginFailures("100");
@@ -104,7 +105,7 @@ public class SecurityDefensesTest extends AbstractRealmTest {
 
     @Test
     public void maxWaitLoginFailures() throws InterruptedException {
-        final short secondsToWait = 5;
+        final short secondsToWait = 15;
 
         bruteForceDetectionPage.form().setProtectionEnabled(true);
         bruteForceDetectionPage.form().setMaxLoginFailures("1");
@@ -120,7 +121,7 @@ public class SecurityDefensesTest extends AbstractRealmTest {
     @Test
     public void failureResetTime() throws InterruptedException {
         final short failureResetTime = 3;
-        final short waitIncrement = 3;
+        final short waitIncrement = 5;
 
         bruteForceDetectionPage.form().setProtectionEnabled(true);
         bruteForceDetectionPage.form().setMaxLoginFailures("1");
@@ -199,8 +200,7 @@ public class SecurityDefensesTest extends AbstractRealmTest {
 
         wait *= 1000;
 
-        log.debug("Wait: " + wait);
-        Thread.sleep(wait);
+        pause(wait);
 
         if (finalLogin) {
             testRealmLoginPage.form().login(testUser);

@@ -17,23 +17,20 @@
 
 package org.keycloak;
 
+import org.junit.Assert;
+import org.junit.Test;
+import org.keycloak.representations.IDToken;
+import org.keycloak.representations.JsonWebToken;
+import org.keycloak.representations.adapters.config.AdapterConfig;
+import org.keycloak.representations.oidc.OIDCClientRepresentation;
+import org.keycloak.util.JsonSerialization;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import com.fasterxml.jackson.annotation.JsonAnyGetter;
-import com.fasterxml.jackson.annotation.JsonAnySetter;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonUnwrapped;
-import org.junit.Assert;
-import org.junit.Test;
-import org.keycloak.representations.IDToken;
-import org.keycloak.representations.JsonWebToken;
-import org.keycloak.representations.adapters.config.AdapterConfig;
-import org.keycloak.util.JsonSerialization;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -123,6 +120,37 @@ public class JsonParserTest {
         }
         m.appendTail(sb);
         System.out.println(sb.toString());
+    }
+
+    @Test
+    public void testReadOIDCClientRep() throws IOException {
+        String stringRep = "{\"subject_type\": \"public\", \"jwks_uri\": \"https://op.certification.openid.net:60720/export/jwk_60720.json\", \"contacts\": [\"roland.hedberg@umu.se\"], \"application_type\": \"web\", \"grant_types\": [\"authorization_code\"], \"post_logout_redirect_uris\": [\"https://op.certification.openid.net:60720/logout\"], \"redirect_uris\": [\"https://op.certification.openid.net:60720/authz_cb\"], \"response_types\": [\"code\"], \"require_auth_time\": true, \"default_max_age\": 3600}";
+        OIDCClientRepresentation clientRep = JsonSerialization.readValue(stringRep, OIDCClientRepresentation.class);
+        Assert.assertEquals("public", clientRep.getSubjectType());
+        Assert.assertTrue(clientRep.getRequireAuthTime());
+        Assert.assertEquals(3600, clientRep.getDefaultMaxAge().intValue());
+        Assert.assertEquals(1, clientRep.getRedirectUris().size());
+        Assert.assertEquals("https://op.certification.openid.net:60720/authz_cb", clientRep.getRedirectUris().get(0));
+        Assert.assertNull(clientRep.getJwks());
+    }
+
+    @Test
+    public void testReadOIDCClientRepWithPairwise() throws IOException {
+        String stringRep = "{\"subject_type\": \"pairwise\", \"jwks_uri\": \"https://op.certification.openid.net:60720/export/jwk_60720.json\", \"contacts\": [\"roland.hedberg@umu.se\"], \"application_type\": \"web\", \"grant_types\": [\"authorization_code\"], \"post_logout_redirect_uris\": [\"https://op.certification.openid.net:60720/logout\"], \"redirect_uris\": [\"https://op.certification.openid.net:60720/authz_cb\"], \"response_types\": [\"code\"], \"require_auth_time\": true, \"default_max_age\": 3600}";
+        OIDCClientRepresentation clientRep = JsonSerialization.readValue(stringRep, OIDCClientRepresentation.class);
+        Assert.assertEquals("pairwise", clientRep.getSubjectType());
+        Assert.assertTrue(clientRep.getRequireAuthTime());
+        Assert.assertEquals(3600, clientRep.getDefaultMaxAge().intValue());
+        Assert.assertEquals(1, clientRep.getRedirectUris().size());
+        Assert.assertEquals("https://op.certification.openid.net:60720/authz_cb", clientRep.getRedirectUris().get(0));
+        Assert.assertNull(clientRep.getJwks());
+    }
+
+    @Test
+    public void testReadOIDCClientRepWithJWKS() throws IOException {
+        String stringRep = "{\"token_endpoint_auth_method\": \"private_key_jwt\", \"subject_type\": \"public\", \"jwks_uri\": null, \"jwks\": {\"keys\": [{\"use\": \"enc\", \"e\": \"AQAB\", \"d\": \"lZQv0_81euRLeUYU84Aodh0ar7ymDlzWP5NMra4Jklkb-lTBWkI-u4RMsPqGYyW3KHRoL_pgzZXSzQx8RLQfER6timRWb--NxMMKllZubByU3RqH2ooNuocJurspYiXkznPW1Mg9DaNXL0C2hwWPQHTeUVISpjgi5TCOV1ccWVyksFruya_VNL1CIByB-L0GL1rqbKv32cDwi2A3_jJa61cpzfLSIBe-lvCO6tuiDsR4qgJnUwnndQFwEI_4mLmD3iNWXrc8N-poleV8mBfMqBB5fWwy_ZTFCpmQ5AywGmctaik_wNhMoWuA4tUfY6_1LdKld-5Cjq55eLtuJjtvuQ\", \"n\": \"tx3Hjdbc19lkTiohbJrNj4jf2_90MEE122CRrwtFu6saDywKcG7Bi7w2FMAK2oTkuWfqhWRb5BEGmnSXdiCEPO5d-ytqP3nwlZXHaCDYscpP8bB4YLhvCn7R8Efw6gwQle24QPRP3lYoFeuUbDUq7GKA5SfaZUvWoeWjqyLIaBspKQsC26_Umx1E4IXLrMSL6nkRnrYcVZBAXrYCeTP1XtsV38_lZVJfHSaJaUy4PKaj3yvgm93EV2CXybPti7CCMXZ34VqqWiF64pQjZsPu3ZTr7ha_TTQq499-zYRQNDvIVsBDLQQIgrbctuGqj6lrXb31Jj3JIEYqH_4h5X9d0Q\", \"q\": \"1q-r-bmMFbIzrLK2U3elksZq8CqUqZxlSfkGMZuVkxgYMS-e4FPzEp2iirG-eO11aa0cpMMoBdTnVdGJ_ZUR93w0lGf9XnQAJqxP7eOsrUoiW4VWlWH4WfOiLgpO-pFtyTz_JksYYaotc_Z3Zy-Szw6a39IDbuYGy1qL-15oQuc\", \"p\": \"2lrYPppRbcQWu4LtWN6tOVUrtCOPv1eLTKTc7q8vCMcem1Ox5QFB7KnUtNZ5Ni7wnZUeVDfimNebtjNsGvDSrpgIlo9dEnFBQsQIkzZ2SkoYfgmF8hNdi6P-BfRjdgYouy4c6xAnGDgSMTip1YnPRyvbMaoYT9E_tEcBW5wOeoc\", \"kid\": \"a0\", \"kty\": \"RSA\"}, {\"use\": \"sig\", \"e\": \"AQAB\", \"d\": \"DodXDEtkovWWGsMEXYy_nEEMCWyROMOebCnCv0ey3i4M4bh2dmwqgz0e-IKQAFlGiMkidGL1lNbq0uFS04FbuRAR06dYw1cbrNbDdhrWFxKTd1L5D9p-x-gW-YDWhpI8rUGRa76JXkOSxZUbg09_QyUd99CXAHh-FXi_ZkIKD8hK6FrAs68qhLf8MNkUv63DTduw7QgeFfQivdopePxyGuMk5n8veqwsUZsklQkhNlTYQqeM1xb2698ZQcNYkl0OssEsSJKRjXt-LRPowKrdvTuTo2p--HMI0pIEeFs7H_u5OW3jihjvoFClGPynHQhgWmQzlQRvWRXh6FhDVqFeGQ\", \"n\": \"zfZzttF7HmnTYwSMPdxKs5AoczbNS2mOPz-tN1g4ljqI_F1DG8cgQDcN_VDufxoFGRERo2FK6WEN41LhbGEyP6uL6wW6Cy29qE9QZcvY5mXrncndRSOkNcMizvuEJes_fMYrmP_lPiC6kWiqItTk9QBWqJfiYKhCx9cSDXsBmJXn3KWQCVHvj1ANFWW0CWLMKlWN-_NMNLIWJN_pEAocTZMzxSFBK1b5_5J8ZS7hfWRF6MQmjsJcz2jzA21SQZNpre3kwnTGRSwo05sAS-TyeadDqQPWgbqX69UzcGq5irhzN8cpZ_JaTk3Y_uV6owanTZLVvCgdjaAnMYeZhb0KFw\", \"q\": \"5E5XKK5njT-zzRqqTeY2tgP9PJBACeaH_xQRHZ_1ydE7tVd7HdgdaEHfQ1jvKIHFkknWWOBAY1mlBc4YDirLShB_voShD8C-Hx3nF5sne5fleVfU-sZy6Za4B2U75PcE62oZgCPauOTAEm9Xuvrt5aMMovyzR8ecJZhm9bw7naU\", \"p\": \"5vJHCSM3H3q4RltYzENC9RyZZV8EUmpkv9moyguT5t-BUGA-T4W_FGIxzOPXRWOckIplKkoDKhavUeNmTZMCUcue0nkICSJpvNE4Nb2p5PZk_QqSdQNvCasQtdojEG0AmfVD85SU551CYxJdLdDFOqyK2entpMr8lhokem189As\", \"kid\": \"a1\", \"kty\": \"RSA\"}, {\"d\": \"S4_OufhLBgXFMgIDMI1zlVe2uCExpcEAQ80J_lXfS8I\", \"use\": \"sig\", \"crv\": \"P-256\", \"kty\": \"EC\", \"y\": \"DBdNyq30mXmUs_BIvKMqaTTNO7HDhCi0YiC8GciwNYk\", \"x\": \"cYwzBoyjRjxj334bRTqanONf7DUYK-6TgiuN0DixJAk\", \"kid\": \"a2\"}, {\"d\": \"33TnYgdJtWAiVosKqUnz0zSmvWTbsx5-6pceynW6Xck\", \"use\": \"enc\", \"crv\": \"P-256\", \"kty\": \"EC\", \"y\": \"Cula95Eix1Ia77St3OULe6-UKWs5I06nmdfUzhXUQTs\", \"x\": \"wk8HBVxNNzj1gJBxPmmx9XYW1L61ObBGzxpRa6_OqWU\", \"kid\": \"a3\"}]}, \"application_type\": \"web\", \"contacts\": [\"roland.hedberg@umu.se\"], \"post_logout_redirect_uris\": [\"https://op.certification.openid.net:60784/logout\"], \"redirect_uris\": [\"https://op.certification.openid.net:60784/authz_cb\"], \"response_types\": [\"code\"], \"require_auth_time\": true, \"grant_types\": [\"authorization_code\"], \"default_max_age\": 3600}";
+        OIDCClientRepresentation clientRep = JsonSerialization.readValue(stringRep, OIDCClientRepresentation.class);
+        Assert.assertNotNull(clientRep.getJwks());
     }
 
 }

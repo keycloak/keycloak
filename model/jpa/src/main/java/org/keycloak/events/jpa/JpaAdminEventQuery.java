@@ -17,10 +17,10 @@
 
 package org.keycloak.events.jpa;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.LinkedList;
-import java.util.List;
+import org.keycloak.events.admin.AdminEvent;
+import org.keycloak.events.admin.AdminEventQuery;
+import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
 
 import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
@@ -29,10 +29,10 @@ import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Expression;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
-
-import org.keycloak.events.admin.AdminEvent;
-import org.keycloak.events.admin.AdminEventQuery;
-import org.keycloak.events.admin.OperationType;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * @author <a href="mailto:giriraj.sharma27@gmail.com">Giriraj Sharma</a>
@@ -71,7 +71,19 @@ public class JpaAdminEventQuery implements AdminEventQuery {
         predicates.add(root.get("operationType").in(operationStrings));
         return this;
     }
-    
+
+    @Override
+    public AdminEventQuery resourceType(ResourceType... resourceTypes) {
+
+        List<String> resourceTypeStrings = new LinkedList<String>();
+        for (ResourceType e : resourceTypes) {
+            resourceTypeStrings.add(e.toString());
+        }
+        predicates.add(root.get("resourceType").in(resourceTypeStrings));
+
+        return this;
+    }
+
     @Override
     public AdminEventQuery authRealm(String authRealmId) {
         predicates.add(cb.equal(root.get("authRealmId"), authRealmId));
@@ -99,7 +111,7 @@ public class JpaAdminEventQuery implements AdminEventQuery {
     @Override
     public AdminEventQuery resourcePath(String resourcePath) {
         Expression<String> rPath = root.get("resourcePath");
-        predicates.add(cb.like(rPath, "%"+resourcePath+"%"));
+        predicates.add(cb.like(rPath, resourcePath.replace('*', '%')));
         return this;
     }
 

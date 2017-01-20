@@ -1,0 +1,166 @@
+<!--
+  ~ JBoss, Home of Professional Open Source.
+  ~ Copyright 2016 Red Hat, Inc., and individual contributors
+  ~ as indicated by the @author tags.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~     http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
+
+    <ol class="breadcrumb">
+        <li><a href="#/realms/{{realm.realm}}/clients">{{:: 'clients' | translate}}</a></li>
+        <li><a href="#/realms/{{realm.realm}}/clients/{{client.id}}">{{client.clientId}}</a></li>
+        <li><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server">{{:: 'authz-authorization' | translate}}</a></li>
+        <li><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server/policy">{{:: 'authz-policies' | translate}}</a></li>
+        <li data-ng-show="create">{{:: 'authz-add-role-policy' | translate}}</li>
+        <li data-ng-hide="create">{{:: 'roles' | translate}}</li>
+        <li data-ng-hide="create">{{originalPolicy.name}}</li>
+    </ol>
+
+    <h1 data-ng-show="create">{{:: 'authz-add-role-policy' | translate}}</h1>
+    <h1 data-ng-hide="create">{{originalPolicy.name|capitalize}}<i class="pficon pficon-delete clickable" data-ng-show="!create"
+                                                         data-ng-click="remove()"></i></h1>
+
+    <form class="form-horizontal" name="clientForm" novalidate>
+        <fieldset class="border-top">
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="name">{{:: 'name' | translate}} <span class="required">*</span></label>
+                <div class="col-sm-6">
+                    <input class="form-control" type="text" id="name" name="name" data-ng-model="policy.name" autofocus required data-ng-blur="checkNewNameAvailability()">
+                </div>
+                <kc-tooltip>{{:: 'authz-policy-name.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="description">{{:: 'description' | translate}} </label>
+                <div class="col-sm-6">
+                    <input class="form-control" type="text" id="description" name="description" data-ng-model="policy.description">
+                </div>
+                <kc-tooltip>{{:: 'authz-policy-description.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group clearfix">
+                <label class="col-md-2 control-label" for="roles">{{:: 'realm-roles' | translate}} <span class="required">*</span></label>
+
+                <div class="col-md-4">
+                    <select ui-select2="{ minimumInputLength: 1}" id="roles" data-ng-model="selectedRole" data-ng-change="selectRole(selectedRole);" data-placeholder="{{:: 'select-a-role' | translate}}..."
+                            ng-options="role as role.name for role in roles" data-ng-required="selectedRoles.length == 0">
+                        <option></option>
+                    </select>
+                </div>
+
+                <kc-tooltip>{{:: 'authz-policy-role-realm-roles.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group clearfix" style="margin-top: -15px;">
+                <label class="col-md-2 control-label"></label>
+                <div class="col-sm-4" data-ng-show="hasRealmRole()">
+                    <table class="table table-striped table-bordered">
+                        <thead>
+                        <tr>
+                            <th class="col-sm-5">{{:: 'name' | translate}}</th>
+                            <th>{{:: 'authz-required' | translate}}</th>
+                            <th>{{:: 'actions' | translate}}</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr ng-repeat="role in selectedRoles | orderBy:'name'" ng-if="!role.clientRole">
+                            <td>{{role.name}}</td>
+                            <td><input type="checkbox" ng-model="role.required" id="{{role.id}}"></td>
+                            <td class="kc-action-cell">
+                                <button class="btn btn-default btn-block btn-sm" ng-click="removeFromList(role);">{{:: 'remove' | translate}}</button>
+                            </td>
+                        </tr>
+                        <tr data-ng-show="!selectedRoles.length">
+                            <td class="text-muted" colspan="3">{{:: 'authz-no-roles-assigned' | translate}}</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="form-group clearfix">
+                <label class="col-md-2 control-label" for="clients">{{:: 'clients' | translate}}</label>
+
+                <div class="col-md-4">
+                    <select class="form-control" id="clients"
+                            ng-model="selectedClient"
+                            ng-change="selectClient()"
+                            data-ng-options="current as current.clientId for current in clients">
+                        <option value="">{{:: 'selectOne' | translate}}...</option>
+                    </select>
+                </div>
+                <kc-tooltip>{{:: 'authz-policy-role-clients.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group clearfix">
+                <label class="col-md-2 control-label" for="clientRoles">{{:: 'client-roles' | translate}} <span class="required">*</span></label>
+
+                <div class="col-md-4">
+                    <select ui-select2="{ minimumInputLength: 1}" id="clientRoles" data-ng-model="selectedRole" data-ng-change="selectRole(selectedRole);" data-placeholder="{{:: 'select-a-role' | translate}}..."
+                            ng-options="role as role.name for role in clientRoles" data-ng-required="selectedRoles.length == 0" data-ng-disabled="!selectedClient">
+                        <option></option>
+                    </select>
+                </div>
+
+                <kc-tooltip>{{:: 'authz-policy-role-client-roles.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group clearfix" style="margin-top: -15px;">
+                <label class="col-md-2 control-label"></label>
+                <div class="col-sm-4" data-ng-show="hasClientRole()">
+                    <table class="table table-striped table-bordered">
+                        <thead>
+                            <tr>
+                                <th class="col-sm-5">{{:: 'name' | translate}}</th>
+                                <th class="col-sm-5">{{:: 'client' | translate}}</th>
+                                <th>{{:: 'authz-required' | translate}}</th>
+                                <th>{{:: 'actions' | translate}}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr ng-repeat="role in selectedRoles | orderBy:'name'" ng-if="role.clientRole">
+                                <td>{{role.name}}</td>
+                                <td>{{role.container.name}}</td>
+                                <td><input type="checkbox" ng-model="role.required" id="{{role.id}}"></td>
+                                <td class="kc-action-cell">
+                                    <button class="btn btn-default btn-block btn-sm" ng-click="removeFromList(role);">{{:: 'remove' | translate}}</button>
+                                </td>
+                            </tr>
+                            <tr data-ng-show="!selectedRoles.length">
+                                <td class="text-muted" colspan="3">{{:: 'authz-no-roles-assigned' | translate}}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="form-group clearfix">
+                <label class="col-md-2 control-label" for="policy.logic">{{:: 'authz-policy-logic' | translate}}</label>
+
+                <div class="col-sm-1">
+                    <select class="form-control" id="policy.logic"
+                            data-ng-model="policy.logic">
+                        <option value="POSITIVE">{{:: 'authz-policy-logic-positive' | translate}}</option>
+                        <option value="NEGATIVE">{{:: 'authz-policy-logic-negative' | translate}}</option>
+                    </select>
+                </div>
+
+                <kc-tooltip>{{:: 'authz-policy-logic.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <input type="hidden" data-ng-model="policy.type"/>
+        </fieldset>
+        <div class="form-group" data-ng-show="access.manageAuthorization">
+            <div class="col-md-10 col-md-offset-2">
+                <button kc-save data-ng-disabled="!changed">{{:: 'save' | translate}}</button>
+                <button kc-reset data-ng-disabled="!changed">{{:: 'cancel' | translate}}</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<kc-menu></kc-menu>

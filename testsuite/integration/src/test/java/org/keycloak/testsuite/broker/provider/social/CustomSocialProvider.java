@@ -18,9 +18,9 @@ package org.keycloak.testsuite.broker.provider.social;
 
 import org.keycloak.broker.provider.AbstractIdentityProvider;
 import org.keycloak.broker.provider.AuthenticationRequest;
+import org.keycloak.broker.social.SocialIdentityProvider;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.IdentityProviderModel;
-import org.keycloak.broker.social.SocialIdentityProvider;
 import org.keycloak.models.KeycloakSession;
 
 import javax.ws.rs.core.Response;
@@ -30,8 +30,8 @@ import javax.ws.rs.core.Response;
  */
 public class CustomSocialProvider extends AbstractIdentityProvider<IdentityProviderModel> implements SocialIdentityProvider<IdentityProviderModel> {
 
-    public CustomSocialProvider(IdentityProviderModel config) {
-        super(config);
+    public CustomSocialProvider(KeycloakSession session, IdentityProviderModel config) {
+        super(session, config);
     }
 
     @Override

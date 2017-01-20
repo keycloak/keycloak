@@ -19,10 +19,12 @@ package org.keycloak.testsuite.admin.authentication;
 
 import org.junit.Test;
 import org.keycloak.authentication.authenticators.broker.IdpCreateUserIfUniqueAuthenticatorFactory;
+import org.keycloak.common.Profile;
 import org.keycloak.representations.idm.AuthenticatorConfigInfoRepresentation;
 import org.keycloak.representations.idm.ConfigPropertyRepresentation;
 import org.keycloak.testsuite.Assert;
 
+import javax.ws.rs.NotFoundException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -30,8 +32,6 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-
-import javax.ws.rs.NotFoundException;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
@@ -136,6 +136,9 @@ public class ProvidersTest extends AbstractAuthenticationTest {
                 "Validates a OTP on a separate OTP form. Only shown if required based on the configured conditions.");
         addProviderInfo(result, "auth-cookie", "Cookie", "Validates the SSO cookie set by the auth server.");
         addProviderInfo(result, "auth-otp-form", "OTP Form", "Validates a OTP on a separate OTP form.");
+        if (Profile.isFeatureEnabled(Profile.Feature.SCRIPTS)) {
+            addProviderInfo(result, "auth-script-based", "Script", "Script based authentication. Allows to define custom authentication logic via JavaScript.");
+        }
         addProviderInfo(result, "auth-spnego", "Kerberos", "Initiates the SPNEGO protocol.  Most often used with Kerberos.");
         addProviderInfo(result, "auth-username-password-form", "Username Password Form",
                 "Validates a username and password from login form.");
@@ -144,7 +147,8 @@ public class ProvidersTest extends AbstractAuthenticationTest {
                 "Validates the password supplied as a 'password' form parameter in direct grant request");
         addProviderInfo(result, "direct-grant-validate-username", "Username Validation",
                 "Validates the username supplied as a 'username' form parameter in direct grant request");
-        addProviderInfo(result, "http-basic-authenticator", null, null);
+        addProviderInfo(result, "http-basic-authenticator", "HTTP Basic Authentication", "Validates username and password from Authorization HTTP header");
+        addProviderInfo(result, "identity-provider-redirector", "Identity Provider Redirector", "Redirects to default Identity Provider or Identity Provider specified with kc_idp_hint query parameter");
         addProviderInfo(result, "idp-confirm-link", "Confirm link existing account", "Show the form where user confirms if he wants " +
                 "to link identity provider with existing account or rather edit user profile data retrieved from identity provider to avoid conflict");
         addProviderInfo(result, "idp-create-user-if-unique", "Create User If Unique", "Detect if there is existing Keycloak account " +
@@ -161,6 +165,8 @@ public class ProvidersTest extends AbstractAuthenticationTest {
                 "Will also set it if execution is OPTIONAL and the OTP is currently configured for it.");
         addProviderInfo(result, "reset-password", "Reset Password", "Sets the Update Password required action if execution is REQUIRED.  " +
                 "Will also set it if execution is OPTIONAL and the password is currently configured for it.");
+        addProviderInfo(result, "testsuite-dummy-click-through", "Testsuite Dummy Click Thru",
+                "Testsuite Dummy authenticator.  User needs to click through the page to continue.");
         addProviderInfo(result, "testsuite-dummy-passthrough", "Testsuite Dummy Pass Thru",
                 "Testsuite Dummy authenticator.  Just passes through and is hardcoded to a specific user");
         addProviderInfo(result, "testsuite-dummy-registration", "Testsuite Dummy Pass Thru",

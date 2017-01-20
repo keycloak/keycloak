@@ -25,11 +25,12 @@ import org.keycloak.adapters.OIDCHttpFacade;
 import org.keycloak.adapters.ServerRequest;
 import org.keycloak.adapters.spi.AuthenticationError;
 import org.keycloak.adapters.spi.LogoutError;
+import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.IDToken;
-import org.keycloak.common.util.KeycloakUriBuilder;
+import org.keycloak.util.TokenUtil;
 
 import javax.security.cert.X509Certificate;
 import javax.servlet.http.Cookie;
@@ -91,15 +92,15 @@ public class ServletOAuthClient extends KeycloakDeploymentDelegateOAuthClient {
         String state = getStateCode();
         KeycloakDeployment resolvedDeployment = resolveDeployment(getDeployment(), request);
         String authUrl = resolvedDeployment.getAuthUrl().clone().build().toString();
+        String scopeParam = TokenUtil.attachOIDCScope(scope);
 
         KeycloakUriBuilder uriBuilder =  KeycloakUriBuilder.fromUri(authUrl)
                 .queryParam(OAuth2Constants.RESPONSE_TYPE, OAuth2Constants.CODE)
                 .queryParam(OAuth2Constants.CLIENT_ID, getClientId())
                 .queryParam(OAuth2Constants.REDIRECT_URI, redirectUri)
-                .queryParam(OAuth2Constants.STATE, state);
-        if (scope != null) {
-            uriBuilder.queryParam(OAuth2Constants.SCOPE, scope);
-        }
+                .queryParam(OAuth2Constants.STATE, state)
+                .queryParam(OAuth2Constants.SCOPE, scopeParam);
+
         URI url = uriBuilder.build();
 
         String stateCookiePath = this.stateCookiePath;

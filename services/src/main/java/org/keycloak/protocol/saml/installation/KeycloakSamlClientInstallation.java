@@ -41,14 +41,14 @@ public class KeycloakSamlClientInstallation implements ClientInstallationProvide
     @Override
     public Response generateInstallation(KeycloakSession session, RealmModel realm, ClientModel client, URI baseUri) {
         SamlClient samlClient = new SamlClient(client);
-        StringBuffer buffer = new StringBuffer();
+        StringBuilder buffer = new StringBuilder();
         buffer.append("<keycloak-saml-adapter>\n");
-        baseXml(realm, client, baseUri, samlClient, buffer);
+        baseXml(session, realm, client, baseUri, samlClient, buffer);
         buffer.append("</keycloak-saml-adapter>\n");
         return Response.ok(buffer.toString(), MediaType.TEXT_PLAIN_TYPE).build();
     }
 
-    public static void baseXml(RealmModel realm, ClientModel client, URI baseUri, SamlClient samlClient, StringBuffer buffer) {
+    public static void baseXml(KeycloakSession session, RealmModel realm, ClientModel client, URI baseUri, SamlClient samlClient, StringBuilder buffer) {
         buffer.append("    <SP entityID=\"").append(client.getClientId()).append("\"\n");
         buffer.append("        sslPolicy=\"").append(realm.getSslRequired().name()).append("\"\n");
         buffer.append("        logoutPage=\"SPECIFY YOUR LOGOUT PAGE!\">\n");
@@ -96,6 +96,7 @@ public class KeycloakSamlClientInstallation implements ClientInstallationProvide
         buffer.append(">\n");
         buffer.append("            <SingleSignOnService signRequest=\"").append(Boolean.toString(samlClient.requiresClientSignature())).append("\"\n");
         buffer.append("                                 validateResponseSignature=\"").append(Boolean.toString(samlClient.requiresRealmSignature())).append("\"\n");
+        buffer.append("                                 validateAssertionSignature=\"").append(Boolean.toString(samlClient.requiresAssertionSignature())).append("\"\n");
         buffer.append("                                 requestBinding=\"POST\"\n");
         UriBuilder bindingUrlBuilder = UriBuilder.fromUri(baseUri);
         String bindingUrl = RealmsResource.protocolUrl(bindingUrlBuilder)
@@ -111,15 +112,6 @@ public class KeycloakSamlClientInstallation implements ClientInstallationProvide
         buffer.append("                                 postBindingUrl=\"").append(bindingUrl).append("\"\n");
         buffer.append("                                 redirectBindingUrl=\"").append(bindingUrl).append("\"");
         buffer.append("/>\n");
-        if (samlClient.requiresRealmSignature()) {
-            buffer.append("            <Keys>\n");
-            buffer.append("                <Key signing=\"true\">\n");
-            buffer.append("                    <CertificatePem>\n");
-            buffer.append("                       ").append(realm.getCertificatePem()).append("\n");
-            buffer.append("                    </CertificatePem>\n");
-            buffer.append("                </Key>\n");
-            buffer.append("            </Keys>\n");
-        }
         buffer.append("        </IDP>\n");
         buffer.append("    </SP>\n");
     }
@@ -136,7 +128,7 @@ public class KeycloakSamlClientInstallation implements ClientInstallationProvide
 
     @Override
     public String getHelpText() {
-        return "Keycloak SAML adapter configuration file.  Put this in WEB-INF directory if your WAR.";
+        return "Keycloak SAML adapter configuration file.  Put this in WEB-INF directory of your WAR.";
     }
 
     @Override

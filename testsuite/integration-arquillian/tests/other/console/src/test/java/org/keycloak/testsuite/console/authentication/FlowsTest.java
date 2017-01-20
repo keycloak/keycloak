@@ -22,7 +22,6 @@
 package org.keycloak.testsuite.console.authentication;
 
 import org.jboss.arquillian.graphene.page.Page;
-import static org.junit.Assert.*;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -33,6 +32,8 @@ import org.keycloak.testsuite.console.page.authentication.flows.CreateFlow;
 import org.keycloak.testsuite.console.page.authentication.flows.CreateFlowForm;
 import org.keycloak.testsuite.console.page.authentication.flows.Flows;
 import org.keycloak.testsuite.console.page.authentication.flows.FlowsTable;
+
+import static org.junit.Assert.*;
 
 /**
  *

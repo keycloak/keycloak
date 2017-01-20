@@ -16,6 +16,7 @@
  */
 package org.keycloak.services.resources.admin;
 
+import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
@@ -29,11 +30,10 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ForbiddenException;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.KeycloakApplication;
-import org.keycloak.services.ErrorResponse;
-import org.keycloak.services.ServicesLogger;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -47,7 +47,6 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
-
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
@@ -59,7 +58,7 @@ import java.util.List;
  * @version $Revision: 1 $
  */
 public class RealmsAdminResource {
-    protected static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    protected static final Logger logger = Logger.getLogger(RealmsAdminResource.class);
     protected AdminAuth auth;
     protected TokenManager tokenManager;
 
@@ -105,15 +104,16 @@ public class RealmsAdminResource {
             ClientModel adminApp = auth.getRealm().getClientByClientId(realmManager.getRealmAdminClientId(auth.getRealm()));
             addRealmRep(reps, auth.getRealm(), adminApp);
         }
+
+        if (reps.isEmpty()) {
+            throw new ForbiddenException();
+        }
+
         logger.debug(("getRealms()"));
         return reps;
     }
 
     protected void addRealmRep(List<RealmRepresentation> reps, RealmModel realm, ClientModel realmManagementClient) {
-        if (!auth.hasOneOfAppRole(realmManagementClient, AdminRoles.ALL_REALM_ROLES)) {
-            throw new ForbiddenException();
-        }
-
         if (auth.hasAppRole(realmManagementClient, AdminRoles.VIEW_REALM)) {
             reps.add(ModelToRepresentation.toRepresentation(realm, false));
         } else if (auth.hasOneOfAppRole(realmManagementClient, AdminRoles.ALL_REALM_ROLES)) {

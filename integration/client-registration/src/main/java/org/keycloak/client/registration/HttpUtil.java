@@ -20,12 +20,14 @@ package org.keycloak.client.registration;
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.*;
+import org.apache.http.client.methods.HttpDelete;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpPut;
+import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.keycloak.client.registration.Auth;
-import org.keycloak.client.registration.ClientRegistrationException;
-import org.keycloak.client.registration.HttpErrorException;
+import org.keycloak.common.util.StreamUtil;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -69,8 +71,7 @@ class HttpUtil {
             if (response.getStatusLine().getStatusCode() == 201) {
                 return responseStream;
             } else {
-                responseStream.close();
-                throw new HttpErrorException(response.getStatusLine());
+                throw httpErrorException(response, responseStream);
             }
         } catch (IOException e) {
             throw new ClientRegistrationException("Failed to send request", e);
@@ -97,10 +98,7 @@ class HttpUtil {
                 responseStream.close();
                 return null;
             } else {
-                if (responseStream != null) {
-                    responseStream.close();
-                }
-                throw new HttpErrorException(response.getStatusLine());
+                throw httpErrorException(response, responseStream);
             }
         } catch (IOException e) {
             throw new ClientRegistrationException("Failed to send request", e);
@@ -118,9 +116,6 @@ class HttpUtil {
             addAuth(request);
 
             HttpResponse response = httpClient.execute(request);
-            if (response.getEntity() != null) {
-                response.getEntity().getContent();
-            }
 
             InputStream responseStream = null;
             if (response.getEntity() != null) {
@@ -130,10 +125,7 @@ class HttpUtil {
             if (response.getStatusLine().getStatusCode() == 200) {
                 return responseStream;
             } else {
-                if (responseStream != null) {
-                    responseStream.close();
-                }
-                throw new HttpErrorException(response.getStatusLine());
+                throw httpErrorException(response, responseStream);
             }
         } catch (IOException e) {
             throw new ClientRegistrationException("Failed to send request", e);
@@ -147,12 +139,13 @@ class HttpUtil {
             addAuth(request);
 
             HttpResponse response = httpClient.execute(request);
+            InputStream responseStream = null;
             if (response.getEntity() != null) {
-                response.getEntity().getContent().close();
+                responseStream = response.getEntity().getContent();
             }
 
             if (response.getStatusLine().getStatusCode() != 204) {
-                throw new HttpErrorException(response.getStatusLine());
+                throw httpErrorException(response, responseStream);
             }
         } catch (IOException e) {
             throw new ClientRegistrationException("Failed to send request", e);
@@ -182,6 +175,15 @@ class HttpUtil {
     private void addAuth(HttpRequestBase request) {
         if (auth != null) {
             auth.addAuth(request);
+        }
+    }
+
+    private HttpErrorException httpErrorException(HttpResponse response, InputStream responseStream) throws IOException {
+        if (responseStream != null) {
+            String errorResponse = StreamUtil.readString(responseStream);
+            return new HttpErrorException(response.getStatusLine(), errorResponse);
+        } else {
+            return new HttpErrorException(response.getStatusLine(), null);
         }
     }
 

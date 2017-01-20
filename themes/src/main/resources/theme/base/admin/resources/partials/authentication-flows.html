@@ -17,7 +17,7 @@
                 <div class="pull-right" data-ng-show="access.manageRealm">
                     <button class="btn btn-default" data-ng-click="createFlow()">{{:: 'new' | translate}}</button>
                     <button class="btn btn-default" data-ng-click="copyFlow()">{{:: 'copy' | translate}}</button>
-                    <button class="btn btn-default" data-ng-hide="flow.builtIn" data-ng-click="removeFlow()">{{:: 'delete' | translate}}</button>
+                    <button class="btn btn-default" data-ng-hide="flow.builtIn" data-ng-click="deleteFlow()">{{:: 'delete' | translate}}</button>
                     <button class="btn btn-default" data-ng-hide="flow.builtIn" data-ng-click="addExecution()">{{:: 'add-execution' | translate}}</button>
                     <button class="btn btn-default" data-ng-hide="flow.builtIn || flow.providerId === 'client-flow'" data-ng-click="addFlow()">{{:: 'add-flow' | translate}}</button>
                 </div>
@@ -35,7 +35,7 @@
             <td class="kc-sorter">
                     <button data-ng-hide="flow.builtIn" data-ng-disabled="$first" class="btn btn-default btn-sm" data-ng-click="raisePriority(execution)"><i class="fa fa-angle-up"></i></button>
                     <button data-ng-hide="flow.builtIn" data-ng-disabled="$last" class="btn btn-default btn-sm" data-ng-click="lowerPriority(execution)"><i class="fa fa-angle-down"></i></button>
-                    <span>{{execution.displayName|capitalize}}</span>
+                    <span>{{execution.displayName|capitalize}}<span ng-if="execution.alias">({{execution.alias}})</span></span>
             </td>
             <td ng-repeat="lev in execution.postLevels"></td>
             <td ng-repeat="choice in execution.requirementChoices">

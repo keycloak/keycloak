@@ -19,14 +19,13 @@ package org.keycloak.subsystem.saml.as7.xml;
 
 import org.jboss.staxmapper.XMLExtendedStreamWriter;
 
-import java.lang.reflect.UndeclaredThrowableException;
-import java.util.ArrayDeque;
-import java.util.Iterator;
-
 import javax.xml.namespace.NamespaceContext;
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
+import java.lang.reflect.UndeclaredThrowableException;
+import java.util.ArrayDeque;
+import java.util.Iterator;
 
 /**
  * An XML stream writer which nicely formats the XML for configuration files.

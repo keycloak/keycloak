@@ -17,14 +17,13 @@
 package org.keycloak.subsystem.server.extension;
 
 import org.jboss.as.controller.AttributeDefinition;
-import org.jboss.as.controller.SimpleAttributeDefinition;
-
-import java.util.List;
 import org.jboss.as.controller.ModelOnlyWriteAttributeHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
+
+import java.util.List;
 
 /**
  * Update an attribute on an Auth Server.
@@ -33,7 +32,7 @@ import org.jboss.dmr.ModelNode;
  */
 public class KeycloakSubsystemWriteAttributeHandler extends ModelOnlyWriteAttributeHandler { //extends ReloadRequiredWriteAttributeHandler {
 
-    public KeycloakSubsystemWriteAttributeHandler(List<SimpleAttributeDefinition> definitions) {
+    public KeycloakSubsystemWriteAttributeHandler(List<AttributeDefinition> definitions) {
         this(definitions.toArray(new AttributeDefinition[definitions.size()]));
     }
 
@@ -59,7 +58,7 @@ public class KeycloakSubsystemWriteAttributeHandler extends ModelOnlyWriteAttrib
     }
 
     private boolean attribNotChanging(String attributeName, ModelNode newValue, ModelNode oldValue) {
-        SimpleAttributeDefinition attribDef = KeycloakSubsystemDefinition.lookup(attributeName);
+        AttributeDefinition attribDef = KeycloakSubsystemDefinition.lookup(attributeName);
         if (!oldValue.isDefined()) {
             oldValue = attribDef.getDefaultValue();
         }

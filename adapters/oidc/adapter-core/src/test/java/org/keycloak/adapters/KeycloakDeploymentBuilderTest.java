@@ -21,10 +21,12 @@ import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager;
 import org.junit.Test;
 import org.keycloak.adapters.authentication.ClientIdAndSecretCredentialsProvider;
 import org.keycloak.adapters.authentication.JWTClientCredentialsProvider;
+import org.keycloak.adapters.rotation.HardcodedPublicKeyLocator;
+import org.keycloak.adapters.rotation.JWKPublicKeyLocator;
 import org.keycloak.common.enums.RelativeUrlsUsed;
 import org.keycloak.common.enums.SslRequired;
-import org.keycloak.enums.TokenStore;
 import org.keycloak.common.util.PemUtils;
+import org.keycloak.enums.TokenStore;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -39,7 +41,11 @@ public class KeycloakDeploymentBuilderTest {
         KeycloakDeployment deployment = KeycloakDeploymentBuilder.build(getClass().getResourceAsStream("/keycloak.json"));
         assertEquals("demo", deployment.getRealm());
         assertEquals("customer-portal", deployment.getResourceName());
-        assertEquals(PemUtils.decodePublicKey("MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCrVrCuTtArbgaZzL1hvh0xtL5mc7o0NqPVnYXkLvgcwiC3BjLGw1tGEGoJaXDuSaRllobm53JBhjx33UNv+5z/UMG4kytBWxheNVKnL6GgqlNabMaFfPLPCF8kAgKnsi79NMo+n6KnSY8YeUmec/p2vjO2NjsSAVcWEQMVhJ31LwIDAQAB"), deployment.getRealmKey());
+
+        assertTrue(deployment.getPublicKeyLocator() instanceof HardcodedPublicKeyLocator);
+        assertEquals(PemUtils.decodePublicKey("MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCrVrCuTtArbgaZzL1hvh0xtL5mc7o0NqPVnYXkLvgcwiC3BjLGw1tGEGoJaXDuSaRllobm53JBhjx33UNv+5z/UMG4kytBWxheNVKnL6GgqlNabMaFfPLPCF8kAgKnsi79NMo+n6KnSY8YeUmec/p2vjO2NjsSAVcWEQMVhJ31LwIDAQAB"),
+                deployment.getPublicKeyLocator().getPublicKey(null, deployment));
+
         assertEquals("https://localhost:8443/auth/realms/demo/protocol/openid-connect/auth", deployment.getAuthUrl().build().toString());
         assertEquals(SslRequired.EXTERNAL, deployment.getSslRequired());
         assertTrue(deployment.isUseResourceRoleMappings());
@@ -61,12 +67,19 @@ public class KeycloakDeploymentBuilderTest {
         assertEquals(1000, deployment.getRegisterNodePeriod());
         assertEquals(TokenStore.COOKIE, deployment.getTokenStore());
         assertEquals("email", deployment.getPrincipalAttribute());
+        assertEquals(10, deployment.getTokenMinimumTimeToLive());
+        assertEquals(20, deployment.getMinTimeBetweenJwksRequests());
+        assertEquals(120, deployment.getPublicKeyCacheTtl());
     }
 
     @Test
     public void loadNoClientCredentials() throws Exception {
         KeycloakDeployment deployment = KeycloakDeploymentBuilder.build(getClass().getResourceAsStream("/keycloak-no-credentials.json"));
         assertEquals(ClientIdAndSecretCredentialsProvider.PROVIDER_ID, deployment.getClientAuthenticator().getId());
+
+        assertTrue(deployment.getPublicKeyLocator() instanceof JWKPublicKeyLocator);
+        assertEquals(10, deployment.getMinTimeBetweenJwksRequests());
+        assertEquals(86400, deployment.getPublicKeyCacheTtl());
     }
 
     @Test

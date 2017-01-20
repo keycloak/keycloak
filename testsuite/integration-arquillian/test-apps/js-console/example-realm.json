@@ -19,6 +19,21 @@
             ],
             "realmRoles": [ "user" ],
             "clientRoles": {
+                "realm-management" : [ "view-realm", "manage-users" ],
+                "account": ["view-profile", "manage-account"]
+            }
+        },{
+            "username" : "unauthorized",
+            "enabled": true,
+            "email" : "sample-user2@example",
+            "firstName": "Sample",
+            "lastName": "User",
+            "credentials" : [
+                { "type" : "password",
+                    "value" : "password" }
+            ],
+            "realmRoles": [],
+            "clientRoles": {
                 "account": ["view-profile", "manage-account"]
             }
         }
@@ -54,6 +69,12 @@
                 "http://localhost:8280",
                 "https://localhost:8643"
             ]
+        },{
+            "clientId": "js-database",
+            "enabled": true,
+            "adminUrl": "/database",
+            "baseUrl": "/database",
+            "bearerOnly": true
         }
     ],
     "clientScopeMappings": {

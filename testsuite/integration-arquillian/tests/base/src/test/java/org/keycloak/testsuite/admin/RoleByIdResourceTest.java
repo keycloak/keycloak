@@ -17,11 +17,11 @@
 
 package org.keycloak.testsuite.admin;
 
-import org.hamcrest.Matchers;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.RoleByIdResource;
 import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.util.AdminEventPaths;
@@ -36,7 +36,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -87,7 +91,7 @@ public class RoleByIdResourceTest extends AbstractAdminTest {
         role.setDescription("Role A New");
 
         resource.updateRole(ids.get("role-a"), role);
-        assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, AdminEventPaths.roleByIdResourcePath(ids.get("role-a")), role);
+        assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, AdminEventPaths.roleByIdResourcePath(ids.get("role-a")), role, ResourceType.REALM_ROLE);
 
         role = resource.getRole(ids.get("role-a"));
 
@@ -101,7 +105,7 @@ public class RoleByIdResourceTest extends AbstractAdminTest {
     public void deleteRole() {
         assertNotNull(resource.getRole(ids.get("role-a")));
         resource.deleteRole(ids.get("role-a"));
-        assertAdminEvents.assertEvent(realmId, OperationType.DELETE, AdminEventPaths.roleByIdResourcePath(ids.get("role-a")));
+        assertAdminEvents.assertEvent(realmId, OperationType.DELETE, AdminEventPaths.roleByIdResourcePath(ids.get("role-a")), ResourceType.REALM_ROLE);
 
         try {
             resource.getRole(ids.get("role-a"));
@@ -120,9 +124,7 @@ public class RoleByIdResourceTest extends AbstractAdminTest {
         l.add(RoleBuilder.create().id(ids.get("role-c")).build());
         resource.addComposites(ids.get("role-a"), l);
 
-        // TODO adminEvents: Fix once composite roles events will be fixed...
-        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, Matchers.startsWith(AdminEventPaths.roleByIdResourceCompositesPath(ids.get("role-a"))));
-        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, Matchers.startsWith(AdminEventPaths.roleByIdResourceCompositesPath(ids.get("role-a"))));
+        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.roleByIdResourceCompositesPath(ids.get("role-a")), l, ResourceType.REALM_ROLE);
 
         Set<RoleRepresentation> composites = resource.getRoleComposites(ids.get("role-a"));
 
@@ -136,7 +138,7 @@ public class RoleByIdResourceTest extends AbstractAdminTest {
         Assert.assertNames(clientComposites, "role-c");
 
         resource.deleteComposites(ids.get("role-a"), l);
-        assertAdminEvents.assertEvent(realmId, OperationType.DELETE, AdminEventPaths.roleByIdResourceCompositesPath(ids.get("role-a")));
+        assertAdminEvents.assertEvent(realmId, OperationType.DELETE, AdminEventPaths.roleByIdResourceCompositesPath(ids.get("role-a")), l, ResourceType.REALM_ROLE);
 
         assertFalse(resource.getRole(ids.get("role-a")).isComposite());
         assertEquals(0, resource.getRoleComposites(ids.get("role-a")).size());

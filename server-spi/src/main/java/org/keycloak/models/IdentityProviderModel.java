@@ -57,6 +57,8 @@ public class IdentityProviderModel implements Serializable {
 
     private String postBrokerLoginFlowId;
 
+    private String displayName;
+
     /**
      * <p>A map containing the configuration and properties for a specific identity provider instance and implementation. The items
      * in the map are understood by the identity provider implementation.</p>
@@ -67,17 +69,20 @@ public class IdentityProviderModel implements Serializable {
     }
 
     public IdentityProviderModel(IdentityProviderModel model) {
-        this.internalId = model.getInternalId();
-        this.providerId = model.getProviderId();
-        this.alias = model.getAlias();
-        this.config = new HashMap<String, String>(model.getConfig());
-        this.enabled = model.isEnabled();
-        this.trustEmail = model.isTrustEmail();
-        this.storeToken = model.isStoreToken();
-        this.authenticateByDefault = model.isAuthenticateByDefault();
-        this.addReadTokenRoleOnCreate = model.addReadTokenRoleOnCreate;
-        this.firstBrokerLoginFlowId = model.getFirstBrokerLoginFlowId();
-        this.postBrokerLoginFlowId = model.getPostBrokerLoginFlowId();
+        if (model != null) {
+            this.internalId = model.getInternalId();
+            this.providerId = model.getProviderId();
+            this.alias = model.getAlias();
+            this.displayName = model.getDisplayName();
+            this.config = new HashMap<String, String>(model.getConfig());
+            this.enabled = model.isEnabled();
+            this.trustEmail = model.isTrustEmail();
+            this.storeToken = model.isStoreToken();
+            this.authenticateByDefault = model.isAuthenticateByDefault();
+            this.addReadTokenRoleOnCreate = model.addReadTokenRoleOnCreate;
+            this.firstBrokerLoginFlowId = model.getFirstBrokerLoginFlowId();
+            this.postBrokerLoginFlowId = model.getPostBrokerLoginFlowId();
+        }
     }
 
     public String getInternalId() {
@@ -120,10 +125,12 @@ public class IdentityProviderModel implements Serializable {
         this.storeToken = storeToken;
     }
 
+    @Deprecated
     public boolean isAuthenticateByDefault() {
         return authenticateByDefault;
     }
 
+    @Deprecated
     public void setAuthenticateByDefault(boolean authenticateByDefault) {
         this.authenticateByDefault = authenticateByDefault;
     }
@@ -166,6 +173,14 @@ public class IdentityProviderModel implements Serializable {
 
     public void setTrustEmail(boolean trustEmail) {
         this.trustEmail = trustEmail;
+    }
+
+    public String getDisplayName() {
+        return displayName;
+    }
+
+    public void setDisplayName(String displayName) {
+        this.displayName = displayName;
     }
     
 }

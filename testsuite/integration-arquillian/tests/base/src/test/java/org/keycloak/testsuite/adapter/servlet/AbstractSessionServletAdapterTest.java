@@ -17,17 +17,11 @@
 
 package org.keycloak.testsuite.adapter.servlet;
 
-import org.keycloak.testsuite.adapter.AbstractServletsAdapterTest;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.After;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.ClientResource;
@@ -35,20 +29,20 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testsuite.adapter.AbstractServletsAdapterTest;
 import org.keycloak.testsuite.adapter.page.SessionPortal;
-
-import static org.keycloak.testsuite.auth.page.AuthRealm.DEMO;
-
 import org.keycloak.testsuite.auth.page.account.Sessions;
 import org.keycloak.testsuite.auth.page.login.Login;
-
-import static org.keycloak.testsuite.admin.ApiUtil.findClientResourceByClientId;
-import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlEquals;
-import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWithLoginUrlOf;
-
 import org.keycloak.testsuite.util.SecondBrowser;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.keycloak.testsuite.auth.page.AuthRealm.DEMO;
+import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlEquals;
+import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWithLoginUrlOf;
 
 /**
  *
@@ -150,7 +144,7 @@ public abstract class AbstractSessionServletAdapterTest extends AbstractServlets
         sessionPortalPage.navigateTo();
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
         testRealmLoginPage.form().login("bburke@redhat.com", "password");
-        assertEquals(driver.getCurrentUrl(), sessionPortalPage.toString());
+        assertCurrentUrlEquals(sessionPortalPage);
         String pageSource = driver.getPageSource();
         assertTrue(pageSource.contains("Counter=1"));
 
@@ -170,7 +164,7 @@ public abstract class AbstractSessionServletAdapterTest extends AbstractServlets
         
         // bburke should be still logged with original httpSession in our browser window
         sessionPortalPage.navigateTo();
-        assertEquals(driver.getCurrentUrl(), sessionPortalPage.toString());
+        assertCurrentUrlEquals(sessionPortalPage);
         String pageSource = driver.getPageSource();
         assertTrue(pageSource.contains("Counter=3"));
         String logoutUri = OIDCLoginProtocolService.logoutUrl(authServerPage.createUriBuilder())
@@ -192,7 +186,7 @@ public abstract class AbstractSessionServletAdapterTest extends AbstractServlets
         sessionPortalPage.navigateTo();
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
         login.form().login("bburke@redhat.com", "password");
-        assertEquals(driver.getCurrentUrl(), sessionPortalPage.toString());
+        assertCurrentUrlEquals(sessionPortalPage);
         String pageSource = driver.getPageSource();
         assertTrue(pageSource.contains("Counter=1"));
 

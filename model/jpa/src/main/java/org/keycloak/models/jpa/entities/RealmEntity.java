@@ -73,6 +73,10 @@ public class RealmEntity {
     protected boolean verifyEmail;
     @Column(name="RESET_PASSWORD_ALLOWED")
     protected boolean resetPasswordAllowed;
+    @Column(name="LOGIN_WITH_EMAIL_ALLOWED")
+    protected boolean loginWithEmailAllowed;
+    @Column(name="DUPLICATE_EMAILS_ALLOWED")
+    protected boolean duplicateEmailsAllowed;
     @Column(name="REMEMBER_ME")
     protected boolean rememberMe;
 
@@ -117,15 +121,6 @@ public class RealmEntity {
     @Column(name="NOT_BEFORE")
     protected int notBefore;
 
-    @Column(name="PUBLIC_KEY", length = 4000)
-    protected String publicKeyPem;
-    @Column(name="PRIVATE_KEY", length = 4000)
-    protected String privateKeyPem;
-    @Column(name="CERTIFICATE", length = 4000)
-    protected String certificatePem;
-    @Column(name="CODE_SECRET", length = 255)
-    protected String codeSecret;
-
     @Column(name="LOGIN_THEME")
     protected String loginTheme;
     @Column(name="ACCOUNT_THEME")
@@ -136,13 +131,13 @@ public class RealmEntity {
     protected String emailTheme;
 
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
-    Collection<RealmAttributeEntity> attributes = new ArrayList<RealmAttributeEntity>();
+    Collection<RealmAttributeEntity> attributes = new ArrayList<>();
 
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
-    Collection<RequiredCredentialEntity> requiredCredentials = new ArrayList<RequiredCredentialEntity>();
+    Collection<RequiredCredentialEntity> requiredCredentials = new ArrayList<>();
 
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
-    List<UserFederationProviderEntity> userFederationProviders = new ArrayList<UserFederationProviderEntity>();
+    List<UserFederationProviderEntity> userFederationProviders = new ArrayList<>();
 
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
     Collection<UserFederationMapperEntity> userFederationMappers = new ArrayList<UserFederationMapperEntity>();
@@ -296,6 +291,22 @@ public class RealmEntity {
     public void setVerifyEmail(boolean verifyEmail) {
         this.verifyEmail = verifyEmail;
     }
+    
+    public boolean isLoginWithEmailAllowed() {
+        return loginWithEmailAllowed;
+    }
+
+    public void setLoginWithEmailAllowed(boolean loginWithEmailAllowed) {
+        this.loginWithEmailAllowed = loginWithEmailAllowed;
+    }
+    
+    public boolean isDuplicateEmailsAllowed() {
+        return duplicateEmailsAllowed;
+    }
+
+    public void setDuplicateEmailsAllowed(boolean duplicateEmailsAllowed) {
+        this.duplicateEmailsAllowed = duplicateEmailsAllowed;
+    }
 
     public boolean isResetPasswordAllowed() {
         return resetPasswordAllowed;
@@ -382,30 +393,6 @@ public class RealmEntity {
 
     public void setAccessCodeLifespanLogin(int accessCodeLifespanLogin) {
         this.accessCodeLifespanLogin = accessCodeLifespanLogin;
-    }
-
-    public String getPublicKeyPem() {
-        return publicKeyPem;
-    }
-
-    public void setPublicKeyPem(String publicKeyPem) {
-        this.publicKeyPem = publicKeyPem;
-    }
-
-    public String getPrivateKeyPem() {
-        return privateKeyPem;
-    }
-
-    public void setPrivateKeyPem(String privateKeyPem) {
-        this.privateKeyPem = privateKeyPem;
-    }
-
-    public String getCodeSecret() {
-        return codeSecret;
-    }
-
-    public void setCodeSecret(String codeSecret) {
-        this.codeSecret = codeSecret;
     }
 
     public Collection<RequiredCredentialEntity> getRequiredCredentials() {
@@ -565,14 +552,6 @@ public class RealmEntity {
 
     public void setAttributes(Collection<RealmAttributeEntity> attributes) {
         this.attributes = attributes;
-    }
-
-    public String getCertificatePem() {
-        return certificatePem;
-    }
-
-    public void setCertificatePem(String certificatePem) {
-        this.certificatePem = certificatePem;
     }
 
     public List<IdentityProviderEntity> getIdentityProviders() {

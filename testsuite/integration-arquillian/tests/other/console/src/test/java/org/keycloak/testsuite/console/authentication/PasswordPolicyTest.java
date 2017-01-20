@@ -25,7 +25,7 @@ import org.keycloak.testsuite.console.AbstractConsoleTest;
 import org.keycloak.testsuite.console.page.authentication.PasswordPolicy;
 import org.keycloak.testsuite.console.page.users.UserCredentials;
 
-import static org.keycloak.testsuite.console.page.authentication.PasswordPolicy.Type.HASH_ITERATIONS;
+import static org.keycloak.testsuite.console.page.authentication.PasswordPolicy.Type.DIGITS;
 import static org.keycloak.testsuite.console.page.authentication.PasswordPolicy.Type.REGEX_PATTERN;
 
 /**
@@ -48,17 +48,18 @@ public class PasswordPolicyTest extends AbstractConsoleTest {
     @Test
     public void testAddAndRemovePolicy() {
         passwordPolicyPage.navigateTo();
-        passwordPolicyPage.addPolicy(HASH_ITERATIONS, 5);
-        passwordPolicyPage.removePolicy(HASH_ITERATIONS);
+        passwordPolicyPage.addPolicy(DIGITS, 5);
+        assertAlertSuccess();
+        passwordPolicyPage.removePolicy(DIGITS);
         assertAlertSuccess();
     }
 
     @Test
     public void testInvalidPolicyValues() {
         passwordPolicyPage.navigateTo();
-        passwordPolicyPage.addPolicy(HASH_ITERATIONS, "asd");
+        passwordPolicyPage.addPolicy(DIGITS, "asd");
         assertAlertDanger();
-        passwordPolicyPage.removePolicy(HASH_ITERATIONS);
+        passwordPolicyPage.removePolicy(DIGITS);
 
         passwordPolicyPage.addPolicy(REGEX_PATTERN, "([");
         assertAlertDanger();
@@ -177,6 +178,12 @@ public class PasswordPolicyTest extends AbstractConsoleTest {
 
         testUserCredentialsPage.resetPassword("firstPassword");
         assertAlertDanger();
+
+        testUserCredentialsPage.resetPassword("thirdPassword");
+        assertAlertSuccess();
+
+        testUserCredentialsPage.resetPassword("firstPassword");
+        assertAlertSuccess();
     }
 
 }

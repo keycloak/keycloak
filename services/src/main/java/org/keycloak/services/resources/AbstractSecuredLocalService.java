@@ -16,24 +16,25 @@
  */
 package org.keycloak.services.resources;
 
+import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.BadRequestException;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.AbstractOAuthClient;
-import org.keycloak.common.ClientConnection;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.common.ClientConnection;
 import org.keycloak.common.util.KeycloakUriBuilder;
+import org.keycloak.common.util.UriUtils;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.services.ForbiddenException;
-import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.Auth;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.util.CookieHelper;
-import org.keycloak.common.util.UriUtils;
+import org.keycloak.util.TokenUtil;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -56,7 +57,7 @@ import java.util.Set;
  * @version $Revision: 1 $
  */
 public abstract class AbstractSecuredLocalService {
-    private static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    private static final Logger logger = Logger.getLogger(AbstractSecuredLocalService.class);
 
     private static final String KEYCLOAK_STATE_CHECKER = "KEYCLOAK_STATE_CHECKER";
 
@@ -237,15 +238,14 @@ public abstract class AbstractSecuredLocalService {
 
         public Response redirect(UriInfo uriInfo, String redirectUri) {
             String state = getStateCode();
+            String scopeParam = TokenUtil.attachOIDCScope(scope);
 
             UriBuilder uriBuilder = UriBuilder.fromUri(authUrl)
                     .queryParam(OAuth2Constants.CLIENT_ID, clientId)
                     .queryParam(OAuth2Constants.REDIRECT_URI, redirectUri)
                     .queryParam(OAuth2Constants.STATE, state)
-                    .queryParam(OAuth2Constants.RESPONSE_TYPE, OAuth2Constants.CODE);
-            if (scope != null) {
-                uriBuilder.queryParam(OAuth2Constants.SCOPE, scope);
-            }
+                    .queryParam(OAuth2Constants.RESPONSE_TYPE, OAuth2Constants.CODE)
+                    .queryParam(OAuth2Constants.SCOPE, scopeParam);
 
             URI url = uriBuilder.build();
 

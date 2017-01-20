@@ -66,17 +66,26 @@ public class CompositeRolesModelTest extends AbstractModelTest {
     @Test
     public void testComposites() {
         Set<RoleModel> requestedRoles = getRequestedRoles("APP_COMPOSITE_APPLICATION", "APP_COMPOSITE_USER");
-        Assert.assertEquals(2, requestedRoles.size());
+        Assert.assertEquals(5, requestedRoles.size());
+        assertContains("APP_COMPOSITE_APPLICATION", "APP_COMPOSITE_ROLE", requestedRoles);
+        assertContains("APP_COMPOSITE_APPLICATION", "APP_COMPOSITE_CHILD", requestedRoles);
+        assertContains("APP_COMPOSITE_APPLICATION", "APP_ROLE_2", requestedRoles);
         assertContains("APP_ROLE_APPLICATION", "APP_ROLE_1", requestedRoles);
         assertContains("realm", "REALM_ROLE_1", requestedRoles);
 
         requestedRoles = getRequestedRoles("APP_COMPOSITE_APPLICATION", "REALM_APP_COMPOSITE_USER");
-        Assert.assertEquals(1, requestedRoles.size());
+        Assert.assertEquals(4, requestedRoles.size());
         assertContains("APP_ROLE_APPLICATION", "APP_ROLE_1", requestedRoles);
 
         requestedRoles = getRequestedRoles("REALM_COMPOSITE_1_APPLICATION", "REALM_COMPOSITE_1_USER");
         Assert.assertEquals(1, requestedRoles.size());
         assertContains("realm", "REALM_COMPOSITE_1", requestedRoles);
+
+        requestedRoles = getRequestedRoles("REALM_COMPOSITE_2_APPLICATION", "REALM_COMPOSITE_1_USER");
+        Assert.assertEquals(3, requestedRoles.size());
+        assertContains("realm", "REALM_COMPOSITE_1", requestedRoles);
+        assertContains("realm", "REALM_COMPOSITE_CHILD", requestedRoles);
+        assertContains("realm", "REALM_ROLE_4", requestedRoles);
 
         requestedRoles = getRequestedRoles("REALM_ROLE_1_APPLICATION", "REALM_COMPOSITE_1_USER");
         Assert.assertEquals(1, requestedRoles.size());

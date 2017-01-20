@@ -86,6 +86,13 @@ public class DirExportProvider extends MultipleStepsExportProvider {
     }
 
     @Override
+    protected void writeFederatedUsers(String fileName, KeycloakSession session, RealmModel realm, List<String> users) throws IOException {
+        File file = new File(this.rootDirectory, fileName);
+        FileOutputStream os = new FileOutputStream(file);
+        ExportUtils.exportFederatedUsersToStream(session, realm, users, JsonSerialization.prettyMapper, os);
+    }
+
+    @Override
     public void close() {
     }
 }

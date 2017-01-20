@@ -24,6 +24,7 @@ package org.keycloak.testsuite.console.events;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Test;
+import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.admin.ApiUtil;
@@ -38,7 +39,6 @@ import javax.ws.rs.core.Response;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
-import org.keycloak.admin.client.resource.ClientsResource;
 import static org.keycloak.testsuite.auth.page.login.Login.OIDC;
 import static org.keycloak.testsuite.console.clients.AbstractClientTest.createClientRep;
 
@@ -88,6 +88,7 @@ public class AdminEventsTest extends AbstractConsoleTest {
         assertEquals(1, resultList.size());
         resultList.get(0).findElement(By.xpath("//td[text()='CREATE']"));
         resultList.get(0).findElement(By.xpath("//td[text()='clients/" + id + "']"));
+        resultList.get(0).findElement(By.xpath("//td[text()='CLIENT']"));
 
         adminEventsPage.table().reset();
         adminEventsPage.table().filterForm().addOperationType("UPDATE");
@@ -97,6 +98,7 @@ public class AdminEventsTest extends AbstractConsoleTest {
         assertEquals(1, resultList.size());
         resultList.get(0).findElement(By.xpath("//td[text()='UPDATE']"));
         resultList.get(0).findElement(By.xpath("//td[text()='clients/" + id + "']"));
+        resultList.get(0).findElement(By.xpath("//td[text()='CLIENT']"));
 
         adminEventsPage.table().reset();
         adminEventsPage.table().filterForm().addOperationType("DELETE");
@@ -106,6 +108,7 @@ public class AdminEventsTest extends AbstractConsoleTest {
         assertEquals(1, resultList.size());
         resultList.get(0).findElement(By.xpath("//td[text()='DELETE']"));
         resultList.get(0).findElement(By.xpath("//td[text()='clients/" + id + "']"));
+        resultList.get(0).findElement(By.xpath("//td[text()='CLIENT']"));
     }
     
     public ClientsResource clientsResource() {

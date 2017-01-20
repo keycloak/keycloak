@@ -24,10 +24,10 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.adapters.ServerRequest;
+import org.keycloak.common.util.UriUtils;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.servlet.ServletOAuthClient;
 import org.keycloak.util.JsonSerialization;
-import org.keycloak.common.util.UriUtils;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;

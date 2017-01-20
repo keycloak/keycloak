@@ -17,26 +17,21 @@
 
 package org.keycloak.adapters;
 
-import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpGet;
 import org.jboss.logging.Logger;
 import org.keycloak.adapters.authentication.ClientCredentialsProvider;
+import org.keycloak.adapters.authorization.PolicyEnforcer;
+import org.keycloak.adapters.rotation.PublicKeyLocator;
 import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.common.enums.RelativeUrlsUsed;
 import org.keycloak.common.enums.SslRequired;
+import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.enums.TokenStore;
 import org.keycloak.representations.adapters.config.AdapterConfig;
-import org.keycloak.representations.idm.PublishedRealmRepresentation;
-import org.keycloak.util.JsonSerialization;
-import org.keycloak.common.util.KeycloakUriBuilder;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URI;
-import java.security.PublicKey;
 import java.util.Map;
 
 /**
@@ -57,7 +52,7 @@ public class AdapterDeploymentContext {
      * during the application deployment's life cycle.
      *
      * @param deployment A KeycloakConfigResolver, possibly missing the Auth
-     *                   Server URL and/or Realm Public Key
+     *                   Server URL
      */
     public AdapterDeploymentContext(KeycloakDeployment deployment) {
         this.deployment = deployment;
@@ -79,7 +74,6 @@ public class AdapterDeploymentContext {
     /**
      * For single-tenant deployments, it complements KeycloakDeployment
      * by resolving a relative Auth Server's URL based on the current request
-     * and, if needed, will lazily resolve the Realm's Public Key.
      *
      * For multi-tenant deployments, defers the resolution of KeycloakDeployment
      * to the KeycloakConfigResolver .
@@ -98,8 +92,8 @@ public class AdapterDeploymentContext {
         if (deployment.getAuthServerBaseUrl() == null) return deployment;
 
         KeycloakDeployment resolvedDeployment = resolveUrls(deployment, facade);
-        if (resolvedDeployment.getRealmKey() == null) {
-            resolveRealmKey(resolvedDeployment);
+        if (resolvedDeployment.getPublicKeyLocator() == null) {
+            throw new RuntimeException("KeycloakDeployment was never initialized through appropriate SPIs");
         }
         return resolvedDeployment;
     }
@@ -112,45 +106,6 @@ public class AdapterDeploymentContext {
             DeploymentDelegate delegate = new DeploymentDelegate(this.deployment);
             delegate.setAuthServerBaseUrl(getBaseBuilder(facade, this.deployment.getAuthServerBaseUrl()).build().toString());
             return delegate;
-        }
-    }
-
-    public void resolveRealmKey(KeycloakDeployment deployment) {
-        if (deployment.getClient() == null) {
-            throw new RuntimeException("KeycloakDeployment was never initialized through appropriate SPIs");
-        }
-        HttpGet get = new HttpGet(deployment.getRealmInfoUrl());
-        try {
-            HttpResponse response = deployment.getClient().execute(get);
-            int status = response.getStatusLine().getStatusCode();
-            if (status != 200) {
-                close(response);
-                throw new RuntimeException("Unable to resolve realm public key remotely, status = " + status);
-            }
-            HttpEntity entity = response.getEntity();
-            if (entity == null) {
-                throw new RuntimeException("Unable to resolve realm public key remotely.  There was no entity.");
-            }
-            InputStream is = entity.getContent();
-            try {
-                ByteArrayOutputStream os = new ByteArrayOutputStream();
-                int c;
-                while ((c = is.read()) != -1) {
-                    os.write(c);
-                }
-                byte[] bytes = os.toByteArray();
-                String json = new String(bytes);
-                PublishedRealmRepresentation rep = JsonSerialization.readValue(json, PublishedRealmRepresentation.class);
-                deployment.setRealmKey(rep.getPublicKey());
-            } finally {
-                try {
-                    is.close();
-                } catch (IOException ignored) {
-
-                }
-            }
-        } catch (IOException e) {
-            throw new RuntimeException("Unable to resolve realm public key remotely", e);
         }
     }
 
@@ -208,6 +163,11 @@ public class AdapterDeploymentContext {
         }
 
         @Override
+        public String getJwksUrl() {
+            return (this.jwksUrl != null) ? this.jwksUrl : delegate.getJwksUrl();
+        }
+
+        @Override
         public String getResourceName() {
             return delegate.getResourceName();
         }
@@ -223,13 +183,13 @@ public class AdapterDeploymentContext {
         }
 
         @Override
-        public PublicKey getRealmKey() {
-            return delegate.getRealmKey();
+        public void setPublicKeyLocator(PublicKeyLocator publicKeyLocator) {
+            delegate.setPublicKeyLocator(publicKeyLocator);
         }
 
         @Override
-        public void setRealmKey(PublicKey realmKey) {
-            delegate.setRealmKey(realmKey);
+        public PublicKeyLocator getPublicKeyLocator() {
+            return delegate.getPublicKeyLocator();
         }
 
         @Override
@@ -383,6 +343,12 @@ public class AdapterDeploymentContext {
         }
 
         @Override
+        public void updateNotBefore(int notBefore) {
+            delegate.setNotBefore(notBefore);
+            getPublicKeyLocator().reset(this);
+        }
+
+        @Override
         public void setExposeToken(boolean exposeToken) {
             delegate.setExposeToken(exposeToken);
         }
@@ -455,6 +421,46 @@ public class AdapterDeploymentContext {
         @Override
         public void setTurnOffChangeSessionIdOnLogin(boolean turnOffChangeSessionIdOnLogin) {
             delegate.setTurnOffChangeSessionIdOnLogin(turnOffChangeSessionIdOnLogin);
+        }
+
+        @Override
+        public int getTokenMinimumTimeToLive() {
+            return delegate.getTokenMinimumTimeToLive();
+        }
+
+        @Override
+        public void setTokenMinimumTimeToLive(final int tokenMinimumTimeToLive) {
+            delegate.setTokenMinimumTimeToLive(tokenMinimumTimeToLive);
+        }
+
+        @Override
+        public PolicyEnforcer getPolicyEnforcer() {
+            return delegate.getPolicyEnforcer();
+        }
+
+        @Override
+        public void setPolicyEnforcer(PolicyEnforcer policyEnforcer) {
+            delegate.setPolicyEnforcer(policyEnforcer);
+        }
+
+        @Override
+        public void setMinTimeBetweenJwksRequests(int minTimeBetweenJwksRequests) {
+            delegate.setMinTimeBetweenJwksRequests(minTimeBetweenJwksRequests);
+        }
+
+        @Override
+        public int getMinTimeBetweenJwksRequests() {
+            return delegate.getMinTimeBetweenJwksRequests();
+        }
+
+        @Override
+        public int getPublicKeyCacheTtl() {
+            return delegate.getPublicKeyCacheTtl();
+        }
+
+        @Override
+        public void setPublicKeyCacheTtl(int publicKeyCacheTtl) {
+            delegate.setPublicKeyCacheTtl(publicKeyCacheTtl);
         }
     }
 

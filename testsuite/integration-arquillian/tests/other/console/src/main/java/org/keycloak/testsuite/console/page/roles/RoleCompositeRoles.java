@@ -1,24 +1,23 @@
 package org.keycloak.testsuite.console.page.roles;
 
+import org.keycloak.representations.idm.RoleRepresentation.Composites;
+import org.keycloak.testsuite.page.Form;
+import org.keycloak.testsuite.util.UIUtils;
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.support.FindBy;
+import org.openqa.selenium.support.ui.Select;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import org.keycloak.representations.idm.RoleRepresentation.Composites;
-import org.keycloak.testsuite.page.Form;
-import static org.keycloak.testsuite.util.WaitUtils.pause;
+
 import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
-import org.openqa.selenium.By;
-import org.openqa.selenium.WebElement;
-import org.openqa.selenium.logging.LogEntries;
-import org.openqa.selenium.logging.LogEntry;
-import org.openqa.selenium.support.FindBy;
-import org.openqa.selenium.support.ui.Select;
 
 /**
  *
@@ -156,22 +155,12 @@ public class RoleCompositeRoles extends Form {
 
     public boolean isAssignedRole(String role) {
         waitUntilElement(By.id("assigned")).is().present();
-        try {
-            assignedRealmRolesSelect.selectByVisibleText(role);
-        } catch (Exception ex) {
-            return false;
-        }
-        return true;
+        return UIUtils.selectContainsOption(assignedRealmRolesSelect, role);
     }
 
     public boolean isAssignedClientRole(String role) {
         waitUntilElement(By.id("assigned")).is().present();
-        try {
-            assignedClientRolesSelect.selectByVisibleText(role);
-        } catch (Exception ex) {
-            return false;
-        }
-        return true;
+        return UIUtils.selectContainsOption(assignedClientRolesSelect, role);
     }
 
     public void selectClientRole(String client) {

@@ -17,12 +17,6 @@
 
 package org.keycloak.authentication.authenticators.broker.util;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.keycloak.authentication.requiredactions.util.UpdateProfileContext;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
@@ -38,6 +32,12 @@ import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.services.resources.IdentityBrokerService;
 import org.keycloak.util.JsonSerialization;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -256,7 +256,6 @@ public class SerializedBrokeredIdentityContext implements UpdateProfileContext {
         ctx.setLastName(getLastName());
         ctx.setBrokerSessionId(getBrokerSessionId());
         ctx.setBrokerUserId(getBrokerUserId());
-        ctx.setCode(getCode());
         ctx.setToken(getToken());
 
         RealmModel realm = clientSession.getRealm();
@@ -297,7 +296,6 @@ public class SerializedBrokeredIdentityContext implements UpdateProfileContext {
         ctx.setLastName(context.getLastName());
         ctx.setBrokerSessionId(context.getBrokerSessionId());
         ctx.setBrokerUserId(context.getBrokerUserId());
-        ctx.setCode(context.getCode());
         ctx.setToken(context.getToken());
         ctx.setIdentityProviderId(context.getIdpConfig().getAlias());
 

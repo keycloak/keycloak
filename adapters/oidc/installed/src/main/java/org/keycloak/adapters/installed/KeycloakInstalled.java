@@ -19,11 +19,11 @@ package org.keycloak.adapters.installed;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
-import org.keycloak.RSATokenVerifier;
-import org.keycloak.common.VerificationException;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.KeycloakDeploymentBuilder;
 import org.keycloak.adapters.ServerRequest;
+import org.keycloak.adapters.rotation.AdapterRSATokenVerifier;
+import org.keycloak.common.VerificationException;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.representations.AccessToken;
@@ -119,6 +119,7 @@ public class KeycloakInstalled {
                 .queryParam(OAuth2Constants.CLIENT_ID, deployment.getResourceName())
                 .queryParam(OAuth2Constants.REDIRECT_URI, redirectUri)
                 .queryParam(OAuth2Constants.STATE, state)
+                .queryParam(OAuth2Constants.SCOPE, OAuth2Constants.SCOPE_OPENID)
                 .build().toString();
 
         Desktop.getDesktop().browse(new URI(authUrl));
@@ -175,6 +176,7 @@ public class KeycloakInstalled {
                 .queryParam(OAuth2Constants.RESPONSE_TYPE, OAuth2Constants.CODE)
                 .queryParam(OAuth2Constants.CLIENT_ID, deployment.getResourceName())
                 .queryParam(OAuth2Constants.REDIRECT_URI, redirectUri)
+                .queryParam(OAuth2Constants.SCOPE, OAuth2Constants.SCOPE_OPENID)
                 .build().toString();
 
         printer.println("Open the following URL in a browser. After login copy/paste the code back and press <enter>");
@@ -211,7 +213,7 @@ public class KeycloakInstalled {
         refreshToken = tokenResponse.getRefreshToken();
         idTokenString = tokenResponse.getIdToken();
 
-        token = RSATokenVerifier.verifyToken(tokenString, deployment.getRealmKey(), deployment.getRealmInfoUrl());
+        token = AdapterRSATokenVerifier.verifyToken(tokenString, deployment);
         if (idTokenString != null) {
             try {
                 JWSInput input = new JWSInput(idTokenString);

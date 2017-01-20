@@ -18,6 +18,7 @@
 package org.keycloak.forms.account.freemarker.model;
 
 import org.jboss.logging.Logger;
+import org.keycloak.models.Constants;
 import org.keycloak.models.UserModel;
 
 import javax.ws.rs.core.MultivaluedMap;
@@ -55,8 +56,8 @@ public class AccountBean {
 
         if (profileFormData != null) {
             for (String key : profileFormData.keySet()) {
-                if (key.startsWith("user.attributes.")) {
-                    String attribute = key.substring("user.attributes.".length());
+                if (key.startsWith(Constants.USER_ATTRIBUTES_PREFIX)) {
+                    String attribute = key.substring(Constants.USER_ATTRIBUTES_PREFIX.length());
                     attributes.put(attribute, profileFormData.getFirst(key));
                 }
             }
@@ -72,7 +73,11 @@ public class AccountBean {
     }
 
     public String getUsername() {
-        return profileFormData != null ? profileFormData.getFirst("username") : user.getUsername();
+        if (profileFormData != null && profileFormData.containsKey("username")) {
+            return profileFormData.getFirst("username");
+        } else {
+            return user.getUsername();
+        }
     }
 
     public String getEmail() {

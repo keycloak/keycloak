@@ -17,19 +17,23 @@
 
 package org.keycloak.protocol.oidc.utils;
 
-import java.util.Map;
-
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.authentication.AuthenticationProcessor;
+import org.keycloak.authentication.ClientAuthenticator;
+import org.keycloak.authentication.ClientAuthenticatorFactory;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.provider.ProviderFactory;
 import org.keycloak.services.ErrorResponseException;
 
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -68,6 +72,18 @@ public class AuthorizeClientUtil {
                 .setRequest(session.getContext().getContextObject(HttpRequest.class));
 
         return processor;
+    }
+
+    public static ClientAuthenticatorFactory findClientAuthenticatorForOIDCAuthMethod(KeycloakSession session, String oidcAuthMethod) {
+        List<ProviderFactory> providerFactories = session.getKeycloakSessionFactory().getProviderFactories(ClientAuthenticator.class);
+        for (ProviderFactory factory : providerFactories) {
+            ClientAuthenticatorFactory clientAuthFactory = (ClientAuthenticatorFactory) factory;
+            if (clientAuthFactory.getProtocolAuthenticatorMethods(OIDCLoginProtocol.LOGIN_PROTOCOL).contains(oidcAuthMethod)) {
+                return clientAuthFactory;
+            }
+        }
+
+        return null;
     }
 
     public static class ClientAuthResult {

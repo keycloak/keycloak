@@ -17,12 +17,13 @@
 
 package org.keycloak.testsuite.util;
 
+import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.representations.idm.RoleRepresentation.Composites;
+
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import org.keycloak.representations.idm.RoleRepresentation;
-import org.keycloak.representations.idm.RoleRepresentation.Composites;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

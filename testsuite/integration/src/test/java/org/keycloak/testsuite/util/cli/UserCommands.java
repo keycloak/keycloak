@@ -17,20 +17,19 @@
 
 package org.keycloak.testsuite.util.cli;
 
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
-
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.KeycloakSessionTask;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
+
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -103,7 +102,7 @@ public class UserCommands {
                 user.setEnabled(true);
                 user.setEmail(username + "@keycloak.org");
                 UserCredentialModel passwordCred = UserCredentialModel.password(password);
-                user.updateCredential(passwordCred);
+                session.userCredentialManager().updateCredential(realm, user, passwordCred);
 
                 for (RoleModel role : roles) {
                     user.grantRole(role);

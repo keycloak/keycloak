@@ -20,6 +20,8 @@ import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
+import org.keycloak.models.Constants;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -46,6 +48,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.keycloak.services.ErrorResponse;
 
 /**
  * @author Bill Burke
@@ -62,7 +65,7 @@ public class GroupResource {
         this.realm = realm;
         this.session = session;
         this.auth = auth;
-        this.adminEvent = adminEvent;
+        this.adminEvent = adminEvent.resource(ResourceType.GROUP);
         this.group = group;
     }
 
@@ -136,6 +139,12 @@ public class GroupResource {
         if (group == null) {
             throw new NotFoundException("Could not find group by id");
         }
+        
+        for (GroupModel group : group.getSubGroups()) {
+            if (group.getName().equals(rep.getName())) {
+                return ErrorResponse.exists("Parent already contains subgroup named '" + rep.getName() + "'");
+            }
+        }
 
         Response.ResponseBuilder builder = Response.status(204);
         GroupModel child = null;
@@ -144,7 +153,7 @@ public class GroupResource {
             if (child == null) {
                 throw new NotFoundException("Could not find child by id");
             }
-            adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo).representation(rep).success();
+            adminEvent.operation(OperationType.UPDATE);
         } else {
             child = realm.createGroup(rep.getName());
             updateGroup(rep, child);
@@ -152,10 +161,13 @@ public class GroupResource {
                                            .path(uriInfo.getMatchedURIs().get(2))
                                            .path(child.getId()).build();
             builder.status(201).location(uri);
-            adminEvent.operation(OperationType.UPDATE).resourcePath(uriInfo).representation(rep).success();
+            rep.setId(child.getId());
+            adminEvent.operation(OperationType.CREATE);
 
         }
         realm.moveGroup(child, group);
+        adminEvent.resourcePath(uriInfo).representation(rep).success();
+
         GroupRepresentation childRep = ModelToRepresentation.toGroupHierarchy(child, true);
         return builder.type(MediaType.APPLICATION_JSON_TYPE).entity(childRep).build();
     }
@@ -192,7 +204,7 @@ public class GroupResource {
      * Returns a list of users, filtered according to query parameters
      *
      * @param firstResult Pagination offset
-     * @param maxResults Pagination size
+     * @param maxResults Maximum results size (defaults to 100)
      * @return
      */
     @GET
@@ -207,14 +219,14 @@ public class GroupResource {
             throw new NotFoundException("Could not find group by id");
         }
 
-        firstResult = firstResult != null ? firstResult : -1;
-        maxResults = maxResults != null ? maxResults : -1;
+        firstResult = firstResult != null ? firstResult : 0;
+        maxResults = maxResults != null ? maxResults : Constants.DEFAULT_MAX_RESULTS;
 
         List<UserRepresentation> results = new ArrayList<UserRepresentation>();
         List<UserModel> userModels = session.users().getGroupMembers(realm, group, firstResult, maxResults);
 
         for (UserModel user : userModels) {
-            results.add(ModelToRepresentation.toRepresentation(user));
+            results.add(ModelToRepresentation.toRepresentation(session, realm, user));
         }
         return results;
     }

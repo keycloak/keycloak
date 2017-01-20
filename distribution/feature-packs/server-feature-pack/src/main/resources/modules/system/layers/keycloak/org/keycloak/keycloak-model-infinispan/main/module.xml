@@ -28,7 +28,11 @@
         <module name="org.keycloak.keycloak-common"/>
         <module name="org.keycloak.keycloak-core"/>
         <module name="org.keycloak.keycloak-server-spi"/>
+        <module name="org.keycloak.keycloak-server-spi-private"/>
         <module name="org.infinispan"/>
+        <module name="org.infinispan.commons"/>
+        <module name="org.infinispan.cachestore.remote"/>
+        <module name="org.infinispan.client.hotrod"/>
         <module name="org.jboss.logging"/>
         <module name="javax.api"/>
     </dependencies>

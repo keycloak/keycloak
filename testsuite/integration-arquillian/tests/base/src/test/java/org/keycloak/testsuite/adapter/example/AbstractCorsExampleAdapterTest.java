@@ -22,6 +22,7 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.adapter.AbstractExampleAdapterTest;
@@ -39,6 +40,7 @@ import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
 /**
  * Created by fkiss.
  */
+@Ignore //Needs a discussion about future work.
 public abstract class AbstractCorsExampleAdapterTest extends AbstractExampleAdapterTest {
 
     public static final String CORS = "cors";

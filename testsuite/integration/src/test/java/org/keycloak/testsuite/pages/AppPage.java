@@ -19,7 +19,6 @@ package org.keycloak.testsuite.pages;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
-import org.keycloak.testsuite.OAuthClient;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 

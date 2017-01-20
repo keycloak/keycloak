@@ -17,9 +17,6 @@
 
 package org.keycloak.testsuite.admin.event;
 
-import java.util.Collections;
-import java.util.List;
-
 import org.junit.Before;
 import org.junit.ComparisonFailure;
 import org.junit.Rule;
@@ -27,6 +24,7 @@ import org.junit.Test;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -41,6 +39,9 @@ import org.keycloak.testsuite.util.AssertAdminEvents;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
+
+import java.util.Collections;
+import java.util.List;
 
 import static org.keycloak.testsuite.auth.page.AuthRealm.ADMIN;
 import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
@@ -136,6 +137,7 @@ public class AdminEventAuthDetailsTest extends AbstractAuthTest {
                     .realmId(realmUuid)
                     .operationType(OperationType.UPDATE)
                     .resourcePath(AdminEventPaths.userResourcePath(appUserId))
+                    .resourceType(ResourceType.USER)
                     .representation(rep)
                     .authDetails(expectedRealmId, expectedClientUuid, expectedUserId)
                     .assertEvent();

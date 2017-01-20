@@ -17,12 +17,14 @@
 
 package org.keycloak.testsuite.console.page.fragment;
 
-import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
-
+import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.fragment.Root;
-import static org.keycloak.testsuite.util.WaitUtils.pause;
+import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
+
+import static org.keycloak.testsuite.util.WaitUtils.waitForModalFadeIn;
+import static org.keycloak.testsuite.util.WaitUtils.waitForModalFadeOut;
 
 /**
  *
@@ -32,6 +34,9 @@ public class ModalDialog {
 
     @Root
     private WebElement root;
+
+    @Drone
+    private WebDriver driver;
 
     @FindBy(xpath = ".//button[text()='Cancel']")
     private WebElement cancelButton;
@@ -44,26 +49,24 @@ public class ModalDialog {
     private WebElement nameInput;
 
     public void ok() {
-        waitUntilElement(okButton).is().present();
+        waitForModalFadeIn(driver);
         okButton.click();
-        waitUntilElement(root).is().not().present();
+        waitForModalFadeOut(driver);
     }
     
     public void confirmDeletion() {
-        waitUntilElement(deleteButton).is().present();
+        waitForModalFadeIn(driver);
         deleteButton.click();
-        waitUntilElement(root).is().not().present();
-        pause(200);
+        waitForModalFadeOut(driver);
     }
 
     public void cancel() {
-        waitUntilElement(cancelButton).is().present();
+        waitForModalFadeIn(driver);
         cancelButton.click();
-        waitUntilElement(root).is().not().present();
+        waitForModalFadeOut(driver);
     }
 
     public void setName(String name) {
-        waitUntilElement(nameInput).is().present();
         nameInput.clear();
         nameInput.sendKeys(name);
     }

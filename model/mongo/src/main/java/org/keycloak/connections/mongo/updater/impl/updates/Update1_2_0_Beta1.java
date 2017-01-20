@@ -17,9 +17,6 @@
 
 package org.keycloak.connections.mongo.updater.impl.updates;
 
-import java.util.List;
-import java.util.Map;
-
 import com.mongodb.BasicDBList;
 import com.mongodb.BasicDBObject;
 import com.mongodb.BasicDBObjectBuilder;
@@ -33,6 +30,9 @@ import org.keycloak.models.AdminRoles;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
+
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

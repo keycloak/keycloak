@@ -30,7 +30,6 @@ import javax.persistence.ManyToOne;
 import javax.persistence.MapKeyColumn;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
-import javax.persistence.OneToOne;
 import javax.persistence.Table;
 import java.util.Map;
 
@@ -58,6 +57,9 @@ public class IdentityProviderEntity {
 
     @Column(name="PROVIDER_ALIAS")
     private String alias;
+
+    @Column(name="PROVIDER_DISPLAY_NAME")
+    private String displayName;
 
     @Column(name="ENABLED")
     private boolean enabled;
@@ -180,6 +182,14 @@ public class IdentityProviderEntity {
 
     public void setTrustEmail(boolean trustEmail) {
         this.trustEmail = trustEmail;
+    }
+
+    public String getDisplayName() {
+        return displayName;
+    }
+
+    public void setDisplayName(String displayName) {
+        this.displayName = displayName;
     }
 
     @Override

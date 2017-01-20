@@ -19,12 +19,15 @@ package org.keycloak.adapters;
 
 import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.RSATokenVerifier;
+import org.keycloak.adapters.rotation.AdapterRSATokenVerifier;
 import org.keycloak.adapters.spi.AdapterSessionStore;
 import org.keycloak.adapters.spi.AuthChallenge;
 import org.keycloak.adapters.spi.AuthOutcome;
 import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.common.VerificationException;
+import org.keycloak.common.util.Encode;
+import org.keycloak.common.util.KeycloakUriBuilder;
+import org.keycloak.common.util.UriUtils;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.enums.TokenStore;
 import org.keycloak.jose.jws.JWSInput;
@@ -32,8 +35,7 @@ import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.IDToken;
-import org.keycloak.common.util.KeycloakUriBuilder;
-import org.keycloak.common.util.UriUtils;
+import org.keycloak.util.TokenUtil;
 
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicLong;
@@ -159,10 +161,16 @@ public class OAuthRequestAuthenticator {
         String scope = getQueryParamValue(OAuth2Constants.SCOPE);
         url = UriUtils.stripQueryParam(url, OAuth2Constants.SCOPE);
 
+        String prompt = getQueryParamValue(OAuth2Constants.PROMPT);
+        url = UriUtils.stripQueryParam(url, OAuth2Constants.PROMPT);
+
+        String maxAge = getQueryParamValue(OAuth2Constants.MAX_AGE);
+        url = UriUtils.stripQueryParam(url, OAuth2Constants.MAX_AGE);
+
         KeycloakUriBuilder redirectUriBuilder = deployment.getAuthUrl().clone()
                 .queryParam(OAuth2Constants.RESPONSE_TYPE, OAuth2Constants.CODE)
                 .queryParam(OAuth2Constants.CLIENT_ID, deployment.getResourceName())
-                .queryParam(OAuth2Constants.REDIRECT_URI, url)
+                .queryParam(OAuth2Constants.REDIRECT_URI, Encode.encodeQueryParamAsIs(url)) // Need to encode uri ourselves as queryParam() will not encode % characters.
                 .queryParam(OAuth2Constants.STATE, state)
                 .queryParam("login", "true");
         if(loginHint != null && loginHint.length() > 0){
@@ -171,9 +179,15 @@ public class OAuthRequestAuthenticator {
         if (idpHint != null && idpHint.length() > 0) {
             redirectUriBuilder.queryParam(AdapterConstants.KC_IDP_HINT,idpHint);
         }
-        if (scope != null && scope.length() > 0) {
-            redirectUriBuilder.queryParam(OAuth2Constants.SCOPE, scope);
+        if (prompt != null && prompt.length() > 0) {
+            redirectUriBuilder.queryParam(OAuth2Constants.PROMPT, prompt);
         }
+        if (maxAge != null && maxAge.length() > 0) {
+            redirectUriBuilder.queryParam(OAuth2Constants.MAX_AGE, maxAge);
+        }
+
+        scope = TokenUtil.attachOIDCScope(scope);
+        redirectUriBuilder.queryParam(OAuth2Constants.SCOPE, scope);
 
         return redirectUriBuilder.build().toString();
     }
@@ -182,15 +196,13 @@ public class OAuthRequestAuthenticator {
         return sslRedirectPort;
     }
 
-    protected static final AtomicLong counter = new AtomicLong();
-
     protected String getStateCode() {
-        return counter.getAndIncrement() + "/" + AdapterUtils.generateId();
+        return AdapterUtils.generateId();
     }
 
     protected AuthChallenge loginRedirect() {
         final String state = getStateCode();
-        final String redirect = getRedirectUri(state);
+        final String redirect =  getRedirectUri(state);
         if (redirect == null) {
             return challenge(403, OIDCAuthenticationError.Reason.NO_REDIRECT_URI, null);
         }
@@ -329,7 +341,7 @@ public class OAuthRequestAuthenticator {
         refreshToken = tokenResponse.getRefreshToken();
         idTokenString = tokenResponse.getIdToken();
         try {
-            token = RSATokenVerifier.verifyToken(tokenString, deployment.getRealmKey(), deployment.getRealmInfoUrl());
+            token = AdapterRSATokenVerifier.verifyToken(tokenString, deployment);
             if (idTokenString != null) {
                 try {
                     JWSInput input = new JWSInput(idTokenString);
@@ -344,7 +356,7 @@ public class OAuthRequestAuthenticator {
             return challenge(403, OIDCAuthenticationError.Reason.INVALID_TOKEN, null);
         }
         if (tokenResponse.getNotBeforePolicy() > deployment.getNotBefore()) {
-            deployment.setNotBefore(tokenResponse.getNotBeforePolicy());
+            deployment.updateNotBefore(tokenResponse.getNotBeforePolicy());
         }
         if (token.getIssuedAt() < deployment.getNotBefore()) {
             log.error("Stale token");

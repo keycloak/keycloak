@@ -17,6 +17,8 @@
 
 package org.keycloak.adapters;
 
+import java.util.Collections;
+import java.util.List;
 import org.jboss.logging.Logger;
 import org.keycloak.KeycloakPrincipal;
 import org.keycloak.adapters.spi.AuthChallenge;
@@ -61,7 +63,7 @@ public abstract class RequestAuthenticator {
         if (log.isTraceEnabled()) {
             log.trace("try bearer");
         }
-        
+
         AuthOutcome outcome = bearer.authenticate(facade);
         if (outcome == AuthOutcome.FAILED) {
             challenge = bearer.getChallenge();
@@ -74,18 +76,36 @@ public abstract class RequestAuthenticator {
             return AuthOutcome.AUTHENTICATED;
         }
 
+        QueryParamterTokenRequestAuthenticator queryParamAuth = createQueryParamterTokenRequestAuthenticator();
+        if (log.isTraceEnabled()) {
+            log.trace("try query paramter auth");
+        }
+
+        outcome = queryParamAuth.authenticate(facade);
+        if (outcome == AuthOutcome.FAILED) {
+            challenge = queryParamAuth.getChallenge();
+            log.debug("QueryParamAuth auth FAILED");
+            return AuthOutcome.FAILED;
+        } else if (outcome == AuthOutcome.AUTHENTICATED) {
+            if (verifySSL()) return AuthOutcome.FAILED;
+            log.debug("QueryParamAuth AUTHENTICATED");
+            completeAuthentication(queryParamAuth, "KEYCLOAK");
+            return AuthOutcome.AUTHENTICATED;
+        }
+
         if (deployment.isEnableBasicAuth()) {
             BasicAuthRequestAuthenticator basicAuth = createBasicAuthAuthenticator();
             if (log.isTraceEnabled()) {
                 log.trace("try basic auth");
             }
-    
+
             outcome = basicAuth.authenticate(facade);
             if (outcome == AuthOutcome.FAILED) {
                 challenge = basicAuth.getChallenge();
                 log.debug("BasicAuth FAILED");
                 return AuthOutcome.FAILED;
             } else if (outcome == AuthOutcome.AUTHENTICATED) {
+                if (verifySSL()) return AuthOutcome.FAILED;
                 log.debug("BasicAuth AUTHENTICATED");
                 completeAuthentication(basicAuth, "BASIC");
                 return AuthOutcome.AUTHENTICATED;
@@ -95,6 +115,12 @@ public abstract class RequestAuthenticator {
         if (deployment.isBearerOnly()) {
             challenge = bearer.getChallenge();
             log.debug("NOT_ATTEMPTED: bearer only");
+            return AuthOutcome.NOT_ATTEMPTED;
+        }
+
+        if (isAutodetectedBearerOnly(facade.getRequest())) {
+            challenge = bearer.getChallenge();
+            log.debug("NOT_ATTEMPTED: Treating as bearer only");
             return AuthOutcome.NOT_ATTEMPTED;
         }
 
@@ -140,6 +166,36 @@ public abstract class RequestAuthenticator {
         return false;
     }
 
+    protected boolean isAutodetectedBearerOnly(HttpFacade.Request request) {
+        if (!deployment.isAutodetectBearerOnly()) return false;
+
+        String headerValue = facade.getRequest().getHeader("X-Requested-With");
+        if (headerValue != null && headerValue.equalsIgnoreCase("XMLHttpRequest")) {
+            return true;
+        }
+
+        headerValue = facade.getRequest().getHeader("Faces-Request");
+        if (headerValue != null && headerValue.startsWith("partial/")) {
+            return true;
+        }
+
+        headerValue = facade.getRequest().getHeader("SOAPAction");
+        if (headerValue != null) {
+            return true;
+        }
+
+        List<String> accepts = facade.getRequest().getHeaders("Accept");
+        if (accepts == null) accepts = Collections.emptyList();
+
+        for (String accept : accepts) {
+            if (accept.contains("text/html") || accept.contains("text/*") || accept.contains("*/*")) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     protected abstract OAuthRequestAuthenticator createOAuthAuthenticator();
 
     protected BearerTokenRequestAuthenticator createBearerTokenAuthenticator() {
@@ -150,6 +206,10 @@ public abstract class RequestAuthenticator {
         return new BasicAuthRequestAuthenticator(deployment);
     }
 
+    protected QueryParamterTokenRequestAuthenticator createQueryParamterTokenRequestAuthenticator() {
+        return new QueryParamterTokenRequestAuthenticator(deployment);
+    }
+
     protected void completeAuthentication(OAuthRequestAuthenticator oauth) {
         RefreshableKeycloakSecurityContext session = new RefreshableKeycloakSecurityContext(deployment, tokenStore, oauth.getTokenString(), oauth.getToken(), oauth.getIdTokenString(), oauth.getIdToken(), oauth.getRefreshToken());
         final KeycloakPrincipal<RefreshableKeycloakSecurityContext> principal = new KeycloakPrincipal<RefreshableKeycloakSecurityContext>(AdapterUtils.getPrincipalName(deployment, oauth.getToken()), session);
@@ -158,10 +218,12 @@ public abstract class RequestAuthenticator {
     }
 
     protected abstract void completeOAuthAuthentication(KeycloakPrincipal<RefreshableKeycloakSecurityContext> principal);
+
     protected abstract void completeBearerAuthentication(KeycloakPrincipal<RefreshableKeycloakSecurityContext> principal, String method);
 
     /**
      * After code is received, we change the session id if possible to guard against https://www.owasp.org/index.php/Session_Fixation
+     *
      * @param create
      * @return
      */

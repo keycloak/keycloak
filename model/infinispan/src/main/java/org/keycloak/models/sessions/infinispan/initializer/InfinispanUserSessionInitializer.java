@@ -17,14 +17,6 @@
 
 package org.keycloak.models.sessions.infinispan.initializer;
 
-import java.io.Serializable;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-
 import org.infinispan.Cache;
 import org.infinispan.context.Flag;
 import org.infinispan.distexec.DefaultExecutorService;
@@ -35,6 +27,14 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.KeycloakSessionTask;
 import org.keycloak.models.utils.KeycloakModelUtils;
+
+import java.io.Serializable;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 /**
  * Startup initialization for reading persistent userSessions/clientSessions to be filled into infinispan/memory . In cluster,
@@ -92,13 +92,13 @@ public class InfinispanUserSessionInitializer {
 
 
     private boolean isFinished() {
-        InitializerState state = (InitializerState) workCache.get(stateKey);
+        InitializerState state = getStateFromCache();
         return state != null && state.isFinished();
     }
 
 
     private InitializerState getOrCreateInitializerState() {
-        InitializerState state = (InitializerState) workCache.get(stateKey);
+        InitializerState state = getStateFromCache();
         if (state == null) {
             final int[] count = new int[1];
 
@@ -128,6 +128,12 @@ public class InfinispanUserSessionInitializer {
 
     }
 
+    private InitializerState getStateFromCache() {
+        // TODO: We ignore cacheStore for now, so that in Cross-DC scenario (with RemoteStore enabled) is the remoteStore ignored. This means that every DC needs to load offline sessions separately.
+        return (InitializerState) workCache.getAdvancedCache()
+                .withFlags(Flag.SKIP_CACHE_STORE, Flag.SKIP_CACHE_LOAD)
+                .get(stateKey);
+    }
 
     private void saveStateToCache(final InitializerState state) {
 
@@ -138,8 +144,9 @@ public class InfinispanUserSessionInitializer {
             public void run() {
 
                 // Save this synchronously to ensure all nodes read correct state
+                // TODO: We ignore cacheStore for now, so that in Cross-DC scenario (with RemoteStore enabled) is the remoteStore ignored. This means that every DC needs to load offline sessions separately.
                 InfinispanUserSessionInitializer.this.workCache.getAdvancedCache().
-                        withFlags(Flag.IGNORE_RETURN_VALUES, Flag.FORCE_SYNCHRONOUS)
+                        withFlags(Flag.IGNORE_RETURN_VALUES, Flag.FORCE_SYNCHRONOUS, Flag.SKIP_CACHE_STORE, Flag.SKIP_CACHE_LOAD)
                         .put(stateKey, state);
             }
 

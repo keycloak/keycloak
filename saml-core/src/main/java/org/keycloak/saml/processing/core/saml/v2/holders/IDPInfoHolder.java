@@ -16,8 +16,8 @@
  */
 package org.keycloak.saml.processing.core.saml.v2.holders;
 
-import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.dom.saml.v2.assertion.AssertionType;
+import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 
 /**
  * Holds essential information about an IDP for creating saml messages.

@@ -17,42 +17,41 @@
 
 package org.keycloak.testsuite.arquillian;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.tools.ant.DirectoryScanner;
 import org.jboss.arquillian.container.test.spi.client.deployment.ApplicationArchiveProcessor;
+import org.jboss.arquillian.core.api.InstanceProducer;
+import org.jboss.arquillian.core.api.annotation.Inject;
 import org.jboss.arquillian.test.spi.TestClass;
+import org.jboss.arquillian.test.spi.annotation.ClassScoped;
 import org.jboss.logging.Logger;
 import org.jboss.logging.Logger.Level;
 import org.jboss.shrinkwrap.api.Archive;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
-import org.keycloak.representations.adapters.config.BaseAdapterConfig;
-import org.keycloak.testsuite.adapter.AdapterLibsMode;
+import org.keycloak.representations.adapters.config.AdapterConfig;
+import org.keycloak.testsuite.arquillian.annotation.UseServletFilter;
 import org.keycloak.testsuite.util.IOUtil;
 import org.keycloak.util.JsonSerialization;
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 
 import javax.xml.transform.TransformerException;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import static org.keycloak.testsuite.arquillian.AppServerTestEnricher.getAdapterLibsLocationProperty;
+
 import static org.keycloak.testsuite.arquillian.AppServerTestEnricher.hasAppServerContainerAnnotation;
 import static org.keycloak.testsuite.arquillian.AppServerTestEnricher.isRelative;
 import static org.keycloak.testsuite.arquillian.AppServerTestEnricher.isTomcatAppServer;
-
-import static org.keycloak.testsuite.arquillian.AuthServerTestEnricher.*;
+import static org.keycloak.testsuite.arquillian.AuthServerTestEnricher.getAuthServerContextRoot;
 import static org.keycloak.testsuite.util.IOUtil.*;
 
-;
 
 /**
  * @author tkyjovsk
  */
 public class DeploymentArchiveProcessor implements ApplicationArchiveProcessor {
-
-    public static final String REALM_KEY = "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCrVrCuTtArbgaZzL1hvh0xtL5mc7o0NqPVnYXkLvgcwiC3BjLGw1tGEGoJaXDuSaRllobm53JBhjx33UNv+5z/UMG4kytBWxheNVKnL6GgqlNabMaFfPLPCF8kAgKnsi79NMo+n6KnSY8YeUmec/p2vjO2NjsSAVcWEQMVhJ31LwIDAQAB";
 
     protected final Logger log = org.jboss.logging.Logger.getLogger(this.getClass());
 
@@ -64,13 +63,17 @@ public class DeploymentArchiveProcessor implements ApplicationArchiveProcessor {
     public static final String ADAPTER_CONFIG_PATH_TENANT2 = "/WEB-INF/classes/tenant2-keycloak.json";
     public static final String ADAPTER_CONFIG_PATH_JS = "/keycloak.json";
     public static final String SAML_ADAPTER_CONFIG_PATH = "/WEB-INF/keycloak-saml.xml";
+    public static final String JBOSS_DEPLOYMENT_XML_PATH = "/WEB-INF/jboss-deployment-structure.xml";
+
+    @Inject
+    @ClassScoped
+    private InstanceProducer<TestContext> testContextProducer;
 
     @Override
     public void process(Archive<?> archive, TestClass testClass) {
         log.info("Processing archive " + archive.getName());
 //        if (isAdapterTest(testClass)) {
         modifyAdapterConfigs(archive, testClass);
-        attachAdapterLibs(archive, testClass);
         modifyWebXml(archive, testClass);
 //        } else {
 //            log.info(testClass.getJavaClass().getSimpleName() + " is not an AdapterTest");
@@ -94,7 +97,7 @@ public class DeploymentArchiveProcessor implements ApplicationArchiveProcessor {
         if (archive.contains(adapterConfigPath)) {
             log.info("Modifying adapter config " + adapterConfigPath + " in " + archive.getName());
             if (adapterConfigPath.equals(SAML_ADAPTER_CONFIG_PATH)) { // SAML adapter config
-                log.info("Modyfying saml adapter config in " + archive.getName());
+                log.info("Modifying saml adapter config in " + archive.getName());
 
                 Document doc = loadXML(archive.get("WEB-INF/keycloak-saml.xml").getAsset().openStream());
                 if (authServerSslRequired) {
@@ -116,10 +119,13 @@ public class DeploymentArchiveProcessor implements ApplicationArchiveProcessor {
                     log.error("Can't transform document to String");
                     throw new RuntimeException(e);
                 }
+
+                // For running SAML tests it is necessary to have few dependencies on app-server side.
+                // Few of them are not in adapter zip so we need to add them manually here
             } else { // OIDC adapter config
                 try {
-                    BaseAdapterConfig adapterConfig = loadJson(archive.get(adapterConfigPath)
-                            .getAsset().openStream(), BaseAdapterConfig.class);
+                    AdapterConfig adapterConfig = loadJson(archive.get(adapterConfigPath)
+                            .getAsset().openStream(), AdapterConfig.class);
 
                     log.info(" setting " + (relative ? "" : "non-") + "relative auth-server-url");
                     if (relative) {
@@ -127,9 +133,8 @@ public class DeploymentArchiveProcessor implements ApplicationArchiveProcessor {
 //                ac.setRealmKey(null); // TODO verify if realm key is required for relative scneario
                     } else {
                         adapterConfig.setAuthServerUrl(getAuthServerContextRoot() + "/auth");
-                        adapterConfig.setRealmKey(REALM_KEY);
                     }
-                    
+
                     if ("true".equals(System.getProperty("app.server.ssl.required"))) {
                         adapterConfig.setSslRequired("all");
                     }
@@ -141,30 +146,6 @@ public class DeploymentArchiveProcessor implements ApplicationArchiveProcessor {
                     log.log(Level.FATAL, "Cannot serialize adapter config to JSON.", ex);
                 }
             }
-        }
-    }
-
-    protected void attachAdapterLibs(Archive<?> archive, TestClass testClass) {
-        AdapterLibsMode adapterType = AdapterLibsMode.getByType(System.getProperty("adapter.libs.mode",
-                AdapterLibsMode.PROVIDED.getType()));
-        log.info("Adapter type: " + adapterType);
-        if (adapterType.equals(AdapterLibsMode.BUNDLED)) {
-            log.info("Attaching keycloak adapter libs to " + archive.getName());
-
-            String libsLocationProperty = getAdapterLibsLocationProperty(testClass.getJavaClass());
-            assert libsLocationProperty != null;
-            File libsLocation = new File(System.getProperty(libsLocationProperty));
-            assert libsLocation.exists();
-            log.info("Libs location: " + libsLocation.getPath());
-
-            WebArchive war = (WebArchive) archive;
-
-            for (File lib : getAdapterLibs(libsLocation)) {
-                log.info(" attaching: " + lib.getName());
-                war.addAsLibrary(lib);
-            }
-        } else {
-            log.info("Expecting keycloak adapter libs to be provided by the server.");
         }
     }
 
@@ -182,18 +163,88 @@ public class DeploymentArchiveProcessor implements ApplicationArchiveProcessor {
         return libs;
     }
 
+    public void addFilterDependencies(Archive<?> archive, TestClass testClass) {
+        log.info("Adding filter dependencies to " + archive.getName());
+
+        TestContext testContext = testContextProducer.get();
+        if (testContext.getAppServerInfo().isUndertow()) {
+            return;
+        }
+
+        String dependency = testClass.getAnnotation(UseServletFilter.class).filterDependency();
+        ((WebArchive) archive).addAsLibraries(KeycloakDependenciesResolver.resolveDependencies((dependency + ":" + System.getProperty("project.version"))));
+
+        try {
+            Document jbossXmlDoc = loadXML(archive.get(JBOSS_DEPLOYMENT_XML_PATH).getAsset().openStream());
+            removeNodeByAttributeValue(jbossXmlDoc, "dependencies", "module", "name", "org.keycloak.keycloak-saml-core");
+            removeNodeByAttributeValue(jbossXmlDoc, "dependencies", "module", "name", "org.keycloak.keycloak-adapter-spi");
+            archive.add(new StringAsset((documentToString(jbossXmlDoc))), JBOSS_DEPLOYMENT_XML_PATH);
+        } catch (TransformerException e) {
+            log.error("Can't transform document to String");
+            throw new RuntimeException(e);
+        }
+
+    }
+
     protected void modifyWebXml(Archive<?> archive, TestClass testClass) {
-        if (isTomcatAppServer(testClass.getJavaClass())) {
-            try {
-                String webXmlContent = IOUtils.toString(
-                        archive.get(WEBXML_PATH).getAsset().openStream());
-
-                webXmlContent = webXmlContent.replace("<auth-method>KEYCLOAK</auth-method>", "<auth-method>BASIC</auth-method>");
-
-                archive.add(new StringAsset((webXmlContent)), WEBXML_PATH);
-            } catch (IOException ex) {
-                throw new RuntimeException("Cannot load web.xml from archive.");
+        try {
+            Document webXmlDoc = loadXML(
+                    archive.get(WEBXML_PATH).getAsset().openStream());
+            if (isTomcatAppServer(testClass.getJavaClass())) {
+                modifyDocElementValue(webXmlDoc, "auth-method", "KEYCLOAK", "BASIC");
             }
+
+            if (testClass.getJavaClass().isAnnotationPresent(UseServletFilter.class)) {
+
+                addFilterDependencies(archive, testClass);
+
+                //We need to add filter declaration to web.xml
+                log.info("Adding filter to " + testClass.getAnnotation(UseServletFilter.class).filterClass() + " with mapping " + testClass.getAnnotation(UseServletFilter.class).filterPattern() + " for " + archive.getName());
+
+                Element filter = webXmlDoc.createElement("filter");
+                Element filterName = webXmlDoc.createElement("filter-name");
+                Element filterClass = webXmlDoc.createElement("filter-class");
+
+                filterName.setTextContent(testClass.getAnnotation(UseServletFilter.class).filterName());
+                filterClass.setTextContent(testClass.getAnnotation(UseServletFilter.class).filterClass());
+
+                filter.appendChild(filterName);
+                filter.appendChild(filterClass);
+                appendChildInDocument(webXmlDoc, "web-app", filter);
+
+                Element filterMapping = webXmlDoc.createElement("filter-mapping");
+
+
+                Element urlPattern = webXmlDoc.createElement("url-pattern");
+
+                filterName = webXmlDoc.createElement("filter-name");
+
+                filterName.setTextContent(testClass.getAnnotation(UseServletFilter.class).filterName());
+                urlPattern.setTextContent(getElementTextContent(webXmlDoc, "web-app/security-constraint/web-resource-collection/url-pattern"));
+
+                filterMapping.appendChild(filterName);
+                filterMapping.appendChild(urlPattern);
+
+                if (!testClass.getAnnotation(UseServletFilter.class).dispatcherType().isEmpty()) {
+                    Element dispatcher = webXmlDoc.createElement("dispatcher");
+                    dispatcher.setTextContent(testClass.getAnnotation(UseServletFilter.class).dispatcherType());
+                    filterMapping.appendChild(dispatcher);
+                }
+                appendChildInDocument(webXmlDoc, "web-app", filterMapping);
+
+                //finally we need to remove all keycloak related configuration from web.xml
+                removeElementsFromDoc(webXmlDoc, "web-app", "security-constraint");
+                removeElementsFromDoc(webXmlDoc, "web-app", "login-config");
+                removeElementsFromDoc(webXmlDoc, "web-app", "security-role");
+
+
+            }
+
+
+            archive.add(new StringAsset((documentToString(webXmlDoc))), WEBXML_PATH);
+        } catch (TransformerException e) {
+            log.error("Can't transform document to String");
+            throw new RuntimeException(e);
         }
     }
 

@@ -17,14 +17,15 @@
 
 package org.keycloak.protocol.oidc.endpoints;
 
+import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
-import org.keycloak.common.ClientConnection;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.authentication.AuthenticationProcessor;
-import org.keycloak.constants.AdapterConstants;
+import org.keycloak.common.ClientConnection;
 import org.keycloak.common.constants.ServiceAccountConstants;
+import org.keycloak.constants.AdapterConstants;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
@@ -44,12 +45,12 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.ServicesLogger;
+import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.ClientManager;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.Cors;
-import org.keycloak.services.Urls;
 
 import javax.ws.rs.OPTIONS;
 import javax.ws.rs.POST;
@@ -68,7 +69,7 @@ import java.util.Map;
  */
 public class TokenEndpoint {
 
-    private static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    private static final Logger logger = Logger.getLogger(TokenEndpoint.class);
     private MultivaluedMap<String, String> formParams;
     private ClientModel client;
     private Map<String, String> clientAuthAttributes;
@@ -132,7 +133,7 @@ public class TokenEndpoint {
 
     @Path("introspect")
     public Object introspect() {
-        TokenIntrospectionEndpoint tokenIntrospectionEndpoint = new TokenIntrospectionEndpoint(this.realm, this.tokenManager, this.event);
+        TokenIntrospectionEndpoint tokenIntrospectionEndpoint = new TokenIntrospectionEndpoint(this.realm, this.event);
 
         ResteasyProviderFactory.getInstance().injectProperties(tokenIntrospectionEndpoint);
 
@@ -149,7 +150,7 @@ public class TokenEndpoint {
 
     private void checkSsl() {
         if (!uriInfo.getBaseUri().getScheme().equals("https") && realm.getSslRequired().isRequired(clientConnection)) {
-            throw new ErrorResponseException("invalid_request", "HTTPS required", Response.Status.FORBIDDEN);
+            throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "HTTPS required", Response.Status.FORBIDDEN);
         }
     }
 
@@ -165,13 +166,13 @@ public class TokenEndpoint {
         clientAuthAttributes = clientAuth.getClientAuthAttributes();
 
         if (client.isBearerOnly()) {
-            throw new ErrorResponseException("invalid_client", "Bearer-only not allowed", Response.Status.BAD_REQUEST);
+            throw new ErrorResponseException(OAuthErrorException.INVALID_CLIENT, "Bearer-only not allowed", Response.Status.BAD_REQUEST);
         }
     }
 
     private void checkGrantType() {
         if (grantType == null) {
-            throw new ErrorResponseException("invalid_request", "Missing form parameter: " + OIDCLoginProtocol.GRANT_TYPE_PARAM, Response.Status.BAD_REQUEST);
+            throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Missing form parameter: " + OIDCLoginProtocol.GRANT_TYPE_PARAM, Response.Status.BAD_REQUEST);
         }
 
         if (grantType.equals(OAuth2Constants.AUTHORIZATION_CODE)) {
@@ -197,75 +198,78 @@ public class TokenEndpoint {
         String code = formParams.getFirst(OAuth2Constants.CODE);
         if (code == null) {
             event.error(Errors.INVALID_CODE);
-            throw new ErrorResponseException("invalid_request", "Missing parameter: " + OAuth2Constants.CODE, Response.Status.BAD_REQUEST);
+            throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Missing parameter: " + OAuth2Constants.CODE, Response.Status.BAD_REQUEST);
         }
 
-        ClientSessionCode accessCode = ClientSessionCode.parse(code, session, realm);
-        if (accessCode == null) {
+        ClientSessionCode.ParseResult parseResult = ClientSessionCode.parseResult(code, session, realm);
+        if (parseResult.isClientSessionNotFound() || parseResult.isIllegalHash()) {
             String[] parts = code.split("\\.");
             if (parts.length == 2) {
-                try {
-                    event.detail(Details.CODE_ID, new String(parts[1]));
-                } catch (Throwable t) {
-                }
+                event.detail(Details.CODE_ID, parts[1]);
             }
             event.error(Errors.INVALID_CODE);
-            throw new ErrorResponseException("invalid_grant", "Code not found", Response.Status.BAD_REQUEST);
+            if (parseResult.getClientSession() != null) {
+                session.sessions().removeClientSession(realm, parseResult.getClientSession());
+            }
+            throw new ErrorResponseException(OAuthErrorException.INVALID_GRANT, "Code not valid", Response.Status.BAD_REQUEST);
         }
 
-        ClientSessionModel clientSession = accessCode.getClientSession();
+        ClientSessionModel clientSession = parseResult.getClientSession();
         event.detail(Details.CODE_ID, clientSession.getId());
-        if (!accessCode.isValid(ClientSessionModel.Action.CODE_TO_TOKEN.name(), ClientSessionCode.ActionType.CLIENT)) {
+
+        if (!parseResult.getCode().isValid(ClientSessionModel.Action.CODE_TO_TOKEN.name(), ClientSessionCode.ActionType.CLIENT)) {
             event.error(Errors.INVALID_CODE);
-            throw new ErrorResponseException("invalid_grant", "Code is expired", Response.Status.BAD_REQUEST);
+            throw new ErrorResponseException(OAuthErrorException.INVALID_GRANT, "Code is expired", Response.Status.BAD_REQUEST);
         }
 
-        accessCode.setAction(null);
+        parseResult.getCode().setAction(null);
+
         UserSessionModel userSession = clientSession.getUserSession();
 
         if (userSession == null) {
             event.error(Errors.USER_SESSION_NOT_FOUND);
-            throw new ErrorResponseException("invalid_grant", "User session not found", Response.Status.BAD_REQUEST);
+            throw new ErrorResponseException(OAuthErrorException.INVALID_GRANT, "User session not found", Response.Status.BAD_REQUEST);
         }
 
         UserModel user = userSession.getUser();
         if (user == null) {
             event.error(Errors.USER_NOT_FOUND);
-            throw new ErrorResponseException("invalid_grant", "User not found", Response.Status.BAD_REQUEST);
+            throw new ErrorResponseException(OAuthErrorException.INVALID_GRANT, "User not found", Response.Status.BAD_REQUEST);
         }
         if (!user.isEnabled()) {
             event.error(Errors.USER_DISABLED);
-            throw new ErrorResponseException("invalid_grant", "User disabled", Response.Status.BAD_REQUEST);
+            throw new ErrorResponseException(OAuthErrorException.INVALID_GRANT, "User disabled", Response.Status.BAD_REQUEST);
         }
 
         event.user(userSession.getUser());
         event.session(userSession.getId());
 
         String redirectUri = clientSession.getNote(OIDCLoginProtocol.REDIRECT_URI_PARAM);
-        if (redirectUri != null && !redirectUri.equals(formParams.getFirst(OAuth2Constants.REDIRECT_URI))) {
+        String formParam = formParams.getFirst(OAuth2Constants.REDIRECT_URI);
+        if (redirectUri != null && !redirectUri.equals(formParam)) {
             event.error(Errors.INVALID_CODE);
-            throw new ErrorResponseException("invalid_grant", "Incorrect redirect_uri", Response.Status.BAD_REQUEST);
+            throw new ErrorResponseException(OAuthErrorException.INVALID_GRANT, "Incorrect redirect_uri", Response.Status.BAD_REQUEST);
         }
 
         if (!client.getClientId().equals(clientSession.getClient().getClientId())) {
             event.error(Errors.INVALID_CODE);
-            throw new ErrorResponseException("invalid_grant", "Auth error", Response.Status.BAD_REQUEST);
+            throw new ErrorResponseException(OAuthErrorException.INVALID_GRANT, "Auth error", Response.Status.BAD_REQUEST);
         }
 
         if (!client.isStandardFlowEnabled()) {
             event.error(Errors.NOT_ALLOWED);
-            throw new ErrorResponseException("invalid_grant", "Client not allowed to exchange code", Response.Status.BAD_REQUEST);
+            throw new ErrorResponseException(OAuthErrorException.INVALID_GRANT, "Client not allowed to exchange code", Response.Status.BAD_REQUEST);
         }
 
         if (!AuthenticationManager.isSessionValid(realm, userSession)) {
             event.error(Errors.USER_SESSION_NOT_FOUND);
-            throw new ErrorResponseException("invalid_grant", "Session not active", Response.Status.BAD_REQUEST);
+            throw new ErrorResponseException(OAuthErrorException.INVALID_GRANT, "Session not active", Response.Status.BAD_REQUEST);
         }
 
         updateClientSession(clientSession);
         updateUserSessionFromClientAuth(userSession);
 
-        AccessToken token = tokenManager.createClientAccessToken(session, accessCode.getRequestedRoles(), realm, client, user, userSession, clientSession);
+        AccessToken token = tokenManager.createClientAccessToken(session, parseResult.getCode().getRequestedRoles(), realm, client, user, userSession, clientSession);
 
         AccessTokenResponse res = tokenManager.responseBuilder(realm, client, event, session, userSession, clientSession)
                 .accessToken(token)
@@ -274,7 +278,7 @@ public class TokenEndpoint {
 
         event.success();
 
-        return Cors.add(request, Response.ok(res).type(MediaType.APPLICATION_JSON_TYPE)).auth().allowedOrigins(client).allowedMethods("POST").exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS).build();
+        return Cors.add(request, Response.ok(res).type(MediaType.APPLICATION_JSON_TYPE)).auth().allowedOrigins(uriInfo, client).allowedMethods("POST").exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS).build();
     }
 
     public Response buildRefreshToken() {
@@ -301,13 +305,13 @@ public class TokenEndpoint {
 
         event.success();
 
-        return Cors.add(request, Response.ok(res, MediaType.APPLICATION_JSON_TYPE)).auth().allowedOrigins(client).allowedMethods("POST").exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS).build();
+        return Cors.add(request, Response.ok(res, MediaType.APPLICATION_JSON_TYPE)).auth().allowedOrigins(uriInfo, client).allowedMethods("POST").exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS).build();
     }
 
     private void updateClientSession(ClientSessionModel clientSession) {
 
         if(clientSession == null) {
-            logger.clientSessionNull();
+            ServicesLogger.LOGGER.clientSessionNull();
             return;
         }
 
@@ -325,16 +329,16 @@ public class TokenEndpoint {
 
     private void updateClientSessions(List<ClientSessionModel> clientSessions) {
         if(clientSessions == null) {
-            logger.clientSessionNull();
+            ServicesLogger.LOGGER.clientSessionNull();
             return;
         }
         for (ClientSessionModel clientSession : clientSessions) {
             if(clientSession == null) {
-                logger.clientSessionNull();
+                ServicesLogger.LOGGER.clientSessionNull();
                 continue;
             }
             if(clientSession.getClient() == null) {
-                logger.clientModelNull();
+                ServicesLogger.LOGGER.clientModelNull();
                 continue;
             }
             if(client.getId().equals(clientSession.getClient().getId())) {
@@ -354,12 +358,12 @@ public class TokenEndpoint {
 
         if (!client.isDirectAccessGrantsEnabled()) {
             event.error(Errors.NOT_ALLOWED);
-            throw new ErrorResponseException("invalid_grant", "Client not allowed for direct access grants", Response.Status.BAD_REQUEST);
+            throw new ErrorResponseException(OAuthErrorException.INVALID_GRANT, "Client not allowed for direct access grants", Response.Status.BAD_REQUEST);
         }
 
         if (client.isConsentRequired()) {
             event.error(Errors.CONSENT_DENIED);
-            throw new ErrorResponseException("invalid_client", "Client requires user consent", Response.Status.BAD_REQUEST);
+            throw new ErrorResponseException(OAuthErrorException.INVALID_CLIENT, "Client requires user consent", Response.Status.BAD_REQUEST);
         }
         String scope = formParams.getFirst(OAuth2Constants.SCOPE);
 
@@ -387,7 +391,7 @@ public class TokenEndpoint {
         UserModel user = clientSession.getAuthenticatedUser();
         if (user.getRequiredActions() != null && user.getRequiredActions().size() > 0) {
             event.error(Errors.RESOLVE_REQUIRED_ACTIONS);
-            throw new ErrorResponseException("invalid_grant", "Account is not fully set up", Response.Status.BAD_REQUEST);
+            throw new ErrorResponseException(OAuthErrorException.INVALID_GRANT, "Account is not fully set up", Response.Status.BAD_REQUEST);
 
         }
         processor.attachSession();
@@ -403,30 +407,30 @@ public class TokenEndpoint {
 
         event.success();
 
-        return Cors.add(request, Response.ok(res, MediaType.APPLICATION_JSON_TYPE)).auth().allowedOrigins(client).allowedMethods("POST").exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS).build();
+        return Cors.add(request, Response.ok(res, MediaType.APPLICATION_JSON_TYPE)).auth().allowedOrigins(uriInfo, client).allowedMethods("POST").exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS).build();
     }
 
     public Response buildClientCredentialsGrant() {
         if (client.isBearerOnly()) {
             event.error(Errors.INVALID_CLIENT);
-            throw new ErrorResponseException("unauthorized_client", "Bearer-only client not allowed to retrieve service account", Response.Status.UNAUTHORIZED);
+            throw new ErrorResponseException(OAuthErrorException.UNAUTHORIZED_CLIENT, "Bearer-only client not allowed to retrieve service account", Response.Status.UNAUTHORIZED);
         }
         if (client.isPublicClient()) {
             event.error(Errors.INVALID_CLIENT);
-            throw new ErrorResponseException("unauthorized_client", "Public client not allowed to retrieve service account", Response.Status.UNAUTHORIZED);
+            throw new ErrorResponseException(OAuthErrorException.UNAUTHORIZED_CLIENT, "Public client not allowed to retrieve service account", Response.Status.UNAUTHORIZED);
         }
         if (!client.isServiceAccountsEnabled()) {
             event.error(Errors.INVALID_CLIENT);
-            throw new ErrorResponseException("unauthorized_client", "Client not enabled to retrieve service account", Response.Status.UNAUTHORIZED);
+            throw new ErrorResponseException(OAuthErrorException.UNAUTHORIZED_CLIENT, "Client not enabled to retrieve service account", Response.Status.UNAUTHORIZED);
         }
 
-        UserModel clientUser = session.users().getUserByServiceAccountClient(client);
+        UserModel clientUser = session.users().getServiceAccount(client);
 
         if (clientUser == null || client.getProtocolMapperByName(OIDCLoginProtocol.LOGIN_PROTOCOL, ServiceAccountConstants.CLIENT_ID_PROTOCOL_MAPPER) == null) {
             // May need to handle bootstrap here as well
             logger.debugf("Service account user for client '%s' not found or default protocol mapper for service account not found. Creating now", client.getClientId());
             new ClientManager(new RealmManager(session)).enableServiceAccount(client);
-            clientUser = session.users().getUserByServiceAccountClient(client);
+            clientUser = session.users().getServiceAccount(client);
         }
 
         String clientUsername = clientUser.getUsername();
@@ -435,7 +439,7 @@ public class TokenEndpoint {
 
         if (!clientUser.isEnabled()) {
             event.error(Errors.USER_DISABLED);
-            throw new ErrorResponseException("invalid_request", "User '" + clientUsername + "' disabled", Response.Status.UNAUTHORIZED);
+            throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "User '" + clientUsername + "' disabled", Response.Status.UNAUTHORIZED);
         }
 
         String scope = formParams.getFirst(OAuth2Constants.SCOPE);
@@ -467,7 +471,7 @@ public class TokenEndpoint {
 
         event.success();
 
-        return Cors.add(request, Response.ok(res, MediaType.APPLICATION_JSON_TYPE)).auth().allowedOrigins(client).allowedMethods("POST").exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS).build();
+        return Cors.add(request, Response.ok(res, MediaType.APPLICATION_JSON_TYPE)).auth().allowedOrigins(uriInfo, client).allowedMethods("POST").exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS).build();
     }
 
 }

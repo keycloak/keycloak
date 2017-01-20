@@ -35,8 +35,8 @@ import javax.xml.crypto.dsig.XMLSignatureException;
 import javax.xml.parsers.ParserConfigurationException;
 import java.security.GeneralSecurityException;
 import java.security.KeyPair;
-import java.security.PublicKey;
 import java.security.cert.X509Certificate;
+import org.keycloak.rotation.KeyLocator;
 
 /**
  * Class that deals with SAML2 Signature
@@ -121,7 +121,7 @@ public class SAML2Signature {
      * @throws MarshalException
      * @throws GeneralSecurityException
      */
-    public Document sign(Document doc, String referenceID, KeyPair keyPair, String canonicalizationMethodType) throws ParserConfigurationException,
+    public Document sign(Document doc, String referenceID, String keyName, KeyPair keyPair, String canonicalizationMethodType) throws ParserConfigurationException,
             GeneralSecurityException, MarshalException, XMLSignatureException {
         String referenceURI = "#" + referenceID;
 
@@ -130,6 +130,7 @@ public class SAML2Signature {
         if (sibling != null) {
             SignatureUtilTransferObject dto = new SignatureUtilTransferObject();
             dto.setDocumentToBeSigned(doc);
+            dto.setKeyName(keyName);
             dto.setKeyPair(keyPair);
             dto.setDigestMethod(digestMethod);
             dto.setSignatureMethod(signatureMethod);
@@ -142,7 +143,7 @@ public class SAML2Signature {
 
             return XMLSignatureUtil.sign(dto, canonicalizationMethodType);
         }
-        return XMLSignatureUtil.sign(doc, keyPair, digestMethod, signatureMethod, referenceURI, canonicalizationMethodType);
+        return XMLSignatureUtil.sign(doc, keyName, keyPair, digestMethod, signatureMethod, referenceURI, canonicalizationMethodType);
     }
 
     /**
@@ -153,12 +154,12 @@ public class SAML2Signature {
      *
      * @throws org.keycloak.saml.common.exceptions.ProcessingException
      */
-    public void signSAMLDocument(Document samlDocument, KeyPair keypair, String canonicalizationMethodType) throws ProcessingException {
+    public void signSAMLDocument(Document samlDocument, String keyName, KeyPair keypair, String canonicalizationMethodType) throws ProcessingException {
         // Get the ID from the root
         String id = samlDocument.getDocumentElement().getAttribute(ID_ATTRIBUTE_NAME);
         try {
-            sign(samlDocument, id, keypair, canonicalizationMethodType);
-        } catch (Exception e) {
+            sign(samlDocument, id, keyName, keypair, canonicalizationMethodType);
+        } catch (ParserConfigurationException | GeneralSecurityException | MarshalException | XMLSignatureException e) {
             throw new ProcessingException(logger.signatureError(e));
         }
     }
@@ -167,20 +168,18 @@ public class SAML2Signature {
      * Validate the SAML2 Document
      *
      * @param signedDocument
-     * @param publicKey
+     * @param keyLocator
      *
      * @return
      *
      * @throws ProcessingException
      */
-    public boolean validate(Document signedDocument, PublicKey publicKey) throws ProcessingException {
+    public boolean validate(Document signedDocument, KeyLocator keyLocator) throws ProcessingException {
         try {
             configureIdAttribute(signedDocument);
-            return XMLSignatureUtil.validate(signedDocument, publicKey);
-        } catch (MarshalException me) {
+            return XMLSignatureUtil.validate(signedDocument, keyLocator);
+        } catch (MarshalException | XMLSignatureException me) {
             throw new ProcessingException(logger.signatureError(me));
-        } catch (XMLSignatureException xse) {
-            throw new ProcessingException(logger.signatureError(xse));
         }
     }
 

@@ -18,8 +18,10 @@
 package org.keycloak.models.jpa;
 
 import org.jboss.logging.Logger;
-import org.keycloak.connections.jpa.util.JpaUtils;
 import org.keycloak.common.enums.SslRequired;
+import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.component.ComponentFactory;
+import org.keycloak.component.ComponentModel;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.AuthenticatorConfigModel;
@@ -29,7 +31,6 @@ import org.keycloak.models.GroupModel;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.OTPPolicy;
 import org.keycloak.models.PasswordPolicy;
@@ -37,23 +38,30 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.UserFederationMapperModel;
-import org.keycloak.models.UserFederationProviderCreationEventImpl;
-import org.keycloak.models.UserFederationProviderModel;
-import org.keycloak.models.jpa.entities.*;
+import org.keycloak.models.jpa.entities.AuthenticationExecutionEntity;
+import org.keycloak.models.jpa.entities.AuthenticationFlowEntity;
+import org.keycloak.models.jpa.entities.AuthenticatorConfigEntity;
+import org.keycloak.models.jpa.entities.ClientEntity;
+import org.keycloak.models.jpa.entities.ClientTemplateEntity;
+import org.keycloak.models.jpa.entities.ComponentConfigEntity;
+import org.keycloak.models.jpa.entities.ComponentEntity;
+import org.keycloak.models.jpa.entities.GroupEntity;
+import org.keycloak.models.jpa.entities.IdentityProviderEntity;
+import org.keycloak.models.jpa.entities.IdentityProviderMapperEntity;
+import org.keycloak.models.jpa.entities.RealmAttributeEntity;
+import org.keycloak.models.jpa.entities.RealmAttributes;
+import org.keycloak.models.jpa.entities.RealmEntity;
+import org.keycloak.models.jpa.entities.RequiredActionProviderEntity;
+import org.keycloak.models.jpa.entities.RequiredCredentialEntity;
+import org.keycloak.models.jpa.entities.RoleEntity;
+import org.keycloak.models.utils.ComponentUtil;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
-
-import java.security.Key;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -70,10 +78,6 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
     protected static final Logger logger = Logger.getLogger(RealmAdapter.class);
     protected RealmEntity realm;
     protected EntityManager em;
-    protected volatile transient PublicKey publicKey;
-    protected volatile transient PrivateKey privateKey;
-    protected volatile transient X509Certificate certificate;
-    protected volatile transient Key codeSecretKey;
     protected KeycloakSession session;
     private PasswordPolicy passwordPolicy;
     private OTPPolicy otpPolicy;
@@ -165,6 +169,7 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
     @Override
     public void setRegistrationEmailAsUsername(boolean registrationEmailAsUsername) {
         realm.setRegistrationEmailAsUsername(registrationEmailAsUsername);
+        if (registrationEmailAsUsername) realm.setDuplicateEmailsAllowed(false);
         em.flush();
     }
 
@@ -179,6 +184,7 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
         em.flush();
     }
 
+    @Override
     public void setAttribute(String name, String value) {
         for (RealmAttributeEntity attr : realm.getAttributes()) {
             if (attr.getName().equals(name)) {
@@ -194,18 +200,22 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
         realm.getAttributes().add(attr);
     }
 
+    @Override
     public void setAttribute(String name, Boolean value) {
         setAttribute(name, value.toString());
     }
 
+    @Override
     public void setAttribute(String name, Integer value) {
         setAttribute(name, value.toString());
     }
 
+    @Override
     public void setAttribute(String name, Long value) {
         setAttribute(name, value.toString());
     }
 
+    @Override
     public void removeAttribute(String name) {
         Iterator<RealmAttributeEntity> it = realm.getAttributes().iterator();
         while (it.hasNext()) {
@@ -217,6 +227,7 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
         }
     }
 
+    @Override
     public String getAttribute(String name) {
         for (RealmAttributeEntity attr : realm.getAttributes()) {
             if (attr.getName().equals(name)) {
@@ -226,24 +237,28 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
         return null;
     }
 
+    @Override
     public Integer getAttribute(String name, Integer defaultValue) {
         String v = getAttribute(name);
         return v != null ? Integer.parseInt(v) : defaultValue;
 
     }
 
+    @Override
     public Long getAttribute(String name, Long defaultValue) {
         String v = getAttribute(name);
         return v != null ? Long.parseLong(v) : defaultValue;
 
     }
 
+    @Override
     public Boolean getAttribute(String name, Boolean defaultValue) {
         String v = getAttribute(name);
         return v != null ? Boolean.parseBoolean(v) : defaultValue;
 
     }
 
+    @Override
     public Map<String, String> getAttributes() {
         // should always return a copy
         Map<String, String> result = new HashMap<String, String>();
@@ -252,6 +267,7 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
         }
         return result;
     }
+
     @Override
     public boolean isBruteForceProtected() {
         return getAttribute("bruteForceProtected", false);
@@ -330,6 +346,33 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
     @Override
     public void setVerifyEmail(boolean verifyEmail) {
         realm.setVerifyEmail(verifyEmail);
+        em.flush();
+    }
+    
+    @Override
+    public boolean isLoginWithEmailAllowed() {
+        return realm.isLoginWithEmailAllowed();
+    }
+
+    @Override
+    public void setLoginWithEmailAllowed(boolean loginWithEmailAllowed) {
+        realm.setLoginWithEmailAllowed(loginWithEmailAllowed);
+        if (loginWithEmailAllowed) realm.setDuplicateEmailsAllowed(false);
+        em.flush();
+    }
+    
+    @Override
+    public boolean isDuplicateEmailsAllowed() {
+        return realm.isDuplicateEmailsAllowed();
+    }
+
+    @Override
+    public void setDuplicateEmailsAllowed(boolean duplicateEmailsAllowed) {
+        realm.setDuplicateEmailsAllowed(duplicateEmailsAllowed);
+        if (duplicateEmailsAllowed) {
+            realm.setLoginWithEmailAllowed(false);
+            realm.setRegistrationEmailAsUsername(false);
+        }
         em.flush();
     }
 
@@ -457,100 +500,6 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
     public void setAccessCodeLifespanLogin(int accessCodeLifespanLogin) {
         realm.setAccessCodeLifespanLogin(accessCodeLifespanLogin);
         em.flush();
-    }
-
-    @Override
-    public String getPublicKeyPem() {
-        return realm.getPublicKeyPem();
-    }
-
-    @Override
-    public void setPublicKeyPem(String publicKeyPem) {
-        realm.setPublicKeyPem(publicKeyPem);
-        em.flush();
-    }
-
-    @Override
-    public X509Certificate getCertificate() {
-        if (certificate != null) return certificate;
-        certificate = KeycloakModelUtils.getCertificate(getCertificatePem());
-        return certificate;
-    }
-
-    @Override
-    public void setCertificate(X509Certificate certificate) {
-        this.certificate = certificate;
-        String certificatePem = KeycloakModelUtils.getPemFromCertificate(certificate);
-        setCertificatePem(certificatePem);
-
-    }
-
-    @Override
-    public String getCertificatePem() {
-        return realm.getCertificatePem();
-    }
-
-    @Override
-    public void setCertificatePem(String certificate) {
-        realm.setCertificatePem(certificate);
-
-    }
-
-    @Override
-    public String getPrivateKeyPem() {
-        return realm.getPrivateKeyPem();
-    }
-
-    @Override
-    public void setPrivateKeyPem(String privateKeyPem) {
-        realm.setPrivateKeyPem(privateKeyPem);
-        em.flush();
-    }
-
-    @Override
-    public PublicKey getPublicKey() {
-        if (publicKey != null) return publicKey;
-        publicKey = KeycloakModelUtils.getPublicKey(getPublicKeyPem());
-        return publicKey;
-    }
-
-    @Override
-    public void setPublicKey(PublicKey publicKey) {
-        this.publicKey = publicKey;
-        String publicKeyPem = KeycloakModelUtils.getPemFromKey(publicKey);
-        setPublicKeyPem(publicKeyPem);
-    }
-
-    @Override
-    public PrivateKey getPrivateKey() {
-        if (privateKey != null) return privateKey;
-        privateKey = KeycloakModelUtils.getPrivateKey(getPrivateKeyPem());
-        return privateKey;
-    }
-
-    @Override
-    public void setPrivateKey(PrivateKey privateKey) {
-        this.privateKey = privateKey;
-        String privateKeyPem = KeycloakModelUtils.getPemFromKey(privateKey);
-        setPrivateKeyPem(privateKeyPem);
-    }
-
-    @Override
-    public String getCodeSecret() {
-        return realm.getCodeSecret();
-    }
-
-    @Override
-    public Key getCodeSecretKey() {
-        if (codeSecretKey == null) {
-            codeSecretKey = KeycloakModelUtils.getSecretKey(getCodeSecret());
-        }
-        return codeSecretKey;
-    }
-
-    @Override
-    public void setCodeSecret(String codeSecret) {
-        realm.setCodeSecret(codeSecret);
     }
 
     protected RequiredCredentialModel initRequiredCredentialModel(String type) {
@@ -805,194 +754,6 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
         em.flush();
     }
 
-    @Override
-    public List<UserFederationProviderModel> getUserFederationProviders() {
-        List<UserFederationProviderEntity> entities = realm.getUserFederationProviders();
-        if (entities.isEmpty()) return Collections.EMPTY_LIST;
-        List<UserFederationProviderEntity> copy = new ArrayList<UserFederationProviderEntity>();
-        for (UserFederationProviderEntity entity : entities) {
-            copy.add(entity);
-
-        }
-        Collections.sort(copy, new Comparator<UserFederationProviderEntity>() {
-
-            @Override
-            public int compare(UserFederationProviderEntity o1, UserFederationProviderEntity o2) {
-                return o1.getPriority() - o2.getPriority();
-            }
-
-        });
-        List<UserFederationProviderModel> result = new ArrayList<UserFederationProviderModel>();
-        for (UserFederationProviderEntity entity : copy) {
-            result.add(new UserFederationProviderModel(entity.getId(), entity.getProviderName(), entity.getConfig(), entity.getPriority(), entity.getDisplayName(),
-                    entity.getFullSyncPeriod(), entity.getChangedSyncPeriod(), entity.getLastSync()));
-        }
-
-        return Collections.unmodifiableList(result);
-    }
-
-    @Override
-    public UserFederationProviderModel addUserFederationProvider(String providerName, Map<String, String> config, int priority, String displayName, int fullSyncPeriod, int changedSyncPeriod, int lastSync) {
-        KeycloakModelUtils.ensureUniqueDisplayName(displayName, null, getUserFederationProviders());
-
-        String id = KeycloakModelUtils.generateId();
-        UserFederationProviderEntity entity = new UserFederationProviderEntity();
-        entity.setId(id);
-        entity.setRealm(realm);
-        entity.setProviderName(providerName);
-        entity.setConfig(config);
-        entity.setPriority(priority);
-        if (displayName == null) {
-            displayName = id;
-        }
-        entity.setDisplayName(displayName);
-        entity.setFullSyncPeriod(fullSyncPeriod);
-        entity.setChangedSyncPeriod(changedSyncPeriod);
-        entity.setLastSync(lastSync);
-        em.persist(entity);
-        realm.getUserFederationProviders().add(entity);
-        em.flush();
-        UserFederationProviderModel providerModel = new UserFederationProviderModel(entity.getId(), providerName, config, priority, displayName, fullSyncPeriod, changedSyncPeriod, lastSync);
-
-        session.getKeycloakSessionFactory().publish(new UserFederationProviderCreationEventImpl(this, providerModel));
-
-        return providerModel;
-    }
-
-    @Override
-    public void removeUserFederationProvider(UserFederationProviderModel provider) {
-        Iterator<UserFederationProviderEntity> it = realm.getUserFederationProviders().iterator();
-        while (it.hasNext()) {
-            UserFederationProviderEntity entity = it.next();
-            if (entity.getId().equals(provider.getId())) {
-
-                session.users().preRemove(this, provider);
-                removeFederationMappersForProvider(provider.getId());
-
-                it.remove();
-                em.remove(entity);
-                return;
-            }
-        }
-    }
-
-    private void removeFederationMappersForProvider(String federationProviderId) {
-        Set<UserFederationMapperEntity> mappers = getUserFederationMapperEntitiesByFederationProvider(federationProviderId);
-        for (UserFederationMapperEntity mapper : mappers) {
-            realm.getUserFederationMappers().remove(mapper);
-            em.remove(mapper);
-        }
-    }
-
-    @Override
-    public void updateUserFederationProvider(UserFederationProviderModel model) {
-        KeycloakModelUtils.ensureUniqueDisplayName(model.getDisplayName(), model, getUserFederationProviders());
-
-        Iterator<UserFederationProviderEntity> it = realm.getUserFederationProviders().iterator();
-        while (it.hasNext()) {
-            UserFederationProviderEntity entity = it.next();
-            if (entity.getId().equals(model.getId())) {
-                String displayName = model.getDisplayName();
-                if (displayName != null) {
-                    entity.setDisplayName(model.getDisplayName());
-                }
-                entity.setConfig(model.getConfig());
-                entity.setPriority(model.getPriority());
-                entity.setProviderName(model.getProviderName());
-                entity.setPriority(model.getPriority());
-                entity.setFullSyncPeriod(model.getFullSyncPeriod());
-                entity.setChangedSyncPeriod(model.getChangedSyncPeriod());
-                entity.setLastSync(model.getLastSync());
-                break;
-            }
-        }
-    }
-
-    @Override
-    public void setUserFederationProviders(List<UserFederationProviderModel> providers) {
-        for (UserFederationProviderModel currentProvider : providers) {
-            KeycloakModelUtils.ensureUniqueDisplayName(currentProvider.getDisplayName(), currentProvider, providers);
-        }
-
-        Iterator<UserFederationProviderEntity> it = realm.getUserFederationProviders().iterator();
-        while (it.hasNext()) {
-            UserFederationProviderEntity entity = it.next();
-            boolean found = false;
-            for (UserFederationProviderModel model : providers) {
-                if (entity.getId().equals(model.getId())) {
-                    entity.setConfig(model.getConfig());
-                    entity.setPriority(model.getPriority());
-                    entity.setProviderName(model.getProviderName());
-                    String displayName = model.getDisplayName();
-                    if (displayName != null) {
-                        entity.setDisplayName(displayName);
-                    }
-                    entity.setFullSyncPeriod(model.getFullSyncPeriod());
-                    entity.setChangedSyncPeriod(model.getChangedSyncPeriod());
-                    entity.setLastSync(model.getLastSync());
-                    found = true;
-                    break;
-                }
-
-            }
-            if (found) continue;
-            session.users().preRemove(this, new UserFederationProviderModel(entity.getId(), entity.getProviderName(), entity.getConfig(), entity.getPriority(), entity.getDisplayName(),
-                    entity.getFullSyncPeriod(), entity.getChangedSyncPeriod(), entity.getLastSync()));
-            removeFederationMappersForProvider(entity.getId());
-
-            it.remove();
-            em.remove(entity);
-        }
-
-        List<UserFederationProviderModel> add = new LinkedList<>();
-        for (UserFederationProviderModel model : providers) {
-            boolean found = false;
-            for (UserFederationProviderEntity entity : realm.getUserFederationProviders()) {
-                if (entity.getId().equals(model.getId())) {
-                    found = true;
-                    break;
-                }
-            }
-            if (!found) add.add(model);
-        }
-
-        for (UserFederationProviderModel model : add) {
-            UserFederationProviderEntity entity = new UserFederationProviderEntity();
-            if (model.getId() != null) {
-                entity.setId(model.getId());
-            } else {
-                String id = KeycloakModelUtils.generateId();
-                entity.setId(id);
-                model.setId(id);
-            }
-            entity.setConfig(model.getConfig());
-            entity.setPriority(model.getPriority());
-            entity.setProviderName(model.getProviderName());
-            entity.setPriority(model.getPriority());
-            String displayName = model.getDisplayName();
-            if (displayName == null) {
-                displayName = entity.getId();
-            }
-            entity.setDisplayName(displayName);
-            entity.setFullSyncPeriod(model.getFullSyncPeriod());
-            entity.setChangedSyncPeriod(model.getChangedSyncPeriod());
-            entity.setLastSync(model.getLastSync());
-            entity.setRealm(realm);
-            em.persist(entity);
-            realm.getUserFederationProviders().add(entity);
-
-            session.getKeycloakSessionFactory().publish(new UserFederationProviderCreationEventImpl(this, model));
-        }
-    }
-
-    protected UserFederationProviderEntity getUserFederationProviderEntityById(String federationProviderId) {
-        for (UserFederationProviderEntity entity : realm.getUserFederationProviders()) {
-            if (entity.getId().equals(federationProviderId)) {
-                return entity;
-            }
-        }
-        return null;
-    }
 
     @Override
     public RoleModel getRole(String name) {
@@ -1025,16 +786,9 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
     }
 
     @Override
-    public boolean removeRoleById(String id) {
-        RoleModel role = getRoleById(id);
-        if (role == null) return false;
-        return role.getContainer().removeRole(role);
-    }
-
-    @Override
     public PasswordPolicy getPasswordPolicy() {
         if (passwordPolicy == null) {
-            passwordPolicy = new PasswordPolicy(realm.getPasswordPolicy());
+            passwordPolicy = PasswordPolicy.parse(session, realm.getPasswordPolicy());
         }
         return passwordPolicy;
     }
@@ -1234,27 +988,33 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
         List<IdentityProviderModel> identityProviders = new ArrayList<IdentityProviderModel>();
 
         for (IdentityProviderEntity entity: entities) {
-            IdentityProviderModel identityProviderModel = new IdentityProviderModel();
-
-            identityProviderModel.setProviderId(entity.getProviderId());
-            identityProviderModel.setAlias(entity.getAlias());
-            identityProviderModel.setInternalId(entity.getInternalId());
-            Map<String, String> config = entity.getConfig();
-            Map<String, String> copy = new HashMap<>();
-            copy.putAll(config);
-            identityProviderModel.setConfig(copy);
-            identityProviderModel.setEnabled(entity.isEnabled());
-            identityProviderModel.setTrustEmail(entity.isTrustEmail());
-            identityProviderModel.setAuthenticateByDefault(entity.isAuthenticateByDefault());
-            identityProviderModel.setFirstBrokerLoginFlowId(entity.getFirstBrokerLoginFlowId());
-            identityProviderModel.setPostBrokerLoginFlowId(entity.getPostBrokerLoginFlowId());
-            identityProviderModel.setStoreToken(entity.isStoreToken());
-            identityProviderModel.setAddReadTokenRoleOnCreate(entity.isAddReadTokenRoleOnCreate());
+            IdentityProviderModel identityProviderModel = entityToModel(entity);
 
             identityProviders.add(identityProviderModel);
         }
 
         return Collections.unmodifiableList(identityProviders);
+    }
+
+    private IdentityProviderModel entityToModel(IdentityProviderEntity entity) {
+        IdentityProviderModel identityProviderModel = new IdentityProviderModel();
+        identityProviderModel.setProviderId(entity.getProviderId());
+        identityProviderModel.setAlias(entity.getAlias());
+        identityProviderModel.setDisplayName(entity.getDisplayName());
+
+        identityProviderModel.setInternalId(entity.getInternalId());
+        Map<String, String> config = entity.getConfig();
+        Map<String, String> copy = new HashMap<>();
+        copy.putAll(config);
+        identityProviderModel.setConfig(copy);
+        identityProviderModel.setEnabled(entity.isEnabled());
+        identityProviderModel.setTrustEmail(entity.isTrustEmail());
+        identityProviderModel.setAuthenticateByDefault(entity.isAuthenticateByDefault());
+        identityProviderModel.setFirstBrokerLoginFlowId(entity.getFirstBrokerLoginFlowId());
+        identityProviderModel.setPostBrokerLoginFlowId(entity.getPostBrokerLoginFlowId());
+        identityProviderModel.setStoreToken(entity.isStoreToken());
+        identityProviderModel.setAddReadTokenRoleOnCreate(entity.isAddReadTokenRoleOnCreate());
+        return identityProviderModel;
     }
 
     @Override
@@ -1274,6 +1034,7 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
 
         entity.setInternalId(KeycloakModelUtils.generateId());
         entity.setAlias(identityProvider.getAlias());
+        entity.setDisplayName(identityProvider.getDisplayName());
         entity.setProviderId(identityProvider.getProviderId());
         entity.setEnabled(identityProvider.isEnabled());
         entity.setStoreToken(identityProvider.isStoreToken());
@@ -1296,8 +1057,29 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
     public void removeIdentityProviderByAlias(String alias) {
         for (IdentityProviderEntity entity : realm.getIdentityProviders()) {
             if (entity.getAlias().equals(alias)) {
+
+                IdentityProviderModel model = entityToModel(entity);
                 em.remove(entity);
                 em.flush();
+
+                session.getKeycloakSessionFactory().publish(new RealmModel.IdentityProviderRemovedEvent() {
+
+                    @Override
+                    public RealmModel getRealm() {
+                        return RealmAdapter.this;
+                    }
+
+                    @Override
+                    public IdentityProviderModel getRemovedIdentityProvider() {
+                        return model;
+                    }
+
+                    @Override
+                    public KeycloakSession getKeycloakSession() {
+                        return session;
+                    }
+                });
+
             }
         }
     }
@@ -1307,6 +1089,7 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
         for (IdentityProviderEntity entity : this.realm.getIdentityProviders()) {
             if (entity.getInternalId().equals(identityProvider.getInternalId())) {
                 entity.setAlias(identityProvider.getAlias());
+                entity.setDisplayName(identityProvider.getDisplayName());
                 entity.setEnabled(identityProvider.isEnabled());
                 entity.setTrustEmail(identityProvider.isTrustEmail());
                 entity.setAuthenticateByDefault(identityProvider.isAuthenticateByDefault());
@@ -1319,6 +1102,24 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
         }
 
         em.flush();
+
+        session.getKeycloakSessionFactory().publish(new RealmModel.IdentityProviderUpdatedEvent() {
+
+            @Override
+            public RealmModel getRealm() {
+                return RealmAdapter.this;
+            }
+
+            @Override
+            public IdentityProviderModel getUpdatedIdentityProvider() {
+                return identityProvider;
+            }
+
+            @Override
+            public KeycloakSession getKeycloakSession() {
+                return session;
+            }
+        });
     }
 
     @Override
@@ -1476,130 +1277,6 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
         if (entity.getConfig() != null) config.putAll(entity.getConfig());
         mapping.setConfig(config);
         return mapping;
-    }
-
-    @Override
-    public Set<UserFederationMapperModel> getUserFederationMappers() {
-        Collection<UserFederationMapperEntity> entities = this.realm.getUserFederationMappers();
-        if (entities.isEmpty()) return Collections.EMPTY_SET;
-        Set<UserFederationMapperModel> mappers = new HashSet<>();
-        for (UserFederationMapperEntity entity : entities) {
-            UserFederationMapperModel mapper = entityToModel(entity);
-            mappers.add(mapper);
-        }
-        return Collections.unmodifiableSet(mappers);
-    }
-
-    @Override
-    public Set<UserFederationMapperModel> getUserFederationMappersByFederationProvider(String federationProviderId) {
-        Set<UserFederationMapperEntity> mapperEntities = getUserFederationMapperEntitiesByFederationProvider(federationProviderId);
-        if (mapperEntities.isEmpty()) return Collections.EMPTY_SET;
-        Set<UserFederationMapperModel> mappers = new HashSet<UserFederationMapperModel>();
-        for (UserFederationMapperEntity entity : mapperEntities) {
-            UserFederationMapperModel mapper = entityToModel(entity);
-            mappers.add(mapper);
-        }
-        return Collections.unmodifiableSet(mappers);
-    }
-
-    @Override
-    public UserFederationMapperModel addUserFederationMapper(UserFederationMapperModel model) {
-        if (getUserFederationMapperByName(model.getFederationProviderId(), model.getName()) != null) {
-            throw new ModelDuplicateException("User federation mapper must be unique per federation provider. There is already: " + model.getName());
-        }
-        String id = KeycloakModelUtils.generateId();
-        UserFederationMapperEntity entity = new UserFederationMapperEntity();
-        entity.setId(id);
-        entity.setName(model.getName());
-        entity.setFederationProvider(getUserFederationProviderEntityById(model.getFederationProviderId()));
-        entity.setFederationMapperType(model.getFederationMapperType());
-        entity.setRealm(this.realm);
-        entity.setConfig(model.getConfig());
-
-        em.persist(entity);
-        this.realm.getUserFederationMappers().add(entity);
-        UserFederationMapperModel mapperModel = entityToModel(entity);
-
-        return mapperModel;
-    }
-
-    @Override
-    public void removeUserFederationMapper(UserFederationMapperModel mapper) {
-        UserFederationMapperEntity toDelete = getUserFederationMapperEntity(mapper.getId());
-        if (toDelete != null) {
-            this.realm.getUserFederationMappers().remove(toDelete);
-            em.remove(toDelete);
-        }
-    }
-
-    protected UserFederationMapperEntity getUserFederationMapperEntity(String id) {
-        for (UserFederationMapperEntity entity : this.realm.getUserFederationMappers()) {
-            if (entity.getId().equals(id)) {
-                return entity;
-            }
-        }
-        return null;
-
-    }
-
-    protected UserFederationMapperEntity getUserFederationMapperEntityByName(String federationProviderId, String name) {
-        for (UserFederationMapperEntity entity : this.realm.getUserFederationMappers()) {
-            if (federationProviderId.equals(entity.getFederationProvider().getId()) && entity.getName().equals(name)) {
-                return entity;
-            }
-        }
-        return null;
-
-    }
-
-    protected Set<UserFederationMapperEntity> getUserFederationMapperEntitiesByFederationProvider(String federationProviderId) {
-        Set<UserFederationMapperEntity> mappers = new HashSet<UserFederationMapperEntity>();
-        for (UserFederationMapperEntity entity : this.realm.getUserFederationMappers()) {
-            if (federationProviderId.equals(entity.getFederationProvider().getId())) {
-                mappers.add(entity);
-            }
-        }
-        return mappers;
-    }
-
-    @Override
-    public void updateUserFederationMapper(UserFederationMapperModel mapper) {
-        UserFederationMapperEntity entity = getUserFederationMapperEntity(mapper.getId());
-        entity.setFederationProvider(getUserFederationProviderEntityById(mapper.getFederationProviderId()));
-        entity.setFederationMapperType(mapper.getFederationMapperType());
-        if (entity.getConfig() == null) {
-            entity.setConfig(mapper.getConfig());
-        } else {
-            entity.getConfig().clear();
-            entity.getConfig().putAll(mapper.getConfig());
-        }
-        em.flush();
-    }
-
-    @Override
-    public UserFederationMapperModel getUserFederationMapperById(String id) {
-        UserFederationMapperEntity entity = getUserFederationMapperEntity(id);
-        if (entity == null) return null;
-        return entityToModel(entity);
-    }
-
-    @Override
-    public UserFederationMapperModel getUserFederationMapperByName(String federationProviderId, String name) {
-        UserFederationMapperEntity entity = getUserFederationMapperEntityByName(federationProviderId, name);
-        if (entity == null) return null;
-        return entityToModel(entity);
-    }
-
-    protected UserFederationMapperModel entityToModel(UserFederationMapperEntity entity) {
-        UserFederationMapperModel mapper = new UserFederationMapperModel();
-        mapper.setId(entity.getId());
-        mapper.setName(entity.getName());
-        mapper.setFederationProviderId(entity.getFederationProvider().getId());
-        mapper.setFederationMapperType(entity.getFederationMapperType());
-        Map<String, String> config = new HashMap<String, String>();
-        if (entity.getConfig() != null) config.putAll(entity.getConfig());
-        mapper.setConfig(config);
-        return mapper;
     }
 
     @Override
@@ -2002,12 +1679,6 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
     }
 
     @Override
-    public void addTopLevelGroup(GroupModel subGroup) {
-        session.realms().addTopLevelGroup(this, subGroup);
-
-    }
-
-    @Override
     public void moveGroup(GroupModel group, GroupModel toParent) {
         session.realms().moveGroup(this, group, toParent);
     }
@@ -2098,4 +1769,189 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
         return session.realms().getClientTemplateById(id, this);
     }
 
+    @Override
+    public ComponentModel addComponentModel(ComponentModel model) {
+        model = importComponentModel(model);
+        ComponentUtil.notifyCreated(session, this, model);
+
+        return model;
+    }
+
+    /**
+     * This just exists for testing purposes
+     *
+     */
+    public static final String COMPONENT_PROVIDER_EXISTS_DISABLED = "component.provider.exists.disabled";
+
+    @Override
+    public ComponentModel importComponentModel(ComponentModel model) {
+        ComponentFactory componentFactory = null;
+        try {
+            componentFactory = ComponentUtil.getComponentFactory(session, model);
+            if (componentFactory == null && System.getProperty(COMPONENT_PROVIDER_EXISTS_DISABLED) == null) {
+                throw new IllegalArgumentException("Invalid component type");
+            }
+            componentFactory.validateConfiguration(session, this, model);
+        } catch (Exception e) {
+            if (System.getProperty(COMPONENT_PROVIDER_EXISTS_DISABLED) == null) {
+                throw e;
+            }
+
+        }
+
+
+        ComponentEntity c = new ComponentEntity();
+        if (model.getId() == null) {
+            c.setId(KeycloakModelUtils.generateId());
+        } else {
+            c.setId(model.getId());
+        }
+        c.setName(model.getName());
+        c.setParentId(model.getParentId());
+        if (model.getParentId() == null) {
+            c.setParentId(this.getId());
+            model.setParentId(this.getId());
+        }
+        c.setProviderType(model.getProviderType());
+        c.setProviderId(model.getProviderId());
+        c.setSubType(model.getSubType());
+        c.setRealm(realm);
+        em.persist(c);
+        setConfig(model, c);
+        model.setId(c.getId());
+        return model;
+    }
+
+    protected void setConfig(ComponentModel model, ComponentEntity c) {
+        for (String key : model.getConfig().keySet()) {
+            List<String> vals = model.getConfig().get(key);
+            if (vals == null) {
+                continue;
+            }
+            for (String val : vals) {
+                ComponentConfigEntity config = new ComponentConfigEntity();
+                config.setId(KeycloakModelUtils.generateId());
+                config.setName(key);
+                config.setValue(val);
+                config.setComponent(c);
+                em.persist(config);
+            }
+        }
+    }
+
+    @Override
+    public void updateComponent(ComponentModel component) {
+        ComponentUtil.getComponentFactory(session, component).validateConfiguration(session, this, component);
+
+        ComponentEntity c = em.find(ComponentEntity.class, component.getId());
+        if (c == null) return;
+        c.setName(component.getName());
+        c.setProviderId(component.getProviderId());
+        c.setProviderType(component.getProviderType());
+        c.setParentId(component.getParentId());
+        c.setSubType(component.getSubType());
+        em.createNamedQuery("deleteComponentConfigByComponent").setParameter("component", c).executeUpdate();
+        em.flush();
+        setConfig(component, c);
+        ComponentUtil.notifyUpdated(session, this, component);
+
+
+    }
+
+    @Override
+    public void removeComponent(ComponentModel component) {
+        ComponentEntity c = em.find(ComponentEntity.class, component.getId());
+        if (c == null) return;
+        session.users().preRemove(this, component);
+        removeComponents(component.getId());
+        em.createNamedQuery("deleteComponentConfigByComponent").setParameter("component", c).executeUpdate();
+        em.remove(c);
+    }
+
+    @Override
+    public void removeComponents(String parentId) {
+        TypedQuery<String> query = em.createNamedQuery("getComponentIdsByParent", String.class)
+                .setParameter("realm", realm)
+                .setParameter("parentId", parentId);
+        List<String> results = query.getResultList();
+        if (results.isEmpty()) return;
+        for (String id : results) {
+            session.users().preRemove(this, getComponent(id));
+        }
+        em.createNamedQuery("deleteComponentConfigByParent").setParameter("parentId", parentId).executeUpdate();
+        em.createNamedQuery("deleteComponentByParent").setParameter("parentId", parentId).executeUpdate();
+
+    }
+
+    @Override
+    public List<ComponentModel> getComponents(String parentId, String providerType) {
+        if (parentId == null) parentId = getId();
+        TypedQuery<ComponentEntity> query = em.createNamedQuery("getComponentsByParentAndType", ComponentEntity.class)
+                .setParameter("realm", realm)
+                .setParameter("parentId", parentId)
+                .setParameter("providerType", providerType);
+        List<ComponentEntity> results = query.getResultList();
+        List<ComponentModel> rtn = new LinkedList<>();
+        for (ComponentEntity c : results) {
+            ComponentModel model = entityToModel(c);
+            rtn.add(model);
+
+        }
+        return rtn;
+    }
+
+    @Override
+    public List<ComponentModel> getComponents(String parentId) {
+        TypedQuery<ComponentEntity> query = em.createNamedQuery("getComponentsByParent", ComponentEntity.class)
+                .setParameter("realm", realm)
+                .setParameter("parentId", parentId);
+        List<ComponentEntity> results = query.getResultList();
+        List<ComponentModel> rtn = new LinkedList<>();
+        for (ComponentEntity c : results) {
+            ComponentModel model = entityToModel(c);
+            rtn.add(model);
+
+        }
+        return rtn;
+    }
+
+    protected ComponentModel entityToModel(ComponentEntity c) {
+        ComponentModel model = new ComponentModel();
+        model.setId(c.getId());
+        model.setName(c.getName());
+        model.setProviderType(c.getProviderType());
+        model.setProviderId(c.getProviderId());
+        model.setSubType(c.getSubType());
+        model.setParentId(c.getParentId());
+        MultivaluedHashMap<String, String> config = new MultivaluedHashMap<>();
+        TypedQuery<ComponentConfigEntity> configQuery = em.createNamedQuery("getComponentConfig", ComponentConfigEntity.class)
+                .setParameter("component", c);
+        List<ComponentConfigEntity> configResults = configQuery.getResultList();
+        for (ComponentConfigEntity configEntity : configResults) {
+            config.add(configEntity.getName(), configEntity.getValue());
+        }
+        model.setConfig(config);
+        return model;
+    }
+
+    @Override
+    public List<ComponentModel> getComponents() {
+        TypedQuery<ComponentEntity> query = em.createNamedQuery("getComponents", ComponentEntity.class)
+                .setParameter("realm", realm);
+        List<ComponentEntity> results = query.getResultList();
+        List<ComponentModel> rtn = new LinkedList<>();
+        for (ComponentEntity c : results) {
+            ComponentModel model = entityToModel(c);
+            rtn.add(model);
+
+        }
+        return rtn;
+    }
+
+    @Override
+    public ComponentModel getComponent(String id) {
+        ComponentEntity c = em.find(ComponentEntity.class, id);
+        if (c == null) return null;
+        return entityToModel(c);
+    }
 }

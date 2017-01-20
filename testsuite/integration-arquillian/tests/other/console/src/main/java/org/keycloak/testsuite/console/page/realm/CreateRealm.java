@@ -19,10 +19,11 @@
 package org.keycloak.testsuite.console.page.realm;
 
 import org.jboss.arquillian.drone.api.annotation.Drone;
-import static org.openqa.selenium.By.id;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
+
+import static org.openqa.selenium.By.id;
 
 /**
  *

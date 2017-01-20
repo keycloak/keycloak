@@ -21,10 +21,13 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.authentication.AuthenticationFlow;
 import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
-import org.keycloak.models.AuthenticationExecutionModel;
+import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
 import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
 import org.keycloak.representations.idm.AuthenticationExecutionRepresentation;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
+import org.keycloak.testsuite.util.AdminEventPaths;
+import org.keycloak.testsuite.util.AssertAdminEvents;
 
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.NotFoundException;
@@ -60,8 +63,9 @@ public class ExecutionTest extends AbstractAuthenticationTest {
         }
 
         // copy built-in flow so we get a new editable flow
-        params.put("newName", "Copy of browser");
+        params.put("newName", "Copy-of-browser");
         Response response = authMgmtResource.copy("browser", params);
+        assertAdminEvents.assertEvent(REALM_NAME, OperationType.CREATE, AdminEventPaths.authCopyFlowPath("browser"), params, ResourceType.AUTH_FLOW);
         try {
             Assert.assertEquals("Copy flow", 201, response.getStatus());
         } finally {
@@ -71,30 +75,33 @@ public class ExecutionTest extends AbstractAuthenticationTest {
         // add execution using inexistent provider
         params.put("provider", "test-execution");
         try {
-            authMgmtResource.addExecution("Copy of browser", params);
+            authMgmtResource.addExecution("CopyOfBrowser", params);
             Assert.fail("add execution with inexistent provider should fail");
         } catch(BadRequestException expected) {
+            // Expected
         }
 
         // add execution - should succeed
         params.put("provider", "idp-review-profile");
-        authMgmtResource.addExecution("Copy of browser", params);
+        authMgmtResource.addExecution("Copy-of-browser", params);
+        assertAdminEvents.assertEvent(REALM_NAME, OperationType.CREATE, AdminEventPaths.authAddExecutionPath("Copy-of-browser"), params, ResourceType.AUTH_EXECUTION);
 
         // check execution was added
-        List<AuthenticationExecutionInfoRepresentation> executionReps = authMgmtResource.getExecutions("Copy of browser");
+        List<AuthenticationExecutionInfoRepresentation> executionReps = authMgmtResource.getExecutions("Copy-of-browser");
         AuthenticationExecutionInfoRepresentation exec = findExecutionByProvider("idp-review-profile", executionReps);
         Assert.assertNotNull("idp-review-profile added", exec);
 
         // we'll need auth-cookie later
         AuthenticationExecutionInfoRepresentation authCookieExec = findExecutionByProvider("auth-cookie", executionReps);
 
-        compareExecution(newExecInfo("Review Profile", "idp-review-profile", true, 0, 3, DISABLED, null, new String[]{REQUIRED, DISABLED}), exec);
+        compareExecution(newExecInfo("Review Profile", "idp-review-profile", true, 0, 4, DISABLED, null, new String[]{REQUIRED, DISABLED}), exec);
 
         // remove execution
         authMgmtResource.removeExecution(exec.getId());
+        assertAdminEvents.assertEvent(REALM_NAME, OperationType.DELETE, AdminEventPaths.authExecutionPath(exec.getId()), ResourceType.AUTH_EXECUTION);
 
         // check execution was removed
-        executionReps = authMgmtResource.getExecutions("Copy of browser");
+        executionReps = authMgmtResource.getExecutions("Copy-of-browser");
         exec = findExecutionByProvider("idp-review-profile", executionReps);
         Assert.assertNull("idp-review-profile removed", exec);
 
@@ -102,6 +109,7 @@ public class ExecutionTest extends AbstractAuthenticationTest {
 
         // delete auth-cookie
         authMgmtResource.removeExecution(authCookieExec.getId());
+        assertAdminEvents.assertEvent(REALM_NAME, OperationType.DELETE, AdminEventPaths.authExecutionPath(authCookieExec.getId()), ResourceType.AUTH_EXECUTION);
 
         AuthenticationExecutionRepresentation rep = new AuthenticationExecutionRepresentation();
         rep.setPriority(10);
@@ -135,13 +143,14 @@ public class ExecutionTest extends AbstractAuthenticationTest {
             response.close();
         }
 
-        // get Copy of browser flow id, and set it on execution
+        // get Copy-of-browser flow id, and set it on execution
         List<AuthenticationFlowRepresentation> flows = authMgmtResource.getFlows();
-        AuthenticationFlowRepresentation flow = findFlowByAlias("Copy of browser", flows);
+        AuthenticationFlowRepresentation flow = findFlowByAlias("Copy-of-browser", flows);
         rep.setParentFlow(flow.getId());
 
         // add execution - should succeed
         response = authMgmtResource.addExecution(rep);
+        assertAdminEvents.assertEvent(REALM_NAME, OperationType.CREATE, AssertAdminEvents.isExpectedPrefixFollowedByUuid(AdminEventPaths.authMgmtBasePath() + "/executions"), rep, ResourceType.AUTH_EXECUTION);
         try {
             Assert.assertEquals("added execution", 201, response.getStatus());
         } finally {
@@ -149,13 +158,13 @@ public class ExecutionTest extends AbstractAuthenticationTest {
         }
 
         // check execution was added
-        List<AuthenticationExecutionInfoRepresentation> executions = authMgmtResource.getExecutions("Copy of browser");
+        List<AuthenticationExecutionInfoRepresentation> executions = authMgmtResource.getExecutions("Copy-of-browser");
         exec = findExecutionByProvider("auth-cookie", executions);
         Assert.assertNotNull("auth-cookie added", exec);
 
         // Note: there is no checking in addExecution if requirement is one of requirementChoices
         // Thus we can have OPTIONAL which is neither ALTERNATIVE, nor DISABLED
-        compareExecution(newExecInfo("Cookie", "auth-cookie", false, 0, 2, OPTIONAL, null, new String[]{ALTERNATIVE, DISABLED}), exec);
+        compareExecution(newExecInfo("Cookie", "auth-cookie", false, 0, 3, OPTIONAL, null, new String[]{ALTERNATIVE, DISABLED}), exec);
     }
 
     @Test
@@ -170,6 +179,7 @@ public class ExecutionTest extends AbstractAuthenticationTest {
         // switch from DISABLED to ALTERNATIVE
         exec.setRequirement(DISABLED);
         authMgmtResource.updateExecutions("browser", exec);
+        assertAdminEvents.assertEvent(REALM_NAME, OperationType.UPDATE, AdminEventPaths.authUpdateExecutionPath("browser"), exec, ResourceType.AUTH_EXECUTION);
 
         // make sure the change is visible
         executionReps = authMgmtResource.getExecutions("browser");
@@ -183,14 +193,13 @@ public class ExecutionTest extends AbstractAuthenticationTest {
     public void testClientFlowExecutions() {
         // Create client flow
         AuthenticationFlowRepresentation clientFlow = newFlow("new-client-flow", "desc", AuthenticationFlow.CLIENT_FLOW, true, false);
-        Response response = authMgmtResource.createFlow(clientFlow);
-        Assert.assertEquals(201, response.getStatus());
-        response.close();
+        createFlow(clientFlow);
 
         // Add execution to it
         Map<String, String> executionData = new HashMap<>();
         executionData.put("provider", ClientIdAndSecretAuthenticator.PROVIDER_ID);
         authMgmtResource.addExecution("new-client-flow", executionData);
+        assertAdminEvents.assertEvent(REALM_NAME, OperationType.CREATE, AdminEventPaths.authAddExecutionPath("new-client-flow"), executionData, ResourceType.AUTH_EXECUTION);
 
         // Check executions of not-existent flow - SHOULD FAIL
         try {
@@ -226,6 +235,7 @@ public class ExecutionTest extends AbstractAuthenticationTest {
         // Update success
         executionRep.setRequirement(ALTERNATIVE);
         authMgmtResource.updateExecutions("new-client-flow", executionRep);
+        assertAdminEvents.assertEvent(REALM_NAME, OperationType.UPDATE, AdminEventPaths.authUpdateExecutionPath("new-client-flow"), executionRep, ResourceType.AUTH_EXECUTION);
 
         // Check updated
         executionRep = findExecutionByProvider(ClientIdAndSecretAuthenticator.PROVIDER_ID, authMgmtResource.getExecutions("new-client-flow"));
@@ -241,7 +251,10 @@ public class ExecutionTest extends AbstractAuthenticationTest {
 
         // Successfuly remove execution and flow
         authMgmtResource.removeExecution(executionRep.getId());
+        assertAdminEvents.assertEvent(REALM_NAME, OperationType.DELETE, AdminEventPaths.authExecutionPath(executionRep.getId()), ResourceType.AUTH_EXECUTION);
+
         AuthenticationFlowRepresentation rep = findFlowByAlias("new-client-flow", authMgmtResource.getFlows());
         authMgmtResource.deleteFlow(rep.getId());
+        assertAdminEvents.assertEvent(REALM_NAME, OperationType.DELETE, AdminEventPaths.authFlowPath(rep.getId()), ResourceType.AUTH_FLOW);
     }
 }

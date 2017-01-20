@@ -53,4 +53,6 @@ public interface TestApplicationResource {
     @Path("/clear-admin-actions")
     Response clearAdminActions();
 
+    @Path("/oidc-client-endpoints")
+    TestOIDCEndpointsApplicationResource oidcClientEndpoints();
 }

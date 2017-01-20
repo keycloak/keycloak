@@ -17,13 +17,13 @@
 
 package org.keycloak.models.sessions.infinispan.mapreduce;
 
-import java.io.Serializable;
-import java.util.Collection;
-
 import org.infinispan.distexec.mapreduce.Collector;
 import org.infinispan.distexec.mapreduce.Mapper;
 import org.keycloak.models.sessions.infinispan.entities.ClientSessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
+
+import java.io.Serializable;
+import java.util.Collection;
 
 /**
  * Return all clientSessions attached to any from input list of userSessions

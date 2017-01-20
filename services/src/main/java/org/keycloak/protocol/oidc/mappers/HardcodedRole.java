@@ -83,6 +83,7 @@ public class HardcodedRole extends AbstractOIDCProtocolMapper implements OIDCAcc
     @Override
     public AccessToken transformAccessToken(AccessToken token, ProtocolMapperModel mappingModel, KeycloakSession session,
                                             UserSessionModel userSession, ClientSessionModel clientSession) {
+
         String role = mappingModel.getConfig().get(ROLE_CONFIG);
         String[] scopedRole = KeycloakModelUtils.parseRole(role);
         String appName = scopedRole[0];
@@ -97,6 +98,7 @@ public class HardcodedRole extends AbstractOIDCProtocolMapper implements OIDCAcc
             }
             access.addRole(role);
         }
+
         return token;
     }
 

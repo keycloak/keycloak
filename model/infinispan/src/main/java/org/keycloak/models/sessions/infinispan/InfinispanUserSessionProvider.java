@@ -19,6 +19,7 @@ package org.keycloak.models.sessions.infinispan;
 
 import org.infinispan.Cache;
 import org.infinispan.CacheStream;
+import org.infinispan.context.Flag;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.ClientInitialAccessModel;
@@ -27,10 +28,10 @@ import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakTransaction;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserLoginFailureModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.UserSessionProvider;
-import org.keycloak.models.UsernameLoginFailureModel;
 import org.keycloak.models.session.UserSessionPersisterProvider;
 import org.keycloak.models.sessions.infinispan.entities.ClientInitialAccessEntity;
 import org.keycloak.models.sessions.infinispan.entities.ClientSessionEntity;
@@ -81,7 +82,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         this.loginFailureCache = loginFailureCache;
         this.tx = new InfinispanKeycloakTransaction();
 
-        session.getTransaction().enlistAfterCompletion(tx);
+        session.getTransactionManager().enlistAfterCompletion(tx);
     }
 
     protected Cache<String, SessionEntity> getCache(boolean offline) {
@@ -102,7 +103,6 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         tx.put(sessionCache, id, entity);
 
         ClientSessionAdapter wrap = wrap(realm, entity, false);
-        wrap.setNote(ClientSessionModel.ACTION_KEY, KeycloakModelUtils.generateCodeSecret());
         return wrap;
     }
 
@@ -292,6 +292,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
 
     @Override
     public void removeExpired(RealmModel realm) {
+        log.debugf("Removing expired sessions");
         removeExpiredUserSessions(realm);
         removeExpiredClientSessions(realm);
         removeExpiredOfflineUserSessions(realm);
@@ -303,9 +304,13 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         int expired = Time.currentTime() - realm.getSsoSessionMaxLifespan();
         int expiredRefresh = Time.currentTime() - realm.getSsoSessionIdleTimeout();
 
-        Iterator<Map.Entry<String, SessionEntity>> itr = sessionCache.entrySet().stream().filter(UserSessionPredicate.create(realm.getId()).expired(expired, expiredRefresh)).iterator();
+        // Each cluster node cleanups just local sessions, which are those owned by himself (+ few more taking l1 cache into account)
+        Iterator<Map.Entry<String, SessionEntity>> itr = sessionCache.getAdvancedCache().withFlags(Flag.CACHE_MODE_LOCAL)
+                .entrySet().stream().filter(UserSessionPredicate.create(realm.getId()).expired(expired, expiredRefresh)).iterator();
 
+        int counter = 0;
         while (itr.hasNext()) {
+            counter++;
             UserSessionEntity entity = (UserSessionEntity) itr.next().getValue();
             tx.remove(sessionCache, entity.getId());
 
@@ -315,23 +320,38 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
                 }
             }
         }
+
+        log.debugf("Removed %d expired user sessions for realm '%s'", counter, realm.getName());
     }
 
     private void removeExpiredClientSessions(RealmModel realm) {
         int expiredDettachedClientSession = Time.currentTime() - RealmInfoUtil.getDettachedClientSessionLifespan(realm);
 
-        Iterator<Map.Entry<String, SessionEntity>> itr = sessionCache.entrySet().stream().filter(ClientSessionPredicate.create(realm.getId()).expiredRefresh(expiredDettachedClientSession).requireNullUserSession()).iterator();
+        // Each cluster node cleanups just local sessions, which are those owned by himself (+ few more taking l1 cache into account)
+        Iterator<Map.Entry<String, SessionEntity>> itr = sessionCache.getAdvancedCache().withFlags(Flag.CACHE_MODE_LOCAL)
+                .entrySet().stream().filter(ClientSessionPredicate.create(realm.getId()).expiredRefresh(expiredDettachedClientSession).requireNullUserSession()).iterator();
+
+        int counter = 0;
         while (itr.hasNext()) {
+            counter++;
             tx.remove(sessionCache, itr.next().getKey());
         }
+
+        log.debugf("Removed %d expired client sessions for realm '%s'", counter, realm.getName());
     }
 
     private void removeExpiredOfflineUserSessions(RealmModel realm) {
         UserSessionPersisterProvider persister = session.getProvider(UserSessionPersisterProvider.class);
         int expiredOffline = Time.currentTime() - realm.getOfflineSessionIdleTimeout();
 
-        Iterator<Map.Entry<String, SessionEntity>> itr = offlineSessionCache.entrySet().stream().filter(UserSessionPredicate.create(realm.getId()).expired(null, expiredOffline)).iterator();
+        // Each cluster node cleanups just local sessions, which are those owned by himself (+ few more taking l1 cache into account)
+        UserSessionPredicate predicate = UserSessionPredicate.create(realm.getId()).expired(null, expiredOffline);
+        Iterator<Map.Entry<String, SessionEntity>> itr = offlineSessionCache.getAdvancedCache().withFlags(Flag.CACHE_MODE_LOCAL)
+                .entrySet().stream().filter(predicate).iterator();
+
+        int counter = 0;
         while (itr.hasNext()) {
+            counter++;
             UserSessionEntity entity = (UserSessionEntity) itr.next().getValue();
             tx.remove(offlineSessionCache, entity.getId());
 
@@ -341,22 +361,32 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
                 tx.remove(offlineSessionCache, clientSessionId);
             }
         }
+
+        log.debugf("Removed %d expired offline user sessions for realm '%s'", counter, realm.getName());
     }
 
     private void removeExpiredOfflineClientSessions(RealmModel realm) {
         UserSessionPersisterProvider persister = session.getProvider(UserSessionPersisterProvider.class);
         int expiredOffline = Time.currentTime() - realm.getOfflineSessionIdleTimeout();
 
-        Iterator<String> itr = offlineSessionCache.entrySet().stream().filter(ClientSessionPredicate.create(realm.getId()).expiredRefresh(expiredOffline)).map(Mappers.sessionId()).iterator();
+        // Each cluster node cleanups just local sessions, which are those owned by himself (+ few more taking l1 cache into account)
+        Iterator<String> itr = offlineSessionCache.getAdvancedCache().withFlags(Flag.CACHE_MODE_LOCAL)
+                .entrySet().stream().filter(ClientSessionPredicate.create(realm.getId()).expiredRefresh(expiredOffline)).map(Mappers.sessionId()).iterator();
+
+        int counter = 0;
         while (itr.hasNext()) {
+            counter++;
             String sessionId = itr.next();
             tx.remove(offlineSessionCache, sessionId);
             persister.removeClientSession(sessionId, true);
         }
+
+        log.debugf("Removed %d expired offline client sessions for realm '%s'", counter, realm.getName());
     }
 
     private void removeExpiredClientInitialAccess(RealmModel realm) {
-        Iterator<String> itr = sessionCache.entrySet().stream().filter(ClientInitialAccessPredicate.create(realm.getId()).expired(Time.currentTime())).map(Mappers.sessionId()).iterator();
+        Iterator<String> itr = sessionCache.getAdvancedCache().withFlags(Flag.CACHE_MODE_LOCAL)
+                .entrySet().stream().filter(ClientInitialAccessPredicate.create(realm.getId()).expired(Time.currentTime())).map(Mappers.sessionId()).iterator();
         while (itr.hasNext()) {
             tx.remove(sessionCache, itr.next());
         }
@@ -377,24 +407,24 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
     }
 
     @Override
-    public UsernameLoginFailureModel getUserLoginFailure(RealmModel realm, String username) {
-        LoginFailureKey key = new LoginFailureKey(realm.getId(), username);
+    public UserLoginFailureModel getUserLoginFailure(RealmModel realm, String userId) {
+        LoginFailureKey key = new LoginFailureKey(realm.getId(), userId);
         return wrap(key, loginFailureCache.get(key));
     }
 
     @Override
-    public UsernameLoginFailureModel addUserLoginFailure(RealmModel realm, String username) {
-        LoginFailureKey key = new LoginFailureKey(realm.getId(), username);
+    public UserLoginFailureModel addUserLoginFailure(RealmModel realm, String userId) {
+        LoginFailureKey key = new LoginFailureKey(realm.getId(), userId);
         LoginFailureEntity entity = new LoginFailureEntity();
         entity.setRealm(realm.getId());
-        entity.setUsername(username);
+        entity.setUserId(userId);
         tx.put(loginFailureCache, key, entity);
         return wrap(key, entity);
     }
 
     @Override
-    public void removeUserLoginFailure(RealmModel realm, String username) {
-        tx.remove(loginFailureCache, new LoginFailureKey(realm.getId(), username));
+    public void removeUserLoginFailure(RealmModel realm, String userId) {
+        tx.remove(loginFailureCache, new LoginFailureKey(realm.getId(), userId));
     }
 
     @Override
@@ -432,8 +462,8 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         }
     }
 
-    @Override
-    public void onUserRemoved(RealmModel realm, UserModel user) {
+
+    protected void onUserRemoved(RealmModel realm, UserModel user) {
         removeUserSessions(realm, user, true);
         removeUserSessions(realm, user, false);
 
@@ -537,9 +567,8 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         return entity != null ? new ClientInitialAccessAdapter(session, this, cache, realm, entity) : null;
     }
 
-
-    UsernameLoginFailureModel wrap(LoginFailureKey key, LoginFailureEntity entity) {
-        return entity != null ? new UsernameLoginFailureAdapter(this, loginFailureCache, key, entity) : null;
+    UserLoginFailureModel wrap(LoginFailureKey key, LoginFailureEntity entity) {
+        return entity != null ? new UserLoginFailureAdapter(this, loginFailureCache, key, entity) : null;
     }
 
     List<ClientSessionModel> wrapClientSessions(RealmModel realm, Collection<ClientSessionEntity> entities, boolean offline) {
@@ -728,6 +757,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         }
         return list;
     }
+
 
     class InfinispanKeycloakTransaction implements KeycloakTransaction {
 

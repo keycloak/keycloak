@@ -20,6 +20,7 @@ import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -38,6 +39,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.net.URI;
 import java.util.List;
+import org.keycloak.services.ErrorResponse;
 
 /**
  * @author Bill Burke
@@ -53,7 +55,7 @@ public class GroupsResource {
         this.realm = realm;
         this.session = session;
         this.auth = auth;
-        this.adminEvent = adminEvent;
+        this.adminEvent = adminEvent.resource(ResourceType.GROUP);
         auth.init(RealmAuth.Resource.USER);
 
     }
@@ -101,6 +103,12 @@ public class GroupsResource {
     public Response addTopLevelGroup(GroupRepresentation rep) {
         auth.requireManage();
 
+        for (GroupModel group : realm.getGroups()) {
+            if (group.getName().equals(rep.getName())) {
+                return ErrorResponse.exists("Top level group named '" + rep.getName() + "' already exists.");
+            }
+        }
+        
         GroupModel child = null;
         Response.ResponseBuilder builder = Response.status(204);
         if (rep.getId() != null) {
@@ -108,16 +116,20 @@ public class GroupsResource {
             if (child == null) {
                 throw new NotFoundException("Could not find child by id");
             }
-            adminEvent.operation(OperationType.UPDATE).resourcePath(uriInfo).representation(rep).success();
+            adminEvent.operation(OperationType.UPDATE).resourcePath(uriInfo);
         } else {
             child = realm.createGroup(rep.getName());
             GroupResource.updateGroup(rep, child);
             URI uri = uriInfo.getAbsolutePathBuilder()
                     .path(child.getId()).build();
             builder.status(201).location(uri);
-            adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo).representation(rep).success();
+
+            rep.setId(child.getId());
+            adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo, child.getId());
         }
         realm.moveGroup(child, null);
+
+        adminEvent.representation(rep).success();
         return builder.build();
     }
 }

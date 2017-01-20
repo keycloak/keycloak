@@ -17,9 +17,12 @@
 
 package org.keycloak.subsystem.as7;
 
+import org.jboss.as.server.deployment.DeploymentUnit;
+import org.jboss.as.web.deployment.WarMetaData;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
 import org.jboss.logging.Logger;
+import org.jboss.metadata.web.jboss.JBossWebMetaData;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -154,14 +157,23 @@ public final class KeycloakAdapterConfigService {
         return null;
     }
 
-    public String getRealmName(String deploymentName) {
-        ModelNode deployment = this.secureDeployments.get(deploymentName);
+    public String getRealmName(DeploymentUnit deploymentUnit) {
+        ModelNode deployment = getSecureDeployment(deploymentUnit);
         return deployment.get(RealmDefinition.TAG_NAME).asString();
 
     }
 
-    public String getJSON(String deploymentName) {
-        ModelNode deployment = this.secureDeployments.get(deploymentName);
+    protected boolean isDeploymentConfigured(DeploymentUnit deploymentUnit) {
+        ModelNode deployment = getSecureDeployment(deploymentUnit);
+        if (! deployment.isDefined()) {
+            return false;
+        }
+        ModelNode resource = deployment.get(SecureDeploymentDefinition.RESOURCE.getName());
+        return resource.isDefined();
+    }
+
+    public String getJSON(DeploymentUnit deploymentUnit) {
+        ModelNode deployment = getSecureDeployment(deploymentUnit);
         String realmName = deployment.get(RealmDefinition.TAG_NAME).asString();
         ModelNode realm = this.realms.get(realmName);
 
@@ -184,9 +196,36 @@ public final class KeycloakAdapterConfigService {
         }
     }
 
-    public boolean isSecureDeployment(String deploymentName) {
+    public boolean isSecureDeployment(DeploymentUnit deploymentUnit) {
         //log.info("********* CHECK KEYCLOAK DEPLOYMENT: deployments.size()" + deployments.size());
 
+        String deploymentName = preferredDeploymentName(deploymentUnit);
         return this.secureDeployments.containsKey(deploymentName);
+    }
+
+    private ModelNode getSecureDeployment(DeploymentUnit deploymentUnit) {
+        String deploymentName = preferredDeploymentName(deploymentUnit);
+        return this.secureDeployments.containsKey(deploymentName)
+          ? this.secureDeployments.get(deploymentName)
+          : new ModelNode();
+    }
+    
+    // KEYCLOAK-3273: prefer module name if available
+    private String preferredDeploymentName(DeploymentUnit deploymentUnit) {
+        String deploymentName = deploymentUnit.getName();
+        WarMetaData warMetaData = deploymentUnit.getAttachment(WarMetaData.ATTACHMENT_KEY);
+        if (warMetaData == null) {
+            return deploymentName;
+        }
+        
+        JBossWebMetaData webMetaData = warMetaData.getMergedJBossWebMetaData();
+        if (webMetaData == null) {
+            return deploymentName;
+        }
+        
+        String moduleName = webMetaData.getModuleName();
+        if (moduleName != null) return moduleName + ".war";
+        
+        return deploymentName;
     }
 }

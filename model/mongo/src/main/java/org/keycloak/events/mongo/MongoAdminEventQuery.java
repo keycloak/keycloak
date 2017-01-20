@@ -17,18 +17,18 @@
 
 package org.keycloak.events.mongo;
 
+import com.mongodb.BasicDBObject;
+import com.mongodb.DBCollection;
+import com.mongodb.DBCursor;
+import org.keycloak.events.admin.AdminEvent;
+import org.keycloak.events.admin.AdminEventQuery;
+import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
+
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.regex.Pattern;
-
-import org.keycloak.events.admin.AdminEvent;
-import org.keycloak.events.admin.AdminEventQuery;
-import org.keycloak.events.admin.OperationType;
-
-import com.mongodb.BasicDBObject;
-import com.mongodb.DBCollection;
-import com.mongodb.DBCursor;
 
 public class MongoAdminEventQuery implements AdminEventQuery{
     
@@ -55,6 +55,18 @@ public class MongoAdminEventQuery implements AdminEventQuery{
             operationStrings.add(e.toString());
         }
         query.put("operationType", new BasicDBObject("$in", operationStrings));
+        return this;
+    }
+
+    @Override
+    public AdminEventQuery resourceType(ResourceType... resourceTypes) {
+
+        List<String> resourceTypeStrings = new LinkedList<String>();
+        for (ResourceType e : resourceTypes) {
+            resourceTypeStrings.add(e.toString());
+        }
+        query.put("resourceType", new BasicDBObject("$in", resourceTypeStrings));
+
         return this;
     }
     

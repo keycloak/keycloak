@@ -19,14 +19,13 @@ package org.keycloak.broker.oidc;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jboss.logging.Logger;
-import org.keycloak.common.ClientConnection;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.broker.provider.AbstractIdentityProvider;
 import org.keycloak.broker.provider.AuthenticationRequest;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.IdentityBrokerException;
-import org.keycloak.truststore.JSSETruststoreConfigurator;
+import org.keycloak.broker.provider.util.SimpleHttp;
+import org.keycloak.common.ClientConnection;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
@@ -35,6 +34,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.services.ErrorPage;
 import org.keycloak.services.messages.Messages;
+import org.keycloak.truststore.JSSETruststoreConfigurator;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.QueryParam;
@@ -73,8 +73,8 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
     public static final String OAUTH2_PARAMETER_GRANT_TYPE = "grant_type";
 
 
-    public AbstractOAuth2IdentityProvider(C config) {
-        super(config);
+    public AbstractOAuth2IdentityProvider(KeycloakSession session, C config) {
+        super(session, config);
 
         if (config.getDefaultScope() == null || config.getDefaultScope().isEmpty()) {
             config.setDefaultScope(getDefaultScopes());
@@ -91,7 +91,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
         try {
             URI authorizationUrl = createAuthorizationUrl(request).build();
 
-            return Response.temporaryRedirect(authorizationUrl).build();
+            return Response.seeOther(authorizationUrl).build();
         } catch (Exception e) {
             throw new IdentityBrokerException("Could not create authentication request.", e);
         }
@@ -233,9 +233,9 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
                         federatedIdentity.setToken(response);
                     }
 
-                    federatedIdentity.setCode(state);
                     federatedIdentity.setIdpConfig(getConfig());
                     federatedIdentity.setIdp(AbstractOAuth2IdentityProvider.this);
+                    federatedIdentity.setCode(state);
 
                     return callback.authenticated(federatedIdentity);
                 }

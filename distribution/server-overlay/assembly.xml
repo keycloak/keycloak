@@ -30,19 +30,8 @@
             <directory>${project.build.directory}/unpacked/keycloak-${project.version}/modules/system/layers/keycloak</directory>
             <outputDirectory>modules/system/add-ons/keycloak</outputDirectory>
             <includes>
-                <include>com/google/zxing/**</include>
-                <include>org/freemarker/**</include>
-                <include>org/jboss/aesh/0.65/**</include>
-                <include>org/keycloak/**</include>
-                <include>org/liquibase/**</include>
-                <include>org/mongodb/**</include>
-                <include>org/twitter4j/**</include>
-                <include>sun/jdk/jgss/**</include>
+                <include>**/**</include>
             </includes>
-        </fileSet>
-        <fileSet>
-            <directory>${project.build.directory}/unpacked/keycloak-${project.version}/content</directory>
-            <outputDirectory></outputDirectory>
         </fileSet>
         <fileSet>
             <directory>${project.build.directory}/unpacked/keycloak-${project.version}/themes</directory>
@@ -66,28 +55,35 @@
             <outputDirectory></outputDirectory>
         </fileSet>
         <fileSet>
-            <directory>cli</directory>
+            <directory>${project.build.directory}/cli</directory>
             <includes>
                 <include>*.cli</include>
             </includes>
             <outputDirectory>bin</outputDirectory>
         </fileSet>
+        <fileSet>
+            <directory>${project.build.directory}/unpacked/keycloak-${project.version}/bin</directory>
+            <includes>
+                <include>add-user-keycloak.*</include>
+                <include>federation-sssd-setup.sh</include>
+                <include>kcadm.*</include>
+                <include>kcreg.*</include>
+            </includes>
+            <outputDirectory>bin</outputDirectory>
+        </fileSet>
+        <fileSet>
+            <directory>${project.build.directory}/unpacked/keycloak-${project.version}/bin/client</directory>
+            <includes>
+                <include>keycloak*</include>
+            </includes>
+            <outputDirectory>bin/client</outputDirectory>
+        </fileSet>
     </fileSets>
 
     <files>
         <file>
-            <source>${project.build.directory}/unpacked/keycloak-${project.version}/standalone/configuration/keycloak-server.json</source>
-            <outputDirectory>standalone/configuration</outputDirectory>
-        </file>
-        <file>
-            <source>${project.build.directory}/unpacked/keycloak-${project.version}/bin/add-user-keycloak.sh</source>
-            <outputDirectory>bin</outputDirectory>
-            <destName>add-user-keycloak.sh</destName>
-        </file>
-        <file>
-            <source>${project.build.directory}/unpacked/keycloak-${project.version}/bin/add-user-keycloak.bat</source>
-            <outputDirectory>bin</outputDirectory>
-            <destName>add-user-keycloak.bat</destName>
+            <source>target/README.txt</source>
+            <outputDirectory></outputDirectory>
         </file>
     </files>
 

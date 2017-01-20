@@ -19,8 +19,14 @@ package org.keycloak.services.managers;
 import org.keycloak.Config;
 import org.keycloak.common.Version;
 import org.keycloak.common.enums.SslRequired;
-import org.keycloak.models.*;
-import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.models.AdminRoles;
+import org.keycloak.models.Constants;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
+import org.keycloak.models.UserCredentialModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.DefaultKeyProviders;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.ServicesLogger;
 
@@ -30,7 +36,6 @@ import org.keycloak.services.ServicesLogger;
  */
 public class ApplianceBootstrap {
 
-    private static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
     private final KeycloakSession session;
 
     public ApplianceBootstrap(KeycloakSession session) {
@@ -56,7 +61,7 @@ public class ApplianceBootstrap {
         }
 
         String adminRealmName = Config.getAdminRealm();
-        logger.initializingAdminRealm(adminRealmName);
+        ServicesLogger.LOGGER.initializingAdminRealm(adminRealmName);
 
         RealmManager manager = new RealmManager(session);
         manager.setContextPath(contextPath);
@@ -77,13 +82,17 @@ public class ApplianceBootstrap {
         realm.setSslRequired(SslRequired.EXTERNAL);
         realm.setRegistrationAllowed(false);
         realm.setRegistrationEmailAsUsername(false);
-        KeycloakModelUtils.generateRealmKeys(realm);
+
+        session.getContext().setRealm(realm);
+        DefaultKeyProviders.createProviders(realm);
 
         return true;
     }
 
     public void createMasterRealmUser(String username, String password) {
         RealmModel realm = session.realms().getRealm(Config.getAdminRealm());
+        session.getContext().setRealm(realm);
+
         if (session.users().getUsersCount(realm) > 0) {
             throw new IllegalStateException("Can't create initial user as users already exists");
         }
@@ -94,7 +103,7 @@ public class ApplianceBootstrap {
         UserCredentialModel usrCredModel = new UserCredentialModel();
         usrCredModel.setType(UserCredentialModel.PASSWORD);
         usrCredModel.setValue(password);
-        session.users().updateCredential(realm, adminUser, usrCredModel);
+        session.userCredentialManager().updateCredential(realm, adminUser, usrCredModel);
 
         RoleModel adminRole = realm.getRole(AdminRoles.ADMIN);
         adminUser.grantRole(adminRole);

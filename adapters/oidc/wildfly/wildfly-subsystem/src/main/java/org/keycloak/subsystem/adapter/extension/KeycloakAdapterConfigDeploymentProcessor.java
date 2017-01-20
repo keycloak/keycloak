@@ -46,8 +46,7 @@ public class KeycloakAdapterConfigDeploymentProcessor implements DeploymentUnitP
 
     // not sure if we need this yet, keeping here just in case
     protected void addSecurityDomain(DeploymentUnit deploymentUnit, KeycloakAdapterConfigService service) {
-        String deploymentName = deploymentUnit.getName();
-        if (!service.isSecureDeployment(deploymentName)) {
+        if (!service.isSecureDeployment(deploymentUnit)) {
             return;
         }
         WarMetaData warMetaData = deploymentUnit.getAttachment(WarMetaData.ATTACHMENT_KEY);
@@ -67,10 +66,9 @@ public class KeycloakAdapterConfigDeploymentProcessor implements DeploymentUnitP
     public void deploy(DeploymentPhaseContext phaseContext) throws DeploymentUnitProcessingException {
         DeploymentUnit deploymentUnit = phaseContext.getDeploymentUnit();
 
-        String deploymentName = deploymentUnit.getName();
         KeycloakAdapterConfigService service = KeycloakAdapterConfigService.getInstance();
-        if (service.isSecureDeployment(deploymentName)) {
-            addKeycloakAuthData(phaseContext, deploymentName, service);
+        if (service.isSecureDeployment(deploymentUnit) && service.isDeploymentConfigured(deploymentUnit)) {
+            addKeycloakAuthData(phaseContext, service);
         }
 
         // FYI, Undertow Extension will find deployments that have auth-method set to KEYCLOAK
@@ -79,14 +77,14 @@ public class KeycloakAdapterConfigDeploymentProcessor implements DeploymentUnitP
         // addSecurityDomain(deploymentUnit, service);
     }
 
-    private void addKeycloakAuthData(DeploymentPhaseContext phaseContext, String deploymentName, KeycloakAdapterConfigService service) throws DeploymentUnitProcessingException {
+    private void addKeycloakAuthData(DeploymentPhaseContext phaseContext, KeycloakAdapterConfigService service) throws DeploymentUnitProcessingException {
         DeploymentUnit deploymentUnit = phaseContext.getDeploymentUnit();
         WarMetaData warMetaData = deploymentUnit.getAttachment(WarMetaData.ATTACHMENT_KEY);
         if (warMetaData == null) {
-            throw new DeploymentUnitProcessingException("WarMetaData not found for " + deploymentName + ".  Make sure you have specified a WAR as your secure-deployment in the Keycloak subsystem.");
+            throw new DeploymentUnitProcessingException("WarMetaData not found for " + deploymentUnit.getName() + ".  Make sure you have specified a WAR as your secure-deployment in the Keycloak subsystem.");
         }
 
-        addJSONData(service.getJSON(deploymentName), warMetaData);
+        addJSONData(service.getJSON(deploymentUnit), warMetaData);
         JBossWebMetaData webMetaData = warMetaData.getMergedJBossWebMetaData();
         if (webMetaData == null) {
             webMetaData = new JBossWebMetaData();
@@ -99,8 +97,8 @@ public class KeycloakAdapterConfigDeploymentProcessor implements DeploymentUnitP
             webMetaData.setLoginConfig(loginConfig);
         }
         loginConfig.setAuthMethod("KEYCLOAK");
-        loginConfig.setRealmName(service.getRealmName(deploymentName));
-        KeycloakLogger.ROOT_LOGGER.deploymentSecured(deploymentName);
+        loginConfig.setRealmName(service.getRealmName(deploymentUnit));
+        KeycloakLogger.ROOT_LOGGER.deploymentSecured(deploymentUnit.getName());
     }
 
     private void addJSONData(String json, WarMetaData warMetaData) {

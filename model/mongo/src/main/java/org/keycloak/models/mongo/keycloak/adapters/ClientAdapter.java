@@ -17,8 +17,6 @@
 
 package org.keycloak.models.mongo.keycloak.adapters;
 
-import com.mongodb.DBObject;
-import com.mongodb.QueryBuilder;
 import org.keycloak.connections.mongo.api.context.MongoStoreInvocationContext;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientTemplateModel;
@@ -27,9 +25,9 @@ import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.entities.ProtocolMapperEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoClientEntity;
 import org.keycloak.models.mongo.keycloak.entities.MongoRoleEntity;
+import org.keycloak.models.mongo.keycloak.entities.ProtocolMapperEntity;
 import org.keycloak.models.mongo.utils.MongoModelUtils;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
@@ -65,6 +63,19 @@ public class ClientAdapter extends AbstractMongoAdapter<MongoClientEntity> imple
     @Override
     public void updateClient() {
         updateMongoEntity();
+
+        session.getKeycloakSessionFactory().publish(new RealmModel.ClientUpdatedEvent() {
+
+            @Override
+            public ClientModel getUpdatedClient() {
+                return ClientAdapter.this;
+            }
+
+            @Override
+            public KeycloakSession getKeycloakSession() {
+                return session;
+            }
+        });
     }
 
 

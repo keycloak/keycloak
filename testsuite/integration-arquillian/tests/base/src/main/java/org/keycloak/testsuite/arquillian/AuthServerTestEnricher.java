@@ -16,17 +16,11 @@
  */
 package org.keycloak.testsuite.arquillian;
 
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.LinkedHashSet;
-import java.util.Set;
-
 import org.jboss.arquillian.container.spi.Container;
 import org.jboss.arquillian.container.spi.ContainerRegistry;
 import org.jboss.arquillian.container.spi.event.StartContainer;
 import org.jboss.arquillian.container.spi.event.StartSuiteContainers;
-import org.jboss.arquillian.container.test.api.ContainerController;
+import org.jboss.arquillian.container.spi.event.StopContainer;
 import org.jboss.arquillian.core.api.Event;
 import org.jboss.arquillian.core.api.Instance;
 import org.jboss.arquillian.core.api.InstanceProducer;
@@ -39,6 +33,12 @@ import org.jboss.arquillian.test.spi.event.suite.BeforeSuite;
 import org.jboss.logging.Logger;
 import org.keycloak.testsuite.util.LogChecker;
 import org.keycloak.testsuite.util.OAuthClient;
+
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 /**
  *
@@ -53,10 +53,9 @@ public class AuthServerTestEnricher {
     private Instance<ContainerRegistry> containerRegistry;
 
     @Inject
-    private Instance<ContainerController> containerController;
-
-    @Inject
     private Event<StartContainer> startContainerEvent;
+    @Inject
+    private Event<StopContainer> stopContainerEvent;
 
     private static final String AUTH_SERVER_CONTAINER_DEFAULT = "auth-server-undertow";
     private static final String AUTH_SERVER_CONTAINER_PROPERTY = "auth.server.container";
@@ -65,8 +64,8 @@ public class AuthServerTestEnricher {
     private static final String AUTH_SERVER_CLUSTER_PROPERTY = "auth.server.cluster";
     public static final boolean AUTH_SERVER_CLUSTER = Boolean.parseBoolean(System.getProperty(AUTH_SERVER_CLUSTER_PROPERTY, "false"));
 
-    private static final String MIGRATED_AUTH_SERVER_CONTAINER_PROPERTY = "migrated.auth.server.container";
-    public static final String MIGRATED_AUTH_SERVER_CONTAINER = System.getProperty(MIGRATED_AUTH_SERVER_CONTAINER_PROPERTY); // == null if migration not enabled
+    private static final Boolean START_MIGRATION_CONTAINER = "auto".equals(System.getProperty("migration.mode")) || 
+            "manual".equals(System.getProperty("migration.mode"));
 
     @Inject
     @SuiteScoped
@@ -132,23 +131,19 @@ public class AuthServerTestEnricher {
             throw new RuntimeException(String.format("No auth server container matching '%sN' found in arquillian.xml.", authServerBackend));
         }
 
-        if (MIGRATED_AUTH_SERVER_CONTAINER != null) {
+        if (START_MIGRATION_CONTAINER) {
             // init migratedAuthServerInfo
-            if (MIGRATED_AUTH_SERVER_CONTAINER.startsWith("migrated-auth-server-")) {
-                for (ContainerInfo container : suiteContext.getContainers()) {
-                    // migrated auth server
-                    if (container.getQualifier().equals(MIGRATED_AUTH_SERVER_CONTAINER)) {
-                        updateWithAuthServerInfo(container);
-                        suiteContext.setMigratedAuthServerInfo(container);
-                    }
+            for (ContainerInfo container : suiteContext.getContainers()) {
+                // migrated auth server
+                if (container.getQualifier().equals("auth-server-jboss-migration")) {
+                    updateWithAuthServerInfo(container);
+                    suiteContext.setMigratedAuthServerInfo(container);
                 }
-            } else {
-                throw new IllegalArgumentException(String.format("Value of %s should start with 'migrated-auth-server-' prefix.", MIGRATED_AUTH_SERVER_CONTAINER_PROPERTY));
             }
             // validate setup
             if (suiteContext.getMigratedAuthServerInfo() == null) {
                 throw new RuntimeException(String.format("Migration test was enabled but no auth server from which to migrate was activated. "
-                        + "A container matching '%s' needs to be enabled in arquillian.xml.", MIGRATED_AUTH_SERVER_CONTAINER));
+                        + "A container matching auth-server-jboss-migration needs to be enabled in arquillian.xml."));
             }
         }
 
@@ -171,14 +166,15 @@ public class AuthServerTestEnricher {
 
     public void startMigratedContainer(@Observes(precedence = 2) StartSuiteContainers event) {
         if (suiteContext.isAuthServerMigrationEnabled()) {
-            log.info("\n\n### Starting keycloak " + System.getProperty("version", "- previous") + " ###\n");
+            log.info("\n\n### Starting keycloak " + System.getProperty("migrated.auth.server.version", "- previous") + " ###\n\n");
             startContainerEvent.fire(new StartContainer(suiteContext.getMigratedAuthServerInfo().getArquillianContainer()));
         }
     }
 
     public void stopMigratedContainer(@Observes(precedence = 1) StartSuiteContainers event) {
         if (suiteContext.isAuthServerMigrationEnabled()) {
-            containerController.get().stop(suiteContext.getAuthServerInfo().getQualifier());
+            log.info("## STOP old container: " + suiteContext.getMigratedAuthServerInfo().getQualifier());
+            stopContainerEvent.fire(new StopContainer(suiteContext.getMigratedAuthServerInfo().getArquillianContainer()));
         }
     }
 
@@ -189,14 +185,6 @@ public class AuthServerTestEnricher {
             LogChecker.checkJBossServerLog(jbossHomePath);
         }
     }
-//
-//    public void startAuthServerContainer(@Observes BeforeSuite event) {
-//        startContainerEvent.fire(new StartContainer(suiteContext.getAuthServerInfo().getArquillianContainer()));
-//    }
-//
-//    public void stopAuthServerContainer(@Observes AfterSuite event) {
-//        containerController.get().stop(suiteContext.getAuthServerInfo().getQualifier());
-//    }
 
     public void initializeTestContext(@Observes(precedence = 2) BeforeClass event) {
         TestContext testContext = new TestContext(suiteContext, event.getTestClass().getJavaClass());

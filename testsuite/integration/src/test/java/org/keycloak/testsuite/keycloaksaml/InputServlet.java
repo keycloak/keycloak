@@ -18,7 +18,6 @@
 package org.keycloak.testsuite.keycloaksaml;
 
 import org.junit.Assert;
-import org.keycloak.KeycloakSecurityContext;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;

@@ -17,26 +17,27 @@
 
 package org.keycloak.authentication.authenticators.client;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
-
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.ClientAuthenticationFlowContext;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.idm.CredentialRepresentation;
-import org.keycloak.services.ServicesLogger;
 import org.keycloak.util.BasicAuthHelper;
+
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.Response;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Validates client based on "client_id" and "client_secret" sent either in request parameters or in "Authorization: Basic" header .
@@ -46,8 +47,6 @@ import org.keycloak.util.BasicAuthHelper;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class ClientIdAndSecretAuthenticator extends AbstractClientAuthenticator {
-
-    protected static ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
 
     public static final String PROVIDER_ID = "client-secret";
 
@@ -86,7 +85,7 @@ public class ClientIdAndSecretAuthenticator extends AbstractClientAuthenticator 
 
         if (formData != null && client_id == null) {
             client_id = formData.getFirst(OAuth2Constants.CLIENT_ID);
-            clientSecret = formData.getFirst("client_secret");
+            clientSecret = formData.getFirst(OAuth2Constants.CLIENT_SECRET);
         }
 
         if (client_id == null) {
@@ -178,5 +177,17 @@ public class ClientIdAndSecretAuthenticator extends AbstractClientAuthenticator 
     @Override
     public String getId() {
         return PROVIDER_ID;
+    }
+
+    @Override
+    public Set<String> getProtocolAuthenticatorMethods(String loginProtocol) {
+        if (loginProtocol.equals(OIDCLoginProtocol.LOGIN_PROTOCOL)) {
+            Set<String> results = new LinkedHashSet<>();
+            results.add(OIDCLoginProtocol.CLIENT_SECRET_BASIC);
+            results.add(OIDCLoginProtocol.CLIENT_SECRET_POST);
+            return results;
+        } else {
+            return Collections.emptySet();
+        }
     }
 }

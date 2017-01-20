@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-tests-adapters-jboss</artifactId>
-        <version>2.0.0.CR1-SNAPSHOT</version>
+        <version>2.5.1.Final-SNAPSHOT</version>
     </parent>
 
     <artifactId>integration-arquillian-tests-adapters-remote</artifactId>
@@ -49,6 +49,11 @@
             <artifactId>commons-io</artifactId> 
             <version>2.4</version> 
         </dependency> 
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-csv</artifactId>
+            <version>1.2</version>
+        </dependency>
     </dependencies>
     
     <build>
@@ -65,9 +70,9 @@
                         <configuration>
                             <artifactItems>
                                 <artifactItem>
-                                    <groupId>org.keycloak.quickstart</groupId>
-                                    <artifactId>keycloak-quickstart-app-profile-jee</artifactId>        
-                                    <version>0.5-SNAPSHOT</version>
+                                    <groupId>org.keycloak.testsuite</groupId>
+                                    <artifactId>keycloak-test-app-profile-jee</artifactId>        
+                                    <version>${project.version}</version>
                                     <type>war</type>
                                 </artifactItem>
                             </artifactItems>
@@ -122,6 +127,14 @@
             <!--dummy profile for enforcer-->
         </profile>
         <profile>
+            <id>app-server-remote-as7-eap6</id>
+            <!--this profile is required if remote app server is AS7 or EAP6-->
+            <properties>
+                <app.server.management.protocol>remote</app.server.management.protocol>
+                <app.server.management.port>${app.server.management.port.jmx}</app.server.management.port>
+            </properties>
+        </profile>
+        <profile>
             <id>no-offset</id>
             <properties>
                 <app.server.port.offset>0</app.server.port.offset>
@@ -157,7 +170,7 @@
                                 <warmup.load>1</warmup.load>
                                 <warmup.duration>10</warmup.duration>
                                 <max.iterations>0</max.iterations>
-                                <sleep.between.repeats>30</sleep.between.repeats>
+                                <sleep.between.loops>30</sleep.between.loops>
                             </systemPropertyVariables>
                         </configuration>
                     </plugin>

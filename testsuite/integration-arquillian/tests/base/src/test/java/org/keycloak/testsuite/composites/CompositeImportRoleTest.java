@@ -16,15 +16,16 @@
  */
 package org.keycloak.testsuite.composites;
 
+import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.pages.LoginPage;
-import java.util.List;
-import org.jboss.arquillian.graphene.page.Page;
 import org.keycloak.testsuite.util.OAuthClient.AccessTokenResponse;
+
+import java.util.List;
 
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 

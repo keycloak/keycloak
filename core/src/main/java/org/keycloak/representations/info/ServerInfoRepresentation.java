@@ -17,6 +17,8 @@
 
 package org.keycloak.representations.info;
 
+import org.keycloak.representations.idm.ComponentTypeRepresentation;
+import org.keycloak.representations.idm.PasswordPolicyTypeRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperTypeRepresentation;
 
@@ -30,6 +32,7 @@ public class ServerInfoRepresentation {
 
     private SystemInfoRepresentation systemInfo;
     private MemoryInfoRepresentation memoryInfo;
+    private ProfileInfoRepresentation profileInfo;
 
     private Map<String, List<ThemeInfoRepresentation>> themes;
 
@@ -42,6 +45,9 @@ public class ServerInfoRepresentation {
     private Map<String, List<ProtocolMapperTypeRepresentation>> protocolMapperTypes;
     private Map<String, List<ProtocolMapperRepresentation>> builtinProtocolMappers;
     private Map<String, List<ClientInstallationRepresentation>> clientInstallations;
+    private Map<String, List<ComponentTypeRepresentation>> componentTypes;
+
+    private List<PasswordPolicyTypeRepresentation> passwordPolicies;
 
     private Map<String, List<String>> enums;
 
@@ -59,6 +65,14 @@ public class ServerInfoRepresentation {
 
     public void setMemoryInfo(MemoryInfoRepresentation memoryInfo) {
         this.memoryInfo = memoryInfo;
+    }
+
+    public ProfileInfoRepresentation getProfileInfo() {
+        return profileInfo;
+    }
+
+    public void setProfileInfo(ProfileInfoRepresentation profileInfo) {
+        this.profileInfo = profileInfo;
     }
 
     public Map<String, List<ThemeInfoRepresentation>> getThemes() {
@@ -131,5 +145,21 @@ public class ServerInfoRepresentation {
 
     public void setClientInstallations(Map<String, List<ClientInstallationRepresentation>> clientInstallations) {
         this.clientInstallations = clientInstallations;
+    }
+
+    public List<PasswordPolicyTypeRepresentation> getPasswordPolicies() {
+        return passwordPolicies;
+    }
+
+    public void setPasswordPolicies(List<PasswordPolicyTypeRepresentation> passwordPolicies) {
+        this.passwordPolicies = passwordPolicies;
+    }
+
+    public Map<String, List<ComponentTypeRepresentation>> getComponentTypes() {
+        return componentTypes;
+    }
+
+    public void setComponentTypes(Map<String, List<ComponentTypeRepresentation>> componentTypes) {
+        this.componentTypes = componentTypes;
     }
 }

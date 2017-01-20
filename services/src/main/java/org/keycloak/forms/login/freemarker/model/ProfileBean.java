@@ -16,14 +16,13 @@
  */
 package org.keycloak.forms.login.freemarker.model;
 
+import org.jboss.logging.Logger;
+import org.keycloak.authentication.requiredactions.util.UpdateProfileContext;
+
+import javax.ws.rs.core.MultivaluedMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import javax.ws.rs.core.MultivaluedMap;
-
-import org.jboss.logging.Logger;
-import org.keycloak.authentication.requiredactions.util.UpdateProfileContext;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

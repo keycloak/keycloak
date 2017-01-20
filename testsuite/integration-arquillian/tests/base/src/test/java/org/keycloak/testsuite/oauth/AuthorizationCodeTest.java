@@ -18,12 +18,15 @@ package org.keycloak.testsuite.oauth;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.OAuthErrorException;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.models.Constants;
+import org.keycloak.protocol.oidc.utils.OIDCResponseMode;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
@@ -47,10 +50,6 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
     @Rule
     public AssertEvents events = new AssertEvents(this);
 
-    @Page
-    protected ErrorPage errorPage;
-
-
     @Override
     public void beforeAbstractKeycloakTest() throws Exception {
         super.beforeAbstractKeycloakTest();
@@ -58,25 +57,26 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
-
         RealmRepresentation realmRepresentation = loadJson(getClass().getResourceAsStream("/testrealm.json"), RealmRepresentation.class);
-
         testRealms.add(realmRepresentation);
+    }
 
+    @Before
+    public void clientConfiguration() {
+        oauth.responseType(OAuth2Constants.CODE);
+        oauth.responseMode(null);
     }
 
     @Test
     public void authorizationRequest() throws IOException {
-        oauth.state("mystate");
+        oauth.state("OpenIdConnect.AuthenticationProperties=2302984sdlk");
 
-        OAuthClient.AuthorizationCodeResponse response = oauth.doLogin("test-user@localhost", "password");
+        OAuthClient.AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
 
         Assert.assertTrue(response.isRedirected());
         Assert.assertNotNull(response.getCode());
-        assertEquals("mystate", response.getState());
+        assertEquals("OpenIdConnect.AuthenticationProperties=2302984sdlk", response.getState());
         Assert.assertNull(response.getError());
-
-        testingClient.testing().verifyCode("test", response.getCode());
 
         String codeId = events.expectLogin().assertEvent().getDetails().get(Details.CODE_ID);
         assertCode(codeId, response.getCode());
@@ -93,7 +93,6 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
         Assert.assertEquals("Success code", title);
 
         String code = driver.findElement(By.id(OAuth2Constants.CODE)).getAttribute("value");
-        testingClient.testing().verifyCode("test", code);
 
         String codeId = events.expectLogin().detail(Details.REDIRECT_URI, "http://localhost:8180/auth/realms/test/protocol/openid-connect/oauth/oob").assertEvent().getDetails().get(Details.CODE_ID);
         assertCode(codeId, code);
@@ -107,12 +106,10 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
 
         oauth.state("mystate");
 
-        OAuthClient.AuthorizationCodeResponse response = oauth.doLogin("test-user@localhost", "password");
+        OAuthClient.AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
 
         Assert.assertTrue(response.isRedirected());
         Assert.assertNotNull(response.getCode());
-
-        testingClient.testing().verifyCode("test", response.getCode());
 
         String codeId = events.expectLogin().assertEvent().getDetails().get(Details.CODE_ID);
         assertCode(codeId, response.getCode());
@@ -122,40 +119,51 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
     public void authorizationRequestNoState() throws IOException {
         oauth.state(null);
 
-        OAuthClient.AuthorizationCodeResponse response = oauth.doLogin("test-user@localhost", "password");
+        OAuthClient.AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
 
         Assert.assertTrue(response.isRedirected());
         Assert.assertNotNull(response.getCode());
         Assert.assertNull(response.getState());
         Assert.assertNull(response.getError());
 
-        testingClient.testing().verifyCode("test", response.getCode());
-
         String codeId = events.expectLogin().assertEvent().getDetails().get(Details.CODE_ID);
         assertCode(codeId, response.getCode());
     }
 
     @Test
-    public void authorizationRequestImplicitFlowDisabled() throws IOException {
+    public void authorizationRequestInvalidResponseType() throws IOException {
+        oauth.responseType("tokenn");
         UriBuilder b = UriBuilder.fromUri(oauth.getLoginFormUrl());
-        b.replaceQueryParam(OAuth2Constants.RESPONSE_TYPE, "token id_token");
         driver.navigate().to(b.build().toURL());
-        assertEquals("Client is not allowed to initiate browser login with given response_type. Implicit flow is disabled for the client.", errorPage.getError());
-        events.expectLogin().error(Errors.NOT_ALLOWED).user((String) null).session((String) null).clearDetails().detail(Details.RESPONSE_TYPE, "token id_token").assertEvent();
+
+        OAuthClient.AuthorizationEndpointResponse errorResponse = new OAuthClient.AuthorizationEndpointResponse(oauth);
+        Assert.assertTrue(errorResponse.isRedirected());
+        Assert.assertEquals(errorResponse.getError(), OAuthErrorException.UNSUPPORTED_RESPONSE_TYPE);
+
+        events.expectLogin().error(Errors.INVALID_REQUEST).user((String) null).session((String) null).clearDetails().detail(Details.RESPONSE_TYPE, "tokenn").assertEvent();
     }
 
+    // KEYCLOAK-3281
     @Test
-    public void authorizationRequestInvalidResponseType() throws IOException {
-        UriBuilder b = UriBuilder.fromUri(oauth.getLoginFormUrl());
-        b.replaceQueryParam(OAuth2Constants.RESPONSE_TYPE, "tokenn");
-        driver.navigate().to(b.build().toURL());
-        assertEquals("Invalid parameter: response_type", errorPage.getError());
-        events.expectLogin().error(Errors.INVALID_REQUEST).client((String) null).user((String) null).session((String) null).clearDetails().detail(Details.RESPONSE_TYPE, "tokenn").assertEvent();
+    public void authorizationRequestFormPostResponseMode() throws IOException {
+        oauth.responseMode(OIDCResponseMode.FORM_POST.toString().toLowerCase());
+        oauth.state("OpenIdConnect.AuthenticationProperties=2302984sdlk");
+        oauth.doLoginGrant("test-user@localhost", "password");
+
+        String sources = driver.getPageSource();
+        System.out.println(sources);
+
+        String code = driver.findElement(By.id("code")).getText();
+        String state = driver.findElement(By.id("state")).getText();
+
+        assertEquals("OpenIdConnect.AuthenticationProperties=2302984sdlk", state);
+
+        String codeId = events.expectLogin().assertEvent().getDetails().get(Details.CODE_ID);
+        assertCode(codeId, code);
     }
 
     private void assertCode(String expectedCodeId, String actualCode) {
-        String code = testingClient.testing().verifyCode("test", actualCode);
-        assertEquals(expectedCodeId, code);
+        assertEquals(expectedCodeId, actualCode.split("\\.")[1]);
     }
 
 }

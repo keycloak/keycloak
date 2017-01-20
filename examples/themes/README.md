@@ -17,14 +17,14 @@ Alternatively you can deploy as modules. This can be done by first running:
     mvn clean install
     $KEYCLOAK_HOME/bin/jboss-cli.sh --command="module add --name=org.keycloak.example.themes --resources=target/keycloak-example-themes.jar"
 
-Then open $KEYCLOAK_HOME/standalone/configuration/keycloak-server.json and register the theme module by adding:
-    
-    "theme": {
-        "module": {
-            "modules": [ "org.keycloak.example.themes" ]
-        }
-    }
+Then open `standalone/configuration/standalone.xml` and register the theme module by adding:
 
+    <theme>
+        ...
+        <modules>
+            <module>org.keycloak.example.themes</module>
+        </modules>
+    </theme>
 
 Address Theme
 -------------------
@@ -45,11 +45,11 @@ Change Logo Theme
 
 To enable the theme open the admin console, select your realm, click on `Theme`. In the dropdowns for `Login Theme`, `Account Theme` and `Admin Console Theme` select `logo-example`. Click `Save` and login to the realm to see the new theme in action.
 
-To change the theme for the welcome pages open `standalone/configuration/keycloak-server.json` find the config for `theme` and add 'welcomeTheme':
+To change the theme for the welcome pages open `standalone/configuration/standalone.xml` find the config for `theme` and add 'welcomeTheme':
 
-    "theme": {
+    <theme>
         ...
-        "welcomeTheme": "logo-example"
-    },
+        <welcomeTheme>logo-example</welcomeTheme>
+    </theme>
 
 One thing to note is that to change the admin console for the master admin console (`/auth/admin`) you need to change the theme for the master realm. Changing the admin console theme for any other realms will only change the admin console for that specific realm (for example `/auth/admin/myrealm/console`).

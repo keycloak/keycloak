@@ -42,7 +42,7 @@
         <div class="form-group">
             <label class="col-md-2 control-label" class="control-label">
                 <span>{{:: 'client-roles' | translate}}</span>
-                <select class="form-control" id="clients" name="clients" ng-change="changeClient()" ng-model="client" ng-options="a.clientId for a in clients" ng-disabled="false"></select>
+                <select class="form-control" id="clients" name="clients" ng-change="changeClient()" ng-model="client" ng-options="a.clientId for a in clients | orderBy:'clientId'" ng-disabled="false"></select>
             </label>
             <div class="col-md-10" data-ng-show="client">
                 <div class="row" data-ng-hide="client">

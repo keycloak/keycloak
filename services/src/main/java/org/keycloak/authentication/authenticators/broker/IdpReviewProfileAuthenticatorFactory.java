@@ -17,10 +17,6 @@
 
 package org.keycloak.authentication.authenticators.broker;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
 import org.keycloak.Config;
 import org.keycloak.authentication.Authenticator;
 import org.keycloak.authentication.AuthenticatorFactory;
@@ -29,6 +25,10 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -108,7 +108,8 @@ public class IdpReviewProfileAuthenticatorFactory implements AuthenticatorFactor
         property.setLabel("{{:: 'update-profile-on-first-login' | translate}}");
         property.setType(ProviderConfigProperty.LIST_TYPE);
         List<String> updateProfileValues = Arrays.asList(IdentityProviderRepresentation.UPFLM_ON, IdentityProviderRepresentation.UPFLM_MISSING, IdentityProviderRepresentation.UPFLM_OFF);
-        property.setDefaultValue(updateProfileValues);
+        property.setOptions(updateProfileValues);
+        property.setDefaultValue(IdentityProviderRepresentation.UPFLM_MISSING);
         property.setHelpText("Define conditions under which a user has to review and update his profile after first-time login. Value 'On' means that"
                 + " page for reviewing profile will be displayed and user can review and update his profile. Value 'off' means that page won't be displayed."
                 + " Value 'missing' means that page is displayed just when some required attribute is missing (wasn't downloaded from identity provider). Value 'missing' is the default one."

@@ -18,6 +18,7 @@
 package org.keycloak.services.resources.admin;
 
 import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.ClientInitialAccessModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -26,8 +27,18 @@ import org.keycloak.representations.idm.ClientInitialAccessPresentation;
 import org.keycloak.services.clientregistration.ClientRegistrationTokenUtils;
 
 import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.*;
-import javax.ws.rs.core.*;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriInfo;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -49,7 +60,7 @@ public class ClientInitialAccessResource {
     public ClientInitialAccessResource(RealmModel realm, RealmAuth auth, AdminEventBuilder adminEvent) {
         this.auth = auth;
         this.realm = realm;
-        this.adminEvent = adminEvent;
+        this.adminEvent = adminEvent.resource(ResourceType.CLIENT_INITIAL_ACCESS_MODEL);
 
         auth.init(RealmAuth.Resource.CLIENT);
     }
@@ -73,13 +84,9 @@ public class ClientInitialAccessResource {
 
         adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo, clientInitialAccessModel.getId()).representation(config).success();
 
-        if (session.getTransaction().isActive()) {
-            session.getTransaction().commit();
-        }
-
         ClientInitialAccessPresentation rep = wrap(clientInitialAccessModel);
 
-        String token = ClientRegistrationTokenUtils.createInitialAccessToken(realm, uriInfo, clientInitialAccessModel);
+        String token = ClientRegistrationTokenUtils.createInitialAccessToken(session, realm, uriInfo, clientInitialAccessModel);
         rep.setToken(token);
 
         response.setStatus(Response.Status.CREATED.getStatusCode());
@@ -108,6 +115,7 @@ public class ClientInitialAccessResource {
         auth.requireManage();
 
         session.sessions().removeClientInitialAccessModel(realm, id);
+        adminEvent.operation(OperationType.DELETE).resourcePath(uriInfo).success();
     }
 
     private ClientInitialAccessPresentation wrap(ClientInitialAccessModel model) {

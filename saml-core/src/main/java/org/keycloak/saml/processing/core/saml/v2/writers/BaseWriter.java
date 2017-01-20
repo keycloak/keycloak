@@ -16,14 +16,6 @@
  */
 package org.keycloak.saml.processing.core.saml.v2.writers;
 
-import org.keycloak.saml.common.PicketLinkLogger;
-import org.keycloak.saml.common.PicketLinkLoggerFactory;
-import org.keycloak.saml.common.constants.JBossSAMLConstants;
-import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
-import org.keycloak.saml.common.exceptions.ProcessingException;
-import org.keycloak.saml.common.util.StaxUtil;
-import org.keycloak.saml.common.util.StringUtil;
-import org.keycloak.saml.processing.core.saml.v2.util.StaxWriterUtil;
 import org.keycloak.dom.saml.v2.assertion.AttributeType;
 import org.keycloak.dom.saml.v2.assertion.BaseIDAbstractType;
 import org.keycloak.dom.saml.v2.assertion.EncryptedElementType;
@@ -34,6 +26,14 @@ import org.keycloak.dom.saml.v2.assertion.SubjectConfirmationType;
 import org.keycloak.dom.saml.v2.assertion.SubjectType;
 import org.keycloak.dom.saml.v2.metadata.LocalizedNameType;
 import org.keycloak.dom.xmlsec.w3.xmldsig.KeyInfoType;
+import org.keycloak.saml.common.PicketLinkLogger;
+import org.keycloak.saml.common.PicketLinkLoggerFactory;
+import org.keycloak.saml.common.constants.JBossSAMLConstants;
+import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
+import org.keycloak.saml.common.exceptions.ProcessingException;
+import org.keycloak.saml.common.util.StaxUtil;
+import org.keycloak.saml.common.util.StringUtil;
+import org.keycloak.saml.processing.core.saml.v2.util.StaxWriterUtil;
 
 import javax.xml.datatype.XMLGregorianCalendar;
 import javax.xml.namespace.QName;
@@ -43,8 +43,12 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import org.keycloak.dom.saml.v2.protocol.ExtensionsType;
+import org.keycloak.saml.SamlProtocolExtensionsAwareBuilder;
 
 import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.ASSERTION_NSURI;
+import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.PROTOCOL_NSURI;
+import org.w3c.dom.Node;
 
 /**
  * Base Class for the Stax writers for SAML
@@ -172,11 +176,19 @@ public class BaseWriter {
                 if (attributeValue != null) {
                     if (attributeValue instanceof String) {
                         writeStringAttributeValue((String) attributeValue);
+                    } else if (attributeValue instanceof NameIDType) {
+                    	writeNameIDTypeAttributeValue((NameIDType) attributeValue);
                     } else
                         throw logger.writerUnsupportedAttributeValueError(attributeValue.getClass().getName());
                 }
             }
         }
+    }
+
+    public void writeNameIDTypeAttributeValue(NameIDType attributeValue) throws ProcessingException {
+        StaxUtil.writeStartElement(writer, ASSERTION_PREFIX, JBossSAMLConstants.ATTRIBUTE_VALUE.get(), ASSERTION_NSURI.get());
+    	write((NameIDType)attributeValue, new QName(ASSERTION_NSURI.get(), JBossSAMLConstants.NAMEID.get(), ASSERTION_PREFIX));
+        StaxUtil.writeEndElement(writer);
     }
 
     public void writeStringAttributeValue(String attributeValue) throws ProcessingException {
@@ -229,6 +241,28 @@ public class BaseWriter {
         if (subjectConfirmations != null) {
             for (SubjectConfirmationType subjectConfirmationType : subjectConfirmations) {
                 write(subjectConfirmationType);
+            }
+        }
+
+        StaxUtil.writeEndElement(writer);
+        StaxUtil.flush(writer);
+    }
+
+    public void write(ExtensionsType extensions) throws ProcessingException {
+        if (extensions.getAny().isEmpty()) {
+            return;
+        }
+
+        StaxUtil.writeStartElement(writer, PROTOCOL_PREFIX, JBossSAMLConstants.EXTENSIONS.get(), PROTOCOL_NSURI.get());
+
+        for (Object o : extensions.getAny()) {
+            if (o instanceof Node) {
+                StaxUtil.writeDOMNode(writer, (Node) o);
+            } else if (o instanceof SamlProtocolExtensionsAwareBuilder.NodeGenerator) {
+                SamlProtocolExtensionsAwareBuilder.NodeGenerator ng = (SamlProtocolExtensionsAwareBuilder.NodeGenerator) o;
+                ng.write(writer);
+            } else {
+                throw logger.samlExtensionUnknownChild(o == null ? null : o.getClass());
             }
         }
 

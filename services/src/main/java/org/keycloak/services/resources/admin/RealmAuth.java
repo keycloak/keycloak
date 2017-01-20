@@ -31,7 +31,7 @@ public class RealmAuth {
     private Resource resource;
 
     public enum Resource {
-        CLIENT, USER, REALM, EVENTS, IDENTITY_PROVIDER, IMPERSONATION
+        CLIENT, USER, REALM, EVENTS, IDENTITY_PROVIDER, IMPERSONATION, AUTHORIZATION
     }
 
     private AdminAuth auth;
@@ -89,6 +89,8 @@ public class RealmAuth {
                 return AdminRoles.VIEW_EVENTS;
             case IDENTITY_PROVIDER:
                 return AdminRoles.VIEW_IDENTITY_PROVIDERS;
+            case AUTHORIZATION:
+                return AdminRoles.VIEW_AUTHORIZATION;
             default:
                 throw new IllegalStateException();
         }
@@ -108,6 +110,8 @@ public class RealmAuth {
                 return AdminRoles.MANAGE_IDENTITY_PROVIDERS;
             case IMPERSONATION:
                 return ImpersonationConstants.IMPERSONATION_ROLE;
+            case AUTHORIZATION:
+                return AdminRoles.MANAGE_AUTHORIZATION;
             default:
                 throw new IllegalStateException();
         }

@@ -16,12 +16,31 @@
  */
 package org.keycloak.representations;
 
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
+import com.fasterxml.jackson.annotation.JsonAnySetter;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import org.keycloak.json.StringOrArrayDeserializer;
+import org.keycloak.json.StringOrArraySerializer;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @author pedroigor
  */
 public class UserInfo {
+
+    // Should be in signed UserInfo response
+    @JsonProperty("iss")
+    protected String issuer;
+    @JsonProperty("aud")
+    @JsonSerialize(using = StringOrArraySerializer.class)
+    @JsonDeserialize(using = StringOrArrayDeserializer.class)
+    protected String[] audience;
+
     @JsonProperty("sub")
     protected String sub;
 
@@ -84,6 +103,34 @@ public class UserInfo {
 
     @JsonProperty("claims_locales")
     protected String claimsLocales;
+
+    protected Map<String, Object> otherClaims = new HashMap<>();
+
+    public String getIssuer() {
+        return issuer;
+    }
+
+    public void setIssuer(String issuer) {
+        this.issuer = issuer;
+    }
+
+    @JsonIgnore
+    public String[] getAudience() {
+        return audience;
+    }
+
+    public boolean hasAudience(String audience) {
+        for (String a : this.audience) {
+            if (a.equals(audience)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public void setAudience(String... audience) {
+        this.audience = audience;
+    }
 
     public String getSubject() {
         return this.sub;
@@ -259,5 +306,20 @@ public class UserInfo {
 
     public void setClaimsLocales(String claimsLocales) {
         this.claimsLocales = claimsLocales;
+    }
+
+    /**
+     * This is a map of any other claims and data that might be in the UserInfo.  Could be custom claims set up by the auth server
+     *
+     * @return
+     */
+    @JsonAnyGetter
+    public Map<String, Object> getOtherClaims() {
+        return otherClaims;
+    }
+
+    @JsonAnySetter
+    public void setOtherClaims(String name, Object value) {
+        otherClaims.put(name, value);
     }
 }

@@ -17,7 +17,6 @@
 
 package org.keycloak.models.jpa;
 
-import org.keycloak.connections.jpa.util.JpaUtils;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientTemplateModel;
 import org.keycloak.models.KeycloakSession;
@@ -498,6 +497,18 @@ public class ClientAdapter implements ClientModel, JpaModel<ClientEntity> {
     @Override
     public void updateClient() {
         em.flush();
+        session.getKeycloakSessionFactory().publish(new RealmModel.ClientUpdatedEvent() {
+
+            @Override
+            public ClientModel getUpdatedClient() {
+                return ClientAdapter.this;
+            }
+
+            @Override
+            public KeycloakSession getKeycloakSession() {
+                return session;
+            }
+        });
     }
 
     @Override

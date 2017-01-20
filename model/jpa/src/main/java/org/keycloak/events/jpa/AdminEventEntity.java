@@ -41,6 +41,9 @@ public class AdminEventEntity {
     
     @Column(name="OPERATION_TYPE")
     private String operationType;
+
+    @Column(name="RESOURCE_TYPE", length = 64)
+    private String resourceType;
     
     @Column(name="AUTH_REALM_ID")
     private String authRealmId;
@@ -151,4 +154,11 @@ public class AdminEventEntity {
         this.error = error;
     }
 
+    public String getResourceType() {
+        return resourceType;
+    }
+
+    public void setResourceType(String resourceType) {
+        this.resourceType = resourceType;
+    }
 }

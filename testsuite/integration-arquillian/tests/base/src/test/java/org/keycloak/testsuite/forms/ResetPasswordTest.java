@@ -16,40 +16,49 @@
  */
 package org.keycloak.testsuite.forms;
 
-import org.junit.*;
+import org.jboss.arquillian.graphene.page.Page;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
+import org.keycloak.representations.idm.EventRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AssertEvents;
-//import org.keycloak.testsuite.Constants;
-import org.keycloak.testsuite.util.MailUtils;
-import org.keycloak.testsuite.pages.*;
+import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
+import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
+import org.keycloak.testsuite.pages.ErrorPage;
+import org.keycloak.testsuite.pages.InfoPage;
+import org.keycloak.testsuite.pages.LoginPage;
+import org.keycloak.testsuite.pages.LoginPasswordResetPage;
+import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
+import org.keycloak.testsuite.pages.VerifyEmailPage;
+import org.keycloak.testsuite.util.GreenMailRule;
+import org.keycloak.testsuite.util.MailUtils;
+import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.UserBuilder;
 
 import javax.mail.MessagingException;
 import javax.mail.Multipart;
 import javax.mail.internet.MimeMessage;
-
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.jboss.arquillian.graphene.page.Page;
-import org.keycloak.representations.idm.EventRepresentation;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.TestRealmKeycloakTest;
-import org.keycloak.testsuite.util.GreenMailRule;
-import org.keycloak.testsuite.util.OAuthClient;
-import org.keycloak.testsuite.util.UserBuilder;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
+//import org.keycloak.testsuite.Constants;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
  */
-public class ResetPasswordTest extends TestRealmKeycloakTest {
+public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
 
     static int lifespan = 0;
 
@@ -169,6 +178,11 @@ public class ResetPasswordTest extends TestRealmKeycloakTest {
     }
 
     @Test
+    public void resetPasswordWithSpacesInUsername() throws IOException, MessagingException {
+        resetPassword(" login-test ");
+    }
+
+    @Test
     public void resetPasswordCancelChangeUser() throws IOException, MessagingException {
         loginPage.open();
         loginPage.resetPassword();
@@ -183,7 +197,6 @@ public class ResetPasswordTest extends TestRealmKeycloakTest {
         events.expectRequiredAction(EventType.SEND_RESET_PASSWORD).detail(Details.USERNAME, "test-user@localhost")
                 .session((String) null)
                 .detail(Details.EMAIL, "test-user@localhost").assertEvent();
-
 
         loginPage.login("login@test.com", "password");
 
@@ -216,7 +229,7 @@ public class ResetPasswordTest extends TestRealmKeycloakTest {
 
         events.expectRequiredAction(EventType.SEND_RESET_PASSWORD)
                 .user(userId)
-                .detail(Details.USERNAME, username)
+                .detail(Details.USERNAME, username.trim())
                 .detail(Details.EMAIL, "login@test.com")
                 .session((String)null)
                 .assertEvent();
@@ -233,11 +246,11 @@ public class ResetPasswordTest extends TestRealmKeycloakTest {
 
         updatePasswordPage.changePassword("resetPassword", "resetPassword");
 
-        String sessionId = events.expectRequiredAction(EventType.UPDATE_PASSWORD).user(userId).detail(Details.USERNAME, username).assertEvent().getSessionId();
+        String sessionId = events.expectRequiredAction(EventType.UPDATE_PASSWORD).user(userId).detail(Details.USERNAME, username.trim()).assertEvent().getSessionId();
 
         assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        events.expectLogin().user(userId).detail(Details.USERNAME, username).session(sessionId).assertEvent();
+        events.expectLogin().user(userId).detail(Details.USERNAME, username.trim()).session(sessionId).assertEvent();
 
         oauth.openLogout();
 
@@ -314,6 +327,7 @@ public class ResetPasswordTest extends TestRealmKeycloakTest {
 
         assertTrue(updatePasswordPage.isCurrent());
         assertEquals(error, updatePasswordPage.getError());
+        events.expectRequiredAction(EventType.UPDATE_PASSWORD_ERROR).error(Errors.PASSWORD_REJECTED).user(userId).detail(Details.USERNAME, "login-test").assertEvent().getSessionId();
     }
 
     @Test
@@ -544,6 +558,8 @@ public class ResetPasswordTest extends TestRealmKeycloakTest {
 
         assertEquals("Invalid password: minimum length 8.", resetPasswordPage.getErrorMessage());
 
+        events.expectRequiredAction(EventType.UPDATE_PASSWORD_ERROR).error(Errors.PASSWORD_REJECTED).user(userId).detail(Details.USERNAME, "login-test").assertEvent().getSessionId();
+
         updatePasswordPage.changePassword("resetPasswordWithPasswordPolicy", "resetPasswordWithPasswordPolicy");
 
         String sessionId = events.expectRequiredAction(EventType.UPDATE_PASSWORD).user(userId).detail(Details.USERNAME, "login-test").assertEvent().getSessionId();
@@ -593,6 +609,47 @@ public class ResetPasswordTest extends TestRealmKeycloakTest {
         } finally {
             setTimeOffset(0);
         }
+    }
+
+    @Test
+    public void resetPasswordLinkOpenedInNewBrowser() throws IOException, MessagingException {
+        String username = "login-test";
+        String resetUri = oauth.AUTH_SERVER_ROOT + "/realms/test/login-actions/reset-credentials";
+        driver.navigate().to(resetUri);
+
+        resetPasswordPage.assertCurrent();
+
+        resetPasswordPage.changePassword(username);
+
+        loginPage.assertCurrent();
+        assertEquals("You should receive an email shortly with further instructions.", loginPage.getSuccessMessage());
+
+        events.expectRequiredAction(EventType.SEND_RESET_PASSWORD)
+                .user(userId)
+                .detail(Details.REDIRECT_URI,  oauth.AUTH_SERVER_ROOT + "/realms/test/account/")
+                .client("account")
+                .detail(Details.USERNAME, username)
+                .detail(Details.EMAIL, "login@test.com")
+                .session((String)null)
+                .assertEvent();
+
+        assertEquals(1, greenMail.getReceivedMessages().length);
+
+        MimeMessage message = greenMail.getReceivedMessages()[0];
+
+        String changePasswordUrl = getPasswordResetEmailLink(message);
+
+        driver.manage().deleteAllCookies();
+        driver.navigate().to(changePasswordUrl.trim());
+
+        System.out.println(driver.getPageSource());
+
+        updatePasswordPage.assertCurrent();
+
+        updatePasswordPage.changePassword("resetPassword", "resetPassword");
+
+        assertTrue(infoPage.isCurrent());
+        assertEquals("Your account has been updated.", infoPage.getInfo());
     }
 
     public static String getPasswordResetEmailLink(MimeMessage message) throws IOException, MessagingException {

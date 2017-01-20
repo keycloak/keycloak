@@ -1,13 +1,13 @@
 package org.keycloak.testsuite.console.page.federation;
 
-import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
-
 import org.keycloak.testsuite.console.page.fragment.OnOffSwitch;
 import org.keycloak.testsuite.page.Form;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.ui.Select;
+
+import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 
 /**
  * @author pdrozd
@@ -45,12 +45,15 @@ public class KerberosUserProviderForm extends Form {
         setInputValue(consoleDisplayNameInput, name);
     }
 
+    public String getConsoleDisplayNameInput() {
+        return getInputValue(consoleDisplayNameInput);
+    }
+
     public void setPriorityInput(Integer priority) {
         setInputValue(priorityInput, String.valueOf(priority));
     }
 
     public void setKerberosRealmInput(String kerberosRealm) {
-        waitUntilElement(By.id("kerberosRealm")).is().present();
         setInputValue(kerberosRealmInput, kerberosRealm);
     }
 
@@ -71,7 +74,6 @@ public class KerberosUserProviderForm extends Form {
     }
 
     public void selectEditMode(String mode) {
-        waitUntilElement(By.id("editMode")).is().present();
         editModeSelect.selectByVisibleText(mode);
     }
 

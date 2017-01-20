@@ -31,6 +31,7 @@ import org.junit.rules.TemporaryFolder;
 import org.keycloak.Config;
 import org.keycloak.adapters.KeycloakConfigResolver;
 import org.keycloak.adapters.servlet.KeycloakOIDCFilter;
+import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakTransaction;
 import org.keycloak.models.RealmModel;
@@ -39,10 +40,9 @@ import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.managers.RealmManager;
-import org.keycloak.testsuite.Retry;
 import org.keycloak.testsuite.KeycloakServer;
+import org.keycloak.testsuite.Retry;
 import org.keycloak.util.JsonSerialization;
-import org.keycloak.common.util.Time;
 
 import javax.servlet.DispatcherType;
 import javax.servlet.Servlet;
@@ -85,12 +85,12 @@ public abstract class AbstractKeycloakRule extends ExternalResource {
 
     public UserRepresentation getUser(String realm, String name) {
         KeycloakSession session = server.getSessionFactory().create();
-        session.getTransaction().begin();
+        session.getTransactionManager().begin();
         try {
             RealmModel realmByName = session.realms().getRealmByName(realm);
             UserModel user = session.users().getUserByUsername(name, realmByName);
-            UserRepresentation userRep = user != null ? ModelToRepresentation.toRepresentation(user) : null;
-            session.getTransaction().commit();
+            UserRepresentation userRep = user != null ? ModelToRepresentation.toRepresentation(session, realmByName, user) : null;
+            session.getTransactionManager().commit();
             return userRep;
         } finally {
             session.close();
@@ -99,11 +99,11 @@ public abstract class AbstractKeycloakRule extends ExternalResource {
 
     public UserRepresentation getUserById(String realm, String id) {
         KeycloakSession session = server.getSessionFactory().create();
-        session.getTransaction().begin();
+        session.getTransactionManager().begin();
         try {
             RealmModel realmByName = session.realms().getRealmByName(realm);
-            UserRepresentation userRep = ModelToRepresentation.toRepresentation(session.users().getUserById(id, realmByName));
-            session.getTransaction().commit();
+            UserRepresentation userRep = ModelToRepresentation.toRepresentation(session, realmByName, session.users().getUserById(id, realmByName));
+            session.getTransactionManager().commit();
             return userRep;
         } finally {
             session.close();
@@ -112,7 +112,7 @@ public abstract class AbstractKeycloakRule extends ExternalResource {
 
     protected void setupKeycloak() {
         KeycloakSession session = server.getSessionFactory().create();
-        session.getTransaction().begin();
+        session.getTransactionManager().begin();
 
         try {
             RealmManager manager = new RealmManager(session);
@@ -121,7 +121,7 @@ public abstract class AbstractKeycloakRule extends ExternalResource {
 
             configure(session, manager, adminstrationRealm);
 
-            session.getTransaction().commit();
+            session.getTransactionManager().commit();
         } finally {
             session.close();
         }
@@ -129,7 +129,7 @@ public abstract class AbstractKeycloakRule extends ExternalResource {
 
     public void update(KeycloakRule.KeycloakSetup configurer, String realmId) {
         KeycloakSession session = server.getSessionFactory().create();
-        session.getTransaction().begin();
+        session.getTransactionManager().begin();
 
         try {
             RealmManager manager = new RealmManager(session);
@@ -141,7 +141,7 @@ public abstract class AbstractKeycloakRule extends ExternalResource {
             configurer.session = session;
             configurer.config(manager, adminstrationRealm, appRealm);
 
-            session.getTransaction().commit();
+            session.getTransactionManager().commit();
         } finally {
             session.close();
         }
@@ -221,7 +221,7 @@ public abstract class AbstractKeycloakRule extends ExternalResource {
     protected void removeTestRealms() {
         KeycloakSession session = server.getSessionFactory().create();
         try {
-            session.getTransaction().begin();
+            session.getTransactionManager().begin();
             RealmManager realmManager = new RealmManager(session);
             for (String realmName : getTestRealms()) {
                 RealmModel realm = realmManager.getRealmByName(realmName);
@@ -229,7 +229,7 @@ public abstract class AbstractKeycloakRule extends ExternalResource {
                     realmManager.removeRealm(realm);
                 }
             }
-            session.getTransaction().commit();
+            session.getTransactionManager().commit();
         } finally {
             session.close();
         }
@@ -248,12 +248,12 @@ public abstract class AbstractKeycloakRule extends ExternalResource {
 
     public KeycloakSession startSession() {
         KeycloakSession session = server.getSessionFactory().create();
-        session.getTransaction().begin();
+        session.getTransactionManager().begin();
         return session;
     }
 
     public void stopSession(KeycloakSession session, boolean commit) {
-        KeycloakTransaction transaction = session.getTransaction();
+        KeycloakTransaction transaction = session.getTransactionManager();
         if (commit && !transaction.getRollbackOnly()) {
             transaction.commit();
         } else {

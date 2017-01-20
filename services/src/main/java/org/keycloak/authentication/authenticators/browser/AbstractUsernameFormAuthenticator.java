@@ -17,9 +17,11 @@
 
 package org.keycloak.authentication.authenticators.browser;
 
+import org.jboss.logging.Logger;
 import org.keycloak.authentication.AbstractFormAuthenticator;
-import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.AuthenticationFlowContext;
+import org.keycloak.authentication.AuthenticationFlowError;
+import org.keycloak.credential.CredentialInput;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.models.ModelDuplicateException;
@@ -42,7 +44,7 @@ import java.util.List;
  */
 public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuthenticator {
 
-    private static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    private static final Logger logger = Logger.getLogger(AbstractUsernameFormAuthenticator.class);
 
     public static final String REGISTRATION_FORM_ACTION = "registration_form";
     public static final String ATTEMPTED_USERNAME = "ATTEMPTED_USERNAME";
@@ -100,7 +102,7 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
             return false;
         }
         if (context.getRealm().isBruteForceProtected()) {
-            if (context.getProtector().isTemporarilyDisabled(context.getSession(), context.getRealm(), user.getUsername())) {
+            if (context.getProtector().isTemporarilyDisabled(context.getSession(), context.getRealm(), user)) {
                 context.getEvent().user(user);
                 context.getEvent().error(Errors.USER_TEMPORARILY_DISABLED);
                 Response challengeResponse = temporarilyDisabledUser(context);
@@ -119,6 +121,10 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
             context.failureChallenge(AuthenticationFlowError.INVALID_USER, challengeResponse);
             return false;
         }
+
+        // remove leading and trailing whitespace
+        username = username.trim();
+
         context.getEvent().detail(Details.USERNAME, username);
         context.getClientSession().setNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME, username);
 
@@ -126,7 +132,7 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
         try {
             user = KeycloakModelUtils.findUserByNameOrEmail(context.getSession(), context.getRealm(), username);
         } catch (ModelDuplicateException mde) {
-            logger.modelDuplicateException(mde);
+            ServicesLogger.LOGGER.modelDuplicateException(mde);
 
             // Could happen during federation import
             if (mde.getDuplicateFieldName() != null && mde.getDuplicateFieldName().equals(UserModel.EMAIL)) {
@@ -163,11 +169,12 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
     }
 
     public boolean validatePassword(AuthenticationFlowContext context, UserModel user, MultivaluedMap<String, String> inputData) {
-        List<UserCredentialModel> credentials = new LinkedList<>();
+        List<CredentialInput> credentials = new LinkedList<>();
         String password = inputData.getFirst(CredentialRepresentation.PASSWORD);
         credentials.add(UserCredentialModel.password(password));
-        boolean valid = context.getSession().users().validCredentials(context.getSession(), context.getRealm(), user, credentials);
-        if (!valid) {
+        if (password != null && !password.isEmpty() && context.getSession().userCredentialManager().isValid(context.getRealm(), user, credentials)) {
+            return true;
+        } else {
             context.getEvent().user(user);
             context.getEvent().error(Errors.INVALID_USER_CREDENTIALS);
             Response challengeResponse = invalidCredentials(context);
@@ -175,7 +182,6 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
             context.clearUser();
             return false;
         }
-        return true;
     }
 
 }

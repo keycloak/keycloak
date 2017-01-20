@@ -49,6 +49,14 @@ module.factory('RealmLoader', function(Loader, Realm, $route, $q) {
 	});
 });
 
+module.factory('RealmKeysLoader', function(Loader, RealmKeys, $route, $q) {
+    return Loader.get(RealmKeys, function() {
+        return {
+            id : $route.current.params.realm
+        }
+    });
+});
+
 module.factory('RealmEventsConfigLoader', function(Loader, RealmEventsConfig, $route, $q) {
     return Loader.get(RealmEventsConfig, function() {
         return {
@@ -126,52 +134,55 @@ module.factory('UserLoader', function(Loader, User, $route, $q) {
     });
 });
 
-module.factory('UserFederationInstanceLoader', function(Loader, UserFederationInstances, $route, $q) {
-    return Loader.get(UserFederationInstances, function() {
+module.factory('ComponentLoader', function(Loader, Components, $route, $q) {
+    return Loader.get(Components, function() {
         return {
             realm : $route.current.params.realm,
-            instance: $route.current.params.instance
+            componentId: $route.current.params.componentId
         }
     });
 });
 
-module.factory('UserFederationFactoryLoader', function(Loader, UserFederationProviders, $route, $q) {
-    return Loader.get(UserFederationProviders, function() {
+module.factory('LDAPMapperLoader', function(Loader, Components, $route, $q) {
+    return Loader.get(Components, function() {
         return {
             realm : $route.current.params.realm,
-            provider: $route.current.params.provider
+            componentId: $route.current.params.mapperId
         }
     });
 });
 
-module.factory('UserFederationMapperTypesLoader', function(Loader, UserFederationMapperTypes, $route, $q) {
-    return Loader.get(UserFederationMapperTypes, function () {
-        return {
-            realm: $route.current.params.realm,
-            provider: $route.current.params.instance
-        }
-    });
+module.factory('ComponentsLoader', function(Loader, Components, $route, $q) {
+    var componentsLoader = {};
+
+    componentsLoader.loadComponents = function(parent, componentType) {
+        return Loader.query(Components, function() {
+            return {
+                realm : $route.current.params.realm,
+                parent : parent,
+                type: componentType
+            }
+        })();
+    };
+
+    return componentsLoader;
 });
 
-module.factory('UserFederationMappersLoader', function(Loader, UserFederationMappers, $route, $q) {
-    return Loader.query(UserFederationMappers, function () {
-        return {
-            realm: $route.current.params.realm,
-            provider: $route.current.params.instance
-        }
-    });
-});
+module.factory('SubComponentTypesLoader', function(Loader, SubComponentTypes, $route, $q) {
+    var componentsLoader = {};
 
-module.factory('UserFederationMapperLoader', function(Loader, UserFederationMapper, $route, $q) {
-    return Loader.get(UserFederationMapper, function () {
-        return {
-            realm: $route.current.params.realm,
-            provider: $route.current.params.instance,
-            mapperId: $route.current.params.mapperId
-        }
-    });
-});
+    componentsLoader.loadComponents = function(parent, componentType) {
+        return Loader.query(SubComponentTypes, function() {
+            return {
+                realm : $route.current.params.realm,
+                componentId : parent,
+                type: componentType
+            }
+        })();
+    };
 
+    return componentsLoader;
+});
 
 module.factory('UserSessionStatsLoader', function(Loader, UserSessionStats, $route, $q) {
     return Loader.get(UserSessionStats, function() {
@@ -500,6 +511,15 @@ module.factory('ClientInitialAccessLoader', function(Loader, ClientInitialAccess
         }
     });
 });
+
+module.factory('ClientRegistrationPolicyProvidersLoader', function(Loader, ClientRegistrationPolicyProviders, $route) {
+    return Loader.query(ClientRegistrationPolicyProviders, function() {
+        return {
+            realm: $route.current.params.realm
+        }
+    });
+});
+
 
 
 

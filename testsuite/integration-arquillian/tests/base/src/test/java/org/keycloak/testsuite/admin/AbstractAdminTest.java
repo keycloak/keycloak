@@ -17,29 +17,23 @@
 
 package org.keycloak.testsuite.admin;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.events.log.JBossLoggingEventListenerProviderFactory;
-import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.TestRealmKeycloakTest;
+import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.events.EventsListenerProviderFactory;
 import org.keycloak.testsuite.util.AssertAdminEvents;
 import org.keycloak.util.JsonSerialization;
 
-import static org.junit.Assert.assertArrayEquals;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * This class adapts the functionality from the old testsuite to make tests
@@ -47,7 +41,7 @@ import static org.junit.Assert.assertArrayEquals;
  *
  * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
  */
-public abstract class AbstractAdminTest extends TestRealmKeycloakTest  {
+public abstract class AbstractAdminTest extends AbstractTestRealmKeycloakTest {
     protected static final String REALM_NAME = "admin-client-test";
 
     protected RealmResource realm;
@@ -89,7 +83,6 @@ public abstract class AbstractAdminTest extends TestRealmKeycloakTest  {
     }
 
     // old testsuite expects this realm to be removed at the end of the test
-    // not sure if it really matters
     @After
     public void after() {
         for (RealmRepresentation r : adminClient.realms().findAll()) {

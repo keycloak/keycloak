@@ -17,16 +17,12 @@
 
 package org.keycloak.testsuite.model;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
+import org.keycloak.common.util.Time;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
@@ -37,9 +33,13 @@ import org.keycloak.models.session.UserSessionPersisterProvider;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.services.managers.ClientManager;
 import org.keycloak.services.managers.RealmManager;
-import org.keycloak.services.managers.UserManager;
+import org.keycloak.models.UserManager;
 import org.keycloak.testsuite.rule.KeycloakRule;
-import org.keycloak.common.util.Time;
+
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -336,6 +336,7 @@ public class UserSessionPersisterProviderTest {
 
         resetSession();
 
+        Assert.assertEquals(1, persister.getUserSessionsCount(true));
         loadedSessions = loadPersistedSessionsPaginated(true, 10, 1, 1);
         UserSessionModel persistedSession = loadedSessions.get(0);
         UserSessionProviderTest.assertSession(persistedSession, session.users().getUserByUsername("user2", realm), "127.0.0.3", started, started, "test-app");

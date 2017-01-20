@@ -31,6 +31,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  *
@@ -63,14 +64,30 @@ public abstract class AbstractAdapterTest extends AbstractAuthTest {
                 modifyClientUrls(tr, appServerContextRootPage.toString(), "");
                 modifyClientWebOrigins(tr, "8080", System.getProperty("auth.server.http.port", null));
                 modifySamlMasterURLs(tr, "/", "http://localhost:" + System.getProperty("auth.server.http.port", null) + "/");
+                modifySAMLClientsAttributes(tr, "8080", System.getProperty("auth.server.http.port", "8180"));
             } else {
                 modifyClientRedirectUris(tr, "^(/.*/\\*)", appServerContextRootPage.toString() + "$1");
                 modifyClientUrls(tr, "^(/.*)", appServerContextRootPage.toString() + "$1");
+                modifyClientWebOrigins(tr, "8080", System.getProperty("app.server.http.port", null));
                 modifySamlMasterURLs(tr, "8080", System.getProperty("auth.server.http.port", null));
+                modifySAMLClientsAttributes(tr, "8080", System.getProperty("app.server.http.port", "8280"));
+                modifyClientJWKSUrl(tr, "^(/.*)", appServerContextRootPage.toString() + "$1");
             }
             if ("true".equals(System.getProperty("auth.server.ssl.required"))) {
                 tr.setSslRequired("all");
             }
+        }
+    }
+
+    private void modifyClientJWKSUrl(RealmRepresentation realm, String regex, String replacement) {
+        if (realm.getClients() != null) {
+            realm.getClients().stream().
+                    filter(client -> "client-jwt".equals(client.getClientAuthenticatorType()) && client.getAttributes().containsKey("jwks.url")).
+                    forEach(client -> {
+                Map<String, String> attr = client.getAttributes();
+                attr.put("jwks.url", attr.get("jwks.url").replaceFirst(regex, replacement));
+                client.setAttributes(attr);
+            });
         }
     }
 
@@ -120,6 +137,19 @@ public abstract class AbstractAdapterTest extends AbstractAuthTest {
                         newWebOrigins.add(uri.replaceAll(regex, replacement));
                     }
                     client.setWebOrigins(newWebOrigins);
+                }
+            }
+        }
+    }
+
+    protected void modifySAMLClientsAttributes(RealmRepresentation realm, String regex, String replacement) {
+        if (realm.getClients() != null) {
+            for (ClientRepresentation client : realm.getClients()) {
+                if (client.getProtocol() != null && client.getProtocol().equals("saml")) {
+                    log.info("Modifying attributes of SAML client: " + client.getClientId());
+                    for (Map.Entry<String, String> entry : client.getAttributes().entrySet()) {
+                        client.getAttributes().put(entry.getKey(), entry.getValue().replaceAll(regex, replacement));
+                    }
                 }
             }
         }

@@ -17,15 +17,16 @@
 
 package org.keycloak.adapters.saml.config.parsers;
 
+import org.jboss.logging.Logger;
 import org.keycloak.adapters.saml.DefaultSamlDeployment;
 import org.keycloak.adapters.saml.SamlDeployment;
 import org.keycloak.adapters.saml.config.Key;
 import org.keycloak.adapters.saml.config.KeycloakSamlAdapter;
 import org.keycloak.adapters.saml.config.SP;
 import org.keycloak.common.enums.SslRequired;
+import org.keycloak.common.util.PemUtils;
 import org.keycloak.saml.SignatureAlgorithm;
 import org.keycloak.saml.common.exceptions.ParsingException;
-import org.keycloak.common.util.PemUtils;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -39,12 +40,16 @@ import java.security.PublicKey;
 import java.security.cert.Certificate;
 import java.util.HashSet;
 import java.util.Set;
+import org.keycloak.adapters.cloned.HttpClientBuilder;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
 public class DeploymentBuilder {
+
+    protected static Logger log = Logger.getLogger(DeploymentBuilder.class);
+
     public SamlDeployment build(InputStream xml, ResourceLoader resourceLoader) throws ParsingException {
         DefaultSamlDeployment deployment = new DefaultSamlDeployment();
         DefaultSamlDeployment.DefaultIDP idp = new DefaultSamlDeployment.DefaultIDP();
@@ -90,12 +95,16 @@ public class DeploymentBuilder {
                         KeyStore keyStore = loadKeystore(resourceLoader, key);
                         Certificate cert = null;
                         try {
+                            log.debugf("Try to load key [%s]", key.getKeystore().getCertificateAlias());
                             cert = keyStore.getCertificate(key.getKeystore().getCertificateAlias());
+                            if(cert == null) {
+                                log.errorf("Key alias %s is not found into keystore", key.getKeystore().getCertificateAlias());
+                            }
                             privateKey = (PrivateKey) keyStore.getKey(key.getKeystore().getPrivateKeyAlias(), key.getKeystore().getPrivateKeyPassword().toCharArray());
+                            publicKey = cert.getPublicKey();
                         } catch (Exception e) {
                             throw new RuntimeException(e);
                         }
-                        publicKey = cert.getPublicKey();
                     } else {
                         if (key.getPrivateKeyPem() == null) {
                             throw new RuntimeException("SP signing key must have a PrivateKey defined");
@@ -149,6 +158,7 @@ public class DeploymentBuilder {
         }
         sso.setSignRequest(sp.getIdp().getSingleSignOnService().isSignRequest());
         sso.setValidateResponseSignature(sp.getIdp().getSingleSignOnService().isValidateResponseSignature());
+        sso.setValidateAssertionSignature(sp.getIdp().getSingleSignOnService().isValidateAssertionSignature());
 
         slo.setSignRequest(sp.getIdp().getSingleLogoutService().isSignRequest());
         slo.setSignResponse(sp.getIdp().getSingleLogoutService().isSignResponse());
@@ -169,35 +179,39 @@ public class DeploymentBuilder {
         if (sp.getIdp().getKeys() != null) {
             for (Key key : sp.getIdp().getKeys()) {
                 if (key.isSigning()) {
-                    if (key.getKeystore() != null) {
-                        KeyStore keyStore = loadKeystore(resourceLoader, key);
-                        Certificate cert = null;
-                        try {
-                            cert = keyStore.getCertificate(key.getKeystore().getCertificateAlias());
-                        } catch (KeyStoreException e) {
-                            throw new RuntimeException(e);
-                        }
-                        idp.setSignatureValidationKey(cert.getPublicKey());
-                    } else {
-                        if (key.getPublicKeyPem() == null && key.getCertificatePem() == null) {
-                            throw new RuntimeException("IDP signing key must have a PublicKey or Certificate defined");
-                        }
-                        try {
-                            PublicKey publicKey = getPublicKeyFromPem(key);
-                            idp.setSignatureValidationKey(publicKey);
-                        } catch (Exception e) {
-                            throw new RuntimeException(e);
-                        }
-                    }
+                    processSigningKey(idp, key, resourceLoader);
                 }
             }
         }
 
+        idp.setClient(new HttpClientBuilder().build(sp.getIdp().getHttpClientConfig()));
+        idp.refreshKeyLocatorConfiguration();
 
         return deployment;
     }
 
-    protected static PublicKey getPublicKeyFromPem(Key key) throws Exception {
+    private void processSigningKey(DefaultSamlDeployment.DefaultIDP idp, Key key, ResourceLoader resourceLoader) throws RuntimeException {
+        PublicKey publicKey;
+        if (key.getKeystore() != null) {
+            KeyStore keyStore = loadKeystore(resourceLoader, key);
+            Certificate cert = null;
+            try {
+                cert = keyStore.getCertificate(key.getKeystore().getCertificateAlias());
+            } catch (KeyStoreException e) {
+                throw new RuntimeException(e);
+            }
+            publicKey = cert.getPublicKey();
+        } else {
+            if (key.getPublicKeyPem() == null && key.getCertificatePem() == null) {
+                throw new RuntimeException("IDP signing key must have a PublicKey or Certificate defined");
+            }
+            publicKey = getPublicKeyFromPem(key);
+        }
+
+        idp.addSignatureValidationKey(publicKey);
+    }
+
+    protected static PublicKey getPublicKeyFromPem(Key key) {
         PublicKey publicKey;
         if (key.getPublicKeyPem() != null) {
             publicKey = PemUtils.decodePublicKey(key.getPublicKeyPem().trim());

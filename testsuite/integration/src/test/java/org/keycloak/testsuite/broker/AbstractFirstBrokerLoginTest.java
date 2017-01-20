@@ -17,14 +17,6 @@
 
 package org.keycloak.testsuite.broker;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import javax.mail.internet.MimeMessage;
-
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.authentication.authenticators.broker.IdpCreateUserIfUniqueAuthenticatorFactory;
@@ -49,8 +41,14 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
 
+import javax.mail.internet.MimeMessage;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -287,6 +285,10 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractIdentityProvi
 
         // authenticated and redirected to app. User is linked with identity provider
         assertFederatedUser("pedroigor", "psilva@redhat.com", "pedroigor");
+
+        // Assert user's email is verified now
+        UserModel user = getFederatedUser();
+        Assert.assertTrue(user.isEmailVerified());
     }
 
 

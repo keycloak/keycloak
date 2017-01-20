@@ -1,6 +1,5 @@
 package org.keycloak.testsuite.performance.httpclient;
 
-import java.io.IOException;
 import org.apache.http.client.config.CookieSpecs;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpDelete;
@@ -12,12 +11,16 @@ import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.config.SocketConfig;
 import org.apache.http.impl.client.BasicCookieStore;
 import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.DefaultHttpRequestRetryHandler;
 import org.apache.http.impl.client.DefaultRedirectStrategy;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.junit.After;
 import org.junit.Before;
 import org.keycloak.testsuite.performance.PerformanceTest;
+
+import java.io.IOException;
+
 import static org.keycloak.testsuite.performance.PerformanceTest.MAX_THREADS;
 
 /**
@@ -45,6 +48,7 @@ public abstract class HttpClientPerformanceTest extends PerformanceTest {
                 .setDefaultCookieStore(new BasicCookieStore())
                 .setDefaultRequestConfig(getDefaultRequestConfig())
                 .setRedirectStrategy(new CustomRedirectStrategy())
+                .setRetryHandler(new DefaultHttpRequestRetryHandler(0, false))
                 .build();
     }
 

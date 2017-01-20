@@ -16,17 +16,27 @@
  */
 package org.keycloak.testsuite.account.custom;
 
+import org.jboss.arquillian.graphene.page.Page;
+import org.junit.Before;
+import org.junit.Test;
+import org.keycloak.models.AuthenticationExecutionModel.Requirement;
+import org.keycloak.models.utils.TimeBasedOTP;
+import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
+import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.testsuite.admin.Users;
+import org.keycloak.testsuite.auth.page.login.OneTimeCode;
+import org.keycloak.testsuite.pages.LoginConfigTotpPage;
+
+import javax.ws.rs.core.Response;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import javax.ws.rs.core.Response;
-import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Assert;
-import static org.junit.Assert.assertTrue;
-import org.junit.Test;
 
-import org.junit.Before;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.keycloak.authentication.authenticators.browser.ConditionalOtpFormAuthenticator.DEFAULT_OTP_OUTCOME;
 import static org.keycloak.authentication.authenticators.browser.ConditionalOtpFormAuthenticator.FORCE;
 import static org.keycloak.authentication.authenticators.browser.ConditionalOtpFormAuthenticator.FORCE_OTP_FOR_HTTP_HEADER;
@@ -35,16 +45,8 @@ import static org.keycloak.authentication.authenticators.browser.ConditionalOtpF
 import static org.keycloak.authentication.authenticators.browser.ConditionalOtpFormAuthenticator.SKIP;
 import static org.keycloak.authentication.authenticators.browser.ConditionalOtpFormAuthenticator.SKIP_OTP_FOR_HTTP_HEADER;
 import static org.keycloak.authentication.authenticators.browser.ConditionalOtpFormAuthenticator.SKIP_OTP_ROLE;
-import org.keycloak.models.AuthenticationExecutionModel.Requirement;
 import static org.keycloak.models.UserModel.RequiredAction.CONFIGURE_TOTP;
-import org.keycloak.models.utils.TimeBasedOTP;
-import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
-import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
 import static org.keycloak.representations.idm.CredentialRepresentation.PASSWORD;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.representations.idm.RoleRepresentation;
-import org.keycloak.testsuite.admin.Users;
-import org.keycloak.testsuite.auth.page.login.OneTimeCode;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
 
 /**
@@ -57,6 +59,9 @@ public class CustomAuthFlowOTPTest extends AbstractCustomAccountManagementTest {
     
     @Page
     private OneTimeCode testLoginOneTimeCodePage;
+
+    @Page
+    private LoginConfigTotpPage loginConfigTotpPage;
     
     @Override
     public void setDefaultPageUriParameters() {
@@ -68,12 +73,17 @@ public class CustomAuthFlowOTPTest extends AbstractCustomAccountManagementTest {
     @Override
     public void beforeTest() {
         super.beforeTest();
+    }
+
+    private void configureRequiredActions() {
         //set configure TOTP as required action to test user
         List<String> requiredActions = new ArrayList<>();
         requiredActions.add(CONFIGURE_TOTP.name());
         testUser.setRequiredActions(requiredActions);
         testRealmResource().users().get(testUser.getId()).update(testUser);
-        
+    }
+
+    private void configureOTP() {
         //configure OTP for test user
         testRealmAccountManagementPage.navigateTo();
         testRealmLoginPage.form().login(testUser);
@@ -82,7 +92,7 @@ public class CustomAuthFlowOTPTest extends AbstractCustomAccountManagementTest {
         testRealmLoginPage.form().totpForm().setTotp(totp.generateTOTP(totpSecret));
         testRealmLoginPage.form().totpForm().submit();
         testRealmAccountManagementPage.signOut();
-        
+
         //verify that user has OTP configured
         testUser = testRealmResource().users().get(testUser.getId()).toRepresentation();
         Users.setPasswordFor(testUser, PASSWORD);
@@ -91,40 +101,45 @@ public class CustomAuthFlowOTPTest extends AbstractCustomAccountManagementTest {
 
     @Test
     public void requireOTPTest() {
-        
+
         updateRequirement("browser", "auth-otp-form", Requirement.REQUIRED);
-        
         testRealmAccountManagementPage.navigateTo();
         testRealmLoginPage.form().login(testUser);
+        assertTrue(loginConfigTotpPage.isCurrent());
+
+        configureOTP();
+        testRealmLoginPage.form().login(testUser);
         testRealmLoginPage.form().totpForm().waitForTotpInputFieldPresent();
-        
+
         //verify that the page is login page, not totp setup
         assertCurrentUrlStartsWith(testLoginOneTimeCodePage);
     }
-    
+
     @Test
     public void conditionalOTPNoDefault() {
+        configureRequiredActions();
+        configureOTP();
         //prepare config - no configuration specified
         Map<String, String> config = new HashMap<>();
         setConditionalOTPForm(config);
-        
+
         //test OTP is required
         testRealmAccountManagementPage.navigateTo();
         testRealmLoginPage.form().login(testUser);
         testRealmLoginPage.form().totpForm().waitForTotpInputFieldPresent();
-        
+
         //verify that the page is login page, not totp setup
         assertCurrentUrlStartsWith(testLoginOneTimeCodePage);
     }
-    
+
     @Test
     public void conditionalOTPDefaultSkip() {
         //prepare config - default skip
         Map<String, String> config = new HashMap<>();
         config.put(DEFAULT_OTP_OUTCOME, SKIP);
-        
+
         setConditionalOTPForm(config);
-        
+
         //test OTP is skipped
         testRealmAccountManagementPage.navigateTo();
         testRealmLoginPage.form().login(testUser);
@@ -133,6 +148,7 @@ public class CustomAuthFlowOTPTest extends AbstractCustomAccountManagementTest {
     
     @Test
     public void conditionalOTPDefaultForce() {
+
         //prepare config - default force
         Map<String, String> config = new HashMap<>();
         config.put(DEFAULT_OTP_OUTCOME, FORCE);
@@ -142,8 +158,12 @@ public class CustomAuthFlowOTPTest extends AbstractCustomAccountManagementTest {
         //test OTP is forced
         testRealmAccountManagementPage.navigateTo();
         testRealmLoginPage.form().login(testUser);
+        assertTrue(loginConfigTotpPage.isCurrent());
+
+        configureOTP();
+        testRealmLoginPage.form().login(testUser);
         testRealmLoginPage.form().totpForm().waitForTotpInputFieldPresent();
-        
+
         //verify that the page is login page, not totp setup
         assertCurrentUrlStartsWith(testLoginOneTimeCodePage);
     }
@@ -154,56 +174,54 @@ public class CustomAuthFlowOTPTest extends AbstractCustomAccountManagementTest {
         Map<String, String> config = new HashMap<>();
         config.put(OTP_CONTROL_USER_ATTRIBUTE, "userSkipAttribute");
         config.put(DEFAULT_OTP_OUTCOME, FORCE);
-        
+
         setConditionalOTPForm(config);
 
         //add skip user attribute to user
-        Map<String, Object> userAttributes = new HashMap<>();
-        List<String> attributeValues = new ArrayList<>();
-        attributeValues.add("skip");
-        userAttributes.put("userSkipAttribute", attributeValues);
-        testUser.setAttributes(userAttributes);
+        testUser.singleAttribute("userSkipAttribute", "skip");
         testRealmResource().users().get(testUser.getId()).update(testUser);
-        
+
         //test OTP is skipped
         testRealmAccountManagementPage.navigateTo();
         testRealmLoginPage.form().login(testUser);
+
         assertCurrentUrlStartsWith(testRealmAccountManagementPage);
     }
-    
+
     @Test
     public void conditionalOTPUserAttributeForce() {
+
         //prepare config - user attribute, default to skip
         Map<String, String> config = new HashMap<>();
         config.put(OTP_CONTROL_USER_ATTRIBUTE, "userSkipAttribute");
         config.put(DEFAULT_OTP_OUTCOME, SKIP);
-        
+
         setConditionalOTPForm(config);
 
         //add force user attribute to user
-        Map<String, Object> userAttributes = new HashMap<>();
-        List<String> attributeValues = new ArrayList<>();
-        attributeValues.add("force");
-        userAttributes.put("userSkipAttribute", attributeValues);
-        testUser.setAttributes(userAttributes);
+        testUser.singleAttribute("userSkipAttribute", "force");
         testRealmResource().users().get(testUser.getId()).update(testUser);
-        
+
         //test OTP is required
         testRealmAccountManagementPage.navigateTo();
         testRealmLoginPage.form().login(testUser);
+        assertTrue(loginConfigTotpPage.isCurrent());
+
+        configureOTP();
+        testRealmLoginPage.form().login(testUser);
         testRealmLoginPage.form().totpForm().waitForTotpInputFieldPresent();
-        
+
         //verify that the page is login page, not totp setup
         assertCurrentUrlStartsWith(testLoginOneTimeCodePage);
     }
-    
+
     @Test
     public void conditionalOTPRoleSkip() {
         //prepare config - role, default to force
         Map<String, String> config = new HashMap<>();
         config.put(SKIP_OTP_ROLE, "otp_role");
         config.put(DEFAULT_OTP_OUTCOME, FORCE);
-        
+
         setConditionalOTPForm(config);
 
         //create role
@@ -215,20 +233,20 @@ public class CustomAuthFlowOTPTest extends AbstractCustomAccountManagementTest {
         List<RoleRepresentation> realmRoles = new ArrayList<>();
         realmRoles.add(role);
         testRealmResource().users().get(testUser.getId()).roles().realmLevel().add(realmRoles);
-        
+
         //test OTP is skipped
         testRealmAccountManagementPage.navigateTo();
         testRealmLoginPage.form().login(testUser);
         assertCurrentUrlStartsWith(testRealmAccountManagementPage);
     }
-    
+
     @Test
     public void conditionalOTPRoleForce() {
         //prepare config - role, default to skip
         Map<String, String> config = new HashMap<>();
         config.put(FORCE_OTP_ROLE, "otp_role");
         config.put(DEFAULT_OTP_OUTCOME, SKIP);
-        
+
         setConditionalOTPForm(config);
 
         //create role
@@ -240,16 +258,21 @@ public class CustomAuthFlowOTPTest extends AbstractCustomAccountManagementTest {
         List<RoleRepresentation> realmRoles = new ArrayList<>();
         realmRoles.add(role);
         testRealmResource().users().get(testUser.getId()).roles().realmLevel().add(realmRoles);
-        
+
         //test OTP is required
         testRealmAccountManagementPage.navigateTo();
         testRealmLoginPage.form().login(testUser);
+
+        assertTrue(loginConfigTotpPage.isCurrent());
+
+        configureOTP();
+        testRealmLoginPage.form().login(testUser);
         testRealmLoginPage.form().totpForm().waitForTotpInputFieldPresent();
-        
+
         //verify that the page is login page, not totp setup
         assertCurrentUrlStartsWith(testLoginOneTimeCodePage);
     }
-    
+
     @Test
     public void conditionalOTPRequestHeaderSkip() {
         //prepare config - request header skip, default to force
@@ -257,7 +280,7 @@ public class CustomAuthFlowOTPTest extends AbstractCustomAccountManagementTest {
         String port = System.getProperty("auth.server.http.port", "8180");
         config.put(SKIP_OTP_FOR_HTTP_HEADER, "Host: localhost:" + port);
         config.put(DEFAULT_OTP_OUTCOME, FORCE);
-        
+
         setConditionalOTPForm(config);
 
         //test OTP is skipped
@@ -265,7 +288,7 @@ public class CustomAuthFlowOTPTest extends AbstractCustomAccountManagementTest {
         testRealmLoginPage.form().login(testUser);
         assertCurrentUrlStartsWith(testRealmAccountManagementPage);
     }
-    
+
     @Test
     public void conditionalOTPRequestHeaderForce() {
         //prepare config - equest header force, default to skip
@@ -273,18 +296,22 @@ public class CustomAuthFlowOTPTest extends AbstractCustomAccountManagementTest {
         String port = System.getProperty("auth.server.http.port", "8180");
         config.put(FORCE_OTP_FOR_HTTP_HEADER, "Host: localhost:" + port);
         config.put(DEFAULT_OTP_OUTCOME, SKIP);
-        
+
         setConditionalOTPForm(config);
 
         //test OTP is required
         testRealmAccountManagementPage.navigateTo();
         testRealmLoginPage.form().login(testUser);
+        assertEquals(driver.getTitle(), "Mobile Authenticator Setup");
+
+        configureOTP();
+        testRealmLoginPage.form().login(testUser);
         testRealmLoginPage.form().totpForm().waitForTotpInputFieldPresent();
-        
+
         //verify that the page is login page, not totp setup
         assertCurrentUrlStartsWith(testLoginOneTimeCodePage);
     }
-    
+
     private void setConditionalOTPForm(Map<String, String> config) {
         String flowAlias = "ConditionalOTPFlow";
         String provider = "auth-conditional-otp-form";
@@ -298,7 +325,7 @@ public class CustomAuthFlowOTPTest extends AbstractCustomAccountManagementTest {
         flow.setBuiltIn(false);
         
         Response response = getAuthMgmtResource().createFlow(flow);
-        Assert.assertEquals(flowAlias + " create success", 201, response.getStatus());
+        assertEquals(flowAlias + " create success", 201, response.getStatus());
         response.close();
         
         //add execution - username-password form
@@ -329,10 +356,10 @@ public class CustomAuthFlowOTPTest extends AbstractCustomAccountManagementTest {
         AuthenticatorConfigRepresentation authConfig = new AuthenticatorConfigRepresentation();
         authConfig.setAlias("Config alias");
         authConfig.setConfig(config);
-        
+
         //add auth config to the execution
         response = getAuthMgmtResource().newExecutionConfig(executionId, authConfig);
-        Assert.assertEquals("new execution success", 201, response.getStatus());
+        assertEquals("new execution success", 201, response.getStatus());
         response.close();
     }
 }

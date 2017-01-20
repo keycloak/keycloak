@@ -17,22 +17,13 @@
 
 package org.keycloak.testsuite.admin.client;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
-import javax.ws.rs.BadRequestException;
-import javax.ws.rs.NotFoundException;
-import javax.ws.rs.core.Response;
-
-import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.Test;
+
 import org.keycloak.admin.client.resource.ClientTemplatesResource;
 import org.keycloak.admin.client.resource.RoleMappingResource;
 import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.Constants;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -44,8 +35,20 @@ import org.keycloak.representations.idm.MappingsRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.util.AdminEventPaths;
+import org.keycloak.testsuite.util.Matchers;
 
-import static org.junit.Assert.assertEquals;
+import javax.ws.rs.BadRequestException;
+import javax.ws.rs.NotFoundException;
+import javax.ws.rs.core.Response;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import javax.ws.rs.*;
+import javax.ws.rs.core.Response.Status;
+
+import static org.junit.Assert.*;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -138,7 +141,7 @@ public class ClientTemplateTest extends AbstractClientTest {
 
         clientTemplates().get(template1Id).update(templateRep);
 
-        assertAdminEvents.assertEvent(getRealmId(), OperationType.UPDATE, AdminEventPaths.clientTemplateResourcePath(template1Id), templateRep);
+        assertAdminEvents.assertEvent(getRealmId(), OperationType.UPDATE, AdminEventPaths.clientTemplateResourcePath(template1Id), templateRep, ResourceType.CLIENT_TEMPLATE);
 
         // Assert updated attributes
         templateRep = clientTemplates().get(template1Id).toRepresentation();
@@ -153,6 +156,34 @@ public class ClientTemplateTest extends AbstractClientTest {
 
 
     @Test
+    public void testRenameTemplate() {
+        // Create two templates
+        ClientTemplateRepresentation template1Rep = new ClientTemplateRepresentation();
+        template1Rep.setName("template1");
+        template1Rep.setDescription("template1-desc");
+        template1Rep.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+        template1Rep.setFullScopeAllowed(true);
+        createTemplate(template1Rep);
+
+        ClientTemplateRepresentation template2Rep = new ClientTemplateRepresentation();
+        template2Rep.setName("template2");
+        template2Rep.setDescription("template2-desc");
+        template2Rep.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+        template2Rep.setFullScopeAllowed(true);
+        String template2Id = createTemplate(template2Rep);
+
+        // Test updating
+        template2Rep.setName("template1");
+
+        try {
+            clientTemplates().get(template2Id).update(template2Rep);
+        } catch (ClientErrorException ex) {
+            assertThat(ex.getResponse(), Matchers.statusCodeIs(Status.CONFLICT));
+        }
+    }
+
+
+    @Test
     public void testScopes() {
         // Add realm role1
         RoleRepresentation roleRep1 = createRealmRole("role1");
@@ -162,7 +193,7 @@ public class ClientTemplateTest extends AbstractClientTest {
 
         // Add role2 as composite to role1
         testRealmResource().roles().get("role1").addComposites(Collections.singletonList(roleRep2));
-        assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE, Matchers.startsWith(AdminEventPaths.roleResourceCompositesPath("role1")));
+        assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE, AdminEventPaths.roleResourceCompositesPath("role1"), Collections.singletonList(roleRep2), ResourceType.REALM_ROLE);
 
         // create client template
         ClientTemplateRepresentation templateRep = new ClientTemplateRepresentation();
@@ -176,10 +207,10 @@ public class ClientTemplateTest extends AbstractClientTest {
         RoleMappingResource scopesResource = clientTemplates().get(templateId).getScopeMappings();
 
         scopesResource.realmLevel().add(Collections.singletonList(roleRep1));
-        assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE, AdminEventPaths.clientTemplateScopeMappingsRealmLevelPath(templateId) + "/" + roleRep1.getId());
+        assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE, AdminEventPaths.clientTemplateScopeMappingsRealmLevelPath(templateId), Collections.singletonList(roleRep1), ResourceType.REALM_SCOPE_MAPPING);
 
         scopesResource.clientLevel(accountMgmtId).add(Collections.singletonList(viewAccountRoleRep));
-        assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE, AdminEventPaths.clientTemplateScopeMappingsClientLevelPath(templateId, accountMgmtId) + "/" + viewAccountRoleRep.getId());
+        assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE, AdminEventPaths.clientTemplateScopeMappingsClientLevelPath(templateId, accountMgmtId), Collections.singletonList(viewAccountRoleRep), ResourceType.CLIENT_SCOPE_MAPPING);
 
         // test that scopes are available (also through composite role)
         List<RoleRepresentation> allRealm = scopesResource.realmLevel().listAll();
@@ -198,10 +229,10 @@ public class ClientTemplateTest extends AbstractClientTest {
 
         // remove scopes
         scopesResource.realmLevel().remove(Collections.singletonList(roleRep1));
-        assertAdminEvents.assertEvent(getRealmId(), OperationType.DELETE, AdminEventPaths.clientTemplateScopeMappingsRealmLevelPath(templateId) + "/" + roleRep1.getId());
+        assertAdminEvents.assertEvent(getRealmId(), OperationType.DELETE, AdminEventPaths.clientTemplateScopeMappingsRealmLevelPath(templateId), Collections.singletonList(roleRep1), ResourceType.REALM_SCOPE_MAPPING);
 
         scopesResource.clientLevel(accountMgmtId).remove(Collections.singletonList(viewAccountRoleRep));
-        assertAdminEvents.assertEvent(getRealmId(), OperationType.DELETE, AdminEventPaths.clientTemplateScopeMappingsClientLevelPath(templateId, accountMgmtId) + "/" + viewAccountRoleRep.getId());
+        assertAdminEvents.assertEvent(getRealmId(), OperationType.DELETE, AdminEventPaths.clientTemplateScopeMappingsClientLevelPath(templateId, accountMgmtId), Collections.singletonList(viewAccountRoleRep), ResourceType.CLIENT_SCOPE_MAPPING);
 
         // assert scopes are removed
         allRealm = scopesResource.realmLevel().listAll();
@@ -256,7 +287,7 @@ public class ClientTemplateTest extends AbstractClientTest {
 
         // Add realm role to scopes of clientTemplate
         clientTemplates().get(templateId).getScopeMappings().realmLevel().add(Collections.singletonList(roleRep));
-        assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE, AdminEventPaths.clientTemplateScopeMappingsRealmLevelPath(templateId) + "/" + roleRep.getId());
+        assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE, AdminEventPaths.clientTemplateScopeMappingsRealmLevelPath(templateId), Collections.singletonList(roleRep), ResourceType.REALM_SCOPE_MAPPING);
 
         List<RoleRepresentation> roleReps = clientTemplates().get(templateId).getScopeMappings().realmLevel().listAll();
         Assert.assertEquals(1, roleReps.size());
@@ -264,7 +295,7 @@ public class ClientTemplateTest extends AbstractClientTest {
 
         // Remove realm role
         testRealmResource().roles().deleteRole("foo-role");
-        assertAdminEvents.assertEvent(getRealmId(), OperationType.DELETE, AdminEventPaths.roleResourcePath("foo-role"));
+        assertAdminEvents.assertEvent(getRealmId(), OperationType.DELETE, AdminEventPaths.roleResourcePath("foo-role"), ResourceType.REALM_ROLE);
 
         // Get scope mappings
         roleReps = clientTemplates().get(templateId).getScopeMappings().realmLevel().listAll();
@@ -279,7 +310,7 @@ public class ClientTemplateTest extends AbstractClientTest {
         roleRep.setName(roleName);
         testRealmResource().roles().create(roleRep);
 
-        assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE, Matchers.startsWith(AdminEventPaths.rolesResourcePath()));
+        assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE, AdminEventPaths.roleResourcePath(roleName), roleRep, ResourceType.REALM_ROLE);
 
         return testRealmResource().roles().get(roleName).toRepresentation();
     }
@@ -330,14 +361,14 @@ public class ClientTemplateTest extends AbstractClientTest {
         resp.close();
         String templateId = ApiUtil.getCreatedId(resp);
 
-        assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE, AdminEventPaths.clientTemplateResourcePath(templateId), templateRep);
+        assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE, AdminEventPaths.clientTemplateResourcePath(templateId), templateRep, ResourceType.CLIENT_TEMPLATE);
 
         return templateId;
     }
 
     private void removeTemplate(String templateId) {
         clientTemplates().get(templateId).remove();
-        assertAdminEvents.assertEvent(getRealmId(), OperationType.DELETE, AdminEventPaths.clientTemplateResourcePath(templateId));
+        assertAdminEvents.assertEvent(getRealmId(), OperationType.DELETE, AdminEventPaths.clientTemplateResourcePath(templateId), ResourceType.CLIENT_TEMPLATE);
     }
 
 }

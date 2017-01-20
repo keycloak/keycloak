@@ -25,11 +25,9 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.ClientInstallationProvider;
 import org.keycloak.protocol.saml.SamlClient;
 import org.keycloak.protocol.saml.SamlProtocol;
-import org.keycloak.services.resources.RealmsResource;
 
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriBuilder;
 import java.net.URI;
 
 /**
@@ -41,9 +39,9 @@ public class KeycloakSamlSubsystemInstallation implements ClientInstallationProv
     @Override
     public Response generateInstallation(KeycloakSession session, RealmModel realm, ClientModel client, URI baseUri) {
         SamlClient samlClient = new SamlClient(client);
-        StringBuffer buffer = new StringBuffer();
+        StringBuilder buffer = new StringBuilder();
         buffer.append("<secure-deployment name=\"YOUR-WAR.war\">\n");
-        KeycloakSamlClientInstallation.baseXml(realm, client, baseUri, samlClient, buffer);
+        KeycloakSamlClientInstallation.baseXml(session, realm, client, baseUri, samlClient, buffer);
         buffer.append("</secure-deployment>\n");
         return Response.ok(buffer.toString(), MediaType.TEXT_PLAIN_TYPE).build();
     }

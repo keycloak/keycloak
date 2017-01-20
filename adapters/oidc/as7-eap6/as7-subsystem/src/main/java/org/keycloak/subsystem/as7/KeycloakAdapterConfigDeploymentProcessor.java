@@ -49,7 +49,6 @@ public class KeycloakAdapterConfigDeploymentProcessor implements DeploymentUnitP
     @Override
     public void deploy(DeploymentPhaseContext phaseContext) throws DeploymentUnitProcessingException {
         DeploymentUnit deploymentUnit = phaseContext.getDeploymentUnit();
-        String deploymentName = deploymentUnit.getName();
 
         // if it's not a web-app there's nothing to secure
         WarMetaData warMetaData = deploymentUnit.getAttachment(WarMetaData.ATTACHMENT_KEY);
@@ -67,24 +66,25 @@ public class KeycloakAdapterConfigDeploymentProcessor implements DeploymentUnitP
         // otherwise
         LoginConfigMetaData loginConfig = webMetaData.getLoginConfig();
 
-        boolean hasSubsystemConfig = service.isSecureDeployment(deploymentName);
+        boolean hasSubsystemConfig = service.isSecureDeployment(deploymentUnit);
         boolean webRequiresKC = loginConfig != null && "KEYCLOAK".equalsIgnoreCase(loginConfig.getAuthMethod());
+        boolean isConfigured = service.isDeploymentConfigured(deploymentUnit);
 
-        if (hasSubsystemConfig || webRequiresKC) {
-            log.debug("Setting up KEYCLOAK auth method for WAR: " + deploymentName);
+        if ((hasSubsystemConfig && isConfigured) || webRequiresKC) {
+            log.debug("Setting up KEYCLOAK auth method for WAR: " + deploymentUnit.getName());
 
             // if secure-deployment configuration exists for web app, we force KEYCLOAK auth method on it
             if (hasSubsystemConfig) {
-                addJSONData(service.getJSON(deploymentName), warMetaData);
+                addJSONData(service.getJSON(deploymentUnit), warMetaData);
                 if (loginConfig != null) {
                     loginConfig.setAuthMethod("KEYCLOAK");
-                    loginConfig.setRealmName(service.getRealmName(deploymentName));
+                    loginConfig.setRealmName(service.getRealmName(deploymentUnit));
                 } else {
-                    log.warn("Failed to set up KEYCLOAK auth method for WAR: " + deploymentName + " (loginConfig == null)");
+                    log.warn("Failed to set up KEYCLOAK auth method for WAR: " + deploymentUnit.getName() + " (loginConfig == null)");
                 }
             }
             addValve(webMetaData);
-            KeycloakLogger.ROOT_LOGGER.deploymentSecured(deploymentName);
+            KeycloakLogger.ROOT_LOGGER.deploymentSecured(deploymentUnit.getName());
         }
     }
 

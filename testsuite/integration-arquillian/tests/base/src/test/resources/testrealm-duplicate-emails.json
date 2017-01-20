@@ -1,0 +1,142 @@
+{
+  "id": "test-duplicate-emails",
+  "realm": "test-duplicate-emails",
+  "enabled": true,
+  "sslRequired": "external",
+  "registrationAllowed": true,
+  "resetPasswordAllowed": true,
+  "editUsernameAllowed" : true,
+  "loginWithEmailAllowed": false,
+  "duplicateEmailsAllowed": true,
+  "privateKey": "MIICXAIBAAKBgQCrVrCuTtArbgaZzL1hvh0xtL5mc7o0NqPVnYXkLvgcwiC3BjLGw1tGEGoJaXDuSaRllobm53JBhjx33UNv+5z/UMG4kytBWxheNVKnL6GgqlNabMaFfPLPCF8kAgKnsi79NMo+n6KnSY8YeUmec/p2vjO2NjsSAVcWEQMVhJ31LwIDAQABAoGAfmO8gVhyBxdqlxmIuglbz8bcjQbhXJLR2EoS8ngTXmN1bo2L90M0mUKSdc7qF10LgETBzqL8jYlQIbt+e6TH8fcEpKCjUlyq0Mf/vVbfZSNaVycY13nTzo27iPyWQHK5NLuJzn1xvxxrUeXI6A2WFpGEBLbHjwpx5WQG9A+2scECQQDvdn9NE75HPTVPxBqsEd2z10TKkl9CZxu10Qby3iQQmWLEJ9LNmy3acvKrE3gMiYNWb6xHPKiIqOR1as7L24aTAkEAtyvQOlCvr5kAjVqrEKXalj0Tzewjweuxc0pskvArTI2Oo070h65GpoIKLc9jf+UA69cRtquwP93aZKtW06U8dQJAF2Y44ks/mK5+eyDqik3koCI08qaC8HYq2wVl7G2QkJ6sbAaILtcvD92ToOvyGyeE0flvmDZxMYlvaZnaQ0lcSQJBAKZU6umJi3/xeEbkJqMfeLclD27XGEFoPeNrmdx0q10Azp4NfJAY+Z8KRyQCR2BEG+oNitBOZ+YXF9KCpH3cdmECQHEigJhYg+ykOvr1aiZUMFT72HU0jnmQe2FVekuG+LJUt2Tm7GtMjTFoGpf0JwrVuZN39fOYAlo+nTixgeW7X8Y=",
+  "publicKey": "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCrVrCuTtArbgaZzL1hvh0xtL5mc7o0NqPVnYXkLvgcwiC3BjLGw1tGEGoJaXDuSaRllobm53JBhjx33UNv+5z/UMG4kytBWxheNVKnL6GgqlNabMaFfPLPCF8kAgKnsi79NMo+n6KnSY8YeUmec/p2vjO2NjsSAVcWEQMVhJ31LwIDAQAB",
+  "requiredCredentials": [ "password" ],
+  "defaultRoles": [ "user" ],
+  "smtpServer": {
+    "from": "auto@keycloak.org",
+    "host": "localhost",
+    "port":"3025"
+  },
+  "users" : [
+    {
+      "username" : "non-duplicate-email-user",
+      "enabled": true,
+      "email" : "non-duplicate-email-user@localhost",
+      "firstName": "Brian",
+      "lastName": "Cohen",
+      "credentials" : [
+        { "type" : "password",
+          "value" : "password" }
+      ],
+      "realmRoles": ["user", "offline_access"],
+      "clientRoles": {
+        "test-app": [ "customer-user" ],
+        "account": [ "view-profile", "manage-account" ]
+      }
+    },
+    {
+      "username" : "duplicate-email-user1",
+      "enabled": true,
+      "email" : "duplicate-email-user@localhost",
+      "firstName": "Agent",
+      "lastName": "Smith",
+      "credentials" : [
+        { "type" : "password",
+          "value" : "password" }
+      ],
+      "realmRoles": ["user", "offline_access"],
+      "clientRoles": {
+        "test-app": [ "customer-user" ],
+        "account": [ "view-profile", "manage-account" ]
+      }
+    },
+    {
+      "username" : "duplicate-email-user2",
+      "enabled": true,
+      "email" : "duplicate-email-user@localhost",
+      "firstName": "Agent",
+      "lastName": "Smith",
+      "credentials" : [
+        { "type" : "password",
+          "value" : "password" }
+      ],
+      "realmRoles": ["user", "offline_access"],
+      "clientRoles": {
+        "test-app": [ "customer-user" ],
+        "account": [ "view-profile", "manage-account" ]
+      }
+    }
+  ],
+  "scopeMappings": [
+    {
+      "client": "test-app",
+      "roles": ["user"]
+    }
+  ],
+  "clients": [
+    {
+      "clientId": "test-app",
+      "enabled": true,
+      "baseUrl": "http://localhost:8180/auth/realms/master/app/auth",
+      "redirectUris": [
+        "http://localhost:8180/auth/realms/master/app/auth/*"
+      ],
+      "adminUrl": "http://localhost:8180/auth/realms/master/app/admin",
+      "secret": "password"
+    }
+  ],
+  "roles" : {
+    "realm" : [
+      {
+        "name": "user",
+        "description": "Have User privileges"
+      },
+      {
+        "name": "admin",
+        "description": "Have Administrator privileges"
+      },
+      {
+        "name": "customer-user-premium",
+        "description": "Have User Premium privileges"
+      },
+      {
+        "name": "sample-realm-role",
+        "description": "Sample realm role"
+      }
+    ],
+    "client" : {
+      "test-app" : [
+        {
+          "name": "customer-user",
+          "description": "Have Customer User privileges"
+        },
+        {
+          "name": "customer-admin",
+          "description": "Have Customer Admin privileges"
+        },
+        {
+          "name": "sample-client-role",
+          "description": "Sample client role"
+        },
+        {
+          "name": "customer-admin-composite-role",
+          "description": "Have Customer Admin privileges via composite role",
+          "composite" : true,
+          "composites" : {
+            "realm" : [ "customer-user-premium" ],
+            "client" : {
+              "test-app" : [ "customer-admin" ]
+            }
+          }
+        }
+      ]
+    }
+
+  },
+  "groups" : [],
+  "clientScopeMappings": {},
+  "internationalizationEnabled": true,
+  "supportedLocales": ["en", "de"],
+  "defaultLocale": "en",
+  "eventsListeners": ["jboss-logging", "event-queue"]
+}

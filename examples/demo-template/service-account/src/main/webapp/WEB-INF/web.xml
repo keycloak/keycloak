@@ -25,22 +25,12 @@
 
     <servlet>
         <servlet-name>ProductSAClientSecretServlet</servlet-name>
-        <servlet-class>org.keycloak.example.ProductSAClientSecretServlet</servlet-class>
-    </servlet>
-
-    <servlet>
-        <servlet-name>ProductSAClientSignedJWTServlet</servlet-name>
-        <servlet-class>org.keycloak.example.ProductSAClientSignedJWTServlet</servlet-class>
+        <servlet-class>org.keycloak.example.ProductServiceAccountServlet</servlet-class>
     </servlet>
 
     <servlet-mapping>
         <servlet-name>ProductSAClientSecretServlet</servlet-name>
-        <url-pattern>/app-secret/*</url-pattern>
-    </servlet-mapping>
-
-    <servlet-mapping>
-        <servlet-name>ProductSAClientSignedJWTServlet</servlet-name>
-        <url-pattern>/app-jwt/*</url-pattern>
+        <url-pattern>/app/*</url-pattern>
     </servlet-mapping>
 
 </web-app>

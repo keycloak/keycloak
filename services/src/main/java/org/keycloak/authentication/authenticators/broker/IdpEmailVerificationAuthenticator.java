@@ -17,16 +17,11 @@
 
 package org.keycloak.authentication.authenticators.broker;
 
-import java.util.concurrent.TimeUnit;
-
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriBuilder;
-
+import org.jboss.logging.Logger;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;
-import org.keycloak.authentication.requiredactions.VerifyEmail;
 import org.keycloak.authentication.authenticators.broker.util.SerializedBrokeredIdentityContext;
+import org.keycloak.authentication.requiredactions.VerifyEmail;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailTemplateProvider;
@@ -44,12 +39,17 @@ import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.LoginActionsService;
 
+import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriBuilder;
+import java.util.concurrent.TimeUnit;
+
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class IdpEmailVerificationAuthenticator extends AbstractIdpAuthenticator {
 
-    protected static ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    private static Logger logger = Logger.getLogger(IdpEmailVerificationAuthenticator.class);
 
     @Override
     protected void authenticateImpl(AuthenticationFlowContext context, SerializedBrokeredIdentityContext serializedCtx, BrokeredIdentityContext brokerContext) {
@@ -58,7 +58,7 @@ public class IdpEmailVerificationAuthenticator extends AbstractIdpAuthenticator 
         ClientSessionModel clientSession = context.getClientSession();
 
         if (realm.getSmtpConfig().size() == 0) {
-            logger.smtpNotConfigured();
+            ServicesLogger.LOGGER.smtpNotConfigured();
             context.attempted();
             return;
         }
@@ -95,7 +95,7 @@ public class IdpEmailVerificationAuthenticator extends AbstractIdpAuthenticator 
         } catch (EmailException e) {
             event.error(Errors.EMAIL_SEND_FAILED);
 
-            logger.confirmBrokerEmailFailed(e);
+            ServicesLogger.LOGGER.confirmBrokerEmailFailed(e);
             Response challenge = context.form()
                     .setError(Messages.EMAIL_SENT_ERROR)
                     .createErrorPage();
@@ -132,10 +132,13 @@ public class IdpEmailVerificationAuthenticator extends AbstractIdpAuthenticator 
                     clientSession.setNote(IS_DIFFERENT_BROWSER, "true");
                 }
 
+                // User successfully confirmed linking by email verification. His email was defacto verified
+                existingUser.setEmailVerified(true);
+
                 context.setUser(existingUser);
                 context.success();
             } else {
-                logger.keyParamDoesNotMatch();
+                ServicesLogger.LOGGER.keyParamDoesNotMatch();
                 Response challengeResponse = context.form()
                         .setError(Messages.INVALID_ACCESS_CODE)
                         .createErrorPage();

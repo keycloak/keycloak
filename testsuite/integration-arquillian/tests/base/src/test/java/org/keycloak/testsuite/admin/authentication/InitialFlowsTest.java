@@ -24,8 +24,6 @@ import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentatio
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
 
-import javax.ws.rs.core.GenericType;
-import javax.ws.rs.core.Response;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -125,12 +123,14 @@ public class InitialFlowsTest extends AbstractAuthenticationTest {
         AuthenticationFlowRepresentation flow = newFlow("browser", "browser based authentication", "basic-flow", true, true);
         addExecExport(flow, null, false, "auth-cookie", false, null, ALTERNATIVE, 10);
         addExecExport(flow, null, false, "auth-spnego", false, null, DISABLED, 20);
+        addExecExport(flow, null, false, "identity-provider-redirector", false, null, ALTERNATIVE, 25);
         addExecExport(flow, "forms", false, null, true, null, ALTERNATIVE, 30);
 
         List<AuthenticationExecutionInfoRepresentation> execs = new LinkedList<>();
         addExecInfo(execs, "Cookie", "auth-cookie", false, 0, 0, ALTERNATIVE, null, new String[]{ALTERNATIVE, DISABLED});
         addExecInfo(execs, "Kerberos", "auth-spnego", false, 0, 1, DISABLED, null, new String[]{ALTERNATIVE, REQUIRED, DISABLED});
-        addExecInfo(execs, "forms", null, false, 0, 2, ALTERNATIVE, true, new String[]{ALTERNATIVE, REQUIRED, DISABLED});
+        addExecInfo(execs, "Identity Provider Redirector", "identity-provider-redirector", true, 0, 2, ALTERNATIVE, null, new String[]{ALTERNATIVE, DISABLED});
+        addExecInfo(execs, "forms", null, false, 0, 3, ALTERNATIVE, true, new String[]{ALTERNATIVE, REQUIRED, DISABLED});
         addExecInfo(execs, "Username Password Form", "auth-username-password-form", false, 1, 0, REQUIRED, null, new String[]{REQUIRED});
         addExecInfo(execs, "OTP Form", "auth-otp-form", false, 1, 1, OPTIONAL, null, new String[]{REQUIRED, OPTIONAL, DISABLED});
         expected.add(new FlowExecutions(flow, execs));
@@ -194,13 +194,6 @@ public class InitialFlowsTest extends AbstractAuthenticationTest {
         addExecInfo(execs, "Send Reset Email", "reset-credential-email", false, 0, 1, REQUIRED, null, new String[]{REQUIRED});
         addExecInfo(execs, "Reset Password", "reset-password", false, 0, 2, REQUIRED, null, new String[]{REQUIRED, OPTIONAL, DISABLED});
         addExecInfo(execs, "Reset OTP", "reset-otp", false, 0, 3, OPTIONAL, null, new String[]{REQUIRED, OPTIONAL, DISABLED});
-        expected.add(new FlowExecutions(flow, execs));
-
-        flow = newFlow("saml ecp", "SAML ECP Profile Authentication Flow", "basic-flow", true, true);
-        addExecExport(flow, null, false, "http-basic-authenticator", false, null, REQUIRED, 10);
-
-        execs = new LinkedList<>();
-        addExecInfo(execs, null, "http-basic-authenticator", false, 0, 0, REQUIRED, null, new String[]{});
         expected.add(new FlowExecutions(flow, execs));
 
         return expected;

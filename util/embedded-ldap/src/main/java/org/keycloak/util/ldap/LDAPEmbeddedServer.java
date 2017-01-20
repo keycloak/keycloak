@@ -17,12 +17,6 @@
 
 package org.keycloak.util.ldap;
 
-import java.io.File;
-import java.io.InputStream;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Properties;
-
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.text.StrSubstitutor;
@@ -41,6 +35,12 @@ import org.apache.directory.server.protocol.shared.transport.Transport;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.FindFile;
 import org.keycloak.common.util.StreamUtil;
+
+import java.io.File;
+import java.io.InputStream;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Properties;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -219,13 +219,15 @@ public class LDAPEmbeddedServer {
         ldapServer.setSearchBaseDn(this.baseDN);
 
         // Read the transports
-        Transport ldap = new TcpTransport(this.bindHost, this.bindPort, 3, 50);
+        Transport ldaps = new TcpTransport(this.bindHost, this.bindPort, 3, 50);
         if (enableSSL) {
-            ldap.setEnableSSL(true);
+            ldaps.setEnableSSL(true);
             ldapServer.setKeystoreFile(keystoreFile);
             ldapServer.setCertificatePassword(certPassword);
+            Transport ldap = new TcpTransport(this.bindHost, 10389, 3, 50);
+            ldapServer.addTransports( ldap );
         }
-        ldapServer.addTransports( ldap );
+        ldapServer.addTransports( ldaps );
 
         // Associate the DS to this LdapServer
         ldapServer.setDirectoryService( directoryService );

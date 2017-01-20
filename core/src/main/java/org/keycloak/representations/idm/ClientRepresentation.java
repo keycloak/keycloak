@@ -17,6 +17,8 @@
 
 package org.keycloak.representations.idm;
 
+import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
+
 import java.util.List;
 import java.util.Map;
 
@@ -47,6 +49,7 @@ public class ClientRepresentation {
     protected Boolean implicitFlowEnabled;
     protected Boolean directAccessGrantsEnabled;
     protected Boolean serviceAccountsEnabled;
+    protected Boolean authorizationServicesEnabled;
     @Deprecated
     protected Boolean directGrantsOnly;
     protected Boolean publicClient;
@@ -61,6 +64,7 @@ public class ClientRepresentation {
     private Boolean useTemplateConfig;
     private Boolean useTemplateScope;
     private Boolean useTemplateMappers;
+    private ResourceServerRepresentation authorizationSettings;
 
 
     public String getId() {
@@ -239,6 +243,17 @@ public class ClientRepresentation {
         this.serviceAccountsEnabled = serviceAccountsEnabled;
     }
 
+    public Boolean getAuthorizationServicesEnabled() {
+        if (authorizationSettings != null) {
+            return true;
+        }
+        return authorizationServicesEnabled;
+    }
+
+    public void setAuthorizationServicesEnabled(Boolean authorizationServicesEnabled) {
+        this.authorizationServicesEnabled = authorizationServicesEnabled;
+    }
+
     @Deprecated
     public Boolean isDirectGrantsOnly() {
         return directGrantsOnly;
@@ -344,4 +359,11 @@ public class ClientRepresentation {
         this.useTemplateMappers = useTemplateMappers;
     }
 
+    public ResourceServerRepresentation getAuthorizationSettings() {
+        return authorizationSettings;
+    }
+
+    public void setAuthorizationSettings(ResourceServerRepresentation authorizationSettings) {
+        this.authorizationSettings = authorizationSettings;
+    }
 }

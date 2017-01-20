@@ -16,6 +16,7 @@
  */
 package org.keycloak.testsuite.actions;
 
+import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
@@ -24,25 +25,24 @@ import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
+import org.keycloak.representations.idm.EventRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
+import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.InfoPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.RegisterPage;
 import org.keycloak.testsuite.pages.VerifyEmailPage;
+import org.keycloak.testsuite.util.GreenMailRule;
+import org.keycloak.testsuite.util.MailUtils;
 
 import javax.mail.MessagingException;
 import javax.mail.Multipart;
 import javax.mail.internet.MimeMessage;
-
 import java.io.IOException;
-import org.jboss.arquillian.graphene.page.Page;
-import org.keycloak.representations.idm.EventRepresentation;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.TestRealmKeycloakTest;
-import org.keycloak.testsuite.util.GreenMailRule;
-import org.keycloak.testsuite.util.MailUtils;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -50,7 +50,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class RequiredActionEmailVerificationTest extends TestRealmKeycloakTest {
+public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeycloakTest {
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
@@ -72,6 +72,9 @@ public class RequiredActionEmailVerificationTest extends TestRealmKeycloakTest {
 
     @Page
     protected InfoPage infoPage;
+
+    @Page
+    protected ErrorPage errorPage;
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
@@ -178,6 +181,33 @@ public class RequiredActionEmailVerificationTest extends TestRealmKeycloakTest {
     }
 
     @Test
+    public void verifyEmailResendFirstInvalidSecondStillValid() throws IOException, MessagingException {
+        loginPage.open();
+        loginPage.login("test-user@localhost", "password");
+
+        verifyEmailPage.clickResendEmail();
+
+        Assert.assertEquals(2, greenMail.getReceivedMessages().length);
+
+        MimeMessage message1 = greenMail.getReceivedMessages()[0];
+
+        String verificationUrl1 = getPasswordResetEmailLink(message1);
+
+        driver.navigate().to(verificationUrl1.trim());
+
+        assertTrue(errorPage.isCurrent());
+        assertEquals("The link you clicked is a old stale link and is no longer valid. Maybe you have already verified your email?", errorPage.getError());
+
+        MimeMessage message2 = greenMail.getReceivedMessages()[1];
+
+        String verificationUrl2 = getPasswordResetEmailLink(message2);
+
+        driver.navigate().to(verificationUrl2.trim());
+
+        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+    }
+
+    @Test
     public void verifyEmailNewBrowserSession() throws IOException, MessagingException {
         loginPage.open();
         loginPage.login("test-user@localhost", "password");
@@ -222,10 +252,7 @@ public class RequiredActionEmailVerificationTest extends TestRealmKeycloakTest {
         String resendEmailLink = verifyEmailPage.getResendEmailLink();
         String keyInsteadCodeURL = resendEmailLink.replace("code=", "key=");
 
-        AssertEvents.ExpectedEvent emailEvent = events.expectRequiredAction(EventType.SEND_VERIFY_EMAIL).detail("email", "test-user@localhost");
-        EventRepresentation sendEvent = emailEvent.assertEvent();
-        String sessionId = sendEvent.getSessionId();
-        String mailCodeId = sendEvent.getDetails().get(Details.CODE_ID);
+        events.expectRequiredAction(EventType.SEND_VERIFY_EMAIL).detail("email", "test-user@localhost").assertEvent();
 
         driver.navigate().to(keyInsteadCodeURL);
 
@@ -237,16 +264,48 @@ public class RequiredActionEmailVerificationTest extends TestRealmKeycloakTest {
                 .clearDetails()
                 .assertEvent();
 
-        String badKeyURL = KeycloakUriBuilder.fromUri(resendEmailLink).queryParam("key", "foo").build().toString();
+        String badKeyURL = KeycloakUriBuilder.fromUri(resendEmailLink).replaceQueryParam("key", "foo").build().toString();
         driver.navigate().to(badKeyURL);
 
         events.expectRequiredAction(EventType.VERIFY_EMAIL_ERROR)
-                .error(Errors.INVALID_USER_CREDENTIALS)
-                .session(sessionId)
-                .detail("email", "test-user@localhost")
-                .detail(Details.CODE_ID, mailCodeId)
+                .error(Errors.INVALID_CODE)
+                .client((String)null)
+                .user((String)null)
+                .session((String)null)
+                .clearDetails()
                 .assertEvent();
     }
+
+    @Test
+    public void verifyEmailBadCode() throws IOException, MessagingException {
+        loginPage.open();
+        loginPage.login("test-user@localhost", "password");
+
+        Assert.assertTrue(verifyEmailPage.isCurrent());
+
+        Assert.assertEquals(1, greenMail.getReceivedMessages().length);
+
+        MimeMessage message = greenMail.getReceivedMessages()[0];
+
+        String verificationUrl = getPasswordResetEmailLink(message);
+
+        verificationUrl = KeycloakUriBuilder.fromUri(verificationUrl).replaceQueryParam("code", "foo").build().toString();
+
+        events.poll();
+
+        driver.navigate().to(verificationUrl.trim());
+
+        assertEquals("The link you clicked is a old stale link and is no longer valid. Maybe you have already verified your email?", errorPage.getError());
+
+        events.expectRequiredAction(EventType.VERIFY_EMAIL_ERROR)
+                .error(Errors.INVALID_CODE)
+                .client((String)null)
+                .user((String)null)
+                .session((String)null)
+                .clearDetails()
+                .assertEvent();
+    }
+
 
     public static String getPasswordResetEmailLink(MimeMessage message) throws IOException, MessagingException {
     	Multipart multipart = (Multipart) message.getContent();

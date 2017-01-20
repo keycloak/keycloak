@@ -19,7 +19,11 @@ package org.keycloak.services;
 
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.common.ClientConnection;
-import org.keycloak.models.*;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.KeycloakContext;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.RealmImporter;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.KeycloakApplication;
@@ -57,6 +61,7 @@ public class DefaultKeycloakContext implements KeycloakContext {
     @Override
     public String getContextPath() {
         KeycloakApplication app = getContextObject(KeycloakApplication.class);
+        if (app == null) return null;
         return app.getContextPath();
     }
 
@@ -103,13 +108,6 @@ public class DefaultKeycloakContext implements KeycloakContext {
     @Override
     public void setConnection(ClientConnection connection) {
         this.connection = connection;
-    }
-
-    @Override
-    public RealmImporter getRealmManager() {
-        RealmManager manager = new RealmManager(session);
-        manager.setContextPath(getContextPath());
-        return manager;
     }
 
     @Override

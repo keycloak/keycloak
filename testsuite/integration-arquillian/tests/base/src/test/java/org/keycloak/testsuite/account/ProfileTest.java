@@ -23,25 +23,10 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
-import org.junit.Test;
-import org.keycloak.OAuth2Constants;
-import org.keycloak.services.resources.RealmsResource;
-import org.keycloak.testsuite.pages.AccountApplicationsPage;
-import org.keycloak.testsuite.pages.AccountUpdateProfilePage;
-import org.keycloak.testsuite.pages.LoginPage;
-import org.keycloak.testsuite.pages.OAuthGrantPage;
-import org.openqa.selenium.JavascriptExecutor;
-
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.UriBuilder;
-import java.io.IOException;
-import java.net.URI;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
+import org.junit.Test;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.RoleMappingResource;
 import org.keycloak.admin.client.resource.RoleScopeResource;
@@ -49,13 +34,27 @@ import org.keycloak.models.AccountRoles;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.TestRealmKeycloakTest;
+import org.keycloak.services.resources.RealmsResource;
+import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.pages.AccountApplicationsPage;
+import org.keycloak.testsuite.pages.AccountUpdateProfilePage;
+import org.keycloak.testsuite.pages.LoginPage;
+import org.keycloak.testsuite.pages.OAuthGrantPage;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.RealmBuilder;
+import org.keycloak.testsuite.util.RealmRepUtil;
 import org.keycloak.testsuite.util.UserBuilder;
+import org.openqa.selenium.JavascriptExecutor;
 import twitter4j.JSONArray;
 import twitter4j.JSONObject;
+
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.UriBuilder;
+import java.io.IOException;
+import java.net.URI;
+import java.util.Collections;
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -64,20 +63,15 @@ import static org.junit.Assert.fail;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
  */
-public class ProfileTest extends TestRealmKeycloakTest {
+public class ProfileTest extends AbstractTestRealmKeycloakTest {
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
-        UserRepresentation user = findUserInRealmRep(testRealm, "test-user@localhost");
+        UserRepresentation user = RealmRepUtil.findUser(testRealm, "test-user@localhost");
         user.setFirstName("First");
         user.setLastName("Last");
-        Map<String, Object> attributes = user.getAttributes();
-        if (attributes == null) {
-            attributes = new HashMap<>();
-            user.setAttributes(attributes);
-        }
-        attributes.put("key1", "value1");
-        attributes.put("key2", "value2");
+        user.singleAttribute("key1", "value1");
+        user.singleAttribute("key2", "value2");
 
         UserRepresentation user2 = UserBuilder.create()
                                               .enabled(true)
@@ -87,7 +81,7 @@ public class ProfileTest extends TestRealmKeycloakTest {
         RealmBuilder.edit(testRealm)
                     .user(user2);
 
-        ClientBuilder.edit(findClientInRealmRep(testRealm, "test-app"))
+        ClientBuilder.edit(RealmRepUtil.findClientByClientId(testRealm, "test-app"))
                      .addWebOrigin("http://localtest.me:8180");
     }
 

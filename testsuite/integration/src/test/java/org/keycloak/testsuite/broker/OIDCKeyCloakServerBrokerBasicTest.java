@@ -28,16 +28,15 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.Urls;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.Constants;
+import org.keycloak.testsuite.KeycloakServer;
 import org.keycloak.testsuite.pages.AccountApplicationsPage;
 import org.keycloak.testsuite.rule.AbstractKeycloakRule;
 import org.keycloak.testsuite.rule.WebResource;
-import org.keycloak.testsuite.KeycloakServer;
 import org.keycloak.util.JsonSerialization;
 import org.openqa.selenium.NoSuchElementException;
 
-import java.io.IOException;
-
 import javax.ws.rs.core.UriBuilder;
+import java.io.IOException;
 
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
@@ -152,7 +151,7 @@ public class OIDCKeyCloakServerBrokerBasicTest extends AbstractKeycloakIdentityP
     }
 
     @Test
-    public void testSuccessfulAuthenticationWithoutUpdateProfile_emailNotProvided_emailVerifyEnabled() {
+    public void testSuccessfulAuthenticationWithoutUpdateProfile_emailNotProvided_emailVerifyEnabled() throws Exception {
         super.testSuccessfulAuthenticationWithoutUpdateProfile_emailNotProvided_emailVerifyEnabled();
     }
 
@@ -170,4 +169,15 @@ public class OIDCKeyCloakServerBrokerBasicTest extends AbstractKeycloakIdentityP
     public void testAccountManagementLinkIdentity() {
         super.testAccountManagementLinkIdentity();
     }
+
+    @Test
+    public void testWithLinkedFederationProvider() throws Exception {
+        super.testWithLinkedFederationProvider();
+    }
+
+    @Test
+    public void testAccountManagementLinkedIdentityAlreadyExists() {
+        super.testAccountManagementLinkedIdentityAlreadyExists();
+    }
+
 }

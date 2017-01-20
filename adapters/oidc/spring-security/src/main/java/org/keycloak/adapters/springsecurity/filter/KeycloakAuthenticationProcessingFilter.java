@@ -19,10 +19,10 @@ package org.keycloak.adapters.springsecurity.filter;
 
 import org.keycloak.adapters.AdapterDeploymentContext;
 import org.keycloak.adapters.AdapterTokenStore;
-import org.keycloak.adapters.spi.AuthChallenge;
-import org.keycloak.adapters.spi.AuthOutcome;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.RequestAuthenticator;
+import org.keycloak.adapters.spi.AuthChallenge;
+import org.keycloak.adapters.spi.AuthOutcome;
 import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.adapters.springsecurity.KeycloakAuthenticationException;
 import org.keycloak.adapters.springsecurity.authentication.KeycloakAuthenticationEntryPoint;
@@ -63,6 +63,8 @@ import java.io.IOException;
 public class KeycloakAuthenticationProcessingFilter extends AbstractAuthenticationProcessingFilter implements ApplicationContextAware {
     public static final String DEFAULT_LOGIN_URL = "/sso/login";
     public static final String AUTHORIZATION_HEADER = "Authorization";
+    public static final String SCHEME_BEARER = "bearer ";
+    public static final String SCHEME_BASIC = "basic ";
 
     /**
      * Request matcher that matches requests to the {@link KeycloakAuthenticationEntryPoint#DEFAULT_LOGIN_URI default login URI}
@@ -140,6 +142,7 @@ public class KeycloakAuthenticationProcessingFilter extends AbstractAuthenticati
         if (AuthOutcome.FAILED.equals(result)) {
             throw new KeycloakAuthenticationException("Auth outcome: " + result);
         }
+       
         else if (AuthOutcome.AUTHENTICATED.equals(result)) {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             Assert.notNull(authentication, "Authentication SecurityContextHolder was null");
@@ -164,7 +167,7 @@ public class KeycloakAuthenticationProcessingFilter extends AbstractAuthenticati
      */
     protected boolean isBearerTokenRequest(HttpServletRequest request) {
         String authValue = request.getHeader(AUTHORIZATION_HEADER);
-        return authValue != null && authValue.startsWith("Bearer");
+        return authValue != null && authValue.toLowerCase().startsWith(SCHEME_BEARER);
     }
 
     /**
@@ -176,7 +179,7 @@ public class KeycloakAuthenticationProcessingFilter extends AbstractAuthenticati
      */
     protected boolean isBasicAuthRequest(HttpServletRequest request) {
         String authValue = request.getHeader(AUTHORIZATION_HEADER);
-        return authValue != null && authValue.startsWith("Basic");
+        return authValue != null && authValue.toLowerCase().startsWith(SCHEME_BASIC);
     }
 
     @Override

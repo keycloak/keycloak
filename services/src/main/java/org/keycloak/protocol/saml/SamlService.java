@@ -17,29 +17,16 @@
 
 package org.keycloak.protocol.saml;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URI;
-import java.security.PublicKey;
-
-import javax.ws.rs.Consumes;
-import javax.ws.rs.FormParam;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriInfo;
-
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.common.VerificationException;
+import org.keycloak.common.util.PemUtils;
 import org.keycloak.common.util.StreamUtil;
 import org.keycloak.dom.saml.v2.SAML2Object;
+import org.keycloak.dom.saml.v2.assertion.BaseIDAbstractType;
+import org.keycloak.dom.saml.v2.assertion.NameIDType;
+import org.keycloak.dom.saml.v2.assertion.SubjectType;
 import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
 import org.keycloak.dom.saml.v2.protocol.LogoutRequestType;
 import org.keycloak.dom.saml.v2.protocol.NameIDPolicyType;
@@ -49,11 +36,15 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
+import org.keycloak.keys.RsaKeyMetadata;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
+import org.keycloak.models.KeyManager;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.AuthorizationEndpointBase;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.protocol.saml.profile.ecp.SamlEcpProfileService;
 import org.keycloak.saml.SAML2LogoutResponseBuilder;
@@ -68,6 +59,34 @@ import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.services.util.CacheControlUtil;
 
+import javax.ws.rs.Consumes;
+import javax.ws.rs.FormParam;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriInfo;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URI;
+import java.security.PublicKey;
+import java.util.Objects;
+import java.util.Properties;
+import java.util.Set;
+import java.util.TreeSet;
+import org.keycloak.common.util.StringPropertyReplacer;
+import org.keycloak.dom.saml.v2.metadata.KeyTypes;
+import org.keycloak.keys.KeyMetadata;
+import org.keycloak.rotation.HardcodedKeyLocator;
+import org.keycloak.rotation.KeyLocator;
+import org.keycloak.saml.SPMetadataDescriptor;
+import org.keycloak.saml.processing.core.util.KeycloakKeySamlExtensionGenerator;
+
 /**
  * Resource class for the oauth/openid connect token service
  *
@@ -77,6 +96,9 @@ import org.keycloak.services.util.CacheControlUtil;
 public class SamlService extends AuthorizationEndpointBase {
 
     protected static final Logger logger = Logger.getLogger(SamlService.class);
+
+    @Context
+    protected KeycloakSession session;
 
     public SamlService(RealmModel realm, EventBuilder event) {
         super(realm, event);
@@ -227,9 +249,9 @@ public class SamlService extends AuthorizationEndpointBase {
             String bindingType = getBindingType(requestAbstractType);
             if (samlClient.forcePostBinding())
                 bindingType = SamlProtocol.SAML_POST_BINDING;
-            String redirect = null;
+            String redirect;
             URI redirectUri = requestAbstractType.getAssertionConsumerServiceURL();
-            if (redirectUri != null && !"null".equals(redirectUri)) { // "null" is for testing purposes
+            if (redirectUri != null && ! "null".equals(redirectUri.toString())) { // "null" is for testing purposes
                 redirect = RedirectUtils.verifyRedirectUri(uriInfo, redirectUri.toString(), realm, client);
             } else {
                 if (bindingType.equals(SamlProtocol.SAML_POST_BINDING)) {
@@ -258,8 +280,9 @@ public class SamlService extends AuthorizationEndpointBase {
 
             // Handle NameIDPolicy from SP
             NameIDPolicyType nameIdPolicy = requestAbstractType.getNameIDPolicy();
-            if (nameIdPolicy != null && !samlClient.forceNameIDFormat()) {
-                String nameIdFormat = nameIdPolicy.getFormat().toString();
+            final URI nameIdFormatUri = nameIdPolicy == null ? null : nameIdPolicy.getFormat();
+            if (nameIdFormatUri != null && ! samlClient.forceNameIDFormat()) {
+                String nameIdFormat = nameIdFormatUri.toString();
                 // TODO: Handle AllowCreate too, relevant for persistent NameID.
                 if (isSupportedNameIdFormat(nameIdFormat)) {
                     clientSession.setNote(GeneralConstants.NAMEID_FORMAT, nameIdFormat);
@@ -267,6 +290,20 @@ public class SamlService extends AuthorizationEndpointBase {
                     event.detail(Details.REASON, "unsupported_nameid_format");
                     event.error(Errors.INVALID_SAML_AUTHN_REQUEST);
                     return ErrorPage.error(session, Messages.UNSUPPORTED_NAME_ID_FORMAT);
+                }
+            }
+
+            //Reading subject/nameID in the saml request
+            SubjectType subject = requestAbstractType.getSubject();
+            if (subject != null) {
+                SubjectType.STSubType subType = subject.getSubType();
+                if (subType != null) {
+                    BaseIDAbstractType baseID = subject.getSubType().getBaseID();
+                    if (baseID != null && baseID instanceof NameIDType) {
+                        NameIDType nameID = (NameIDType) baseID;
+                        clientSession.setNote(OIDCLoginProtocol.LOGIN_HINT_PARAM, nameID.getValue());
+                    }
+
                 }
             }
 
@@ -310,8 +347,11 @@ public class SamlService extends AuthorizationEndpointBase {
             AuthenticationManager.AuthResult authResult = authManager.authenticateIdentityCookie(session, realm, false);
             if (authResult != null) {
                 String logoutBinding = getBindingType();
-                if ("true".equals(samlClient.forcePostBinding()))
+                String postBindingUri = SamlProtocol.getLogoutServiceUrl(uriInfo, client, SamlProtocol.SAML_POST_BINDING);
+                if (samlClient.forcePostBinding() && postBindingUri != null && ! postBindingUri.trim().isEmpty())
                     logoutBinding = SamlProtocol.SAML_POST_BINDING;
+                boolean postBinding = Objects.equals(SamlProtocol.SAML_POST_BINDING, logoutBinding);
+
                 String bindingUri = SamlProtocol.getLogoutServiceUrl(uriInfo, client, logoutBinding);
                 UserSessionModel userSession = authResult.getSession();
                 userSession.setNote(SamlProtocol.SAML_LOGOUT_BINDING_URI, bindingUri);
@@ -323,6 +363,8 @@ public class SamlService extends AuthorizationEndpointBase {
                     userSession.setNote(SamlProtocol.SAML_LOGOUT_RELAY_STATE, relayState);
                 userSession.setNote(SamlProtocol.SAML_LOGOUT_REQUEST_ID, logoutRequest.getID());
                 userSession.setNote(SamlProtocol.SAML_LOGOUT_BINDING, logoutBinding);
+                userSession.setNote(SamlProtocol.SAML_LOGOUT_ADD_EXTENSIONS_ELEMENT_WITH_KEY_INFO, Boolean.toString((! postBinding) && samlClient.addExtensionsElementWithKeyInfo()));
+                userSession.setNote(SamlProtocol.SAML_SERVER_SIGNATURE_KEYINFO_KEY_NAME_TRANSFORMER, samlClient.getXmlSigKeyInfoKeyNameTransformer().name());
                 userSession.setNote(SamlProtocol.SAML_LOGOUT_CANONICALIZATION, samlClient.getCanonicalizationMethod());
                 userSession.setNote(AuthenticationManager.KEYCLOAK_LOGOUT_PROTOCOL, SamlProtocol.LOGIN_PROTOCOL);
                 // remove client from logout requests
@@ -373,13 +415,17 @@ public class SamlService extends AuthorizationEndpointBase {
             builder.destination(logoutBindingUri);
             builder.issuer(RealmsResource.realmBaseUrl(uriInfo).build(realm.getName()).toString());
             JaxrsSAML2BindingBuilder binding = new JaxrsSAML2BindingBuilder().relayState(logoutRelayState);
+            boolean postBinding = SamlProtocol.SAML_POST_BINDING.equals(logoutBinding);
             if (samlClient.requiresRealmSignature()) {
                 SignatureAlgorithm algorithm = samlClient.getSignatureAlgorithm();
-                binding.signatureAlgorithm(algorithm).signWith(realm.getPrivateKey(), realm.getPublicKey(), realm.getCertificate()).signDocument();
-
+                KeyManager.ActiveRsaKey keys = session.keys().getActiveRsaKey(realm);
+                binding.signatureAlgorithm(algorithm).signWith(keys.getKid(), keys.getPrivateKey(), keys.getPublicKey(), keys.getCertificate()).signDocument();
+                if (! postBinding && samlClient.addExtensionsElementWithKeyInfo()) {    // Only include extension if REDIRECT binding and signing whole SAML protocol message
+                    builder.addExtension(new KeycloakKeySamlExtensionGenerator(keys.getKid()));
+                }
             }
             try {
-                if (SamlProtocol.SAML_POST_BINDING.equals(logoutBinding)) {
+                if (postBinding) {
                     return binding.postBinding(builder.buildDocument()).response(logoutBindingUri);
                 } else {
                     return binding.redirectBinding(builder.buildDocument()).response(logoutBindingUri);
@@ -441,7 +487,8 @@ public class SamlService extends AuthorizationEndpointBase {
                 return;
             }
             PublicKey publicKey = SamlProtocolUtils.getSignatureValidationKey(client);
-            SamlProtocolUtils.verifyRedirectSignature(publicKey, uriInfo, GeneralConstants.SAML_REQUEST_KEY);
+            KeyLocator clientKeyLocator = new HardcodedKeyLocator(publicKey);
+            SamlProtocolUtils.verifyRedirectSignature(documentHolder, clientKeyLocator, uriInfo, GeneralConstants.SAML_REQUEST_KEY);
         }
 
         @Override
@@ -509,19 +556,37 @@ public class SamlService extends AuthorizationEndpointBase {
     @Produces(MediaType.APPLICATION_XML)
     @NoCache
     public String getDescriptor() throws Exception {
-        return getIDPMetadataDescriptor(uriInfo, realm);
+        return getIDPMetadataDescriptor(uriInfo, session, realm);
 
     }
 
-    public static String getIDPMetadataDescriptor(UriInfo uriInfo, RealmModel realm) throws IOException {
+    public static String getIDPMetadataDescriptor(UriInfo uriInfo, KeycloakSession session, RealmModel realm) throws IOException {
         InputStream is = SamlService.class.getResourceAsStream("/idp-metadata-template.xml");
         String template = StreamUtil.readString(is);
-        template = template.replace("${idp.entityID}", RealmsResource.realmBaseUrl(uriInfo).build(realm.getName()).toString());
-        template = template.replace("${idp.sso.HTTP-POST}", RealmsResource.protocolUrl(uriInfo).build(realm.getName(), SamlProtocol.LOGIN_PROTOCOL).toString());
-        template = template.replace("${idp.sso.HTTP-Redirect}", RealmsResource.protocolUrl(uriInfo).build(realm.getName(), SamlProtocol.LOGIN_PROTOCOL).toString());
-        template = template.replace("${idp.sls.HTTP-POST}", RealmsResource.protocolUrl(uriInfo).build(realm.getName(), SamlProtocol.LOGIN_PROTOCOL).toString());
-        template = template.replace("${idp.signing.certificate}", realm.getCertificatePem());
-        return template;
+        Properties props = new Properties();
+        props.put("idp.entityID", RealmsResource.realmBaseUrl(uriInfo).build(realm.getName()).toString());
+        props.put("idp.sso.HTTP-POST", RealmsResource.protocolUrl(uriInfo).build(realm.getName(), SamlProtocol.LOGIN_PROTOCOL).toString());
+        props.put("idp.sso.HTTP-Redirect", RealmsResource.protocolUrl(uriInfo).build(realm.getName(), SamlProtocol.LOGIN_PROTOCOL).toString());
+        props.put("idp.sls.HTTP-POST", RealmsResource.protocolUrl(uriInfo).build(realm.getName(), SamlProtocol.LOGIN_PROTOCOL).toString());
+        StringBuilder keysString = new StringBuilder();
+        Set<RsaKeyMetadata> keys = new TreeSet<>((o1, o2) -> o1.getStatus() == o2.getStatus() // Status can be only PASSIVE OR ACTIVE, push PASSIVE to end of list
+          ? (int) (o2.getProviderPriority() - o1.getProviderPriority())
+          : (o1.getStatus() == KeyMetadata.Status.PASSIVE ? 1 : -1));
+        keys.addAll(session.keys().getRsaKeys(realm, false));
+        for (RsaKeyMetadata key : keys) {
+            addKeyInfo(keysString, key, KeyTypes.SIGNING.value());
+        }
+        props.put("idp.signing.certificates", keysString.toString());
+        return StringPropertyReplacer.replaceProperties(template, props);
+    }
+
+    private static void addKeyInfo(StringBuilder target, RsaKeyMetadata key, String purpose) {
+        if (key == null) {
+            return;
+        }
+
+        target.append(SPMetadataDescriptor.xmlKeyInfo("                        ",
+          key.getKid(), PemUtils.encodeCertificate(key.getCertificate()), purpose, false));
     }
 
     @GET
@@ -550,12 +615,29 @@ public class SamlService extends AuthorizationEndpointBase {
             return ErrorPage.error(session, Messages.INVALID_REDIRECT_URI);
         }
 
+        ClientSessionModel clientSession = createClientSessionForIdpInitiatedSso(this.session, this.realm, client, relayState);
+
+        return newBrowserAuthentication(clientSession, false, false);
+    }
+
+    /**
+     * Creates a client session object for SAML IdP-initiated SSO session.
+     * The session takes the parameters from from client definition,
+     * namely binding type and redirect URL.
+     *
+     * @param session KC session
+     * @param realm Realm to create client session in
+     * @param client Client to create client session for
+     * @param relayState Optional relay state - free field as per SAML specification
+     * @return
+     */
+    public static ClientSessionModel createClientSessionForIdpInitiatedSso(KeycloakSession session, RealmModel realm, ClientModel client, String relayState) {
         String bindingType = SamlProtocol.SAML_POST_BINDING;
         if (client.getManagementUrl() == null && client.getAttribute(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_POST_ATTRIBUTE) == null && client.getAttribute(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_REDIRECT_ATTRIBUTE) != null) {
             bindingType = SamlProtocol.SAML_REDIRECT_BINDING;
         }
 
-        String redirect = null;
+        String redirect;
         if (bindingType.equals(SamlProtocol.SAML_REDIRECT_BINDING)) {
             redirect = client.getAttribute(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_REDIRECT_ATTRIBUTE);
         } else {
@@ -579,8 +661,7 @@ public class SamlService extends AuthorizationEndpointBase {
             clientSession.setNote(GeneralConstants.RELAY_STATE, relayState);
         }
 
-        return newBrowserAuthentication(clientSession, false, false);
-
+        return clientSession;
     }
 
     @POST

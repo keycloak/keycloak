@@ -21,7 +21,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import static org.keycloak.testsuite.util.MailServerConfiguration.*;
+
+import static org.keycloak.testsuite.util.MailServerConfiguration.FROM;
+import static org.keycloak.testsuite.util.MailServerConfiguration.HOST;
+import static org.keycloak.testsuite.util.MailServerConfiguration.PORT;
 
 /**
  *
@@ -97,6 +100,9 @@ public final class SuiteContext {
                 + authServerInfo.getQualifier() + "\n";
         for (ContainerInfo bInfo : getAuthServerBackendsInfo()) {
             containers += "Backend: " + bInfo + "\n";
+        }
+        if (isAuthServerMigrationEnabled()) {
+            containers += "Migrated from: " + System.getProperty("migrated.auth.server.version") + "\n";
         }
         return "SUITE CONTEXT:\n"
                 + containers;

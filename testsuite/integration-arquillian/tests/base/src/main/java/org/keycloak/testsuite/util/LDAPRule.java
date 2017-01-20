@@ -17,11 +17,12 @@
 
 package org.keycloak.testsuite.util;
 
+import org.junit.rules.ExternalResource;
+import org.keycloak.models.LDAPConstants;
+import org.keycloak.util.ldap.LDAPEmbeddedServer;
+
 import java.util.Map;
 import java.util.Properties;
-
-import org.junit.rules.ExternalResource;
-import org.keycloak.util.ldap.LDAPEmbeddedServer;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -29,6 +30,14 @@ import org.keycloak.util.ldap.LDAPEmbeddedServer;
 public class LDAPRule extends ExternalResource {
 
     public static final String LDAP_CONNECTION_PROPERTIES_LOCATION = "classpath:ldap/ldap-connection.properties";
+
+    private static final String PROPERTY_ENABLE_SSL = "enableSSL";
+
+    private static final String PROPERTY_KEYSTORE_FILE = "keystoreFile";
+
+    private static final String PRIVATE_KEY = "keystore/keycloak.jks";
+
+    private static final String PROPERTY_CERTIFICATE_PASSWORD = "certificatePassword";
 
     protected LDAPTestConfiguration ldapTestConfiguration;
     protected LDAPEmbeddedServer ldapEmbeddedServer;
@@ -66,6 +75,11 @@ public class LDAPRule extends ExternalResource {
         Properties defaultProperties = new Properties();
         defaultProperties.setProperty(LDAPEmbeddedServer.PROPERTY_DSF, LDAPEmbeddedServer.DSF_INMEMORY);
         defaultProperties.setProperty(LDAPEmbeddedServer.PROPERTY_LDIF_FILE, "classpath:ldap/users.ldif");
+        defaultProperties.setProperty(LDAPConstants.CONNECTION_URL, "ldaps://localhost:10636");
+        defaultProperties.setProperty(LDAPEmbeddedServer.PROPERTY_BIND_PORT, "10636");
+        defaultProperties.setProperty(PROPERTY_ENABLE_SSL, "true");
+        defaultProperties.setProperty(PROPERTY_CERTIFICATE_PASSWORD, "secret");
+        defaultProperties.setProperty(PROPERTY_KEYSTORE_FILE, this.getClass().getClassLoader().getResource(LDAPRule.PRIVATE_KEY).getFile());
 
         return new LDAPEmbeddedServer(defaultProperties);
     }

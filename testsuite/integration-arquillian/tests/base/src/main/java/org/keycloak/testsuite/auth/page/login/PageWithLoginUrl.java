@@ -17,8 +17,9 @@
 
 package org.keycloak.testsuite.auth.page.login;
 
-import java.net.URI;
 import org.openqa.selenium.WebDriver;
+
+import java.net.URI;
 
 /**
  * Used by util class LoginAssert. Implementing classes: AuthRealm, AdminConsole.

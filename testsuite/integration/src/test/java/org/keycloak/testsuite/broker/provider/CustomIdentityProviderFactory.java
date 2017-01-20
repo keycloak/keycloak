@@ -18,6 +18,7 @@ package org.keycloak.testsuite.broker.provider;
 
 import org.keycloak.broker.provider.AbstractIdentityProviderFactory;
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.KeycloakSession;
 
 /**
  * @author pedroigor
@@ -32,8 +33,8 @@ public class CustomIdentityProviderFactory extends AbstractIdentityProviderFacto
     }
 
     @Override
-    public CustomIdentityProvider create(IdentityProviderModel model) {
-        return new CustomIdentityProvider(model);
+    public CustomIdentityProvider create(KeycloakSession session, IdentityProviderModel model) {
+        return new CustomIdentityProvider(session, model);
     }
 
     @Override

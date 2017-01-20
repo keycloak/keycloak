@@ -17,9 +17,9 @@
 
 package org.keycloak;
 
+import org.keycloak.common.util.Base64Url;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.IDToken;
-import org.keycloak.common.util.Base64Url;
 import org.keycloak.util.JsonSerialization;
 
 import java.io.IOException;
@@ -41,6 +41,7 @@ public class KeycloakSecurityContext implements Serializable {
     // Don't store parsed tokens into HTTP session
     protected transient AccessToken token;
     protected transient IDToken idToken;
+    protected transient AuthorizationContext authorizationContext;
 
     public KeycloakSecurityContext() {
     }
@@ -58,6 +59,10 @@ public class KeycloakSecurityContext implements Serializable {
 
     public String getTokenString() {
         return tokenString;
+    }
+
+    public AuthorizationContext getAuthorizationContext() {
+        return authorizationContext;
     }
 
     public IDToken getIdToken() {

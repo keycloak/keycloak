@@ -105,7 +105,7 @@ public class SamlPrincipal implements Serializable, Principal {
      * @return
      */
     public List<String> getFriendlyAttributes(String friendlyName) {
-        List<String> list = friendlyAttributes.get(name);
+        List<String> list = friendlyAttributes.get(friendlyName);
         if (list != null) {
             return Collections.unmodifiableList(list);
         } else {

@@ -17,7 +17,6 @@
 
 package org.keycloak.testsuite.arquillian;
 
-import org.keycloak.testsuite.arquillian.provider.*;
 import org.jboss.arquillian.container.spi.client.container.DeployableContainer;
 import org.jboss.arquillian.container.test.impl.enricher.resource.URLResourceProvider;
 import org.jboss.arquillian.container.test.spi.client.deployment.ApplicationArchiveProcessor;
@@ -28,7 +27,13 @@ import org.jboss.arquillian.graphene.location.CustomizableURLResourceProvider;
 import org.jboss.arquillian.test.spi.enricher.resource.ResourceProvider;
 import org.jboss.arquillian.test.spi.execution.TestExecutionDecider;
 import org.keycloak.testsuite.arquillian.h2.H2TestEnricher;
+import org.keycloak.testsuite.arquillian.karaf.CustomKarafContainer;
 import org.keycloak.testsuite.arquillian.migration.MigrationTestExecutionDecider;
+import org.keycloak.testsuite.arquillian.provider.AdminClientProvider;
+import org.keycloak.testsuite.arquillian.provider.OAuthClientProvider;
+import org.keycloak.testsuite.arquillian.provider.SuiteContextProvider;
+import org.keycloak.testsuite.arquillian.provider.TestContextProvider;
+import org.keycloak.testsuite.arquillian.provider.URLProvider;
 
 /**
  *
@@ -48,10 +53,10 @@ public class KeycloakArquillianExtension implements LoadableExtension {
         builder
                 .service(DeploymentScenarioGenerator.class, DeploymentTargetModifier.class)
                 .service(ApplicationArchiveProcessor.class, DeploymentArchiveProcessor.class)
+                .service(DeployableContainer.class, CustomKarafContainer.class)
                 .observer(AuthServerTestEnricher.class)
                 .observer(AppServerTestEnricher.class)
                 .observer(H2TestEnricher.class);
-
         builder
                 .service(TestExecutionDecider.class, MigrationTestExecutionDecider.class);
 

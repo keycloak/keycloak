@@ -3,7 +3,7 @@
 
     <div class="row">
         <div class="col-md-10">
-            <h2>${msg("editAccountHtmlTtile")}</h2>
+            <h2>${msg("editAccountHtmlTitle")}</h2>
         </div>
         <div class="col-md-2 subtitle">
             <span class="subtitle"><span class="required">*</span> ${msg("requiredFields")}</span>
@@ -14,15 +14,17 @@
 
         <input type="hidden" id="stateChecker" name="stateChecker" value="${stateChecker?html}">
 
-        <div class="form-group ${messagesPerField.printIfExists('username','has-error')}">
-            <div class="col-sm-2 col-md-2">
-                <label for="username" class="control-label">${msg("username")}</label> <#if realm.editUsernameAllowed><span class="required">*</span></#if>
-            </div>
+        <#if !realm.registrationEmailAsUsername>
+            <div class="form-group ${messagesPerField.printIfExists('username','has-error')}">
+                <div class="col-sm-2 col-md-2">
+                    <label for="username" class="control-label">${msg("username")}</label> <#if realm.editUsernameAllowed><span class="required">*</span></#if>
+                </div>
 
-            <div class="col-sm-10 col-md-10">
-                <input type="text" class="form-control" id="username" name="username" <#if !realm.editUsernameAllowed>disabled="disabled"</#if> value="${(account.username!'')?html}"/>
+                <div class="col-sm-10 col-md-10">
+                    <input type="text" class="form-control" id="username" name="username" <#if !realm.editUsernameAllowed>disabled="disabled"</#if> value="${(account.username!'')?html}"/>
+                </div>
             </div>
-        </div>
+        </#if>
 
         <div class="form-group ${messagesPerField.printIfExists('email','has-error')}">
             <div class="col-sm-2 col-md-2">

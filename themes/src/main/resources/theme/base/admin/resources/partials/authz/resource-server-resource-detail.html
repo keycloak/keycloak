@@ -1,0 +1,73 @@
+<div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
+
+    <ol class="breadcrumb">
+        <li><a href="#/realms/{{realm.realm}}/clients">{{:: 'clients' | translate}}</a></li>
+        <li><a href="#/realms/{{realm.realm}}/clients/{{client.id}}">{{client.clientId}}</a></li>
+        <li><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server">{{:: 'authz-authorization' | translate}}</a></li>
+        <li><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server/resource">{{:: 'authz-resource' | translate}}</a></li>
+        <li data-ng-show="create">{{:: 'authz-add-resource' | translate}}</li>
+        <li data-ng-hide="create">{{originalResource.name}}</li>
+    </ol>
+
+    <h1 data-ng-show="create">{{:: 'authz-add-resource' | translate}}</h1>
+    <h1 data-ng-hide="create">{{originalResource.name|capitalize}}<i class="pficon pficon-delete clickable" data-ng-show="!create"
+                                                         data-ng-click="remove()"></i></h1>
+
+    <form class="form-horizontal" name="clientForm" novalidate>
+        <fieldset class="border-top">
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="name">{{:: 'name' | translate}} <span class="required" data-ng-show="create">*</span></label>
+                <div class="col-sm-6">
+                    <input class="form-control" type="text" id="name" name="name" data-ng-model="resource.name" autofocus required data-ng-blur="checkNewNameAvailability()">
+                </div>
+                <kc-tooltip>{{:: 'authz-resource-name.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group" data-ng-hide="create">
+                <label class="col-md-2 control-label" for="resource.owner.name">{{:: 'authz-owner' | translate}} </label>
+                <div class="col-sm-6">
+                    <input class="form-control" type="text" id="resource.owner.name" name="name" data-ng-model="resource.owner.name" autofocus disabled>
+                </div>
+                <kc-tooltip>{{:: 'authz-resource-owner.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="type">{{:: 'type' | translate}} </label>
+                <div class="col-sm-6">
+                    <input class="form-control" type="text" id="type" name="name" data-ng-model="resource.type" autofocus>
+                </div>
+                <kc-tooltip>{{:: 'authz-resource-type.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="uri">{{:: 'authz-uri' | translate}} </label>
+                <div class="col-sm-6">
+                    <input class="form-control" type="text" id="uri" name="name" data-ng-model="resource.uri" autofocus>
+                </div>
+                <kc-tooltip>{{:: 'authz-resource-uri.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group clearfix">
+                <label class="col-md-2 control-label" for="reqActions">{{:: 'authz-scopes' | translate}}</label>
+
+                <div class="col-md-6">
+                    <input type="hidden" ui-select2="scopesUiSelect" id="reqActions" data-ng-model="resource.scopes" data-placeholder="{{:: 'authz-select-scope' | translate}}..." multiple/>
+                </div>
+
+                <kc-tooltip>{{:: 'authz-resource-scopes.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="iconUri">{{:: 'authz-icon-uri' | translate}} </label>
+                <div class="col-sm-6">
+                    <input class="form-control" type="text" id="iconUri" name="name" data-ng-model="resource.icon_uri" autofocus>
+                </div>
+                <kc-tooltip>{{:: 'authz-icon-uri.tooltip' | translate}}</kc-tooltip>
+            </div>
+        </fieldset>
+
+        <div class="form-group" data-ng-show="access.manageAuthorization">
+            <div class="col-md-10 col-md-offset-2">
+                <button kc-save data-ng-disabled="!changed">{{:: 'save' | translate}}</button>
+                <button kc-reset data-ng-disabled="!changed">{{:: 'cancel' | translate}}</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<kc-menu></kc-menu>

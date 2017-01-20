@@ -98,7 +98,7 @@ public abstract class AbstractDemoExampleAdapterTest extends AbstractExampleAdap
     @Override
     public void addAdapterTestRealms(List<RealmRepresentation> testRealms) {
         testRealms.add(
-                loadRealm(new File(EXAMPLES_HOME_DIR + "/preconfigured-demo/testrealm.json")));
+                loadRealm(new File(EXAMPLES_HOME_DIR + "/demo-template/testrealm.json")));
     }
 
     @Override

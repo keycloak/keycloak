@@ -41,7 +41,7 @@
             </fieldset>
         </form>
 
-        <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageClients" data-ng-show="!client.fullScopeAllowed" data-ng-hide="client.useTemplateScope && template && template.fullScopeAllowed">
+        <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageClients" data-ng-hide="hideRoleSelector()">
             <div class="form-group">
                 <label class="col-md-2 control-label" class="control-label">{{:: 'realm-roles' | translate}}</label>
                 <div class="col-md-10">
@@ -53,7 +53,7 @@
                             <select id="available" class="form-control" multiple size="5"
                                     ng-multiple="true"
                                     ng-model="selectedRealmRoles"
-                                    ng-options="r.name for r in realmRoles">
+                                    ng-options="r.name for r in realmRoles | orderBy:'name'">
                             </select>
                             <button ng-disabled="selectedRealmRoles.length == 0" class="btn btn-default" type="submit" ng-click="addRealmRole()">
                                 {{:: 'add-selected' | translate}} <i class="fa fa-angle-double-right"></i>
@@ -65,7 +65,7 @@
                             <select id="assigned" class="form-control" multiple size=5
                                     ng-multiple="true"
                                     ng-model="selectedRealmMappings"
-                                    ng-options="r.name for r in realmMappings">
+                                    ng-options="r.name for r in realmMappings | orderBy:'name'">
                             </select>
                             <button ng-disabled="selectedRealmMappings.length == 0" class="btn btn-default" type="submit" ng-click="deleteRealmRole()">
                                 <i class="fa fa-angle-double-left"></i> {{:: 'remove-selected' | translate}}
@@ -77,7 +77,7 @@
                             <select id="realm-composite" class="form-control" multiple size=5
                                     disabled="true"
                                     ng-model="dummymodel"
-                                    ng-options="r.name for r in realmComposite">
+                                    ng-options="r.name for r in realmComposite | orderBy:'name'">
                             </select>
                         </div>
                     </div>
@@ -87,7 +87,7 @@
             <div class="form-group">
                 <label class="col-md-2 control-label" class="control-label">
                     <span>{{:: 'client-roles' | translate}}</span>
-                    <select class="form-control" id="clients" name="clients" ng-change="changeClient()" ng-model="targetClient" ng-options="a.clientId for a in clients" ng-disabled="false"></select>
+                    <select class="form-control" id="clients" name="clients" ng-change="changeClient()" ng-model="targetClient" ng-options="a.clientId for a in clients | orderBy:'clientId'" ng-disabled="false"></select>
                 </label>
 
                 <div class="col-md-10">
@@ -101,7 +101,7 @@
                             <select id="available-client" class="form-control" multiple size="5"
                                     ng-multiple="true"
                                     ng-model="selectedClientRoles"
-                                    ng-options="r.name for r in clientRoles">
+                                    ng-options="r.name for r in clientRoles | orderBy:'name'">
                             </select>
                             <button ng-disabled="selectedClientRoles.length == 0" class="btn btn-default" type="submit" ng-click="addClientRole()">
                                 {{:: 'add-selected' | translate}} <i class="fa fa-angle-double-right"></i>
@@ -113,7 +113,7 @@
                             <select id="assigned-client" class="form-control" multiple size=5
                                     ng-multiple="true"
                                     ng-model="selectedClientMappings"
-                                    ng-options="r.name for r in clientMappings">
+                                    ng-options="r.name for r in clientMappings | orderBy:'name'">
                             </select>
                             <button ng-disabled="selectedClientMappings.length == 0" class="btn btn-default" type="submit" ng-click="deleteClientRole()">
                                 <i class="fa fa-angle-double-left"></i> {{:: 'remove-selected' | translate}}
@@ -125,13 +125,13 @@
                             <select id="client-composite" class="form-control" multiple size=5
                                     disabled="true"
                                     ng-model="dummymodel"
-                                    ng-options="r.name for r in clientComposite">
+                                    ng-options="r.name for r in clientComposite | orderBy:'name'">
                             </select>
                         </div>
                     </div>
                 </div>
             </div>
         </form>
-    </div>
+        </div>
 
 <kc-menu></kc-menu>

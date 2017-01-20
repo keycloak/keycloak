@@ -1,11 +1,13 @@
 package org.keycloak.testsuite.console.page.roles;
 
-import java.util.ArrayList;
-import java.util.List;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.testsuite.console.page.fragment.DataTable;
-import static org.openqa.selenium.By.tagName;
 import org.openqa.selenium.WebElement;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.openqa.selenium.By.tagName;
 
 /**
  *
@@ -28,7 +30,6 @@ public class RolesTable extends DataTable {
     }
 
     public void clickRole(String name) {
-        waitForBody();
         clickRowByLinkText(name);
     }
 

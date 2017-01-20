@@ -1,0 +1,117 @@
+<style>
+    .ace_editor { height: 200px; }
+</style>
+<div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
+
+    <ol class="breadcrumb">
+        <li><a href="#/realms/{{realm.realm}}/clients">{{:: 'clients' | translate}}</a></li>
+        <li><a href="#/realms/{{realm.realm}}/clients/{{client.id}}">{{client.clientId}}</a></li>
+        <li><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server">{{:: 'authz-authorization' | translate}}</a></li>
+        <li><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server/policy">{{:: 'authz-policies' | translate}}</a></li>
+        <li data-ng-show="create">{{:: 'authz-add-time-policy' | translate}}</li>
+        <li data-ng-hide="create">{{:: 'time' | translate}}</li>
+        <li data-ng-hide="create">{{originalPolicy.name}}</li>
+    </ol>
+
+
+    <h1 data-ng-show="create">{{:: 'authz-add-time-policy' | translate}}</h1>
+    <h1 data-ng-hide="create">{{originalPolicy.name|capitalize}}<i class="pficon pficon-delete clickable" data-ng-click="remove()"></i></h1>
+
+    <form class="form-horizontal" name="clientForm" novalidate>
+        <fieldset class="border-top">
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="name">{{:: 'name' | translate}} <span class="required">*</span></label>
+                <div class="col-sm-6">
+                    <input class="form-control" type="text" id="name" name="name" data-ng-model="policy.name" autofocus required data-ng-blur="checkNewNameAvailability()">
+                </div>
+                <kc-tooltip>{{:: 'authz-policy-name.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="description">{{:: 'description' | translate}} </label>
+                <div class="col-sm-6">
+                    <input class="form-control" type="text" id="description" name="description" data-ng-model="policy.description">
+                </div>
+                <kc-tooltip>{{:: 'authz-policy-description.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="policy.config.nbf">{{:: 'not-before' | translate}}</label>
+
+                <div class="col-md-6 time-selector">
+                    <input class="form-control" style="width: 150px" type="text" id="policy.config.nbf" name="notBefore" data-ng-model="policy.config.nbf" placeholder="yyyy-MM-dd hh:mm:ss" data-ng-required="isRequired()">
+                </div>
+                <kc-tooltip>{{:: 'authz-policy-time-not-before.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="policy.config.noa">{{:: 'authz-policy-time-not-on-after' | translate}}</label>
+
+                <div class="col-md-6 time-selector">
+                    <input class="form-control" style="width: 150px" type="text" id="policy.config.noa" name="policy.config.noa" data-ng-model="policy.config.noa" placeholder="yyyy-MM-dd hh:mm:ss" data-ng-required="isRequired()">
+                </div>
+                <kc-tooltip>{{:: 'authz-policy-time-not-on-after.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="policy.config.noa">{{:: 'authz-policy-time-day-month' | translate}}</label>
+
+                <div class="col-md-6 time-selector">
+                    <input class="form-control" type="number" min="1" max="31" data-ng-model="policy.config.dayMonth" id="dayMonth" name="dayMonth" data-ng-required="isRequired()"/>&nbsp;&nbsp;to&nbsp;&nbsp;<input class="form-control" type="number" min="{{policy.config.dayMonth}}" max="31" data-ng-model="policy.config.dayMonthEnd" id="dayMonthEnd" name="dayMonthEnd"/>
+                </div>
+                <kc-tooltip>{{:: 'authz-policy-time-day-month.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="policy.config.noa">{{:: 'authz-policy-time-month' | translate}}</label>
+
+                <div class="col-md-6 time-selector">
+                    <input class="form-control" type="number" min="1" max="12" data-ng-model="policy.config.month" id="month" name="month" data-ng-required="isRequired()"/>&nbsp;&nbsp;to&nbsp;&nbsp;<input class="form-control" type="number" min="{{policy.config.month}}" max="12" data-ng-model="policy.config.monthEnd" id="monthEnd" name="monthEnd"/>
+                </div>
+                <kc-tooltip>{{:: 'authz-policy-time-month.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="policy.config.noa">{{:: 'authz-policy-time-year' | translate}}</label>
+
+                <div class="col-md-6 time-selector">
+                    <input class="form-control" type="number" min="2016" max="2050" data-ng-model="policy.config.year" id="year" name="year" data-ng-required="isRequired()"/>&nbsp;&nbsp;to&nbsp;&nbsp;<input class="form-control" type="number" min="{{policy.config.year}}" max="2050" data-ng-model="policy.config.yearEnd" id="yearEnd" name="yearEnd"/>
+                </div>
+                <kc-tooltip>{{:: 'authz-policy-time-year.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="policy.config.noa">{{:: 'authz-policy-time-hour' | translate}}</label>
+
+                <div class="col-md-6 time-selector">
+                    <input class="form-control" type="number" min="0" max="23" data-ng-model="policy.config.hour" id="hour" name="hour" data-ng-required="isRequired()"/>&nbsp;&nbsp;to&nbsp;&nbsp;<input class="form-control" type="number" min="{{policy.config.hour}}" max="23" data-ng-model="policy.config.hourEnd" id="hourEnd" name="hourEnd"/>
+                </div>
+                <kc-tooltip>{{:: 'authz-policy-time-hour.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="policy.config.noa">{{:: 'authz-policy-time-minute' | translate}}</label>
+
+                <div class="col-md-6 time-selector">
+                    <input class="form-control" type="number" min="0" max="59" data-ng-model="policy.config.minute" id="minute" name="minute" data-ng-required="isRequired()"/>&nbsp;&nbsp;to&nbsp;&nbsp;<input class="form-control" type="number" min="{{policy.config.minute}}" max="59" data-ng-model="policy.config.minuteEnd" id="minuteEnd" name="minuteEnd"/>
+                </div>
+                <kc-tooltip>{{:: 'authz-policy-time-minute.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group clearfix">
+                <label class="col-md-2 control-label" for="policy.logic">{{:: 'authz-policy-logic' | translate}}</label>
+
+                <div class="col-sm-1">
+                    <select class="form-control" id="policy.logic"
+                            data-ng-model="policy.logic">
+                        <option value="POSITIVE">{{:: 'authz-policy-logic-positive' | translate}}</option>
+                        <option value="NEGATIVE">{{:: 'authz-policy-logic-negative' | translate}}</option>
+                    </select>
+                </div>
+
+                <kc-tooltip>{{:: 'authz-policy-logic.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <input type="hidden" data-ng-model="policy.type"/>
+        </fieldset>
+
+        <div class="form-group" data-ng-show="access.manageAuthorization">
+            <div class="col-md-10 col-md-offset-2">
+                <button kc-save data-ng-disabled="!changed">{{:: 'save' | translate}}</button>
+                <button kc-reset data-ng-disabled="!changed">{{:: 'cancel' | translate}}</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<kc-menu></kc-menu>

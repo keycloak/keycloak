@@ -17,12 +17,14 @@
 package org.keycloak.services.managers;
 
 
+import org.jboss.logging.Logger;
 import org.keycloak.common.ClientConnection;
+import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserLoginFailureModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.UsernameLoginFailureModel;
 import org.keycloak.services.ServicesLogger;
 
 import java.util.ArrayList;
@@ -38,7 +40,7 @@ import java.util.concurrent.TimeUnit;
  * @version $Revision: 1 $
  */
 public class DefaultBruteForceProtector implements Runnable, BruteForceProtector {
-    protected static ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    private static final Logger logger = Logger.getLogger(DefaultBruteForceProtector.class);
 
     protected volatile boolean run = true;
     protected int maxDeltaTimeSeconds = 60 * 60 * 12; // 12 hours
@@ -52,21 +54,20 @@ public class DefaultBruteForceProtector implements Runnable, BruteForceProtector
     protected LinkedBlockingQueue<LoginEvent> queue = new LinkedBlockingQueue<LoginEvent>();
     public static final int TRANSACTION_SIZE = 20;
 
-
     protected abstract class LoginEvent implements Comparable<LoginEvent> {
         protected final String realmId;
-        protected final String username;
+        protected final String userId;
         protected final String ip;
 
-        protected LoginEvent(String realmId, String username, String ip) {
+        protected LoginEvent(String realmId, String userId, String ip) {
             this.realmId = realmId;
-            this.username = username;
+            this.userId = userId;
             this.ip = ip;
         }
 
         @Override
         public int compareTo(LoginEvent o) {
-            return username.compareTo(o.username);
+            return userId.compareTo(o.userId);
         }
     }
 
@@ -79,8 +80,8 @@ public class DefaultBruteForceProtector implements Runnable, BruteForceProtector
     protected class FailedLogin extends LoginEvent {
         protected final CountDownLatch latch = new CountDownLatch(1);
 
-        public FailedLogin(String realmId, String username, String ip) {
-            super(realmId, username, ip);
+        public FailedLogin(String realmId, String userId, String ip) {
+            super(realmId, userId, ip);
         }
     }
 
@@ -92,14 +93,16 @@ public class DefaultBruteForceProtector implements Runnable, BruteForceProtector
         logger.debug("failure");
         RealmModel realm = getRealmModel(session, event);
         logFailure(event);
-        UserModel user = session.users().getUserByUsername(event.username.toString(), realm);
-        UsernameLoginFailureModel userLoginFailure = getUserModel(session, event);
+
+        String userId = event.userId;
+        UserModel user = session.users().getUserById(userId, realm);
+        UserLoginFailureModel userLoginFailure = getUserModel(session, event);
         if (user != null) {
             if (userLoginFailure == null) {
-                userLoginFailure = session.sessions().addUserLoginFailure(realm, event.username.toLowerCase());
+                userLoginFailure = session.sessions().addUserLoginFailure(realm, userId);
             }
             userLoginFailure.setLastIPFailure(event.ip);
-            long currentTime = System.currentTimeMillis();
+            long currentTime = Time.currentTimeMillis();
             long last = userLoginFailure.getLastFailure();
             long deltaTime = 0;
             if (last > 0) {
@@ -115,7 +118,7 @@ public class DefaultBruteForceProtector implements Runnable, BruteForceProtector
             userLoginFailure.incrementFailures();
             logger.debugv("new num failures: {0}", userLoginFailure.getNumFailures());
 
-            int waitSeconds = realm.getWaitIncrementSeconds() * (userLoginFailure.getNumFailures() / realm.getFailureFactor());
+            int waitSeconds = realm.getWaitIncrementSeconds() *  (userLoginFailure.getNumFailures() / realm.getFailureFactor());
             logger.debugv("waitSeconds: {0}", waitSeconds);
             logger.debugv("deltaTime: {0}", deltaTime);
 
@@ -135,10 +138,10 @@ public class DefaultBruteForceProtector implements Runnable, BruteForceProtector
     }
 
 
-    protected UsernameLoginFailureModel getUserModel(KeycloakSession session, LoginEvent event) {
+    protected UserLoginFailureModel getUserModel(KeycloakSession session, LoginEvent event) {
         RealmModel realm = getRealmModel(session, event);
         if (realm == null) return null;
-        UsernameLoginFailureModel user = session.sessions().getUserLoginFailure(realm, event.username.toLowerCase());
+        UserLoginFailureModel user = session.sessions().getUserLoginFailure(realm, event.userId);
         if (user == null) return null;
         return user;
     }
@@ -177,7 +180,7 @@ public class DefaultBruteForceProtector implements Runnable, BruteForceProtector
                         queue.drainTo(events, TRANSACTION_SIZE);
                         Collections.sort(events); // we sort to avoid deadlock due to ordered updates.  Maybe I'm overthinking this.
                         KeycloakSession session = factory.create();
-                        session.getTransaction().begin();
+                        session.getTransactionManager().begin();
                         try {
                             for (LoginEvent event : events) {
                                 if (event instanceof FailedLogin) {
@@ -186,9 +189,9 @@ public class DefaultBruteForceProtector implements Runnable, BruteForceProtector
                                     run = false;
                                 }
                             }
-                            session.getTransaction().commit();
+                            session.getTransactionManager().commit();
                         } catch (Exception e) {
-                            session.getTransaction().rollback();
+                            session.getTransactionManager().rollback();
                             throw e;
                         } finally {
                             for (LoginEvent event : events) {
@@ -200,7 +203,7 @@ public class DefaultBruteForceProtector implements Runnable, BruteForceProtector
                             session.close();
                         }
                     } catch (Exception e) {
-                        logger.failedProcessingType(e);
+                        ServicesLogger.LOGGER.failedProcessingType(e);
                     }
                 } catch (InterruptedException e) {
                     break;
@@ -212,11 +215,11 @@ public class DefaultBruteForceProtector implements Runnable, BruteForceProtector
     }
 
     protected void logFailure(LoginEvent event) {
-        logger.loginFailure(event.username, event.ip);
+        ServicesLogger.LOGGER.loginFailure(event.userId, event.ip);
         failures++;
         long delta = 0;
         if (lastFailure > 0) {
-            delta = System.currentTimeMillis() - lastFailure;
+            delta = Time.currentTimeMillis() - lastFailure;
             if (delta > (long)maxDeltaTimeSeconds * 1000L) {
                 totalTime = 0;
 
@@ -227,34 +230,35 @@ public class DefaultBruteForceProtector implements Runnable, BruteForceProtector
     }
 
     @Override
-    public void failedLogin(RealmModel realm, String username, ClientConnection clientConnection) {
+    public void failedLogin(RealmModel realm, UserModel user, ClientConnection clientConnection) {
         try {
-            FailedLogin event = new FailedLogin(realm.getId(), username, clientConnection.getRemoteAddr());
+            FailedLogin event = new FailedLogin(realm.getId(), user.getId(), clientConnection.getRemoteAddr());
             queue.offer(event);
             // wait a minimum of seconds for type to process so that a hacker
             // cannot flood with failed logins and overwhelm the queue and not have notBefore updated to block next requests
             // todo failure HTTP responses should be queued via async HTTP
             event.latch.await(5, TimeUnit.SECONDS);
-
         } catch (InterruptedException e) {
         }
+        logger.trace("sent failure event");
     }
 
     @Override
-    public boolean isTemporarilyDisabled(KeycloakSession session, RealmModel realm, String username) {
-        UsernameLoginFailureModel failure = session.sessions().getUserLoginFailure(realm, username.toLowerCase());
-        if (failure == null) {
-            return false;
+    public boolean isTemporarilyDisabled(KeycloakSession session, RealmModel realm, UserModel user) {
+        UserLoginFailureModel failure = session.sessions().getUserLoginFailure(realm, user.getId());
+
+        if (failure != null) {
+            int currTime = (int) (Time.currentTimeMillis() / 1000);
+            int failedLoginNotBefore = failure.getFailedLoginNotBefore();
+            if (currTime < failedLoginNotBefore) {
+                logger.debugv("Current: {0} notBefore: {1}", currTime, failedLoginNotBefore);
+                return true;
+            }
         }
 
-        int currTime = (int)(System.currentTimeMillis()/1000);
-        if (currTime < failure.getFailedLoginNotBefore()) {
-            logger.debugv("Current: {0} notBefore: {1}", currTime , failure.getFailedLoginNotBefore());
-            return true;
-        }
+
         return false;
     }
-
     @Override
     public void close() {
 

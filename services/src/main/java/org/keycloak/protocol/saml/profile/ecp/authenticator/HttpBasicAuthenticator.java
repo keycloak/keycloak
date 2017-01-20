@@ -25,8 +25,12 @@ import org.keycloak.authentication.Authenticator;
 import org.keycloak.authentication.AuthenticatorFactory;
 import org.keycloak.common.util.Base64;
 import org.keycloak.events.Errors;
-import org.keycloak.models.*;
 import org.keycloak.models.AuthenticationExecutionModel.Requirement;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserCredentialModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.provider.ProviderConfigProperty;
 
 import javax.ws.rs.core.HttpHeaders;
@@ -43,7 +47,7 @@ public class HttpBasicAuthenticator implements AuthenticatorFactory {
 
     @Override
     public String getDisplayType() {
-        return null;
+        return "HTTP Basic Authentication";
     }
 
     @Override
@@ -68,7 +72,7 @@ public class HttpBasicAuthenticator implements AuthenticatorFactory {
 
     @Override
     public String getHelpText() {
-        return null;
+        return "Validates username and password from Authorization HTTP header";
     }
 
     @Override
@@ -97,7 +101,7 @@ public class HttpBasicAuthenticator implements AuthenticatorFactory {
 
                     if (user != null) {
                         String password = usernameAndPassword[1];
-                        boolean valid = context.getSession().users().validCredentials(context.getSession(), realm, user, UserCredentialModel.password(password));
+                        boolean valid = context.getSession().userCredentialManager().isValid(realm, user, UserCredentialModel.password(password));
 
                         if (valid) {
                             context.getClientSession().setAuthenticatedUser(user);

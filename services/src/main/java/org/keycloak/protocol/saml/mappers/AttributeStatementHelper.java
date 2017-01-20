@@ -17,13 +17,13 @@
 
 package org.keycloak.protocol.saml.mappers;
 
-import org.keycloak.models.ProtocolMapperModel;
-import org.keycloak.protocol.ProtocolMapperUtils;
-import org.keycloak.provider.ProviderConfigProperty;
-import org.keycloak.protocol.saml.SamlProtocol;
-import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.dom.saml.v2.assertion.AttributeStatementType;
 import org.keycloak.dom.saml.v2.assertion.AttributeType;
+import org.keycloak.models.ProtocolMapperModel;
+import org.keycloak.protocol.ProtocolMapperUtils;
+import org.keycloak.protocol.saml.SamlProtocol;
+import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -49,6 +49,15 @@ public class AttributeStatementHelper {
                                     String attributeValue) {
         AttributeType attribute = createAttributeType(mappingModel);
         attribute.addAttributeValue(attributeValue);
+        attributeStatement.addAttribute(new AttributeStatementType.ASTChoiceType(attribute));
+    }
+
+    public static void addAttributes(AttributeStatementType attributeStatement, ProtocolMapperModel mappingModel,
+                                    List<String> attributeValues) {
+
+        AttributeType attribute = createAttributeType(mappingModel);
+        attributeValues.forEach(attribute::addAttributeValue);
+
         attributeStatement.addAttribute(new AttributeStatementType.ASTChoiceType(attribute));
     }
 
@@ -85,7 +94,7 @@ public class AttributeStatementHelper {
         types.add(AttributeStatementHelper.URI_REFERENCE);
         types.add(AttributeStatementHelper.UNSPECIFIED);
         property.setType(ProviderConfigProperty.LIST_TYPE);
-        property.setDefaultValue(types);
+        property.setOptions(types);
         configProperties.add(property);
 
     }

@@ -24,6 +24,7 @@ import org.keycloak.dom.saml.v2.metadata.IDPSSODescriptorType;
 import org.keycloak.dom.saml.v2.metadata.KeyDescriptorType;
 import org.keycloak.dom.saml.v2.metadata.KeyTypes;
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.saml.common.util.DocumentUtil;
@@ -49,12 +50,12 @@ public class SAMLIdentityProviderFactory extends AbstractIdentityProviderFactory
     }
 
     @Override
-    public SAMLIdentityProvider create(IdentityProviderModel model) {
-        return new SAMLIdentityProvider(new SAMLIdentityProviderConfig(model));
+    public SAMLIdentityProvider create(KeycloakSession session, IdentityProviderModel model) {
+        return new SAMLIdentityProvider(session, new SAMLIdentityProviderConfig(model));
     }
 
     @Override
-    public Map<String, String> parseConfig(InputStream inputStream) {
+    public Map<String, String> parseConfig(KeycloakSession session, InputStream inputStream) {
         try {
             Object parsedObject = new SAMLParser().parse(inputStream);
             EntityDescriptorType entityType;
@@ -107,6 +108,7 @@ public class SAMLIdentityProviderFactory extends AbstractIdentityProviderFactory
                     samlIdentityProviderConfig.setSingleLogoutServiceUrl(singleLogoutServiceUrl);
                     samlIdentityProviderConfig.setSingleSignOnServiceUrl(singleSignOnServiceUrl);
                     samlIdentityProviderConfig.setWantAuthnRequestsSigned(idpDescriptor.isWantAuthnRequestsSigned());
+                    samlIdentityProviderConfig.setAddExtensionsElementWithKeyInfo(false);
                     samlIdentityProviderConfig.setValidateSignature(idpDescriptor.isWantAuthnRequestsSigned());
                     samlIdentityProviderConfig.setPostBindingResponse(postBinding);
                     samlIdentityProviderConfig.setPostBindingAuthnRequest(postBinding);
@@ -120,7 +122,7 @@ public class SAMLIdentityProviderFactory extends AbstractIdentityProviderFactory
                             Element x509KeyInfo = DocumentUtil.getChildElement(keyInfo, new QName("dsig", "X509Certificate"));
 
                             if (KeyTypes.SIGNING.equals(keyDescriptorType.getUse())) {
-                                samlIdentityProviderConfig.setSigningCertificate(x509KeyInfo.getTextContent());
+                                samlIdentityProviderConfig.addSigningCertificate(x509KeyInfo.getTextContent());
                             } else if (KeyTypes.ENCRYPTION.equals(keyDescriptorType.getUse())) {
                                 samlIdentityProviderConfig.setEncryptionPublicKey(x509KeyInfo.getTextContent());
                             } else if (keyDescriptorType.getUse() ==  null) {
@@ -130,8 +132,8 @@ public class SAMLIdentityProviderFactory extends AbstractIdentityProviderFactory
                     }
 
                     if (defaultCertificate != null) {
-                        if (samlIdentityProviderConfig.getSigningCertificate() == null) {
-                            samlIdentityProviderConfig.setSigningCertificate(defaultCertificate);
+                        if (samlIdentityProviderConfig.getSigningCertificates().length == 0) {
+                            samlIdentityProviderConfig.addSigningCertificate(defaultCertificate);
                         }
 
                         if (samlIdentityProviderConfig.getEncryptionPublicKey() == null) {

@@ -24,7 +24,11 @@ import org.keycloak.client.registration.ClientRegistrationException;
 import org.keycloak.client.registration.HttpErrorException;
 import org.keycloak.representations.idm.ClientRepresentation;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.fail;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -44,6 +48,14 @@ public class RegistrationAccessTokenTest extends AbstractClientRegistrationTest 
         c.setRootUrl("http://root");
 
         client = createClient(c);
+
+        c = new ClientRepresentation();
+        c.setEnabled(true);
+        c.setClientId("SomeOtherClient");
+        c.setSecret("RegistrationAccessTokenTestClientSecret");
+        c.setRootUrl("http://root");
+
+        createClient(c);
 
         reg.auth(Auth.token(client.getRegistrationAccessToken()));
     }
@@ -78,8 +90,28 @@ public class RegistrationAccessTokenTest extends AbstractClientRegistrationTest 
     }
 
     @Test
+    public void getClientWrongClient() throws ClientRegistrationException {
+        try {
+            reg.get("SomeOtherClient");
+        } catch (ClientRegistrationException e) {
+            assertEquals(401, ((HttpErrorException) e.getCause()).getStatusLine().getStatusCode());
+        }
+    }
+
+    @Test
+    public void getClientMissingClient() throws ClientRegistrationException {
+        try {
+            reg.get("nosuch");
+        } catch (ClientRegistrationException e) {
+            assertEquals(401, ((HttpErrorException) e.getCause()).getStatusLine().getStatusCode());
+        }
+    }
+
+    @Test
     public void getClientWithBadRegistrationToken() throws ClientRegistrationException {
-        reg.auth(Auth.token("invalid"));
+        String oldToken = client.getRegistrationAccessToken();
+        reg.update(client);
+        reg.auth(Auth.token(oldToken));
         try {
             reg.get(client.getClientId());
             fail("Expected 401");
@@ -104,9 +136,9 @@ public class RegistrationAccessTokenTest extends AbstractClientRegistrationTest 
 
     @Test
     public void updateClientWithBadRegistrationToken() throws ClientRegistrationException {
-        client.setRootUrl("http://newroot");
-
-        reg.auth(Auth.token("invalid"));
+        String oldToken = client.getRegistrationAccessToken();
+        reg.update(client);
+        reg.auth(Auth.token(oldToken));
         try {
             reg.update(client);
             fail("Expected 401");
@@ -125,7 +157,9 @@ public class RegistrationAccessTokenTest extends AbstractClientRegistrationTest 
 
     @Test
     public void deleteClientWithBadRegistrationToken() throws ClientRegistrationException {
-        reg.auth(Auth.token("invalid"));
+        String oldToken = client.getRegistrationAccessToken();
+        reg.update(client);
+        reg.auth(Auth.token(oldToken));
         try {
             reg.delete(client);
             fail("Expected 401");

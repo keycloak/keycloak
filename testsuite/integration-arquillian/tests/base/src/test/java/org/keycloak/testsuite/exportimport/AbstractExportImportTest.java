@@ -17,14 +17,14 @@
 
 package org.keycloak.testsuite.exportimport;
 
-import java.util.HashSet;
-import java.util.Properties;
-import java.util.Set;
-
 import org.jboss.arquillian.container.spi.Container;
 import org.jboss.arquillian.container.spi.client.container.LifecycleException;
 import org.keycloak.exportimport.ExportImportConfig;
 import org.keycloak.testsuite.AbstractKeycloakTest;
+
+import java.util.HashSet;
+import java.util.Properties;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

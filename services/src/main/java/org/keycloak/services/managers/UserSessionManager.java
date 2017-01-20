@@ -16,11 +16,7 @@
  */
 package org.keycloak.services.managers;
 
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
-
+import org.jboss.logging.Logger;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
@@ -34,6 +30,11 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.session.UserSessionPersisterProvider;
 import org.keycloak.services.ServicesLogger;
 
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Set;
+
 
 /**
  *
@@ -41,7 +42,7 @@ import org.keycloak.services.ServicesLogger;
  */
 public class UserSessionManager {
 
-    protected static ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    private static final Logger logger = Logger.getLogger(UserSessionManager.class);
 
     private final KeycloakSession kcSession;
     private final UserSessionPersisterProvider persister;
@@ -71,18 +72,8 @@ public class UserSessionManager {
     }
 
     // userSessionId is provided from offline token. It's used just to verify if it match the ID from clientSession representation
-    public ClientSessionModel findOfflineClientSession(RealmModel realm, String clientSessionId, String userSessionId) {
-        ClientSessionModel clientSession = kcSession.sessions().getOfflineClientSession(realm, clientSessionId);
-        if (clientSession == null) {
-            return null;
-        }
-
-        if (!userSessionId.equals(clientSession.getUserSession().getId())) {
-            throw new ModelException("User session don't match. Offline client session " + clientSession.getId() + ", It's user session " + clientSession.getUserSession().getId() +
-                    "  Wanted user session: " + userSessionId);
-        }
-
-        return clientSession;
+    public ClientSessionModel findOfflineClientSession(RealmModel realm, String clientSessionId) {
+        return kcSession.sessions().getOfflineClientSession(realm, clientSessionId);
     }
 
     public Set<ClientModel> findClientsWithOfflineToken(RealmModel realm, UserModel user) {
@@ -136,7 +127,7 @@ public class UserSessionManager {
     public boolean isOfflineTokenAllowed(ClientSessionModel clientSession) {
         RoleModel offlineAccessRole = clientSession.getRealm().getRole(Constants.OFFLINE_ACCESS_ROLE);
         if (offlineAccessRole == null) {
-            logger.roleNotInRealm(Constants.OFFLINE_ACCESS_ROLE);
+            ServicesLogger.LOGGER.roleNotInRealm(Constants.OFFLINE_ACCESS_ROLE);
             return false;
         }
 

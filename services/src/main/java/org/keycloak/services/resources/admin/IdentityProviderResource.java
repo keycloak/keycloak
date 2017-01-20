@@ -16,12 +16,15 @@
  */
 package org.keycloak.services.resources.admin;
 
+import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.IdentityProviderFactory;
 import org.keycloak.broker.provider.IdentityProviderMapper;
+import org.keycloak.broker.social.SocialIdentityProvider;
 import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
@@ -32,15 +35,15 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
+import org.keycloak.models.utils.StripSecretsUtils;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderFactory;
+import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.ConfigPropertyRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperTypeRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.services.ErrorResponse;
-import org.keycloak.services.ServicesLogger;
-import org.keycloak.broker.social.SocialIdentityProvider;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -55,7 +58,6 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -67,7 +69,7 @@ import java.util.Map;
  */
 public class IdentityProviderResource {
 
-    private static ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    protected static final Logger logger = Logger.getLogger(IdentityProviderResource.class);
 
     private final RealmAuth auth;
     private final RealmModel realm;
@@ -82,7 +84,7 @@ public class IdentityProviderResource {
         this.session = session;
         this.identityProviderModel = identityProviderModel;
         this.auth = auth;
-        this.adminEvent = adminEvent;
+        this.adminEvent = adminEvent.resource(ResourceType.IDENTITY_PROVIDER);
     }
 
     /**
@@ -101,7 +103,7 @@ public class IdentityProviderResource {
         }
 
         IdentityProviderRepresentation rep = ModelToRepresentation.toRepresentation(realm, this.identityProviderModel);
-        return rep;
+        return StripSecretsUtils.strip(rep);
     }
 
     /**
@@ -152,12 +154,18 @@ public class IdentityProviderResource {
         }
     }
 
-    public static void updateIdpFromRep(IdentityProviderRepresentation providerRep, RealmModel realm, KeycloakSession session) {
+    private void updateIdpFromRep(IdentityProviderRepresentation providerRep, RealmModel realm, KeycloakSession session) {
         String internalId = providerRep.getInternalId();
         String newProviderId = providerRep.getAlias();
         String oldProviderId = getProviderIdByInternalId(realm, internalId);
 
-        realm.updateIdentityProvider(RepresentationToModel.toModel(realm, providerRep));
+        IdentityProviderModel updated = RepresentationToModel.toModel(realm, providerRep);
+
+        if (updated.getConfig() != null && ComponentRepresentation.SECRET_VALUE.equals(updated.getConfig().get("clientSecret"))) {
+            updated.getConfig().put("clientSecret", identityProviderModel.getConfig() != null ? identityProviderModel.getConfig().get("clientSecret") : null);
+        }
+
+        realm.updateIdentityProvider(updated);
 
         if (oldProviderId != null && !oldProviderId.equals(newProviderId)) {
 
@@ -228,7 +236,7 @@ public class IdentityProviderResource {
 
         try {
             IdentityProviderFactory factory = getIdentityProviderFactory();
-            return factory.create(identityProviderModel).export(uriInfo, realm, format);
+            return factory.create(session, identityProviderModel).export(uriInfo, realm, format);
         } catch (Exception e) {
             return ErrorResponse.error("Could not export public broker configuration for identity provider [" + identityProviderModel.getProviderId() + "].", Response.Status.NOT_FOUND);
         }
@@ -261,12 +269,7 @@ public class IdentityProviderResource {
                     rep.setHelpText(mapper.getHelpText());
                     List<ProviderConfigProperty> configProperties = mapper.getConfigProperties();
                     for (ProviderConfigProperty prop : configProperties) {
-                        ConfigPropertyRepresentation propRep = new ConfigPropertyRepresentation();
-                        propRep.setName(prop.getName());
-                        propRep.setLabel(prop.getLabel());
-                        propRep.setType(prop.getType());
-                        propRep.setDefaultValue(prop.getDefaultValue());
-                        propRep.setHelpText(prop.getHelpText());
+                        ConfigPropertyRepresentation propRep = ModelToRepresentation.toRepresentation(prop);
                         rep.getProperties().add(propRep);
                     }
                     types.put(rep.getId(), rep);
@@ -317,7 +320,7 @@ public class IdentityProviderResource {
         IdentityProviderMapperModel model = RepresentationToModel.toModel(mapper);
         model = realm.addIdentityProviderMapper(model);
 
-        adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo, model.getId())
+        adminEvent.operation(OperationType.CREATE).resource(ResourceType.IDENTITY_PROVIDER_MAPPER).resourcePath(uriInfo, model.getId())
             .representation(mapper).success();
 
         return Response.created(uriInfo.getAbsolutePathBuilder().path(model.getId()).build()).build();
@@ -367,7 +370,7 @@ public class IdentityProviderResource {
         if (model == null) throw new NotFoundException("Model not found");
         model = RepresentationToModel.toModel(rep);
         realm.updateIdentityProviderMapper(model);
-        adminEvent.operation(OperationType.UPDATE).resourcePath(uriInfo).representation(rep).success();
+        adminEvent.operation(OperationType.UPDATE).resource(ResourceType.IDENTITY_PROVIDER_MAPPER).resourcePath(uriInfo).representation(rep).success();
 
     }
 
@@ -389,7 +392,7 @@ public class IdentityProviderResource {
         IdentityProviderMapperModel model = realm.getIdentityProviderMapperById(id);
         if (model == null) throw new NotFoundException("Model not found");
         realm.removeIdentityProviderMapper(model);
-        adminEvent.operation(OperationType.DELETE).resourcePath(uriInfo).success();
+        adminEvent.operation(OperationType.DELETE).resource(ResourceType.IDENTITY_PROVIDER_MAPPER).resourcePath(uriInfo).success();
 
     }
 

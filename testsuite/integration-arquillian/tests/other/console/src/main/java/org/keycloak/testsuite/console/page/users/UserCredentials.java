@@ -1,9 +1,10 @@
 package org.keycloak.testsuite.console.page.users;
 
 import org.keycloak.testsuite.console.page.fragment.OnOffSwitch;
-import static org.keycloak.testsuite.page.Form.setInputValue;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
+
+import static org.keycloak.testsuite.page.Form.setInputValue;
 import static org.keycloak.testsuite.util.WaitUtils.*;
 
 /**
@@ -42,7 +43,6 @@ public class UserCredentials extends User {
     }
 
     public void clickResetPasswordAndConfirm() {
-        waitUntilElement(resetPasswordButton);
         resetPasswordButton.click();
         modalDialog.ok();
     }

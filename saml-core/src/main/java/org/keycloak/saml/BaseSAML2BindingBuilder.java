@@ -18,6 +18,8 @@
 package org.keycloak.saml;
 
 import org.jboss.logging.Logger;
+
+import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.saml.common.constants.GeneralConstants;
 import org.keycloak.saml.common.constants.JBossSAMLConstants;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
@@ -28,7 +30,7 @@ import org.keycloak.saml.processing.core.saml.v2.util.DocumentUtil;
 import org.keycloak.saml.processing.core.util.XMLEncryptionUtil;
 import org.keycloak.saml.processing.web.util.PostBindingUtil;
 import org.keycloak.saml.processing.web.util.RedirectBindingUtil;
-import org.keycloak.common.util.KeycloakUriBuilder;
+
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -39,14 +41,16 @@ import javax.xml.crypto.dsig.CanonicalizationMethod;
 import javax.xml.namespace.QName;
 import java.io.IOException;
 import java.net.URI;
+import java.security.InvalidKeyException;
 import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.Signature;
+import java.security.SignatureException;
 import java.security.cert.X509Certificate;
 
-import static org.keycloak.saml.common.util.StringUtil.isNotNull;
 import static org.keycloak.common.util.HtmlUtils.escapeAttribute;
+import static org.keycloak.saml.common.util.StringUtil.isNotNull;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -55,6 +59,7 @@ import static org.keycloak.common.util.HtmlUtils.escapeAttribute;
 public class BaseSAML2BindingBuilder<T extends BaseSAML2BindingBuilder> {
     protected static final Logger logger = Logger.getLogger(BaseSAML2BindingBuilder.class);
 
+    protected String signingKeyName;
     protected KeyPair signingKeyPair;
     protected X509Certificate signingCertificate;
     protected boolean sign;
@@ -82,23 +87,27 @@ public class BaseSAML2BindingBuilder<T extends BaseSAML2BindingBuilder> {
         return (T)this;
     }
 
-    public T signWith(KeyPair keyPair) {
+    public T signWith(String signingKeyName, KeyPair keyPair) {
+        this.signingKeyName = signingKeyName;
         this.signingKeyPair = keyPair;
         return (T)this;
     }
 
-    public T signWith(PrivateKey privateKey, PublicKey publicKey) {
+    public T signWith(String signingKeyName, PrivateKey privateKey, PublicKey publicKey) {
+        this.signingKeyName = signingKeyName;
         this.signingKeyPair = new KeyPair(publicKey, privateKey);
         return (T)this;
     }
 
-    public T signWith(KeyPair keyPair, X509Certificate cert) {
+    public T signWith(String signingKeyName, KeyPair keyPair, X509Certificate cert) {
+        this.signingKeyName = signingKeyName;
         this.signingKeyPair = keyPair;
         this.signingCertificate = cert;
         return (T)this;
     }
 
-    public T signWith(PrivateKey privateKey, PublicKey publicKey, X509Certificate cert) {
+    public T signWith(String signingKeyName, PrivateKey privateKey, PublicKey publicKey, X509Certificate cert) {
+        this.signingKeyName = signingKeyName;
         this.signingKeyPair = new KeyPair(publicKey, privateKey);
         this.signingCertificate = cert;
         return (T)this;
@@ -147,8 +156,8 @@ public class BaseSAML2BindingBuilder<T extends BaseSAML2BindingBuilder> {
         }
 
         public String encoded() throws ProcessingException, ConfigurationException, IOException {
-            byte[] responseBytes = DocumentUtil.getDocumentAsString(document).getBytes("UTF-8");
-            return PostBindingUtil.base64Encode(new String(responseBytes));
+            byte[] responseBytes = DocumentUtil.getDocumentAsString(document).getBytes(GeneralConstants.SAML_CHARSET);
+            return PostBindingUtil.base64Encode(new String(responseBytes, GeneralConstants.SAML_CHARSET));
         }
         public Document getDocument() {
             return document;
@@ -263,7 +272,7 @@ public class BaseSAML2BindingBuilder<T extends BaseSAML2BindingBuilder> {
             samlSignature.setX509Certificate(signingCertificate);
         }
 
-        samlSignature.signSAMLDocument(samlDocument, signingKeyPair, canonicalizationMethodType);
+        samlSignature.signSAMLDocument(samlDocument, signingKeyName, signingKeyPair, canonicalizationMethodType);
     }
 
     public void signAssertion(Document samlDocument) throws ProcessingException {
@@ -292,8 +301,8 @@ public class BaseSAML2BindingBuilder<T extends BaseSAML2BindingBuilder> {
 
 
     public String buildHtmlPostResponse(Document responseDoc, String actionUrl, boolean asRequest) throws ProcessingException, ConfigurationException, IOException {
-        byte[] responseBytes = org.keycloak.saml.common.util.DocumentUtil.getDocumentAsString(responseDoc).getBytes("UTF-8");
-        String samlResponse = PostBindingUtil.base64Encode(new String(responseBytes));
+        byte[] responseBytes = org.keycloak.saml.common.util.DocumentUtil.getDocumentAsString(responseDoc).getBytes(GeneralConstants.SAML_CHARSET);
+        String samlResponse = PostBindingUtil.base64Encode(new String(responseBytes, GeneralConstants.SAML_CHARSET));
 
         return buildHtml(samlResponse, actionUrl, asRequest);
     }
@@ -307,34 +316,34 @@ public class BaseSAML2BindingBuilder<T extends BaseSAML2BindingBuilder> {
             key = GeneralConstants.SAML_REQUEST_KEY;
         }
 
-        builder.append("<HTML>");
-        builder.append("<HEAD>");
+        builder.append("<HTML>")
+          .append("<HEAD>")
 
-        builder.append("<TITLE>SAML HTTP Post Binding</TITLE>");
-        builder.append("</HEAD>");
-        builder.append("<BODY Onload=\"document.forms[0].submit()\">");
+          .append("<TITLE>SAML HTTP Post Binding</TITLE>")
+          .append("</HEAD>")
+          .append("<BODY Onload=\"document.forms[0].submit()\">")
 
-        builder.append("<FORM METHOD=\"POST\" ACTION=\"" + actionUrl + "\">");
-        builder.append("<INPUT TYPE=\"HIDDEN\" NAME=\"" + key + "\"" + " VALUE=\"" + samlResponse + "\"/>");
+          .append("<FORM METHOD=\"POST\" ACTION=\"").append(actionUrl).append("\">")
+          .append("<INPUT TYPE=\"HIDDEN\" NAME=\"").append(key).append("\"").append(" VALUE=\"").append(samlResponse).append("\"/>");
 
         if (isNotNull(relayState)) {
-            builder.append("<INPUT TYPE=\"HIDDEN\" NAME=\"RelayState\" " + "VALUE=\"" + escapeAttribute(relayState) + "\"/>");
+            builder.append("<INPUT TYPE=\"HIDDEN\" NAME=\"RelayState\" " + "VALUE=\"").append(escapeAttribute(relayState)).append("\"/>");
         }
 
-        builder.append("<NOSCRIPT>");
-        builder.append("<P>JavaScript is disabled. We strongly recommend to enable it. Click the button below to continue.</P>");
-        builder.append("<INPUT TYPE=\"SUBMIT\" VALUE=\"CONTINUE\" />");
-        builder.append("</NOSCRIPT>");
+        builder.append("<NOSCRIPT>")
+          .append("<P>JavaScript is disabled. We strongly recommend to enable it. Click the button below to continue.</P>")
+          .append("<INPUT TYPE=\"SUBMIT\" VALUE=\"CONTINUE\" />")
+          .append("</NOSCRIPT>")
 
-        builder.append("</FORM></BODY></HTML>");
+          .append("</FORM></BODY></HTML>");
 
         return builder.toString();
     }
 
     public String base64Encoded(Document document) throws ConfigurationException, ProcessingException, IOException  {
         String documentAsString = DocumentUtil.getDocumentAsString(document);
-        logger.debugv("saml docment: {0}", documentAsString);
-        byte[] responseBytes = documentAsString.getBytes("UTF-8");
+        logger.debugv("saml document: {0}", documentAsString);
+        byte[] responseBytes = documentAsString.getBytes(GeneralConstants.SAML_CHARSET);
 
         return RedirectBindingUtil.deflateBase64URLEncode(responseBytes);
     }
@@ -356,9 +365,9 @@ public class BaseSAML2BindingBuilder<T extends BaseSAML2BindingBuilder> {
             byte[] sig = new byte[0];
             try {
                 signature.initSign(signingKeyPair.getPrivate());
-                signature.update(rawQuery.getBytes("UTF-8"));
+                signature.update(rawQuery.getBytes(GeneralConstants.SAML_CHARSET));
                 sig = signature.sign();
-            } catch (Exception e) {
+            } catch (InvalidKeyException | SignatureException e) {
                 throw new ProcessingException(e);
             }
             String encodedSig = RedirectBindingUtil.base64URLEncode(sig);

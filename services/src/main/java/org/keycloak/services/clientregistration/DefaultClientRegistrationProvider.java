@@ -17,11 +17,17 @@
 
 package org.keycloak.services.clientregistration;
 
-import org.keycloak.events.EventBuilder;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.representations.idm.ClientRepresentation;
 
-import javax.ws.rs.*;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.net.URI;
@@ -39,7 +45,8 @@ public class DefaultClientRegistrationProvider extends AbstractClientRegistratio
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response createDefault(ClientRepresentation client) {
-        client = create(client);
+        DefaultClientRegistrationContext context = new DefaultClientRegistrationContext(session, client, this);
+        client = create(context);
         URI uri = session.getContext().getUri().getAbsolutePathBuilder().path(client.getClientId()).build();
         return Response.created(uri).entity(client).build();
     }
@@ -55,8 +62,10 @@ public class DefaultClientRegistrationProvider extends AbstractClientRegistratio
     @PUT
     @Path("{clientId}")
     @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
     public Response updateDefault(@PathParam("clientId") String clientId, ClientRepresentation client) {
-        client = update(clientId, client);
+        DefaultClientRegistrationContext context = new DefaultClientRegistrationContext(session, client, this);
+        client = update(clientId, context);
         return Response.ok(client).build();
     }
 
@@ -65,19 +74,4 @@ public class DefaultClientRegistrationProvider extends AbstractClientRegistratio
     public void deleteDefault(@PathParam("clientId") String clientId) {
         delete(clientId);
     }
-
-    @Override
-    public void setAuth(ClientRegistrationAuth auth) {
-        this.auth = auth;
-    }
-
-    @Override
-    public void setEvent(EventBuilder event) {
-        this.event = event;
-    }
-
-    @Override
-    public void close() {
-    }
-
 }

@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-tests</artifactId>
-        <version>2.0.0.CR1-SNAPSHOT</version>
+        <version>2.5.1.Final-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -32,13 +32,17 @@
     <description></description>
 
     <properties>
+        <cli.log.output>false</cli.log.output>
+        <test.intermittent>false</test.intermittent>
+        <exclude.test>-</exclude.test>
         <exclude.console>-</exclude.console>
         <exclude.account>-</exclude.account>
         <exclude.client>-</exclude.client>
-        <!--exclude migration tests by default, enabled by 'migration' profile in tests/pom.xml-->
-        <exclude.migration>**/migration/**/*Test.java</exclude.migration>
         <!--exclude cluster tests by default, enabled by 'auth-server-*-cluster' profiles in tests/pom.xml-->
         <exclude.cluster>**/cluster/**/*Test.java</exclude.cluster>
+
+        <!-- exclude undertow adapter tests. They can be added by -Dtest=org.keycloak.testsuite.adapter.undertow.**.*Test -->
+        <exclude.undertow.adapter>**/adapter/undertow/**/*Test.java</exclude.undertow.adapter>
     </properties>
     
     <dependencies>
@@ -68,6 +72,11 @@
             <scope>compile</scope>
         </dependency>
         <dependency>
+            <groupId>org.subethamail</groupId>
+            <artifactId>subethasmtp</artifactId>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
             <groupId>com.icegreen</groupId>
             <artifactId>greenmail</artifactId>
             <scope>compile</scope>
@@ -75,6 +84,18 @@
     </dependencies>
     
     <build>
+        <testResources>
+            <testResource>
+                <directory>src/test/resources</directory>
+                <filtering>true</filtering>
+                <includes>
+                    <include>migration-test/*</include>
+                </includes>
+            </testResource>
+            <testResource>
+                <directory>src/test/resources</directory>
+            </testResource>
+        </testResources>
         <plugins>
             <plugin>
                 <artifactId>maven-jar-plugin</artifactId>
@@ -92,11 +113,12 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
                     <excludes>
+                        <exclude>${exclude.test}</exclude>
                         <exclude>${exclude.console}</exclude>
                         <exclude>${exclude.account}</exclude>
                         <exclude>${exclude.client}</exclude>
-                        <exclude>${exclude.migration}</exclude>
                         <exclude>${exclude.cluster}</exclude>
+                        <exclude>${exclude.undertow.adapter}</exclude>
                     </excludes>
                 </configuration>
             </plugin>
@@ -130,6 +152,7 @@
                             <goal>copy-resources</goal>
                         </goals>
                         <configuration>
+                            <skip>${skip.add.user.json}</skip>
                             <outputDirectory>${auth.server.config.dir}</outputDirectory>
                             <resources>
                                 <resource>
@@ -144,7 +167,30 @@
                     </execution>
                 </executions>
             </plugin>
-            
+
+            <plugin>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>unpack-client-cli-dist</id>
+                        <phase>generate-test-resources</phase>
+                        <goals>
+                            <goal>unpack</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>org.keycloak</groupId>
+                                    <artifactId>keycloak-client-cli-dist</artifactId>
+                                    <version>${project.version}</version>
+                                    <type>zip</type>
+                                    <outputDirectory>${containers.home}</outputDirectory>
+                                </artifactItem>
+                            </artifactItems>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
 
     </build>

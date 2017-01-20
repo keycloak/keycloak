@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-tests</artifactId>
-        <version>2.0.0.CR1-SNAPSHOT</version>
+        <version>2.5.1.Final-SNAPSHOT</version>
     </parent>
 
     <artifactId>integration-arquillian-tests-other</artifactId>
@@ -38,8 +38,9 @@
 
     <modules>
         <module>adapters</module>
+        <module>sssd</module>
     </modules>
-    
+
     <build>
         <pluginManagement>
             <plugins>
@@ -59,13 +60,13 @@
                                         <artifactId>integration-arquillian-tests-base</artifactId>
                                         <version>${project.version}</version>
                                         <type>test-jar</type>
-                                        <includes>arquillian.xml,keycloak-add-user.json,kerberos/*</includes>
+                                        <includes>arquillian.xml,keycloak-add-user.json,test-constants.properties,kerberos/*</includes>
                                     </artifactItem>
                                 </artifactItems>
                             </configuration>
                         </execution>
                     </executions>
-                </plugin> 
+                </plugin>
                 <plugin>
                     <artifactId>maven-resources-plugin</artifactId>
                     <executions>
@@ -118,6 +119,12 @@
             </dependencies>
         </profile>
         <profile>
+            <id>clean-start</id>
+            <modules>
+                <module>clean-start</module>
+            </modules>
+        </profile>
+        <profile>
             <id>console-ui-tests</id>
             <modules>
                 <module>console</module>
@@ -139,6 +146,18 @@
             <id>jpa-performance</id>
             <modules>
                 <module>jpa-performance</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>nodejs-adapter-tests</id>
+            <modules>
+                <module>nodejs_adapter</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>auth-server-wildfly</id>
+            <modules>
+                <module>server-config-migration</module>
             </modules>
         </profile>
     </profiles>

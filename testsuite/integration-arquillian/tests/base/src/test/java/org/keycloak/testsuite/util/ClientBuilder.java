@@ -17,8 +17,6 @@
 
 package org.keycloak.testsuite.util;
 
-import java.util.ArrayList;
-import org.keycloak.dom.saml.v2.ac.BooleanType;
 import org.keycloak.representations.idm.ClientRepresentation;
 
 import java.util.Arrays;

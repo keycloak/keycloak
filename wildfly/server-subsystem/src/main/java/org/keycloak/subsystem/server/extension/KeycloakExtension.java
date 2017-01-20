@@ -24,6 +24,7 @@ import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.SubsystemRegistration;
 import org.jboss.as.controller.descriptions.StandardResourceDescriptionResolver;
 import org.jboss.as.controller.parsing.ExtensionParsingContext;
+import org.jboss.as.controller.registry.ManagementResourceRegistration;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 import static org.keycloak.subsystem.server.logging.KeycloakLogger.ROOT_LOGGER;
@@ -44,6 +45,10 @@ public class KeycloakExtension implements Extension {
     private static final ResourceDefinition KEYCLOAK_SUBSYSTEM_RESOURCE = new KeycloakSubsystemDefinition();
     private static final KeycloakSubsystemParser PARSER = new KeycloakSubsystemParser();
     private static final ModelVersion MGMT_API_VERSION = ModelVersion.create(1,1,0);
+    
+    static final ThemeResourceDefinition THEME_DEFINITION = new ThemeResourceDefinition();
+    static final SpiResourceDefinition SPI_DEFINITION = new SpiResourceDefinition();
+    static final ProviderResourceDefinition PROVIDER_DEFINITION = new ProviderResourceDefinition();
 
     static StandardResourceDescriptionResolver getResourceDescriptionResolver(final String... keyPrefix) {
         StringBuilder prefix = new StringBuilder(SUBSYSTEM_NAME);
@@ -69,7 +74,11 @@ public class KeycloakExtension implements Extension {
         ROOT_LOGGER.debug("Activating Keycloak Extension");
         final SubsystemRegistration subsystem = context.registerSubsystem(SUBSYSTEM_NAME, MGMT_API_VERSION);
 
-        subsystem.registerSubsystemModel(KEYCLOAK_SUBSYSTEM_RESOURCE);
+        ManagementResourceRegistration subsystemRegistration = subsystem.registerSubsystemModel(KEYCLOAK_SUBSYSTEM_RESOURCE);
+        subsystemRegistration.registerSubModel(THEME_DEFINITION);
+        ManagementResourceRegistration spiRegistration = subsystemRegistration.registerSubModel(SPI_DEFINITION);
+        spiRegistration.registerSubModel(PROVIDER_DEFINITION);
+        
         subsystem.registerXMLElementWriter(PARSER);
     }
 }

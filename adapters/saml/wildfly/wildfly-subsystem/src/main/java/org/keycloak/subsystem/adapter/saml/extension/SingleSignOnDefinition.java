@@ -37,6 +37,11 @@ abstract class SingleSignOnDefinition {
                     .setXmlName(Constants.XML.VALIDATE_RESPONSE_SIGNATURE)
                     .build();
 
+    static final SimpleAttributeDefinition VALIDATE_ASSERTION_SIGNATURE =
+            new SimpleAttributeDefinitionBuilder(Constants.Model.VALIDATE_ASSERTION_SIGNATURE, ModelType.BOOLEAN, true)
+                    .setXmlName(Constants.XML.VALIDATE_ASSERTION_SIGNATURE)
+                    .build();
+
     static final SimpleAttributeDefinition REQUEST_BINDING =
             new SimpleAttributeDefinitionBuilder(Constants.Model.REQUEST_BINDING, ModelType.STRING, true)
                     .setXmlName(Constants.XML.REQUEST_BINDING)
@@ -52,7 +57,7 @@ abstract class SingleSignOnDefinition {
                     .setXmlName(Constants.XML.BINDING_URL)
                     .build();
 
-    static final SimpleAttributeDefinition[] ATTRIBUTES = {SIGN_REQUEST, VALIDATE_RESPONSE_SIGNATURE, REQUEST_BINDING, RESPONSE_BINDING, BINDING_URL};
+    static final SimpleAttributeDefinition[] ATTRIBUTES = {SIGN_REQUEST, VALIDATE_RESPONSE_SIGNATURE, VALIDATE_ASSERTION_SIGNATURE, REQUEST_BINDING, RESPONSE_BINDING, BINDING_URL};
 
     static final HashMap<String, SimpleAttributeDefinition> ATTRIBUTE_MAP = new HashMap<>();
 

@@ -17,16 +17,24 @@
 
 package org.keycloak.adapters.authentication;
 
-import java.security.PrivateKey;
+import java.security.KeyPair;
+import java.security.PublicKey;
 import java.util.Map;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.adapters.AdapterUtils;
 import org.keycloak.adapters.KeycloakDeployment;
+import org.keycloak.jose.jwk.JWK;
+import org.keycloak.jose.jwk.JWKBuilder;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.common.util.KeystoreUtil;
 import org.keycloak.common.util.Time;
+import org.keycloak.jose.jws.JWSBuilder;
+import org.keycloak.representations.JsonWebToken;
+
+import java.security.PrivateKey;
+import java.util.Map;
 
 /**
  * Client authentication based on JWT signed by client private key .
@@ -38,7 +46,9 @@ public class JWTClientCredentialsProvider implements ClientCredentialsProvider {
 
     public static final String PROVIDER_ID = "jwt";
 
-    private PrivateKey privateKey;
+    private KeyPair keyPair;
+    private JWK publicKeyJwk;
+
     private int tokenTimeout;
 
     @Override
@@ -46,12 +56,21 @@ public class JWTClientCredentialsProvider implements ClientCredentialsProvider {
         return PROVIDER_ID;
     }
 
-    public void setPrivateKey(PrivateKey privateKey) {
-        this.privateKey = privateKey;
+    public void setupKeyPair(KeyPair keyPair) {
+        this.keyPair = keyPair;
+        this.publicKeyJwk = JWKBuilder.create().rs256(keyPair.getPublic());
     }
 
     public void setTokenTimeout(int tokenTimeout) {
         this.tokenTimeout = tokenTimeout;
+    }
+
+    protected int getTokenTimeout() {
+        return tokenTimeout;
+    }
+
+    public PublicKey getPublicKey() {
+        return keyPair.getPublic();
     }
 
     @Override
@@ -84,7 +103,9 @@ public class JWTClientCredentialsProvider implements ClientCredentialsProvider {
         if (clientKeyAlias == null) {
             clientKeyAlias = deployment.getResourceName();
         }
-        this.privateKey = KeystoreUtil.loadPrivateKeyFromKeystore(clientKeystoreFile, clientKeystorePassword, clientKeyPassword, clientKeyAlias, clientKeystoreFormat);
+
+        KeyPair keyPair = KeystoreUtil.loadKeyPairFromKeystore(clientKeystoreFile, clientKeystorePassword, clientKeyPassword, clientKeyAlias, clientKeystoreFormat);
+        setupKeyPair(keyPair);
 
         this.tokenTimeout = asInt(cfg, "token-timeout", 10);
     }
@@ -116,8 +137,9 @@ public class JWTClientCredentialsProvider implements ClientCredentialsProvider {
     public String createSignedRequestToken(String clientId, String realmInfoUrl) {
         JsonWebToken jwt = createRequestToken(clientId, realmInfoUrl);
         return new JWSBuilder()
+                .kid(publicKeyJwk.getKeyId())
                 .jsonContent(jwt)
-                .rsa256(privateKey);
+                .rsa256(keyPair.getPrivate());
     }
 
     protected JsonWebToken createRequestToken(String clientId, String realmInfoUrl) {

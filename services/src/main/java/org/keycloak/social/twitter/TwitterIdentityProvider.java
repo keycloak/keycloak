@@ -17,12 +17,13 @@
 package org.keycloak.social.twitter;
 
 import org.jboss.logging.Logger;
-import org.keycloak.common.ClientConnection;
 import org.keycloak.broker.oidc.OAuth2IdentityProviderConfig;
 import org.keycloak.broker.provider.AbstractIdentityProvider;
 import org.keycloak.broker.provider.AuthenticationRequest;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.IdentityBrokerException;
+import org.keycloak.broker.social.SocialIdentityProvider;
+import org.keycloak.common.ClientConnection;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.models.ClientModel;
@@ -30,10 +31,9 @@ import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.services.ErrorPage;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.messages.Messages;
-import org.keycloak.services.ErrorPage;
-import org.keycloak.broker.social.SocialIdentityProvider;
 import twitter4j.Twitter;
 import twitter4j.TwitterFactory;
 import twitter4j.auth.AccessToken;
@@ -57,8 +57,8 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
         SocialIdentityProvider<OAuth2IdentityProviderConfig> {
 
     protected static final Logger logger = Logger.getLogger(TwitterIdentityProvider.class);
-    public TwitterIdentityProvider(OAuth2IdentityProviderConfig config) {
-        super(config);
+    public TwitterIdentityProvider(KeycloakSession session, OAuth2IdentityProviderConfig config) {
+        super(session, config);
     }
 
     @Override
@@ -82,7 +82,7 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
 
             URI authenticationUrl = URI.create(requestToken.getAuthenticationURL());
 
-            return Response.temporaryRedirect(authenticationUrl).build();
+            return Response.seeOther(authenticationUrl).build();
         } catch (Exception e) {
             throw new IdentityBrokerException("Could send authentication request to twitter.", e);
         }
@@ -113,13 +113,16 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
         public Response authResponse(@QueryParam("state") String state,
                                      @QueryParam("denied") String denied,
                                      @QueryParam("oauth_verifier") String verifier) {
+            if (denied != null) {
+                return callback.cancelled(state);
+            }
 
             try {
                 Twitter twitter = new TwitterFactory().getInstance();
 
                 twitter.setOAuthConsumer(getConfig().getClientId(), getConfig().getClientSecret());
 
-                ClientSessionModel clientSession = parseClientSessionCode(state).getClientSession();
+                ClientSessionModel clientSession = ClientSessionCode.getClientSession(state, session, realm);
 
                 String twitterToken = clientSession.getNote("twitter_token");
                 String twitterSecret = clientSession.getNote("twitter_tokenSecret");
@@ -145,8 +148,8 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
                 tokenBuilder.append("}");
 
                 identity.setToken(tokenBuilder.toString());
-                identity.setCode(state);
                 identity.setIdpConfig(getConfig());
+                identity.setCode(state);
 
                 return callback.authenticated(identity);
             } catch (Exception e) {

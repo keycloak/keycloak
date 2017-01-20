@@ -23,8 +23,6 @@ import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.dmr.ModelNode;
 
-import java.util.List;
-
 /**
  * Update an attribute on a realm.
  *

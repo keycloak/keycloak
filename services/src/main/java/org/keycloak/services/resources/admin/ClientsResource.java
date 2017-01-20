@@ -16,19 +16,29 @@
  */
 package org.keycloak.services.resources.admin;
 
+import static java.lang.Boolean.TRUE;
+
+import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
-import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
+import org.keycloak.authorization.admin.AuthorizationService;
+import org.keycloak.common.Profile;
 import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.services.ErrorResponse;
-import org.keycloak.services.ServicesLogger;
+import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.managers.ClientManager;
+import org.keycloak.services.managers.RealmManager;
+import org.keycloak.services.validation.ClientValidator;
+import org.keycloak.services.validation.PairwiseClientValidator;
+import org.keycloak.services.validation.ValidationMessages;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -41,9 +51,9 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
-
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 
 /**
  * Base resource class for managing a realm's clients.
@@ -52,7 +62,7 @@ import java.util.List;
  * @version $Revision: 1 $
  */
 public class ClientsResource {
-    protected static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    protected static final Logger logger = Logger.getLogger(ClientsResource.class);
     protected RealmModel realm;
     private RealmAuth auth;
     private AdminEventBuilder adminEvent;
@@ -63,7 +73,7 @@ public class ClientsResource {
     public ClientsResource(RealmModel realm, RealmAuth auth, AdminEventBuilder adminEvent) {
         this.realm = realm;
         this.auth = auth;
-        this.adminEvent = adminEvent;
+        this.adminEvent = adminEvent.resource(ResourceType.CLIENT);
 
         auth.init(RealmAuth.Resource.CLIENT);
     }
@@ -89,7 +99,17 @@ public class ClientsResource {
             boolean view = auth.hasView();
             for (ClientModel clientModel : clientModels) {
                 if (view) {
-                    rep.add(ModelToRepresentation.toRepresentation(clientModel));
+                    ClientRepresentation representation = ModelToRepresentation.toRepresentation(clientModel);
+
+                    if (Profile.isFeatureEnabled(Profile.Feature.AUTHORIZATION)) {
+                        AuthorizationService authorizationService = getAuthorizationService(clientModel);
+
+                        if (authorizationService.isEnabled()) {
+                            representation.setAuthorizationServicesEnabled(true);
+                        }
+                    }
+
+                    rep.add(representation);
                 } else {
                     ClientRepresentation client = new ClientRepresentation();
                     client.setId(clientModel.getId());
@@ -107,6 +127,10 @@ public class ClientsResource {
         return rep;
     }
 
+    private AuthorizationService getAuthorizationService(ClientModel clientModel) {
+        return new AuthorizationService(session, clientModel, auth);
+    }
+
     /**
      * Create a new client
      *
@@ -121,8 +145,32 @@ public class ClientsResource {
     public Response createClient(final @Context UriInfo uriInfo, final ClientRepresentation rep) {
         auth.requireManage();
 
+        ValidationMessages validationMessages = new ValidationMessages();
+        if (!ClientValidator.validate(rep, validationMessages) || !PairwiseClientValidator.validate(session, rep, validationMessages)) {
+            Properties messages = AdminRoot.getMessages(session, realm, auth.getAuth().getToken().getLocale());
+            throw new ErrorResponseException(
+                    validationMessages.getStringMessages(),
+                    validationMessages.getStringMessages(messages),
+                    Response.Status.BAD_REQUEST
+            );
+        }
+
         try {
             ClientModel clientModel = ClientManager.createClient(session, realm, rep, true);
+
+            if (TRUE.equals(rep.isServiceAccountsEnabled())) {
+                UserModel serviceAccount = session.users().getServiceAccount(clientModel);
+
+                if (serviceAccount == null) {
+                    new ClientManager(new RealmManager(session)).enableServiceAccount(clientModel);
+                }
+            }
+
+            if (Profile.isFeatureEnabled(Profile.Feature.AUTHORIZATION)) {
+                if (TRUE.equals(rep.getAuthorizationServicesEnabled())) {
+                    getAuthorizationService(clientModel).enable();
+                }
+            }
 
             adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo, clientModel.getId()).representation(rep).success();
 

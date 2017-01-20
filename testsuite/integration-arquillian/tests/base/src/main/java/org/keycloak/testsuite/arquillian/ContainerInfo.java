@@ -1,9 +1,10 @@
 package org.keycloak.testsuite.arquillian;
 
+import org.jboss.arquillian.container.spi.Container;
+
 import java.net.URL;
 import java.util.Map;
 import java.util.Objects;
-import org.jboss.arquillian.container.spi.Container;
 
 /**
  *
@@ -40,6 +41,10 @@ public class ContainerInfo {
 
     public void setContextRoot(URL contextRoot) {
         this.contextRoot = contextRoot;
+    }
+
+    public boolean isUndertow() {
+        return getQualifier().toLowerCase().contains("undertow");
     }
 
     public boolean isAS7() {

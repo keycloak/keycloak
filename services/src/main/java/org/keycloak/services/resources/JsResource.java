@@ -44,35 +44,82 @@ public class JsResource {
     @GET
     @Path("/keycloak.js")
     @Produces("text/javascript")
-    public Response getJs() {
-        InputStream inputStream = getClass().getClassLoader().getResourceAsStream("keycloak.js");
-        if (inputStream != null) {
-            CacheControl cacheControl = new CacheControl();
-            cacheControl.setNoTransform(false);
-            cacheControl.setMaxAge(Config.scope("theme").getInt("staticMaxAge", -1));
-
-            return Response.ok(inputStream).type("text/javascript").cacheControl(cacheControl).build();
-        } else {
-            return Response.status(Response.Status.NOT_FOUND).build();
-        }
+    public Response getKeycloakJs() {
+        return getJs("keycloak.js");
     }
 
     @GET
     @Path("/{version}/keycloak.js")
     @Produces("text/javascript")
-    public Response getJsWithVersion(@PathParam("version") String version) {
+    public Response getKeycloakJsWithVersion(@PathParam("version") String version) {
         if (!version.equals(Version.RESOURCES_VERSION)) {
             return Response.status(Response.Status.NOT_FOUND).build();
         }
 
-        return getJs();
+        return getKeycloakJs();
     }
 
     @GET
     @Path("/keycloak.min.js")
     @Produces("text/javascript")
-    public Response getMinJs() {
-        InputStream inputStream = getClass().getClassLoader().getResourceAsStream("keycloak.min.js");
+    public Response getKeycloakMinJs() {
+        return getJs("keycloak.min.js");
+    }
+
+    @GET
+    @Path("/{version}/keycloak.min.js")
+    @Produces("text/javascript")
+    public Response getKeycloakMinJsWithVersion(@PathParam("version") String version) {
+        if (!version.equals(Version.RESOURCES_VERSION)) {
+            return Response.status(Response.Status.NOT_FOUND).build();
+        }
+
+        return getKeycloakMinJs();
+    }
+
+    /**
+     * Get keycloak-authz.js file for javascript clients
+     *
+     * @return
+     */
+    @GET
+    @Path("/keycloak-authz.js")
+    @Produces("text/javascript")
+    public Response getKeycloakAuthzJs() {
+        return getJs("keycloak-authz.js");
+    }
+
+    @GET
+    @Path("/{version}/keycloak-authz.js")
+    @Produces("text/javascript")
+    public Response getKeycloakAuthzJsWithVersion(@PathParam("version") String version) {
+        if (!version.equals(Version.RESOURCES_VERSION)) {
+            return Response.status(Response.Status.NOT_FOUND).build();
+        }
+
+        return getKeycloakAuthzJs();
+    }
+
+    @GET
+    @Path("/keycloak-authz.min.js")
+    @Produces("text/javascript")
+    public Response getKeycloakAuthzMinJs() {
+        return getJs("keycloak-authz.min.js");
+    }
+
+    @GET
+    @Path("/{version}/keycloak-authz.min.js")
+    @Produces("text/javascript")
+    public Response getKeycloakAuthzMinJsWithVersion(@PathParam("version") String version) {
+        if (!version.equals(Version.RESOURCES_VERSION)) {
+            return Response.status(Response.Status.NOT_FOUND).build();
+        }
+
+        return getKeycloakAuthzMinJs();
+    }
+
+    private Response getJs(String name) {
+        InputStream inputStream = getClass().getClassLoader().getResourceAsStream(name);
         if (inputStream != null) {
             CacheControl cacheControl = new CacheControl();
             cacheControl.setNoTransform(false);
@@ -83,16 +130,4 @@ public class JsResource {
             return Response.status(Response.Status.NOT_FOUND).build();
         }
     }
-
-    @GET
-    @Path("/{version}/keycloak.min.js")
-    @Produces("text/javascript")
-    public Response getMinJsWithVersion(@PathParam("version") String version) {
-        if (!version.equals(Version.RESOURCES_VERSION)) {
-            return Response.status(Response.Status.NOT_FOUND).build();
-        }
-
-        return getMinJs();
-    }
-
 }

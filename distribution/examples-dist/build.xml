@@ -136,6 +136,14 @@
                 <exclude name="**/*.iml"/>
             </fileset>
         </copy>
+        <copy todir="target/examples/authz" overwrite="true">
+            <fileset dir="../../examples/authz">
+                <exclude name="**/target/**"/>
+                <exclude name="**/*.iml"/>
+                <exclude name="**/*.unconfigured"/>
+                <exclude name="**/subsystem-config.xml"/>
+            </fileset>
+        </copy>
         <copy file="../../examples/pom.xml" tofile="target/examples/pom.xml"/>
         <copy file="../../examples/README.md" tofile="target/examples/README.md"/>
         <move file="target/examples/unconfigured-demo/README.md.unconfigured" tofile="target/examples/unconfigured-demo/README.md"/>

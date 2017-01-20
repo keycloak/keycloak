@@ -23,8 +23,16 @@
         "provider": "${keycloak.user.provider:jpa}"
     },
 
+    "userFederatedStorage": {
+        "provider": "${keycloak.userFederatedStorage.provider:jpa}"
+    },
+
     "userSessionPersister": {
         "provider": "${keycloak.userSessionPersister.provider:jpa}"
+    },
+
+    "authorizationPersister": {
+        "provider": "${keycloak.authorization.provider:jpa}"
     },
 
     "userCache": {
@@ -82,7 +90,8 @@
             "driverDialect": "${keycloak.connectionsJpa.driverDialect:}",
             "user": "${keycloak.connectionsJpa.user:sa}",
             "password": "${keycloak.connectionsJpa.password:}",
-            "databaseSchema": "${keycloak.connectionsJpa.databaseSchema:update}",
+            "initializeEmpty": true,
+            "migrationStrategy": "update",
             "showSql": "${keycloak.connectionsJpa.showSql:false}",
             "formatSql": "${keycloak.connectionsJpa.formatSql:true}",
             "globalStatsInterval": "${keycloak.connectionsJpa.globalStatsInterval:-1}"
@@ -110,17 +119,28 @@
         "default": {
             "clustered": "${keycloak.connectionsInfinispan.clustered:false}",
             "async": "${keycloak.connectionsInfinispan.async:true}",
-            "sessionsOwners": "${keycloak.connectionsInfinispan.sessionsOwners:2}"
+            "sessionsOwners": "${keycloak.connectionsInfinispan.sessionsOwners:2}",
+            "remoteStoreEnabled": "${keycloak.connectionsInfinispan.remoteStoreEnabled:false}",
+            "remoteStoreHost": "${keycloak.connectionsInfinispan.remoteStoreHost:localhost}",
+            "remoteStorePort": "${keycloak.connectionsInfinispan.remoteStorePort:11222}"
         }
     },
 
 
     "truststore": {
         "file": {
-            "file": "${keycloak.truststore.file:src/main/keystore/keycloak.truststore}",
+            "file": "${keycloak.truststore.file:src/test/resources/keystore/keycloak.truststore}",
             "password": "${keycloak.truststore.password:secret}",
             "hostname-verification-policy": "${keycloak.truststore.policy:WILDCARD}",
-            "disabled": "${keycloak.truststore.disabled:true}"
+            "disabled": "${keycloak.truststore.disabled:false}"
         }
+    },
+
+    "jta-lookup": {
+        "provider": "${keycloak.jta.lookup.provider:jboss}",
+        "jboss" : {
+            "enabled": true
+        }
+
     }
 }

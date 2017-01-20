@@ -23,13 +23,15 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.admin.client.Keycloak;
+import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.RoleResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.constants.ServiceAccountConstants;
-import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
+import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.AccessToken;
@@ -41,6 +43,9 @@ import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
+import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.ClientManager;
@@ -286,7 +291,7 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
         oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
         oauth.clientId("offline-client");
         OAuthClient.AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("secret1", "test-user@localhost", "password");
-        tokenResponse.getErrorDescription();
+        Assert.assertNull(tokenResponse.getErrorDescription());
         AccessToken token = oauth.verifyToken(tokenResponse.getAccessToken());
         String offlineTokenString = tokenResponse.getRefreshToken();
         RefreshToken offlineToken = oauth.verifyRefreshToken(offlineTokenString);
@@ -432,5 +437,41 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
         appRealm.roles().get("composite").remove();
         testUser.roles().realmLevel().add(Collections.singletonList(offlineAccess));
         
+    }
+
+    /**
+     * KEYCLOAK-4201
+     *
+     * @throws Exception
+     */
+    @Test
+    public void offlineTokenAdminRESTAccess() throws Exception {
+        // Grant "view-realm" role to user
+        RealmResource appRealm = adminClient.realm("test");
+        ClientResource realmMgmt = ApiUtil.findClientByClientId(appRealm, Constants.REALM_MANAGEMENT_CLIENT_ID);
+        String realmMgmtUuid = realmMgmt.toRepresentation().getId();
+        RoleRepresentation roleRep = realmMgmt.roles().get(AdminRoles.VIEW_REALM).toRepresentation();
+
+        UserResource testUser = findUserByUsernameId(appRealm, "test-user@localhost");
+        testUser.roles().clientLevel(realmMgmtUuid).add(Collections.singletonList(roleRep));
+
+        // Login with offline token now
+        oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
+        oauth.clientId("offline-client");
+        OAuthClient.AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("secret1", "test-user@localhost", "password");
+
+        events.clear();
+
+        // Set the time offset, so that "normal" userSession expires
+        setTimeOffset(86400);
+
+        // Refresh with the offline token
+        tokenResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken(), "secret1");
+
+        // Use accessToken to admin REST request
+        Keycloak offlineTokenAdmin = Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth",
+                AuthRealm.MASTER, Constants.ADMIN_CLI_CLIENT_ID, tokenResponse.getAccessToken());
+        RealmRepresentation testRealm = offlineTokenAdmin.realm("test").toRepresentation();
+        Assert.assertNotNull(testRealm);
     }
 }

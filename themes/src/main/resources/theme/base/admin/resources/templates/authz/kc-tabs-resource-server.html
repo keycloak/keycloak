@@ -1,0 +1,13 @@
+<div data-ng-controller="ClientTabCtrl">
+
+    <kc-tabs-client></kc-tabs-client>
+
+    <ul class="nav nav-tabs nav-tabs-pf"  data-ng-hide="create && !path[4]" style="margin-left: 15px">
+        <li ng-class="{active: !path[6]}"><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server/">{{:: 'settings' | translate}}</a></li>
+        <li ng-class="{active: path[6] == 'resource'}" data-ng-hide="create"><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server/resource">{{:: 'authz-resources' | translate}}</a></li>
+        <li ng-class="{active: path[6] == 'scope'}" data-ng-hide="create"><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server/scope">{{:: 'authz-authz-scopes' | translate}}</a></li>
+        <li ng-class="{active: path[6] == 'policy'}" data-ng-hide="create"><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server/policy">{{:: 'authz-policies' | translate}}</a></li>
+        <li ng-class="{active: path[6] == 'permission'}" data-ng-hide="create"><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server/permission">{{:: 'authz-permissions' | translate}}</a></li>
+        <li ng-class="{active: path[6] == 'evaluate'}" data-ng-hide="create"><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server/evaluate">{{:: 'authz-evaluate' | translate}}</a></li>
+    </ul>
+</div>

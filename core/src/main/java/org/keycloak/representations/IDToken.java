@@ -25,7 +25,10 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  */
 public class IDToken extends JsonWebToken {
     public static final String NONCE = "nonce";
+    public static final String AUTH_TIME = "auth_time";
     public static final String SESSION_STATE = "session_state";
+    public static final String AT_HASH = "at_hash";
+    public static final String C_HASH = "c_hash";
     public static final String NAME = "name";
     public static final String GIVEN_NAME = "given_name";
     public static final String FAMILY_NAME = "family_name";
@@ -46,13 +49,24 @@ public class IDToken extends JsonWebToken {
     public static final String ADDRESS = "address";
     public static final String UPDATED_AT = "updated_at";
     public static final String CLAIMS_LOCALES = "claims_locales";
+    public static final String ACR = "acr";
+
     // NOTE!!!  WE used to use @JsonUnwrapped on a UserClaimSet object.  This screws up otherClaims and the won't work
     // anymore.  So don't have any @JsonUnwrapped!
     @JsonProperty(NONCE)
     protected String nonce;
 
+    @JsonProperty(AUTH_TIME)
+    protected int authTime;
+
     @JsonProperty(SESSION_STATE)
     protected String sessionState;
+
+    @JsonProperty(AT_HASH)
+    protected String accessTokenHash;
+
+    @JsonProperty(C_HASH)
+    protected String codeHash;
 
     @JsonProperty(NAME)
     protected String name;
@@ -114,6 +128,9 @@ public class IDToken extends JsonWebToken {
     @JsonProperty(CLAIMS_LOCALES)
     protected String claimsLocales;
 
+    @JsonProperty(ACR)
+    protected String acr;
+
     public String getNonce() {
         return nonce;
     }
@@ -122,12 +139,36 @@ public class IDToken extends JsonWebToken {
         this.nonce = nonce;
     }
 
+    public int getAuthTime() {
+        return authTime;
+    }
+
+    public void setAuthTime(int authTime) {
+        this.authTime = authTime;
+    }
+
     public String getSessionState() {
         return sessionState;
     }
 
     public void setSessionState(String sessionState) {
         this.sessionState = sessionState;
+    }
+
+    public String getAccessTokenHash() {
+        return accessTokenHash;
+    }
+
+    public void setAccessTokenHash(String accessTokenHash) {
+        this.accessTokenHash = accessTokenHash;
+    }
+
+    public String getCodeHash() {
+        return codeHash;
+    }
+
+    public void setCodeHash(String codeHash) {
+        this.codeHash = codeHash;
     }
 
     public String getName() {
@@ -290,4 +331,11 @@ public class IDToken extends JsonWebToken {
         this.claimsLocales = claimsLocales;
     }
 
+    public String getAcr() {
+        return acr;
+    }
+
+    public void setAcr(String acr) {
+        this.acr = acr;
+    }
 }

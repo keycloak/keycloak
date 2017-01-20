@@ -25,7 +25,7 @@ import java.net.URL;
 /**
  * @author mhajas
  */
-public class BadClientSalesPostSigServlet extends SAMLServletWithLogout {
+public class BadClientSalesPostSigServlet extends SAMLServlet {
     public static final String DEPLOYMENT_NAME = "bad-client-sales-post-sig";
 
     @ArquillianResource

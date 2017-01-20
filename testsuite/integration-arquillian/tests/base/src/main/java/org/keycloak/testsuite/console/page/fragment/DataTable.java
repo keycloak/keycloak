@@ -17,14 +17,15 @@
 
 package org.keycloak.testsuite.console.page.fragment;
 
+import org.jboss.arquillian.drone.api.annotation.Drone;
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
 import java.util.List;
 
-import static org.keycloak.testsuite.util.WaitUtils.pause;
-import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
-import org.openqa.selenium.By;
+import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 import static org.openqa.selenium.By.xpath;
 
 /**
@@ -32,6 +33,9 @@ import static org.openqa.selenium.By.xpath;
  * @author tkyjovsk
  */
 public class DataTable {
+
+    @Drone
+    protected WebDriver driver;
 
     @FindBy(css = "input[class*='search']")
     private WebElement searchInput;
@@ -49,38 +53,30 @@ public class DataTable {
     private WebElement infoRow;
 
     public void search(String pattern) {
-        waitForBody();
         searchInput.sendKeys(pattern);
         searchButton.click();
     }
 
     public void clickHeaderButton(String buttonText) {
-        waitForBody();
         header.findElement(By.xpath(".//button[text()='" + buttonText + "']")).click();
+        waitForPageToLoad(driver);
     }
 
     public void clickHeaderLink(String linkText) {
-        waitForBody();
         header.findElement(By.linkText(linkText)).click();
+        waitForPageToLoad(driver);
     }
 
     public WebElement body() {
         return body;
     }
 
-    public void waitForBody() {
-        waitUntilElement(body).is().present();
-    }
-
     public List<WebElement> rows() {
-        waitForBody();
-        pause(250);
         return rows;
     }
 
     public WebElement getRowByLinkText(String text) {
         WebElement row = body.findElement(By.xpath(".//tr[./td/a[text()='" + text + "']]"));
-        waitUntilElement(row).is().present();
         return row;
     }
 

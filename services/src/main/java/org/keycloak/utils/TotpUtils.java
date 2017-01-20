@@ -27,7 +27,6 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.Base32;
 
 import java.io.ByteArrayOutputStream;
-import java.net.URLEncoder;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

@@ -16,6 +16,11 @@
  */
 package org.keycloak.saml.processing.core.parsers.saml;
 
+import org.keycloak.dom.saml.v1.assertion.SAML11AssertionType;
+import org.keycloak.dom.saml.v1.protocol.SAML11ResponseType;
+import org.keycloak.dom.saml.v1.protocol.SAML11StatusCodeType;
+import org.keycloak.dom.saml.v1.protocol.SAML11StatusType;
+import org.keycloak.dom.saml.v2.protocol.StatusDetailType;
 import org.keycloak.saml.common.PicketLinkLogger;
 import org.keycloak.saml.common.PicketLinkLoggerFactory;
 import org.keycloak.saml.common.constants.JBossSAMLConstants;
@@ -24,11 +29,6 @@ import org.keycloak.saml.common.parsers.ParserNamespaceSupport;
 import org.keycloak.saml.common.util.StaxParserUtil;
 import org.keycloak.saml.processing.core.saml.v1.SAML11Constants;
 import org.keycloak.saml.processing.core.saml.v2.util.XMLTimeUtil;
-import org.keycloak.dom.saml.v1.assertion.SAML11AssertionType;
-import org.keycloak.dom.saml.v1.protocol.SAML11ResponseType;
-import org.keycloak.dom.saml.v1.protocol.SAML11StatusCodeType;
-import org.keycloak.dom.saml.v1.protocol.SAML11StatusType;
-import org.keycloak.dom.saml.v2.protocol.StatusDetailType;
 import org.w3c.dom.Element;
 
 import javax.xml.datatype.XMLGregorianCalendar;

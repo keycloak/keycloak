@@ -57,6 +57,7 @@ public abstract class AbstractClientRegistrationTest extends AbstractKeycloakTes
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         RealmRepresentation rep = new RealmRepresentation();
         rep.setEnabled(true);
+        rep.setId(REALM_NAME);
         rep.setRealm(REALM_NAME);
         rep.setUsers(new LinkedList<UserRepresentation>());
 
@@ -88,6 +89,14 @@ public abstract class AbstractClientRegistrationTest extends AbstractKeycloakTes
         user3.setCredentials(credentials);
 
         rep.getUsers().add(user3);
+
+        UserRepresentation appUser = new UserRepresentation();
+        appUser.setEnabled(true);
+        appUser.setUsername("test-user");
+        appUser.setEmail("test-user@localhost");
+        appUser.setCredentials(credentials);
+
+        rep.getUsers().add(appUser);
 
         testRealms.add(rep);
     }

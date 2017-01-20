@@ -52,6 +52,9 @@ public class OIDCConfigurationRepresentation {
     @JsonProperty("jwks_uri")
     private String jwksUri;
 
+    @JsonProperty("check_session_iframe")
+    private String checkSessionIframe;
+
     @JsonProperty("grant_types_supported")
     private List<String> grantTypesSupported;
 
@@ -64,11 +67,41 @@ public class OIDCConfigurationRepresentation {
     @JsonProperty("id_token_signing_alg_values_supported")
     private List<String> idTokenSigningAlgValuesSupported;
 
+    @JsonProperty("userinfo_signing_alg_values_supported")
+    private List<String> userInfoSigningAlgValuesSupported;
+
+    @JsonProperty("request_object_signing_alg_values_supported")
+    private List<String> requestObjectSigningAlgValuesSupported;
+
     @JsonProperty("response_modes_supported")
     private List<String> responseModesSupported;
 
     @JsonProperty("registration_endpoint")
     private String registrationEndpoint;
+
+    @JsonProperty("token_endpoint_auth_methods_supported")
+    private List<String> tokenEndpointAuthMethodsSupported;
+
+    @JsonProperty("token_endpoint_auth_signing_alg_values_supported")
+    private List<String> tokenEndpointAuthSigningAlgValuesSupported;
+
+    @JsonProperty("claims_supported")
+    private List<String> claimsSupported;
+
+    @JsonProperty("claim_types_supported")
+    private List<String> claimTypesSupported;
+
+    @JsonProperty("claims_parameter_supported")
+    private Boolean claimsParameterSupported;
+
+    @JsonProperty("scopes_supported")
+    private List<String> scopesSupported;
+
+    @JsonProperty("request_parameter_supported")
+    private Boolean requestParameterSupported;
+
+    @JsonProperty("request_uri_parameter_supported")
+    private Boolean requestUriParameterSupported;
 
     protected Map<String, Object> otherClaims = new HashMap<String, Object>();
 
@@ -120,6 +153,14 @@ public class OIDCConfigurationRepresentation {
         this.jwksUri = jwksUri;
     }
 
+    public String getCheckSessionIframe() {
+        return checkSessionIframe;
+    }
+
+    public void setCheckSessionIframe(String checkSessionIframe) {
+        this.checkSessionIframe = checkSessionIframe;
+    }
+
     public String getLogoutEndpoint() {
         return logoutEndpoint;
     }
@@ -160,6 +201,22 @@ public class OIDCConfigurationRepresentation {
         this.idTokenSigningAlgValuesSupported = idTokenSigningAlgValuesSupported;
     }
 
+    public List<String> getUserInfoSigningAlgValuesSupported() {
+        return userInfoSigningAlgValuesSupported;
+    }
+
+    public void setUserInfoSigningAlgValuesSupported(List<String> userInfoSigningAlgValuesSupported) {
+        this.userInfoSigningAlgValuesSupported = userInfoSigningAlgValuesSupported;
+    }
+
+    public List<String> getRequestObjectSigningAlgValuesSupported() {
+        return requestObjectSigningAlgValuesSupported;
+    }
+
+    public void setRequestObjectSigningAlgValuesSupported(List<String> requestObjectSigningAlgValuesSupported) {
+        this.requestObjectSigningAlgValuesSupported = requestObjectSigningAlgValuesSupported;
+    }
+
     public List<String> getResponseModesSupported() {
         return responseModesSupported;
     }
@@ -174,6 +231,70 @@ public class OIDCConfigurationRepresentation {
 
     public void setRegistrationEndpoint(String registrationEndpoint) {
         this.registrationEndpoint = registrationEndpoint;
+    }
+
+    public List<String> getTokenEndpointAuthMethodsSupported() {
+        return tokenEndpointAuthMethodsSupported;
+    }
+
+    public void setTokenEndpointAuthMethodsSupported(List<String> tokenEndpointAuthMethodsSupported) {
+        this.tokenEndpointAuthMethodsSupported = tokenEndpointAuthMethodsSupported;
+    }
+
+    public List<String> getTokenEndpointAuthSigningAlgValuesSupported() {
+        return tokenEndpointAuthSigningAlgValuesSupported;
+    }
+
+    public void setTokenEndpointAuthSigningAlgValuesSupported(List<String> tokenEndpointAuthSigningAlgValuesSupported) {
+        this.tokenEndpointAuthSigningAlgValuesSupported = tokenEndpointAuthSigningAlgValuesSupported;
+    }
+
+    public List<String> getClaimsSupported() {
+        return claimsSupported;
+    }
+
+    public void setClaimsSupported(List<String> claimsSupported) {
+        this.claimsSupported = claimsSupported;
+    }
+
+    public List<String> getClaimTypesSupported() {
+        return claimTypesSupported;
+    }
+
+    public void setClaimTypesSupported(List<String> claimTypesSupported) {
+        this.claimTypesSupported = claimTypesSupported;
+    }
+
+    public Boolean getClaimsParameterSupported() {
+        return claimsParameterSupported;
+    }
+
+    public void setClaimsParameterSupported(Boolean claimsParameterSupported) {
+        this.claimsParameterSupported = claimsParameterSupported;
+    }
+
+    public List<String> getScopesSupported() {
+        return scopesSupported;
+    }
+
+    public void setScopesSupported(List<String> scopesSupported) {
+        this.scopesSupported = scopesSupported;
+    }
+
+    public Boolean getRequestParameterSupported() {
+        return requestParameterSupported;
+    }
+
+    public void setRequestParameterSupported(Boolean requestParameterSupported) {
+        this.requestParameterSupported = requestParameterSupported;
+    }
+
+    public Boolean getRequestUriParameterSupported() {
+        return requestUriParameterSupported;
+    }
+
+    public void setRequestUriParameterSupported(Boolean requestUriParameterSupported) {
+        this.requestUriParameterSupported = requestUriParameterSupported;
     }
 
     @JsonAnyGetter

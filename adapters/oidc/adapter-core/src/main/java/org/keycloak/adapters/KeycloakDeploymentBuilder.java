@@ -21,10 +21,14 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jboss.logging.Logger;
 import org.keycloak.adapters.authentication.ClientCredentialsProviderUtils;
+import org.keycloak.adapters.authorization.PolicyEnforcer;
+import org.keycloak.adapters.rotation.HardcodedPublicKeyLocator;
+import org.keycloak.adapters.rotation.JWKPublicKeyLocator;
 import org.keycloak.common.enums.SslRequired;
+import org.keycloak.common.util.PemUtils;
 import org.keycloak.enums.TokenStore;
 import org.keycloak.representations.adapters.config.AdapterConfig;
-import org.keycloak.common.util.PemUtils;
+import org.keycloak.representations.adapters.config.PolicyEnforcerConfig;
 import org.keycloak.util.SystemPropertiesJsonParserFactory;
 
 import java.io.IOException;
@@ -57,11 +61,16 @@ public class KeycloakDeploymentBuilder {
             PublicKey realmKey;
             try {
                 realmKey = PemUtils.decodePublicKey(realmKeyPem);
+                HardcodedPublicKeyLocator pkLocator = new HardcodedPublicKeyLocator(realmKey);
+                deployment.setPublicKeyLocator(pkLocator);
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
-            deployment.setRealmKey(realmKey);
+        } else {
+            JWKPublicKeyLocator pkLocator = new JWKPublicKeyLocator();
+            deployment.setPublicKeyLocator(pkLocator);
         }
+
         if (adapterConfig.getSslRequired() != null) {
             deployment.setSslRequired(SslRequired.valueOf(adapterConfig.getSslRequired().toUpperCase()));
         } else {
@@ -90,10 +99,14 @@ public class KeycloakDeploymentBuilder {
         }
 
         deployment.setBearerOnly(adapterConfig.isBearerOnly());
+        deployment.setAutodetectBearerOnly(adapterConfig.isAutodetectBearerOnly());
         deployment.setEnableBasicAuth(adapterConfig.isEnableBasicAuth());
         deployment.setAlwaysRefreshToken(adapterConfig.isAlwaysRefreshToken());
         deployment.setRegisterNodeAtStartup(adapterConfig.isRegisterNodeAtStartup());
         deployment.setRegisterNodePeriod(adapterConfig.getRegisterNodePeriod());
+        deployment.setTokenMinimumTimeToLive(adapterConfig.getTokenMinimumTimeToLive());
+        deployment.setMinTimeBetweenJwksRequests(adapterConfig.getMinTimeBetweenJwksRequests());
+        deployment.setPublicKeyCacheTtl(adapterConfig.getPublicKeyCacheTtl());
 
         if (realmKeyPem == null && adapterConfig.isBearerOnly() && adapterConfig.getAuthServerUrl() == null) {
             throw new IllegalArgumentException("For bearer auth, you must set the realm-public-key or auth-server-url");
@@ -102,11 +115,17 @@ public class KeycloakDeploymentBuilder {
             deployment.setClient(new HttpClientBuilder().build(adapterConfig));
         }
         if (adapterConfig.getAuthServerUrl() == null && (!deployment.isBearerOnly() || realmKeyPem == null)) {
-            throw new RuntimeException("You must specify auth-url");
+            throw new RuntimeException("You must specify auth-server-url");
         }
         deployment.setAuthServerBaseUrl(adapterConfig);
         if (adapterConfig.getTurnOffChangeSessionIdOnLogin() != null) {
             deployment.setTurnOffChangeSessionIdOnLogin(adapterConfig.getTurnOffChangeSessionIdOnLogin());
+        }
+
+        PolicyEnforcerConfig policyEnforcerConfig = adapterConfig.getPolicyEnforcerConfig();
+
+        if (policyEnforcerConfig != null) {
+            deployment.setPolicyEnforcer(new PolicyEnforcer(deployment, adapterConfig));
         }
 
         log.debug("Use authServerUrl: " + deployment.getAuthServerBaseUrl() + ", tokenUrl: " + deployment.getTokenUrl() + ", relativeUrls: " + deployment.getRelativeUrls());

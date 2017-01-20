@@ -59,7 +59,10 @@ import java.util.Iterator;
 import java.util.Map;
 
 import static javax.ws.rs.core.Response.Status.OK;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -143,7 +146,7 @@ public class SamlEcpProfileTest {
 
         assertNotNull(samlResponse);
 
-        ResponseType responseType = (ResponseType) new SAMLParser().parse(DocumentUtil.getNodeAsStream(samlResponse));
+        ResponseType responseType = (ResponseType) new SAMLParser().parse(samlResponse);
         StatusCodeType statusCode = responseType.getStatus().getStatusCode();
 
         assertEquals(statusCode.getValue().toString(), JBossSAMLURIConstants.STATUS_SUCCESS.get());
@@ -226,7 +229,7 @@ public class SamlEcpProfileTest {
 
         assertNotNull(samlResponse);
 
-        StatusResponseType responseType = (StatusResponseType) new SAMLParser().parse(DocumentUtil.getNodeAsStream(samlResponse));
+        StatusResponseType responseType = (StatusResponseType) new SAMLParser().parse(samlResponse);
         StatusCodeType statusCode = responseType.getStatus().getStatusCode();
 
         assertNotEquals(statusCode.getStatusCode().getValue().toString(), JBossSAMLURIConstants.STATUS_SUCCESS.get());

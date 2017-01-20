@@ -16,6 +16,7 @@
  */
 package org.keycloak.protocol.oidc;
 
+import org.jboss.logging.Logger;
 import org.keycloak.common.constants.KerberosConstants;
 import org.keycloak.common.util.UriUtils;
 import org.keycloak.events.EventBuilder;
@@ -29,12 +30,12 @@ import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.oidc.mappers.AddressMapper;
 import org.keycloak.protocol.oidc.mappers.FullNameMapper;
 import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
+import org.keycloak.protocol.oidc.mappers.UserAttributeMapper;
 import org.keycloak.protocol.oidc.mappers.UserPropertyMapper;
 import org.keycloak.protocol.oidc.mappers.UserSessionNoteMapper;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientTemplateRepresentation;
 import org.keycloak.services.ServicesLogger;
-import org.keycloak.services.managers.AuthenticationManager;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -43,14 +44,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.keycloak.protocol.oidc.mappers.UserAttributeMapper;
-
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
 public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
-    private static ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    private static final Logger logger = Logger.getLogger(OIDCLoginProtocolFactory.class);
 
     public static final String USERNAME = "username";
     public static final String EMAIL = "email";
@@ -166,7 +165,7 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
 
     @Override
     public String getId() {
-        return "openid-connect";
+        return OIDCLoginProtocol.LOGIN_PROTOCOL;
     }
 
     @Override
@@ -195,7 +194,7 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
 
         // Backwards compatibility only
         if (rep.isDirectGrantsOnly() != null) {
-            logger.usingDeprecatedDirectGrantsOnly();
+            ServicesLogger.LOGGER.usingDeprecatedDirectGrantsOnly();
             newClient.setStandardFlowEnabled(!rep.isDirectGrantsOnly());
             newClient.setDirectAccessGrantsEnabled(rep.isDirectGrantsOnly());
         } else {

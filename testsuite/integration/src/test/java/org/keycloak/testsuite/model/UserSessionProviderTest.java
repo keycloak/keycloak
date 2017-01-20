@@ -22,21 +22,30 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
+import org.keycloak.common.util.Time;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserLoginFailureModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.models.UsernameLoginFailureModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
-import org.keycloak.services.managers.UserManager;
+import org.keycloak.models.UserManager;
 import org.keycloak.testsuite.rule.KeycloakRule;
-import org.keycloak.common.util.Time;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Set;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -65,8 +74,12 @@ public class UserSessionProviderTest {
         UserModel user2 = session.users().getUserByUsername("user2", realm);
 
         UserManager um = new UserManager(session);
-        um.removeUser(realm, user1);
-        um.removeUser(realm, user2);
+        if (user1 != null) {
+            um.removeUser(realm, user1);
+        }
+        if (user2 != null) {
+            um.removeUser(realm, user2);
+        }
         kc.stopSession(session, true);
     }
 
@@ -471,10 +484,10 @@ public class UserSessionProviderTest {
 
     @Test
     public void loginFailures() {
-        UsernameLoginFailureModel failure1 = session.sessions().addUserLoginFailure(realm, "user1");
+        UserLoginFailureModel failure1 = session.sessions().addUserLoginFailure(realm, "user1");
         failure1.incrementFailures();
 
-        UsernameLoginFailureModel failure2 = session.sessions().addUserLoginFailure(realm, "user2");
+        UserLoginFailureModel failure2 = session.sessions().addUserLoginFailure(realm, "user2");
         failure2.incrementFailures();
         failure2.incrementFailures();
 
@@ -519,11 +532,12 @@ public class UserSessionProviderTest {
 
         resetSession();
 
-        session.sessions().onUserRemoved(realm, session.users().getUserByUsername("user1", realm));
+        UserModel user1 = session.users().getUserByUsername("user1", realm);
+        new UserManager(session).removeUser(realm, user1);
 
         resetSession();
 
-        assertTrue(session.sessions().getUserSessions(realm, session.users().getUserByUsername("user1", realm)).isEmpty());
+        assertTrue(session.sessions().getUserSessions(realm, user1).isEmpty());
         assertFalse(session.sessions().getUserSessions(realm, session.users().getUserByUsername("user2", realm)).isEmpty());
 
         assertNull(session.sessions().getUserLoginFailure(realm, "user1"));

@@ -19,6 +19,8 @@ package org.keycloak.testsuite.adapter;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.common.util.Encode;
+import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.services.managers.RealmManager;
@@ -34,13 +36,11 @@ import java.security.PublicKey;
  */
 public class AdapterTest {
 
-    public static PublicKey realmPublicKey;
     @ClassRule
     public static AbstractKeycloakRule keycloakRule = new AbstractKeycloakRule() {
         @Override
         protected void configure(KeycloakSession session, RealmManager manager, RealmModel adminRealm) {
-            RealmModel realm = AdapterTestStrategy.baseAdapterTestInitialization(session, manager, adminRealm, getClass());
-            realmPublicKey = realm.getPublicKey();
+            AdapterTestStrategy.baseAdapterTestInitialization(session, manager, adminRealm, getClass());
 
             URL url = getClass().getResource("/adapter-test/cust-app-keycloak.json");
             createApplicationDeployment()
@@ -72,6 +72,12 @@ public class AdapterTest {
                     .name("product-portal").contextPath("/product-portal")
                     .servletClass(ProductServlet.class).adapterConfigPath(url.getPath())
                     .role("user").deployApplication();
+           
+            url = getClass().getResource("/adapter-test/product-autodetect-bearer-only-keycloak.json");
+            createApplicationDeployment()
+                    .name("product-portal-autodetect-bearer-only").contextPath("/product-portal-autodetect-bearer-only")
+                    .servletClass(ProductServlet.class).adapterConfigPath(url.getPath())
+                    .role("user").deployApplication();
 
             // Test that replacing system properties works for adapters
             System.setProperty("app.server.base.url", "http://localhost:8081");
@@ -98,6 +104,11 @@ public class AdapterTest {
         testStrategy.testLoginSSOMax();
 
         testStrategy.testLoginSSOAndLogout();
+    }
+
+    @Test
+    public void testLoginEncodedRedirectUri() throws Exception {
+        testStrategy.testLoginEncodedRedirectUri();
     }
 
     @Test
@@ -142,6 +153,11 @@ public class AdapterTest {
     @Test
     public void testNullBearerTokenCustomErrorPage() throws Exception {
         testStrategy.testNullBearerTokenCustomErrorPage();
+    }
+
+    @Test
+    public void testAutodetectBearerOnly() throws Exception {
+        testStrategy.testAutodetectBearerOnly();
     }
 
     @Test
@@ -203,4 +219,17 @@ public class AdapterTest {
         testStrategy.testAccountManagementSessionsLogout();
     }
 
+    /**
+     * KEYCLOAK-1733
+     */
+    @Test
+    public void testNullQueryParameterAccessToken() throws Exception {
+        testStrategy.testNullQueryParameterAccessToken();
+    }
+
+    @Test
+    public void testRestCallWithAccessTokenAsQueryParameter() throws Exception {
+        testStrategy.testRestCallWithAccessTokenAsQueryParameter();
+
+    }
 }

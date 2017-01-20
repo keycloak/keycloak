@@ -25,7 +25,7 @@ import java.net.URL;
 /**
  * @author mhajas
  */
-public class SalesPostSigServlet extends SAMLServletWithLogout {
+public class SalesPostSigServlet extends SAMLServlet {
     public static final String DEPLOYMENT_NAME = "sales-post-sig";
 
     @ArquillianResource

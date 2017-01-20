@@ -22,7 +22,11 @@ import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testsuite.adapter.filter.AdapterActionsFilter;
+import org.keycloak.testsuite.util.WaitUtils;
+import org.openqa.selenium.By;
 
+import javax.ws.rs.core.UriBuilder;
 import java.io.IOException;
 import java.net.URL;
 import java.util.List;
@@ -62,15 +66,15 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
     }
 
     protected static WebArchive samlServletDeployment(String name, Class... servletClasses) {
-        return samlServletDeployment(name, "keycloak-saml.xml", servletClasses);
+        return samlServletDeployment(name, "web.xml", servletClasses);
     }
 
-    protected static WebArchive samlServletDeployment(String name, String adapterConfig ,Class... servletClasses) {
+    protected static WebArchive samlServletDeployment(String name, String webXMLPath, Class... servletClasses) {
         String baseSAMLPath = "/adapter-test/keycloak-saml/";
         String webInfPath = baseSAMLPath + name + "/WEB-INF/";
 
-        URL keycloakSAMLConfig = AbstractServletsAdapterTest.class.getResource(webInfPath + adapterConfig);
-        URL webXML = AbstractServletsAdapterTest.class.getResource(baseSAMLPath + "web.xml");
+        URL keycloakSAMLConfig = AbstractServletsAdapterTest.class.getResource(webInfPath + "keycloak-saml.xml");
+        URL webXML = AbstractServletsAdapterTest.class.getResource(baseSAMLPath + webXMLPath);
 
         WebArchive deployment = ShrinkWrap.create(WebArchive.class, name + ".war")
                 .addClasses(servletClasses)
@@ -105,6 +109,19 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
     public void setDefaultPageUriParameters() {
         super.setDefaultPageUriParameters();
         testRealmPage.setAuthRealm(DEMO);
+    }
+
+    protected void setAdapterAndServerTimeOffset(int timeOffset, String... servletUris) {
+        setTimeOffset(timeOffset);
+
+        for (String servletUri : servletUris) {
+            String timeOffsetUri = UriBuilder.fromUri(servletUri)
+                    .queryParam(AdapterActionsFilter.TIME_OFFSET_PARAM, timeOffset)
+                    .build().toString();
+
+            driver.navigate().to(timeOffsetUri);
+            WaitUtils.waitUntilElement(By.tagName("body")).is().visible();
+        }
     }
 
 }

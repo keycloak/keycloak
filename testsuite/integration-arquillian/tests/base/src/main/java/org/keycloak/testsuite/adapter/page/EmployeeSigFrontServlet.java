@@ -25,7 +25,7 @@ import java.net.URL;
 /**
  * @author mhajas
  */
-public class EmployeeSigFrontServlet extends SAMLServletWithLogout {
+public class EmployeeSigFrontServlet extends SAMLServlet {
     public static final String DEPLOYMENT_NAME = "employee-sig-front";
 
     @ArquillianResource

@@ -16,7 +16,21 @@
  */
 package org.keycloak.saml.processing.core.saml.v2.util;
 
+import org.keycloak.dom.saml.v1.assertion.SAML11AssertionType;
+import org.keycloak.dom.saml.v1.assertion.SAML11AttributeStatementType;
+import org.keycloak.dom.saml.v1.assertion.SAML11AttributeType;
+import org.keycloak.dom.saml.v1.assertion.SAML11ConditionsType;
+import org.keycloak.dom.saml.v1.assertion.SAML11StatementAbstractType;
+import org.keycloak.dom.saml.v2.assertion.AssertionType;
+import org.keycloak.dom.saml.v2.assertion.AttributeStatementType;
+import org.keycloak.dom.saml.v2.assertion.AttributeStatementType.ASTChoiceType;
+import org.keycloak.dom.saml.v2.assertion.AttributeType;
+import org.keycloak.dom.saml.v2.assertion.ConditionsType;
 import org.keycloak.dom.saml.v2.assertion.EncryptedAssertionType;
+import org.keycloak.dom.saml.v2.assertion.NameIDType;
+import org.keycloak.dom.saml.v2.assertion.StatementAbstractType;
+import org.keycloak.dom.saml.v2.assertion.SubjectType;
+import org.keycloak.dom.saml.v2.assertion.SubjectType.STSubType;
 import org.keycloak.dom.saml.v2.protocol.ResponseType;
 import org.keycloak.saml.common.ErrorCodes;
 import org.keycloak.saml.common.PicketLinkLogger;
@@ -33,22 +47,9 @@ import org.keycloak.saml.processing.api.saml.v2.response.SAML2Response;
 import org.keycloak.saml.processing.api.saml.v2.sig.SAML2Signature;
 import org.keycloak.saml.processing.core.parsers.saml.SAMLParser;
 import org.keycloak.saml.processing.core.saml.v2.writers.SAMLAssertionWriter;
-import org.keycloak.dom.saml.v1.assertion.SAML11AssertionType;
-import org.keycloak.dom.saml.v1.assertion.SAML11AttributeStatementType;
-import org.keycloak.dom.saml.v1.assertion.SAML11AttributeType;
-import org.keycloak.dom.saml.v1.assertion.SAML11ConditionsType;
-import org.keycloak.dom.saml.v1.assertion.SAML11StatementAbstractType;
-import org.keycloak.dom.saml.v2.assertion.AssertionType;
-import org.keycloak.dom.saml.v2.assertion.AttributeStatementType;
-import org.keycloak.dom.saml.v2.assertion.AttributeStatementType.ASTChoiceType;
-import org.keycloak.dom.saml.v2.assertion.AttributeType;
-import org.keycloak.dom.saml.v2.assertion.ConditionsType;
-import org.keycloak.dom.saml.v2.assertion.NameIDType;
-import org.keycloak.dom.saml.v2.assertion.StatementAbstractType;
-import org.keycloak.dom.saml.v2.assertion.SubjectType;
-import org.keycloak.dom.saml.v2.assertion.SubjectType.STSubType;
 import org.keycloak.saml.processing.core.util.JAXPValidationUtil;
 import org.keycloak.saml.processing.core.util.XMLEncryptionUtil;
+
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -62,6 +63,9 @@ import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+
+import org.keycloak.rotation.HardcodedKeyLocator;
+import org.keycloak.saml.common.constants.GeneralConstants;
 
 /**
  * Utility to deal with assertions
@@ -86,7 +90,7 @@ public class AssertionUtil {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         SAMLAssertionWriter writer = new SAMLAssertionWriter(StaxUtil.getXMLStreamWriter(baos));
         writer.write(assertion);
-        return new String(baos.toByteArray());
+        return new String(baos.toByteArray(), GeneralConstants.SAML_CHARSET);
     }
 
     /**
@@ -276,7 +280,7 @@ public class AssertionUtil {
             Node n = doc.importNode(assertionElement, true);
             doc.appendChild(n);
 
-            return new SAML2Signature().validate(doc, publicKey);
+            return new SAML2Signature().validate(doc, new HardcodedKeyLocator(publicKey));
         } catch (Exception e) {
             logger.signatureAssertionValidationError(e);
         }

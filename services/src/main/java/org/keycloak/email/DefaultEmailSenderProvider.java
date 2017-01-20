@@ -17,14 +17,14 @@
 
 package org.keycloak.email;
 
-import org.keycloak.truststore.HostnameVerificationPolicy;
-import org.keycloak.truststore.JSSETruststoreConfigurator;
+import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.services.ServicesLogger;
+import org.keycloak.truststore.HostnameVerificationPolicy;
+import org.keycloak.truststore.JSSETruststoreConfigurator;
 
-import javax.mail.Message;
 import javax.mail.MessagingException;
 import javax.mail.Multipart;
 import javax.mail.Session;
@@ -45,7 +45,7 @@ import java.util.Properties;
  */
 public class DefaultEmailSenderProvider implements EmailSenderProvider {
 
-    private static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    private static final Logger logger = Logger.getLogger(DefaultEmailSenderProvider.class);
 
     private final KeycloakSession session;
 
@@ -57,7 +57,7 @@ public class DefaultEmailSenderProvider implements EmailSenderProvider {
     public void send(RealmModel realm, UserModel user, String subject, String textBody, String htmlBody) throws EmailException {
         Transport transport = null;
         try {
-            String address = user.getEmail();
+            String address = retrieveEmailAddress(user);
             Map<String, String> config = realm.getSmtpConfig();
 
             Properties props = new Properties();
@@ -108,10 +108,10 @@ public class DefaultEmailSenderProvider implements EmailSenderProvider {
                 multipart.addBodyPart(htmlPart);
             }
 
-            Message msg = new MimeMessage(session);
+            MimeMessage msg = new MimeMessage(session);
             msg.setFrom(new InternetAddress(from));
             msg.setHeader("To", address);
-            msg.setSubject(subject);
+            msg.setSubject(subject, "utf-8");
             msg.setContent(multipart);
             msg.saveChanges();
             msg.setSentDate(new Date());
@@ -124,7 +124,7 @@ public class DefaultEmailSenderProvider implements EmailSenderProvider {
             }
             transport.sendMessage(msg, new InternetAddress[]{new InternetAddress(address)});
         } catch (Exception e) {
-            logger.failedToSendEmail(e);
+            ServicesLogger.LOGGER.failedToSendEmail(e);
             throw new EmailException(e);
         } finally {
             if (transport != null) {
@@ -135,6 +135,10 @@ public class DefaultEmailSenderProvider implements EmailSenderProvider {
                 }
             }
         }
+    }
+    
+    protected String retrieveEmailAddress(UserModel user) {
+        return user.getEmail();
     }
 
     private void setupTruststore(Properties props) throws NoSuchAlgorithmException, KeyManagementException {

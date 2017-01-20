@@ -14,6 +14,7 @@
 nbactions.xml
 nb-configuration.xml
 catalog.xml
+nbproject
 
 # Compiled source #
 ###################
@@ -45,3 +46,6 @@ catalog.xml
 #########
 target
 
+# Maven shade
+#############
+*dependency-reduced-pom.xml

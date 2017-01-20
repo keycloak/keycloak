@@ -17,21 +17,17 @@
 
 package org.keycloak.connections.jpa.updater.liquibase.conn;
 
-import java.sql.Connection;
-
 import liquibase.Liquibase;
 import liquibase.changelog.ChangeSet;
 import liquibase.changelog.DatabaseChangeLog;
 import liquibase.database.Database;
 import liquibase.database.DatabaseFactory;
-import liquibase.database.core.DB2Database;
 import liquibase.database.jvm.JdbcConnection;
 import liquibase.exception.LiquibaseException;
-import liquibase.lockservice.LockService;
-import liquibase.lockservice.LockServiceFactory;
 import liquibase.logging.LogFactory;
 import liquibase.logging.LogLevel;
 import liquibase.resource.ClassLoaderResourceAccessor;
+import liquibase.resource.ResourceAccessor;
 import liquibase.servicelocator.ServiceLocator;
 import liquibase.sqlgenerator.SqlGeneratorFactory;
 import org.jboss.logging.Logger;
@@ -40,10 +36,11 @@ import org.keycloak.connections.jpa.updater.liquibase.LiquibaseJpaUpdaterProvide
 import org.keycloak.connections.jpa.updater.liquibase.PostgresPlusDatabase;
 import org.keycloak.connections.jpa.updater.liquibase.lock.CustomInsertLockRecordGenerator;
 import org.keycloak.connections.jpa.updater.liquibase.lock.CustomLockDatabaseChangeLogGenerator;
-import org.keycloak.connections.jpa.updater.liquibase.lock.CustomLockService;
 import org.keycloak.connections.jpa.updater.liquibase.lock.DummyLockService;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+
+import java.sql.Connection;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -53,7 +50,7 @@ public class DefaultLiquibaseConnectionProvider implements LiquibaseConnectionPr
     private static final Logger logger = Logger.getLogger(DefaultLiquibaseConnectionProvider.class);
 
     private volatile boolean initialized = false;
-
+    
     @Override
     public LiquibaseConnectionProvider create(KeycloakSession session) {
         if (!initialized) {
@@ -131,15 +128,32 @@ public class DefaultLiquibaseConnectionProvider implements LiquibaseConnectionPr
             database.setDefaultSchemaName(defaultSchema);
         }
 
-        String changelog = (database instanceof DB2Database) ? LiquibaseJpaUpdaterProvider.DB2_CHANGELOG :  LiquibaseJpaUpdaterProvider.CHANGELOG;
-        logger.debugf("Using changelog file: %s", changelog);
+        String changelog = LiquibaseJpaUpdaterProvider.CHANGELOG;
+        ResourceAccessor resourceAccessor = new ClassLoaderResourceAccessor(getClass().getClassLoader());
 
-        return new Liquibase(changelog, new ClassLoaderResourceAccessor(getClass().getClassLoader()), database);
+        logger.debugf("Using changelog file %s and changelogTableName %s", changelog, database.getDatabaseChangeLogTableName());
+        
+        return new Liquibase(changelog, resourceAccessor, database);
+    }
+
+    @Override
+    public Liquibase getLiquibaseForCustomUpdate(Connection connection, String defaultSchema, String changelogLocation, ClassLoader classloader, String changelogTableName) throws LiquibaseException {
+        Database database = DatabaseFactory.getInstance().findCorrectDatabaseImplementation(new JdbcConnection(connection));
+        if (defaultSchema != null) {
+            database.setDefaultSchemaName(defaultSchema);
+        }
+
+        ResourceAccessor resourceAccessor = new ClassLoaderResourceAccessor(classloader);
+        database.setDatabaseChangeLogTableName(changelogTableName);
+
+        logger.debugf("Using changelog file %s and changelogTableName %s", changelogLocation, database.getDatabaseChangeLogTableName());
+
+        return new Liquibase(changelogLocation, resourceAccessor, database);
     }
 
     private static class LogWrapper extends LogFactory {
 
-        private liquibase.logging.Logger logger = new liquibase.logging.Logger() {
+        private static final liquibase.logging.Logger logger = new liquibase.logging.Logger() {
             @Override
             public void setName(String name) {
             }

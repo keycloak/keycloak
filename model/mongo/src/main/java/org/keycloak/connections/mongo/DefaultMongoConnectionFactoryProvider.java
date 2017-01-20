@@ -17,14 +17,12 @@
 
 package org.keycloak.connections.mongo;
 
-import java.lang.reflect.Method;
-import java.net.UnknownHostException;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.Map;
-
-import javax.net.ssl.SSLSocketFactory;
-
+import com.mongodb.DB;
+import com.mongodb.MongoClient;
+import com.mongodb.MongoClientOptions;
+import com.mongodb.MongoClientURI;
+import com.mongodb.MongoCredential;
+import com.mongodb.ServerAddress;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.connections.mongo.api.MongoStore;
@@ -33,19 +31,27 @@ import org.keycloak.connections.mongo.impl.context.TransactionMongoStoreInvocati
 import org.keycloak.connections.mongo.updater.MongoUpdaterProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.KeycloakSessionTask;
+import org.keycloak.models.dblock.DBLockManager;
+import org.keycloak.models.dblock.DBLockProvider;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.provider.ServerInfoAwareProviderFactory;
 
-import com.mongodb.DB;
-import com.mongodb.MongoClient;
-import com.mongodb.MongoClientOptions;
-import com.mongodb.MongoClientURI;
-import com.mongodb.MongoCredential;
-import com.mongodb.ServerAddress;
+import javax.net.ssl.SSLSocketFactory;
+import java.lang.reflect.Method;
+import java.net.UnknownHostException;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class DefaultMongoConnectionFactoryProvider implements MongoConnectionProviderFactory, ServerInfoAwareProviderFactory {
+
+    enum MigrationStrategy {
+        UPDATE, VALIDATE
+    }
 
     // TODO Make it dynamic
     private String[] entities = new String[]{
@@ -59,21 +65,27 @@ public class DefaultMongoConnectionFactoryProvider implements MongoConnectionPro
             "org.keycloak.models.mongo.keycloak.entities.MongoMigrationModelEntity",
             "org.keycloak.models.mongo.keycloak.entities.MongoOnlineUserSessionEntity",
             "org.keycloak.models.mongo.keycloak.entities.MongoOfflineUserSessionEntity",
-            "org.keycloak.models.entities.IdentityProviderEntity",
-            "org.keycloak.models.entities.ClientIdentityProviderMappingEntity",
-            "org.keycloak.models.entities.RequiredCredentialEntity",
-            "org.keycloak.models.entities.CredentialEntity",
-            "org.keycloak.models.entities.FederatedIdentityEntity",
-            "org.keycloak.models.entities.UserFederationProviderEntity",
-            "org.keycloak.models.entities.UserFederationMapperEntity",
-            "org.keycloak.models.entities.ProtocolMapperEntity",
-            "org.keycloak.models.entities.IdentityProviderMapperEntity",
-            "org.keycloak.models.entities.AuthenticationExecutionEntity",
-            "org.keycloak.models.entities.AuthenticationFlowEntity",
-            "org.keycloak.models.entities.AuthenticatorConfigEntity",
-            "org.keycloak.models.entities.RequiredActionProviderEntity",
-            "org.keycloak.models.entities.PersistentUserSessionEntity",
-            "org.keycloak.models.entities.PersistentClientSessionEntity",
+            "org.keycloak.models.mongo.keycloak.entities.IdentityProviderEntity",
+            "org.keycloak.models.mongo.keycloak.entities.ClientIdentityProviderMappingEntity",
+            "org.keycloak.models.mongo.keycloak.entities.RequiredCredentialEntity",
+            "org.keycloak.models.mongo.keycloak.entities.CredentialEntity",
+            "org.keycloak.models.mongo.keycloak.entities.FederatedIdentityEntity",
+            "org.keycloak.models.mongo.keycloak.entities.UserFederationProviderEntity",
+            "org.keycloak.models.mongo.keycloak.entities.UserFederationMapperEntity",
+            "org.keycloak.models.mongo.keycloak.entities.ProtocolMapperEntity",
+            "org.keycloak.models.mongo.keycloak.entities.IdentityProviderMapperEntity",
+            "org.keycloak.models.mongo.keycloak.entities.AuthenticationExecutionEntity",
+            "org.keycloak.models.mongo.keycloak.entities.AuthenticationFlowEntity",
+            "org.keycloak.models.mongo.keycloak.entities.AuthenticatorConfigEntity",
+            "org.keycloak.models.mongo.keycloak.entities.RequiredActionProviderEntity",
+            "org.keycloak.models.mongo.keycloak.entities.PersistentUserSessionEntity",
+            "org.keycloak.models.mongo.keycloak.entities.PersistentClientSessionEntity",
+            "org.keycloak.models.mongo.keycloak.entities.ComponentEntity",
+            "org.keycloak.storage.mongo.entity.FederatedUser",
+            "org.keycloak.authorization.mongo.entities.PolicyEntity",
+            "org.keycloak.authorization.mongo.entities.ResourceEntity",
+            "org.keycloak.authorization.mongo.entities.ResourceServerEntity",
+            "org.keycloak.authorization.mongo.entities.ScopeEntity"
     };
 
     private static final Logger logger = Logger.getLogger(DefaultMongoConnectionFactoryProvider.class);
@@ -132,7 +144,7 @@ public class DefaultMongoConnectionFactoryProvider implements MongoConnectionPro
         lazyInit(session);
 
         TransactionMongoStoreInvocationContext invocationContext = new TransactionMongoStoreInvocationContext(mongoStore);
-        session.getTransaction().enlist(new MongoKeycloakTransaction(invocationContext));
+        session.getTransactionManager().enlist(new MongoKeycloakTransaction(invocationContext));
         return new DefaultMongoConnectionProvider(db, mongoStore, invocationContext);
     }
 
@@ -156,23 +168,34 @@ public class DefaultMongoConnectionFactoryProvider implements MongoConnectionPro
     }
 
     private void update(KeycloakSession session) {
-        String databaseSchema = config.get("databaseSchema");
+        MigrationStrategy strategy = getMigrationStrategy();
 
-        if (databaseSchema == null) {
-            throw new RuntimeException("Property 'databaseSchema' needs to be specified in the configuration of mongo connections");
+        MongoUpdaterProvider mongoUpdater = session.getProvider(MongoUpdaterProvider.class);
+        if (mongoUpdater == null) {
+            throw new RuntimeException("Can't update database: Mongo updater provider not found");
+        }
+
+        DBLockProvider dbLock = new DBLockManager(session).getDBLock();
+        if (dbLock.hasLock()) {
+            updateOrValidateDB(strategy, session, mongoUpdater);
         } else {
-            MongoUpdaterProvider mongoUpdater = session.getProvider(MongoUpdaterProvider.class);
-            if (mongoUpdater == null) {
-                throw new RuntimeException("Can't update database: Mongo updater provider not found");
-            }
+            logger.trace("Don't have DBLock retrieved before upgrade. Needs to acquire lock first in separate transaction");
 
-            if (databaseSchema.equals("update")) {
-                mongoUpdater.update(session, db);
-            } else if (databaseSchema.equals("validate")) {
-                mongoUpdater.validate(session, db);
-            } else {
-                throw new RuntimeException("Invalid value for databaseSchema: " + databaseSchema);
-            }
+            KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), new KeycloakSessionTask() {
+
+                @Override
+                public void run(KeycloakSession lockSession) {
+                    DBLockManager dbLockManager = new DBLockManager(lockSession);
+                    DBLockProvider dbLock2 = dbLockManager.getDBLock();
+                    dbLock2.waitForLock();
+                    try {
+                        updateOrValidateDB(strategy, session, mongoUpdater);
+                    } finally {
+                        dbLock2.releaseLock();
+                    }
+                }
+
+            });
         }
     }
 
@@ -183,6 +206,17 @@ public class DefaultMongoConnectionFactoryProvider implements MongoConnectionPro
             entityClasses[i] = getClass().getClassLoader().loadClass(entities[i]);
         }
         return entityClasses;
+    }
+
+    protected void updateOrValidateDB(MigrationStrategy strategy, KeycloakSession session, MongoUpdaterProvider mongoUpdater) {
+        switch (strategy) {
+            case UPDATE:
+                mongoUpdater.update(session, db);
+                break;
+            case VALIDATE:
+                mongoUpdater.validate(session, db);
+                break;
+        }
     }
 
     @Override
@@ -302,5 +336,19 @@ public class DefaultMongoConnectionFactoryProvider implements MongoConnectionPro
   	public Map<String,String> getOperationalInfo() {
   		return operationalInfo;
   	}
+
+    private MigrationStrategy getMigrationStrategy() {
+        String migrationStrategy = config.get("migrationStrategy");
+        if (migrationStrategy == null) {
+            // Support 'databaseSchema' for backwards compatibility
+            migrationStrategy = config.get("databaseSchema");
+        }
+
+        if (migrationStrategy != null) {
+            return MigrationStrategy.valueOf(migrationStrategy.toUpperCase());
+        } else {
+            return MigrationStrategy.UPDATE;
+        }
+    }
 
 }

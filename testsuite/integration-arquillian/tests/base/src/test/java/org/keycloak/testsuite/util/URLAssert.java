@@ -17,8 +17,6 @@
 
 package org.keycloak.testsuite.util;
 
-import javax.ws.rs.core.UriBuilder;
-
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -26,11 +24,8 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.junit.Assert;
-import org.keycloak.testsuite.page.AbstractPage;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 import org.keycloak.testsuite.auth.page.login.PageWithLoginUrl;
+import org.keycloak.testsuite.page.AbstractPage;
 import org.openqa.selenium.WebDriver;
 
 import java.io.IOException;
@@ -39,6 +34,11 @@ import java.io.Reader;
 import java.io.StringWriter;
 import java.net.URI;
 import java.nio.charset.Charset;
+
+import static org.junit.Assert.assertTrue;
+import static org.keycloak.testsuite.util.URLUtils.currentUrlDoesntStartWith;
+import static org.keycloak.testsuite.util.URLUtils.currentUrlEqual;
+import static org.keycloak.testsuite.util.URLUtils.currentUrlStartWith;
 
 /**
  *
@@ -51,16 +51,14 @@ public class URLAssert {
     }
 
     public static void assertCurrentUrlEquals(WebDriver driver, final AbstractPage page) {
-//        WebDriverWait wait = new WebDriverWait(driver, 1);
-//        ExpectedCondition<Boolean> urlStartsWith = new ExpectedCondition<Boolean>() {
-//
-//            @Override
-//            public Boolean apply(WebDriver wd) {
-//                return startsWithNormalized(wd.getCurrentUrl(), page.toString());
-//            }
-//        };
-//        wait.until(urlStartsWith);
-        assertEqualsNormalized(page.toString(), driver.getCurrentUrl());
+        String expected = page.toString();
+        assertTrue("Expected URL: " + expected + "; actual: " + driver.getCurrentUrl(),
+                currentUrlEqual(driver, page.toString()));
+    }
+
+    public static void assertCurrentUrlEquals(WebDriver driver, final String url) {
+        assertTrue("Expected URL: " + url + "; actual: " + driver.getCurrentUrl(),
+                currentUrlEqual(driver, url));
     }
 
     public static void assertCurrentUrlStartsWith(AbstractPage page) {
@@ -68,16 +66,8 @@ public class URLAssert {
     }
 
     public static void assertCurrentUrlStartsWith(WebDriver driver, final String url) {
-//        WebDriverWait wait = new WebDriverWait(driver, 1);
-//        ExpectedCondition<Boolean> urlStartsWith = new ExpectedCondition<Boolean>() {
-//
-//            @Override
-//            public Boolean apply(WebDriver wd) {
-//                return startsWithNormalized(wd.getCurrentUrl(), url);
-//            }
-//        };
-//        wait.until(urlStartsWith);
-        assertTrue("'" + driver.getCurrentUrl() + " does not start with '" + url + "'", startsWithNormalized(driver.getCurrentUrl(), url));
+        assertTrue("URL expected to begin with:" + url + "; actual URL: " + driver.getCurrentUrl(),
+                currentUrlStartWith(driver, url));
     }
 
     public static void assertCurrentUrlDoesntStartWith(AbstractPage page) {
@@ -85,34 +75,9 @@ public class URLAssert {
     }
 
     public static void assertCurrentUrlDoesntStartWith(WebDriver driver, final String url) {
-//        WebDriverWait wait = new WebDriverWait(driver, 1, 250);
-//        ExpectedCondition<Boolean> urlDoesntStartWith = new ExpectedCondition<Boolean>() {
-//
-//            @Override
-//            public Boolean apply(WebDriver wd) {
-//                return !startsWithNormalized(wd.getCurrentUrl(), url);
-//            }
-//        };
-//        wait.until(urlDoesntStartWith);
-        assertFalse(startsWithNormalized(driver.getCurrentUrl(), url));
+        assertTrue("URL expected NOT to begin with:" + url + "; actual URL: " + driver.getCurrentUrl(),
+                currentUrlDoesntStartWith(driver, url));
     }
-
-    // this normalization is needed because of slash-encoding in uri fragment (the part after #)
-    public static String normalizeUri(String uri) {
-        return UriBuilder.fromUri(uri).build().toASCIIString();
-    }
-
-    public static boolean startsWithNormalized(String str1, String str2) {
-        String uri1 = normalizeUri(str1);
-        String uri2 = normalizeUri(str2);
-        return uri1.startsWith(uri2);
-    }
-
-    public static void assertEqualsNormalized(String str1, String str2) {
-        assertEquals(normalizeUri(str1), normalizeUri(str2));
-    }
-
-
 
     public static void assertCurrentUrlStartsWithLoginUrlOf(PageWithLoginUrl page) {
         assertCurrentUrlStartsWithLoginUrlOf(page.getDriver(), page);

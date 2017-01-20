@@ -17,13 +17,16 @@
 package org.keycloak.services.resources;
 
 import org.jboss.logging.Logger;
-import org.keycloak.forms.account.AccountPages;
-import org.keycloak.forms.account.AccountProvider;
+import org.keycloak.common.util.UriUtils;
+import org.keycloak.credential.CredentialModel;
 import org.keycloak.events.Details;
+import org.keycloak.events.Errors;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventStoreProvider;
 import org.keycloak.events.EventType;
+import org.keycloak.forms.account.AccountPages;
+import org.keycloak.forms.account.AccountProvider;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.ClientModel;
@@ -36,18 +39,13 @@ import org.keycloak.models.ModelException;
 import org.keycloak.models.ModelReadOnlyException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
-import org.keycloak.models.UserCredentialValueModel;
-import org.keycloak.models.UserFederationProvider;
-import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.CredentialValidation;
 import org.keycloak.models.utils.FormMessage;
-import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
-import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.ForbiddenException;
 import org.keycloak.services.ServicesLogger;
@@ -60,7 +58,6 @@ import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.util.ResolveRelative;
 import org.keycloak.services.validation.Validation;
-import org.keycloak.common.util.UriUtils;
 import org.keycloak.util.JsonSerialization;
 
 import javax.ws.rs.Consumes;
@@ -75,7 +72,6 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import javax.ws.rs.core.Variant;
-
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.URI;
@@ -91,7 +87,7 @@ import java.util.UUID;
  */
 public class AccountService extends AbstractSecuredLocalService {
 
-    private static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    private static final Logger logger = Logger.getLogger(AccountService.class);
 
     private static Set<String> VALID_PATHS = new HashSet<String>();
     static {
@@ -270,7 +266,7 @@ public class AccountService extends AbstractSecuredLocalService {
         } else if (types.contains(MediaType.APPLICATION_JSON_TYPE)) {
             requireOneOf(AccountRoles.MANAGE_ACCOUNT, AccountRoles.VIEW_PROFILE);
 
-            UserRepresentation rep = ModelToRepresentation.toRepresentation(auth.getUser());
+            UserRepresentation rep = ModelToRepresentation.toRepresentation(session, realm, auth.getUser());
             if (rep.getAttributes() != null) {
                 Iterator<String> itr = rep.getAttributes().keySet().iterator();
                 while (itr.hasNext()) {
@@ -404,7 +400,7 @@ public class AccountService extends AbstractSecuredLocalService {
             String email = formData.getFirst("email");
             String oldEmail = user.getEmail();
             boolean emailChanged = oldEmail != null ? !oldEmail.equals(email) : email != null;
-            if (emailChanged) {
+            if (emailChanged && !realm.isDuplicateEmailsAllowed()) {
                 UserModel existing = session.users().getUserByEmail(email, realm);
                 if (existing != null && !existing.getId().equals(user.getId())) {
                     throw new ModelDuplicateException(Messages.EMAIL_EXISTS);
@@ -421,6 +417,17 @@ public class AccountService extends AbstractSecuredLocalService {
                 user.setEmailVerified(false);
                 event.clone().event(EventType.UPDATE_EMAIL).detail(Details.PREVIOUS_EMAIL, oldEmail).detail(Details.UPDATED_EMAIL, email).success();
             }
+
+            if (realm.isRegistrationEmailAsUsername()) {
+                if (!realm.isDuplicateEmailsAllowed()) {
+                    UserModel existing = session.users().getUserByEmail(email, realm);
+                    if (existing != null && !existing.getId().equals(user.getId())) {
+                        throw new ModelDuplicateException(Messages.USERNAME_EXISTS);
+                    }
+                }
+                user.setUsername(email);
+            }
+
             setReferrerOnPage();
             return account.setSuccess(Messages.ACCOUNT_UPDATED).createResponse(AccountPages.ACCOUNT);
         } catch (ModelReadOnlyException roe) {
@@ -444,7 +451,7 @@ public class AccountService extends AbstractSecuredLocalService {
         csrfCheck(stateChecker);
 
         UserModel user = auth.getUser();
-        user.setOtpEnabled(false);
+        session.userCredentialManager().disableCredentialType(realm, user, CredentialModel.OTP);
 
         event.event(EventType.REMOVE_TOTP).client(auth.getClient()).user(auth.getUser()).success();
 
@@ -481,6 +488,7 @@ public class AccountService extends AbstractSecuredLocalService {
 
     @Path("revoke-grant")
     @POST
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     public Response processRevokeGrant(final MultivaluedMap<String, String> formData) {
         if (auth == null) {
             return login("applications");
@@ -500,7 +508,7 @@ public class AccountService extends AbstractSecuredLocalService {
 
         // Revoke grant in UserModel
         UserModel user = auth.getUser();
-        user.revokeConsentForClient(client.getId());
+        session.users().revokeConsentForClient(realm, user.getId(), client.getId());
         new UserSessionManager(session).revokeOfflineToken(user, client);
 
         // Logout clientSessions for this user and client
@@ -564,15 +572,13 @@ public class AccountService extends AbstractSecuredLocalService {
         UserCredentialModel credentials = new UserCredentialModel();
         credentials.setType(realm.getOTPPolicy().getType());
         credentials.setValue(totpSecret);
-        session.users().updateCredential(realm, user, credentials);
-
-        user.setOtpEnabled(true);
+        session.userCredentialManager().updateCredential(realm, user, credentials);
 
         // to update counter
         UserCredentialModel cred = new UserCredentialModel();
         cred.setType(realm.getOTPPolicy().getType());
         cred.setValue(totp);
-        session.users().validCredentials(session, realm, user, cred);
+        session.userCredentialManager().isValid(realm, user, cred);
 
         event.event(EventType.UPDATE_TOTP).client(auth.getClient()).user(auth.getUser()).success();
 
@@ -612,41 +618,52 @@ public class AccountService extends AbstractSecuredLocalService {
         String passwordNew = formData.getFirst("password-new");
         String passwordConfirm = formData.getFirst("password-confirm");
 
+        EventBuilder errorEvent = event.clone().event(EventType.UPDATE_PASSWORD_ERROR)
+                .client(auth.getClient())
+                .user(auth.getClientSession().getUserSession().getUser());
+
         if (requireCurrent) {
             if (Validation.isBlank(password)) {
                 setReferrerOnPage();
+                errorEvent.error(Errors.PASSWORD_MISSING);
                 return account.setError(Messages.MISSING_PASSWORD).createResponse(AccountPages.PASSWORD);
             }
 
             UserCredentialModel cred = UserCredentialModel.password(password);
-            if (!session.users().validCredentials(session, realm, user, cred)) {
+            if (!session.userCredentialManager().isValid(realm, user, cred)) {
                 setReferrerOnPage();
+                errorEvent.error(Errors.INVALID_USER_CREDENTIALS);
                 return account.setError(Messages.INVALID_PASSWORD_EXISTING).createResponse(AccountPages.PASSWORD);
             }
         }
 
         if (Validation.isBlank(passwordNew)) {
             setReferrerOnPage();
+            errorEvent.error(Errors.PASSWORD_MISSING);
             return account.setError(Messages.MISSING_PASSWORD).createResponse(AccountPages.PASSWORD);
         }
 
         if (!passwordNew.equals(passwordConfirm)) {
             setReferrerOnPage();
+            errorEvent.error(Errors.PASSWORD_CONFIRM_ERROR);
             return account.setError(Messages.INVALID_PASSWORD_CONFIRM).createResponse(AccountPages.PASSWORD);
         }
 
         try {
-            session.users().updateCredential(realm, user, UserCredentialModel.password(passwordNew));
+            session.userCredentialManager().updateCredential(realm, user, UserCredentialModel.password(passwordNew, false));
         } catch (ModelReadOnlyException mre) {
             setReferrerOnPage();
+            errorEvent.error(Errors.NOT_ALLOWED);
             return account.setError(Messages.READ_ONLY_PASSWORD).createResponse(AccountPages.PASSWORD);
-        }catch (ModelException me) {
-            logger.failedToUpdatePassword(me);
+        } catch (ModelException me) {
+            ServicesLogger.LOGGER.failedToUpdatePassword(me);
             setReferrerOnPage();
+            errorEvent.detail(Details.REASON, me.getMessage()).error(Errors.PASSWORD_REJECTED);
             return account.setError(me.getMessage(), me.getParameters()).createResponse(AccountPages.PASSWORD);
-        }catch (Exception ape) {
-            logger.failedToUpdatePassword(ape);
+        } catch (Exception ape) {
+            ServicesLogger.LOGGER.failedToUpdatePassword(ape);
             setReferrerOnPage();
+            errorEvent.detail(Details.REASON, ape.getMessage()).error(Errors.PASSWORD_REJECTED);
             return account.setError(ape.getMessage()).createResponse(AccountPages.PASSWORD);
         }
 
@@ -710,12 +727,12 @@ public class AccountService extends AbstractSecuredLocalService {
 
                 try {
                     ClientSessionModel clientSession = auth.getClientSession();
-                    ClientSessionCode clientSessionCode = new ClientSessionCode(realm, clientSession);
+                    ClientSessionCode clientSessionCode = new ClientSessionCode(session, realm, clientSession);
                     clientSessionCode.setAction(ClientSessionModel.Action.AUTHENTICATE.name());
                     clientSession.setRedirectUri(redirectUri);
                     clientSession.setNote(OIDCLoginProtocol.STATE_PARAM, UUID.randomUUID().toString());
 
-                    return Response.temporaryRedirect(
+                    return Response.seeOther(
                             Urls.identityProviderAuthnRequest(this.uriInfo.getBaseUri(), providerId, realm.getName(), clientSessionCode.getCode()))
                             .build();
                 } catch (Exception spe) {
@@ -763,32 +780,7 @@ public class AccountService extends AbstractSecuredLocalService {
     }
 
     public static boolean isPasswordSet(KeycloakSession session, RealmModel realm, UserModel user) {
-        boolean passwordSet = false;
-
-        // See if password is set for user on linked UserFederationProvider
-        if (user.getFederationLink() != null) {
-
-            UserFederationProvider federationProvider = null;
-            for (UserFederationProviderModel fedProviderModel : realm.getUserFederationProviders()) {
-                if (fedProviderModel.getId().equals(user.getFederationLink())) {
-                    federationProvider = KeycloakModelUtils.getFederationProviderInstance(session, fedProviderModel);
-                }
-            }
-
-            if (federationProvider != null) {
-                Set<String> supportedCreds = federationProvider.getSupportedCredentialTypes(user);
-                if (supportedCreds.contains(UserCredentialModel.PASSWORD)) {
-                    passwordSet = true;
-                }
-            }
-        }
-
-        for (UserCredentialValueModel c : user.getCredentialsDirectly()) {
-            if (c.getType().equals(CredentialRepresentation.PASSWORD)) {
-                passwordSet = true;
-            }
-        }
-        return passwordSet;
+        return session.userCredentialManager().isConfiguredFor(realm, user, CredentialModel.PASSWORD);
     }
 
     private String[] getReferrer() {
@@ -808,7 +800,11 @@ public class AccountService extends AbstractSecuredLocalService {
             }
 
             if (referrerUri != null) {
-                return new String[]{referrer, referrerUri};
+                String referrerName = referrerClient.getName();
+                if (Validation.isBlank(referrerName)) {
+                    referrerName = referrer;
+                }
+                return new String[]{referrerName, referrerUri};
             }
         } else if (referrerUri != null) {
             referrerClient = realm.getClientByClientId(referrer);

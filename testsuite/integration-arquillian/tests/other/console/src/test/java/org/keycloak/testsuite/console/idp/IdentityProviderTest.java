@@ -18,13 +18,14 @@
 package org.keycloak.testsuite.console.idp;
 
 import org.jboss.arquillian.graphene.page.Page;
-import static org.junit.Assert.*;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.keycloak.testsuite.console.page.idp.IdentityProviderSettings;
 import org.keycloak.testsuite.console.AbstractConsoleTest;
+import org.keycloak.testsuite.console.page.idp.IdentityProviderSettings;
 import org.keycloak.testsuite.model.Provider;
 import org.keycloak.testsuite.model.SocialProvider;
+
+import static org.junit.Assert.*;
 
 /**
  *

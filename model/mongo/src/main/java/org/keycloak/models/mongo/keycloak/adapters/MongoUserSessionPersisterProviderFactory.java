@@ -43,11 +43,6 @@ public class MongoUserSessionPersisterProviderFactory implements UserSessionPers
     }
 
     @Override
-    public void postInit(KeycloakSessionFactory factory) {
-
-    }
-
-    @Override
     public void close() {
 
     }

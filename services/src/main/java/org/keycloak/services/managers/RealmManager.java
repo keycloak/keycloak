@@ -18,27 +18,28 @@ package org.keycloak.services.managers;
 
 import org.keycloak.Config;
 import org.keycloak.common.enums.SslRequired;
-import org.keycloak.models.PasswordPolicy;
-import org.keycloak.models.session.UserSessionPersisterProvider;
-import org.keycloak.models.utils.RealmImporter;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.AdminRoles;
-import org.keycloak.models.ClientModel;
 import org.keycloak.models.BrowserSecurityHeaders;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.ImpersonationConstants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OTPPolicy;
+import org.keycloak.models.PasswordPolicy;
+import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.UserFederationProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionProvider;
+import org.keycloak.models.session.UserSessionPersisterProvider;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.models.utils.DefaultRequiredActions;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.models.utils.RealmImporter;
 import org.keycloak.models.utils.RepresentationToModel;
+import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.representations.idm.ApplicationRepresentation;
@@ -47,14 +48,12 @@ import org.keycloak.representations.idm.OAuthClientRepresentation;
 import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
-import org.keycloak.timer.TimerProvider;
+import org.keycloak.storage.UserStorageProviderModel;
+import org.keycloak.services.clientregistration.policy.DefaultClientRegistrationPolicies;
 
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-
-import org.keycloak.models.ProtocolMapperModel;
-import org.keycloak.protocol.ProtocolMapperUtils;
 
 /**
  * Per request object
@@ -120,6 +119,10 @@ public class RealmManager implements RealmImporter {
         setupAuthenticationFlows(realm);
         setupRequiredActions(realm);
         setupOfflineTokens(realm);
+        setupAuthorizationServices(realm);
+        setupClientRegistrations(realm);
+
+        fireRealmPostCreate(realm);
 
         return realm;
     }
@@ -217,14 +220,14 @@ public class RealmManager implements RealmImporter {
         realm.setFailureFactor(30);
         realm.setSslRequired(SslRequired.EXTERNAL);
         realm.setOTPPolicy(OTPPolicy.DEFAULT_POLICY);
+        realm.setLoginWithEmailAllowed(true);
 
         realm.setEventsListeners(Collections.singleton("jboss-logging"));
 
-        realm.setPasswordPolicy(new PasswordPolicy("hashIterations(20000)"));
+        realm.setPasswordPolicy(PasswordPolicy.parse(session, "hashIterations(20000)"));
     }
 
     public boolean removeRealm(RealmModel realm) {
-        List<UserFederationProviderModel> federationProviders = realm.getUserFederationProviders();
 
         ClientModel masterAdminClient = realm.getMasterAdminClient();
         boolean removed = model.removeRealm(realm.getId());
@@ -243,11 +246,13 @@ public class RealmManager implements RealmImporter {
                 sessionsPersister.onRealmRemoved(realm);
             }
 
-            // Remove all periodic syncs for configured federation providers
-            UsersSyncManager usersSyncManager = new UsersSyncManager();
-            for (final UserFederationProviderModel fedProvider : federationProviders) {
-                usersSyncManager.notifyToRefreshPeriodicSync(session, realm, fedProvider, true);
+          // Refresh periodic sync tasks for configured storageProviders
+            List<UserStorageProviderModel> storageProviders = realm.getUserStorageProviders();
+            UserStorageSyncManager storageSync = new UserStorageSyncManager();
+            for (UserStorageProviderModel provider : storageProviders) {
+                storageSync.notifyToRefreshPeriodicSync(session, realm, provider, true);
             }
+
         }
         return removed;
     }
@@ -483,12 +488,18 @@ public class RealmManager implements RealmImporter {
         setupAuthenticationFlows(realm);
         setupRequiredActions(realm);
 
-        // Refresh periodic sync tasks for configured federationProviders
-        List<UserFederationProviderModel> federationProviders = realm.getUserFederationProviders();
-        UsersSyncManager usersSyncManager = new UsersSyncManager();
-        for (final UserFederationProviderModel fedProvider : federationProviders) {
-            usersSyncManager.notifyToRefreshPeriodicSync(session, realm, fedProvider, false);
+        // Refresh periodic sync tasks for configured storageProviders
+        List<UserStorageProviderModel> storageProviders = realm.getUserStorageProviders();
+        UserStorageSyncManager storageSync = new UserStorageSyncManager();
+        for (UserStorageProviderModel provider : storageProviders) {
+            storageSync.notifyToRefreshPeriodicSync(session, realm, provider, false);
         }
+
+        setupAuthorizationServices(realm);
+        setupClientRegistrations(realm);
+
+        fireRealmPostCreate(realm);
+
         return realm;
     }
 
@@ -579,6 +590,28 @@ public class RealmManager implements RealmImporter {
             return Collections.emptyList();
         }
         return session.users().searchForUser(searchString.trim(), realmModel);
+    }
+
+    private void setupAuthorizationServices(RealmModel realm) {
+        KeycloakModelUtils.setupAuthorizationServices(realm);
+    }
+
+    private void setupClientRegistrations(RealmModel realm) {
+        DefaultClientRegistrationPolicies.addDefaultPolicies(realm);
+    }
+
+    private void fireRealmPostCreate(RealmModel realm) {
+        session.getKeycloakSessionFactory().publish(new RealmModel.RealmPostCreateEvent() {
+            @Override
+            public RealmModel getCreatedRealm() {
+                return realm;
+            }
+            @Override
+            public KeycloakSession getKeycloakSession() {
+                return session;
+            }
+        });
+
     }
 
 }

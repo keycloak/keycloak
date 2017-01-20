@@ -27,28 +27,26 @@ import org.eclipse.jetty.security.authentication.FormAuthenticator;
 import org.eclipse.jetty.security.authentication.LoginAuthenticator;
 import org.eclipse.jetty.server.Authentication;
 import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.server.Response;
 import org.eclipse.jetty.server.UserIdentity;
 import org.eclipse.jetty.server.handler.ContextHandler;
-import org.eclipse.jetty.util.URIUtil;
 import org.jboss.logging.Logger;
 import org.keycloak.KeycloakPrincipal;
 import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.adapters.AdapterDeploymentContext;
 import org.keycloak.adapters.AdapterTokenStore;
 import org.keycloak.adapters.AdapterUtils;
-import org.keycloak.adapters.jetty.spi.JettyHttpFacade;
-import org.keycloak.adapters.jetty.spi.JettyUserSessionManagement;
-import org.keycloak.adapters.spi.AuthChallenge;
-import org.keycloak.adapters.spi.AuthOutcome;
 import org.keycloak.adapters.AuthenticatedActionsHandler;
-import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.adapters.KeycloakConfigResolver;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.KeycloakDeploymentBuilder;
 import org.keycloak.adapters.NodesRegistrationManagement;
 import org.keycloak.adapters.PreAuthActionsHandler;
 import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
+import org.keycloak.adapters.jetty.spi.JettyHttpFacade;
+import org.keycloak.adapters.jetty.spi.JettyUserSessionManagement;
+import org.keycloak.adapters.spi.AuthChallenge;
+import org.keycloak.adapters.spi.AuthOutcome;
+import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.enums.TokenStore;
 import org.keycloak.representations.adapters.config.AdapterConfig;
@@ -61,7 +59,6 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashSet;
 import java.util.Set;
@@ -340,13 +337,13 @@ public abstract class AbstractKeycloakJettyAuthenticator extends LoginAuthentica
         Authentication authentication = request.getAuthentication();
         if (!(authentication instanceof KeycloakAuthentication)) {
             UserIdentity userIdentity = createIdentity(principal);
-            authentication = createAuthentication(userIdentity);
+            authentication = createAuthentication(userIdentity, request);
             request.setAuthentication(authentication);
         }
         return authentication;
     }
 
-    protected abstract Authentication createAuthentication(UserIdentity userIdentity);
+    protected abstract Authentication createAuthentication(UserIdentity userIdentity, Request request);
 
     public static abstract class KeycloakAuthentication extends UserAuthentication {
         public KeycloakAuthentication(String method, UserIdentity userIdentity) {

@@ -40,7 +40,6 @@ public class KeycloakOIDCJbossSubsystemClientInstallation implements ClientInsta
         StringBuffer buffer = new StringBuffer();
         buffer.append("<secure-deployment name=\"WAR MODULE NAME.war\">\n");
         buffer.append("    <realm>").append(realm.getName()).append("</realm>\n");
-        buffer.append("    <realm-public-key>").append(realm.getPublicKeyPem()).append("</realm-public-key>\n");
         buffer.append("    <auth-server-url>").append(baseUri.toString()).append("</auth-server-url>\n");
         if (client.isBearerOnly()){
             buffer.append("    <bearer-only>true</bearer-only>\n");

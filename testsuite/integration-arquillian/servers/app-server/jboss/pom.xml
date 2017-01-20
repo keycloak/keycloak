@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-servers-app-server</artifactId>
-        <version>2.0.0.CR1-SNAPSHOT</version>
+        <version>2.5.1.Final-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -108,7 +108,7 @@
                         <executions>
                             <execution>
                                 <id>configure-adapter-debug-log</id>
-                                <phase>process-resources</phase>
+                                <phase>process-test-resources</phase>
                                 <goals>
                                     <goal>transform</goal>
                                 </goals>
@@ -186,6 +186,24 @@
                     <plugin>
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>exec-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>install-adapters</id>
+                                <phase>process-resources</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>${common.resources}/install-adapters.${script.suffix}</executable>
+                                    <workingDirectory>${app.server.jboss.home}/bin</workingDirectory>
+                                    <environmentVariables>
+                                        <JAVA_HOME>${app.server.java.home}</JAVA_HOME>
+                                        <JBOSS_HOME>${app.server.jboss.home}</JBOSS_HOME>
+                                        <SAML_SUPPORTED>${app.server.saml.adapter.supported}</SAML_SUPPORTED>
+                                    </environmentVariables>
+                                </configuration>
+                            </execution>
+                        </executions>
                     </plugin>
 
                     <plugin>
@@ -266,15 +284,13 @@
                 </plugins>
             </build>
         </profile>
-        
         <profile>
-            <id>adapter-libs-provided</id>
-            <activation>    
+            <id>app-server-apply-patches</id>
+            <activation>
                 <property>
-                    <name>!adapter.libs.bundled</name>
+                    <name>app.server.patch.zips</name>
                 </property>
             </activation>
-
             <build>
                 <pluginManagement>
                     <plugins>
@@ -283,29 +299,27 @@
                             <artifactId>exec-maven-plugin</artifactId>
                             <executions>
                                 <execution>
-                                    <id>install-adapters</id>
-                                    <phase>process-test-resources</phase>
+                                    <id>install-patches</id>
+                                    <phase>process-resources</phase>
                                     <goals>
                                         <goal>exec</goal>
                                     </goals>
+                                    <configuration>
+                                        <executable>${common.resources}/install-patch.${script.suffix}</executable>
+                                        <workingDirectory>${app.server.home}/bin</workingDirectory>
+                                        <environmentVariables>
+                                            <JAVA_HOME>${app.server.java.home}</JAVA_HOME>
+                                            <JBOSS_HOME>${app.server.jboss.home}</JBOSS_HOME>
+                                            <APP_PATCH_ZIPS>${app.server.patch.zips}</APP_PATCH_ZIPS>
+                                        </environmentVariables>
+                                    </configuration>
                                 </execution>
                             </executions>
-                            <configuration>
-                                <executable>${common.resources}/install-adapters.${script.suffix}</executable>
-                                <workingDirectory>${app.server.jboss.home}/bin</workingDirectory>
-                                <environmentVariables>
-                                    <JAVA_HOME>${app.server.java.home}</JAVA_HOME>
-                                    <JBOSS_HOME>${app.server.jboss.home}</JBOSS_HOME>
-                                    <SAML_SUPPORTED>${app.server.saml.adapter.supported}</SAML_SUPPORTED>
-                                </environmentVariables>
-                            </configuration>
                         </plugin>
                     </plugins>
                 </pluginManagement>
             </build>
         </profile>
-        
-                        
         <profile>
             <id>ssl</id>
             <activation>
@@ -423,7 +437,13 @@
             <modules>
                 <module>relative</module>
             </modules>
-        </profile>        
+        </profile>
+        <profile>
+            <id>app-server-eap6-fuse</id>
+            <modules>
+                <module>eap6-fuse</module>
+            </modules>
+        </profile>
     </profiles>    
 
 </project>

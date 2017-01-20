@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-tests-other</artifactId>
-        <version>2.0.0.CR1-SNAPSHOT</version>
+        <version>2.5.1.Final-SNAPSHOT</version>
     </parent>
 
     <artifactId>integration-arquillian-tests-adapters</artifactId>
@@ -53,7 +53,10 @@
         <app.server.memory.settings>-Xms64m -Xmx512m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m</app.server.memory.settings>
         
         <app.server.ssl.required>false</app.server.ssl.required>
-        
+
+        <settings.path></settings.path>
+        <repo.url></repo.url>
+
         <adapter.test.props>
             -Dapp.server.base.url=http://localhost:${app.server.http.port}
             -Dauth.server.base.url=http://localhost:${auth.server.http.port}
@@ -63,12 +66,14 @@
             -Dauth.server.ssl.required=${auth.server.ssl.required}
             -Dmy.host.name=localhost
             -Djava.security.krb5.conf=${project.build.directory}/dependency/kerberos/test-krb5.conf
+            -Dkie.maven.settings.custom=${settings.path}
+            -Drepo.url=${repo.url}
         </adapter.test.props>
         
         <app.server.home>${containers.home}/app-server-${app.server}</app.server.home>
-        <adapter.libs.mode>bundled</adapter.libs.mode>
-        <adapter.config.mode>bundled</adapter.config.mode>
-        
+        <adapter.config.bundled>true</adapter.config.bundled>
+        <examples.basedir>${main.basedir}/examples</examples.basedir>
+
     </properties>
         
     <modules>
@@ -88,6 +93,27 @@
             </activation>
             <build>
                 <plugins>
+                    <plugin>
+                        <groupId>org.commonjava.maven.plugins</groupId>
+                        <artifactId>directory-maven-plugin</artifactId>
+                        <version>0.1</version>
+                        <executions>
+                            <execution>
+                                <id>directories</id>
+                                <goals>
+                                    <goal>directory-of</goal>
+                                </goals>
+                                <phase>initialize</phase>
+                                <configuration>
+                                    <property>main.basedir</property>
+                                    <project>
+                                        <groupId>org.keycloak</groupId>
+                                        <artifactId>keycloak-parent</artifactId>
+                                    </project>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
                     <plugin>
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>xml-maven-plugin</artifactId>
@@ -169,26 +195,24 @@
 
                                 <adapter.test.props>${adapter.test.props}</adapter.test.props>
 
-                                <adapter.libs.home>${adapter.libs.home}</adapter.libs.home>
-                                <adapter.libs.mode>${adapter.libs.mode}</adapter.libs.mode>
-                                <adapter.config.mode>${adapter.config.mode}</adapter.config.mode>
+                                <adapter.config.bundled>${adapter.config.bundled}</adapter.config.bundled>
                             </systemPropertyVariables>
                         </configuration>
                     </plugin>
+                    <plugin>
+                        <groupId>org.jboss.shrinkwrap.resolver</groupId>
+                        <artifactId>shrinkwrap-resolver-maven-plugin</artifactId>
+                        <version>${version.shrinkwrap.resolvers}</version>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>propagate-execution-context</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
                 </plugins>
             </build>
-        </profile>
-        
-        <profile>
-            <id>adapter-libs-provided</id>
-            <activation>    
-                <property>
-                    <name>!adapter.libs.bundled</name>
-                </property>
-            </activation>
-            <properties>
-                <adapter.libs.mode>provided</adapter.libs.mode>
-            </properties>
         </profile>
         
         <profile>
@@ -214,22 +238,22 @@
                                         <artifactItems>
                                             <artifactItem>
                                                 <groupId>org.keycloak.example.demo</groupId>
-                                                <artifactId>product-portal-example</artifactId>        
+                                                <artifactId>product-portal-example</artifactId>
                                                 <version>${project.version}</version>
                                                 <type>war</type>
                                             </artifactItem>
                                             <artifactItem>
                                                 <groupId>org.keycloak.example.demo</groupId>
-                                                <artifactId>customer-portal-example</artifactId>        
+                                                <artifactId>customer-portal-example</artifactId>
                                                 <version>${project.version}</version>
                                                 <type>war</type>
-                                            </artifactItem>                                        
+                                            </artifactItem>
                                             <artifactItem>
                                                 <groupId>org.keycloak.example.demo</groupId>
-                                                <artifactId>database-service</artifactId>        
+                                                <artifactId>database-service</artifactId>
                                                 <version>${project.version}</version>
                                                 <type>war</type>
-                                            </artifactItem>       
+                                            </artifactItem>
                                             <artifactItem>
                                                 <groupId>org.keycloak.testsuite</groupId>
                                                 <artifactId>integration-arquillian-test-apps-js-console</artifactId>
@@ -237,14 +261,20 @@
                                                 <type>war</type>
                                             </artifactItem>
                                             <artifactItem>
-                                                <groupId>org.keycloak</groupId>
-                                                <artifactId>examples-multitenant</artifactId>        
+                                                <groupId>org.keycloak.testsuite</groupId>
+                                                <artifactId>integration-arquillian-test-apps-js-database</artifactId>
                                                 <version>${project.version}</version>
                                                 <type>war</type>
-                                            </artifactItem>                    
+                                            </artifactItem>
                                             <artifactItem>
                                                 <groupId>org.keycloak</groupId>
-                                                <artifactId>examples-basicauth</artifactId>        
+                                                <artifactId>examples-multitenant</artifactId>
+                                                <version>${project.version}</version>
+                                                <type>war</type>
+                                            </artifactItem>
+                                            <artifactItem>
+                                                <groupId>org.keycloak</groupId>
+                                                <artifactId>examples-basicauth</artifactId>
                                                 <version>${project.version}</version>
                                                 <type>war</type>
                                             </artifactItem>
@@ -278,13 +308,37 @@
                                                 <version>${project.version}</version>
                                                 <type>war</type>
                                             </artifactItem>
+                                            <artifactItem>
+                                                <groupId>org.keycloak.testsuite</groupId>
+                                                <artifactId>hello-world-authz-service</artifactId>
+                                                <version>${project.version}</version>
+                                                <type>war</type>
+                                            </artifactItem>
+                                            <artifactItem>
+                                                <groupId>org.keycloak.testsuite</groupId>
+                                                <artifactId>photoz-html5-client</artifactId>
+                                                <version>${project.version}</version>
+                                                <type>war</type>
+                                            </artifactItem>
+                                            <artifactItem>
+                                                <groupId>org.keycloak.testsuite</groupId>
+                                                <artifactId>photoz-restful-api</artifactId>
+                                                <version>${project.version}</version>
+                                                <type>war</type>
+                                            </artifactItem>
+                                            <artifactItem>
+                                                <groupId>org.keycloak.testsuite</groupId>
+                                                <artifactId>servlet-authz-app</artifactId>
+                                                <version>${project.version}</version>
+                                                <type>war</type>
+                                            </artifactItem>
                                         </artifactItems>
                                         <outputDirectory>${examples.home}</outputDirectory>
                                         <overWriteIfNewer>true</overWriteIfNewer>
                                     </configuration>
                                 </execution>                            
                                 <execution>
-                                    <id>example-realms</id>
+                                    <id>test-apps-realms</id>
                                     <phase>generate-test-resources</phase>
                                     <goals>
                                         <goal>unpack</goal>
@@ -292,26 +346,19 @@
                                     <configuration>
                                         <artifactItems>
                                             <artifactItem>
-                                                <groupId>org.keycloak</groupId>
-                                                <artifactId>keycloak-examples-dist</artifactId>        
-                                                <version>${project.version}</version>
-                                                <type>zip</type>
-                                                <includes>**/*realm.json,**/testsaml.json</includes>
-                                            </artifactItem>
-                                            <artifactItem>
                                                 <groupId>org.keycloak.testsuite</groupId>
                                                 <artifactId>integration-arquillian-test-apps-dist</artifactId>
                                                 <version>${project.version}</version>
                                                 <type>zip</type>
-                                                <includes>**/*realm.json,**/testsaml.json</includes>
+                                                <includes>**/*realm.json,**/*authz-service.json,**/testsaml.json</includes>
                                             </artifactItem>
                                         </artifactItems>
                                         <outputDirectory>${examples.home}</outputDirectory>
                                         <overWriteIfNewer>true</overWriteIfNewer>
                                     </configuration>
-                                </execution>                            
+                                </execution>
                             </executions>
-                        </plugin>            
+                        </plugin>
                         <plugin>
                             <artifactId>maven-surefire-plugin</artifactId>
                             <configuration>
@@ -336,6 +383,27 @@
                                             <resource>
                                                 <directory>${basedir}/src/test/resources</directory>
                                                 <filtering>true</filtering>
+                                            </resource>
+                                        </resources>
+                                    </configuration>
+                                </execution>
+                                <execution>
+                                    <id>example-realms</id>
+                                    <phase>generate-test-resources</phase>
+                                    <goals>
+                                        <goal>copy-resources</goal>
+                                    </goals>
+                                    <configuration>
+                                        <outputDirectory>${examples.home}/example-realms</outputDirectory>
+                                        <overWriteIfNewer>true</overWriteIfNewer>
+                                        <resources>
+                                            <resource>
+                                                <directory>${examples.basedir}</directory>
+                                                <filtering>true</filtering>
+                                                <includes>
+                                                    <include>**/*realm.json</include>
+                                                    <include>**/testsaml.json</include>
+                                                </includes>
                                             </resource>
                                         </resources>
                                     </configuration>

@@ -97,10 +97,9 @@ public class DocumentUtil {
      * @throws ParserConfigurationException
      */
     public static Document createDocument() throws ConfigurationException {
-        DocumentBuilderFactory factory = getDocumentBuilderFactory();
         DocumentBuilder builder;
         try {
-            builder = factory.newDocumentBuilder();
+            builder = getDocumentBuilder();
         } catch (ParserConfigurationException e) {
             throw new ConfigurationException(e);
         }
@@ -118,8 +117,7 @@ public class DocumentUtil {
      */
     public static Document createDocumentWithBaseNamespace(String baseNamespace, String localPart) throws ProcessingException {
         try {
-            DocumentBuilderFactory factory = getDocumentBuilderFactory();
-            DocumentBuilder builder = factory.newDocumentBuilder();
+            DocumentBuilder builder = getDocumentBuilder();
             return builder.getDOMImplementation().createDocument(baseNamespace, localPart, null);
         } catch (DOMException e) {
             throw logger.processingError(e);
@@ -157,8 +155,7 @@ public class DocumentUtil {
      */
     public static Document getDocument(Reader reader) throws ConfigurationException, ProcessingException, ParsingException {
         try {
-            DocumentBuilderFactory factory = getDocumentBuilderFactory();
-            DocumentBuilder builder = factory.newDocumentBuilder();
+            DocumentBuilder builder = getDocumentBuilder();
             return builder.parse(new InputSource(reader));
         } catch (ParserConfigurationException e) {
             throw logger.configurationError(e);
@@ -181,9 +178,8 @@ public class DocumentUtil {
      * @throws SAXException
      */
     public static Document getDocument(File file) throws ConfigurationException, ProcessingException, ParsingException {
-        DocumentBuilderFactory factory = getDocumentBuilderFactory();
         try {
-            DocumentBuilder builder = factory.newDocumentBuilder();
+            DocumentBuilder builder = getDocumentBuilder();
             return builder.parse(file);
         } catch (ParserConfigurationException e) {
             throw logger.configurationError(e);
@@ -206,9 +202,8 @@ public class DocumentUtil {
      * @throws SAXException
      */
     public static Document getDocument(InputStream is) throws ConfigurationException, ProcessingException, ParsingException {
-        DocumentBuilderFactory factory = getDocumentBuilderFactory();
         try {
-            DocumentBuilder builder = factory.newDocumentBuilder();
+            DocumentBuilder builder = getDocumentBuilder();
             return builder.parse(is);
         } catch (ParserConfigurationException e) {
             throw logger.configurationError(e);
@@ -376,7 +371,7 @@ public class DocumentUtil {
             throw logger.processingError(e);
         }
 
-        return new String(baos.toByteArray());
+        return new String(baos.toByteArray(), GeneralConstants.SAML_CHARSET);
     }
 
     /**
@@ -502,6 +497,25 @@ public class DocumentUtil {
         }
     }
 
+    private static final ThreadLocal<DocumentBuilder> XML_DOCUMENT_BUILDER = new ThreadLocal<DocumentBuilder>() {
+        @Override
+        protected DocumentBuilder initialValue() {
+            DocumentBuilderFactory factory = getDocumentBuilderFactory();
+            try {
+                return factory.newDocumentBuilder();
+            } catch (ParserConfigurationException ex) {
+                throw new RuntimeException(ex);
+            }
+        }
+
+    };
+
+    private static DocumentBuilder getDocumentBuilder() throws ParserConfigurationException {
+        DocumentBuilder res = XML_DOCUMENT_BUILDER.get();
+        res.reset();
+        return res;
+    }
+
     /**
      * <p> Creates a namespace aware {@link DocumentBuilderFactory}. The returned instance is cached and shared between
      * different threads. </p>
@@ -519,7 +533,7 @@ public class DocumentUtil {
                 }
                 documentBuilderFactory = DocumentBuilderFactory.newInstance();
                 documentBuilderFactory.setNamespaceAware(true);
-                documentBuilderFactory.setXIncludeAware(true);
+                documentBuilderFactory.setXIncludeAware(false);
                 String feature = "";
                 try {
                     feature = feature_disallow_doctype_decl;

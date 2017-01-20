@@ -94,6 +94,7 @@
         {
             "alias" : "model-saml-signed-idp",
             "providerId" : "saml",
+            "displayName": "My SAML",
             "enabled": true,
             "config": {
                 "singleSignOnServiceUrl": "http://localhost:8082/auth/realms/realm-with-saml-identity-provider/protocol/saml",
@@ -157,6 +158,7 @@
         {
             "alias" : "model-oidc-idp",
             "providerId" : "oidc",
+            "displayName": "My OIDC",
             "enabled": false,
             "authenticateByDefault" : "false",
             "config": {
@@ -172,13 +174,13 @@
         {
             "alias" : "kc-oidc-idp",
             "providerId" : "keycloak-oidc",
+            "displayName": "My Keycloak OIDC",
             "enabled": true,
             "storeToken" : true,
             "addReadTokenRoleOnCreate": true,
             "config": {
                 "clientId": "broker-app",
                 "clientSecret": "secret",
-                "prompt": "login",
                 "authorizationUrl": "http://localhost:8082/auth/realms/realm-with-oidc-identity-provider/protocol/openid-connect/auth",
                 "tokenUrl": "http://localhost:8082/auth/realms/realm-with-oidc-identity-provider/protocol/openid-connect/token",
                 "userInfoUrl": "http://localhost:8082/auth/realms/realm-with-oidc-identity-provider/protocol/openid-connect/userinfo",
@@ -196,7 +198,6 @@
             "config": {
                 "clientId": "broker-app",
                 "clientSecret": "secret",
-                "prompt": "login",
                 "authorizationUrl": "http://localhost:8082/auth/realms/realm-with-oidc-idp-property-mappers/protocol/openid-connect/auth",
                 "tokenUrl": "http://localhost:8082/auth/realms/realm-with-oidc-idp-property-mappers/protocol/openid-connect/token",
                 "userInfoUrl": "http://localhost:8082/auth/realms/realm-with-oidc-idp-property-mappers/protocol/openid-connect/userinfo",
@@ -243,6 +244,15 @@
             "config": {
                 "user.attribute": "lastName",
                 "claim": "family_name"
+            }
+        },
+        {
+            "name": "kc-tenantid-mapper",
+            "identityProviderAlias": "kc-oidc-idp-property-mappers",
+            "identityProviderMapper": "oidc-user-attribute-idp-mapper",
+            "config": {
+                "user.attribute": "tenantid",
+                "claim": "tenantid"
             }
         },
         {

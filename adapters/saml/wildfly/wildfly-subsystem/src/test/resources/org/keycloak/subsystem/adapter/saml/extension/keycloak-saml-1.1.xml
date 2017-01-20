@@ -44,6 +44,7 @@
             <IDP entityID="idp" signaturesRequired="true" signatureAlgorithm="test" signatureCanonicalizationMethod="test">
                 <SingleSignOnService signRequest="true"
                                      validateResponseSignature="true"
+                                     validateAssertionSignature="true"
                                      requestBinding="POST"
                                      responseBinding="POST"
                                      bindingUrl="http://localhost:8080/auth/realms/saml-demo/protocol/saml"/>

@@ -29,6 +29,10 @@ import javax.xml.stream.events.EndElement;
 import javax.xml.stream.events.StartElement;
 import javax.xml.stream.events.XMLEvent;
 import java.util.List;
+import org.keycloak.adapters.saml.config.IDP.HttpClientConfig;
+import static org.keycloak.adapters.saml.config.parsers.SPXmlParser.getAttributeValue;
+import static org.keycloak.adapters.saml.config.parsers.SPXmlParser.getBooleanAttributeValue;
+import static org.keycloak.adapters.saml.config.parsers.SPXmlParser.getIntegerAttributeValue;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -41,16 +45,16 @@ public class IDPXmlParser extends AbstractParser {
         StartElement startElement = StaxParserUtil.getNextStartElement(xmlEventReader);
         StaxParserUtil.validate(startElement, ConfigXmlConstants.IDP_ELEMENT);
         IDP idp = new IDP();
-        String entityID = SPXmlParser.getAttributeValue(startElement, ConfigXmlConstants.ENTITY_ID_ATTR);
+        String entityID = getAttributeValue(startElement, ConfigXmlConstants.ENTITY_ID_ATTR);
         if (entityID == null) {
             throw new ParsingException("entityID must be set on IDP");
 
         }
         idp.setEntityID(entityID);
 
-        boolean signaturesRequired = SPXmlParser.getBooleanAttributeValue(startElement, ConfigXmlConstants.SIGNATURES_REQUIRED_ATTR);
-        idp.setSignatureCanonicalizationMethod(SPXmlParser.getAttributeValue(startElement, ConfigXmlConstants.SIGNATURE_CANONICALIZATION_METHOD_ATTR));
-        idp.setSignatureAlgorithm(SPXmlParser.getAttributeValue(startElement, ConfigXmlConstants.SIGNATURE_ALGORITHM_ATTR));
+        boolean signaturesRequired = getBooleanAttributeValue(startElement, ConfigXmlConstants.SIGNATURES_REQUIRED_ATTR);
+        idp.setSignatureCanonicalizationMethod(getAttributeValue(startElement, ConfigXmlConstants.SIGNATURE_CANONICALIZATION_METHOD_ATTR));
+        idp.setSignatureAlgorithm(getAttributeValue(startElement, ConfigXmlConstants.SIGNATURE_ALGORITHM_ATTR));
         while (xmlEventReader.hasNext()) {
             XMLEvent xmlEvent = StaxParserUtil.peek(xmlEventReader);
             if (xmlEvent == null)
@@ -75,6 +79,10 @@ public class IDPXmlParser extends AbstractParser {
                 IDP.SingleLogoutService slo = parseSingleLogoutService(xmlEventReader, signaturesRequired);
                 idp.setSingleLogoutService(slo);
 
+            } else if (tag.equals(ConfigXmlConstants.HTTP_CLIENT_ELEMENT)) {
+                HttpClientConfig config = parseHttpClientElement(xmlEventReader);
+                idp.setHttpClientConfig(config);
+
             } else if (tag.equals(ConfigXmlConstants.KEYS_ELEMENT)) {
                 KeysXmlParser parser = new KeysXmlParser();
                 List<Key> keys = (List<Key>)parser.parse(xmlEventReader);
@@ -90,26 +98,61 @@ public class IDPXmlParser extends AbstractParser {
     protected IDP.SingleLogoutService parseSingleLogoutService(XMLEventReader xmlEventReader, boolean signaturesRequired) throws ParsingException {
         IDP.SingleLogoutService slo = new IDP.SingleLogoutService();
         StartElement element = StaxParserUtil.getNextStartElement(xmlEventReader);
-        slo.setSignRequest(SPXmlParser.getBooleanAttributeValue(element, ConfigXmlConstants.SIGN_REQUEST_ATTR, signaturesRequired));
-        slo.setValidateResponseSignature(SPXmlParser.getBooleanAttributeValue(element, ConfigXmlConstants.VALIDATE_RESPONSE_SIGNATURE_ATTR, signaturesRequired));
-        slo.setValidateRequestSignature(SPXmlParser.getBooleanAttributeValue(element, ConfigXmlConstants.VALIDATE_REQUEST_SIGNATURE_ATTR, signaturesRequired));
-        slo.setRequestBinding(SPXmlParser.getAttributeValue(element, ConfigXmlConstants.REQUEST_BINDING_ATTR));
-        slo.setResponseBinding(SPXmlParser.getAttributeValue(element, ConfigXmlConstants.RESPONSE_BINDING_ATTR));
-        slo.setSignResponse(SPXmlParser.getBooleanAttributeValue(element, ConfigXmlConstants.SIGN_RESPONSE_ATTR, signaturesRequired));
-        slo.setPostBindingUrl(SPXmlParser.getAttributeValue(element, ConfigXmlConstants.POST_BINDING_URL_ATTR));
-        slo.setRedirectBindingUrl(SPXmlParser.getAttributeValue(element, ConfigXmlConstants.REDIRECT_BINDING_URL_ATTR));
+        slo.setSignRequest(getBooleanAttributeValue(element, ConfigXmlConstants.SIGN_REQUEST_ATTR, signaturesRequired));
+        slo.setValidateResponseSignature(getBooleanAttributeValue(element, ConfigXmlConstants.VALIDATE_RESPONSE_SIGNATURE_ATTR, signaturesRequired));
+        slo.setValidateRequestSignature(getBooleanAttributeValue(element, ConfigXmlConstants.VALIDATE_REQUEST_SIGNATURE_ATTR, signaturesRequired));
+        slo.setRequestBinding(getAttributeValue(element, ConfigXmlConstants.REQUEST_BINDING_ATTR));
+        slo.setResponseBinding(getAttributeValue(element, ConfigXmlConstants.RESPONSE_BINDING_ATTR));
+        slo.setSignResponse(getBooleanAttributeValue(element, ConfigXmlConstants.SIGN_RESPONSE_ATTR, signaturesRequired));
+        slo.setPostBindingUrl(getAttributeValue(element, ConfigXmlConstants.POST_BINDING_URL_ATTR));
+        slo.setRedirectBindingUrl(getAttributeValue(element, ConfigXmlConstants.REDIRECT_BINDING_URL_ATTR));
         return slo;
     }
 
     protected IDP.SingleSignOnService parseSingleSignOnService(XMLEventReader xmlEventReader, boolean signaturesRequired) throws ParsingException {
         IDP.SingleSignOnService sso = new IDP.SingleSignOnService();
         StartElement element = StaxParserUtil.getNextStartElement(xmlEventReader);
-        sso.setSignRequest(SPXmlParser.getBooleanAttributeValue(element, ConfigXmlConstants.SIGN_REQUEST_ATTR, signaturesRequired));
-        sso.setValidateResponseSignature(SPXmlParser.getBooleanAttributeValue(element, ConfigXmlConstants.VALIDATE_RESPONSE_SIGNATURE_ATTR, signaturesRequired));
-        sso.setRequestBinding(SPXmlParser.getAttributeValue(element, ConfigXmlConstants.REQUEST_BINDING_ATTR));
-        sso.setResponseBinding(SPXmlParser.getAttributeValue(element, ConfigXmlConstants.RESPONSE_BINDING_ATTR));
-        sso.setBindingUrl(SPXmlParser.getAttributeValue(element, ConfigXmlConstants.BINDING_URL_ATTR));
+        sso.setSignRequest(getBooleanAttributeValue(element, ConfigXmlConstants.SIGN_REQUEST_ATTR, signaturesRequired));
+        sso.setValidateResponseSignature(getBooleanAttributeValue(element, ConfigXmlConstants.VALIDATE_RESPONSE_SIGNATURE_ATTR, signaturesRequired));
+        sso.setValidateAssertionSignature(getBooleanAttributeValue(element, ConfigXmlConstants.VALIDATE_ASSERTION_SIGNATURE_ATTR));
+        sso.setRequestBinding(getAttributeValue(element, ConfigXmlConstants.REQUEST_BINDING_ATTR));
+        sso.setResponseBinding(getAttributeValue(element, ConfigXmlConstants.RESPONSE_BINDING_ATTR));
+        sso.setBindingUrl(getAttributeValue(element, ConfigXmlConstants.BINDING_URL_ATTR));
         return sso;
+    }
+
+    private HttpClientConfig parseHttpClientElement(XMLEventReader xmlEventReader) throws ParsingException {
+        StartElement startElement = StaxParserUtil.getNextStartElement(xmlEventReader);
+        StaxParserUtil.validate(startElement, ConfigXmlConstants.HTTP_CLIENT_ELEMENT);
+        HttpClientConfig config = new HttpClientConfig();
+
+        config.setAllowAnyHostname(getBooleanAttributeValue(startElement, ConfigXmlConstants.ALLOW_ANY_HOSTNAME_ATTR, false));
+        config.setClientKeystore(getAttributeValue(startElement, ConfigXmlConstants.CLIENT_KEYSTORE_ATTR));
+        config.setClientKeystorePassword(getAttributeValue(startElement, ConfigXmlConstants.CLIENT_KEYSTORE_PASSWORD_ATTR));
+        config.setConnectionPoolSize(getIntegerAttributeValue(startElement, ConfigXmlConstants.CONNECTION_POOL_SIZE_ATTR, 0));
+        config.setDisableTrustManager(getBooleanAttributeValue(startElement, ConfigXmlConstants.ALLOW_ANY_HOSTNAME_ATTR, false));
+        config.setProxyUrl(getAttributeValue(startElement, ConfigXmlConstants.PROXY_URL_ATTR));
+        config.setTruststore(getAttributeValue(startElement, ConfigXmlConstants.TRUSTSTORE_ATTR));
+        config.setTruststorePassword(getAttributeValue(startElement, ConfigXmlConstants.TRUSTSTORE_PASSWORD_ATTR));
+
+        while (xmlEventReader.hasNext()) {
+            XMLEvent xmlEvent = StaxParserUtil.peek(xmlEventReader);
+            if (xmlEvent == null)
+                break;
+            if (xmlEvent instanceof EndElement) {
+                EndElement endElement = (EndElement) StaxParserUtil.getNextEvent(xmlEventReader);
+                String endElementName = StaxParserUtil.getEndElementName(endElement);
+                if (endElementName.equals(ConfigXmlConstants.ROLE_IDENTIFIERS_ELEMENT))
+                    break;
+                else
+                    continue;
+            }
+
+            String tag = StaxParserUtil.getStartElementName(startElement);
+            StaxParserUtil.bypassElementBlock(xmlEventReader, tag);
+        }
+
+        return config;
     }
 
     @Override

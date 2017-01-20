@@ -27,5 +27,29 @@
                 <exclude name="**/subsystem-config.xml"/>
             </fileset>
         </copy>
+        <copy todir="target/test-apps/photoz" overwrite="true">
+            <fileset dir="../photoz">
+                <exclude name="**/target/**"/>
+                <exclude name="**/*.iml"/>
+                <exclude name="**/*.unconfigured"/>
+                <exclude name="**/subsystem-config.xml"/>
+            </fileset>
+        </copy>
+        <copy todir="target/test-apps/hello-world-authz-service" overwrite="true">
+            <fileset dir="../hello-world-authz-service">
+                <exclude name="**/target/**"/>
+                <exclude name="**/*.iml"/>
+                <exclude name="**/*.unconfigured"/>
+                <exclude name="**/subsystem-config.xml"/>
+            </fileset>
+        </copy>
+        <copy todir="target/test-apps/servlet-authz-app" overwrite="true">
+            <fileset dir="../servlet-authz">
+                <exclude name="**/target/**"/>
+                <exclude name="**/*.iml"/>
+                <exclude name="**/*.unconfigured"/>
+                <exclude name="**/subsystem-config.xml"/>
+            </fileset>
+        </copy>
     </target>
 </project>

@@ -17,8 +17,9 @@
 package org.keycloak.testsuite.broker.provider.social;
 
 import org.keycloak.broker.provider.AbstractIdentityProviderFactory;
-import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.broker.social.SocialIdentityProviderFactory;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.IdentityProviderModel;
 
 /**
  * @author pedroigor
@@ -33,8 +34,8 @@ public class CustomSocialProviderFactory extends AbstractIdentityProviderFactory
     }
 
     @Override
-    public CustomSocialProvider create(IdentityProviderModel model) {
-        return new CustomSocialProvider(model);
+    public CustomSocialProvider create(KeycloakSession session, IdentityProviderModel model) {
+        return new CustomSocialProvider(session, model);
     }
 
     @Override

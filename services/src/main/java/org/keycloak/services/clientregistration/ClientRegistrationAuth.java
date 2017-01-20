@@ -18,11 +18,11 @@
 package org.keycloak.services.clientregistration;
 
 import org.jboss.resteasy.spi.Failure;
-import org.jboss.resteasy.spi.NotFoundException;
-import org.jboss.resteasy.spi.UnauthorizedException;
 import org.keycloak.Config;
+import org.keycloak.OAuthErrorException;
 import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.common.util.Time;
+import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.AdminRoles;
@@ -33,7 +33,10 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
 import org.keycloak.representations.JsonWebToken;
-import org.keycloak.services.ForbiddenException;
+import org.keycloak.services.ErrorResponseException;
+import org.keycloak.services.clientregistration.policy.RegistrationAuth;
+import org.keycloak.services.clientregistration.policy.ClientRegistrationPolicyException;
+import org.keycloak.services.clientregistration.policy.ClientRegistrationPolicyManager;
 import org.keycloak.util.TokenUtil;
 
 import javax.ws.rs.core.HttpHeaders;
@@ -47,15 +50,17 @@ import java.util.Map;
  */
 public class ClientRegistrationAuth {
 
-    private KeycloakSession session;
-    private EventBuilder event;
+    private final KeycloakSession session;
+    private final ClientRegistrationProvider provider;
+    private final EventBuilder event;
 
     private RealmModel realm;
     private JsonWebToken jwt;
     private ClientInitialAccessModel initialAccessModel;
 
-    public ClientRegistrationAuth(KeycloakSession session, EventBuilder event) {
+    public ClientRegistrationAuth(KeycloakSession session, ClientRegistrationProvider provider, EventBuilder event) {
         this.session = session;
+        this.provider = provider;
         this.event = event;
     }
 
@@ -73,15 +78,16 @@ public class ClientRegistrationAuth {
             return;
         }
 
-        jwt = ClientRegistrationTokenUtils.verifyToken(realm, uri, split[1]);
-        if (jwt == null) {
-            throw unauthorized();
+        ClientRegistrationTokenUtils.TokenVerification tokenVerification = ClientRegistrationTokenUtils.verifyToken(session, realm, uri, split[1]);
+        if (tokenVerification.getError() != null) {
+            throw unauthorized(tokenVerification.getError().getMessage());
         }
+        jwt = tokenVerification.getJwt();
 
         if (isInitialAccessToken()) {
             initialAccessModel = session.sessions().getClientInitialAccessModel(session.getContext().getRealm(), jwt.getId());
             if (initialAccessModel == null) {
-                throw unauthorized();
+                throw unauthorized("Initial Access Token not found");
             }
         }
     }
@@ -98,27 +104,42 @@ public class ClientRegistrationAuth {
         return jwt != null && ClientRegistrationTokenUtils.TYPE_REGISTRATION_ACCESS_TOKEN.equals(jwt.getType());
     }
 
-    public void requireCreate() {
+    public RegistrationAuth requireCreate(ClientRegistrationContext context) {
         init();
+
+        RegistrationAuth registrationAuth = RegistrationAuth.ANONYMOUS;
 
         if (isBearerToken()) {
             if (hasRole(AdminRoles.MANAGE_CLIENTS, AdminRoles.CREATE_CLIENT)) {
-                return;
+                registrationAuth = RegistrationAuth.AUTHENTICATED;
             } else {
                 throw forbidden();
             }
         } else if (isInitialAccessToken()) {
             if (initialAccessModel.getRemainingCount() > 0) {
                 if (initialAccessModel.getExpiration() == 0 || (initialAccessModel.getTimestamp() + initialAccessModel.getExpiration()) > Time.currentTime()) {
-                    return;
+                    registrationAuth = RegistrationAuth.AUTHENTICATED;
+                } else {
+                    throw unauthorized("Expired initial access token");
                 }
+            } else {
+                throw unauthorized("No remaining count on initial access token");
             }
         }
 
-        throw unauthorized();
+        try {
+            ClientRegistrationPolicyManager.triggerBeforeRegister(context, registrationAuth);
+        } catch (ClientRegistrationPolicyException crpe) {
+            throw forbidden(crpe.getMessage());
+        }
+
+        return registrationAuth;
     }
 
     public void requireView(ClientModel client) {
+        RegistrationAuth authType = null;
+        boolean authenticated = false;
+
         init();
 
         if (isBearerToken()) {
@@ -126,26 +147,65 @@ public class ClientRegistrationAuth {
                 if (client == null) {
                     throw notFound();
                 }
-                return;
+
+                authenticated = true;
+                authType = RegistrationAuth.AUTHENTICATED;
             } else {
                 throw forbidden();
             }
         } else if (isRegistrationAccessToken()) {
-            if (client.getRegistrationToken() != null && client != null && client.getRegistrationToken().equals(jwt.getId())) {
-                return;
+            if (client != null && client.getRegistrationToken() != null && client.getRegistrationToken().equals(jwt.getId())) {
+                authenticated = true;
+                authType = getRegistrationAuth();
             }
         } else if (isInitialAccessToken()) {
-            throw unauthorized();
+            throw unauthorized("Not initial access token allowed");
         } else {
             if (authenticateClient(client)) {
-                return;
+                authenticated = true;
+                authType = RegistrationAuth.AUTHENTICATED;
             }
         }
 
-        throw unauthorized();
+        if (authenticated) {
+            try {
+                ClientRegistrationPolicyManager.triggerBeforeView(session, provider, authType, client);
+            } catch (ClientRegistrationPolicyException crpe) {
+                throw forbidden(crpe.getMessage());
+            }
+        } else {
+            throw unauthorized("Not authorized to view client. Not valid token or client credentials provided.");
+        }
     }
 
-    public void requireUpdate(ClientModel client) {
+    public RegistrationAuth getRegistrationAuth() {
+        String str = (String) jwt.getOtherClaims().get(RegistrationAccessToken.REGISTRATION_AUTH);
+        return RegistrationAuth.fromString(str);
+    }
+
+    public RegistrationAuth requireUpdate(ClientRegistrationContext context, ClientModel client) {
+        RegistrationAuth regAuth = requireUpdateAuth(client);
+
+        try {
+            ClientRegistrationPolicyManager.triggerBeforeUpdate(context, regAuth, client);
+        } catch (ClientRegistrationPolicyException crpe) {
+            throw forbidden(crpe.getMessage());
+        }
+
+        return regAuth;
+    }
+
+    public void requireDelete(ClientModel client) {
+        RegistrationAuth chainType = requireUpdateAuth(client);
+
+        try {
+            ClientRegistrationPolicyManager.triggerBeforeRemove(session, provider, chainType, client);
+        } catch (ClientRegistrationPolicyException crpe) {
+            throw forbidden(crpe.getMessage());
+        }
+    }
+
+    private RegistrationAuth requireUpdateAuth(ClientModel client) {
         init();
 
         if (isBearerToken()) {
@@ -153,17 +213,18 @@ public class ClientRegistrationAuth {
                 if (client == null) {
                     throw notFound();
                 }
-                return;
+
+                return RegistrationAuth.AUTHENTICATED;
             } else {
                 throw forbidden();
             }
         } else if (isRegistrationAccessToken()) {
-            if (client.getRegistrationToken() != null && client != null && client.getRegistrationToken().equals(jwt.getId())) {
-                return;
+            if (client != null && client.getRegistrationToken() != null && client.getRegistrationToken().equals(jwt.getId())) {
+                return getRegistrationAuth();
             }
         }
 
-        throw unauthorized();
+        throw unauthorized("Not authorized to update client. Maybe missing token or bad token type.");
     }
 
     public ClientInitialAccessModel getInitialAccessModel() {
@@ -209,6 +270,10 @@ public class ClientRegistrationAuth {
     }
 
     private boolean authenticateClient(ClientModel client) {
+        if (client == null) {
+            return false;
+        }
+
         if (client.isPublicClient()) {
             return true;
         }
@@ -218,36 +283,40 @@ public class ClientRegistrationAuth {
         Response response = processor.authenticateClient();
         if (response != null) {
             event.client(client.getClientId()).error(Errors.NOT_ALLOWED);
-            throw unauthorized();
+            throw unauthorized("Failed to authenticate client");
         }
 
         ClientModel authClient = processor.getClient();
-        if (client == null) {
+        if (authClient == null) {
             event.client(client.getClientId()).error(Errors.NOT_ALLOWED);
-            throw unauthorized();
+            throw unauthorized("No client authenticated");
         }
 
         if (!authClient.getClientId().equals(client.getClientId())) {
             event.client(client.getClientId()).error(Errors.NOT_ALLOWED);
-            throw unauthorized();
+            throw unauthorized("Different client authenticated");
         }
 
         return true;
     }
 
-    private Failure unauthorized() {
-        event.error(Errors.NOT_ALLOWED);
-        return new UnauthorizedException();
+    private Failure unauthorized(String errorDescription) {
+        event.detail(Details.REASON, errorDescription).error(Errors.INVALID_TOKEN);
+        throw new ErrorResponseException(OAuthErrorException.INVALID_TOKEN, errorDescription, Response.Status.UNAUTHORIZED);
     }
 
     private Failure forbidden() {
+        return forbidden("Forbidden");
+    }
+
+    private Failure forbidden(String errorDescription) {
         event.error(Errors.NOT_ALLOWED);
-        return new ForbiddenException();
+        throw new ErrorResponseException(OAuthErrorException.INSUFFICIENT_SCOPE, errorDescription, Response.Status.FORBIDDEN);
     }
 
     private Failure notFound() {
-        event.error(Errors.NOT_ALLOWED);
-        return new NotFoundException("Client not found");
+        event.error(Errors.CLIENT_NOT_FOUND);
+        throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Client not found", Response.Status.NOT_FOUND);
     }
 
 }

@@ -17,6 +17,7 @@
 
 package org.keycloak.authentication.authenticators.resetcred;
 
+import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;
@@ -46,7 +47,7 @@ import java.util.List;
  */
 public class ResetCredentialChooseUser implements Authenticator, AuthenticatorFactory {
 
-    protected static ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    private static final Logger logger = Logger.getLogger(ResetCredentialChooseUser.class);
 
     public static final String PROVIDER_ID = "reset-credentials-choose-user";
 
@@ -80,9 +81,12 @@ public class ResetCredentialChooseUser implements Authenticator, AuthenticatorFa
             return;
         }
 
-        UserModel user = context.getSession().users().getUserByUsername(username, context.getRealm());
-        if (user == null && username.contains("@")) {
-            user =  context.getSession().users().getUserByEmail(username, context.getRealm());
+        username = username.trim();
+        
+        RealmModel realm = context.getRealm();
+        UserModel user = context.getSession().users().getUserByUsername(username, realm);
+        if (user == null && realm.isLoginWithEmailAllowed() && username.contains("@")) {
+            user =  context.getSession().users().getUserByEmail(username, realm);
         }
 
         context.getClientSession().setNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME, username);

@@ -16,11 +16,10 @@
  */
 package org.keycloak.subsystem.server.extension;
 
-import java.io.IOException;
-
 import org.jboss.as.subsystem.test.AbstractSubsystemBaseTest;
-import org.jboss.dmr.ModelNode;
-import org.junit.Test;
+
+import java.io.IOException;
+import java.util.Properties;
 
 /**
  * Tests all management expects for subsystem, parsing, marshaling, model definition and other
@@ -38,14 +37,14 @@ public class SubsystemParsingTestCase extends AbstractSubsystemBaseTest {
         super(KeycloakExtension.SUBSYSTEM_NAME, new KeycloakExtension());
     }
 
-    @Test
-    public void testJson() throws Exception {
-        ModelNode node = new ModelNode();
-        node.get("web-context").set("auth");
-
-        System.out.println("json=" + node.toJSONString(false));
+    @Override
+    protected Properties getResolvedProperties() {
+        Properties properties = new Properties();
+        properties.put("jboss.home.dir", System.getProperty("java.io.tmpdir"));
+        properties.put("keycloak.jta.lookup.provider", "jboss");
+        return properties;
     }
-
+    
     @Override
     protected String getSubsystemXml() throws IOException {
         return readResource("keycloak-server-1.1.xml");

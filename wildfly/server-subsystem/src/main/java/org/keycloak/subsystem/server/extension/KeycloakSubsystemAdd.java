@@ -44,17 +44,28 @@ class KeycloakSubsystemAdd extends AbstractBoottimeAddStepHandler {
         context.addStep(new AbstractDeploymentChainStep() {
             @Override
             protected void execute(DeploymentProcessorTarget processorTarget) {
+                processorTarget.addDeploymentProcessor(SUBSYSTEM_NAME, Phase.DEPENDENCIES, 0, new KeycloakProviderDependencyProcessor());
+                processorTarget.addDeploymentProcessor(SUBSYSTEM_NAME,
+                        Phase.POST_MODULE, // PHASE
+                        Phase.POST_MODULE_VALIDATOR_FACTORY - 2, // PRIORITY
+                        new KeycloakProviderDeploymentProcessor());
                 processorTarget.addDeploymentProcessor(SUBSYSTEM_NAME,
                         Phase.POST_MODULE, // PHASE
                         Phase.POST_MODULE_VALIDATOR_FACTORY - 1, // PRIORITY
                         new KeycloakServerDeploymentProcessor());
             }
         }, OperationContext.Stage.RUNTIME);
+        context.addStep(new AbstractDeploymentChainStep() {
+            @Override
+            protected void execute(DeploymentProcessorTarget processorTarget) {
+            }
+        }, OperationContext.Stage.RUNTIME);
     }
 
-    protected void populateModel(final OperationContext context, final ModelNode operation, final Resource resource) throws  OperationFailedException {
+    @Override
+    protected void populateModel(final OperationContext context, final ModelNode operation, final Resource resource) throws OperationFailedException {
         ModelNode model = resource.getModel();
-
+        
         // set attribute values from parsed model
         for (AttributeDefinition attrDef : ALL_ATTRIBUTES) {
             attrDef.validateAndSet(operation, model);
@@ -79,5 +90,7 @@ class KeycloakSubsystemAdd extends AbstractBoottimeAddStepHandler {
         ServerUtil serverUtil = new ServerUtil(operation);
         serverUtil.addStepToUploadServerWar(context);
         KeycloakAdapterConfigService.INSTANCE.setWebContext(webContext);
+        
+        KeycloakAdapterConfigService.INSTANCE.updateConfig(operation, model);
     }
 }

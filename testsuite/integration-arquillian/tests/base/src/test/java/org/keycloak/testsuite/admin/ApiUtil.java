@@ -17,27 +17,30 @@
 package org.keycloak.testsuite.admin;
 
 import org.jboss.logging.Logger;
+import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.RoleResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.representations.idm.GroupRepresentation;
+import org.keycloak.representations.idm.KeysMetadataRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
+import javax.ws.rs.core.Response.StatusType;
 import java.net.URI;
+import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import javax.ws.rs.core.Response.Status;
-import javax.ws.rs.core.Response.StatusType;
 
 import static org.keycloak.representations.idm.CredentialRepresentation.PASSWORD;
-
-import org.keycloak.representations.idm.GroupRepresentation;
 
 /**
  * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
@@ -50,14 +53,23 @@ public class ApiUtil {
         URI location = response.getLocation();
         if (!response.getStatusInfo().equals(Status.CREATED)) {
             StatusType statusInfo = response.getStatusInfo();
-            throw new RuntimeException("Create method returned status " +
-                    statusInfo.getReasonPhrase() + " (Code: " + statusInfo.getStatusCode() + "); expected status: Created (201)");
+            throw new WebApplicationException("Create method returned status " +
+                    statusInfo.getReasonPhrase() + " (Code: " + statusInfo.getStatusCode() + "); expected status: Created (201)", response);
         }
         if (location == null) {
             return null;
         }
         String path = location.getPath();
         return path.substring(path.lastIndexOf('/') + 1);
+    }
+
+    public static ClientResource findClientResourceById(RealmResource realm, String id) {
+        for (ClientRepresentation c : realm.clients().findAll()) {
+            if (c.getId().equals(id)) {
+                return realm.clients().get(c.getId());
+            }
+        }
+        return null;
     }
 
     public static ClientResource findClientResourceByClientId(RealmResource realm, String clientId) {
@@ -71,7 +83,7 @@ public class ApiUtil {
 
     public static ClientResource findClientResourceByName(RealmResource realm, String name) {
         for (ClientRepresentation c : realm.clients().findAll()) {
-            if (c.getName().equals(name)) {
+            if (name.equals(c.getName())) {
                 return realm.clients().get(c.getId());
             }
         }
@@ -80,7 +92,7 @@ public class ApiUtil {
 
     public static ClientResource findClientByClientId(RealmResource realm, String clientId) {
         for (ClientRepresentation c : realm.clients().findAll()) {
-            if (c.getClientId().equals(clientId)) {
+            if (clientId.equals(c.getClientId())) {
                 return realm.clients().get(c.getId());
             }
         }
@@ -183,4 +195,25 @@ public class ApiUtil {
         }
         return contains;
     }
+
+    public static AuthorizationResource findAuthorizationSettings(RealmResource realm, String clientId) {
+        for (ClientRepresentation c : realm.clients().findAll()) {
+            if (c.getClientId().equals(clientId)) {
+                return realm.clients().get(c.getId()).authorization();
+            }
+        }
+        return null;
+    }
+
+    public static KeysMetadataRepresentation.KeyMetadataRepresentation findActiveKey(RealmResource realm) {
+        KeysMetadataRepresentation keyMetadata = realm.keys().getKeyMetadata();
+        String activeKid = keyMetadata.getActive().get("RSA");
+        for (KeysMetadataRepresentation.KeyMetadataRepresentation rep : keyMetadata.getKeys()) {
+            if (rep.getKid().equals(activeKid)) {
+                return rep;
+            }
+        }
+        return null;
+    }
+
 }

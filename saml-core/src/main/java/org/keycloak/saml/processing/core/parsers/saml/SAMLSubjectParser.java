@@ -16,6 +16,12 @@
  */
 package org.keycloak.saml.processing.core.parsers.saml;
 
+import org.keycloak.dom.saml.v2.assertion.EncryptedElementType;
+import org.keycloak.dom.saml.v2.assertion.NameIDType;
+import org.keycloak.dom.saml.v2.assertion.SubjectConfirmationDataType;
+import org.keycloak.dom.saml.v2.assertion.SubjectConfirmationType;
+import org.keycloak.dom.saml.v2.assertion.SubjectType;
+import org.keycloak.dom.xmlsec.w3.xmldsig.KeyInfoType;
 import org.keycloak.saml.common.ErrorCodes;
 import org.keycloak.saml.common.PicketLinkLogger;
 import org.keycloak.saml.common.PicketLinkLoggerFactory;
@@ -27,12 +33,6 @@ import org.keycloak.saml.common.parsers.ParserNamespaceSupport;
 import org.keycloak.saml.common.util.StaxParserUtil;
 import org.keycloak.saml.processing.core.parsers.util.SAMLParserUtil;
 import org.keycloak.saml.processing.core.saml.v2.util.XMLTimeUtil;
-import org.keycloak.dom.saml.v2.assertion.EncryptedElementType;
-import org.keycloak.dom.saml.v2.assertion.NameIDType;
-import org.keycloak.dom.saml.v2.assertion.SubjectConfirmationDataType;
-import org.keycloak.dom.saml.v2.assertion.SubjectConfirmationType;
-import org.keycloak.dom.saml.v2.assertion.SubjectType;
-import org.keycloak.dom.xmlsec.w3.xmldsig.KeyInfoType;
 import org.w3c.dom.Element;
 
 import javax.xml.namespace.QName;

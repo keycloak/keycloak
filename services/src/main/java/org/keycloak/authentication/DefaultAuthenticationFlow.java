@@ -17,6 +17,7 @@
 
 package org.keycloak.authentication;
 
+import org.jboss.logging.Logger;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientSessionModel;
@@ -32,7 +33,7 @@ import java.util.List;
  * @version $Revision: 1 $
  */
 public class DefaultAuthenticationFlow implements AuthenticationFlow {
-    protected static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    private static final Logger logger = Logger.getLogger(DefaultAuthenticationFlow.class);
     Response alternativeChallenge = null;
     AuthenticationExecutionModel challengedAlternativeExecution = null;
     boolean alternativeSuccessful = false;
@@ -72,7 +73,14 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
             }
             if (model.isAuthenticatorFlow()) {
                 AuthenticationFlow authenticationFlow = processor.createFlowExecution(model.getFlowId(), model);
-                return authenticationFlow.processAction(actionExecution);
+                Response flowChallenge = authenticationFlow.processAction(actionExecution);
+                if (flowChallenge == null) {
+                    processor.getClientSession().setExecutionStatus(model.getId(), ClientSessionModel.ExecutionStatus.SUCCESS);
+                    if (model.isAlternative()) alternativeSuccessful = true;
+                    return processFlow();
+                } else {
+                   return flowChallenge;
+                }
             } else if (model.getId().equals(actionExecution)) {
                 AuthenticatorFactory factory = (AuthenticatorFactory) processor.getSession().getKeycloakSessionFactory().getProviderFactory(Authenticator.class, model.getAuthenticator());
                 if (factory == null) {
@@ -247,7 +255,7 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
                 return processor.authenticate();
             default:
                 logger.debugv("authenticator INTERNAL_ERROR: {0}", execution.getAuthenticator());
-                logger.unknownResultStatus();
+                ServicesLogger.LOGGER.unknownResultStatus();
                 throw new AuthenticationFlowException(AuthenticationFlowError.INTERNAL_ERROR);
         }
     }

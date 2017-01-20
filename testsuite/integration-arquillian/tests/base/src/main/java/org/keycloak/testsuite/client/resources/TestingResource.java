@@ -17,9 +17,15 @@
 
 package org.keycloak.testsuite.client.resources;
 
+import org.jboss.resteasy.annotations.cache.NoCache;
+import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.representations.idm.AdminEventRepresentation;
+import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testsuite.components.TestProvider;
 import org.keycloak.testsuite.rest.representation.AuthenticatorState;
+import org.keycloak.testsuite.rest.resource.TestCacheResource;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -31,13 +37,14 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.util.List;
 import java.util.Map;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
 
-@Path("/realms/master/testing")
+@Path("/testing")
 @Consumes(MediaType.APPLICATION_JSON)
 public interface TestingResource {
 
@@ -72,6 +79,99 @@ public interface TestingResource {
     @Produces(MediaType.APPLICATION_JSON)
     Response clearAdminEventQueue();
 
+    @GET
+    @Path("/clear-event-store")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response clearEventStore();
+
+    @GET
+    @Path("/clear-event-store-for-realm")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response clearEventStore(@QueryParam("realmId") String realmId);
+
+    @GET
+    @Path("/clear-event-store-older-than")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response clearEventStore(@QueryParam("realmId") String realmId, @QueryParam("olderThan") long olderThan);
+
+    /**
+     * Query events
+     *
+     * Returns all events, or filters them based on URL query parameters listed here
+     *
+     * @param realmId The realm
+     * @param types The types of events to return
+     * @param client App or oauth client name
+     * @param user User id
+     * @param dateFrom From date
+     * @param dateTo To date
+     * @param ipAddress IP address
+     * @param firstResult Paging offset
+     * @param maxResults Paging size
+     * @return
+     */
+    @Path("query-events")
+    @GET
+    @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
+    public List<EventRepresentation> queryEvents(@QueryParam("realmId") String realmId, @QueryParam("type") List<String> types, @QueryParam("client") String client,
+            @QueryParam("user") String user, @QueryParam("dateFrom") String dateFrom, @QueryParam("dateTo") String dateTo,
+            @QueryParam("ipAddress") String ipAddress, @QueryParam("first") Integer firstResult,
+            @QueryParam("max") Integer maxResults);
+
+    @PUT
+    @Path("/on-event")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public void onEvent(final EventRepresentation rep);
+
+    @GET
+    @Path("/clear-admin-event-store")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response clearAdminEventStore();
+
+    @GET
+    @Path("/clear-admin-event-store-for-realm")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response clearAdminEventStore(@QueryParam("realmId") String realmId);
+
+    @GET
+    @Path("/clear-admin-event-store-older-than")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response clearAdminEventStore(@QueryParam("realmId") String realmId, @QueryParam("olderThan") long olderThan);
+
+    /**
+     * Get admin events
+     *
+     * Returns all admin events, or filters events based on URL query parameters listed here
+     *
+     * @param realmId
+     * @param operationTypes
+     * @param authRealm
+     * @param authClient
+     * @param authUser user id
+     * @param authIpAddress
+     * @param resourcePath
+     * @param dateFrom
+     * @param dateTo
+     * @param firstResult
+     * @param maxResults
+     * @return
+     */
+    @Path("query-admin-events")
+    @GET
+    @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
+    public List<AdminEventRepresentation> getAdminEvents(@QueryParam("realmId") String realmId, @QueryParam("operationTypes") List<String> operationTypes, @QueryParam("authRealm") String authRealm, @QueryParam("authClient") String authClient,
+            @QueryParam("authUser") String authUser, @QueryParam("authIpAddress") String authIpAddress,
+            @QueryParam("resourcePath") String resourcePath, @QueryParam("dateFrom") String dateFrom,
+            @QueryParam("dateTo") String dateTo, @QueryParam("first") Integer firstResult,
+            @QueryParam("max") Integer maxResults);
+
+    @POST
+    @Path("/on-admin-event")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public void onAdminEvent(final AdminEventRepresentation rep, @QueryParam("includeRepresentation") boolean includeRepresentation);
+
     @POST
     @Path("/remove-user-session")
     @Produces(MediaType.APPLICATION_JSON)
@@ -92,18 +192,73 @@ public interface TestingResource {
     @Produces(MediaType.APPLICATION_JSON)
     Response removeExpired(@QueryParam("realm") final String realm);
 
-    @GET
-    @Path("/cache/{cache}/{id}")
-    @Produces(MediaType.APPLICATION_JSON)
-    boolean isCached(@PathParam("cache") String cacheName, @PathParam("id") String id);
-
-    @GET
-    @Path("/verify-code")
-    @Produces(MediaType.APPLICATION_JSON)
-    String verifyCode(@QueryParam("realm") String realmName, @QueryParam("code") String code);
+    @Path("/cache/{cache}")
+    TestingCacheResource cache(@PathParam("cache") String cacheName);
 
     @POST
     @Path("/update-pass-through-auth-state")
     @Produces(MediaType.APPLICATION_JSON)
     AuthenticatorState updateAuthenticator(AuthenticatorState state);
+    
+    @GET
+    @Path("/valid-credentials")
+    @Produces(MediaType.APPLICATION_JSON)
+    public boolean validCredentials(@QueryParam("realmName") String realmName, @QueryParam("userName") String userName, @QueryParam("password") String password);
+
+    @GET
+    @Path("/user-by-federated-identity")
+    @Produces(MediaType.APPLICATION_JSON)
+    public UserRepresentation getUserByFederatedIdentity(@QueryParam("realmName") String realmName,
+                                                         @QueryParam("identityProvider") String identityProvider,
+                                                         @QueryParam("userId") String userId,
+                                                         @QueryParam("userName") String userName);
+
+    @GET
+    @Path("/user-by-username-from-fed-factory")
+    @Produces(MediaType.APPLICATION_JSON)
+    public UserRepresentation getUserByUsernameFromFedProviderFactory(@QueryParam("realmName") String realmName,
+                                                                      @QueryParam("userName") String userName);
+
+    @GET
+    @Path("/get-client-auth-flow")
+    @Produces(MediaType.APPLICATION_JSON)
+    public AuthenticationFlowRepresentation getClientAuthFlow(@QueryParam("realmName") String realmName);
+
+    @GET
+    @Path("/get-reset-cred-flow")
+    @Produces(MediaType.APPLICATION_JSON)
+    public AuthenticationFlowRepresentation getResetCredFlow(@QueryParam("realmName") String realmName);
+
+    @GET
+    @Path("/get-user-by-service-account-client")
+    @Produces(MediaType.APPLICATION_JSON)
+    public UserRepresentation getUserByServiceAccountClient(@QueryParam("realmName") String realmName, @QueryParam("clientId") String clientId);
+
+    @Path("export-import")
+    TestingExportImportResource exportImport();
+
+    @GET
+    @Path("/test-component")
+    @Produces(MediaType.APPLICATION_JSON)
+    Map<String, TestProvider.DetailsRepresentation> getTestComponentDetails();
+
+    @GET
+    @Path("/smtp-config")
+    @Produces(MediaType.APPLICATION_JSON)
+    Map<String, String> getSmtpConfig();
+
+    @GET
+    @Path("/identity-config")
+    @Produces(MediaType.APPLICATION_JSON)
+    Map<String, String> getIdentityProviderConfig(@QueryParam("alias") String alias);
+
+    @GET
+    @Path("/component")
+    @Produces(MediaType.APPLICATION_JSON)
+    MultivaluedHashMap<String, String> getComponentConfig(@QueryParam("componentId") String componentId);
+
+    @PUT
+    @Path("/set-krb5-conf-file")
+    @Consumes(MediaType.APPLICATION_JSON)
+    void setKrb5ConfFile(@QueryParam("krb5-conf-file") String krb5ConfFile);
 }

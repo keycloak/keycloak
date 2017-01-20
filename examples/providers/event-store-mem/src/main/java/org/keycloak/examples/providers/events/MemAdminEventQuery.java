@@ -17,15 +17,16 @@
 
 package org.keycloak.examples.providers.events;
 
+import org.keycloak.events.admin.AdminEvent;
+import org.keycloak.events.admin.AdminEventQuery;
+import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
+
 import java.util.Collections;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.regex.Pattern;
-
-import org.keycloak.events.admin.AdminEvent;
-import org.keycloak.events.admin.AdminEventQuery;
-import org.keycloak.events.admin.OperationType;
 
 /**
  * @author <a href="mailto:giriraj.sharma27@gmail.com">Giriraj Sharma</a>
@@ -69,6 +70,27 @@ public class MemAdminEventQuery implements AdminEventQuery {
                 itr.remove();
             }
         }
+        return this;
+    }
+
+    @Override
+    public AdminEventQuery resourceType(ResourceType... resourceTypes) {
+
+        Iterator<AdminEvent> itr = this.adminEvents.iterator();
+        while (itr.hasNext()) {
+            AdminEvent next = itr.next();
+            boolean include = false;
+            for (ResourceType e : resourceTypes) {
+                if (next.getResourceType().equals(e)) {
+                    include = true;
+                    break;
+                }
+            }
+            if (!include) {
+                itr.remove();
+            }
+        }
+
         return this;
     }
     

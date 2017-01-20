@@ -25,10 +25,8 @@ import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
-import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
-import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.TimeBasedOTP;
@@ -351,8 +349,7 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
     public void grantAccessTokenExpiredPassword() throws Exception {
 
         RealmResource realmResource = adminClient.realm("test");
-        RealmManager.realm(realmResource).passwordPolicy(
-                new PasswordPolicy("forceExpiredPasswordChange(1)").toString());
+        RealmManager.realm(realmResource).passwordPolicy("forceExpiredPasswordChange(1)");
 
         try {
             setTimeOffset(60 * 60 * 48);
@@ -376,7 +373,7 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
                     .user((String) null)
                     .assertEvent();
         } finally {
-            RealmManager.realm(realmResource).passwordPolicy(new PasswordPolicy("").toString());
+            RealmManager.realm(realmResource).passwordPolicy("");
             UserManager.realm(realmResource).username("test-user@localhost")
                     .removeRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD.toString());
         }

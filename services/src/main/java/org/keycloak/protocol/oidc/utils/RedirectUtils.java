@@ -17,11 +17,12 @@
 
 package org.keycloak.protocol.oidc.utils;
 
+import org.jboss.logging.Logger;
+import org.keycloak.common.util.UriUtils;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.services.Urls;
-import org.keycloak.services.ServicesLogger;
 
 import javax.ws.rs.core.UriInfo;
 import java.net.URI;
@@ -33,7 +34,7 @@ import java.util.Set;
  */
 public class RedirectUtils {
 
-    private static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    private static final Logger logger = Logger.getLogger(RedirectUtils.class);
 
     public static String verifyRealmRedirectUri(UriInfo uriInfo, String redirectUri, RealmModel realm) {
         Set<String> validRedirects = getValidateRedirectUris(uriInfo, realm);
@@ -41,8 +42,9 @@ public class RedirectUtils {
     }
 
     public static String verifyRedirectUri(UriInfo uriInfo, String redirectUri, RealmModel realm, ClientModel client) {
-        Set<String> validRedirects = client.getRedirectUris();
-        return verifyRedirectUri(uriInfo, client.getRootUrl(), redirectUri, realm, validRedirects);
+        if (client != null)
+            return verifyRedirectUri(uriInfo, client.getRootUrl(), redirectUri, realm, client.getRedirectUris());
+        return null;
     }
 
     public static Set<String> resolveValidRedirects(UriInfo uriInfo, String rootUrl, Set<String> validRedirects) {
@@ -69,20 +71,15 @@ public class RedirectUtils {
 
     private static String verifyRedirectUri(UriInfo uriInfo, String rootUrl, String redirectUri, RealmModel realm, Set<String> validRedirects) {
         if (redirectUri == null) {
-            if (validRedirects.size() != 1) return null;
-            String validRedirect = validRedirects.iterator().next();
-            int idx = validRedirect.indexOf("/*");
-            if (idx > -1) {
-                validRedirect = validRedirect.substring(0, idx);
-            }
-            redirectUri = validRedirect;
+            logger.debug("No Redirect URI parameter specified");
+            return null;
         } else if (validRedirects.isEmpty()) {
             logger.debug("No Redirect URIs supplied");
             redirectUri = null;
         } else {
             redirectUri = lowerCaseHostname(redirectUri);
 
-            String r = redirectUri.indexOf('?') != -1 ? redirectUri.substring(0, redirectUri.indexOf('?')) : redirectUri;
+            String r = redirectUri;
             Set<String> resolveValidRedirects = resolveValidRedirects(uriInfo, rootUrl, validRedirects);
 
             boolean valid = matchesRedirects(resolveValidRedirects, r);
@@ -126,28 +123,27 @@ public class RedirectUtils {
 
     private static String relativeToAbsoluteURI(UriInfo uriInfo, String rootUrl, String relative) {
         if (rootUrl == null || rootUrl.isEmpty()) {
-            URI baseUri = uriInfo.getBaseUri();
-            String uri = baseUri.getScheme() + "://" + baseUri.getHost();
-            if (baseUri.getPort() != -1) {
-                uri += ":" + baseUri.getPort();
-            }
-            rootUrl = uri;
+            rootUrl = UriUtils.getOrigin(uriInfo.getBaseUri());
         }
-        relative = rootUrl + relative;
-        return relative;
+        StringBuilder sb = new StringBuilder();
+        sb.append(rootUrl);
+        sb.append(relative);
+        return sb.toString();
     }
 
     private static boolean matchesRedirects(Set<String> validRedirects, String redirect) {
         for (String validRedirect : validRedirects) {
-            if (validRedirect.endsWith("*")) {
+            if (validRedirect.endsWith("*") && !validRedirect.contains("?")) {
+                // strip off the query component - we don't check them when wildcards are effective
+                String r = redirect.contains("?") ? redirect.substring(0, redirect.indexOf("?")) : redirect;
                 // strip off *
                 int length = validRedirect.length() - 1;
                 validRedirect = validRedirect.substring(0, length);
-                if (redirect.startsWith(validRedirect)) return true;
+                if (r.startsWith(validRedirect)) return true;
                 // strip off trailing '/'
                 if (length - 1 > 0 && validRedirect.charAt(length - 1) == '/') length--;
                 validRedirect = validRedirect.substring(0, length);
-                if (validRedirect.equals(redirect)) return true;
+                if (validRedirect.equals(r)) return true;
             } else if (validRedirect.equals(redirect)) return true;
         }
         return false;

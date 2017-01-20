@@ -17,10 +17,14 @@
 
 package org.keycloak.models.sessions.infinispan.initializer;
 
-import java.util.List;
-
 import org.junit.Assert;
 import org.junit.Test;
+import org.keycloak.models.cache.infinispan.UserCacheSession;
+
+import java.text.DateFormat;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.List;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -58,5 +62,32 @@ public class InitializerStateTest {
         for (int i : expected) {
             Assert.assertTrue(segments.contains(i));
         }
+    }
+
+    @Test
+    public void testDailyTimeout() throws Exception {
+        Date date = new Date(UserCacheSession.dailyTimeout(10, 30));
+        System.out.println(DateFormat.getDateTimeInstance(DateFormat.FULL, DateFormat.FULL).format(date));
+        date = new Date(UserCacheSession.dailyTimeout(17, 45));
+        System.out.println(DateFormat.getDateTimeInstance(DateFormat.FULL, DateFormat.FULL).format(date));
+        date = new Date(UserCacheSession.weeklyTimeout(Calendar.MONDAY, 13, 45));
+        System.out.println(DateFormat.getDateTimeInstance(DateFormat.FULL, DateFormat.FULL).format(date));
+        date = new Date(UserCacheSession.weeklyTimeout(Calendar.THURSDAY, 13, 45));
+        System.out.println(DateFormat.getDateTimeInstance(DateFormat.FULL, DateFormat.FULL).format(date));
+        System.out.println("----");
+        Calendar cal = Calendar.getInstance();
+        cal.add(Calendar.HOUR, 1);
+        int hour = cal.get(Calendar.HOUR_OF_DAY);
+        int min = cal.get(Calendar.MINUTE);
+        date = new Date(cal.getTimeInMillis());
+        System.out.println(DateFormat.getDateTimeInstance(DateFormat.FULL, DateFormat.FULL).format(date));
+        date = new Date(UserCacheSession.dailyTimeout(hour, min));
+        System.out.println(DateFormat.getDateTimeInstance(DateFormat.FULL, DateFormat.FULL).format(date));
+        cal = Calendar.getInstance();
+        cal.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY);
+        date = new Date(cal.getTimeInMillis());
+        System.out.println(DateFormat.getDateTimeInstance(DateFormat.FULL, DateFormat.FULL).format(date));
+
+
     }
 }

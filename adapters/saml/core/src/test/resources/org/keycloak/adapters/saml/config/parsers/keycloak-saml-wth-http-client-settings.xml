@@ -1,0 +1,83 @@
+<!--
+  ~ Copyright 2016 Red Hat, Inc. and/or its affiliates
+  ~ and other contributors as indicated by the @author tags.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<keycloak-saml-adapter xmlns="urn:keycloak:saml:adapter"
+                       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                       xsi:schemaLocation="urn:keycloak:saml:adapter http://www.keycloak.org/schema/keycloak_saml_adapter_1_7.xsd">
+    <SP entityID="sp"
+        sslPolicy="ALL"
+        nameIDPolicyFormat="format"
+        forceAuthentication="true"
+        isPassive="true">
+        <Keys>
+            <Key signing="true" >
+                <KeyStore file="file" resource="cp" password="pw">
+                    <PrivateKey alias="private alias" password="private pw"/>
+                    <Certificate alias="cert alias"/>
+                </KeyStore>
+            </Key>
+            <Key encryption="true">
+                <PrivateKeyPem>
+                    private pem
+                </PrivateKeyPem>
+                <PublicKeyPem>
+                    public pem
+                </PublicKeyPem>
+            </Key>
+        </Keys>
+        <PrincipalNameMapping policy="FROM_ATTRIBUTE" attribute="attribute"/>
+        <RoleIdentifiers>
+            <Attribute name="member"/>
+        </RoleIdentifiers>
+        <IDP entityID="idp"
+             signatureAlgorithm="RSA_SHA512"
+             signatureCanonicalizationMethod="canon"
+             signaturesRequired="true"
+                >
+            <SingleSignOnService signRequest="true"
+                                 validateResponseSignature="true"
+                                 requestBinding="POST"
+                                 bindingUrl="url"
+                    />
+
+            <SingleLogoutService
+                    validateRequestSignature="true"
+                    validateResponseSignature="true"
+                    signRequest="true"
+                    signResponse="true"
+                    requestBinding="REDIRECT"
+                    responseBinding="POST"
+                    postBindingUrl="posturl"
+                    redirectBindingUrl="redirecturl"
+                    />
+            <Keys>
+                <Key signing="true">
+                    <CertificatePem>
+                        cert pem
+                    </CertificatePem>
+                </Key>
+            </Keys>
+            <HttpClient allowAnyHostname="true"
+                        clientKeystore="ks" clientKeystorePassword="ks-pwd"
+                        connectionPoolSize="42"
+                        disableTrustManager="true"
+                        proxyUrl="pu"
+                        truststore="ts" truststorePassword="tsp"
+                        />
+        </IDP>
+    </SP>
+</keycloak-saml-adapter>

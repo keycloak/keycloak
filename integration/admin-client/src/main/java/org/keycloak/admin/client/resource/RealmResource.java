@@ -27,7 +27,15 @@ import org.keycloak.representations.idm.PartialImportRepresentation;
 import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 
-import javax.ws.rs.*;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.util.List;
@@ -148,6 +156,9 @@ public interface RealmResource {
     @Path("clients-initial-access")
     ClientInitialAccessResource clientInitialAccess();
 
+    @Path("client-registration-policy")
+    ClientRegistrationPolicyResource clientRegistrationPolicy();
+
     @Path("partialImport")
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
@@ -161,15 +172,12 @@ public interface RealmResource {
     @Path("attack-detection")
     AttackDetectionResource attackDetection();
 
-    @Path("user-federation")
-    UserFederationProvidersResource userFederation();
-
     @Path("testLDAPConnection")
     @GET
     @NoCache
     Response testLDAPConnection(@QueryParam("action") String action, @QueryParam("connectionUrl") String connectionUrl,
                                 @QueryParam("bindDn") String bindDn, @QueryParam("bindCredential") String bindCredential,
-                                @QueryParam("useTruststoreSpi") String useTruststoreSpi);
+                                @QueryParam("useTruststoreSpi") String useTruststoreSpi, @QueryParam("connectionTimeout") String connectionTimeout);
 
     @Path("clear-realm-cache")
     @POST
@@ -178,6 +186,10 @@ public interface RealmResource {
     @Path("clear-user-cache")
     @POST
     void clearUserCache();
+
+    @Path("clear-keys-cache")
+    @POST
+    void clearKeysCache();
 
     @Path("push-revocation")
     @POST
@@ -192,5 +204,15 @@ public interface RealmResource {
     @Path("sessions/{session}")
     @DELETE
     void deleteSession(@PathParam("session") String sessionId);
+
+    @Path("components")
+    ComponentsResource components();
+
+    @Path("user-storage")
+    UserStorageProviderResource userStorage();
+
+
+    @Path("keys")
+    KeyResource keys();
 
 }

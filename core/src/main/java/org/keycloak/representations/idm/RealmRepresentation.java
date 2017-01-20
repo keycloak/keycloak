@@ -18,8 +18,14 @@
 package org.keycloak.representations.idm;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import org.keycloak.common.util.MultivaluedHashMap;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -48,6 +54,8 @@ public class RealmRepresentation {
     protected Boolean registrationEmailAsUsername;
     protected Boolean rememberMe;
     protected Boolean verifyEmail;
+    protected Boolean loginWithEmailAllowed;
+    protected Boolean duplicateEmailsAllowed;
     protected Boolean resetPasswordAllowed;
     protected Boolean editUsernameAllowed;
 
@@ -66,9 +74,13 @@ public class RealmRepresentation {
     protected Integer failureFactor;
     //--- end brute force settings
 
+    @Deprecated
     protected String privateKey;
+    @Deprecated
     protected String publicKey;
+    @Deprecated
     protected String certificate;
+    @Deprecated
     protected String codeSecret;
     protected RolesRepresentation roles;
     protected List<GroupRepresentation> groups;
@@ -85,6 +97,7 @@ public class RealmRepresentation {
     protected Integer otpPolicyPeriod;
 
     protected List<UserRepresentation> users;
+    protected List<UserRepresentation> federatedUsers;
     protected List<ScopeMappingRepresentation> scopeMappings;
     protected Map<String, List<ScopeMappingRepresentation>> clientScopeMappings;
     protected List<ClientRepresentation> clients;
@@ -109,6 +122,7 @@ public class RealmRepresentation {
     private List<IdentityProviderRepresentation> identityProviders;
     private List<IdentityProviderMapperRepresentation> identityProviderMappers;
     private List<ProtocolMapperRepresentation> protocolMappers;
+    private MultivaluedHashMap<String, ComponentExportRepresentation> components;
     protected Boolean internationalizationEnabled;
     protected Set<String> supportedLocales;
     protected String defaultLocale;
@@ -120,6 +134,8 @@ public class RealmRepresentation {
     protected String directGrantFlow;
     protected String resetCredentialsFlow;
     protected String clientAuthenticationFlow;
+
+    protected Map<String, String> attributes;
 
     protected String keycloakVersion;
 
@@ -403,6 +419,22 @@ public class RealmRepresentation {
 
     public void setVerifyEmail(Boolean verifyEmail) {
         this.verifyEmail = verifyEmail;
+    }
+    
+    public Boolean isLoginWithEmailAllowed() {
+        return loginWithEmailAllowed;
+    }
+
+    public void setLoginWithEmailAllowed(Boolean loginWithEmailAllowed) {
+        this.loginWithEmailAllowed = loginWithEmailAllowed;
+    }
+    
+    public Boolean isDuplicateEmailsAllowed() {
+        return duplicateEmailsAllowed;
+    }
+
+    public void setDuplicateEmailsAllowed(Boolean duplicateEmailsAllowed) {
+        this.duplicateEmailsAllowed = duplicateEmailsAllowed;
     }
 
     public Boolean isResetPasswordAllowed() {
@@ -849,9 +881,32 @@ public class RealmRepresentation {
         this.clientTemplates = clientTemplates;
     }
 
+    public MultivaluedHashMap<String, ComponentExportRepresentation> getComponents() {
+        return components;
+    }
+
+    public void setComponents(MultivaluedHashMap<String, ComponentExportRepresentation> components) {
+        this.components = components;
+    }
+
     @JsonIgnore
     public boolean isIdentityFederationEnabled() {
         return identityProviders != null && !identityProviders.isEmpty();
     }
 
+    public void setAttributes(Map<String, String> attributes) {
+        this.attributes = attributes;
+    }
+
+    public Map<String, String> getAttributes() {
+        return attributes;
+    }
+
+    public List<UserRepresentation> getFederatedUsers() {
+        return federatedUsers;
+    }
+
+    public void setFederatedUsers(List<UserRepresentation> federatedUsers) {
+        this.federatedUsers = federatedUsers;
+    }
 }

@@ -86,7 +86,7 @@ public class RegistrationUserCreation implements FormAction, FormActionFactory {
                 context.validationError(formData, errors);
                 return;
             }
-            if (email != null && context.getSession().users().getUserByEmail(email, context.getRealm()) != null) {
+            if (email != null && !context.getRealm().isDuplicateEmailsAllowed() && context.getSession().users().getUserByEmail(email, context.getRealm()) != null) {
                 context.error(Errors.EMAIL_IN_USE);
                 formData.remove(Validation.FIELD_EMAIL);
                 errors.add(new FormMessage(RegistrationPage.FIELD_EMAIL, Messages.EMAIL_EXISTS));

@@ -17,14 +17,18 @@
 
 package org.keycloak.partialimport;
 
-import java.util.ArrayList;
-import java.util.List;
-import javax.ws.rs.core.Response;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelDuplicateException;
+import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.PartialImportRepresentation;
+import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
+
+import javax.ws.rs.core.Response;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * This class manages the PartialImport handlers.
@@ -62,7 +66,7 @@ public class PartialImportManager {
             try {
                 partialImport.prepare(rep, realm, session);
             } catch (ErrorResponseException error) {
-                if (session.getTransaction().isActive()) session.getTransaction().setRollbackOnly();
+                if (session.getTransactionManager().isActive()) session.getTransactionManager().setRollbackOnly();
                 return error.getResponse();
             }
         }
@@ -72,7 +76,7 @@ public class PartialImportManager {
                 partialImport.removeOverwrites(realm, session);
                 results.addAllResults(partialImport.doImport(rep, realm, session));
             } catch (ErrorResponseException error) {
-                if (session.getTransaction().isActive()) session.getTransaction().setRollbackOnly();
+                if (session.getTransactionManager().isActive()) session.getTransactionManager().setRollbackOnly();
                 return error.getResponse();
             }
         }
@@ -84,8 +88,12 @@ public class PartialImportManager {
             }
         }
 
-        if (session.getTransaction().isActive()) {
-            session.getTransaction().commit();
+        if (session.getTransactionManager().isActive()) {
+            try {
+                session.getTransactionManager().commit();
+            } catch (ModelException e) {
+                return ErrorResponse.exists(e.getLocalizedMessage());
+            }
         }
 
         return Response.ok(results).build();

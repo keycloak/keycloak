@@ -17,7 +17,7 @@
 
 package org.keycloak.protocol.saml;
 
-import org.keycloak.services.resources.admin.ClientAttributeCertificateResource;
+import org.keycloak.services.util.CertificateInfoHelper;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -31,11 +31,13 @@ public interface SamlConfigAttributes {
     String SAML_AUTHNSTATEMENT = "saml.authnstatement";
     String SAML_FORCE_NAME_ID_FORMAT_ATTRIBUTE = "saml_force_name_id_format";
     String SAML_SERVER_SIGNATURE = "saml.server.signature";
+    String SAML_SERVER_SIGNATURE_KEYINFO_EXT = "saml.server.signature.keyinfo.ext";
+    String SAML_SERVER_SIGNATURE_KEYINFO_KEY_NAME_TRANSFORMER = "saml.server.signature.keyinfo.xmlSigKeyInfoKeyNameTransformer";
     String SAML_FORCE_POST_BINDING = "saml.force.post.binding";
     String SAML_ASSERTION_SIGNATURE = "saml.assertion.signature";
     String SAML_ENCRYPT = "saml.encrypt";
     String SAML_CLIENT_SIGNATURE_ATTRIBUTE = "saml.client.signature";
-    String SAML_SIGNING_CERTIFICATE_ATTRIBUTE = "saml.signing." + ClientAttributeCertificateResource.X509CERTIFICATE;
-    String SAML_ENCRYPTION_CERTIFICATE_ATTRIBUTE = "saml.encryption." + ClientAttributeCertificateResource.X509CERTIFICATE;
-    String SAML_ENCRYPTION_PRIVATE_KEY_ATTRIBUTE = "saml.encryption." + ClientAttributeCertificateResource.PRIVATE_KEY;
+    String SAML_SIGNING_CERTIFICATE_ATTRIBUTE = "saml.signing." + CertificateInfoHelper.X509CERTIFICATE;
+    String SAML_ENCRYPTION_CERTIFICATE_ATTRIBUTE = "saml.encryption." + CertificateInfoHelper.X509CERTIFICATE;
+    String SAML_ENCRYPTION_PRIVATE_KEY_ATTRIBUTE = "saml.encryption." + CertificateInfoHelper.PRIVATE_KEY;
 }

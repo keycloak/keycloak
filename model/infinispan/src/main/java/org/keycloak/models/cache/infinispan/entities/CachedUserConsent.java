@@ -17,12 +17,12 @@
 
 package org.keycloak.models.cache.infinispan.entities;
 
-import java.util.HashSet;
-import java.util.Set;
-
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserConsentModel;
+
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -32,6 +32,8 @@ public class CachedUserConsent {
     private final String clientDbId;
     private final Set<ProtocolMapperModel> protocolMappers = new HashSet<>();
     private final Set<String> roleIds = new HashSet<>();
+    private final Long createdDate;
+    private final Long lastUpdatedDate;
 
     public CachedUserConsent(UserConsentModel consentModel) {
         this.clientDbId = consentModel.getClient().getId();
@@ -39,6 +41,8 @@ public class CachedUserConsent {
         for (RoleModel role : consentModel.getGrantedRoles()) {
             this.roleIds.add(role.getId());
         }
+        this.createdDate = consentModel.getCreatedDate();
+        this.lastUpdatedDate = consentModel.getLastUpdatedDate();
     }
 
     public String getClientDbId() {
@@ -51,5 +55,13 @@ public class CachedUserConsent {
 
     public Set<String> getRoleIds() {
         return roleIds;
+    }
+
+    public Long getCreatedDate() {
+        return createdDate;
+    }
+
+    public Long getLastUpdatedDate() {
+        return lastUpdatedDate;
     }
 }

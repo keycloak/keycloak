@@ -32,6 +32,7 @@ public class Version {
     public static String VERSION;
     public static String RESOURCES_VERSION;
     public static String BUILD_TIME;
+    public static String DEFAULT_PROFILE;
 
     static {
         Properties props = new Properties();
@@ -40,6 +41,7 @@ public class Version {
             props.load(is);
             Version.NAME = props.getProperty("name");
             Version.NAME_HTML = props.getProperty("name-html");
+            Version.DEFAULT_PROFILE = props.getProperty("default-profile");
             Version.VERSION = props.getProperty("version");
             Version.BUILD_TIME = props.getProperty("build-time");
             Version.RESOURCES_VERSION = Version.VERSION.toLowerCase();

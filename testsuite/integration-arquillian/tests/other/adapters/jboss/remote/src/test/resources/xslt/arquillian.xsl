@@ -32,6 +32,7 @@
                 <configuration>
                     <property name="adapterImplClass">org.jboss.as.arquillian.container.remote.RemoteDeployableContainer</property>
 
+                    <property name="managementProtocol">${app.server.management.protocol}</property>
                     <property name="managementAddress">${app.server.host}</property>
                     <property name="managementPort">${app.server.management.port}</property>
                     <property name="username">admin</property>

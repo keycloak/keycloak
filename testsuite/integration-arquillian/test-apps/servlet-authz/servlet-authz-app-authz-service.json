@@ -1,0 +1,147 @@
+{
+  "allowRemoteResourceManagement": true,
+  "policyEnforcementMode": "ENFORCING",
+  "resources": [
+    {
+      "name": "Admin Resource",
+      "uri": "/protected/admin/*",
+      "type": "http://servlet-authz/protected/admin",
+      "scopes": [
+        {
+          "name": "urn:servlet-authz:protected:admin:access"
+        }
+      ]
+    },
+    {
+      "name": "Protected Resource",
+      "uri": "/*",
+      "type": "http://servlet-authz/protected/resource",
+      "scopes": [
+        {
+          "name": "urn:servlet-authz:protected:resource:access"
+        }
+      ]
+    },
+    {
+      "name": "Premium Resource",
+      "uri": "/protected/premium/*",
+      "type": "urn:servlet-authz:protected:resource",
+      "scopes": [
+        {
+          "name": "urn:servlet-authz:protected:premium:access"
+        }
+      ]
+    },
+    {
+      "name": "Main Page",
+      "type": "urn:servlet-authz:protected:resource",
+      "scopes": [
+        {
+          "name": "urn:servlet-authz:page:main:actionForAdmin"
+        },
+        {
+          "name": "urn:servlet-authz:page:main:actionForUser"
+        },
+        {
+          "name": "urn:servlet-authz:page:main:actionForPremiumUser"
+        }
+      ]
+    }
+  ],
+  "policies": [
+    {
+      "name": "Any Admin Policy",
+      "description": "Defines that adminsitrators can do something",
+      "type": "role",
+      "config": {
+        "roles": "[{\"id\":\"admin\"}]"
+      }
+    },
+    {
+      "name": "Any User Policy",
+      "description": "Defines that any user can do something",
+      "type": "role",
+      "config": {
+        "roles": "[{\"id\":\"user\"}]"
+      }
+    },
+    {
+      "name": "Only Premium User Policy",
+      "description": "Defines that only premium users can do something",
+      "type": "role",
+      "logic": "POSITIVE",
+      "config": {
+        "roles": "[{\"id\":\"user_premium\"}]"
+      }
+    },
+    {
+      "name": "All Users Policy",
+      "description": "Defines that all users can do something",
+      "type": "aggregate",
+      "decisionStrategy": "AFFIRMATIVE",
+      "config": {
+        "applyPolicies": "[\"Any User Policy\",\"Any Admin Policy\",\"Only Premium User Policy\"]"
+      }
+    },
+    {
+      "name": "Premium Resource Permission",
+      "description": "A policy that defines access to premium resources",
+      "type": "resource",
+      "decisionStrategy": "UNANIMOUS",
+      "config": {
+        "resources": "[\"Premium Resource\"]",
+        "applyPolicies": "[\"Only Premium User Policy\"]"
+      }
+    },
+    {
+      "name": "Administrative Resource Permission",
+      "description": "A policy that defines access to administrative resources",
+      "type": "resource",
+      "decisionStrategy": "UNANIMOUS",
+      "config": {
+        "resources": "[\"Admin Resource\"]",
+        "applyPolicies": "[\"Any Admin Policy\"]"
+      }
+    },
+    {
+      "name": "Protected Resource Permission",
+      "description": "A policy that defines access to any protected resource",
+      "type": "resource",
+      "decisionStrategy": "AFFIRMATIVE",
+      "config": {
+        "resources": "[\"Protected Resource\"]",
+        "applyPolicies": "[\"All Users Policy\"]"
+      }
+    },
+    {
+      "name": "Action 1 on Main Page Resource Permission",
+      "description": "A policy that defines access to action 1 on the main page",
+      "type": "scope",
+      "decisionStrategy": "AFFIRMATIVE",
+      "config": {
+        "scopes": "[\"urn:servlet-authz:page:main:actionForAdmin\"]",
+        "applyPolicies": "[\"Any Admin Policy\"]"
+      }
+    },
+    {
+      "name": "Action 2 on Main Page Resource Permission",
+      "description": "A policy that defines access to action 2 on the main page",
+      "type": "scope",
+      "decisionStrategy": "AFFIRMATIVE",
+      "config": {
+        "scopes": "[\"urn:servlet-authz:page:main:actionForUser\"]",
+        "applyPolicies": "[\"Any User Policy\"]"
+      }
+    },
+    {
+      "name": "Action 3 on Main Page Resource Permission",
+      "description": "A policy that defines access to action 3 on the main page",
+      "type": "scope",
+      "decisionStrategy": "AFFIRMATIVE",
+      "config": {
+        "scopes": "[\"urn:servlet-authz:page:main:actionForPremiumUser\"]",
+        "applyPolicies": "[\"Only Premium User Policy\"]"
+      }
+    }
+  ]
+}

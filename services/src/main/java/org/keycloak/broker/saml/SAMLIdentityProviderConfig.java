@@ -18,10 +18,14 @@ package org.keycloak.broker.saml;
 
 import org.keycloak.models.IdentityProviderModel;
 
+import org.keycloak.saml.common.util.XmlKeyInfoKeyNameTransformer;
+
 /**
  * @author Pedro Igor
  */
 public class SAMLIdentityProviderConfig extends IdentityProviderModel {
+
+    public static final XmlKeyInfoKeyNameTransformer DEFAULT_XML_KEY_INFO_KEY_NAME_TRANSFORMER = XmlKeyInfoKeyNameTransformer.NONE;
 
     public SAMLIdentityProviderConfig() {
     }
@@ -62,13 +66,44 @@ public class SAMLIdentityProviderConfig extends IdentityProviderModel {
         getConfig().put("forceAuthn", String.valueOf(forceAuthn));
     }
 
+    /**
+     * @deprecated Prefer {@link #getSigningCertificates()}}
+     * @param signingCertificate
+     */
     public String getSigningCertificate() {
-        return getConfig().get("signingCertificate");
+        return getConfig().get(SIGNING_CERTIFICATE_KEY);
     }
 
+    /**
+     * @deprecated Prefer {@link #addSigningCertificate(String)}}
+     * @param signingCertificate
+     */
     public void setSigningCertificate(String signingCertificate) {
-        getConfig().put("signingCertificate", signingCertificate);
+        getConfig().put(SIGNING_CERTIFICATE_KEY, signingCertificate);
     }
+
+    public void addSigningCertificate(String signingCertificate) {
+        String crt = getConfig().get(SIGNING_CERTIFICATE_KEY);
+        if (crt == null || crt.isEmpty()) {
+            getConfig().put(SIGNING_CERTIFICATE_KEY, signingCertificate);
+        } else {
+            // Note that "," is not coding character per PEM format specification:
+            // see https://tools.ietf.org/html/rfc1421, section 4.3.2.4 Step 4: Printable Encoding
+            getConfig().put(SIGNING_CERTIFICATE_KEY, crt + "," + signingCertificate);
+        }
+    }
+
+    public String[] getSigningCertificates() {
+        String crt = getConfig().get(SIGNING_CERTIFICATE_KEY);
+        if (crt == null || crt.isEmpty()) {
+            return new String[] { };
+        }
+        // Note that "," is not coding character per PEM format specification:
+        // see https://tools.ietf.org/html/rfc1421, section 4.3.2.4 Step 4: Printable Encoding
+        return crt.split(",");
+    }
+
+    public static final String SIGNING_CERTIFICATE_KEY = "signingCertificate";
 
     public String getNameIDPolicyFormat() {
         return getConfig().get("nameIDPolicyFormat");
@@ -84,6 +119,14 @@ public class SAMLIdentityProviderConfig extends IdentityProviderModel {
 
     public void setWantAuthnRequestsSigned(boolean wantAuthnRequestsSigned) {
         getConfig().put("wantAuthnRequestsSigned", String.valueOf(wantAuthnRequestsSigned));
+    }
+
+    public boolean isAddExtensionsElementWithKeyInfo() {
+        return Boolean.valueOf(getConfig().get("addExtensionsElementWithKeyInfo"));
+    }
+
+    public void setAddExtensionsElementWithKeyInfo(boolean addExtensionsElementWithKeyInfo) {
+        getConfig().put("addExtensionsElementWithKeyInfo", String.valueOf(addExtensionsElementWithKeyInfo));
     }
 
     public String getSignatureAlgorithm() {
@@ -124,6 +167,21 @@ public class SAMLIdentityProviderConfig extends IdentityProviderModel {
 
     public void setBackchannelSupported(boolean backchannel) {
         getConfig().put("backchannelSupported", String.valueOf(backchannel));
+    }
+
+    /**
+     * Always returns non-{@code null} result.
+     * @return Configured ransformer of {@link #DEFAULT_XML_KEY_INFO_KEY_NAME_TRANSFORMER} if not set.
+     */
+    public XmlKeyInfoKeyNameTransformer getXmlSigKeyInfoKeyNameTransformer() {
+        return XmlKeyInfoKeyNameTransformer.from(getConfig().get("xmlSigKeyInfoKeyNameTransformer"), DEFAULT_XML_KEY_INFO_KEY_NAME_TRANSFORMER);
+    }
+
+    public void setXmlSigKeyInfoKeyNameTransformer(XmlKeyInfoKeyNameTransformer xmlSigKeyInfoKeyNameTransformer) {
+        getConfig().put("xmlSigKeyInfoKeyNameTransformer",
+          xmlSigKeyInfoKeyNameTransformer == null
+            ? null
+            : xmlSigKeyInfoKeyNameTransformer.name());
     }
 
 }

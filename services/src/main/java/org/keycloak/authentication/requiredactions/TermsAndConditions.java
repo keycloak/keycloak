@@ -17,8 +17,6 @@
 
 package org.keycloak.authentication.requiredactions;
 
-import java.util.Arrays;
-
 import org.keycloak.Config;
 import org.keycloak.authentication.RequiredActionContext;
 import org.keycloak.authentication.RequiredActionFactory;
@@ -28,6 +26,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 
 import javax.ws.rs.core.Response;
+import java.util.Arrays;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

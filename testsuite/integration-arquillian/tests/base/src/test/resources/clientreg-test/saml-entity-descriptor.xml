@@ -90,10 +90,22 @@ x5Ql0ejivIJAYcMGUyA+/YwJg2FGoA==
             isDefault="true"
             index="0"
             Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Artifact"
-            Location="https://LoadBalancer-9.siroe.com:3443/federation/Consumer/metaAlias/sp"/>
+            Location="https://LoadBalancer-9.siroe.com:3443/federation/Consumer/metaAlias/sp/artifact"/>
         <AssertionConsumerService
             index="1"
             Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST"
-            Location="https://LoadBalancer-9.siroe.com:3443/federation/Consumer/metaAlias/sp"/>
+            Location="https://LoadBalancer-9.siroe.com:3443/federation/Consumer/metaAlias/sp/post"/>
+        <AssertionConsumerService
+            index="2"
+            Binding="urn:oasis:names:tc:SAML:2.0:bindings:PAOS"
+            Location="https://LoadBalancer-9.siroe.com:3443/federation/Consumer/metaAlias/sp/paos"/>
+        <AssertionConsumerService
+            index="3"
+            Binding="urn:oasis:names:tc:SAML:2.0:bindings:SOAP"
+            Location="https://LoadBalancer-9.siroe.com:3443/federation/Consumer/metaAlias/sp/soap"/>
+        <AssertionConsumerService
+            index="4"
+            Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect"
+            Location="https://LoadBalancer-9.siroe.com:3443/federation/Consumer/metaAlias/sp/redirect"/>
     </SPSSODescriptor>
 </EntityDescriptor>

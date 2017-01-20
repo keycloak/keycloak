@@ -17,13 +17,16 @@
 
 package org.keycloak.models.sessions.infinispan;
 
-import java.io.Serializable;
-
 import org.infinispan.Cache;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
-import org.keycloak.models.*;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.KeycloakSessionTask;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.UserSessionProvider;
+import org.keycloak.models.UserSessionProviderFactory;
 import org.keycloak.models.sessions.infinispan.entities.LoginFailureEntity;
 import org.keycloak.models.sessions.infinispan.entities.LoginFailureKey;
 import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
@@ -34,6 +37,8 @@ import org.keycloak.models.utils.PostMigrationEvent;
 import org.keycloak.provider.ProviderEvent;
 import org.keycloak.provider.ProviderEventListener;
 
+import java.io.Serializable;
+
 public class InfinispanUserSessionProviderFactory implements UserSessionProviderFactory {
 
     private static final Logger log = Logger.getLogger(InfinispanUserSessionProviderFactory.class);
@@ -41,7 +46,7 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
     private Config.Scope config;
 
     @Override
-    public UserSessionProvider create(KeycloakSession session) {
+    public InfinispanUserSessionProvider create(KeycloakSession session) {
         InfinispanConnectionProvider connections = session.getProvider(InfinispanConnectionProvider.class);
         Cache<String, SessionEntity> cache = connections.getCache(InfinispanConnectionProvider.SESSION_CACHE_NAME);
         Cache<String, SessionEntity> offlineSessionsCache = connections.getCache(InfinispanConnectionProvider.OFFLINE_SESSION_CACHE_NAME);
@@ -69,6 +74,11 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
             public void onEvent(ProviderEvent event) {
                 if (event instanceof PostMigrationEvent) {
                     loadPersistentSessions(factory, maxErrors, sessionsPerSegment);
+                } else if (event instanceof UserModel.UserRemovedEvent) {
+                    UserModel.UserRemovedEvent userRemovedEvent = (UserModel.UserRemovedEvent) event;
+
+                    InfinispanUserSessionProvider provider = (InfinispanUserSessionProvider) userRemovedEvent.getKeycloakSession().getProvider(UserSessionProvider.class, getId());
+                    provider.onUserRemoved(userRemovedEvent.getRealm(), userRemovedEvent.getUser());
                 }
             }
         });

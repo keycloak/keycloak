@@ -17,11 +17,19 @@
 
 package org.keycloak.models.cache.infinispan;
 
-import org.keycloak.models.*;
-import org.keycloak.models.cache.CacheRealmProvider;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientTemplateModel;
+import org.keycloak.models.ProtocolMapperModel;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleContainerModel;
+import org.keycloak.models.RoleModel;
 import org.keycloak.models.cache.infinispan.entities.CachedClient;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -44,7 +52,7 @@ public class ClientAdapter implements ClientModel {
 
     private void getDelegateForUpdate() {
         if (updated == null) {
-            cacheSession.registerClientInvalidation(cached.getId());
+            cacheSession.registerClientInvalidation(cached.getId(), cached.getClientId(), cachedRealm.getId());
             updated = cacheSession.getDelegate().getClientById(cached.getId(), cachedRealm);
             if (updated == null) throw new IllegalStateException("Not found in database");
         }
@@ -561,26 +569,17 @@ public class ClientAdapter implements ClientModel {
 
     @Override
     public RoleModel getRole(String name) {
-        for (RoleModel role : getRoles()) {
-            if (role.getName().equals(name)) return role;
-        }
-        return null;
+        return cacheSession.getClientRole(getRealm(), this, name);
     }
 
     @Override
     public RoleModel addRole(String name) {
-        getDelegateForUpdate();
-        RoleModel role = updated.addRole(name);
-        cacheSession.registerRoleInvalidation(role.getId());
-        return role;
+        return cacheSession.addClientRole(getRealm(), this, name);
     }
 
     @Override
     public RoleModel addRole(String id, String name) {
-        getDelegateForUpdate();
-        RoleModel role =  updated.addRole(id, name);
-        cacheSession.registerRoleInvalidation(role.getId());
-        return role;
+        return cacheSession.addClientRole(getRealm(), this, id, name);
     }
 
     @Override

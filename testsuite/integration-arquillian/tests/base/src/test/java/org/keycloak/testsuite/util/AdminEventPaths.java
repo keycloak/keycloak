@@ -17,10 +17,8 @@
 
 package org.keycloak.testsuite.util;
 
-import java.net.URI;
-
-import javax.ws.rs.core.UriBuilder;
-
+import org.keycloak.admin.client.resource.AttackDetectionResource;
+import org.keycloak.admin.client.resource.AuthenticationManagementResource;
 import org.keycloak.admin.client.resource.ClientAttributeCertificateResource;
 import org.keycloak.admin.client.resource.ClientInitialAccessResource;
 import org.keycloak.admin.client.resource.ClientResource;
@@ -37,10 +35,11 @@ import org.keycloak.admin.client.resource.RoleByIdResource;
 import org.keycloak.admin.client.resource.RoleMappingResource;
 import org.keycloak.admin.client.resource.RoleResource;
 import org.keycloak.admin.client.resource.RolesResource;
-import org.keycloak.admin.client.resource.UserFederationProviderResource;
-import org.keycloak.admin.client.resource.UserFederationProvidersResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.admin.client.resource.UsersResource;
+
+import javax.ws.rs.core.UriBuilder;
+import java.net.URI;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -51,6 +50,11 @@ public class AdminEventPaths {
 
     public static String deleteSessionPath(String userSessionId) {
         URI uri = UriBuilder.fromUri("").path(RealmResource.class, "deleteSession").build(userSessionId);
+        return uri.toString();
+    }
+
+    public static String defaultGroupPath(String groupId) {
+        URI uri = UriBuilder.fromUri("").path(RealmResource.class, "addDefaultGroup").build(groupId);
         return uri.toString();
     }
 
@@ -278,29 +282,6 @@ public class AdminEventPaths {
         return uri.toString();
     }
 
-    // USER FEDERATION PROVIDERS AND MAPPERS
-
-    public static String userFederationsResourcePath() {
-        URI uri = UriBuilder.fromUri("").path(RealmResource.class, "userFederation").build();
-        return uri.toString();
-    }
-
-    public static String userFederationCreateResourcePath() {
-        URI uri = UriBuilder.fromUri(userFederationsResourcePath()).path(UserFederationProvidersResource.class, "create").build();
-        return uri.toString();
-    }
-
-    public static String userFederationResourcePath(String userFederationId) {
-        URI uri = UriBuilder.fromUri(userFederationsResourcePath()).path(UserFederationProvidersResource.class, "get").build(userFederationId);
-        return uri.toString();
-    }
-
-    public static String userFederationMapperResourcePath(String userFederationId, String userFederationMapperId) {
-        URI uri = UriBuilder.fromUri(userFederationResourcePath(userFederationId))
-                .path(UserFederationProviderResource.class, "getMapperById").build(userFederationMapperId);
-        return uri.toString();
-    }
-
     // CLIENT INITIAL ACCESS
 
     public static String clientInitialAccessPath(String clientInitialAccessId) {
@@ -348,6 +329,101 @@ public class AdminEventPaths {
     public static String groupSubgroupsPath(String groupId) {
         URI uri = UriBuilder.fromUri(groupPath(groupId))
                 .path(GroupResource.class, "subGroup")
+                .build();
+        return uri.toString();
+    }
+
+
+    // AUTHENTICATION FLOWS
+
+    public static String authMgmtBasePath() {
+        URI uri = UriBuilder.fromUri("").path(RealmResource.class, "flows")
+                .build();
+        return uri.toString();
+    }
+
+    public static String authFlowsPath() {
+        URI uri = UriBuilder.fromUri(authMgmtBasePath()).path(AuthenticationManagementResource.class, "getFlows")
+                .build();
+        return uri.toString();
+    }
+
+    public static String authFlowPath(String flowId) {
+        URI uri = UriBuilder.fromUri(authMgmtBasePath()).path(AuthenticationManagementResource.class, "getFlow")
+                .build(flowId);
+        return uri.toString();
+    }
+
+    public static String authCopyFlowPath(String flowAlias) {
+        URI uri = UriBuilder.fromUri(authMgmtBasePath()).path(AuthenticationManagementResource.class, "copy")
+                .build(flowAlias);
+        return uri.toString();
+    }
+
+    public static String authAddExecutionFlowPath(String flowAlias) {
+        URI uri = UriBuilder.fromUri(authMgmtBasePath()).path(AuthenticationManagementResource.class, "addExecutionFlow")
+                .build(flowAlias);
+        return uri.toString();
+    }
+
+    public static String authAddExecutionPath(String flowAlias) {
+        return authFlowPath(flowAlias) + "/executions/execution";
+    }
+
+    public static String authUpdateExecutionPath(String flowAlias) {
+        URI uri = UriBuilder.fromUri(authMgmtBasePath()).path(AuthenticationManagementResource.class, "updateExecutions")
+                .build(flowAlias);
+        return uri.toString();
+    }
+
+    public static String authExecutionPath(String executionId) {
+        URI uri = UriBuilder.fromUri(authMgmtBasePath()).path(AuthenticationManagementResource.class, "removeExecution")
+                .build(executionId);
+        return uri.toString();
+    }
+
+    public static String authAddExecutionConfigPath(String executionId) {
+        URI uri = UriBuilder.fromUri(authMgmtBasePath()).path(AuthenticationManagementResource.class, "newExecutionConfig")
+                .build(executionId);
+        return uri.toString();
+    }
+
+    public static String authExecutionConfigPath(String configId) {
+        URI uri = UriBuilder.fromUri(authMgmtBasePath()).path(AuthenticationManagementResource.class, "getAuthenticatorConfig")
+                .build(configId);
+        return uri.toString();
+    }
+
+    public static String authRaiseExecutionPath(String executionId) {
+        URI uri = UriBuilder.fromUri(authMgmtBasePath()).path(AuthenticationManagementResource.class, "raisePriority")
+                .build(executionId);
+        return uri.toString();
+    }
+
+    public static String authLowerExecutionPath(String executionId) {
+        URI uri = UriBuilder.fromUri(authMgmtBasePath()).path(AuthenticationManagementResource.class, "lowerPriority")
+                .build(executionId);
+        return uri.toString();
+    }
+
+    public static String authRequiredActionPath(String requiredActionAlias) {
+        URI uri = UriBuilder.fromUri(authMgmtBasePath()).path(AuthenticationManagementResource.class, "getRequiredAction")
+                .build(requiredActionAlias);
+        return uri.toString();
+    }
+
+    // ATTACK DETECTION
+
+    public static String attackDetectionClearBruteForceForUserPath(String username) {
+        URI uri = UriBuilder.fromUri("").path(RealmResource.class, "attackDetection")
+                .path(AttackDetectionResource.class, "clearBruteForceForUser")
+                .build(username);
+        return uri.toString();
+    }
+
+    public static String attackDetectionClearAllBruteForcePath() {
+        URI uri = UriBuilder.fromUri("").path(RealmResource.class, "attackDetection")
+                .path(AttackDetectionResource.class, "clearAllBruteForce")
                 .build();
         return uri.toString();
     }

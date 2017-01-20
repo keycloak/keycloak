@@ -17,12 +17,11 @@
 
 package org.keycloak.testsuite.admin.realm;
 
-import org.hamcrest.Matchers;
 import org.junit.Before;
 import org.junit.Test;
-import org.keycloak.admin.client.resource.RoleByIdResource;
 import org.keycloak.admin.client.resource.RolesResource;
 import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.testsuite.Assert;
@@ -80,12 +79,11 @@ public class RealmRolesTest extends AbstractAdminTest {
 
         resource = adminClient.realm(REALM_NAME).roles();
 
-        // ResourcePath for event for creating role contains roleID instead of roleName (looks like a bug...)
-        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.roleResourcePath(ids.get("role-a")), roleA);
-        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.roleResourcePath(ids.get("role-b")), roleB);
+        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.roleResourcePath("role-a"), roleA, ResourceType.REALM_ROLE);
+        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.roleResourcePath("role-b"), roleB, ResourceType.REALM_ROLE);
 
-        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.clientResourcePath(clientUuid), clientRep);
-        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.clientRoleResourcePath(clientUuid, ids.get("role-c")), roleC);
+        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.clientResourcePath(clientUuid), clientRep, ResourceType.CLIENT);
+        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.clientRoleResourcePath(clientUuid, "role-c"), roleC, ResourceType.CLIENT_ROLE);
     }
 
     @Test
@@ -105,7 +103,7 @@ public class RealmRolesTest extends AbstractAdminTest {
         role.setDescription("Role A New");
 
         resource.get("role-a").update(role);
-        assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, AdminEventPaths.roleResourcePath("role-a"), role);
+        assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, AdminEventPaths.roleResourcePath("role-a"), role, ResourceType.REALM_ROLE);
 
         role = resource.get("role-a-new").toRepresentation();
 
@@ -119,7 +117,7 @@ public class RealmRolesTest extends AbstractAdminTest {
     public void deleteRole() {
         assertNotNull(resource.get("role-a"));
         resource.deleteRole("role-a");
-        assertAdminEvents.assertEvent(realmId, OperationType.DELETE, AdminEventPaths.roleResourcePath("role-a"));
+        assertAdminEvents.assertEvent(realmId, OperationType.DELETE, AdminEventPaths.roleResourcePath("role-a"), ResourceType.REALM_ROLE);
 
         try {
             resource.get("role-a").toRepresentation();
@@ -138,9 +136,8 @@ public class RealmRolesTest extends AbstractAdminTest {
         l.add(RoleBuilder.create().id(ids.get("role-b")).build());
         l.add(RoleBuilder.create().id(ids.get("role-c")).build());
         resource.get("role-a").addComposites(l);
-        // TODO adminEvents: Fix once composite roles events will be fixed...
-        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, Matchers.startsWith(AdminEventPaths.roleResourceCompositesPath("role-a")));
-        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, Matchers.startsWith(AdminEventPaths.roleResourceCompositesPath("role-a")));
+
+        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.roleResourceCompositesPath("role-a"), l, ResourceType.REALM_ROLE);
 
         Set<RoleRepresentation> composites = resource.get("role-a").getRoleComposites();
 
@@ -154,7 +151,7 @@ public class RealmRolesTest extends AbstractAdminTest {
         Assert.assertNames(clientComposites, "role-c");
 
         resource.get("role-a").deleteComposites(l);
-        assertAdminEvents.assertEvent(realmId, OperationType.DELETE, AdminEventPaths.roleResourceCompositesPath("role-a"));
+        assertAdminEvents.assertEvent(realmId, OperationType.DELETE, AdminEventPaths.roleResourceCompositesPath("role-a"), l, ResourceType.REALM_ROLE);
 
         assertFalse(resource.get("role-a").toRepresentation().isComposite());
         assertEquals(0, resource.get("role-a").getRoleComposites().size());

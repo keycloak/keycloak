@@ -18,10 +18,15 @@
 package org.keycloak.protocol.oidc.mappers;
 
 import org.keycloak.Config;
+import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.ProtocolMapperModel;
+import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.IDToken;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -53,5 +58,47 @@ public abstract class AbstractOIDCProtocolMapper implements ProtocolMapper {
     @Override
     public void postInit(KeycloakSessionFactory factory) {
 
+    }
+
+    public AccessToken transformUserInfoToken(AccessToken token, ProtocolMapperModel mappingModel, KeycloakSession session,
+                                              UserSessionModel userSession, ClientSessionModel clientSession) {
+
+        if (!OIDCAttributeMapperHelper.includeInUserInfo(mappingModel)) {
+            return token;
+        }
+
+        setClaim(token, mappingModel, userSession);
+        return token;
+    }
+
+    public AccessToken transformAccessToken(AccessToken token, ProtocolMapperModel mappingModel, KeycloakSession session,
+                                            UserSessionModel userSession, ClientSessionModel clientSession) {
+
+        if (!OIDCAttributeMapperHelper.includeInAccessToken(mappingModel)){
+            return token;
+        }
+
+        setClaim(token, mappingModel, userSession);
+        return token;
+    }
+
+    public IDToken transformIDToken(IDToken token, ProtocolMapperModel mappingModel, KeycloakSession session,
+                                    UserSessionModel userSession, ClientSessionModel clientSession) {
+
+        if (!OIDCAttributeMapperHelper.includeInIDToken(mappingModel)){
+            return token;
+        }
+
+        setClaim(token, mappingModel, userSession);
+        return token;
+    }
+
+    /**
+     * Intended to be overridden in {@link ProtocolMapper} implementations to add claims to an token.
+     * @param token
+     * @param mappingModel
+     * @param userSession
+     */
+    protected void setClaim(IDToken token, ProtocolMapperModel mappingModel, UserSessionModel userSession) {
     }
 }

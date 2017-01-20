@@ -16,12 +16,6 @@
  */
 package org.keycloak.social.stackoverflow;
 
-import java.io.StringWriter;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLDecoder;
-import java.util.HashMap;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import org.jboss.logging.Logger;
 import org.keycloak.broker.oidc.AbstractOAuth2IdentityProvider;
@@ -31,6 +25,13 @@ import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.broker.social.SocialIdentityProvider;
+import org.keycloak.models.KeycloakSession;
+
+import java.io.StringWriter;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLDecoder;
+import java.util.HashMap;
 
 /**
  * Stackoverflow social provider. See https://api.stackexchange.com/docs/authentication
@@ -46,8 +47,8 @@ public class StackoverflowIdentityProvider extends AbstractOAuth2IdentityProvide
 	public static final String PROFILE_URL = "https://api.stackexchange.com/2.2/me?order=desc&sort=name&site=stackoverflow";
 	public static final String DEFAULT_SCOPE = "";
 
-	public StackoverflowIdentityProvider(StackOverflowIdentityProviderConfig config) {
-		super(config);
+	public StackoverflowIdentityProvider(KeycloakSession session, StackOverflowIdentityProviderConfig config) {
+		super(session, config);
 		config.setAuthorizationUrl(AUTH_URL);
 		config.setTokenUrl(TOKEN_URL);
 		config.setUserInfoUrl(PROFILE_URL);

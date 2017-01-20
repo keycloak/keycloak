@@ -17,14 +17,13 @@
 
 package org.keycloak.testsuite.jaxrs;
 
-import java.util.HashSet;
-import java.util.Set;
+import org.keycloak.jaxrs.JaxrsBearerTokenFilterImpl;
 
 import javax.servlet.ServletContext;
 import javax.ws.rs.core.Application;
 import javax.ws.rs.core.Context;
-
-import org.keycloak.jaxrs.JaxrsBearerTokenFilterImpl;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

@@ -17,14 +17,16 @@
 
 package org.keycloak.authentication.authenticators.client;
 
+
 import java.security.PublicKey;
-import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
@@ -32,12 +34,15 @@ import javax.ws.rs.core.Response;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.ClientAuthenticationFlowContext;
+import org.keycloak.common.util.Time;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.crypto.RSAProvider;
+import org.keycloak.keys.loader.PublicKeyStorageManager;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.ServicesLogger;
@@ -54,9 +59,8 @@ import org.keycloak.services.Urls;
  */
 public class JWTClientAuthenticator extends AbstractClientAuthenticator {
 
-    protected static ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
-
     public static final String PROVIDER_ID = "client-jwt";
+    public static final String ATTR_PREFIX = "jwt.credential";
     public static final String CERTIFICATE_ATTR = "jwt.credential.certificate";
 
     public static final AuthenticationExecutionModel.Requirement[] REQUIREMENT_CHOICES = {
@@ -115,15 +119,12 @@ public class JWTClientAuthenticator extends AbstractClientAuthenticator {
             }
 
             // Get client key and validate signature
-            String encodedCertificate = client.getAttribute(CERTIFICATE_ATTR);
-            if (encodedCertificate == null) {
-                Response challengeResponse = ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "unauthorized_client", "Client '" + clientId + "' doesn't have certificate configured");
-                context.failure(AuthenticationFlowError.CLIENT_CREDENTIALS_SETUP_REQUIRED, challengeResponse);
+            PublicKey clientPublicKey = getSignatureValidationKey(client, context, jws);
+            if (clientPublicKey == null) {
+                // Error response already set to context
                 return;
             }
 
-            X509Certificate clientCert = KeycloakModelUtils.getCertificate(encodedCertificate);
-            PublicKey clientPublicKey = clientCert.getPublicKey();
             boolean signatureValid;
             try {
                 signatureValid = RSAProvider.verify(jws, clientPublicKey);
@@ -135,21 +136,38 @@ public class JWTClientAuthenticator extends AbstractClientAuthenticator {
                 throw new RuntimeException("Signature on JWT token failed validation");
             }
 
-            // Validate other things
-            String expectedAudience = Urls.realmIssuer(context.getUriInfo().getBaseUri(), realm.getName());
-            if (!token.hasAudience(expectedAudience)) {
-                throw new RuntimeException("Token audience doesn't match domain. Realm audience is '" + expectedAudience + "' but audience from token is '" + Arrays.asList(token.getAudience()).toString() + "'");
+            // Allow both "issuer" or "token-endpoint" as audience
+            String issuerUrl = Urls.realmIssuer(context.getUriInfo().getBaseUri(), realm.getName());
+            String tokenUrl = OIDCLoginProtocolService.tokenUrl(context.getUriInfo().getBaseUriBuilder()).build(realm.getName()).toString();
+            if (!token.hasAudience(issuerUrl) && !token.hasAudience(tokenUrl)) {
+                throw new RuntimeException("Token audience doesn't match domain. Realm issuer is '" + issuerUrl + "' but audience from token is '" + Arrays.asList(token.getAudience()).toString() + "'");
             }
 
             if (!token.isActive()) {
                 throw new RuntimeException("Token is not active");
             }
 
+            // KEYCLOAK-2986
+            if (token.getExpiration() == 0 && token.getIssuedAt() + 10 < Time.currentTime()) {
+                throw new RuntimeException("Token is not active");
+            }
+
             context.success();
         } catch (Exception e) {
-            logger.errorValidatingAssertion(e);
+            ServicesLogger.LOGGER.errorValidatingAssertion(e);
             Response challengeResponse = ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "unauthorized_client", "Client authentication with signed JWT failed: " + e.getMessage());
             context.failure(AuthenticationFlowError.INVALID_CLIENT_CREDENTIALS, challengeResponse);
+        }
+    }
+
+    protected PublicKey getSignatureValidationKey(ClientModel client, ClientAuthenticationFlowContext context, JWSInput jws) {
+        PublicKey publicKey = PublicKeyStorageManager.getClientPublicKey(context.getSession(), client, jws);
+        if (publicKey == null) {
+            Response challengeResponse = ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "unauthorized_client", "Unable to load public key");
+            context.failure(AuthenticationFlowError.CLIENT_CREDENTIALS_SETUP_REQUIRED, challengeResponse);
+            return null;
+        } else {
+            return publicKey;
         }
     }
 
@@ -202,5 +220,16 @@ public class JWTClientAuthenticator extends AbstractClientAuthenticator {
     @Override
     public String getId() {
         return PROVIDER_ID;
+    }
+
+    @Override
+    public Set<String> getProtocolAuthenticatorMethods(String loginProtocol) {
+        if (loginProtocol.equals(OIDCLoginProtocol.LOGIN_PROTOCOL)) {
+            Set<String> results = new HashSet<>();
+            results.add(OIDCLoginProtocol.PRIVATE_KEY_JWT);
+            return results;
+        } else {
+            return Collections.emptySet();
+        }
     }
 }

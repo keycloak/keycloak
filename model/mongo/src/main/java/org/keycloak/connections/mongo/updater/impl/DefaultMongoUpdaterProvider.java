@@ -33,6 +33,9 @@ import org.keycloak.connections.mongo.updater.impl.updates.Update1_4_0;
 import org.keycloak.connections.mongo.updater.impl.updates.Update1_7_0;
 import org.keycloak.connections.mongo.updater.impl.updates.Update1_8_0;
 import org.keycloak.connections.mongo.updater.impl.updates.Update1_9_2;
+import org.keycloak.connections.mongo.updater.impl.updates.Update2_3_0;
+import org.keycloak.connections.mongo.updater.impl.updates.Update2_4_0;
+import org.keycloak.connections.mongo.updater.impl.updates.Update2_5_0;
 import org.keycloak.models.KeycloakSession;
 
 import java.util.Date;
@@ -57,7 +60,10 @@ public class DefaultMongoUpdaterProvider implements MongoUpdaterProvider {
             Update1_4_0.class,
             Update1_7_0.class,
             Update1_8_0.class,
-            Update1_9_2.class
+            Update1_9_2.class,
+            Update2_3_0.class,
+            Update2_4_0.class,
+            Update2_5_0.class
     };
 
     @Override

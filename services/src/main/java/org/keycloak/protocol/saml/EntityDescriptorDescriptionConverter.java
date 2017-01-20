@@ -101,6 +101,7 @@ public class EntityDescriptorDescriptionConverter implements ClientDescriptionCo
         app.setFullScopeAllowed(true);
         app.setProtocol(SamlProtocol.LOGIN_PROTOCOL);
         attributes.put(SamlConfigAttributes.SAML_SERVER_SIGNATURE, SamlProtocol.ATTRIBUTE_TRUE_VALUE); // default to true
+        attributes.put(SamlConfigAttributes.SAML_SERVER_SIGNATURE_KEYINFO_EXT, SamlProtocol.ATTRIBUTE_FALSE_VALUE); // default to false
         attributes.put(SamlConfigAttributes.SAML_SIGNATURE_ALGORITHM, SignatureAlgorithm.RSA_SHA256.toString());
         attributes.put(SamlConfigAttributes.SAML_AUTHNSTATEMENT, SamlProtocol.ATTRIBUTE_TRUE_VALUE);
         SPSSODescriptorType spDescriptorType = CoreConfigUtil.getSPDescriptor(entity);
@@ -110,7 +111,7 @@ public class EntityDescriptorDescriptionConverter implements ClientDescriptionCo
         String logoutPost = getLogoutLocation(spDescriptorType, JBossSAMLURIConstants.SAML_HTTP_POST_BINDING.get());
         if (logoutPost != null) attributes.put(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_POST_ATTRIBUTE, logoutPost);
         String logoutRedirect = getLogoutLocation(spDescriptorType, JBossSAMLURIConstants.SAML_HTTP_REDIRECT_BINDING.get());
-        if (logoutPost != null) attributes.put(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_REDIRECT_ATTRIBUTE, logoutRedirect);
+        if (logoutRedirect != null) attributes.put(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_REDIRECT_ATTRIBUTE, logoutRedirect);
 
         String assertionConsumerServicePostBinding = CoreConfigUtil.getServiceURL(spDescriptorType, JBossSAMLURIConstants.SAML_HTTP_POST_BINDING.get());
         if (assertionConsumerServicePostBinding != null) {
@@ -121,6 +122,14 @@ public class EntityDescriptorDescriptionConverter implements ClientDescriptionCo
         if (assertionConsumerServiceRedirectBinding != null) {
             attributes.put(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_REDIRECT_ATTRIBUTE, assertionConsumerServiceRedirectBinding);
             redirectUris.add(assertionConsumerServiceRedirectBinding);
+        }
+        String assertionConsumerServiceSoapBinding = CoreConfigUtil.getServiceURL(spDescriptorType, JBossSAMLURIConstants.SAML_SOAP_BINDING.get());
+        if (assertionConsumerServiceSoapBinding != null) {
+            redirectUris.add(assertionConsumerServiceSoapBinding);
+        }
+        String assertionConsumerServicePaosBinding = CoreConfigUtil.getServiceURL(spDescriptorType, JBossSAMLURIConstants.SAML_PAOS_BINDING.get());
+        if (assertionConsumerServicePaosBinding != null) {
+            redirectUris.add(assertionConsumerServicePaosBinding);
         }
         if (spDescriptorType.getNameIDFormat() != null) {
             for (String format : spDescriptorType.getNameIDFormat()) {

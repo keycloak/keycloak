@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!--
+  ~ Copyright 2016 Red Hat, Inc. and/or its affiliates
+  ~ and other contributors as indicated by the @author tags.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<databaseChangeLog logicalFilePath="META-INF/db2-jpa-changelog-1.8.0.xml" xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+    <changeSet author="mposolda@redhat.com" id="1.8.0">
+        <preConditions onSqlOutput="TEST" onFail="MARK_RAN">
+            <dbms type="db2" />
+        </preConditions>
+
+        <addColumn tableName="IDENTITY_PROVIDER">
+            <column name="POST_BROKER_LOGIN_FLOW_ID" type="VARCHAR(36)">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+        <createTable tableName="CLIENT_TEMPLATE">
+            <column name="ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="NAME" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="REALM_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="DESCRIPTION" type="VARCHAR(255)"/>
+            <column name="PROTOCOL" type="VARCHAR(255)"/>
+            <column name="FULL_SCOPE_ALLOWED" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="CONSENT_REQUIRED" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="STANDARD_FLOW_ENABLED" type="BOOLEAN" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+            <column name="IMPLICIT_FLOW_ENABLED" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="DIRECT_ACCESS_GRANTS_ENABLED" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="SERVICE_ACCOUNTS_ENABLED" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="FRONTCHANNEL_LOGOUT" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="BEARER_ONLY" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="PUBLIC_CLIENT" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <createTable tableName="CLIENT_TEMPLATE_ATTRIBUTES">
+            <column name="TEMPLATE_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="VALUE" type="VARCHAR(2048)"/>
+            <column name="NAME" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <createTable tableName="TEMPLATE_SCOPE_MAPPING">
+            <column name="TEMPLATE_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ROLE_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+
+
+        <dropNotNullConstraint tableName="PROTOCOL_MAPPER" columnName="CLIENT_ID" columnDataType="VARCHAR(36)"/>
+        <addColumn tableName="CLIENT">
+            <column name="CLIENT_TEMPLATE_ID" type="VARCHAR(36)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="USE_TEMPLATE_CONFIG" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="USE_TEMPLATE_SCOPE" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="USE_TEMPLATE_MAPPERS" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+        <addColumn tableName="PROTOCOL_MAPPER">
+            <column name="CLIENT_TEMPLATE_ID" type="VARCHAR(36)">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+        <createTable tableName="REALM_CLIENT_TEMPLATE">
+            <column name="CLIENT_TEMPLATE_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="REALM_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addPrimaryKey columnNames="ID" constraintName="PK_CLI_TEMPLATE" tableName="CLIENT_TEMPLATE"/>
+        <addUniqueConstraint columnNames="REALM_ID,NAME" constraintName="UK_CLI_TEMPLATE" tableName="CLIENT_TEMPLATE"/>
+        <addForeignKeyConstraint baseColumnNames="REALM_ID" baseTableName="CLIENT_TEMPLATE" constraintName="FK_REALM_CLI_TMPLT" referencedColumnNames="ID" referencedTableName="REALM"/>
+        <addForeignKeyConstraint baseColumnNames="CLIENT_TEMPLATE_ID" baseTableName="PROTOCOL_MAPPER" constraintName="FK_CLI_TMPLT_MAPPER" referencedColumnNames="ID" referencedTableName="CLIENT_TEMPLATE"/>
+        <addForeignKeyConstraint baseColumnNames="CLIENT_TEMPLATE_ID" baseTableName="CLIENT" constraintName="FK_CLI_TMPLT_CLIENT" referencedColumnNames="ID" referencedTableName="CLIENT_TEMPLATE"/>
+        <addForeignKeyConstraint baseColumnNames="REALM_ID" baseTableName="REALM_CLIENT_TEMPLATE" constraintName="FK_RLM_CLI_TMPLT_RLM" referencedColumnNames="ID" referencedTableName="REALM"/>
+        <addForeignKeyConstraint baseColumnNames="CLIENT_TEMPLATE_ID" baseTableName="REALM_CLIENT_TEMPLATE" constraintName="FK_RLM_CLI_TMPLT_CLI" referencedColumnNames="ID" referencedTableName="CLIENT_TEMPLATE"/>
+        <addPrimaryKey columnNames="TEMPLATE_ID, ROLE_ID" constraintName="PK_TEMPLATE_SCOPE" tableName="TEMPLATE_SCOPE_MAPPING"/>
+        <addForeignKeyConstraint baseColumnNames="TEMPLATE_ID" baseTableName="TEMPLATE_SCOPE_MAPPING" constraintName="FK_TEMPL_SCOPE_TEMPL" referencedColumnNames="ID" referencedTableName="CLIENT_TEMPLATE"/>
+        <addForeignKeyConstraint baseColumnNames="ROLE_ID" baseTableName="TEMPLATE_SCOPE_MAPPING" constraintName="FK_TEMPL_SCOPE_ROLE" referencedColumnNames="ID" referencedTableName="KEYCLOAK_ROLE"/>
+        <addPrimaryKey columnNames="TEMPLATE_ID, NAME" constraintName="PK_CL_TMPL_ATTR" tableName="CLIENT_TEMPLATE_ATTRIBUTES"/>
+        <addForeignKeyConstraint baseColumnNames="TEMPLATE_ID" baseTableName="CLIENT_TEMPLATE_ATTRIBUTES" constraintName="FK_CL_TEMPL_ATTR_TEMPL" referencedColumnNames="ID" referencedTableName="CLIENT_TEMPLATE"/>
+
+        <update tableName="CREDENTIAL">
+            <column name="ALGORITHM" type="VARCHAR(36)" value="pbkdf2" />
+            <where>TYPE in ('password-history', 'password') AND ALGORITHM is NULL</where>
+        </update>
+
+    </changeSet>
+
+    <changeSet id="1.8.0-2" author="keycloak">
+        <preConditions onSqlOutput="TEST" onFail="MARK_RAN">
+            <dbms type="db2" />
+        </preConditions>
+
+        <dropDefaultValue tableName="CREDENTIAL" columnName="ALGORITHM" columnDataType="VARCHAR(36)"/>
+
+        <update tableName="CREDENTIAL">
+            <column name="ALGORITHM" type="VARCHAR(36)" value="pbkdf2" />
+            <where>TYPE in ('password-history', 'password') AND ALGORITHM = 'HmacSHA1'</where>
+        </update>
+
+    </changeSet>
+
+</databaseChangeLog>

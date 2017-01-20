@@ -17,85 +17,55 @@
 
 package org.keycloak.protocol.oidc.endpoints;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-
-import javax.ws.rs.GET;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
-
+import org.jboss.logging.Logger;
+import org.keycloak.OAuth2Constants;
+import org.keycloak.OAuthErrorException;
 import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
-import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
-import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.AuthorizationEndpointBase;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequest;
+import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequestParserProcessor;
+import org.keycloak.protocol.oidc.utils.OIDCRedirectUriBuilder;
 import org.keycloak.protocol.oidc.utils.OIDCResponseMode;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.services.ErrorPageException;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.Urls;
-import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.services.util.CacheControlUtil;
+import org.keycloak.util.TokenUtil;
+
+import javax.ws.rs.GET;
+import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.Response;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class AuthorizationEndpoint extends AuthorizationEndpointBase {
 
-    private static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    private static final Logger logger = Logger.getLogger(AuthorizationEndpoint.class);
 
     public static final String CODE_AUTH_TYPE = "code";
 
     /**
      * Prefix used to store additional HTTP GET params from original client request into {@link ClientSessionModel} note to be available later in Authenticators, RequiredActions etc. Prefix is used to
      * prevent collisions with internally used notes.
-     * 
+     *
      * @see ClientSessionModel#getNote(String)
-     * @see #KNOWN_REQ_PARAMS
-     * @see #additionalReqParams
      */
     public static final String CLIENT_SESSION_NOTE_ADDITIONAL_REQ_PARAMS_PREFIX = "client_request_param_";
-    /**
-     * Max number of additional req params copied into client session note to prevent DoS attacks
-     * 
-     * @see #additionalReqParams
-     */
-    public static final int ADDITIONAL_REQ_PARAMS_MAX_MUMBER = 5;
-    /**
-     * Max size of additional req param value copied into client session note to prevent DoS attacks - params with longer value are ignored
-     * 
-     * @see #additionalReqParams
-     */
-    public static final int ADDITIONAL_REQ_PARAMS_MAX_SIZE = 200;
-
-    /** Set of known protocol GET params not to be stored into {@link #additionalReqParams} */
-    private static final Set<String> KNOWN_REQ_PARAMS = new HashSet<>();
-    static {
-        KNOWN_REQ_PARAMS.add(OIDCLoginProtocol.CLIENT_ID_PARAM);
-        KNOWN_REQ_PARAMS.add(OIDCLoginProtocol.RESPONSE_TYPE_PARAM);
-        KNOWN_REQ_PARAMS.add(OIDCLoginProtocol.RESPONSE_MODE_PARAM);
-        KNOWN_REQ_PARAMS.add(OIDCLoginProtocol.REDIRECT_URI_PARAM);
-        KNOWN_REQ_PARAMS.add(OIDCLoginProtocol.STATE_PARAM);
-        KNOWN_REQ_PARAMS.add(OIDCLoginProtocol.SCOPE_PARAM);
-        KNOWN_REQ_PARAMS.add(OIDCLoginProtocol.LOGIN_HINT_PARAM);
-        KNOWN_REQ_PARAMS.add(OIDCLoginProtocol.PROMPT_PARAM);
-        KNOWN_REQ_PARAMS.add(AdapterConstants.KC_IDP_HINT);
-        KNOWN_REQ_PARAMS.add(OIDCLoginProtocol.NONCE_PARAM);
-    }
 
     private enum Action {
         REGISTER, CODE, FORGOT_CREDENTIALS
@@ -106,19 +76,10 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
 
     private Action action;
     private OIDCResponseType parsedResponseType;
+    private OIDCResponseMode parsedResponseMode;
 
-    private String clientId;
+    private AuthorizationEndpointRequest request;
     private String redirectUri;
-    private String redirectUriParam;
-    private String responseType;
-    private String responseMode;
-    private String state;
-    private String scope;
-    private String loginHint;
-    private String prompt;
-    private String nonce;
-    private String idpHint;
-    protected Map<String, String> additionalReqParams = new HashMap<>();
 
     public AuthorizationEndpoint(RealmModel realm, EventBuilder event) {
         super(realm, event);
@@ -128,25 +89,29 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
     @GET
     public Response build() {
         MultivaluedMap<String, String> params = uriInfo.getQueryParameters();
-
-        clientId = params.getFirst(OIDCLoginProtocol.CLIENT_ID_PARAM);
-        responseType = params.getFirst(OIDCLoginProtocol.RESPONSE_TYPE_PARAM);
-        responseMode = params.getFirst(OIDCLoginProtocol.RESPONSE_MODE_PARAM);
-        redirectUriParam = params.getFirst(OIDCLoginProtocol.REDIRECT_URI_PARAM);
-        state = params.getFirst(OIDCLoginProtocol.STATE_PARAM);
-        scope = params.getFirst(OIDCLoginProtocol.SCOPE_PARAM);
-        loginHint = params.getFirst(OIDCLoginProtocol.LOGIN_HINT_PARAM);
-        prompt = params.getFirst(OIDCLoginProtocol.PROMPT_PARAM);
-        idpHint = params.getFirst(AdapterConstants.KC_IDP_HINT);
-        nonce = params.getFirst(OIDCLoginProtocol.NONCE_PARAM);
-
-        extractAdditionalReqParams(params);
+        String requestUri = uriInfo.getRequestUri().toString();
+        String clientId = params.getFirst(OIDCLoginProtocol.CLIENT_ID_PARAM);
 
         checkSsl();
         checkRealm();
-        checkResponseType();
-        checkClient();
+        checkClient(clientId);
+
+        request = AuthorizationEndpointRequestParserProcessor.parseRequest(event, session, client, params);
+
         checkRedirectUri();
+        Response errorResponse = checkResponseType();
+        if (errorResponse != null) {
+            return errorResponse;
+        }
+
+        if (!TokenUtil.isOIDCRequest(request.getScope())) {
+            ServicesLogger.LOGGER.oidcScopeMissing();
+        }
+
+        errorResponse = checkOIDCParams();
+        if (errorResponse != null) {
+            return errorResponse;
+        }
 
         createClientSession();
         // So back button doesn't work
@@ -161,27 +126,6 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         }
 
         throw new RuntimeException("Unknown action " + action);
-    }
-
-    protected void extractAdditionalReqParams(MultivaluedMap<String, String> params) {
-        for (String paramName : params.keySet()) {
-            if (!KNOWN_REQ_PARAMS.contains(paramName)) {
-                String value = params.getFirst(paramName);
-                if (value != null && value.trim().isEmpty()) {
-                    value = null;
-                }
-                if (value != null && value.length() <= ADDITIONAL_REQ_PARAMS_MAX_SIZE) {
-                    if (additionalReqParams.size() >= ADDITIONAL_REQ_PARAMS_MAX_MUMBER) {
-                        logger.debug("Maximal number of additional OIDC params (" + ADDITIONAL_REQ_PARAMS_MAX_MUMBER + ") exceeded, ignoring rest of them!");
-                        break;
-                    }
-                    additionalReqParams.put(paramName, value);
-                } else {
-                    logger.debug("OIDC Additional param " + paramName + " ignored because value is empty or longer than " + ADDITIONAL_REQ_PARAMS_MAX_SIZE);
-                }
-            }
-
-        }
     }
 
     public AuthorizationEndpoint register() {
@@ -220,7 +164,7 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         }
     }
 
-    private void checkClient() {
+    private void checkClient(String clientId) {
         if (clientId == null) {
             event.error(Errors.INVALID_REQUEST);
             throw new ErrorPageException(session, Messages.MISSING_PARAMETER, OIDCLoginProtocol.CLIENT_ID_PARAM);
@@ -234,28 +178,26 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
             throw new ErrorPageException(session, Messages.CLIENT_NOT_FOUND);
         }
 
+        if (!client.isEnabled()) {
+            event.error(Errors.CLIENT_DISABLED);
+            throw new ErrorPageException(session, Messages.CLIENT_DISABLED);
+        }
+
         if (client.isBearerOnly()) {
             event.error(Errors.NOT_ALLOWED);
             throw new ErrorPageException(session, Messages.BEARER_ONLY);
         }
 
-        if ((parsedResponseType.hasResponseType(OIDCResponseType.CODE) || parsedResponseType.hasResponseType(OIDCResponseType.NONE)) && !client.isStandardFlowEnabled()) {
-            event.error(Errors.NOT_ALLOWED);
-            throw new ErrorPageException(session, Messages.STANDARD_FLOW_DISABLED);
-        }
-
-        if (parsedResponseType.isImplicitOrHybridFlow() && !client.isImplicitFlowEnabled()) {
-            event.error(Errors.NOT_ALLOWED);
-            throw new ErrorPageException(session, Messages.IMPLICIT_FLOW_DISABLED);
-        }
-
         session.getContext().setClient(client);
     }
 
-    private void checkResponseType() {
+    private Response checkResponseType() {
+        String responseType = request.getResponseType();
+
         if (responseType == null) {
+            ServicesLogger.LOGGER.missingParameter(OAuth2Constants.RESPONSE_TYPE);
             event.error(Errors.INVALID_REQUEST);
-            throw new ErrorPageException(session, Messages.MISSING_PARAMETER, OIDCLoginProtocol.RESPONSE_TYPE_PARAM);
+            return redirectErrorToClient(OIDCResponseMode.QUERY, OAuthErrorException.INVALID_REQUEST, "Missing parameter: response_type");
         }
 
         event.detail(Details.RESPONSE_TYPE, responseType);
@@ -266,29 +208,74 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
                 action = Action.CODE;
             }
         } catch (IllegalArgumentException iae) {
-            logger.error(iae);
+            logger.error(iae.getMessage());
             event.error(Errors.INVALID_REQUEST);
-            throw new ErrorPageException(session, Messages.INVALID_PARAMETER, OIDCLoginProtocol.RESPONSE_TYPE_PARAM);
+            return redirectErrorToClient(OIDCResponseMode.QUERY, OAuthErrorException.UNSUPPORTED_RESPONSE_TYPE, null);
         }
 
+        OIDCResponseMode parsedResponseMode = null;
         try {
-            OIDCResponseMode parsedResponseMode = OIDCResponseMode.parse(responseMode, parsedResponseType);
-            event.detail(Details.RESPONSE_MODE, parsedResponseMode.toString().toLowerCase());
-
-            // Disallowed by OIDC specs
-            if (parsedResponseType.isImplicitOrHybridFlow() && parsedResponseMode == OIDCResponseMode.QUERY) {
-                logger.responseModeQueryNotAllowed();
-                event.error(Errors.INVALID_REQUEST);
-                throw new ErrorPageException(session, Messages.INVALID_PARAMETER, OIDCLoginProtocol.RESPONSE_MODE_PARAM);
-            }
-
+            parsedResponseMode = OIDCResponseMode.parse(request.getResponseMode(), parsedResponseType);
         } catch (IllegalArgumentException iae) {
+            ServicesLogger.LOGGER.invalidParameter(OIDCLoginProtocol.RESPONSE_MODE_PARAM);
             event.error(Errors.INVALID_REQUEST);
-            throw new ErrorPageException(session, Messages.INVALID_PARAMETER, OIDCLoginProtocol.RESPONSE_MODE_PARAM);
+            return redirectErrorToClient(OIDCResponseMode.QUERY, OAuthErrorException.INVALID_REQUEST, "Invalid parameter: response_mode");
         }
+
+        event.detail(Details.RESPONSE_MODE, parsedResponseMode.toString().toLowerCase());
+
+        // Disallowed by OIDC specs
+        if (parsedResponseType.isImplicitOrHybridFlow() && parsedResponseMode == OIDCResponseMode.QUERY) {
+            ServicesLogger.LOGGER.responseModeQueryNotAllowed();
+            event.error(Errors.INVALID_REQUEST);
+            return redirectErrorToClient(OIDCResponseMode.QUERY, OAuthErrorException.INVALID_REQUEST, "Response_mode 'query' not allowed for implicit or hybrid flow");
+        }
+
+        if ((parsedResponseType.hasResponseType(OIDCResponseType.CODE) || parsedResponseType.hasResponseType(OIDCResponseType.NONE)) && !client.isStandardFlowEnabled()) {
+            ServicesLogger.LOGGER.flowNotAllowed("Standard");
+            event.error(Errors.NOT_ALLOWED);
+            return redirectErrorToClient(parsedResponseMode, OAuthErrorException.UNSUPPORTED_RESPONSE_TYPE, "Client is not allowed to initiate browser login with given response_type. Standard flow is disabled for the client.");
+        }
+
+        if (parsedResponseType.isImplicitOrHybridFlow() && !client.isImplicitFlowEnabled()) {
+            ServicesLogger.LOGGER.flowNotAllowed("Implicit");
+            event.error(Errors.NOT_ALLOWED);
+            return redirectErrorToClient(parsedResponseMode, OAuthErrorException.UNSUPPORTED_RESPONSE_TYPE, "Client is not allowed to initiate browser login with given response_type. Implicit flow is disabled for the client.");
+        }
+
+        this.parsedResponseMode = parsedResponseMode;
+
+        return null;
+    }
+
+    private Response checkOIDCParams() {
+        if (parsedResponseType.isImplicitOrHybridFlow() && request.getNonce() == null) {
+            ServicesLogger.LOGGER.missingParameter(OIDCLoginProtocol.NONCE_PARAM);
+            event.error(Errors.INVALID_REQUEST);
+            return redirectErrorToClient(parsedResponseMode, OAuthErrorException.INVALID_REQUEST, "Missing parameter: nonce");
+        }
+
+        return null;
+    }
+
+    private Response redirectErrorToClient(OIDCResponseMode responseMode, String error, String errorDescription) {
+        OIDCRedirectUriBuilder errorResponseBuilder = OIDCRedirectUriBuilder.fromUri(redirectUri, responseMode)
+                .addParam(OAuth2Constants.ERROR, error);
+
+        if (errorDescription != null) {
+            errorResponseBuilder.addParam(OAuth2Constants.ERROR_DESCRIPTION, errorDescription);
+        }
+
+        if (request.getState() != null) {
+            errorResponseBuilder.addParam(OAuth2Constants.STATE, request.getState());
+        }
+
+        return errorResponseBuilder.build();
     }
 
     private void checkRedirectUri() {
+        String redirectUriParam = request.getRedirectUriParam();
+
         event.detail(Details.REDIRECT_URI, redirectUriParam);
 
         redirectUri = RedirectUtils.verifyRedirectUri(uriInfo, redirectUriParam, realm, client);
@@ -303,42 +290,31 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         clientSession.setAuthMethod(OIDCLoginProtocol.LOGIN_PROTOCOL);
         clientSession.setRedirectUri(redirectUri);
         clientSession.setAction(ClientSessionModel.Action.AUTHENTICATE.name());
-        clientSession.setNote(OIDCLoginProtocol.RESPONSE_TYPE_PARAM, responseType);
-        clientSession.setNote(OIDCLoginProtocol.REDIRECT_URI_PARAM, redirectUriParam);
+        clientSession.setNote(OIDCLoginProtocol.RESPONSE_TYPE_PARAM, request.getResponseType());
+        clientSession.setNote(OIDCLoginProtocol.REDIRECT_URI_PARAM, request.getRedirectUriParam());
         clientSession.setNote(OIDCLoginProtocol.ISSUER, Urls.realmIssuer(uriInfo.getBaseUri(), realm.getName()));
 
-        if (state != null) clientSession.setNote(OIDCLoginProtocol.STATE_PARAM, state);
-        if (nonce != null) clientSession.setNote(OIDCLoginProtocol.NONCE_PARAM, nonce);
-        if (scope != null) clientSession.setNote(OIDCLoginProtocol.SCOPE_PARAM, scope);
-        if (loginHint != null) clientSession.setNote(OIDCLoginProtocol.LOGIN_HINT_PARAM, loginHint);
-        if (prompt != null) clientSession.setNote(OIDCLoginProtocol.PROMPT_PARAM, prompt);
-        if (idpHint != null) clientSession.setNote(AdapterConstants.KC_IDP_HINT, idpHint);
-        if (responseMode != null) clientSession.setNote(OIDCLoginProtocol.RESPONSE_MODE_PARAM, responseMode);
+        if (request.getState() != null) clientSession.setNote(OIDCLoginProtocol.STATE_PARAM, request.getState());
+        if (request.getNonce() != null) clientSession.setNote(OIDCLoginProtocol.NONCE_PARAM, request.getNonce());
+        if (request.getMaxAge() != null) clientSession.setNote(OIDCLoginProtocol.MAX_AGE_PARAM, String.valueOf(request.getMaxAge()));
+        if (request.getScope() != null) clientSession.setNote(OIDCLoginProtocol.SCOPE_PARAM, request.getScope());
+        if (request.getLoginHint() != null) clientSession.setNote(OIDCLoginProtocol.LOGIN_HINT_PARAM, request.getLoginHint());
+        if (request.getPrompt() != null) clientSession.setNote(OIDCLoginProtocol.PROMPT_PARAM, request.getPrompt());
+        if (request.getIdpHint() != null) clientSession.setNote(AdapterConstants.KC_IDP_HINT, request.getIdpHint());
+        if (request.getResponseMode() != null) clientSession.setNote(OIDCLoginProtocol.RESPONSE_MODE_PARAM, request.getResponseMode());
 
-        if (additionalReqParams != null) {
-            for (String paramName : additionalReqParams.keySet()) {
-                clientSession.setNote(CLIENT_SESSION_NOTE_ADDITIONAL_REQ_PARAMS_PREFIX + paramName, additionalReqParams.get(paramName));
+        if (request.getAdditionalReqParams() != null) {
+            for (String paramName : request.getAdditionalReqParams().keySet()) {
+                clientSession.setNote(CLIENT_SESSION_NOTE_ADDITIONAL_REQ_PARAMS_PREFIX + paramName, request.getAdditionalReqParams().get(paramName));
             }
         }
     }
 
     private Response buildAuthorizationCodeAuthorizationResponse() {
-
-        if (idpHint != null && !"".equals(idpHint)) {
-            IdentityProviderModel identityProviderModel = realm.getIdentityProviderByAlias(idpHint);
-
-            if (identityProviderModel == null) {
-                return session.getProvider(LoginFormsProvider.class)
-                        .setError(Messages.IDENTITY_PROVIDER_NOT_FOUND, idpHint)
-                        .createErrorPage();
-            }
-            return buildRedirectToIdentityProvider(idpHint, new ClientSessionCode(realm, clientSession).getCode());
-        }
-
         this.event.event(EventType.LOGIN);
         clientSession.setNote(Details.AUTH_TYPE, CODE_AUTH_TYPE);
 
-        return handleBrowserAuthenticationRequest(clientSession, new OIDCLoginProtocol(session, realm, uriInfo, headers, event), prompt != null && prompt.equals("none"), false);
+        return handleBrowserAuthenticationRequest(clientSession, new OIDCLoginProtocol(session, realm, uriInfo, headers, event), TokenUtil.hasPrompt(request.getPrompt(), OIDCLoginProtocol.PROMPT_VALUE_NONE), false);
     }
 
     private Response buildRegister() {

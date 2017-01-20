@@ -1,0 +1,267 @@
+<div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
+
+    <ol class="breadcrumb">
+        <li><a href="#/realms/{{realm.realm}}/clients">{{:: 'clients' | translate}}</a></li>
+        <li><a href="#/realms/{{realm.realm}}/clients/{{client.id}}">{{client.clientId}}</a></li>
+        <li><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server">{{:: 'authz-authorization' | translate}}</a></li>
+        <li><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server/evaluate">{{:: 'authz-policy-evaluation' | translate}}</a></li>
+    </ol>
+
+    <kc-tabs-resource-server></kc-tabs-resource-server>
+
+    <div data-ng-show="showResult">
+        <br>
+        <a href="" data-ng-click="showRequestTab()">{{:: 'authz-evaluation-new' | translate}}</a>
+        |
+        <a href="" data-ng-click="reevaluate()">{{:: 'authz-evaluation-re-evaluate' | translate}}</a>
+        |
+        <a href="" data-ng-click="showAuthzData()">{{:: 'authz-show-authorization-data' | translate}}</a>
+    </div>
+
+    <div data-ng-show="evaluationResult && !showResult">
+        <br>
+        <a href="" data-ng-click="showResultTab()">{{:: 'authz-evaluation-previous' | translate}}</a>
+    </div>
+
+    <div data-ng-show="showRpt">
+        <div class="form-group">
+            <label class="col-sm-1 control-label" for="rpt">{{:: 'authz-evaluation-authorization-data' | translate}}</label>
+            <div class="col-md-6">
+                <textarea id="rpt" class="form-control" rows="20">{{evaluationResult.rpt | json}}</textarea>
+            </div>
+            <kc-tooltip>{{:: 'authz-evaluation-authorization-data.tooltip' | translate}}</kc-tooltip>
+        </div>
+    </div>
+
+    <div data-ng-hide="showResult">
+        <form class="form-horizontal" name="clientForm" novalidate>
+            <fieldset>
+                <fieldset class="border-top">
+                    <legend><span class="text">{{:: 'authz-evaluation-identity-information' | translate}}</span>
+                        <kc-tooltip>{{:: 'authz-evaluation-identity-information.tooltip' | translate}}</kc-tooltip>
+                    </legend>
+                    <div class="form-group">
+                        <label class="col-md-2 control-label" for="client">{{:: 'client' | translate}}</label>
+
+                        <div class="col-sm-2">
+                            <div>
+                                <select class="form-control" id="client"
+                                        ng-model="authzRequest.clientId"
+                                        ng-options="client.id as client.clientId for client in clients track by client.id">
+                                    <option value="">{{:: 'authz-select-client' | translate}}...</option>
+                                </select>
+                            </div>
+                        </div>
+                        <kc-tooltip>{{:: 'authz-evaluation-client.tooltip' | translate}}</kc-tooltip>
+                    </div>
+                    <div class="form-group clearfix">
+                        <label class="col-md-2 control-label" for="users">{{:: 'user' | translate}} <span class="required"
+                                                                                     data-ng-show="!authzRequest.roleIds || authzRequest.roleIds.length == 0">*</span></label>
+
+                        <div class="col-md-6">
+                            <input type="hidden" ui-select2="usersUiSelect" id="users" data-ng-model="selectedUser" data-ng-change="selectUser(selectedUser);" data-placeholder="{{:: 'authz-select-user' | translate}}..."
+                                   data-ng-required="!authzRequest.roleIds || authzRequest.roleIds.length == 0">
+                            </input>
+                        </div>
+
+                        <kc-tooltip>{{:: 'authz-evaluation-user.tooltip' | translate}}</kc-tooltip>
+                    </div>
+
+                    <div class="form-group clearfix">
+                        <label class="col-md-2 control-label" for="reqActions">{{:: 'roles' | translate}} <span class="required"
+                                                                                           data-ng-show="!authzRequest.userId || authzRequest.userId == null">*</span></label>
+
+                        <div class="col-md-6">
+                            <select ui-select2="{ minimumInputLength: 1}"
+                                    data-ng-model="authzRequest.roleIds"
+                                    data-placeholder="{{:: 'authz-any-role' | translate}}..." multiple
+                                    data-ng-required="!authzRequest.userId || authzRequest.userId == null">
+                                <option ng-repeat="role in roles track by role.id" value="{{role.name}}">{{role.name}}
+                                </option>
+                            </select>
+                        </div>
+
+                        <kc-tooltip>{{:: 'authz-evaluation-role.tooltip' | translate}}</kc-tooltip>
+                    </div>
+                </fieldset>
+                <fieldset>
+                    <legend collapsed><span class="text">{{:: 'authz-evaluation-contextual-info' | translate}}</span>
+                        <kc-tooltip>{{:: 'authz-evaluation-contextual-info.tooltip' | translate}}</kc-tooltip>
+                    </legend>
+                    <div class="form-group clearfix block">
+                        <label class="col-md-2 control-label" for="newRedirectUri">{{:: 'authz-evaluation-contextual-attributes' | translate}}</label>
+
+                        <div class="col-sm-6">
+                            <table class="table table-striped table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>{{:: 'key' | translate}}</th>
+                                        <th>{{:: 'value' | translate}}</th>
+                                        <th>{{:: 'actions' | translate}}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr ng-repeat="(key, value) in (authzRequest.context.attributes)">
+                                        <td>{{getContextAttributeName(key)}}</td>
+                                        <td>
+                                            <select class="form-control" id="attribute-{{key}}"
+                                                    data-ng-model="authzRequest.context.attributes[key]"
+                                                    data-ng-show="getContextAttribute(key).values"
+                                                    ng-options="value1.key as value1.name for value1 in getContextAttribute(key).values">
+                                            </select>
+                                            <input ng-model="authzRequest.context.attributes[key]" class="form-control"
+                                                   type="text" name="{{key}}" id="attribute-{{key}}"
+                                                   data-ng-hide="getContextAttribute(key).values"/>
+                                        </td>
+                                        <td class="kc-action-cell">
+                                            <button class="btn btn-default btn-block btn-sm"
+                                                    data-ng-click="removeContextAttribute(key)">{{:: 'delete' | translate}}
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <select class="form-control" id="newContextAttribute.key"
+                                                    data-ng-model="newContextAttribute"
+                                                    ng-change="selectDefaultContextAttribute()"
+                                                    data-ng-hide="!isDefaultContextAttribute()"
+                                                    ng-options="attribute as attribute.name for attribute in defaultContextAttributes track by attribute.key">
+                                            </select>
+                                            <input ng-model="newContextAttribute.key" class="form-control" type="text"
+                                                   id="newAttributeKey" data-ng-hide="isDefaultContextAttribute()"/>
+                                        </td>
+                                        <td>
+                                            <select class="form-control" id="newContextAttribute.value"
+                                                    data-ng-model="newContextAttribute.value"
+                                                    data-ng-show="newContextAttribute.values"
+                                                    ng-options="value.key as value.name for value in newContextAttribute.values track by value.key">
+                                            </select>
+                                            <input ng-model="newContextAttribute.value" class="form-control" type="text"
+                                                   id="newAttributeValue" data-ng-show="!newContextAttribute.values"/>
+                                        </td>
+                                        <td class="kc-action-cell">
+                                            <button class="btn btn-default btn-block btn-sm"
+                                                    data-ng-click="addContextAttribute()"
+                                                    data-ng-disabled="!newContextAttribute.key || newContextAttribute.key == ''">
+                                                {{:: 'add' | translate}}
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <kc-tooltip>{{:: 'authz-evaluation-contextual-attributes.tooltip' | translate}}</kc-tooltip>
+                    </div>
+                </fieldset>
+                <fieldset>
+                    <legend><span class="text">{{:: 'authz-permissions' | translate}}</span>
+                        <kc-tooltip>{{:: 'authz-evaluation-permissions.tooltip' | translate}}</kc-tooltip>
+                    </legend>
+                    <div class="form-group">
+                        <label class="col-md-2 control-label" for="applyResourceType">{{:: 'authz-permission-resource-apply-to-resource-type' | translate}}</label>
+
+                        <div class="col-md-6">
+                            <input ng-model="applyResourceType" id="applyResourceType" onoffswitch
+                                   data-ng-click="setApplyToResourceType()"/>
+                        </div>
+                        <kc-tooltip>{{:: 'authz-permission-resource-apply-to-resource-type.tooltip' | translate}}
+                        </kc-tooltip>
+                    </div>
+                    <div class="form-group clearfix" data-ng-hide="applyResourceType">
+                        <label class="col-md-2 control-label" for="reqActions">{{:: 'authz-resources' | translate}} <span class="required">*</span></label>
+
+                        <div class="col-md-6">
+                            <input type="hidden" ui-select2="resourcesUiSelect" id="reqActions3" data-ng-change="resolveScopes()" data-ng-model="newResource" data-placeholder="{{:: 'authz-select-resource' | translate}}..." data-ng-required="!applyResourceType && authzRequest.resources.length == 0 && !authzRequest.entitlements" />
+                        </div>
+                        <kc-tooltip>{{:: 'authz-permission-resource-resource.tooltip' | translate}}</kc-tooltip>
+                    </div>
+                    <div class="form-group clearfix" data-ng-show="applyResourceType">
+                        <label class="col-md-2 control-label" for="newResource.type">{{:: 'authz-resource-type' | translate}} <span
+                                class="required">*</span></label>
+
+                        <div class="col-md-6">
+                            <input class="form-control" type="text" id="newResource.type" name="newResource.type"
+                                   data-ng-model="authzRequest.resources[0].type"
+                                   data-ng-required="applyResourceType && !authzRequest.resources[0].type && !authzRequest.entitlements">
+                        </div>
+
+                        <kc-tooltip>{{:: 'authz-permission-resource-type.tooltip' | translate}}</kc-tooltip>
+                    </div>
+                    <div class="form-group clearfix" data-ng-show="applyResourceType || newResource._id == null">
+                        <label class="col-md-2 control-label" for="newResource.scopes">{{:: 'authz-scopes' | translate}}</label>
+
+                        <div class="col-md-6">
+                            <input type="hidden" ui-select2="scopesUiSelect" id="reqActions" data-ng-model="newScopes" data-placeholder="{{:: 'authz-any-scope' | translate}}..." multiple />
+                        </div>
+
+                        <kc-tooltip>{{:: 'authz-permission-scope-scope.tooltip' | translate}}</kc-tooltip>
+                    </div>
+                    <div class="form-group clearfix" data-ng-show="newResource._id != null">
+                        <label class="col-md-2 control-label" for="newResource.scopes">{{:: 'authz-scopes' | translate}}</label>
+
+                        <div class="col-md-6">
+                            <select ui-select2
+                                    id="newResource.scopes"
+                                    data-ng-model="newScopes"
+                                    data-placeholder="{{:: 'authz-any-scope' | translate}}..." multiple>
+                                <option ng-repeat="scope in scopes" value="{{scope.name}}">{{scope.name}}</option>
+                            </select>
+                        </div>
+
+                        <kc-tooltip>{{:: 'authz-permission-scope-scope.tooltip' | translate}}</kc-tooltip>
+                    </div>
+                    <div class="form-group clearfix block" data-ng-show="!applyResourceType">
+                        <label class="col-md-2 control-label" for="newRedirectUri"></label>
+
+                        <div class="col-sm-6">
+                            <button data-ng-click="addResource()" class="btn btn-primary">Add</button>
+                            <table class="table table-striped table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>{{:: 'authz-resource' | translate}}</th>
+                                        <th>{{:: 'authz-scopes' | translate}}</th>
+                                        <th>{{:: 'actions' | translate}}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr data-ng-show="!authzRequest.resources || authzRequest.resources.length == 0">
+                                        <td colspan="3">
+                                            {{:: 'authz-no-resources' | translate}}
+                                        </td>
+                                    </tr>
+                                    <tr ng-repeat="resource in authzRequest.resources">
+                                        <td>{{resource.name ? resource.name : 'authz-evaluation-any-resource-with-scopes' | translate}}</td>
+                                        <td>
+                                            <span data-ng-show="!resource.scopes.length">{{:: 'authz-any-scope' | translate}}.</span>
+                                            <span data-ng-show="resource.scopes.length > 0">
+                                                <span ng-repeat="scope in resource.scopes">
+                                                    {{scope.name ? scope.name : scope}} {{$last ? '' : ', '}}
+                                                </span>
+                                            </span>
+                                        </td>
+                                        <td class="kc-action-cell">
+                                            <button class="btn btn-default btn-block btn-sm"
+                                                    data-ng-click="removeResource($index)">{{:: 'delete' | translate}}
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </fieldset>
+
+                <div class="form-group">
+                    <div class="col-md-10 col-md-offset-2">
+                        <button kc-save data-ng-click="evaluate()">{{:: 'authz-evaluation-evaluate' | translate}}</button>
+                        <button kc-reset data-ng-disabled="!changed">{{:: 'reset' | translate}}</button>
+                    </div>
+                </div>
+            </fieldset>
+        </form>
+    </div>
+    <div data-ng-include="resultUrl" data-ng-show="showResult && !showRpt"/>
+</div>
+
+<kc-menu></kc-menu>

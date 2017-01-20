@@ -25,11 +25,11 @@ import java.io.Serializable;
 public class LoginFailureKey implements Serializable {
 
     private final String realm;
-    private final String username;
+    private final String userId;
 
-    public LoginFailureKey(String realm, String username) {
+    public LoginFailureKey(String realm, String userId) {
         this.realm = realm;
-        this.username = username;
+        this.userId = userId;
     }
 
     @Override
@@ -40,7 +40,7 @@ public class LoginFailureKey implements Serializable {
         LoginFailureKey key = (LoginFailureKey) o;
 
         if (realm != null ? !realm.equals(key.realm) : key.realm != null) return false;
-        if (username != null ? !username.equals(key.username) : key.username != null) return false;
+        if (userId != null ? !userId.equals(key.userId) : key.userId != null) return false;
 
         return true;
     }
@@ -48,7 +48,7 @@ public class LoginFailureKey implements Serializable {
     @Override
     public int hashCode() {
         int result = realm != null ? realm.hashCode() : 0;
-        result = 31 * result + (username != null ? username.hashCode() : 0);
+        result = 31 * result + (userId != null ? userId.hashCode() : 0);
         return result;
     }
 

@@ -16,29 +16,30 @@
  */
 package org.keycloak.services.resources.admin;
 
-import java.io.IOException;
-import java.util.LinkedList;
-import java.util.List;
-
+import org.jboss.logging.Logger;
 import org.keycloak.common.ClientConnection;
+import org.keycloak.common.util.Time;
 import org.keycloak.events.EventListenerProvider;
 import org.keycloak.events.EventStoreProvider;
 import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.events.admin.AuthDetails;
 import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.util.JsonSerialization;
-import org.keycloak.common.util.Time;
 
 import javax.ws.rs.core.UriInfo;
+import java.io.IOException;
+import java.util.LinkedList;
+import java.util.List;
 
 public class AdminEventBuilder {
 
-    private static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    protected static final Logger logger = Logger.getLogger(AdminEventBuilder.class);
 
     private EventStoreProvider store;
     private List<EventListenerProvider> listeners;
@@ -54,7 +55,7 @@ public class AdminEventBuilder {
             if (store != null) {
                 this.store = store;
             } else {
-                logger.noEventStoreProvider();
+                ServicesLogger.LOGGER.noEventStoreProvider();
             }
         }
 
@@ -65,7 +66,7 @@ public class AdminEventBuilder {
                 if (listener != null) {
                     listeners.add(listener);
                 } else {
-                    logger.providerNotFound(id);
+                    ServicesLogger.LOGGER.providerNotFound(id);
                 }
             }
         }
@@ -86,8 +87,13 @@ public class AdminEventBuilder {
         return this;
     }
 
-    public AdminEventBuilder operation(OperationType e) {
-        adminEvent.setOperationType(e);
+    public AdminEventBuilder operation(OperationType operationType) {
+        adminEvent.setOperationType(operationType);
+        return this;
+    }
+
+    public AdminEventBuilder resource(ResourceType resourceType){
+        adminEvent.setResourceType(resourceType);
         return this;
     }
 
@@ -178,12 +184,6 @@ public class AdminEventBuilder {
         return path.substring(path.indexOf(realmRelative) + realmRelative.length());
     }
 
-    public void error(String error) {
-        adminEvent.setOperationType(OperationType.valueOf(adminEvent.getOperationType().name() + "_ERROR"));
-        adminEvent.setError(error);
-        send();
-    }
-
     public AdminEventBuilder representation(Object value) {
         if (value == null || value.equals("")) {
             return this;
@@ -215,7 +215,7 @@ public class AdminEventBuilder {
             try {
                 store.onEvent(adminEvent, includeRepresentation);
             } catch (Throwable t) {
-                logger.failedToSaveEvent(t);
+                ServicesLogger.LOGGER.failedToSaveEvent(t);
             }
         }
 
@@ -224,7 +224,7 @@ public class AdminEventBuilder {
                 try {
                     l.onEvent(adminEvent, includeRepresentation);
                 } catch (Throwable t) {
-                    logger.failedToSendType(t, l);
+                    ServicesLogger.LOGGER.failedToSendType(t, l);
                 }
             }
         }

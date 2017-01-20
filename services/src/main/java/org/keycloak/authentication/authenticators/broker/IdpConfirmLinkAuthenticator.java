@@ -17,9 +17,6 @@
 
 package org.keycloak.authentication.authenticators.broker;
 
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
-
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.AuthenticationFlowException;
@@ -34,12 +31,13 @@ import org.keycloak.models.UserModel;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.messages.Messages;
 
+import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.Response;
+
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class IdpConfirmLinkAuthenticator extends AbstractIdpAuthenticator {
-
-    protected static ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
 
     @Override
     protected void authenticateImpl(AuthenticationFlowContext context, SerializedBrokeredIdentityContext serializedCtx, BrokeredIdentityContext brokerContext) {
@@ -47,7 +45,7 @@ public class IdpConfirmLinkAuthenticator extends AbstractIdpAuthenticator {
 
         String existingUserInfo = clientSession.getNote(EXISTING_USER_INFO);
         if (existingUserInfo == null) {
-            logger.noDuplicationDetected();
+            ServicesLogger.LOGGER.noDuplicationDetected();
             context.attempted();
             return;
         }

@@ -20,12 +20,16 @@ package org.keycloak.protocol.oidc.installation;
 import org.keycloak.Config;
 import org.keycloak.authentication.ClientAuthenticator;
 import org.keycloak.authentication.ClientAuthenticatorFactory;
+import org.keycloak.authorization.admin.AuthorizationService;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
 import org.keycloak.protocol.ClientInstallationProvider;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.representations.adapters.config.PolicyEnforcerConfig;
 import org.keycloak.services.managers.ClientManager;
 import org.keycloak.util.JsonSerialization;
 
@@ -34,6 +38,7 @@ import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.net.URI;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -46,7 +51,6 @@ public class KeycloakOIDCClientInstallation implements ClientInstallationProvide
         ClientManager.InstallationAdapterConfig rep = new ClientManager.InstallationAdapterConfig();
         rep.setAuthServerUrl(baseUri.toString());
         rep.setRealm(realm.getName());
-        rep.setRealmKey(realm.getPublicKeyPem());
         rep.setSslRequired(realm.getSslRequired().name().toLowerCase());
 
         if (client.isPublicClient() && !client.isBearerOnly()) rep.setPublicClient(true);
@@ -59,6 +63,9 @@ public class KeycloakOIDCClientInstallation implements ClientInstallationProvide
             Map<String, Object> adapterConfig = getClientCredentialsAdapterConfig(session, client);
             rep.setCredentials(adapterConfig);
         }
+
+        configureAuthorizationSettings(session, client, rep);
+
         String json = null;
         try {
             json = JsonSerialization.writeValueAsPrettyString(rep);
@@ -80,7 +87,7 @@ public class KeycloakOIDCClientInstallation implements ClientInstallationProvide
             return false;
         }
 
-        if (client.isBearerOnly() && client.getNodeReRegistrationTimeout() <= 0) {
+        if (client.isBearerOnly() && !client.isServiceAccountsEnabled() && client.getNodeReRegistrationTimeout() <= 0) {
             return false;
         }
 
@@ -143,4 +150,23 @@ public class KeycloakOIDCClientInstallation implements ClientInstallationProvide
         return MediaType.APPLICATION_JSON;
     }
 
+    private void configureAuthorizationSettings(KeycloakSession session, ClientModel client, ClientManager.InstallationAdapterConfig rep) {
+        if (new AuthorizationService(session, client, null).isEnabled()) {
+            PolicyEnforcerConfig enforcerConfig = new PolicyEnforcerConfig();
+
+            enforcerConfig.setEnforcementMode(null);
+            enforcerConfig.setCreateResources(null);
+            enforcerConfig.setOnlineIntrospection(null);
+
+            rep.setEnforcerConfig(enforcerConfig);
+
+            Set<RoleModel> clientRoles = client.getRoles();
+
+            if (clientRoles.size() == 1) {
+                if (clientRoles.iterator().next().getName().equals(Constants.AUTHZ_UMA_PROTECTION)) {
+                    rep.setUseResourceRoleMappings(null);
+                }
+            }
+        }
+    }
 }

@@ -16,6 +16,7 @@
  */
 package org.keycloak.saml.common.util;
 
+import org.keycloak.saml.common.ErrorCodes;
 import org.keycloak.saml.common.PicketLinkLogger;
 import org.keycloak.saml.common.PicketLinkLoggerFactory;
 import org.keycloak.saml.common.constants.GeneralConstants;
@@ -23,7 +24,8 @@ import org.keycloak.saml.common.constants.JBossSAMLConstants;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.common.exceptions.ConfigurationException;
 import org.keycloak.saml.common.exceptions.ParsingException;
-import org.keycloak.saml.common.ErrorCodes;
+import org.keycloak.saml.common.exceptions.ProcessingException;
+
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
@@ -47,6 +49,7 @@ import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
 import java.io.InputStream;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Utility for the stax based parser
@@ -122,7 +125,6 @@ public class StaxParserUtil {
      */
     public static String getAttributeValue(Attribute attribute) {
         String str = trim(attribute.getValue());
-        str = StringUtil.getSystemPropertyAsString(str);
         return str;
     }
 
@@ -224,7 +226,6 @@ public class StaxParserUtil {
         String str = null;
         try {
             str = xmlEventReader.getElementText().trim();
-            str = StringUtil.getSystemPropertyAsString(str);
         } catch (XMLStreamException e) {
             throw logger.parserException(e);
         }
@@ -239,20 +240,43 @@ public class StaxParserUtil {
      * @return
      */
     public static XMLEventReader getXMLEventReader(InputStream is) {
-        XMLInputFactory xmlInputFactory = null;
+        XMLInputFactory xmlInputFactory;
         XMLEventReader xmlEventReader = null;
         try {
-            xmlInputFactory = getXMLInputFactory();
-            xmlInputFactory.setProperty(XMLInputFactory.IS_REPLACING_ENTITY_REFERENCES, Boolean.TRUE);
-            xmlInputFactory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, Boolean.FALSE);
-            xmlInputFactory.setProperty(XMLInputFactory.IS_NAMESPACE_AWARE, Boolean.TRUE);
-            xmlInputFactory.setProperty(XMLInputFactory.IS_COALESCING, Boolean.TRUE);
-
+            xmlInputFactory = XML_INPUT_FACTORY.get();
             xmlEventReader = xmlInputFactory.createXMLEventReader(is);
         } catch (Exception ex) {
             throw new RuntimeException(ex);
         }
         return xmlEventReader;
+    }
+
+    private static AtomicBoolean XML_EVENT_READER_ON_SOURCE_SUPPORTED = new AtomicBoolean(true);
+
+    /**
+     * Get the XML event reader
+     *
+     * @param source
+     *
+     * @return
+     */
+    public static XMLEventReader getXMLEventReader(Source source) {
+        XMLInputFactory xmlInputFactory = XML_INPUT_FACTORY.get();
+        try {
+            if (XML_EVENT_READER_ON_SOURCE_SUPPORTED.get()) {
+                try {
+                    // The following method is optional per specification
+                    return xmlInputFactory.createXMLEventReader(source);
+                } catch (UnsupportedOperationException ex) {
+                    XML_EVENT_READER_ON_SOURCE_SUPPORTED.set(false);
+                    return getXMLEventReader(source);
+                }
+            } else {
+                return getXMLEventReader(DocumentUtil.getSourceAsStream(source));
+            }
+        } catch (ConfigurationException | ProcessingException | XMLStreamException ex) {
+            throw new RuntimeException(ex);
+        }
     }
 
     /**
@@ -518,6 +542,13 @@ public class StaxParserUtil {
             throw new RuntimeException(logger.parserExpectedEndTag("</" + tag + ">.  Found </" + elementTag + ">"));
     }
 
+    private static final ThreadLocal<XMLInputFactory> XML_INPUT_FACTORY = new ThreadLocal<XMLInputFactory>() {
+        @Override
+        protected XMLInputFactory initialValue() {
+            return getXMLInputFactory();
+        }
+    };
+
     private static XMLInputFactory getXMLInputFactory() {
         boolean tccl_jaxp = SystemPropertiesUtil.getSystemProperty(GeneralConstants.TCCL_JAXP, "false")
                 .equalsIgnoreCase("true");
@@ -526,7 +557,14 @@ public class StaxParserUtil {
             if (tccl_jaxp) {
                 SecurityActions.setTCCL(StaxParserUtil.class.getClassLoader());
             }
-            return XMLInputFactory.newInstance();
+            XMLInputFactory xmlInputFactory = XMLInputFactory.newInstance();
+
+            xmlInputFactory.setProperty(XMLInputFactory.IS_REPLACING_ENTITY_REFERENCES, Boolean.TRUE);
+            xmlInputFactory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, Boolean.FALSE);
+            xmlInputFactory.setProperty(XMLInputFactory.IS_NAMESPACE_AWARE, Boolean.TRUE);
+            xmlInputFactory.setProperty(XMLInputFactory.IS_COALESCING, Boolean.TRUE);
+
+            return xmlInputFactory;
         } finally {
             if (tccl_jaxp) {
                 SecurityActions.setTCCL(prevTCCL);

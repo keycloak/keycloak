@@ -1,15 +1,5 @@
 package org.keycloak.testsuite.performance.httpclient;
 
-import java.io.File;
-import java.io.IOException;
-import static java.net.HttpURLConnection.HTTP_OK;
-import java.net.SocketException;
-import java.net.SocketTimeoutException;
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import org.apache.http.Header;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
@@ -26,19 +16,32 @@ import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Before;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
-import org.keycloak.testsuite.performance.page.AppProfileJEE;
-import static org.keycloak.testsuite.performance.LoginLogoutParameters.AVERAGE_LOGIN_TIME_LIMIT;
-import static org.keycloak.testsuite.performance.LoginLogoutParameters.AVERAGE_LOGOUT_TIME_LIMIT;
-import static org.keycloak.testsuite.performance.LoginLogoutParameters.LOGIN_REQUEST_TIME;
-import static org.keycloak.testsuite.performance.LoginLogoutParameters.LOGOUT_REQUEST_TIME;
-import static org.keycloak.testsuite.performance.LoginLogoutParameters.ACCESS_REQUEST_TIME;
-import static org.keycloak.testsuite.performance.LoginLogoutParameters.LOGIN_VERIFY_REQUEST_TIME;
-import static org.keycloak.testsuite.performance.LoginLogoutParameters.LOGOUT_VERIFY_REQUEST_TIME;
-import org.keycloak.testsuite.performance.PerformanceTest;
+import org.keycloak.testsuite.performance.LoginLogoutTestParameters;
 import org.keycloak.testsuite.performance.OperationTimeoutException;
+import org.keycloak.testsuite.performance.PerformanceMeasurement;
+import org.keycloak.testsuite.performance.PerformanceTest;
+import org.keycloak.testsuite.performance.page.AppProfileJEE;
+
+import java.io.File;
+import java.io.IOException;
+import java.net.SocketException;
+import java.net.SocketTimeoutException;
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import static java.net.HttpURLConnection.HTTP_OK;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.keycloak.testsuite.performance.LoginLogoutTestParameters.ACCESS_REQUEST_TIME;
+import static org.keycloak.testsuite.performance.LoginLogoutTestParameters.LOGIN_REQUEST_TIME;
+import static org.keycloak.testsuite.performance.LoginLogoutTestParameters.LOGIN_VERIFY_REQUEST_TIME;
+import static org.keycloak.testsuite.performance.LoginLogoutTestParameters.LOGOUT_REQUEST_TIME;
+import static org.keycloak.testsuite.performance.LoginLogoutTestParameters.LOGOUT_VERIFY_REQUEST_TIME;
+import static org.keycloak.testsuite.performance.LoginLogoutTestParameters.PASSWORD_HASH_ITERATIONS;
 import static org.keycloak.testsuite.util.IOUtil.loadRealm;
 
 /**
@@ -50,7 +53,7 @@ public class HttpClientLoginLogoutPerfTest extends HttpClientPerformanceTest {
 
     private static final Logger LOG = Logger.getLogger(HttpClientLoginLogoutPerfTest.class);
 
-    private static final String EXAMPLES = "Examples";
+    private static final String TEST_REALM = "Test";
 
     private String securedUrl;
     private String logoutUrl;
@@ -69,18 +72,20 @@ public class HttpClientLoginLogoutPerfTest extends HttpClientPerformanceTest {
 
     @Deployment(name = AppProfileJEE.DEPLOYMENT_NAME)
     private static WebArchive appProfileJEE() throws IOException {
-        return warDeployment("keycloak-quickstart-app-profile-jee-0.5-SNAPSHOT");
+        return exampleDeployment("keycloak-test-app-profile-jee");
     }
 
     @Override
     public void setDefaultPageUriParameters() {
         super.setDefaultPageUriParameters();
-        testRealmPage.setAuthRealm(EXAMPLES);
+        testRealmPage.setAuthRealm(TEST_REALM);
     }
 
     @Override
     public void addAdapterTestRealms(List<RealmRepresentation> testRealms) {
-        testRealms.add(loadRealm("/examples-realm.json"));
+        RealmRepresentation examplesRealm = loadRealm("/test-realm.json");
+        examplesRealm.setPasswordPolicy("hashIterations(" + PASSWORD_HASH_ITERATIONS + ")");
+        testRealms.add(examplesRealm);
     }
 
     @Before
@@ -98,17 +103,15 @@ public class HttpClientLoginLogoutPerfTest extends HttpClientPerformanceTest {
     }
 
     @Override
-    protected boolean isLatestResultsWithinLimits() {
-        return isLatestTimeoutsWithinLimits()
-                && getLatestResults().get(LOGIN_REQUEST_TIME).getAverage() < AVERAGE_LOGIN_TIME_LIMIT
-                && getLatestResults().get(LOGOUT_REQUEST_TIME).getAverage() < AVERAGE_LOGOUT_TIME_LIMIT;
+    protected boolean isMeasurementWithinLimits(PerformanceMeasurement measurement) {
+        return LoginLogoutTestParameters.isMeasurementWithinLimits(measurement);
     }
 
     public class Runnable extends HttpClientPerformanceTest.Runnable {
 
         @Override
         public void performanceScenario() throws IOException, OperationTimeoutException {
-            LOG.debug(String.format("Starting login-logout scenario #%s", getRepeatCounter()));
+            LOG.trace(String.format("Starting login-logout scenario #%s", getLoopCounter()));
             context.getCookieStore().clear();
 
             // ACCESS
@@ -118,17 +121,17 @@ public class HttpClientLoginLogoutPerfTest extends HttpClientPerformanceTest {
             LOG.trace(getSecuredPageRequest);
             timer.reset();
             try (CloseableHttpResponse r = client.execute(getSecuredPageRequest, context)) {
-                assertEquals(HTTP_OK, r.getStatusLine().getStatusCode());
+                assertEquals("ACCESS_REQUEST OK", HTTP_OK, r.getStatusLine().getStatusCode());
                 logRedirects();
-                assertEquals(1, context.getRedirectLocations().size());
-                assertTrue(getLastRedirect().toASCIIString().startsWith(loginPageUrl));
+                assertEquals("ACCESS_REQUEST has 1 redirect", 1, context.getRedirectLocations().size());
+                assertTrue("ACCESS_REQUEST redirects to login page", getLastRedirect().toASCIIString().startsWith(loginPageUrl));
                 pageContent = EntityUtils.toString(r.getEntity());
             } catch (SocketException ex) {
                 throw new OperationTimeoutException(ACCESS_REQUEST_TIME, ex);
             } catch (SocketTimeoutException ex) {
                 throw new OperationTimeoutException(ACCESS_REQUEST_TIME, ex.bytesTransferred, ex);
             }
-            metrics.addValue(ACCESS_REQUEST_TIME, timer.getElapsedTime());
+            statistics.addValue(ACCESS_REQUEST_TIME, timer.getElapsedTime());
 
             // LOGIN
             final HttpPost loginRequest = new HttpPost(getLoginUrlFromPage(pageContent));
@@ -141,31 +144,31 @@ public class HttpClientLoginLogoutPerfTest extends HttpClientPerformanceTest {
             LOG.trace(loginRequest);
             timer.reset();
             try (CloseableHttpResponse r = client.execute(loginRequest, context)) {
-                assertEquals(HTTP_OK, r.getStatusLine().getStatusCode());
+                assertEquals("LOGIN_REQUEST OK", HTTP_OK, r.getStatusLine().getStatusCode());
                 logRedirects();
-                assertEquals(2, context.getRedirectLocations().size());
-                assertTrue(getLastRedirect().toASCIIString().equals(securedUrl));
+                assertEquals("LOGIN_REQUEST has 2 redirects", 2, context.getRedirectLocations().size());
+                assertTrue("LOGIN_REQUEST redirects to secured page", getLastRedirect().toASCIIString().equals(securedUrl));
             } catch (SocketException ex) {
                 throw new OperationTimeoutException(LOGIN_REQUEST_TIME, ex);
             } catch (SocketTimeoutException ex) {
                 throw new OperationTimeoutException(LOGIN_REQUEST_TIME, ex.bytesTransferred, ex);
             }
-            metrics.addValue(LOGIN_REQUEST_TIME, timer.getElapsedTime());
+            statistics.addValue(LOGIN_REQUEST_TIME, timer.getElapsedTime());
 
             // VERIFY LOGIN
             LOG.trace("Verifying login");
             LOG.trace(getSecuredPageRequest);
             timer.reset();
             try (CloseableHttpResponse r = client.execute(getSecuredPageRequest, context)) {
-                assertEquals(HTTP_OK, r.getStatusLine().getStatusCode());
+                assertEquals("LOGIN_VERIFY_REQUEST OK", HTTP_OK, r.getStatusLine().getStatusCode());
                 logRedirects();
-                assertEquals(0, context.getRedirectLocations().size());
+                assertEquals("LOGIN_VERIFY_REQUEST has 0 redirects", 0, context.getRedirectLocations().size());
             } catch (SocketException ex) {
                 throw new OperationTimeoutException(LOGIN_VERIFY_REQUEST_TIME, ex);
             } catch (SocketTimeoutException ex) {
                 throw new OperationTimeoutException(LOGIN_VERIFY_REQUEST_TIME, ex.bytesTransferred, ex);
             }
-            metrics.addValue(LOGIN_VERIFY_REQUEST_TIME, timer.getElapsedTime());
+            statistics.addValue(LOGIN_VERIFY_REQUEST_TIME, timer.getElapsedTime());
 
             // LOGOUT
             final HttpGet logoutRequest = new HttpGet(logoutUrl);
@@ -173,31 +176,31 @@ public class HttpClientLoginLogoutPerfTest extends HttpClientPerformanceTest {
             LOG.trace(logoutRequest);
             timer.reset();
             try (CloseableHttpResponse r = client.execute(logoutRequest, context)) {
-                assertEquals(HTTP_OK, r.getStatusLine().getStatusCode());
+                assertEquals("LOGOUT_REQUEST OK", HTTP_OK, r.getStatusLine().getStatusCode());
                 logRedirects();
-                assertEquals(0, context.getRedirectLocations().size());
+                assertEquals("LOGOUT_REQUEST has 0 redirects", 0, context.getRedirectLocations().size());
             } catch (SocketException ex) {
                 throw new OperationTimeoutException(LOGOUT_REQUEST_TIME, ex);
             } catch (SocketTimeoutException ex) {
                 throw new OperationTimeoutException(LOGOUT_REQUEST_TIME, ex.bytesTransferred, ex);
             }
-            metrics.addValue(LOGOUT_REQUEST_TIME, timer.getElapsedTime());
+            statistics.addValue(LOGOUT_REQUEST_TIME, timer.getElapsedTime());
 
             // VERIFY LOGOUT
             LOG.trace("Verifying logout");
             LOG.trace(getSecuredPageRequest);
             timer.reset();
             try (CloseableHttpResponse r = client.execute(getSecuredPageRequest, context)) {
-                assertEquals(HTTP_OK, r.getStatusLine().getStatusCode());
+                assertEquals("LOGOUT_VERIFY_REQUEST OK", HTTP_OK, r.getStatusLine().getStatusCode());
                 logRedirects();
-                assertEquals(1, context.getRedirectLocations().size());
-                assertTrue(getLastRedirect().toASCIIString().startsWith(loginPageUrl));
+                assertEquals("LOGOUT_VERIFY_REQUEST has 1 redirect", 1, context.getRedirectLocations().size());
+                assertTrue("LOGOUT_VERIFY_REQUEST redirects to login page", getLastRedirect().toASCIIString().startsWith(loginPageUrl));
             } catch (SocketException ex) {
                 throw new OperationTimeoutException(LOGOUT_VERIFY_REQUEST_TIME, ex);
             } catch (SocketTimeoutException ex) {
                 throw new OperationTimeoutException(LOGOUT_VERIFY_REQUEST_TIME, ex.bytesTransferred, ex);
             }
-            metrics.addValue(LOGOUT_VERIFY_REQUEST_TIME, timer.getElapsedTime());
+            statistics.addValue(LOGOUT_VERIFY_REQUEST_TIME, timer.getElapsedTime());
 
             LOG.trace("Logged out");
 

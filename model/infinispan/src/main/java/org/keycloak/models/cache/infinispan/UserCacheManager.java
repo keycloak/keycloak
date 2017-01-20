@@ -18,41 +18,94 @@
 package org.keycloak.models.cache.infinispan;
 
 import org.infinispan.Cache;
-import org.infinispan.notifications.Listener;
 import org.jboss.logging.Logger;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.cache.infinispan.entities.CachedUser;
+import org.keycloak.models.cache.infinispan.events.InvalidationEvent;
 import org.keycloak.models.cache.infinispan.entities.Revisioned;
+import org.keycloak.models.cache.infinispan.events.UserCacheInvalidationEvent;
 import org.keycloak.models.cache.infinispan.stream.InRealmPredicate;
 
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Predicate;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-@Listener
 public class UserCacheManager extends CacheManager {
 
-    protected static final Logger logger = Logger.getLogger(UserCacheManager.class);
+    private static final Logger logger = Logger.getLogger(UserCacheManager.class);
 
     protected volatile boolean enabled = true;
+
     public UserCacheManager(Cache<String, Revisioned> cache, Cache<String, Long> revisions) {
         super(cache, revisions);
     }
 
     @Override
-    public void clear() {
-        cache.clear();
+    protected Logger getLogger() {
+        return logger;
     }
 
     @Override
-    protected Predicate<Map.Entry<String, Revisioned>> getInvalidationPredicate(Object object) {
-        return null;
+    public void clear() {
+        cache.clear();
+        revisions.clear();
+    }
+
+
+    public void userUpdatedInvalidations(String userId, String username, String email, String realmId, Set<String> invalidations) {
+        invalidations.add(userId);
+        if (email != null) invalidations.add(UserCacheSession.getUserByEmailCacheKey(realmId, email));
+        invalidations.add(UserCacheSession.getUserByUsernameCacheKey(realmId, username));
+    }
+
+    // Fully invalidate user including consents and federatedIdentity links.
+    public void fullUserInvalidation(String userId, String username, String email, String realmId, boolean identityFederationEnabled, Map<String, String> federatedIdentities, Set<String> invalidations) {
+        userUpdatedInvalidations(userId, username, email, realmId, invalidations);
+
+        if (identityFederationEnabled) {
+            // Invalidate all keys for lookup this user by any identityProvider link
+            for (Map.Entry<String, String> socialLink : federatedIdentities.entrySet()) {
+                String fedIdentityCacheKey = UserCacheSession.getUserByFederatedIdentityCacheKey(realmId, socialLink.getKey(), socialLink.getValue());
+                invalidations.add(fedIdentityCacheKey);
+            }
+
+            // Invalidate federationLinks of user
+            invalidations.add(UserCacheSession.getFederatedIdentityLinksCacheKey(userId));
+        }
+
+        // Consents
+        invalidations.add(UserCacheSession.getConsentCacheKey(userId));
+    }
+
+    public void federatedIdentityLinkUpdatedInvalidation(String userId, Set<String> invalidations) {
+        invalidations.add(UserCacheSession.getFederatedIdentityLinksCacheKey(userId));
+    }
+
+    public void federatedIdentityLinkRemovedInvalidation(String userId, String realmId, String identityProviderId, String socialUserId, Set<String> invalidations) {
+        invalidations.add(UserCacheSession.getFederatedIdentityLinksCacheKey(userId));
+        if (identityProviderId != null) {
+            invalidations.add(UserCacheSession.getUserByFederatedIdentityCacheKey(realmId, identityProviderId, socialUserId));
+        }
+    }
+
+    public void consentInvalidation(String userId, Set<String> invalidations) {
+        invalidations.add(UserCacheSession.getConsentCacheKey(userId));
+    }
+
+
+    @Override
+    protected void addInvalidationsFromEvent(InvalidationEvent event, Set<String> invalidations) {
+        if (event instanceof UserCacheInvalidationEvent) {
+            ((UserCacheInvalidationEvent) event).addInvalidations(this, invalidations);
+        }
     }
 
     public void invalidateRealmUsers(String realm, Set<String> invalidations) {
-        addInvalidations(InRealmPredicate.create().realm(realm), invalidations);
+        InRealmPredicate inRealmPredicate = getInRealmPredicate(realm);
+        addInvalidations(inRealmPredicate, invalidations);
+    }
+
+    private InRealmPredicate getInRealmPredicate(String realmId) {
+        return InRealmPredicate.create().realm(realmId);
     }
 }

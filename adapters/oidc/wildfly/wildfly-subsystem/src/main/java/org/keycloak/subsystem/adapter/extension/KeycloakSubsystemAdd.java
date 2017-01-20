@@ -21,10 +21,9 @@ import org.jboss.as.controller.AbstractBoottimeAddStepHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.server.AbstractDeploymentChainStep;
 import org.jboss.as.server.DeploymentProcessorTarget;
+import org.jboss.as.server.deployment.DeploymentUnitProcessor;
 import org.jboss.as.server.deployment.Phase;
 import org.jboss.dmr.ModelNode;
-
-import org.jboss.as.server.deployment.DeploymentUnitProcessor;
 
 /**
  * The Keycloak subsystem add update handler.

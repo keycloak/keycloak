@@ -22,16 +22,24 @@ import org.jboss.resteasy.plugins.providers.multipart.InputPart;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 import org.jboss.resteasy.spi.NotAcceptableException;
 import org.jboss.resteasy.spi.NotFoundException;
+import org.keycloak.common.util.PemUtils;
 import org.keycloak.common.util.StreamUtil;
 import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
+import org.keycloak.jose.jwk.JSONWebKeySet;
+import org.keycloak.jose.jwk.JWK;
+import org.keycloak.jose.jwk.JWKParser;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.KeyManager;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.KeyStoreConfig;
 import org.keycloak.representations.idm.CertificateRepresentation;
 import org.keycloak.services.ErrorResponseException;
-import org.keycloak.common.util.PemUtils;
+import org.keycloak.services.util.CertificateInfoHelper;
+import org.keycloak.util.JWKSUtils;
+import org.keycloak.util.JsonSerialization;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -42,12 +50,12 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
-
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.KeyStore;
 import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.List;
@@ -59,8 +67,9 @@ import java.util.Map;
  */
 public class ClientAttributeCertificateResource {
 
-    public static final String PRIVATE_KEY = "private.key";
-    public static final String X509CERTIFICATE = "certificate";
+    public static final String CERTIFICATE_PEM = "Certificate PEM";
+    public static final String PUBLIC_KEY_PEM = "Public Key PEM";
+    public static final String JSON_WEB_KEY_SET = "JSON Web Key Set";
 
     protected RealmModel realm;
     private RealmAuth auth;
@@ -68,8 +77,6 @@ public class ClientAttributeCertificateResource {
     protected KeycloakSession session;
     protected AdminEventBuilder adminEvent;
     protected String attributePrefix;
-    protected String privateAttribute;
-    protected String certificateAttribute;
 
     public ClientAttributeCertificateResource(RealmModel realm, RealmAuth auth, ClientModel client, KeycloakSession session, String attributePrefix, AdminEventBuilder adminEvent) {
         this.realm = realm;
@@ -77,9 +84,7 @@ public class ClientAttributeCertificateResource {
         this.client = client;
         this.session = session;
         this.attributePrefix = attributePrefix;
-        this.privateAttribute = attributePrefix + "." + PRIVATE_KEY;
-        this.certificateAttribute = attributePrefix + "." + X509CERTIFICATE;
-        this.adminEvent = adminEvent;
+        this.adminEvent = adminEvent.resource(ResourceType.CLIENT);
     }
 
     /**
@@ -97,9 +102,7 @@ public class ClientAttributeCertificateResource {
             throw new NotFoundException("Could not find client");
         }
 
-        CertificateRepresentation info = new CertificateRepresentation();
-        info.setCertificate(client.getAttribute(certificateAttribute));
-        info.setPrivateKey(client.getAttribute(privateAttribute));
+        CertificateRepresentation info = CertificateInfoHelper.getCertificateFromClient(client, attributePrefix);
         return info;
     }
 
@@ -121,8 +124,7 @@ public class ClientAttributeCertificateResource {
 
         CertificateRepresentation info = KeycloakModelUtils.generateKeyPairCertificate(client.getClientId());
 
-        client.setAttribute(privateAttribute, info.getPrivateKey());
-        client.setAttribute(certificateAttribute, info.getCertificate());
+        CertificateInfoHelper.updateClientModelCertificateInfo(client, info, attributePrefix);
 
         adminEvent.operation(OperationType.ACTION).resourcePath(session.getContext().getUri()).representation(info).success();
 
@@ -148,22 +150,15 @@ public class ClientAttributeCertificateResource {
             throw new NotFoundException("Could not find client");
         }
 
-        CertificateRepresentation info = getCertFromRequest(uriInfo, input);
+        try {
+            CertificateRepresentation info = getCertFromRequest(input);
+            CertificateInfoHelper.updateClientModelCertificateInfo(client, info, attributePrefix);
 
-        if (info.getPrivateKey() != null) {
-            client.setAttribute(privateAttribute, info.getPrivateKey());
-        } else if (info.getCertificate() != null) {
-            client.removeAttribute(privateAttribute);
-        } else {
+            adminEvent.operation(OperationType.ACTION).resourcePath(session.getContext().getUri()).representation(info).success();
+            return info;
+        } catch (IllegalStateException ise) {
             throw new ErrorResponseException("certificate-not-found", "Certificate or key with given alias not found in the keystore", Response.Status.BAD_REQUEST);
         }
-
-        if (info.getCertificate() != null) {
-            client.setAttribute(certificateAttribute, info.getCertificate());
-        }
-
-        adminEvent.operation(OperationType.ACTION).resourcePath(session.getContext().getUri()).representation(info).success();
-        return info;
     }
 
     /**
@@ -171,7 +166,7 @@ public class ClientAttributeCertificateResource {
      *
      * @param uriInfo
      * @param input
-     * @return
+     * @return information extracted from uploaded certificate - not necessarily the new state of certificate on the server
      * @throws IOException
      */
     @POST
@@ -185,31 +180,54 @@ public class ClientAttributeCertificateResource {
             throw new NotFoundException("Could not find client");
         }
 
-        CertificateRepresentation info = getCertFromRequest(uriInfo, input);
+        try {
+            CertificateRepresentation info = getCertFromRequest(input);
+            info.setPrivateKey(null);
+            CertificateInfoHelper.updateClientModelCertificateInfo(client, info, attributePrefix);
 
-        if (info.getCertificate() != null) {
-            client.setAttribute(certificateAttribute, info.getCertificate());
-        } else {
-            throw new ErrorResponseException("certificate-not-found", "Certificate with given alias not found in the keystore", Response.Status.BAD_REQUEST);
+            adminEvent.operation(OperationType.ACTION).resourcePath(session.getContext().getUri()).representation(info).success();
+            return info;
+        } catch (IllegalStateException ise) {
+            throw new ErrorResponseException("certificate-not-found", "Certificate or key with given alias not found in the keystore", Response.Status.BAD_REQUEST);
         }
-
-        adminEvent.operation(OperationType.ACTION).resourcePath(session.getContext().getUri()).representation(info).success();
-        return info;
     }
 
-    private CertificateRepresentation getCertFromRequest(UriInfo uriInfo, MultipartFormDataInput input) throws IOException {
+    private CertificateRepresentation getCertFromRequest(MultipartFormDataInput input) throws IOException {
         auth.requireManage();
         CertificateRepresentation info = new CertificateRepresentation();
         Map<String, List<InputPart>> uploadForm = input.getFormDataMap();
         String keystoreFormat = uploadForm.get("keystoreFormat").get(0).getBodyAsString();
         List<InputPart> inputParts = uploadForm.get("file");
-        if (keystoreFormat.equals("Certificate PEM")) {
+        if (keystoreFormat.equals(CERTIFICATE_PEM)) {
             String pem = StreamUtil.readString(inputParts.get(0).getBody(InputStream.class, null));
+
+            // Validate format
+            KeycloakModelUtils.getCertificate(pem);
+
             info.setCertificate(pem);
             return info;
+        } else if (keystoreFormat.equals(PUBLIC_KEY_PEM)) {
+            String pem = StreamUtil.readString(inputParts.get(0).getBody(InputStream.class, null));
 
+            // Validate format
+            KeycloakModelUtils.getPublicKey(pem);
+
+            info.setPublicKey(pem);
+            return info;
+        } else if (keystoreFormat.equals(JSON_WEB_KEY_SET)) {
+            InputStream stream = inputParts.get(0).getBody(InputStream.class, null);
+            JSONWebKeySet keySet = JsonSerialization.readValue(stream, JSONWebKeySet.class);
+            JWK publicKeyJwk = JWKSUtils.getKeyForUse(keySet, JWK.Use.SIG);
+            if (publicKeyJwk == null) {
+                throw new IllegalStateException("Certificate not found for use sig");
+            } else {
+                PublicKey publicKey = JWKParser.create(publicKeyJwk).toPublicKey();
+                String publicKeyPem = KeycloakModelUtils.getPemFromKey(publicKey);
+                info.setPublicKey(publicKeyPem);
+                info.setKid(publicKeyJwk.getKeyId());
+                return info;
+            }
         }
-
 
 
         String keyAlias = uploadForm.get("keyAlias").get(0).getBodyAsString();
@@ -270,8 +288,10 @@ public class ClientAttributeCertificateResource {
             throw new NotAcceptableException("Only support jks or pkcs12 format.");
         }
 
-        String privatePem = client.getAttribute(privateAttribute);
-        String certPem = client.getAttribute(certificateAttribute);
+        CertificateRepresentation info = CertificateInfoHelper.getCertificateFromClient(client, attributePrefix);
+        String privatePem = info.getPrivateKey();
+        String certPem = info.getCertificate();
+
         if (privatePem == null && certPem == null) {
             throw new NotFoundException("keypair not generated for client");
         }
@@ -320,7 +340,10 @@ public class ClientAttributeCertificateResource {
         CertificateRepresentation info = KeycloakModelUtils.generateKeyPairCertificate(client.getClientId());
         byte[] rtn = getKeystore(config, info.getPrivateKey(), info.getCertificate());
 
-        client.setAttribute(certificateAttribute, info.getCertificate());
+        info.setPrivateKey(null);
+
+        CertificateInfoHelper.updateClientModelCertificateInfo(client, info, attributePrefix);
+
         adminEvent.operation(OperationType.ACTION).resourcePath(session.getContext().getUri()).representation(info).success();
         return rtn;
     }
@@ -349,11 +372,9 @@ public class ClientAttributeCertificateResource {
 
 
             if (config.isRealmCertificate() == null || config.isRealmCertificate().booleanValue()) {
-                X509Certificate certificate = realm.getCertificate();
-                if (certificate == null) {
-                    KeycloakModelUtils.generateRealmCertificate(realm);
-                    certificate = realm.getCertificate();
-                }
+                KeyManager keys = session.keys();
+                String kid = keys.getActiveRsaKey(realm).getKid();
+                Certificate certificate = keys.getRsaCertificate(realm, kid);
                 String certificateAlias = config.getRealmAlias();
                 if (certificateAlias == null) certificateAlias = realm.getName();
                 keyStore.setCertificateEntry(certificateAlias, certificate);

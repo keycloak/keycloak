@@ -16,10 +16,11 @@
  */
 package org.keycloak.services.resources.admin;
 
+import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
-import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.ClientTemplateModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
@@ -28,7 +29,6 @@ import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.idm.ClientTemplateRepresentation;
 import org.keycloak.services.ErrorResponse;
-import org.keycloak.services.ServicesLogger;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -50,7 +50,7 @@ import java.util.List;
  * @version $Revision: 1 $
  */
 public class ClientTemplatesResource {
-    protected static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    protected static final Logger logger = Logger.getLogger(ClientTemplatesResource.class);
     protected RealmModel realm;
     private RealmAuth auth;
     private AdminEventBuilder adminEvent;
@@ -61,7 +61,7 @@ public class ClientTemplatesResource {
     public ClientTemplatesResource(RealmModel realm, RealmAuth auth, AdminEventBuilder adminEvent) {
         this.realm = realm;
         this.auth = auth;
-        this.adminEvent = adminEvent;
+        this.adminEvent = adminEvent.resource(ResourceType.CLIENT_TEMPLATE);
 
         auth.init(RealmAuth.Resource.CLIENT);
     }

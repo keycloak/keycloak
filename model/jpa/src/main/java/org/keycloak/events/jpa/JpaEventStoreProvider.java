@@ -20,17 +20,17 @@ package org.keycloak.events.jpa;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jboss.logging.Logger;
-import org.keycloak.events.admin.AdminEvent;
-import org.keycloak.events.admin.AdminEventQuery;
-import org.keycloak.events.admin.AuthDetails;
-import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventQuery;
 import org.keycloak.events.EventStoreProvider;
 import org.keycloak.events.EventType;
+import org.keycloak.events.admin.AdminEvent;
+import org.keycloak.events.admin.AdminEventQuery;
+import org.keycloak.events.admin.AuthDetails;
+import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
 
 import javax.persistence.EntityManager;
-
 import java.io.IOException;
 import java.util.Map;
 import java.util.UUID;
@@ -150,6 +150,11 @@ public class JpaEventStoreProvider implements EventStoreProvider {
         adminEventEntity.setRealmId(adminEvent.getRealmId());
         setAuthDetails(adminEventEntity, adminEvent.getAuthDetails());
         adminEventEntity.setOperationType(adminEvent.getOperationType().toString());
+
+        if (adminEvent.getResourceType() != null) {
+            adminEventEntity.setResourceType(adminEvent.getResourceType().toString());
+        }
+
         adminEventEntity.setResourcePath(adminEvent.getResourcePath());
         adminEventEntity.setError(adminEvent.getError());
         
@@ -165,6 +170,11 @@ public class JpaEventStoreProvider implements EventStoreProvider {
         adminEvent.setRealmId(adminEventEntity.getRealmId());
         setAuthDetails(adminEvent, adminEventEntity);
         adminEvent.setOperationType(OperationType.valueOf(adminEventEntity.getOperationType()));
+
+        if (adminEventEntity.getResourceType() != null) {
+            adminEvent.setResourceType(ResourceType.valueOf(adminEventEntity.getResourceType()));
+        }
+
         adminEvent.setResourcePath(adminEventEntity.getResourcePath());
         adminEvent.setError(adminEventEntity.getError());
         

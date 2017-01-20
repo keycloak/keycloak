@@ -112,6 +112,7 @@
     <xs:complexType name="sign-on-type">
         <xs:attribute name="signRequest" type="xs:boolean" use="optional"/>
         <xs:attribute name="validateResponseSignature" type="xs:boolean" use="optional"/>
+        <xs:attribute name="validateAssertionSignature" type="xs:boolean" use="optional"/>
         <xs:attribute name="requestBinding" type="xs:string" use="optional"/>
         <xs:attribute name="responseBinding" type="xs:string" use="optional"/>
         <xs:attribute name="bindingUrl" type="xs:string" use="optional"/>

@@ -17,15 +17,15 @@
  */
 package org.keycloak.testsuite.console.realm;
 
-import java.util.concurrent.TimeUnit;
+import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.testsuite.console.page.realm.TokenSettings;
 
-import org.jboss.arquillian.graphene.page.Page;
-import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWithLoginUrlOf;
+import java.util.concurrent.TimeUnit;
+
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
+import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWithLoginUrlOf;
 
 /**
  *

@@ -16,7 +16,10 @@
  */
 package org.keycloak.protocol.oidc;
 
+import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.OAuthErrorException;
+import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
@@ -32,8 +35,10 @@ import org.keycloak.protocol.oidc.utils.OIDCResponseMode;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.services.ServicesLogger;
+import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.managers.ResourceAdminManager;
+import org.keycloak.util.TokenUtil;
 
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
@@ -56,14 +61,31 @@ public class OIDCLoginProtocol implements LoginProtocol {
     public static final String REDIRECT_URI_PARAM = "redirect_uri";
     public static final String CLIENT_ID_PARAM = "client_id";
     public static final String NONCE_PARAM = "nonce";
-    public static final String PROMPT_PARAM = "prompt";
+    public static final String MAX_AGE_PARAM = OAuth2Constants.MAX_AGE;
+    public static final String PROMPT_PARAM = OAuth2Constants.PROMPT;
     public static final String LOGIN_HINT_PARAM = "login_hint";
+    public static final String REQUEST_PARAM = "request";
+    public static final String REQUEST_URI_PARAM = "request_uri";
+    public static final String UI_LOCALES_PARAM = OAuth2Constants.UI_LOCALES_PARAM;
+    public static final String CLAIMS_PARAM = "claims";
+
     public static final String LOGOUT_REDIRECT_URI = "OIDC_LOGOUT_REDIRECT_URI";
     public static final String ISSUER = "iss";
 
     public static final String RESPONSE_MODE_PARAM = "response_mode";
 
-    private static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    public static final String PROMPT_VALUE_NONE = "none";
+    public static final String PROMPT_VALUE_LOGIN = "login";
+    public static final String PROMPT_VALUE_CONSENT = "consent";
+    public static final String PROMPT_VALUE_SELECT_ACCOUNT = "select_account";
+
+    // Client authentication methods
+    public static final String CLIENT_SECRET_BASIC = "client_secret_basic";
+    public static final String CLIENT_SECRET_POST = "client_secret_post";
+    public static final String CLIENT_SECRET_JWT = "client_secret_jwt";
+    public static final String PRIVATE_KEY_JWT = "private_key_jwt";
+
+    private static final Logger logger = Logger.getLogger(OIDCLoginProtocol.class);
 
     protected KeycloakSession session;
 
@@ -151,17 +173,31 @@ public class OIDCLoginProtocol implements LoginProtocol {
         // Implicit or hybrid flow
         if (responseType.isImplicitOrHybridFlow()) {
             TokenManager tokenManager = new TokenManager();
-            AccessTokenResponse res = tokenManager.responseBuilder(realm, clientSession.getClient(), event, session, userSession, clientSession)
-                    .generateAccessToken()
-                    .generateIDToken()
-                    .build();
+            TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager.responseBuilder(realm, clientSession.getClient(), event, session, userSession, clientSession)
+                    .generateAccessToken();
 
             if (responseType.hasResponseType(OIDCResponseType.ID_TOKEN)) {
-                redirectUri.addParam("id_token", res.getIdToken());
+
+                responseBuilder.generateIDToken();
+
+                if (responseType.hasResponseType(OIDCResponseType.TOKEN)) {
+                    responseBuilder.generateAccessTokenHash();
+                }
+
+                if (responseType.hasResponseType(OIDCResponseType.CODE)) {
+                    responseBuilder.generateCodeHash(accessCode.getCode());
+                }
+
+            }
+
+            AccessTokenResponse res = responseBuilder.build();
+
+            if (responseType.hasResponseType(OIDCResponseType.ID_TOKEN)) {
+                redirectUri.addParam(OAuth2Constants.ID_TOKEN, res.getIdToken());
             }
 
             if (responseType.hasResponseType(OIDCResponseType.TOKEN)) {
-                redirectUri.addParam("access_token", res.getToken());
+                redirectUri.addParam(OAuth2Constants.ACCESS_TOKEN, res.getToken());
                 redirectUri.addParam("token_type", res.getTokenType());
                 redirectUri.addParam("session_state", res.getSessionState());
                 redirectUri.addParam("expires_in", String.valueOf(res.getExpiresIn()));
@@ -192,14 +228,14 @@ public class OIDCLoginProtocol implements LoginProtocol {
         switch (error) {
             case CANCELLED_BY_USER:
             case CONSENT_DENIED:
-                return "access_denied";
+                return OAuthErrorException.ACCESS_DENIED;
             case PASSIVE_INTERACTION_REQUIRED:
-                return "interaction_required";
+                return OAuthErrorException.INTERACTION_REQUIRED;
             case PASSIVE_LOGIN_REQUIRED:
-                return "login_required";
+                return OAuthErrorException.LOGIN_REQUIRED;
             default:
-                logger.untranslatedProtocol(error.name());
-                return "access_denied";
+                ServicesLogger.LOGGER.untranslatedProtocol(error.name());
+                return OAuthErrorException.SERVER_ERROR;
         }
     }
 
@@ -233,6 +269,36 @@ public class OIDCLoginProtocol implements LoginProtocol {
         } else {
             return Response.ok().build();
         }
+    }
+
+
+    @Override
+    public boolean requireReauthentication(UserSessionModel userSession, ClientSessionModel clientSession) {
+        return isPromptLogin(clientSession) || isAuthTimeExpired(userSession, clientSession);
+    }
+
+    protected boolean isPromptLogin(ClientSessionModel clientSession) {
+        String prompt = clientSession.getNote(OIDCLoginProtocol.PROMPT_PARAM);
+        return TokenUtil.hasPrompt(prompt, OIDCLoginProtocol.PROMPT_VALUE_LOGIN);
+    }
+
+    protected boolean isAuthTimeExpired(UserSessionModel userSession, ClientSessionModel clientSession) {
+        String authTime = userSession.getNote(AuthenticationManager.AUTH_TIME);
+        String maxAge = clientSession.getNote(OIDCLoginProtocol.MAX_AGE_PARAM);
+        if (maxAge == null) {
+            return false;
+        }
+
+        int authTimeInt = authTime==null ? 0 : Integer.parseInt(authTime);
+        int maxAgeInt = Integer.parseInt(maxAge);
+
+        if (authTimeInt + maxAgeInt < Time.currentTime()) {
+            logger.debugf("Authentication time is expired, needs to reauthenticate. userSession=%s, clientId=%s, maxAge=%d, authTime=%d", userSession.getId(),
+                    clientSession.getClient().getId(), maxAgeInt, authTimeInt);
+            return true;
+        }
+
+        return false;
     }
 
     @Override

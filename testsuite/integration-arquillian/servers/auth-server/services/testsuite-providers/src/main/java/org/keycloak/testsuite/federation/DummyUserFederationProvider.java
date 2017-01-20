@@ -17,17 +17,21 @@
 
 package org.keycloak.testsuite.federation;
 
-import org.keycloak.models.CredentialValidationOutput;
+import org.keycloak.component.ComponentModel;
+import org.keycloak.credential.CredentialInput;
+import org.keycloak.credential.CredentialInputValidator;
+import org.keycloak.credential.CredentialModel;
 import org.keycloak.models.GroupModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
-import org.keycloak.models.UserFederationProvider;
 import org.keycloak.models.UserModel;
+import org.keycloak.storage.UserStorageProvider;
+import org.keycloak.storage.user.UserLookupProvider;
+import org.keycloak.storage.user.UserRegistrationProvider;
 
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -35,28 +39,32 @@ import java.util.Set;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class DummyUserFederationProvider implements UserFederationProvider {
+public class DummyUserFederationProvider implements UserStorageProvider,
+        UserLookupProvider,
+        UserRegistrationProvider,
+        CredentialInputValidator {
 
     private final Map<String, UserModel> users;
+    private KeycloakSession session;
+    private ComponentModel component;
 
-    public DummyUserFederationProvider(Map<String, UserModel> users) {
+
+
+    public DummyUserFederationProvider(KeycloakSession session, ComponentModel component, Map<String, UserModel> users) {
         this.users = users;
+        this.session = session;
+        this.component = component;
     }
 
+
+
     @Override
-    public UserModel validateAndProxy(RealmModel realm, UserModel local) {
+    public UserModel addUser(RealmModel realm, String username) {
+        UserModel local = session.userLocalStorage().addUser(realm, username);
+        local.setFederationLink(component.getId());
+
+        users.put(username, local);
         return local;
-    }
-
-    @Override
-    public boolean synchronizeRegistrations() {
-        return true;
-    }
-
-    @Override
-    public UserModel register(RealmModel realm, UserModel user) {
-        users.put(user.getUsername(), user);
-        return user;
     }
 
     @Override
@@ -65,23 +73,18 @@ public class DummyUserFederationProvider implements UserFederationProvider {
     }
 
     @Override
-    public UserModel getUserByUsername(RealmModel realm, String username) {
-        return users.get(username);
-    }
-
-    @Override
-    public UserModel getUserByEmail(RealmModel realm, String email) {
+    public UserModel getUserById(String id, RealmModel realm) {
         return null;
     }
 
     @Override
-    public List<UserModel> searchByAttributes(Map<String, String> attributes, RealmModel realm, int maxResults) {
-        return Collections.emptyList();
+    public UserModel getUserByUsername(String username, RealmModel realm) {
+        return users.get(username);
     }
 
     @Override
-    public List<UserModel> getGroupMembers(RealmModel realm, GroupModel group, int firstResult, int maxResults) {
-        return Collections.emptyList();
+    public UserModel getUserByEmail(String email, RealmModel realm) {
+        return null;
     }
 
     @Override
@@ -99,49 +102,37 @@ public class DummyUserFederationProvider implements UserFederationProvider {
 
     }
 
-    @Override
-    public boolean isValid(RealmModel realm, UserModel local) {
-        String username = local.getUsername();
-        return users.containsKey(username);
-    }
-
-    @Override
-    public Set<String> getSupportedCredentialTypes(UserModel user) {
-        // Just user "test-user" is able to validate password with this federationProvider
-        if (user.getUsername().equals("test-user")) {
-            return Collections.singleton(UserCredentialModel.PASSWORD);
-        } else {
-            return Collections.emptySet();
-        }
-    }
-
-    @Override
     public Set<String> getSupportedCredentialTypes() {
         return Collections.singleton(UserCredentialModel.PASSWORD);
     }
 
     @Override
-    public boolean validCredentials(RealmModel realm, UserModel user, List<UserCredentialModel> input) {
-        if (user.getUsername().equals("test-user") && input.size() == 1) {
-            UserCredentialModel password = input.get(0);
+    public boolean supportsCredentialType(String credentialType) {
+        return getSupportedCredentialTypes().contains(credentialType);
+    }
+
+    @Override
+    public boolean isConfiguredFor(RealmModel realm, UserModel user, String credentialType) {
+        if (!CredentialModel.PASSWORD.equals(credentialType)) return false;
+
+        if (user.getUsername().equals("test-user")) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    @Override
+    public boolean isValid(RealmModel realm, UserModel user, CredentialInput input) {
+        if (user.getUsername().equals("test-user")) {
+            UserCredentialModel password = (UserCredentialModel)input;
             if (password.getType().equals(UserCredentialModel.PASSWORD)) {
                 return "secret".equals(password.getValue());
             }
         }
-        return false;
-    }
+        return false;    }
 
-    @Override
-    public boolean validCredentials(RealmModel realm, UserModel user, UserCredentialModel... input) {
-        return validCredentials(realm, user, Arrays.asList(input));
-    }
-
-    @Override
-    public CredentialValidationOutput validCredentials(RealmModel realm, UserCredentialModel credential) {
-        return CredentialValidationOutput.failed();
-    }
-
-    @Override
+     @Override
     public void close() {
 
     }

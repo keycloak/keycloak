@@ -15,7 +15,6 @@ import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
-import org.junit.Ignore;
 import static org.keycloak.representations.idm.CredentialRepresentation.PASSWORD;
 
 /**
@@ -40,6 +39,7 @@ public class LoginEventsTest extends AbstractConsoleTest {
 
     @Test
     public void userAccessEventsTest() {
+        deleteAllCookiesForTestRealm();
         testRealmAdminConsolePage.navigateTo();
         Users.setPasswordFor(testUser, "Wrong_password");
         testRealmLoginPage.form().login(testUser);

@@ -16,7 +16,12 @@
  */
 package org.keycloak.services.managers;
 
+import org.jboss.logging.Logger;
 import org.keycloak.TokenIdGenerator;
+import org.keycloak.common.util.KeycloakUriBuilder;
+import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.common.util.StringPropertyReplacer;
+import org.keycloak.common.util.Time;
 import org.keycloak.connections.httpclient.HttpClientProvider;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.models.ClientModel;
@@ -32,10 +37,6 @@ import org.keycloak.representations.adapters.action.PushNotBeforeAction;
 import org.keycloak.representations.adapters.action.TestAvailabilityAction;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.util.ResolveRelative;
-import org.keycloak.common.util.KeycloakUriBuilder;
-import org.keycloak.common.util.MultivaluedHashMap;
-import org.keycloak.common.util.StringPropertyReplacer;
-import org.keycloak.common.util.Time;
 
 import javax.ws.rs.core.UriBuilder;
 import java.io.IOException;
@@ -53,7 +54,7 @@ import java.util.Set;
  * @version $Revision: 1 $
  */
 public class ResourceAdminManager {
-    protected static ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    private static final Logger logger = Logger.getLogger(ResourceAdminManager.class);
     private static final String CLIENT_SESSION_HOST_PROPERTY = "${application.session.host}";
 
     private KeycloakSession session;
@@ -244,7 +245,7 @@ public class ResourceAdminManager {
 
     protected boolean sendLogoutRequest(RealmModel realm, ClientModel resource, List<String> adapterSessionIds, List<String> userSessions, int notBefore, String managementUrl) {
         LogoutAction adminAction = new LogoutAction(TokenIdGenerator.generateId(), Time.currentTime() + 30, resource.getClientId(), adapterSessionIds, notBefore, userSessions);
-        String token = new TokenManager().encodeToken(realm, adminAction);
+        String token = new TokenManager().encodeToken(session, realm, adminAction);
         if (logger.isDebugEnabled()) logger.debugv("logout resource {0} url: {1} sessionIds: " + adapterSessionIds, resource.getClientId(), managementUrl);
         URI target = UriBuilder.fromUri(managementUrl).path(AdapterConstants.K_LOGOUT).build();
         try {
@@ -253,7 +254,7 @@ public class ResourceAdminManager {
             logger.debugf("logout success for %s: %s", managementUrl, success);
             return success;
         } catch (IOException e) {
-            logger.logoutFailed(e, resource.getClientId());
+            ServicesLogger.LOGGER.logoutFailed(e, resource.getClientId());
             return false;
         }
     }
@@ -295,7 +296,7 @@ public class ResourceAdminManager {
 
     protected boolean sendPushRevocationPolicyRequest(RealmModel realm, ClientModel resource, int notBefore, String managementUrl) {
         PushNotBeforeAction adminAction = new PushNotBeforeAction(TokenIdGenerator.generateId(), Time.currentTime() + 30, resource.getClientId(), notBefore);
-        String token = new TokenManager().encodeToken(realm, adminAction);
+        String token = new TokenManager().encodeToken(session, realm, adminAction);
         logger.debugv("pushRevocation resource: {0} url: {1}", resource.getClientId(), managementUrl);
         URI target = UriBuilder.fromUri(managementUrl).path(AdapterConstants.K_PUSH_NOT_BEFORE).build();
         try {
@@ -304,7 +305,7 @@ public class ResourceAdminManager {
             logger.debugf("pushRevocation success for %s: %s", managementUrl, success);
             return success;
         } catch (IOException e) {
-            logger.failedToSendRevocation(e);
+            ServicesLogger.LOGGER.failedToSendRevocation(e);
             return false;
         }
     }
@@ -333,7 +334,7 @@ public class ResourceAdminManager {
 
     protected boolean sendTestNodeAvailabilityRequest(RealmModel realm, ClientModel client, String managementUrl) {
         TestAvailabilityAction adminAction = new TestAvailabilityAction(TokenIdGenerator.generateId(), Time.currentTime() + 30, client.getClientId());
-        String token = new TokenManager().encodeToken(realm, adminAction);
+        String token = new TokenManager().encodeToken(session, realm, adminAction);
         logger.debugv("testNodes availability resource: {0} url: {1}", client.getClientId(), managementUrl);
         URI target = UriBuilder.fromUri(managementUrl).path(AdapterConstants.K_TEST_AVAILABLE).build();
         try {
@@ -342,7 +343,7 @@ public class ResourceAdminManager {
             logger.debugf("testAvailability success for %s: %s", managementUrl, success);
             return success;
         } catch (IOException e) {
-            logger.availabilityTestFailed(managementUrl);
+            ServicesLogger.LOGGER.availabilityTestFailed(managementUrl);
             return false;
         }
    }

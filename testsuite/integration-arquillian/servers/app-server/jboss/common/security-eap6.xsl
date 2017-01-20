@@ -17,7 +17,7 @@
 
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
                 xmlns:xalan="http://xml.apache.org/xalan"
-                xmlns:j="urn:jboss:domain:1.7"
+                xmlns:j="urn:jboss:domain:1.8"
                 xmlns:w="urn:jboss:domain:web:2.2"
                 version="2.0"
                 exclude-result-prefixes="xalan j ds k sec">

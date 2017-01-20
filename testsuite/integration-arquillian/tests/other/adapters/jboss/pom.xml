@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-tests-adapters</artifactId>
-        <version>2.0.0.CR1-SNAPSHOT</version>
+        <version>2.5.1.Final-SNAPSHOT</version>
     </parent>
 
     <artifactId>integration-arquillian-tests-adapters-jboss</artifactId>
@@ -35,8 +35,9 @@
     
     <properties>
         <common.resources>${project.parent.basedir}/common</common.resources>
-        <adapter.libs.home>${app.server.home}/modules/system/add-ons/keycloak</adapter.libs.home>
         <app.server.type>managed</app.server.type>
+        <auth.server.actual.http.port>${auth.server.http.port}</auth.server.actual.http.port>
+        <keycloak.subsystem.xsl>keycloak-subsystem.xsl</keycloak.subsystem.xsl>
     </properties>
 
     <build>
@@ -46,7 +47,7 @@
                 <artifactId>xml-maven-plugin</artifactId>
                 <executions>
                     <execution>
-                        <id>Configure keycloak subsystem</id>
+                        <id>configure-keycloak-subsystem</id>
                         <phase>process-test-resources</phase>
                         <goals>
                             <goal>transform</goal>
@@ -58,12 +59,12 @@
                                     <includes>
                                         <include>standalone.xml</include>
                                     </includes>
-                                    <stylesheet>${common.resources}/xslt/keycloak-subsystem.xsl</stylesheet>
+                                    <stylesheet>${common.resources}/xslt/${keycloak.subsystem.xsl}</stylesheet>
                                     <outputDir>${app.server.home}/standalone/configuration</outputDir>
                                     <parameters>
                                         <parameter>
                                             <name>auth-server-host</name>
-                                            <value>http://localhost:${auth.server.http.port}</value>
+                                            <value>http://localhost:${auth.server.actual.http.port}</value>
                                         </parameter>
                                     </parameters>
                                 </transformationSet>
@@ -84,41 +85,17 @@
                     <value>true</value>
                 </property>
             </activation>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.codehaus.mojo</groupId>
-                        <artifactId>xml-maven-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>Configure keycloak subsystem</id>
-                                <phase>process-test-resources</phase>
-                                <goals>
-                                    <goal>transform</goal>
-                                </goals>
-                                <configuration>
-                                    <transformationSets>
-                                        <transformationSet>
-                                            <dir>${app.server.home}/standalone/configuration</dir>
-                                            <includes>
-                                                <include>standalone.xml</include>
-                                            </includes>
-                                            <stylesheet>${common.resources}/xslt/keycloak-subsystem.xsl</stylesheet>
-                                            <outputDir>${app.server.home}/standalone/configuration</outputDir>
-                                            <parameters>
-                                                <parameter>
-                                                    <name>auth-server-host</name>
-                                                    <value>https://localhost:${auth.server.https.port}</value>
-                                                </parameter>
-                                            </parameters>
-                                        </transformationSet>
-                                    </transformationSets>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
+            <properties>
+                <!-- one realm definition for each secure-deployment -->
+                <auth.server.actual.http.port>${auth.server.https.port}</auth.server.actual.http.port>
+            </properties>
+        </profile>
+        <profile>
+            <id>keycloak-subsystem-separate-realm</id>
+            <properties>
+                <!-- single realm definition, multiple secure-deployments -->
+                <keycloak.subsystem.xsl>keycloak-subsystem_separate-realm-def.xsl</keycloak.subsystem.xsl>
+            </properties>
         </profile>
         <profile>
             <id>adapter-test-jboss-submodules</id>
@@ -129,10 +106,10 @@
             </activation>
             <dependencies>
                 <dependency>
-                    <groupId>org.wildfly</groupId>
+                    <groupId>org.wildfly.arquillian</groupId>
                     <artifactId>wildfly-arquillian-container-${app.server.type}</artifactId>
                     <version>${arquillian-wildfly-container.version}</version>
-                </dependency>                
+                </dependency>
             </dependencies>            
         </profile>
 
@@ -177,8 +154,19 @@
             <modules>
                 <module>relative</module>
             </modules>
-        </profile>                
-        
+        </profile>
+        <profile>
+            <id>app-server-remote</id>
+            <modules>
+                <module>remote</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>app-server-eap6-fuse</id>
+            <modules>
+                <module>eap6-fuse</module>
+            </modules>
+        </profile>
     </profiles>
     
 </project>

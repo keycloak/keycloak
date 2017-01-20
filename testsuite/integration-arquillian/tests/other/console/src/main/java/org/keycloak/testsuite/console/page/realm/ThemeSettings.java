@@ -21,9 +21,6 @@ import org.keycloak.testsuite.console.page.fragment.OnOffSwitch;
 import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.ui.Select;
 
-import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
-import org.openqa.selenium.By;
-
 /**
  *
  * @author Filip Kiss
@@ -51,7 +48,6 @@ public class ThemeSettings extends RealmSettings {
     private OnOffSwitch internatEnabledSwitch;
 
     public void changeLoginTheme(String themeName) {
-        waitUntilElement(By.id("loginTheme")).is().present();
         loginThemeSelect.selectByVisibleText(themeName);
     }
 

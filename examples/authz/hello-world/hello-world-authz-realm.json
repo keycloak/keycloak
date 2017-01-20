@@ -1,0 +1,49 @@
+{
+  "realm" : "hello-world-authz",
+  "enabled" : true,
+  "privateKey" : "MIIEpQIBAAKCAQEAzMhNM9HXNQWhVf1m64zS67SIyQjj+tV5GR+MqlRTWDXdo8GAWHd+alY1urRhfRoqMy4F499+8wh2REKFykNt0ng6s6wWnEaKDboS3SAUV6lybcOAkwIOCtCZj1ItddKG3m64fzxDDQrcpkbiAvw3S8KJ4UJK+pyh9iX01duSDtM/HhPawsPdY8JSMfuo1IxQ2Vxw+8RKwbbdUeew6cyYGYAeFYwA66mlM3otB0RBHh4bjwg8297+2g53TdwM2rbCHRbrorMQD3031OTyFSp7lXCtoMLWRfAFnOP/2yZWZMXbiJheC0R3sLbU7Ef0/cUbYyk4Ckfq6pcYDR+VZBF7AwIDAQABAoIBAAwa4wVnKBOIS6srmYPfBTDNsTBBCEjxiYEErmn7JhoWxQ1DCPUxyxU6F177/q9Idqoj1FFOCtEO9P6/9+ym470HQmEQkR2Xxd1d3HOZy9oKuCro3ZbTDkVxY0JnlyxZz4MihGFxDH2e4MArfHy0sAgYbdIU+x2pWKGWSMzDd/TMSOExhc/sIQAg6ljbPCLLXCPQFAncoHRyGPrkRZs6UTZi5SJuCglVa2/3G+0drDdPuA83/mwsZfIBqQgbGbFgtq5T5C6CKMkPOQ42Rcclm7kEr6riTkJRo23EO1iOJVpxzI0tbxZsJAsW7zeqv0wWRyUgVfQAje6OdsNexp5aCtECgYEA6nMHCQ9xXvufCyzpIbYGxdAGqH6m1AR5gXerHqRiGNx+8UUt/E9cy/HTOhmZDK/eC4BT9tImeF01l1oSU/+wGKfux0SeAQchBhhq8GD6jmrtgczKAfZHp0Zrht7o9qu9KE7ZNWRmY1foJN9yNYmzY6qqHEy+zNo9amcqT7UZKO8CgYEA35sp9fMpMqkJE+NEJ9Ph/t2081BEkC0DYIuETZRSi+Ek5AliWTyEkg+oisTbWzi6fMQHS7W+M1SQP6djksLQNPP+353DKgup5gtKS+K/y2xNd7fSsNmkjW1bdJJpID7WzwwmwdahHxpcnFFuEXi5FkG3Vqmtd3cD0TYL33JlRy0CgYEA0+a3eybsDy9Zpp4m8IM3R98nxW8DlimdMLlafs2QpGvWiHdAgwWwF90wTxkHzgG+raKFQVbb0npcj7mnSyiUnxRZqt2H+eHZpUq4jR76F3LpzCGui2tvg+8QDMy4vwqmYyIxDCL8r9mqRnl3HpChBPoh2oY7BahTTjKEeZpzbR0CgYEAoNnVjX+mGzNNvGi4Fo5s/BIwoPcU20IGM+Uo/0W7O7Rx/Thi7x6BnzB0ZZ7GzRA51paNSQEsGXCzc5bOIjzR2cXLisDKK+zIAxwMDhrHLWZzM7OgdGeb38DTEUBhLzkE/VwYZUgoD1+/TxOkwhy9yCzt3gGhL1cF//GJCOwZvuECgYEAgsO4rdYScgCpsyePnHsFk+YtqtdORnmttF3JFcL3w2QneXuRwg2uW2Kfz8CVphrR9eOU0tiw38w6QTHIVeyRY8qqlHtiXj6dEYz7frh/k4hI29HwFx43rRpnAnN8kBEJYBYdbjaQ35Wsqkfu1tvHJ+6fxSwvQu/TVdGp0OfilAY=",
+  "publicKey" : "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAzMhNM9HXNQWhVf1m64zS67SIyQjj+tV5GR+MqlRTWDXdo8GAWHd+alY1urRhfRoqMy4F499+8wh2REKFykNt0ng6s6wWnEaKDboS3SAUV6lybcOAkwIOCtCZj1ItddKG3m64fzxDDQrcpkbiAvw3S8KJ4UJK+pyh9iX01duSDtM/HhPawsPdY8JSMfuo1IxQ2Vxw+8RKwbbdUeew6cyYGYAeFYwA66mlM3otB0RBHh4bjwg8297+2g53TdwM2rbCHRbrorMQD3031OTyFSp7lXCtoMLWRfAFnOP/2yZWZMXbiJheC0R3sLbU7Ef0/cUbYyk4Ckfq6pcYDR+VZBF7AwIDAQAB",
+  "certificate" : "MIICsTCCAZkCBgFVETX4AzANBgkqhkiG9w0BAQsFADAcMRowGAYDVQQDDBFIZWxsbyBXb3JsZCBBdXRoWjAeFw0xNjA2MDIxMzAxMzdaFw0yNjA2MDIxMzAzMTdaMBwxGjAYBgNVBAMMEUhlbGxvIFdvcmxkIEF1dGhaMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAzMhNM9HXNQWhVf1m64zS67SIyQjj+tV5GR+MqlRTWDXdo8GAWHd+alY1urRhfRoqMy4F499+8wh2REKFykNt0ng6s6wWnEaKDboS3SAUV6lybcOAkwIOCtCZj1ItddKG3m64fzxDDQrcpkbiAvw3S8KJ4UJK+pyh9iX01duSDtM/HhPawsPdY8JSMfuo1IxQ2Vxw+8RKwbbdUeew6cyYGYAeFYwA66mlM3otB0RBHh4bjwg8297+2g53TdwM2rbCHRbrorMQD3031OTyFSp7lXCtoMLWRfAFnOP/2yZWZMXbiJheC0R3sLbU7Ef0/cUbYyk4Ckfq6pcYDR+VZBF7AwIDAQABMA0GCSqGSIb3DQEBCwUAA4IBAQANm5gIT/c50lwjawM686gNXpppLA928WsCOn9NIIWjSKekP8Bf9S73kf7vWcsEppm5B8rRyRxolXmzwghv74L7uVDg8Injjgj+XbPVQP+cJqWpSaMZHF7UfWe0/4M945Xcbmsl5q+m9PmrPG0AaaZhqXHcp4ehB1H+awyRqiERpJUuwZNycw2+2kjDADpsFf8hZVUd1F6ReYyOkqUyUjbL+jYTC7ZBNa7Ok+w6HCXWgkgVATAgQXJRM3w14IOc5MH/vfMCrCl/eNQLbjGl9y7u8PKwh3MXHDO2OLqtg6hOTSrOGUPJZGmGtUAl+2/R7FzoWkML/BNe2hjsL6UJwg91",
+  "requiredCredentials" : [ "password" ],
+  "users" :
+  [
+    {
+      "username" : "alice",
+      "enabled" : true,
+      "credentials" : [ {
+        "type" : "password",
+        "value" : "alice"
+      } ],
+      "realmRoles" : ["uma_authorization"]
+    },
+    {
+      "username" : "jdoe",
+      "enabled" : true,
+      "credentials" : [ {
+        "type" : "password",
+        "value" : "jdoe"
+      } ],
+      "realmRoles" : ["uma_authorization"]
+    },
+    {
+      "username" : "service-account-hello-world-authz-service",
+      "enabled" : true,
+      "serviceAccountClientId" : "hello-world-authz-service",
+      "clientRoles": {
+        "hello-world-authz-service" : ["uma_protection"]
+      }
+    }
+  ],
+  "clients" : [
+    {
+      "clientId" : "hello-world-authz-service",
+      "secret" : "secret",
+      "authorizationServicesEnabled" : true,
+      "enabled" : true,
+      "redirectUris" : [ "http://localhost:8080/hello-world-authz-service/*" ],
+      "baseUrl": "http://localhost:8080/hello-world-authz-service",
+      "adminUrl": "http://localhost:8080/hello-world-authz-service",
+      "directAccessGrantsEnabled" : true
+    }
+  ]
+}

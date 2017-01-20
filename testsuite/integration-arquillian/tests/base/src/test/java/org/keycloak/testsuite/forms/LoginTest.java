@@ -29,7 +29,7 @@ import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.TestRealmKeycloakTest;
+import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.ErrorPage;
@@ -37,21 +37,21 @@ import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
-import org.keycloak.common.util.Time;
 
-import java.util.Map;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.core.Response;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class LoginTest extends TestRealmKeycloakTest {
+public class LoginTest extends AbstractTestRealmKeycloakTest {
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
@@ -306,22 +306,25 @@ public class LoginTest extends TestRealmKeycloakTest {
     }
 
     @Test
-    public void loginPromptNone() {
-        driver.navigate().to(oauth.getLoginFormUrl().toString() + "&prompt=none");
-
-        assertFalse(loginPage.isCurrent());
-        assertTrue(appPage.isCurrent());
-
+    public void loginWithWhitespaceSuccess() {
         loginPage.open();
-        loginPage.login("login-test", "password");
+        loginPage.login(" login-test \t ", "password");
+
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
 
         events.expectLogin().user(userId).detail(Details.USERNAME, "login-test").assertEvent();
+    }
 
-        driver.navigate().to(oauth.getLoginFormUrl().toString() + "&prompt=none");
+    @Test
+    public void loginWithEmailWhitespaceSuccess() {
+        loginPage.open();
+        loginPage.login("    login@test.com    ", "password");
+
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
 
-        events.expectLogin().user(userId).removeDetail(Details.USERNAME).assertEvent();
+        events.expectLogin().user(userId).assertEvent();
     }
 
     private void setPasswordPolicy(String policy) {
@@ -351,7 +354,9 @@ public class LoginTest extends TestRealmKeycloakTest {
 
             events.expectRequiredAction(EventType.UPDATE_PASSWORD).user(userId).detail(Details.USERNAME, "login-test").assertEvent();
 
-            assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+            String currentUrl = driver.getCurrentUrl();
+            String pageSource = driver.getPageSource();
+            assertEquals("bad expectation, on page: " + currentUrl, RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
             events.expectLogin().user(userId).detail(Details.USERNAME, "login-test").assertEvent();
 
@@ -471,6 +476,89 @@ public class LoginTest extends TestRealmKeycloakTest {
             loginPage.open();
             assertTrue(loginPage.isRememberMeChecked());
             Assert.assertEquals("login-test", loginPage.getUsername());
+
+            loginPage.setRememberMe(false);
+        } finally {
+            setRememberMe(false);
+        }
+    }
+
+    //KEYCLOAK-2741
+    @Test
+    public void loginAgainWithoutRememberMe() {
+        setRememberMe(true);
+
+        try {
+            //login with remember me
+            loginPage.open();
+            assertFalse(loginPage.isRememberMeChecked());
+            loginPage.setRememberMe(true);
+            assertTrue(loginPage.isRememberMeChecked());
+            loginPage.login("login-test", "password");
+
+            Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+            Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
+            EventRepresentation loginEvent = events.expectLogin().user(userId)
+                                                   .detail(Details.USERNAME, "login-test")
+                                                   .detail(Details.REMEMBER_ME, "true")
+                                                   .assertEvent();
+            String sessionId = loginEvent.getSessionId();
+
+            // Expire session
+            testingClient.testing().removeUserSession("test", sessionId);
+
+            // Assert rememberMe checked and username/email prefilled
+            loginPage.open();
+            assertTrue(loginPage.isRememberMeChecked());
+            Assert.assertEquals("login-test", loginPage.getUsername());
+
+            //login without remember me
+            loginPage.setRememberMe(false);
+            loginPage.login("login-test", "password");
+            
+            // Expire session
+            loginEvent = events.expectLogin().user(userId)
+                                                   .detail(Details.USERNAME, "login-test")
+                                                   .assertEvent();
+            sessionId = loginEvent.getSessionId();
+            testingClient.testing().removeUserSession("test", sessionId);
+            
+            // Assert rememberMe not checked nor username/email prefilled
+            loginPage.open();
+            assertFalse(loginPage.isRememberMeChecked());
+            assertNotEquals("login-test", loginPage.getUsername());
+        } finally {
+            setRememberMe(false);
+        }
+    }
+    
+    @Test
+    // KEYCLOAK-3181
+    public void loginWithEmailUserAndRememberMe() {
+        setRememberMe(true);
+
+        try {
+            loginPage.open();
+            loginPage.setRememberMe(true);
+            assertTrue(loginPage.isRememberMeChecked());
+            loginPage.login("login@test.com", "password");
+
+            Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+            Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
+            EventRepresentation loginEvent = events.expectLogin().user(userId)
+                                                   .detail(Details.USERNAME, "login@test.com")
+                                                   .detail(Details.REMEMBER_ME, "true")
+                                                   .assertEvent();
+            String sessionId = loginEvent.getSessionId();
+
+            // Expire session
+            testingClient.testing().removeUserSession("test", sessionId);
+
+            // Assert rememberMe checked and username/email prefilled
+            loginPage.open();
+            assertTrue(loginPage.isRememberMeChecked());
+            
+            Assert.assertEquals("login@test.com", loginPage.getUsername());
 
             loginPage.setRememberMe(false);
         } finally {

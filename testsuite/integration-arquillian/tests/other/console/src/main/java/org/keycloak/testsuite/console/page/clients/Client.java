@@ -1,11 +1,12 @@
 package org.keycloak.testsuite.console.page.clients;
 
 import org.jboss.arquillian.graphene.fragment.Root;
-import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.testsuite.console.page.fragment.Breadcrumb;
-import static org.keycloak.testsuite.console.page.fragment.Breadcrumb.BREADCRUMB_XPATH;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
+
+import static org.keycloak.testsuite.console.page.fragment.Breadcrumb.BREADCRUMB_XPATH;
+import org.openqa.selenium.NoSuchElementException;
 
 /**
  *
@@ -73,6 +74,8 @@ public class Client extends Clients {
         private WebElement sessionsLink;
         @FindBy(linkText = "Installation")
         private WebElement installationLink;
+        @FindBy(linkText = "Service Account Roles")
+        private WebElement serviceAccountRoles;
 
         public void settings() {
             settingsLink.click();
@@ -100,6 +103,14 @@ public class Client extends Clients {
 
         public void installation() {
             installationLink.click();
+        }
+        
+        public boolean isServiceAccountRolesDisplayed() {
+            try {
+                return serviceAccountRoles.isDisplayed();
+            } catch (NoSuchElementException ex) {
+            }
+            return false;
         }
         
         public WebElement getTabs() {

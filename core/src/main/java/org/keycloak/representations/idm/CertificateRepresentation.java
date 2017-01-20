@@ -25,7 +25,9 @@ package org.keycloak.representations.idm;
 public class CertificateRepresentation {
 
     protected String privateKey;
+    protected String publicKey;
     protected String certificate;
+    protected String kid;
 
     public String getPrivateKey() {
         return privateKey;
@@ -33,6 +35,14 @@ public class CertificateRepresentation {
 
     public void setPrivateKey(String privateKey) {
         this.privateKey = privateKey;
+    }
+
+    public String getPublicKey() {
+        return publicKey;
+    }
+
+    public void setPublicKey(String publicKey) {
+        this.publicKey = publicKey;
     }
 
     public String getCertificate() {
@@ -43,5 +53,11 @@ public class CertificateRepresentation {
         this.certificate = certificate;
     }
 
+    public String getKid() {
+        return kid;
+    }
 
+    public void setKid(String kid) {
+        this.kid = kid;
+    }
 }

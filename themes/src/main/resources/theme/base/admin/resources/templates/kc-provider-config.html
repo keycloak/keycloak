@@ -2,7 +2,7 @@
     <div data-ng-repeat="option in properties" class="form-group" data-ng-controller="ProviderConfigCtrl">
         <label class="col-md-2 control-label">{{:: option.label | translate}}</label>
 
-        <div class="col-md-6" data-ng-hide="option.type == 'boolean' || option.type == 'List' || option.type == 'Role' || option.type == 'ClientList' || option.type == 'Password'">
+        <div class="col-md-6" data-ng-hide="option.type == 'boolean' || option.type == 'List' || option.type == 'Role' || option.type == 'ClientList' || option.type == 'Password' || option.type=='Script'">
             <input class="form-control" type="text" data-ng-model="config[ option.name ]" >
         </div>
         <div class="col-md-6" data-ng-show="option.type == 'Password'">
@@ -12,7 +12,7 @@
             <input ng-model="config[ option.name ]" value="'true'" name="option.name" id="option.name" onoffswitchstring on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
         </div>
         <div class="col-md-6" data-ng-show="option.type == 'List'">
-            <select ng-model="config[ option.name ]" ng-options="data for data in option.defaultValue">
+            <select ng-model="config[ option.name ]" ng-options="data for data in option.options">
                 <option value="" selected> {{:: 'selectOne' | translate}} </option>
             </select>
         </div>
@@ -22,7 +22,7 @@
                     <input class="form-control" type="text" data-ng-model="config[ option.name ]" >
                 </div>
                 <div class="col-md-2">
-                    <button type="submit" data-ng-click="openRoleSelector(option.name, config)" class="btn btn-default" tooltip-placement="top" tooltip-trigger="mouseover mouseout" tooltip="{{:: 'selectRole.tooltip' | translate}}">{{:: 'selectRole.label' | translate}}</button>
+                    <button type="button" data-ng-click="openRoleSelector(option.name, config)" class="btn btn-default" tooltip-placement="top" tooltip-trigger="mouseover mouseout" tooltip="{{:: 'selectRole.tooltip' | translate}}">{{:: 'selectRole.label' | translate}}</button>
                 </div>
             </div>
         </div>
@@ -30,6 +30,12 @@
             <select ng-model="config[ option.name ]" ng-options="client.clientId as client.clientId for client in clients">
                 <option value="" selected> {{:: 'selectOne' | translate}} </option>
             </select>
+        </div>
+
+        <div class="col-md-6" data-ng-show="option.type == 'Script'">
+            <div ng-model="config[option.name]" placeholder="Enter your script..." ui-ace="{ useWrapMode: true, showGutter: true, theme:'github', mode: 'javascript'}">
+                {{config[option.name]}}
+            </div>
         </div>
 
         <kc-tooltip>{{:: option.helpText | translate}}</kc-tooltip>

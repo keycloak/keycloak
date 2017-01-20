@@ -17,9 +17,10 @@
 
 package org.keycloak.testsuite.console.page.fragment;
 
-import java.util.List;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
+
+import java.util.List;
 
 /**
  *

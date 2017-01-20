@@ -1,12 +1,11 @@
 package org.keycloak.testsuite.adapter;
 
-import org.keycloak.testsuite.adapter.servlet.AbstractDemoServletsAdapterTest;
+import org.keycloak.testsuite.adapter.servlet.AbstractJBossOIDCServletsAdapterTest;
 
 /**
  *
  * @author tkyjovsk
  */
-//@AdapterLibsLocationProperty("adapter.libs.eap")
-public class RelativeEAPOIDCAdapterTest extends AbstractDemoServletsAdapterTest {
+public class RelativeEAPOIDCAdapterTest extends AbstractJBossOIDCServletsAdapterTest {
 
 }

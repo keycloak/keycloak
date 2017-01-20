@@ -44,6 +44,8 @@ public abstract class AbstractAccountPage extends AbstractPage {
     }
 
     public void openLanguage(String language){
-        localeDropdown.findElement(By.linkText(language)).click();
+        WebElement langLink = localeDropdown.findElement(By.xpath("//a[text()='" +language +"']"));
+        String url = langLink.getAttribute("href");
+        driver.navigate().to(url);
     }
 }

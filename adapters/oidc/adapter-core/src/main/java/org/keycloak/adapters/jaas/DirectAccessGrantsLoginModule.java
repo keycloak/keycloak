@@ -17,19 +17,6 @@
 
 package org.keycloak.adapters.jaas;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.Serializable;
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-
-import javax.security.auth.Subject;
-import javax.security.auth.callback.CallbackHandler;
-import javax.security.auth.login.LoginException;
-
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
@@ -39,12 +26,25 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.message.BasicNameValuePair;
 import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.common.VerificationException;
 import org.keycloak.adapters.authentication.ClientCredentialsProviderUtils;
+import org.keycloak.common.VerificationException;
+import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.constants.ServiceUrlConstants;
 import org.keycloak.representations.AccessTokenResponse;
+import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.util.JsonSerialization;
-import org.keycloak.common.util.KeycloakUriBuilder;
+
+import javax.security.auth.Subject;
+import javax.security.auth.callback.CallbackHandler;
+import javax.security.auth.login.LoginException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.Serializable;
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Login module based on Resource Owner password credentials grant from OAuth2 specs. It's supposed to be used in environments. which
@@ -102,9 +102,9 @@ public class DirectAccessGrantsLoginModule extends AbstractKeycloakLoginModule {
             StringBuilder errorBuilder = new StringBuilder("Login failed. Invalid status: " + status);
             if (entity != null) {
                 InputStream is = entity.getContent();
-                Map<String, String> errors = (Map<String, String>) JsonSerialization.readValue(is, Map.class);
-                errorBuilder.append(", OAuth2 error. Error: " + errors.get(OAuth2Constants.ERROR))
-                        .append(", Error description: " + errors.get(OAuth2Constants.ERROR_DESCRIPTION));
+                OAuth2ErrorRepresentation errorRep = JsonSerialization.readValue(is, OAuth2ErrorRepresentation.class);
+                errorBuilder.append(", OAuth2 error. Error: " + errorRep.getError())
+                        .append(", Error description: " + errorRep.getErrorDescription());
             }
             String error = errorBuilder.toString();
             log.warn(error);
@@ -161,9 +161,9 @@ public class DirectAccessGrantsLoginModule extends AbstractKeycloakLoginModule {
                     if (entity != null) {
                         InputStream is = entity.getContent();
                         if (status == 400) {
-                            Map<String, String> errors = (Map<String, String>) JsonSerialization.readValue(is, Map.class);
-                            errorBuilder.append(", OAuth2 error. Error: " + errors.get(OAuth2Constants.ERROR))
-                                    .append(", Error description: " + errors.get(OAuth2Constants.ERROR_DESCRIPTION));
+                            OAuth2ErrorRepresentation errorRep = JsonSerialization.readValue(is, OAuth2ErrorRepresentation.class);
+                            errorBuilder.append(", OAuth2 error. Error: " + errorRep.getError())
+                                    .append(", Error description: " + errorRep.getErrorDescription());
 
                         } else {
                             if (is != null) is.close();

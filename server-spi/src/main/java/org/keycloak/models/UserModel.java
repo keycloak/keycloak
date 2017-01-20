@@ -17,6 +17,8 @@
 
 package org.keycloak.models;
 
+import org.keycloak.provider.ProviderEvent;
+
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -31,6 +33,12 @@ public interface UserModel extends RoleMapperModel {
     String FIRST_NAME = "firstName";
     String EMAIL = "email";
     String LOCALE = "locale";
+
+    interface UserRemovedEvent extends ProviderEvent {
+        RealmModel getRealm();
+        UserModel getUser();
+        KeycloakSession getKeycloakSession();
+    }
 
     String getId();
 
@@ -47,12 +55,10 @@ public interface UserModel extends RoleMapperModel {
 
     boolean isEnabled();
 
-    boolean isOtpEnabled();
-
     void setEnabled(boolean enabled);
 
     /**
-     * Set single value of specified attribute. Remove all other existing values
+     * Set single value of specified attribute. Remove all other existing values of this attribute
      *
      * @param name
      * @param value
@@ -103,14 +109,6 @@ public interface UserModel extends RoleMapperModel {
 
     void setEmailVerified(boolean verified);
 
-    void setOtpEnabled(boolean totp);
-
-    void updateCredential(UserCredentialModel cred);
-
-    List<UserCredentialValueModel> getCredentialsDirectly();
-
-    void updateCredentialDirectly(UserCredentialValueModel cred);
-
     Set<GroupModel> getGroups();
     void joinGroup(GroupModel group);
     void leaveGroup(GroupModel group);
@@ -122,13 +120,7 @@ public interface UserModel extends RoleMapperModel {
     String getServiceAccountClientLink();
     void setServiceAccountClientLink(String clientInternalId);
 
-    void addConsent(UserConsentModel consent);
-    UserConsentModel getConsentByClient(String clientInternalId);
-    List<UserConsentModel> getConsents();
-    void updateConsent(UserConsentModel consent);
-    boolean revokeConsentForClient(String clientInternalId);
-
     public static enum RequiredAction {
-        VERIFY_EMAIL, UPDATE_PROFILE, CONFIGURE_TOTP, UPDATE_PASSWORD
+        VERIFY_EMAIL, UPDATE_PROFILE, CONFIGURE_TOTP, UPDATE_PASSWORD, TERMS_AND_CONDITIONS
     }
 }

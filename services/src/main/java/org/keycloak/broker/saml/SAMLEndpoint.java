@@ -19,11 +19,11 @@ package org.keycloak.broker.saml;
 
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
-import org.keycloak.common.ClientConnection;
-import org.keycloak.common.VerificationException;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.broker.provider.IdentityProvider;
+import org.keycloak.common.ClientConnection;
+import org.keycloak.common.VerificationException;
 import org.keycloak.dom.saml.v2.assertion.AssertionType;
 import org.keycloak.dom.saml.v2.assertion.AttributeStatementType;
 import org.keycloak.dom.saml.v2.assertion.AttributeType;
@@ -38,14 +38,15 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
+import org.keycloak.models.KeyManager;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.saml.JaxrsSAML2BindingBuilder;
-import org.keycloak.saml.SAML2LogoutResponseBuilder;
-import org.keycloak.saml.SAMLRequestParser;
 import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.protocol.saml.SamlProtocolUtils;
+import org.keycloak.saml.SAML2LogoutResponseBuilder;
+import org.keycloak.saml.SAMLRequestParser;
 import org.keycloak.saml.common.constants.GeneralConstants;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.common.exceptions.ConfigurationException;
@@ -65,6 +66,7 @@ import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
@@ -72,9 +74,13 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import java.io.IOException;
-import java.security.PublicKey;
+import java.security.Key;
 import java.security.cert.X509Certificate;
+import java.util.LinkedList;
 import java.util.List;
+import org.keycloak.rotation.HardcodedKeyLocator;
+import org.keycloak.rotation.KeyLocator;
+import org.keycloak.saml.processing.core.util.KeycloakKeySamlExtensionGenerator;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -87,6 +93,7 @@ public class SAMLEndpoint {
     public static final String SAML_FEDERATED_SUBJECT_NAMEFORMAT = "SAML_FEDERATED_SUBJECT_NAMEFORMAT";
     public static final String SAML_LOGIN_RESPONSE = "SAML_LOGIN_RESPONSE";
     public static final String SAML_ASSERTION = "SAML_ASSERTION";
+    public static final String SAML_IDP_INITIATED_CLIENT_ID = "SAML_IDP_INITIATED_CLIENT_ID";
     public static final String SAML_AUTHN_STATEMENT = "SAML_AUTHN_STATEMENT";
     protected RealmModel realm;
     protected EventBuilder event;
@@ -125,7 +132,7 @@ public class SAMLEndpoint {
     public Response redirectBinding(@QueryParam(GeneralConstants.SAML_REQUEST_KEY) String samlRequest,
                                     @QueryParam(GeneralConstants.SAML_RESPONSE_KEY) String samlResponse,
                                     @QueryParam(GeneralConstants.RELAY_STATE) String relayState)  {
-        return new RedirectBinding().execute(samlRequest, samlResponse, relayState);
+        return new RedirectBinding().execute(samlRequest, samlResponse, relayState, null);
     }
 
 
@@ -136,7 +143,29 @@ public class SAMLEndpoint {
     public Response postBinding(@FormParam(GeneralConstants.SAML_REQUEST_KEY) String samlRequest,
                                 @FormParam(GeneralConstants.SAML_RESPONSE_KEY) String samlResponse,
                                 @FormParam(GeneralConstants.RELAY_STATE) String relayState) {
-        return new PostBinding().execute(samlRequest, samlResponse, relayState);
+        return new PostBinding().execute(samlRequest, samlResponse, relayState, null);
+    }
+
+    @Path("clients/{client_id}")
+    @GET
+    public Response redirectBinding(@QueryParam(GeneralConstants.SAML_REQUEST_KEY) String samlRequest,
+                                    @QueryParam(GeneralConstants.SAML_RESPONSE_KEY) String samlResponse,
+                                    @QueryParam(GeneralConstants.RELAY_STATE) String relayState,
+                                    @PathParam("client_id") String clientId)  {
+        return new RedirectBinding().execute(samlRequest, samlResponse, relayState, clientId);
+    }
+
+
+    /**
+     */
+    @Path("clients/{client_id}")
+    @POST
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    public Response postBinding(@FormParam(GeneralConstants.SAML_REQUEST_KEY) String samlRequest,
+                                @FormParam(GeneralConstants.SAML_RESPONSE_KEY) String samlResponse,
+                                @FormParam(GeneralConstants.RELAY_STATE) String relayState,
+                                @PathParam("client_id") String clientId) {
+        return new PostBinding().execute(samlRequest, samlResponse, relayState, clientId);
     }
 
     protected abstract class Binding {
@@ -173,22 +202,28 @@ public class SAMLEndpoint {
         protected abstract void verifySignature(String key, SAMLDocumentHolder documentHolder) throws VerificationException;
         protected abstract SAMLDocumentHolder extractRequestDocument(String samlRequest);
         protected abstract SAMLDocumentHolder extractResponseDocument(String response);
-        protected PublicKey getIDPKey() {
-            X509Certificate certificate = null;
-            try {
-                certificate = XMLSignatureUtil.getX509CertificateFromKeyInfoString(config.getSigningCertificate().replaceAll("\\s", ""));
-            } catch (ProcessingException e) {
-                throw new RuntimeException(e);
+        
+        protected KeyLocator getIDPKeyLocator() {
+            List<Key> keys = new LinkedList<>();
+
+            for (String signingCertificate : config.getSigningCertificates()) {
+                try {
+                    X509Certificate cert = XMLSignatureUtil.getX509CertificateFromKeyInfoString(signingCertificate.replaceAll("\\s", ""));
+                    keys.add(cert.getPublicKey());
+                } catch (ProcessingException e) {
+                    throw new RuntimeException(e);
+                }
             }
-            return certificate.getPublicKey();
+
+            return new HardcodedKeyLocator(keys);
         }
 
-        public Response execute(String samlRequest, String samlResponse, String relayState) {
+        public Response execute(String samlRequest, String samlResponse, String relayState, String clientId) {
             event = new EventBuilder(realm, session, clientConnection);
             Response response = basicChecks(samlRequest, samlResponse);
             if (response != null) return response;
             if (samlRequest != null) return handleSamlRequest(samlRequest, relayState);
-            else return handleSamlResponse(samlResponse, relayState);
+            else return handleSamlResponse(samlResponse, relayState, clientId);
         }
 
         protected Response handleSamlRequest(String samlRequest, String relayState) {
@@ -264,13 +299,19 @@ public class SAMLEndpoint {
             builder.issuer(issuerURL);
             JaxrsSAML2BindingBuilder binding = new JaxrsSAML2BindingBuilder()
                         .relayState(relayState);
+            boolean postBinding = config.isPostBindingResponse();
             if (config.isWantAuthnRequestsSigned()) {
-                binding.signWith(realm.getPrivateKey(), realm.getPublicKey(), realm.getCertificate())
+                KeyManager.ActiveRsaKey keys = session.keys().getActiveRsaKey(realm);
+                String keyName = config.getXmlSigKeyInfoKeyNameTransformer().getKeyName(keys.getKid(), keys.getCertificate());
+                binding.signWith(keyName, keys.getPrivateKey(), keys.getPublicKey(), keys.getCertificate())
                         .signatureAlgorithm(provider.getSignatureAlgorithm())
                         .signDocument();
+                if (! postBinding && config.isAddExtensionsElementWithKeyInfo()) {    // Only include extension if REDIRECT binding and signing whole SAML protocol message
+                    builder.addExtension(new KeycloakKeySamlExtensionGenerator(keyName));
+                }
             }
             try {
-                if (config.isPostBindingResponse()) {
+                if (postBinding) {
                     return binding.postBinding(builder.buildDocument()).response(config.getSingleLogoutServiceUrl());
                 } else {
                     return binding.redirectBinding(builder.buildDocument()).response(config.getSingleLogoutServiceUrl());
@@ -288,18 +329,21 @@ public class SAMLEndpoint {
         private String getEntityId(UriInfo uriInfo, RealmModel realm) {
             return UriBuilder.fromUri(uriInfo.getBaseUri()).path("realms").path(realm.getName()).build().toString();
         }
-        protected Response handleLoginResponse(String samlResponse, SAMLDocumentHolder holder, ResponseType responseType, String relayState) {
+        protected Response handleLoginResponse(String samlResponse, SAMLDocumentHolder holder, ResponseType responseType, String relayState, String clientId) {
 
             try {
-                AssertionType assertion = AssertionUtil.getAssertion(responseType, realm.getPrivateKey());
+                KeyManager.ActiveRsaKey keys = session.keys().getActiveRsaKey(realm);
+                AssertionType assertion = AssertionUtil.getAssertion(responseType, keys.getPrivateKey());
                 SubjectType subject = assertion.getSubject();
                 SubjectType.STSubType subType = subject.getSubType();
                 NameIDType subjectNameID = (NameIDType) subType.getBaseID();
                 //Map<String, String> notes = new HashMap<>();
                 BrokeredIdentityContext identity = new BrokeredIdentityContext(subjectNameID.getValue());
-                identity.setCode(relayState);
                 identity.getContextData().put(SAML_LOGIN_RESPONSE, responseType);
                 identity.getContextData().put(SAML_ASSERTION, assertion);
+                if (clientId != null && ! clientId.trim().isEmpty()) {
+                    identity.getContextData().put(SAML_IDP_INITIATED_CLIENT_ID, clientId);
+                }
 
                 identity.setUsername(subjectNameID.getValue());
 
@@ -340,6 +384,7 @@ public class SAMLEndpoint {
                 if (authn != null && authn.getSessionIndex() != null) {
                     identity.setBrokerSessionId(identity.getBrokerUserId() + "." + authn.getSessionIndex());
                  }
+                identity.setCode(relayState);
 
 
                 return callback.authenticated(identity);
@@ -352,7 +397,7 @@ public class SAMLEndpoint {
 
 
 
-        public Response handleSamlResponse(String samlResponse, String relayState) {
+        public Response handleSamlResponse(String samlResponse, String relayState, String clientId) {
             SAMLDocumentHolder holder = extractResponseDocument(samlResponse);
             StatusResponseType statusResponse = (StatusResponseType)holder.getSamlObject();
             // validate destination
@@ -373,7 +418,7 @@ public class SAMLEndpoint {
                 }
             }
             if (statusResponse instanceof ResponseType) {
-                return handleLoginResponse(samlResponse, holder, (ResponseType)statusResponse, relayState);
+                return handleLoginResponse(samlResponse, holder, (ResponseType)statusResponse, relayState, clientId);
 
             } else {
                 // todo need to check that it is actually a LogoutResponse
@@ -415,7 +460,7 @@ public class SAMLEndpoint {
     protected class PostBinding extends Binding {
         @Override
         protected void verifySignature(String key, SAMLDocumentHolder documentHolder) throws VerificationException {
-            SamlProtocolUtils.verifyDocumentSignature(documentHolder.getSamlDocument(), getIDPKey());
+            SamlProtocolUtils.verifyDocumentSignature(documentHolder.getSamlDocument(), getIDPKeyLocator());
         }
 
         @Override
@@ -437,8 +482,8 @@ public class SAMLEndpoint {
     protected class RedirectBinding extends Binding {
         @Override
         protected void verifySignature(String key, SAMLDocumentHolder documentHolder) throws VerificationException {
-            PublicKey publicKey = getIDPKey();
-            SamlProtocolUtils.verifyRedirectSignature(publicKey, uriInfo, key);
+            KeyLocator locator = getIDPKeyLocator();
+            SamlProtocolUtils.verifyRedirectSignature(documentHolder, locator, uriInfo, key);
         }
 
 

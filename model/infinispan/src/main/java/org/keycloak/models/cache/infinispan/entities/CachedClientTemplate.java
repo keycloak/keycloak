@@ -20,11 +20,8 @@ package org.keycloak.models.cache.infinispan.entities;
 import org.keycloak.models.ClientTemplateModel;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.cache.infinispan.RealmCache;
 
-import java.io.Serializable;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;

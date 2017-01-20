@@ -21,6 +21,7 @@ import org.jboss.resteasy.client.jaxrs.ResteasyClient;
 import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
 import org.jboss.resteasy.client.jaxrs.ResteasyWebTarget;
 import org.keycloak.testsuite.client.resources.TestApplicationResource;
+import org.keycloak.testsuite.client.resources.TestExampleCompanyResource;
 import org.keycloak.testsuite.client.resources.TestingResource;
 
 /**
@@ -40,10 +41,16 @@ public class KeycloakTestingClient {
     }
 
     public TestingResource testing() {
-        return target.proxy(TestingResource.class);
+        return target.path("/realms/master").proxy(TestingResource.class);
+    }
+
+    public TestingResource testing(String realm) {
+        return target.path("/realms/" + realm).proxy(TestingResource.class);
     }
 
     public TestApplicationResource testApp() { return target.proxy(TestApplicationResource.class); }
+
+    public TestExampleCompanyResource testExampleCompany() { return target.proxy(TestExampleCompanyResource.class); }
 
     public void close() {
         client.close();

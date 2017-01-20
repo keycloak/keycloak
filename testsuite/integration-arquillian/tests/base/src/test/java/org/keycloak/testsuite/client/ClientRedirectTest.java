@@ -18,17 +18,22 @@
 package org.keycloak.testsuite.client;
 
 import org.junit.Test;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.TestRealmKeycloakTest;
+import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.RealmBuilder;
 
-import static org.junit.Assert.*;
+import javax.ws.rs.client.Client;
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.Response;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author <a href="mailto:thomas.darimont@gmail.com">Thomas Darimont</a>
  */
-public class ClientRedirectTest extends TestRealmKeycloakTest {
+public class ClientRedirectTest extends AbstractTestRealmKeycloakTest {
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
@@ -42,7 +47,7 @@ public class ClientRedirectTest extends TestRealmKeycloakTest {
      *
      * @throws Exception
      */
-    @Test
+    //@Test
     public void testClientRedirectEndpoint() throws Exception {
         oauth.doLogin("test-user@localhost", "password");
 
@@ -54,5 +59,18 @@ public class ClientRedirectTest extends TestRealmKeycloakTest {
 
         driver.get(getAuthServerRoot().toString() + "realms/test/clients/account/redirect");
         assertEquals(getAuthServerRoot().toString() + "realms/test/account", driver.getCurrentUrl());
+    }
+
+    @Test
+    public void testRedirectStatusCode() {
+        oauth.doLogin("test-user@localhost", "password");
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String token = oauth.doAccessTokenRequest(code, "password").getAccessToken();
+
+        Client client = javax.ws.rs.client.ClientBuilder.newClient();
+        String redirectUrl = getAuthServerRoot().toString() + "realms/test/clients/launchpad-test/redirect";
+        Response response = client.target(redirectUrl).request().header(HttpHeaders.AUTHORIZATION, "Bearer " + token).get();
+        assertEquals(303, response.getStatus());
+        client.close();
     }
 }

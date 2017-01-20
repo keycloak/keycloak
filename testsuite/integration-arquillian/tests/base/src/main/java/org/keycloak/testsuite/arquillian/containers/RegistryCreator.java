@@ -16,9 +16,6 @@
  */
 package org.keycloak.testsuite.arquillian.containers;
 
-import java.util.Collection;
-import java.util.Map;
-
 import org.jboss.arquillian.config.descriptor.api.ArquillianDescriptor;
 import org.jboss.arquillian.config.descriptor.api.ContainerDef;
 import org.jboss.arquillian.config.descriptor.api.GroupDef;
@@ -33,6 +30,11 @@ import org.jboss.arquillian.core.api.annotation.Observes;
 import org.jboss.arquillian.core.spi.ServiceLoader;
 import org.jboss.arquillian.core.spi.Validate;
 import org.jboss.logging.Logger;
+
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+
 import static org.keycloak.testsuite.arquillian.containers.SecurityActions.isClassPresent;
 import static org.keycloak.testsuite.arquillian.containers.SecurityActions.loadClass;
 
@@ -71,7 +73,17 @@ public class RegistryCreator {
             throw new IllegalStateException("There are not any container adapters on the classpath");
         }
 
-        for (ContainerDef container : event.getContainers()) {
+        createRegistry(event.getContainers(), containers, reg, serviceLoader);
+
+        for (GroupDef group : event.getGroups()) {
+            createRegistry(group.getGroupContainers(), containers, reg, serviceLoader);
+        }
+
+        registry.set(reg);
+    }
+
+    private void createRegistry(List<ContainerDef> containerDefs, Collection<DeployableContainer> containers, ContainerRegistry reg, ServiceLoader serviceLoader) {
+        for (ContainerDef container : containerDefs) {
             if (isCreatingContainer(container, containers)) {
                 if (isEnabled(container)) {
                     log.info("Registering container: " + container.getContainerName());
@@ -81,21 +93,6 @@ public class RegistryCreator {
                 }
             }
         }
-
-        for (GroupDef group : event.getGroups()) {
-            for (ContainerDef container : group.getGroupContainers()) {
-                if (isCreatingContainer(container, containers)) {
-                    if (isEnabled(container)) {
-                        log.info("Registering container: " + container.getContainerName());
-                        reg.create(container, serviceLoader);
-                    } else {
-                        log.info("Container is disabled: " + container.getContainerName());
-                    }
-                }
-            }
-        }
-
-        registry.set(reg);
     }
 
     private static final String ENABLED = "enabled";
@@ -138,7 +135,7 @@ public class RegistryCreator {
         Validate.notNullOrEmpty(adapterImplClass, "The value of " + ADAPTER_IMPL_CONFIG_STRING + " can not be a null object "
                 + "nor an empty string!");
 
-        Class<?> foundAdapter = null;
+        Class<?> foundAdapter;
 
         if (isClassPresent(adapterImplClass)) {
             foundAdapter = loadClass(adapterImplClass);

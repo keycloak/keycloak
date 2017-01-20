@@ -18,7 +18,6 @@
 package org.keycloak.testsuite.util;
 
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
-import org.keycloak.services.util.P3PHelper;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

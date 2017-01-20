@@ -31,6 +31,7 @@ import org.junit.Assert;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.RSATokenVerifier;
 import org.keycloak.common.VerificationException;
+import org.keycloak.common.util.PemUtils;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.crypto.RSAProvider;
@@ -38,7 +39,7 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.util.BasicAuthHelper;
-import org.keycloak.common.util.PemUtils;
+import org.keycloak.util.TokenUtil;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 
@@ -442,9 +443,10 @@ public class OAuthClient {
         if(uiLocales != null){
             b.queryParam(OAuth2Constants.UI_LOCALES_PARAM, uiLocales);
         }
-        if (scope != null) {
-            b.queryParam(OAuth2Constants.SCOPE, scope);
-        }
+
+        String scopeParam = TokenUtil.attachOIDCScope(scope);
+        b.queryParam(OAuth2Constants.SCOPE, scopeParam);
+
         return b.build(realm).toString();
     }
 

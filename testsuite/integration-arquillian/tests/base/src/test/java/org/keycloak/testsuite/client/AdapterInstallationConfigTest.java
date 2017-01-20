@@ -25,7 +25,9 @@ import org.keycloak.common.enums.SslRequired;
 import org.keycloak.representations.adapters.config.AdapterConfig;
 import org.keycloak.representations.idm.ClientRepresentation;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -35,13 +37,10 @@ public class AdapterInstallationConfigTest extends AbstractClientRegistrationTes
     private ClientRepresentation client;
     private ClientRepresentation client2;
     private ClientRepresentation clientPublic;
-    private String publicKey;
 
     @Before
     public void before() throws Exception {
         super.before();
-
-        publicKey = adminClient.realm(REALM_NAME).toRepresentation().getPublicKey();
 
         client = new ClientRepresentation();
         client.setEnabled(true);
@@ -92,7 +91,6 @@ public class AdapterInstallationConfigTest extends AbstractClientRegistrationTes
         assertEquals(1, config.getCredentials().size());
         assertEquals(client.getSecret(), config.getCredentials().get("secret"));
 
-        assertEquals(publicKey, config.getRealmKey());
         assertEquals(client.getClientId(), config.getResource());
         assertEquals(SslRequired.EXTERNAL.name().toLowerCase(), config.getSslRequired());
     }
@@ -132,7 +130,6 @@ public class AdapterInstallationConfigTest extends AbstractClientRegistrationTes
 
         assertEquals(0, config.getCredentials().size());
 
-        assertEquals(publicKey, config.getRealmKey());
         assertEquals(clientPublic.getClientId(), config.getResource());
         assertEquals(SslRequired.EXTERNAL.name().toLowerCase(), config.getSslRequired());
     }

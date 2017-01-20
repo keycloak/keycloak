@@ -16,11 +16,13 @@
  */
 package org.keycloak.services.resources;
 
+import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.BadRequestException;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.UnauthorizedException;
+import org.keycloak.OAuthErrorException;
 import org.keycloak.common.ClientConnection;
-import org.keycloak.OAuth2Constants;
+import org.keycloak.common.util.Time;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -30,9 +32,8 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
+import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.services.ForbiddenException;
-import org.keycloak.services.ServicesLogger;
-import org.keycloak.common.util.Time;
 
 import javax.ws.rs.HeaderParam;
 import javax.ws.rs.POST;
@@ -46,15 +47,13 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import javax.ws.rs.ext.Providers;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class ClientsManagementService {
 
-    protected static final ServicesLogger logger = ServicesLogger.ROOT_LOGGER;
+    private static final Logger logger = Logger.getLogger(ClientsManagementService.class);
 
     private RealmModel realm;
 
@@ -172,11 +171,9 @@ public class ClientsManagementService {
         ClientModel client = AuthorizeClientUtil.authorizeClient(session, event).getClient();
 
         if (client.isPublicClient()) {
-            Map<String, String> error = new HashMap<String, String>();
-            error.put(OAuth2Constants.ERROR, "invalid_client");
-            error.put(OAuth2Constants.ERROR_DESCRIPTION, "Public clients not allowed");
+            OAuth2ErrorRepresentation errorRep = new OAuth2ErrorRepresentation(OAuthErrorException.INVALID_CLIENT, "Public clients not allowed");
             event.error(Errors.INVALID_CLIENT);
-            throw new BadRequestException("Public clients not allowed", javax.ws.rs.core.Response.status(javax.ws.rs.core.Response.Status.BAD_REQUEST).entity(error).type(MediaType.APPLICATION_JSON_TYPE).build());
+            throw new BadRequestException("Public clients not allowed", javax.ws.rs.core.Response.status(javax.ws.rs.core.Response.Status.BAD_REQUEST).entity(errorRep).type(MediaType.APPLICATION_JSON_TYPE).build());
         }
 
         return client;
@@ -185,11 +182,9 @@ public class ClientsManagementService {
     protected String getClientClusterHost(MultivaluedMap<String, String> formData) {
         String clientClusterHost = formData.getFirst(AdapterConstants.CLIENT_CLUSTER_HOST);
         if (clientClusterHost == null || clientClusterHost.length() == 0) {
-            Map<String, String> error = new HashMap<String, String>();
-            error.put(OAuth2Constants.ERROR, "invalid_request");
-            error.put(OAuth2Constants.ERROR_DESCRIPTION, "Client cluster host not specified");
+            OAuth2ErrorRepresentation errorRep = new OAuth2ErrorRepresentation( OAuthErrorException.INVALID_REQUEST, "Client cluster host not specified");
             event.error(Errors.INVALID_CODE);
-            throw new BadRequestException("Cluster host not specified", javax.ws.rs.core.Response.status(javax.ws.rs.core.Response.Status.BAD_REQUEST).entity(error).type(MediaType.APPLICATION_JSON_TYPE).build());
+            throw new BadRequestException("Cluster host not specified", javax.ws.rs.core.Response.status(javax.ws.rs.core.Response.Status.BAD_REQUEST).entity(errorRep).type(MediaType.APPLICATION_JSON_TYPE).build());
         }
 
         return clientClusterHost;

@@ -28,5 +28,8 @@
     "register-node-at-startup": true,
     "register-node-period": 1000,
     "token-store": "cookie",
-    "principal-attribute": "email"
+    "principal-attribute": "email",
+    "token-minimum-time-to-live": 10,
+    "min-time-between-jwks-requests": 20,
+    "public-key-cache-ttl": 120
 }

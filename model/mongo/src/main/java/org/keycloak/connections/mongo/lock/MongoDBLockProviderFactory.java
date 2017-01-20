@@ -27,6 +27,8 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.dblock.DBLockProviderFactory;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
@@ -36,6 +38,9 @@ public class MongoDBLockProviderFactory implements DBLockProviderFactory {
 
     private long lockRecheckTimeMillis;
     private long lockWaitTimeoutMillis;
+
+    // True if this node has a lock acquired
+    private AtomicBoolean hasLock = new AtomicBoolean(false);
 
     protected long getLockRecheckTimeMillis() {
         return lockRecheckTimeMillis;
@@ -81,4 +86,13 @@ public class MongoDBLockProviderFactory implements DBLockProviderFactory {
     public String getId() {
         return "mongo";
     }
+
+    public boolean hasLock() {
+        return hasLock.get();
+    }
+
+    public void setHasLock(boolean hasLock) {
+        this.hasLock.set(hasLock);
+    }
+
 }

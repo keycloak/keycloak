@@ -20,7 +20,12 @@ package org.keycloak.proxy;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.keycloak.representations.adapters.config.AdapterConfig;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
