@@ -35,7 +35,7 @@ public class LDAPDnTest {
         Assert.assertEquals("uid=Johny\\,Depp\\+Pepp\\\\Foo,ou=People,dc=keycloak,dc=org", dn.toString());
         Assert.assertEquals(LDAPDn.fromString("uid=Johny\\,Depp\\+Pepp\\\\Foo,ou=People,dc=keycloak,dc=org"), dn);
 
-        Assert.assertEquals("ou=People,dc=keycloak,dc=org", dn.getParentDn());
+        Assert.assertEquals("ou=People,dc=keycloak,dc=org", dn.getParentDn().toString());
 
         Assert.assertTrue(dn.isDescendantOf(LDAPDn.fromString("dc=keycloak, dc=org")));
         Assert.assertTrue(dn.isDescendantOf(LDAPDn.fromString("dc=org")));
@@ -45,5 +45,23 @@ public class LDAPDnTest {
 
         Assert.assertEquals("uid", dn.getFirstRdnAttrName());
         Assert.assertEquals("Johny,Depp+Pepp\\Foo", dn.getFirstRdnAttrValue());
+    }
+
+    @Test
+    public void testCorrectEscape() throws Exception {
+        LDAPDn dn = LDAPDn.fromString("dc=keycloak, dc=org");
+        dn.addFirst("cn", "Johny,Džýa Foo");
+        Assert.assertEquals("cn=Johny\\,Džýa Foo,dc=keycloak,dc=org", dn.toString());
+        Assert.assertEquals("Johny,Džýa Foo", dn.getFirstRdnAttrValue());
+
+        dn = LDAPDn.fromString("dc=keycloak, dc=org");
+        dn.addFirst("cn", "Johny,Džýa Foo ");
+        Assert.assertEquals("cn=Johny\\,Džýa Foo\\ ,dc=keycloak,dc=org", dn.toString());
+        Assert.assertEquals("Johny,Džýa Foo ", dn.getFirstRdnAttrValue());
+
+        dn = LDAPDn.fromString("dc=keycloak, dc=org");
+        dn.addFirst("cn", "Johny,Džýa ");
+        Assert.assertEquals("cn=Johny\\,Džýa\\ ,dc=keycloak,dc=org", dn.toString());
+        Assert.assertEquals("Johny,Džýa ", dn.getFirstRdnAttrValue());
     }
 }
