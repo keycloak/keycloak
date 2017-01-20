@@ -256,7 +256,9 @@ ol#kc-totp-settings li:first-of-type {
     }
 
     #kc-logo-wrapper {
-        margin-left: auto;
+        position: absolute;
+        top: 25px;
+        right: 50px;
     }
 
     .login-pf .container {
@@ -327,5 +329,6 @@ ol#kc-totp-settings li:first-of-type {
 
 @media (max-height: 645px) {
     #kc-container-wrapper {
+        top: 20%;
     }
 }
