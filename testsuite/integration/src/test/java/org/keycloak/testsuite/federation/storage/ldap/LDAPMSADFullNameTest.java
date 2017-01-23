@@ -60,7 +60,7 @@ import org.openqa.selenium.WebDriver;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
-public class MSADFullNameTest {
+public class LDAPMSADFullNameTest {
 
     // Run this test just on MSAD and just when sAMAccountName is mapped to username
     private static LDAPRule ldapRule = new LDAPRule((Map<String, String> ldapConfig) -> {

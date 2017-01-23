@@ -56,7 +56,7 @@ import org.openqa.selenium.WebDriver;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
-public class MSADMapperTest {
+public class LDAPMSADMapperTest {
 
     // Run this test just on MSAD
     private static LDAPRule ldapRule = new LDAPRule((Map<String, String> ldapConfig) -> {
