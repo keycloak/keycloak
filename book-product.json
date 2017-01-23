@@ -13,6 +13,8 @@
     "community": false,
     "product": true,
     "images": "rhsso-images",
+    "appServer": "JBoss EAP 7",
+    "quickstartRepo": "https://github.com/redhat-developer/redhat-sso-quickstarts",
     "project": {
       "name": "Red Hat Single Sign-On",
       "version": "7.1.0",
@@ -28,6 +30,14 @@
       "keycloakgettingstarted": {
         "name": "Getting Started",
         "link": "/paged/getting-started-guide/"
+      },
+      "keycloakinstallingandboot": {
+        "name": "Installing and Boot",
+        "link": "/single/getting-started-guide/#install-boot"
+      },
+      "keycloakinstallclientadapter": {
+        "name": "Installing the Client Adapter",
+        "link": "/single/getting-started-guide/#installing_the_client_adapter"
       }
     }
   }

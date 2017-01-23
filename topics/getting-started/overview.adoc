@@ -1,21 +1,29 @@
 [[_getting_started_overview]]
 == Getting Started
 
-All tutorials are based on the *{{book.project.name}} Demo Distribution*.
+Before you can participate in this tutorial, you need to complete the installation of {{book.project.name}} and create the
+initial admin user as shown in the link:{{book.project.doc_base_url}}{{book.project.doc_info_version_url}}{{book.external_link.keycloakinstallingandboot.link}}[{{book.external_link.keycloakinstallingandboot.name}}] tutorial.
+There is one caveat to this.  You have to run a separate {{book.appServer}} instance on the same machine as the
+{{book.project.name}} server.  This separate instance will run your Java Servlet application.  Because of this you will
+have to run the {{book.project.name}} under a different port so that there are no port conflicts when running on the
+same machine.  Use the `jboss.socket.binding.port-offset` system property on the command line.  The value of this property
+is a number that will be added to the base value of every port opened by the {{book.project.name}} server.
 
-* *keycloak-demo-{{book.project.version}}.[zip|tar.gz]*
+To boot the {{book.project.name}} server:
 
-To unpack this file run the _unzip_ or _gunzip_ and _tar_ utilities. Throughout this guide the directory where you have unpacked
-the demo distribution is referenced as *${KEYCLOAK_DEMO_SERVER_DIR}*.
+.Linux/Unix
+[source]
+----
+$ ${KEYCLOAK_SERVER_DIR}/bin/standalone.sh -Djboss.socket.binding.port-offset=100
+----
 
-[NOTE]
-This guide assumes that you are already familiar with {{book.project.name}} and that you are able to install and boot a {{book.project.name}} Server. For more information, see the link:{{book.project.doc_base_url}}{{book.project.doc_info_version-url}}{{book.external_link.keycloakgettingstarted.link}}[{{book.external_link.keycloakgettingstarted.name}}] tutorials.
+.Windows
+[source]
+----
+> ${KEYCLOAK_SERVER_DIR}\bin\standalone.bat -Djboss.socket.binding.port-offset=100
+----
 
-Ensure you have a {{book.project.name}} instance running; the default configuration is http://localhost:8080/auth[http://localhost:8080/auth]. After logging in to the
-Administration Console, a page similar to this one is displayed:
+For more details about how to install and configure a {{book.appServer}}, please follow the steps on the link:{{book.project.doc_base_url}}{{book.project.doc_info_version_url}}{{book.external_link.keycloakinstallclientadapter.link}}[{{book.external_link.keycloakinstallclientadapter.name}}] tutorial.
 
-.{{book.project.name}} Administration Console
-image:../../{{book.images}}/getting-started/kc-start-page.png[alt="{{book.project.name}} Administration Console"]
-
-All source code for the getting started tutorials can be obtained from the demo distributions. The authorization-related examples
-are located at *${KEYCLOAK_DEMO_SERVER_DIR}/examples/authz*.
+After installing and booting both servers you should be able to access {{book.project.name}} Admin Console at http://localhost:8180/auth/admin/ and also the {{book.appServer}} instance at
+http://localhost:8080.
