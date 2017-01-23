@@ -17,16 +17,13 @@
 
 package org.keycloak.testsuite.federation.storage.ldap;
 
-import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.FixMethodOrder;
 import org.junit.Rule;
@@ -40,11 +37,15 @@ import org.keycloak.component.ComponentModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.storage.ldap.LDAPStorageProvider;
+import org.keycloak.storage.ldap.idm.model.LDAPObject;
 import org.keycloak.storage.ldap.mappers.membership.LDAPGroupMapperMode;
+import org.keycloak.storage.ldap.mappers.membership.group.GroupLDAPStorageMapperFactory;
 import org.keycloak.storage.ldap.mappers.membership.group.GroupMapperConfig;
 import org.keycloak.testsuite.OAuthClient;
 import org.keycloak.testsuite.pages.AppPage;
@@ -66,7 +67,16 @@ import static org.keycloak.testsuite.Constants.AUTH_SERVER_ROOT;
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class LDAPSpecialCharsTest {
 
-    private static LDAPRule ldapRule = new LDAPRule();
+
+    // Skip this test for MSAD with sAMAccountName as it is not allowed to use specialCharacters in sAMAccountName attribute
+    private static LDAPRule ldapRule = new LDAPRule((Map<String, String> ldapConfig) -> {
+
+        String vendor = ldapConfig.get(LDAPConstants.VENDOR);
+        String usernameAttr = ldapConfig.get(LDAPConstants.USERNAME_LDAP_ATTRIBUTE);
+
+        return (vendor.equals(LDAPConstants.VENDOR_ACTIVE_DIRECTORY) && usernameAttr.equalsIgnoreCase(LDAPConstants.SAM_ACCOUNT_NAME));
+
+    });
 
     static ComponentModel ldapModel = null;
     static String descriptionAttrName = null;
@@ -75,9 +85,18 @@ public class LDAPSpecialCharsTest {
     private static KeycloakRule keycloakRule = new KeycloakRule(new LDAPGroupMapperTest.GroupTestKeycloakSetup(ldapRule) {
 
         @Override
-        protected void postSetup() {
+        protected void postSetup(RealmModel appRealm, LDAPStorageProvider ldapProvider) {
             LDAPSpecialCharsTest.ldapModel = this.ldapModel;
             LDAPSpecialCharsTest.descriptionAttrName = this.descriptionAttrName;
+
+            LDAPObject groupSpecialCharacters = LDAPTestUtils.createLDAPGroup(session, appRealm, ldapModel, "group-spec,ia*l_characžter)s", descriptionAttrName, "group-special-characters");
+
+            // Resync LDAP groups to Keycloak DB
+            ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(appRealm, ldapModel, "groupsMapper");
+            new GroupLDAPStorageMapperFactory().create(session, mapperModel).syncDataFromFederationProviderToKeycloak(appRealm);
+
+            LDAPObject james2 = LDAPTestUtils.addLDAPUser(ldapProvider, appRealm, "jamees,key*cložak)ppp", "James2", "Brown2", "james2@email.org", null, "89102");
+            LDAPTestUtils.updateLDAPPassword(ldapProvider, james2, "Password1");
         }
 
     });
