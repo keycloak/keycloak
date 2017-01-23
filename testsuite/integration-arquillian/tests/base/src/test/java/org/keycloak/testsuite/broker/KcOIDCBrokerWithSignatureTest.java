@@ -211,6 +211,23 @@ public class KcOIDCBrokerWithSignatureTest extends AbstractBaseBrokerTest {
         // Set key id to a valid one
         cfg.setPublicKeySignatureVerifierKeyId(expectedKeyId);
         updateIdentityProvider(idpRep);
+        logInAsUserInIDP();
+        assertLoggedInAccountManagement();
+        logoutFromRealm(bc.consumerRealmName());
+
+        // Set key id to empty
+        cfg.setPublicKeySignatureVerifierKeyId("");
+        updateIdentityProvider(idpRep);
+        logInAsUserInIDP();
+        assertLoggedInAccountManagement();
+        logoutFromRealm(bc.consumerRealmName());
+
+        // Unset key id
+        cfg.setPublicKeySignatureVerifierKeyId(null);
+        updateIdentityProvider(idpRep);
+        logInAsUserInIDP();
+        assertLoggedInAccountManagement();
+        logoutFromRealm(bc.consumerRealmName());
     }
 
 
