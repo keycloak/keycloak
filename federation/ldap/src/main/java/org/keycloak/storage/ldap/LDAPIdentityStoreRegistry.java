@@ -20,11 +20,15 @@ package org.keycloak.storage.ldap;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
 import org.keycloak.storage.ldap.idm.store.ldap.LDAPIdentityStore;
 import org.keycloak.storage.ldap.mappers.LDAPConfigDecorator;
 
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -35,7 +39,7 @@ public class LDAPIdentityStoreRegistry {
 
     private Map<String, LDAPIdentityStoreContext> ldapStores = new ConcurrentHashMap<>();
 
-    public LDAPIdentityStore getLdapStore(ComponentModel ldapModel, Map<ComponentModel, LDAPConfigDecorator> configDecorators) {
+    public LDAPIdentityStore getLdapStore(KeycloakSession session, ComponentModel ldapModel, Map<ComponentModel, LDAPConfigDecorator> configDecorators) {
         LDAPIdentityStoreContext context = ldapStores.get(ldapModel.getId());
 
         // Ldap config might have changed for the realm. In this case, we must re-initialize
@@ -49,7 +53,7 @@ public class LDAPIdentityStoreRegistry {
         }
 
         if (context == null || !ldapConfig.equals(context.config)) {
-            logLDAPConfig(ldapModel.getName(), ldapConfig);
+            logLDAPConfig(session, ldapModel, ldapConfig);
 
             LDAPIdentityStore store = createLdapIdentityStore(ldapConfig);
             context = new LDAPIdentityStoreContext(ldapConfig, store);
@@ -59,8 +63,18 @@ public class LDAPIdentityStoreRegistry {
     }
 
     // Don't log LDAP password
-    private void logLDAPConfig(String fedProviderDisplayName, LDAPConfig ldapConfig) {
-        logger.infof("Creating new LDAP Store for the LDAP storage provider: '%s', LDAP Configuration: %s", fedProviderDisplayName, ldapConfig.toString());
+    private void logLDAPConfig(KeycloakSession session, ComponentModel ldapModel, LDAPConfig ldapConfig) {
+        logger.infof("Creating new LDAP Store for the LDAP storage provider: '%s', LDAP Configuration: %s", ldapModel.getName(), ldapConfig.toString());
+
+        if (logger.isDebugEnabled()) {
+            RealmModel realm = session.realms().getRealm(ldapModel.getParentId());
+            List<ComponentModel> mappers = realm.getComponents(ldapModel.getId());
+            mappers.stream().forEach((ComponentModel c) -> {
+
+                logger.debugf("Mapper for provider: %s, Mapper name: %s, Provider: %s, Mapper configuration: %s", ldapModel.getName(), c.getName(), c.getProviderId(), c.getConfig().toString());
+
+            });
+        }
     }
 
     /**

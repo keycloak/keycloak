@@ -133,11 +133,15 @@ public class MSADLDSUserAccountControlStorageMapper extends AbstractLDAPStorageM
         if (ldapProvider.getEditMode() == UserStorageProvider.EditMode.WRITABLE) {
             if (errorCode.equals("532") || errorCode.equals("773")) {
                 // User needs to change his MSAD password. Allow him to login, but add UPDATE_PASSWORD required action
-                user.addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
+                if (!user.getRequiredActions().contains(UserModel.RequiredAction.UPDATE_PASSWORD.name())) {
+                    user.addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
+                }
                 return true;
             } else if (errorCode.equals("533")) {
                 // User is disabled in MSAD LDS. Set him to disabled in KC as well
-                user.setEnabled(false);
+                if (user.isEnabled()) {
+                    user.setEnabled(false);
+                }
                 return true;
             } else if (errorCode.equals("775")) {
                 logger.warnf("Locked user '%s' attempt to login", user.getUsername());

@@ -454,6 +454,11 @@ public class LDAPOperationManager {
                         values = "No values";
                     }
 
+                    String attrName = item.getAttribute().getID().toUpperCase();
+                    if (attrName.contains("PASSWORD") || attrName.contains("UNICODEPWD")) {
+                        values = "********************";
+                    }
+
                     logger.tracef("  Op [%s]: %s = %s", item.getModificationOp(), item.getAttribute().getID(), values);
                 }
 
@@ -600,7 +605,11 @@ public class LDAPOperationManager {
         }
 
         if (logger.isDebugEnabled()) {
-            logger.debugf("Creating LdapContext using properties: [%s]", env);
+            Map<String, Object> copyEnv = new HashMap<>(env);
+            if (copyEnv.containsKey(Context.SECURITY_CREDENTIALS)) {
+                copyEnv.put(Context.SECURITY_CREDENTIALS, "**************************************");
+            }
+            logger.debugf("Creating LdapContext using properties: [%s]", copyEnv);
         }
 
         return env;
