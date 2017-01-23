@@ -155,4 +155,12 @@ public class SAMLParserTest {
             assertThat(parsedObject, instanceOf(EntityDescriptorType.class));
         }
     }
+
+    @Test
+    public void testAttributeProfileMetadata() throws Exception {
+        try (InputStream st = SAMLParserTest.class.getResourceAsStream("KEYCLOAK-4236-AttributeProfile-element.xml")) {
+            Object parsedObject = parser.parse(st);
+            assertThat(parsedObject, instanceOf(EntityDescriptorType.class));
+        }
+    }
 }
