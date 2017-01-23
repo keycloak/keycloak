@@ -2,14 +2,14 @@
 ==== Spring Security Adapter
 
 To secure an application with Spring Security and Keycloak, add this adapter as a dependency to your project.
-You then have to provide some extra beans in your Spring Security configuration file and add the Keycloak security filter to your pipeline. 
+You then have to provide some extra beans in your Spring Security configuration file and add the Keycloak security filter to your pipeline.
 
 Unlike the other Keycloak Adapters, you should not configure your security in web.xml.
-However, keycloak.json is still required. 
+However, keycloak.json is still required.
 
 ===== Adapter Installation
 
-Add Keycloak Spring Security adapter as a dependency to your Maven POM or Gradle build. 
+Add Keycloak Spring Security adapter as a dependency to your Maven POM or Gradle build.
 
 
 [source,xml,subs="attributes+"]
@@ -23,19 +23,19 @@ Add Keycloak Spring Security adapter as a dependency to your Maven POM or Gradle
 
 ===== Spring Security Configuration
 
-The Keycloak Spring Security adapter takes advantage of Spring Security's flexible security configuration syntax. 
+The Keycloak Spring Security adapter takes advantage of Spring Security's flexible security configuration syntax.
 
 ====== Java Configuration
 
 Keycloak provides a KeycloakWebSecurityConfigurerAdapter as a convenient base class for creating a http://docs.spring.io/spring-security/site/docs/4.0.x/apidocs/org/springframework/security/config/annotation/web/WebSecurityConfigurer.html[WebSecurityConfigurer]                instance.
 The implementation allows customization by overriding methods.
-While its use is not required, it greatly simplifies your security context configuration. 
+While its use is not required, it greatly simplifies your security context configuration.
 
 
 [source]
 ----
 
-                    
+
 @Configuration
 @EnableWebSecurity
 @ComponentScan(basePackageClasses = KeycloakSecurityComponents.class)
@@ -69,22 +69,22 @@ public class SecurityConfig extends KeycloakWebSecurityConfigurerAdapter
                 .anyRequest().permitAll();
     }
 }
-----            
+----
 
-You must provide a session authentication strategy bean which should be of type `RegisterSessionAuthenticationStrategy` for public or confidential applications and `NullAuthenticatedSessionStrategy` for bearer-only applications. 
+You must provide a session authentication strategy bean which should be of type `RegisterSessionAuthenticationStrategy` for public or confidential applications and `NullAuthenticatedSessionStrategy` for bearer-only applications.
 
 Spring Security's `SessionFixationProtectionStrategy` is currently not supported because it changes the session identifier after login via Keycloak.
-If the session identifier changes, universal log out will not work because Keycloak is unaware of the new session identifier. 
+If the session identifier changes, universal log out will not work because Keycloak is unaware of the new session identifier.
 
 ====== XML Configuration
 
-While Spring Security's XML namespace simplifies configuration, customizing the configuration can be a bit verbose. 
+While Spring Security's XML namespace simplifies configuration, customizing the configuration can be a bit verbose.
 
 
 [source]
 ----
 
-                    
+
 <?xml version="1.0" encoding="UTF-8"?>
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:context="http://www.springframework.org/schema/context"
@@ -144,7 +144,7 @@ While Spring Security's XML namespace simplifies configuration, customizing the 
     </security:http>
 
 </beans>
-----            
+----
 
 ===== Multi Tenancy
 
@@ -155,23 +155,23 @@ More details on how to implement the `KeycloakConfigResolver` can be found in <<
 ===== Naming Security Roles
 
 Spring Security, when using role-based authentication, requires that role names start with `ROLE_`.
-For example, an administrator role must be declared in Keycloak as `ROLE_ADMIN` or similar, not simply `ADMIN`. 
+For example, an administrator role must be declared in Keycloak as `ROLE_ADMIN` or similar, not simply `ADMIN`.
 
 The class `org.keycloak.adapters.springsecurity.authentication.KeycloakAuthenticationProvider`            supports an optional `org.springframework.security.core.authority.mapping.GrantedAuthoritiesMapper`            which can be used to map roles coming from Keycloak to roles recognized by Spring Security.
 Use, for example, `org.springframework.security.core.authority.mapping.SimpleAuthorityMapper` to insert the `ROLE_` prefix and convert the role name to upper case.
-The class is part of Spring Security Core module. 
+The class is part of Spring Security Core module.
 
 ===== Client to Client Support
 
 To simplify communication between clients, Keycloak provides an extension of Spring's `RestTemplate` that handles bearer token authentication for you.
 To enable this feature your security configuration must add the `KeycloakRestTemplate` bean.
-Note that it must be scoped as a prototype to function correctly. 
+Note that it must be scoped as a prototype to function correctly.
 
-For Java configuration: 
+For Java configuration:
 [source]
 ----
 
-                
+
 @Configuration
 @EnableWebSecurity
 @ComponentScan(basePackageClasses = KeycloakSecurityComponents.class)
@@ -190,24 +190,24 @@ public class SecurityConfig extends KeycloakWebSecurityConfigurerAdapter {
 
     ...
 }
-----        
+----
 
-For XML configuration: 
+For XML configuration:
 [source]
 ----
 
-                
+
 <bean id="keycloakRestTemplate" class="org.keycloak.adapters.springsecurity.client.KeycloakRestTemplate" scope="prototype">
     <constructor-arg name="factory" ref="keycloakClientRequestFactory" />
 </bean>
-----        
+----
 
 Your application code can then use `KeycloakRestTemplate` any time it needs to make a call to another client.
-For example: 
+For example:
 [source]
 ----
 
-                
+
 
 @Service
 public class RemoteProductService implements ProductService {
@@ -223,18 +223,36 @@ public class RemoteProductService implements ProductService {
         return Arrays.asList(response.getBody());
     }
 }
-----        
+----
 
-===== Spring Boot Configuration
+===== Spring Boot Integration
+
+The Spring Boot and the Spring Security adapters can be combined.
+
+====== Using Spring Boot Configuration
+
+By Default, the Spring Security Adapter looks for a `keycloak.json` configuration file. You can make sure it looks at the configuration provided by the Spring Boot Adapter by adding this bean :
+
+[source]
+----
+
+@Bean
+public KeycloakConfigResolver KeycloakConfigResolver() {
+    return new KeycloakSpringBootConfigResolver();
+}
+
+----
+
+====== Avoid double Filter bean registration
 
 Spring Boot attempts to eagerly register filter beans with the web application context.
-Therefore, when running the Keycloak Spring Security adapter in a Spring Boot environment, it may be necessary to add two ``FilterRegistrationBean``s to your security configuration to prevent the Keycloak filters from being registered twice. 
+Therefore, when running the Keycloak Spring Security adapter in a Spring Boot environment, it may be necessary to add two ``FilterRegistrationBean``s to your security configuration to prevent the Keycloak filters from being registered twice.
 
 
 [source]
 ----
 
-                
+
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig extends KeycloakWebSecurityConfigurerAdapter
@@ -259,4 +277,4 @@ public class SecurityConfig extends KeycloakWebSecurityConfigurerAdapter
 
     ...
 }
-----        
+----
