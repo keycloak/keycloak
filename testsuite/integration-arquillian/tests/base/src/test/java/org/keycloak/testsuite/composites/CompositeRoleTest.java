@@ -17,7 +17,6 @@
 package org.keycloak.testsuite.composites;
 
 import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
@@ -28,6 +27,7 @@ import org.keycloak.common.enums.SslRequired;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.util.ClientBuilder;
@@ -343,6 +343,24 @@ public class CompositeRoleTest extends AbstractCompositeKeycloakTest {
 
         AccessTokenResponse refreshResponse = oauth.doRefreshTokenRequest(response.getRefreshToken(), "password");
         Assert.assertEquals(200, refreshResponse.getStatusCode());
+    }
+
+    
+    // KEYCLOAK-4274
+    @Test
+    public void testRecursiveComposites() throws Exception {
+        // This will create recursive composite mappings between "REALM_COMPOSITE_1" and "REALM_ROLE_1"
+        RoleRepresentation realmComposite1 = testRealm().roles().get("REALM_COMPOSITE_1").toRepresentation();
+        testRealm().roles().get("REALM_ROLE_1").addComposites(Collections.singletonList(realmComposite1));
+
+        UserResource userResource = ApiUtil.findUserByUsernameId(testRealm(), "REALM_COMPOSITE_1_USER");
+        List<RoleRepresentation> realmRoles = userResource.roles().realmLevel().listEffective();
+        Assert.assertNames(realmRoles, "REALM_COMPOSITE_1", "REALM_ROLE_1");
+
+        userResource = ApiUtil.findUserByUsernameId(testRealm(), "REALM_ROLE_1_USER");
+        realmRoles = userResource.roles().realmLevel().listEffective();
+        Assert.assertNames(realmRoles, "REALM_COMPOSITE_1", "REALM_ROLE_1");
+
     }
 
 }
