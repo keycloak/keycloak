@@ -172,7 +172,7 @@ public class RoleAdapter extends AbstractMongoAdapter<MongoRoleEntity> implement
 
     @Override
     public boolean hasRole(RoleModel role) {
-        return this.equals(role) || KeycloakModelUtils.searchFor(role, this);
+        return this.equals(role) || KeycloakModelUtils.searchFor(role, this, new HashSet<>());
     }
 
     public MongoRoleEntity getRole() {
