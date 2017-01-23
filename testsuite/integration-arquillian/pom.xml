@@ -50,8 +50,9 @@
         <undertow-embedded.version>1.0.0.Alpha2</undertow-embedded.version>
 
         <!--migration properties-->
-        <migration.project.version>2.2.1.Final</migration.project.version>
-        <migration.product.version>1.9.8.Final</migration.product.version>
+        <migration.70.version>1.9.8.Final</migration.70.version>
+        <migration.70.authz.version>2.2.1.Final</migration.70.authz.version>
+        <!--<migration.71.version>2.5.1.Final</migration.71.version>-->
         
         <maven.compiler.target>1.8</maven.compiler.target>
         <maven.compiler.source>1.8</maven.compiler.source>
@@ -135,9 +136,9 @@
     
     <profiles>
         <profile>
-            <id>test-project-migration</id>
+            <id>test-70-migration</id>
             <properties>
-                <migrated.auth.server.version>${migration.project.version}</migrated.auth.server.version>
+                <migrated.auth.server.version>${migration.70.version}</migrated.auth.server.version>
             </properties>
             <build>
                 <pluginManagement>
@@ -155,9 +156,9 @@
             </build>
         </profile>
         <profile>
-            <id>test-product-migration</id>
+            <id>test-70-authz-migration</id>
             <properties>
-                <migrated.auth.server.version>${migration.product.version}</migrated.auth.server.version>
+                <migrated.auth.server.version>${migration.70.authz.version}</migrated.auth.server.version>
             </properties>
             <build>
                 <pluginManagement>
@@ -174,6 +175,26 @@
                 </pluginManagement>
             </build>
         </profile>
+<!--        <profile>
+            <id>test-71-migration</id>
+            <properties>
+                <migrated.auth.server.version>${migration.71.version}</migrated.auth.server.version>
+            </properties>
+            <build>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <artifactId>maven-surefire-plugin</artifactId>
+                            <configuration>
+                                <systemPropertyVariables>
+                                    <migrated.auth.server.version>${migrated.auth.server.version}</migrated.auth.server.version>
+                                </systemPropertyVariables>
+                            </configuration>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
+            </build>
+        </profile>-->
     </profiles>
 
 </project>

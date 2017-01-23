@@ -38,7 +38,6 @@ import java.net.URL;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
-import static org.junit.Assert.assertNotNull;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.exportimport.Strategy;
 import static org.keycloak.testsuite.Assert.assertNames;
@@ -62,25 +61,8 @@ public class LegacyImportTest extends AbstractExportImportTest {
     }
 
     @Test
-    public void importPreviousProject() throws Exception {
-
-        String projectVersion = System.getProperty("migration.project.version");
-        assertNotNull(projectVersion);
-        
-        testLegacyImport(projectVersion);
-    }
-    
-    @Test
-    public void importPreviousProduct() throws Exception {
-
-        String productVersion = System.getProperty("migration.product.version");
-        assertNotNull(productVersion);
-        
-        testLegacyImport(productVersion);
-    }
-
-    private void testLegacyImport(String version) {
-        String file = "/migration-test/migration-realm-" + version + ".json";
+    public void testLegacyImport(String version) {
+        String file = "/migration-test/migration-realm-1.9.8.Final.json";
         
         URL url = LegacyImportTest.class.getResource(file);
         String targetFilePath = new File(url.getFile()).getAbsolutePath();
