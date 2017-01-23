@@ -62,7 +62,11 @@ public class LDAPMSADMapperTest {
     private static LDAPRule ldapRule = new LDAPRule((Map<String, String> ldapConfig) -> {
 
         String vendor = ldapConfig.get(LDAPConstants.VENDOR);
-        return !(vendor.equals(LDAPConstants.VENDOR_ACTIVE_DIRECTORY));
+
+        // TODO: This is skipped as it requires that MSAD server is set to not allow weak passwords (There needs to be pwdProperties=1 set on MSAD side).
+        // TODO: Currently we can't rely on it. See KEYCLOAK-4276
+        return true;
+        // return !(vendor.equals(LDAPConstants.VENDOR_ACTIVE_DIRECTORY));
 
     });
 
