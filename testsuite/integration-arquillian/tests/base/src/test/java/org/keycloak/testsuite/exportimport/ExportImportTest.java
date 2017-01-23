@@ -179,6 +179,9 @@ public class ExportImportTest extends AbstractExportImportTest {
 
         List<ComponentRepresentation> components = adminClient.realm("test").components().query();
         KeysMetadataRepresentation keyMetadata = adminClient.realm("test").keys().getKeyMetadata();
+        String sampleRealmRoleId = adminClient.realm("test").roles().get("sample-realm-role").toRepresentation().getId();
+        String testAppId = adminClient.realm("test").clients().findByClientId("test-app").get(0).getId();
+        String sampleClientRoleId = adminClient.realm("test").clients().get(testAppId).roles().get("sample-client-role").toRepresentation().getId();
 
         // Delete some realm (and some data in admin realm)
         adminClient.realm("test").remove();
@@ -208,6 +211,12 @@ public class ExportImportTest extends AbstractExportImportTest {
 
         KeysMetadataRepresentation keyMetadataImported = adminClient.realm("test").keys().getKeyMetadata();
         assertEquals(keyMetadata.getActive(), keyMetadataImported.getActive());
+
+        String importedSampleRealmRoleId = adminClient.realm("test").roles().get("sample-realm-role").toRepresentation().getId();
+        assertEquals(sampleRealmRoleId, importedSampleRealmRoleId);
+
+        String importedSampleClientRoleId = adminClient.realm("test").clients().get(testAppId).roles().get("sample-client-role").toRepresentation().getId();
+        assertEquals(sampleClientRoleId, importedSampleClientRoleId);
     }
 
     private void assertAuthenticated(String realmName, String username, String password) {
