@@ -2,28 +2,31 @@ package org.keycloak.testsuite.broker;
 
 import org.junit.Before;
 import org.junit.Test;
+
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.Assert;
-import org.keycloak.testsuite.util.RealmBuilder;
+import org.keycloak.testsuite.pages.ConsentPage;
+import org.keycloak.testsuite.util.*;
 
 import org.openqa.selenium.TimeoutException;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.admin.ApiUtil.createUserWithAdminClient;
 import static org.keycloak.testsuite.admin.ApiUtil.resetUserPassword;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.USER_EMAIL;
-import static org.keycloak.testsuite.broker.BrokerTestTools.*;
 import static org.keycloak.testsuite.util.MailAssert.assertEmailAndGetUrl;
-import org.keycloak.testsuite.util.MailServer;
-import org.keycloak.testsuite.util.MailServerConfiguration;
-import org.keycloak.testsuite.util.UserBuilder;
+
+import org.jboss.arquillian.graphene.page.Page;
+
+import static org.keycloak.testsuite.broker.BrokerTestTools.*;
 
 public abstract class AbstractBrokerTest extends AbstractBaseBrokerTest {
 
@@ -255,6 +258,44 @@ public abstract class AbstractBrokerTest extends AbstractBaseBrokerTest {
 
         assertEquals("Account is disabled, contact admin.", errorPage.getError());
     }
+
+    @Page
+    ConsentPage consentPage;
+
+    // KEYCLOAK-4181
+    @Test
+    public void loginWithExistingUserWithErrorFromProviderIdP() {
+        ClientRepresentation client = adminClient.realm(bc.providerRealmName())
+          .clients()
+          .findByClientId(bc.getIDPClientIdInProviderRealm(suiteContext))
+          .get(0);
+
+        adminClient.realm(bc.providerRealmName())
+          .clients()
+          .get(client.getId())
+          .update(ClientBuilder.edit(client).consentRequired(true).build());
+
+        driver.navigate().to(getAccountUrl(bc.consumerRealmName()));
+
+        log.debug("Clicking social " + bc.getIDPAlias());
+        accountLoginPage.clickSocial(bc.getIDPAlias());
+
+        waitForPage(driver, "log in to");
+
+        Assert.assertTrue("Driver should be on the provider realm page right now",
+                driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));
+
+        log.debug("Logging in");
+        accountLoginPage.login(bc.getUserLogin(), bc.getUserPassword());
+
+        driver.manage().timeouts().pageLoadTimeout(30, TimeUnit.MINUTES);
+
+        waitForPage(driver, "grant access");
+        consentPage.cancel();
+
+        waitForPage(driver, "log in to");
+    }
+
 
 
     protected void testSingleLogout() {
