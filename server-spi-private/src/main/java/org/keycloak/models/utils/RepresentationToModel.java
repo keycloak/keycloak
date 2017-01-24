@@ -279,13 +279,6 @@ public class RepresentationToModel {
             }
         }
 
-        if (rep.getClients() != null) {
-            rep.getClients().forEach(clientRepresentation -> {
-                ClientModel client = newRealm.getClientByClientId(clientRepresentation.getClientId());
-                importAuthorizationSettings(clientRepresentation, client, session);
-            });
-        }
-
         if (rep.getSmtpServer() != null) {
             newRealm.setSmtpConfig(new HashMap(rep.getSmtpServer()));
         }
@@ -329,6 +322,13 @@ public class RepresentationToModel {
                 importFederatedUser(session, newRealm, userRep);
 
             }
+        }
+
+        if (rep.getClients() != null) {
+            rep.getClients().forEach(clientRepresentation -> {
+                ClientModel client = newRealm.getClientByClientId(clientRepresentation.getClientId());
+                importAuthorizationSettings(clientRepresentation, client, session);
+            });
         }
 
         if(rep.isInternationalizationEnabled() != null){
