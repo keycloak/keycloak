@@ -253,8 +253,7 @@ public abstract class AbstractPolicyEnforcer {
     }
 
     private String getPath(Request request) {
-        String pathInfo = URI.create(request.getURI()).getPath().substring(1);
-        return pathInfo.substring(pathInfo.indexOf('/'), pathInfo.length());
+        return request.getRelativePath();
     }
 
     private Set<String> getRequiredScopes(PathConfig pathConfig, Request request) {

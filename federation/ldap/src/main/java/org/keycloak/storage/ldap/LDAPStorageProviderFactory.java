@@ -192,7 +192,7 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
     public LDAPStorageProvider create(KeycloakSession session, ComponentModel model) {
         Map<ComponentModel, LDAPConfigDecorator> configDecorators = getLDAPConfigDecorators(session, model);
 
-        LDAPIdentityStore ldapIdentityStore = this.ldapStoreRegistry.getLdapStore(model, configDecorators);
+        LDAPIdentityStore ldapIdentityStore = this.ldapStoreRegistry.getLdapStore(session, model, configDecorators);
         return new LDAPStorageProvider(this, session, model, ldapIdentityStore);
     }
 

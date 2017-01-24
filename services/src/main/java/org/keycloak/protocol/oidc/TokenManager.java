@@ -66,6 +66,8 @@ import org.keycloak.common.util.Time;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
+
+import java.security.PublicKey;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -287,7 +289,17 @@ public class TokenManager {
     public RefreshToken toRefreshToken(KeycloakSession session, RealmModel realm, String encodedRefreshToken) throws JWSInputException, OAuthErrorException {
         JWSInput jws = new JWSInput(encodedRefreshToken);
 
-        if (!RSAProvider.verify(jws, session.keys().getRsaPublicKey(realm, jws.getHeader().getKeyId()))) {
+        PublicKey publicKey;
+
+        // Backwards compatibility. Old offline tokens didn't have KID in the header
+        if (jws.getHeader().getKeyId() == null && TokenUtil.isOfflineToken(encodedRefreshToken)) {
+            logger.debugf("KID is null in offline token. Using the realm active key to verify token signature.");
+            publicKey = session.keys().getActiveRsaKey(realm).getPublicKey();
+        } else {
+            publicKey = session.keys().getRsaPublicKey(realm, jws.getHeader().getKeyId());
+        }
+
+        if (!RSAProvider.verify(jws, publicKey)) {
             throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Invalid refresh token");
         }
 

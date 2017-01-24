@@ -864,7 +864,7 @@ public class AccountTest extends AbstractTestRealmKeycloakTest {
         Assert.assertTrue(applicationsPage.isCurrent());
 
         Map<String, AccountApplicationsPage.AppEntry> apps = applicationsPage.getApplications();
-        Assert.assertThat(apps.keySet(), containsInAnyOrder("Account", "test-app", "test-app-scope", "third-party", "test-app-authz", "My Named Test App"));
+        Assert.assertThat(apps.keySet(), containsInAnyOrder("Account", "test-app", "test-app-scope", "third-party", "test-app-authz", "My Named Test App", "Test App Named - ${client_account}"));
 
         AccountApplicationsPage.AppEntry accountEntry = apps.get("Account");
         Assert.assertEquals(2, accountEntry.getRolesAvailable().size());
@@ -951,7 +951,20 @@ public class AccountTest extends AbstractTestRealmKeycloakTest {
         // When a client has a name provided, the name should be available to the back link
         Assert.assertEquals("Back to " + namedClient.getName(), profilePage.getBackToApplicationLinkText());
         Assert.assertEquals(namedClient.getBaseUrl(), profilePage.getBackToApplicationLinkHref());
-        
+
+        foundClients = testRealm.clients().findByClientId("var-named-test-app");
+        if (foundClients.isEmpty()) {
+            Assert.fail("Unable to find var-named-test-app");
+        }
+        namedClient = foundClients.get(0);
+
+        driver.navigate().to(profilePage.getPath() + "?referrer=" + namedClient.getClientId());
+        Assert.assertTrue(profilePage.isCurrent());
+        // When a client has a name provided as a variable, the name should be resolved using a localized bundle and available to the back link
+        Assert.assertEquals("Back to Test App Named - Account", profilePage.getBackToApplicationLinkText());
+        Assert.assertEquals(namedClient.getBaseUrl(), profilePage.getBackToApplicationLinkHref());
+
+
         foundClients = testRealm.clients().findByClientId("test-app");
         if (foundClients.isEmpty()) {
             Assert.fail("Unable to find test-app");

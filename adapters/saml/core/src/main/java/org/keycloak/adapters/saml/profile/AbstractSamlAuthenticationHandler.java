@@ -60,6 +60,7 @@ import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
 import org.keycloak.saml.processing.core.saml.v2.util.AssertionUtil;
 import org.keycloak.saml.processing.web.util.PostBindingUtil;
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
 import java.io.IOException;
@@ -70,14 +71,11 @@ import java.security.KeyManagementException;
 import java.security.PublicKey;
 import java.security.Signature;
 import java.security.SignatureException;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import org.keycloak.dom.saml.v2.SAML2Object;
 import org.keycloak.dom.saml.v2.protocol.ExtensionsType;
 import org.keycloak.rotation.KeyLocator;
 import org.keycloak.saml.processing.core.util.KeycloakKeySamlExtensionGenerator;
-import org.w3c.dom.Element;
 
 /**
  *
@@ -196,7 +194,7 @@ public abstract class AbstractSamlAuthenticationHandler implements SamlAuthentic
                         challenge = new AuthChallenge() {
                             @Override
                             public boolean challenge(HttpFacade exchange) {
-                                SamlAuthenticationError error = new SamlAuthenticationError(SamlAuthenticationError.Reason.INVALID_SIGNATURE);
+                                SamlAuthenticationError error = new SamlAuthenticationError(SamlAuthenticationError.Reason.INVALID_SIGNATURE, statusResponse);
                                 exchange.getRequest().setError(error);
                                 exchange.getResponse().sendError(403);
                                 return true;
@@ -312,8 +310,25 @@ public abstract class AbstractSamlAuthenticationHandler implements SamlAuthentic
         return false;
     }
 
-    protected AuthOutcome handleLoginResponse(ResponseType responseType, boolean postBinding, OnSessionCreated onCreateSession) {
+    protected AuthOutcome handleLoginResponse(final ResponseType responseType, boolean postBinding, OnSessionCreated onCreateSession) {
         AssertionType assertion = null;
+        if (! isSuccessfulSamlResponse(responseType) || responseType.getAssertions() == null || responseType.getAssertions().isEmpty()) {
+            challenge = new AuthChallenge() {
+                @Override
+                public boolean challenge(HttpFacade exchange) {
+                    SamlAuthenticationError error = new SamlAuthenticationError(SamlAuthenticationError.Reason.ERROR_STATUS, responseType);
+                    exchange.getRequest().setError(error);
+                    exchange.getResponse().sendError(403);
+                    return true;
+                }
+
+                @Override
+                public int getResponseCode() {
+                    return 403;
+                }
+            };
+            return AuthOutcome.FAILED;
+        }
         try {
             assertion = AssertionUtil.getAssertion(responseType, deployment.getDecryptionKey());
             if (AssertionUtil.hasExpired(assertion)) {
@@ -335,6 +350,7 @@ public abstract class AbstractSamlAuthenticationHandler implements SamlAuthentic
                     return 403;
                 }
             };
+            return AuthOutcome.FAILED;
         }
 
         if (deployment.getIDP().getSingleSignOnService().validateAssertionSignature()) {
@@ -346,7 +362,7 @@ public abstract class AbstractSamlAuthenticationHandler implements SamlAuthentic
                 challenge = new AuthChallenge() {
                     @Override
                     public boolean challenge(HttpFacade exchange) {
-                        SamlAuthenticationError error = new SamlAuthenticationError(SamlAuthenticationError.Reason.INVALID_SIGNATURE);
+                        SamlAuthenticationError error = new SamlAuthenticationError(SamlAuthenticationError.Reason.INVALID_SIGNATURE, responseType);
                         exchange.getRequest().setError(error);
                         exchange.getResponse().sendError(403);
                         return true;
@@ -447,6 +463,14 @@ public abstract class AbstractSamlAuthenticationHandler implements SamlAuthentic
         log.debug("AUTHENTICATED authn");
 
         return AuthOutcome.AUTHENTICATED;
+    }
+
+    private boolean isSuccessfulSamlResponse(ResponseType responseType) {
+        return responseType != null
+          && responseType.getStatus() != null
+          && responseType.getStatus().getStatusCode() != null
+          && responseType.getStatus().getStatusCode().getValue() != null
+          && Objects.equals(responseType.getStatus().getStatusCode().getValue().toString(), JBossSAMLURIConstants.STATUS_SUCCESS.get());
     }
 
     private String getAttributeValue(Object attrValue) {

@@ -196,10 +196,8 @@ public class OAuthRequestAuthenticator {
         return sslRedirectPort;
     }
 
-    protected static final AtomicLong counter = new AtomicLong();
-
     protected String getStateCode() {
-        return counter.getAndIncrement() + "/" + AdapterUtils.generateId();
+        return AdapterUtils.generateId();
     }
 
     protected AuthChallenge loginRedirect() {

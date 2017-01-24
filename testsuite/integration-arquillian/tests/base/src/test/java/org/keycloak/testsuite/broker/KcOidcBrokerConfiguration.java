@@ -50,6 +50,7 @@ public class KcOidcBrokerConfiguration implements BrokerConfiguration {
     public List<ClientRepresentation> createProviderClients(SuiteContext suiteContext) {
         ClientRepresentation client = new ClientRepresentation();
         client.setId(CLIENT_ID);
+        client.setClientId(getIDPClientIdInProviderRealm(suiteContext));
         client.setName(CLIENT_ID);
         client.setSecret(CLIENT_SECRET);
         client.setEnabled(true);
@@ -121,6 +122,11 @@ public class KcOidcBrokerConfiguration implements BrokerConfiguration {
     @Override
     public String getUserLogin() {
         return USER_LOGIN;
+    }
+
+    @Override
+    public String getIDPClientIdInProviderRealm(SuiteContext suiteContext) {
+        return CLIENT_ID;
     }
 
     @Override

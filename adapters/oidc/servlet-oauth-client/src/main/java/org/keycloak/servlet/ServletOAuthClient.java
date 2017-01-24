@@ -219,6 +219,11 @@ public class ServletOAuthClient extends KeycloakDeploymentDelegateOAuthClient {
                 }
 
                 @Override
+                public String getRelativePath() {
+                    return servletRequest.getServletPath();
+                }
+
+                @Override
                 public boolean isSecure() {
                     return servletRequest.isSecure();
                 }

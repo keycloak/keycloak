@@ -253,10 +253,13 @@ ol#kc-totp-settings li:first-of-type {
     #kc-container-wrapper {
         position: absolute;
         width: 100%;
+        margin-top: 50px;
     }
 
     #kc-logo-wrapper {
-        margin-left: auto;
+        position: absolute;
+        top: 50px;
+        right: 50px;
     }
 
     .login-pf .container {
@@ -319,13 +322,14 @@ ol#kc-totp-settings li:first-of-type {
     }
 }
 
-@media (min-height: 621px) {
+@media (min-height: 646px) {
     #kc-container-wrapper {
         bottom: 12%;
     }
 }
 
-@media (max-height: 620px) {
+@media (max-height: 645px) {
     #kc-container-wrapper {
+        top: 20%;
     }
 }
