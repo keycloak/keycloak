@@ -37,7 +37,6 @@ import org.keycloak.models.session.UserSessionPersisterProvider;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.models.utils.DefaultRequiredActions;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.models.utils.RealmImporter;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -61,7 +60,7 @@ import java.util.List;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class RealmManager implements RealmImporter {
+public class RealmManager {
 
     protected KeycloakSession session;
     protected RealmProvider model;
@@ -420,8 +419,15 @@ public class RealmManager implements RealmImporter {
         }
     }
 
-    @Override
     public RealmModel importRealm(RealmRepresentation rep) {
+        return importRealm(rep, false);
+    }
+
+
+    /**
+     * if "skipUserDependent" is true, then import of any models, which needs users already imported in DB, will be skipped. For example authorization
+     */
+    public RealmModel importRealm(RealmRepresentation rep, boolean skipUserDependent) {
         String id = rep.getId();
         if (id == null) {
             id = KeycloakModelUtils.generateId();
@@ -463,7 +469,7 @@ public class RealmManager implements RealmImporter {
 
         if (!hasRealmRole(rep, Constants.OFFLINE_ACCESS_ROLE)) setupOfflineTokens(realm);
 
-        RepresentationToModel.importRealm(session, rep, realm);
+        RepresentationToModel.importRealm(session, rep, realm, skipUserDependent);
 
         setupAdminConsoleLocaleMapper(realm);
 

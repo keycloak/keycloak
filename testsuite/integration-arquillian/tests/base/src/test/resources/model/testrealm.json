@@ -292,6 +292,15 @@
                         }
                     },
                     {
+                        "name": "wburke policy",
+                        "description": "Defines that only wburke can do something",
+                        "type": "user",
+                        "logic": "POSITIVE",
+                        "config": {
+                            "users" : "[\"wburke\"]"
+                        }
+                    },
+                    {
                         "name": "All Users Policy",
                         "description": "Defines that all users can do something",
                         "type": "aggregate",
