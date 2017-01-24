@@ -253,6 +253,7 @@ ol#kc-totp-settings li:first-of-type {
     #kc-container-wrapper {
         position: absolute;
         width: 100%;
+        margin-top: 50px;
     }
 
     #kc-logo-wrapper {
