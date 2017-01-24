@@ -38,8 +38,6 @@ public abstract class AbstractSAMLFilterServletAdapterTest extends AbstractSAMLS
         testRealmLoginPage.form().login(bburkeUser);
         employee2ServletPage.checkRolesEndPoint(true);
         employee2ServletPage.logout();
-
-        forbiddenIfNotAuthenticated = false;
     }
 
     @After
@@ -72,7 +70,7 @@ public abstract class AbstractSAMLFilterServletAdapterTest extends AbstractSAMLS
     @Test
     @Override
     @Ignore
-    public void testErrorHandling() {
+    public void testErrorHandlingUnsigned() {
 
     }
 }

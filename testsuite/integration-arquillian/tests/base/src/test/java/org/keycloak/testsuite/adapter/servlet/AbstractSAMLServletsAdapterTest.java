@@ -802,7 +802,7 @@ public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAd
         assertCurrentUrlStartsWith(testRealmSAMLPostLoginPage);
         testRealmSAMLPostLoginPage.form().login("bburke", "password");
 
-        waitUntilElement(By.xpath("//body")).text().contains("Error info: SamlAuthenticationError [reason=INVALID_SIGNATURE, status=null]");
+        waitUntilElement(By.xpath("//body")).text().contains("Error info: SamlAuthenticationError [reason=INVALID_SIGNATURE");
         assertEquals(driver.getCurrentUrl(), badAssertionSalesPostSigPage + "/saml");
     }
 
@@ -812,30 +812,28 @@ public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAd
         assertCurrentUrlStartsWith(testRealmSAMLPostLoginPage);
         testRealmSAMLPostLoginPage.form().login("bburke", "password");
 
-        waitUntilElement(By.xpath("//body")).text().contains("Error info: SamlAuthenticationError [reason=INVALID_SIGNATURE, status=null]");
+        waitUntilElement(By.xpath("//body")).text().contains("Error info: SamlAuthenticationError [reason=INVALID_SIGNATURE");
         assertEquals(driver.getCurrentUrl(), missingAssertionSigPage + "/saml");
     }
 
     @Test
-    public void testErrorHandling() throws Exception {
+    public void testErrorHandlingUnsigned() throws Exception {
         Client client = ClientBuilder.newClient();
         // make sure
-        Response response = client.target(employeeSigServletPage.toString()).request().get();
+        Response response = client.target(employeeServletPage.toString()).request().get();
         response.close();
         SAML2ErrorResponseBuilder builder = new SAML2ErrorResponseBuilder()
-                .destination(employeeSigServletPage.toString() + "/saml")
+                .destination(employeeServletPage.toString() + "/saml")
                 .issuer("http://localhost:" + System.getProperty("auth.server.http.port", "8180") + "/realms/demo")
                 .status(JBossSAMLURIConstants.STATUS_REQUEST_DENIED.get());
         BaseSAML2BindingBuilder binding = new BaseSAML2BindingBuilder()
                 .relayState(null);
         Document document = builder.buildDocument();
-        URI uri = binding.redirectBinding(document).generateURI(employeeSigServletPage.toString() + "/saml", false);
+        URI uri = binding.redirectBinding(document).generateURI(employeeServletPage.toString() + "/saml", false);
         response = client.target(uri).request().get();
         String errorPage = response.readEntity(String.class);
         response.close();
-        Assert.assertTrue(errorPage.contains("Error info: SamlAuthenticationError [reason=ERROR_STATUS"));
-        Assert.assertFalse(errorPage.contains("status=null"));
-        client.close();
+        Assert.assertEquals(403, response.getStatus());
     }
 
     @Test
@@ -1003,14 +1001,6 @@ public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAd
     }
 
     private void assertOnForbiddenPage() {
-        switch (System.getProperty("app.server")) {
-            case "eap6":
-                waitUntilElement(By.xpath("//body")).text().not().contains("principal=");
-                String source = driver.getPageSource();
-                assertTrue(source.isEmpty() || source.contains("<body></body>"));
-                break;
-            default:
-                waitUntilElement(By.xpath("//body")).text().contains(FORBIDDEN_TEXT);
-        }
+        waitUntilElement(By.xpath("//body")).text().contains(FORBIDDEN_TEXT);
     }
 }
