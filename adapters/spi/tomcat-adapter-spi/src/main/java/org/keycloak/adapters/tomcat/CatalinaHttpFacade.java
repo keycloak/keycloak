@@ -79,6 +79,11 @@ public class CatalinaHttpFacade implements HttpFacade {
         }
 
         @Override
+        public String getRelativePath() {
+            return request.getServletPath();
+        }
+
+        @Override
         public boolean isSecure() {
             return request.isSecure();
         }

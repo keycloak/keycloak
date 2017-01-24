@@ -67,6 +67,11 @@ public class JaxrsHttpFacade implements OIDCHttpFacade {
         }
 
         @Override
+        public String getRelativePath() {
+            return requestContext.getUriInfo().getPath();
+        }
+
+        @Override
         public boolean isSecure() {
             return securityContext.isSecure();
         }
