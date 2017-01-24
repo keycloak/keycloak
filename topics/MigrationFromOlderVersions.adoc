@@ -164,6 +164,21 @@ The version specific section below will mention if any changes are required to a
 
 === Version specific migration
 
+==== Migrating to 2.5.1
+
+===== Migration of old offline tokens
+
+If you migrate from version 2.2.0 or older and you used offline tokens, then your offline tokens didn't have KID in the token header.
+We added KID to the token header in 2.3.0 together with the ability to have multiple realm keys, so {{book.project.name}} is able to find the correct key based on the token KID.
+
+For the offline tokens without KID, {{book.project.name}} 2.5.1 will always use the active realm key to find the proper key for the token verification. In other words, migration of old
+offline tokens will work. So for example, your user requested offline token in 1.9.8, then you migrate from 1.9.8 to 2.5.1 and then your user will be
+still able to refresh his old offline token in 2.5.1 version.
+
+But there is limitation, that once you change the realm active key, the users won't be able to refresh old offline tokens
+anymore. So you shouldn't change the active realm key until all your users with offline tokens refreshed their tokens. Obviously newly
+refreshed tokens will have KID in the header, so after all users exchange their old offline tokens, you are free to change the active realm key.
+
 ==== Migrating to 2.5.0
 
 ===== Changes to the infinispan caches
