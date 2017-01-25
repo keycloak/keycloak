@@ -154,12 +154,14 @@
                 <module>nodejs_adapter</module>
             </modules>
         </profile>
+<!--
         <profile>
             <id>auth-server-wildfly</id>
             <modules>
                 <module>server-config-migration</module>
             </modules>
         </profile>
+ -->
     </profiles>
 
 </project>
