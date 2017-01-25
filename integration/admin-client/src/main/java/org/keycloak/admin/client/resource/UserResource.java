@@ -76,6 +76,18 @@ public interface UserResource {
     @Path("remove-totp")
     public void removeTotp();
 
+    /**
+     * Disables or deletes all credentials for specific types.
+     * Type examples "otp", "password"
+     *
+     *
+     * @param credentialTypes
+     */
+    @Path("disable-credential-types")
+    @PUT
+    @Consumes(MediaType.APPLICATION_JSON)
+    public void disableCredentialType(List<String> credentialTypes);
+
     @PUT
     @Path("reset-password")
     public void resetPassword(CredentialRepresentation credentialRepresentation);
