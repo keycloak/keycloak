@@ -129,7 +129,7 @@ public class RepresentationToModel {
         return policy;
 
     }
-    public static void importRealm(KeycloakSession session, RealmRepresentation rep, RealmModel newRealm) {
+    public static void importRealm(KeycloakSession session, RealmRepresentation rep, RealmModel newRealm, boolean skipUserDependent) {
         convertDeprecatedSocialProviders(rep);
         convertDeprecatedApplications(session, rep);
 
@@ -279,13 +279,6 @@ public class RepresentationToModel {
             }
         }
 
-        if (rep.getClients() != null) {
-            rep.getClients().forEach(clientRepresentation -> {
-                ClientModel client = newRealm.getClientByClientId(clientRepresentation.getClientId());
-                importAuthorizationSettings(clientRepresentation, client, session);
-            });
-        }
-
         if (rep.getSmtpServer() != null) {
             newRealm.setSmtpConfig(new HashMap(rep.getSmtpServer()));
         }
@@ -329,6 +322,10 @@ public class RepresentationToModel {
                 importFederatedUser(session, newRealm, userRep);
 
             }
+        }
+
+        if (!skipUserDependent) {
+            importRealmAuthorizationSettings(rep, newRealm, session);
         }
 
         if(rep.isInternationalizationEnabled() != null){
@@ -1810,6 +1807,15 @@ public class RepresentationToModel {
                     }
                 }
             }
+        }
+    }
+
+    public static void importRealmAuthorizationSettings(RealmRepresentation rep, RealmModel newRealm, KeycloakSession session) {
+        if (rep.getClients() != null) {
+            rep.getClients().forEach(clientRepresentation -> {
+                ClientModel client = newRealm.getClientByClientId(clientRepresentation.getClientId());
+                importAuthorizationSettings(clientRepresentation, client, session);
+            });
         }
     }
 
