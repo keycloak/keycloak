@@ -68,11 +68,16 @@ public abstract class AbstractAuthTest extends AbstractKeycloakTest {
         testRealms.add(testRealmRep);
     }
 
-    @Before
-    public void beforeAuthTest() {
+    @Override
+    public void setDefaultPageUriParameters() {
+        super.setDefaultPageUriParameters();
+        testRealmPage.setAuthRealm(TEST);
         testRealmLoginPage.setAuthRealm(testRealmPage);
         testRealmAccountPage.setAuthRealm(testRealmPage);
+    }
 
+    @Before
+    public void beforeAuthTest() {
         testUser = createUserRepresentation("test", "test@email.test", "test", "user", true);
         setPasswordFor(testUser, PASSWORD);
 
@@ -81,6 +86,7 @@ public abstract class AbstractAuthTest extends AbstractKeycloakTest {
 
         deleteAllCookiesForTestRealm();
     }
+
 
     public void createTestUserWithAdminClient() {
         log.debug("creating test user");
