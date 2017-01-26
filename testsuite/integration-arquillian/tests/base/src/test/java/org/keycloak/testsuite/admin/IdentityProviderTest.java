@@ -129,8 +129,6 @@ public class IdentityProviderTest extends AbstractAdminTest {
         assertFalse(representation.isStoreToken());
         assertFalse(representation.isTrustEmail());
 
-        testingClient.testing("admin-client-test").getSmtpConfig();
-
         assertEquals("some secret value", testingClient.testing("admin-client-test").getIdentityProviderConfig("new-identity-provider").get("clientSecret"));
 
         IdentityProviderRepresentation rep = realm.identityProviders().findAll().stream().filter(i -> i.getAlias().equals("new-identity-provider")).findFirst().get();
