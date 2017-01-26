@@ -164,10 +164,17 @@ public class AuthServerTestEnricher {
         return authServerInfo;
     }
 
-    public void startMigratedContainer(@Observes(precedence = 2) StartSuiteContainers event) {
+    public void startMigratedContainer(@Observes(precedence = 3) StartSuiteContainers event) {
         if (suiteContext.isAuthServerMigrationEnabled()) {
             log.info("\n\n### Starting keycloak " + System.getProperty("migrated.auth.server.version", "- previous") + " ###\n\n");
             startContainerEvent.fire(new StartContainer(suiteContext.getMigratedAuthServerInfo().getArquillianContainer()));
+        }
+    }
+
+    public void runPreMigrationTask(@Observes(precedence = 2) StartSuiteContainers event) {
+        if (suiteContext.isAuthServerMigrationEnabled()) {
+            log.info("\n\n### Run preMigration task on keycloak " + System.getProperty("migrated.auth.server.version", "- previous") + " ###\n\n");
+            suiteContext.getMigrationContext().runPreMigrationTask();
         }
     }
 

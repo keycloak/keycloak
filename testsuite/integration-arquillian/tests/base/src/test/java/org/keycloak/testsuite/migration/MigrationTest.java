@@ -35,6 +35,7 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
+import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.AuthenticationExecutionExportRepresentation;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -47,7 +48,9 @@ import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.testsuite.AbstractKeycloakTest;
+import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.arquillian.migration.Migration;
+import org.keycloak.testsuite.util.OAuthClient;
 
 import static org.keycloak.testsuite.Assert.assertEquals;
 import static org.keycloak.testsuite.Assert.assertFalse;
@@ -104,6 +107,7 @@ public class MigrationTest extends AbstractKeycloakTest {
         testMigrationTo2_2_0();
         testMigrationTo2_3_0();
         testMigrationTo2_5_0();
+        testMigrationTo2_5_1();
     }
     
     @Test
@@ -167,6 +171,10 @@ public class MigrationTest extends AbstractKeycloakTest {
         
         //https://github.com/keycloak/keycloak/pull/3630
         testDuplicateEmailSupport(masterRealm, migrationRealm);
+    }
+
+    private void testMigrationTo2_5_1() {
+        testOfflineTokenLogin();
     }
         
     private void testExtractRealmKeys(RealmResource masterRealm, RealmResource migrationRealm) {
@@ -336,5 +344,17 @@ public class MigrationTest extends AbstractKeycloakTest {
             assertTrue("LoginWithEmailAllowed should be enabled.", rep.isLoginWithEmailAllowed());
             assertFalse("DuplicateEmailsAllowed should be disabled.", rep.isDuplicateEmailsAllowed());
         }
+    }
+
+    private void testOfflineTokenLogin() {
+        log.info("test login with old offline token");
+        String oldOfflineToken = suiteContext.getMigrationContext().getOfflineToken();
+        Assert.assertNotNull(oldOfflineToken);
+
+        oauth.realm(MIGRATION);
+        oauth.clientId("migration-test-client");
+        OAuthClient.AccessTokenResponse response = oauth.doRefreshTokenRequest(oldOfflineToken, "b2c07929-69e3-44c6-8d7f-76939000b3e4");
+        AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
+        assertEquals("migration-test-user", accessToken.getPreferredUsername());
     }
 }
