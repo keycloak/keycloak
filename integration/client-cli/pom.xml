@@ -30,16 +30,6 @@
     <artifactId>keycloak-client-cli-parent</artifactId>
     <packaging>pom</packaging>
 
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>org.jboss.aesh</groupId>
-                <artifactId>aesh</artifactId>
-                <version>0.66.10</version>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
-
     <modules>
         <module>client-registration-cli</module>
         <module>admin-cli</module>
