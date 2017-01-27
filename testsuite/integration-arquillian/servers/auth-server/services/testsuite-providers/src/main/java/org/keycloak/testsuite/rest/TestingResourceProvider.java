@@ -17,13 +17,10 @@
 
 package org.keycloak.testsuite.rest;
 
-import org.infinispan.Cache;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.BadRequestException;
-import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.Time;
 import org.keycloak.component.ComponentModel;
-import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventQuery;
 import org.keycloak.events.EventStoreProvider;
@@ -62,6 +59,11 @@ import org.keycloak.testsuite.forms.PassThroughClientAuthenticator;
 import org.keycloak.testsuite.rest.representation.AuthenticatorState;
 import org.keycloak.testsuite.rest.resource.TestCacheResource;
 import org.keycloak.testsuite.rest.resource.TestingExportImportResource;
+import org.keycloak.testsuite.runonserver.ModuleUtil;
+import org.keycloak.testsuite.runonserver.FetchOnServer;
+import org.keycloak.testsuite.runonserver.RunOnServer;
+import org.keycloak.testsuite.runonserver.SerializationUtil;
+import org.keycloak.util.JsonSerialization;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -81,8 +83,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import static org.keycloak.exportimport.ExportImportConfig.PROVIDER;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -637,21 +637,6 @@ public class TestingResourceProvider implements RealmResourceProvider {
     }
 
     @GET
-    @Path("/component")
-    @Produces(MediaType.APPLICATION_JSON)
-    public MultivaluedHashMap<String, String> getComponentConfig(@QueryParam("componentId") String componentId) {
-        RealmModel realm = session.getContext().getRealm();
-        return realm.getComponent(componentId).getConfig();
-    }
-
-    @GET
-    @Path("/smtp-config")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Map<String, String> getSmtpConfig() {
-        return session.getContext().getRealm().getSmtpConfig();
-    }
-
-    @GET
     @Path("/identity-config")
     @Produces(MediaType.APPLICATION_JSON)
     public Map<String, String> getIdentityProviderConfig(@QueryParam("alias") String alias) {
@@ -663,6 +648,29 @@ public class TestingResourceProvider implements RealmResourceProvider {
     @Consumes(MediaType.APPLICATION_JSON)
     public void setKrb5ConfFile(@QueryParam("krb5-conf-file") String krb5ConfFile) {
         System.setProperty("java.security.krb5.conf", krb5ConfFile);
+    }
+
+    @POST
+    @Path("/run-on-server")
+    @Consumes(MediaType.TEXT_PLAIN)
+    @Produces(MediaType.TEXT_PLAIN)
+    public String runOnServer(String runOnServer) throws Exception {
+        try {
+            ClassLoader cl = ModuleUtil.isModules() ? ModuleUtil.getClassLoader() : getClass().getClassLoader();
+            Object r = SerializationUtil.decode(runOnServer, cl);
+
+            if (r instanceof FetchOnServer) {
+                Object result = ((FetchOnServer) r).run(session);
+                return result != null ? JsonSerialization.writeValueAsString(result) : null;
+            } else if (r instanceof RunOnServer) {
+                ((RunOnServer) r).run(session);
+                return null;
+            } else {
+                throw new IllegalArgumentException();
+            }
+        } catch (Throwable t) {
+            return SerializationUtil.encodeException(t);
+        }
     }
 
     private RealmModel getRealmByName(String realmName) {

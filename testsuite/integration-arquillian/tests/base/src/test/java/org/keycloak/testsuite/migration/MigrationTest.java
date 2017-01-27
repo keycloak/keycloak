@@ -21,6 +21,9 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.ws.rs.NotFoundException;
+
+import org.jboss.arquillian.container.test.api.Deployment;
+import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.ClientResource;
@@ -50,6 +53,8 @@ import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.arquillian.migration.Migration;
+import org.keycloak.testsuite.runonserver.RunHelpers;
+import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
 import org.keycloak.testsuite.util.OAuthClient;
 
 import static org.keycloak.testsuite.Assert.assertEquals;
@@ -71,7 +76,12 @@ public class MigrationTest extends AbstractKeycloakTest {
     private RealmResource migrationRealm2;
     private RealmResource migrationRealm3;
     private RealmResource masterRealm;
-        
+
+    @Deployment
+    public static WebArchive deploy() {
+        return RunOnServerDeployment.create();
+    }
+
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         log.info("Adding no test realms for migration test. Test realm should be migrated from previous vesrion.");
@@ -187,7 +197,9 @@ public class MigrationTest extends AbstractKeycloakTest {
 
         components = masterRealm.components().query(MASTER, KeyProvider.class.getName(), "rsa");
         assertEquals(1, components.size());
-        assertEquals(expectedMasterRealmKey, testingClient.testing(MASTER).getComponentConfig(components.get(0).getId()).getFirst("privateKey"));
+
+        ComponentRepresentation component = testingClient.server(MASTER).fetch(RunHelpers.internalComponent(components.get(0).getId()));
+        assertEquals(expectedMasterRealmKey, component.getConfig().getFirst("privateKey"));
 
         components = masterRealm.components().query(MASTER, KeyProvider.class.getName(), "hmac-generated");
         assertEquals(1, components.size());
@@ -197,7 +209,9 @@ public class MigrationTest extends AbstractKeycloakTest {
 
         components = migrationRealm.components().query(MIGRATION, KeyProvider.class.getName(), "rsa");
         assertEquals(1, components.size());
-        assertEquals(expectedMigrationRealmKey, testingClient.testing(MIGRATION).getComponentConfig(components.get(0).getId()).getFirst("privateKey"));
+
+        component = testingClient.server(MIGRATION).fetch(RunHelpers.internalComponent(components.get(0).getId()));
+        assertEquals(expectedMigrationRealmKey, component.getConfig().getFirst("privateKey"));
 
         components = migrationRealm.components().query(MIGRATION, KeyProvider.class.getName(), "hmac-generated");
         assertEquals(1, components.size());
