@@ -35,6 +35,9 @@ public class KeyInfoTools {
      * @return The object or {@code null} if not found.
      */
     public static <T> T getContent(Iterable<Object> objects, Class<T> clazz) {
+        if (objects == null) {
+            return null;
+        }
         for (Object o : objects) {
             if (clazz.isInstance(o)) {
                 return (T) o;
@@ -45,11 +48,11 @@ public class KeyInfoTools {
 
 
     public static KeyName getKeyName(KeyInfo keyInfo) {
-        return getContent(keyInfo.getContent(), KeyName.class);
+        return keyInfo == null ? null : getContent(keyInfo.getContent(), KeyName.class);
     }
 
     public static X509Data getX509Data(KeyInfo keyInfo) {
-        return getContent(keyInfo.getContent(), X509Data.class);
+        return keyInfo == null ? null : getContent(keyInfo.getContent(), X509Data.class);
     }
 
     public static X509Certificate getX509Certificate(KeyInfo keyInfo) {
