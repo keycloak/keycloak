@@ -154,7 +154,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
 
             Object firstDepartment = idToken.getOtherClaims().get("firstDepartment");
             assertThat(firstDepartment, instanceOf(String.class));
-            assertThat(firstDepartment, is("finance"));   // Has to be the first item
+            assertThat(firstDepartment, anyOf(is("finance"), is("development")));   // Has to be the first item
 
             AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
             assertEquals(accessToken.getName(), "Tom Brady");
