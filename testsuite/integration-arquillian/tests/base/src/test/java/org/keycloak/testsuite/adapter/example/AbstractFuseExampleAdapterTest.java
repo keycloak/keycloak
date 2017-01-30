@@ -116,6 +116,7 @@ public abstract class AbstractFuseExampleAdapterTest extends AbstractExampleAdap
         testRealmLoginPage.form().login("admin", "password");
         assertCurrentUrlStartsWith(adminInterface);
         assertTrue(driver.getPageSource().contains("Hello admin!"));
+        assertTrue(driver.getPageSource().contains("This second sentence is returned from a Camel RestDSL endpoint"));
 
         customerListing.navigateTo();
         customerListing.clickLogOut();
