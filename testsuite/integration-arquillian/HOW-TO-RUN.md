@@ -64,7 +64,7 @@ mvn -f testsuite/integration-arquillian/tests/other/adapters/karaf/fuse63/pom.xm
  clean install \
  -Pauth-server-wildfly \
  -Papp-server-fuse63 \
- -Dfuse63.version=6.3.0.redhat-198
+ -Dfuse63.version=6.3.0.redhat-229
 ````
 
 ### EAP6 with Hawtio
@@ -117,23 +117,24 @@ mvn -f testsuite/integration-arquillian/tests/other/adapters/jboss/eap6-fuse/pom
 
 ### DB migration test
 
-This will:
+This test will:
  - start Keycloak 1.9.8
  - import realm and some data to MySQL DB
  - stop Keycloak 1.9.8
- - start latest KEycloak and update DB from 1.9.8
+ - start latest KEycloak, which automatically updates DB from 1.9.8
  - Do some test that data are correct
  
+
 1) Prepare MySQL DB and ensure that MySQL DB is empty. See [../../misc/DatabaseTesting.md](../../misc/DatabaseTesting.md) for some hints for locally prepare Docker MySQL image.
 
-2) Run the test (Update according to your DB connection):
+2) Run the test (Update according to your DB connection, versions etc):
 
 ````
 export DB_HOST=localhost
 
 mvn -f testsuite/integration-arquillian/pom.xml \
   clean install \
-  -Pauth-server-wildfly,jpa,auth-server-migration \
+  -Pauth-server-wildfly,jpa,clean-jpa,auth-server-migration \
   -Dtest=MigrationTest \
   -Dmigration.mode=auto \
   -Dmigrated.auth.server.version=1.9.8.Final \
@@ -146,8 +147,7 @@ mvn -f testsuite/integration-arquillian/pom.xml \
 ````
 
 ### JSON export/import migration test
-This will
-  - start latest Keycloak and import the file, which was previously exported from Keycloak 1.9.8.Final
+This will start latest Keycloak and import the realm JSON file, which was previously exported from Keycloak 1.9.8.Final
   
 ````
 mvn -f testsuite/integration-arquillian/pom.xml \
