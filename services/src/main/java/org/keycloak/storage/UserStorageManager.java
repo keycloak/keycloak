@@ -60,7 +60,7 @@ import static org.keycloak.models.utils.KeycloakModelUtils.runJobInTransaction;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class UserStorageManager implements UserProvider, OnUserCache, OnCreateComponent {
+public class UserStorageManager implements UserProvider, OnUserCache, OnCreateComponent, OnUpdateComponent {
 
     private static final Logger logger = Logger.getLogger(UserStorageManager.class);
 
@@ -634,12 +634,17 @@ public class UserStorageManager implements UserProvider, OnUserCache, OnCreateCo
 
     @Override
     public void onCreate(KeycloakSession session, RealmModel realm, ComponentModel model) {
+        notifyToRefreshPeriodicSync(session, realm, model);
+    }
+
+    private void notifyToRefreshPeriodicSync(KeycloakSession session, RealmModel realm, ComponentModel model) {
         ComponentFactory factory = ComponentUtil.getComponentFactory(session, model);
         if (!(factory instanceof UserStorageProviderFactory)) return;
         new UserStorageSyncManager().notifyToRefreshPeriodicSync(session, realm, new UserStorageProviderModel(model), false);
-
     }
 
-
-
+    @Override
+    public void onUpdate(KeycloakSession session, RealmModel realm, ComponentModel model) {
+        notifyToRefreshPeriodicSync(session, realm, model);
+    }
 }
