@@ -150,7 +150,7 @@ public class ExportImportTest extends AbstractExportImportTest {
 
         removeRealm("test");
         removeRealm("test-realm");
-        assertEquals(1, adminClient.realms().findAll().size());
+        Assert.assertNames(adminClient.realms().findAll(), "master");
 
         assertNotAuthenticated("test", "test-user@localhost", "password");
         assertNotAuthenticated("test", "user1", "password");
@@ -163,7 +163,7 @@ public class ExportImportTest extends AbstractExportImportTest {
         testingClient.testing().exportImport().runImport();
 
         // Ensure data are imported back
-        assertEquals(3, adminClient.realms().findAll().size());
+        Assert.assertNames(adminClient.realms().findAll(), "master", "test", "test-realm");
 
         assertAuthenticated("test", "test-user@localhost", "password");
         assertAuthenticated("test", "user1", "password");
@@ -186,7 +186,7 @@ public class ExportImportTest extends AbstractExportImportTest {
         // Delete some realm (and some data in admin realm)
         adminClient.realm("test").remove();
 
-        assertEquals(2, adminClient.realms().findAll().size());
+        Assert.assertNames(adminClient.realms().findAll(), "test-realm", "master");
 
         assertNotAuthenticated("test", "test-user@localhost", "password");
         assertNotAuthenticated("test", "user1", "password");
@@ -199,7 +199,7 @@ public class ExportImportTest extends AbstractExportImportTest {
         testingClient.testing().exportImport().runImport();
 
         // Ensure data are imported back, but just for "test" realm
-        assertEquals(3, adminClient.realms().findAll().size());
+        Assert.assertNames(adminClient.realms().findAll(), "master", "test", "test-realm");
 
         assertAuthenticated("test", "test-user@localhost", "password");
         assertAuthenticated("test", "user1", "password");
