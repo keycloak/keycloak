@@ -23,13 +23,17 @@ import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
+import org.junit.Rule;
 import org.junit.Test;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.common.Version;
 import org.keycloak.common.util.Time;
+import org.keycloak.common.util.UriUtils;
 import org.keycloak.constants.AdapterConstants;
+import org.keycloak.events.Details;
+import org.keycloak.events.EventType;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.representations.AccessToken;
@@ -37,6 +41,7 @@ import org.keycloak.representations.VersionRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.adapter.AbstractServletsAdapterTest;
 import org.keycloak.testsuite.adapter.filter.AdapterActionsFilter;
 import org.keycloak.testsuite.adapter.page.*;
@@ -49,7 +54,6 @@ import org.keycloak.testsuite.util.URLUtils;
 import org.keycloak.util.BasicAuthHelper;
 
 import org.openqa.selenium.By;
-import org.openqa.selenium.WebElement;
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
@@ -115,6 +119,9 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
     private BasicAuth basicAuthPage;
     @Page
     private Config configPage;
+
+    @Rule
+    public AssertEvents assertEvents = new AssertEvents(this);
 
     @Deployment(name = CustomerPortal.DEPLOYMENT_NAME)
     protected static WebArchive customerPortal() {
@@ -192,8 +199,7 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
         testRealmLoginPage.form().login("bburke@redhat.com", "password");
         assertCurrentUrlEquals(driver, inputPortal + "/secured/post");
-        String pageSource = driver.getPageSource();
-        assertTrue(pageSource.contains("parameter=hello"));
+        waitUntilElement(By.xpath("//body")).text().contains("parameter=hello");
 
         String logoutUri = OIDCLoginProtocolService.logoutUrl(authServerPage.createUriBuilder())
                 .queryParam(OAuth2Constants.REDIRECT_URI, customerPortal.toString())
@@ -353,6 +359,10 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
 
     @Test
     public void testLoginSSOMax() throws InterruptedException {
+        // Delete cookies
+        driver.navigate().to(customerPortal + "/error.html");
+        driver.manage().deleteAllCookies();
+
         // test login to customer-portal which does a bearer request to customer-db
         customerPortal.navigateTo();
         testRealmLoginPage.form().waitForUsernameInputPresent();
@@ -600,6 +610,7 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
         RealmRepresentation realm = testRealmResource().toRepresentation();
         realm.setEventsEnabled(true);
         realm.setEnabledEventTypes(Arrays.asList("REVOKE_GRANT", "LOGIN"));
+        realm.setEventsListeners(Arrays.asList("jboss-logging", "event-queue"));
         testRealmResource().update(realm);
 
         customerPortal.navigateTo();
@@ -613,6 +624,26 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
         waitUntilElement(By.xpath("//body")).text().contains("Bill Burke");
         waitUntilElement(By.xpath("//body")).text().contains("Stian Thorgersen");
 
+        String userId = ApiUtil.findUserByUsername(testRealmResource(), "bburke@redhat.com").getId();
+
+        assertEvents.expectLogin()
+                .realm(realm.getId())
+                .client("customer-portal")
+                .user(userId)
+                .detail(Details.USERNAME, "bburke@redhat.com")
+                .detail(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED)
+                .detail(Details.REDIRECT_URI, customerPortal.getInjectedUrl().toString())
+                .removeDetail(Details.CODE_ID)
+                .assertEvent();
+
+        assertEvents.expectCodeToToken(null, null)
+                .realm(realm.getId())
+                .client("customer-portal")
+                .user(userId)
+                .session(AssertEvents.isUUID())
+                .removeDetail(Details.CODE_ID)
+                .assertEvent();
+
         applicationsPage.navigateTo();
         applicationsPage.revokeGrantForApplication("customer-portal");
 
@@ -620,42 +651,14 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
 
         assertTrue(oAuthGrantPage.isCurrent());
 
-        loginEventsPage.navigateTo();
+        assertEvents.expect(EventType.REVOKE_GRANT)
+                .realm(realm.getId())
+                .client("account")
+                .user(userId)
+                .detail(Details.REVOKED_CLIENT, "customer-portal")
+                .assertEvent();
 
-        if (!testContext.isAdminLoggedIn()) {
-            loginPage.form().login(adminUser);
-            testContext.setAdminLoggedIn(true);
-        }
-
-        loginEventsPage.table().filter();
-        loginEventsPage.table().filterForm().addEventType("REVOKE_GRANT");
-        loginEventsPage.table().update();
-
-        List<WebElement> resultList = loginEventsPage.table().rows();
-
-        assertEquals(1, resultList.size());
-
-        resultList.get(0).findElement(By.xpath(".//td[text()='REVOKE_GRANT']"));
-        resultList.get(0).findElement(By.xpath(".//td[text()='Client']/../td[text()='account']"));
-        resultList.get(0).findElement(By.xpath(".//td[text()='IP Address']/../td[text()='127.0.0.1' or text()='0:0:0:0:0:0:0:1']"));
-        resultList.get(0).findElement(By.xpath(".//td[text()='revoked_client']/../td[text()='customer-portal']"));
-
-        loginEventsPage.table().reset();
-        loginEventsPage.table().filterForm().addEventType("LOGIN");
-        loginEventsPage.table().update();
-        resultList = loginEventsPage.table().rows();
-
-        assertEquals(1, resultList.size());
-
-        resultList.get(0).findElement(By.xpath(".//td[text()='LOGIN']"));
-        resultList.get(0).findElement(By.xpath(".//td[text()='Client']/../td[text()='customer-portal']"));
-        resultList.get(0).findElement(By.xpath(".//td[text()='IP Address']/../td[text()='127.0.0.1' or text()='0:0:0:0:0:0:0:1']"));
-        resultList.get(0).findElement(By.xpath(".//td[text()='username']/../td[text()='bburke@redhat.com']"));
-        resultList.get(0).findElement(By.xpath(".//td[text()='consent']/../td[text()='consent_granted']"));
-
-        configPage.navigateTo();
-        configPage.form().clearLoginEvents();
-        driver.findElement(By.xpath("//div[@class='modal-dialog']//button[text()='Delete']")).click();
+        assertEvents.assertEmpty();
     }
 
     @Test
@@ -663,6 +666,7 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
         RealmRepresentation realm = testRealmResource().toRepresentation();
         realm.setEventsEnabled(true);
         realm.setEnabledEventTypes(Arrays.asList("LOGIN", "LOGIN_ERROR", "LOGOUT", "CODE_TO_TOKEN"));
+        realm.setEventsListeners(Arrays.asList("jboss-logging", "event-queue"));
         testRealmResource().update(realm);
 
         customerPortal.navigateTo();
@@ -672,53 +676,37 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
         waitUntilElement(By.xpath("//body")).text().contains("Bill Burke");
         waitUntilElement(By.xpath("//body")).text().contains("Stian Thorgersen");
 
+        String userId = ApiUtil.findUserByUsername(testRealmResource(), "bburke@redhat.com").getId();
+
+        assertEvents.expectLogin()
+                .realm(realm.getId())
+                .client("customer-portal")
+                .user(userId)
+                .detail(Details.USERNAME, "bburke@redhat.com")
+                .detail(Details.CONSENT, Details.CONSENT_VALUE_NO_CONSENT_REQUIRED)
+                .detail(Details.REDIRECT_URI, customerPortal.getInjectedUrl().toString())
+                .removeDetail(Details.CODE_ID)
+                .assertEvent();
+
+        assertEvents.expectCodeToToken(null, null)
+                .realm(realm.getId())
+                .client("customer-portal")
+                .user(userId)
+                .session(AssertEvents.isUUID())
+                .removeDetail(Details.CODE_ID)
+                .assertEvent();
+
+
         driver.navigate().to(testRealmPage.getOIDCLogoutUrl() + "?redirect_uri=" + customerPortal);
 
-        loginEventsPage.navigateTo();
+        assertEvents.expectLogout(null)
+                .realm(realm.getId())
+                .user(userId)
+                .session(AssertEvents.isUUID())
+                .detail(Details.REDIRECT_URI, customerPortal.getInjectedUrl().toString())
+                .assertEvent();
 
-        if (!testContext.isAdminLoggedIn()) {
-            loginPage.form().login(adminUser);
-            testContext.setAdminLoggedIn(true);
-        }
-
-        loginEventsPage.table().filter();
-        loginEventsPage.table().filterForm().addEventType("LOGOUT");
-        loginEventsPage.table().update();
-
-        List<WebElement> resultList = loginEventsPage.table().rows();
-
-        assertEquals(1, resultList.size());
-
-        resultList.get(0).findElement(By.xpath(".//td[text()='LOGOUT']"));
-        resultList.get(0).findElement(By.xpath(".//td[text()='Client']/../td[text()='']"));
-        resultList.get(0).findElement(By.xpath(".//td[text()='IP Address']/../td[text()='127.0.0.1' or text()='0:0:0:0:0:0:0:1']"));
-
-        loginEventsPage.table().reset();
-        loginEventsPage.table().filterForm().addEventType("LOGIN");
-        loginEventsPage.table().update();
-        resultList = loginEventsPage.table().rows();
-
-        assertEquals(1, resultList.size());
-
-        resultList.get(0).findElement(By.xpath(".//td[text()='LOGIN']"));
-        resultList.get(0).findElement(By.xpath(".//td[text()='Client']/../td[text()='customer-portal']"));
-        resultList.get(0).findElement(By.xpath(".//td[text()='IP Address']/../td[text()='127.0.0.1' or text()='0:0:0:0:0:0:0:1']"));
-        resultList.get(0).findElement(By.xpath(".//td[text()='username']/../td[text()='bburke@redhat.com']"));
-
-        loginEventsPage.table().reset();
-        loginEventsPage.table().filterForm().addEventType("CODE_TO_TOKEN");
-        loginEventsPage.table().update();
-        resultList = loginEventsPage.table().rows();
-
-        assertEquals(1, resultList.size());
-        resultList.get(0).findElement(By.xpath(".//td[text()='CODE_TO_TOKEN']"));
-        resultList.get(0).findElement(By.xpath(".//td[text()='Client']/../td[text()='customer-portal']"));
-        resultList.get(0).findElement(By.xpath(".//td[text()='IP Address']/../td[text()='127.0.0.1' or text()='0:0:0:0:0:0:0:1']"));
-        resultList.get(0).findElement(By.xpath(".//td[text()='refresh_token_type']/../td[text()='Refresh']"));
-
-        configPage.navigateTo();
-        configPage.form().clearLoginEvents();
-        driver.findElement(By.xpath("//div[@class='modal-dialog']//button[text()='Delete']")).click();
+        assertEvents.assertEmpty();
 
         String serverLogPath = null;
 

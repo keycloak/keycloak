@@ -41,7 +41,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 import javax.net.ssl.SSLContext;
 import javax.ws.rs.NotFoundException;
 import org.jboss.arquillian.container.test.api.RunAsClient;
@@ -76,7 +75,6 @@ import org.keycloak.testsuite.auth.page.login.UpdatePassword;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.TestEventsLogger;
-import org.keycloak.testsuite.util.WaitUtils;
 import org.openqa.selenium.WebDriver;
 
 import static org.keycloak.testsuite.admin.Users.setPasswordFor;
@@ -155,8 +153,6 @@ public abstract class AbstractKeycloakTest {
 
         setDefaultPageUriParameters();
 
-        driverSettings();
-
         TestEventsLogger.setDriver(driver);
 
         if (!suiteContext.isAdminPasswordUpdated()) {
@@ -196,12 +192,6 @@ public abstract class AbstractKeycloakTest {
         realmAccountPage.navigateTo(); // Because IE webdriver freezes when loading a JSON page (realm page), we need to use this alternative
         log.info("deleting cookies in '" + realmAccountPage.getAuthRealm() + "' realm");
         driver.manage().deleteAllCookies();
-    }
-
-    protected void driverSettings() {
-        driver.manage().timeouts().implicitlyWait(WaitUtils.IMPLICIT_ELEMENT_WAIT_MILLIS, TimeUnit.MILLISECONDS);
-        driver.manage().timeouts().pageLoadTimeout(WaitUtils.PAGELOAD_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
-        driver.manage().window().maximize();
     }
 
     public void setDefaultPageUriParameters() {
