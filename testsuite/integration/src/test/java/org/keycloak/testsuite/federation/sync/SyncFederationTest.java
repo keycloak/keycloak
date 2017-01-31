@@ -61,9 +61,19 @@ public class SyncFederationTest {
     });
 
 
+    /**
+     * Test that period sync is triggered when creating a synchronized User Storage Provider
+     *
+     */
     @Test
-    public void test01PeriodicSync() {
+    public void test01PeriodicSyncOnCreate() {
 
+        KeycloakSession session = keycloakRule.startSession();
+        KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
+        DummyUserFederationProviderFactory dummyFedFactory = (DummyUserFederationProviderFactory) sessionFactory.getProviderFactory(UserStorageProvider.class, DummyUserFederationProviderFactory.PROVIDER_NAME);
+        int full = dummyFedFactory.getFullSyncCounter();
+        int changed = dummyFedFactory.getChangedSyncCounter();
+        keycloakRule.stopSession(session, false);
         // Enable timer for SyncDummyUserFederationProvider
         keycloakRule.update(new KeycloakRule.KeycloakSetup() {
 
@@ -81,16 +91,11 @@ public class SyncFederationTest {
 
         });
 
-        KeycloakSession session = keycloakRule.startSession();
+        session = keycloakRule.startSession();
         try {
-            KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
-            DummyUserFederationProviderFactory dummyFedFactory = (DummyUserFederationProviderFactory)sessionFactory.getProviderFactory(UserStorageProvider.class, DummyUserFederationProviderFactory.PROVIDER_NAME);
-            int full = dummyFedFactory.getFullSyncCounter();
-            int changed = dummyFedFactory.getChangedSyncCounter();
 
             // Assert that after some period was DummyUserFederationProvider triggered
             UserStorageSyncManager usersSyncManager = new UserStorageSyncManager();
-            usersSyncManager.bootstrapPeriodic(sessionFactory, session.getProvider(TimerProvider.class));
             sleep(1800);
 
             // Cancel timer
@@ -117,8 +122,8 @@ public class SyncFederationTest {
             // Assert that dummy provider won't be invoked anymore
             sleep(1800);
             Assert.assertEquals(full, dummyFedFactory.getFullSyncCounter());
-            int newestChanged =  dummyFedFactory.getChangedSyncCounter();
-            Assert.assertEquals("Assertion failed. newChanged=" + newChanged + ", newestChanged="  + newestChanged, newChanged, newestChanged);
+            int newestChanged = dummyFedFactory.getChangedSyncCounter();
+            Assert.assertEquals("Assertion failed. newChanged=" + newChanged + ", newestChanged=" + newestChanged, newChanged, newestChanged);
         } finally {
             keycloakRule.stopSession(session, true);
         }
@@ -134,8 +139,114 @@ public class SyncFederationTest {
         });
     }
 
+    /**
+     * Test that period sync is triggered when updating a synchronized User Storage Provider to have a non-negative sync period
+     *
+     */
     @Test
-    public void test02ConcurrentSync() throws Exception {
+    public void test02PeriodicSyncOnUpdate() {
+
+        KeycloakSession session = keycloakRule.startSession();
+        KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
+        DummyUserFederationProviderFactory dummyFedFactory = (DummyUserFederationProviderFactory) sessionFactory.getProviderFactory(UserStorageProvider.class, DummyUserFederationProviderFactory.PROVIDER_NAME);
+        int full = dummyFedFactory.getFullSyncCounter();
+        int changed = dummyFedFactory.getChangedSyncCounter();
+        keycloakRule.stopSession(session, false);
+        // Enable timer for SyncDummyUserFederationProvider
+        keycloakRule.update(new KeycloakRule.KeycloakSetup() {
+
+            @Override
+            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                UserStorageProviderModel model = new UserStorageProviderModel();
+                model.setProviderId(DummyUserFederationProviderFactory.PROVIDER_NAME);
+                model.setPriority(1);
+                model.setName("test-sync-dummy");
+                model.setFullSyncPeriod(-1);
+                model.setChangedSyncPeriod(-1);
+                model.setLastSync(0);
+                dummyModel = new UserStorageProviderModel(appRealm.addComponentModel(model));
+            }
+
+        });
+
+        session = keycloakRule.startSession();
+        try {
+
+            // Assert that after some period was DummyUserFederationProvider triggered
+            UserStorageSyncManager usersSyncManager = new UserStorageSyncManager();
+            // Assert that dummy provider won't be invoked anymore
+            sleep(1800);
+            Assert.assertEquals(full, dummyFedFactory.getFullSyncCounter());
+            int newestChanged = dummyFedFactory.getChangedSyncCounter();
+            Assert.assertEquals("Assertion failed. newChanged=" + changed + ", newestChanged=" + newestChanged, changed, newestChanged);
+        } finally {
+            keycloakRule.stopSession(session, true);
+        }
+
+        keycloakRule.update(new KeycloakRule.KeycloakSetup() {
+
+            @Override
+            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                dummyModel.setChangedSyncPeriod(1);
+                appRealm.updateComponent(dummyModel);
+            }
+
+        });
+
+
+        session = keycloakRule.startSession();
+        try {
+
+            // Assert that after some period was DummyUserFederationProvider triggered
+            UserStorageSyncManager usersSyncManager = new UserStorageSyncManager();
+            sleep(1800);
+
+            // Cancel timer
+            RealmModel appRealm = session.realms().getRealmByName("test");
+            usersSyncManager.notifyToRefreshPeriodicSync(session, appRealm, dummyModel, true);
+            log.infof("Notified sync manager about cancel periodic sync");
+
+            // This sync is here just to ensure that we have lock (doublecheck that periodic sync, which was possibly triggered before canceling timer is finished too)
+            while (true) {
+                SynchronizationResult result = usersSyncManager.syncChangedUsers(session.getKeycloakSessionFactory(), appRealm.getId(), dummyModel);
+                if (result.isIgnored()) {
+                    log.infof("Still waiting for lock before periodic sync is finished", result.toString());
+                    sleep(1000);
+                } else {
+                    break;
+                }
+            }
+
+            // Assert that DummyUserFederationProviderFactory.syncChangedUsers was invoked at least 2 times (once periodically and once for us)
+            int newChanged = dummyFedFactory.getChangedSyncCounter();
+            Assert.assertEquals(full, dummyFedFactory.getFullSyncCounter());
+            log.info("Asserting. newChanged=" + newChanged + " > changed=" + changed);
+            Assert.assertTrue("Assertion failed. newChanged=" + newChanged + ", changed=" + changed, newChanged > (changed + 1));
+
+            // Assert that dummy provider won't be invoked anymore
+            sleep(1800);
+            Assert.assertEquals(full, dummyFedFactory.getFullSyncCounter());
+            int newestChanged = dummyFedFactory.getChangedSyncCounter();
+            Assert.assertEquals("Assertion failed. newChanged=" + newChanged + ", newestChanged=" + newestChanged, newChanged, newestChanged);
+        } finally {
+            keycloakRule.stopSession(session, true);
+        }
+
+
+        // remove dummyProvider
+        keycloakRule.update(new KeycloakRule.KeycloakSetup() {
+
+            @Override
+            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
+                appRealm.removeComponent(dummyModel);
+            }
+
+        });
+    }
+
+
+    @Test
+    public void test03ConcurrentSync() throws Exception {
         SyncDummyUserFederationProviderFactory.restartLatches();
 
         // Enable timer for SyncDummyUserFederationProvider

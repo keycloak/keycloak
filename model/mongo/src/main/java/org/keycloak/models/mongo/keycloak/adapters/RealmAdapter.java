@@ -1748,14 +1748,17 @@ public class RealmAdapter extends AbstractMongoAdapter<MongoRealmEntity> impleme
     public void updateComponent(ComponentModel model) {
         ComponentUtil.getComponentFactory(session, model).validateConfiguration(session, this, model);
 
+        ComponentModel old = null;
         for (ComponentEntity entity : realm.getComponentEntities()) {
             if (entity.getId().equals(model.getId())) {
+                old = entityToModel(entity);
                 updateComponentEntity(entity, model);
-
+                break;
             }
         }
+        if (old == null) return; // wasn't updated
         updateRealm();
-        ComponentUtil.notifyUpdated(session, this, model);
+        ComponentUtil.notifyUpdated(session, this, old, model);
 
     }
 
