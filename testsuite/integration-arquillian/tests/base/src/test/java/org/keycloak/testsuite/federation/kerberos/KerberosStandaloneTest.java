@@ -78,6 +78,11 @@ public class KerberosStandaloneTest extends AbstractKerberosTest {
     protected boolean isCaseSensitiveLogin() {
         return kerberosRule.isCaseSensitiveLogin();
     }
+    
+    @Override
+    protected boolean isStartEmbeddedLdapServer() {
+        return kerberosRule.isStartEmbeddedLdapServer();
+    }
 
 
     @Override
@@ -90,7 +95,7 @@ public class KerberosStandaloneTest extends AbstractKerberosTest {
         spnegoLoginTestImpl();
 
         // Assert user was imported and hasn't any required action on him. Profile info is synced from LDAP
-        assertUser("hnelson", "hnelson@keycloak.org", null, null, false);
+        assertUser("hnelson", "hnelson@" + kerberosRule.getConfig().get(KerberosConstants.KERBEROS_REALM).toLowerCase(), null, null, false);
     }
 
 
@@ -108,11 +113,11 @@ public class KerberosStandaloneTest extends AbstractKerberosTest {
         Assert.assertEquals(200, spnegoResponse.getStatus());
         String responseText = spnegoResponse.readEntity(String.class);
         Assert.assertTrue(responseText.contains("You need to update your user profile to activate your account."));
-        Assert.assertTrue(responseText.contains("hnelson@keycloak.org"));
+        Assert.assertTrue(responseText.contains("hnelson@" + kerberosRule.getConfig().get(KerberosConstants.KERBEROS_REALM).toLowerCase()));
         spnegoResponse.close();
 
         // Assert user was imported and has required action on him
-        assertUser("hnelson", "hnelson@keycloak.org", null, null, true);
+        assertUser("hnelson", "hnelson@" + kerberosRule.getConfig().get(KerberosConstants.KERBEROS_REALM).toLowerCase(), null, null, true);
 
         // Switch updateProfileOnFirstLogin to off
         kerberosProvider.getConfig().putSingle(KerberosConstants.UPDATE_PROFILE_FIRST_LOGIN, "false");
