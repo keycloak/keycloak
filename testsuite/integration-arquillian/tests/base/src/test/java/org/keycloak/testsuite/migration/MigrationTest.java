@@ -23,6 +23,7 @@ import java.util.stream.Collectors;
 import javax.ws.rs.NotFoundException;
 
 import org.jboss.arquillian.container.test.api.Deployment;
+import org.jboss.arquillian.container.test.api.TargetsContainer;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Before;
 import org.junit.Test;
@@ -52,6 +53,7 @@ import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
+import org.keycloak.testsuite.arquillian.DeploymentTargetModifier;
 import org.keycloak.testsuite.arquillian.migration.Migration;
 import org.keycloak.testsuite.runonserver.RunHelpers;
 import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
@@ -78,6 +80,7 @@ public class MigrationTest extends AbstractKeycloakTest {
     private RealmResource masterRealm;
 
     @Deployment
+    @TargetsContainer(DeploymentTargetModifier.AUTH_SERVER_CURRENT)
     public static WebArchive deploy() {
         return RunOnServerDeployment.create();
     }
