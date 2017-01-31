@@ -801,7 +801,7 @@ public class ModelToRepresentation {
         representation.setType(model.getType());
         representation.setDecisionStrategy(model.getDecisionStrategy());
         representation.setLogic(model.getLogic());
-        representation.setConfig(model.getConfig());
+        representation.setConfig(new HashMap<>(model.getConfig()));
 
         return representation;
     }
