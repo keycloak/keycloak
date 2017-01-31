@@ -1845,6 +1845,7 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
 
         ComponentEntity c = em.find(ComponentEntity.class, component.getId());
         if (c == null) return;
+        ComponentModel old = entityToModel(c);
         c.setName(component.getName());
         c.setProviderId(component.getProviderId());
         c.setProviderType(component.getProviderType());
@@ -1853,7 +1854,7 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
         em.createNamedQuery("deleteComponentConfigByComponent").setParameter("component", c).executeUpdate();
         em.flush();
         setConfig(component, c);
-        ComponentUtil.notifyUpdated(session, this, component);
+        ComponentUtil.notifyUpdated(session, this, old, component);
 
 
     }
