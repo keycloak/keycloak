@@ -4,6 +4,9 @@
 
 For overview see the **Modules Overview** section at the bottom of this README.
 
+## How to run tests
+
+See the file [HOW-TO-RUN.md](HOW-TO-RUN.md) .
 
 ## Container Lifecycles
 

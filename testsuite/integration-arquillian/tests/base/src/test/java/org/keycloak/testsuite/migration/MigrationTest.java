@@ -361,14 +361,27 @@ public class MigrationTest extends AbstractKeycloakTest {
     }
 
     private void testOfflineTokenLogin() {
-        log.info("test login with old offline token");
-        String oldOfflineToken = suiteContext.getMigrationContext().getOfflineToken();
-        Assert.assertNotNull(oldOfflineToken);
+        if (isImportMigrationMode()) {
+            log.info("Skip offline token login test in the 'import' migrationMode");
+        } else {
+            log.info("test login with old offline token");
+            String oldOfflineToken = suiteContext.getMigrationContext().getOfflineToken();
+            Assert.assertNotNull(oldOfflineToken);
 
-        oauth.realm(MIGRATION);
-        oauth.clientId("migration-test-client");
-        OAuthClient.AccessTokenResponse response = oauth.doRefreshTokenRequest(oldOfflineToken, "b2c07929-69e3-44c6-8d7f-76939000b3e4");
-        AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
-        assertEquals("migration-test-user", accessToken.getPreferredUsername());
+            oauth.realm(MIGRATION);
+            oauth.clientId("migration-test-client");
+            OAuthClient.AccessTokenResponse response = oauth.doRefreshTokenRequest(oldOfflineToken, "b2c07929-69e3-44c6-8d7f-76939000b3e4");
+            AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
+            assertEquals("migration-test-user", accessToken.getPreferredUsername());
+        }
+    }
+
+    private String getMigrationMode() {
+        return System.getProperty("migration.mode");
+    }
+
+    private boolean isImportMigrationMode() {
+        String mode = getMigrationMode();
+        return "import".equals(mode);
     }
 }
