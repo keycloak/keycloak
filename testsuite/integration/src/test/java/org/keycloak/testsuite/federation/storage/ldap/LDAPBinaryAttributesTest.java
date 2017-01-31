@@ -43,7 +43,6 @@ import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.mongo.keycloak.adapters.MongoRealmProviderFactory;
 import org.keycloak.models.utils.UserModelDelegate;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
