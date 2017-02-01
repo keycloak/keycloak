@@ -653,12 +653,7 @@
             if (token) {
                 kc.token = token;
                 kc.tokenParsed = decodeToken(token);
-
-                var sessionId = kc.realm + '/' + kc.tokenParsed.sub;
-                if (kc.tokenParsed.session_state) {
-                    sessionId = sessionId + '/' + kc.tokenParsed.session_state;
-                }
-                kc.sessionId = sessionId;
+                kc.sessionId = kc.tokenParsed.session_state;
                 kc.authenticated = true;
                 kc.subject = kc.tokenParsed.sub;
                 kc.realmAccess = kc.tokenParsed.realm_access;
