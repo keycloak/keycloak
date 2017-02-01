@@ -39,20 +39,43 @@ public interface ComponentFactory<CreatedType, ProviderType extends Provider> ex
         return null;
     }
 
+    /**
+     * Called before a component is created or updated.  Allows you to validate the configuration
+     *
+     * @param session
+     * @param realm
+     * @param model
+     * @throws ComponentValidationException
+     */
     default
     void validateConfiguration(KeycloakSession session, RealmModel realm, ComponentModel model) throws ComponentValidationException
     {
 
     }
 
+    /**
+     * Called after a component is created
+     *
+     * @param session
+     * @param realm
+     * @param model
+     */
     default
     void onCreate(KeycloakSession session, RealmModel realm, ComponentModel model) {
 
     }
 
 
+    /**
+     * Called after the component is updated.
+     *
+     * @param session
+     * @param realm
+     * @param oldModel old saved model
+     * @param newModel new configuration
+     */
     default
-    void onUpdate(KeycloakSession session, RealmModel realm, ComponentModel model) {
+    void onUpdate(KeycloakSession session, RealmModel realm, ComponentModel oldModel, ComponentModel newModel) {
 
     }
 
