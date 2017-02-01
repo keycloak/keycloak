@@ -375,8 +375,8 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
     }
 
     @Override
-    public void onUpdate(KeycloakSession session, RealmModel realm, ComponentModel model) {
-        checkKerberosCredential(session, realm, model);
+    public void onUpdate(KeycloakSession session, RealmModel realm, ComponentModel oldModel, ComponentModel newModel) {
+        checkKerberosCredential(session, realm, newModel);
 
     }
 
