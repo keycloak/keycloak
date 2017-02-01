@@ -26,6 +26,7 @@ import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.storage.OnCreateComponent;
+import org.keycloak.storage.OnUpdateComponent;
 import org.keycloak.storage.UserStorageProviderFactory;
 
 import java.util.HashMap;
@@ -94,9 +95,12 @@ public class ComponentUtil {
             ((OnCreateComponent)session.userStorageManager()).onCreate(session, realm, model);
         }
     }
-    public static void notifyUpdated(KeycloakSession session, RealmModel realm, ComponentModel model) {
-        ComponentFactory factory = getComponentFactory(session, model);
-        factory.onUpdate(session, realm, model);
+    public static void notifyUpdated(KeycloakSession session, RealmModel realm, ComponentModel oldModel, ComponentModel newModel) {
+        ComponentFactory factory = getComponentFactory(session, newModel);
+        factory.onUpdate(session, realm, newModel);
+        if (factory instanceof UserStorageProviderFactory) {
+            ((OnUpdateComponent)session.userStorageManager()).onUpdate(session, realm, oldModel, newModel);
+        }
     }
 
 }
