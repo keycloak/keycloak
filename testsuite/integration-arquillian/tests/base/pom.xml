@@ -43,6 +43,13 @@
 
         <!-- exclude undertow adapter tests. They can be added by -Dtest=org.keycloak.testsuite.adapter.undertow.**.*Test -->
         <exclude.undertow.adapter>**/adapter/undertow/**/*Test.java</exclude.undertow.adapter>
+
+        <!-- exclude truststore / ssl tests from default run - those should be run by using ssl-tests profile -->
+        <exclude.ssl>**/*TruststoreTest.java</exclude.ssl>
+
+        <!-- improve performance - exclude individual KcReg and KcAdm tests - they are aggregated and run via TestAll*.java -->
+        <exclude.cli>**/org/keycloak/testsuite/cli/**/*Test.java</exclude.cli>
+
     </properties>
     
     <dependencies>
@@ -119,6 +126,8 @@
                         <exclude>${exclude.client}</exclude>
                         <exclude>${exclude.cluster}</exclude>
                         <exclude>${exclude.undertow.adapter}</exclude>
+                        <exclude>${exclude.ssl}</exclude>
+                        <exclude>${exclude.cli}</exclude>
                     </excludes>
                 </configuration>
             </plugin>

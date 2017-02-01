@@ -158,6 +158,40 @@ mvn -f testsuite/integration-arquillian/pom.xml \
   -Dmigrated.auth.server.version=1.9.8.Final
 ````
 
+## Running tests that require secure connection (https)
+
+There is a subset of tests concerned with testing https connectivity, and requires a dedicated profile to run:
+
+````
+mvn clean install -f testsuite/integration-arquillian -Pauth-server-wildfly,ssl,ssl-tests
+````
+
+Profile `auth-server-wildfly` configures Wildfly container for a server, rather than Undertow.
+Profile `ssl` configures Wildfly server with secure https.
+Profile `ssl-tests` configures execution of only tests that are meant to be run against secured server.
 
 
 
+## CLI tests
+
+CLI tests are run as part of the default integration-arquillian testsuite.
+
+There are tests for `kcadm` CLI tool, and tests for `kcreg` CLI tool.
+
+If you only want to run these CLI tests you can use the following:
+
+````
+mvn clean install -f testsuite/integration-arquillian '-Dtest=**/org/keycloak/testsuite/cli/**/TestAll*'
+````
+
+This will run the tests in aggregated manner rather than each test individually to noticeably speed up the run
+(that is how they are run as part of the default build).
+
+
+Alternatively you can run the same tests individually, by using:
+
+````
+mvn clean install -f testsuite/integration-arquillian '-Dtest=**/org/keycloak/testsuite/cli/**/*Test.java'
+````
+
+Note that you have to specify `*Test.java` (or `TestAll*`), and not just `*` in order to avoid running the tests twice.

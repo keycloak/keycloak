@@ -18,7 +18,7 @@ import static org.keycloak.testsuite.cli.KcRegExec.execute;
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
-public class KcRegUpdateTest extends AbstractRegCliTest {
+public class KcRegUpdateTest extends AbstractRegCliTest<KcRegUpdateTest> {
 
 
     @Test
@@ -34,7 +34,7 @@ public class KcRegUpdateTest extends AbstractRegCliTest {
 
 
             // create an object so we can update it
-            KcRegExec exe = execute("create --config '" + configFile.getName() + "' -o -s clientId=my_client");
+            KcRegExec exe = execute("create --config '" + configFile.getName() + "' -o -s clientId=my_client_u");
 
             assertExitCodeAndStdErrSize(exe, 0, 0);
 
@@ -47,7 +47,7 @@ public class KcRegUpdateTest extends AbstractRegCliTest {
 
 
             // Merge update
-            exe = execute("update my_client --config '" + configFile.getName() + "' -o " +
+            exe = execute("update my_client_u --config '" + configFile.getName() + "' -o " +
                         " -s enabled=false -s 'redirectUris=[\"http://localhost:8980/myapp/*\"]'");
 
             assertExitCodeAndStdErrSize(exe, 0, 0);
@@ -59,7 +59,7 @@ public class KcRegUpdateTest extends AbstractRegCliTest {
 
 
             // Another merge update - test deleting an attribute, deleting a list item and adding a list item
-            exe = execute("update my_client --config '" + configFile.getName() + "' -o -d redirectUris -s webOrigins+=http://localhost:8980/myapp -s webOrigins+=http://localhost:8981/myapp -d webOrigins[0]");
+            exe = execute("update my_client_u --config '" + configFile.getName() + "' -o -d redirectUris -s webOrigins+=http://localhost:8980/myapp -s webOrigins+=http://localhost:8981/myapp -d webOrigins[0]");
 
             assertExitCodeAndStdErrSize(exe, 0, 0);
 
@@ -73,7 +73,7 @@ public class KcRegUpdateTest extends AbstractRegCliTest {
             // Another merge update - test nested attributes and setting an attribute using json format
             // TODO KEYCLOAK-3705 Updating protocolMapper config via client registration endpoint has no effect
             /*
-            exe = execute("update my_client --config '" + configFile.getName() + "' -o -s 'protocolMappers[0].config.\"id.token.claim\"=false' " +
+            exe = execute("update my_client_u --config '" + configFile.getName() + "' -o -s 'protocolMappers[0].config.\"id.token.claim\"=false' " +
                     "-s 'protocolMappers[4].config={\"single\": \"true\", \"attribute.nameformat\": \"Basic\", \"attribute.name\": \"Role\"}'");
 
             assertExitCodeAndStdErrSize(exe, 0, 0);
@@ -89,7 +89,7 @@ public class KcRegUpdateTest extends AbstractRegCliTest {
 
 
             // check that using an invalid attribute key is not ignored
-            exe = execute("update my_client --nonexisting --config '" + configFile.getName() + "'");
+            exe = execute("update my_client_u --nonexisting --config '" + configFile.getName() + "'");
 
             assertExitCodeAndStreamSizes(exe, 1, 0, 2);
             Assert.assertEquals("error message", "Unsupported option: --nonexisting", exe.stderrLines().get(0));
@@ -97,7 +97,7 @@ public class KcRegUpdateTest extends AbstractRegCliTest {
 
 
             // try use incompatible endpoint
-            exe = execute("update my_client --config '" + configFile.getName() + "' -o -s enabled=true -e oidc");
+            exe = execute("update my_client_u --config '" + configFile.getName() + "' -o -s enabled=true -e oidc");
 
             assertExitCodeAndStreamSizes(exe, 1, 0, 1);
             Assert.assertEquals("error message", "Failed to set attribute 'enabled' on document type 'oidc'", exe.stderrLines().get(0));
@@ -106,8 +106,8 @@ public class KcRegUpdateTest extends AbstractRegCliTest {
 
             // test overwrite from file
             exe = KcRegExec.newBuilder()
-                    .argsLine("update my_client --config '" + configFile.getName() +
-                            "' -o  -s clientId=my_client -s 'redirectUris=[\"http://localhost:8980/myapp/*\"]' -f -")
+                    .argsLine("update my_client_u --config '" + configFile.getName() +
+                            "' -o  -s clientId=my_client_u -s 'redirectUris=[\"http://localhost:8980/myapp/*\"]' -f -")
                     .stdin(new ByteArrayInputStream("{ \"enabled\": false }".getBytes()))
                     .execute();
 
@@ -123,7 +123,7 @@ public class KcRegUpdateTest extends AbstractRegCliTest {
 
             // test using merge with file
             exe = KcRegExec.newBuilder()
-                    .argsLine("update my_client --config '" + configFile.getName() +
+                    .argsLine("update my_client_u --config '" + configFile.getName() +
                             "' -o -s enabled=true -m -f -")
                     .stdin(new ByteArrayInputStream("{ \"webOrigins\": [\"http://localhost:8980/myapp\"] }".getBytes()))
                     .execute();
@@ -139,11 +139,11 @@ public class KcRegUpdateTest extends AbstractRegCliTest {
 
             // remove registration access token
             exe = execute("config registration-token --config '" + configFile.getName() + "' --server " + serverUrl +
-                    " --realm " + realm + " --client my_client -d");
+                    " --realm " + realm + " --client my_client_u -d");
 
             assertExitCodeAndStdErrSize(exe, 0, 0);
 
-            Assert.assertNull("my_client registration token", handler.loadConfig().ensureRealmConfigData(serverUrl, realm).getClients().get("my_client"));
+            Assert.assertNull("my_client_u registration token", handler.loadConfig().ensureRealmConfigData(serverUrl, realm).getClients().get("my_client_u"));
         }
     }
 }
