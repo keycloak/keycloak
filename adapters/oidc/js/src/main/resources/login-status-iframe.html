@@ -81,7 +81,7 @@
         var origin = event.origin;
         var data = event.data.split(' ');
         if (data.length != 2) {
-            event.source.postMessage('error', origin);
+            return;
         }
 
         var clientId = data[0];
