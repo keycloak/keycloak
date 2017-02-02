@@ -24,6 +24,7 @@ import org.keycloak.KeycloakPrincipal;
 import org.keycloak.adapters.spi.AuthChallenge;
 import org.keycloak.adapters.spi.AuthOutcome;
 import org.keycloak.adapters.spi.HttpFacade;
+import org.keycloak.common.enums.SslRequired;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
