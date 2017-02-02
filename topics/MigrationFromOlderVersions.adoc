@@ -21,7 +21,8 @@ If migrating from Keycloak version 2.1.0 or older, you should also copy `keycloa
 and/or `domain/configuration`.
 
 There will be configuration in those config files that pertains to Keycloak, which will need to be upgraded.  For that,
-you should run one of the upgrade scripts.  They are `migrate-standalone.cli`, `migrate-standalone-ha.cli`, and `migrate-domain.cli`.
+you should run one or more of the appropriate upgrade scripts.  They are `migrate-standalone.cli`, `migrate-standalone-ha.cli`, 
+`migrate-domain-standalone.cli` and `migrate-domain-clustered.cli`.
 
 The server should not be running when you execute a migration script.
 
@@ -31,6 +32,11 @@ The server should not be running when you execute a migration script.
 $ .../bin/jboss-cli.sh --file=migrate-standalone.cli
 ----
 
+Note that for upgrading domain.xml, there are two migration scripts, `migrate-domain-standalone.cli` and
+`migrate-domain-clustered.cli`.  These scripts migrate separate profiles within your domain.xml that were
+originally shipped with Keycloak.  If you have changed the name of the profile there is a variable near
+the top of the script that you will need to change.
+ 
 If you are migrating `keycloak-server.json`, this will also be migrated as needed.  If you prefer,
 you can migrate `keycloak-server.json` beforehand using the instructions in the next section.
 
@@ -42,6 +48,9 @@ for each version.  They also have values at the top of the script that you may n
 environment.
 
 === Migrate and convert keycloak-server.json
+If you ran one of the migration scripts from the previous section then you have probably already migrated
+your keycloak-server.json.  This section is kept here for reference.  If you prefer, you can follow the
+instructions in this section before running the migration scripts above.
 
 You should copy `standalone/configuration/keycloak-server.json` from the old version to make sure any configuration changes you've done are added to the new installation.
 The version specific section below will list any changes done to this file that you have to do when upgrading from one version to another.
