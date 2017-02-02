@@ -22,9 +22,9 @@ Alternatively, you don't have to modify your WAR at all and you can secure it vi
 Both methods are described in this section.
 
 [[_jboss_adapter_installation]]
-===== Adapter Installation
+===== Installing the adapter
 
-Adapters are available as a separate archive and are also available as Maven artifacts.
+Adapters are available as a separate archive depending on what server version you are using.
 
 {% if book.community %}
 Install on Wildfly 9 or 10:
@@ -86,100 +86,37 @@ $ unzip rh-sso-{{book.project.version}}-eap6-adapter.zip
 ----
 {% endif %}
 
-This ZIP archive contains JBoss Modules specific to the {{book.project.name}} adapter. It also contains JBoss CLI scripts to install and configure the adapter.
+This ZIP archive contains JBoss Modules specific to the {{book.project.name}} adapter. It also contains JBoss CLI scripts
+to configure the adapter subsystem.
 
-Once the ZIP archive is extracted you have to enable the {{book.project.name}} subystem in the server configuration (i.e. `standalone.xml`). The easiest way to
-do this is to use the supplied JBoss CLI scripts.
-
-To install and configure the adapter, first start the server and then run the JBoss CLI installation script :
-
-[source]
-----
-$ ./bin/jboss-cli.sh -c --file=adapter-install.cli
-----
-
-The script will add the required configuration to the server configuration file.
-
-{% if book.community %}
-For JBoss EAP 7 and WildFly 9+ there is also an offline CLI script that can be used to install the adapter while the server
-is not running:
-{% endif %}
-{% if book.product %}
-For JBoss EAP 7 there is also an offline CLI script that can be used to install the adapter while the server
-is not running:
-{% endif %}
+To configure the adapter subsystem if the server is not running execute:
 
 [source]
 ----
 $ ./bin/jboss-cli.sh --file=adapter-install-offline.cli
 ----
 
-If you are planning to add it manually you need to add the extension and subsystem definition to the server configuration:
+NOTE: The offline script is not available for JBoss EAP 6
 
-[source,xml]
-----
-<extensions>
-    <extension module="org.keycloak.keycloak-adapter-subsystem"/>
-    ...
-</extensions>
-
-<profile>
-    <subsystem xmlns="urn:jboss:domain:keycloak:1.1"/>
-    ...
-</profile>
-----
-
-If you need to be able to propagate the security context from the web tier to the EJB tier you also need to add the `keycloak` security domain:
-
-[source,xml]
-----
-<subsystem xmlns="urn:jboss:domain:security:...">
-    <security-domains>
-        ...
-        <security-domain name="keycloak">
-            <authentication>
-                <login-module code="org.keycloak.adapters.jboss.KeycloakLoginModule"
-                              flag="required"/>
-            </authentication>
-        </security-domain>
-    </security-domains>
-    ...
-----
-
-For example, if you have a JAX-RS service that is an EJB within your WEB-INF/classes directory, you'll want to annotate it with the @SecurityDomain annotation as follows:
+Alternatively, if the server is running execute:
 
 [source]
 ----
-
-import org.jboss.ejb3.annotation.SecurityDomain;
-import org.jboss.resteasy.annotations.cache.NoCache;
-
-import javax.annotation.security.RolesAllowed;
-import javax.ejb.EJB;
-import javax.ejb.Stateless;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import java.util.ArrayList;
-import java.util.List;
-
-@Path("customers")
-@Stateless
-@SecurityDomain("keycloak")
-public class CustomerService {
-
-    @EJB
-    CustomerDB db;
-
-    @GET
-    @Produces("application/json")
-    @NoCache
-    @RolesAllowed("db_user")
-    public List<String> getCustomers() {
-        return db.getCustomers();
-    }
-}
+$ ./bin/jboss-cli.sh --file=adapter-install.cli
 ----
+
+[[_jboss_adapter_upgrading]]
+===== Upgrading the adapter
+
+It is important that you upgrade the ${book.project.name}} server first then the adapters. This is because older adapters
+will work with the newer server, but not always the other way around.
+
+The steps to upgrade the adapter is slightly different to the steps to install the adapter.
+
+First step is to delete the old adapter modules. Do this be deleting the directory `modules/system/add-ons/keycloak/`.
+
+Next follow the steps in the <<_jboss_adapter_installation,Installing the adapter>> to unzip the adapter. Since the
+adapter subsystem has already been configured skip that step.
 
 ===== Required Per WAR Configuration
 
@@ -302,4 +239,27 @@ If you have multiple deployments secured by the same realm you can share the rea
         <bearer-only>true</bearer-only>
     </secure-deployment>
 </subsystem>
+----
+
+
+===== Security Domain
+
+To propogate the security context to the EJB tier you need to configure it to use the "keycloak" security domain. This
+can be achieved with the @SecurityDomain annotation:
+
+[source]
+----
+
+import org.jboss.ejb3.annotation.SecurityDomain;
+...
+
+@Stateless
+@SecurityDomain("keycloak")
+public class CustomerService {
+
+    @RolesAllowed("user")
+    public List<String> getCustomers() {
+        return db.getCustomers();
+    }
+}
 ----
