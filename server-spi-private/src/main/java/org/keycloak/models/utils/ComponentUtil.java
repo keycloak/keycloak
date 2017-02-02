@@ -97,7 +97,7 @@ public class ComponentUtil {
     }
     public static void notifyUpdated(KeycloakSession session, RealmModel realm, ComponentModel oldModel, ComponentModel newModel) {
         ComponentFactory factory = getComponentFactory(session, newModel);
-        factory.onUpdate(session, realm, newModel);
+        factory.onUpdate(session, realm, oldModel, newModel);
         if (factory instanceof UserStorageProviderFactory) {
             ((OnUpdateComponent)session.userStorageManager()).onUpdate(session, realm, oldModel, newModel);
         }
