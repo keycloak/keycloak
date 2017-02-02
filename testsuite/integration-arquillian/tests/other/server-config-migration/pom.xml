@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-tests-other</artifactId>
-        <version>2.5.1.Final-SNAPSHOT</version>
+        <version>3.0.0.CR1-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     
@@ -323,7 +323,8 @@
                             </java-opts>
                             <execute-commands>
                                 <scripts>
-                                    <script>${jbossHome}/bin/migrate-domain.cli</script>
+                                    <script>${jbossHome}/bin/migrate-domain-standalone.cli</script>
+                                    <script>${jbossHome}/bin/migrate-domain-clustered.cli</script>
                                 </scripts>
                             </execute-commands>
                         </configuration>
