@@ -105,26 +105,13 @@ Alternatively, if the server is running execute:
 $ ./bin/jboss-cli.sh --file=adapter-install.cli
 ----
 
-[[_jboss_adapter_upgrading]]
-===== Upgrading the adapter
-
-It is important that you upgrade the ${book.project.name}} server first then the adapters. This is because older adapters
-will work with the newer server, but not always the other way around.
-
-The steps to upgrade the adapter is slightly different to the steps to install the adapter.
-
-First step is to delete the old adapter modules. Do this be deleting the directory `modules/system/add-ons/keycloak/`.
-
-Next follow the steps in the <<_jboss_adapter_installation,Installing the adapter>> to unzip the adapter. Since the
-adapter subsystem has already been configured skip that step.
-
 ===== Required Per WAR Configuration
 
-This section describes how to secure a WAR directly by adding config and editing files within your WAR package.
+This section describes how to secure a WAR directly by adding configuration and editing files within your WAR package.
 
-The first thing you must do is create a `keycloak.json` adapter config file within the `WEB-INF` directory of your WAR.
+The first thing you must do is create a `keycloak.json` adapter configuration file within the `WEB-INF` directory of your WAR.
 
-The format of this config file is describe in the <<fake/../java-adapter-config.adoc#_java_adapter_config,Java adapter configuration>> section.
+The format of this configuration file is described in the <<fake/../java-adapter-config.adoc#_java_adapter_config,Java adapter configuration>> section.
 
 Next you must set the `auth-method` to `KEYCLOAK` in `web.xml`.
 You also have to use standard servlet security to specify role-base constraints on your URLs.
@@ -244,7 +231,7 @@ If you have multiple deployments secured by the same realm you can share the rea
 
 ===== Security Domain
 
-To propogate the security context to the EJB tier you need to configure it to use the "keycloak" security domain. This
+To propagate the security context to the EJB tier you need to configure it to use the "keycloak" security domain. This
 can be achieved with the @SecurityDomain annotation:
 
 [source]
