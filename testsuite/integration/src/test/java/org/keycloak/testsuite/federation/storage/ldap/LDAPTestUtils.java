@@ -150,6 +150,14 @@ public class LDAPTestUtils {
         Assert.assertEquals(expectedPostalCode, user.getFirstAttribute("postal_code"));
     }
 
+    public static void assertLoaded(UserModel user, String username, String expectedFirstName, String expectedLastName, String expectedEmail, String expectedPostalCode) {
+        Assert.assertNotNull(user);
+        Assert.assertEquals(expectedFirstName, user.getFirstName());
+        Assert.assertEquals(expectedLastName, user.getLastName());
+        Assert.assertEquals(expectedEmail, user.getEmail());
+        Assert.assertEquals(expectedPostalCode, user.getFirstAttribute("postal_code"));
+    }
+
 
     // CRUD model mappers
 
