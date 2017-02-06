@@ -33,7 +33,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
-import org.keycloak.models.ModelReadOnlyException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
@@ -41,6 +40,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserManager;
 import org.keycloak.models.cache.UserCache;
 import org.keycloak.models.credential.PasswordUserCredentialModel;
+import org.keycloak.storage.ReadOnlyException;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
@@ -538,7 +538,7 @@ public class LDAPStorageProvider implements UserStorageProvider,
     public boolean updateCredential(RealmModel realm, UserModel user, CredentialInput input) {
         if (!CredentialModel.PASSWORD.equals(input.getType()) || ! (input instanceof PasswordUserCredentialModel)) return false;
         if (editMode == UserStorageProvider.EditMode.READ_ONLY) {
-            throw new ModelReadOnlyException("Federated storage is not writable");
+            throw new ReadOnlyException("Federated storage is not writable");
 
         } else if (editMode == UserStorageProvider.EditMode.WRITABLE) {
             LDAPIdentityStore ldapIdentityStore = getLdapIdentityStore();

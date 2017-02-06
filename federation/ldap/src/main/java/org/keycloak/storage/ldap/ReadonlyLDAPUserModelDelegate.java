@@ -17,9 +17,9 @@
 
 package org.keycloak.storage.ldap;
 
-import org.keycloak.models.ModelReadOnlyException;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.UserModelDelegate;
+import org.keycloak.storage.ReadOnlyException;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -36,22 +36,22 @@ public class ReadonlyLDAPUserModelDelegate extends UserModelDelegate implements 
 
     @Override
     public void setUsername(String username) {
-        throw new ModelReadOnlyException("Federated storage is not writable");
+        throw new ReadOnlyException("Federated storage is not writable");
     }
 
     @Override
     public void setLastName(String lastName) {
-        throw new ModelReadOnlyException("Federated storage is not writable");
+        throw new ReadOnlyException("Federated storage is not writable");
     }
 
     @Override
     public void setFirstName(String first) {
-        throw new ModelReadOnlyException("Federated storage is not writable");
+        throw new ReadOnlyException("Federated storage is not writable");
     }
 
     @Override
     public void setEmail(String email) {
-        throw new ModelReadOnlyException("Federated storage is not writable");
+        throw new ReadOnlyException("Federated storage is not writable");
     }
 
 }
