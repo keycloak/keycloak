@@ -85,15 +85,6 @@
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-saml-core</artifactId>
         </dependency>
-        <!-- mongo -->
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-model-mongo</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.mongodb</groupId>
-            <artifactId>mongo-java-driver</artifactId>
-        </dependency>
 
         <dependency>
             <groupId>org.liquibase</groupId>

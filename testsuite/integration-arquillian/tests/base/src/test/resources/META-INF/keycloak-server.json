@@ -98,16 +98,6 @@
         }
     },
 
-    "connectionsMongo": {
-        "default": {
-            "host": "${keycloak.connectionsMongo.host:127.0.0.1}",
-            "port": "${keycloak.connectionsMongo.port:27017}",
-            "db": "${keycloak.connectionsMongo.db:keycloak}",
-            "databaseSchema": "${keycloak.connectionsMongo.databaseSchema:update}",
-            "connectionsPerHost": "${keycloak.connectionsMongo.connectionsPerHost:100}"
-        }
-    },
-
     "realmCache": {
         "provider": "${keycloak.realm.cache.provider:default}",
         "default" : {

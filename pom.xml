@@ -90,7 +90,6 @@
         <freemarker.version>2.3.23</freemarker.version>
         <jetty9.version>9.1.0.v20131115</jetty9.version>
         <liquibase.version>3.4.1</liquibase.version>
-        <mongo.driver.version>3.2.0</mongo.driver.version>
         <mysql.version>5.1.29</mysql.version>
         <osgi.version>4.2.0</osgi.version>
         <pax.web.version>4.2.4</pax.web.version>
@@ -111,7 +110,6 @@
         <subethasmtp.version>3.1.7</subethasmtp.version>
 
         <!-- Maven Plugins -->
-        <embedmongo.plugin.version>0.1.12</embedmongo.plugin.version>
         <enforcer.plugin.version>1.4</enforcer.plugin.version>
         <replacer.plugin.version>1.3.5</replacer.plugin.version>
         <jboss.as.plugin.version>7.5.Final</jboss.as.plugin.version>
@@ -485,11 +483,6 @@
                 <artifactId>selenium-chrome-driver</artifactId>
                 <version>${selenium.version}</version>
                 <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.mongodb</groupId>
-                <artifactId>mongo-java-driver</artifactId>
-                <version>${mongo.driver.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.jmeter</groupId>
@@ -950,11 +943,6 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-model-mongo</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-model-infinispan</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -1394,11 +1382,6 @@
                     <groupId>com.lazerycode.jmeter</groupId>
                     <artifactId>jmeter-analysis-maven-plugin</artifactId>
                     <version>${jmeter.analysis.plugin.version}</version>
-                </plugin>
-                <plugin>
-                    <groupId>com.github.joelittlejohn.embedmongo</groupId>
-                    <artifactId>embedmongo-maven-plugin</artifactId>
-                    <version>${embedmongo.plugin.version}</version>
                 </plugin>
                 <plugin>
                     <groupId>org.jboss.as.plugins</groupId>
