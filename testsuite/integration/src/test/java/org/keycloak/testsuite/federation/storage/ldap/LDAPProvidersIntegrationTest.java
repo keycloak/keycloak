@@ -30,6 +30,7 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.credential.CredentialModel;
+import org.keycloak.storage.ReadOnlyException;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.storage.ldap.LDAPConfig;
@@ -39,7 +40,6 @@ import org.keycloak.storage.ldap.idm.model.LDAPObject;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.ModelException;
-import org.keycloak.models.ModelReadOnlyException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
@@ -706,26 +706,26 @@ public class LDAPProvidersIntegrationTest {
             try {
                 user.setEmail("error@error.com");
                 Assert.fail("should fail");
-            } catch (ModelReadOnlyException e) {
+            } catch (ReadOnlyException e) {
 
             }
             try {
                 user.setLastName("Berk");
                 Assert.fail("should fail");
-            } catch (ModelReadOnlyException e) {
+            } catch (ReadOnlyException e) {
 
             }
             try {
                 user.setFirstName("Bilbo");
                 Assert.fail("should fail");
-            } catch (ModelReadOnlyException e) {
+            } catch (ReadOnlyException e) {
 
             }
             try {
                 UserCredentialModel cred = UserCredentialModel.password("PoopyPoop1", true);
                 session.userCredentialManager().updateCredential(appRealm, user, cred);
                 Assert.fail("should fail");
-            } catch (ModelReadOnlyException e) {
+            } catch (ReadOnlyException e) {
 
             }
 
