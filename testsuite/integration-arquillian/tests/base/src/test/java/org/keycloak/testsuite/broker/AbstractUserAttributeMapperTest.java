@@ -233,4 +233,24 @@ public abstract class AbstractUserAttributeMapperTest extends AbstractBaseBroker
           .build()
         );
     }
+
+    @Test
+    public void testAddBasicMappingMultipleValues() {
+        testValueMapping(ImmutableMap.<String, List<String>>builder()
+          .build(),
+          ImmutableMap.<String, List<String>>builder()
+          .put(ATTRIBUTE_TO_MAP_NAME, ImmutableList.<String>builder().add("second value").add("second value 2").build())
+          .build()
+        );
+    }
+
+    @Test
+    public void testDeleteBasicMappingMultipleValues() {
+        testValueMapping(ImmutableMap.<String, List<String>>builder()
+          .put(ATTRIBUTE_TO_MAP_NAME, ImmutableList.<String>builder().add("second value").add("second value 2").build())
+          .build(),
+          ImmutableMap.<String, List<String>>builder()
+          .build()
+        );
+    }
 }
