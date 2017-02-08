@@ -740,7 +740,7 @@ public class AuthenticationManager {
             if (!isSessionValid(realm, userSession)) {
                 // Check if accessToken was for the offline session.
                 if (!isCookie) {
-                    UserSessionModel offlineUserSession = session.sessions().getUserSession(realm, token.getSessionState());
+                    UserSessionModel offlineUserSession = session.sessions().getOfflineUserSession(realm, token.getSessionState());
                     if (isOfflineSessionValid(realm, offlineUserSession)) {
                         return new AuthResult(user, offlineUserSession, token);
                     }
