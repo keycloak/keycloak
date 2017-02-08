@@ -3,6 +3,7 @@ package org.keycloak.testsuite.console.page.users;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.console.page.fragment.OnOffSwitch;
 import org.keycloak.testsuite.page.Form;
+import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.ui.Select;
@@ -112,7 +113,7 @@ public class UserAttributesForm extends Form {
 
     public void addRequiredAction(String requiredAction) {
         requiredUserActionsInput.click();
-        requiredUserActionsSelect.selectByVisibleText(requiredAction);
+        requiredUserActionsInput.findElement(By.xpath("//div[text()='" + requiredAction + "']")).click();
     }
 
     public void setRequiredActions(List<String> requiredActions) {

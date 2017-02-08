@@ -30,7 +30,7 @@ public class ConfigTest extends AbstractConsoleTest {
         configPage.form().addSaveType("CLIENT_INFO");
         //after removeSavedType method stay input focused -> in phantomjs drop menu doesn't appear after first click
         configPage.form().removeSaveType("LOGIN");
-        configPage.form().setExpiration("50", "Days");
+        configPage.form().setExpiration("5", "Days");
         configPage.form().save();
         assertAlertSuccess();
 
@@ -38,7 +38,7 @@ public class ConfigTest extends AbstractConsoleTest {
         assertTrue(realm.isEventsEnabled());
         assertFalse(realm.getEnabledEventTypes().contains("LOGIN"));
         assertTrue(realm.getEnabledEventTypes().contains("CLIENT_INFO"));
-        assertEquals(4320000L, realm.getEventsExpiration().longValue());
+        assertEquals(432000L, realm.getEventsExpiration().longValue());
     }
 
     @Test
