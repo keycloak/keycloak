@@ -54,4 +54,4 @@ globalStatsInterval::
 schema::
   Specify the database schema to use
 
-NOTE:  These configuration switches and more are described in link:{{book.appserver.doc_base_url}}{{book.appserver.version}}{{book.appserver.jpa_ref.link}}[{{book.appserver.jpa_ref.name}}] in the _{{book.appserver.develdoc.name}}_.
+NOTE:  These configuration switches and more are described in the link:{{book.appserver.jpa.link}}[_{{book.appserver.jpa.name}}_].

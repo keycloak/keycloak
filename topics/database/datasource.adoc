@@ -42,5 +42,4 @@ Finally, with PostgreSQL at least, you need to define the database username and 
 may be worried that this is in clear text in the example.  There are methods to obfuscate this, but this is beyond the
 scope of this guide.
 
-NOTE:  For more information about datasource features, see link:{{book.appserver.doc_base_url}}{{book.appserver.version}}{{book.appserver.datasource_ref.link}}[{{book.appserver.datasource_ref.name}}]
-       in the _{{book.appserver.admindoc.name}}_.
+NOTE:  For more information about datasource features, see link:{{book.appserver.datasource.link}}[the datasource configuration chapter] in the _{{book.appserver.admindoc.name}}_.
