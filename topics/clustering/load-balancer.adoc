@@ -222,4 +222,4 @@ of the master host.
 
 ==== Configuring Other Load Balancers
 
-See link:{{book.appserver.doc_base_url}}{{book.appserver.version}}{{book.appserver.loadbalancer_ref.link}}[{{book.appserver.loadbalancer_ref.name}}] in the _{{book.appserver.admindoc.name}}_ for information how to use other software-based load balancers.
+See link:{{book.appserver.loadbalancer.link}}[the load balancing] section in the _{{book.appserver.loadbalancer.name}}_ for information how to use other software-based load balancers.

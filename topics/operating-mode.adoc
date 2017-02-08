@@ -9,4 +9,4 @@ your server configurations?  Your choice of operating mode effects how you confi
 
 TIP: The {{book.project.name}} is built on top of the {{book.appserver.name}} Application Server.  This guide will only
      go over the basics for deployment within a specific mode.  If you want specific information on this, a better place
-     to go would be the link:{{book.appserver.doc_base_url}}{{book.appserver.version}}{{book.appserver.admindoc.link}}[{{book.appserver.admindoc.name}}]
+     to go would be the link:{{book.appserver.admindoc.link}}[_{{book.appserver.admindoc.name}}_].
