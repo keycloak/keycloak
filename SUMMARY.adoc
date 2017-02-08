@@ -7,7 +7,9 @@
 {% if book.community %}
 .. link:topics/installation/distribution-files-community.adoc[Installing Distribution Files]
 {% endif %}
+{% if book.product %}
 .. link:topics/installation/distribution-files-product.adoc[Installing Distribution Files]
+{% endif %}
 .. link:topics/installation/directory-structure.adoc[Distribution Directory Structure]
 . link:topics/operating-mode.adoc[Choosing an Operating Mode]
 .. link:topics/operating-mode/standalone.adoc[Standalone Mode]
