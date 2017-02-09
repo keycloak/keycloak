@@ -35,11 +35,16 @@ import static org.keycloak.testsuite.arquillian.AppServerTestEnricher.getAppServ
  */
 public class DeploymentTargetModifier extends AnnotationDeploymentScenarioGenerator {
 
+    // Will be replaced in runtime by real auth-server-container
+    public static final String AUTH_SERVER_CURRENT = "auth-server-current";
+
     protected final Logger log = Logger.getLogger(this.getClass());
 
     @Override
     public List<DeploymentDescription> generate(TestClass testClass) {
         List<DeploymentDescription> deployments = super.generate(testClass);
+
+        checkAuthServerTestDeployment(deployments, testClass);
 
         String appServerQualifier = getAppServerQualifier(
                 testClass.getJavaClass());
@@ -54,6 +59,19 @@ public class DeploymentTargetModifier extends AnnotationDeploymentScenarioGenera
         }
 
         return deployments;
+    }
+
+    private void checkAuthServerTestDeployment(List<DeploymentDescription> descriptions, TestClass testClass) {
+        for (DeploymentDescription deployment : descriptions) {
+            if (deployment.getTarget() != null) {
+                String containerQualifier = deployment.getTarget().getName();
+                if (AUTH_SERVER_CURRENT.equals(containerQualifier)) {
+                    String authServerQualifier = AuthServerTestEnricher.AUTH_SERVER_CONTAINER;
+                    log.infof("Setting target container for deployment %s.%s: %s", testClass.getName(), deployment.getName(), authServerQualifier);
+                    deployment.setTarget(new TargetDescription(authServerQualifier));
+                }
+            }
+        }
     }
 
 }

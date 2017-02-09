@@ -23,6 +23,7 @@ import java.util.stream.Collectors;
 import javax.ws.rs.NotFoundException;
 
 import org.jboss.arquillian.container.test.api.Deployment;
+import org.jboss.arquillian.container.test.api.TargetsContainer;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Before;
 import org.junit.Test;
@@ -52,6 +53,7 @@ import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
+import org.keycloak.testsuite.arquillian.DeploymentTargetModifier;
 import org.keycloak.testsuite.arquillian.migration.Migration;
 import org.keycloak.testsuite.runonserver.RunHelpers;
 import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
@@ -78,6 +80,7 @@ public class MigrationTest extends AbstractKeycloakTest {
     private RealmResource masterRealm;
 
     @Deployment
+    @TargetsContainer(DeploymentTargetModifier.AUTH_SERVER_CURRENT)
     public static WebArchive deploy() {
         return RunOnServerDeployment.create();
     }
@@ -361,14 +364,27 @@ public class MigrationTest extends AbstractKeycloakTest {
     }
 
     private void testOfflineTokenLogin() {
-        log.info("test login with old offline token");
-        String oldOfflineToken = suiteContext.getMigrationContext().getOfflineToken();
-        Assert.assertNotNull(oldOfflineToken);
+        if (isImportMigrationMode()) {
+            log.info("Skip offline token login test in the 'import' migrationMode");
+        } else {
+            log.info("test login with old offline token");
+            String oldOfflineToken = suiteContext.getMigrationContext().getOfflineToken();
+            Assert.assertNotNull(oldOfflineToken);
 
-        oauth.realm(MIGRATION);
-        oauth.clientId("migration-test-client");
-        OAuthClient.AccessTokenResponse response = oauth.doRefreshTokenRequest(oldOfflineToken, "b2c07929-69e3-44c6-8d7f-76939000b3e4");
-        AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
-        assertEquals("migration-test-user", accessToken.getPreferredUsername());
+            oauth.realm(MIGRATION);
+            oauth.clientId("migration-test-client");
+            OAuthClient.AccessTokenResponse response = oauth.doRefreshTokenRequest(oldOfflineToken, "b2c07929-69e3-44c6-8d7f-76939000b3e4");
+            AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
+            assertEquals("migration-test-user", accessToken.getPreferredUsername());
+        }
+    }
+
+    private String getMigrationMode() {
+        return System.getProperty("migration.mode");
+    }
+
+    private boolean isImportMigrationMode() {
+        String mode = getMigrationMode();
+        return "import".equals(mode);
     }
 }

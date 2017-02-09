@@ -1,0 +1,33 @@
+./
+    keycloak-server-dist:keycloak
+    keycloak-demo-dist:keycloak-demo
+    keycloak-server-overlay:keycloak-overlay
+    keycloak-proxy-dist:keycloak-proxy
+    keycloak-api-docs-dist:keycloak-api-docs
+    keycloak-examples-dist:keycloak-examples
+
+./adapters/keycloak-oidc
+    keycloak-as7-adapter-dist
+    keycloak-eap6-adapter-dist
+    keycloak-jetty81-adapter-dist
+    keycloak-jetty91-adapter-dist
+    keycloak-jetty92-adapter-dist
+    keycloak-jetty93-adapter-dist
+    keycloak-js-adapter-dist
+    keycloak-tomcat6-adapter-dist
+    keycloak-tomcat7-adapter-dist
+    keycloak-tomcat8-adapter-dist
+    keycloak-wf8-adapter-dist
+    keycloak-wildfly-adapter-dist
+    keycloak-fuse-adapter-dist
+
+./adapters/saml
+    keycloak-saml-as7-adapter-dist
+    keycloak-saml-eap6-adapter-dist
+    keycloak-saml-jetty81-adapter-dist
+    keycloak-saml-jetty92-adapter-dist
+    keycloak-saml-jetty93-adapter-dist
+    keycloak-saml-tomcat6-adapter-dist
+    keycloak-saml-tomcat7-adapter-dist
+    keycloak-saml-tomcat8-adapter-dist
+    keycloak-saml-wildfly-adapter-dist

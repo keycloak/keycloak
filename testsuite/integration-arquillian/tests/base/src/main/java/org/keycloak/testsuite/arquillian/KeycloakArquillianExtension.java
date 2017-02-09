@@ -18,6 +18,7 @@
 package org.keycloak.testsuite.arquillian;
 
 import org.jboss.arquillian.container.spi.client.container.DeployableContainer;
+import org.jboss.arquillian.container.osgi.OSGiApplicationArchiveProcessor;
 import org.jboss.arquillian.container.test.impl.enricher.resource.URLResourceProvider;
 import org.jboss.arquillian.container.test.spi.client.deployment.ApplicationArchiveProcessor;
 import org.jboss.arquillian.container.test.spi.client.deployment.DeploymentScenarioGenerator;
@@ -63,7 +64,8 @@ public class KeycloakArquillianExtension implements LoadableExtension {
         builder
                 .override(ResourceProvider.class, URLResourceProvider.class, URLProvider.class)
                 .override(ResourceProvider.class, CustomizableURLResourceProvider.class, URLProvider.class)
-                .override(ResourceProvider.class, ContainerCustomizableURLResourceProvider.class, URLProvider.class);
+                .override(ResourceProvider.class, ContainerCustomizableURLResourceProvider.class, URLProvider.class)
+                .override(ApplicationArchiveProcessor.class, OSGiApplicationArchiveProcessor.class, KeycloakOSGiApplicationArchiveProcessor.class);
 
     }
 
