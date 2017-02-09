@@ -173,13 +173,17 @@ public class UserAttributeMapper extends AbstractIdentityProviderMapper {
             setIfNotEmpty(user::setLastName, attributeValuesInContext);
         } else {
             List<String> currentAttributeValues = user.getAttributes().get(attribute);
-            if (attributeValuesInContext != null
-                    && currentAttributeValues != null
-                    && !CollectionUtil.collectionEquals(attributeValuesInContext, currentAttributeValues)) {
-                user.setAttribute(attribute, attributeValuesInContext);
-            } else if (attributeValuesInContext == null) {
+            if (attributeValuesInContext == null) {
+                // attribute no longer sent by brokered idp, remove it
                 user.removeAttribute(attribute);
+            } else if (currentAttributeValues == null) {
+                // new attribute sent by brokered idp, add it
+                user.setAttribute(attribute, attributeValuesInContext);
+            } else if (!CollectionUtil.collectionEquals(attributeValuesInContext, currentAttributeValues)) {
+                // attribute sent by brokered idp has different values as before, update it
+                user.setAttribute(attribute, attributeValuesInContext);
             }
+            // attribute allready set
         }
     }
 
