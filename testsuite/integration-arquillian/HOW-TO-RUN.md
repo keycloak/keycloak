@@ -159,5 +159,52 @@ mvn -f testsuite/integration-arquillian/pom.xml \
 ````
 
 
+## Social Login
+The social login tests require setup of all social networks including an example social user. These details can't be 
+shared as it would result in the clients and users eventually being blocked. By default these tests are skipped.
+   
+To run the full test you need to configure clients in Google, Facebook, GitHub, Twitter, LinkedIn, Microsoft and 
+StackOverflow. See the server administration guide for details on how to do that. Further, you also need to create a 
+sample user that can login to the social network.
+ 
+The details should be added to a standard properties file. For some properties you can use shared common properties and
+override when needed. Or you can specify these for all providers. All providers require at least clientId and 
+clientSecret (StackOverflow also requires clientKey).
+ 
+An example social.properties file looks like:
+
+    common.username=sampleuser@example.org
+    common.password=commonpassword
+    common.profile.firstName=Foo
+    common.profile.lastName=Bar
+    common.profile.email=sampleuser@example.org
+
+    google.clientId=asdfasdfasdfasdfsadf
+    google.clientSecret=zxcvzxcvzxcvzxcv
+
+    facebook.clientId=asdfasdfasdfasdfsadf
+    facebook.clientSecret=zxcvzxcvzxcvzxcv
+    facebook.profile.lastName=Test
+
+In the example above the common username, password and profile are shared for all providers, but Facebook has a 
+different last name.
+
+Some providers actively block bots so you need to use a proper browser to test. Either Firefox or Chrome should work.
+
+To run the tests run:
+
+    mvn -f testsuite/integration-arquillian/pom.xml \
+          clean install \
+          -Pauth-server-wildfly \
+          -Dtest=SocialLoginTest \
+          -Dbrowser=chrome \
+          -Dsocial.config=/path/to/social.properties
 
 
+## Different Browsers
+ 
+To run with Chrome add `-Dbrowser=chrome`. Depending on the Chrome version you have you may need to download the latest
+chromedriver from https://sites.google.com/a/chromium.org/chromedriver/downloads and point to it with 
+`-Dwebdriver.chrome.driver=/path/to/chromedriver`.
+ 
+    
