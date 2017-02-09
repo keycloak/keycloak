@@ -10,8 +10,8 @@ you do not define security constraints in _web.xml_.
 Instead you define a filter mapping using the {{book.project.name}} servlet filter adapter to secure the url patterns you want to secure.
 
 NOTE: Backchannel logout works a bit differently than the standard adapters.
-      Instead of invalidating the http session it instead marks the session id as logged out.
-      There's just no way of arbitrarily invalidating an http session based on a session id.
+      Instead of invalidating the http session it instead marks the session ID as logged out.
+      There's just no way of arbitrarily invalidating an http session based on a session ID.
 
 WARNING: Backchannel logout does not currently work when you have a clustered application that uses the SAML filter. 
 
@@ -43,7 +43,7 @@ You can define multiple filter mappings if you have various different secure and
 WARNING: You must have a filter mapping that covers `/saml`.
          This mapping covers all server callbacks.
 
-When registering SPs with an IDP, you must register `http[s]://hostname/{context-root}/saml` as your Assert Consumer Service URL and Single Logout Service URL. 
+When registering SPs with an IdP, you must register `http[s]://hostname/{context-root}/saml` as your Assert Consumer Service URL and Single Logout Service URL. 
 
 To use this filter, include this maven artifact in your WAR poms: 
 
