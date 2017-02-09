@@ -60,7 +60,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
-import org.keycloak.models.mongo.keycloak.entities.UserEntity;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -621,8 +620,14 @@ public class MongoUserProvider implements UserProvider, UserCredentialStore {
     @Override
     public void preRemove(RealmModel realm, ComponentModel component) {
         if (!component.getProviderType().equals(UserStorageProvider.class.getName())) return;
+        String providerId = component.getId();
+        removeImportedUsers(realm, providerId);
+    }
+
+    @Override
+    public void removeImportedUsers(RealmModel realm, String providerId) {
         DBObject query = new QueryBuilder()
-                .and("federationLink").is(component.getId())
+                .and("federationLink").is(providerId)
                 .get();
 
         List<MongoUserEntity> mongoUsers = getMongoStore().loadEntities(MongoUserEntity.class, query, invocationContext);
@@ -633,6 +638,22 @@ public class MongoUserProvider implements UserProvider, UserCredentialStore {
             UserAdapter user = new UserAdapter(session, realm, userEntity, invocationContext);
             userManager.removeUser(realm, user, this);
         }
+    }
+
+    @Override
+    public void unlinkUsers(RealmModel realm, String storageProviderId) {
+        DBObject query = new QueryBuilder()
+                .and("federationLink").is(storageProviderId)
+                .get();
+
+        List<MongoUserEntity> mongoUsers = getMongoStore().loadEntities(MongoUserEntity.class, query, invocationContext);
+
+        for (MongoUserEntity userEntity : mongoUsers) {
+            // Doing this way to ensure UserRemovedEvent triggered with proper callbacks.
+            UserAdapter user = new UserAdapter(session, realm, userEntity, invocationContext);
+            user.setFederationLink(null);
+        }
+
     }
 
     @Override

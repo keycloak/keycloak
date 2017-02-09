@@ -69,6 +69,22 @@ public interface UserProvider extends Provider,
     UserModel addUser(RealmModel realm, String id, String username, boolean addDefaultRoles, boolean addDefaultRequiredActions);
     void preRemove(RealmModel realm);
 
+    /**
+     * Removes any imported users from a specific User Storage Provider.
+     *
+     * @param realm
+     * @param storageProviderId
+     */
+    void removeImportedUsers(RealmModel realm, String storageProviderId);
+
+    /**
+     * Set federation link to null to imported users of a specific User Storage Provider
+     *
+     * @param realm
+     * @param storageProviderId
+     */
+    void unlinkUsers(RealmModel realm, String storageProviderId);
+
     void preRemove(RealmModel realm, RoleModel role);
     void preRemove(RealmModel realm, GroupModel group);
 

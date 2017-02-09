@@ -868,6 +868,21 @@ public class UserCacheSession implements UserCache {
 
     }
 
+    @Override
+    public void removeImportedUsers(RealmModel realm, String storageProviderId) {
+        getDelegate().removeImportedUsers(realm, storageProviderId);
+        clear();
+        addRealmInvalidation(realm.getId()); // easier to just invalidate whole realm
+    }
+
+    @Override
+    public void unlinkUsers(RealmModel realm, String storageProviderId) {
+        getDelegate().unlinkUsers(realm, storageProviderId);
+        clear();
+        addRealmInvalidation(realm.getId()); // easier to just invalidate whole realm
+
+    }
+
     private void addRealmInvalidation(String realmId) {
         realmInvalidations.add(realmId);
         invalidationEvents.add(UserCacheRealmInvalidationEvent.create(realmId));

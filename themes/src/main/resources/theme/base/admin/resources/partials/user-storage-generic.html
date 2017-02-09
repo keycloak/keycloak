@@ -229,6 +229,8 @@
                 <button kc-reset data-ng-disabled="!changed">{{:: 'cancel' | translate}}</button>
                 <button class="btn btn-primary" data-ng-click="triggerChangedUsersSync()" data-ng-hide="changed || !showSync">{{:: 'synchronize-changed-users' | translate}}</button>
                 <button class="btn btn-primary" data-ng-click="triggerFullSync()" data-ng-hide="changed || !showSync">{{:: 'synchronize-all-users' | translate}}</button>
+                <button class="btn btn-primary" data-ng-click="removeImportedUsers()" data-ng-hide="changed">{{:: 'remove-imported-users' | translate}}</button>
+                <button class="btn btn-primary" data-ng-click="unlinkUsers()" data-ng-hide="changed">{{:: 'unlink-users' | translate}}</button>
             </div>
         </div>
     </form>
