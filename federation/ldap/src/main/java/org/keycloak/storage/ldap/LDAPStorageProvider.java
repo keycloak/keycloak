@@ -135,7 +135,7 @@ public class LDAPStorageProvider implements UserStorageProvider,
         return editMode;
     }
 
-    public ComponentModel getModel() {
+    public UserStorageProviderModel getModel() {
         return model;
     }
 

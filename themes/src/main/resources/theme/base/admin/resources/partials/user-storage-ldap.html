@@ -33,6 +33,13 @@
                 </div>
                 <kc-tooltip>{{:: 'priority.tooltip' | translate}}</kc-tooltip>
             </div>
+            <div class="form-group clearfix block">
+                <label class="col-md-2 control-label" for="importEnabled">{{:: 'import-enabled' | translate}}</label>
+                <div class="col-md-6">
+                    <input ng-model="instance.config['importEnabled'][0]" name="importEnabled" id="importEnabled" onoffswitchvalue on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
+                </div>
+                <kc-tooltip>{{:: 'ldap.import-enabled.tooltip' | translate}}</kc-tooltip>
+            </div>
 
             <div class="form-group">
                 <label class="col-md-2 control-label" for="editMode">{{:: 'edit-mode' | translate}}</label>

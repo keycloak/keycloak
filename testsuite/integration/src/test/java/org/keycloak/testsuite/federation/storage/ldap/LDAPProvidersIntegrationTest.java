@@ -19,6 +19,9 @@ package org.keycloak.testsuite.federation.storage.ldap;
 
 import org.jboss.logging.Logger;
 import org.junit.Assert;
+import org.junit.Assume;
+import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.FixMethodOrder;
 import org.junit.Rule;
@@ -27,9 +30,12 @@ import org.junit.rules.RuleChain;
 import org.junit.rules.TestRule;
 import org.junit.runners.MethodSorters;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.admin.client.Keycloak;
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.credential.CredentialModel;
+import org.keycloak.models.Constants;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.storage.ldap.LDAPConfig;
@@ -67,7 +73,10 @@ import org.openqa.selenium.WebDriver;
 
 import java.util.List;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MASTER;
 import static org.junit.Assert.assertEquals;
+import static org.keycloak.models.AdminRoles.ADMIN;
+import static org.keycloak.testsuite.Constants.AUTH_SERVER_ROOT;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -172,6 +181,67 @@ public class LDAPProvidersIntegrationTest {
         }
 
 
+    }
+
+
+    private Keycloak adminClient;
+
+    @Before
+    public void onBefore() {
+        adminClient = Keycloak.getInstance(AUTH_SERVER_ROOT, MASTER, ADMIN, ADMIN, Constants.ADMIN_CLI_CLIENT_ID);
+    }
+
+    @Test
+    public void testRemoveImportedUsers() {
+        KeycloakSession session = keycloakRule.startSession();
+        try {
+            RealmManager manager = new RealmManager(session);
+            RealmModel appRealm = manager.getRealm("test");
+            UserModel user = session.users().getUserByUsername("johnkeycloak", appRealm);
+            Assert.assertEquals(ldapModel.getId(), user.getFederationLink());
+        } finally {
+            keycloakRule.stopSession(session, true);
+        }
+
+        adminClient.realm("test").userStorage().removeImportedUsers(ldapModel.getId());
+
+        session = keycloakRule.startSession();
+        try {
+            RealmManager manager = new RealmManager(session);
+            RealmModel appRealm = manager.getRealm("test");
+            UserModel user = session.userLocalStorage().getUserByUsername("johnkeycloak", appRealm);
+            Assert.assertNull(user);
+        } finally {
+            keycloakRule.stopSession(session, true);
+        }
+    }
+
+    // test name prefixed with zz to make sure it runs last as we are unlinking imported users
+    @Test
+    public void zzTestUnlinkUsers() {
+        KeycloakSession session = keycloakRule.startSession();
+        try {
+            RealmManager manager = new RealmManager(session);
+            RealmModel appRealm = manager.getRealm("test");
+            UserModel user = session.users().getUserByUsername("johnkeycloak", appRealm);
+            Assert.assertEquals(ldapModel.getId(), user.getFederationLink());
+        } finally {
+            keycloakRule.stopSession(session, true);
+        }
+
+        adminClient.realm("test").userStorage().unlink(ldapModel.getId());
+
+        session = keycloakRule.startSession();
+        try {
+            RealmManager manager = new RealmManager(session);
+            RealmModel appRealm = manager.getRealm("test");
+            UserModel user = session.users().getUserByUsername("johnkeycloak", appRealm);
+            Assert.assertNotNull(user);
+            Assert.assertNull(user.getFederationLink());
+
+        } finally {
+            keycloakRule.stopSession(session, true);
+        }
     }
 
     @Test

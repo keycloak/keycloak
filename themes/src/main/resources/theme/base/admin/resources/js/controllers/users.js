@@ -1046,6 +1046,7 @@ module.controller('LDAPUserStorageCtrl', function($scope, $location, Notificatio
             instance.config['evictionMinute'] = [''];
             instance.config['maxLifespan'] = [''];
             instance.config['batchSizeForSync'] = [DEFAULT_BATCH_SIZE];
+            //instance.config['importEnabled'] = ['true'];
 
             if (providerFactory.properties) {
 
@@ -1097,6 +1098,9 @@ module.controller('LDAPUserStorageCtrl', function($scope, $location, Notificatio
             }
             if (!instance.config['priority']) {
                 instance.config['priority'] = ['0'];
+            }
+            if (!instance.config['importEnabled']) {
+                instance.config['importEnabled'] = ['true'];
             }
 
             if (providerFactory.properties) {
