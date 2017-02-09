@@ -47,4 +47,6 @@
 .. link:topics/cache/replication.adoc[Replication and Failover]
 .. link:topics/cache/disable.adoc[Disabling Caching]
 .. link:topics/cache/clear.adoc[Clearing Caches at Runtime]
+{% if book.community %}
 . link:topics/proxy.adoc[Keycloak Security Proxy]
+{% endif %}
