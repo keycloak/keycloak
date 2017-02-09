@@ -19,7 +19,7 @@ import static org.keycloak.testsuite.cli.KcRegExec.execute;
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
-public class KcRegCreateTest extends AbstractRegCliTest {
+public class KcRegCreateTest extends AbstractRegCliTest<KcRegCreateTest> {
 
     @Test
     public void testCreateWithRealmOverride() throws IOException {
@@ -41,7 +41,6 @@ public class KcRegCreateTest extends AbstractRegCliTest {
             assertExitCodeAndStreamSizes(exe, 0, 0, 1);
         }
     }
-
 
     @Test
     public void testCreateThoroughly() throws IOException {
@@ -214,5 +213,10 @@ public class KcRegCreateTest extends AbstractRegCliTest {
             config = handler.loadConfig();
             Assert.assertNull("initial token == null", config.ensureRealmConfigData(serverUrl, realm).getInitialToken());
         }
+    }
+
+    public void runAllTests() throws IOException {
+        testCreateWithRealmOverride();
+        testCreateThoroughly();
     }
 }

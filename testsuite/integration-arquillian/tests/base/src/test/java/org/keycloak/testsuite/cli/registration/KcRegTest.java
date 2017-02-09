@@ -23,7 +23,7 @@ import static org.keycloak.testsuite.cli.KcRegExec.execute;
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
-public class KcRegTest extends AbstractRegCliTest {
+public class KcRegTest extends AbstractRegCliTest<KcRegTest> {
 
     @Test
     public void testNoArgs() {
@@ -215,7 +215,7 @@ public class KcRegTest extends AbstractRegCliTest {
     @Test
     public void testCredentialsServerAndRealmWithDefaultConfig() {
         /*
-         *  Test without --server specified
+         *  Test with default config, using --server and --realm to identify config to use
          */
         KcRegExec exe = execute("config credentials --server " + serverUrl + " --realm master");
 
@@ -237,7 +237,7 @@ public class KcRegTest extends AbstractRegCliTest {
     @Test
     public void testCredentialsNoRealmWithDefaultConfig() {
         /*
-         *  Test without --server specified
+         *  Test without --realm specified
          */
         KcRegExec exe = execute("config credentials --server " + serverUrl + " --user admin --password admin");
 
@@ -649,6 +649,32 @@ public class KcRegTest extends AbstractRegCliTest {
 
             assertExitCodeAndStreamSizes(exe, 0, 0, 0);
         }
+    }
+
+
+    public void runAllTests() throws IOException {
+        testNoArgs();
+        testHelpGlobalOption();
+        testBadCommand();
+        testBadOptionInPlaceOfCommand();
+        testBadOption();
+        testCredentialsServerAndRealmWithDefaultConfig();
+        testCredentialsNoServerWithDefaultConfig();
+        testCredentialsNoRealmWithDefaultConfig();
+        testUserLoginWithDefaultConfig();
+        testUserLoginWithDefaultConfigInteractive();
+        testClientLoginWithDefaultConfigInteractive();
+        testUserLoginWithCustomConfig();
+        testCustomConfigLoginCreateDelete();
+        testCRUDWithOnTheFlyUserAuth();
+        testCRUDWithOnTheFlyUserAuthWithClientSecret();
+        testCRUDWithOnTheFlyUserAuthWithSignedJwtClient();
+        testCRUDWithOnTheFlyServiceAccountWithClientSecret();
+        testCRUDWithOnTheFlyServiceAccountWithSignedJwtClient();
+        testCreateDeleteWithInitialAndRegistrationTokens();
+        testCreateDeleteWithInitialAndRegistrationTokensNoConfig();
+        testCreateWithAllowedHostsWithoutAuthenticationNoConfig();
+        testCreateWithAllowedHostsWithoutAuthentication();
     }
 
 }

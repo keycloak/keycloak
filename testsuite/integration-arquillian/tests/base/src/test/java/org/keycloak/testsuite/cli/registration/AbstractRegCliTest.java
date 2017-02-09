@@ -2,6 +2,7 @@ package org.keycloak.testsuite.cli.registration;
 
 import org.junit.Assert;
 import org.junit.Before;
+import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.ClientInitialAccessResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
@@ -45,7 +46,7 @@ import static org.keycloak.testsuite.cli.KcRegExec.execute;
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
-public abstract class AbstractRegCliTest extends AbstractCliTest {
+public abstract class AbstractRegCliTest<T extends AbstractRegCliTest> extends AbstractCliTest {
 
     protected String serverUrl = isAuthServerSSL() ?
             "https://localhost:" + getAuthServerHttpsPort() + "/auth" :
@@ -527,4 +528,10 @@ public abstract class AbstractRegCliTest extends AbstractCliTest {
         lastModified2 = configFile.exists() ? configFile.lastModified() : 0;
         Assert.assertEquals("config file not modified", lastModified, lastModified2);
     }
+
+    T adminClient(Keycloak adminClient) {
+        this.adminClient = adminClient;
+        return (T) this;
+    }
+
 }

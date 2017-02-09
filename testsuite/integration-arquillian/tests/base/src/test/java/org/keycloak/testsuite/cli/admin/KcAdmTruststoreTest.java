@@ -25,7 +25,7 @@ public class KcAdmTruststoreTest extends AbstractAdmCliTest {
 
         // only run this test if ssl protected keycloak server is available
         if (!isAuthServerSSL()) {
-            System.out.println("TEST SKIPPED - This test requires HTTPS. Run with '-Pauth-server-wildfly -Dauth.server.ssl.required=true'");
+            System.out.println("TEST SKIPPED - This test requires HTTPS. Run with '-Pauth-server-wildfly,ssl'");
             return;
         }
 

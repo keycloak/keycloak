@@ -927,7 +927,41 @@
                 <auth.server.management.port.jmx>9999</auth.server.management.port.jmx>
             </properties>
         </profile>
-        
+
+
+        <!-- This makes it possible to activate 'ssl' profile in IDEA and have tests detect it -->
+        <profile>
+            <id>ssl</id>
+            <activation>
+                <property>
+                    <name>auth.server.ssl.required</name>
+                    <value>true</value>
+                </property>
+            </activation>
+            <properties>
+                <auth.server.ssl.required>true</auth.server.ssl.required>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>ssl-tests</id>
+            <activation>
+                <property>
+                    <name>ssl-tests</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-surefire-plugin</artifactId>
+
+                        <configuration>
+                            <test>**/*TruststoreTest.java</test>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
     </profiles>
     
 </project>

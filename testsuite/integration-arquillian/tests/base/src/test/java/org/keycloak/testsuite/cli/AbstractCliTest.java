@@ -12,15 +12,15 @@ import java.util.List;
 public abstract class AbstractCliTest extends AbstractKeycloakTest {
 
 
-    public void assertExitCodeAndStdOutSize(AbstractExec exe, int exitCode, int stdOutLineCount) {
+    public static void assertExitCodeAndStdOutSize(AbstractExec exe, int exitCode, int stdOutLineCount) {
         assertExitCodeAndStreamSizes(exe, exitCode, stdOutLineCount, -1);
     }
 
-    public void assertExitCodeAndStdErrSize(AbstractExec exe, int exitCode, int stdErrLineCount) {
+    public static void assertExitCodeAndStdErrSize(AbstractExec exe, int exitCode, int stdErrLineCount) {
         assertExitCodeAndStreamSizes(exe, exitCode, -1, stdErrLineCount);
     }
 
-    public void assertExitCodeAndStreamSizes(AbstractExec exe, int exitCode, int stdOutLineCount, int stdErrLineCount) {
+    public static void assertExitCodeAndStreamSizes(AbstractExec exe, int exitCode, int stdOutLineCount, int stdErrLineCount) {
         Assert.assertEquals("exitCode == " + exitCode, exitCode, exe.exitCode());
         if (stdOutLineCount != -1) {
             try {
@@ -38,7 +38,7 @@ public abstract class AbstractCliTest extends AbstractKeycloakTest {
         }
     }
 
-    private void assertLineCount(String label, List<String> lines, int count) {
+    private static void assertLineCount(String label, List<String> lines, int count) {
         if (lines.size() == count) {
             return;
         }

@@ -558,4 +558,26 @@ public class KcAdmTest extends AbstractAdmCliTest {
                 "--client admin-cli-jwt --keystore '" + keystore.getAbsolutePath() + "' --storepass storepass --keypass keypass --alias admin-cli", "",
                 "Logging into " + serverUrl + " as service-account-admin-cli-jwt of realm test");
     }
+
+
+    public void runAllTests() throws IOException {
+        testBadCommand();
+        testNoArgs();
+        testBadOption();
+        testBadOptionInPlaceOfCommand();
+        testHelpGlobalOption();
+        testCredentialsServerAndRealmWithDefaultConfig();
+        testCredentialsNoServerWithDefaultConfig();
+        testCredentialsNoRealmWithDefaultConfig();
+        testUserLoginWithDefaultConfig();
+        testUserLoginWithCustomConfig();
+        testUserLoginWithDefaultConfigInteractive();
+        testClientLoginWithDefaultConfigInteractive();
+        testCustomConfigLoginCreateDelete();
+        testCRUDWithOnTheFlyUserAuth();
+        testCRUDWithOnTheFlyUserAuthWithClientSecret();
+        testCRUDWithOnTheFlyUserAuthWithSignedJwtClient();
+        testCRUDWithOnTheFlyServiceAccountWithClientSecret();
+        testCRUDWithOnTheFlyServiceAccountWithSignedJwtClient();
+    }
 }
