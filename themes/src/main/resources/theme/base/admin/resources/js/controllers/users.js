@@ -670,7 +670,7 @@ module.controller('UserFederationCtrl', function($scope, $location, $route, real
 });
 
 module.controller('GenericUserStorageCtrl', function($scope, $location, Notifications, $route, Dialog, realm,
-                                                     serverInfo, instance, providerId, Components, UserStorageSync) {
+                                                     serverInfo, instance, providerId, Components, UserStorageOperations) {
     console.log('GenericUserStorageCtrl');
     console.log('providerId: ' + providerId);
     $scope.create = !instance.providerId;
@@ -869,7 +869,7 @@ module.controller('GenericUserStorageCtrl', function($scope, $location, Notifica
     }
 
     function triggerSync(action) {
-        UserStorageSync.save({ action: action, realm: $scope.realm.realm, componentId: $scope.instance.id }, {}, function(syncResult) {
+        UserStorageOperations.sync.save({ action: action, realm: $scope.realm.realm, componentId: $scope.instance.id }, {}, function(syncResult) {
             $route.reload();
             Notifications.success("Sync of users finished successfully. " + syncResult.status);
         }, function() {
@@ -877,6 +877,24 @@ module.controller('GenericUserStorageCtrl', function($scope, $location, Notifica
             Notifications.error("Error during sync of users");
         });
     }
+    $scope.removeImportedUsers = function() {
+        UserStorageOperations.removeImportedUsers.save({ realm: $scope.realm.realm, componentId: $scope.instance.id }, {}, function(syncResult) {
+            $route.reload();
+            Notifications.success("Remove imported users finished successfully. ");
+        }, function() {
+            $route.reload();
+            Notifications.error("Error during remove");
+        });
+    };
+    $scope.unlinkUsers = function() {
+        UserStorageOperations.unlinkUsers.save({ realm: $scope.realm.realm, componentId: $scope.instance.id }, {}, function(syncResult) {
+            $route.reload();
+            Notifications.success("Unlink of users finished successfully. ");
+        }, function() {
+            $route.reload();
+            Notifications.error("Error during unlink");
+        });
+    };
 
 });
 
@@ -971,7 +989,7 @@ module.controller('UserGroupMembershipCtrl', function($scope, $route, realm, gro
 });
 
 module.controller('LDAPUserStorageCtrl', function($scope, $location, Notifications, $route, Dialog, realm,
-                                                     serverInfo, instance, Components, UserStorageSync, RealmLDAPConnectionTester) {
+                                                     serverInfo, instance, Components, UserStorageOperations, RealmLDAPConnectionTester) {
     console.log('LDAPUserStorageCtrl');
     var providerId = 'ldap';
     console.log('providerId: ' + providerId);
@@ -1247,9 +1265,10 @@ module.controller('LDAPUserStorageCtrl', function($scope, $location, Notificatio
         console.log('GenericCtrl: triggerChangedUsersSync');
         triggerSync('triggerChangedUsersSync');
     }
+    
 
     function triggerSync(action) {
-        UserStorageSync.save({ action: action, realm: $scope.realm.realm, componentId: $scope.instance.id }, {}, function(syncResult) {
+        UserStorageOperations.sync.save({ action: action, realm: $scope.realm.realm, componentId: $scope.instance.id }, {}, function(syncResult) {
             $route.reload();
             Notifications.success("Sync of users finished successfully. " + syncResult.status);
         }, function() {
@@ -1257,7 +1276,24 @@ module.controller('LDAPUserStorageCtrl', function($scope, $location, Notificatio
             Notifications.error("Error during sync of users");
         });
     }
-
+    $scope.removeImportedUsers = function() {
+        UserStorageOperations.removeImportedUsers.save({ realm: $scope.realm.realm, componentId: $scope.instance.id }, {}, function(syncResult) {
+            $route.reload();
+            Notifications.success("Remove imported users finished successfully. ");
+        }, function() {
+            $route.reload();
+            Notifications.error("Error during remove");
+        });
+    };
+    $scope.unlinkUsers = function() {
+        UserStorageOperations.unlinkUsers.save({ realm: $scope.realm.realm, componentId: $scope.instance.id }, {}, function(syncResult) {
+            $route.reload();
+            Notifications.success("Unlink of users finished successfully. ");
+        }, function() {
+            $route.reload();
+            Notifications.error("Error during unlink");
+        });
+    };
     var initConnectionTest = function(testAction, ldapConfig) {
         return {
             action: testAction,
