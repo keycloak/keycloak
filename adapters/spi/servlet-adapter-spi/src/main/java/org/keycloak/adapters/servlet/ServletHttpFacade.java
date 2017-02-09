@@ -67,7 +67,15 @@ public class ServletHttpFacade implements HttpFacade {
 
         @Override
         public String getRelativePath() {
-            return request.getServletPath();
+            String uri = request.getRequestURI();
+            String contextPath = request.getContextPath();
+            String servletPath = uri.substring(uri.indexOf(contextPath) + contextPath.length());
+
+            if ("".equals(servletPath)) {
+                servletPath = "/";
+            }
+
+            return servletPath;
         }
 
         @Override
