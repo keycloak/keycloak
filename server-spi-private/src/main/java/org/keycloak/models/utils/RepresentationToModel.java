@@ -1727,6 +1727,7 @@ public class RepresentationToModel {
 
     public static ComponentModel toModel(KeycloakSession session, ComponentRepresentation rep) {
         ComponentModel model = new ComponentModel();
+        model.setId(rep.getId());
         model.setParentId(rep.getParentId());
         model.setProviderType(rep.getProviderType());
         model.setProviderId(rep.getProviderId());
