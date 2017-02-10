@@ -348,4 +348,43 @@ public class SamlClient {
         }
     }
 
+    /**
+     * Send request for login form and then login using user param
+     * @param user
+     * @param idpInitiatedURI
+     * @param expectedResponseBinding
+     * @return
+     */
+    public static SAMLDocumentHolder idpInitiatedLogin(UserRepresentation user, URI idpInitiatedURI, Binding expectedResponseBinding) {
+        CloseableHttpResponse response = null;
+        SamlClient.RedirectStrategyWithSwitchableFollowRedirect strategy = new SamlClient.RedirectStrategyWithSwitchableFollowRedirect();
+        try (CloseableHttpClient client = HttpClientBuilder.create().setRedirectStrategy(strategy).build()) {
+
+            HttpGet get = new HttpGet(idpInitiatedURI);
+            response = client.execute(get);
+            assertThat(response, statusCodeIsHC(Response.Status.OK));
+
+            HttpClientContext context = HttpClientContext.create();
+
+            String loginPageText = EntityUtils.toString(response.getEntity(), "UTF-8");
+            response.close();
+
+            assertThat(loginPageText, containsString("login"));
+
+            HttpUriRequest loginRequest = handleLoginPage(user, loginPageText);
+
+            strategy.setRedirectable(false);
+            response = client.execute(loginRequest, context);
+
+            return expectedResponseBinding.extractResponse(response);
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        } finally {
+            if (response != null) {
+                EntityUtils.consumeQuietly(response.getEntity());
+                try { response.close(); } catch (IOException ex) { }
+            }
+        }
+    }
+
 }
