@@ -40,6 +40,8 @@ import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
  */
 public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
 
+    protected static final String ATTRIBUTE_VALUE = "attribute.value";
+
     @Page
     protected AccountUpdateProfilePage accountUpdateProfilePage;
 
