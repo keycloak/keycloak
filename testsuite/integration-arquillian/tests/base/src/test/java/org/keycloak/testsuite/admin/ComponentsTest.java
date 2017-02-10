@@ -99,6 +99,26 @@ public class ComponentsTest extends AbstractAdminTest {
     }
 
     @Test
+    public void testCreateWithoutGivenId() {
+        ComponentRepresentation rep = createComponentRepresentation("mycomponent");
+        rep.getConfig().addFirst("required", "foo");
+        rep.setId(null);
+
+        String id = createComponent(rep);
+        assertNotNull(id);
+    }
+
+    @Test
+    public void testCreateWithGivenId() {
+        ComponentRepresentation rep = createComponentRepresentation("mycomponent");
+        rep.getConfig().addFirst("required", "foo");
+        rep.setId("fixed-id");
+
+        String id = createComponent(rep);
+        assertEquals("fixed-id", id);
+    }
+
+    @Test
     public void testUpdate() {
         ComponentRepresentation rep = createComponentRepresentation("mycomponent");
 
