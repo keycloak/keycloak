@@ -130,6 +130,7 @@ import static org.keycloak.testsuite.util.IOUtil.loadXML;
 import static org.keycloak.testsuite.util.IOUtil.modifyDocElementAttribute;
 import static org.keycloak.testsuite.util.Matchers.bodyHC;
 import static org.keycloak.testsuite.util.Matchers.statusCodeIsHC;
+import static org.keycloak.testsuite.util.SamlClient.idpInitiatedLogin;
 import static org.keycloak.testsuite.util.SamlClient.login;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
 import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
@@ -734,7 +735,7 @@ public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAd
     }
 
     @Test
-    public void idpInitiatedLogin() {
+    public void idpInitiatedLoginTest() {
         samlidpInitiatedLoginPage.setAuthRealm(SAMLSERVLETDEMO);
         samlidpInitiatedLoginPage.setUrlName("employee2");
         samlidpInitiatedLoginPage.navigateTo();
@@ -1017,6 +1018,47 @@ public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAd
             response = client.execute(get);
             assertThat(response, statusCodeIsHC(Response.Status.OK));
             assertThat(response, bodyHC(containsString("boolean-attribute: true")));
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        } finally {
+            if (response != null) {
+                EntityUtils.consumeQuietly(response.getEntity());
+                try { response.close(); } catch (IOException ex) { }
+            }
+        }
+    }
+
+    // KEYCLOAK-4329
+    @Test
+    public void testEmptyKeyInfoElement() {
+        samlidpInitiatedLoginPage.setAuthRealm(SAMLSERVLETDEMO);
+        samlidpInitiatedLoginPage.setUrlName("sales-post-sig-email");
+        System.out.println(samlidpInitiatedLoginPage.toString());
+        URI idpInitiatedLoginPage = URI.create(samlidpInitiatedLoginPage.toString());
+
+        log.debug("Log in using idp initiated login");
+        SAMLDocumentHolder documentHolder = idpInitiatedLogin(bburkeUser, idpInitiatedLoginPage, SamlClient.Binding.POST);
+
+
+        log.debug("Removing KeyInfo from Keycloak response");
+        Document responseDoc = documentHolder.getSamlDocument();
+        IOUtil.removeElementFromDoc(responseDoc, "samlp:Response/dsig:Signature/dsig:KeyInfo");
+
+        CloseableHttpResponse response = null;
+        try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
+            HttpClientContext context = HttpClientContext.create();
+
+            log.debug("Sending response to SP");
+            HttpUriRequest post = SamlClient.Binding.POST.createSamlPostUnsignedRequest(getAppServerSamlEndpoint(salesPostSigEmailServletPage), null, responseDoc);
+            response = client.execute(post, context);
+            System.out.println(EntityUtils.toString(response.getEntity()));
+            assertThat(response, statusCodeIsHC(Response.Status.FOUND));
+            response.close();
+
+            HttpGet get = new HttpGet(salesPostSigEmailServletPage.toString());
+            response = client.execute(get);
+            assertThat(response, statusCodeIsHC(Response.Status.OK));
+            assertThat(response, bodyHC(containsString("principal=bburke")));
         } catch (Exception ex) {
             throw new RuntimeException(ex);
         } finally {
