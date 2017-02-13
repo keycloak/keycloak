@@ -43,10 +43,7 @@ public class FolderThemeProviderFactory implements ThemeProviderFactory {
         
         List<File> rootDirs = new ArrayList<>();
         for (String dir : d.split(",")) {
-            File themeDir = new File(dir);
-            if (!themeDir.exists()) 
-                throw new RuntimeException("Unknown theme directory in Keycloak config: " + dir);
-            rootDirs.add(themeDir);
+            rootDirs.add(new File(dir));
         }
         
         themeProvider = new FolderThemeProvider(rootDirs);
