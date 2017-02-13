@@ -17,7 +17,6 @@
 package org.keycloak.models.utils;
 
 import org.keycloak.models.GroupModel;
-import org.keycloak.models.ModelReadOnlyException;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.UserModelDelegate;
@@ -36,101 +35,101 @@ public class ReadOnlyUserModelDelegate extends UserModelDelegate {
 
     @Override
     public void setUsername(String username) {
-        throw new ModelReadOnlyException();
+        throw new ReadOnlyException();
     }
 
     @Override
     public void setEnabled(boolean enabled) {
-        throw new ModelReadOnlyException();
+        throw new ReadOnlyException();
     }
 
     @Override
     public void setSingleAttribute(String name, String value) {
-        throw new ModelReadOnlyException();
+        throw new ReadOnlyException();
     }
 
     @Override
     public void setAttribute(String name, List<String> values) {
-        throw new ModelReadOnlyException();
+        throw new ReadOnlyException();
     }
 
     @Override
     public void removeAttribute(String name) {
-        throw new ModelReadOnlyException();
+        throw new ReadOnlyException();
     }
 
     @Override
     public void addRequiredAction(String action) {
-        throw new ModelReadOnlyException();
+        throw new ReadOnlyException();
     }
 
     @Override
     public void removeRequiredAction(String action) {
-        throw new ModelReadOnlyException();
+        throw new ReadOnlyException();
     }
 
     @Override
     public void addRequiredAction(RequiredAction action) {
-        throw new ModelReadOnlyException();
+        throw new ReadOnlyException();
     }
 
     @Override
     public void removeRequiredAction(RequiredAction action) {
-        throw new ModelReadOnlyException();
+        throw new ReadOnlyException();
     }
 
     @Override
     public void setFirstName(String firstName) {
-        throw new ModelReadOnlyException();
+        throw new ReadOnlyException();
     }
 
     @Override
     public void setLastName(String lastName) {
-        throw new ModelReadOnlyException();
+        throw new ReadOnlyException();
     }
 
     @Override
     public void setEmail(String email) {
-        throw new ModelReadOnlyException();
+        throw new ReadOnlyException();
     }
 
     @Override
     public void setEmailVerified(boolean verified) {
-        throw new ModelReadOnlyException();
+        throw new ReadOnlyException();
     }
 
     @Override
     public void deleteRoleMapping(RoleModel role) {
-        throw new ModelReadOnlyException();
+        throw new ReadOnlyException();
     }
 
     @Override
     public void setFederationLink(String link) {
-        throw new ModelReadOnlyException();
+        throw new ReadOnlyException();
     }
 
     @Override
     public void setServiceAccountClientLink(String clientInternalId) {
-        throw new ModelReadOnlyException();
+        throw new ReadOnlyException();
     }
 
     @Override
     public void setCreatedTimestamp(Long timestamp) {
-        throw new ModelReadOnlyException();
+        throw new ReadOnlyException();
     }
 
     @Override
     public void joinGroup(GroupModel group) {
-        throw new ModelReadOnlyException();
+        throw new ReadOnlyException();
     }
 
     @Override
     public void leaveGroup(GroupModel group) {
-        throw new ModelReadOnlyException();
+        throw new ReadOnlyException();
     }
 
     @Override
     public void grantRole(RoleModel role) {
-        throw new ModelReadOnlyException();
+        throw new ReadOnlyException();
     }
 }
