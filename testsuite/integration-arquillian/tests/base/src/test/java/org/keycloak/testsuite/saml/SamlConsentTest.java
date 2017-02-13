@@ -31,7 +31,7 @@ public class SamlConsentTest extends AbstractSamlTest {
     }
 
     @Test
-    public void signingOfRejectedConsentAssertionTest() throws ParsingException, ConfigurationException, ProcessingException {
+    public void rejectedConsentResponseTest() throws ParsingException, ConfigurationException, ProcessingException {
         ClientRepresentation client = adminClient.realm(REALM_NAME)
                 .clients()
                 .findByClientId(SAML_CLIENT_ID_SALES_POST_ENC)
@@ -51,8 +51,10 @@ public class SamlConsentTest extends AbstractSamlTest {
         String idpInitiatedLogin = getAuthServerRoot() + "realms/" + REALM_NAME + "/protocol/saml/clients/sales-post-enc";
         SAMLDocumentHolder documentHolder = idpInitiatedLoginWithRequiredConsent(bburkeUser, URI.create(idpInitiatedLogin), SamlClient.Binding.POST, false);
 
-        assertThat(IOUtil.documentToString(documentHolder.getSamlDocument()), containsString("<dsig:Signature"));
-        assertThat(IOUtil.documentToString(documentHolder.getSamlDocument()), not(containsString("<samlp:LogoutResponse")));
-        assertThat(IOUtil.documentToString(documentHolder.getSamlDocument()), containsString("<samlp:Response"));
+        assertThat(IOUtil.documentToString(documentHolder.getSamlDocument()), containsString("<dsig:Signature")); // KEYCLOAK-4262
+        assertThat(IOUtil.documentToString(documentHolder.getSamlDocument()), not(containsString("<samlp:LogoutResponse"))); // KEYCLOAK-4261
+        assertThat(IOUtil.documentToString(documentHolder.getSamlDocument()), containsString("<samlp:Response")); // KEYCLOAK-4261
+        assertThat(IOUtil.documentToString(documentHolder.getSamlDocument()), containsString("<samlp:Status")); // KEYCLOAK-4181
+        assertThat(IOUtil.documentToString(documentHolder.getSamlDocument()), containsString("<samlp:StatusCode Value=\"urn:oasis:names:tc:SAML:2.0:status:RequestDenied\"")); // KEYCLOAK-4181
     }
 }
