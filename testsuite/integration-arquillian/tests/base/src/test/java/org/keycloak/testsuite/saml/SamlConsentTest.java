@@ -15,6 +15,7 @@ import java.net.URI;
 import java.util.List;
 
 import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.not;
 import static org.junit.Assert.assertThat;
 import static org.keycloak.testsuite.util.IOUtil.loadRealm;
 import static org.keycloak.testsuite.util.SamlClient.idpInitiatedLoginWithRequiredConsent;
@@ -51,5 +52,7 @@ public class SamlConsentTest extends AbstractSamlTest {
         SAMLDocumentHolder documentHolder = idpInitiatedLoginWithRequiredConsent(bburkeUser, URI.create(idpInitiatedLogin), SamlClient.Binding.POST, false);
 
         assertThat(IOUtil.documentToString(documentHolder.getSamlDocument()), containsString("<dsig:Signature"));
+        assertThat(IOUtil.documentToString(documentHolder.getSamlDocument()), not(containsString("<samlp:LogoutResponse")));
+        assertThat(IOUtil.documentToString(documentHolder.getSamlDocument()), containsString("<samlp:Response"));
     }
 }
