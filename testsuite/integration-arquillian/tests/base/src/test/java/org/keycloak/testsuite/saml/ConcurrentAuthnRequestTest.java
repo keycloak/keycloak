@@ -53,12 +53,7 @@ import static org.keycloak.testsuite.util.IOUtil.loadRealm;
  * @author hmlnarik
  */
 @Ignore
-public class ConcurrentAuthnRequestTest extends AbstractAuthTest {
-
-    private static final String REALM_NAME = "demo";
-
-    private static final String SAML_ASSERTION_CONSUMER_URL_SALES_POST = "http://localhost:8080/sales-post/";
-    private static final String SAML_CLIENT_ID_SALES_POST = "http://localhost:8081/sales-post/";
+public class ConcurrentAuthnRequestTest extends AbstractSamlTest {
 
     public static final int ITERATIONS = 10000;
     public static final int CONCURRENT_THREADS = 5;
@@ -121,12 +116,6 @@ public class ConcurrentAuthnRequestTest extends AbstractAuthTest {
 
     public AuthnRequestType createLoginRequestDocument(String issuer, String assertionConsumerURL, String realmName) {
         return SamlClient.createLoginRequestDocument(issuer, assertionConsumerURL, getAuthServerSamlEndpoint(realmName));
-    }
-
-    private URI getAuthServerSamlEndpoint(String realm) throws IllegalArgumentException, UriBuilderException {
-        return RealmsResource
-          .protocolUrl(UriBuilder.fromUri(getAuthServerRoot()))
-          .build(realm, SamlProtocol.LOGIN_PROTOCOL);
     }
 
     private void testLogin(Binding requestBinding) throws Exception {

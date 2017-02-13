@@ -29,6 +29,7 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
@@ -89,13 +90,18 @@ public class IOUtil {
         }
     }
 
-    public static String documentToString(Document newDoc) throws TransformerException {
-        DOMSource domSource = new DOMSource(newDoc);
-        Transformer transformer = TransformerFactory.newInstance().newTransformer();
-        StringWriter sw = new StringWriter();
-        StreamResult sr = new StreamResult(sw);
-        transformer.transform(domSource, sr);
-        return sw.toString();
+    public static String documentToString(Document newDoc) {
+        try {
+            DOMSource domSource = new DOMSource(newDoc);
+            Transformer transformer = TransformerFactory.newInstance().newTransformer();
+            StringWriter sw = new StringWriter();
+            StreamResult sr = new StreamResult(sw);
+            transformer.transform(domSource, sr);
+            return sw.toString();
+        } catch (TransformerException e) {
+            log.error("Can't transform document to String");
+            throw new RuntimeException(e);
+        }
     }
 
     public static void modifyDocElementAttribute(Document doc, String tagName, String attributeName, String regex, String replacement) {

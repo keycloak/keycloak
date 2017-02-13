@@ -60,27 +60,7 @@ import static org.keycloak.testsuite.util.Matchers.statusCodeIsHC;
  *
  * @author hmlnarik
  */
-public class AuthnRequestNameIdFormatTest extends AbstractAuthTest {
-
-    private static final String REALM_NAME = "demo";
-
-    private static final String SAML_ASSERTION_CONSUMER_URL_SALES_POST = "http://localhost:8080/sales-post/";
-    private static final String SAML_CLIENT_ID_SALES_POST = "http://localhost:8081/sales-post/";
-
-    @Override
-    public void addTestRealms(List<RealmRepresentation> testRealms) {
-        testRealms.add(loadRealm("/adapter-test/keycloak-saml/testsaml.json"));
-    }
-
-    public AuthnRequestType createLoginRequestDocument(String issuer, String assertionConsumerURL, String realmName) {
-        return SamlClient.createLoginRequestDocument(issuer, assertionConsumerURL, getAuthServerSamlEndpoint(realmName));
-    }
-
-    private URI getAuthServerSamlEndpoint(String realm) throws IllegalArgumentException, UriBuilderException {
-        return RealmsResource
-          .protocolUrl(UriBuilder.fromUri(getAuthServerRoot()))
-          .build(realm, SamlProtocol.LOGIN_PROTOCOL);
-    }
+public class AuthnRequestNameIdFormatTest extends AbstractSamlTest {
 
     private void testLoginWithNameIdPolicy(Binding requestBinding, Binding responseBinding, NameIDPolicyType nameIDPolicy, Matcher<String> nameIdMatcher) throws Exception {
         AuthnRequestType loginRep = createLoginRequestDocument(SAML_CLIENT_ID_SALES_POST, SAML_ASSERTION_CONSUMER_URL_SALES_POST, REALM_NAME);
