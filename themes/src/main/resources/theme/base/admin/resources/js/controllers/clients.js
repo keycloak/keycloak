@@ -1229,8 +1229,7 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, templates,
 });
 
 module.controller('CreateClientCtrl', function($scope, realm, client, templates, $route, serverInfo, Client, ClientDescriptionConverter, $location, $modal, Dialog, Notifications) {
-    $scope.protocols = ['openid-connect',
-        'saml'];//Object.keys(serverInfo.providers['login-protocol'].providers).sort();
+    $scope.protocols = Object.keys(serverInfo.providers['login-protocol'].providers).sort();
     $scope.create = true;
     $scope.templates = [ {name:'NONE'}];
     var templateNameMap = new Object();
