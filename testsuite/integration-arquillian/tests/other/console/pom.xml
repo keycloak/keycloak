@@ -32,7 +32,8 @@
     <name>Admin Console UI Tests</name>
 
     <properties>
-        <keycloak.theme.dir>${auth.server.home}/themes</keycloak.theme.dir>
+        <keycloak.theme.dir>${auth.server.home}/themes-primary</keycloak.theme.dir>
+        <developer.theme.dir>${project.basedir}/../../../../../themes/src/main/resources/theme</developer.theme.dir>
     </properties>
 
     <build>
@@ -54,6 +55,33 @@
                         </configuration>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>com.google.code.maven-replacer-plugin</groupId>
+                <artifactId>maven-replacer-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>addThemeDirs</id>
+                        <phase>test-compile</phase>
+                        <goals>
+                            <goal>replace</goal>
+                        </goals>
+                        <configuration>
+                            <replacements>
+                                <replacement>
+                                    <token>${jboss.home.dir}/themes</token>
+                                    <!-- Note that ${jboss.home.dir} is not set here so it passes through unexpanded. -->
+                                    <value>${jboss.home.dir}/themes-primary,${developer.theme.dir}</value>
+                                </replacement>
+                            </replacements>
+                        </configuration>
+                    </execution>
+                </executions>
+                <configuration>
+                    <regex>false</regex>
+                    <basedir>${auth.server.home}</basedir>
+                    <filesToInclude>standalone\configuration\standalone.xml</filesToInclude>
+                </configuration>
             </plugin>
         </plugins>
         <pluginManagement>

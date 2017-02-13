@@ -22,6 +22,8 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -38,11 +40,16 @@ public class FolderThemeProviderFactory implements ThemeProviderFactory {
     @Override
     public void init(Config.Scope config) {
         String d = config.get("dir");
-        File rootDir = null;
-        if (d != null) {
-            rootDir = new File(d);
+        
+        List<File> rootDirs = new ArrayList<>();
+        for (String dir : d.split(",")) {
+            File themeDir = new File(dir);
+            if (!themeDir.exists()) 
+                throw new RuntimeException("Unknown theme directory in Keycloak config: " + dir);
+            rootDirs.add(themeDir);
         }
-        themeProvider = new FolderThemeProvider(rootDir);
+        
+        themeProvider = new FolderThemeProvider(rootDirs);
     }
 
     @Override
