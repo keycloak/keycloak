@@ -30,9 +30,37 @@
     <name>JS Console</name>
     <description/>
 
+    <properties>
+        <js-adapter.version>${project.version}</js-adapter.version>
+    </properties>
+
     <build>
         <finalName>js-console</finalName>
         <plugins>
+            <plugin>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>unpack-javascript-adapter</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>unpack</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>org.keycloak</groupId>
+                                    <artifactId>keycloak-js-adapter</artifactId>
+                                    <version>${js-adapter.version}</version>
+                                    <type>jar</type>
+                                    <outputDirectory>${pom.basedir}/target/js-console/js</outputDirectory>
+                                </artifactItem>
+                            </artifactItems>
+                            <includes>**/keycloak.js</includes>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.jboss.as.plugins</groupId>
                 <artifactId>jboss-as-maven-plugin</artifactId>
