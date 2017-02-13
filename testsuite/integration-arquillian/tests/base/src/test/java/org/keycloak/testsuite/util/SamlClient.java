@@ -58,6 +58,7 @@ import org.w3c.dom.Document;
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertThat;
 import static org.keycloak.testsuite.admin.Users.getPasswordOf;
+import static org.keycloak.testsuite.arquillian.AuthServerTestEnricher.getAuthServerContextRoot;
 import static org.keycloak.testsuite.util.Matchers.*;
 
 /**
@@ -289,6 +290,58 @@ public class SamlClient {
     }
 
     /**
+     * Prepares a GET/POST request for consent granting . The consent page is expected
+     * to have at least input fields with id "kc-login" and "kc-cancel".
+     * @param consentPage
+     * @param consent
+     * @return
+     */
+    public static HttpUriRequest handleConsentPage(String consentPage, boolean consent) {
+        org.jsoup.nodes.Document theLoginPage = Jsoup.parse(consentPage);
+
+        List<NameValuePair> parameters = new LinkedList<>();
+        for (Element form : theLoginPage.getElementsByTag("form")) {
+            String method = form.attr("method");
+            String action = form.attr("action");
+            boolean isPost = method != null && "post".equalsIgnoreCase(method);
+
+            for (Element input : form.getElementsByTag("input")) {
+                if (Objects.equals(input.id(), "kc-login")) {
+                    if (consent)
+                        parameters.add(new BasicNameValuePair(input.attr("name"), input.attr("value")));
+                } else if (Objects.equals(input.id(), "kc-cancel")) {
+                    if (!consent)
+                        parameters.add(new BasicNameValuePair(input.attr("name"), input.attr("value")));
+                } else {
+                    parameters.add(new BasicNameValuePair(input.attr("name"), input.val()));
+                }
+            }
+
+            if (isPost) {
+                HttpPost res = new HttpPost(getAuthServerContextRoot() + action);
+
+                UrlEncodedFormEntity formEntity;
+                try {
+                    formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
+                } catch (UnsupportedEncodingException e) {
+                    throw new RuntimeException(e);
+                }
+                res.setEntity(formEntity);
+
+                return res;
+            } else {
+                UriBuilder b = UriBuilder.fromPath(action);
+                for (NameValuePair parameter : parameters) {
+                    b.queryParam(parameter.getName(), parameter.getValue());
+                }
+                return new HttpGet(b.build());
+            }
+        }
+
+        throw new IllegalArgumentException("Invalid consent page: " + consentPage);
+    }
+
+    /**
      * Creates a SAML login request document with the given parameters. See SAML &lt;AuthnRequest&gt; description for more details.
      * @param issuer
      * @param assertionConsumerURL
@@ -307,7 +360,7 @@ public class SamlClient {
     }
 
     /**
-     * Send request for login form and then login using user param
+     * Send request for login form and then login using user param. This method is designed for clients without required consent
      * @param user
      * @param samlEndpoint
      * @param samlRequest
@@ -318,6 +371,38 @@ public class SamlClient {
      */
     public static SAMLDocumentHolder login(UserRepresentation user, URI samlEndpoint,
                                            Document samlRequest, String relayState, Binding requestBinding, Binding expectedResponseBinding) {
+        return login(user, samlEndpoint, samlRequest, relayState, requestBinding, expectedResponseBinding, false, true);
+    }
+
+    /**
+     * Send request for login form and then login using user param. This method is designed for clients which requires consent
+     * @param user
+     * @param samlEndpoint
+     * @param samlRequest
+     * @param relayState
+     * @param requestBinding
+     * @param expectedResponseBinding
+     * @return
+     */
+    public static SAMLDocumentHolder loginWithRequiredConsent(UserRepresentation user, URI samlEndpoint,
+                                           Document samlRequest, String relayState, Binding requestBinding, Binding expectedResponseBinding, boolean consent) {
+        return login(user, samlEndpoint, samlRequest, relayState, requestBinding, expectedResponseBinding, true, consent);
+    }
+
+    /**
+     * Send request for login form and then login using user param. Check whether client requires consent and handle consent page.
+     * @param user
+     * @param samlEndpoint
+     * @param samlRequest
+     * @param relayState
+     * @param requestBinding
+     * @param expectedResponseBinding
+     * @param consentRequired
+     * @param consent
+     * @return
+     */
+    public static SAMLDocumentHolder login(UserRepresentation user, URI samlEndpoint,
+                                           Document samlRequest, String relayState, Binding requestBinding, Binding expectedResponseBinding, boolean consentRequired, boolean consent) {
         CloseableHttpResponse response = null;
         SamlClient.RedirectStrategyWithSwitchableFollowRedirect strategy = new SamlClient.RedirectStrategyWithSwitchableFollowRedirect();
         try (CloseableHttpClient client = HttpClientBuilder.create().setRedirectStrategy(strategy).build()) {
@@ -334,6 +419,13 @@ public class SamlClient {
 
             HttpUriRequest loginRequest = handleLoginPage(user, loginPageText);
 
+            if (consentRequired) {
+                // Client requires consent
+                response = client.execute(loginRequest, context);
+                String consentPageText = EntityUtils.toString(response.getEntity(), "UTF-8");
+                loginRequest = handleConsentPage(consentPageText, consent);
+            }
+
             strategy.setRedirectable(false);
             response = client.execute(loginRequest, context);
 
@@ -349,13 +441,37 @@ public class SamlClient {
     }
 
     /**
-     * Send request for login form and then login using user param
+     * Send request for login form and then login using user param for clients which doesn't require consent
      * @param user
      * @param idpInitiatedURI
      * @param expectedResponseBinding
      * @return
      */
     public static SAMLDocumentHolder idpInitiatedLogin(UserRepresentation user, URI idpInitiatedURI, Binding expectedResponseBinding) {
+        return idpInitiatedLogin(user, idpInitiatedURI, expectedResponseBinding, false, true);
+    }
+
+    /**
+     * Send request for login form and then login using user param. For clients which requires consent
+     * @param user
+     * @param idpInitiatedURI
+     * @param expectedResponseBinding
+     * @param consent
+     * @return
+     */
+    public static SAMLDocumentHolder idpInitiatedLoginWithRequiredConsent(UserRepresentation user, URI idpInitiatedURI, Binding expectedResponseBinding, boolean consent) {
+        return idpInitiatedLogin(user, idpInitiatedURI, expectedResponseBinding, true, consent);
+    }
+
+    /**
+     * Send request for login form and then login using user param. Checks whether client requires consent and handle consent page.
+     * @param user
+     * @param idpInitiatedURI
+     * @param expectedResponseBinding
+     * @param consent
+     * @return
+     */
+    public static SAMLDocumentHolder idpInitiatedLogin(UserRepresentation user, URI idpInitiatedURI, Binding expectedResponseBinding, boolean consentRequired, boolean consent) {
         CloseableHttpResponse response = null;
         SamlClient.RedirectStrategyWithSwitchableFollowRedirect strategy = new SamlClient.RedirectStrategyWithSwitchableFollowRedirect();
         try (CloseableHttpClient client = HttpClientBuilder.create().setRedirectStrategy(strategy).build()) {
@@ -372,6 +488,13 @@ public class SamlClient {
             assertThat(loginPageText, containsString("login"));
 
             HttpUriRequest loginRequest = handleLoginPage(user, loginPageText);
+
+            if (consentRequired) {
+                // Client requires consent
+                response = client.execute(loginRequest, context);
+                String consentPageText = EntityUtils.toString(response.getEntity(), "UTF-8");
+                loginRequest = handleConsentPage(consentPageText, consent);
+            }
 
             strategy.setRedirectable(false);
             response = client.execute(loginRequest, context);
