@@ -206,20 +206,25 @@ public class IOUtil {
         return currentElement.getTextContent();
     }
 
-    public static void appendChildInDocument(Document doc, String parentTag, Element node) {
-        NodeList nodes = doc.getElementsByTagName(parentTag);
-        if (nodes.getLength() != 1) {
-            log.warn("Not able or ambiguous to find element: " + parentTag);
+    public static void appendChildInDocument(Document doc, String parentPath, Element node) {
+        String[] pathSegments = parentPath.split("/");
+
+        Element currentElement = (Element) doc.getElementsByTagName(pathSegments[0]).item(0);
+        if (currentElement == null) {
+            log.warn("Not able to find element: " + pathSegments[0] + " in document");
             return;
         }
 
-        Element parentElement = (Element) nodes.item(0);
-        if (parentElement == null) {
-            log.warn("Not able to find element: " + parentTag);
-            return;
+        for (int i = 1; i < pathSegments.length; i++) {
+            currentElement = (Element) currentElement.getElementsByTagName(pathSegments[i]).item(0);
+
+            if (currentElement == null) {
+                log.warn("Not able to find element: " + pathSegments[i] + " in " + pathSegments[i - 1]);
+                return;
+            }
         }
 
-        parentElement.appendChild(node);
+        currentElement.appendChild(node);
     }
 
     public static void execCommand(String command, File dir) throws IOException, InterruptedException {
