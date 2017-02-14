@@ -1,0 +1,78 @@
+
+[[_fuse_adapter_servlet_whiteboard]]
+===== Secure Servlet deployed as OSGI service
+
+This is useful for the case, when you have sevlet class inside your OSGI bundle project, which is not deployed as classic WAR. Fuse uses
+https://ops4j1.jira.com/wiki/display/ops4j/Pax+Web+Extender+-+Whiteboard[Pax Web Whiteboard Extender] for deploy such servlet as web application.
+
+The needed steps to secure your servlet with {{book.project.name}} are:
+
+* {{book.project.name}} provides PaxWebIntegrationService, which allows to inject jetty-web.xml and configure security constraints for your application.
+  You need to declare such service in `OSGI-INF/blueprint/blueprint.xml` inside your application. Note that your servlet needs to depend on it.
+  The example configuration can look like this:
+
+[source,xml]
+----
+<?xml version="1.0" encoding="UTF-8"?>
+<blueprint xmlns="http://www.osgi.org/xmlns/blueprint/v1.0.0"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="http://www.osgi.org/xmlns/blueprint/v1.0.0
+           http://www.osgi.org/xmlns/blueprint/v1.0.0/blueprint.xsd">
+
+    <!-- Using jetty bean just for the compatibility with other fuse services -->
+    <bean id="servletConstraintMapping" class="org.eclipse.jetty.security.ConstraintMapping">
+        <property name="constraint">
+            <bean class="org.eclipse.jetty.util.security.Constraint">
+                <property name="name" value="cst1"/>
+                <property name="roles">
+                    <list>
+                        <value>user</value>
+                    </list>
+                </property>
+                <property name="authenticate" value="true"/>
+                <property name="dataConstraint" value="0"/>
+            </bean>
+        </property>
+        <property name="pathSpec" value="/product-portal/*"/>
+    </bean>
+
+    <bean id="keycloakPaxWebIntegration" class="org.keycloak.adapters.osgi.PaxWebIntegrationService"
+          init-method="start" destroy-method="stop">
+        <property name="jettyWebXmlLocation" value="/WEB-INF/jetty-web.xml" />
+        <property name="bundleContext" ref="blueprintBundleContext" />
+        <property name="constraintMappings">
+            <list>
+                <ref component-id="servletConstraintMapping" />
+            </list>
+        </property>
+    </bean>
+
+    <bean id="productServlet" class="org.keycloak.example.ProductPortalServlet" depends-on="keycloakPaxWebIntegration">
+    </bean>
+
+    <service ref="productServlet" interface="javax.servlet.Servlet">
+        <service-properties>
+            <entry key="alias" value="/product-portal" />
+            <entry key="servlet-name" value="ProductServlet" />
+            <entry key="keycloak.config.file" value="/keycloak.json" />
+        </service-properties>
+    </service>
+
+</blueprint>
+----
+
+* You may need to have directory `WEB-INF` inside your project (even if your project is not web application) and create files `/WEB-INF/jetty-web.xml` and
+`/WEB-INF/keycloak.json` in similar way like it's in <<fake/../classic-war.adoc#_fuse_adapter_classic_war,Classic WAR application>>.
+Note you don't need `web.xml` as the security-constrains are declared in blueprint configuration file.
+
+* The `Import-Package` in `META-INF/MANIFEST.MF` needs to contain at least those imports:
+
+[source, subs="attributes"]
+----
+org.keycloak.adapters.jetty;version="{{book.project.versionMvn}}",
+org.keycloak.adapters;version="{{book.project.versionMvn}}",
+org.keycloak.constants;version="{{book.project.versionMvn}}",
+org.keycloak.util;version="{{book.project.versionMvn}}",
+org.keycloak.*;version="{{book.project.versionMvn}}",
+*;resolution:=optional
+----

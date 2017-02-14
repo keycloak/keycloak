@@ -1,0 +1,111 @@
+
+[[_fuse_adapter_cxf_separate]]
+===== Secure Apache CXF Endpoint on separate Jetty
+
+It's recommended to run your CXF endpoints secured by {{book.project.name}} on separate Jetty engine. This is the setup described in this section.
+
+* You need to add `META-INF/spring/beans.xml` to your application and then declare `httpj:engine-factory` with Jetty SecurityHandler with
+injected `KeycloakJettyAuthenticator` inside. The configuration may look like this for CXF JAX-WS application:
+
+[source,xml]
+----
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:jaxws="http://cxf.apache.org/jaxws"
+       xmlns:httpj="http://cxf.apache.org/transports/http-jetty/configuration"
+       xsi:schemaLocation="
+        http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://cxf.apache.org/jaxws http://cxf.apache.org/schemas/jaxws.xsd
+        http://www.springframework.org/schema/osgi http://www.springframework.org/schema/osgi/spring-osgi.xsd
+        http://cxf.apache.org/transports/http-jetty/configuration http://cxf.apache.org/schemas/configuration/http-jetty.xsd">
+
+    <import resource="classpath:META-INF/cxf/cxf.xml" />
+
+    <bean id="kcAdapterConfig" class="org.keycloak.representations.adapters.config.AdapterConfig">
+        <property name="realm" value="demo"/>
+        <property name="resource" value="custom-cxf-endpoint"/>
+        <property name="bearerOnly" value="true"/>
+        <property name="authServerUrl" value="http://localhost:8080/auth" />
+        <property name="sslRequired" value="EXTERNAL"/>
+    </bean>
+
+    <bean id="keycloakAuthenticator" class="org.keycloak.adapters.jetty.KeycloakJettyAuthenticator">
+        <property name="adapterConfig">
+            <ref local="kcAdapterConfig" />
+        </property>
+    </bean>
+
+    <bean id="constraint" class="org.eclipse.jetty.util.security.Constraint">
+        <property name="name" value="Customers"/>
+        <property name="roles">
+            <list>
+                <value>user</value>
+            </list>
+        </property>
+        <property name="authenticate" value="true"/>
+        <property name="dataConstraint" value="0"/>
+    </bean>
+
+    <bean id="constraintMapping" class="org.eclipse.jetty.security.ConstraintMapping">
+        <property name="constraint" ref="constraint"/>
+        <property name="pathSpec" value="/*"/>
+    </bean>
+
+    <bean id="securityHandler" class="org.eclipse.jetty.security.ConstraintSecurityHandler">
+        <property name="authenticator" ref="keycloakAuthenticator" />
+        <property name="constraintMappings">
+            <list>
+                <ref local="constraintMapping" />
+            </list>
+        </property>
+        <property name="authMethod" value="BASIC"/>
+        <property name="realmName" value="does-not-matter"/>
+    </bean>
+
+    <httpj:engine-factory bus="cxf" id="kc-cxf-endpoint">
+        <httpj:engine port="8282">
+            <httpj:handlers>
+                <ref local="securityHandler" />
+            </httpj:handlers>
+            <httpj:sessionSupport>true</httpj:sessionSupport>
+        </httpj:engine>
+    </httpj:engine-factory>
+
+    <jaxws:endpoint
+                    implementor="org.keycloak.example.ws.ProductImpl"
+                    address="http://localhost:8282/ProductServiceCF" depends-on="kc-cxf-endpoint" />
+
+</beans>
+----
+
+* For the CXF JAX-RS application, the only difference might be in the configuration of the endpoint dependent on engine-factory:
+
+[source,xml]
+----
+<jaxrs:server serviceClass="org.keycloak.example.rs.CustomerService" address="http://localhost:8282/rest"
+    depends-on="kc-cxf-endpoint">
+    <jaxrs:providers>
+        <bean class="com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider" />
+    </jaxrs:providers>
+</jaxrs:server>
+----
+
+
+* The `Import-Package` in `META-INF/MANIFEST.MF` needs to contain those imports:
+
+[source, subs="attributes"]
+----
+META-INF.cxf;version="[2.7,3.2)",
+META-INF.cxf.osgi;version="[2.7,3.2)";resolution:=optional,
+org.apache.cxf.bus;version="[2.7,3.2)",
+org.apache.cxf.bus.spring;version="[2.7,3.2)",
+org.apache.cxf.bus.resource;version="[2.7,3.2)",
+org.apache.cxf.transport.http;version="[2.7,3.2)",
+org.apache.cxf.*;version="[2.7,3.2)",
+org.springframework.beans.factory.config,
+org.eclipse.jetty.security;version="[8,10)",
+org.eclipse.jetty.util.security;version="[8,10)",
+org.keycloak.*;version="{{book.project.versionMvn}}"
+----

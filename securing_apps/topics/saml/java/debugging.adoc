@@ -1,0 +1,6 @@
+
+==== Troubleshooting
+
+The best way to troubleshoot some problems is to turn on debugging for saml in both the client adapter and the {{book.project.name}} server.
+To do this turn on debugging int the `org.keycloak.saml` package to `debug` in your log4j or other logging framework.
+Turning this on allows you to see the SAML requests and response documents being sent to and from the server. 

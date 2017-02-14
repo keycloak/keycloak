@@ -1,0 +1,4 @@
+== SAML
+
+This section describes how you can secure applications and services with SAML using either {{book.project.name}} client adapters or generic
+SAML provider libraries.

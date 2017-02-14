@@ -1,0 +1,102 @@
+
+[[_fuse_adapter_classic_war]]
+===== Secure Classic WAR application
+
+The needed steps to secure your WAR are:
+
+* Declare needed security constraints in `/WEB-INF/web.xml` . You also need to declare login-config and all the roles inside security-role.
+The example configuration can look like this:
+
+[source,xml]
+----
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns="http://java.sun.com/xml/ns/javaee"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd"
+         version="3.0">
+
+    <module-name>customer-portal</module-name>
+
+    <welcome-file-list>
+        <welcome-file>index.html</welcome-file>
+    </welcome-file-list>
+
+    <security-constraint>
+        <web-resource-collection>
+            <web-resource-name>Customers</web-resource-name>
+            <url-pattern>/customers/*</url-pattern>
+        </web-resource-collection>
+        <auth-constraint>
+            <role-name>user</role-name>
+        </auth-constraint>
+    </security-constraint>
+
+    <login-config>
+        <auth-method>BASIC</auth-method>
+        <realm-name>does-not-matter</realm-name>
+    </login-config>
+
+    <security-role>
+        <role-name>admin</role-name>
+    </security-role>
+    <security-role>
+        <role-name>user</role-name>
+    </security-role>
+</web-app>
+----
+
+* Add `jetty-web.xml` file with the authenticator to `/WEB-INF/jetty-web.xml` . Typically it will look like this:
+
+[source,xml]
+----
+<?xml version="1.0"?>
+<!DOCTYPE Configure PUBLIC "-//Mort Bay Consulting//DTD Configure//EN"
+ "http://www.eclipse.org/jetty/configure_9_0.dtd">
+<Configure class="org.eclipse.jetty.webapp.WebAppContext">
+    <Get name="securityHandler">
+        <Set name="authenticator">
+            <New class="org.keycloak.adapters.jetty.KeycloakJettyAuthenticator">
+            </New>
+        </Set>
+    </Get>
+</Configure>
+----
+
+* Add `/WEB-INF/keycloak.json` with your {{book.project.name}} configuration. The format of this config file is described
+in the <<fake/../../java-adapter-config.adoc#_java_adapter_config,Java Adapters Config>> section. It is also possible to have this file available externally as described below.
+
+* Make sure your WAR imports `org.keycloak.adapters.jetty` and maybe some more packages in `META-INF/MANIFEST.MF` file in header `Import-Package`. It's
+recommended to use `maven-bundle-plugin` in your project to properly generate OSGI headers in manifest.
+Note that "*" resolution for package doesn't import `org.keycloak.adapters.jetty` package
+as it's not used by application or Blueprint or Spring descriptor, but it's used just in `jetty-web.xml` file. So list of the packages to import may look like this:
+
+[source, subs="attributes"]
+----
+org.keycloak.adapters.jetty;version="{{book.project.versionMvn}}",
+org.keycloak.adapters;version="{{book.project.versionMvn}}",
+org.keycloak.constants;version="{{book.project.versionMvn}}",
+org.keycloak.util;version="{{book.project.versionMvn}}",
+org.keycloak.*;version="{{book.project.versionMvn}}",
+*;resolution:=optional
+----
+
+====== External adapter configuration
+
+This is for the case when you don't want adapter configuration file `keycloak.json` to be bundled inside your WAR application. Instead it will be available
+externally and loaded based on naming conventions.
+
+To enable the functionality you need to add this section to your `web.xml`:
+
+[source,xml]
+----
+<context-param>
+    <param-name>keycloak.config.resolver</param-name>
+    <param-value>org.keycloak.adapters.osgi.PathBasedKeycloakConfigResolver</param-value>
+</context-param>
+----
+
+That component will use `keycloak.config` or `karaf.etc` java properties to look for a base folder to look for the configuration.
+Inside one of those folders it will look for a file called `<your_web_context>-keycloak.json`.
+
+So for example if your web application has context `my-portal`, then your adapter configuration will be loaded from the file `$FUSE_HOME/etc/my-portal-keycloak.json` .
+

@@ -1,0 +1,99 @@
+
+[[_fuse_adapter_cxf_builtin]]
+===== Secure Apache CXF Endpoint on default Jetty Engine
+
+Some services automatically come with deployed servlets on startup. One of such services is CXF servlet running on
+$$http://localhost:8181/cxf$$ context. Securing such endpoints is quite tricky. The approach, which {{book.project.name}} is currently using,
+is providing ServletReregistrationService, which undeploys builtin servlet at startup, so you are able to re-deploy it again on context secured by {{book.project.name}}.
+This is how configuration file `OSGI-INF/blueprint/blueprint.xml` inside your application may look like. Note it adds JAX-RS `customerservice` endpoint,
+which is endpoint specific to your application, but more importantly, it secures whole `/cxf` context.
+
+[source,xml]
+----
+<?xml version="1.0" encoding="UTF-8"?>
+<blueprint xmlns="http://www.osgi.org/xmlns/blueprint/v1.0.0"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xmlns:jaxrs="http://cxf.apache.org/blueprint/jaxrs"
+           xsi:schemaLocation="
+		http://www.osgi.org/xmlns/blueprint/v1.0.0 http://www.osgi.org/xmlns/blueprint/v1.0.0/blueprint.xsd
+		http://cxf.apache.org/blueprint/jaxrs http://cxf.apache.org/schemas/blueprint/jaxrs.xsd">
+
+    <!-- JAXRS Application -->
+
+    <bean id="customerBean" class="org.keycloak.example.rs.CxfCustomerService" />
+
+    <jaxrs:server id="cxfJaxrsServer" address="/customerservice">
+        <jaxrs:providers>
+            <bean class="com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider" />
+        </jaxrs:providers>
+        <jaxrs:serviceBeans>
+            <ref component-id="customerBean" />
+        </jaxrs:serviceBeans>
+    </jaxrs:server>
+
+
+    <!-- Securing of whole /cxf context by unregister default cxf servlet from paxweb and re-register with applied security constraints -->
+
+    <bean id="cxfConstraintMapping" class="org.eclipse.jetty.security.ConstraintMapping">
+        <property name="constraint">
+            <bean class="org.eclipse.jetty.util.security.Constraint">
+                <property name="name" value="cst1"/>
+                <property name="roles">
+                    <list>
+                        <value>user</value>
+                    </list>
+                </property>
+                <property name="authenticate" value="true"/>
+                <property name="dataConstraint" value="0"/>
+            </bean>
+        </property>
+        <property name="pathSpec" value="/cxf/*"/>
+    </bean>
+
+    <bean id="cxfKeycloakPaxWebIntegration" class="org.keycloak.adapters.osgi.PaxWebIntegrationService"
+          init-method="start" destroy-method="stop">
+        <property name="bundleContext" ref="blueprintBundleContext" />
+        <property name="jettyWebXmlLocation" value="/WEB-INF/jetty-web.xml" />
+        <property name="constraintMappings">
+            <list>
+                <ref component-id="cxfConstraintMapping" />
+            </list>
+        </property>
+    </bean>
+
+    <bean id="defaultCxfReregistration" class="org.keycloak.adapters.osgi.ServletReregistrationService" depends-on="cxfKeycloakPaxWebIntegration"
+          init-method="start" destroy-method="stop">
+        <property name="bundleContext" ref="blueprintBundleContext" />
+        <property name="managedServiceReference">
+            <reference interface="org.osgi.service.cm.ManagedService" filter="(service.pid=org.apache.cxf.osgi)" timeout="5000"  />
+        </property>
+    </bean>
+
+</blueprint>
+----
+
+As a side effect, all other CXF services running on default CXF HTTP destination will be secured too. Similarly when the application is undeployed, then
+whole `/cxf` context will become unsecured too. For this reason, it's recommended to use your own Jetty engine for your apps like
+described in <<fake/../cxf-separate.adoc#_fuse_adapter_cxf_separate,Secure CXF Application on separate Jetty Engine>> as then you have more
+control over security for each application individually.
+
+* You may need to have directory `WEB-INF` inside your project (even if your project is not web application) and create files `/WEB-INF/jetty-web.xml` and
+  `/WEB-INF/keycloak.json` in similar way like it's in <<fake/../classic-war.adoc#_fuse_adapter_classic_war,Classic WAR application>>.
+  Note you don't need `web.xml` as the security-constrains are declared in blueprint configuration file.
+
+
+* The `Import-Package` in `META-INF/MANIFEST.MF` needs to contain those imports:
+
+[source, subs="attributes"]
+----
+META-INF.cxf;version="[2.7,3.2)",
+META-INF.cxf.osgi;version="[2.7,3.2)";resolution:=optional,
+org.apache.cxf.transport.http;version="[2.7,3.2)",
+org.apache.cxf.*;version="[2.7,3.2)",
+com.fasterxml.jackson.jaxrs.json;version="[2.5,3)",
+org.eclipse.jetty.security;version="[8,10)",
+org.eclipse.jetty.util.security;version="[8,10)",
+org.keycloak.*;version="{{book.project.versionMvn}}",
+org.keycloak.adapters.jetty;version="{{book.project.versionMvn}}",
+*;resolution:=optional
+----

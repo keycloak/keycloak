@@ -1,0 +1,35 @@
+{
+  "gitbook": "2.x.x",
+  "structure": {
+    "readme": "README.adoc"
+  },
+  "plugins": [
+    "toggle-chapters",
+    "ungrey",
+    "splitter"
+  ],
+  "variables": {
+    "title": "Securing Applications and Services Guide",
+    "project": {
+      "name": "Keycloak",
+      "version": "SNAPSHOT",
+      "versionMvn": "SNAPSHOT"
+    },
+    "community": true,
+    "product": false,
+    "images": "keycloak-images",
+    "developerguide": {
+      "name": "Server Developer Guide",
+      "link": "https://keycloak.gitbooks.io/server-developer-guide/content/"
+    },
+    "adminguide": {
+      "name": "Server Administration Guide",
+      "link": "https://keycloak.gitbooks.io/server-adminstration-guide/content/"
+    },
+    "installguide": {
+      "name": "Server Installation and Configuration Guide",
+      "link": "https://keycloak.gitbooks.io/server-installation-and-configuration/content/"
+    },
+    "fuseVersion": "JBoss Fuse 6.3.0 Rollup 1"
+  }
+}
