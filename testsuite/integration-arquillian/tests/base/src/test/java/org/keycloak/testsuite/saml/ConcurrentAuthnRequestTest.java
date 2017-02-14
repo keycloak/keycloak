@@ -17,12 +17,9 @@
 package org.keycloak.testsuite.saml;
 
 import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
-import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.saml.processing.api.saml.v2.request.SAML2Request;
-import org.keycloak.services.resources.RealmsResource;
-import org.keycloak.testsuite.AbstractAuthTest;
 import org.keycloak.testsuite.util.SamlClient;
 
 import java.io.IOException;
@@ -33,8 +30,7 @@ import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import javax.ws.rs.core.UriBuilder;
-import javax.ws.rs.core.UriBuilderException;
+
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.protocol.HttpClientContext;
@@ -65,7 +61,7 @@ public class ConcurrentAuthnRequestTest extends AbstractSamlTest {
         ExecutorService threadPool = Executors.newFixedThreadPool(CONCURRENT_THREADS);
 
         try (CloseableHttpClient client = HttpClientBuilder.create().setRedirectStrategy(strategy).build()) {
-            HttpUriRequest post = requestBinding.createSamlRequest(samlEndpoint, relayState, samlRequest);
+            HttpUriRequest post = requestBinding.createSamlUnsignedRequest(samlEndpoint, relayState, samlRequest);
             
             Collection<Callable<Void>> futures = new LinkedList<>();
             for (int i = 0; i < ITERATIONS; i ++) {

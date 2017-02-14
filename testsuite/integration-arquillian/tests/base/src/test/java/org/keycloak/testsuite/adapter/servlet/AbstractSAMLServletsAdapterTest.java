@@ -1009,7 +1009,7 @@ public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAd
         try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
             HttpClientContext context = HttpClientContext.create();
 
-            HttpUriRequest post = SamlClient.Binding.POST.createSamlPostUnsignedRequest(getAppServerSamlEndpoint(employee2ServletPage), null, responseDoc);
+            HttpUriRequest post = SamlClient.Binding.POST.createSamlUnsignedResponse(getAppServerSamlEndpoint(employee2ServletPage), null, responseDoc);
             response = client.execute(post, context);
             assertThat(response, statusCodeIsHC(Response.Status.FOUND));
             response.close();
@@ -1049,7 +1049,7 @@ public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAd
             HttpClientContext context = HttpClientContext.create();
 
             log.debug("Sending response to SP");
-            HttpUriRequest post = SamlClient.Binding.POST.createSamlPostUnsignedRequest(getAppServerSamlEndpoint(salesPostSigEmailServletPage), null, responseDoc);
+            HttpUriRequest post = SamlClient.Binding.POST.createSamlUnsignedResponse(getAppServerSamlEndpoint(salesPostSigEmailServletPage), null, responseDoc);
             response = client.execute(post, context);
             System.out.println(EntityUtils.toString(response.getEntity()));
             assertThat(response, statusCodeIsHC(Response.Status.FOUND));
