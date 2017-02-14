@@ -44,6 +44,7 @@
     },
 
     "quickstartRepo": "https://github.com/keycloak/keycloak-quickstarts",
+    "fuseVersion": "JBoss Fuse 6.3.0 Rollup 1",
 
     "appserver": {
       "name": "Wildfly",
