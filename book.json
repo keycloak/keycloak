@@ -42,6 +42,10 @@
       "name": "Securing Applications and Services Guide",
       "link": "https://keycloak.gitbooks.io/securing-client-applications-guide/content/"
     },
+    "apidocs": {
+      "name": "API Documentation",
+      "link": "http://keycloak.org/docs"
+    },
 
     "quickstartRepo": "https://github.com/keycloak/keycloak-quickstarts",
     "fuseVersion": "JBoss Fuse 6.3.0 Rollup 1",
