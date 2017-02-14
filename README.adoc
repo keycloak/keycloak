@@ -1,9 +1,4 @@
 
-= Server Developer Guide
+= Moved
 
-image:images/keycloak_logo.png[alt="Keycloak"]
-
-{{book.project.name}} {{book.project.version}}
-
-http://www.keycloak.org
-
+Moved to https://github.com/keycloak/keycloak-documentation
