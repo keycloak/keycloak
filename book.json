@@ -38,6 +38,10 @@
       "name": "Server Installation and Configuration",
       "link": "https://keycloak.gitbooks.io/keycloak-documentation/content/server_installation/index.html"
     },
+    "adapterguide": {
+      "name": "Securing Applications and Services Guide",
+      "link": "https://keycloak.gitbooks.io/securing-client-applications-guide/content/"
+    },
 
     "quickstartRepo": "https://github.com/keycloak/keycloak-quickstarts",
 
