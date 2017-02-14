@@ -1,0 +1,83 @@
+
+=== OpenID Connect v1.0 Identity Providers
+
+{{book.project.name}} can broker identity providers based on the OpenID Connect protocol.  These IDPs must support the <<fake/../../sso-protocols/oidc.adoc#_oidc, Authorization Code Flow>>
+as defined by the specification in order to authenticate the user and authorize access.
+
+To begin configuring an OIDC provider, go to the `Identity Providers` left menu item
+and select `OpenID Connect v1.0` from the `Add provider` drop down list.  This will bring you to the `Add identity provider` page.
+
+.Add Identity Provider
+image:../../{{book.images}}/oidc-add-identity-provider.png[]
+
+The initial configuration options on this page are described in <<fake/../../identity-broker/configuration.adoc#_general-idp-config, General IDP Configuration>>.
+You must define the OpenID Connection configuration options as well.  They basically describe the OIDC IDP you are communicating with.
+
+.OpenID Connect Config
+|===
+|Configuration|Description
+
+|Authorization URL
+|Authorization URL endpoint required by the OIDC protocol
+
+|Token URL
+|Token URL endpoint required by the OIDC protocol
+
+|Logout URL
+|Logout URL endpoint defined in the OIDC protocol.  This value is optional.
+
+|Backchannel Logout
+|Backchannel logout is a background, out-of-band, REST invocation to the IDP to logout the user.  Some IDPs can only perform logout through browser redirects as they may
+ only be able to identity sessions via a browser cookie.
+
+|User Info URL
+|User Info URL endpoint defined by the OIDC protocol.  This is an endpoint from which user profile information can be downloaded.
+
+|Client ID
+|This realm will act as an OIDC client to the external federation IDP you are configuring here.  Your realm will need a OIDC client ID when using the Authorization Code Flow
+ to interact with the external IDP
+
+|Client Secret
+|This realm will need a client secret to use when using the Authorization Code Flow.
+
+|Issuer
+|Responses from the IDP may contain an issuer claim.  This config value is optional.  If specified, this claim will be validated against the value you provide.
+
+|Default Scopes
+|Space-separated list of OIDC scopes to send with the authentication request.  The default is `openid`
+
+|Prompt
+|Another optional switch.  This is the prompt parameter defined by the OIDC specification. Through it you can force re-authentication and other options.  See the specification for
+ more details
+
+|Validate Signatures
+|Another optional switch. This is to specify if {{book.project.name}} will verify the signatures on the external ID Token signed by this Identity provider. If this is on,
+the {{book.project.name}} will need to know the public key of the external OIDC identity provider. See below for how to setup it.
+WARNING: For the performance purposes, {{book.project.name}} caches the public key of the external OIDC identity provider. If you think that private key of your Identity provider
+was compromised, it is obviously good to update your keys, but it's also good to clear the keys cache. See
+<<fake/../../realms/cache.adoc#_clear-cache, Clearing the cache>> section for more details.
+
+|Use JWKS URL
+|Applicable if `Validate Signatures` is on. If the switch is on, then identity provider public keys  will be downloaded from given JWKS URL.
+ This allows great flexibility because new keys will be always re-downloaded again when identity provider generates new keypair. If the switch is off,
+ then public key (or certificate) from the {{book.project.name}} DB is used, so when identity provider keypair changes, you always need to import new key to the {{book.project.name}} DB as well.
+
+|JWKS URL
+|URL where identity provider keys in JWK format are stored. See https://self-issued.info/docs/draft-ietf-jose-json-web-key.html[JWK specification] for more details.
+ If you use external {{book.project.name}} identity provider, then you can use URL like http://broker-keycloak:8180/auth/realms/test/protocol/openid-connect/certs assuming your brokered
+ {{book.project.name}} is running on http://broker-keycloak:8180 and it's realm is `test` .
+
+|Validating Public Key
+|Applicable if `Use JWKS URL` is off. Here is the public key in PEM format that must be used to verify external IDP signatures.
+
+|Validating Public Key Id
+|Applicable if `Use JWKS URL` is off. This field specifies ID of the public key in PEM format. This config value is optional. As there is no standard way
+ for computing key ID from key, various external identity providers might use different algorithm from {{book.project.name}}. If the value of this field
+ is not specified, the validating public key specified above is used for all requests regardless of key ID sent by external IDP. When set, value of this
+ field serves as key ID used by {{book.project.name}} for validating signatures from such providers and must match the key ID specified by the IDP.
+
+|===
+
+You can also import all this configuration data by providing a URL or file that points to OpenID Provider Metadata (see OIDC Discovery specification).
+If you are connecting to a {{book.project.name}} external IDP, you can import the IDP setttings from the url `<root>/auth/realms/\{realm-name}/.well-known/openid-configuration`.
+This link is a JSON document describing metadata about the IDP.

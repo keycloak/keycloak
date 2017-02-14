@@ -1,0 +1,84 @@
+
+=== SAML v2.0 Identity Providers
+
+{{book.project.name}} can broker identity providers based on the SAML v2.0 protocol.
+
+To begin configuring an OIDC provider, go to the `Identity Providers` left menu item
+and select `SAML v2.0` from the `Add provider` drop down list.  This will bring you to the `Add identity provider` page.
+
+.Add Identity Provider
+image:../../{{book.images}}/saml-add-identity-provider.png[]
+
+The initial configuration options on this page are described in <<fake/../../identity-broker/configuration.adoc#_general-idp-config, General IDP Configuration>>.
+You must define the SAML configuration options as well.  They basically describe the SAML IDP you are communicating with.
+
+.SAML Config
+|===
+|Configuration|Description
+
+|Single Sign-On Service URL
+|This is a required field and specifies the SAML endpoint to start the authentication process.  If your SAML IDP publishes an IDP entity descriptor, the value of
+ this field will be specified there.
+
+|Single Logout Service URL
+|This is an optional field that specifies the SAML logout endpoint. If your SAML IDP publishes an IDP entity descriptor, the value of
+ this field will be specified there.
+ 
+|Backchannel Logout
+|Enable if your SAML IDP supports backchannel logout
+
+|NameID Policy Format
+|Specifies the URI reference corresponding to a name identifier format. Defaults to urn:oasis:names:tc:SAML:2.0:nameid-format:persistent.
+
+|HTTP-POST Binding Response
+|When this realm responds to any SAML requests sent by the external IDP, which SAML binding should be used?  If set to `off`, then the Redirect Binding will be used.
+
+|HTTP-POST Binding for AuthnRequest
+|When this realm requests authentication from the external SAML IDP, which SAML binding should be used?  If set to `off`, then the Redirect Binding will be used.
+
+|Want AuthnRequests Signed
+|If true, it will use the realm's keypair to sign requests sent to the external SAML IDP
+
+|Signature Algorithm
+|If `Want AuthnRequests Signed` is on, then you can also pick the signature algorithm to use.
+
+|SAML Signature Key Name
+|Signed SAML documents sent via POST binding contain identification of signing key in `KeyName`
+ element. This by default contains {{book.project.name}} key ID. However various external SAML IDPs might
+ expect a different key name or no key name at all. This switch controls whether `KeyName`
+ contains key ID (option `KEY_ID`), subject from certificate corresponding to the realm key
+ (option `CERT_SUBJECT` - expected for instance by Microsoft Active Directory Federation
+ Services), or that the key name hint is completely omitted from the SAML message (option `NONE`).
+
+|Force Authentication
+|Indicates that the user will be forced to enter in their credentials at the external IDP even if they are already logged in.
+
+|Validate Signature
+|Whether or not the realm should expect that SAML requests and responses from the external IDP be digitally signed.  It is highly recommended you turn this on!
+
+|Validating X509 Certificate
+|The public certificate that will be used to validate the signatures of SAML requests and responses from the external IDP.
+|===
+
+
+You can also import all this configuration data by providing a URL or file that points to the SAML IDP entity descriptor of the external IDP.
+If you are connecting to a {{book.project.name}} external IDP, you can import the IDP setttings from the url `<root>/auth/realms/\{realm-name}/protocol/saml/descriptor`.
+This link is an XML document describing metadata about the IDP.
+
+
+You can also import all this configuration data by providing a URL or XML file that points to the entity descriptor of the external SAML IDP you want to connect to.
+
+[[_identity_broker_saml_sp_descriptor]]
+==== SP Descriptor
+
+Once you create a SAML provider, there is an `EXPORT` button that appears when viewing that provider.
+Clicking this button will export a SAML SP entity descriptor which you can use to import into the external SP provider.
+
+This metadata is also available publicly by going to the URL
+
+[source]
+----
+http[s]://{host:port}/auth/realms/{realm-name}/broker/{broker-alias}/endpoint/descriptor
+----
+
+

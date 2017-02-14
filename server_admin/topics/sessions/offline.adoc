@@ -1,0 +1,29 @@
+[[_offline-access]]
+
+=== Offline Access
+
+Offline access is a feature described in http://openid.net/specs/openid-connect-core-1_0.html#OfflineAccess[OpenID Connect specification] .
+The idea is that during login, your client application will request an Offline token instead of a classic Refresh token.
+The application can save this offline token in a database or on disk and can use it later even if user is logged out.
+This is useful if your application needs to do some "offline" actions on behalf of user even when the user is not online.
+An example is a periodic backup of some data every night.
+
+Your application is responsible for persisting the offline token in some storage (usually a database) and then using it to manually retrieve new access token from {{book.project.name}} server.
+
+The difference between a classic Refresh token and an Offline token is, that an offline token will never expire and is not subject of `SSO Session Idle timeout` .
+The offline token is valid even after a user logout or server restart.
+However by default you do need to use the offline token for a refresh token action at least once per 30 days (this value, `Offline Session Idle timeout`, can be changed in the administration console in the `Tokens` tab under `Realm Settings`). Also if you enable the option `Revoke refresh tokens`, then each offline token can be used just once.
+So after refresh, you always need to store the new offline token from refresh response into your DB instead of the previous one.
+
+Users can view and revoke offline tokens that have been granted by them in the <<fake/../../account.adoc#_account-service, User Account Service>>.
+The admin user can revoke offline tokens for individual users in admin console in the `Consents` tab of a particular user.
+The admin can also view all the offline tokens issued in the `Offline Access` tab of each client.
+Offline tokens can also be revoked by setting a <<fake/../../sessions/revocation.adoc#_revocation-policy, revocation policy>>.
+
+To be able to issue an offline token, users need to have the role mapping for the realm-level role `offline_access`.
+Clients also need to have that role in their scope.
+
+The client can request an offline token by adding the parameter `scope=offline_access` when sending authorization request to {{book.project.name}}.
+The {{book.project.name}} OIDC client adapter automatically adds this parameter when you use it to access secured URL of your application (i.e.
+$$http://localhost:8080/customer-portal/secured?scope=offline_access$$). The Direct Access Grant and Service Accounts also
+support offline tokens if you include `scope=offline_access` in the body of the authentication request.

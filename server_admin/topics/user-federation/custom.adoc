@@ -1,0 +1,6 @@
+
+=== Custom Providers
+
+{{book.project.name}} does have a private SPI for User Storage Federation that you can use to write your own custom providers.
+There is no commercial support for this yet.  You can find some documentation for this in our link:https://keycloak.gitbooks.io/server-developer-guide/content/[community documentation].
+This SPI is slated for a major rewrite before commercial support will be provided.

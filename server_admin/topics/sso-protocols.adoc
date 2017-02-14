@@ -1,0 +1,5 @@
+
+== SSO Protocols
+
+The chapter gives a brief overview of the authentication protocols and how the {{book.project.name}} authentication server
+and the applications it secures interact with these protocols.
