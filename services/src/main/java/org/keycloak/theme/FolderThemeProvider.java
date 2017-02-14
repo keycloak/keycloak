@@ -60,7 +60,9 @@ public class FolderThemeProvider implements ThemeProvider {
                     return pathname.isDirectory() && new File(pathname, typeName).isDirectory();
                 }
             });
-            allThemeDirs.addAll(Arrays.asList(themeDirs));
+            if (themeDirs != null) {
+                allThemeDirs.addAll(Arrays.asList(themeDirs));
+            }
         }
         if (!allThemeDirs.isEmpty()) {
             Set<String> names = new HashSet<String>();
