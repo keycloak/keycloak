@@ -1,0 +1,40 @@
+{
+  "gitbook": "2.x.x",
+  "structure": {
+    "readme": "README.adoc"
+  },
+  "plugins": [
+    "toggle-chapters",
+    "ungrey",
+    "splitter"
+  ],
+  "variables": {
+    "title": "Server Developer Guide",
+    "project": {
+      "name": "Red Hat Single Sign-On",
+      "version": "7.1.0",
+      "doc_base_url": "https://access.redhat.com/documentation/en/red-hat-single-sign-on/",
+      "doc_info_version_url": "7.1-Beta"
+    },
+    "community": false,
+    "product": true,
+    "images": "rhsso-images",
+    "adminguide": {
+      "name": "Server Administration Guide",
+      "link": "/single/server-administration-guide/"
+    },
+    "clientguide": {
+      "name": "Securing Applications and Services Guide",
+      "link": "/single/securing-applications-and-services-guide/"
+
+    },
+    "installguide": {
+      "name": "Server Installation and Configuration Guide",
+      "link": "/single/server-installation-and-configuration-guide/"
+    },
+    "apidocs": {
+      "name": "API Documentation",
+      "link": "/single/api-documentation/"
+    }
+  }
+}

@@ -1,0 +1,42 @@
+[[_user-storage-spi]]
+== User Storage SPI
+
+The User Storage SPI allows you to write extensions to {{book.project.name}} to connect to external user databases and credential
+stores.  The built-in LDAP and ActiveDirectory support is an implementation of this SPI in action.  Out of the box,
+{{book.project.name}} uses its local database to create, update, and lookup users and validation credentials from.  Often though,
+organizations have existing external proprietary user databases that they cannot migrate to {{book.project.name}}'s data model.
+For those situations, Application developers can write implementations of the User Storage SPI to bridge between the external user store and the internal
+user object model that {{book.project.name}} uses to login users and manage them.
+
+When the {{book.project.name}} runtime needs to look up a user, like when a user is logging in, it performs a number of
+steps to locate the user.  It first looks to see if the user is in the user cache, if its there it uses that in-memory
+representation.  Then it looks for the user within {{book.project.name}} local database.  If its not there, it then
+loops through User Storage SPI provider implementations to perform the user query until one of them returns
+the user the runtime is looking for.  The provider queries the external user store for the user and maps the external data representation
+of the user to {{book.project.name}}'s user metamodel.
+
+User Storage SPI provider implementations can also perform complex criteria queries, perform CRUD operations on users,
+validate and manage credentials, or perform bulk updates of many users at once.  It all depends on the capabilities of
+the external store.
+
+User Storage SPI provider implementations are packaged and deployed similarly (and often are) to Java EE components.
+The are not enabled by default, but instead must be enabled and configured per realm under the `User Federation` tab
+in the administration console.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,26 @@
+= {{book.title}}
+
+ . link:topics/preface.adoc[Preface]
+ . link:topics/admin-rest-api.adoc[Admin REST API]
+ . link:topics/themes.adoc[Themes]
+ . link:topics/custom-attributes.adoc[Custom User Attributes]
+{% if book.community %}
+ . link:topics/providers.adoc[Service Provider Interfaces (SPI)]
+ . link:topics/extensions.adoc[Extending Server]
+ . link:topics/auth-spi.adoc[Authentication SPI]
+ . link:topics/events.adoc[Event Listener SPI]
+{% endif %}
+ . link:topics/user-storage.adoc[User Storage SPI]
+ .. link:topics/user-storage/provider-interfaces.adoc[Provider Interfaces]
+ .. link:topics/user-storage/provider-capability-interfaces.adoc[Provider Capability Interfaces]
+ .. link:topics/user-storage/model-interfaces.adoc[Model Interfaces]
+ .. link:topics/user-storage/packaging.adoc[Packaging and Deployment]
+ .. link:topics/user-storage/simple-example.adoc[Simple Read-Only, Lookup Example]
+ .. link:topics/user-storage/configuration.adoc[Configuration Techniques]
+ .. link:topics/user-storage/registration-query.adoc[Add/Remove User and Query Capability interfaces]
+ .. link:topics/user-storage/augmenting.adoc[Augmenting External Storage]
+ .. link:topics/user-storage/import.adoc[Import Implementation Strategy]
+ .. link:topics/user-storage/cache.adoc[User Caches]
+ .. link:topics/user-storage/javaee.adoc[Leveraging Java EE]
+ .. link:topics/user-storage/rest.adoc[REST Management API]
+ .. link:topics/user-storage/migration.adoc[Migrating from an Earlier User Federation SPI]

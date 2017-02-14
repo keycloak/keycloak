@@ -1,0 +1,15 @@
+[[_user_federation_mapper]]
+== User Federation Mapper SPI
+
+=== LDAP Mapper
+
+For the more advanced usecases, you have the possibility to create your own implementation of LDAP mapper or just subclass from some already existing mapper
+implementation. You will need to implement `UserFederationMapperFactory` interface.
+
+In most cases, instead of creating `UserFederationMapperFactory` from scratch, you can create subclasses of `AbstractLDAPFederationMapperFactory`, which itself
+implements `UserFederationMapperFactory`.
+
+Then you need to create mapper implementation, which will be subclass of `AbstractLDAPFederationMapper` (this mapper implementation will be returned by
+`YourAbstractLDAPFederationMapperFactorySubclass.createMapper` method).
+
+For details on how to package and deploy a custom provider refer to the <<providers.adoc#providers,Service Provider Interfaces>> chapter.

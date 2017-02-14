@@ -1,0 +1,394 @@
+[[_providers]]
+
+== Service Provider Interfaces (SPI)
+
+Keycloak is designed to cover most use-cases without requiring custom code, but we also want it to be customizable.
+To achive this Keycloak has a number of Service Provider Interfaces (SPI) which you can implement your own providers for.
+
+=== Implementing a SPI
+
+To implement an SPI you need to implement it's ProviderFactory and Provider interfaces. You also need to create a service configuration file.
+
+For example to implement the Event Listener SPI you need to implement EventListenerProviderFactory and EventListenerProvider and also provide the file
+`META-INF/services/org.keycloak.events.EventListenerProviderFactory`.
+
+Example EventListenerProviderFactory:
+
+[source,java]
+----
+package org.acme.provider;
+
+import ...
+
+public class MyEventListenerProviderFactory implements EventListenerProviderFactory {
+
+    private List<Event> events;
+
+    public String getId() {
+        return "my-event-listener";
+    }
+
+    public void init(Config.Scope config) {
+        events = new LinkedList();
+    }
+
+    public void postInit(KeycloakSessionFactory factory) {
+    }
+
+    public EventListenerProvider create(KeycloakSession session) {
+        return new MyEventListenerProvider(events);
+    }
+
+    public void close() {
+    }
+}
+----
+
+NOTE: Keycloak creates a single instance of `EventListenerProviderFactory` which makes it possible to store state for multiple requests.
+`EventListenerProvider` instances are created by calling create on the factory for each requests so these should be light-weight object.
+
+Example EventListenerProvider:
+
+[source,java]
+----
+package org.acme.provider;
+
+import ...
+
+public class MyEventListenerProvider implements EventListenerProvider {
+
+    private List<Event> events;
+
+    public MyEventListenerProvider(List<Event> events) {
+        this.events = events;
+    }
+
+    @Override
+    public void onEvent(Event event) {
+        events.add(event);
+    }
+
+    @Override
+    public void close() {
+
+    }
+
+    @Override
+    public void onEvent(AdminEvent event, boolean includeRepresentation) {
+        // Assume this implementation just ignores admin events
+    }
+}
+----
+
+Example service configuration file (`META-INF/services/org.keycloak.events.EventListenerProviderFactory`):
+
+[source]
+----
+org.acme.provider.MyEventListenerProviderFactory
+----
+
+You can configure your provider through `standalone.xml`, `standalone-ha.xml`, or `domain.xml`.  
+See the link:{{book.project.doc_base_url}}{{book.project.doc_info_version_url}}{{book.installguide.link}}[{{book.installguide.name}}] for more details on 
+where the `standalone.xml`, `standalone-ha.xml`, or `domain.xml` file lives.
+
+For example by adding the following to `standalone.xml`:
+
+[source,xml]
+----
+<spi name="eventsListener">
+    <provider name="my-event-listener" enabled="true">
+        <properties>
+            <property name="aNumber" value="10"/>
+            <property name="aString" value="Foo"/>
+        </properties>
+    </provider>
+</spi>
+----
+
+Then you can retrieve the config in the `ProviderFactory` init method:
+
+[source,java]
+----
+public void init(Config.Scope config) {
+    Integer aNumber = config.getInt("aNumber");
+    String aString = config.get("aString");
+}
+----
+
+Your provider can also lookup other providers if needed. For example:
+
+[source,java]
+----
+public class MyEventListenerProvider implements EventListenerProvider {
+
+    private KeycloakSession session;
+    private List<Event> events;
+
+    public MyEventListenerProvider(KeycloakSession session, List<Event> events) {
+        this.session = session;
+        this.events = events;
+    }
+
+    public void onEvent(Event event) {
+        RealmModel realm = session.realms().getRealm(event.getRealmId());
+        UserModel user = session.users().getUserById(event.getUserId(), realm);
+
+        EmailSenderProvider emailSender = session.getProvider(EmailSenderProvider.class);
+        emailSender.send(realm, user, "Hello", "Hello plain text", "<h1>Hello html</h1>" );
+    }
+
+    ...
+
+}
+----
+
+[[_providers_admin_console]]
+==== Show info from you SPI implementation in Keycloak admin console
+
+Sometimes it is useful to show additional info about your Provider to a Keycloak administrator. You can show provider build time informations (eg. version of
+custom provider currently installed), current configuration of the provider (eg. url of remote system your provider talks to) or some operational info
+(average time of response from remote system your provider talks to). Keycloak admin console provides Server Info page to show this kind of information.
+
+To show info from your provider it is enough to implement `org.keycloak.provider.ServerInfoAwareProviderFactory` interface in your `ProviderFactory`.
+
+Example implementation for `MyEventListenerProviderFactory` from previous example:
+
+[source,java]
+----
+package org.acme.provider;
+
+import ...
+
+public class MyEventListenerProviderFactory implements EventListenerProviderFactory, ServerInfoAwareProviderFactory {
+    ...
+
+    @Override
+    public Map<String, String> getOperationalInfo() {
+        Map<String, String> ret = new LinkedHashMap<>();
+        ret.put("version", "1.0");
+        ret.put("listSizeMax", max + "");
+        ret.put("listSizeCurrent", events.size() + "");
+        return ret;
+    }
+}
+----            
+
+=== Registering provider implementations
+
+There are two ways to register provider implementations.  The easiest way is to just throw your provider jar within
+the Keycloak `deploy/` directory.  Keycloak supports hot deployment as well in this scenario.  This is also the best
+solution.
+
+The alternative is not really recommended, but exists for legacy purposes as the Keycloak deployer didn't exist in
+previous versions of the project.  Keycloak can load provider implementations from JBoss Modules or directly from the file-system.
+Using Modules is recommended as you can control exactly what classes are available to your provider.
+Any providers loaded from the file-system uses a classloader with the Keycloak classloader as its parent.
+
+==== Using the Keycloak Deployer
+
+If you copy your provider jar to the Keycloak `deploy/` directory, your provider will automatically be deployed.
+Hot deployment works too.  Additionally, your provider jar works similarly to other components deployed in a JBoss/Wildfly
+environment in that they can use facilities like the `jboss-deployment-structure.xml` file.  This file allows you to
+set up dependencies on other components and load third-party jars and modules.
+
+Provider jars can also be contained within other deployable units like EARs and WARs.  Deploying with a EAR actually makes
+it really easy to use third party jars as you can just put these libraries in the EAR's `lib/` directory.
+
+==== Register a provider using Modules
+
+To register a provider using Modules first create a module.
+To do this you can either use the jboss-cli script or manually create a folder inside `KEYCLOAK_HOME/modules` and add your jar and a `module.xml`.
+For example to add the event listener sysout example provider using the `jboss-cli` script execute: 
+
+[source]
+----
+KEYCLOAK_HOME/bin/jboss-cli.sh --command="module add --name=org.keycloak.examples.event-sysout --resources=target/event-listener-sysout-example.jar --dependencies=org.keycloak.keycloak-core,org.keycloak.keycloak-server-spi,org.keycloak.keycloak-events-api"
+----                
+Or to manually create it start by creating the folder `KEYCLOAK_HOME/modules/org/keycloak/examples/event-sysout/main`.
+Then copy `event-listener-sysout-example.jar` to this folder and create `module.xml` with the following content: 
+
+[source]
+----
+
+<?xml version="1.0" encoding="UTF-8"?>
+<module xmlns="urn:jboss:module:1.3" name="org.keycloak.examples.event-sysout">
+    <resources>
+        <resource-root path="event-listener-sysout-example.jar"/>
+    </resources>
+    <dependencies>
+        <module name="org.keycloak.keycloak-core"/>
+        <module name="org.keycloak.keycloak-server-spi"/>
+    </dependencies>
+</module>
+----            
+
+Once you've created the module you need to register this module with Keycloak.
+This is done by editing the keycloak-server subsystem section of 
+`standalone.xml`, `standalone-ha.xml`, or `domain.xml`, and adding it to the providers: 
+
+[source,xml]
+----
+<subsystem xmlns="urn:jboss:domain:keycloak-server:1.1">
+    <web-context>auth</web-context>
+    <providers>
+        <provider>module:org.keycloak.examples.event-sysout</provider>
+    </providers>
+    ...
+----            
+
+==== Register a provider using file-system
+
+To register your provider simply copy the JAR including the ProviderFactory and Provider classes and the service configuration file to server's root `providers` directory. 
+
+You can also define multiple provider class-path if you want to create isolated class-loaders.
+To do this edit `standalone.xml`, `standalone-ha.xml`, or `domain.xml` and add more classpath entries to the providers element.
+For example: 
+
+[source,xml]
+----
+<providers>
+    <provider>classpath:provider1.jar;lib-v1.jar</provider>
+    <provider>classpath:provider2.jar;lib-v2.jar</provider>
+</providers>
+----
+
+The above example will create two separate class-loaders for providers.
+The classpath entries follow the same syntax as Java classpath, with ';' separating multiple-entries.
+Wildcard is also supported allowing loading all jars (files with .jar or .JAR extension) in a folder, for example: 
+
+[source,xml]
+----
+<providers>
+    <provider>classpath:/home/user/providers/*</provider>
+</providers>
+----            
+
+==== Configuring a provider
+
+You can pass configuration options to your provider by setting them in `standalone.xml`, `standalone-ha.xml`, or `domain.xml`.
+For example to set the max value for `my-event-listener` add: 
+
+[source.xml]
+----
+<spi name="eventsListener">
+    <provider name="my-event-listener" enabled="true">
+        <properties>
+            <property name="max" value="100"/>
+        </properties>
+    </provider>
+</spi>
+----            
+
+==== Disabling a provider
+
+You can disable a provider by setting the enabled attribute for the provider to false 
+in `standalone.xml`, `standalone-ha.xml`, or `domain.xml`.
+For example to disable the Infinispan user cache provider add: 
+
+[source,xml]
+----
+<spi name="userCache">
+    <provider name="infinispan" enabled="false"/>
+</spi>
+----
+
+=== Leveraging Java EE
+
+The can be packaged within any Java EE component so long as you set up the `META-INF/services`
+file correctly to point to your providers.  For example, if your provider needs to use third party libraries, you
+can package up your provider within an ear and store these third pary libraries in the ear's `lib/` directory.
+Also note that provider jars can make use of the `jboss-deployment-structure.xml` file that EJBs, WARS, and EARs
+can use in a JBoss/Wildfly environment.  See the JBoss/Wildfly documentation for more details on this file.  It
+allows you to pull in external dependencies among other fine grain actions.
+
+`ProviderFactory` implementations are required to be plain java objects.  But, we also currently support
+implementing provider classes as Stateful EJBs.  TThis is how you would do it:
+
+[source,java]
+----
+@Stateful
+@Local(EjbExampleUserStorageProvider.class)
+public class EjbExampleUserStorageProvider implements UserStorageProvider,
+        UserLookupProvider,
+        UserRegistrationProvider,
+        UserQueryProvider,
+        CredentialInputUpdater,
+        CredentialInputValidator,
+        OnUserCache
+{
+    @PersistenceContext
+    protected EntityManager em;
+
+    protected ComponentModel model;
+    protected KeycloakSession session;
+
+    public void setModel(ComponentModel model) {
+        this.model = model;
+    }
+
+    public void setSession(KeycloakSession session) {
+        this.session = session;
+    }
+
+
+    @Remove
+    @Override
+    public void close() {
+    }
+...
+}
+----
+
+You have to define the `@Local` annotation and specify your provider class there.  If you don't do this, EJB will
+not proxy the provider instance correctly and your provider won't work.
+
+You must put the `@Remove` annotation on the `close()` method of your provider.  If you don't, the stateful bean
+will never be cleaned up and you may eventually see error messages.
+
+Implementations of `ProviderFactory` are required to be plain java objects.  Your factory class would
+perform a JNDI lookup of the Stateful EJB in its create() method.
+
+[source,java]
+----
+public class EjbExampleUserStorageProviderFactory
+        implements UserStorageProviderFactory<EjbExampleUserStorageProvider> {
+
+    @Override
+    public EjbExampleUserStorageProvider create(KeycloakSession session, ComponentModel model) {
+        try {
+            InitialContext ctx = new InitialContext();
+            EjbExampleUserStorageProvider provider = (EjbExampleUserStorageProvider)ctx.lookup(
+                     "java:global/user-storage-jpa-example/" + EjbExampleUserStorageProvider.class.getSimpleName());
+            provider.setModel(model);
+            provider.setSession(session);
+            return provider;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+----
+
+=== Available SPIs
+
+Here's a list of the most important available SPIs and a brief description. For more details on each SPI refer to individual sections.
+If you want to see list of all available SPIs at runtime, you can check `Server Info` page in admin console as described in <<fake/../providers.adoc#_providers_admin_console,Admin Console>> section.
+
+
+|===
+|SPI|Description
+
+|Connections Infinispan|Loads and configures Infinispan connections. The default implementation can load connections from the Infinispan subsystem, or alternatively can be manually configured in standalone.xml
+|Connections Jpa|Loads and configures Jpa connections. The default implementation can load datasources from WildFly/EAP, or alternatively can be manually configured in standalone.xml
+|Connections Mongo|Loads and configures MongoDB connections. The default implementation is configured in standalone.xml
+|Email Sender|Sends email. The default implementation uses JavaMail
+|Email Template|Format email and uses Email Sender to send the email. The default implementation uses FreeMarker templates
+|Events Listener|Listen to user related events for example user login success and failures. Keycloak provides two implementations out of box. One that logs events to the server log and another that can send email notifications to users on certain events
+|Login Protocol|Provides protocols. Keycloak provides implementations of OpenID Connect and SAML 2.0
+|Realm|Provides realm and application meta-data. Keycloak provides implementations for Relational Databases and MongoDB
+|Realm Cache|Caches realm and application meta-data to improve performance. Default implementation uses Infinispan
+|Timer|Executes scheduled tasks. Keycloak provides a basic implementation based on java.util.Timer
+|User|Provides users and role-mappings. Keycloak provides implementations for Relational Databases and MongoDB
+|User Cache|Caches users to improve performance. Default implementation uses Infinispan
+|User Federation|Support syncing users from an external source. Keycloak provides implementations for LDAP and Active Directory
+|User Sessions|Provides users session information. Keycloak provides implementations for basic in-memory, Infinispan, Relational Databases and MongoDB
+|===
