@@ -30,6 +30,10 @@
       "name": "Server Administration",
       "link": "https://keycloak.gitbooks.io/keycloak-documentation/content/server_admin/index.html"
     },
+    "developerguide": {
+      "name": "Server Developer Guide",
+      "link": "https://keycloak.gitbooks.io/server-developer-guide/content/"
+    },
     "installguide": {
       "name": "Server Installation and Configuration",
       "link": "https://keycloak.gitbooks.io/keycloak-documentation/content/server_installation/index.html"
