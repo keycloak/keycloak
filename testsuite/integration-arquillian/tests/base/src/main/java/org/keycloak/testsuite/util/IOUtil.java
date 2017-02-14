@@ -158,6 +158,22 @@ public class IOUtil {
         node.setTextContent(node.getTextContent().replace(regex, replacement));
     }
 
+    public static void setDocElementAttributeValue(Document doc, String tagName, String attributeName, String value) {
+        NodeList nodes = doc.getElementsByTagName(tagName);
+        if (nodes.getLength() != 1) {
+            log.warn("Not able or ambiguous to find element: " + tagName);
+            return;
+        }
+
+        Element node = (Element) nodes.item(0);
+        if (node == null) {
+            log.warn("Not able to find element: " + tagName);
+            return;
+        }
+
+        node.setAttribute(attributeName, value);
+    }
+
     public static void removeElementsFromDoc(Document doc, String parentTag, String removeNode) {
         NodeList nodes = doc.getElementsByTagName(parentTag);
         if (nodes.getLength() != 1) {
