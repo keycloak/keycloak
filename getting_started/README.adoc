@@ -1,5 +1,5 @@
 
-= Getting Started Guide
+= Getting Started
 
 image:images/keycloak_logo.png[alt="Keycloak"]
 

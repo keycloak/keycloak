@@ -1,5 +1,5 @@
 
-= Server Administration Guide
+= Server Administration
 
 image:images/keycloak_logo.png[alt="Keycloak"]
 

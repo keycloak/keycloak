@@ -1,5 +1,5 @@
 
-= Server Installation and Configuration Guide
+= Server Installation and Configuration
 
 image:images/keycloak_logo.png[alt="Keycloak"]
 

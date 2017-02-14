@@ -1,105 +1,105 @@
 = {{book.title}}
 
- . link:topics/overview/overview.adoc[Overview]
+ .. link:authorization_services/topics/overview/overview.adoc[Overview]
 
-   .. link:topics/overview/architecture.adoc[Architecture]
+   ... link:authorization_services/topics/overview/architecture.adoc[Architecture]
 
-   .. link:topics/overview/terminology.adoc[Terminology]
+   ... link:authorization_services/topics/overview/terminology.adoc[Terminology]
 
- . link:topics/getting-started/overview.adoc[Getting Started]
+ .. link:authorization_services/topics/getting-started/overview.adoc[Getting Started]
 
-   .. link:topics/getting-started/hello-world/overview.adoc[Securing a Servlet Application]
+   ... link:authorization_services/topics/getting-started/hello-world/overview.adoc[Securing a Servlet Application]
 
-      ... link:topics/getting-started/hello-world/create-realm.adoc[Creating a Realm and a User]
+      .... link:authorization_services/topics/getting-started/hello-world/create-realm.adoc[Creating a Realm and a User]
 
-      ... link:topics/getting-started/hello-world/create-resource-server.adoc[Enabling Authorization Services]
+      .... link:authorization_services/topics/getting-started/hello-world/create-resource-server.adoc[Enabling Authorization Services]
 
-      ... link:topics/getting-started/hello-world/deploy.adoc[Build, Deploy, and Test Your Application]
+      .... link:authorization_services/topics/getting-started/hello-world/deploy.adoc[Build, Deploy, and Test Your Application]
 {% if book.community %}
-   .. link:topics/example/overview.adoc[Examples]
+   ... link:authorization_services/topics/example/overview.adoc[Examples]
 {% endif %}
 
- . link:topics/resource-server/overview.adoc[Managing Resource Servers]
+ .. link:authorization_services/topics/resource-server/overview.adoc[Managing Resource Servers]
 
-   .. link:topics/resource-server/create-client.adoc[Creating a Client Application]
+   ... link:authorization_services/topics/resource-server/create-client.adoc[Creating a Client Application]
 
-   .. link:topics/resource-server/enable-authorization.adoc[Enabling Authorization Services]
+   ... link:authorization_services/topics/resource-server/enable-authorization.adoc[Enabling Authorization Services]
 
-   .. link:topics/resource-server/default-config.adoc[Default Configuration]
+   ... link:authorization_services/topics/resource-server/default-config.adoc[Default Configuration]
 
-   .. link:topics/resource-server/import-config.adoc[Export and Import Authorization Configuration]
+   ... link:authorization_services/topics/resource-server/import-config.adoc[Export and Import Authorization Configuration]
 
- . link:topics/resource/overview.adoc[Managing Resources and Scopes]
+ .. link:authorization_services/topics/resource/overview.adoc[Managing Resources and Scopes]
 
-   .. link:topics/resource/view.adoc[Viewing Resources]
+   ... link:authorization_services/topics/resource/view.adoc[Viewing Resources]
 
-   .. link:topics/resource/create.adoc[Creating Resources]
+   ... link:authorization_services/topics/resource/create.adoc[Creating Resources]
 
- . link:topics/policy/overview.adoc[Managing Policies]
+ .. link:authorization_services/topics/policy/overview.adoc[Managing Policies]
 
-   .. link:topics/policy/user-policy.adoc[User-Based Policy]
+   ... link:authorization_services/topics/policy/user-policy.adoc[User-Based Policy]
 
-   .. link:topics/policy/role-policy.adoc[Role-Based Policy]
+   ... link:authorization_services/topics/policy/role-policy.adoc[Role-Based Policy]
 
-      ... link:topics/policy/role-policy-required-role.adoc[Defining a Role as Required]
+      .... link:authorization_services/topics/policy/role-policy-required-role.adoc[Defining a Role as Required]
 
-   .. link:topics/policy/js-policy.adoc[JavaScript-Based Policy]
+   ... link:authorization_services/topics/policy/js-policy.adoc[JavaScript-Based Policy]
 
-   .. link:topics/policy/drools-policy.adoc[Rule-Based Policy]
+   ... link:authorization_services/topics/policy/drools-policy.adoc[Rule-Based Policy]
 
-   .. link:topics/policy/time-policy.adoc[Time-Based Policy]
+   ... link:authorization_services/topics/policy/time-policy.adoc[Time-Based Policy]
 
-   .. link:topics/policy/aggregated-policy.adoc[Aggregated Policy]
+   ... link:authorization_services/topics/policy/aggregated-policy.adoc[Aggregated Policy]
 
-   .. link:topics/policy/logic.adoc[Positive and Negative Logic]
+   ... link:authorization_services/topics/policy/logic.adoc[Positive and Negative Logic]
 
-   .. link:topics/policy/evaluation-api.adoc[Policy Evaluation API]
+   ... link:authorization_services/topics/policy/evaluation-api.adoc[Policy Evaluation API]
 
- . link:topics/permission/overview.adoc[Managing Permissions]
+ .. link:authorization_services/topics/permission/overview.adoc[Managing Permissions]
 
-   .. link:topics/permission/create-resource.adoc[Creating Resource-Based Permissions]
+   ... link:authorization_services/topics/permission/create-resource.adoc[Creating Resource-Based Permissions]
 
-      ... link:topics/permission/typed-resource-permission.adoc[Typed Resource Permissions]
+      .... link:authorization_services/topics/permission/typed-resource-permission.adoc[Typed Resource Permissions]
 
-   .. link:topics/permission/create-scope.adoc[Creating Scope-Based Permissions]
+   ... link:authorization_services/topics/permission/create-scope.adoc[Creating Scope-Based Permissions]
 
-   .. link:topics/permission/decision-strategy.adoc[Policy Decision Strategies]
+   ... link:authorization_services/topics/permission/decision-strategy.adoc[Policy Decision Strategies]
 
- . link:topics/policy-evaluation-tool/overview.adoc[Evaluating and Testing Policies]
+ .. link:authorization_services/topics/policy-evaluation-tool/overview.adoc[Evaluating and Testing Policies]
 
- . link:topics/service/overview.adoc[Authorization Services]
+ .. link:authorization_services/topics/service/overview.adoc[Authorization Services]
 
-   .. link:topics/service/protection/protection-api.adoc[Protection API]
+   ... link:authorization_services/topics/service/protection/protection-api.adoc[Protection API]
 
-      ... link:topics/service/protection/whatis-obtain-pat.adoc[What is a PAT and How to Obtain It]
+      .... link:authorization_services/topics/service/protection/whatis-obtain-pat.adoc[What is a PAT and How to Obtain It]
 
-      ... link:topics/service/protection/resources-api-papi.adoc[Managing Resources]
+      .... link:authorization_services/topics/service/protection/resources-api-papi.adoc[Managing Resources]
 
-      ... link:topics/service/protection/permission-api-papi.adoc[Managing Permission Requests]
+      .... link:authorization_services/topics/service/protection/permission-api-papi.adoc[Managing Permission Requests]
 
-   .. link:topics/service/authorization/authorization-api.adoc[Authorization API]
+   ... link:authorization_services/topics/service/authorization/authorization-api.adoc[Authorization API]
 
-      ... link:topics/service/authorization/whatis-obtain-aat.adoc[What is an AAT and How to Obtain It]
+      .... link:authorization_services/topics/service/authorization/whatis-obtain-aat.adoc[What is an AAT and How to Obtain It]
 
-      ... link:topics/service/authorization/authorization-api-aapi.adoc[Requesting Authorization Data and Token]
+      .... link:authorization_services/topics/service/authorization/authorization-api-aapi.adoc[Requesting Authorization Data and Token]
 
-   .. link:topics/service/entitlement/entitlement-api.adoc[Entitlement API]
+   ... link:authorization_services/topics/service/entitlement/entitlement-api.adoc[Entitlement API]
 
-      ... link:topics/service/entitlement/entitlement-api-aapi.adoc[Requesting Entitlements]
+      .... link:authorization_services/topics/service/entitlement/entitlement-api-aapi.adoc[Requesting Entitlements]
 
-   .. link:topics/service/protection/token-introspection.adoc[Introspecting a Requesting Party Token]
+   ... link:authorization_services/topics/service/protection/token-introspection.adoc[Introspecting a Requesting Party Token]
 
-   .. link:topics/service/client-api.adoc[Authorization Client Java API]
+   ... link:authorization_services/topics/service/client-api.adoc[Authorization Client Java API]
 
- . link:topics/enforcer/overview.adoc[Policy Enforcers]
+ .. link:authorization_services/topics/enforcer/overview.adoc[Policy Enforcers]
 
-   .. link:topics/enforcer/keycloak-enforcement-filter.adoc[{{book.project.name}} Adapter Policy Enforcer]
+   ... link:authorization_services/topics/enforcer/keycloak-enforcement-filter.adoc[{{book.project.name}} Adapter Policy Enforcer]
 
-      ... link:topics/enforcer/keycloak-enforcement-bearer.adoc[Protecting a Stateless Service Using a Bearer Token]
+      .... link:authorization_services/topics/enforcer/keycloak-enforcement-bearer.adoc[Protecting a Stateless Service Using a Bearer Token]
 
-      ... link:topics/enforcer/authorization-context.adoc[Obtaining the Authorization Context]
+      .... link:authorization_services/topics/enforcer/authorization-context.adoc[Obtaining the Authorization Context]
 
-      ... link:topics/enforcer/js-adapter.adoc[JavaScript Integration]
+      .... link:authorization_services/topics/enforcer/js-adapter.adoc[JavaScript Integration]
 
-      ... link:topics/enforcer/https.adoc[Setting up TLS/HTTPS]
+      .... link:authorization_services/topics/enforcer/https.adoc[Setting up TLS/HTTPS]
 

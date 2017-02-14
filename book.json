@@ -1,0 +1,41 @@
+{
+  "gitbook": "2.x.x",
+  "structure": {
+    "readme": "README.adoc"
+  },
+  "plugins": [
+    "toggle-chapters",
+    "ungrey",
+    "splitter",
+    "ga"
+  ],
+  "pluginsConfig": {
+    "ga": {
+      "token": "UA-86203452-1"
+    }
+  },
+
+  "variables": {
+    "title": "Keycloak Documentation",
+    "project": {
+      "name": "Keycloak",
+      "version": "3.0.0.CR1-SNAPSHOT",
+      "versionMvn": "3.0.0.CR1-SNAPSHOT"
+    },
+    "community": true,
+    "product": false,
+    "images": "keycloak-images",
+
+    "adminguide": {
+      "name": "Server Administration",
+      "link": "https://keycloak.gitbooks.io/keycloak-documentation/content/server_admin/index.html"
+    },
+    "installguide": {
+      "name": "Server Installation and Configuration",
+      "link": "https://keycloak.gitbooks.io/keycloak-documentation/content/server_installation/index.html"
+    },
+
+    "appServer": "WildFly 10",
+    "quickstartRepo": "https://github.com/keycloak/keycloak-quickstarts"
+  }
+}

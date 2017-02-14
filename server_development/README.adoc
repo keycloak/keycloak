@@ -1,5 +1,5 @@
 
-= Server Developer Guide
+= Server Developer
 
 image:images/keycloak_logo.png[alt="Keycloak"]
 

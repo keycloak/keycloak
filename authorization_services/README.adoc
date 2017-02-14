@@ -1,5 +1,5 @@
 
-= Authorization Services Guide
+= Authorization Services
 
 image:images/keycloak_logo.png[alt="Keycloak"]
 
