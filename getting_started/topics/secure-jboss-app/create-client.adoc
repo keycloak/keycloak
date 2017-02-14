@@ -19,7 +19,7 @@ image:../../{{book.images}}/clients.png[]
 .Add Client
 image:../../{{book.images}}/add-client.png[]
 
-. After clicking the `Save` button your client application entry will be created.  You now have to go back to the {{book.appServer}}
+. After clicking the `Save` button your client application entry will be created.  You now have to go back to the {{book.appserver.name}}
 instance that the application is deployed on and configure it so that this app is secured by {{book.project.name}}.  You can obtain
 a template for the configuration you need by going to the `Installation` tab in the client entry in the {{book.project.name}} Admin Console.
 +

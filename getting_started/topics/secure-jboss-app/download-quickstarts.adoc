@@ -9,7 +9,7 @@ installed on your machine and available in your PATH before you can continue:
 * Git
 
 You can obtain the code by cloning the repository at {{book.quickstartRepo}}. Use the branch matching the version of Red Hat Single Sign-On in use. Follow these steps to download the code, build it,
-and deploy it. Make sure your {{book.appServer}} application server is started before you run these steps.
+and deploy it. Make sure your {{book.appserver.name}} application server is started before you run these steps.
 
 .Clone Project
 [source, subs="attributes"]
