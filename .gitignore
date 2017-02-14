@@ -1,5 +1,6 @@
-node_modules
 _book
+node_modules
+
 
 # Intellij
 ###################
@@ -47,4 +48,8 @@ catalog.xml
 # Maven #
 #########
 target
+
+# Test build
+############
+build/
 

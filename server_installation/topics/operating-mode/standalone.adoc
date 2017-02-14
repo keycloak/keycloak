@@ -1,0 +1,44 @@
+
+[[_standalone-mode]]
+=== Standalone Mode
+
+Standalone operating mode is only useful when you want to run one, and only one {{book.project.name}} server instance.
+It is not usable for clustered deployments and all caches are non-distributed and local-only.  It is not recommended that
+you use standalone mode in production as you will have a single point of failure.  If your standalone mode server goes down,
+users will not be able to log in.  This mode is really only useful to test drive and play with the features of {{book.project.name}}
+
+==== Standalone Boot Script
+
+When running the server in standalone mode, there is a specific script you need to run to boot the server depending on your
+operating system.  These scripts live in the _bin/_ directory of the server distribution.
+
+.Standalone Boot Scripts
+image:../../{{book.images}}/standalone-boot-files.png[]
+
+To boot the server:
+
+.Linux/Unix
+[source]
+----
+$ .../bin/standalone.sh
+----
+
+.Windows
+[source]
+----
+> ...\bin\standalone.bat
+----
+
+==== Standalone Configuration
+
+The bulk of this guide walks you through how to configure infrastructure level aspects of {{book.project.name}}.  These
+aspects are configured in a configuration file that is specific to the application server that {{book.project.name}} is a
+derivative of.  In the standalone operation mode, this file lives in _.../standalone/configuration/standalone.xml_.  This file
+is also used to configure non-infrastructure level things that are specific to {{book.project.name}} components.
+
+.Standalone Config File
+image:../../{{book.images}}/standalone-config-file.png[]
+
+WARNING: Any changes you make to this file while the server is running will not take effect and may even be overwritten
+      by the server.  Instead use the the command line scripting or the web console of {{book.appserver.name}}.  See
+      the link:{{book.appserver.admindoc.link}}[_{{book.appserver.admindoc.name}}_] for more information.

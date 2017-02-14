@@ -1,0 +1,30 @@
+
+=== Distribution Directory Structure
+
+This chapter walks you through the directory structure of the server distribution.
+
+.distribution directory structure
+image:../../{{book.images}}/files.png[alt="distribution"]
+
+Let's examine the purpose of some of the directories:
+
+_bin/_::
+  This contains various scripts to either boot the server or perform some other management action on the server.
+
+_domain/_::
+  This contains configuration files and working directory when running {{book.project.name}} in <<fake/../../operating-mode/domain.adoc#_domain-mode,domain mode>>.
+
+_modules/_::
+  These are all the Java libraries used by the server.
+
+{% if book.community %}
+_providers/_::
+  If you are writing extensions to keycloak, you can put your extensions here.  See the link:{{book.developerguide.link}}[{{book.developerguide.name}}] for more information on this.
+{% endif %}
+
+_standalone/_::
+  This contains configuration files and working directory when running {{book.project.name}} in <<fake/../../operating-mode/standalone.adoc#_standalone-mode,standalone mode>>.
+
+_themes/_::
+  This directory contains all the html, style sheets, javascript files, and images used to display any UI screen displayed by the server.
+  Here you can modify an existing theme or create your own.  See the link:{{book.developerguide.link}}[{{book.developerguide.name}}] for more information on this.
