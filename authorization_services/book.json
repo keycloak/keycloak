@@ -1,0 +1,44 @@
+{
+  "gitbook": "2.x.x",
+  "structure": {
+    "readme": "README.adoc"
+  },
+  "plugins": [
+    "toggle-chapters",
+    "ungrey",
+    "splitter"
+  ],
+  "variables": {
+    "title": "Authorization Services Guide",
+    "community": true,
+    "product": false,
+    "images": "keycloak-images",
+    "appServer": "WildFly 10",
+    "quickstartRepo": "https://github.com/redhat-developer/redhat-sso-quickstarts",
+    "project": {
+      "name": "Keycloak",
+      "version": "SNAPSHOT",
+      "module": "Authorization Services",
+      "doc_base_url": "https://keycloak.gitbooks.io/",
+      "doc_info_version_url": ""
+    },
+    "external_link": {
+      "keycloakjsadapter": {
+        "name": "JavaScript OpenID Connect Adapter",
+        "link": "/securing-client-applications-guide/content/topics/oidc/javascript-adapter.html"
+      },
+      "keycloakgettingstarted": {
+        "name": "Getting Started",
+        "link": "/getting-started-tutorials/content/"
+      },
+      "keycloakinstallingandboot": {
+        "name": "Installing and Boot",
+        "link": "/getting-started-tutorials/content/topics/first-boot.html"
+      },
+      "keycloakinstallclientadapter": {
+        "name": "Installing the Client Adapter",
+        "link": "/getting-started-tutorials/content/topics/secure-jboss-app/install-client-adapter.html"
+      }
+    }
+  }
+}

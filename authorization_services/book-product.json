@@ -1,0 +1,44 @@
+{
+  "gitbook": "2.x.x",
+  "structure": {
+    "readme": "README.adoc"
+  },
+  "plugins": [
+    "toggle-chapters",
+    "ungrey",
+    "splitter"
+  ],
+  "variables": {
+    "title": "Authorization Services Guide",
+    "community": false,
+    "product": true,
+    "images": "rhsso-images",
+    "appServer": "JBoss EAP 7",
+    "quickstartRepo": "https://github.com/redhat-developer/redhat-sso-quickstarts",
+    "project": {
+      "name": "Red Hat Single Sign-On",
+      "version": "7.1.0",
+      "module": "Authorization Services",
+      "doc_base_url": "https://access.redhat.com/documentation/en/red-hat-single-sign-on/",
+      "doc_info_version_url": "7.1-Beta"
+    },
+    "external_link": {
+      "keycloakjsadapter": {
+        "name": "JavaScript OpenID Connect Adapter",
+        "link": "/single/securing-applications-and-services-guide#javascript_adapter"
+      },
+      "keycloakgettingstarted": {
+        "name": "Getting Started",
+        "link": "/paged/getting-started-guide/"
+      },
+      "keycloakinstallingandboot": {
+        "name": "Installing and Boot",
+        "link": "/single/getting-started-guide/#install-boot"
+      },
+      "keycloakinstallclientadapter": {
+        "name": "Installing the Client Adapter",
+        "link": "/single/getting-started-guide/#installing_the_client_adapter"
+      }
+    }
+  }
+}

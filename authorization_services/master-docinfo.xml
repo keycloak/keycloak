@@ -1,0 +1,12 @@
+<productname>{book_project_name}</productname>
+<productnumber>{book_project_doc_info_version_url}</productnumber>
+<subtitle>For Use with {book_project_name} {book_project_doc_info_version_url}</subtitle>
+<title>{book_title}</title>
+<release>{doc_info_version_url}</release>
+<abstract>
+	    <para>This guide consists of information for authorization services for {book_project_name} {book_project_doc_info_version_url}</para>
+    </abstract>
+<authorgroup>
+    <orgname>Red Hat Customer Content Services</orgname>
+</authorgroup>
+<xi:include href="Common_Content/Legal_Notice.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
