@@ -1,0 +1,34 @@
+{
+  "gitbook": "2.x.x",
+  "structure": {
+    "readme": "README.adoc"
+  },
+  "plugins": [
+    "toggle-chapters",
+    "ungrey",
+    "splitter"
+  ],
+  "variables": {
+    "title": "Getting Started Guide",
+    "project": {
+      "name": "Keycloak",
+      "version": "SNAPSHOT"
+    },
+    "community": true,
+    "product": false,
+    "images": "keycloak-images",
+
+    "installguide": {
+      "name": "Server Installation and Configuration Guide",
+      "link": "https://keycloak.gitbooks.io/server-installation-and-configuration/content/"
+
+    },
+    "adminguide": {
+      "name": "Server Administration Guide",
+      "link": "https://keycloak.gitbooks.io/server-adminstration-guide/content/"
+    },
+    "clientadapter": "RH-SSO-{{book.project.version}}-eap7-adapter.zip",
+    "appServer": "WildFly 10",
+    "quickstartRepo": "https://github.com/redhat-developer/redhat-sso-quickstarts"
+  }
+}

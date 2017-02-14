@@ -1,0 +1,46 @@
+
+=== Installing the Client Adapter
+
+Download the {{book.appServer}} distribution and unzip
+it into a directory on your machine.
+
+{% if book.community %}
+Next download the keycloak-wildfly-adapter-dist-{{book.project.version}}.zip distribution.
+{% endif %}
+
+{% if book.product %}
+Next download the RH-SSO-{{book.project.version}}-eap7-adapter.zip distribution.
+{% endif %}
+
+Unzip this file into the root directory of your {{book.appServer}} distribution.
+
+Next perform the following actions:
+
+.Linux/Unix
+[source]
+----
+$ cd bin
+$ ./jboss-cli.sh --file=adapter-install-offline.cli
+----
+
+.Windows
+[source]
+----
+> cd bin
+> jboss-cli.bat --file=adapter-install-offline.cli
+----
+
+This script will make the appropriate edits to the _.../standalone/configuration/standalone.xml_ file of your app
+server distribution.  Finally, boot the application server.
+
+.Linux/Unix
+[source]
+----
+$ .../bin/standalone.sh
+----
+
+.Windows
+[source]
+----
+> ...\bin\standalone.bat
+----

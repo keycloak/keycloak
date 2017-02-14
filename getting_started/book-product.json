@@ -1,0 +1,36 @@
+{
+  "gitbook": "2.x.x",
+  "structure": {
+    "readme": "README.adoc"
+  },
+  "plugins": [
+    "toggle-chapters",
+    "ungrey",
+    "splitter"
+  ],
+  "variables": {
+    "title": "Getting Started Guide",
+    "project": {
+      "name": "Red Hat Single Sign-On",
+      "version": "7.1.0",
+      "doc_base_url": "https://access.redhat.com/documentation/en/red-hat-single-sign-on/",
+      "doc_info_version_url": "7.1-Beta"
+    },
+    "community": false,
+    "product": true,
+    "images": "rhsso-images",
+
+    "installguide": {
+      "name": "Server Installation and Configuration Guide",
+      "link": "/single/server-installation-and-configuration-guide/"
+
+    },
+    "adminguide": {
+      "name": "Server Administration Guide",
+      "link": "/single/server-administration-guide/"
+    },
+    "clientadapter": "RH-SSO-{{book.project.version}}-eap7-adapter.zip",
+    "appServer": "JBoss EAP 7",
+    "quickstartRepo": "https://github.com/redhat-developer/redhat-sso-quickstarts"
+  }
+}

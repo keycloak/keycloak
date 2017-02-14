@@ -1,0 +1,4 @@
+
+= Moved
+
+Moved to https://github.com/keycloak/keycloak-documentation
