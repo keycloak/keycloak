@@ -24,6 +24,7 @@ import org.apache.catalina.LifecycleListener;
 import org.apache.catalina.authenticator.FormAuthenticator;
 import org.apache.catalina.connector.Request;
 import org.apache.catalina.connector.Response;
+import org.jboss.logging.Logger;
 import org.keycloak.adapters.saml.config.parsers.DeploymentBuilder;
 import org.keycloak.adapters.saml.config.parsers.ResourceLoader;
 import org.keycloak.adapters.spi.AuthChallenge;
@@ -45,8 +46,6 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Keycloak authentication valve
@@ -59,7 +58,7 @@ public abstract class AbstractSamlAuthenticatorValve extends FormAuthenticator i
 
     public static final String TOKEN_STORE_NOTE = "TOKEN_STORE_NOTE";
 
-	private final static Logger log = Logger.getLogger(""+AbstractSamlAuthenticatorValve.class);
+	private final static Logger log = Logger.getLogger(AbstractSamlAuthenticatorValve.class);
 	protected CatalinaUserSessionManagement userSessionManagement = new CatalinaUserSessionManagement();
     protected SamlDeploymentContext deploymentContext;
     protected SessionIdMapper mapper = new InMemorySessionIdMapper();
@@ -103,14 +102,14 @@ public abstract class AbstractSamlAuthenticatorValve extends FormAuthenticator i
                 //deploymentContext = new SamlDeploymentContext(configResolver);
                 //log.log(Level.INFO, "Using {0} to resolve Keycloak configuration on a per-request basis.", configResolverClass);
             } catch (Exception ex) {
-                log.log(Level.FINE, "The specified resolver {0} could NOT be loaded. Keycloak is unconfigured and will deny all requests. Reason: {1}", new Object[]{configResolverClass, ex.getMessage()});
+                log.errorv("The specified resolver {0} could NOT be loaded. Keycloak is unconfigured and will deny all requests. Reason: {1}", configResolverClass, ex.getMessage());
                 //deploymentContext = new AdapterDeploymentContext(new KeycloakDeployment());
             }
         } else {
             InputStream is = getConfigInputStream(context);
             final SamlDeployment deployment;
             if (is == null) {
-                log.info("No adapter configuration. Keycloak is unconfigured and will deny all requests.");
+                log.error("No adapter configuration. Keycloak is unconfigured and will deny all requests.");
                 deployment = new DefaultSamlDeployment();
             } else {
                 try {
@@ -126,7 +125,7 @@ public abstract class AbstractSamlAuthenticatorValve extends FormAuthenticator i
                 }
             }
             deploymentContext = new SamlDeploymentContext(deployment);
-            log.fine("Keycloak is using a per-deployment configuration.");
+            log.debug("Keycloak is using a per-deployment configuration.");
         }
 
         context.getServletContext().setAttribute(SamlDeploymentContext.class.getName(), deploymentContext);
@@ -140,8 +139,7 @@ public abstract class AbstractSamlAuthenticatorValve extends FormAuthenticator i
         if (xml == null) {
             return null;
         }
-        log.finest("**** using " + AdapterConstants.AUTH_DATA_PARAM_NAME);
-        log.finest(xml);
+        log.trace("**** using " + AdapterConstants.AUTH_DATA_PARAM_NAME);
         return new ByteArrayInputStream(xml.getBytes());
     }
 
@@ -150,13 +148,13 @@ public abstract class AbstractSamlAuthenticatorValve extends FormAuthenticator i
         if (is == null) {
             String path = context.getServletContext().getInitParameter("keycloak.config.file");
             if (path == null) {
-                log.fine("**** using /WEB-INF/keycloak-saml.xml");
+                log.trace("**** using /WEB-INF/keycloak-saml.xml");
                 is = context.getServletContext().getResourceAsStream("/WEB-INF/keycloak-saml.xml");
             } else {
                 try {
                     is = new FileInputStream(path);
                 } catch (FileNotFoundException e) {
-                    log.log(Level.SEVERE, "NOT FOUND {0}", path);
+                    log.errorv("NOT FOUND {0}", path);
                     throw new RuntimeException(e);
                 }
             }
@@ -166,7 +164,7 @@ public abstract class AbstractSamlAuthenticatorValve extends FormAuthenticator i
 
     @Override
     public void invoke(Request request, Response response) throws IOException, ServletException {
-        log.fine("*********************** SAML ************");
+        log.trace("*********************** SAML ************");
         CatalinaHttpFacade facade = new CatalinaHttpFacade(response, request);
         SamlDeployment deployment = deploymentContext.resolveDeployment(facade);
         if (request.getRequestURI().substring(request.getContextPath().length()).endsWith("/saml")) {
@@ -208,11 +206,11 @@ public abstract class AbstractSamlAuthenticatorValve extends FormAuthenticator i
     }
 
     protected boolean authenticateInternal(Request request, HttpServletResponse response, Object loginConfig) throws IOException {
-        log.fine("authenticateInternal");
+        log.trace("authenticateInternal");
         CatalinaHttpFacade facade = new CatalinaHttpFacade(response, request);
         SamlDeployment deployment = deploymentContext.resolveDeployment(facade);
         if (deployment == null || !deployment.isConfigured()) {
-            log.fine("deployment not configured");
+            log.trace("deployment not configured");
             return false;
         }
         SamlSessionStore tokenStore = getSessionStore(request, facade, deployment);
@@ -225,7 +223,7 @@ public abstract class AbstractSamlAuthenticatorValve extends FormAuthenticator i
     protected boolean executeAuthenticator(Request request, HttpServletResponse response, CatalinaHttpFacade facade, SamlDeployment deployment, SamlAuthenticator authenticator) {
         AuthOutcome outcome = authenticator.authenticate();
         if (outcome == AuthOutcome.AUTHENTICATED) {
-            log.fine("AUTHENTICATED");
+            log.trace("AUTHENTICATED");
             if (facade.isEnded()) {
                 return false;
             }
@@ -237,13 +235,13 @@ public abstract class AbstractSamlAuthenticatorValve extends FormAuthenticator i
                 forwardToLogoutPage(request, response, deployment);
 
             }
-            log.fine("Logging OUT");
+            log.trace("Logging OUT");
             return false;
         }
 
         AuthChallenge challenge = authenticator.getChallenge();
         if (challenge != null) {
-            log.fine("challenge");
+            log.trace("challenge");
             challenge.challenge(facade);
         }
         return false;
