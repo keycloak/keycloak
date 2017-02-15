@@ -1,21 +1,21 @@
 
 === Downloading, Building, and Deploying Application Code
 
-The project and code for the application you are going to secure is available in link:{{book.quickstartRepo}}[Red Hat Developers GitHub].  You will need the following
+The project and code for the application you are going to secure is available in link:{{book.quickstartRepo.link}}[{{book.quickstartRepo.name}}].  You will need the following
 installed on your machine and available in your PATH before you can continue:
 
 * Java JDK 8
 * Apache Maven 3.1.1 or higher
 * Git
 
-You can obtain the code by cloning the repository at {{book.quickstartRepo}}. Use the branch matching the version of Red Hat Single Sign-On in use. Follow these steps to download the code, build it,
+You can obtain the code by cloning the repository at {{book.quickstartRepo.link}}. Use the branch matching the version of Red Hat Single Sign-On in use. Follow these steps to download the code, build it,
 and deploy it. Make sure your {{book.appserver.name}} application server is started before you run these steps.
 
 .Clone Project
 [source, subs="attributes"]
 ----
-$ git clone {{book.quickstartRepo}}
-$ cd redhat-sso-quickstarts/app-profile-jee-vanilla
+$ git clone {{book.quickstartRepo.link}}
+$ cd {{book.quickstartRepo.dir}}/app-profile-jee-vanilla
 $ mvn clean wildfly:deploy
 ----
 

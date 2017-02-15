@@ -3,25 +3,25 @@
 
 Now that the *app-authz-vanilla* resource server (or client) is properly configured and authorization services are enabled, it can be deployed to the server.
 
-The project and code for the application you are going to deploy is available in link:{{book.quickstartRepo}}[Red Hat Developers GitHub].  You will need the following
+The project and code for the application you are going to deploy is available in link:{{book.quickstartRepo.link}}[{{book.quickstartRepo.name}}].  You will need the following
 installed on your machine and available in your PATH before you can continue:
 
 * Java JDK 8
 * Apache Maven 3.1.1 or higher
 * Git
 
-You can obtain the code by cloning the repository at {{book.quickstartRepo}}. Use the branch matching the version of Red Hat Single Sign-On in use. Follow these steps to download the code.
+You can obtain the code by cloning the repository at {{book.quickstartRepo.link}}. Use the branch matching the version of Red Hat Single Sign-On in use. Follow these steps to download the code.
 
 .Clone Project
 [source, subs="attributes"]
 ----
-$ git clone {{book.quickstartRepo}}
+$ git clone {{book.quickstartRepo.link}}
 ----
 
 The application we are about to build and deploy is located at
 
 ----
-$ cd redhat-sso-quickstarts/app-authz-jee-vanilla
+$ cd {{book.quickstartRepo.dir}}/app-authz-jee-vanilla
 ----
 
 ==== Obtaining the Adapter Configuration
