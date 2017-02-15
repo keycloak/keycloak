@@ -113,6 +113,11 @@
                 <artifactId>keycloak-spring-security-adapter</artifactId>
                 <version>${version.keycloak}</version>
             </dependency>
+            <dependency>
+               <groupId>org.keycloak</groupId>
+               <artifactId>keycloak-default-spring-boot-starter</artifactId>
+               <version>${version.keycloak}</version>
+           </dependency>
         </dependencies>
     </dependencyManagement>
 

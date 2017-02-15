@@ -192,6 +192,7 @@
         <module>authz</module>
         <module>examples</module>
         <module>testsuite</module>
+        <module>misc</module>
     </modules>
 
     <dependencyManagement>
