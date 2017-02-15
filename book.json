@@ -28,27 +28,27 @@
 
     "adminguide": {
       "name": "Server Administration",
-      "link": "https://keycloak.gitbooks.io/keycloak-documentation/content/server_admin/index.html"
+      "link": "https://keycloak.gitbooks.io/documentation/content/server_admin/index.html"
     },
     "developerguide": {
-      "name": "Server Developer Guide",
-      "link": "https://keycloak.gitbooks.io/server-developer-guide/content/"
+      "name": "Server Development",
+      "link": "https://keycloak.gitbooks.io/documentation/content/server_development/index.html"
     },
     "installguide": {
       "name": "Server Installation and Configuration",
-      "link": "https://keycloak.gitbooks.io/keycloak-documentation/content/server_installation/index.html"
+      "link": "https://keycloak.gitbooks.io/documentation/content/server_installation/index.html"
     },
     "adapterguide": {
       "name": "Securing Applications and Services Guide",
-      "link": "https://keycloak.gitbooks.io/securing-client-applications-guide/content/"
+      "link": "https://keycloak.gitbooks.io/documentation/content/securing_apps/index.html"
     },
     "gettingstarted": {
       "name": "Getting Started Tutorial",
-      "link": "https://keycloak.gitbooks.io/securing-client-applications-guide/content/"
+      "link": "https://keycloak.gitbooks.io/documentation/content/getting_started/index.html"
     },
     "apidocs": {
       "name": "API Documentation",
-      "link": "http://keycloak.org/docs"
+      "link": "http://www.keycloak.org/documentation.html"
     },
 
     "quickstartRepo": "https://github.com/keycloak/keycloak-quickstarts",
