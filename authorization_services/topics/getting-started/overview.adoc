@@ -2,7 +2,7 @@
 == Getting Started
 
 Before you can participate in this tutorial, you need to complete the installation of {{book.project.name}} and create the
-initial admin user as shown in the link:{{book.project.doc_base_url}}{{book.project.doc_info_version_url}}{{book.external_link.keycloakinstallingandboot.link}}[{{book.external_link.keycloakinstallingandboot.name}}] tutorial.
+initial admin user as shown in the link:{{book.gettingstarted.link}}[{{book.gettingstarted.name}}] tutorial.
 There is one caveat to this.  You have to run a separate {{book.appServer}} instance on the same machine as the
 {{book.project.name}} server.  This separate instance will run your Java Servlet application.  Because of this you will
 have to run the {{book.project.name}} under a different port so that there are no port conflicts when running on the
@@ -23,7 +23,7 @@ $ ${KEYCLOAK_SERVER_DIR}/bin/standalone.sh -Djboss.socket.binding.port-offset=10
 > ${KEYCLOAK_SERVER_DIR}\bin\standalone.bat -Djboss.socket.binding.port-offset=100
 ----
 
-For more details about how to install and configure a {{book.appServer}}, please follow the steps on the link:{{book.project.doc_base_url}}{{book.project.doc_info_version_url}}{{book.external_link.keycloakinstallclientadapter.link}}[{{book.external_link.keycloakinstallclientadapter.name}}] tutorial.
+For more details about how to install and configure a {{book.appServer}}, please follow the steps on the link:{{book.adapterguide.link}}[{{book.adapterguide.name}}] tutorial.
 
 After installing and booting both servers you should be able to access {{book.project.name}} Admin Console at http://localhost:8180/auth/admin/ and also the {{book.appServer}} instance at
 http://localhost:8080.

@@ -248,7 +248,7 @@ We then load the `properties` field with the username and password combinations 
 
 The `Config.Scope` parameter is factory configuration that can be set up
 within `standalone.xml`, `standalone-ha.xml`, or `domain.xml`.
-For more information on where the `standalone.xml`, `standalone-ha.xml`, or `domain.xml` file resides see the link:{{book.project.doc_base_url}}{{book.project.doc_info_version_url}}{{book.installguide.link}}[{{book.installguide.name}}].
+For more information on where the `standalone.xml`, `standalone-ha.xml`, or `domain.xml` file resides see the link:{{book.installguide.link}}[{{book.installguide.name}}].
 
 For example, by adding the following to `standalone.xml`:
 

@@ -42,6 +42,10 @@
       "name": "Securing Applications and Services Guide",
       "link": "https://keycloak.gitbooks.io/securing-client-applications-guide/content/"
     },
+    "gettingstarted": {
+      "name": "Getting Started Tutorial",
+      "link": "https://keycloak.gitbooks.io/securing-client-applications-guide/content/"
+    },
     "apidocs": {
       "name": "API Documentation",
       "link": "http://keycloak.org/docs"
