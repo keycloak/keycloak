@@ -55,12 +55,7 @@ if (result == []) of /subsystem=keycloak-server/:read-children-names(child-type=
   echo
 end-if
 
-# Find if we are using jpa or mongo
-if (result == mongo) of /subsystem=keycloak-server/spi=realm/:read-attribute(name=default-provider)
-  set persistenceProvider=mongo
-else
-  set persistenceProvider=jpa
-end-if
+set persistenceProvider=jpa
 
 # Migrate from 2.1.0 to 2.2.0
 if (outcome == failed) of /extension=org.jboss.as.deployment-scanner/:read-resource

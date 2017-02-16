@@ -20,23 +20,22 @@ The changes you will likely make are when you need to add a new SPI, change an e
 All elements in an SPI declaration are optional, but a full SPI declaration
   looks like this:
 ````xml
-<spi name="dblock">
-     <default-provider>mongo</default-provider>
-     <provider name="jpa" enabled="true">
+<spi name="example">
+     <default-provider>myprovider</default-provider>
+     <provider name="myprovider" enabled="true">
          <properties>
-             <property name="lockWaitTimeout" value="800"/>
+             <property name="key" value="value"/>
          </properties>
      </provider>
-     <provider name="mongo" enabled="true">
+     <provider name="mypotherrovider" enabled="true">
          <properties>
-             <property name="lockRecheckTime" value="2"/>
-             <property name="lockWaitTimeout" value="600"/>
+             <property name="key" value="value2"/>
          </properties>
      </provider>
 </spi>
 ````
-Here we have two providers defined for the SPI `dblock`.  The 
-`default-provider` is listed as `mongo`.  However it is up to the SPI to decide how it will 
+Here we have two providers defined for the SPI `example`.  The 
+`default-provider` is listed as `myprovider`.  However it is up to the SPI to decide how it will 
 treat this setting.  Some SPIs allow more than one provider and some do not.  So
 `default-provider` can help the SPI to choose.
 
