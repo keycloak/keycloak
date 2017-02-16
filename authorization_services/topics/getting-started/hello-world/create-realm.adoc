@@ -18,7 +18,8 @@ image:../../../{{book.images}}/getting-started/hello-world/create-realm.png[alt=
 
 . On the right side of the empty user list, click *Add User*.
 
-. Complete the fields as shown in the screenshot below to create a new user with the username of *alice* and then click *Save*.
+. To create a new user with the username of *alice*, complete the username, email, first name, and last name fields.
+Click the *User Enabled* switch to *On*, and then click *Save*.
 +
 .Add User
 image:../../../{{book.images}}/getting-started/hello-world/create-user.png[alt="Add User"]

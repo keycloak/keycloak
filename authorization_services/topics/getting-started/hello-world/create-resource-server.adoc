@@ -5,7 +5,7 @@ You can enable authorization services in an existing client application configur
 
 To create a new client, complete the following steps:
 
-. Click *Clients* to start creating a new client application and fill in the fields as shown in the screenshot below:
+. Click *Clients* to start creating a new client application and fill in the *Client ID*, *Client Protocol*, and *Root URL* fields. 
 +
 .Create Client Application
 image:../../../{{book.images}}/getting-started/hello-world/create-client.png[alt="Create Client Application"]
@@ -16,7 +16,7 @@ image:../../../{{book.images}}/getting-started/hello-world/create-client.png[alt
 image:../../../{{book.images}}/getting-started/hello-world/enable-authz.png[alt="Client Details"]
 
 . On the Client Details page, click the *Authorization Enabled* switch to *ON*, and then click *Save*.
-A new *Authorization* tab is displayed for the client. 
+A new *Authorization* tab is displayed for the client.
 
 . Click the *Authorization* tab and an Authorization Settings page similar to the following is displayed:
 +
