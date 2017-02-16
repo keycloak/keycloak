@@ -22,8 +22,3 @@ depends on your <<fake/../../operating-mode.adoc#_operating-mode, operating mode
     </provider>
 </spi>
 ----
-
-{% if book.community %}
-If you are using Mongo DB replace `jpa` with `mongo`.
-{% endif %}
-

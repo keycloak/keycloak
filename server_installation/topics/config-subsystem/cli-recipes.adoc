@@ -39,22 +39,21 @@ For domain mode, this would mean something like:
 ----
 **/spi=mySPI/:write-attribute(name=default-provider,value=myProvider)
 ----
-==== Configure the dblock SPI with both jpa and mango providers
+==== Configure the dblock SPI
 [source]
 ----
 **/spi=dblock/:add(default-provider=jpa)
 **/spi=dblock/provider=jpa/:add(properties={lockWaitTimeout => "900"},enabled=true)
-**/spi=dblock/provider=mongo/:add(properties={lockRecheckTime => "2",lockWaitTimeout => "800"},enabled=true)
 ----
 ==== Add or change a single property value for a provider
 [source]
 ----
-**/spi=dblock/provider=mongo/:map-put(name=properties,key=lockRecheckTime,value=3)
+**/spi=dblock/provider=jpa/:map-put(name=properties,key=lockWaitTimeout,value=3)
 ----
 ==== Remove a single property from a provider
 [source]
 ----
-**/spi=dblock/provider=mongo/:map-remove(name=properties,key=lockRecheckTime)
+**/spi=dblock/provider=jpa/:map-remove(name=properties,key=lockRecheckTime)
 ----
 ==== Set values on a provider property of type `List`
 [source]

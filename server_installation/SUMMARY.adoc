@@ -26,9 +26,6 @@
 ... link:server_installation/topics/database/datasource.adoc[Datasource Setup]
 ... link:server_installation/topics/database/hibernate.adoc[Database Configuration]
 ... link:server_installation/topics/database/unicode-considerations.adoc[Unicode considerations]
-{% if book.community %}
-.. link:server_installation/topics/mongo.adoc[Mongo DB Setup]
-{% endif %}
 .. link:server_installation/topics/network.adoc[Network Setup]
 ... link:server_installation/topics/network/bind-address.adoc[Bind Addresses]
 ... link:server_installation/topics/network/ports.adoc[Socket Port Bindings]
