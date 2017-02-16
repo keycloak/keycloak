@@ -227,6 +227,27 @@ public class IOUtil {
         currentElement.appendChild(node);
     }
 
+    public static void removeElementFromDoc(Document doc, String path) {
+        String[] pathSegments = path.split("/");
+
+        Element currentElement = (Element) doc.getElementsByTagName(pathSegments[0]).item(0);
+        if (currentElement == null) {
+            log.warn("Not able to find element: " + pathSegments[0] + " in document");
+            return;
+        }
+
+        for (int i = 1; i < pathSegments.length; i++) {
+            currentElement = (Element) currentElement.getElementsByTagName(pathSegments[i]).item(0);
+
+            if (currentElement == null) {
+                log.warn("Not able to find element: " + pathSegments[i] + " in " + pathSegments[i - 1]);
+                return;
+            }
+        }
+
+        currentElement.getParentNode().removeChild(currentElement);
+    }
+
     public static void execCommand(String command, File dir) throws IOException, InterruptedException {
         Process process = Runtime.getRuntime().exec(command, null, dir);
         if (process.waitFor(10, TimeUnit.SECONDS)) {
