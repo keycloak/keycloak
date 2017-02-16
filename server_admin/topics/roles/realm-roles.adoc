@@ -17,3 +17,6 @@ The localized value is then configured within property files in your theme.  See
 for more information on localization.  If a client requires user _consent_, this description string will be displayed on the
 consent page for the user.
 
+If the client has to explicitly request for a realm role, set `Scope Param Required` to true. The role then has to be specified via the `scope` parameter when requesting a token. Multiple realm roles are separated by space:
+
+`scope=admin user`
