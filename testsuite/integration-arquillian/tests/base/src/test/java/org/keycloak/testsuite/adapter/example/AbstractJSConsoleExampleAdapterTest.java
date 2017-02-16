@@ -454,6 +454,18 @@ public abstract class AbstractJSConsoleExampleAdapterTest extends AbstractExampl
                 .contains("location: " + authServerContextRootPage.toString() + "/auth/admin/realms/" + EXAMPLE + "/users/" + users.get(0).getId());
     }
 
+    @Test
+    public void reentrancyCallbackTest() {
+        logInAndInit("standard");
+
+        jsConsoleTestAppPage.callReentrancyCallback();
+
+        waitUntilElement(jsConsoleTestAppPage.getEventsElement()).text().contains("First callback");
+        waitUntilElement(jsConsoleTestAppPage.getEventsElement()).text().contains("Second callback");
+
+        waitUntilElement(jsConsoleTestAppPage.getEventsElement()).text().not().contains("Auth Logout");
+    }
+
     private void setImplicitFlowForClient() {
         ClientResource clientResource = ApiUtil.findClientResourceByClientId(testRealmResource(), "js-console");
         ClientRepresentation client = clientResource.toRepresentation();
