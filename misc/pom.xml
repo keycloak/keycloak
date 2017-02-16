@@ -14,5 +14,6 @@
     <packaging>pom</packaging>
     <modules>
         <module>spring-boot-starter</module>
+        <module>keycloak-test-helper</module>
     </modules>
 </project>
