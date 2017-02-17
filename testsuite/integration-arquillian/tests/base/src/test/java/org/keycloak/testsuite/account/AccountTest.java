@@ -40,6 +40,7 @@ import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.drone.Different;
 import org.keycloak.testsuite.pages.AccountApplicationsPage;
+import org.keycloak.testsuite.pages.AccountFederatedIdentityPage;
 import org.keycloak.testsuite.pages.AccountLogPage;
 import org.keycloak.testsuite.pages.AccountPasswordPage;
 import org.keycloak.testsuite.pages.AccountSessionsPage;
@@ -95,6 +96,12 @@ public class AccountTest extends AbstractTestRealmKeycloakTest {
                                               .alias("myoidc")
                                               .displayName("MyOIDC")
                                               .build());
+        testRealm.addIdentityProvider(IdentityProviderBuilder.create()
+                                              .providerId("oidc")
+                                              .alias("myhiddenoidc")
+                                              .displayName("MyHiddenOIDC")
+                                              .hideOnLoginPage()
+                                              .build());
 
         RealmBuilder.edit(testRealm)
                     .user(user2);
@@ -138,6 +145,9 @@ public class AccountTest extends AbstractTestRealmKeycloakTest {
 
     @Page
     protected AccountApplicationsPage applicationsPage;
+    
+    @Page
+    protected AccountFederatedIdentityPage federatedIdentityPage;
 
     @Page
     protected ErrorPage errorPage;
@@ -918,7 +928,13 @@ public class AccountTest extends AbstractTestRealmKeycloakTest {
         Assert.assertEquals("GitHub", loginPage.findSocialButton("github").getText());
         Assert.assertEquals("mysaml", loginPage.findSocialButton("mysaml").getText());
         Assert.assertEquals("MyOIDC", loginPage.findSocialButton("myoidc").getText());
-
+    }
+    
+    @Test
+    public void testIdentityProviderHiddenOnLoginPageIsVisbleInAccount(){
+        federatedIdentityPage.open();
+        loginPage.login("test-user@localhost", "password");
+        Assert.assertNotNull(federatedIdentityPage.findAddProviderButton("myhiddenoidc"));
     }
 
     @Test

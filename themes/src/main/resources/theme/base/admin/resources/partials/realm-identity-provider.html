@@ -33,7 +33,7 @@
                     <caption class="hidden">{{:: 'table-of-identity-providers' | translate}}</caption>
                     <thead>
                     <tr>
-                        <th colspan="6" class="kc-table-actions">
+                        <th colspan="7" class="kc-table-actions">
                             <div class="dropdown pull-right" data-ng-show="access.manageIdentityProviders">
                                 <select class="form-control" ng-model="provider"
                                         ng-options="p.name group by p.groupName for p in allProviders track by p.id"
@@ -47,6 +47,7 @@
                         <th>{{:: 'name' | translate}}</th>
                         <th>{{:: 'provider' | translate}}</th>
                         <th>{{:: 'enabled' | translate}}</th>
+                        <th>{{:: 'hidden' | translate}}</th>
                         <th width="15%">{{:: 'gui-order' | translate}}</th>
                         <th colspan="2">{{:: 'actions' | translate}}</th>
                     </tr>
@@ -62,6 +63,7 @@
                         </td>
                         <td>{{identityProvider.providerId}}</td>
                         <td translate="{{identityProvider.enabled}}"></td>
+                        <td translate="{{identityProvider.config.hideOnLoginPage == 'true'}}"></td>
                         <td>{{identityProvider.config.guiOrder}}</td>
                         <td class="kc-action-cell" kc-open="/realms/{{realm.realm}}/identity-provider-settings/provider/{{identityProvider.providerId}}/{{identityProvider.alias}}">{{:: 'edit' | translate}}</td>
                         <td class="kc-action-cell" data-ng-show="access.manageIdentityProviders" data-ng-click="removeIdentityProvider(identityProvider)">{{:: 'delete' | translate}}</td>
