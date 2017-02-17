@@ -49,6 +49,7 @@ The `Keycloak` class provides a central point for configuration
 and integration with your application.  The simplest creation
 involves no arguments.
 
+    var Keycloak = require('keycloak-connect');
     var keycloak = new Keycloak();
 
 By default, this will locate a file named `keycloak.json` alongside
