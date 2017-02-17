@@ -51,5 +51,13 @@
                 <exclude name="**/subsystem-config.xml"/>
             </fileset>
         </copy>
+        <copy todir="target/test-apps/cors" overwrite="true">
+            <fileset dir="../cors">
+                <exclude name="**/target/**"/>
+                <exclude name="**/*.iml"/>
+                <exclude name="**/*.unconfigured"/>
+                <exclude name="**/subsystem-config.xml"/>
+            </fileset>
+        </copy>
     </target>
 </project>
