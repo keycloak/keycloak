@@ -24,6 +24,7 @@ import org.apache.catalina.realm.GenericPrincipal;
 import org.jboss.logging.Logger;
 import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.adapters.spi.SessionIdMapper;
+import org.keycloak.adapters.spi.SessionIdMapperUpdater;
 import org.keycloak.adapters.tomcat.CatalinaUserSessionManagement;
 import org.keycloak.adapters.tomcat.GenericPrincipalFactory;
 import org.keycloak.common.util.KeycloakUriBuilder;
@@ -45,17 +46,20 @@ public class CatalinaSamlSessionStore implements SamlSessionStore {
     private final CatalinaUserSessionManagement sessionManagement;
     protected final GenericPrincipalFactory principalFactory;
     private final SessionIdMapper idMapper;
+    private final SessionIdMapperUpdater idMapperUpdater;
     protected final Request request;
     protected final AbstractSamlAuthenticatorValve valve;
     protected final HttpFacade facade;
     protected final SamlDeployment deployment;
 
     public CatalinaSamlSessionStore(CatalinaUserSessionManagement sessionManagement, GenericPrincipalFactory principalFactory,
-                                    SessionIdMapper idMapper, Request request, AbstractSamlAuthenticatorValve valve, HttpFacade facade,
+                                    SessionIdMapper idMapper, SessionIdMapperUpdater idMapperUpdater,
+                                    Request request, AbstractSamlAuthenticatorValve valve, HttpFacade facade,
                                     SamlDeployment deployment) {
         this.sessionManagement = sessionManagement;
         this.principalFactory = principalFactory;
         this.idMapper = idMapper;
+        this.idMapperUpdater = idMapperUpdater;
         this.request = request;
         this.valve = valve;
         this.facade = facade;
@@ -95,7 +99,7 @@ public class CatalinaSamlSessionStore implements SamlSessionStore {
             if (samlSession != null) {
                 if (samlSession.getSessionIndex() != null) {
                     ids.add(session.getId());
-                    idMapper.removeSession(session.getId());
+                    idMapperUpdater.removeSession(idMapper, session.getId());
                 }
                 session.removeAttribute(SamlSession.class.getName());
             }
@@ -114,7 +118,7 @@ public class CatalinaSamlSessionStore implements SamlSessionStore {
             ids.addAll(sessions);
             logoutSessionIds(ids);
             for (String id : ids) {
-                idMapper.removeSession(id);
+                idMapperUpdater.removeSession(idMapper, id);
             }
         }
 
@@ -128,7 +132,7 @@ public class CatalinaSamlSessionStore implements SamlSessionStore {
              String sessionId = idMapper.getSessionFromSSO(id);
              if (sessionId != null) {
                  sessionIds.add(sessionId);
-                 idMapper.removeSession(sessionId);
+                 idMapperUpdater.removeSession(idMapper, sessionId);
              }
 
         }
@@ -144,7 +148,6 @@ public class CatalinaSamlSessionStore implements SamlSessionStore {
     @Override
     public boolean isLoggedIn() {
         Session session = request.getSessionInternal(false);
-        if (session == null) return false;
         if (session == null) {
             log.debug("session was null, returning null");
             return false;
@@ -196,7 +199,7 @@ public class CatalinaSamlSessionStore implements SamlSessionStore {
         request.setUserPrincipal(principal);
         request.setAuthType("KEYCLOAK-SAML");
         String newId = changeSessionId(session);
-        idMapper.map(account.getSessionIndex(), account.getPrincipal().getSamlSubject(), newId);
+        idMapperUpdater.map(idMapper, account.getSessionIndex(), account.getPrincipal().getSamlSubject(), newId);
 
     }
 
