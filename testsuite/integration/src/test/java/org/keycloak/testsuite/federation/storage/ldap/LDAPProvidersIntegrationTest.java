@@ -19,9 +19,7 @@ package org.keycloak.testsuite.federation.storage.ldap;
 
 import org.jboss.logging.Logger;
 import org.junit.Assert;
-import org.junit.Assume;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.FixMethodOrder;
 import org.junit.Rule;
@@ -31,7 +29,6 @@ import org.junit.rules.TestRule;
 import org.junit.runners.MethodSorters;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.Keycloak;
-import org.keycloak.common.Profile;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.credential.CredentialModel;
@@ -55,6 +52,8 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.storage.ldap.mappers.FullNameLDAPStorageMapper;
 import org.keycloak.storage.ldap.mappers.FullNameLDAPStorageMapperFactory;
+import org.keycloak.storage.ldap.mappers.HardcodedLDAPAttributeMapper;
+import org.keycloak.storage.ldap.mappers.HardcodedLDAPAttributeMapperFactory;
 import org.keycloak.storage.ldap.mappers.HardcodedLDAPRoleStorageMapper;
 import org.keycloak.storage.ldap.mappers.HardcodedLDAPRoleStorageMapperFactory;
 import org.keycloak.storage.ldap.mappers.LDAPStorageMapper;
@@ -688,6 +687,79 @@ public class LDAPProvidersIntegrationTest {
             keycloakRule.stopSession(session, true);
         }
     }
+
+
+    @Test
+    public void testHardcodedAttributeMapperTest() throws Exception {
+        // Create hardcoded mapper for "description"
+        KeycloakSession session = keycloakRule.startSession();
+        ComponentModel hardcodedMapperModel = null;
+
+        try {
+            RealmModel appRealm = new RealmManager(session).getRealmByName("test");
+
+            hardcodedMapperModel = KeycloakModelUtils.createComponentModel("hardcodedAttr-description", ldapModel.getId(), HardcodedLDAPAttributeMapperFactory.PROVIDER_ID, LDAPStorageMapper.class.getName(),
+                    HardcodedLDAPAttributeMapper.LDAP_ATTRIBUTE_NAME, "description",
+                    HardcodedLDAPAttributeMapper.LDAP_ATTRIBUTE_VALUE, "some-${RANDOM}");
+            appRealm.addComponentModel(hardcodedMapperModel);
+        } finally {
+            keycloakRule.stopSession(session, true);
+        }
+
+        // Register new user
+        loginPage.open();
+        loginPage.clickRegister();
+        registerPage.assertCurrent();
+
+        registerPage.register("firstName", "lastName", "email34@check.cz", "register123", "Password1", "Password1");
+        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+
+
+
+        session = keycloakRule.startSession();
+        ComponentModel userAttrMapper = null;
+        try {
+            RealmModel appRealm = new RealmManager(session).getRealmByName("test");
+
+            // See that user don't yet have any description
+            UserModel user = LDAPTestUtils.assertUserImported(session.users(), appRealm, "register123", "firstName", "lastName", "email34@check.cz", null);
+            Assert.assertNull(user.getFirstAttribute("desc"));
+            Assert.assertNull(user.getFirstAttribute("description"));
+
+            // Remove hardcoded mapper for "description" and create regular userAttribute mapper for description
+            appRealm.removeComponent(hardcodedMapperModel);
+
+            userAttrMapper = LDAPTestUtils.addUserAttributeMapper(appRealm, ldapModel, "desc-attribute-mapper", "desc", "description");
+            userAttrMapper.put(UserAttributeLDAPStorageMapper.ALWAYS_READ_VALUE_FROM_LDAP, "true");
+            appRealm.updateComponent(userAttrMapper);
+        } finally {
+            keycloakRule.stopSession(session, true);
+        }
+
+
+
+        // Check that user has description on him now
+        session = keycloakRule.startSession();
+        try {
+            RealmModel appRealm = new RealmManager(session).getRealmByName("test");
+
+            session.userCache().evict(appRealm, session.users().getUserByUsername("register123", appRealm));
+
+            // See that user don't yet have any description
+            UserModel user = session.users().getUserByUsername("register123", appRealm);
+            Assert.assertNull(user.getFirstAttribute("description"));
+            Assert.assertNotNull(user.getFirstAttribute("desc"));
+            String desc = user.getFirstAttribute("desc");
+            Assert.assertTrue(desc.startsWith("some-"));
+            Assert.assertEquals(35, desc.length());
+
+            // Remove mapper for "description"
+            appRealm.removeComponent(userAttrMapper);
+        } finally {
+            keycloakRule.stopSession(session, true);
+        }
+    }
+
 
     @Test
     public void testHardcodedRoleMapper() {
