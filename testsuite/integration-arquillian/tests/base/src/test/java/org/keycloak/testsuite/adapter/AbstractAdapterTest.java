@@ -70,7 +70,7 @@ public abstract class AbstractAdapterTest extends AbstractAuthTest {
                 modifyClientUrls(tr, "^(/.*)", appServerContextRootPage.toString() + "$1");
                 modifyClientWebOrigins(tr, "8080", System.getProperty("app.server.http.port", null));
                 modifySamlMasterURLs(tr, "8080", System.getProperty("auth.server.http.port", null));
-                modifySAMLClientsAttributes(tr, "8080", System.getProperty("app.server.http.port", "8280"));
+                modifySAMLClientsAttributes(tr, "http://localhost:8080",  appServerContextRootPage.toString());
                 modifyClientJWKSUrl(tr, "^(/.*)", appServerContextRootPage.toString() + "$1");
             }
             if ("true".equals(System.getProperty("auth.server.ssl.required"))) {

@@ -73,7 +73,7 @@
         <app.server.home>${containers.home}/app-server-${app.server}</app.server.home>
         <adapter.config.bundled>true</adapter.config.bundled>
         <examples.basedir>${main.basedir}/examples</examples.basedir>
-
+        <exclude.test>-</exclude.test>
     </properties>
         
     <modules>
@@ -362,6 +362,9 @@
                         <plugin>
                             <artifactId>maven-surefire-plugin</artifactId>
                             <configuration>
+                                <excludes>
+                                    <exclude>${exclude.test}</exclude>
+                                </excludes>
                                 <systemPropertyVariables>
                                     <examples.home>${examples.home}</examples.home>
                                     <examples.version.suffix>${project.version}</examples.version.suffix>
