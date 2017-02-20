@@ -28,6 +28,7 @@ import org.jboss.logging.Logger.Level;
 import org.jboss.shrinkwrap.api.Archive;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
+import org.keycloak.adapters.servlet.KeycloakOIDCFilter;
 import org.keycloak.representations.adapters.config.AdapterConfig;
 import org.keycloak.testsuite.arquillian.annotation.UseServletFilter;
 import org.keycloak.testsuite.util.IOUtil;
@@ -205,6 +206,28 @@ public class DeploymentArchiveProcessor implements ApplicationArchiveProcessor {
 
             filter.appendChild(filterName);
             filter.appendChild(filterClass);
+            appendChildInDocument(webXmlDoc, "web-app", filter);
+
+            filter.appendChild(filterName);
+            filter.appendChild(filterClass);
+
+            // Limitation that all deployments of annotated class use same skipPattern. Refactor if something more flexible is needed (would require more tricky web.xml parsing though...)
+            String skipPattern = testClass.getAnnotation(UseServletFilter.class).skipPattern();
+            if (skipPattern != null && !skipPattern.isEmpty()) {
+                Element initParam = webXmlDoc.createElement("init-param");
+
+                Element paramName = webXmlDoc.createElement("param-name");
+                paramName.setTextContent(KeycloakOIDCFilter.SKIP_PATTERN_PARAM);
+
+                Element paramValue = webXmlDoc.createElement("param-value");
+                paramValue.setTextContent(skipPattern);
+
+                initParam.appendChild(paramName);
+                initParam.appendChild(paramValue);
+
+                filter.appendChild(initParam);
+            }
+
             appendChildInDocument(webXmlDoc, "web-app", filter);
 
             Element filterMapping = webXmlDoc.createElement("filter-mapping");

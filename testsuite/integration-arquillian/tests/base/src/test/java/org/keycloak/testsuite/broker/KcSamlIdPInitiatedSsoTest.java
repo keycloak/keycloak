@@ -34,6 +34,7 @@ import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Test;
+import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.support.ui.ExpectedCondition;
 import org.openqa.selenium.support.ui.WebDriverWait;
@@ -84,7 +85,7 @@ public class KcSamlIdPInitiatedSsoTest extends AbstractKeycloakTest {
     }
 
     @Test
-    public void testProviderIdpInitiatedLogin() {
+    public void testProviderIdpInitiatedLogin() throws Exception {
         driver.navigate().to(getSamlIdpInitiatedUrl(REALM_PROV_NAME, "samlbroker"));
 
         waitForPage("log in to");
@@ -114,7 +115,7 @@ public class KcSamlIdPInitiatedSsoTest extends AbstractKeycloakTest {
         boolean isUserFound = users.stream().anyMatch(user -> user.getUsername().equals("mytest") && user.getEmail().equals("test@localhost"));
         Assert.assertTrue("There must be user " + "mytest" + " in realm " + REALM_CONS_NAME, isUserFound);
 
-        Assert.assertThat(driver.findElement(org.openqa.selenium.By.tagName("form")).getAttribute("action"), containsString("http://localhost:18080/sales-post-enc/"));
+        Assert.assertThat(driver.findElement(By.tagName("a")).getAttribute("id"), containsString("account"));
     }
 
     private String getSamlIdpInitiatedUrl(String realmName, String samlIdpInitiatedSsoUrlName) {

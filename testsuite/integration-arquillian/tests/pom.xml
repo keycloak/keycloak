@@ -70,8 +70,10 @@
         <migration.import.properties/>
         <examples.home>${project.build.directory}/examples</examples.home>
 
-        <browser>phantomjs</browser>
+        <browser>htmlUnit</browser>
+        <htmlUnitBrowserVersion>chrome</htmlUnitBrowserVersion>
         <firefox_binary>/usr/bin/firefox</firefox_binary>
+        <phantomjs.cli.args>--ignore-ssl-errors=true --web-security=false</phantomjs.cli.args>
 
         <frontend.console.output>true</frontend.console.output>
         <backends.console.output>true</backends.console.output>
@@ -181,7 +183,9 @@
                             <test.intermittent>${test.intermittent}</test.intermittent>
 
                             <browser>${browser}</browser>
+                            <htmlUnitBrowserVersion>${htmlUnitBrowserVersion}</htmlUnitBrowserVersion>
                             <firefox_binary>${firefox_binary}</firefox_binary>
+                            <phantomjs.cli.args>${phantomjs.cli.args}</phantomjs.cli.args>
 
                             <project.version>${project.version}</project.version>
                             <migration.project.version>${migration.project.version}</migration.project.version>

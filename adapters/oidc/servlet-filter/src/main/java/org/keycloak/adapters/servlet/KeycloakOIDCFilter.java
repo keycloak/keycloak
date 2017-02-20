@@ -53,6 +53,9 @@ import java.util.regex.Pattern;
  * @version $Revision: 1 $
  */
 public class KeycloakOIDCFilter implements Filter {
+
+    public static final String SKIP_PATTERN_PARAM = "keycloak.config.skipPattern";
+
     protected AdapterDeploymentContext deploymentContext;
     protected SessionIdMapper idMapper = new InMemorySessionIdMapper();
     protected NodesRegistrationManagement nodesRegistrationManagement;
@@ -63,7 +66,7 @@ public class KeycloakOIDCFilter implements Filter {
     @Override
     public void init(final FilterConfig filterConfig) throws ServletException {
 
-        String skipPatternDefinition = filterConfig.getInitParameter("keycloak.config.skipPattern");
+        String skipPatternDefinition = filterConfig.getInitParameter(SKIP_PATTERN_PARAM);
         if (skipPatternDefinition != null) {
             skipPattern = Pattern.compile(skipPatternDefinition, Pattern.DOTALL);
         }
