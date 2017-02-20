@@ -107,6 +107,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * Base resource for managing users
  *
+ * @resource Users
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */

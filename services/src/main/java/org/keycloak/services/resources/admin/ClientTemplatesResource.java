@@ -46,6 +46,7 @@ import java.util.List;
 /**
  * Base resource class for managing a realm's client templates.
  *
+ * @resource Client Templates
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */

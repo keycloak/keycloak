@@ -73,6 +73,7 @@ import java.util.Map;
 import static javax.ws.rs.core.Response.Status.NOT_FOUND;
 
 /**
+ * @resource Authentication Management
  * @author Bill Burke
  */
 public class AuthenticationManagementResource {

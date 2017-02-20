@@ -54,6 +54,7 @@ import java.util.List;
 /**
  * Top level resource for Admin REST API
  *
+ * @resource Realms Admin
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */

@@ -42,6 +42,7 @@ import java.util.Map;
 /**
  * Base resource class for the admin REST api of one realm
  *
+ * @resource Attack Detection
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */

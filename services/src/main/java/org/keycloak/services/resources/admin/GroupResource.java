@@ -51,6 +51,7 @@ import java.util.Set;
 import org.keycloak.services.ErrorResponse;
 
 /**
+ * @resource Groups
  * @author Bill Burke
  */
 public class GroupResource {

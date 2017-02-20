@@ -65,6 +65,7 @@ import java.util.Properties;
 import java.util.stream.Collectors;
 
 /**
+ * @resource Component
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */

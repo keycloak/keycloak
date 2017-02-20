@@ -58,6 +58,7 @@ import java.util.Properties;
 /**
  * Base resource class for managing a realm's clients.
  *
+ * @resource Clients
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
