@@ -141,13 +141,14 @@ public class LDAPTestUtils {
         return (LDAPStorageProvider)keycloakSession.getProvider(UserStorageProvider.class, ldapFedModel);
     }
 
-    public static void assertUserImported(UserProvider userProvider, RealmModel realm, String username, String expectedFirstName, String expectedLastName, String expectedEmail, String expectedPostalCode) {
+    public static UserModel assertUserImported(UserProvider userProvider, RealmModel realm, String username, String expectedFirstName, String expectedLastName, String expectedEmail, String expectedPostalCode) {
         UserModel user = userProvider.getUserByUsername(username, realm);
         Assert.assertNotNull(user);
         Assert.assertEquals(expectedFirstName, user.getFirstName());
         Assert.assertEquals(expectedLastName, user.getLastName());
         Assert.assertEquals(expectedEmail, user.getEmail());
         Assert.assertEquals(expectedPostalCode, user.getFirstAttribute("postal_code"));
+        return user;
     }
 
     public static void assertLoaded(UserModel user, String username, String expectedFirstName, String expectedLastName, String expectedEmail, String expectedPostalCode) {

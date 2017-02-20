@@ -487,7 +487,13 @@ public class LDAPOperationManager {
                 while (all.hasMore()) {
                     Attribute attribute = all.next();
 
-                    logger.tracef("  %s = %s", attribute.getID(), attribute.get());
+                    String attrName = attribute.getID().toUpperCase();
+                    Object attrVal = attribute.get();
+                    if (attrName.contains("PASSWORD") || attrName.contains("UNICODEPWD")) {
+                        attrVal = "********************";
+                    }
+
+                    logger.tracef("  %s = %s", attribute.getID(), attrVal);
                 }
 
                 logger.tracef("]");
