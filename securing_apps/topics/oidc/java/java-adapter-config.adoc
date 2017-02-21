@@ -17,6 +17,7 @@ This is what one might look like:
   "enable-cors" : true,
   "cors-max-age" : 1000,
   "cors-allowed-methods" : "POST, PUT, DELETE, GET",
+  "cors-exposed-headers" : "WWW-Authenticate, My-custom-exposed-Header",
   "bearer-only" : false,
   "enable-basic-auth" : false,
   "expose-token" : true,
@@ -99,6 +100,12 @@ cors-allowed-methods::
 
 cors-allowed-headers::
   If CORS is enabled, this sets the value of the `Access-Control-Allow-Headers` header.
+  This should be a comma-separated string.
+  This is _OPTIONAL_.
+  If not set, this header is not returned in CORS responses.
+
+cors-exposed-headers::
+  If CORS is enabled, this sets the value of the `Access-Control-Expose-Headers` header.
   This should be a comma-separated string.
   This is _OPTIONAL_.
   If not set, this header is not returned in CORS responses.
