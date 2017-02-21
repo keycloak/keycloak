@@ -109,7 +109,7 @@ public class KeycloakAuthenticationProcessingFilter extends AbstractAuthenticati
      *
      */
     public KeycloakAuthenticationProcessingFilter(AuthenticationManager authenticationManager, RequestMatcher
-            requiresAuthenticationRequestMatcher) {
+                requiresAuthenticationRequestMatcher) {
         super(requiresAuthenticationRequestMatcher);
         Assert.notNull(authenticationManager, "authenticationManager cannot be null");
         this.authenticationManager = authenticationManager;
@@ -132,6 +132,10 @@ public class KeycloakAuthenticationProcessingFilter extends AbstractAuthenticati
 
         HttpFacade facade = new SimpleHttpFacade(request, response);
         KeycloakDeployment deployment = adapterDeploymentContext.resolveDeployment(facade);
+
+        // using Spring authenticationFailureHandler
+        deployment.setContainerErrorPage(false);
+
         AdapterTokenStore tokenStore = adapterTokenStoreFactory.createAdapterTokenStore(deployment, request);
         RequestAuthenticator authenticator
                 = new SpringSecurityRequestAuthenticator(facade, request, deployment, tokenStore, -1);
@@ -184,7 +188,7 @@ public class KeycloakAuthenticationProcessingFilter extends AbstractAuthenticati
 
     @Override
     protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain,
-                                            Authentication authResult) throws IOException, ServletException {
+            Authentication authResult) throws IOException, ServletException {
 
         if (!(this.isBearerTokenRequest(request) || this.isBasicAuthRequest(request))) {
             super.successfulAuthentication(request, response, chain, authResult);
@@ -212,7 +216,7 @@ public class KeycloakAuthenticationProcessingFilter extends AbstractAuthenticati
 
     @Override
     protected void unsuccessfulAuthentication(HttpServletRequest request, HttpServletResponse response,
-                                              AuthenticationException failed) throws IOException, ServletException {
+            AuthenticationException failed) throws IOException, ServletException {
 
         if (this.isBearerTokenRequest(request)) {
             SecurityContextHolder.clearContext();
