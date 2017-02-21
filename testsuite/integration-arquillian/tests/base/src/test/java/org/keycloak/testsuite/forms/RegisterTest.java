@@ -130,6 +130,9 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
         assertEquals("test-user@localhost", user.getEmail());
         assertEquals("firstName", user.getFirstName());
         assertEquals("lastName", user.getLastName());
+
+        testRealm().users().get(userId).remove();
+        setDuplicateEmailsAllowed(false);
     }
 
     @Test

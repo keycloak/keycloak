@@ -47,7 +47,7 @@ public class ClientRedirectTest extends AbstractTestRealmKeycloakTest {
      *
      * @throws Exception
      */
-    //@Test
+    @Test
     public void testClientRedirectEndpoint() throws Exception {
         oauth.doLogin("test-user@localhost", "password");
 

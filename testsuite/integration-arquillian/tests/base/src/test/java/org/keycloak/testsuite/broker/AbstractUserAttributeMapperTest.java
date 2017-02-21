@@ -49,12 +49,13 @@ public abstract class AbstractUserAttributeMapperTest extends AbstractBaseBroker
 
         RealmResource realm = adminClient.realm(bc.consumerRealmName());
         final IdentityProviderRepresentation idp = bc.setUpIdentityProvider(suiteContext);
-        realm.identityProviders().create(idp);
+        Response resp = realm.identityProviders().create(idp);
+        resp.close();
 
         IdentityProviderResource idpResource = realm.identityProviders().get(idp.getAlias());
         for (IdentityProviderMapperRepresentation mapper : createIdentityProviderMappers()) {
             mapper.setIdentityProviderAlias(bc.getIDPAlias());
-            Response resp = idpResource.addMapper(mapper);
+            resp = idpResource.addMapper(mapper);
             resp.close();
         }
     }
@@ -67,7 +68,8 @@ public abstract class AbstractUserAttributeMapperTest extends AbstractBaseBroker
             for (ClientRepresentation client : clients) {
                 log.debug("adding client " + client.getName() + " to realm " + bc.providerRealmName());
 
-                providerRealm.clients().create(client);
+                Response resp = providerRealm.clients().create(client);
+                resp.close();
             }
         }
 
@@ -77,7 +79,8 @@ public abstract class AbstractUserAttributeMapperTest extends AbstractBaseBroker
             for (ClientRepresentation client : clients) {
                 log.debug("adding client " + client.getName() + " to realm " + bc.consumerRealmName());
 
-                consumerRealm.clients().create(client);
+                Response resp = consumerRealm.clients().create(client);
+                resp.close();
             }
         }
     }

@@ -191,6 +191,13 @@ public class ProfileTest extends AbstractTestRealmKeycloakTest {
         assertEquals("newemail@localhost", profile.getEmail());
         assertEquals("NewFirst", profile.getFirstName());
         assertEquals("NewLast", profile.getLastName());
+
+        // Revert
+        user.setFirstName("First");
+        user.setLastName("Last");
+        user.setEmail("test-user@localhost");
+        doUpdateProfile(token, null, JsonSerialization.writeValueAsString(user));
+        assertEquals(200, response.getStatusLine().getStatusCode());
     }
 
     @Test

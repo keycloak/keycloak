@@ -75,7 +75,7 @@ public class InstallationTest extends AbstractClientTest {
     }
 
     private String samlUrl() {
-        return authServerUrl() + "/realms/master/protocol/saml";
+        return authServerUrl() + "/realms/test/protocol/saml";
     }
 
     @Test
@@ -111,7 +111,7 @@ public class InstallationTest extends AbstractClientTest {
     }
 
     private void assertOidcInstallationConfig(String config) {
-        assertThat(config, containsString("master"));
+        assertThat(config, containsString("test"));
         assertThat(config, not(containsString(ApiUtil.findActiveKey(testRealmResource()).getPublicKey())));
         assertThat(config, containsString(authServerUrl()));
     }

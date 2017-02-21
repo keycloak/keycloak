@@ -14,9 +14,12 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import javax.ws.rs.NotFoundException;
+import javax.ws.rs.core.Response;
+
 import org.apache.commons.io.FileUtils;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
+import org.junit.After;
 import org.junit.Assert;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -101,6 +104,22 @@ public class UserStorageTest extends AbstractAuthTest {
 
     }
 
+    @After
+    public void removeTestUser() throws URISyntaxException, IOException {
+        testingClient.server().run(session -> {
+            RealmModel realm = session.realms().getRealmByName("test");
+            if (realm == null) {
+                return;
+            }
+
+            UserModel user = session.users().getUserByUsername("thor", realm);
+            if (user != null) {
+                session.userLocalStorage().removeUser(realm, user);
+                session.userCache().clear();
+            }
+        });
+    }
+
     protected ComponentRepresentation newPropProviderRW() {
         ComponentRepresentation propProviderRW = new ComponentRepresentation();
         propProviderRW.setName("user-props");
@@ -114,7 +133,11 @@ public class UserStorageTest extends AbstractAuthTest {
     }
 
     protected String addComponent(ComponentRepresentation component) {
-        return ApiUtil.getCreatedId(testRealmResource().components().add(component));
+        Response resp = testRealmResource().components().add(component);
+        resp.close();
+        String id = ApiUtil.getCreatedId(resp);
+        getCleanup().addComponentId(id);
+        return id;
     }
 
     private void loginSuccessAndLogout(String username, String password) {
@@ -547,6 +570,9 @@ public class UserStorageTest extends AbstractAuthTest {
             UserMapStorage.realmRemovals.set(0);
         });
 
+        // Re-create realm
+        RealmRepresentation repOrig = testContext.getTestRealmReps().get(0);
+        adminClient.realms().create(repOrig);
     }
 
     @Test

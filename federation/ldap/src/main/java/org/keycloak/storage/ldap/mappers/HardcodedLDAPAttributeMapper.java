@@ -99,6 +99,10 @@ public class HardcodedLDAPAttributeMapper extends AbstractLDAPStorageMapper {
 
     @Override
     public UserModel proxy(LDAPObject ldapUser, UserModel delegate, RealmModel realm) {
+        // Don't update attribute in LDAP later. It's supposed to be written just at registration time
+        String ldapAttrName = mapperModel.get(LDAP_ATTRIBUTE_NAME);
+        ldapUser.addReadOnlyAttributeName(ldapAttrName);
+
         return delegate;
     }
 

@@ -207,6 +207,8 @@ public class IdentityProviderTest extends AbstractAdminTest {
         Assert.assertNotNull(ApiUtil.getCreatedId(response));
         response.close();
 
+        getCleanup().addIdentityProviderAlias(idpRep.getAlias());
+
         String secret = idpRep.getConfig() != null ? idpRep.getConfig().get("clientSecret") : null;
         idpRep = StripSecretsUtils.strip(idpRep);
 

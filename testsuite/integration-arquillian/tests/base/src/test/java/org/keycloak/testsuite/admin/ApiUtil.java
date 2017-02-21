@@ -35,7 +35,6 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.Response.StatusType;
 import java.net.URI;
-import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -172,6 +171,13 @@ public class ApiUtil {
         log.info("assigning roles " + Arrays.toString(roles) + " to user: \""
                 + userResource.toRepresentation().getUsername() + "\" in realm: \"" + realmName + "\"");
         userResource.roles().realmLevel().add(roleRepresentations);
+    }
+
+    public static void removeUserByUsername(RealmResource realmResource, String username) {
+        UserRepresentation user = findUserByUsername(realmResource, username);
+        if (user != null) {
+            realmResource.users().delete(user.getId());
+        }
     }
 
     public static void assignClientRoles(RealmResource realm, String userId, String clientName, String... roles) {

@@ -35,12 +35,12 @@ public interface TestingExportImportResource {
     @GET
     @Path("/run-import")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response runImport();
+    void runImport();
 
     @GET
     @Path("/run-export")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response runExport();
+    void runExport();
 
     @GET
     @Path("/get-users-per-file")

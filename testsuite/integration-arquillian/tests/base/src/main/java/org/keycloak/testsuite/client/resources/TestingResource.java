@@ -72,27 +72,27 @@ public interface TestingResource {
     @POST
     @Path("/clear-event-queue")
     @Produces(MediaType.APPLICATION_JSON)
-    Response clearEventQueue();
+    void clearEventQueue();
 
     @POST
     @Path("/clear-admin-event-queue")
     @Produces(MediaType.APPLICATION_JSON)
-    Response clearAdminEventQueue();
+    void clearAdminEventQueue();
 
     @GET
     @Path("/clear-event-store")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response clearEventStore();
+    void clearEventStore();
 
     @GET
     @Path("/clear-event-store-for-realm")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response clearEventStore(@QueryParam("realmId") String realmId);
+    void clearEventStore(@QueryParam("realmId") String realmId);
 
     @GET
     @Path("/clear-event-store-older-than")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response clearEventStore(@QueryParam("realmId") String realmId, @QueryParam("olderThan") long olderThan);
+    void clearEventStore(@QueryParam("realmId") String realmId, @QueryParam("olderThan") long olderThan);
 
     /**
      * Query events
@@ -127,17 +127,17 @@ public interface TestingResource {
     @GET
     @Path("/clear-admin-event-store")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response clearAdminEventStore();
+    void clearAdminEventStore();
 
     @GET
     @Path("/clear-admin-event-store-for-realm")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response clearAdminEventStore(@QueryParam("realmId") String realmId);
+    void clearAdminEventStore(@QueryParam("realmId") String realmId);
 
     @GET
     @Path("/clear-admin-event-store-older-than")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response clearAdminEventStore(@QueryParam("realmId") String realmId, @QueryParam("olderThan") long olderThan);
+    void clearAdminEventStore(@QueryParam("realmId") String realmId, @QueryParam("olderThan") long olderThan);
 
     /**
      * Get admin events
@@ -170,17 +170,17 @@ public interface TestingResource {
     @POST
     @Path("/on-admin-event")
     @Consumes(MediaType.APPLICATION_JSON)
-    public void onAdminEvent(final AdminEventRepresentation rep, @QueryParam("includeRepresentation") boolean includeRepresentation);
+    void onAdminEvent(final AdminEventRepresentation rep, @QueryParam("includeRepresentation") boolean includeRepresentation);
 
     @POST
     @Path("/remove-user-session")
     @Produces(MediaType.APPLICATION_JSON)
-    Response removeUserSession(@QueryParam("realm") final String realm, @QueryParam("session") final String sessionId);
+    void removeUserSession(@QueryParam("realm") final String realm, @QueryParam("session") final String sessionId);
 
     @POST
     @Path("/remove-user-sessions")
     @Produces(MediaType.APPLICATION_JSON)
-    Response removeUserSessions(@QueryParam("realm") final String realm);
+    void removeUserSessions(@QueryParam("realm") final String realm);
 
     @GET
     @Path("/get-user-session")
@@ -190,7 +190,7 @@ public interface TestingResource {
     @POST
     @Path("/remove-expired")
     @Produces(MediaType.APPLICATION_JSON)
-    Response removeExpired(@QueryParam("realm") final String realm);
+    void removeExpired(@QueryParam("realm") final String realm);
 
     @Path("/cache/{cache}")
     TestingCacheResource cache(@PathParam("cache") String cacheName);

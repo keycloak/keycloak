@@ -17,9 +17,11 @@
 package org.keycloak.testsuite.admin.event;
 
 import org.junit.Before;
+import org.junit.Rule;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 import org.keycloak.testsuite.AbstractAuthTest;
+import org.keycloak.testsuite.util.TestCleanup;
 
 import java.util.Collections;
 import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
@@ -32,14 +34,6 @@ public abstract class AbstractEventTest extends AbstractAuthTest {
 
     protected RealmEventsConfigRepresentation configRep;
 
-    @Override
-    public void setDefaultPageUriParameters() {
-        super.setDefaultPageUriParameters();
-        testRealmPage.setAuthRealm(MASTER);
-        testRealmLoginPage.setAuthRealm(testRealmPage);
-        testRealmAccountPage.setAuthRealm(testRealmPage);
-    }
-
     @Before
     public void setConfigRep() {
         RealmResource testRsc = testRealmResource();
@@ -49,6 +43,12 @@ public abstract class AbstractEventTest extends AbstractAuthTest {
         configRep.setEventsEnabled(false);
         configRep.setEnabledEventTypes(Collections.<String>emptyList()); // resets to all types
         saveConfig();
+    }
+
+    @Override
+    public void setDefaultPageUriParameters() {
+        testRealmPage.setAuthRealm("test");
+        accountPage.setAuthRealm("test");
     }
 
     protected void saveConfig() {

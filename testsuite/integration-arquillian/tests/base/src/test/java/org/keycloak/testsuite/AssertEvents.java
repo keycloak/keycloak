@@ -64,7 +64,7 @@ public class AssertEvents implements TestRule {
             @Override
             public void evaluate() throws Throwable {
                 // TODO: Ideally clear the queue just before testClass rather then before each method
-                context.getTestingClient().testing().clearEventQueue();
+                clear();
                 base.evaluate();
                 // TODO Test should fail if there are leftover events
             }
@@ -84,12 +84,7 @@ public class AssertEvents implements TestRule {
     }
 
     public void clear() {
-        Response res = context.testingClient.testing().clearEventQueue();
-        try {
-            Assert.assertEquals("clear-event-queue success", res.getStatus(), 200);
-        } finally {
-            res.close();
-        }
+        context.getTestingClient().testing().clearEventQueue();
     }
 
     public ExpectedEvent expectRequiredAction(EventType event) {

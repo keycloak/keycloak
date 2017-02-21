@@ -28,9 +28,13 @@ import org.jboss.arquillian.core.api.annotation.Inject;
 import org.jboss.arquillian.core.api.annotation.Observes;
 import org.jboss.arquillian.test.spi.annotation.ClassScoped;
 import org.jboss.arquillian.test.spi.annotation.SuiteScoped;
+import org.jboss.arquillian.test.spi.event.suite.AfterClass;
 import org.jboss.arquillian.test.spi.event.suite.BeforeClass;
 import org.jboss.arquillian.test.spi.event.suite.BeforeSuite;
 import org.jboss.logging.Logger;
+import org.keycloak.admin.client.Keycloak;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.util.LogChecker;
 import org.keycloak.testsuite.util.OAuthClient;
 
@@ -38,7 +42,10 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
+
+import javax.ws.rs.NotFoundException;
 
 /**
  *
@@ -201,6 +208,35 @@ public class AuthServerTestEnricher {
     public void initializeOAuthClient(@Observes(precedence = 3) BeforeClass event) {
         OAuthClient oAuthClient = new OAuthClient();
         oAuthClientProducer.set(oAuthClient);
+    }
+
+    public void afterClass(@Observes(precedence = 2) AfterClass event) {
+        TestContext testContext = testContextProducer.get();
+
+        List<RealmRepresentation> testRealmReps = testContext.getTestRealmReps();
+        Keycloak adminClient = testContext.getAdminClient();
+        KeycloakTestingClient testingClient = testContext.getTestingClient();
+
+        if (testRealmReps != null) {
+            log.info("removing test realms after test class");
+            for (RealmRepresentation testRealm : testRealmReps) {
+                String realmName = testRealm.getRealm();
+                log.info("removing realm: " + realmName);
+                try {
+                    adminClient.realms().realm(realmName).remove();
+                } catch (NotFoundException e) {
+                    // Ignore
+                }
+            }
+        }
+
+        if (adminClient != null) {
+            adminClient.close();
+        }
+
+        if (testingClient != null) {
+            testingClient.close();
+        }
     }
 
 }

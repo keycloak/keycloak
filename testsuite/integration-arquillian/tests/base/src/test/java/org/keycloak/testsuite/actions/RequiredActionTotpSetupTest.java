@@ -17,6 +17,7 @@
 package org.keycloak.testsuite.actions;
 
 import org.jboss.arquillian.graphene.page.Page;
+import org.jboss.arquillian.junit.InSequence;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
@@ -32,8 +33,10 @@ import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentatio
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
+import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.AccountTotpPage;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
@@ -42,7 +45,9 @@ import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginTotpPage;
 import org.keycloak.testsuite.pages.RegisterPage;
 import org.keycloak.testsuite.util.RealmBuilder;
+import org.keycloak.testsuite.util.UserBuilder;
 
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -75,6 +80,15 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
                 adminClient.realm("test").flows().updateExecutions("browser", execution);
             }
         }
+
+        ApiUtil.removeUserByUsername(testRealm(), "test-user@localhost");
+        UserRepresentation user = UserBuilder.create().enabled(true)
+                .username("test-user@localhost")
+                .email("test-user@localhost")
+                .firstName("Tom")
+                .lastName("Brady")
+                .requiredAction(UserModel.RequiredAction.UPDATE_PROFILE.name()).build();
+        ApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), user, "password");
     }
 
 
@@ -266,6 +280,12 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
         events.expectLogin().assertEvent();
+
+        // Revert
+        realmRep = adminClient.realm("test").toRepresentation();
+        RealmBuilder.edit(realmRep)
+                .otpDigits(6);
+        adminClient.realm("test").update(realmRep);
     }
 
     @Test
@@ -334,6 +354,18 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
         events.expectLogin().assertEvent();
+
+        // Revert
+        realmRep = adminClient.realm("test").toRepresentation();
+        RealmBuilder.edit(realmRep)
+                .otpLookAheadWindow(1)
+                .otpDigits(6)
+                .otpPeriod(30)
+                .otpType(UserCredentialModel.TOTP)
+                .otpAlgorithm(HmacOTP.HMAC_SHA1)
+                .otpInitialCounter(0);
+        adminClient.realm("test").update(realmRep);
+
     }
 
 }

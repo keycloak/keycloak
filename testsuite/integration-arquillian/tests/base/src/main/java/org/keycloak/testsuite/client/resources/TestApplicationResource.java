@@ -53,7 +53,7 @@ public interface TestApplicationResource {
 
     @POST
     @Path("/clear-admin-actions")
-    Response clearAdminActions();
+    void clearAdminActions();
 
     @GET
     @Produces(MediaType.TEXT_HTML)

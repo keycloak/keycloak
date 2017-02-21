@@ -52,6 +52,9 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
         client = adminClient.realm(REALM_NAME).clients().get(createdClient.getId()).toRepresentation();
         assertEquals(CLIENT_ID, client.getClientId());
 
+        // Remove this client after test
+        getCleanup().addClientUuid(createdClient.getId());
+
         return client;
     }
 
