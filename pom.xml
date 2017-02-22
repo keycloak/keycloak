@@ -129,7 +129,7 @@
     <licenses>
         <license>
             <name>Apache License, Version 2.0</name>
-            <url>http://www.apache.org/licenses/LICENSE-2.0</url>
+            <url>https://www.apache.org/licenses/LICENSE-2.0</url>
             <distribution>repo</distribution>
         </license>
     </licenses>
@@ -137,7 +137,7 @@
     <scm>
         <connection>scm:git:git://github.com/keycloak/keycloak.git</connection>
         <developerConnection>scm:git:git@github.com:keycloak/keycloak.git</developerConnection>
-        <url>http://github.com/keycloak/keycloak/tree/master/</url>
+        <url>https://github.com/keycloak/keycloak/tree/master/</url>
     </scm>
 
     <distributionManagement>
@@ -1349,7 +1349,7 @@
         <!-- for org.jboss.web:jbossweb -->
         <repository>
             <id>jboss</id>
-            <url>http://repository.jboss.org/nexus/content/groups/public/</url>
+            <url>https://repository.jboss.org/nexus/content/groups/public/</url>
             <snapshots>
                 <enabled>false</enabled>
             </snapshots>
