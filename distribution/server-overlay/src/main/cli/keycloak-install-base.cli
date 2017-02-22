@@ -14,4 +14,8 @@ embed-server --server-config=standalone.xml
 /subsystem=infinispan/cache-container=keycloak/local-cache=keys:add()
 /subsystem=infinispan/cache-container=keycloak/local-cache=keys/eviction=EVICTION:add(max-entries=1000,strategy=LRU)
 /subsystem=infinispan/cache-container=keycloak/local-cache=keys/expiration=EXPIRATION:add(max-idle=3600000)
+/subsystem=infinispan/cache-container=hibernate/local-cache=immutable-entity:add()
+/subsystem=infinispan/cache-container=hibernate/local-cache=immutable-entity/transaction=TRANSACTION:add(mode=NON_XA)
+/subsystem=infinispan/cache-container=hibernate/local-cache=immutable-entity/eviction=EVICTION:add(max-entries=10000,strategy=LRU)
+/subsystem=infinispan/cache-container=hibernate/local-cache=immutable-entity/expiration=EXPIRATION:add(max-idle=100000)
 /extension=org.keycloak.keycloak-server-subsystem/:add(module=org.keycloak.keycloak-server-subsystem)

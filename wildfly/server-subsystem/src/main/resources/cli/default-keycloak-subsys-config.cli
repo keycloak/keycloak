@@ -18,3 +18,4 @@
 /subsystem=keycloak-server/spi=jta-lookup/provider=jboss/:add(enabled=true)
 /subsystem=keycloak-server/spi=publicKeyStorage/:add
 /subsystem=keycloak-server/spi=publicKeyStorage/provider=infinispan/:add(properties={minTimeBetweenRequests => "10"},enabled=true)
+/subsystem=keycloak-server/spi=userFederatedStorage/:add(default-provider=jpa)
