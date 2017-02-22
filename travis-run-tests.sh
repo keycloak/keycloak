@@ -25,7 +25,7 @@ fi
 
 if [ $1 == "group4" ]; then
     cd testsuite/integration-arquillian/tests/base
-    mvn test -B -Dtest=org.keycloak.testsuite.k*.**.*Test,org.keycloak.testsuite.m*.**.*Test,org.keycloak.testsuite.o*.**.*Test
+    mvn test -B -Dtest=org.keycloak.testsuite.k*.**.*Test,org.keycloak.testsuite.m*.**.*Test,org.keycloak.testsuite.o*.**.*Test,org.keycloak.testsuite.s*.**.*Test
 fi
 
 if [ $1 == "adapter" ]; then
