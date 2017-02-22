@@ -4,6 +4,7 @@
 /subsystem=keycloak-server/spi=eventsStore/provider=jpa/:add(properties={exclude-events => "[\"REFRESH_TOKEN\"]"},enabled=true)
 /subsystem=keycloak-server/spi=realm/:add(default-provider=jpa)
 /subsystem=keycloak-server/spi=user/:add(default-provider=jpa)
+/subsystem=keycloak-server/spi=userFederatedStorage/:add(default-provider=jpa)
 /subsystem=keycloak-server/spi=userCache/:add
 /subsystem=keycloak-server/spi=userCache/provider=default/:add(enabled=true)
 /subsystem=keycloak-server/spi=userSessionPersister/:add(default-provider=jpa)
