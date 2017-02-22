@@ -32,7 +32,7 @@
     </description>
     <groupId>org.keycloak</groupId>
     <artifactId>keycloak-parent</artifactId>
-    <version>2.5.4.Final-SNAPSHOT</version>
+    <version>2.5.4.Final</version>
     <packaging>pom</packaging>
 
     <properties>
