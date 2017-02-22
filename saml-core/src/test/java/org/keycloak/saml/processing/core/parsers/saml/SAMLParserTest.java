@@ -16,11 +16,16 @@
  */
 package org.keycloak.saml.processing.core.parsers.saml;
 
+import org.keycloak.common.util.Base64;
+import org.keycloak.common.util.DerUtils;
 import org.keycloak.dom.saml.v2.assertion.AssertionType;
 import org.keycloak.dom.saml.v2.assertion.NameIDType;
 import org.keycloak.dom.saml.v2.metadata.EntityDescriptorType;
+import org.keycloak.saml.processing.core.saml.v2.util.AssertionUtil;
 
 import java.io.InputStream;
+import java.security.PrivateKey;
+
 import org.junit.Test;
 
 import static org.junit.Assert.*;
@@ -35,11 +40,21 @@ import org.w3c.dom.Element;
 /**
  * Test class for SAML parser.
  *
+ * To create SAML XML for use in the test, use for instance https://www.samltool.com, {@link #PRIVATE_KEY} and
+ * {@link #PUBLIC_CERT}.
+ *
  * TODO: Add further tests.
  *
  * @author hmlnarik
  */
 public class SAMLParserTest {
+
+    private static final String PRIVATE_KEY = "MIICdgIBADANBgkqhkiG9w0BAQEFAASCAmAwggJcAgEAAoGBAOJDgeiUFOERg6N2qUeLjkE7HDzg4h2m4hMG8WDYLhuAm6k2pq+1SkRDvisD67y2AvXXFz069Vw5TMDnpbmGpigEbdr+YT7As+YpVhxI1nSwTzzEAuL2Ywun1FNfOFAeBt6hzQ/veJ+rc3D3BSgjeY/yiZNen36T3BD8pi3HojErAgMBAAECgYBWmtpVqKCZSXfmkJvYy70GkNaNItLJ4L+14rlvhS+YzVBHo6iHps+nc3qNwnFwCQb3DH5TrIaP50rOp5wSeEyOWk7fOJeAwM4Vsc3d+av/Iu/WwNDyAFW3gGO19YvccfGvEbToMPtppOt47UDK26xfibCwUFwEGg0hGc0gcVQWMQJBAPl8YnETSjI0wZuaSdkUp2/FtHEAZa1yFPtPx7CVCpUG53frKOAx2t0N7AQ2vQUNPqOas8gDGr5O5J+l9tjOD0MCQQDoK+asMuMnSClm/RZRFIckcToFwjfgNQY/AKN31k705jJr+3+er3VlODL7dpnF0X2mVDjiXIp4hH9K0qfW+TP5AkAQOIMaAPwQ+Zcg684jXBFq1freYf06YrF0iYJdO8N9Xv6LsHFu6i7lsnMG7xwpCOxqrLNFrNX/S5fXvW2oOPWLAkEAiTu547tIjaWX42ph0JdDsoTC+Tht8rck9ASam3Evxo5y62UDcHbh+2yWphDaoBVOIgzSeuqcZtRasY2G7AjtcQJAEiXYeHB5+lancDDkBhH8KKdl1+FORRB9kJ4gxTwrjLwprWFjdatMb3O+xJGss+KnVUa/THRa5CRX4pHh93711Q==";
+
+    /**
+     * The public certificate that corresponds to {@link #PRIVATE_KEY}.
+     */
+    private static final String PUBLIC_CERT = "MIICXjCCAcegAwIBAgIBADANBgkqhkiG9w0BAQ0FADBLMQswCQYDVQQGEwJubzERMA8GA1UECAwIVmVzdGZvbGQxEzARBgNVBAoMCkV4YW1wbGVPcmcxFDASBgNVBAMMC2V4YW1wbGUub3JnMCAXDTE3MDIyNzEwNTY0MFoYDzIxMTcwMjAzMTA1NjQwWjBLMQswCQYDVQQGEwJubzERMA8GA1UECAwIVmVzdGZvbGQxEzARBgNVBAoMCkV4YW1wbGVPcmcxFDASBgNVBAMMC2V4YW1wbGUub3JnMIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDiQ4HolBThEYOjdqlHi45BOxw84OIdpuITBvFg2C4bgJupNqavtUpEQ74rA+u8tgL11xc9OvVcOUzA56W5hqYoBG3a/mE+wLPmKVYcSNZ0sE88xALi9mMLp9RTXzhQHgbeoc0P73ifq3Nw9wUoI3mP8omTXp9+k9wQ/KYtx6IxKwIDAQABo1AwTjAdBgNVHQ4EFgQUzWjvSL0O2V2B2N9G1qARQiVgv3QwHwYDVR0jBBgwFoAUzWjvSL0O2V2B2N9G1qARQiVgv3QwDAYDVR0TBAUwAwEB/zANBgkqhkiG9w0BAQ0FAAOBgQBgvKTTcLGlF0KvnIGxkzdaFeYewQtsQZHgnUt+JGKge0CyUU+QPVFhrH19b7fjKeykq/avm/2hku4mKaPyRYpvU9Gm+ARz67rs/vr0ZgJFk00TGI6ssGhdFd7iCptuIh5lEvWk1hD5LzThOI3isq0gK2tTbhafQOkKa45IwbOQ8Q==";
 
     private SAMLParser parser;
 
@@ -71,6 +86,28 @@ public class SAMLParserTest {
 
             assertThat(resp.getAssertions(), not(nullValue()));
             assertThat(resp.getAssertions().size(), is(1));
+        }
+    }
+
+    @Test
+    public void testSaml20EncryptedAssertionWithNewlines() throws Exception {
+        try (InputStream st = SAMLParserTest.class.getResourceAsStream("KEYCLOAK-4489-encrypted-assertion-with-newlines.xml")) {
+            Object parsedObject = parser.parse(st);
+            assertThat(parsedObject, instanceOf(ResponseType.class));
+
+            ResponseType resp = (ResponseType) parsedObject;
+            assertThat(resp.getAssertions().size(), is(1));
+
+            ResponseType.RTChoiceType rtChoiceType = resp.getAssertions().get(0);
+            assertNull(rtChoiceType.getAssertion());
+            assertNotNull(rtChoiceType.getEncryptedAssertion());
+
+            PrivateKey privateKey = DerUtils.decodePrivateKey(Base64.decode(PRIVATE_KEY));
+            ResponseType rtWithDecryptedAssertion = AssertionUtil.decryptAssertion(resp, privateKey);
+
+            rtChoiceType = rtWithDecryptedAssertion.getAssertions().get(0);
+            assertNotNull(rtChoiceType.getAssertion());
+            assertNull(rtChoiceType.getEncryptedAssertion());
         }
     }
 
