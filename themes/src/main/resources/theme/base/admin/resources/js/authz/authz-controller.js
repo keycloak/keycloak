@@ -1551,8 +1551,9 @@ module.controller('ResourceServerPolicyJSDetailCtrl', function($scope, $route, $
 
         onInit : function() {
             $scope.initEditor = function(editor){
+                editor.$blockScrolling = Infinity;
                 var session = editor.getSession();
-
+                
                 session.setMode('ace/mode/javascript');
             };
         },
