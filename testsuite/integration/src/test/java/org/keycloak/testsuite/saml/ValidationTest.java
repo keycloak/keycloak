@@ -78,7 +78,7 @@ public class ValidationTest {
     public void testBrokerExportDescriptor() throws Exception {
         URL schemaFile = getClass().getResource("/schema/saml/v2/saml-schema-metadata-2.0.xsd");
         Source xmlFile = new StreamSource(new ByteArrayInputStream(SPMetadataDescriptor.getSPDescriptor(
-                "POST", "http://realm/assertion", "http://realm/logout", true, "test", SamlProtocol.SAML_DEFAULT_NAMEID_FORMAT, KeycloakModelUtils.generateKeyPairCertificate("test").getCertificate()
+                "POST", "http://realm/assertion", "http://realm/logout", true, false, "test", SamlProtocol.SAML_DEFAULT_NAMEID_FORMAT, KeycloakModelUtils.generateKeyPairCertificate("test").getCertificate()
         ).getBytes()), "SP Descriptor");
         SchemaFactory schemaFactory = SchemaFactory
                 .newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
