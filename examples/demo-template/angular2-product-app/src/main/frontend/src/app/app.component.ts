@@ -13,6 +13,8 @@ import { environment } from '../environments/environment';
   styleUrls: ['./app.component.css']
 })
 export class AppComponent {
+  title = 'Angular2 Product';
+
   products: string[] = [];
 
   constructor(private http: Http, private kc: KeycloakService) {}
