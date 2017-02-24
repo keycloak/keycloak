@@ -161,6 +161,20 @@ public class SAMLIdentityProviderConfig extends IdentityProviderModel {
         getConfig().put("postBindingResponse", String.valueOf(postBindingResponse));
     }
 
+    public boolean isPostBindingLogout() {
+        String postBindingLogout = getConfig().get("postBindingLogout");
+        if (postBindingLogout == null) {
+            // To maintain unchanged behavior when adding this field, we set the inital value to equal that
+            // of the binding for the response:
+            return isPostBindingResponse();
+        }
+        return Boolean.valueOf(postBindingLogout);
+    }
+
+    public void setPostBindingLogout(boolean postBindingLogout) {
+        getConfig().put("postBindingLogout", String.valueOf(postBindingLogout));
+    }
+
     public boolean isBackchannelSupported() {
         return Boolean.valueOf(getConfig().get("backchannelSupported"));
     }

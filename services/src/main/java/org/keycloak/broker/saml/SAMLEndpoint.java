@@ -303,7 +303,7 @@ public class SAMLEndpoint {
             builder.issuer(issuerURL);
             JaxrsSAML2BindingBuilder binding = new JaxrsSAML2BindingBuilder()
                         .relayState(relayState);
-            boolean postBinding = config.isPostBindingResponse();
+            boolean postBinding = config.isPostBindingLogout();
             if (config.isWantAuthnRequestsSigned()) {
                 KeyManager.ActiveRsaKey keys = session.keys().getActiveRsaKey(realm);
                 String keyName = config.getXmlSigKeyInfoKeyNameTransformer().getKeyName(keys.getKid(), keys.getCertificate());

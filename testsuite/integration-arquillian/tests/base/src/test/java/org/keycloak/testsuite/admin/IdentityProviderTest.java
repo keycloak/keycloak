@@ -529,6 +529,7 @@ public class IdentityProviderTest extends AbstractAdminTest {
         assertThat(config.keySet(), containsInAnyOrder(
           "validateSignature",
           "singleLogoutServiceUrl",
+          "postBindingLogout",
           "postBindingResponse",
           "postBindingAuthnRequest",
           "singleSignOnServiceUrl",
