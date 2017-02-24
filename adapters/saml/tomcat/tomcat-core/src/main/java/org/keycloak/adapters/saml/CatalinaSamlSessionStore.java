@@ -89,10 +89,12 @@ public class CatalinaSamlSessionStore implements SamlSessionStore {
         Session sessionInternal = request.getSessionInternal(false);
         if (sessionInternal == null) return;
         HttpSession session = sessionInternal.getSession();
+        List<String> ids = new LinkedList<String>();
         if (session != null) {
             SamlSession samlSession = (SamlSession)session.getAttribute(SamlSession.class.getName());
             if (samlSession != null) {
                 if (samlSession.getSessionIndex() != null) {
+                    ids.add(session.getId());
                     idMapper.removeSession(session.getId());
                 }
                 session.removeAttribute(SamlSession.class.getName());
@@ -101,6 +103,7 @@ public class CatalinaSamlSessionStore implements SamlSessionStore {
         }
         sessionInternal.setPrincipal(null);
         sessionInternal.setAuthType(null);
+        logoutSessionIds(ids);
     }
 
     @Override
