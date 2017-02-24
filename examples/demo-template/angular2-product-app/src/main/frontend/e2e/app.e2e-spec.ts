@@ -7,8 +7,14 @@ describe('angular2-product-app App', () => {
     page = new Angular2ProductAppPage();
   });
 
-  it('should display message saying app works', () => {
+  it('should display message saying Angular2 Product', () => {
     page.navigateTo();
-    expect(page.getParagraphText()).toEqual('app works!');
+    expect(page.getParagraphText()).toEqual('Angular2 Product');
+  });
+
+  it('should load Products', () => {
+    page.navigateTo();
+    const products = page.loadProducts();
+    ['iphone', 'ipad', 'ipod'].forEach(e => expect(products).toContain(e));
   });
 });

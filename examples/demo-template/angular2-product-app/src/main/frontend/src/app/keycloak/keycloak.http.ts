@@ -1,5 +1,5 @@
 import {Injectable} from '@angular/core';
-import {Http, Request, ConnectionBackend, RequestOptions, RequestOptionsArgs, Response, Headers} from '@angular/http';
+import {Http, Request, XHRBackend, ConnectionBackend, RequestOptions, RequestOptionsArgs, Response, Headers} from '@angular/http';
 
 import {KeycloakService} from './keycloak.service';
 import {Observable} from 'rxjs/Rx';
@@ -30,3 +30,13 @@ export class KeycloakHttp extends Http {
     }
   }
 }
+
+export function keycloakHttpFactory(backend: XHRBackend, defaultOptions: RequestOptions, keycloakService: KeycloakService) {
+  return new KeycloakHttp(backend, defaultOptions, keycloakService);
+}
+
+export const KEYCLOAK_HTTP_PROVIDER = {
+  provide: Http,
+  useFactory: keycloakHttpFactory,
+  deps: [XHRBackend, RequestOptions, KeycloakService]
+};

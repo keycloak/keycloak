@@ -1,14 +1,10 @@
 import { BrowserModule } from '@angular/platform-browser';
 import { NgModule } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import {HttpModule, Http, XHRBackend, RequestOptions} from '@angular/http';
-import {KeycloakService} from './keycloak/keycloak.service';
-import {KeycloakHttp} from './keycloak/keycloak.http';
+import { HttpModule } from '@angular/http';
+import { KeycloakService } from './keycloak/keycloak.service';
+import { KeycloakHttp, KEYCLOAK_HTTP_PROVIDER } from './keycloak/keycloak.http';
 import { AppComponent } from './app.component';
-
-export function keycloakHttpFactory(backend: XHRBackend, defaultOptions: RequestOptions, keycloakService: KeycloakService) {
-  return new KeycloakHttp(backend, defaultOptions, keycloakService);
-}
 
 @NgModule({
   declarations: [
@@ -21,11 +17,7 @@ export function keycloakHttpFactory(backend: XHRBackend, defaultOptions: Request
   ],
   providers: [
     KeycloakService,
-    {
-      provide: Http,
-      useFactory: keycloakHttpFactory,
-      deps: [XHRBackend, RequestOptions, KeycloakService]
-    }
+    KEYCLOAK_HTTP_PROVIDER
   ],
   bootstrap: [AppComponent]
 })
