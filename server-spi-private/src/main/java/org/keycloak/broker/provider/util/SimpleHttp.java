@@ -24,12 +24,10 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.utils.URIBuilder;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
+import org.keycloak.connections.httpclient.HttpClientProvider;
+import org.keycloak.models.KeycloakSession;
 
-import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.SSLSocketFactory;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -49,25 +47,25 @@ import java.util.zip.GZIPInputStream;
  */
 public class SimpleHttp {
 
+    private KeycloakSession session;
+
     private String url;
     private String method;
     private Map<String, String> headers;
     private Map<String, String> params;
 
-    private SSLSocketFactory sslFactory;
-    private HostnameVerifier hostnameVerifier;
-
-    protected SimpleHttp(String url, String method) {
+    protected SimpleHttp(String url, String method, KeycloakSession session) {
+        this.session = session;
         this.url = url;
         this.method = method;
     }
 
-    public static SimpleHttp doGet(String url) {
-        return new SimpleHttp(url, "GET");
+    public static SimpleHttp doGet(String url, KeycloakSession session) {
+        return new SimpleHttp(url, "GET", session);
     }
 
-    public static SimpleHttp doPost(String url) {
-        return new SimpleHttp(url, "POST");
+    public static SimpleHttp doPost(String url, KeycloakSession session) {
+        return new SimpleHttp(url, "POST", session);
     }
 
     public SimpleHttp header(String name, String value) {
@@ -86,20 +84,8 @@ public class SimpleHttp {
         return this;
     }
 
-    public SimpleHttp sslFactory(SSLSocketFactory factory) {
-        sslFactory = factory;
-        return this;
-    }
-
-    public SimpleHttp hostnameVerifier(HostnameVerifier verifier) {
-        hostnameVerifier = verifier;
-        return this;
-    }
-
     public String asString() throws IOException {
-        HttpClientBuilder httpClientBuilder = HttpClients.custom();
-        setupTruststoreIfApplicable(httpClientBuilder);
-        HttpClient httpClient = httpClientBuilder.build();
+        HttpClient httpClient = session.getProvider(HttpClientProvider.class).getHttpClient();
 
         HttpResponse response = makeRequest(httpClient);
 
@@ -127,9 +113,7 @@ public class SimpleHttp {
     }
 
     public int asStatus() throws IOException {
-        HttpClientBuilder httpClientBuilder = HttpClients.custom();
-        setupTruststoreIfApplicable(httpClientBuilder);
-        HttpClient httpClient = httpClientBuilder.build();
+        HttpClient httpClient = session.getProvider(HttpClientProvider.class).getHttpClient();
 
         HttpResponse response = makeRequest(httpClient);
 
@@ -156,17 +140,6 @@ public class SimpleHttp {
         }
 
         return httpClient.execute(httpRequest);
-    }
-
-    private void setupTruststoreIfApplicable(HttpClientBuilder httpClientBuilder) {
-        if (sslFactory != null) {
-            org.apache.http.conn.ssl.SSLSocketFactory apacheSSLSocketFactory =
-                    new org.apache.http.conn.ssl.SSLSocketFactory(sslFactory, null);
-            httpClientBuilder.setSSLSocketFactory(apacheSSLSocketFactory);
-            if (hostnameVerifier != null) {
-                httpClientBuilder.setSSLHostnameVerifier(hostnameVerifier);
-            }
-        }
     }
 
     private URI appendParameterToUrl(String url) throws IOException {
