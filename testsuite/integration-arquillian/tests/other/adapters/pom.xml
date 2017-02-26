@@ -54,6 +54,14 @@
         
         <app.server.ssl.required>false</app.server.ssl.required>
 
+        <app.server.reverse-proxy.port.offset>500</app.server.reverse-proxy.port.offset>
+        <app.server.1.port.offset>300</app.server.1.port.offset>
+        <app.server.1.management.port>10290</app.server.1.management.port>
+        <app.server.1.management.port.jmx>10299</app.server.1.management.port.jmx>
+        <app.server.2.port.offset>400</app.server.2.port.offset>
+        <app.server.2.management.port>10390</app.server.2.management.port>
+        <app.server.2.management.port.jmx>10399</app.server.2.management.port.jmx>
+
         <settings.path></settings.path>
         <repo.url></repo.url>
 
@@ -192,6 +200,14 @@
                                 
                                 <app.server.startup.timeout>${app.server.startup.timeout}</app.server.startup.timeout>
                                 <app.server.memory.settings>${app.server.memory.settings}</app.server.memory.settings>
+
+                                <app.server.reverse-proxy.port.offset>${app.server.reverse-proxy.port.offset}</app.server.reverse-proxy.port.offset>
+
+                                <app.server.1.port.offset>${app.server.1.port.offset}</app.server.1.port.offset>
+                                <app.server.1.management.port>${app.server.1.management.port}</app.server.1.management.port>
+
+                                <app.server.2.port.offset>${app.server.2.port.offset}</app.server.2.port.offset>
+                                <app.server.2.management.port>${app.server.2.management.port}</app.server.2.management.port>
 
                                 <adapter.test.props>${adapter.test.props}</adapter.test.props>
 
