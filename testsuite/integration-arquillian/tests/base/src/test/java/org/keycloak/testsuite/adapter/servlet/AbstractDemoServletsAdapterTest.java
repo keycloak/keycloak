@@ -50,7 +50,7 @@ import org.keycloak.testsuite.auth.page.account.Applications;
 import org.keycloak.testsuite.auth.page.login.OAuthGrant;
 import org.keycloak.testsuite.console.page.events.Config;
 import org.keycloak.testsuite.console.page.events.LoginEvents;
-import org.keycloak.testsuite.util.URLUtils;
+import org.keycloak.testsuite.util.*;
 import org.keycloak.util.BasicAuthHelper;
 
 import org.openqa.selenium.By;
@@ -74,16 +74,13 @@ import java.util.regex.Pattern;
 
 import static org.junit.Assert.*;
 
-import org.keycloak.testsuite.util.Matchers;
-
 import javax.ws.rs.core.Response.Status;
 
 import static org.hamcrest.Matchers.*;
 import static org.keycloak.testsuite.auth.page.AuthRealm.DEMO;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlEquals;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWithLoginUrlOf;
-import static org.keycloak.testsuite.util.WaitUtils.pause;
-import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
+import static org.keycloak.testsuite.util.WaitUtils.*;
 
 /**
  *
@@ -199,7 +196,9 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
         testRealmLoginPage.form().login("bburke@redhat.com", "password");
         assertCurrentUrlEquals(driver, inputPortal + "/secured/post");
-        waitUntilElement(By.xpath("//body")).text().contains("parameter=hello");
+        waitForPageToLoad(driver);
+        String pageSource = driver.getPageSource();
+        assertThat(pageSource, containsString("parameter=hello"));
 
         String logoutUri = OIDCLoginProtocolService.logoutUrl(authServerPage.createUriBuilder())
                 .queryParam(OAuth2Constants.REDIRECT_URI, customerPortal.toString())
@@ -621,8 +620,10 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
 
         oAuthGrantPage.accept();
 
-        waitUntilElement(By.xpath("//body")).text().contains("Bill Burke");
-        waitUntilElement(By.xpath("//body")).text().contains("Stian Thorgersen");
+        String pageSource = driver.getPageSource();
+        waitForPageToLoad(driver);
+        assertThat(pageSource, containsString("Bill Burke"));
+        assertThat(pageSource, containsString("Stian Thorgersen"));
 
         String userId = ApiUtil.findUserByUsername(testRealmResource(), "bburke@redhat.com").getId();
 
@@ -673,8 +674,10 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
 
         testRealmLoginPage.form().login("bburke@redhat.com", "password");
 
-        waitUntilElement(By.xpath("//body")).text().contains("Bill Burke");
-        waitUntilElement(By.xpath("//body")).text().contains("Stian Thorgersen");
+        waitForPageToLoad(driver);
+        String pageSource = driver.getPageSource();
+        assertThat(pageSource, containsString("Bill Burke"));
+        assertThat(pageSource, containsString("Stian Thorgersen"));
 
         String userId = ApiUtil.findUserByUsername(testRealmResource(), "bburke@redhat.com").getId();
 

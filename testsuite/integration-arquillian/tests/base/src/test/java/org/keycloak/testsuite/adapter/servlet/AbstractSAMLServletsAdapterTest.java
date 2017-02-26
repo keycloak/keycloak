@@ -84,9 +84,7 @@ import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.auth.page.login.Login;
 import org.keycloak.testsuite.auth.page.login.SAMLIDPInitiatedLogin;
 import org.keycloak.testsuite.page.AbstractPage;
-import org.keycloak.testsuite.util.IOUtil;
-import org.keycloak.testsuite.util.SamlClient;
-import org.keycloak.testsuite.util.UserBuilder;
+import org.keycloak.testsuite.util.*;
 
 import org.openqa.selenium.By;
 import org.w3c.dom.Document;
@@ -133,7 +131,7 @@ import static org.keycloak.testsuite.util.Matchers.statusCodeIsHC;
 import static org.keycloak.testsuite.util.SamlClient.idpInitiatedLogin;
 import static org.keycloak.testsuite.util.SamlClient.login;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
-import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
+import static org.keycloak.testsuite.util.WaitUtils.*;
 
 /**
  * @author mhajas
@@ -384,7 +382,7 @@ public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAd
 
     private void checkLoggedOut(AbstractPage page, Login loginPage) {
         page.navigateTo();
-        waitUntilElement(By.xpath("//body")).is().present();
+        waitForPageToLoad(driver);
         assertCurrentUrlStartsWith(loginPage);
     }
 
@@ -862,8 +860,10 @@ public abstract class AbstractSAMLServletsAdapterTest extends AbstractServletsAd
         assertCurrentUrlStartsWith(testRealmSAMLPostLoginPage);
         testRealmSAMLPostLoginPage.form().login("bburke", "password");
         assertCurrentUrlStartsWith(employeeServletPage);
-        waitUntilElement(By.xpath("//body")).text().contains("Relay state: " + SamlSPFacade.RELAY_STATE);
-        waitUntilElement(By.xpath("//body")).text().not().contains("SAML response: null");
+        waitForPageToLoad(driver);
+        String pageSource = driver.getPageSource();
+        assertThat(pageSource, containsString("Relay state: " + SamlSPFacade.RELAY_STATE));
+        assertThat(pageSource, not(containsString("SAML response: null")));
     }
 
     @Test
