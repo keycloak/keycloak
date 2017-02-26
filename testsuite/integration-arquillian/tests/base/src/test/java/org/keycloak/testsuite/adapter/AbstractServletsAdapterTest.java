@@ -65,11 +65,11 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
         return deployment;
     }
 
-    protected static WebArchive samlServletDeployment(String name, Class... servletClasses) {
+    public static WebArchive samlServletDeployment(String name, Class... servletClasses) {
         return samlServletDeployment(name, "web.xml", servletClasses);
     }
 
-    protected static WebArchive samlServletDeployment(String name, String webXMLPath, Class... servletClasses) {
+    public static WebArchive samlServletDeployment(String name, String webXMLPath, Class... servletClasses) {
         String baseSAMLPath = "/adapter-test/keycloak-saml/";
         String webInfPath = baseSAMLPath + name + "/WEB-INF/";
 
