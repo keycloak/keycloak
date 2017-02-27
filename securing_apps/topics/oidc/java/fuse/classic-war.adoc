@@ -1,12 +1,13 @@
 
 [[_fuse_adapter_classic_war]]
-===== Secure Classic WAR application
+===== Securing a Classic WAR Application
 
-The needed steps to secure your WAR are:
+The needed steps to secure your WAR application are:
 
-* Declare needed security constraints in `/WEB-INF/web.xml` . You also need to declare login-config and all the roles inside security-role.
-The example configuration can look like this:
-
+. Declare needed security constraints in the `/WEB-INF/web.xml` file. You also need to declare login-config and all the roles inside security-role.
++
+For example:
++
 [source,xml]
 ----
 <?xml version="1.0" encoding="UTF-8"?>
@@ -45,8 +46,10 @@ The example configuration can look like this:
 </web-app>
 ----
 
-* Add `jetty-web.xml` file with the authenticator to `/WEB-INF/jetty-web.xml` . Typically it will look like this:
-
+. Add the `jetty-web.xml` file with the authenticator to the `/WEB-INF/jetty-web.xml` file.
++
+For example:
++
 [source,xml]
 ----
 <?xml version="1.0"?>
@@ -62,14 +65,13 @@ The example configuration can look like this:
 </Configure>
 ----
 
-* Add `/WEB-INF/keycloak.json` with your {{book.project.name}} configuration. The format of this config file is described
-in the <<fake/../../java-adapter-config.adoc#_java_adapter_config,Java Adapters Config>> section. It is also possible to have this file available externally as described below.
+. Add the `/WEB-INF/keycloak.json` file to your {{book.project.name}} configuration. The format of this configuration file is described in the <<fake/../../java-adapter-config.adoc#_java_adapter_config,Java Adapters Config>> section. It is also possible to make this file available externally as described below.
 
-* Make sure your WAR imports `org.keycloak.adapters.jetty` and maybe some more packages in `META-INF/MANIFEST.MF` file in header `Import-Package`. It's
-recommended to use `maven-bundle-plugin` in your project to properly generate OSGI headers in manifest.
-Note that "*" resolution for package doesn't import `org.keycloak.adapters.jetty` package
-as it's not used by application or Blueprint or Spring descriptor, but it's used just in `jetty-web.xml` file. So list of the packages to import may look like this:
-
+. Ensure your WAR application imports `org.keycloak.adapters.jetty` and maybe some more packages in the `META-INF/MANIFEST.MF` file, under the `Import-Package` header. Using `maven-bundle-plugin` in your project properly generates OSGI headers in manifest.
+Note that "*" resolution for the package does not import the `org.keycloak.adapters.jetty` package, since it is not used by the application or the Blueprint or Spring descriptor, but is rather used in the `jetty-web.xml` file. 
++
+The list of the packages to import might look like this:
++
 [source, subs="attributes"]
 ----
 org.keycloak.adapters.jetty;version="{{book.project.versionMvn}}",
@@ -80,12 +82,11 @@ org.keycloak.*;version="{{book.project.versionMvn}}",
 *;resolution:=optional
 ----
 
-====== External adapter configuration
+====== Configuring the External Adapter
 
-This is for the case when you don't want adapter configuration file `keycloak.json` to be bundled inside your WAR application. Instead it will be available
-externally and loaded based on naming conventions.
+If you do not want the `keycloak.json` adapter configuration file to be bundled inside your WAR application, but instead available externally and loaded based on naming conventions, use this configuration method.
 
-To enable the functionality you need to add this section to your `web.xml`:
+To enable the functionality, add this section to your `web.xml` file:
 
 [source,xml]
 ----
@@ -95,8 +96,8 @@ To enable the functionality you need to add this section to your `web.xml`:
 </context-param>
 ----
 
-That component will use `keycloak.config` or `karaf.etc` java properties to look for a base folder to look for the configuration.
-Inside one of those folders it will look for a file called `<your_web_context>-keycloak.json`.
+That component uses `keycloak.config` or `karaf.etc` java properties to search for a base folder to locate the configuration.
+Then inside one of those folders it searches for a file called `<your_web_context>-keycloak.json`.
 
-So for example if your web application has context `my-portal`, then your adapter configuration will be loaded from the file `$FUSE_HOME/etc/my-portal-keycloak.json` .
+So, for example, if your web application has context `my-portal`, then your adapter configuration is loaded from the  `$FUSE_HOME/etc/my-portal-keycloak.json` file.
 

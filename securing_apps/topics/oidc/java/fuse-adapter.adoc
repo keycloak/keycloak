@@ -13,24 +13,22 @@ It leverages <<fake/../jetty9-adapter.adoc#_jetty9_adapter,Jetty 9 adapter>> as 
 under the covers and Jetty is used for running various kinds of web applications.
 {% endif %}
 
-WARNING: The only supported Fuse version is {{book.fuseVersion}}. If you use earlier versions of Fuse, it's possible that some functionalities won't work correctly.
-Especially the http://hawt.io[Hawtio] integration won't work with earlier versions of Fuse.
+WARNING: The only supported version of Fuse is {{book.fuseVersion}}. If you use earlier versions of Fuse, it is possible that some functions will not work correctly. In particular, the http://hawt.io[Hawtio] integration will not work with earlier versions of Fuse.
 
-What is supported for Fuse is:
+Security for the following items is supported for Fuse:
 
-* Security for classic WAR applications deployed on Fuse with https://ops4j1.jira.com/wiki/display/ops4j/Pax+Web+Extender+-+War[Pax Web War Extender].
-* Security for servlets deployed on Fuse as OSGI services with https://ops4j1.jira.com/wiki/display/ops4j/Pax+Web+Extender+-+Whiteboard[Pax Web Whiteboard Extender].
-* Security for http://camel.apache.org/[Apache Camel] Jetty endpoints running with http://camel.apache.org/jetty.html[Camel Jetty] component. 
-* Security for http://cxf.apache.org/[Apache CXF] endpoints running on their own separate http://cxf.apache.org/docs/jetty-configuration.html[Jetty engine]. 
-* Security for http://cxf.apache.org/[Apache CXF] endpoints running on default engine provided by CXF servlet. 
-* Security for SSH and JMX admin access.
-* Security for http://hawt.io[Hawtio admin console]
+* Classic WAR applications deployed on Fuse with https://ops4j1.jira.com/wiki/display/ops4j/Pax+Web+Extender+-+War[Pax Web War Extender]
+* Servlets deployed on Fuse as OSGI services with https://ops4j1.jira.com/wiki/display/ops4j/Pax+Web+Extender+-+Whiteboard[Pax Web Whiteboard Extender]
+* http://camel.apache.org/[Apache Camel] Jetty endpoints running with the http://camel.apache.org/jetty.html[Camel Jetty] component
+* http://cxf.apache.org/[Apache CXF] endpoints running on their own separate http://cxf.apache.org/docs/jetty-configuration.html[Jetty engine]
+* http://cxf.apache.org/[Apache CXF] endpoints running on the default engine provided by the CXF servlet
+* SSH and JMX admin access
+* http://hawt.io[Hawtio administration console]
 
-===== How to secure your web applications inside Fuse
+===== Securing Your Web Applications Inside Fuse
 
-The first thing to do is usually installing of {{book.project.name}} Karaf feature. Then do the steps according to what type of application you want to secure.
-Basically all mentioned web applications require to inject {{book.project.name}} Jetty authenticator into underlying Jetty server . The steps to achieve it are bit different
-according to application type. The details are described in individual sub-chapters.
+You must first install the {{book.project.name}} Karaf feature. Next you will need to perform the steps according to the type of application you want to secure.
+All referenced web applications require injecting the {{book.project.name}} Jetty authenticator into the underlying Jetty server. The steps to achieve this depend on the application type. The details are described below.
 
 {% if book.community %}
 The best place to start is look at Fuse demo bundled as part of {{book.project.name}} examples in directory `fuse` . Most of the steps should be understandable from testing and
