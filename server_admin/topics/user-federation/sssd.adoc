@@ -8,7 +8,7 @@ SSSD also integrates with the http://www.freeipa.org/page/Main_Page[FreeIPA iden
 
 image:../../{{book.images}}/keycloak-sssd-freeipa-integration-overview.png[]
 
-Most of the communication between {{book.project.name}} and SSSD occurs through read-only D-Bus interfaces. For this reason, the only way to provision and update users is to use FreeIPA/IdM administration interface. By default, like the LDAP federation provider, it is set up only to import username, email, first name, and last name.
+Most of the communication between {{book.project.name}} and SSSD occurs through read-only D-Bus interfaces. For this reason, the only way to provision and update users is to use the FreeIPA/IdM administration interface. By default, like the LDAP federation provider, it is set up only to import username, email, first name, and last name.
 
 [NOTE]
 Groups and roles are automatically registered, but not synchronized, so any changes made by the {{book.project.name}} administrator directly in {{book.project.name}} is not synchronized with SSSD.
