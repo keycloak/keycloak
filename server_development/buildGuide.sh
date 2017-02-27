@@ -32,9 +32,15 @@ if [ ! -d target ]; then
    exit
 fi
 
+# Remove the guide directory path from the master.adoc file as it is not needed
+echo ""
+echo "Removing the guide directory path from the master.adoc file as it is not needed."
+echo "NOTE: This should really be done in the Python script!"
+find . -name 'master.adoc' -print | xargs sed -i 's/include::securing_apps\//include::/g'
+
 # Remove the html and build directories and then recreate the html/images/ directory
 if [ -d target/html ]; then
--   rm -r target/html/
+   rm -r target/html/
 fi
 if [ -d target/html ]; then
    rm -r target/html/
