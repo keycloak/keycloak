@@ -147,14 +147,13 @@ An RPM for this library can be found in https://github.com/keycloak/libunix-dbus
 
 {% endif %}
 
-<doublecheck if this section still belongs> {% if book.product %}
+{% if book.product %}
 
-Before enabling the SSSD Federation provider, you must install the RPM for this library and create a symbolic link using the following command:
+Before enabling the SSSD Federation provider, you must install the RPM for this library:
 
   $ sudo yum install rh-sso7-libunix-dbus-java.x86_64.rpm
-  $ ln -s /opt/rh/rh-sso7/root/usr/lib64/libunix_dbus_java.so.0.0.8 /usr/lib64/
 
-{% endif %}<end section>
+{% endif %}
 
 For authentication with PAM {{book.project.name}} uses JNA. Be sure you have this package installed:
 
