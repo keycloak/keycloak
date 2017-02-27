@@ -403,7 +403,7 @@
         <profile>
             <id>jpa</id>
             <properties>
-                <jdbc.mvn.driver.deployment.dir>${auth.server.home}/modules/system/layers/base/com/${jdbc.mvn.artifactId}/main</jdbc.mvn.driver.deployment.dir>
+                <jdbc.mvn.driver.deployment.dir>${auth.server.home}/modules/system/layers/base/test/jdbc/${jdbc.mvn.artifactId}/main</jdbc.mvn.driver.deployment.dir>
                 <skip.h2.tcp>true</skip.h2.tcp>
             </properties>
             <build>

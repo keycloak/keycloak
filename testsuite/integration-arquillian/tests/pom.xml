@@ -487,6 +487,46 @@
                 </pluginManagement>
             </build>
         </profile>
+        
+        <profile>
+            <id>jdbc-driver-dependency</id>
+            <activation>
+                <property>
+                    <name>jdbc.mvn.artifactId</name>
+                </property>
+            </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>${jdbc.mvn.groupId}</groupId>
+                    <artifactId>${jdbc.mvn.artifactId}</artifactId>
+                    <version>${jdbc.mvn.version}</version>
+                </dependency>
+            </dependencies>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-enforcer-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>enforce</goal>
+                                </goals>
+                                <configuration>
+                                    <rules>
+                                        <requireProperty>
+                                            <property>jdbc.mvn.groupId</property>
+                                        </requireProperty>
+                                        <requireProperty>
+                                            <property>jdbc.mvn.version</property>
+                                        </requireProperty>
+                                    </rules>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
 
         <!-- Profiles for migration tests-->
         
@@ -890,10 +930,10 @@
 
                 <!-- CLI -->
                 <!--
-                   - This dependency must come after org.bouncycastle dependencies since it contains BC classes,
-                   - and MAC signature check on classes would fail otherwise with:
-                   - 'java.lang.SecurityException: JCE cannot authenticate the provider BC'
-                 -->
+                  - This dependency must come after org.bouncycastle dependencies since it contains BC classes,
+                  - and MAC signature check on classes would fail otherwise with:
+                  - 'java.lang.SecurityException: JCE cannot authenticate the provider BC'
+                -->
                 <dependency>
                     <groupId>org.keycloak</groupId>
                     <artifactId>keycloak-client-cli-dist</artifactId>
