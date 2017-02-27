@@ -20,7 +20,7 @@
       "version": "7.1.0",
       "module": "Authorization Services",
       "doc_base_url": "https://access.redhat.com/documentation/en/red-hat-single-sign-on/",
-      "doc_info_version_url": "7.1-Beta"
+      "doc_info_version_url": "7.1"
     },
     "external_link": {
       "keycloakjsadapter": {
