@@ -43,8 +43,8 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.hamcrest.Matchers.containsString;
+import static org.junit.Assert.*;
 import static org.keycloak.testsuite.auth.page.AuthRealm.EXAMPLE;
 import static org.keycloak.testsuite.util.IOUtil.loadRealm;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlDoesntStartWith;
@@ -479,7 +479,7 @@ public abstract class AbstractJSConsoleExampleAdapterTest extends AbstractExampl
 
     private void assertResponseError(String errorDescription) {
         jsConsoleTestAppPage.showErrorResponse();
-        assertTrue(jsConsoleTestAppPage.getOutputElement().getText().contains(errorDescription));
+        assertThat(jsConsoleTestAppPage.getOutputElement().getText(), containsString(errorDescription));
     }
 
 }

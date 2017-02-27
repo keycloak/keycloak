@@ -22,6 +22,8 @@ import org.apache.http.HttpHeaders;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.jboss.arquillian.drone.api.annotation.Default;
 import org.jboss.arquillian.graphene.context.GrapheneContext;
@@ -45,12 +47,14 @@ import org.keycloak.testsuite.pages.AccountApplicationsPage;
 import org.keycloak.testsuite.pages.AccountUpdateProfilePage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
+import org.keycloak.testsuite.runonserver.SerializationUtil;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.RealmRepUtil;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.WaitUtils;
+import org.keycloak.util.JsonSerialization;
 import org.openqa.selenium.By;
 import org.openqa.selenium.Capabilities;
 import org.openqa.selenium.JavascriptExecutor;
@@ -68,6 +72,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -146,20 +151,46 @@ public class ProfileTest extends AbstractTestRealmKeycloakTest {
 
         HttpResponse response = doGetProfile(token, null);
         assertEquals(200, response.getStatusLine().getStatusCode());
-        JSONObject profile = new JSONObject(IOUtils.toString(response.getEntity().getContent()));
+        UserRepresentation profile = JsonSerialization.readValue(IOUtils.toString(response.getEntity().getContent()), UserRepresentation.class);
 
-        assertEquals("test-user@localhost", profile.getString("username"));
-        assertEquals("test-user@localhost", profile.getString("email"));
-        assertEquals("First", profile.getString("firstName"));
-        assertEquals("Last", profile.getString("lastName"));
+        assertEquals("test-user@localhost", profile.getUsername());
+        assertEquals("test-user@localhost", profile.getEmail());
+        assertEquals("First", profile.getFirstName());
+        assertEquals("Last", profile.getLastName());
 
-        JSONObject attributes = profile.getJSONObject("attributes");
-        JSONArray attrValue = attributes.getJSONArray("key1");
-        assertEquals(1, attrValue.length());
+        Map<String, List<String>> attributes = profile.getAttributes();
+        List<String> attrValue = attributes.get("key1");
+        assertEquals(1, attrValue.size());
         assertEquals("value1", attrValue.get(0));
-        attrValue = attributes.getJSONArray("key2");
-        assertEquals(1, attrValue.length());
+        attrValue = attributes.get("key2");
+        assertEquals(1, attrValue.size());
         assertEquals("value2", attrValue.get(0));
+    }
+
+    @Test
+    public void updateProfile() throws Exception {
+        oauth.doLogin("test-user@localhost", "password");
+
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String token = oauth.doAccessTokenRequest(code, "password").getAccessToken();
+
+        UserRepresentation user = new UserRepresentation();
+        user.setUsername("test-user@localhost");
+        user.setFirstName("NewFirst");
+        user.setLastName("NewLast");
+        user.setEmail("NewEmail@localhost");
+
+        HttpResponse response = doUpdateProfile(token, null, JsonSerialization.writeValueAsString(user));
+        assertEquals(200, response.getStatusLine().getStatusCode());
+
+        response = doGetProfile(token, null);
+
+        UserRepresentation profile = JsonSerialization.readValue(IOUtils.toString(response.getEntity().getContent()), UserRepresentation.class);
+
+        assertEquals("test-user@localhost", profile.getUsername());
+        assertEquals("newemail@localhost", profile.getEmail());
+        assertEquals("NewFirst", profile.getFirstName());
+        assertEquals("NewLast", profile.getLastName());
     }
 
     @Test
@@ -272,6 +303,21 @@ public class ProfileTest extends AbstractTestRealmKeycloakTest {
         }
         get.setHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON);
         return client.execute(get);
+    }
+
+    private HttpResponse doUpdateProfile(String token, String origin, String value) throws IOException {
+        HttpClient client = new DefaultHttpClient();
+        HttpPost post = new HttpPost(UriBuilder.fromUri(getAccountURI()).build());
+        if (token != null) {
+            post.setHeader(HttpHeaders.AUTHORIZATION, "bearer " + token);
+        }
+        if (origin != null) {
+            post.setHeader("Origin", origin);
+        }
+        post.setHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON);
+        post.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
+        post.setEntity(new StringEntity(value));
+        return client.execute(post);
     }
 
     private String[] doGetProfileJs(String authServerRoot, String token) {

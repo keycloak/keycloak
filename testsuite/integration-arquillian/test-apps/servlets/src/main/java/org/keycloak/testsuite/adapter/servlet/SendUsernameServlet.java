@@ -65,7 +65,7 @@ public class SendUsernameServlet {
             return Response.status(Response.Status.FORBIDDEN).entity("Forbidden").build();
         }
 
-        return Response.ok(getOutput()).header(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_PLAIN_TYPE + ";charset=UTF-8").build();
+        return Response.ok(getOutput()).header(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_HTML_TYPE + ";charset=UTF-8").build();
     }
 
     @POST
