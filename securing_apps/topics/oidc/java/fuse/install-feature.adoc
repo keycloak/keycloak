@@ -1,35 +1,34 @@
 
 [[_fuse_install_feature]]
-===== Install Feature
+===== Installing the Keycloak Feature
 
-First thing to be done is to install the feature `keycloak` into the JBoss Fuse environment. This will install the Fuse adapter
-together with all needed 3rd party dependencies. There are 2 possibilities to install it.
+You must first install the `keycloak` feature in the JBoss Fuse environment. The keycloak feature includes the Fuse adapter and all third-party dependencies. You can install it either from the Maven repository or from an archive.
 
+====== Installing from the Maven Repository
 
-====== Install from Maven Repository
-
-You need to be online and have access to the maven repository.
+As a prequisite, you need to be online and have access to the Maven repository.
 
 {% if book.community %}
-For community it's sufficient to be online as all the artifacts and 3rd party dependencies should be available in maven central repository.
+For community it's sufficient to be online as all the artifacts and 3rd party dependencies should be available in the maven central repository.
 {% endif %}
 {% if book.product %}
-For {{book.project.name}} you first need to configure proper maven repository, so you can install the artifacts. You can find on
-https://access.redhat.com/maven-repository[Maven Repository] page what's the proper maven repository containing the bits.
+For {{book.project.name}} you first need to configure a proper Maven repository, so you can install the artifacts. For more information see the
+https://access.redhat.com/maven-repository[Maven Repository] page.
 
-Assuming it's https://maven.repository.redhat.com/ga/ you will need to add this to the file `$FUSE_HOME/etc/org.ops4j.pax.url.mvn.cfg`
-and add the repository to the list of supported repositories. For example it may look like this:
+Assuming the Maven repository is https://maven.repository.redhat.com/ga/, add the following to the `$FUSE_HOME/etc/org.ops4j.pax.url.mvn.cfg` file and add the repository to the list of supported repositories. For example:
 
 [source]
 ----
-org.ops4j.pax.url.mvn.repositories= \
+ org.ops4j.pax.url.mvn.repositories= \
     https://maven.repository.redhat.com/ga@id=redhat.product.repo
     http://repo1.maven.org/maven2@id=maven.central.repo, \
     ...
 ----
 {% endif %}
 
-You need to start {{book.fuseVersion}} and then in the Karaf terminal you type this:
+To install the keycloak feature using the maven repository complete the following steps:
+
+. Start {{book.fuseVersion}}; then in the Karaf terminal type:
 
 [source,subs="attributes"]
 ----
@@ -37,43 +36,45 @@ features:addurl mvn:org.keycloak/keycloak-osgi-features/{{book.project.versionMv
 features:install keycloak
 ----
 
-Then you may need to install Jetty 9 feature:
+. You might also need to install the Jetty 9 feature:
 
 [source]
 ----
 features:install keycloak-jetty9-adapter
 ----
 
-NOTE: If you are on JBoss Fuse 6.2 or older, you should use `keycloak-jetty8-adapter` . However it's highly recommended to
-rather upgrade to {{book.fuseVersion}} instead.
+NOTE: If you are using JBoss Fuse 6.2 or later, you should use `keycloak-jetty8-adapter`. However, upgrading {{book.fuseVersion}} instead.
 
-Then you can check that requested features were installed:
+. Ensure that the features were installed:
 
 [source]
 ----
 features:list | grep keycloak
 ----
 
-====== Install from ZIP bundle
+====== Installing from the ZIP bundle
 
-This is useful if you are offline and/or don't want to use maven for download jar files and other artifacts. Once you download ZIP bundle of {{book.project.name}} Fuse adapter,
-you will need to unzip it into the root directory of JBoss Fuse. This should install the dependencies under the `system` directory. Use this for {{book.fuseVersion}} :
+This is useful if you are offline or do not want to use Maven to obtain the JAR files and other artifacts.
 
+To install the Fuse adapter from the ZIP archive, complete the following steps:
+
+. Download the {{book.project.name}} Fuse adapter ZIP archive.
+. Unzip it into the root directory of JBoss Fuse. The dependencies are then installed under the `system` directory. You can overwrite all existing jar files.
++
+Use this for {{book.fuseVersion}}:
++
 [source,subs="attributes"]
 ----
 cd /path-to-fuse/jboss-fuse-6.3.0.redhat-198
 unzip -q /path-to-adapter-zip/keycloak-fuse-adapter-dist-{{book.project.versionMvn}}.zip
 ----
-
-Feel free to overwrite all already existing jars. Once you unzip archive, you can start the Fuse and again run commands in fuse/karaf terminal
-
+. Start Fuse and run these commands in the fuse/karaf terminal:
++
 [source,subs="attributes"]
 ----
 features:addurl mvn:org.keycloak/keycloak-osgi-features/{{book.project.versionMvn}}/xml/features
 features:install keycloak
 ----
 
-And also install the corresponding Jetty adapter. The difference from the previous part is, that nothing will be downloaded from maven repository as the artifacts were
-available directly in JBoss Fuse `system` directory.
-
+. Install the corresponding Jetty adapter. Since the artifacts are available directly in the JBoss Fuse `system` directory, you do not need to use the Maven repository.
 

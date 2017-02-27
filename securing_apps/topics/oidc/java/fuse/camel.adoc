@@ -1,10 +1,10 @@
 [[_fuse_adapter_camel]]
 
-===== Apache Camel Application
+===== Securing an Apache Camel Application
 
-* You can secure your Apache camel endpoint using http://camel.apache.org/jetty.html[camel-jetty] component by adding securityHandler with `KeycloakJettyAuthenticator` and
-proper security constraints injected. You can add file `OSGI-INF/blueprint/blueprint.xml` into your camel application with the configuration similar to below.
-The roles, security constraint mappings and {{book.project.name}} adapter configuration may be a bit different according to your environment and needs:
+You can secure your Apache camel endpoint using the http://camel.apache.org/jetty.html[camel-jetty] component by adding securityHandler with `KeycloakJettyAuthenticator` and the proper security constraints injected. You can add the `OSGI-INF/blueprint/blueprint.xml` file to your camel application with a similar configuration as below. The roles, security constraint mappings, and {{book.project.name}} adapter configuration might be slightly different depending on your environment and needs.
+
+For example:
 
 [source,xml]
 ----
@@ -76,7 +76,7 @@ The roles, security constraint mappings and {{book.project.name}} adapter config
 ----
 
 
-* The `Import-Package` in `META-INF/MANIFEST.MF` needs to contain those imports:
+* The `Import-Package` in `META-INF/MANIFEST.MF` needs to contain these imports:
 
 [source, subs="attributes"]
 ----
@@ -95,13 +95,11 @@ org.osgi.service.event,
 
 ===== Camel RestDSL
 
-Camel RestDSL is a Camel feature to define your REST endpoints in a fluent way.
-But under the hood, the capability to provide all this magic, is still demanded to specific implementation classes and
-you have to instruct them on how to integrate with {{book.project.name}}.
+Camel RestDSL is a Camel feature to define your REST endpoints in a fluent way. But you still must use specific implementation classes and provide instructions on how to integrate with {{book.project.name}}.
 
-The way to configure the integration mechanism depends on the Camel component that you configure your RestDSL defined routes to work with.
+The way to configure the integration mechanism depends on the Camel component with which you configure your RestDSL-defined routes to work.
 
-This is an example that show how to do it while using Jetty engine, with reference to some beans defined in the example above.
+This is an example that shows how to do so while using the Jetty engine, with reference to some beans defined in the example above.
 
 [source,xml]
 ----

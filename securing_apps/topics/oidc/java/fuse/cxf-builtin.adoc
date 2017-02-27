@@ -1,12 +1,11 @@
 
 [[_fuse_adapter_cxf_builtin]]
-===== Secure Apache CXF Endpoint on default Jetty Engine
+===== Securing an Apache CXF Endpoint on the Default Jetty Engine
 
-Some services automatically come with deployed servlets on startup. One of such services is CXF servlet running on
-$$http://localhost:8181/cxf$$ context. Securing such endpoints is quite tricky. The approach, which {{book.project.name}} is currently using,
-is providing ServletReregistrationService, which undeploys builtin servlet at startup, so you are able to re-deploy it again on context secured by {{book.project.name}}.
-This is how configuration file `OSGI-INF/blueprint/blueprint.xml` inside your application may look like. Note it adds JAX-RS `customerservice` endpoint,
-which is endpoint specific to your application, but more importantly, it secures whole `/cxf` context.
+Some services automatically come with deployed servlets on startup. One such service is the CXF servlet running in the $$http://localhost:8181/cxf$$ context. Securing such endpoints can be complicated. One approach, which {{book.project.name}} is currently using,
+is providing ServletReregistrationService, which undeploys a built-in servlet at startup, so you are able to redeploy it on a context secured by {{book.project.name}}.
+
+The configuration file `OSGI-INF/blueprint/blueprint.xml` inside your application might resemble the one below. Note that it adds the JAX-RS `customerservice` endpoint, which is endpoint-specific to your application, but more importantly, secures the entire `/cxf` context.
 
 [source,xml]
 ----
@@ -72,17 +71,13 @@ which is endpoint specific to your application, but more importantly, it secures
 </blueprint>
 ----
 
-As a side effect, all other CXF services running on default CXF HTTP destination will be secured too. Similarly when the application is undeployed, then
-whole `/cxf` context will become unsecured too. For this reason, it's recommended to use your own Jetty engine for your apps like
-described in <<fake/../cxf-separate.adoc#_fuse_adapter_cxf_separate,Secure CXF Application on separate Jetty Engine>> as then you have more
-control over security for each application individually.
+As a result, all other CXF services running on the default CXF HTTP destination are also secured. Similarly, when the application is undeployed, the entire `/cxf` context becomes unsecured as well. For this reason, using your own Jetty engine for your applications as described in <<fake/../cxf-separate.adoc#_fuse_adapter_cxf_separate,Secure CXF Application on separate Jetty Engine>> then gives you more
+control over security for each individual application.
 
-* You may need to have directory `WEB-INF` inside your project (even if your project is not web application) and create files `/WEB-INF/jetty-web.xml` and
-  `/WEB-INF/keycloak.json` in similar way like it's in <<fake/../classic-war.adoc#_fuse_adapter_classic_war,Classic WAR application>>.
-  Note you don't need `web.xml` as the security-constrains are declared in blueprint configuration file.
+* The `WEB-INF` directory might need to be inside your project (even if your project is not a web application). You also might need to edit the `/WEB-INF/jetty-web.xml` and `/WEB-INF/keycloak.json` files in a similar way as in <<fake/../classic-war.adoc#_fuse_adapter_classic_war,Classic WAR application>>.
+Note that you do not need the `web.xml` file as the security constraints are declared in the blueprint configuration file.
 
-
-* The `Import-Package` in `META-INF/MANIFEST.MF` needs to contain those imports:
+* The `Import-Package` in `META-INF/MANIFEST.MF` must contain these imports:
 
 [source, subs="attributes"]
 ----

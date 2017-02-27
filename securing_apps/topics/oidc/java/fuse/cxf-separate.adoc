@@ -1,12 +1,11 @@
 
 [[_fuse_adapter_cxf_separate]]
-===== Secure Apache CXF Endpoint on separate Jetty
+===== Securing an Apache CXF Endpoint on a Separate Jetty Engine
 
-It's recommended to run your CXF endpoints secured by {{book.project.name}} on separate Jetty engine. This is the setup described in this section.
+To run your CXF endpoints secured by {{book.project.name}} on separate Jetty engine, complete the following steps:
 
-* You need to add `META-INF/spring/beans.xml` to your application and then declare `httpj:engine-factory` with Jetty SecurityHandler with
-injected `KeycloakJettyAuthenticator` inside. The configuration may look like this for CXF JAX-WS application:
-
+. Add `META-INF/spring/beans.xml` to your application and then declare `httpj:engine-factory` with Jetty SecurityHandler with injected `KeycloakJettyAuthenticator` inside. The configuration might resemble this one for a CXF JAX-WS application:
++
 [source,xml]
 ----
 <?xml version="1.0" encoding="UTF-8"?>
@@ -79,9 +78,9 @@ injected `KeycloakJettyAuthenticator` inside. The configuration may look like th
 
 </beans>
 ----
-
-* For the CXF JAX-RS application, the only difference might be in the configuration of the endpoint dependent on engine-factory:
-
++
+For the CXF JAX-RS application, the only difference might be in the configuration of the endpoint dependent on engine-factory:
++
 [source,xml]
 ----
 <jaxrs:server serviceClass="org.keycloak.example.rs.CustomerService" address="http://localhost:8282/rest"
@@ -93,7 +92,7 @@ injected `KeycloakJettyAuthenticator` inside. The configuration may look like th
 ----
 
 
-* The `Import-Package` in `META-INF/MANIFEST.MF` needs to contain those imports:
+. The `Import-Package` in `META-INF/MANIFEST.MF` must contain those imports:
 
 [source, subs="attributes"]
 ----
