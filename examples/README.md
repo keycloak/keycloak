@@ -11,7 +11,7 @@ This is the our main example, which shows Login, Single-Sign On, Single-Sign Out
 * Preconfigured - Use this flavour to quickly deploy the demo to a local Keycloak server without having to configure anything other than importing the realm settings into Keycloak
 * Unconfigured - Use this flavour to manually configure and deploy the demo to either a local or external Keycloak server
 
-For more information look at `preconfigured-demo/README.md` or `unconfigured-demo/README.md`. For the unconfigured-demo there's an accompanying screencast at [http://keycloak.org/docs](http://keycloak.org/docs) that walks you through the setup process.
+For more information look at `preconfigured-demo/README.md` or `unconfigured-demo/README.md`. For the unconfigured-demo there's an accompanying screencast at [https://www.keycloak.org/documentation.html](https://www.keycloak.org/documentation.html) that walks you through the setup process.
 
 
 Admin Client
