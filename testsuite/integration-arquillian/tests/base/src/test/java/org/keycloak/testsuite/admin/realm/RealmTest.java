@@ -202,6 +202,17 @@ public class RealmTest extends AbstractAdminTest {
         realm.remove();
 
         Assert.assertNames(adminClient.realms().findAll(), "master", AuthRealm.TEST);
+
+        // Re-create realm
+        reCreateRealm();
+    }
+
+    private void reCreateRealm() {
+        // Re-create realm
+        RealmRepresentation realmRep = testContext.getTestRealmReps().stream().filter((RealmRepresentation realm) -> {
+            return realm.getRealm().equals(REALM_NAME);
+        }).findFirst().get();
+        adminClient.realms().create(realmRep);
     }
 
     @Test
@@ -210,6 +221,8 @@ public class RealmTest extends AbstractAdminTest {
 
         ServerInfoResource serverInfoResource = Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth", "master", "admin", "admin", Constants.ADMIN_CLI_CLIENT_ID).serverInfo();
         serverInfoResource.getInfo();
+
+        reCreateRealm();
     }
 
     /**
@@ -608,6 +621,7 @@ public class RealmTest extends AbstractAdminTest {
         client.setSecret("secret");
         Response resp = realm.clients().create(client);
         String clientDbId = ApiUtil.getCreatedId(resp);
+        getCleanup().addClientUuid(clientDbId);
         resp.close();
         assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.clientResourcePath(clientDbId), client, ResourceType.CLIENT);
 
@@ -618,6 +632,7 @@ public class RealmTest extends AbstractAdminTest {
         Response response = realm.users().create(userRep);
         String userId = ApiUtil.getCreatedId(response);
         response.close();
+        getCleanup().addUserId(userId);
         assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.userResourcePath(userId), userRep, ResourceType.USER);
 
         realm.users().get(userId).resetPassword(CredentialBuilder.create().password("password").build());

@@ -75,46 +75,40 @@ public class AccountLinkTest extends AbstractKeycloakTest {
     }
 
     @Before
-    public void addIdpUser() {
-        RealmResource realm = adminClient.realms().realm(PARENT_IDP);
+    public void beforeBrokerTest() {
+        if (testContext.isInitialized()) {
+            return;
+        }
+
+        // addIdpUser
+        RealmResource realmParent = adminClient.realms().realm(PARENT_IDP);
         UserRepresentation user = new UserRepresentation();
         user.setUsername(PARENT_USERNAME);
         user.setEnabled(true);
-        String userId = createUserAndResetPasswordWithAdminClient(realm, user, "password");
+        String userId = createUserAndResetPasswordWithAdminClient(realmParent, user, "password");
 
-    }
-
-    @Before
-    public void addChildUser() {
-        RealmResource realm = adminClient.realms().realm(CHILD_IDP);
-        UserRepresentation user = new UserRepresentation();
+        // addChildUser
+        RealmResource realmChild = adminClient.realms().realm(CHILD_IDP);
+        user = new UserRepresentation();
         user.setUsername("child");
         user.setEnabled(true);
-        String userId = createUserAndResetPasswordWithAdminClient(realm, user, "password");
+        userId = createUserAndResetPasswordWithAdminClient(realmChild, user, "password");
 
-    }
-
-    @Before
-    public void setupUserStorageProvider() {
+        // setupUserStorageProvider
         ComponentRepresentation provider = new ComponentRepresentation();
         provider.setName("passthrough");
         provider.setProviderId(PassThroughFederatedUserStorageProviderFactory.PROVIDER_ID);
         provider.setProviderType(UserStorageProvider.class.getName());
         provider.setConfig(new MultivaluedHashMap<>());
         provider.getConfig().putSingle("priority", Integer.toString(1));
+        realmChild.components().add(provider);
 
-        RealmResource realm = adminClient.realms().realm(CHILD_IDP);
-        realm.components().add(provider);
-
-
-
-
-    }
-
-    @Before
-    public void createBroker() {
+        // createBroker
         createParentChild();
+
+        testContext.setInitialized(true);
     }
+
 
     public void createParentChild() {
         BrokerTestTools.createKcOidcBroker(adminClient, CHILD_IDP, PARENT_IDP, suiteContext);

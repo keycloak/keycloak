@@ -30,6 +30,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
+import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.ErrorPage;
@@ -275,16 +276,6 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
     @Test
     // KEYCLOAK-2557
     public void loginUserWithEmailAsUsername() {
-        UserRepresentation rep = UserBuilder.create()
-                                            .enabled(true)
-                                            .id("foo")
-                                            .email("foo")
-                                            .username("login@test.com")
-                                            .password("password")
-                                            .build();
-
-        adminClient.realm(userId).users().create(rep);
-
         loginPage.open();
         loginPage.login("login@test.com", "password");
 
@@ -363,9 +354,7 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
         } finally {
             setPasswordPolicy(null);
             UserResource userRsc = adminClient.realm("test").users().get("login-test");
-            UserBuilder userBuilder = UserBuilder.edit(userRsc.toRepresentation())
-                                                 .password("password");
-            userRsc.update(userBuilder.build());
+            ApiUtil.resetUserPassword(userRsc, "password", false);
         }
     }
 

@@ -60,7 +60,7 @@ public class LoginEventsTest extends AbstractEventTest {
     }
 
     private void badLogin() {
-        loginEventsPage.navigateTo();
+        accountPage.navigateTo();
         loginPage.form().login("bad", "user");
     }
 

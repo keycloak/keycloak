@@ -143,6 +143,11 @@ public class AuthnRequestNameIdFormatTest extends AbstractSamlTest {
         clientRes.update(client);
 
         testLoginWithNameIdPolicy(Binding.REDIRECT, Binding.POST, null, is("bburke"));
+
+        // Revert
+        client = clientRes.toRepresentation();
+        client.getAttributes().put(SamlConfigAttributes.SAML_FORCE_POST_BINDING, "false");
+        clientRes.update(client);
     }
 
 }

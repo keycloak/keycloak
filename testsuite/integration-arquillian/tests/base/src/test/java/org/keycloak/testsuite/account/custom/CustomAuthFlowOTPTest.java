@@ -20,15 +20,18 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.models.AuthenticationExecutionModel.Requirement;
+import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.admin.Users;
 import org.keycloak.testsuite.auth.page.login.OneTimeCode;
 import org.keycloak.testsuite.pages.LoginConfigTotpPage;
 
+import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -101,6 +104,10 @@ public class CustomAuthFlowOTPTest extends AbstractCustomAccountManagementTest {
 
     @Test
     public void requireOTPTest() {
+        //update realm browser flow
+        RealmRepresentation realm = testRealmResource().toRepresentation();
+        realm.setBrowserFlow("browser");
+        testRealmResource().update(realm);
 
         updateRequirement("browser", "auth-otp-form", Requirement.REQUIRED);
         testRealmAccountManagementPage.navigateTo();
@@ -225,10 +232,8 @@ public class CustomAuthFlowOTPTest extends AbstractCustomAccountManagementTest {
         setConditionalOTPForm(config);
 
         //create role
-        RoleRepresentation role = new RoleRepresentation("otp_role", "", false);
-        testRealmResource().roles().create(role);
-        //obtain id
-        role = testRealmResource().roles().get("otp_role").toRepresentation();
+        RoleRepresentation role = getOrCreateOTPRole();
+
         //add role to user
         List<RoleRepresentation> realmRoles = new ArrayList<>();
         realmRoles.add(role);
@@ -250,10 +255,8 @@ public class CustomAuthFlowOTPTest extends AbstractCustomAccountManagementTest {
         setConditionalOTPForm(config);
 
         //create role
-        RoleRepresentation role = new RoleRepresentation("otp_role", "", false);
-        testRealmResource().roles().create(role);
-        //obtain id
-        role = testRealmResource().roles().get("otp_role").toRepresentation();
+        RoleRepresentation role = getOrCreateOTPRole();
+
         //add role to user
         List<RoleRepresentation> realmRoles = new ArrayList<>();
         realmRoles.add(role);
@@ -271,6 +274,17 @@ public class CustomAuthFlowOTPTest extends AbstractCustomAccountManagementTest {
 
         //verify that the page is login page, not totp setup
         assertCurrentUrlStartsWith(testLoginOneTimeCodePage);
+    }
+
+    private RoleRepresentation getOrCreateOTPRole() {
+        try {
+            return testRealmResource().roles().get("otp_role").toRepresentation();
+        } catch (NotFoundException ex) {
+            RoleRepresentation role = new RoleRepresentation("otp_role", "", false);
+            testRealmResource().roles().create(role);
+            //obtain id
+            return testRealmResource().roles().get("otp_role").toRepresentation();
+        }
     }
 
     @Test
@@ -313,6 +327,19 @@ public class CustomAuthFlowOTPTest extends AbstractCustomAccountManagementTest {
     }
 
     private void setConditionalOTPForm(Map<String, String> config) {
+        List<AuthenticationFlowRepresentation> authFlows = getAuthMgmtResource().getFlows();
+        for (AuthenticationFlowRepresentation flow : authFlows) {
+            if ("ConditionalOTPFlow".equals(flow.getAlias())) {
+                //update realm browser flow
+                RealmRepresentation realm = testRealmResource().toRepresentation();
+                realm.setBrowserFlow(DefaultAuthenticationFlows.BROWSER_FLOW);
+                testRealmResource().update(realm);
+
+                getAuthMgmtResource().deleteFlow(flow.getId());
+                break;
+            }
+        }
+
         String flowAlias = "ConditionalOTPFlow";
         String provider = "auth-conditional-otp-form";
         
@@ -335,7 +362,7 @@ public class CustomAuthFlowOTPTest extends AbstractCustomAccountManagementTest {
         
         //set username-password requirement to required
         updateRequirement(flowAlias, "auth-username-password-form", Requirement.REQUIRED);
-        
+
         //add execution - conditional OTP
         data.clear();
         data.put("provider", provider);
@@ -360,6 +387,8 @@ public class CustomAuthFlowOTPTest extends AbstractCustomAccountManagementTest {
         //add auth config to the execution
         response = getAuthMgmtResource().newExecutionConfig(executionId, authConfig);
         assertEquals("new execution success", 201, response.getStatus());
+        getCleanup().addAuthenticationConfigId(ApiUtil.getCreatedId(response));
         response.close();
     }
+
 }

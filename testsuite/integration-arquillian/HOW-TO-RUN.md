@@ -21,8 +21,10 @@ Adding this system property when running any test:
     
     -Darquillian.debug=true
     
-will add lots of info to the log. Especially about all the triggered arquillian lifecycle events and executed observers listening to those events.
-Also the bootstrap of WebDriver will be unlimited (by default there is 1 minute timeout and test is cancelled when WebDriver is not bootstrapped within it.)
+will add lots of info to the log. Especially about:
+* The test method names, which will be executed for each test class, will be written at the proper running order to the log at the beginning of each test (done by KcArquillian class). 
+* All the triggered arquillian lifecycle events and executed observers listening to those events will be written to the log
+* The bootstrap of WebDriver will be unlimited. By default there is just 1 minute timeout and test is cancelled when WebDriver is not bootstrapped within it.
 
 ### WebDriver timeout
 
@@ -41,7 +43,7 @@ and adapter are all in the same JVM and you can debug them easily. If it is not 
     -Dmaven.surefire.debug=true
    
    
-and you will be able to attach remote debugger to the test. Unfortunately server and adapter are running in different JVMs, so you won't be able to debug them. 
+and you will be able to attach remote debugger to the test. Unfortunately server and adapter are running in different JVMs, so this won't help to debug those. 
 
 TODO: Improve and add more info about Wildfly debugging...
 

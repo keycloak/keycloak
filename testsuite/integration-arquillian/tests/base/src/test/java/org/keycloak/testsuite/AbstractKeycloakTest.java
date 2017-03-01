@@ -19,19 +19,15 @@ package org.keycloak.testsuite;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.http.ssl.SSLContexts;
-import org.h2.util.IOUtils;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.common.util.Time;
-import org.keycloak.testsuite.adapter.AbstractServletsAdapterTest;
+import org.keycloak.testsuite.arquillian.KcArquillian;
 import org.keycloak.testsuite.arquillian.TestContext;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URL;
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
@@ -46,7 +42,6 @@ import javax.ws.rs.NotFoundException;
 import org.jboss.arquillian.container.test.api.RunAsClient;
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
-import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.jboss.logging.Logger;
 import org.junit.After;
@@ -73,7 +68,9 @@ import org.keycloak.testsuite.auth.page.account.Account;
 import org.keycloak.testsuite.auth.page.login.OIDCLogin;
 import org.keycloak.testsuite.auth.page.login.UpdatePassword;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
+import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.TestCleanup;
 import org.keycloak.testsuite.util.TestEventsLogger;
 import org.openqa.selenium.WebDriver;
 
@@ -86,7 +83,7 @@ import static org.keycloak.testsuite.util.IOUtil.PROJECT_BUILD_DIRECTORY;
  *
  * @author tkyjovsk
  */
-@RunWith(Arquillian.class)
+@RunWith(KcArquillian.class)
 @RunAsClient
 public abstract class AbstractKeycloakTest {
 
@@ -136,16 +133,11 @@ public abstract class AbstractKeycloakTest {
 
     @Before
     public void beforeAbstractKeycloakTest() throws Exception {
-        SSLContext ssl = null;
-        if ("true".equals(System.getProperty("auth.server.ssl.required"))) {
-            File trustore = new File(PROJECT_BUILD_DIRECTORY, "dependency/keystore/keycloak.truststore");
-            ssl = getSSLContextWithTrustore(trustore, "secret");
-
-            System.setProperty("javax.net.ssl.trustStore", trustore.getAbsolutePath());
+        adminClient = testContext.getAdminClient();
+        if (adminClient == null) {
+            adminClient = AdminClientUtil.createAdminClient();
+            testContext.setAdminClient(adminClient);
         }
-
-        adminClient = Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth",
-                MASTER, ADMIN, ADMIN, Constants.ADMIN_CLI_CLIENT_ID, null, ssl);
 
         getTestingClient();
 
@@ -161,7 +153,13 @@ public abstract class AbstractKeycloakTest {
             suiteContext.setAdminPasswordUpdated(true);
         }
 
-        importTestRealms();
+        if (testContext.getTestRealmReps() == null) {
+            importTestRealms();
+
+            if (!isImportAfterEachMethod()) {
+                testContext.setTestRealmReps(testRealmReps);
+            }
+        }
 
         oauth.init(adminClient, driver);
     }
@@ -172,8 +170,36 @@ public abstract class AbstractKeycloakTest {
             resetTimeOffset();
         }
 
-        removeTestRealms(); // Remove realms after tests. Tests should cleanup after themselves!
-        adminClient.close(); // don't keep admin connection open
+        if (isImportAfterEachMethod()) {
+            log.info("removing test realms after test method");
+            for (RealmRepresentation testRealm : testRealmReps) {
+                removeRealm(testRealm.getRealm());
+            }
+        } else {
+            // Logout all users after the test
+            List<RealmRepresentation> realms = testContext.getTestRealmReps();
+            for (RealmRepresentation realm : realms) {
+                adminClient.realm(realm.getRealm()).logoutAll();
+            }
+
+            // Cleanup objects
+            for (TestCleanup cleanup : testContext.getCleanups().values()) {
+                cleanup.executeCleanup();
+            }
+            testContext.getCleanups().clear();
+        }
+    }
+
+    protected TestCleanup getCleanup(String realmName) {
+        return testContext.getOrCreateCleanup(realmName);
+    }
+
+    protected TestCleanup getCleanup() {
+        return getCleanup("test");
+    }
+
+    protected boolean isImportAfterEachMethod() {
+        return false;
     }
 
     private void updateMasterAdminPassword() {
@@ -194,6 +220,13 @@ public abstract class AbstractKeycloakTest {
         driver.manage().deleteAllCookies();
     }
 
+    protected void deleteAllCookiesForRealm(String realmName) {
+        // masterRealmPage.navigateTo();
+        driver.navigate().to(oauth.AUTH_SERVER_ROOT + "/realms/" + realmName + "/account"); // Because IE webdriver freezes when loading a JSON page (realm page), we need to use this alternative
+        log.info("deleting cookies in '" + realmName + "' realm");
+        driver.manage().deleteAllCookies();
+    }
+
     public void setDefaultPageUriParameters() {
         masterRealmPage.setAuthRealm(MASTER);
         loginPage.setAuthRealm(MASTER);
@@ -201,9 +234,17 @@ public abstract class AbstractKeycloakTest {
 
     public KeycloakTestingClient getTestingClient() {
         if (testingClient == null) {
-            testingClient = KeycloakTestingClient.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth");
+            testingClient = testContext.getTestingClient();
+            if (testingClient == null) {
+                testingClient = KeycloakTestingClient.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth");
+                testContext.setTestingClient(testingClient);
+            }
         }
         return testingClient;
+    }
+
+    public TestContext getTestContext() {
+        return testContext;
     }
 
     public Keycloak getAdminClient() {
@@ -227,13 +268,6 @@ public abstract class AbstractKeycloakTest {
         log.info("importing test realms");
         for (RealmRepresentation testRealm : testRealmReps) {
             importRealm(testRealm);
-        }
-    }
-
-    public void removeTestRealms() {
-        log.info("removing test realms");
-        for (RealmRepresentation testRealm : testRealmReps) {
-            removeRealm(testRealm);
         }
     }
 
@@ -263,10 +297,6 @@ public abstract class AbstractKeycloakTest {
             adminClient.realms().realm(realmName).remove();
         } catch (NotFoundException e) {
         }
-    }
-
-    public void removeRealm(RealmRepresentation realm) {
-        removeRealm(realm.getRealm());
     }
     
     public RealmsResource realmsResouce() {
@@ -359,16 +389,5 @@ public abstract class AbstractKeycloakTest {
         } catch (URISyntaxException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    public static SSLContext getSSLContextWithTrustore(File file, String password) throws CertificateException, NoSuchAlgorithmException, KeyStoreException, IOException, KeyManagementException {
-        if (!file.isFile()) {
-            throw new RuntimeException("Truststore file not found: " + file.getAbsolutePath());
-        }
-        SSLContext theContext = SSLContexts.custom()
-                .useProtocol("TLS")
-                .loadTrustMaterial(file, password == null ? null : password.toCharArray())
-                .build();
-        return theContext;
     }
 }

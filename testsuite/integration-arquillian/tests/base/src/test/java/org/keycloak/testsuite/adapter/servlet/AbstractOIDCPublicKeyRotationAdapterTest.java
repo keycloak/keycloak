@@ -19,7 +19,6 @@ package org.keycloak.testsuite.adapter.servlet;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import javax.ws.rs.core.Response;
@@ -98,8 +97,6 @@ public abstract class AbstractOIDCPublicKeyRotationAdapterTest extends AbstractS
     protected static WebArchive customerDb() {
         return servletDeployment(CustomerDb.DEPLOYMENT_NAME, AdapterActionsFilter.class, CustomerDatabaseServlet.class);
     }
-
-
 
 
     @Before

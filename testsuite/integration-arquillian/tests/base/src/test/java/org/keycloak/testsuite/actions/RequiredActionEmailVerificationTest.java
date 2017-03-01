@@ -27,8 +27,10 @@ import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
+import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.ErrorPage;
@@ -38,11 +40,13 @@ import org.keycloak.testsuite.pages.RegisterPage;
 import org.keycloak.testsuite.pages.VerifyEmailPage;
 import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.MailUtils;
+import org.keycloak.testsuite.util.UserBuilder;
 
 import javax.mail.MessagingException;
 import javax.mail.Multipart;
 import javax.mail.internet.MimeMessage;
 import java.io.IOException;
+import java.util.Collections;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -85,6 +89,13 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
     @Before
     public void before() {
         oauth.state("mystate"); // have to set this as keycloak validates that state is sent
+
+
+        ApiUtil.removeUserByUsername(testRealm(), "test-user@localhost");
+        UserRepresentation user = UserBuilder.create().enabled(true)
+                .username("test-user@localhost")
+                .email("test-user@localhost").build();
+        ApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), user, "password");
     }
 
     @Test

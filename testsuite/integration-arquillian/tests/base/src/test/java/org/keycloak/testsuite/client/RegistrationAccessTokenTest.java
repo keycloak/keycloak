@@ -48,6 +48,7 @@ public class RegistrationAccessTokenTest extends AbstractClientRegistrationTest 
         c.setRootUrl("http://root");
 
         client = createClient(c);
+        getCleanup().addClientUuid(client.getId());
 
         c = new ClientRepresentation();
         c.setEnabled(true);
@@ -55,7 +56,8 @@ public class RegistrationAccessTokenTest extends AbstractClientRegistrationTest 
         c.setSecret("RegistrationAccessTokenTestClientSecret");
         c.setRootUrl("http://root");
 
-        createClient(c);
+        c = createClient(c);
+        getCleanup().addClientUuid(c.getId());
 
         reg.auth(Auth.token(client.getRegistrationAccessToken()));
     }

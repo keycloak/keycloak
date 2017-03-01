@@ -151,5 +151,10 @@ public enum ResourceType {
     /**
      *
      */
-    , CLUSTER_NODE;
+    , CLUSTER_NODE
+
+    /**
+     *
+     */
+    , COMPONENT;
 }

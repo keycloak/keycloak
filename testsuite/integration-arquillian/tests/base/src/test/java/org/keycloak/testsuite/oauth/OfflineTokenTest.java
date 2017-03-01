@@ -59,6 +59,8 @@ import org.keycloak.util.TokenUtil;
 import java.util.Collections;
 import java.util.List;
 
+import javax.ws.rs.NotFoundException;
+
 import static org.junit.Assert.assertEquals;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.admin.ApiUtil.findRealmRoleByName;
@@ -253,8 +255,11 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
 
         // Assert userSession expired
         testingClient.testing().removeExpired("test");
-
-        testingClient.testing().removeUserSession("test", sessionId);
+        try {
+            testingClient.testing().removeUserSession("test", sessionId);
+        } catch (NotFoundException nfe) {
+            // Ignore
+        }
 
         OAuthClient.AccessTokenResponse response = oauth.doRefreshTokenRequest(offlineTokenString, "secret1");
         AccessToken refreshedToken = oauth.verifyToken(response.getAccessToken());

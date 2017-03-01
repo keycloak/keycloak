@@ -54,6 +54,8 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 
 import javax.ws.rs.core.UriBuilder;
+
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
@@ -271,7 +273,9 @@ public class OAuthClient {
             try {
                 ByteArrayOutputStream out = new ByteArrayOutputStream();
 
-                client.execute(post).getEntity().writeTo(out);
+                CloseableHttpResponse response = client.execute(post);
+                response.getEntity().writeTo(out);
+                response.close();
 
                 return new String(out.toByteArray());
             } catch (Exception e) {
@@ -776,28 +780,32 @@ public class OAuthClient {
         private String error;
         private String errorDescription;
 
-        public AccessTokenResponse(HttpResponse response) throws Exception {
-            statusCode = response.getStatusLine().getStatusCode();
-            if (!"application/json".equals(response.getHeaders("Content-Type")[0].getValue())) {
-                Assert.fail("Invalid content type");
-            }
-
-            String s = IOUtils.toString(response.getEntity().getContent());
-            Map responseJson = JsonSerialization.readValue(s, Map.class);
-
-            if (statusCode == 200) {
-                idToken = (String)responseJson.get("id_token");
-                accessToken = (String)responseJson.get("access_token");
-                tokenType = (String)responseJson.get("token_type");
-                expiresIn = (Integer)responseJson.get("expires_in");
-                refreshExpiresIn = (Integer)responseJson.get("refresh_expires_in");
-
-                if (responseJson.containsKey(OAuth2Constants.REFRESH_TOKEN)) {
-                    refreshToken = (String)responseJson.get(OAuth2Constants.REFRESH_TOKEN);
+        public AccessTokenResponse(CloseableHttpResponse response) throws Exception {
+            try {
+                statusCode = response.getStatusLine().getStatusCode();
+                if (!"application/json".equals(response.getHeaders("Content-Type")[0].getValue())) {
+                    Assert.fail("Invalid content type");
                 }
-            } else {
-                error = (String)responseJson.get(OAuth2Constants.ERROR);
-                errorDescription = responseJson.containsKey(OAuth2Constants.ERROR_DESCRIPTION) ? (String)responseJson.get(OAuth2Constants.ERROR_DESCRIPTION) : null;
+
+                String s = IOUtils.toString(response.getEntity().getContent());
+                Map responseJson = JsonSerialization.readValue(s, Map.class);
+
+                if (statusCode == 200) {
+                    idToken = (String) responseJson.get("id_token");
+                    accessToken = (String) responseJson.get("access_token");
+                    tokenType = (String) responseJson.get("token_type");
+                    expiresIn = (Integer) responseJson.get("expires_in");
+                    refreshExpiresIn = (Integer) responseJson.get("refresh_expires_in");
+
+                    if (responseJson.containsKey(OAuth2Constants.REFRESH_TOKEN)) {
+                        refreshToken = (String) responseJson.get(OAuth2Constants.REFRESH_TOKEN);
+                    }
+                } else {
+                    error = (String) responseJson.get(OAuth2Constants.ERROR);
+                    errorDescription = responseJson.containsKey(OAuth2Constants.ERROR_DESCRIPTION) ? (String) responseJson.get(OAuth2Constants.ERROR_DESCRIPTION) : null;
+                }
+            } finally {
+                response.close();
             }
         }
 

@@ -25,6 +25,7 @@ import org.keycloak.component.ComponentModel;
 import org.keycloak.component.ComponentValidationException;
 import org.keycloak.component.SubComponentFactory;
 import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.ModelToRepresentation;
@@ -93,7 +94,7 @@ public class ComponentResource {
     public ComponentResource(RealmModel realm, RealmAuth auth, AdminEventBuilder adminEvent) {
         this.auth = auth;
         this.realm = realm;
-        this.adminEvent = adminEvent;
+        this.adminEvent = adminEvent.resource(ResourceType.COMPONENT);
 
         auth.init(RealmAuth.Resource.REALM);
     }
@@ -175,7 +176,7 @@ public class ComponentResource {
                 throw new NotFoundException("Could not find component");
             }
             RepresentationToModel.updateComponent(session, rep, model, false);
-            adminEvent.operation(OperationType.UPDATE).resourcePath(uriInfo, model.getId()).representation(StripSecretsUtils.strip(session, rep)).success();
+            adminEvent.operation(OperationType.UPDATE).resourcePath(uriInfo).representation(StripSecretsUtils.strip(session, rep)).success();
             realm.updateComponent(model);
             return Response.noContent().build();
         } catch (ComponentValidationException e) {
@@ -192,7 +193,7 @@ public class ComponentResource {
         if (model == null) {
             throw new NotFoundException("Could not find component");
         }
-        adminEvent.operation(OperationType.DELETE).resourcePath(uriInfo, model.getId()).success();
+        adminEvent.operation(OperationType.DELETE).resourcePath(uriInfo).success();
         realm.removeComponent(model);
 
     }
