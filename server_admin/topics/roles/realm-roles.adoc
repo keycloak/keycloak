@@ -13,7 +13,7 @@ and hit the `Save` button.
 image:../../{{book.images}}/role.png[]
 
 The value for the `description` field is localizable by specifying a substitution variable with `$\{var-name}` strings.
-The localized value is then configured within property files in your theme.  See the link:{{book.project.doc_base_url}}{{book.project.doc_info_version_url}}{{book.developerguide.link}}[{{book.developerguide.name}}]
+The localized value is then configured within property files in your theme.  See the link:{{book.developerguide.link}}[{{book.developerguide.name}}]
 for more information on localization.  If a client requires user _consent_, this description string will be displayed on the
 consent page for the user.
 

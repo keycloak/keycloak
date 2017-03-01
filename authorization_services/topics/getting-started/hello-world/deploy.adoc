@@ -20,6 +20,7 @@ $ git clone {{book.quickstartRepo.link}}
 
 The application we are about to build and deploy is located at
 
+[source, subs="attributes"]
 ----
 $ cd {{book.quickstartRepo.dir}}/app-authz-jee-vanilla
 ----

@@ -14,7 +14,7 @@ User Account Link::
 image:../../{{book.images}}/update-password.png[]
 
 The User Account Service page opens. Every user in a realm has access to this Account Service by default.
-You can update profile information and change or add additional credentials. For more information on this service see the link:{{book.project.doc_base_url}}{{book.project.doc_info_version_url}}{{book.adminguide.link}}[{{book.adminguide.name}}].
+You can update profile information and change or add additional credentials. For more information on this service see the link:{{book.adminguide.link}}[{{book.adminguide.name}}].
 
 
 

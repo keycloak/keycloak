@@ -24,7 +24,7 @@ You can re-configure the existing flow. (For example you can disable some authen
 
 {% if project.community %}
 You can also create a new authentication flow and/or write your own Authenticator implementations and use it in your flow.
-See link:{{book.project.doc_base_url}}{{book.project.doc_info_version_url}}{{book.developerguide.link}}[{{book.developerguide.name}}] for more details.
+See link:{{book.developerguide.link}}[{{book.developerguide.name}}] for more details.
 {% endif %}
 
 ==== Default First Login Flow
