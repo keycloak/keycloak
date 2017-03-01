@@ -123,9 +123,13 @@ unique per provider instance.  We move this logic to the `create()` method.
 This logic, is of course, is really inefficient as every different transaction will read the entire user property file from disk,
 but hopefully this illustrates, in a simple way, how to hook in configuration variables.
 
-==== Configure in Admin Console
+==== Configuring the Provider in Admin Console
 
 Now that the configuration is enabled, you can set the `path` variable when you configure the provider in the admin console.
 
+{% if book.community %}
+
 .Configured Provider
 image:../../{{book.images}}/storage-provider-with-config.png[]
+
+{% end if %}
