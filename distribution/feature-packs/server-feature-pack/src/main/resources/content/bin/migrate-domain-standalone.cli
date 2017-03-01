@@ -120,4 +120,71 @@ if (result == NONE) of /profile=$standaloneProfile/subsystem=infinispan/cache-co
   echo
 end-if
 
+# Migrate from 2.5.0 to 2.5.1
+# NO CHANGES
+
+# Migrate 2.5.1 to 2.5.4
+if (result != REPEATABLE_READ) of /profile=$standaloneProfile/subsystem=infinispan/cache-container=ejb/local-cache=persistent/component=locking/:read-attribute(name=isolation)
+  echo Changing ejb cache locking to REPEATABLE_READ
+  /profile=$standaloneProfile/subsystem=infinispan/cache-container=ejb/local-cache=persistent/component=locking/:write-attribute(name=isolation,value=REPEATABLE_READ)
+  echo
+end-if
+
+if (outcome == success) of /profile=$standaloneProfile/subsystem=infinispan/cache-container=hibernate/local-cache=immutable-entity/:read-resource
+   echo Removing Hibernate immutable-entity cache
+   /profile=$standaloneProfile/subsystem=infinispan/cache-container=hibernate/local-cache=immutable-entity/:remove
+end-if
+
+
+# Migrate from 2.5.4 to 3.0.0 
+if (result == jpa) of /profile=$standaloneProfile/subsystem=keycloak-server/spi=eventsStore/:read-attribute(name=default-provider,include-defaults=false)
+   echo Removing default provider for eventsStore
+   /profile=$standaloneProfile/subsystem=keycloak-server/spi=eventsStore/:undefine-attribute(name=default-provider)
+   echo
+end-if
+
+if ((outcome == success) && (result.default-provider == jpa) && (result.provider == undefined)) of /profile=$standaloneProfile/subsystem=keycloak-server/spi=realm/:read-resource(recursive=false,include-defaults=false)
+   echo Removing declaration for user SPI
+   /profile=$standaloneProfile/subsystem=keycloak-server/spi=realm/:remove
+   echo
+end-if
+
+if ((outcome == success) && (result.default-provider == jpa) && (result.provider == undefined)) of /profile=$standaloneProfile/subsystem=keycloak-server/spi=user/:read-resource(recursive=false,include-defaults=false)
+   echo Removing declaration for user SPI
+   /profile=$standaloneProfile/subsystem=keycloak-server/spi=user/:remove
+   echo
+end-if
+
+if ((outcome == success) && (result.default-provider == jpa) && (result.provider == undefined)) of /profile=$standaloneProfile/subsystem=keycloak-server/spi=userFederatedStorage/:read-resource(recursive=false,include-defaults=false)
+   echo Removing declaration for userFederatedStorage SPI
+   /profile=$standaloneProfile/subsystem=keycloak-server/spi=userFederatedStorage/:remove
+   echo
+end-if
+
+if ((outcome == success) && (result.default-provider == jpa) && (result.provider == undefined)) of /profile=$standaloneProfile/subsystem=keycloak-server/spi=authorizationPersister/:read-resource(recursive=false,include-defaults=false)
+   echo Removing declaration for authorizationPersister SPI
+   /profile=$standaloneProfile/subsystem=keycloak-server/spi=authorizationPersister/:remove
+   echo
+end-if
+
+if (outcome == failed) of /profile=$standaloneProfile/subsystem=keycloak-server/spi=userCache/:read-resource
+   echo Adding userCache SPI
+   /profile=$standaloneProfile/subsystem=keycloak-server/spi=userCache/:add
+   /profile=$standaloneProfile/subsystem=keycloak-server/spi=userCache/provider=default/:add(enabled=true)
+   echo
+end-if
+
+if (outcome == failed) of /profile=$standaloneProfile/subsystem=keycloak-server/spi=realmCache/:read-resource
+   echo Adding realmCache SPI
+   /profile=$standaloneProfile/subsystem=keycloak-server/spi=realmCache/:add
+   /profile=$standaloneProfile/subsystem=keycloak-server/spi=realmCache/provider=default/:add(enabled=true)
+   echo
+end-if
+
+if ((result.default-provider == undefined) && (result.provider.default.enabled == true)) of /subsystem=keycloak-server/spi=connectionsInfinispan/:read-resource(recursive=true,include-defaults=false)
+   echo Adding 'default' as default provider for connectionsInfinispan
+   /profile=$standaloneProfile/subsystem=keycloak-server/spi=connectionsInfinispan/:write-attribute(name=default-provider,value=default)
+   echo
+end-if
+
 echo *** End Migration of /profile=$standaloneProfile ***
