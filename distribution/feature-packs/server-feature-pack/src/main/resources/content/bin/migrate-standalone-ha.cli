@@ -142,4 +142,19 @@ if (result == NONE) of /subsystem=infinispan/cache-container=keycloak/local-cach
   echo
 end-if
 
+# Migrate from 2.5.0 to 2.5.1
+# NO CHANGES
+
+# Migrate 2.5.1 to 2.5.4
+if (result != REPEATABLE_READ) of /subsystem=infinispan/cache-container=ejb/local-cache=persistent/component=locking/:read-attribute(name=isolation)
+  echo Changing ejb cache locking to REPEATABLE_READ
+  /subsystem=infinispan/cache-container=ejb/local-cache=persistent/component=locking/:write-attribute(name=isolation,value=REPEATABLE_READ)
+  echo
+end-if
+
+if (outcome == success) of /subsystem=infinispan/cache-container=hibernate/local-cache=immutable-entity/:read-resource
+   echo Removing Hibernate immutable-entity cache
+   /subsystem=infinispan/cache-container=hibernate/local-cache=immutable-entity/:remove
+end-if
+
 echo *** End Migration ***

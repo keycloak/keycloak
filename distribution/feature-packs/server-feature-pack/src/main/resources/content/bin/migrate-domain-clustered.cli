@@ -137,4 +137,19 @@ if (result == NONE) of /profile=$clusteredProfile/subsystem=infinispan/cache-con
   echo
 end-if
 
+# Migrate from 2.5.0 to 2.5.1
+# NO CHANGES
+
+# Migrate 2.5.1 to 2.5.4
+if (result != REPEATABLE_READ) of /profile=$clusteredProfile/subsystem=infinispan/cache-container=ejb/local-cache=persistent/component=locking/:read-attribute(name=isolation)
+  echo Changing ejb cache locking to REPEATABLE_READ
+  /profile=$clusteredProfile/subsystem=infinispan/cache-container=ejb/local-cache=persistent/component=locking/:write-attribute(name=isolation,value=REPEATABLE_READ)
+  echo
+end-if
+
+if (outcome == success) of /profile=$clusteredProfile/subsystem=infinispan/cache-container=hibernate/local-cache=immutable-entity/:read-resource
+   echo Removing Hibernate immutable-entity cache
+   /profile=$clusteredProfile/subsystem=infinispan/cache-container=hibernate/local-cache=immutable-entity/:remove
+end-if
+
 echo *** End Migration of /profile=$clusteredProfile ***
