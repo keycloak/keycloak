@@ -22,6 +22,6 @@ and a new password.
 image:../../{{book.images}}/registration-form.png[]
 
 You can change the look and feel of the registration form as well as removing or adding additional fields that must be entered.
-See the link:{{book.project.doc_base_url}}{{book.project.doc_info_version_url}}{{book.developerguide.link}}[{{book.developerguide.name}}] for more information.
+See the link:{{book.developerguide.link}}[{{book.developerguide.name}}] for more information.
 
 

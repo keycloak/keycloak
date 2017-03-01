@@ -24,13 +24,13 @@ There is an alternative to register new client without any token as well, but th
 
 ==== Bearer Token
 
-The bearer token can be issued on behalf of a user or a Service Account. The following permissions are required to invoke the endpoints (see link:{{book.project.doc_base_url}}{{book.project.doc_info_version_url}}{{book.adminguide.link}}[{{book.adminguide.name}}] for more details):
+The bearer token can be issued on behalf of a user or a Service Account. The following permissions are required to invoke the endpoints (see link:{{book.adminguide.link}}[{{book.adminguide.name}}] for more details):
 
 * create-client or manage-client - To create clients
 * view-client or manage-client - To view clients
 * manage-client - To update or delete client
 
-If you are using a bearer token to create clients it's recommend to use a token from a Service Account with only the `create-client` role (see link:{{book.project.doc_base_url}}{{book.project.doc_info_version_url}}{{book.adminguide.link}}[{{book.adminguide.name}}] for more details).
+If you are using a bearer token to create clients it's recommend to use a token from a Service Account with only the `create-client` role (see link:{{book.adminguide.link}}[{{book.adminguide.name}}] for more details).
 
 ==== Initial Access Token
 

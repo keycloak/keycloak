@@ -12,6 +12,6 @@ you can start creating realms and users and registering applications to be secur
 
 NOTE:  You can only create an initial admin user on the Welcome Page if you connect using `localhost`. This is a security
        precaution. You can also create the initial admin user at the command line with the `add-user-keycloak.sh` script. For more details see
-       link:{{book.project.doc_base_url}}{{book.project.doc_info_version_url}}{{book.installguide.link}}[{{book.installguide.name}}] and link:{{book.project.doc_base_url}}{{book.project.doc_info_version_url}}{{book.adminguide.link}}[{{book.adminguide.name}}].
+       link:{{book.installguide.link}}[{{book.installguide.name}}] and link:{{book.adminguide.link}}[{{book.adminguide.name}}].
 
 

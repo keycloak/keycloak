@@ -24,44 +24,44 @@
       "version": "7.0",
       "admindoc": {
         "name": "JBoss EAP Configuration Guide",
-        "link": "https://access.redhat.com/documentation/en/red-hat-jboss-enterprise-application-platform/7.0/single/configuration-guide/configuration-guide"
+        "link": "https://access.redhat.com/documentation/en/red-hat-jboss-enterprise-application-platform/7.0/html-single/configuration-guide/configuration-guide"
       },
       "datasource": {
         "name": "JBoss EAP Configuration Guide",
-        "link": "https://access.redhat.com/documentation/en/red-hat-jboss-enterprise-application-platform/7.0/single/configuration-guide/#datasource_management"
+        "link": "https://access.redhat.com/documentation/en/red-hat-jboss-enterprise-application-platform/7.0/html-single/configuration-guide/#datasource_management"
       },
       "network": {
         "name": "JBoss EAP Configuration Guide",
-        "link": "https://access.redhat.com/documentation/en/red-hat-jboss-enterprise-application-platform/7.0/single/configuration-guide/#network_and_port_configuration"
+        "link": "https://access.redhat.com/documentation/en/red-hat-jboss-enterprise-application-platform/7.0/html-single/configuration-guide/#network_and_port_configuration"
       },
       "socket": {
         "name": "JBoss EAP Configuration Guide",
-        "link": "https://access.redhat.com/documentation/en/red-hat-jboss-enterprise-application-platform/7.0/single/configuration-guide/#network_and_port_configuration"
+        "link": "https://access.redhat.com/documentation/en/red-hat-jboss-enterprise-application-platform/7.0/html-single/configuration-guide/#network_and_port_configuration"
       },
       "loadbalancer": {
         "name": "JBoss EAP Configuration Guide",
-        "link": "https://access.redhat.com/documentation/en/red-hat-jboss-enterprise-application-platform/7.0/single/configuration-guide/#configuring_high_availability"
+        "link": "https://access.redhat.com/documentation/en/red-hat-jboss-enterprise-application-platform/7.0/html-single/configuration-guide/#configuring_high_availability"
       },
       "jgroups": {
         "name": "JBoss EAP Configuration Guide",
-        "link": "https://access.redhat.com/documentation/en/red-hat-jboss-enterprise-application-platform/7.0/single/configuration-guide/#cluster_communication_jgroups"
+        "link": "https://access.redhat.com/documentation/en/red-hat-jboss-enterprise-application-platform/7.0/html-single/configuration-guide/#cluster_communication_jgroups"
       },
       "caching": {
         "name": "JBoss EAP Configuration Guide",
-        "link": "https://access.redhat.com/documentation/en/red-hat-jboss-enterprise-application-platform/7.0/single/configuration-guide/#infinispan"
+        "link": "https://access.redhat.com/documentation/en/red-hat-jboss-enterprise-application-platform/7.0/html-single/configuration-guide/#infinispan"
       },
       "jpa": {
         "name": "JBoss EAP Development Guide",
-        "link": "https://access.redhat.com/documentation/en/red-hat-jboss-enterprise-application-platform/7.0/single/development-guide/#hibernate"
+        "link": "https://access.redhat.com/documentation/en/red-hat-jboss-enterprise-application-platform/7.0/html-single/development-guide/#hibernate"
       }
     },
     "developerguide": {
       "name": "Server Developer Guide",
-      "link": "https://access.redhat.com/documentation/en/red-hat-single-sign-on/7.1-Beta/server-developer-guide/"
+      "link": "https://access.redhat.com/documentation/en/red-hat-single-sign-on/7.1-Beta/html-single/server-developer-guide/"
     },
     "adminguide": {
       "name": "Server Administration Guide",
-      "link": "https://access.redhat.com/documentation/en/red-hat-single-sign-on/7.1-Beta/server-administration-guide/"
+      "link": "https://access.redhat.com/documentation/en/red-hat-single-sign-on/7.1-Beta/html-single/server-administration-guide/"
     }
   }
 }

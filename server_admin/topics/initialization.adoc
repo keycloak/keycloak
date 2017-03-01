@@ -1,7 +1,7 @@
 
 == Server Initialization
 
-After performing all the installation and configuration tasks defined in the link:{{book.project.doc_base_url}}{{book.project.doc_info_version_url}}{{book.installguide.link}}[{{book.installguide.name}}],
+After performing all the installation and configuration tasks defined in the link:{{book.installguide.link}}[{{book.installguide.name}}],
 you will need to create an initial admin account.
 {{book.project.name}} does not have any configured admin account out of the box.
 This account will allow you to create an admin that can log into the _master_ realm's administration console so that

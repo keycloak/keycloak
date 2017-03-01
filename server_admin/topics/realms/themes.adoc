@@ -21,12 +21,12 @@ Email Theme::
 
 
 
-The link:{{book.project.doc_base_url}}{{book.project.doc_info_version_url}}{{book.developerguide.link}}[{{book.developerguide.name}}] goes into how to create a new themes or modify existing ones.
+The link:{{book.developerguide.link}}[{{book.developerguide.name}}] goes into how to create a new themes or modify existing ones.
 
 ==== Internationalization
 
 Every UI screen is internationalized in {{book.project.name}}.  The default language is English, but if you turn on the
 `Internationalization` switch on the `Theme` tab you can choose which locales you want to support and what the default locale
 will be.  The next time a user logs in, they will be able to choose a language on the login page to use for the login screens,
-User Account Management UI, and Admin Console.  The link:{{book.project.doc_base_url}}{{book.project.doc_info_version_url}}{{book.developerguide.link}}[{{book.developerguide.name}}] explains
+User Account Management UI, and Admin Console.  The link:{{book.developerguide.link}}[{{book.developerguide.name}}] explains
 how you can offer additional languages.

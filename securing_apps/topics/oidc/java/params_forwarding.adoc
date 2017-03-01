@@ -29,4 +29,4 @@ The supported parameters are:
 
 Most of the parameters are described in the http://openid.net/specs/openid-connect-core-1_0.html#AuthorizationEndpoint[OIDC specification].
 The only exception is parameter `kc_idp_hint`, which is specific to {{book.project.name}} and contains the name of the identity provider to automatically use.
-For more information see the `Identity Brokering` section in {{book.project.doc_base_url}}{{book.project.doc_info_version_url}}{{book.adminguide.link}}[{{book.adminguide.name}}].
+For more information see the `Identity Brokering` section in link:{{book.adminguide.link}}[{{book.adminguide.name}}].

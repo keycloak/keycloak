@@ -32,7 +32,7 @@ Then you can choose to either:
 ** Configure the JWKS URL where {{book.project.name}} can download the client's public keys. This can be a URL such as  \http://myhost.com/myapp/k_jwks (see details above). This option is the most flexible, since the client can rotate its keys anytime and {{book.project.name}} then always downloads new keys when needed without needing to change the configuration. More accurately,  {{book.project.name}} downloads new keys when it sees the token signed by an unknown `kid` (Key ID).
 ** Upload the client's public key or certificate, either in PEM format, in JWK format, or from the keystore. With this option, the public key is hardcoded and must be changed when the client generates a new key pair.
 You can even generate your own keystore from the {{book.project.name}} admininstration console if you don't have your own available.
-For more details on how to set up the {{book.project.name}} administration console see {{book.project.doc_base_url}}{{book.project.doc_info_version_url}}{{book.adminguide.link}}[{{book.adminguide.name}}].
+For more details on how to set up the {{book.project.name}} administration console see {{book.adminguide.link}}[{{book.adminguide.name}}].
 
 For set up on the adapter side you need to have something like this in your `keycloak.json` file:
 
@@ -59,7 +59,7 @@ For inspiration, you can take a look at the examples distribution into the main 
 
 ===== Add Your Own Client Authentication Method
 
-You can add your own client authentication method as well. You will need to implement both client-side and server-side providers. For more details see the `Authentication SPI` section in {{book.developerguide.link}}[{{book.developerguide.name}}].
+You can add your own client authentication method as well. You will need to implement both client-side and server-side providers. For more details see the `Authentication SPI` section in link:{{book.developerguide.link}}[{{book.developerguide.name}}].
 {% endif %}
 
 
