@@ -78,6 +78,8 @@
         <frontend.console.output>true</frontend.console.output>
         <backends.console.output>true</backends.console.output>
 
+        <keycloak.logging.level>off</keycloak.logging.level>
+
         <testsuite.constants>${project.build.directory}/dependency/test-constants.properties</testsuite.constants>
 
         <skip.add.user.json>false</skip.add.user.json>
@@ -186,6 +188,8 @@
                             <htmlUnitBrowserVersion>${htmlUnitBrowserVersion}</htmlUnitBrowserVersion>
                             <firefox_binary>${firefox_binary}</firefox_binary>
                             <phantomjs.cli.args>${phantomjs.cli.args}</phantomjs.cli.args>
+
+                            <keycloak.logging.level>${keycloak.logging.level}</keycloak.logging.level>
 
                             <project.version>${project.version}</project.version>
                             <migration.project.version>${migration.project.version}</migration.project.version>
