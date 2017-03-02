@@ -43,7 +43,7 @@ features:install keycloak
 features:install keycloak-jetty9-adapter
 ----
 
-NOTE: If you are using JBoss Fuse 6.2 or later, you should use `keycloak-jetty8-adapter`. However, upgrading {{book.fuseVersion}} instead.
+NOTE: If you are using JBoss Fuse 6.2 or later, use `keycloak-jetty8-adapter`. However, upgrading to {{book.fuseVersion}} is recommended.
 
 . Ensure that the features were installed:
 
@@ -66,7 +66,12 @@ Use this for {{book.fuseVersion}}:
 [source,subs="attributes"]
 ----
 cd /path-to-fuse/jboss-fuse-6.3.0.redhat-198
-unzip -q /path-to-adapter-zip/keycloak-fuse-adapter-dist-{{book.project.versionMvn}}.zip
+{% if book.community %}
+unzip -q /path-to-adapter-zip/keycloak-fuse-adapter-dist-2.5.4.Final.zip
+{% endif %}
+{% if book.product %}
+unzip -q /path-to-adapter-zip/rh-sso-{{book.project.version}}-fuse-adapter.zip
+{% endif %}
 ----
 . Start Fuse and run these commands in the fuse/karaf terminal:
 +
