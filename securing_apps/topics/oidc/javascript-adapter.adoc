@@ -18,7 +18,7 @@ is selected for `Access Type`.
 
 You also need to configure valid redirect URIs and valid web origins. Be as specific as possible as failing to do so may result in a security vulnerability.
 
-Once the client is created click on the `Installation` tab select `Keycloak OIDC JSON` for `Format Option` then click on `Download`. The downloaded
+Once the client is created click on the `Installation` tab select `Keycloak OIDC JSON` for `Format Option` then click `Download`. The downloaded
 `keycloak.json` file should be hosted on your web server at the same location as your HTML pages.
 
 Alternatively, you can skip the configuration file and manually configure the adapter.
@@ -112,7 +112,7 @@ keycloak.updateToken(30).success(function() {
 );
 ----    
 
-==== Session status iframe
+==== Session Status iframe
 
 By default, the JavaScript adapter creates a hidden iframe that is used to detect if a Single-Sign Out has occurred.
 This does not require any network traffic, instead the status is retrieved by looking at a special status cookie.
@@ -164,23 +164,22 @@ For the Hybrid flow, you need to pass the parameter `flow` with value `hybrid` t
 keycloak.init({ flow: 'hybrid' })
 ----
 
-==== Older browsers
+==== Earlier Browsers
 
 The JavaScript adapter depends on Base64 (window.btoa and window.atob) and HTML5 History API.
-If you need to support browsers that don't have these available (for example IE9) you need to add polyfillers.
+If you need to support browsers that do not have these available (for example, IE9) you need to add polyfillers.
 
 Example polyfill libraries:  
 
 * https://github.com/davidchambers/Base64.js
 * https://github.com/devote/HTML5-History-API        
 
-==== JavaScript Adapter reference
+==== JavaScript Adapter Reference
 
 ===== Constructor
 
-[source]
+[source,javascript]
 ----
-
 new Keycloak();
 new Keycloak('http://localhost/keycloak.json');
 new Keycloak({ url: 'http://localhost/auth', realm: 'myrealm', clientId: 'myApp' });
@@ -357,7 +356,7 @@ Invoking this results in onAuthLogout callback listener being invoked.
 The adapter supports setting callback listeners for certain events.
 
 For example: 
-[source]
+[source,javascript]
 ----
 keycloak.onAuthSuccess = function() { alert('authenticated'); }
 ----
@@ -370,4 +369,4 @@ The available events are:
 * onAuthRefreshSuccess - Called when the token is refreshed.
 * onAuthRefreshError - Called if there was an error while trying to refresh the token.
 * onAuthLogout - Called if the user is logged out (will only be called if the session status iframe is enabled, or in Cordova mode).
-* onTokenExpired - Called when the access token is expired. If a refresh token is available the token can be refreshed with updateToken, or in cases where it's not (ie. with implicit flow) you can redirect to login screen to obtain a new access token.
+* onTokenExpired - Called when the access token is expired. If a refresh token is available the token can be refreshed with updateToken, or in cases where it is not (that is, with implicit flow) you can redirect to login screen to obtain a new access token.
