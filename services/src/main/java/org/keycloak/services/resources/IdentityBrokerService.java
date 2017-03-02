@@ -17,6 +17,7 @@
 package org.keycloak.services.resources;
 
 import org.jboss.logging.Logger;
+import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 
@@ -34,8 +35,10 @@ import org.keycloak.broker.provider.IdentityProviderMapper;
 import org.keycloak.broker.saml.SAMLEndpoint;
 import org.keycloak.broker.social.SocialIdentityProvider;
 import org.keycloak.common.ClientConnection;
+import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.common.util.Time;
+import org.keycloak.common.util.UriUtils;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
@@ -55,17 +58,20 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.FormMessage;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager;
+import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.protocol.saml.SamlService;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.AccessToken;
-import org.keycloak.saml.common.constants.GeneralConstants;
 import org.keycloak.services.ErrorPage;
+import org.keycloak.services.ErrorPageException;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AppAuthManager;
+import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationManager.AuthResult;
 import org.keycloak.services.managers.BruteForceProtector;
 import org.keycloak.services.managers.ClientSessionCode;
@@ -88,6 +94,9 @@ import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import java.io.IOException;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -95,6 +104,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 
 import static org.keycloak.models.AccountRoles.MANAGE_ACCOUNT;
 import static org.keycloak.models.ClientSessionModel.Action.AUTHENTICATE;
@@ -140,6 +150,162 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
         this.event = new EventBuilder(realmModel, session, clientConnection).event(EventType.IDENTITY_PROVIDER_LOGIN);
     }
 
+    private void checkRealm() {
+        if (!realmModel.isEnabled()) {
+            event.error(Errors.REALM_DISABLED);
+            throw new ErrorPageException(session, Messages.REALM_NOT_ENABLED);
+        }
+    }
+
+    private ClientModel checkClient(String clientId) {
+        if (clientId == null) {
+            event.error(Errors.INVALID_REQUEST);
+            throw new ErrorPageException(session, Messages.MISSING_PARAMETER, OIDCLoginProtocol.CLIENT_ID_PARAM);
+        }
+
+        event.client(clientId);
+
+        ClientModel client = realmModel.getClientByClientId(clientId);
+        if (client == null) {
+            event.error(Errors.CLIENT_NOT_FOUND);
+            throw new ErrorPageException(session, Messages.INVALID_REQUEST);
+        }
+
+        if (!client.isEnabled()) {
+            event.error(Errors.CLIENT_DISABLED);
+            throw new ErrorPageException(session, Messages.INVALID_REQUEST);
+        }
+        return client;
+
+    }
+
+    /**
+     * Closes off CORS preflight requests for account linking
+     *
+     * @param providerId
+     * @return
+     */
+    @OPTIONS
+    @Path("/{provider_id}/link")
+    public Response clientIntiatedAccountLinkingPreflight(@PathParam("provider_id") String providerId) {
+        return Response.status(403).build(); // don't allow preflight
+    }
+
+
+    @GET
+    @NoCache
+    @Path("/{provider_id}/link")
+    public Response clientInitiatedAccountLinking(@PathParam("provider_id") String providerId,
+                                                  @QueryParam("redirect_uri") String redirectUri,
+                                                  @QueryParam("client_id") String clientId,
+                                                  @QueryParam("nonce") String nonce,
+                                                  @QueryParam("hash") String hash
+    ) {
+        this.event.event(EventType.CLIENT_INITIATED_ACCOUNT_LINKING);
+        checkRealm();
+        ClientModel client = checkClient(clientId);
+        AuthenticationManager authenticationManager = new AuthenticationManager();
+        redirectUri = RedirectUtils.verifyRedirectUri(uriInfo, redirectUri, realmModel, client);
+        if (redirectUri == null) {
+            event.error(Errors.INVALID_REDIRECT_URI);
+            throw new ErrorPageException(session, Messages.INVALID_REQUEST);
+        }
+
+        if (nonce == null || hash == null) {
+            event.error(Errors.INVALID_REDIRECT_URI);
+            throw new ErrorPageException(session, Messages.INVALID_REQUEST);
+
+        }
+
+        // only allow origins from client.  Not sure we need this as I don't believe cookies can be
+        // sent if CORS preflight requests can't execute.
+        String origin = headers.getRequestHeaders().getFirst("Origin");
+        if (origin != null) {
+            String redirectOrigin = UriUtils.getOrigin(redirectUri);
+            if (!redirectOrigin.equals(origin)) {
+                event.error(Errors.ILLEGAL_ORIGIN);
+                throw new ErrorPageException(session, Messages.INVALID_REQUEST);
+
+            }
+        }
+
+        AuthResult cookieResult = authenticationManager.authenticateIdentityCookie(session, realmModel, true);
+        if (cookieResult == null) {
+            event.error(Errors.NOT_LOGGED_IN);
+            UriBuilder builder = UriBuilder.fromUri(redirectUri)
+                    .queryParam("error", Errors.NOT_LOGGED_IN)
+                    .queryParam("nonce", nonce);
+
+            return Response.status(302).location(builder.build()).build();
+        }
+
+
+
+        ClientSessionModel clientSession = null;
+        for (ClientSessionModel cs : cookieResult.getSession().getClientSessions()) {
+            if (cs.getClient().getClientId().equals(clientId)) {
+                byte[] decoded = Base64Url.decode(hash);
+                MessageDigest md = null;
+                try {
+                    md = MessageDigest.getInstance("SHA-256");
+                } catch (NoSuchAlgorithmException e) {
+                    throw new ErrorPageException(session, Messages.UNEXPECTED_ERROR_HANDLING_REQUEST);
+                }
+                String input = nonce + cookieResult.getSession().getId() + cs.getId() + providerId;
+                byte[] check = md.digest(input.getBytes(StandardCharsets.UTF_8));
+                if (MessageDigest.isEqual(decoded, check)) {
+                    clientSession = cs;
+                }
+                break;
+            }
+        }
+        if (clientSession == null) {
+            event.error(Errors.INVALID_TOKEN);
+            throw new ErrorPageException(session, Messages.INVALID_REQUEST);
+        }
+
+        IdentityProviderModel identityProviderModel = realmModel.getIdentityProviderByAlias(providerId);
+        if (identityProviderModel == null) {
+            event.error(Errors.UNKNOWN_IDENTITY_PROVIDER);
+            UriBuilder builder = UriBuilder.fromUri(redirectUri)
+                    .queryParam("error", Errors.UNKNOWN_IDENTITY_PROVIDER)
+                    .queryParam("nonce", nonce);
+            return Response.status(302).location(builder.build()).build();
+
+        }
+
+
+
+        ClientSessionCode clientSessionCode = new ClientSessionCode(session, realmModel, clientSession);
+        clientSessionCode.setAction(ClientSessionModel.Action.AUTHENTICATE.name());
+        clientSessionCode.getCode();
+        clientSession.setRedirectUri(redirectUri);
+        clientSession.setNote(OIDCLoginProtocol.STATE_PARAM, UUID.randomUUID().toString());
+
+        event.success();
+
+
+        try {
+            IdentityProvider identityProvider = getIdentityProvider(session, realmModel, providerId);
+            Response response = identityProvider.performLogin(createAuthenticationRequest(providerId, clientSessionCode));
+
+            if (response != null) {
+                if (isDebugEnabled()) {
+                    logger.debugf("Identity provider [%s] is going to send a request [%s].", identityProvider, response);
+                }
+                return response;
+            }
+        } catch (IdentityBrokerException e) {
+            return redirectToErrorPage(Messages.COULD_NOT_SEND_AUTHENTICATION_REQUEST, e, providerId);
+        } catch (Exception e) {
+            return redirectToErrorPage(Messages.UNEXPECTED_ERROR_HANDLING_REQUEST, e, providerId);
+        }
+
+        return redirectToErrorPage(Messages.COULD_NOT_PROCEED_WITH_AUTHENTICATION_REQUEST);
+
+    }
+
+
     @POST
     @Path("/{provider_id}/login")
     public Response performPostLogin(@PathParam("provider_id") String providerId, @QueryParam("code") String code) {
@@ -147,6 +313,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
     }
 
     @GET
+    @NoCache
     @Path("/{provider_id}/login")
     public Response performLogin(@PathParam("provider_id") String providerId, @QueryParam("code") String code) {
         this.event.detail(Details.IDENTITY_PROVIDER, providerId);
@@ -198,9 +365,16 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
     }
 
     @GET
+    @NoCache
     @Path("{provider_id}/token")
     public Response retrieveToken(@PathParam("provider_id") String providerId) {
         return getToken(providerId, false);
+    }
+
+    private boolean canReadBrokerToken(AccessToken token) {
+        Map<String, AccessToken.Access> resourceAccess = token.getResourceAccess();
+        AccessToken.Access brokerRoles = resourceAccess == null ? null : resourceAccess.get(Constants.BROKER_SERVICE_CLIENT_ID);
+        return brokerRoles != null && brokerRoles.isUserInRole(Constants.READ_TOKEN_ROLE);
     }
 
     private Response getToken(String providerId, boolean forceRetrieval) {
@@ -226,9 +400,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
                     return corsResponse(forbidden("Realm has not migrated to support the broker token exchange service"), clientModel);
 
                 }
-                Map<String, AccessToken.Access> resourceAccess = token.getResourceAccess();
-                AccessToken.Access brokerRoles = resourceAccess == null ? null : resourceAccess.get(Constants.BROKER_SERVICE_CLIENT_ID);
-                if (brokerRoles == null || !brokerRoles.isUserInRole(Constants.READ_TOKEN_ROLE)) {
+                if (!canReadBrokerToken(token)) {
                     return corsResponse(forbidden("Client [" + clientModel.getClientId() + "] not authorized to retrieve tokens from identity provider [" + providerId + "]."), clientModel);
 
                 }
@@ -366,6 +538,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
 
     // Callback from LoginActionsService after first login with broker was done and Keycloak account is successfully linked/created
     @GET
+    @NoCache
     @Path("/after-first-broker-login")
     public Response afterFirstBrokerLogin(@QueryParam("code") String code) {
         ParsedCodeContext parsedCode = parseClientSessionCode(code);
@@ -487,6 +660,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
 
     // Callback from LoginActionsService after postBrokerLogin flow is finished
     @GET
+    @NoCache
     @Path("/after-post-broker-login")
     public Response afterPostBrokerLoginFlow(@QueryParam("code") String code) {
         ParsedCodeContext parsedCode = parseClientSessionCode(code);
@@ -613,7 +787,19 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
         this.event.event(EventType.FEDERATED_IDENTITY_LINK);
 
         if (federatedUser != null) {
-            return redirectToAccountErrorPage(clientSession, Messages.IDENTITY_PROVIDER_ALREADY_LINKED, context.getIdpConfig().getAlias());
+            // refresh the token
+            if (context.getIdpConfig().isStoreToken()) {
+                federatedIdentityModel = this.session.users().getFederatedIdentity(federatedUser, context.getIdpConfig().getAlias(), this.realmModel);
+                if (!ObjectUtil.isEqualOrBothNull(context.getToken(), federatedIdentityModel.getToken())) {
+
+                    this.session.users().updateFederatedIdentity(this.realmModel, federatedUser, federatedIdentityModel);
+
+                    if (isDebugEnabled()) {
+                        logger.debugf("Identity [%s] update with response from identity provider [%s].", federatedUser, context.getIdpConfig().getAlias());
+                    }
+                }
+            }
+            return Response.status(302).location(UriBuilder.fromUri(clientSession.getRedirectUri()).build()).build();
         }
 
         UserModel authenticatedUser = clientSession.getUserSession().getUser();
@@ -645,15 +831,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
         FederatedIdentityModel federatedIdentityModel = this.session.users().getFederatedIdentity(federatedUser, context.getIdpConfig().getAlias(), this.realmModel);
 
         // Skip DB write if tokens are null or equal
-        if (context.getIdpConfig().isStoreToken() && !ObjectUtil.isEqualOrBothNull(context.getToken(), federatedIdentityModel.getToken())) {
-            federatedIdentityModel.setToken(context.getToken());
-
-            this.session.users().updateFederatedIdentity(this.realmModel, federatedUser, federatedIdentityModel);
-
-            if (isDebugEnabled()) {
-                logger.debugf("Identity [%s] update with response from identity provider [%s].", federatedUser, context.getIdpConfig().getAlias());
-            }
-        }
+        updateToken(context, federatedUser, federatedIdentityModel);
         context.getIdp().updateBrokeredUser(session, realmModel, federatedUser, context);
         Set<IdentityProviderMapperModel> mappers = realmModel.getIdentityProviderMappersByAlias(context.getIdpConfig().getAlias());
         if (mappers != null) {
@@ -664,6 +842,18 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
             }
         }
 
+    }
+
+    private void updateToken(BrokeredIdentityContext context, UserModel federatedUser, FederatedIdentityModel federatedIdentityModel) {
+        if (context.getIdpConfig().isStoreToken() && !ObjectUtil.isEqualOrBothNull(context.getToken(), federatedIdentityModel.getToken())) {
+            federatedIdentityModel.setToken(context.getToken());
+
+            this.session.users().updateFederatedIdentity(this.realmModel, federatedUser, federatedIdentityModel);
+
+            if (isDebugEnabled()) {
+                logger.debugf("Identity [%s] update with response from identity provider [%s].", federatedUser, context.getIdpConfig().getAlias());
+            }
+        }
     }
 
     private ParsedCodeContext parseClientSessionCode(String code) {

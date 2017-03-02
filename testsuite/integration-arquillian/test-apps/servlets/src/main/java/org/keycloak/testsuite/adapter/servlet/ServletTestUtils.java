@@ -51,6 +51,6 @@ public class ServletTestUtils {
             return System.getProperty("auth.server.ssl.base.url", "https://localhost:8543");
         }
 
-        return System.getProperty("auth.server.base.url");
+        return System.getProperty("auth.server.base.url", "http://localhost:8180");
     }
 }
