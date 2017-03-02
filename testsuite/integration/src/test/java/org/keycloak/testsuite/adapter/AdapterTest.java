@@ -104,21 +104,6 @@ public class AdapterTest {
         Thread.sleep(1000000000);
     }
 
-    public static class MySuper {
-
-    }
-
-    public static class Base extends MySuper {
-        public Class superClass() {
-            return super.getClass();
-        }
-    }
-
-    @Test
-    public void testBase() {
-        System.out.println(new Base().superClass().getName());
-    }
-
     @Test
     public void testLoginSSOAndLogout() throws Exception {
         testStrategy.testLoginSSOMax();
