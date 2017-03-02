@@ -70,7 +70,7 @@ cd /path-to-fuse/jboss-fuse-6.3.0.redhat-198
 unzip -q /path-to-adapter-zip/keycloak-fuse-adapter-dist-2.5.4.Final.zip
 {% endif %}
 {% if book.product %}
-unzip -q /path-to-adapter-zip/rh-sso-{{book.project.version}}-fuse-adapter.zip
+unzip -q /path-to-adapter-zip/rh-sso-7.1.0-fuse-adapter.zip
 {% endif %}
 ----
 . Start Fuse and run these commands in the fuse/karaf terminal:

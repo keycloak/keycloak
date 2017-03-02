@@ -22,7 +22,7 @@ This is based on the https://tools.ietf.org/html/rfc7523[RFC7523] specification.
 
 * The client must have the private key and certificate. For  {{book.project.name}} this is available through the traditional `keystore` file, which is either available on the client application's classpath or somewhere on the file system.
 
-* Once the client application is started, it allows to download it's public key in https://self-issued.info/docs/draft-ietf-jose-json-web-key.html[JWKS] format using a URL such as \http://myhost.com/myapp/k_jwks, assuming that \http://myhost.com/myapp is the base URL of your client application. This URL can be used by {{book.project.name}} (see below).
+* Once the client application is started, it allows to download its public key in https://self-issued.info/docs/draft-ietf-jose-json-web-key.html[JWKS] format using a URL such as \http://myhost.com/myapp/k_jwks, assuming that \http://myhost.com/myapp is the base URL of your client application. This URL can be used by {{book.project.name}} (see below).
 
 * During authentication, the client generates a JWT token and signs it with its private key and sends it to {{book.project.name}} in
 the particular backchannel request (for example, code-to-token request) in the `client_assertion` parameter.
