@@ -47,6 +47,17 @@ and you will be able to attach remote debugger to the test. Unfortunately server
 
 TODO: Improve and add more info about Wildfly debugging...
 
+## Testsuite logging
+
+It is configured in `testsuite/integration-arquillian/tests/base/src/test/resources/log4j.properties` . You can see that logging of testsuite itself (category `org.keycloak.testsuite`) is debug by default.
+
+When you run tests with undertow (which is by default), there is logging for Keycloak server and adapter (category `org.keycloak` ) in `info` when you run tests from IDE, but `off` when 
+you run tests with maven. The reason is that, we don't want huge logs when running mvn build. However using system property `keycloak.logging.level` will override it. This can be used for both IDE or maven.
+So for example using `-Dkeycloak.logging.level=debug` will enable debug logging for keycloak server and adapter. 
+
+For more fine-tuning of individual categories, you can look at log4j.properties file and temporarily enable/disable them here.
+
+TODO: Add info about Wildfly logging
 
 ## Run adapter tests
 
