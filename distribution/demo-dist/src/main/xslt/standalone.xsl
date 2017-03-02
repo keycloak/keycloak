@@ -92,6 +92,7 @@
                 <local-cache name="offlineSessions"/>
                 <local-cache name="loginFailures"/>
                 <local-cache name="authorization"/>
+                <local-cache name="actionTokens"/>
                 <local-cache name="work"/>
                 <local-cache name="keys">
                     <eviction max-entries="1000" strategy="LRU"/>

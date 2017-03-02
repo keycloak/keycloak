@@ -151,6 +151,11 @@ public class RestartLoginCookie {
     }
 
     public static ClientSessionModel restartSession(KeycloakSession session, RealmModel realm, String code) throws Exception {
+        String[] parts = code.split("\\.");
+        return restartSessionByClientSession(session, realm, parts[1]);
+    }
+
+    public static ClientSessionModel restartSessionByClientSession(KeycloakSession session, RealmModel realm, String clientSessionId) throws Exception {
         Cookie cook = session.getContext().getRequestHeaders().getCookies().get(KC_RESTART);
         if (cook ==  null) {
             logger.debug("KC_RESTART cookie doesn't exist");
@@ -164,8 +169,6 @@ public class RestartLoginCookie {
             return null;
         }
         RestartLoginCookie cookie = input.readJsonContent(RestartLoginCookie.class);
-        String[] parts = code.split("\\.");
-        String clientSessionId = parts[1];
         if (!clientSessionId.equals(cookie.getClientSession())) {
             logger.debug("RestartLoginCookie clientSession does not match code's clientSession");
             return null;

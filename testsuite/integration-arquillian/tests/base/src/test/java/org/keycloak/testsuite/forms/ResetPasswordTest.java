@@ -434,6 +434,9 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
             events.expectRequiredAction(EventType.RESET_PASSWORD).error("expired_code").client("test-app").user((String) null).session((String) null).clearDetails().assertEvent();
         } finally {
             setTimeOffset(0);
+
+            realmRep.setAccessCodeLifespanUserAction(originalValue.get());
+            testRealm().update(realmRep);
         }
     }
 

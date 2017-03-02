@@ -19,6 +19,7 @@ org.keycloak.provider.ExceptionConverterSpi
 org.keycloak.storage.UserStorageProviderSpi
 org.keycloak.storage.federated.UserFederatedStorageProviderSpi
 org.keycloak.models.RealmSpi
+org.keycloak.models.ActionTokenStoreSpi
 org.keycloak.models.UserSessionSpi
 org.keycloak.models.UserSpi
 org.keycloak.models.session.UserSessionPersisterSpi
