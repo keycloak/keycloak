@@ -13,7 +13,7 @@ RUN yum install -y epel-release jq && yum clean all
 
 ENV JBOSS_HOME /opt/jboss/keycloak
 
-ADD ../distribution/server-dist/target/keycloak-$KEYCLOAK_VERSION.tar.gz /opt/jboss/
+ADD keycloak-$KEYCLOAK_VERSION.tar.gz /opt/jboss/
 RUN mv /opt/jboss/keycloak-$KEYCLOAK_VERSION /opt/jboss/keycloak
 RUN chown -R 1000:0 ${JBOSS_HOME} && chmod -R ug+rw ${JBOSS_HOME}
 

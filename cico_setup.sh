@@ -49,9 +49,13 @@ function build() {
 }
 
 function deploy() {
+  cp distribution/server-dist/target/keycloak-$KEYCLOAK_VERSION.tar.gz docker
+
   # Let's deploy
   docker build -t $DOCKER_IMAGE_DEPLOY -f $CURRENT_DIR/docker/Dockerfile $CURRENT_DIR/docker
 
+  rm docker/keycloak-$KEYCLOAK_VERSION.tar.gz
+	
   docker tag $DOCKER_IMAGE_DEPLOY 8.43.84.245.xip.io/$REPO_NAME/$PROJECT_NAME:latest
   docker push 8.43.84.245.xip.io/$REPO_NAME/$PROJECT_NAME:latest
   echo 'CICO: Image pushed, ready to update deployed app'
