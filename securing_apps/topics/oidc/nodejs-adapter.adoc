@@ -1,16 +1,16 @@
 [[_nodejs_adapter]]
 === Node.js Adapter
 
-{{book.project.name}} provides a Node.js adapter built on top of https://github.com/senchalabs/connect[Connect] to protect server side JavaScript apps — the goal was to be flexible enough to integrate with frameworks like https://expressjs.com/[Express.js].
+{{book.project.name}} provides a Node.js adapter built on top of https://github.com/senchalabs/connect[Connect] to protect server-side JavaScript apps — the goal was to be flexible enough to integrate with frameworks like https://expressjs.com/[Express.js].
 
 {% if book.community %}
 The library can be downloaded directly from https://www.npmjs.com/package/keycloak-connect[ {{book.project.name}} organization] and the source is available at
 https://github.com/keycloak/keycloak-nodejs-connect[GitHub].
 {% endif %}
 
-To use the Node.js adapter, first you must create a client for your application in the {{book.project.name}} Administration Console. The adapter supports public, confidential and bearer-only access type. Which one to choose depends on the use-case scenario.
+To use the Node.js adapter, first you must create a client for your application in the {{book.project.name}} Administration Console. The adapter supports public, confidential, and bearer-only access type. Which one to choose depends on the use-case scenario.
 
-Once the client is created click on the `Installation` tab select `{{book.project.name}} OIDC JSON` for `Format Option` then click on `Download`. The downloaded `keycloak.json` file should be at the root folder of your project.
+Once the client is created click the `Installation` tab, select `{{book.project.name}} OIDC JSON` for `Format Option`, and then click `Download`. The downloaded `keycloak.json` file should be at the root folder of your project.
 
 ==== Installation
 
@@ -49,8 +49,11 @@ The `Keycloak` class provides a central point for configuration
 and integration with your application.  The simplest creation
 involves no arguments.
 
+[source,javascript]
+----
     var Keycloak = require('keycloak-connect');
     var keycloak = new Keycloak();
+----
 
 By default, this will locate a file named `keycloak.json` alongside
 the main executable of your application to initialize keycloak-specific
@@ -62,51 +65,63 @@ being used.
 
 Configuring a web session store::
 
-If you wish to use web sessions to manage
-server-side state for authentication, you will need to initialize the
+If you want to use web sessions to manage
+server-side state for authentication, you need to initialize the
 `Keycloak(...)` with at least a `store` parameter, passing in the actual
 session store that `express-session` is using.
-
+[source,javascript]
+----
     var session = require('express-session');
     var memoryStore = new session.MemoryStore();
 
     var keycloak = new Keycloak({ store: memoryStore });
-
+----
 Passing a custom scope value::
 
-By default, the scope value `openid` will be passed as query parameter to {{book.project.name}}'s login URL but you can add an additional custom value :
-
+By default, the scope value `openid` is passed as a query parameter to {{book.project.name}}'s login URL, but you can add an additional custom value:
+[source,javascript]
     var keycloak = new Keycloak({ scope: 'offline_access' });
 
-==== Install middleware
+==== Installing Middleware
 
 Once instantiated, install the middleware into your connect-capable app:
 
+[source,javascript]
+----
     var app = express();
 
     app.use( keycloak.middleware() );
+----
 
-==== Protect resources
+==== Protecting Resources
 
 Simple authentication::
 
 To enforce that an user must be authenticated before accessing a resource,
 simply use a no-argument version of `keycloak.protect()`:
 
+[source,javascript]
+----
     app.get( '/complain', keycloak.protect(), complaintHandler );
+----
 
 Role-based authorization::
 
 To secure a resource with an application role for the current app:
 
+[source,javascript]
+----
     app.get( '/special', keycloak.protect('special'), specialHandler );
+----
 
 To secure a resource with an application role for a *different* app:
 
+[source,javascript]
     app.get( '/extra-special', keycloak.protect('other-app:special', extraSpecialHandler );
 
 To secure a resource with a realm role:
 
+[source,javascript]
     app.get( '/admin', keycloak.protect( 'realm:admin' ), adminHandler );
 
 Advanced authorization::
@@ -114,11 +129,14 @@ Advanced authorization::
 To secure resources based on parts of the URL itself, assuming a role exists
 for each section:
 
+[source,javascript]
+----
     function protectBySection(token, request) {
       return token.hasRole( request.params.section );
     }
-
+    
     app.get( '/:section/:page', keycloak.protect( protectBySection ), sectionHandler );
+----
 
 ==== Additional URLs
 
@@ -127,14 +145,14 @@ Explicit user-triggered logout::
 By default, the middleware catches calls to `/logout` to send the user through a
 {{book.project.name}}-centric logout workflow. This can be changed by specifying a `logout`
 configuration parameter to the `middleware()` call:
-
+[source,javascript]
     app.use( keycloak.middleware( { logout: '/logoff' } ));
 
 {{book.project.name}} Admin Callbacks::
 
-Also, the middleware supports callbacks from the {{book.project.name}} console to logout a single
+Also, the middleware supports callbacks from the {{book.project.name}} console to log out a single
 session or all sessions.  By default, these type of admin callbacks occur relative
 to the root URL of `/` but can be changed by providing an `admin` parameter
 to the `middleware()` call:
-
+[source,javascript]
     app.use( keycloak.middleware( { admin: '/callbacks' } );
