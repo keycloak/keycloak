@@ -1,0 +1,20 @@
+package org.keycloak.social.openshift;
+
+import org.keycloak.broker.oidc.OAuth2IdentityProviderConfig;
+import org.keycloak.models.IdentityProviderModel;
+
+public class OpenshifV3IdentityProviderConfig extends OAuth2IdentityProviderConfig {
+    private static final String BASE_URL = "baseUrl";
+
+    public OpenshifV3IdentityProviderConfig(IdentityProviderModel identityProviderModel) {
+        super(identityProviderModel);
+    }
+
+    public String getBaseUrl() {
+        return getConfig().get(BASE_URL);
+    }
+
+    public void setBaseUrl(String baseUrl) {
+        getConfig().put(BASE_URL, baseUrl);
+    }
+}
