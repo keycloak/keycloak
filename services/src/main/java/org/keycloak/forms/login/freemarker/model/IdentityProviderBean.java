@@ -49,7 +49,7 @@ public class IdentityProviderBean {
         if (!identityProviders.isEmpty()) {
             Set<IdentityProvider> orderedSet = new TreeSet<>(IdentityProviderComparator.INSTANCE);
             for (IdentityProviderModel identityProvider : identityProviders) {
-                if (identityProvider.isEnabled()) {
+                if (identityProvider.isEnabled() && !identityProvider.isLinkOnly()) {
                     addIdentityProvider(orderedSet, realm, baseURI, identityProvider);
                 }
             }

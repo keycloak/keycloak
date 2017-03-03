@@ -48,6 +48,7 @@
                         <th>{{:: 'provider' | translate}}</th>
                         <th>{{:: 'enabled' | translate}}</th>
                         <th>{{:: 'hidden' | translate}}</th>
+                        <th>{{:: 'link-only-column' | translate}}</th>
                         <th width="15%">{{:: 'gui-order' | translate}}</th>
                         <th colspan="2">{{:: 'actions' | translate}}</th>
                     </tr>
@@ -64,6 +65,7 @@
                         <td>{{identityProvider.providerId}}</td>
                         <td translate="{{identityProvider.enabled}}"></td>
                         <td translate="{{identityProvider.config.hideOnLoginPage == 'true'}}"></td>
+                        <td translate="{{identityProvider.linkOnly}}"></td>
                         <td>{{identityProvider.config.guiOrder}}</td>
                         <td class="kc-action-cell" kc-open="/realms/{{realm.realm}}/identity-provider-settings/provider/{{identityProvider.providerId}}/{{identityProvider.alias}}">{{:: 'edit' | translate}}</td>
                         <td class="kc-action-cell" data-ng-show="access.manageIdentityProviders" data-ng-click="removeIdentityProvider(identityProvider)">{{:: 'delete' | translate}}</td>

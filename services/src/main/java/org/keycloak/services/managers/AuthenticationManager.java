@@ -699,7 +699,7 @@ public class AuthenticationManager {
     }
 
 
-    protected static AuthResult verifyIdentityToken(KeycloakSession session, RealmModel realm, UriInfo uriInfo, ClientConnection connection, boolean checkActive, boolean checkTokenType,
+    public static AuthResult verifyIdentityToken(KeycloakSession session, RealmModel realm, UriInfo uriInfo, ClientConnection connection, boolean checkActive, boolean checkTokenType,
                                                     boolean isCookie, String tokenString, HttpHeaders headers) {
         try {
             TokenVerifier verifier = TokenVerifier.create(tokenString).realmUrl(Urls.realmIssuer(uriInfo.getBaseUri(), realm.getName())).checkActive(checkActive).checkTokenType(checkTokenType);
