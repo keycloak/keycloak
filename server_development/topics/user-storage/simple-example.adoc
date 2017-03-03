@@ -306,20 +306,26 @@ or using the JBoss CLI.
 
 You enable user storage providers per realm within the `User Federation` page in the admin console.
 
+{% if book.community %}
 .User Federation
 image:../../{{book.images}}/empty-user-federation-page.png[]
+{% endif %}
 
 Select the provider we just created from the list: `readonly-property-file`.  It brings you to the configuration
-page for our provider.  We don't have anything to configure, so just click the `Save` button.
+page for our provider.  We do not have anything to configure, so click *Save*.
 
+{% if book.community %}
 .Configured Provider
 image:../../{{book.images}}/storage-provider-created.png[]
+{% endif %}
 
-When you go back to the main `User Federation` page, you'll now see your provider listed.
+When you go back to the main `User Federation` page, you now see your provider listed.
 
+{% if book.community %}
 .User Federation
 image:../../{{book.images}}/user-federation-page.png[]
+{% endif %}
 
-You will now be able to login with a user declared in the `users.properties` file.  Of course, this user will have
+You will now be able to log in with a user declared in the `users.properties` file.  Of course, this user will have
 zero permissions to do anything and will be read only.  You can though view the user on its account page after you
 login.
