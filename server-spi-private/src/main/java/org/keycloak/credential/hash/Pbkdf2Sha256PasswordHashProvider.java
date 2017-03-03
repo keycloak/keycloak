@@ -1,7 +1,7 @@
 package org.keycloak.credential.hash;
 
 /**
- * PBKDF2 Password Hash provider with HMAC using SHA224
+ * PBKDF2 password hash provider with HMAC using SHA224
  *
  * @author <a href="mailto:abkaplan07@gmail.com">Adam Kaplan</a>
  */

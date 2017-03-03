@@ -1,13 +1,13 @@
 package org.keycloak.credential.hash;
 
 /**
- * PBKDF2 Password Hash provider with HMAC using SHA512
+ * PBKDF2 password hash provider with HMAC using SHA512
  *
  * @author <a href"mailto:abkaplan07@gmail.com">Adam Kaplan</a>
  */
 public class Pbkdf2Sha512PasswordHashProvider extends APbkdf2PasswordHashProvider {
 
-    static String ALIAS = "pbkdf2-hmac-sha512";
+    static final String ALIAS = "pbkdf2-hmac-sha512";
 
     @Override
     protected String getAlgorithmAlias() {
