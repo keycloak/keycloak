@@ -19,11 +19,7 @@ package org.keycloak.services.resources;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.authentication.AuthenticationProcessor;
-import org.keycloak.authentication.RequiredActionContext;
-import org.keycloak.authentication.RequiredActionContextResult;
-import org.keycloak.authentication.RequiredActionFactory;
-import org.keycloak.authentication.RequiredActionProvider;
+import org.keycloak.authentication.*;
 import org.keycloak.authentication.authenticators.broker.AbstractIdpAuthenticator;
 import org.keycloak.authentication.authenticators.broker.util.PostBrokerLoginConstants;
 import org.keycloak.authentication.authenticators.broker.util.SerializedBrokeredIdentityContext;
@@ -163,18 +159,45 @@ public class LoginActionsService {
         }
     }
 
+    private SessionCodeChecks checksForCode(String code) {
+        SessionCodeChecks res = new SessionCodeChecks(code);
+        res.initialVerifyCode();
+        return res;
+    }
 
-    private class Checks {
+    private class SessionCodeChecks {
+        private ClientSessionModel presetClientSession;
         ClientSessionCode clientCode;
         Response response;
         ClientSessionCode.ParseResult result;
 
-        boolean verifyCode(String code, String requiredAction, ClientSessionCode.ActionType actionType) {
-            if (!verifyCode(code)) {
+        private final String code;
+
+        public SessionCodeChecks(String code) {
+            this.code = code;
+        }
+
+        public ClientSessionModel getClientSession() {
+            return presetClientSession == null
+              ? (clientCode == null ? null : clientCode.getClientSession())
+              : presetClientSession;
+        }
+
+        public boolean passed() {
+            return response == null;
+        }
+
+        public boolean failed() {
+            return response != null;
+        }
+
+        boolean verifyCode(String requiredAction, ClientSessionCode.ActionType actionType) {
+            if (failed()) {
                 return false;
             }
+
             if (!clientCode.isValidAction(requiredAction)) {
-                ClientSessionModel clientSession = clientCode.getClientSession();
+                ClientSessionModel clientSession = getClientSession();
                 if (ClientSessionModel.Action.REQUIRED_ACTIONS.name().equals(clientSession.getAction())) {
                     response = redirectToRequiredActions(code);
                     return false;
@@ -183,10 +206,10 @@ public class LoginActionsService {
                             .setSuccess(Messages.ALREADY_LOGGED_IN)
                             .createInfoPage();
                     return false;
-                }
+                 }
             }
-            if (!isActionActive(actionType)) return false;
-            return true;
+
+            return isActionActive(actionType);
        }
 
         private boolean isValidAction(String requiredAction) {
@@ -198,18 +221,18 @@ public class LoginActionsService {
         }
 
         private void invalidAction() {
-            event.client(clientCode.getClientSession().getClient());
+            event.client(getClientSession().getClient());
             event.error(Errors.INVALID_CODE);
             response = ErrorPage.error(session, Messages.INVALID_CODE);
         }
 
         private boolean isActionActive(ClientSessionCode.ActionType actionType) {
             if (!clientCode.isActionActive(actionType)) {
-                event.client(clientCode.getClientSession().getClient());
+                event.client(getClientSession().getClient());
                 event.clone().error(Errors.EXPIRED_CODE);
-                if (clientCode.getClientSession().getAction().equals(ClientSessionModel.Action.AUTHENTICATE.name())) {
-                    AuthenticationProcessor.resetFlow(clientCode.getClientSession());
-                    response = processAuthentication(null, clientCode.getClientSession(), Messages.LOGIN_TIMEOUT);
+                if (getClientSession().getAction().equals(ClientSessionModel.Action.AUTHENTICATE.name())) {
+                    AuthenticationProcessor.resetFlow(getClientSession());
+                    response = processAuthentication(null, getClientSession(), Messages.LOGIN_TIMEOUT);
                     return false;
                 }
                 response = ErrorPage.error(session, Messages.EXPIRED_CODE);
@@ -218,7 +241,7 @@ public class LoginActionsService {
             return true;
         }
 
-        public boolean verifyCode(String code) {
+        private boolean initialVerifyCode() {
             if (!checkSsl()) {
                 event.error(Errors.SSL_REQUIRED);
                 response = ErrorPage.error(session, Messages.HTTPS_REQUIRED);
@@ -248,7 +271,8 @@ public class LoginActionsService {
                 response = ErrorPage.error(session, Messages.INVALID_CODE);
                 return false;
             }
-            ClientSessionModel clientSession = clientCode.getClientSession();
+
+            ClientSessionModel clientSession = getClientSession();
             if (clientSession == null) {
                 event.error(Errors.INVALID_CODE);
                 response = ErrorPage.error(session, Messages.INVALID_CODE);
@@ -272,14 +296,15 @@ public class LoginActionsService {
             return true;
         }
 
-        public boolean verifyRequiredAction(String code, String executedAction) {
-            if (!verifyCode(code)) {
+        public boolean verifyRequiredAction(String executedAction) {
+            if (failed()) {
                 return false;
             }
+
             if (!isValidAction(ClientSessionModel.Action.REQUIRED_ACTIONS.name())) return false;
             if (!isActionActive(ClientSessionCode.ActionType.USER)) return false;
 
-            final ClientSessionModel clientSession = clientCode.getClientSession();
+            final ClientSessionModel clientSession = getClientSession();
 
             final UserSessionModel userSession = clientSession.getUserSession();
             if (userSession == null) {
@@ -294,7 +319,7 @@ public class LoginActionsService {
                 return false;
             }
 
-            if (executedAction == null && userSession != null) { // do next required action only if user is already authenticated
+            if (executedAction == null) { // do next required action only if user is already authenticated
                 initEvent(clientSession);
                 event.event(EventType.LOGIN);
                 response = AuthenticationManager.nextActionAfterAuthentication(session, userSession, clientSession, clientConnection, request, uriInfo, event);
@@ -308,7 +333,6 @@ public class LoginActionsService {
                 return false;
             }
             return true;
-
         }
     }
 
@@ -329,13 +353,12 @@ public class LoginActionsService {
         if (clientSession != null && code.equals(clientSession.getNote(LAST_PROCESSED_CODE))) {
             // Allow refresh of previous page
         } else {
-            Checks checks = new Checks();
-            if (!checks.verifyCode(code, ClientSessionModel.Action.AUTHENTICATE.name(), ClientSessionCode.ActionType.LOGIN)) {
+            SessionCodeChecks checks = checksForCode(code);
+            if (!checks.verifyCode(ClientSessionModel.Action.AUTHENTICATE.name(), ClientSessionCode.ActionType.LOGIN)) {
                 return checks.response;
             }
 
-            ClientSessionCode clientSessionCode = checks.clientCode;
-            clientSession = clientSessionCode.getClientSession();
+            clientSession = checks.getClientSession();
         }
 
         event.detail(Details.CODE_ID, code);
@@ -390,12 +413,11 @@ public class LoginActionsService {
             return authenticate(code, null);
         }
 
-        Checks checks = new Checks();
-        if (!checks.verifyCode(code, ClientSessionModel.Action.AUTHENTICATE.name(), ClientSessionCode.ActionType.LOGIN)) {
+        SessionCodeChecks checks = checksForCode(code);
+        if (!checks.verifyCode(ClientSessionModel.Action.AUTHENTICATE.name(), ClientSessionCode.ActionType.LOGIN)) {
             return checks.response;
         }
-        final ClientSessionCode clientCode = checks.clientCode;
-        clientSession = clientCode.getClientSession();
+        clientSession = checks.getClientSession();
         clientSession.setNote(LAST_PROCESSED_CODE, code);
 
         return processAuthentication(execution, clientSession, null);
@@ -419,7 +441,7 @@ public class LoginActionsService {
     @Path(RESET_CREDENTIALS_PATH)
     @GET
     public Response resetCredentialsGET(@QueryParam("code") String code,
-                                         @QueryParam("execution") String execution) {
+                                        @QueryParam("execution") String execution) {
         // we allow applications to link to reset credentials without going through OAuth or SAML handshakes
         //
         if (code == null) {
@@ -448,15 +470,14 @@ public class LoginActionsService {
 
     protected Response resetCredentials(String code, String execution) {
         event.event(EventType.RESET_PASSWORD);
-        Checks checks = new Checks();
-        if (!checks.verifyCode(code, ClientSessionModel.Action.AUTHENTICATE.name(), ClientSessionCode.ActionType.USER)) {
+        SessionCodeChecks checks = checksForCode(code);
+        if (!checks.verifyCode(ClientSessionModel.Action.AUTHENTICATE.name(), ClientSessionCode.ActionType.USER)) {
             return checks.response;
         }
-        final ClientSessionCode clientCode = checks.clientCode;
-        final ClientSessionModel clientSession = clientCode.getClientSession();
+        final ClientSessionModel clientSession = checks.getClientSession();
 
         if (!realm.isResetPasswordAllowed()) {
-            event.client(clientCode.getClientSession().getClient());
+            event.client(clientSession.getClient());
             event.error(Errors.NOT_ALLOWED);
             return ErrorPage.error(session, Messages.RESET_CREDENTIAL_NOT_ALLOWED);
 
@@ -512,13 +533,12 @@ public class LoginActionsService {
             return ErrorPage.error(session, Messages.REGISTRATION_NOT_ALLOWED);
         }
 
-        Checks checks = new Checks();
-        if (!checks.verifyCode(code, ClientSessionModel.Action.AUTHENTICATE.name(), ClientSessionCode.ActionType.LOGIN)) {
+        SessionCodeChecks checks = checksForCode(code);
+        if (!checks.verifyCode(ClientSessionModel.Action.AUTHENTICATE.name(), ClientSessionCode.ActionType.LOGIN)) {
             return checks.response;
         }
         event.detail(Details.CODE_ID, code);
-        ClientSessionCode clientSessionCode = checks.clientCode;
-        ClientSessionModel clientSession = clientSessionCode.getClientSession();
+        ClientSessionModel clientSession = checks.getClientSession();
 
 
         AuthenticationManager.expireIdentityCookie(realm, uriInfo, clientConnection);
@@ -542,13 +562,12 @@ public class LoginActionsService {
             event.error(Errors.REGISTRATION_DISABLED);
             return ErrorPage.error(session, Messages.REGISTRATION_NOT_ALLOWED);
         }
-        Checks checks = new Checks();
-        if (!checks.verifyCode(code, ClientSessionModel.Action.AUTHENTICATE.name(), ClientSessionCode.ActionType.LOGIN)) {
+        SessionCodeChecks checks = checksForCode(code);
+        if (!checks.verifyCode(ClientSessionModel.Action.AUTHENTICATE.name(), ClientSessionCode.ActionType.LOGIN)) {
             return checks.response;
         }
 
-        ClientSessionCode clientCode = checks.clientCode;
-        ClientSessionModel clientSession = clientCode.getClientSession();
+        ClientSessionModel clientSession = checks.getClientSession();
 
         return processRegistration(execution, clientSession, null);
     }
@@ -587,13 +606,12 @@ public class LoginActionsService {
         EventType eventType = firstBrokerLogin ? EventType.IDENTITY_PROVIDER_FIRST_LOGIN : EventType.IDENTITY_PROVIDER_POST_LOGIN;
         event.event(eventType);
 
-        Checks checks = new Checks();
-        if (!checks.verifyCode(code, ClientSessionModel.Action.AUTHENTICATE.name(), ClientSessionCode.ActionType.LOGIN)) {
+        SessionCodeChecks checks = checksForCode(code);
+        if (!checks.verifyCode(ClientSessionModel.Action.AUTHENTICATE.name(), ClientSessionCode.ActionType.LOGIN)) {
             return checks.response;
         }
         event.detail(Details.CODE_ID, code);
-        ClientSessionCode clientSessionCode = checks.clientCode;
-        final ClientSessionModel clientSessionn = clientSessionCode.getClientSession();
+        final ClientSessionModel clientSessionn = checks.getClientSession();
 
         String noteKey = firstBrokerLogin ? AbstractIdpAuthenticator.BROKERED_CONTEXT_NOTE : PostBrokerLoginConstants.PBL_BROKERED_IDENTITY_CONTEXT;
         SerializedBrokeredIdentityContext serializedCtx = SerializedBrokeredIdentityContext.readFromClientSession(clientSessionn, noteKey);
@@ -660,12 +678,12 @@ public class LoginActionsService {
     public Response processConsent(final MultivaluedMap<String, String> formData) {
         event.event(EventType.LOGIN);
         String code = formData.getFirst("code");
-        Checks checks = new Checks();
-        if (!checks.verifyRequiredAction(code, ClientSessionModel.Action.OAUTH_GRANT.name())) {
+        SessionCodeChecks checks = checksForCode(code);
+        if (!checks.verifyRequiredAction(ClientSessionModel.Action.OAUTH_GRANT.name())) {
             return checks.response;
         }
         ClientSessionCode accessCode = checks.clientCode;
-        ClientSessionModel clientSession = accessCode.getClientSession();
+        ClientSessionModel clientSession = checks.getClientSession();
 
         initEvent(clientSession);
 
@@ -726,16 +744,15 @@ public class LoginActionsService {
 
             clientSession.removeNote(Constants.VERIFY_EMAIL_KEY);
 
-            Checks checks = new Checks();
-            if (!checks.verifyCode(code, ClientSessionModel.Action.REQUIRED_ACTIONS.name(), ClientSessionCode.ActionType.USER)) {
+            SessionCodeChecks checks = checksForCode(code);
+            if (!checks.verifyCode(ClientSessionModel.Action.REQUIRED_ACTIONS.name(), ClientSessionCode.ActionType.USER)) {
                 if (checks.clientCode == null && checks.result.isClientSessionNotFound() || checks.result.isIllegalHash()) {
                    return ErrorPage.error(session, Messages.STALE_VERIFY_EMAIL_LINK);
                 }
                 return checks.response;
             }
 
-            ClientSessionCode accessCode = checks.clientCode;
-            clientSession = accessCode.getClientSession();
+            clientSession = checks.getClientSession();
             if (!ClientSessionModel.Action.VERIFY_EMAIL.name().equals(clientSession.getNote(AuthenticationManager.CURRENT_REQUIRED_ACTION))) {
                 ServicesLogger.LOGGER.reqdActionDoesNotMatch();
                 event.error(Errors.INVALID_CODE);
@@ -765,12 +782,12 @@ public class LoginActionsService {
 
             return AuthenticationProcessor.redirectToRequiredActions(session, realm, clientSession, uriInfo);
         } else {
-            Checks checks = new Checks();
-            if (!checks.verifyCode(code, ClientSessionModel.Action.REQUIRED_ACTIONS.name(), ClientSessionCode.ActionType.USER)) {
+            SessionCodeChecks checks = checksForCode(code);
+            if (!checks.verifyCode(ClientSessionModel.Action.REQUIRED_ACTIONS.name(), ClientSessionCode.ActionType.USER)) {
                 return checks.response;
             }
             ClientSessionCode accessCode = checks.clientCode;
-            ClientSessionModel clientSession = accessCode.getClientSession();
+            ClientSessionModel clientSession = checks.getClientSession();
             UserSessionModel userSession = clientSession.getUserSession();
             initEvent(clientSession);
 
@@ -797,11 +814,11 @@ public class LoginActionsService {
     public Response executeActions(@QueryParam("key") String key) {
         event.event(EventType.EXECUTE_ACTIONS);
         if (key != null) {
-            Checks checks = new Checks();
-            if (!checks.verifyCode(key, ClientSessionModel.Action.EXECUTE_ACTIONS.name(), ClientSessionCode.ActionType.USER)) {
+            SessionCodeChecks checks = checksForCode(key);
+            if (!checks.verifyCode(ClientSessionModel.Action.EXECUTE_ACTIONS.name(), ClientSessionCode.ActionType.USER)) {
                 return checks.response;
             }
-            ClientSessionModel clientSession = checks.clientCode.getClientSession();
+            ClientSessionModel clientSession = checks.getClientSession();
             // verify user email as we know it is valid as this entry point would never have gotten here.
             clientSession.getUserSession().getUser().setEmailVerified(true);
             clientSession.setNote(AuthenticationManager.END_AFTER_REQUIRED_ACTIONS, "true");
@@ -875,12 +892,11 @@ public class LoginActionsService {
     public Response processRequireAction(final String code, String action) {
         event.event(EventType.CUSTOM_REQUIRED_ACTION);
         event.detail(Details.CUSTOM_REQUIRED_ACTION, action);
-        Checks checks = new Checks();
-        if (!checks.verifyRequiredAction(code, action)) {
+        SessionCodeChecks checks = checksForCode(code);
+        if (!checks.verifyRequiredAction(action)) {
             return checks.response;
         }
-        final ClientSessionCode clientCode = checks.clientCode;
-        final ClientSessionModel clientSession = clientCode.getClientSession();
+        final ClientSessionModel clientSession = checks.getClientSession();
 
         final UserSessionModel userSession = clientSession.getUserSession();
 
