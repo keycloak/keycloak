@@ -104,6 +104,10 @@ public class ClientInitiatedAccountLinkTest extends AbstractKeycloakTest {
     @Page
     protected ClientApp appPage;
 
+    @Override
+    protected boolean isImportAfterEachMethod() {
+        return true;
+    }
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
