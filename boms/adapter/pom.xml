@@ -55,6 +55,11 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-wildfly-adapter-dist</artifactId>
+                <version>${version.keycloak}</version>
+            </dependency>    
+            <dependency>
+                <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-saml-adapter-core</artifactId>
                 <version>${version.keycloak}</version>
             </dependency>
