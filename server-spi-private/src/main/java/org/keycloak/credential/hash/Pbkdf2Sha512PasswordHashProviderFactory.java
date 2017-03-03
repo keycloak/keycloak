@@ -5,7 +5,9 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 
 /**
- * Created by findyr-akaplan on 3/3/17.
+ * Provider factory for SHA512 variant of the PBKDF2 password hash algorithm.
+ *
+ * @author @author <a href="mailto:abkaplan07@gmail.com">Adam Kaplan</a>
  */
 public class Pbkdf2Sha512PasswordHashProviderFactory implements PasswordHashProviderFactory {
 
