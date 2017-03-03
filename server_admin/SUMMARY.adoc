@@ -70,6 +70,7 @@
 .... link:server_admin/topics/identity-broker/social/linked-in.adoc[Linked-In]
 .... link:server_admin/topics/identity-broker/social/microsoft.adoc[Microsoft]
 .... link:server_admin/topics/identity-broker/social/stack-overflow.adoc[Stack Overflow]
+.... link:server_admin/topics/identity-broker/social/openshift.adoc[Openshift]
 ... link:server_admin/topics/identity-broker/oidc.adoc[OIDC Providers]
 ... link:server_admin/topics/identity-broker/saml.adoc[SAML Providers]
 ... link:server_admin/topics/identity-broker/suggested.adoc[Client Suggested Identity Provider]

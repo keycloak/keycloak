@@ -1,0 +1,39 @@
+
+==== Openshift
+
+NOTE: Openshift Online is currently in the developer preview mode. This documentation has been based on on-premise installations and local `minishift` development environment.
+
+There are a just a few steps you have to complete to be able to login to OpenShift.  First, go to the `Identity Providers` left menu item
+and select `Openshift` from the `Add provider` drop down list.  This will bring you to the `Add identity provider` page.
+
+.Add Identity Provider
+image:../../../{{book.images}}/openshift-add-identity-provider.png[]
+
+.Registering OAuth client
+
+You can register your client using `oc` command line tool.
+
+====
+[bash]
+----
+$ oc create -f <(echo '
+kind: OAuthClient
+apiVersion: v1
+metadata:
+ name: kc-client <1>
+secret: "..." <2>
+redirectURIs:
+ - "http://www.example.com/" <3>
+grantMethod: prompt <4>
+')
+----
+<1> The `name` of your OAuth client. Passed as `client_id` request parameter when making requests to `_<openshift_master>_/oauth/authorize` and `_<openshift_master>_/oauth/token`.
+<2> `secret` is used as the `client_secret` request parameter.
+<3> The `redirect_uri` parameter specified in requests to `_<openshift_master>_/oauth/authorize` and `_<openshift_master>_/oauth/token` must be equal to (or prefixed by) one of the URIs in `redirectURIs`.
+<4> The `grantMethod` is used to determine what action to take when this client requests tokens and has not yet been granted access by the user.
+====
+
+Use client ID and secret defined by `oc create` command to enter them back on the {{book.project.name}} `Add identity provider` page.
+Go back to {{book.project.name}} and specify those items.
+
+Please refer to https://docs.openshift.org/latest/architecture/additional_concepts/authentication.html#oauth[official Openshift documentation] for more detailed guides.
