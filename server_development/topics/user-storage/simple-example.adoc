@@ -312,7 +312,7 @@ image:../../{{book.images}}/empty-user-federation-page.png[]
 {% endif %}
 
 Select the provider we just created from the list: `readonly-property-file`.  It brings you to the configuration
-page for our provider.  We don't have anything to configure, so click *Save*.
+page for our provider.  We do not have anything to configure, so click *Save*.
 
 {% if book.community %}
 .Configured Provider

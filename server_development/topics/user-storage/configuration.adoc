@@ -128,8 +128,6 @@ but hopefully this illustrates, in a simple way, how to hook in configuration va
 Now that the configuration is enabled, you can set the `path` variable when you configure the provider in the admin console.
 
 {% if book.community %}
-
 .Configured Provider
 image:../../{{book.images}}/storage-provider-with-config.png[]
-
-{% end if %}
+{% endif %}
