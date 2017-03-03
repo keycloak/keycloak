@@ -39,6 +39,7 @@ import java.util.UUID;
 public class ClientInitiatedAccountLinkServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse resp) throws ServletException, IOException {
+        resp.setHeader("Cache-Control", "no-cache");
         if (request.getRequestURI().endsWith("/link") && request.getParameter("response") == null) {
             String provider = request.getParameter("provider");
             String realm = request.getParameter("realm");
@@ -68,13 +69,11 @@ public class ClientInitiatedAccountLinkServlet extends HttpServlet {
             resp.setStatus(302);
             resp.setHeader("Location", accountLinkUrl);
         } else if (request.getRequestURI().endsWith("/link") && request.getParameter("response") != null) {
-            String hash = request.getSession().getAttribute("hash").toString();
-            String hashParam = request.getParameter("hash");
             resp.setStatus(200);
             resp.setContentType("text/html");
             PrintWriter pw = resp.getWriter();
             pw.printf("<html><head><title>%s</title></head><body>", "Client Linking");
-            String error = request.getParameter("error");
+            String error = request.getParameter("link_error");
             if (error != null) {
                 pw.println("Link error: " + error);
             } else {

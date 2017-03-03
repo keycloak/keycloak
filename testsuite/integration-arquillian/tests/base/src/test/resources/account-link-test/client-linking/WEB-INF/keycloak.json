@@ -3,6 +3,7 @@
   "resource" : "client-linking",
   "auth-server-url" : "http://localhost:8180/auth",
   "ssl-required" : "external",
+  "min-time-between-jwks-requests" : 0,
   "credentials" : {
       "secret": "password"
    }

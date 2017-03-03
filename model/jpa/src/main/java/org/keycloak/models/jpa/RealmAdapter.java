@@ -1008,6 +1008,7 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
         copy.putAll(config);
         identityProviderModel.setConfig(copy);
         identityProviderModel.setEnabled(entity.isEnabled());
+        identityProviderModel.setLinkOnly(entity.isLinkOnly());
         identityProviderModel.setTrustEmail(entity.isTrustEmail());
         identityProviderModel.setAuthenticateByDefault(entity.isAuthenticateByDefault());
         identityProviderModel.setFirstBrokerLoginFlowId(entity.getFirstBrokerLoginFlowId());
@@ -1044,6 +1045,7 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
         entity.setFirstBrokerLoginFlowId(identityProvider.getFirstBrokerLoginFlowId());
         entity.setPostBrokerLoginFlowId(identityProvider.getPostBrokerLoginFlowId());
         entity.setConfig(identityProvider.getConfig());
+        entity.setLinkOnly(identityProvider.isLinkOnly());
 
         realm.addIdentityProvider(entity);
 
@@ -1098,6 +1100,7 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
                 entity.setAddReadTokenRoleOnCreate(identityProvider.isAddReadTokenRoleOnCreate());
                 entity.setStoreToken(identityProvider.isStoreToken());
                 entity.setConfig(identityProvider.getConfig());
+                entity.setLinkOnly(identityProvider.isLinkOnly());
             }
         }
 

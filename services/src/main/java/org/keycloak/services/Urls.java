@@ -79,6 +79,14 @@ public class Urls {
         return uriBuilder.build(realmName, providerId);
     }
 
+    public static URI identityProviderLinkRequest(URI baseUri, String providerId, String realmName) {
+        UriBuilder uriBuilder = realmBase(baseUri).path(RealmsResource.class, "getBrokerService")
+                .replaceQuery(null)
+                .path(IdentityBrokerService.class, "clientInitiatedAccountLinking");
+
+        return uriBuilder.build(realmName, providerId);
+    }
+
     public static URI identityProviderRetrieveToken(URI baseUri, String providerId, String realmName) {
         return realmBase(baseUri).path(RealmsResource.class, "getBrokerService")
                 .path(IdentityBrokerService.class, "retrieveToken")

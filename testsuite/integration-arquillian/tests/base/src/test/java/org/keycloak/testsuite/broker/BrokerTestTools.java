@@ -38,7 +38,7 @@ public class BrokerTestTools {
         IdentityProviderRepresentation identityProviderRepresentation = new IdentityProviderRepresentation();
 
         identityProviderRepresentation.setAlias(alias);
-        identityProviderRepresentation.setDisplayName(providerId);
+        identityProviderRepresentation.setDisplayName(alias);
         identityProviderRepresentation.setProviderId(providerId);
         identityProviderRepresentation.setEnabled(true);
 
@@ -84,7 +84,16 @@ public class BrokerTestTools {
      * @param suiteContext
      */
     public static void createKcOidcBroker(Keycloak adminClient, String childRealm, String idpRealm, SuiteContext suiteContext) {
-        IdentityProviderRepresentation idp = createIdentityProvider(idpRealm, IDP_OIDC_PROVIDER_ID);
+        createKcOidcBroker(adminClient, childRealm, idpRealm, suiteContext, idpRealm, false);
+
+
+
+    }
+
+    public static void createKcOidcBroker(Keycloak adminClient, String childRealm, String idpRealm, SuiteContext suiteContext, String alias, boolean linkOnly) {
+        IdentityProviderRepresentation idp = createIdentityProvider(alias, IDP_OIDC_PROVIDER_ID);
+        idp.setLinkOnly(linkOnly);
+
         Map<String, String> config = idp.getConfig();
 
         config.put("clientId", childRealm);
@@ -109,8 +118,5 @@ public class BrokerTestTools {
         client.setAdminUrl(getAuthRoot(suiteContext) +
                 "/auth/realms/" + childRealm + "/broker/" + idpRealm + "/endpoint");
         adminClient.realm(idpRealm).clients().create(client);
-
-
-
     }
 }

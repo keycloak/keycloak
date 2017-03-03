@@ -107,6 +107,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import static org.keycloak.models.AccountRoles.MANAGE_ACCOUNT;
+import static org.keycloak.models.AccountRoles.MANAGE_ACCOUNT_LINKS;
 import static org.keycloak.models.ClientSessionModel.Action.AUTHENTICATE;
 import static org.keycloak.models.Constants.ACCOUNT_MANAGEMENT_CLIENT_ID;
 
@@ -230,10 +231,11 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
         }
 
         AuthResult cookieResult = authenticationManager.authenticateIdentityCookie(session, realmModel, true);
+        String errorParam = "link_error";
         if (cookieResult == null) {
             event.error(Errors.NOT_LOGGED_IN);
             UriBuilder builder = UriBuilder.fromUri(redirectUri)
-                    .queryParam("error", Errors.NOT_LOGGED_IN)
+                    .queryParam(errorParam, Errors.NOT_LOGGED_IN)
                     .queryParam("nonce", nonce);
 
             return Response.status(302).location(builder.build()).build();
@@ -264,11 +266,30 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
             throw new ErrorPageException(session, Messages.INVALID_REQUEST);
         }
 
+
+
+        ClientModel accountService = this.realmModel.getClientByClientId(ACCOUNT_MANAGEMENT_CLIENT_ID);
+        if (!accountService.getId().equals(client.getId())) {
+            RoleModel manageAccountRole = accountService.getRole(MANAGE_ACCOUNT);
+
+            if (!clientSession.getRoles().contains(manageAccountRole.getId())) {
+                RoleModel linkRole = accountService.getRole(MANAGE_ACCOUNT_LINKS);
+                if (!clientSession.getRoles().contains(linkRole.getId())) {
+                    event.error(Errors.NOT_ALLOWED);
+                    UriBuilder builder = UriBuilder.fromUri(redirectUri)
+                            .queryParam(errorParam, Errors.NOT_ALLOWED)
+                            .queryParam("nonce", nonce);
+                    return Response.status(302).location(builder.build()).build();
+                }
+            }
+        }
+
+
         IdentityProviderModel identityProviderModel = realmModel.getIdentityProviderByAlias(providerId);
         if (identityProviderModel == null) {
             event.error(Errors.UNKNOWN_IDENTITY_PROVIDER);
             UriBuilder builder = UriBuilder.fromUri(redirectUri)
-                    .queryParam("error", Errors.UNKNOWN_IDENTITY_PROVIDER)
+                    .queryParam(errorParam, Errors.UNKNOWN_IDENTITY_PROVIDER)
                     .queryParam("nonce", nonce);
             return Response.status(302).location(builder.build()).build();
 
@@ -329,7 +350,18 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
             }
 
             ClientSessionCode clientSessionCode = parsedCode.clientSessionCode;
-            IdentityProvider identityProvider = getIdentityProvider(session, realmModel, providerId);
+            IdentityProviderModel identityProviderModel = realmModel.getIdentityProviderByAlias(providerId);
+            if (identityProviderModel == null) {
+                throw new IdentityBrokerException("Identity Provider [" + providerId + "] not found.");
+            }
+            if (identityProviderModel.isLinkOnly()) {
+                throw new IdentityBrokerException("Identity Provider [" + providerId + "] is not allowed to perform a login.");
+
+            }
+            IdentityProviderFactory providerFactory = getIdentityProviderFactory(session, identityProviderModel);
+
+            IdentityProvider identityProvider = providerFactory.create(session, identityProviderModel);
+
             Response response = identityProvider.performLogin(createAuthenticationRequest(providerId, clientSessionCode));
 
             if (response != null) {
@@ -786,23 +818,28 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
     private Response performAccountLinking(ClientSessionModel clientSession, BrokeredIdentityContext context, FederatedIdentityModel federatedIdentityModel, UserModel federatedUser) {
         this.event.event(EventType.FEDERATED_IDENTITY_LINK);
 
+        UserModel authenticatedUser = clientSession.getUserSession().getUser();
+
         if (federatedUser != null) {
-            // refresh the token
-            if (context.getIdpConfig().isStoreToken()) {
-                federatedIdentityModel = this.session.users().getFederatedIdentity(federatedUser, context.getIdpConfig().getAlias(), this.realmModel);
-                if (!ObjectUtil.isEqualOrBothNull(context.getToken(), federatedIdentityModel.getToken())) {
+            if (authenticatedUser.getId().equals(federatedUser.getId())) {
+                // refresh the token
+                if (context.getIdpConfig().isStoreToken()) {
+                    federatedIdentityModel = this.session.users().getFederatedIdentity(federatedUser, context.getIdpConfig().getAlias(), this.realmModel);
+                    if (!ObjectUtil.isEqualOrBothNull(context.getToken(), federatedIdentityModel.getToken())) {
 
-                    this.session.users().updateFederatedIdentity(this.realmModel, federatedUser, federatedIdentityModel);
+                        this.session.users().updateFederatedIdentity(this.realmModel, federatedUser, federatedIdentityModel);
 
-                    if (isDebugEnabled()) {
-                        logger.debugf("Identity [%s] update with response from identity provider [%s].", federatedUser, context.getIdpConfig().getAlias());
+                        if (isDebugEnabled()) {
+                            logger.debugf("Identity [%s] update with response from identity provider [%s].", federatedUser, context.getIdpConfig().getAlias());
+                        }
                     }
                 }
+                return Response.status(302).location(UriBuilder.fromUri(clientSession.getRedirectUri()).build()).build();
+            } else {
+                return redirectToAccountErrorPage(clientSession, Messages.IDENTITY_PROVIDER_ALREADY_LINKED, context.getIdpConfig().getAlias());
             }
-            return Response.status(302).location(UriBuilder.fromUri(clientSession.getRedirectUri()).build()).build();
         }
 
-        UserModel authenticatedUser = clientSession.getUserSession().getUser();
 
         if (isDebugEnabled()) {
             logger.debugf("Linking account [%s] from identity provider [%s] to user [%s].", federatedIdentityModel, context.getIdpConfig().getAlias(), authenticatedUser);

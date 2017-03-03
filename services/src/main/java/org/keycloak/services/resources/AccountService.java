@@ -17,6 +17,7 @@
 package org.keycloak.services.resources;
 
 import org.jboss.logging.Logger;
+import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.UriUtils;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.events.Details;
@@ -70,6 +71,9 @@ import javax.ws.rs.core.Variant;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -771,14 +775,19 @@ public class AccountService extends AbstractSecuredLocalService {
                 String redirectUri = UriBuilder.fromUri(Urls.accountFederatedIdentityPage(uriInfo.getBaseUri(), realm.getName())).build().toString();
 
                 try {
-                    ClientSessionModel clientSession = auth.getClientSession();
-                    ClientSessionCode clientSessionCode = new ClientSessionCode(session, realm, clientSession);
-                    clientSessionCode.setAction(ClientSessionModel.Action.AUTHENTICATE.name());
-                    clientSession.setRedirectUri(redirectUri);
-                    clientSession.setNote(OIDCLoginProtocol.STATE_PARAM, UUID.randomUUID().toString());
-
-                    return Response.seeOther(
-                            Urls.identityProviderAuthnRequest(this.uriInfo.getBaseUri(), providerId, realm.getName(), clientSessionCode.getCode()))
+                    String nonce = UUID.randomUUID().toString();
+                    MessageDigest md = MessageDigest.getInstance("SHA-256");
+                    String input = nonce + auth.getSession().getId() +  auth.getClientSession().getId() + providerId;
+                    byte[] check = md.digest(input.getBytes(StandardCharsets.UTF_8));
+                    String hash = Base64Url.encode(check);
+                    URI linkUrl = Urls.identityProviderLinkRequest(this.uriInfo.getBaseUri(), providerId, realm.getName());
+                    linkUrl = UriBuilder.fromUri(linkUrl)
+                            .queryParam("nonce", nonce)
+                            .queryParam("hash", hash)
+                            .queryParam("client_id", client.getClientId())
+                            .queryParam("redirect_uri", redirectUri)
+                            .build();
+                    return Response.seeOther(linkUrl)
                             .build();
                 } catch (Exception spe) {
                     setReferrerOnPage();

@@ -32,6 +32,7 @@ import org.keycloak.migration.migrators.MigrateTo2_1_0;
 import org.keycloak.migration.migrators.MigrateTo2_2_0;
 import org.keycloak.migration.migrators.MigrateTo2_3_0;
 import org.keycloak.migration.migrators.MigrateTo2_5_0;
+import org.keycloak.migration.migrators.MigrateTo3_0_0;
 import org.keycloak.migration.migrators.Migration;
 import org.keycloak.models.KeycloakSession;
 
@@ -56,7 +57,8 @@ public class MigrationModelManager {
         new MigrateTo2_1_0(),
         new MigrateTo2_2_0(),
         new MigrateTo2_3_0(),
-        new MigrateTo2_5_0()
+            new MigrateTo2_5_0(),
+            new MigrateTo3_0_0()
     };
 
     public static void migrate(KeycloakSession session) {
