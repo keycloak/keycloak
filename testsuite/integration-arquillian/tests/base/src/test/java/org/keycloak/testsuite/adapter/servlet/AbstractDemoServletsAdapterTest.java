@@ -30,7 +30,6 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.common.Version;
 import org.keycloak.common.util.Time;
-import org.keycloak.common.util.UriUtils;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
@@ -51,6 +50,7 @@ import org.keycloak.testsuite.auth.page.login.OAuthGrant;
 import org.keycloak.testsuite.console.page.events.Config;
 import org.keycloak.testsuite.console.page.events.LoginEvents;
 import org.keycloak.testsuite.util.*;
+import org.keycloak.testsuite.util.URLUtils;
 import org.keycloak.util.BasicAuthHelper;
 
 import org.openqa.selenium.By;
@@ -79,6 +79,7 @@ import javax.ws.rs.core.Response.Status;
 import static org.hamcrest.Matchers.*;
 import static org.keycloak.testsuite.auth.page.AuthRealm.DEMO;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlEquals;
+import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWithLoginUrlOf;
 import static org.keycloak.testsuite.util.WaitUtils.*;
 
@@ -372,7 +373,7 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
         Assert.assertTrue(pageSource.contains("Bill Burke") && pageSource.contains("Stian Thorgersen"));
 
         RealmRepresentation demoRealmRep = testRealmResource().toRepresentation();
-        int originalIdle = demoRealmRep.getSsoSessionMaxLifespan();
+        int originalMax = demoRealmRep.getSsoSessionMaxLifespan();
         demoRealmRep.setSsoSessionMaxLifespan(1);
         testRealmResource().update(demoRealmRep);
 
@@ -380,7 +381,7 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
         productPortal.navigateTo();
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
 
-        demoRealmRep.setSsoSessionIdleTimeout(originalIdle);
+        demoRealmRep.setSsoSessionMaxLifespan(originalMax);
         testRealmResource().update(demoRealmRep);
 
         String logoutUri = OIDCLoginProtocolService.logoutUrl(authServerPage.createUriBuilder())
@@ -660,6 +661,11 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
                 .assertEvent();
 
         assertEvents.assertEmpty();
+
+        // Revert consent
+        client = clientResource.toRepresentation();
+        client.setConsentRequired(false);
+        clientResource.update(client);
     }
 
     @Test
@@ -701,6 +707,7 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
 
 
         driver.navigate().to(testRealmPage.getOIDCLogoutUrl() + "?redirect_uri=" + customerPortal);
+        assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
 
         assertEvents.expectLogout(null)
                 .realm(realm.getId())

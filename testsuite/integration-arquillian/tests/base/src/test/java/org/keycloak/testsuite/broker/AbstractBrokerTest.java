@@ -1,5 +1,6 @@
 package org.keycloak.testsuite.broker;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -13,6 +14,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.Assert;
+import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.ConsentPage;
 import org.keycloak.testsuite.util.*;
 
@@ -39,7 +41,7 @@ import static org.keycloak.testsuite.broker.BrokerTestTools.*;
 public abstract class AbstractBrokerTest extends AbstractBaseBrokerTest {
 
     @Before
-    public void createUser() {
+    public void beforeBrokerTest() {
         log.debug("creating user for realm " + bc.providerRealmName());
 
         UserRepresentation user = new UserRepresentation();
@@ -52,18 +54,16 @@ public abstract class AbstractBrokerTest extends AbstractBaseBrokerTest {
         userId = createUserWithAdminClient(realmResource, user);
 
         resetUserPassword(realmResource.users().get(userId), bc.getUserPassword(), false);
-    }
 
-    @Before
-    public void addIdentityProviderToProviderRealm() {
+        if (testContext.isInitialized()) {
+            return;
+        }
+
         log.debug("adding identity provider to realm " + bc.consumerRealmName());
-
         RealmResource realm = adminClient.realm(bc.consumerRealmName());
         realm.identityProviders().create(bc.setUpIdentityProvider(suiteContext));
-    }
 
-    @Before
-    public void addClients() {
+        // addClients
         List<ClientRepresentation> clients = bc.createProviderClients(suiteContext);
         if (clients != null) {
             RealmResource providerRealm = adminClient.realm(bc.providerRealmName());
@@ -83,6 +83,8 @@ public abstract class AbstractBrokerTest extends AbstractBaseBrokerTest {
                 consumerRealm.clients().create(client);
             }
         }
+
+        testContext.setInitialized(true);
     }
 
 
@@ -302,6 +304,13 @@ public abstract class AbstractBrokerTest extends AbstractBaseBrokerTest {
         consentPage.cancel();
 
         waitForPage(driver, "log in to");
+
+        // Revert consentRequired
+        adminClient.realm(bc.providerRealmName())
+                .clients()
+                .get(client.getId())
+                .update(ClientBuilder.edit(client).consentRequired(false).build());
+
     }
 
 

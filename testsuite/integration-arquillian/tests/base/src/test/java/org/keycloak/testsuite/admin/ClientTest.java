@@ -81,6 +81,7 @@ public class ClientTest extends AbstractAdminTest {
         Response response = realm.clients().create(rep);
         response.close();
         String id = ApiUtil.getCreatedId(response);
+        getCleanup().addClientUuid(id);
 
         assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.clientResourcePath(id), rep, ResourceType.CLIENT);
 
@@ -212,6 +213,8 @@ public class ClientTest extends AbstractAdminTest {
     public void serviceAccount() {
         Response response = realm.clients().create(ClientBuilder.create().clientId("serviceClient").serviceAccount().build());
         String id = ApiUtil.getCreatedId(response);
+        getCleanup().addClientUuid(id);
+        response.close();
         UserRepresentation userRep = realm.clients().get(id).getServiceAccountUser();
         assertEquals("service-account-serviceclient", userRep.getUsername());
     }
@@ -237,7 +240,10 @@ public class ClientTest extends AbstractAdminTest {
                 .redirectUris("http://localhost/auth", "http://localhost/auth*")
                 .build();
         Response response = realm.clients().create(client);
-        ClientResource clientResource = realm.clients().get(ApiUtil.getCreatedId(response));
+        String clientUuid = ApiUtil.getCreatedId(response);
+        ClientResource clientResource = realm.clients().get(clientUuid);
+        getCleanup().addClientUuid(clientUuid);
+        response.close();
 
         client = clientResource.toRepresentation();
         client.setRootUrl("http://localhost/base#someFragment");
@@ -291,6 +297,7 @@ public class ClientTest extends AbstractAdminTest {
 
         Response response = realm.clients().create(client);
         String id = ApiUtil.getCreatedId(response);
+        getCleanup().addClientUuid(id);
         response.close();
 
         assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.clientResourcePath(id), client, ResourceType.CLIENT);
@@ -378,6 +385,7 @@ public class ClientTest extends AbstractAdminTest {
     public void scopes() {
         Response response = realm.clients().create(ClientBuilder.create().clientId("client").fullScopeEnabled(false).build());
         String id = ApiUtil.getCreatedId(response);
+        getCleanup().addClientUuid(id);
         response.close();
 
         assertAdminEvents.poll();

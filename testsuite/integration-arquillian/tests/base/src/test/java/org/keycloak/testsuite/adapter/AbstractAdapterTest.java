@@ -79,6 +79,12 @@ public abstract class AbstractAdapterTest extends AbstractAuthTest {
         }
     }
 
+    // TODO: Fix to not require re-import
+    @Override
+    protected boolean isImportAfterEachMethod() {
+        return true;
+    }
+
     private void modifyClientJWKSUrl(RealmRepresentation realm, String regex, String replacement) {
         if (realm.getClients() != null) {
             realm.getClients().stream().

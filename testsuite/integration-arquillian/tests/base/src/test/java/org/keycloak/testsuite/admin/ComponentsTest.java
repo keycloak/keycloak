@@ -49,7 +49,7 @@ public class ComponentsTest extends AbstractAdminTest {
 
     @Test
     public void testNotDeadlocked() {
-        for (int i = 0; i < 100; i++) {
+        for (int i = 0; i < 50; i++) {
             ComponentRepresentation rep = createComponentRepresentation("test-" + i);
             rep.getConfig().putSingle("required", "required-value");
             createComponent(rep);
@@ -263,6 +263,7 @@ public class ComponentsTest extends AbstractAdminTest {
         ComponentsResource components = realm.components();
         Response response = components.add(rep);
         String id = ApiUtil.getCreatedId(response);
+        getCleanup().addComponentId(id);
         response.close();
         return id;
     }

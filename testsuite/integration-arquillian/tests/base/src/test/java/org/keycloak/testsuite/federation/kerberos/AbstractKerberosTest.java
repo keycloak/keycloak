@@ -125,7 +125,9 @@ public abstract class AbstractKerberosTest extends AbstractAuthTest {
         oauth.clientId("kerberos-app");
 
         ComponentRepresentation rep = getUserStorageConfiguration();
-        testRealmResource().components().add(rep);
+        Response resp = testRealmResource().components().add(rep);
+        getCleanup().addComponentId(ApiUtil.getCreatedId(resp));
+        resp.close();
     }
 
     @After

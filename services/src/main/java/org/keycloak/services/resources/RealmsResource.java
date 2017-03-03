@@ -259,8 +259,13 @@ public class RealmsResource {
 
         WellKnownProvider wellKnown = session.getProvider(WellKnownProvider.class, providerName);
 
-        ResponseBuilder responseBuilder = Response.ok(wellKnown.getConfig()).cacheControl(CacheControlUtil.getDefaultCacheControl());
-        return Cors.add(request, responseBuilder).allowedOrigins("*").auth().build();
+        if (wellKnown != null) {
+            ResponseBuilder responseBuilder = Response.ok(wellKnown.getConfig())
+                                                      .cacheControl(CacheControlUtil.getDefaultCacheControl());
+            return Cors.add(request, responseBuilder).allowedOrigins("*").auth().build();
+        }
+
+        throw new NotFoundException();
     }
 
     @Path("{realm}/authz")

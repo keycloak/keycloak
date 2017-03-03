@@ -78,7 +78,8 @@ public class KcOIDCBrokerWithSignatureTest extends AbstractBaseBrokerTest {
         log.debug("adding identity provider to realm " + bc.consumerRealmName());
 
         RealmResource realm = adminClient.realm(bc.consumerRealmName());
-        realm.identityProviders().create(bc.setUpIdentityProvider(suiteContext));
+        Response resp = realm.identityProviders().create(bc.setUpIdentityProvider(suiteContext));
+        resp.close();
     }
 
 
@@ -90,7 +91,8 @@ public class KcOIDCBrokerWithSignatureTest extends AbstractBaseBrokerTest {
             for (ClientRepresentation client : clients) {
                 log.debug("adding client " + client.getName() + " to realm " + bc.providerRealmName());
 
-                providerRealm.clients().create(client);
+                Response resp = providerRealm.clients().create(client);
+                resp.close();
             }
         }
 
@@ -100,7 +102,8 @@ public class KcOIDCBrokerWithSignatureTest extends AbstractBaseBrokerTest {
             for (ClientRepresentation client : clients) {
                 log.debug("adding client " + client.getName() + " to realm " + bc.consumerRealmName());
 
-                consumerRealm.clients().create(client);
+                Response resp = consumerRealm.clients().create(client);
+                resp.close();
             }
         }
     }

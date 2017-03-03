@@ -221,7 +221,7 @@ public class AuthenticationManagementResource {
 
         flow.setId(createdModel.getId());
         adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo, createdModel.getId()).representation(flow).success();
-        return Response.status(201).build();
+        return Response.created(uriInfo.getAbsolutePathBuilder().path(flow.getId()).build()).build();
     }
 
     /**

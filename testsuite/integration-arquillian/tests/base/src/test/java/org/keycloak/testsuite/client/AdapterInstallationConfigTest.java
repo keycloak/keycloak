@@ -24,6 +24,7 @@ import org.keycloak.client.registration.HttpErrorException;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.representations.adapters.config.AdapterConfig;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.testsuite.admin.ApiUtil;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -51,6 +52,7 @@ public class AdapterInstallationConfigTest extends AbstractClientRegistrationTes
         client.setRootUrl("http://root");
         client = createClient(client);
         client.setSecret("RegistrationAccessTokenTestClientSecret");
+        getCleanup().addClientUuid(client.getId());
 
         client2 = new ClientRepresentation();
         client2.setEnabled(true);
@@ -60,6 +62,7 @@ public class AdapterInstallationConfigTest extends AbstractClientRegistrationTes
         client2.setRegistrationAccessToken("RegistrationAccessTokenTestRegistrationAccessToken");
         client2.setRootUrl("http://root");
         client2 = createClient(client2);
+        getCleanup().addClientUuid(client2.getId());
 
         clientPublic = new ClientRepresentation();
         clientPublic.setEnabled(true);
@@ -68,6 +71,7 @@ public class AdapterInstallationConfigTest extends AbstractClientRegistrationTes
         clientPublic.setRegistrationAccessToken("RegistrationAccessTokenTestRegistrationAccessTokenPublic");
         clientPublic.setRootUrl("http://root");
         clientPublic = createClient(clientPublic);
+        getCleanup().addClientUuid(clientPublic.getId());
     }
 
     @Test
@@ -80,7 +84,7 @@ public class AdapterInstallationConfigTest extends AbstractClientRegistrationTes
 
     @Test
     public void getConfig() throws ClientRegistrationException {
-        reg.auth(Auth.client(client.getClientId(), client.getSecret()));
+        reg.auth(Auth.client(client.getClientId(), "RegistrationAccessTokenTestClientSecret"));
 
         AdapterConfig config = reg.getAdapterConfig(client.getClientId());
         assertNotNull(config);
@@ -89,7 +93,7 @@ public class AdapterInstallationConfigTest extends AbstractClientRegistrationTes
         assertEquals("test", config.getRealm());
 
         assertEquals(1, config.getCredentials().size());
-        assertEquals(client.getSecret(), config.getCredentials().get("secret"));
+        assertEquals("RegistrationAccessTokenTestClientSecret", config.getCredentials().get("secret"));
 
         assertEquals(client.getClientId(), config.getResource());
         assertEquals(SslRequired.EXTERNAL.name().toLowerCase(), config.getSslRequired());

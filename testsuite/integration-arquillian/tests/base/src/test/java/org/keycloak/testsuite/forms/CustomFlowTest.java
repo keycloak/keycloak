@@ -96,6 +96,11 @@ public class CustomFlowTest extends AbstractFlowTest {
     public void configureFlows() {
         userId = findUser("login-test").getId();
 
+        // Do this just once per class
+        if (testContext.isInitialized()) {
+            return;
+        }
+
         AuthenticationFlowRepresentation flow = FlowBuilder.create()
                                                            .alias("dummy")
                                                            .description("dummy pass through flow")
@@ -169,6 +174,8 @@ public class CustomFlowTest extends AbstractFlowTest {
                         .authenticatorFlow(false)
                         .build();
         testRealm().flows().addExecution(execution);
+
+        testContext.setInitialized(true);
     }
 
 
@@ -240,16 +247,16 @@ public class CustomFlowTest extends AbstractFlowTest {
         loginPage.login("test-user@localhost", "password");
         Assert.assertTrue(termsPage.isCurrent());
 
-
-
-
-
+        // Revert dummy flow
+        rep.setBrowserFlow("dummy");
+        testRealm().update(rep);
     }
 
     @Test
     public void loginSuccess() {
         AuthenticatorState state = new AuthenticatorState();
         state.setUsername("login-test");
+        state.setClientId("test-app");
         testingClient.testing().updateAuthenticator(state);
 
         oauth.openLoginForm();
@@ -264,6 +271,7 @@ public class CustomFlowTest extends AbstractFlowTest {
     public void grantTest() throws Exception {
         AuthenticatorState state = new AuthenticatorState();
         state.setUsername("login-test");
+        state.setClientId("test-app");
         testingClient.testing().updateAuthenticator(state);
 
         grantAccessToken("test-app", "login-test");
@@ -297,6 +305,9 @@ public class CustomFlowTest extends AbstractFlowTest {
                 .removeDetail(Details.CONSENT)
                 .error(Errors.INVALID_CLIENT_CREDENTIALS)
                 .assertEvent();
+
+        state.setClientId("test-app");
+        testingClient.testing().updateAuthenticator(state);
     }
 
 

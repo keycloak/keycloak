@@ -22,12 +22,14 @@ import java.util.List;
 import java.util.Map;
 
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ProtocolMappersResource;
 import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.testsuite.util.ProtocolMapperUtil;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.mappers.AddressMapper;
 import org.keycloak.representations.AccessToken;
@@ -81,6 +83,15 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
          * @see AccessTokenTest#testAuthorizationNegotiateHeaderIgnored()
          */
         oauth.clientId("test-app");
+    }
+
+
+    private void deleteMappers(ProtocolMappersResource protocolMappers) {
+        ProtocolMapperRepresentation mapper = ProtocolMapperUtil.getMapperByNameAndProtocol(protocolMappers, OIDCLoginProtocol.LOGIN_PROTOCOL, "Realm roles mapper");
+        protocolMappers.delete(mapper.getId());
+
+        mapper = ProtocolMapperUtil.getMapperByNameAndProtocol(protocolMappers, OIDCLoginProtocol.LOGIN_PROTOCOL, "Client roles mapper");
+        protocolMappers.delete(mapper.getId());
     }
 
     @Override
@@ -239,12 +250,15 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
         String realmRoleMappings = (String) roleMappings.get("realm");
         String testAppMappings = (String) roleMappings.get("test-app");
         assertRoles(realmRoleMappings,
-          "pref.user",                      // from direct assignment in user definition
-          "pref.offline_access"             // from direct assignment in user definition
+                "pref.user",                      // from direct assignment in user definition
+                "pref.offline_access"             // from direct assignment in user definition
         );
         assertRoles(testAppMappings,
           "customer-user"                   // from direct assignment in user definition
         );
+
+        // Revert
+        deleteMappers(protocolMappers);
     }
 
 
@@ -268,11 +282,11 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
         String realmRoleMappings = (String) roleMappings.get("realm");
         String testAppMappings = (String) roleMappings.get(clientId);
         assertRoles(realmRoleMappings,
-          "pref.admin",                     // from direct assignment to /roleRichGroup/level2group
-          "pref.user",                      // from parent group of /roleRichGroup/level2group, i.e. from /roleRichGroup
-          "pref.customer-user-premium",     // from client role customer-admin-composite-role - realm role for test-app
-          "pref.realm-composite-role",      // from parent group of /roleRichGroup/level2group, i.e. from /roleRichGroup
-          "pref.sample-realm-role"          // from realm role realm-composite-role
+                "pref.admin",                     // from direct assignment to /roleRichGroup/level2group
+                "pref.user",                      // from parent group of /roleRichGroup/level2group, i.e. from /roleRichGroup
+                "pref.customer-user-premium",     // from client role customer-admin-composite-role - realm role for test-app
+                "pref.realm-composite-role",      // from parent group of /roleRichGroup/level2group, i.e. from /roleRichGroup
+                "pref.sample-realm-role"          // from realm role realm-composite-role
         );
         assertRoles(testAppMappings,
           "ta.customer-user",                  // from direct assignment to /roleRichGroup/level2group
@@ -280,6 +294,9 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
           "ta.customer-admin",                 // from client role customer-admin-composite-role - client role for test-app
           "ta.sample-client-role"              // from realm role realm-composite-role - client role for test-app
         );
+
+        // Revert
+        deleteMappers(protocolMappers);
     }
 
     @Test
@@ -303,13 +320,16 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
         String realmRoleMappings = (String) roleMappings.get("realm");
         String testAppAuthzMappings = (String) roleMappings.get(clientId);
         assertRoles(realmRoleMappings,
-          "pref.admin",                     // from direct assignment to /roleRichGroup/level2group
-          "pref.user",                      // from parent group of /roleRichGroup/level2group, i.e. from /roleRichGroup
-          "pref.customer-user-premium",     // from client role customer-admin-composite-role - realm role for test-app
-          "pref.realm-composite-role",      // from parent group of /roleRichGroup/level2group, i.e. from /roleRichGroup
-          "pref.sample-realm-role"          // from realm role realm-composite-role
+                "pref.admin",                     // from direct assignment to /roleRichGroup/level2group
+                "pref.user",                      // from parent group of /roleRichGroup/level2group, i.e. from /roleRichGroup
+                "pref.customer-user-premium",     // from client role customer-admin-composite-role - realm role for test-app
+                "pref.realm-composite-role",      // from parent group of /roleRichGroup/level2group, i.e. from /roleRichGroup
+                "pref.sample-realm-role"          // from realm role realm-composite-role
         );
         assertRoles(testAppAuthzMappings);  // There is no client role defined for test-app-authz
+
+        // Revert
+        deleteMappers(protocolMappers);
     }
 
     @Test
@@ -333,12 +353,15 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
         String realmRoleMappings = (String) roleMappings.get("realm");
         String testAppScopeMappings = (String) roleMappings.get(clientId);
         assertRoles(realmRoleMappings,
-          "pref.admin",                     // from direct assignment to /roleRichGroup/level2group
-          "pref.user"                       // from parent group of /roleRichGroup/level2group, i.e. from /roleRichGroup
+                "pref.admin",                     // from direct assignment to /roleRichGroup/level2group
+                "pref.user"                       // from parent group of /roleRichGroup/level2group, i.e. from /roleRichGroup
         );
         assertRoles(testAppScopeMappings,
           "test-app-allowed-by-scope"       // from direct assignment to roleRichUser, present as scope allows it
         );
+
+        // Revert
+        deleteMappers(protocolMappers);
     }
 
     @Test
@@ -369,6 +392,9 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
           "test-app-allowed-by-scope",      // from direct assignment to roleRichUser, present as scope allows it
           "customer-admin-composite-role"   // from direct assignment to /roleRichGroup/level2group, present as scope allows it
         );
+
+        // Revert
+        deleteMappers(protocolMappers);
     }
 
     private void assertRoles(String actualRoleString, String...expectedRoles) {
