@@ -13,7 +13,7 @@ import java.security.spec.InvalidKeySpecException;
 import java.security.spec.KeySpec;
 
 /**
- * Abstract class providing core encoding and verification functions for PBKDF2-based password hash algorithms.
+ * Abstract class providing core encoding and verification functions for PBKDF2 password hash algorithms with HMAC.
  *
  * @author <a href="mailto:abkaplan07@gmail.com">Adam Kaplan</a>
  */
