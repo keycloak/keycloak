@@ -1,0 +1,142 @@
+/*
+ * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.keycloak.sessions.infinispan;
+
+import java.util.Map;
+import java.util.Set;
+
+import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
+import org.keycloak.sessions.LoginSessionModel;
+
+/**
+ * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
+ */
+public class LoginSessionEntity extends SessionEntity {
+
+    private String clientUuid;
+    private String authUserId;
+
+    private String redirectUri;
+    private int timestamp;
+    private String action;
+    private Set<String> roles;
+    private Set<String> protocolMappers;
+
+    private Map<String, LoginSessionModel.ExecutionStatus> executionStatus;
+    private String protocol;
+
+    private Map<String, String> notes;
+    private Set<String> requiredActions;
+    private Map<String, String> userSessionNotes;
+
+    public String getClientUuid() {
+        return clientUuid;
+    }
+
+    public void setClientUuid(String clientUuid) {
+        this.clientUuid = clientUuid;
+    }
+
+    public String getAuthUserId() {
+        return authUserId;
+    }
+
+    public void setAuthUserId(String authUserId) {
+        this.authUserId = authUserId;
+    }
+
+    public String getRedirectUri() {
+        return redirectUri;
+    }
+
+    public void setRedirectUri(String redirectUri) {
+        this.redirectUri = redirectUri;
+    }
+
+    public int getTimestamp() {
+        return timestamp;
+    }
+
+    public void setTimestamp(int timestamp) {
+        this.timestamp = timestamp;
+    }
+
+    public String getAction() {
+        return action;
+    }
+
+    public void setAction(String action) {
+        this.action = action;
+    }
+
+    public Set<String> getRoles() {
+        return roles;
+    }
+
+    public void setRoles(Set<String> roles) {
+        this.roles = roles;
+    }
+
+    public Set<String> getProtocolMappers() {
+        return protocolMappers;
+    }
+
+    public void setProtocolMappers(Set<String> protocolMappers) {
+        this.protocolMappers = protocolMappers;
+    }
+
+    public Map<String, LoginSessionModel.ExecutionStatus> getExecutionStatus() {
+        return executionStatus;
+    }
+
+    public void setExecutionStatus(Map<String, LoginSessionModel.ExecutionStatus> executionStatus) {
+        this.executionStatus = executionStatus;
+    }
+
+    public String getProtocol() {
+        return protocol;
+    }
+
+    public void setProtocol(String protocol) {
+        this.protocol = protocol;
+    }
+
+    public Map<String, String> getNotes() {
+        return notes;
+    }
+
+    public void setNotes(Map<String, String> notes) {
+        this.notes = notes;
+    }
+
+    public Set<String> getRequiredActions() {
+        return requiredActions;
+    }
+
+    public void setRequiredActions(Set<String> requiredActions) {
+        this.requiredActions = requiredActions;
+    }
+
+    public Map<String, String> getUserSessionNotes() {
+        return userSessionNotes;
+    }
+
+    public void setUserSessionNotes(Map<String, String> userSessionNotes) {
+        this.userSessionNotes = userSessionNotes;
+    }
+}

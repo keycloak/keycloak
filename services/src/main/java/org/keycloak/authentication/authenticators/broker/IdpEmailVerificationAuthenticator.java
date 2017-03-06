@@ -53,7 +53,7 @@ public class IdpEmailVerificationAuthenticator extends AbstractIdpAuthenticator 
 
     @Override
     protected void authenticateImpl(AuthenticationFlowContext context, SerializedBrokeredIdentityContext serializedCtx, BrokeredIdentityContext brokerContext) {
-        KeycloakSession session = context.getSession();
+        /*KeycloakSession session = context.getSession();
         RealmModel realm = context.getRealm();
         ClientSessionModel clientSession = context.getClientSession();
 
@@ -62,9 +62,6 @@ public class IdpEmailVerificationAuthenticator extends AbstractIdpAuthenticator 
             context.attempted();
             return;
         }
-
-        // Create action cookie to detect if email verification happened in same browser
-        LoginActionsService.createActionCookie(context.getRealm(), context.getUriInfo(), context.getConnection(), context.getClientSession().getId());
 
         VerifyEmail.setupKey(clientSession);
 
@@ -107,12 +104,12 @@ public class IdpEmailVerificationAuthenticator extends AbstractIdpAuthenticator 
                 .setStatus(Response.Status.OK)
                 .setAttribute(LoginFormsProvider.IDENTITY_PROVIDER_BROKER_CONTEXT, brokerContext)
                 .createIdpLinkEmailPage();
-        context.forceChallenge(challenge);
+        context.forceChallenge(challenge);*/
     }
 
     @Override
     protected void actionImpl(AuthenticationFlowContext context, SerializedBrokeredIdentityContext serializedCtx, BrokeredIdentityContext brokerContext) {
-        MultivaluedMap<String, String> queryParams = context.getSession().getContext().getUri().getQueryParameters();
+        /*MultivaluedMap<String, String> queryParams = context.getSession().getContext().getUri().getQueryParameters();
         String key = queryParams.getFirst(Constants.KEY);
         ClientSessionModel clientSession = context.getClientSession();
         RealmModel realm = context.getRealm();
@@ -149,7 +146,7 @@ public class IdpEmailVerificationAuthenticator extends AbstractIdpAuthenticator 
                     .setError(Messages.MISSING_PARAMETER, Constants.KEY)
                     .createErrorPage();
             context.failureChallenge(AuthenticationFlowError.IDENTITY_PROVIDER_ERROR, challengeResponse);
-        }
+        }*/
     }
 
     @Override

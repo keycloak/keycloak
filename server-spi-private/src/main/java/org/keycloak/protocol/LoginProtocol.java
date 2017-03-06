@@ -18,12 +18,14 @@
 package org.keycloak.protocol;
 
 import org.keycloak.events.EventBuilder;
+import org.keycloak.models.ClientLoginSessionModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.provider.Provider;
 import org.keycloak.services.managers.ClientSessionCode;
+import org.keycloak.sessions.LoginSessionModel;
 
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
@@ -66,19 +68,19 @@ public interface LoginProtocol extends Provider {
 
     LoginProtocol setEventBuilder(EventBuilder event);
 
-    Response authenticated(UserSessionModel userSession, ClientSessionCode accessCode);
+    Response authenticated(UserSessionModel userSession, ClientSessionCode<ClientLoginSessionModel> accessCode);
 
-    Response sendError(ClientSessionModel clientSession, Error error);
+    Response sendError(LoginSessionModel loginSession, Error error);
 
-    void backchannelLogout(UserSessionModel userSession, ClientSessionModel clientSession);
-    Response frontchannelLogout(UserSessionModel userSession, ClientSessionModel clientSession);
+    void backchannelLogout(UserSessionModel userSession, ClientLoginSessionModel clientSession);
+    Response frontchannelLogout(UserSessionModel userSession, ClientLoginSessionModel clientSession);
     Response finishLogout(UserSessionModel userSession);
 
     /**
      * @param userSession
-     * @param clientSession
+     * @param loginSession
      * @return true if SSO cookie authentication can't be used. User will need to "actively" reauthenticate
      */
-    boolean requireReauthentication(UserSessionModel userSession, ClientSessionModel clientSession);
+    boolean requireReauthentication(UserSessionModel userSession, LoginSessionModel loginSession);
 
 }

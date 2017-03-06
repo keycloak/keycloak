@@ -32,6 +32,7 @@ org.keycloak.timer.TimerSpi
 org.keycloak.scripting.ScriptingSpi
 org.keycloak.services.managers.BruteForceProtectorSpi
 org.keycloak.services.resource.RealmResourceSPI
+org.keycloak.sessions.LoginSessionSpi
 org.keycloak.protocol.ClientInstallationSpi
 org.keycloak.protocol.LoginProtocolSpi
 org.keycloak.protocol.ProtocolMapperSpi

@@ -134,16 +134,16 @@ public class RegistrationUserCreation implements FormAction, FormActionFactory {
         user.setEnabled(true);
 
         user.setEmail(email);
-        context.getClientSession().setNote(OIDCLoginProtocol.LOGIN_HINT_PARAM, username);
+        context.getLoginSession().setNote(OIDCLoginProtocol.LOGIN_HINT_PARAM, username);
         AttributeFormDataProcessor.process(formData, context.getRealm(), user);
         context.setUser(user);
         context.getEvent().user(user);
         context.getEvent().success();
         context.newEvent().event(EventType.LOGIN);
-        context.getEvent().client(context.getClientSession().getClient().getClientId())
-                .detail(Details.REDIRECT_URI, context.getClientSession().getRedirectUri())
-                .detail(Details.AUTH_METHOD, context.getClientSession().getAuthMethod());
-        String authType = context.getClientSession().getNote(Details.AUTH_TYPE);
+        context.getEvent().client(context.getLoginSession().getClient().getClientId())
+                .detail(Details.REDIRECT_URI, context.getLoginSession().getRedirectUri())
+                .detail(Details.AUTH_METHOD, context.getLoginSession().getProtocol());
+        String authType = context.getLoginSession().getNote(Details.AUTH_TYPE);
         if (authType != null) {
             context.getEvent().detail(Details.AUTH_TYPE, authType);
         }

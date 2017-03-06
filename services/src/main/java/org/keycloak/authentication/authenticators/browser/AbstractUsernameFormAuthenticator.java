@@ -126,7 +126,7 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
         username = username.trim();
 
         context.getEvent().detail(Details.USERNAME, username);
-        context.getClientSession().setNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME, username);
+        context.getLoginSession().setNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME, username);
 
         UserModel user = null;
         try {
@@ -159,10 +159,10 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
         String rememberMe = inputData.getFirst("rememberMe");
         boolean remember = rememberMe != null && rememberMe.equalsIgnoreCase("on");
         if (remember) {
-            context.getClientSession().setNote(Details.REMEMBER_ME, "true");
+            context.getLoginSession().setNote(Details.REMEMBER_ME, "true");
             context.getEvent().detail(Details.REMEMBER_ME, "true");
         } else {
-            context.getClientSession().removeNote(Details.REMEMBER_ME);
+            context.getLoginSession().removeNote(Details.REMEMBER_ME);
         }
         context.setUser(user);
         return true;

@@ -31,6 +31,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.util.CookieHelper;
+import org.keycloak.sessions.LoginSessionModel;
 
 import javax.crypto.SecretKey;
 import javax.ws.rs.core.Cookie;
@@ -125,10 +126,10 @@ public class RestartLoginCookie {
 
     public RestartLoginCookie() {
     }
-    public RestartLoginCookie(ClientSessionModel clientSession) {
+    public RestartLoginCookie(LoginSessionModel clientSession) {
         this.action = clientSession.getAction();
         this.clientId = clientSession.getClient().getClientId();
-        this.authMethod = clientSession.getAuthMethod();
+        this.authMethod = clientSession.getProtocol();
         this.redirectUri = clientSession.getRedirectUri();
         this.clientSession = clientSession.getId();
         for (Map.Entry<String, String> entry : clientSession.getNotes().entrySet()) {
@@ -136,8 +137,8 @@ public class RestartLoginCookie {
         }
     }
 
-    public static void setRestartCookie(KeycloakSession session, RealmModel realm, ClientConnection connection, UriInfo uriInfo, ClientSessionModel clientSession) {
-        RestartLoginCookie restart = new RestartLoginCookie(clientSession);
+    public static void setRestartCookie(KeycloakSession session, RealmModel realm, ClientConnection connection, UriInfo uriInfo, LoginSessionModel loginSession) {
+        RestartLoginCookie restart = new RestartLoginCookie(loginSession);
         String encoded = restart.encode(session, realm);
         String path = AuthenticationManager.getRealmCookiePath(realm, uriInfo);
         boolean secureOnly = realm.getSslRequired().isRequired(connection);
@@ -150,6 +151,8 @@ public class RestartLoginCookie {
         CookieHelper.addCookie(KC_RESTART, "", path, null, null, 0, secureOnly, true);
     }
 
+    // TODO:mposolda
+    /*
     public static ClientSessionModel restartSession(KeycloakSession session, RealmModel realm, String code) throws Exception {
         Cookie cook = session.getContext().getRequestHeaders().getCookies().get(KC_RESTART);
         if (cook ==  null) {
@@ -183,5 +186,5 @@ public class RestartLoginCookie {
         }
 
         return clientSession;
-    }
+    }*/
 }

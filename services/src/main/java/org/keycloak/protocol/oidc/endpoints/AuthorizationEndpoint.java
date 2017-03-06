@@ -44,6 +44,7 @@ import org.keycloak.services.Urls;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.services.util.CacheControlUtil;
+import org.keycloak.sessions.LoginSessionModel;
 import org.keycloak.util.TokenUtil;
 
 import javax.ws.rs.GET;
@@ -63,12 +64,12 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
     public static final String CODE_AUTH_TYPE = "code";
 
     /**
-     * Prefix used to store additional HTTP GET params from original client request into {@link ClientSessionModel} note to be available later in Authenticators, RequiredActions etc. Prefix is used to
+     * Prefix used to store additional HTTP GET params from original client request into {@link LoginSessionModel} note to be available later in Authenticators, RequiredActions etc. Prefix is used to
      * prevent collisions with internally used notes.
      *
-     * @see ClientSessionModel#getNote(String)
+     * @see LoginSessionModel#getNote(String)
      */
-    public static final String CLIENT_SESSION_NOTE_ADDITIONAL_REQ_PARAMS_PREFIX = "client_request_param_";
+    public static final String LOGIN_SESSION_NOTE_ADDITIONAL_REQ_PARAMS_PREFIX = "client_request_param_";
 
     // https://tools.ietf.org/html/rfc7636#section-4.2
     private static final Pattern VALID_CODE_CHALLENGE_PATTERN = Pattern.compile("^[0-9a-zA-Z\\-\\.~_]+$");
@@ -78,7 +79,7 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
     }
 
     private ClientModel client;
-    private ClientSessionModel clientSession;
+    private LoginSessionModel loginSession;
 
     private Action action;
     private OIDCResponseType parsedResponseType;
@@ -125,7 +126,8 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
             return errorResponse;
         }
 
-        createClientSession();
+        createLoginSession();
+
         // So back button doesn't work
         CacheControlUtil.noBackButtonCacheControlHeader();
         switch (action) {
@@ -356,44 +358,44 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         }
     }
 
-    private void createClientSession() {
-        clientSession = session.sessions().createClientSession(realm, client);
-        clientSession.setAuthMethod(OIDCLoginProtocol.LOGIN_PROTOCOL);
-        clientSession.setRedirectUri(redirectUri);
-        clientSession.setAction(ClientSessionModel.Action.AUTHENTICATE.name());
-        clientSession.setNote(OIDCLoginProtocol.RESPONSE_TYPE_PARAM, request.getResponseType());
-        clientSession.setNote(OIDCLoginProtocol.REDIRECT_URI_PARAM, request.getRedirectUriParam());
-        clientSession.setNote(OIDCLoginProtocol.ISSUER, Urls.realmIssuer(uriInfo.getBaseUri(), realm.getName()));
+    private void createLoginSession() {
+        loginSession = session.loginSessions().createLoginSession(realm, client, true);
+        loginSession.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+        loginSession.setRedirectUri(redirectUri);
+        loginSession.setAction(ClientSessionModel.Action.AUTHENTICATE.name());
+        loginSession.setNote(OIDCLoginProtocol.RESPONSE_TYPE_PARAM, request.getResponseType());
+        loginSession.setNote(OIDCLoginProtocol.REDIRECT_URI_PARAM, request.getRedirectUriParam());
+        loginSession.setNote(OIDCLoginProtocol.ISSUER, Urls.realmIssuer(uriInfo.getBaseUri(), realm.getName()));
 
-        if (request.getState() != null) clientSession.setNote(OIDCLoginProtocol.STATE_PARAM, request.getState());
-        if (request.getNonce() != null) clientSession.setNote(OIDCLoginProtocol.NONCE_PARAM, request.getNonce());
-        if (request.getMaxAge() != null) clientSession.setNote(OIDCLoginProtocol.MAX_AGE_PARAM, String.valueOf(request.getMaxAge()));
-        if (request.getScope() != null) clientSession.setNote(OIDCLoginProtocol.SCOPE_PARAM, request.getScope());
-        if (request.getLoginHint() != null) clientSession.setNote(OIDCLoginProtocol.LOGIN_HINT_PARAM, request.getLoginHint());
-        if (request.getPrompt() != null) clientSession.setNote(OIDCLoginProtocol.PROMPT_PARAM, request.getPrompt());
-        if (request.getIdpHint() != null) clientSession.setNote(AdapterConstants.KC_IDP_HINT, request.getIdpHint());
-        if (request.getResponseMode() != null) clientSession.setNote(OIDCLoginProtocol.RESPONSE_MODE_PARAM, request.getResponseMode());
+        if (request.getState() != null) loginSession.setNote(OIDCLoginProtocol.STATE_PARAM, request.getState());
+        if (request.getNonce() != null) loginSession.setNote(OIDCLoginProtocol.NONCE_PARAM, request.getNonce());
+        if (request.getMaxAge() != null) loginSession.setNote(OIDCLoginProtocol.MAX_AGE_PARAM, String.valueOf(request.getMaxAge()));
+        if (request.getScope() != null) loginSession.setNote(OIDCLoginProtocol.SCOPE_PARAM, request.getScope());
+        if (request.getLoginHint() != null) loginSession.setNote(OIDCLoginProtocol.LOGIN_HINT_PARAM, request.getLoginHint());
+        if (request.getPrompt() != null) loginSession.setNote(OIDCLoginProtocol.PROMPT_PARAM, request.getPrompt());
+        if (request.getIdpHint() != null) loginSession.setNote(AdapterConstants.KC_IDP_HINT, request.getIdpHint());
+        if (request.getResponseMode() != null) loginSession.setNote(OIDCLoginProtocol.RESPONSE_MODE_PARAM, request.getResponseMode());
 
         // https://tools.ietf.org/html/rfc7636#section-4
-        if (request.getCodeChallenge() != null) clientSession.setNote(OIDCLoginProtocol.CODE_CHALLENGE_PARAM, request.getCodeChallenge());
+        if (request.getCodeChallenge() != null) loginSession.setNote(OIDCLoginProtocol.CODE_CHALLENGE_PARAM, request.getCodeChallenge());
         if (request.getCodeChallengeMethod() != null) {
-        	clientSession.setNote(OIDCLoginProtocol.CODE_CHALLENGE_METHOD_PARAM, request.getCodeChallengeMethod());
+            loginSession.setNote(OIDCLoginProtocol.CODE_CHALLENGE_METHOD_PARAM, request.getCodeChallengeMethod());
         } else {
-        	clientSession.setNote(OIDCLoginProtocol.CODE_CHALLENGE_METHOD_PARAM, OIDCLoginProtocol.PKCE_METHOD_PLAIN);
+            loginSession.setNote(OIDCLoginProtocol.CODE_CHALLENGE_METHOD_PARAM, OIDCLoginProtocol.PKCE_METHOD_PLAIN);
         }
 
         if (request.getAdditionalReqParams() != null) {
             for (String paramName : request.getAdditionalReqParams().keySet()) {
-                clientSession.setNote(CLIENT_SESSION_NOTE_ADDITIONAL_REQ_PARAMS_PREFIX + paramName, request.getAdditionalReqParams().get(paramName));
+                loginSession.setNote(LOGIN_SESSION_NOTE_ADDITIONAL_REQ_PARAMS_PREFIX + paramName, request.getAdditionalReqParams().get(paramName));
             }
         }
     }
 
     private Response buildAuthorizationCodeAuthorizationResponse() {
         this.event.event(EventType.LOGIN);
-        clientSession.setNote(Details.AUTH_TYPE, CODE_AUTH_TYPE);
+        loginSession.setNote(Details.AUTH_TYPE, CODE_AUTH_TYPE);
 
-        return handleBrowserAuthenticationRequest(clientSession, new OIDCLoginProtocol(session, realm, uriInfo, headers, event), TokenUtil.hasPrompt(request.getPrompt(), OIDCLoginProtocol.PROMPT_VALUE_NONE), false);
+        return handleBrowserAuthenticationRequest(loginSession, new OIDCLoginProtocol(session, realm, uriInfo, headers, event), TokenUtil.hasPrompt(request.getPrompt(), OIDCLoginProtocol.PROMPT_VALUE_NONE), false);
     }
 
     private Response buildRegister() {
@@ -402,7 +404,7 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         AuthenticationFlowModel flow = realm.getRegistrationFlow();
         String flowId = flow.getId();
 
-        AuthenticationProcessor processor = createProcessor(clientSession, flowId, LoginActionsService.REGISTRATION_PATH);
+        AuthenticationProcessor processor = createProcessor(loginSession, flowId, LoginActionsService.REGISTRATION_PATH);
 
         return processor.authenticate();
     }
@@ -413,7 +415,7 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         AuthenticationFlowModel flow = realm.getResetCredentialsFlow();
         String flowId = flow.getId();
 
-        AuthenticationProcessor processor = createProcessor(clientSession, flowId, LoginActionsService.RESET_CREDENTIALS_PATH);
+        AuthenticationProcessor processor = createProcessor(loginSession, flowId, LoginActionsService.RESET_CREDENTIALS_PATH);
 
         return processor.authenticate();
     }

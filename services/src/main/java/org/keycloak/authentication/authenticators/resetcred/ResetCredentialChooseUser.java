@@ -53,9 +53,9 @@ public class ResetCredentialChooseUser implements Authenticator, AuthenticatorFa
 
     @Override
     public void authenticate(AuthenticationFlowContext context) {
-        String existingUserId = context.getClientSession().getNote(AbstractIdpAuthenticator.EXISTING_USER_INFO);
+        String existingUserId = context.getLoginSession().getNote(AbstractIdpAuthenticator.EXISTING_USER_INFO);
         if (existingUserId != null) {
-            UserModel existingUser = AbstractIdpAuthenticator.getExistingUser(context.getSession(), context.getRealm(), context.getClientSession());
+            UserModel existingUser = AbstractIdpAuthenticator.getExistingUser(context.getSession(), context.getRealm(), context.getLoginSession());
 
             logger.debugf("Forget-password triggered when reauthenticating user after first broker login. Skipping reset-credential-choose-user screen and using user '%s' ", existingUser.getUsername());
             context.setUser(existingUser);
@@ -89,7 +89,7 @@ public class ResetCredentialChooseUser implements Authenticator, AuthenticatorFa
             user =  context.getSession().users().getUserByEmail(username, realm);
         }
 
-        context.getClientSession().setNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME, username);
+        context.getLoginSession().setNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME, username);
 
         // we don't want people guessing usernames, so if there is a problem, just continue, but don't set the user
         // a null user will notify further executions, that this was a failure.

@@ -18,6 +18,7 @@
 package org.keycloak.models.sessions.infinispan;
 
 import org.infinispan.Cache;
+import org.keycloak.models.ClientLoginSessionModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -58,6 +59,12 @@ public class UserSessionAdapter implements UserSessionModel {
         this.realm = realm;
         this.entity = entity;
         this.offline = offline;
+    }
+
+    // TODO;mposolda
+    @Override
+    public Map<String, ClientLoginSessionModel> getClientLoginSessions() {
+        return null;
     }
 
     public String getId() {

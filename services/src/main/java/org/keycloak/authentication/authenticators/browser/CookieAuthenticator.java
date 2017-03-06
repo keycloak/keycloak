@@ -25,6 +25,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.services.managers.AuthenticationManager;
+import org.keycloak.sessions.LoginSessionModel;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -44,8 +45,8 @@ public class CookieAuthenticator implements Authenticator {
         if (authResult == null) {
             context.attempted();
         } else {
-            ClientSessionModel clientSession = context.getClientSession();
-            LoginProtocol protocol = context.getSession().getProvider(LoginProtocol.class, clientSession.getAuthMethod());
+            LoginSessionModel clientSession = context.getLoginSession();
+            LoginProtocol protocol = context.getSession().getProvider(LoginProtocol.class, clientSession.getProtocol());
 
             // Cookie re-authentication is skipped if re-authentication is required
             if (protocol.requireReauthentication(authResult.getSession(), clientSession)) {

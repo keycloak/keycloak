@@ -24,12 +24,12 @@ import org.keycloak.authentication.authenticators.broker.util.ExistingUserInfo;
 import org.keycloak.authentication.authenticators.broker.util.SerializedBrokeredIdentityContext;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.forms.login.LoginFormsProvider;
-import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.messages.Messages;
+import org.keycloak.sessions.LoginSessionModel;
 
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
@@ -41,9 +41,9 @@ public class IdpConfirmLinkAuthenticator extends AbstractIdpAuthenticator {
 
     @Override
     protected void authenticateImpl(AuthenticationFlowContext context, SerializedBrokeredIdentityContext serializedCtx, BrokeredIdentityContext brokerContext) {
-        ClientSessionModel clientSession = context.getClientSession();
+        LoginSessionModel loginSession = context.getLoginSession();
 
-        String existingUserInfo = clientSession.getNote(EXISTING_USER_INFO);
+        String existingUserInfo = loginSession.getNote(EXISTING_USER_INFO);
         if (existingUserInfo == null) {
             ServicesLogger.LOGGER.noDuplicationDetected();
             context.attempted();
@@ -65,8 +65,8 @@ public class IdpConfirmLinkAuthenticator extends AbstractIdpAuthenticator {
 
         String action = formData.getFirst("submitAction");
         if (action != null && action.equals("updateProfile")) {
-            context.getClientSession().setNote(ENFORCE_UPDATE_PROFILE, "true");
-            context.getClientSession().removeNote(EXISTING_USER_INFO);
+            context.getLoginSession().setNote(ENFORCE_UPDATE_PROFILE, "true");
+            context.getLoginSession().removeNote(EXISTING_USER_INFO);
             context.resetFlow();
         } else if (action != null && action.equals("linkAccount")) {
             context.success();

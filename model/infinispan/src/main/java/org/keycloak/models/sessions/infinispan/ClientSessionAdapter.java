@@ -157,12 +157,12 @@ public class ClientSessionAdapter implements ClientSessionModel {
     }
 
     @Override
-    public String getAuthMethod() {
+    public String getProtocol() {
         return entity.getAuthMethod();
     }
 
     @Override
-    public void setAuthMethod(String authMethod) {
+    public void setProtocol(String authMethod) {
         entity.setAuthMethod(authMethod);
         update();
     }

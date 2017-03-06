@@ -34,14 +34,14 @@ public class ResetPassword extends AbstractSetRequiredActionAuthenticator {
     @Override
     public void authenticate(AuthenticationFlowContext context) {
         String actionCookie = LoginActionsService.getActionCookie(context.getSession().getContext().getRequestHeaders(), context.getRealm(), context.getUriInfo(), context.getConnection());
-        if (actionCookie == null || !actionCookie.equals(context.getClientSession().getId())) {
-            context.getClientSession().setNote(AuthenticationManager.END_AFTER_REQUIRED_ACTIONS, "true");
+        if (actionCookie == null || !actionCookie.equals(context.getLoginSession().getId())) {
+            context.getLoginSession().setNote(AuthenticationManager.END_AFTER_REQUIRED_ACTIONS, "true");
         }
 
         if (context.getExecution().isRequired() ||
                 (context.getExecution().isOptional() &&
                         configuredFor(context))) {
-            context.getClientSession().addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
+            context.getLoginSession().addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
         }
         context.success();
     }

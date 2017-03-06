@@ -30,6 +30,7 @@ import org.keycloak.forms.account.AccountPages;
 import org.keycloak.forms.account.AccountProvider;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.AccountRoles;
+import org.keycloak.models.ClientLoginSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.FederatedIdentityModel;
@@ -164,16 +165,9 @@ public class AccountService extends AbstractSecuredLocalService {
         if (authResult != null) {
             UserSessionModel userSession = authResult.getSession();
             if (userSession != null) {
-                boolean associated = false;
-                for (ClientSessionModel c : userSession.getClientSessions()) {
-                    if (c.getClient().equals(client)) {
-                        auth.setClientSession(c);
-                        associated = true;
-                        break;
-                    }
-                }
+                boolean associated = userSession.getClientLoginSessions().get(client.getId()) != null;
                 if (!associated) {
-                    ClientSessionModel clientSession = session.sessions().createClientSession(realm, client);
+                    ClientLoginSessionModel clientSession = session.sessions().createClientSession(userSession.getRealm(), client, userSession);
                     clientSession.setUserSession(userSession);
                     auth.setClientSession(clientSession);
                 }

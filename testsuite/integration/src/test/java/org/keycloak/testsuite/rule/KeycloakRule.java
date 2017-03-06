@@ -90,24 +90,6 @@ public class KeycloakRule extends AbstractKeycloakRule {
         stopSession(session, true);
     }
 
-    public ClientSessionCode verifyCode(String code) {
-        KeycloakSession session = startSession();
-        try {
-            RealmModel realm = session.realms().getRealm("test");
-            try {
-                ClientSessionCode accessCode = ClientSessionCode.parse(code, session, realm);
-                if (accessCode == null) {
-                    Assert.fail("Invalid code");
-                }
-                return accessCode;
-            } catch (Throwable t) {
-                throw new AssertionError("Failed to parse code", t);
-            }
-        } finally {
-            stopSession(session, false);
-        }
-    }
-
     public abstract static class KeycloakSetup {
 
         protected KeycloakSession session;

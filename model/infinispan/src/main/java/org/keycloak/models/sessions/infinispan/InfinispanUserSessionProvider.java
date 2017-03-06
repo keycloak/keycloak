@@ -23,6 +23,7 @@ import org.infinispan.context.Flag;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.ClientInitialAccessModel;
+import org.keycloak.models.ClientLoginSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
@@ -89,6 +90,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         return offline ? offlineSessionCache : sessionCache;
     }
 
+    /*
     @Override
     public ClientSessionModel createClientSession(RealmModel realm, ClientModel client) {
         String id = KeycloakModelUtils.generateId();
@@ -104,6 +106,12 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
 
         ClientSessionAdapter wrap = wrap(realm, entity, false);
         return wrap;
+    }*/
+
+    // TODO:mposolda
+    @Override
+    public ClientLoginSessionModel createClientSession(RealmModel realm, ClientModel client, UserSessionModel userSession) {
+        return null;
     }
 
     @Override
@@ -608,6 +616,8 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         }
     }
 
+    // TODO:mposolda
+    /*
     @Override
     public ClientSessionModel createOfflineClientSession(ClientSessionModel clientSession) {
         ClientSessionAdapter offlineClientSession = importClientSession(clientSession, true);
@@ -616,6 +626,11 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         offlineClientSession.setTimestamp(Time.currentTime());
 
         return offlineClientSession;
+    }*/
+
+    @Override
+    public ClientLoginSessionModel createOfflineClientSession(ClientLoginSessionModel clientSession) {
+        return null;
     }
 
     @Override
@@ -624,27 +639,17 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
     }
 
     @Override
-    public List<ClientSessionModel> getOfflineClientSessions(RealmModel realm, UserModel user) {
+    public List<UserSessionModel> getOfflineUserSessions(RealmModel realm, UserModel user) {
         Iterator<Map.Entry<String, SessionEntity>> itr = offlineSessionCache.entrySet().stream().filter(UserSessionPredicate.create(realm.getId()).user(user.getId())).iterator();
-        List<ClientSessionModel> clientSessions = new LinkedList<>();
+        List<UserSessionModel> userSessions = new LinkedList<>();
 
         while(itr.hasNext()) {
             UserSessionEntity entity = (UserSessionEntity) itr.next().getValue();
-            Set<String> currClientSessions = entity.getClientSessions();
-
-            if (currClientSessions == null) {
-                continue;
-            }
-
-            for (String clientSessionId : currClientSessions) {
-                ClientSessionEntity cls = (ClientSessionEntity) offlineSessionCache.get(clientSessionId);
-                if (cls != null) {
-                    clientSessions.add(wrap(realm, cls, true));
-                }
-            }
+            UserSessionModel userSession = wrap(realm, entity, true);
+            userSessions.add(userSession);
         }
 
-        return clientSessions;
+        return userSessions;
     }
 
     @Override
@@ -695,7 +700,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
 
         entity.setAction(clientSession.getAction());
         entity.setAuthenticatorStatus(clientSession.getExecutionStatus());
-        entity.setAuthMethod(clientSession.getAuthMethod());
+        entity.setAuthMethod(clientSession.getProtocol());
         if (clientSession.getAuthenticatedUser() != null) {
             entity.setAuthUserId(clientSession.getAuthenticatedUser().getId());
         }
@@ -755,147 +760,6 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
             list.add(wrap(realm, (ClientInitialAccessEntity) itr.next().getValue()));
         }
         return list;
-    }
-
-
-    class InfinispanKeycloakTransaction implements KeycloakTransaction {
-
-        private boolean active;
-        private boolean rollback;
-        private Map<Object, CacheTask> tasks = new HashMap<>();
-
-        @Override
-        public void begin() {
-            active = true;
-        }
-
-        @Override
-        public void commit() {
-            if (rollback) {
-                throw new RuntimeException("Rollback only!");
-            }
-
-            for (CacheTask task : tasks.values()) {
-                task.execute();
-            }
-        }
-
-        @Override
-        public void rollback() {
-            tasks.clear();
-        }
-
-        @Override
-        public void setRollbackOnly() {
-            rollback = true;
-        }
-
-        @Override
-        public boolean getRollbackOnly() {
-            return rollback;
-        }
-
-        @Override
-        public boolean isActive() {
-            return active;
-        }
-
-        public void put(Cache cache, Object key, Object value) {
-            log.tracev("Adding cache operation: {0} on {1}", CacheOperation.ADD, key);
-
-            Object taskKey = getTaskKey(cache, key);
-            if (tasks.containsKey(taskKey)) {
-                throw new IllegalStateException("Can't add session: task in progress for session");
-            } else {
-                tasks.put(taskKey, new CacheTask(cache, CacheOperation.ADD, key, value));
-            }
-        }
-
-        public void replace(Cache cache, Object key, Object value) {
-            log.tracev("Adding cache operation: {0} on {1}", CacheOperation.REPLACE, key);
-
-            Object taskKey = getTaskKey(cache, key);
-            CacheTask current = tasks.get(taskKey);
-            if (current != null) {
-                switch (current.operation) {
-                    case ADD:
-                    case REPLACE:
-                        current.value = value;
-                        return;
-                    case REMOVE:
-                        return;
-                }
-            } else {
-                tasks.put(taskKey, new CacheTask(cache, CacheOperation.REPLACE, key, value));
-            }
-        }
-
-        public void remove(Cache cache, Object key) {
-            log.tracev("Adding cache operation: {0} on {1}", CacheOperation.REMOVE, key);
-
-            Object taskKey = getTaskKey(cache, key);
-            tasks.put(taskKey, new CacheTask(cache, CacheOperation.REMOVE, key, null));
-        }
-
-        // This is for possibility to lookup for session by id, which was created in this transaction
-        public Object get(Cache cache, Object key) {
-            Object taskKey = getTaskKey(cache, key);
-            CacheTask current = tasks.get(taskKey);
-            if (current != null) {
-                switch (current.operation) {
-                    case ADD:
-                    case REPLACE:
-                        return current.value;                 }
-            }
-
-            return null;
-        }
-
-        private Object getTaskKey(Cache cache, Object key) {
-            if (key instanceof String) {
-                return new StringBuilder(cache.getName())
-                        .append("::")
-                        .append(key.toString()).toString();
-            } else {
-                // loginFailure cache
-                return key;
-            }
-        }
-
-        public class CacheTask {
-            private Cache cache;
-            private CacheOperation operation;
-            private Object key;
-            private Object value;
-
-            public CacheTask(Cache cache, CacheOperation operation, Object key, Object value) {
-                this.cache = cache;
-                this.operation = operation;
-                this.key = key;
-                this.value = value;
-            }
-
-            public void execute() {
-                log.tracev("Executing cache operation: {0} on {1}", operation, key);
-
-                switch (operation) {
-                    case ADD:
-                        cache.put(key, value);
-                        break;
-                    case REMOVE:
-                        cache.remove(key);
-                        break;
-                    case REPLACE:
-                        cache.replace(key, value);
-                        break;
-                }
-            }
-        }
-
-    }
-
-    public enum CacheOperation {
-        ADD, REMOVE, REPLACE
     }
 
 }

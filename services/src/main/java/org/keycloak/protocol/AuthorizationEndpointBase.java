@@ -30,6 +30,7 @@ import org.keycloak.protocol.LoginProtocol.Error;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.resources.LoginActionsService;
+import org.keycloak.sessions.LoginSessionModel;
 
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
@@ -63,9 +64,9 @@ public abstract class AuthorizationEndpointBase {
         this.event = event;
     }
 
-    protected AuthenticationProcessor createProcessor(ClientSessionModel clientSession, String flowId, String flowPath) {
+    protected AuthenticationProcessor createProcessor(LoginSessionModel loginSession, String flowId, String flowPath) {
         AuthenticationProcessor processor = new AuthenticationProcessor();
-        processor.setClientSession(clientSession)
+        processor.setLoginSession(loginSession)
                 .setFlowPath(flowPath)
                 .setFlowId(flowId)
                 .setBrowserFlow(true)
@@ -81,42 +82,45 @@ public abstract class AuthorizationEndpointBase {
     /**
      * Common method to handle browser authentication request in protocols unified way.
      *
-     * @param clientSession for current request
+     * @param loginSession for current request
      * @param protocol handler for protocol used to initiate login
      * @param isPassive set to true if login should be passive (without login screen shown)
      * @param redirectToAuthentication if true redirect to flow url.  If initial call to protocol is a POST, you probably want to do this.  This is so we can disable the back button on browser
      * @return response to be returned to the browser
      */
-    protected Response handleBrowserAuthenticationRequest(ClientSessionModel clientSession, LoginProtocol protocol, boolean isPassive, boolean redirectToAuthentication) {
+    protected Response handleBrowserAuthenticationRequest(LoginSessionModel loginSession, LoginProtocol protocol, boolean isPassive, boolean redirectToAuthentication) {
         AuthenticationFlowModel flow = getAuthenticationFlow();
         String flowId = flow.getId();
-        AuthenticationProcessor processor = createProcessor(clientSession, flowId, LoginActionsService.AUTHENTICATE_PATH);
-        event.detail(Details.CODE_ID, clientSession.getId());
+        AuthenticationProcessor processor = createProcessor(loginSession, flowId, LoginActionsService.AUTHENTICATE_PATH);
+        event.detail(Details.CODE_ID, loginSession.getId());
         if (isPassive) {
             // OIDC prompt == NONE or SAML 2 IsPassive flag
             // This means that client is just checking if the user is already completely logged in.
             // We cancel login if any authentication action or required action is required
             try {
                 if (processor.authenticateOnly() == null) {
-                    processor.attachSession();
+                    // processor.attachSession();
                 } else {
-                    Response response = protocol.sendError(clientSession, Error.PASSIVE_LOGIN_REQUIRED);
-                    session.sessions().removeClientSession(realm, clientSession);
+                    Response response = protocol.sendError(loginSession, Error.PASSIVE_LOGIN_REQUIRED);
+                    session.loginSessions().removeLoginSession(realm, loginSession);
                     return response;
                 }
                 if (processor.isActionRequired()) {
-                    Response response = protocol.sendError(clientSession, Error.PASSIVE_INTERACTION_REQUIRED);
-                    session.sessions().removeClientSession(realm, clientSession);
+                    Response response = protocol.sendError(loginSession, Error.PASSIVE_INTERACTION_REQUIRED);
+                    session.loginSessions().removeLoginSession(realm, loginSession);
                     return response;
-
                 }
+
+                // Attach session once no requiredActions or other things are required
+                processor.attachSession();
             } catch (Exception e) {
                 return processor.handleBrowserException(e);
             }
             return processor.finishAuthentication(protocol);
         } else {
             try {
-                RestartLoginCookie.setRestartCookie(session, realm, clientConnection, uriInfo, clientSession);
+                // TODO: Check if this is required...
+                RestartLoginCookie.setRestartCookie(session, realm, clientConnection, uriInfo, loginSession);
                 if (redirectToAuthentication) {
                     return processor.redirectToFlow();
                 }

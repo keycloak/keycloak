@@ -55,7 +55,7 @@ public class ValidateUsername extends AbstractDirectGrantAuthenticator {
             return;
         }
         context.getEvent().detail(Details.USERNAME, username);
-        context.getClientSession().setNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME, username);
+        context.getLoginSession().setNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME, username);
 
         UserModel user = null;
         try {

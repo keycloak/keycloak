@@ -18,6 +18,7 @@
 package org.keycloak.models.sessions.infinispan.entities;
 
 import org.keycloak.models.ClientSessionModel;
+import org.keycloak.sessions.LoginSessionModel;
 
 import java.util.HashMap;
 import java.util.HashSet;

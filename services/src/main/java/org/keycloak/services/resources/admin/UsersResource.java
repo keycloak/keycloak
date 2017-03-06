@@ -33,6 +33,7 @@ import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
+import org.keycloak.models.ClientLoginSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.Constants;
@@ -396,7 +397,7 @@ public class UsersResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public List<UserSessionRepresentation> getSessions(final @PathParam("id") String id, final @PathParam("clientId") String clientId) {
+    public List<UserSessionRepresentation> getOfflineSessions(final @PathParam("id") String id, final @PathParam("clientId") String clientId) {
         auth.requireView();
 
         UserModel user = session.users().getUserById(id, realm);
@@ -407,18 +408,20 @@ public class UsersResource {
         if (client == null) {
             throw new NotFoundException("Client not found");
         }
-        List<UserSessionModel> sessions = new UserSessionManager(session).findOfflineSessions(realm, client, user);
+        List<UserSessionModel> sessions = new UserSessionManager(session).findOfflineSessions(realm, user);
         List<UserSessionRepresentation> reps = new ArrayList<UserSessionRepresentation>();
         for (UserSessionModel session : sessions) {
             UserSessionRepresentation rep = ModelToRepresentation.toRepresentation(session);
 
             // Update lastSessionRefresh with the timestamp from clientSession
-            for (ClientSessionModel clientSession : session.getClientSessions()) {
-                if (clientId.equals(clientSession.getClient().getId())) {
-                    rep.setLastAccess(Time.toMillis(clientSession.getTimestamp()));
-                    break;
-                }
+            ClientLoginSessionModel clientSession = session.getClientLoginSessions().get(clientId);
+
+            // Skip if userSession is not for this client
+            if (clientSession == null) {
+                continue;
             }
+
+            rep.setLastAccess(clientSession.getTimestamp());
 
             reps.add(rep);
         }
@@ -864,6 +867,8 @@ public class UsersResource {
                                         List<String> actions) {
         auth.requireManage();
 
+        // TODO: This stuff must be refactored for actionTickets (clientSessions)
+        /*
         UserModel user = session.users().getUserById(id, realm);
         if (user == null) {
             return ErrorResponse.error("User not found", Response.Status.NOT_FOUND);
@@ -884,6 +889,7 @@ public class UsersResource {
         ClientSessionCode accessCode = new ClientSessionCode(session, realm, clientSession);
         accessCode.setAction(ClientSessionModel.Action.EXECUTE_ACTIONS.name());
 
+
         try {
             UriBuilder builder = Urls.executeActionsBuilder(uriInfo.getBaseUri());
             builder.queryParam("key", accessCode.getCode());
@@ -901,7 +907,8 @@ public class UsersResource {
         } catch (EmailException e) {
             ServicesLogger.LOGGER.failedToSendActionsEmail(e);
             return ErrorResponse.error("Failed to send execute actions email", Response.Status.INTERNAL_SERVER_ERROR);
-        }
+        }*/
+        return null;
     }
 
     /**
@@ -925,6 +932,7 @@ public class UsersResource {
         return executeActionsEmail(id, redirectUri, clientId, actions);
     }
 
+    /*
     private ClientSessionModel createClientSession(UserModel user, String redirectUri, String clientId) {
 
         if (!user.isEnabled()) {
@@ -965,7 +973,7 @@ public class UsersResource {
         clientSession.setUserSession(userSession);
 
         return clientSession;
-    }
+    }*/
 
     @GET
     @Path("{id}/groups")

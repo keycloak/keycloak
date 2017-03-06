@@ -53,6 +53,9 @@ public interface UserSessionModel {
 
     void setLastSessionRefresh(int seconds);
 
+    Map<String, ClientLoginSessionModel> getClientLoginSessions();
+
+    // TODO: Remove
     List<ClientSessionModel> getClientSessions();
 
     public String getNote(String name);
@@ -64,7 +67,7 @@ public interface UserSessionModel {
     void setState(State state);
 
     public static enum State {
-        LOGGING_IN,
+        LOGGING_IN, // TODO: Maybe state "LOGGING_IN" is useless now once userSession is attached after requiredActions
         LOGGED_IN,
         LOGGING_OUT,
         LOGGED_OUT

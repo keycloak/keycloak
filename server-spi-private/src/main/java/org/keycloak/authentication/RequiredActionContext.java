@@ -26,6 +26,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.sessions.LoginSessionModel;
 
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
@@ -90,8 +91,7 @@ public interface RequiredActionContext {
      */
     UserModel getUser();
     RealmModel getRealm();
-    ClientSessionModel getClientSession();
-    UserSessionModel getUserSession();
+    LoginSessionModel getLoginSession();
     ClientConnection getConnection();
     UriInfo getUriInfo();
     KeycloakSession getSession();

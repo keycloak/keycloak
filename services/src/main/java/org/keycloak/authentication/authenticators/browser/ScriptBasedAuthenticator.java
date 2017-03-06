@@ -160,7 +160,7 @@ public class ScriptBasedAuthenticator implements Authenticator {
             bindings.put("user", context.getUser());
             bindings.put("session", context.getSession());
             bindings.put("httpRequest", context.getHttpRequest());
-            bindings.put("clientSession", context.getClientSession());
+            bindings.put("clientSession", context.getLoginSession());
             bindings.put("LOG", LOGGER);
         });
     }

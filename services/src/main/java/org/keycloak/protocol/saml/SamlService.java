@@ -86,6 +86,7 @@ import org.keycloak.rotation.HardcodedKeyLocator;
 import org.keycloak.rotation.KeyLocator;
 import org.keycloak.saml.SPMetadataDescriptor;
 import org.keycloak.saml.processing.core.util.KeycloakKeySamlExtensionGenerator;
+import org.keycloak.sessions.LoginSessionModel;
 
 /**
  * Resource class for the oauth/openid connect token service
@@ -270,13 +271,13 @@ public class SamlService extends AuthorizationEndpointBase {
                 return ErrorPage.error(session, Messages.INVALID_REDIRECT_URI);
             }
 
-            ClientSessionModel clientSession = session.sessions().createClientSession(realm, client);
-            clientSession.setAuthMethod(SamlProtocol.LOGIN_PROTOCOL);
-            clientSession.setRedirectUri(redirect);
-            clientSession.setAction(ClientSessionModel.Action.AUTHENTICATE.name());
-            clientSession.setNote(SamlProtocol.SAML_BINDING, bindingType);
-            clientSession.setNote(GeneralConstants.RELAY_STATE, relayState);
-            clientSession.setNote(SamlProtocol.SAML_REQUEST_ID, requestAbstractType.getID());
+            LoginSessionModel loginSession = session.loginSessions().createLoginSession(realm, client, true);
+            loginSession.setProtocol(SamlProtocol.LOGIN_PROTOCOL);
+            loginSession.setRedirectUri(redirect);
+            loginSession.setAction(ClientSessionModel.Action.AUTHENTICATE.name());
+            loginSession.setNote(SamlProtocol.SAML_BINDING, bindingType);
+            loginSession.setNote(GeneralConstants.RELAY_STATE, relayState);
+            loginSession.setNote(SamlProtocol.SAML_REQUEST_ID, requestAbstractType.getID());
 
             // Handle NameIDPolicy from SP
             NameIDPolicyType nameIdPolicy = requestAbstractType.getNameIDPolicy();
@@ -285,7 +286,7 @@ public class SamlService extends AuthorizationEndpointBase {
                 String nameIdFormat = nameIdFormatUri.toString();
                 // TODO: Handle AllowCreate too, relevant for persistent NameID.
                 if (isSupportedNameIdFormat(nameIdFormat)) {
-                    clientSession.setNote(GeneralConstants.NAMEID_FORMAT, nameIdFormat);
+                    loginSession.setNote(GeneralConstants.NAMEID_FORMAT, nameIdFormat);
                 } else {
                     event.detail(Details.REASON, "unsupported_nameid_format");
                     event.error(Errors.INVALID_SAML_AUTHN_REQUEST);
@@ -301,13 +302,13 @@ public class SamlService extends AuthorizationEndpointBase {
                     BaseIDAbstractType baseID = subject.getSubType().getBaseID();
                     if (baseID != null && baseID instanceof NameIDType) {
                         NameIDType nameID = (NameIDType) baseID;
-                        clientSession.setNote(OIDCLoginProtocol.LOGIN_HINT_PARAM, nameID.getValue());
+                        loginSession.setNote(OIDCLoginProtocol.LOGIN_HINT_PARAM, nameID.getValue());
                     }
 
                 }
             }
 
-            return newBrowserAuthentication(clientSession, requestAbstractType.isIsPassive(), redirectToAuthentication);
+            return newBrowserAuthentication(loginSession, requestAbstractType.isIsPassive(), redirectToAuthentication);
         }
 
         protected String getBindingType(AuthnRequestType requestAbstractType) {
@@ -518,13 +519,13 @@ public class SamlService extends AuthorizationEndpointBase {
 
     }
 
-    protected Response newBrowserAuthentication(ClientSessionModel clientSession, boolean isPassive, boolean redirectToAuthentication) {
+    protected Response newBrowserAuthentication(LoginSessionModel loginSession, boolean isPassive, boolean redirectToAuthentication) {
         SamlProtocol samlProtocol = new SamlProtocol().setEventBuilder(event).setHttpHeaders(headers).setRealm(realm).setSession(session).setUriInfo(uriInfo);
-        return newBrowserAuthentication(clientSession, isPassive, redirectToAuthentication, samlProtocol);
+        return newBrowserAuthentication(loginSession, isPassive, redirectToAuthentication, samlProtocol);
     }
 
-    protected Response newBrowserAuthentication(ClientSessionModel clientSession, boolean isPassive, boolean redirectToAuthentication, SamlProtocol samlProtocol) {
-        return handleBrowserAuthenticationRequest(clientSession, samlProtocol, isPassive, redirectToAuthentication);
+    protected Response newBrowserAuthentication(LoginSessionModel loginSession, boolean isPassive, boolean redirectToAuthentication, SamlProtocol samlProtocol) {
+        return handleBrowserAuthenticationRequest(loginSession, samlProtocol, isPassive, redirectToAuthentication);
     }
 
     /**
@@ -615,9 +616,9 @@ public class SamlService extends AuthorizationEndpointBase {
             return ErrorPage.error(session, Messages.INVALID_REDIRECT_URI);
         }
 
-        ClientSessionModel clientSession = createClientSessionForIdpInitiatedSso(this.session, this.realm, client, relayState);
+        LoginSessionModel loginSession = createLoginSessionForIdpInitiatedSso(this.session, this.realm, client, relayState);
 
-        return newBrowserAuthentication(clientSession, false, false);
+        return newBrowserAuthentication(loginSession, false, false);
     }
 
     /**
@@ -631,7 +632,7 @@ public class SamlService extends AuthorizationEndpointBase {
      * @param relayState Optional relay state - free field as per SAML specification
      * @return
      */
-    public static ClientSessionModel createClientSessionForIdpInitiatedSso(KeycloakSession session, RealmModel realm, ClientModel client, String relayState) {
+    public static LoginSessionModel createLoginSessionForIdpInitiatedSso(KeycloakSession session, RealmModel realm, ClientModel client, String relayState) {
         String bindingType = SamlProtocol.SAML_POST_BINDING;
         if (client.getManagementUrl() == null && client.getAttribute(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_POST_ATTRIBUTE) == null && client.getAttribute(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_REDIRECT_ATTRIBUTE) != null) {
             bindingType = SamlProtocol.SAML_REDIRECT_BINDING;
@@ -647,21 +648,21 @@ public class SamlService extends AuthorizationEndpointBase {
             redirect = client.getManagementUrl();
         }
 
-        ClientSessionModel clientSession = session.sessions().createClientSession(realm, client);
-        clientSession.setAuthMethod(SamlProtocol.LOGIN_PROTOCOL);
-        clientSession.setAction(ClientSessionModel.Action.AUTHENTICATE.name());
-        clientSession.setNote(SamlProtocol.SAML_BINDING, SamlProtocol.SAML_POST_BINDING);
-        clientSession.setNote(SamlProtocol.SAML_IDP_INITIATED_LOGIN, "true");
-        clientSession.setRedirectUri(redirect);
+        LoginSessionModel loginSession = session.loginSessions().createLoginSession(realm, client, true);
+        loginSession.setProtocol(SamlProtocol.LOGIN_PROTOCOL);
+        loginSession.setAction(ClientSessionModel.Action.AUTHENTICATE.name());
+        loginSession.setNote(SamlProtocol.SAML_BINDING, SamlProtocol.SAML_POST_BINDING);
+        loginSession.setNote(SamlProtocol.SAML_IDP_INITIATED_LOGIN, "true");
+        loginSession.setRedirectUri(redirect);
 
         if (relayState == null) {
             relayState = client.getAttribute(SamlProtocol.SAML_IDP_INITIATED_SSO_RELAY_STATE);
         }
         if (relayState != null && !relayState.trim().equals("")) {
-            clientSession.setNote(GeneralConstants.RELAY_STATE, relayState);
+            loginSession.setNote(GeneralConstants.RELAY_STATE, relayState);
         }
 
-        return clientSession;
+        return loginSession;
     }
 
     @POST

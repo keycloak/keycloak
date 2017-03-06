@@ -22,6 +22,7 @@ import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.FormMessage;
+import org.keycloak.sessions.LoginSessionModel;
 
 import java.net.URI;
 
@@ -62,7 +63,7 @@ public interface AuthenticationFlowContext extends AbstractAuthenticationFlowCon
      *
      * @return
      */
-    ClientSessionModel getClientSession();
+    LoginSessionModel getLoginSession();
 
     /**
      * Create a Freemarker form builder that presets the user, action URI, and a generated access code

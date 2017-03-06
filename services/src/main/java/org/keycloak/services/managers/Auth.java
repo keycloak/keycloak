@@ -17,6 +17,7 @@
 
 package org.keycloak.services.managers;
 
+import org.keycloak.models.ClientLoginSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.RealmModel;
@@ -35,7 +36,7 @@ public class Auth {
     private final UserModel user;
     private final ClientModel client;
     private final UserSessionModel session;
-    private ClientSessionModel clientSession;
+    private ClientLoginSessionModel clientSession;
 
     public Auth(RealmModel realm, AccessToken token, UserModel user, ClientModel client, UserSessionModel session, boolean cookie) {
         this.cookie = cookie;
@@ -71,11 +72,11 @@ public class Auth {
         return session;
     }
 
-    public ClientSessionModel getClientSession() {
+    public ClientLoginSessionModel getClientSession() {
         return clientSession;
     }
 
-    public void setClientSession(ClientSessionModel clientSession) {
+    public void setClientSession(ClientLoginSessionModel clientSession) {
         this.clientSession = clientSession;
     }
 

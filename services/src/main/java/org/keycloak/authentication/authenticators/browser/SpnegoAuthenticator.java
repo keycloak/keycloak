@@ -98,7 +98,7 @@ public class SpnegoAuthenticator extends AbstractUsernameFormAuthenticator imple
             context.setUser(output.getAuthenticatedUser());
             if (output.getState() != null && !output.getState().isEmpty()) {
                 for (Map.Entry<String, String> entry : output.getState().entrySet()) {
-                    context.getClientSession().setUserSessionNote(entry.getKey(), entry.getValue());
+                    context.getLoginSession().setUserSessionNote(entry.getKey(), entry.getValue());
                 }
             }
             context.success();

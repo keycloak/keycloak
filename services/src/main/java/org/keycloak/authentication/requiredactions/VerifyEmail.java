@@ -62,6 +62,8 @@ public class VerifyEmail implements RequiredActionProvider, RequiredActionFactor
             return;
         }
 
+        // TODO:mposolda
+        /*
         context.getEvent().clone().event(EventType.SEND_VERIFY_EMAIL).detail(Details.EMAIL, context.getUser().getEmail()).success();
         LoginActionsService.createActionCookie(context.getRealm(), context.getUriInfo(), context.getConnection(), context.getUserSession().getId());
 
@@ -73,6 +75,7 @@ public class VerifyEmail implements RequiredActionProvider, RequiredActionFactor
                 .setUser(context.getUser());
         Response challenge = loginFormsProvider.createResponse(UserModel.RequiredAction.VERIFY_EMAIL);
         context.challenge(challenge);
+        */
     }
 
     @Override

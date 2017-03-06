@@ -88,8 +88,8 @@ public class UpdatePassword implements RequiredActionProvider, RequiredActionFac
         String passwordConfirm = formData.getFirst("password-confirm");
 
         EventBuilder errorEvent = event.clone().event(EventType.UPDATE_PASSWORD_ERROR)
-                .client(context.getClientSession().getClient())
-                .user(context.getClientSession().getUserSession().getUser());
+                .client(context.getLoginSession().getClient())
+                .user(context.getLoginSession().getAuthenticatedUser());
 
         if (Validation.isBlank(passwordNew)) {
             Response challenge = context.form()

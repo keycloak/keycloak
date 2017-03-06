@@ -61,7 +61,7 @@ public class ResetCredentialEmail implements Authenticator, AuthenticatorFactory
 
     @Override
     public void authenticate(AuthenticationFlowContext context) {
-        LoginActionsService.createActionCookie(context.getRealm(), context.getUriInfo(), context.getConnection(), context.getClientSession().getId());
+        /*LoginActionsService.createActionCookie(context.getRealm(), context.getUriInfo(), context.getConnection(), context.getClientSession().getId());
 
         UserModel user = context.getUser();
         String username = context.getClientSession().getNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME);
@@ -109,12 +109,12 @@ public class ResetCredentialEmail implements Authenticator, AuthenticatorFactory
                     .setError(Messages.EMAIL_SENT_ERROR)
                     .createErrorPage();
             context.failure(AuthenticationFlowError.INTERNAL_ERROR, challenge);
-        }
+        }*/
     }
 
     @Override
     public void action(AuthenticationFlowContext context) {
-        String secret = context.getClientSession().getNote(RESET_CREDENTIAL_SECRET);
+        /*String secret = context.getClientSession().getNote(RESET_CREDENTIAL_SECRET);
         String key = context.getUriInfo().getQueryParameters().getFirst(Constants.KEY);
 
         // Can only guess once!  We remove the note so another guess can't happen
@@ -129,7 +129,7 @@ public class ResetCredentialEmail implements Authenticator, AuthenticatorFactory
         }
         // We now know email is valid, so set it to valid.
         context.getUser().setEmailVerified(true);
-        context.success();
+        context.success();*/
     }
 
     @Override

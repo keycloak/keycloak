@@ -18,6 +18,7 @@
 package org.keycloak.models.session;
 
 import org.keycloak.Config;
+import org.keycloak.models.ClientLoginSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
@@ -70,7 +71,7 @@ public class DisabledUserSessionPersisterProvider implements UserSessionPersiste
     }
 
     @Override
-    public void createClientSession(ClientSessionModel clientSession, boolean offline) {
+    public void createClientSession(UserSessionModel userSession, ClientLoginSessionModel clientSession, boolean offline) {
 
     }
 

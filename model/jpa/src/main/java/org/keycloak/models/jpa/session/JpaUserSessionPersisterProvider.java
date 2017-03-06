@@ -17,6 +17,7 @@
 
 package org.keycloak.models.jpa.session;
 
+import org.keycloak.models.ClientLoginSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
@@ -68,7 +69,7 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
     }
 
     @Override
-    public void createClientSession(ClientSessionModel clientSession, boolean offline) {
+    public void createClientSession(UserSessionModel userSession, ClientLoginSessionModel clientSession, boolean offline) {
         PersistentClientSessionAdapter adapter = new PersistentClientSessionAdapter(clientSession);
         PersistentClientSessionModel model = adapter.getUpdatedModel();
 
@@ -217,6 +218,8 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
             userSessionIds.add(entity.getUserSessionId());
         }
 
+        // TODO:mposolda
+        /*
         if (!userSessionIds.isEmpty()) {
             TypedQuery<PersistentClientSessionEntity> query2 = em.createNamedQuery("findClientSessionsByUserSessions", PersistentClientSessionEntity.class);
             query2.setParameter("userSessionIds", userSessionIds);
@@ -242,6 +245,7 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
                 }
             }
         }
+        */
 
         return result;
     }

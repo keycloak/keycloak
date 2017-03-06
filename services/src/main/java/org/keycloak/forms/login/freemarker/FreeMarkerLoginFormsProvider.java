@@ -23,8 +23,6 @@ import org.keycloak.authentication.requiredactions.util.UpdateProfileContext;
 import org.keycloak.authentication.requiredactions.util.UserUpdateProfileContext;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.common.util.ObjectUtil;
-import org.keycloak.email.EmailException;
-import org.keycloak.email.EmailTemplateProvider;
 import org.keycloak.forms.login.LoginFormsPages;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.forms.login.freemarker.model.ClientBean;
@@ -39,8 +37,6 @@ import org.keycloak.forms.login.freemarker.model.RequiredActionUrlFormatterMetho
 import org.keycloak.forms.login.freemarker.model.TotpBean;
 import org.keycloak.forms.login.freemarker.model.UrlBean;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientSessionModel;
-import org.keycloak.models.Constants;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
@@ -50,6 +46,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.FormMessage;
 import org.keycloak.services.Urls;
 import org.keycloak.services.messages.Messages;
+import org.keycloak.sessions.LoginSessionModel;
 import org.keycloak.theme.BrowserSecurityHeaderSetup;
 import org.keycloak.theme.FreeMarkerException;
 import org.keycloak.theme.FreeMarkerUtil;
@@ -77,7 +74,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
-import java.util.concurrent.TimeUnit;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -106,7 +102,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
 
     private UserModel user;
 
-    private ClientSessionModel clientSession;
+    private LoginSessionModel loginSession;
     private final Map<String, Object> attributes = new HashMap<String, Object>();
 
     public FreeMarkerLoginFormsProvider(KeycloakSession session, FreeMarkerUtil freeMarker) {
@@ -145,10 +141,11 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                 page = LoginFormsPages.LOGIN_UPDATE_PASSWORD;
                 break;
             case VERIFY_EMAIL:
-                try {
+                // TODO:mposolda It should be also clientSession (actionTicket) involved here. Not just loginSession
+                /*try {
                     UriBuilder builder = Urls.loginActionEmailVerificationBuilder(uriInfo.getBaseUri());
                     builder.queryParam(OAuth2Constants.CODE, accessCode);
-                    builder.queryParam(Constants.KEY, clientSession.getNote(Constants.VERIFY_EMAIL_KEY));
+                    builder.queryParam(Constants.KEY, loginSession.getNote(Constants.VERIFY_EMAIL_KEY));
 
                     String link = builder.build(realm.getName()).toString();
                     long expiration = TimeUnit.SECONDS.toMinutes(realm.getAccessCodeLifespanUserAction());
@@ -157,7 +154,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                 } catch (EmailException e) {
                     logger.error("Failed to send verification email", e);
                     return setError(Messages.EMAIL_SENT_ERROR).createErrorPage();
-                }
+                }*/
 
                 actionMessage = Messages.VERIFY_EMAIL;
                 page = LoginFormsPages.LOGIN_VERIFY_EMAIL;
@@ -298,7 +295,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                 attributes.put("register", new RegisterBean(formData));
                 break;
             case OAUTH_GRANT:
-                attributes.put("oauth", new OAuthGrantBean(accessCode, clientSession, client, realmRolesRequested, resourceRolesRequested, protocolMappersRequested, this.accessRequestMessage));
+                attributes.put("oauth", new OAuthGrantBean(accessCode, client, realmRolesRequested, resourceRolesRequested, protocolMappersRequested, this.accessRequestMessage));
                 attributes.put("advancedMsg", new AdvancedMessageFormatterMethod(locale, messagesBundle));
                 break;
             case CODE:
@@ -485,8 +482,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
     }
 
     @Override
-    public Response createOAuthGrant(ClientSessionModel clientSession) {
-        this.clientSession = clientSession;
+    public Response createOAuthGrant() {
         return createResponse(LoginFormsPages.OAUTH_GRANT);
     }
 
@@ -593,8 +589,8 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
     }
 
     @Override
-    public LoginFormsProvider setClientSession(ClientSessionModel clientSession) {
-        this.clientSession = clientSession;
+    public LoginFormsProvider setLoginSession(LoginSessionModel loginSession) {
+        this.loginSession = loginSession;
         return this;
     }
 

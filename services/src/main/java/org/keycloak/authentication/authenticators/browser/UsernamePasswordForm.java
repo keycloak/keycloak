@@ -59,7 +59,7 @@ public class UsernamePasswordForm extends AbstractUsernameFormAuthenticator impl
     @Override
     public void authenticate(AuthenticationFlowContext context) {
         MultivaluedMap<String, String> formData = new MultivaluedMapImpl<>();
-        String loginHint = context.getClientSession().getNote(OIDCLoginProtocol.LOGIN_HINT_PARAM);
+        String loginHint = context.getLoginSession().getNote(OIDCLoginProtocol.LOGIN_HINT_PARAM);
 
         String rememberMeUsername = AuthenticationManager.getRememberMeUsername(context.getRealm(), context.getHttpRequest().getHttpHeaders());
 
@@ -72,7 +72,7 @@ public class UsernamePasswordForm extends AbstractUsernameFormAuthenticator impl
             }
         }
         Response challengeResponse = challenge(context, formData);
-        context.getClientSession().setNote(AuthenticationProcessor.CURRENT_AUTHENTICATION_EXECUTION, context.getExecution().getId());
+        context.getLoginSession().setNote(AuthenticationProcessor.CURRENT_AUTHENTICATION_EXECUTION, context.getExecution().getId());
         context.challenge(challengeResponse);
     }
 

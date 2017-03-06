@@ -18,6 +18,7 @@
 package org.keycloak.models.session;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.keycloak.models.ClientLoginSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.ModelException;
@@ -36,7 +37,7 @@ import java.util.Set;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class PersistentClientSessionAdapter implements ClientSessionModel {
+public class PersistentClientSessionAdapter implements ClientLoginSessionModel {
 
     private final PersistentClientSessionModel model;
     private final RealmModel realm;
@@ -45,22 +46,20 @@ public class PersistentClientSessionAdapter implements ClientSessionModel {
 
     private PersistentClientSessionData data;
 
-    public PersistentClientSessionAdapter(ClientSessionModel clientSession) {
+    public PersistentClientSessionAdapter(ClientLoginSessionModel clientSession) {
         data = new PersistentClientSessionData();
         data.setAction(clientSession.getAction());
-        data.setAuthMethod(clientSession.getAuthMethod());
-        data.setExecutionStatus(clientSession.getExecutionStatus());
+        data.setAuthMethod(clientSession.getProtocol());
         data.setNotes(clientSession.getNotes());
         data.setProtocolMappers(clientSession.getProtocolMappers());
         data.setRedirectUri(clientSession.getRedirectUri());
         data.setRoles(clientSession.getRoles());
-        data.setUserSessionNotes(clientSession.getUserSessionNotes());
 
         model = new PersistentClientSessionModel();
         model.setClientId(clientSession.getClient().getId());
         model.setClientSessionId(clientSession.getId());
-        if (clientSession.getAuthenticatedUser() != null) {
-            model.setUserId(clientSession.getAuthenticatedUser().getId());
+        if (clientSession.getUserSession() != null) {
+            model.setUserId(clientSession.getUserSession().getUser().getId());
         }
         model.setUserSessionId(clientSession.getUserSession().getId());
         model.setTimestamp(clientSession.getTimestamp());
@@ -178,37 +177,12 @@ public class PersistentClientSessionAdapter implements ClientSessionModel {
     }
 
     @Override
-    public Map<String, ExecutionStatus> getExecutionStatus() {
-        return getData().getExecutionStatus();
-    }
-
-    @Override
-    public void setExecutionStatus(String authenticator, ExecutionStatus status) {
-        getData().getExecutionStatus().put(authenticator, status);
-    }
-
-    @Override
-    public void clearExecutionStatus() {
-        getData().getExecutionStatus().clear();
-    }
-
-    @Override
-    public UserModel getAuthenticatedUser() {
-        return userSession.getUser();
-    }
-
-    @Override
-    public void setAuthenticatedUser(UserModel user) {
-        throw new IllegalStateException("Not supported setAuthenticatedUser");
-    }
-
-    @Override
-    public String getAuthMethod() {
+    public String getProtocol() {
         return getData().getAuthMethod();
     }
 
     @Override
-    public void setAuthMethod(String method) {
+    public void setProtocol(String method) {
         getData().setAuthMethod(method);
     }
 
@@ -242,52 +216,6 @@ public class PersistentClientSessionAdapter implements ClientSessionModel {
         return entity.getNotes();
     }
 
-    @Override
-    public Set<String> getRequiredActions() {
-        return getData().getRequiredActions();
-    }
-
-    @Override
-    public void addRequiredAction(String action) {
-        getData().getRequiredActions().add(action);
-    }
-
-    @Override
-    public void removeRequiredAction(String action) {
-        getData().getRequiredActions().remove(action);
-    }
-
-    @Override
-    public void addRequiredAction(UserModel.RequiredAction action) {
-        addRequiredAction(action.name());
-    }
-
-    @Override
-    public void removeRequiredAction(UserModel.RequiredAction action) {
-        removeRequiredAction(action.name());
-    }
-
-    @Override
-    public void setUserSessionNote(String name, String value) {
-        PersistentClientSessionData entity = getData();
-        if (entity.getUserSessionNotes() == null) {
-            entity.setUserSessionNotes(new HashMap<String, String>());
-        }
-        entity.getUserSessionNotes().put(name, value);
-    }
-
-    @Override
-    public Map<String, String> getUserSessionNotes() {
-        PersistentClientSessionData entity = getData();
-        if (entity.getUserSessionNotes() == null || entity.getUserSessionNotes().isEmpty()) return Collections.emptyMap();
-        return entity.getUserSessionNotes();
-    }
-
-    @Override
-    public void clearUserSessionNotes() {
-        PersistentClientSessionData entity = getData();
-        entity.setUserSessionNotes(new HashMap<String, String>());
-    }
 
     @Override
     public boolean equals(Object o) {
@@ -320,17 +248,8 @@ public class PersistentClientSessionAdapter implements ClientSessionModel {
         @JsonProperty("notes")
         private Map<String, String> notes;
 
-        @JsonProperty("userSessionNotes")
-        private Map<String, String> userSessionNotes;
-
-        @JsonProperty("executionStatus")
-        private Map<String, ClientSessionModel.ExecutionStatus> executionStatus = new HashMap<>();
-
         @JsonProperty("action")
         private String action;
-
-        @JsonProperty("requiredActions")
-        private Set<String> requiredActions = new HashSet<>();
 
         public String getAuthMethod() {
             return authMethod;
@@ -372,22 +291,6 @@ public class PersistentClientSessionAdapter implements ClientSessionModel {
             this.notes = notes;
         }
 
-        public Map<String, String> getUserSessionNotes() {
-            return userSessionNotes;
-        }
-
-        public void setUserSessionNotes(Map<String, String> userSessionNotes) {
-            this.userSessionNotes = userSessionNotes;
-        }
-
-        public Map<String, ClientSessionModel.ExecutionStatus> getExecutionStatus() {
-            return executionStatus;
-        }
-
-        public void setExecutionStatus(Map<String, ClientSessionModel.ExecutionStatus> executionStatus) {
-            this.executionStatus = executionStatus;
-        }
-
         public String getAction() {
             return action;
         }
@@ -396,12 +299,5 @@ public class PersistentClientSessionAdapter implements ClientSessionModel {
             this.action = action;
         }
 
-        public Set<String> getRequiredActions() {
-            return requiredActions;
-        }
-
-        public void setRequiredActions(Set<String> requiredActions) {
-            this.requiredActions = requiredActions;
-        }
     }
 }

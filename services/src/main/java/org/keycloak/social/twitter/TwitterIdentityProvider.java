@@ -26,7 +26,6 @@ import org.keycloak.broker.social.SocialIdentityProvider;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
-import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.KeycloakSession;
@@ -47,8 +46,6 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.net.URI;
-
-import static org.keycloak.models.ClientSessionModel.Action.AUTHENTICATE;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -118,6 +115,8 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
             }
 
             try {
+                // TODO:mposolda
+                /*
                 Twitter twitter = new TwitterFactory().getInstance();
 
                 twitter.setOAuthConsumer(getConfig().getClientId(), getConfig().getClientSecret());
@@ -152,6 +151,8 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
                 identity.setCode(state);
 
                 return callback.authenticated(identity);
+                */
+                return null;
             } catch (Exception e) {
                 logger.error("Could get user profile from twitter.", e);
             }
@@ -161,29 +162,6 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
             return ErrorPage.error(session, Messages.UNEXPECTED_ERROR_HANDLING_RESPONSE);
         }
 
-        private ClientSessionCode parseClientSessionCode(String code) {
-            ClientSessionCode clientCode = ClientSessionCode.parse(code, this.session, this.realm);
-
-            if (clientCode != null && clientCode.isValid(AUTHENTICATE.name(), ClientSessionCode.ActionType.LOGIN)) {
-                ClientSessionModel clientSession = clientCode.getClientSession();
-
-                if (clientSession != null) {
-                    ClientModel client = clientSession.getClient();
-
-                    if (client == null) {
-                        throw new IdentityBrokerException("Invalid client");
-                    }
-
-                    logger.debugf("Got authorization code from client [%s].", client.getClientId());
-                }
-
-                logger.debugf("Authorization code is valid.");
-
-                return clientCode;
-            }
-
-            throw new IdentityBrokerException("Invalid code, please login again through your application.");
-        }
 
     }
 

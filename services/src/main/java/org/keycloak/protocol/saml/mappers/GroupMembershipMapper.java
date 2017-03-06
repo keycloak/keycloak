@@ -19,7 +19,7 @@ package org.keycloak.protocol.saml.mappers;
 
 import org.keycloak.dom.saml.v2.assertion.AttributeStatementType;
 import org.keycloak.dom.saml.v2.assertion.AttributeType;
-import org.keycloak.models.ClientSessionModel;
+import org.keycloak.models.ClientLoginSessionModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
@@ -117,7 +117,7 @@ public class GroupMembershipMapper extends AbstractSAMLProtocolMapper implements
 
 
     @Override
-    public void transformAttributeStatement(AttributeStatementType attributeStatement, ProtocolMapperModel mappingModel, KeycloakSession session, UserSessionModel userSession, ClientSessionModel clientSession) {
+    public void transformAttributeStatement(AttributeStatementType attributeStatement, ProtocolMapperModel mappingModel, KeycloakSession session, UserSessionModel userSession, ClientLoginSessionModel clientSession) {
         String single = mappingModel.getConfig().get(SINGLE_GROUP_ATTRIBUTE);
         boolean singleAttribute = Boolean.parseBoolean(single);
 

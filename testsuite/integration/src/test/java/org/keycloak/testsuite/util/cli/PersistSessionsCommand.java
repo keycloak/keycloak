@@ -65,8 +65,9 @@ public class PersistSessionsCommand extends AbstractCommand {
         });
     }
 
+    // TODO:mposolda
     private void createSessionsBatch(final int countInThisBatch) {
-        final List<String> userSessionIds = new LinkedList<>();
+        /*final List<String> userSessionIds = new LinkedList<>();
         final List<String> clientSessionIds = new LinkedList<>();
 
         KeycloakModelUtils.runJobInTransaction(sessionFactory, new KeycloakSessionTask() {
@@ -120,7 +121,7 @@ public class PersistSessionsCommand extends AbstractCommand {
                 log.infof("%d client sessions persisted. Continue", counter);
             }
 
-        });
+        });*/
     }
 
     @Override

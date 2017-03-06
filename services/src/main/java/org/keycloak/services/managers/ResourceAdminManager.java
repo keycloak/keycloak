@@ -24,8 +24,8 @@ import org.keycloak.common.util.StringPropertyReplacer;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.httpclient.HttpClientProvider;
 import org.keycloak.constants.AdapterConstants;
+import org.keycloak.models.ClientLoginSessionModel;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -113,7 +113,7 @@ public class ResourceAdminManager {
 
     protected void logoutUserSessions(URI requestUri, RealmModel realm, List<UserSessionModel> userSessions) {
         // Map from "app" to clientSessions for this app
-        MultivaluedHashMap<ClientModel, ClientSessionModel> clientSessions = new MultivaluedHashMap<ClientModel, ClientSessionModel>();
+        MultivaluedHashMap<String, ClientLoginSessionModel> clientSessions = new MultivaluedHashMap<>();
         for (UserSessionModel userSession : userSessions) {
             putClientSessions(clientSessions, userSession);
         }
@@ -121,37 +121,40 @@ public class ResourceAdminManager {
         logger.debugv("logging out {0} resources ", clientSessions.size());
         //logger.infov("logging out resources: {0}", clientSessions);
 
-        for (Map.Entry<ClientModel, List<ClientSessionModel>> entry : clientSessions.entrySet()) {
-            logoutClientSessions(requestUri, realm, entry.getKey(), entry.getValue());
+        for (Map.Entry<String, List<ClientLoginSessionModel>> entry : clientSessions.entrySet()) {
+            if (entry.getValue().size() == 0) {
+                continue;
+            }
+            logoutClientSessions(requestUri, realm, entry.getValue().get(0).getClient(), entry.getValue());
         }
     }
 
-    private void putClientSessions(MultivaluedHashMap<ClientModel, ClientSessionModel> clientSessions, UserSessionModel userSession) {
-        for (ClientSessionModel clientSession : userSession.getClientSessions()) {
-            ClientModel client = clientSession.getClient();
-            clientSessions.add(client, clientSession);
+    private void putClientSessions(MultivaluedHashMap<String, ClientLoginSessionModel> clientSessions, UserSessionModel userSession) {
+        for (Map.Entry<String, ClientLoginSessionModel> entry : userSession.getClientLoginSessions().entrySet()) {
+            clientSessions.add(entry.getKey(), entry.getValue());
         }
     }
 
     public void logoutUserFromClient(URI requestUri, RealmModel realm, ClientModel resource, UserModel user) {
         List<UserSessionModel> userSessions = session.sessions().getUserSessions(realm, user);
-        List<ClientSessionModel> ourAppClientSessions = null;
+        List<ClientLoginSessionModel> ourAppClientSessions = new LinkedList<>();
         if (userSessions != null) {
-            MultivaluedHashMap<ClientModel, ClientSessionModel> clientSessions = new MultivaluedHashMap<ClientModel, ClientSessionModel>();
             for (UserSessionModel userSession : userSessions) {
-                putClientSessions(clientSessions, userSession);
+                ClientLoginSessionModel clientSession = userSession.getClientLoginSessions().get(resource.getId());
+                if (clientSession != null) {
+                    ourAppClientSessions.add(clientSession);
+                }
             }
-            ourAppClientSessions = clientSessions.get(resource);
         }
 
         logoutClientSessions(requestUri, realm, resource, ourAppClientSessions);
     }
 
-    public boolean logoutClientSession(URI requestUri, RealmModel realm, ClientModel resource, ClientSessionModel clientSession) {
+    public boolean logoutClientSession(URI requestUri, RealmModel realm, ClientModel resource, ClientLoginSessionModel clientSession) {
         return logoutClientSessions(requestUri, realm, resource, Arrays.asList(clientSession));
     }
 
-    protected boolean logoutClientSessions(URI requestUri, RealmModel realm, ClientModel resource, List<ClientSessionModel> clientSessions) {
+    protected boolean logoutClientSessions(URI requestUri, RealmModel realm, ClientModel resource, List<ClientLoginSessionModel> clientSessions) {
         String managementUrl = getManagementUrl(requestUri, resource);
         if (managementUrl != null) {
 
@@ -160,7 +163,7 @@ public class ResourceAdminManager {
             List<String> userSessions = new LinkedList<>();
             if (clientSessions != null && clientSessions.size() > 0) {
                 adapterSessionIds = new MultivaluedHashMap<String, String>();
-                for (ClientSessionModel clientSession : clientSessions) {
+                for (ClientLoginSessionModel clientSession : clientSessions) {
                     String adapterSessionId = clientSession.getNote(AdapterConstants.CLIENT_SESSION_STATE);
                     if (adapterSessionId != null) {
                         String host = clientSession.getNote(AdapterConstants.CLIENT_SESSION_HOST);

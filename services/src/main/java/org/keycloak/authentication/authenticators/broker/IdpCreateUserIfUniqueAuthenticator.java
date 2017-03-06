@@ -53,7 +53,7 @@ public class IdpCreateUserIfUniqueAuthenticator extends AbstractIdpAuthenticator
         KeycloakSession session = context.getSession();
         RealmModel realm = context.getRealm();
 
-        if (context.getClientSession().getNote(EXISTING_USER_INFO) != null) {
+        if (context.getLoginSession().getNote(EXISTING_USER_INFO) != null) {
             context.attempted();
             return;
         }
@@ -61,7 +61,7 @@ public class IdpCreateUserIfUniqueAuthenticator extends AbstractIdpAuthenticator
         String username = getUsername(context, serializedCtx, brokerContext);
         if (username == null) {
             ServicesLogger.LOGGER.resetFlow(realm.isRegistrationEmailAsUsername() ? "Email" : "Username");
-            context.getClientSession().setNote(ENFORCE_UPDATE_PROFILE, "true");
+            context.getLoginSession().setNote(ENFORCE_UPDATE_PROFILE, "true");
             context.resetFlow();
             return;
         }
@@ -91,14 +91,14 @@ public class IdpCreateUserIfUniqueAuthenticator extends AbstractIdpAuthenticator
             userRegisteredSuccess(context, federatedUser, serializedCtx, brokerContext);
 
             context.setUser(federatedUser);
-            context.getClientSession().setNote(BROKER_REGISTERED_NEW_USER, "true");
+            context.getLoginSession().setNote(BROKER_REGISTERED_NEW_USER, "true");
             context.success();
         } else {
             logger.debugf("Duplication detected. There is already existing user with %s '%s' .",
                     duplication.getDuplicateAttributeName(), duplication.getDuplicateAttributeValue());
 
             // Set duplicated user, so next authenticators can deal with it
-            context.getClientSession().setNote(EXISTING_USER_INFO, duplication.serialize());
+            context.getLoginSession().setNote(EXISTING_USER_INFO, duplication.serialize());
 
             Response challengeResponse = context.form()
                     .setError(Messages.FEDERATED_IDENTITY_EXISTS, duplication.getDuplicateAttributeName(), duplication.getDuplicateAttributeValue())
