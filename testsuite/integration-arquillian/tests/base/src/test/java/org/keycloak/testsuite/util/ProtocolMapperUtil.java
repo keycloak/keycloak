@@ -1,12 +1,13 @@
 package org.keycloak.testsuite.util;
 
 import org.keycloak.admin.client.resource.ProtocolMappersResource;
+import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.utils.ModelToRepresentation;
-import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.protocol.oidc.mappers.AddressMapper;
 import org.keycloak.protocol.oidc.mappers.HardcodedClaim;
 import org.keycloak.protocol.oidc.mappers.HardcodedRole;
 import org.keycloak.protocol.oidc.mappers.RoleNameMapper;
+import org.keycloak.protocol.oidc.mappers.ScriptBasedOIDCProtocolMapper;
 import org.keycloak.protocol.oidc.mappers.UserAttributeMapper;
 import org.keycloak.protocol.oidc.mappers.UserClientRoleMappingMapper;
 import org.keycloak.protocol.oidc.mappers.UserRealmRoleMappingMapper;
@@ -149,4 +150,19 @@ public class ProtocolMapperUtil {
         }
         return null;
     }
+
+    public static ProtocolMapperRepresentation createScriptMapper(String name,
+                                                                  String userAttribute,
+                                                                  String tokenClaimName,
+                                                                  String claimType,
+                                                                  boolean accessToken,
+                                                                  boolean idToken,
+                                                                  String script) {
+
+        ProtocolMapperModel mapper = ScriptBasedOIDCProtocolMapper.createClaimMapper(name, userAttribute, tokenClaimName, claimType, false, null, accessToken, idToken);
+        mapper.getConfig().put("script", script);
+
+        return ModelToRepresentation.toRepresentation(mapper);
+    }
+
 }
