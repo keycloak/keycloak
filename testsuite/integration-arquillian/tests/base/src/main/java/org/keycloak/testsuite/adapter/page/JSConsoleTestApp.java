@@ -83,6 +83,8 @@ public class JSConsoleTestApp extends AbstractPageWithInjectedUrl {
     private WebElement refreshTimeSkewButton;
     @FindBy(xpath = "//button[text() = 'Create user']")
     private WebElement createUserButton;
+    @FindBy(xpath = "//button[text() = 'Reentrancy callback']")
+    private WebElement reentrancyCallbackButton;
 
     @FindBy(id = "timeSkew")
     private WebElement timeSkewValue;
@@ -189,5 +191,9 @@ public class JSConsoleTestApp extends AbstractPageWithInjectedUrl {
 
     public void sendCertRequest() {
         certRequestButton.click();
+    }
+
+    public void callReentrancyCallback() {
+        reentrancyCallbackButton.click();
     }
 }

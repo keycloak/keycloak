@@ -48,6 +48,7 @@
     <button onclick="refreshTimeSkew()">refresh timeSkew</button>
     <button onclick="sendBearerToKeycloak()">Bearer to keycloak</button>
     <button onclick="createUser()">Create user</button>
+    <button onclick="reentrancyCallback()">Reentrancy callback</button>
 
 
     <select id="flowSelect">
@@ -72,34 +73,35 @@
 <pre style="background-color: #ddd; border: 1px solid #ccc; padding: 10px;" id="events"></pre>
 
 <h2>Info</h2>
-TimeSkew: <div id="timeSkew"></div>
+TimeSkew:
+<div id="timeSkew"></div>
 
 
 <script>
     function loadProfile() {
-        keycloak.loadUserProfile().success(function(profile) {
+        keycloak.loadUserProfile().success(function (profile) {
             output(profile);
-        }).error(function() {
+        }).error(function () {
             output('Failed to load profile');
         });
     }
 
     function loadUserInfo() {
-        keycloak.loadUserInfo().success(function(userInfo) {
+        keycloak.loadUserInfo().success(function (userInfo) {
             output(userInfo);
-        }).error(function() {
+        }).error(function () {
             output('Failed to load user info');
         });
     }
 
     function refreshToken(minValidity) {
-        keycloak.updateToken(minValidity).success(function(refreshed) {
+        keycloak.updateToken(minValidity).success(function (refreshed) {
             if (refreshed) {
                 output(keycloak.tokenParsed);
             } else {
                 output('Token not refreshed, valid for ' + Math.round(keycloak.tokenParsed.exp + keycloak.timeSkew - new Date().getTime() / 1000) + ' seconds');
             }
-        }).error(function() {
+        }).error(function () {
             output('Failed to refresh token');
         });
     }
@@ -129,7 +131,7 @@ TimeSkew: <div id="timeSkew"></div>
         if (!url) url = window.location.href;
         name = name.replace(/[\[\]]/g, "\\$&");
         var regex = new RegExp("[?&#]" + name + "(=([^&#]*)|&|#|$)"),
-                results = regex.exec(url);
+            results = regex.exec(url);
         if (!results) return null;
         if (!results[2]) return '';
         return decodeURIComponent(results[2].replace(/\+/g, " "));
@@ -161,12 +163,12 @@ TimeSkew: <div id="timeSkew"></div>
 
         var url = 'http://localhost:8280/js-database/customers';
         if (window.location.href.indexOf("8643") > -1) {
-            url = url.replace("8280","8643");
-            url = url.replace("http","https");
+            url = url.replace("8280", "8643");
+            url = url.replace("http", "https");
         }
 
         if (window.location.href.indexOf("8180") > -1) {
-            url = url.replace("8280","8180");
+            url = url.replace("8280", "8180");
         }
 
         var req = new XMLHttpRequest();
@@ -194,6 +196,9 @@ TimeSkew: <div id="timeSkew"></div>
         if (window.location.href.indexOf("8643") > -1) {
             url = url.replace("8180","8543");
             url = url.replace("http","https");
+        if (window.location.href.indexOf("8543") > -1) {
+            url = url.replace("8180", "8543");
+            url = url.replace("http", "https");
         }
 
         var req = new XMLHttpRequest();
@@ -219,8 +224,8 @@ TimeSkew: <div id="timeSkew"></div>
     function cert() {
         var url = 'http://localhost:8180/auth/realms/example/protocol/openid-connect/certs';
         if (window.location.href.indexOf("8643") > -1) {
-            url = url.replace("8180","8543");
-            url = url.replace("http","https");
+            url = url.replace("8180", "8543");
+            url = url.replace("http", "https");
         }
         var req = new XMLHttpRequest();
         req.open('GET', url, true);
@@ -245,8 +250,8 @@ TimeSkew: <div id="timeSkew"></div>
 
         var url = "http://localhost:8180/auth/admin/realms/example/users";
         if (window.location.href.indexOf("8643") > -1) {
-            url = url.replace("8180","8543");
-            url = url.replace("http","https");
+            url = url.replace("8180", "8543");
+            url = url.replace("http", "https");
         }
 
         var req = new XMLHttpRequest();
@@ -267,6 +272,16 @@ TimeSkew: <div id="timeSkew"></div>
         };
 
         req.send(JSON.stringify(user));
+    }
+
+    function reentrancyCallback() {
+        keycloak.updateToken(60).success(function () {
+                event("First callback");
+                keycloak.updateToken(60).success(function () {
+                    event("Second callback")
+                });
+            }
+        );
     }
 
     var keycloak;
@@ -299,7 +314,11 @@ TimeSkew: <div id="timeSkew"></div>
             event('Access token expired.');
         };
 
-        var initOptions = {onLoad: document.getElementById("onLoad").value, flow: document.getElementById("flowSelect").value, responseMode:  document.getElementById("responseModeSelect").value};
+        var initOptions = {
+            onLoad: document.getElementById("onLoad").value,
+            flow: document.getElementById("flowSelect").value,
+            responseMode: document.getElementById("responseModeSelect").value
+        };
         keycloak.init(initOptions).success(function (authenticated) {
             output('Init Success (' + (authenticated ? 'Authenticated' : 'Not Authenticated') + ')');
         }).error(function () {
