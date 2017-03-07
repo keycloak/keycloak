@@ -125,6 +125,13 @@
                 <kc-tooltip>{{:: 'include-authnstatement.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group clearfix block" data-ng-show="protocol == 'saml'">
+                <label class="col-md-2 control-label" for="samlOneTimeUseCondition">{{:: 'include-onetimeuse-condition' | translate}}</label>
+                <div class="col-sm-6">
+                    <input ng-model="samlOneTimeUseCondition" ng-click="switchChange()" name="samlOneTimeUseCondition" id="samlOneTimeUseCondition" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
+                </div>
+                <kc-tooltip>{{:: 'include-onetimeuse-condition.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group clearfix block" data-ng-show="protocol == 'saml'">
                 <label class="col-md-2 control-label" for="samlServerSignature">{{:: 'sign-documents' | translate}}</label>
                 <div class="col-sm-6">
                     <input ng-model="samlServerSignature" ng-click="switchChange()" name="samlServerSignature" id="samlServerSignature" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
