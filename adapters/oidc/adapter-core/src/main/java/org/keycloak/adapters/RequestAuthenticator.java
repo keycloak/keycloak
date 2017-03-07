@@ -169,10 +169,10 @@ public abstract class RequestAuthenticator {
         if (log.isDebugEnabled()) {
             final String remoteAddr = facade.getRequest().getRemoteAddr();
             final SslRequired sslRequired = deployment.getSslRequired();
-            log.debugf("SSL Verification: " +
-                            "\n\tpassed: %s, request is secure: %s, " +
-                            "\n\tSSL is required for: %s, " +
-                            "\n\tSSL is required for remote addr %s: %s",
+            log.debugf("SSL Verification. " +
+                            "Passed: %s, request is secure: %s, " +
+                            "SSL is required for: %s, " +
+                            "SSL is required for remote addr %s: %s",
                     verificationPassed,
                     facade.getRequest().isSecure(),
                     sslRequired.name(),
