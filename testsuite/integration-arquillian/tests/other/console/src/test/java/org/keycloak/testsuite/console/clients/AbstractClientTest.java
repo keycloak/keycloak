@@ -24,6 +24,7 @@ import static org.keycloak.testsuite.console.page.clients.settings.ClientSetting
 import static org.keycloak.testsuite.console.page.clients.settings.ClientSettingsForm.SAMLClientSettingsForm.SAML_FORCE_NAME_ID_FORMAT;
 import static org.keycloak.testsuite.console.page.clients.settings.ClientSettingsForm.SAMLClientSettingsForm.SAML_FORCE_POST_BINDING;
 import static org.keycloak.testsuite.console.page.clients.settings.ClientSettingsForm.SAMLClientSettingsForm.SAML_NAME_ID_FORMAT;
+import static org.keycloak.testsuite.console.page.clients.settings.ClientSettingsForm.SAMLClientSettingsForm.SAML_ONETIMEUSE_CONDITION;
 import static org.keycloak.testsuite.console.page.clients.settings.ClientSettingsForm.SAMLClientSettingsForm.SAML_SERVER_SIGNATURE;
 import static org.keycloak.testsuite.console.page.clients.settings.ClientSettingsForm.SAMLClientSettingsForm.SAML_SIGNATURE_ALGORITHM;
 import static org.keycloak.testsuite.util.AttributesAssert.assertEqualsBooleanAttributes;
@@ -38,7 +39,7 @@ import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlEquals;
 public abstract class AbstractClientTest extends AbstractConsoleTest {
 
     public final String TEST_CLIENT_ID = "test-client";
-    public final List<String> TEST_REDIRECT_URIs = Arrays.asList(new String[]{"http://example.test/app/"});
+    public final List<String> TEST_REDIRECT_URIs = Arrays.asList(new String[] { "http://example.test/app/" });
 
     @Page
     protected Clients clientsPage;
@@ -65,12 +66,12 @@ public abstract class AbstractClientTest extends AbstractConsoleTest {
         client.setClientId(clientId);
         client.setEnabled(true);
         client.setProtocol(protocol);
-        
+
         client.setDirectAccessGrantsEnabled(true);
         client.setFullScopeAllowed(true);
         client.setPublicClient(true);
         client.setStandardFlowEnabled(true);
-        
+
         if (protocol.equals(SAML)) {
             client.setAttributes(getSAMLAttributes());
         }
@@ -86,6 +87,7 @@ public abstract class AbstractClientTest extends AbstractConsoleTest {
         attributes.put(SAML_SIGNATURE_ALGORITHM, "RSA_SHA256");
         attributes.put(SAML_FORCE_NAME_ID_FORMAT, "false");
         attributes.put(SAML_NAME_ID_FORMAT, "username");
+        attributes.put(SAML_ONETIMEUSE_CONDITION, "true");
         return attributes;
     }
 
@@ -128,7 +130,8 @@ public abstract class AbstractClientTest extends AbstractConsoleTest {
 
     public ProtocolMapperRepresentation findClientMapperByName(String clientId, String mapperName) {
         ProtocolMapperRepresentation found = null;
-        for (ProtocolMapperRepresentation mapper : testRealmResource().clients().get(clientId).getProtocolMappers().getMappers()) {
+        for (ProtocolMapperRepresentation mapper : testRealmResource().clients().get(clientId).getProtocolMappers()
+                .getMappers()) {
             if (mapperName.equals(mapper.getName())) {
                 found = mapper;
             }

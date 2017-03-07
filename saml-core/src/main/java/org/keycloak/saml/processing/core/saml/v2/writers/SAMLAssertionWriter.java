@@ -31,6 +31,7 @@ import org.keycloak.dom.saml.v2.assertion.ConditionAbstractType;
 import org.keycloak.dom.saml.v2.assertion.ConditionsType;
 import org.keycloak.dom.saml.v2.assertion.EncryptedElementType;
 import org.keycloak.dom.saml.v2.assertion.NameIDType;
+import org.keycloak.dom.saml.v2.assertion.OneTimeUseType;
 import org.keycloak.dom.saml.v2.assertion.StatementAbstractType;
 import org.keycloak.dom.saml.v2.assertion.SubjectType;
 import org.keycloak.dom.saml.v2.assertion.URIType;
@@ -99,7 +100,8 @@ public class SAMLAssertionWriter extends BaseWriter {
             }
 
             if (conditions.getNotOnOrAfter() != null) {
-                StaxUtil.writeAttribute(writer, JBossSAMLConstants.NOT_ON_OR_AFTER.get(), conditions.getNotOnOrAfter().toString());
+                StaxUtil.writeAttribute(writer, JBossSAMLConstants.NOT_ON_OR_AFTER.get(),
+                        conditions.getNotOnOrAfter().toString());
             }
 
             List<ConditionAbstractType> typeOfConditions = conditions.getConditions();
@@ -119,6 +121,11 @@ public class SAMLAssertionWriter extends BaseWriter {
                             }
                         }
 
+                        StaxUtil.writeEndElement(writer);
+                    }
+                    if (typeCondition instanceof OneTimeUseType) {
+                        StaxUtil.writeStartElement(writer, ASSERTION_PREFIX, JBossSAMLConstants.ONE_TIME_USE.get(),
+                                ASSERTION_NSURI.get());
                         StaxUtil.writeEndElement(writer);
                     }
                 }
@@ -237,8 +244,8 @@ public class SAMLAssertionWriter extends BaseWriter {
             if (uriTypes != null) {
                 for (URIType uriType : uriTypes) {
                     if (uriType instanceof AuthnContextDeclType) {
-                        StaxUtil.writeStartElement(writer, ASSERTION_PREFIX,
-                                JBossSAMLConstants.AUTHN_CONTEXT_DECLARATION.get(), ASSERTION_NSURI.get());
+                        StaxUtil.writeStartElement(writer, ASSERTION_PREFIX, JBossSAMLConstants.AUTHN_CONTEXT_DECLARATION.get(),
+                                ASSERTION_NSURI.get());
                         StaxUtil.writeCharacters(writer, uriType.getValue().toASCIIString());
                         StaxUtil.writeEndElement(writer);
                     }
