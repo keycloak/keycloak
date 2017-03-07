@@ -26,11 +26,15 @@
       "doc_base_url": "https://access.redhat.com/documentation/en/red-hat-single-sign-on/",
       "doc_info_version_url": "7.1"
     },
+    "adapterguide": {
+      "name": "Securing Applications and Services Guide",
+      "link": "https://access.redhat.com/documentation/en-us/red_hat_single_sign-on/7.1-beta/html-single/securing_applications_and_services_guide/"
+    },
     "keycloakjsadapter": {
       "name": "JavaScript OpenID Connect Adapter",
       "link": "https://access.redhat.com/documentation/en/red-hat-single-sign-on/7.1-beta/html-single/securing-applications-and-services-guide#javascript_adapter"
     },
-    "keycloakgettingstarted": {
+    "gettingstarted": {
       "name": "Getting Started",
       "link": "https://access.redhat.com/documentation/en/red-hat-single-sign-on/7.1-beta/html/getting-started-guide/"
     },
