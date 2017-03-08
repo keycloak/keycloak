@@ -49,6 +49,8 @@ function build() {
   mvn -q versions:set -DgenerateBackupPoms=false -DnewVersion=$KEYCLOAK_VERSION
   # Only build the keycloak-server to save time
   mvn clean install -DskipTests=true -pl :keycloak-server-dist -am -P distribution
+  
+  echo 'CICO: keycloak-server build completed successfully!'
 }
 
 function deploy() {
