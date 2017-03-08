@@ -37,6 +37,7 @@
         <module>jetty91-adapter-zip</module>
         <module>jetty92-adapter-zip</module>
         <module>jetty93-adapter-zip</module>
+        <module>jetty94-adapter-zip</module>
         <module>js-adapter-zip</module>
         <module>osgi</module>
         <module>tomcat6-adapter-zip</module>

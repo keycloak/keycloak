@@ -40,6 +40,7 @@
         <module>jetty91-adapter-zip</module> -->
         <module>jetty92-adapter-zip</module>
         <module>jetty93-adapter-zip</module>
+        <module>jetty94-adapter-zip</module>
         <module>as7-eap6-adapter</module>
     </modules>
 </project>

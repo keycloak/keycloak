@@ -35,5 +35,6 @@
         <module>jetty91</module>
         <module>jetty92</module>
         <module>jetty93</module>
+        <module>jetty94</module>
     </modules>
 </project>
