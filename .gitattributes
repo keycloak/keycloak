@@ -18,3 +18,5 @@
 *.eot binary
 *.otf binary
 *.woff binary
+
+*.md diff
