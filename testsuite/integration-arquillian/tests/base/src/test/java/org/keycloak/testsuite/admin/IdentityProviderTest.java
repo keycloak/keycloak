@@ -424,6 +424,11 @@ public class IdentityProviderTest extends AbstractAdminTest {
         Assert.assertNotNull("mapper.config exists", mapper.getConfig());
         Assert.assertEquals("config retained", "offline_access", mapper.getConfig().get("role"));
 
+        // add duplicate mapper
+        Response error = provider.addMapper(mapper);
+        Assert.assertEquals("mapper unique name", 400, error.getStatus());
+        error.close();
+
         // update mapper
         mapper.getConfig().put("role", "master-realm.manage-realm");
         provider.update(id, mapper);

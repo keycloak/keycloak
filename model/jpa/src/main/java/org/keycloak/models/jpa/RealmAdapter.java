@@ -1194,7 +1194,7 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
 
     @Override
     public IdentityProviderMapperModel addIdentityProviderMapper(IdentityProviderMapperModel model) {
-        if (getIdentityProviderMapperByName(model.getIdentityProviderAlias(), model.getIdentityProviderMapper()) != null) {
+        if (getIdentityProviderMapperByName(model.getIdentityProviderAlias(), model.getName()) != null) {
             throw new RuntimeException("identity provider mapper name must be unique per identity provider");
         }
         String id = KeycloakModelUtils.generateId();
