@@ -38,20 +38,8 @@ public class Pbkdf2Test {
     }
 
     @Test
-    public void testSha224HashProvider() {
-        hashProvider = new Pbkdf2Sha224PasswordHashProvider();
-        checkPasswordHashProvider(2);
-    }
-
-    @Test
     public void testSha256HashProvider() {
         hashProvider = new Pbkdf2Sha256PasswordHashProvider();
-        checkPasswordHashProvider(2);
-    }
-
-    @Test
-    public void testSha384HashProvider() {
-        hashProvider = new Pbkdf2Sha384PasswordHashProvider();
         checkPasswordHashProvider(2);
     }
 
