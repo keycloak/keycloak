@@ -3,7 +3,7 @@
 === LDAP and Active Directory
 
 {{book.project.name}} comes with a built-in LDAP/AD provider.  It is possible to federate multiple different LDAP servers in the same
-{{book.project.name} realm.  You can map LDAP user attributes into the {{book.project.name}} common user model.
+{{book.project.name}} realm.  You can map LDAP user attributes into the {{book.project.name}} common user model.
 By default, it maps username, email, first name, and last name, but you are free to configure additional <<_ldap_mappers,mappings>>.
 The LDAP provider also supports password validation via LDAP/AD protocols and different storage, edit, and synchronization modes.
 
