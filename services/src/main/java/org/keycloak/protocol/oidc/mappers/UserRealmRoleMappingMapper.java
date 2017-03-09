@@ -46,6 +46,14 @@ public class UserRealmRoleMappingMapper extends AbstractUserRoleMappingMapper {
         realmRolePrefix.setType(ProviderConfigProperty.STRING_TYPE);
         CONFIG_PROPERTIES.add(realmRolePrefix);
 
+        ProviderConfigProperty multiValued = new ProviderConfigProperty();
+        multiValued.setName(ProtocolMapperUtils.MULTIVALUED);
+        multiValued.setLabel(ProtocolMapperUtils.MULTIVALUED_LABEL);
+        multiValued.setHelpText(ProtocolMapperUtils.MULTIVALUED_HELP_TEXT);
+        multiValued.setType(ProviderConfigProperty.BOOLEAN_TYPE);
+        multiValued.setDefaultValue(false);
+        CONFIG_PROPERTIES.add(multiValued);
+
         OIDCAttributeMapperHelper.addAttributeConfig(CONFIG_PROPERTIES, UserRealmRoleMappingMapper.class);
     }
 
@@ -83,14 +91,21 @@ public class UserRealmRoleMappingMapper extends AbstractUserRoleMappingMapper {
     public static ProtocolMapperModel create(String realmRolePrefix,
                                              String name,
                                              String tokenClaimName, boolean accessToken, boolean idToken) {
-        ProtocolMapperModel mapper = OIDCAttributeMapperHelper.createClaimMapper(name, "foo",
-                tokenClaimName, "String",
-                true, name,
-                accessToken, idToken,
-                PROVIDER_ID);
 
+        return create(realmRolePrefix, name, tokenClaimName, accessToken, idToken, false);
+    }
+
+    public static ProtocolMapperModel create(String realmRolePrefix,
+                                             String name,
+                                             String tokenClaimName, boolean accessToken, boolean idToken, boolean multiValued) {
+        ProtocolMapperModel mapper = OIDCAttributeMapperHelper.createClaimMapper(name, "foo",
+          tokenClaimName, "String",
+          true, name,
+          accessToken, idToken,
+          PROVIDER_ID);
+
+        mapper.getConfig().put(ProtocolMapperUtils.MULTIVALUED, String.valueOf(multiValued));
         mapper.getConfig().put(ProtocolMapperUtils.USER_MODEL_REALM_ROLE_MAPPING_ROLE_PREFIX, realmRolePrefix);
         return mapper;
-
     }
 }
