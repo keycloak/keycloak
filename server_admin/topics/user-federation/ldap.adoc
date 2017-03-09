@@ -2,15 +2,35 @@
 
 === LDAP and Active Directory
 
-{{book.project.name}} comes with a built-in LDAP/AD plugin.
-By default, it is set up only to import username, email, first name, and last name. But you are free to configure additional <<_ldap_mappers,mappers>>
-and add more attributes or delete the default ones.
-It supports password validation via LDAP/AD protocols and different user metadata synchronization modes.
+{{book.project.name}} comes with a built-in LDAP/AD provider.  It is possible to federate multiple different LDAP servers in the same
+{{book.project.name} realm.  You can map LDAP user attributes into the {{book.project.name}} common user model.
+By default, it maps username, email, first name, and last name, but you are free to configure additional <<_ldap_mappers,mappings>>.
+The LDAP provider also supports password validation via LDAP/AD protocols and different storage, edit, and synchronization modes.
+
 To configure a federated LDAP store go to the Admin Console.
 Click on the `User Federation` left menu option.
 When you get to this page there is an `Add Provider` select box.
 You should see _ldap_ within this list.
 Selecting _ldap_ will bring you to the ldap configuration page.
+
+==== Storage Mode
+
+By default, {{book.project.name}} will import users from LDAP into the local {{book.project.name}} user database. This copy of the user
+is either synchronized on demand, or through a periodic background task.
+The one exception to this is passwords.  Passwords are not imported and password validation is
+delegated to the LDAP server.  The benefits to this approach is that all {{book.project.name}} features will work as any extra
+per-user data that is needed can be stored locally.  This approach also reduces load on the LDAP server as uncached users are loaded
+from the {{book.project.name}} database the 2nd time they are accessed.  The only load your LDAP server will have is password validation.
+The downside to this approach is that when a user is first queried, this will require a {{book.project.name}} database insert.  The import will
+also have to be synchronized with your LDAP server as needed.
+
+Alternatively, you can choose not to import users into the {{book.project.name}} user database.  In this case, the common user model
+that the  {{book.project.name}} runtime uses is backed only by the LDAP server.  This means that if LDAP doesn't support
+a piece of data that a {{book.project.name}} feature needs that feature will not work.
+The benefit to this approach is that you do not have the overhead of importing and synchronizing a copy of the LDAP user into the
+{{book.project.name}} user database.
+
+This storage mode is controled by the `Import Enabled` switch.  Set to `On` to import users.
 
 ==== Edit Mode
 
@@ -29,7 +49,7 @@ WRITABLE::
 UNSYNCED::
   Any changes to username, email, first name, last name, and passwords will be stored in {{book.project.name}} local storage.
   It is up to you to figure out how to synchronize back to LDAP. This allows {{book.project.name}} deployments to support
-  updates of user metadata on a read-only LDAP server.
+  updates of user metadata on a read-only LDAP server.  This option only applies when you are importing users from LDAP into the local {{book.project.name}} user database.
 
 ==== Other config options
 
@@ -40,7 +60,8 @@ Priority::
   The priority of this provider when looking up users or for adding registrations.
 
 Sync Registrations::
-  If a new user is added through a registration page or admin console, should the user be eligible to be synchronized to this provider?
+  Does your LDAP support adding new users?  Click this switch if you want new users created by {{book.project.name}} in the admin console or the registration page
+  to be added to LDAP.
 
 Allow Kerberos authentication::
   Enable Kerberos/SPNEGO authentication in realm with users data provisioned from LDAP.
@@ -66,8 +87,8 @@ if the connection to LDAP starts with `ldaps`.
 
 ==== Sync of LDAP users to {{book.project.name}}
 
-LDAP Federation Provider will automatically take care of synchronization (import) of needed LDAP users into the {{book.project.name}} local database.
-As users log in, the LDAP Federation provider will import the LDAP user
+If you have import enabled, the LDAP Provider will automatically take care of synchronization (import) of needed LDAP users into the {{book.project.name}} local database.
+As users log in, the LDAP provider will import the LDAP user
 into the {{book.project.name}} database and then authenticate against the LDAP password. This is the only time users will be imported.
 If you go to the `Users` left menu item in the Admin Console and click the `View all users` button, you will only see those LDAP users that
 have been authenticated at least once by {{book.project.name}}.  It is implemented this way so that admins don't accidentally try to import a huge LDAP DB of users.
@@ -87,9 +108,10 @@ The best way to handle syncing is to click the `Synchronize all users` button wh
 then set up a periodic sync of changed users.  The configuration page for your LDAP Provider has several options to support you.
 
 [[_ldap_mappers]]
-==== LDAP/Federation mappers
 
-LDAP mappers are `listeners`, which are triggered by the LDAP Federation provider at various points, provide another extension point to LDAP integration.
+==== LDAP Mappers
+
+LDAP mappers are `listeners`, which are triggered by the LDAP Provider at various points, provide another extension point to LDAP integration.
 They are triggered when a user logs in via LDAP and needs to be imported, during {{book.project.name}} initiated registration, or when a user is queried from the Admin Console.
 When you create an LDAP Federation provider, {{book.project.name}} will automatically provide set of built-in `mappers` for this provider.
 You are free to change this set and create a new mapper or update/delete existing ones.
