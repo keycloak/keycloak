@@ -20,6 +20,7 @@ public class Pbkdf2Sha384PasswordHashProvider extends APbkdf2PasswordHashProvide
 
     @Override
     protected int getDerivedKeySize() {
-        return 384;
+        // Note: As of Keycloak 2.2 large hash values (4000 characters) are supported.
+        return 1024;
     }
 }

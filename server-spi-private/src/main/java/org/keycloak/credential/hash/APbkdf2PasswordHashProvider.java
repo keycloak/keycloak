@@ -58,7 +58,8 @@ public abstract class APbkdf2PasswordHashProvider implements PasswordHashProvide
     protected abstract String getPbkdf2Algorithm();
 
     /**
-     * The maximum encoded key size for the algorithm.
+     * The maximum encoded key size for the algorithm. The maximum size should exceed the output of the SHA function by
+     * an order of magnitude.
      *
      * @return the max encoded key size, in bytes.
      */
