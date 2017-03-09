@@ -131,12 +131,6 @@
             </modules>
         </profile>
         <profile>
-            <id>console-ui-no-users-tests</id>
-            <modules>
-                <module>console_no_users</module>
-            </modules>
-        </profile>
-        <profile>
             <id>mod_auth_mellon</id>
             <modules>
                 <module>mod_auth_mellon</module>
