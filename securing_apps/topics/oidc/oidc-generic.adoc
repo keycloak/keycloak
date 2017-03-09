@@ -60,9 +60,7 @@ The endpoint can also be invoked directly by the application. To invoke this end
 /realms/{realm-name}/protocol/openid-connect/certs
 ....
 
-The certificate endpoint is the public key or keys used by the realm, encoded as a JSON Web Key (JWK). This key or keys can be used to verify tokens issued by {{book.project.name}} without making invocations to the server. Although multiple keys can be listed, only one key is used for verification.
-
-For more details see the https://tools.ietf.org/html/rfc7517[JSON Web Key specification].
+The certificate endpoint returns the public keys enabled by the realm, encoded as a JSON Web Key (JWK). Depending on the realm settings there can be one or more keys enabled for verifying tokens. For more information see the link:{{book.adminguide.link}}[{{book.adminguide.name}}] and the https://tools.ietf.org/html/rfc7517[JSON Web Key specification].
 
 ===== Introspection Endpoint
 ....
