@@ -48,14 +48,11 @@ function build() {
   # Set the version according to the ENV variable
   #mvn -q versions:set -DgenerateBackupPoms=false -DnewVersion=$KEYCLOAK_VERSION
   # Only build the keycloak-server to save time
-  echo 'CICO: Installing without specifying a version'
-  mvn clean install -DskipTests=true -pl :keycloak-server-dist -am -P distribution
+  #echo 'CICO: Installing without specifying a version'
+  #mvn clean install -DskipTests=true -pl :keycloak-server-dist -am -P distribution
+  echo 'CICO: Run mv clean install -DskipTests=true -Pdistribution'
+  mvn clean install -DskipTests=true -Pdistribution
 
-  echo 'CICO: Installing all the distribution'
-  local EXIT_CODE=$?
-  if [[ $EXIT_CODE -ne 0 ]]; then
-    mvn clean install -DskipTests=true -Pdistribution
-  fi
   echo 'CICO: Listing the directory server-dist'
   ls distribution/server-dist/
   echo 'CICO: Listing the directory target'
