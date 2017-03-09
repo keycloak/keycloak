@@ -131,9 +131,9 @@
             </modules>
         </profile>
         <profile>
-            <id>console-ui-no-users-tests</id>
+            <id>no-default-accounts-tests</id>
             <modules>
-                <module>console_no_users</module>
+                <module>no_accounts</module>
             </modules>
         </profile>
         <profile>

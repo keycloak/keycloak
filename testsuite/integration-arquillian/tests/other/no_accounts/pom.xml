@@ -27,9 +27,9 @@
         <version>3.0.0.CR1-SNAPSHOT</version>
     </parent>
 
-    <artifactId>integration-arquillian-tests-console-no-users</artifactId>
+    <artifactId>integration-arquillian-tests-no-accounts</artifactId>
 
-    <name>Admin Console UI Tests - Without pre-configured accounts</name>
+    <name>Tests without pre-configured accounts</name>
 
     <build>
         <plugins>
