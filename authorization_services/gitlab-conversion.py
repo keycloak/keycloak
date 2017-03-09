@@ -66,7 +66,7 @@ output.write("""
 include::document-attributes.adoc[]
 """)
 
-input = re.sub(r"[ ]*\.+\s*link:(.*)\[(.*)\]", "include::\g<1>[]", input)
+input = re.sub(r"[ ]*\.+\s*link:[^/]+/(.*)\[(.*)\]", "include::\g<1>[]", input)
 input = applyTransformation(input)
 output.write(input)
 
