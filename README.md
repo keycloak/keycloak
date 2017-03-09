@@ -14,23 +14,28 @@ Ensure you have JDK 8 (or newer), Maven 3.1.1 (or newer) and Git installed
     java -version
     mvn -version
     git --version
-    
+
 First clone the Keycloak repository:
-    
+
     git clone https://github.com/keycloak/keycloak.git
     cd keycloak
-    
+
 To build Keycloak run:
 
     mvn install
-    
-This will build all modules and run the testsuite. 
+
+This will build all modules and run the testsuite.
 
 To build the distribution run:
 
     mvn install -Pdistribution
-    
+
 Once completed you will find distribution archives in `distribution`.
+
+
+To build a specific distribution (e.g. keycloak-server) run the following command:
+
+    mvn clean install -DskipTests=true -pl :keycloak-server-dist -am -P distribution
 
 
 Starting Keycloak
@@ -38,7 +43,7 @@ Starting Keycloak
 
 To start Keycloak during development first build as specified above, then run:
 
-    mvn -f testsuite/integration/pom.xml exec:java -Pkeycloak-server 
+    mvn -f testsuite/integration/pom.xml exec:java -Pkeycloak-server
 
 
 To start Keycloak from the appliance distribution first build the distribution it as specified above, then run:
@@ -46,7 +51,7 @@ To start Keycloak from the appliance distribution first build the distribution i
     tar xfz distribution/appliance-dist/target/keycloak-appliance-dist-all-<VERSION>.tar.gz
     cd keycloak-appliance-dist-all-<VERSION>/keycloak
     bin/standalone.sh
-    
+
 To stop the server press `Ctrl + C`.
 
 
