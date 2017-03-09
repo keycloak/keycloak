@@ -52,6 +52,13 @@ Regardless the identity provider you are creating, you'll see the following conf
 |Enabled
 |Turn the provider on/off
 
+|Hide On Login Page
+|When this switch is on, this provider will not be shown as a login option on the login page.  Clients can still request to use this provider by using the 'kc_idp_hint' parameter in the URL they use to request a login.
+
+|Link Only
+|When this switch is on, this provider cannot be used to login users and will not be shown as an option on the login page.  Existing accounts can still be linked with this provider though.
+
+
 |Store Tokens
 |Whether or not to store the token received from the identity provider.
 

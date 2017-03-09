@@ -4,6 +4,9 @@
  .. link:server_development/topics/admin-rest-api.adoc[Admin REST API]
  .. link:server_development/topics/themes.adoc[Themes]
  .. link:server_development/topics/custom-attributes.adoc[Custom User Attributes]
+ .. link:server_development/topics/identity-brokering.adoc[Identity Brokering APIs]
+ ... link:server_development/topics/identity-brokering/tokens.adoc[Retrieving External IDP Tokens]
+ ... link:server_development/topics/identity-brokering/account-linking.adoc[Client Initiated Account Linking]
 {% if book.community %}
  .. link:server_development/topics/providers.adoc[Service Provider Interfaces (SPI)]
  .. link:server_development/topics/extensions.adoc[Extending Server]
