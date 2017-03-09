@@ -73,11 +73,6 @@
                     <version>2.12</version>
                 </dependency>
                 <dependency>
-                    <groupId>org.apache.sshd</groupId>
-                    <artifactId>sshd-core</artifactId>
-                    <version>0.12.0</version>
-                </dependency>
-                <dependency>
                     <groupId>org.apache.karaf.shell</groupId>
                     <artifactId>org.apache.karaf.shell.console</artifactId>
                     <version>3.0.3</version>
