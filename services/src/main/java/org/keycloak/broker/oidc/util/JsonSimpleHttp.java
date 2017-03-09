@@ -20,6 +20,7 @@ package org.keycloak.broker.oidc.util;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.keycloak.broker.provider.util.SimpleHttp;
+import org.keycloak.models.KeycloakSession;
 
 import java.io.IOException;
 
@@ -28,16 +29,16 @@ import java.io.IOException;
  * @version $Revision: 1 $
  */
 public class JsonSimpleHttp extends SimpleHttp {
-    public JsonSimpleHttp(String url, String method) {
-        super(url, method);
+    public JsonSimpleHttp(String url, String method, KeycloakSession session) {
+        super(url, method, session);
     }
 
-    public static JsonSimpleHttp doGet(String url) {
-        return new JsonSimpleHttp(url, "GET");
+    public static JsonSimpleHttp doGet(String url, KeycloakSession session) {
+        return new JsonSimpleHttp(url, "GET", session);
     }
 
-    public static JsonSimpleHttp doPost(String url) {
-        return new JsonSimpleHttp(url, "POST");
+    public static JsonSimpleHttp doPost(String url, KeycloakSession session) {
+        return new JsonSimpleHttp(url, "POST", session);
     }
 
     private static ObjectMapper mapper = new ObjectMapper();
