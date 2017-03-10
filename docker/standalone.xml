@@ -53,7 +53,6 @@
                     </ssl>
                 </server-identities>
             </security-realm>
-            <!-- ------------------------------- -->
         </security-realms>
         <audit-log>
             <formatters>
@@ -375,7 +374,6 @@
                 </host>
                 <!-- Added by Almighty keycloak team -->
                 <https-listener name="https" socket-binding="https" security-realm="UndertowRealm"/>
-                <!-- ------------------------------- -->
             </server>
             <servlet-container name="default">
                 <jsp-config/>

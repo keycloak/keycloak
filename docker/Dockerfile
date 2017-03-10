@@ -44,4 +44,4 @@ ADD standalone.xml /opt/jboss/keycloak/standalone/configuration
 EXPOSE 8080
 ENTRYPOINT [ "/opt/jboss/docker-entrypoint.sh" ]
 
-CMD ["-b", "0.0.0.0"]
+CMD ["--debug", "-b", "0.0.0.0"]
