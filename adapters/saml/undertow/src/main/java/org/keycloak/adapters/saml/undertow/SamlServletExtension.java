@@ -154,7 +154,7 @@ public class SamlServletExtension implements ServletExtension {
         servletContext.setAttribute(SamlDeploymentContext.class.getName(), deploymentContext);
         UndertowUserSessionManagement userSessionManagement = new UndertowUserSessionManagement();
         final ServletSamlAuthMech mech = createAuthMech(deploymentInfo, deploymentContext, userSessionManagement);
-
+        mech.addTokenStoreUpdaters(deploymentInfo);
 
         // setup handlers
 

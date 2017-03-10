@@ -51,7 +51,7 @@ public class DeploymentTargetModifier extends AnnotationDeploymentScenarioGenera
 
         if (appServerQualifier != null && !appServerQualifier.isEmpty()) {
             for (DeploymentDescription deployment : deployments) {
-                if (deployment.getTarget() == null || !deployment.getTarget().getName().equals(appServerQualifier)) {
+                if (deployment.getTarget() == null || !deployment.getTarget().getName().startsWith(appServerQualifier)) {
                     log.debug("Setting target container for " + deployment.getName() + ": " + appServerQualifier);
                     deployment.setTarget(new TargetDescription(appServerQualifier));
                 }

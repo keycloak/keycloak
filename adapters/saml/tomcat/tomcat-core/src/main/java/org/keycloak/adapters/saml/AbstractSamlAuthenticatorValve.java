@@ -25,13 +25,10 @@ import org.apache.catalina.authenticator.FormAuthenticator;
 import org.apache.catalina.connector.Request;
 import org.apache.catalina.connector.Response;
 import org.jboss.logging.Logger;
+
 import org.keycloak.adapters.saml.config.parsers.DeploymentBuilder;
 import org.keycloak.adapters.saml.config.parsers.ResourceLoader;
-import org.keycloak.adapters.spi.AuthChallenge;
-import org.keycloak.adapters.spi.AuthOutcome;
-import org.keycloak.adapters.spi.HttpFacade;
-import org.keycloak.adapters.spi.InMemorySessionIdMapper;
-import org.keycloak.adapters.spi.SessionIdMapper;
+import org.keycloak.adapters.spi.*;
 import org.keycloak.adapters.tomcat.CatalinaHttpFacade;
 import org.keycloak.adapters.tomcat.CatalinaUserSessionManagement;
 import org.keycloak.adapters.tomcat.GenericPrincipalFactory;
@@ -46,6 +43,8 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.*;
+import java.util.Map;
 
 /**
  * Keycloak authentication valve
@@ -62,6 +61,7 @@ public abstract class AbstractSamlAuthenticatorValve extends FormAuthenticator i
 	protected CatalinaUserSessionManagement userSessionManagement = new CatalinaUserSessionManagement();
     protected SamlDeploymentContext deploymentContext;
     protected SessionIdMapper mapper = new InMemorySessionIdMapper();
+    protected SessionIdMapperUpdater idMapperUpdater = SessionIdMapperUpdater.DIRECT;
 
     @Override
     public void lifecycleEvent(LifecycleEvent event) {
@@ -69,7 +69,7 @@ public abstract class AbstractSamlAuthenticatorValve extends FormAuthenticator i
             cache = false;
         } else if (Lifecycle.AFTER_START_EVENT.equals(event.getType())) {
         	keycloakInit();
-        } else if (event.getType() == Lifecycle.BEFORE_STOP_EVENT) {
+        } else if (Lifecycle.BEFORE_STOP_EVENT.equals(event.getType())) {
             beforeStop();
         }
     }
@@ -129,6 +129,8 @@ public abstract class AbstractSamlAuthenticatorValve extends FormAuthenticator i
         }
 
         context.getServletContext().setAttribute(SamlDeploymentContext.class.getName(), deploymentContext);
+
+        addTokenStoreUpdaters();
     }
 
     protected void beforeStop() {
@@ -273,8 +275,68 @@ public abstract class AbstractSamlAuthenticatorValve extends FormAuthenticator i
 
     protected SamlSessionStore createSessionStore(Request request, HttpFacade facade, SamlDeployment resolvedDeployment) {
         SamlSessionStore store;
-        store = new CatalinaSamlSessionStore(userSessionManagement, createPrincipalFactory(), mapper, request, this, facade, resolvedDeployment);
+        store = new CatalinaSamlSessionStore(userSessionManagement, createPrincipalFactory(), mapper, idMapperUpdater, request, this, facade, resolvedDeployment);
         return store;
     }
 
+    protected void addTokenStoreUpdaters() {
+        SessionIdMapperUpdater updater = getIdMapperUpdater();
+
+        try {
+            String idMapperSessionUpdaterClasses = context.getServletContext().getInitParameter("keycloak.sessionIdMapperUpdater.classes");
+            if (idMapperSessionUpdaterClasses == null) {
+                return;
+            }
+
+            for (String clazz : idMapperSessionUpdaterClasses.split("\\s*,\\s*")) {
+                if (! clazz.isEmpty()) {
+                    updater = invokeAddTokenStoreUpdaterMethod(clazz, updater);
+                }
+            }
+        } finally {
+            setIdMapperUpdater(updater);
+        }
+    }
+
+    private SessionIdMapperUpdater invokeAddTokenStoreUpdaterMethod(String idMapperSessionUpdaterClass, SessionIdMapperUpdater previousIdMapperUpdater) {
+        try {
+            Class<?> clazz = context.getLoader().getClassLoader().loadClass(idMapperSessionUpdaterClass);
+            Method addTokenStoreUpdatersMethod = clazz.getMethod("addTokenStoreUpdaters", Context.class, SessionIdMapper.class, SessionIdMapperUpdater.class);
+            if (! Modifier.isStatic(addTokenStoreUpdatersMethod.getModifiers())
+              || ! Modifier.isPublic(addTokenStoreUpdatersMethod.getModifiers())
+              || ! SessionIdMapperUpdater.class.isAssignableFrom(addTokenStoreUpdatersMethod.getReturnType())) {
+                log.errorv("addTokenStoreUpdaters method in class {0} has to be public static. Ignoring class.", idMapperSessionUpdaterClass);
+                return previousIdMapperUpdater;
+            }
+
+            log.debugv("Initializing sessionIdMapperUpdater class {0}", idMapperSessionUpdaterClass);
+            return (SessionIdMapperUpdater) addTokenStoreUpdatersMethod.invoke(null, context, mapper, previousIdMapperUpdater);
+        } catch (ClassNotFoundException ex) {
+            log.warnv(ex, "Cannot use sessionIdMapperUpdater class {0}", idMapperSessionUpdaterClass);
+            return previousIdMapperUpdater;
+        } catch (NoSuchMethodException ex) {
+            log.warnv(ex, "Cannot use sessionIdMapperUpdater class {0}", idMapperSessionUpdaterClass);
+            return previousIdMapperUpdater;
+        } catch (SecurityException ex) {
+            log.warnv(ex, "Cannot use sessionIdMapperUpdater class {0}", idMapperSessionUpdaterClass);
+            return previousIdMapperUpdater;
+        } catch (IllegalAccessException ex) {
+            log.warnv(ex, "Cannot use {0}.addTokenStoreUpdaters(DeploymentInfo, SessionIdMapper) method", idMapperSessionUpdaterClass);
+            return previousIdMapperUpdater;
+        } catch (IllegalArgumentException ex) {
+            log.warnv(ex, "Cannot use {0}.addTokenStoreUpdaters(DeploymentInfo, SessionIdMapper) method", idMapperSessionUpdaterClass);
+            return previousIdMapperUpdater;
+        } catch (InvocationTargetException ex) {
+            log.warnv(ex, "Cannot use {0}.addTokenStoreUpdaters(DeploymentInfo, SessionIdMapper) method", idMapperSessionUpdaterClass);
+            return previousIdMapperUpdater;
+        }
+    }
+
+    public SessionIdMapperUpdater getIdMapperUpdater() {
+        return idMapperUpdater;
+    }
+
+    public void setIdMapperUpdater(SessionIdMapperUpdater idMapperUpdater) {
+        this.idMapperUpdater = idMapperUpdater;
+    }
 }
