@@ -1,20 +1,30 @@
 FROM jboss/base-jdk:8
+MAINTAINER Hector Fernandez <hfernand@redhat.com>
 
-ENV KEYCLOAK_VERSION 3.0.0.CR1-SNAPSHOT
 # Enables signals getting passed from startup script to JVM
 # ensuring clean shutdown when container is stopped.
 ENV LAUNCH_JBOSS_IN_BACKGROUND 1
 
-MAINTAINER Hector Fernandez <hfernand@redhat.com>
+ENV KEYCLOAK_VERSION 3.0.0.CR1-SNAPSHOT
+
+ENV OSO_ADDRESS tsrv.devshift.net:8443
+ENV OSO_DOMAIN_NAME tsrv.devshift.net
 
 USER root
 
-RUN yum install -y epel-release jq && yum clean all
+RUN yum install -y epel-release jq git && yum clean all
 
 ENV JBOSS_HOME /opt/jboss/keycloak
 
 ADD keycloak-$KEYCLOAK_VERSION.tar.gz /opt/jboss/
-RUN mv /opt/jboss/keycloak-$KEYCLOAK_VERSION /opt/jboss/keycloak
+RUN mkdir -p $JBOSS_HOME && cd /opt/jboss/keycloak-$KEYCLOAK_VERSION && cp -R * $JBOSS_HOME
+
+WORKDIR $JBOSS_HOME
+
+# InstallCert is used to export the certificate of the destination OSO
+RUN git clone https://github.com/almighty/InstallCert.git && \
+     javac /opt/jboss/keycloak/InstallCert/InstallCert.java
+
 RUN chown -R 1000:0 ${JBOSS_HOME} && chmod -R ug+rw ${JBOSS_HOME}
 
 USER jboss
@@ -28,6 +38,8 @@ ADD changeDatabase.xsl /opt/jboss/keycloak/
 RUN java -jar /usr/share/java/saxon.jar -s:/opt/jboss/keycloak/standalone/configuration/standalone.xml -xsl:/opt/jboss/keycloak/changeDatabase.xsl -o:/opt/jboss/keycloak/standalone/configuration/standalone.xml; java -jar /usr/share/java/saxon.jar -s:/opt/jboss/keycloak/standalone/configuration/standalone-ha.xml -xsl:/opt/jboss/keycloak/changeDatabase.xsl -o:/opt/jboss/keycloak/standalone/configuration/standalone-ha.xml; rm /opt/jboss/keycloak/changeDatabase.xsl
 RUN mkdir -p /opt/jboss/keycloak/modules/system/layers/base/org/postgresql/jdbc/main; cd /opt/jboss/keycloak/modules/system/layers/base/org/postgresql/jdbc/main; curl -O http://central.maven.org/maven2/org/postgresql/postgresql/9.3-1102-jdbc3/postgresql-9.3-1102-jdbc3.jar
 ADD module.xml /opt/jboss/keycloak/modules/system/layers/base/org/postgresql/jdbc/main/
+
+ADD standalone.xml /opt/jboss/keycloak/standalone/configuration
 
 EXPOSE 8080
 ENTRYPOINT [ "/opt/jboss/docker-entrypoint.sh" ]
