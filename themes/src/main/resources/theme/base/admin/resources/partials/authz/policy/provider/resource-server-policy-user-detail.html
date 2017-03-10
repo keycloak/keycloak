@@ -53,7 +53,7 @@
                             <tr ng-repeat="user in selectedUsers | orderBy:'username'">
                                 <td>{{user.username}}</td>
                                 <td class="kc-action-cell">
-                                    <button class="btn btn-default btn-block btn-sm" ng-click="removeFromList(selectedUsers, $index);">{{:: 'remove' | translate}}</button>
+                                    <button class="btn btn-default btn-block btn-sm" ng-click="removeFromList(selectedUsers, user);">{{:: 'remove' | translate}}</button>
                                 </td>
                             </tr>
                             <tr data-ng-show="!selectedUsers.length">
