@@ -257,8 +257,8 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
                 byte[] check = md.digest(input.getBytes(StandardCharsets.UTF_8));
                 if (MessageDigest.isEqual(decoded, check)) {
                     clientSession = cs;
+                    break;
                 }
-                break;
             }
         }
         if (clientSession == null) {
