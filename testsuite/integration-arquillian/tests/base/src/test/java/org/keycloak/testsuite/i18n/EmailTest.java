@@ -18,6 +18,7 @@ package org.keycloak.testsuite.i18n;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.models.UserModel;
@@ -30,6 +31,7 @@ import org.keycloak.testsuite.util.GreenMailRule;
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
 import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 import org.keycloak.testsuite.ProfileAssume;
@@ -53,6 +55,11 @@ public class EmailTest extends AbstractI18NTest {
         UserRepresentation user = findUser("login-test");
         user.singleAttribute(UserModel.LOCALE, locale);
         ApiUtil.findUserByUsernameId(testRealm(), "login-test").update(user);
+    }
+
+    @Before
+    public void increaseRequestTimeout() {
+        driver.manage().timeouts().pageLoadTimeout(30, TimeUnit.SECONDS);
     }
 
     @Test

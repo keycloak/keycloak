@@ -47,6 +47,7 @@ import javax.mail.Multipart;
 import javax.mail.internet.MimeMessage;
 import java.io.IOException;
 import java.util.Collections;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -96,6 +97,11 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
                 .username("test-user@localhost")
                 .email("test-user@localhost").build();
         ApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), user, "password");
+    }
+
+    @Before
+    public void increaseRequestTimeout() {
+        driver.manage().timeouts().pageLoadTimeout(30, TimeUnit.SECONDS);
     }
 
     @Test

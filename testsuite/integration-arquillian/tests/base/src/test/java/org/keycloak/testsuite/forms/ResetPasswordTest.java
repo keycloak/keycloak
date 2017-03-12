@@ -48,6 +48,7 @@ import javax.mail.internet.MimeMessage;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
@@ -103,6 +104,11 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
+
+    @Before
+    public void increaseRequestTimeout() {
+        driver.manage().timeouts().pageLoadTimeout(30, TimeUnit.SECONDS);
+    }
 
     @Test
     public void resetPasswordLink() throws IOException, MessagingException {
