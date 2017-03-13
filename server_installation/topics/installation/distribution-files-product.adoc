@@ -1,16 +1,9 @@
 
-=== Installing Distribution Files
+=== Installing RH-SSO from a ZIP File
 
-The {{book.project.name}} Server is contained in one distribution file:
+The {{book.project.name}} Server is contained in one distribution file: rh-sso-{{book.project.version}}.zip.gz.
 
-* 'rh-sso-{{book.project.version}}.[zip|tar.gz]'
+The rh-sso-{{book.project.version}}.zip.gz archive is the server-only distribution. It contains only the scripts and binaries to run {{book.project.name}} Server.
 
-The 'rh-sso-{{book.project.version}}.[zip|tar.gz]' file is the server only distribution.  It contains nothing other than the scripts and binaries
-to run the {{book.project.name}} Server.
-
-To unpack of these files run the `unzip` or `gunzip` and `tar` utilities.
-
-
-
-
+To unpack these files, run the `unzip` or `gunzip` utility.
 

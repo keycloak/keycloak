@@ -1,5 +1,10 @@
 
 == Installation
-
-Installing {{book.project.name}} is as simple as downloading it and unzipping it.  This chapter reviews system requirements
+{% if book.community %}
+Installing {{book.project.name}} is as simple as downloading it and unzipping it. This chapter reviews system requirements
 as well as the directory structure of the distribution.
+{% endif %}
+
+{% if book.product %}
+You can install {{book.project.name}} by downloading a ZIP file and unzipping it, or by using an RPM. This chapter reviews system requirements as well as the directory structure.
+{% endif %}

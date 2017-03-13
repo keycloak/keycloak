@@ -8,7 +8,8 @@
 ... link:server_installation/topics/installation/distribution-files-community.adoc[Installing Distribution Files]
 {% endif %}
 {% if book.product %}
-... link:server_installation/topics/installation/distribution-files-product.adoc[Installing Distribution Files]
+... link:server_installation/topics/installation/distribution-files-product.adoc[Installing RH-SSO from a ZIP File]
+... link:server_installation/topics/installation/installing-rpm.adoc[Installing RH-SSO from an RPM]
 {% endif %}
 ... link:server_installation/topics/installation/directory-structure.adoc[Distribution Directory Structure]
 .. link:server_installation/topics/operating-mode.adoc[Choosing an Operating Mode]
