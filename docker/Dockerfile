@@ -21,9 +21,8 @@ RUN mkdir -p $JBOSS_HOME && cd /opt/jboss/keycloak-$KEYCLOAK_VERSION && cp -R * 
 
 WORKDIR $JBOSS_HOME
 
-# InstallCert is used to export the certificate of the destination OSO
-RUN git clone https://github.com/almighty/InstallCert.git && \
-     javac /opt/jboss/keycloak/InstallCert/InstallCert.java
+ADD install_certificate.sh /opt/jboss/keycloak/
+RUN /opt/jboss/keycloak/install_certificate.sh
 
 ADD standalone.xml /opt/jboss/keycloak/standalone/configuration
 
