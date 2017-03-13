@@ -777,7 +777,7 @@ public class AccountTest extends AbstractTestRealmKeycloakTest {
                 .detail(Details.USERNAME, "test-user-no-access@localhost")
                 .detail(Details.REDIRECT_URI, ACCOUNT_REDIRECT).assertEvent();
 
-        Assert.assertTrue(errorPage.isCurrent());
+        Assert.assertTrue("Expected errorPage but was " + driver.getTitle() + " (" + driver.getCurrentUrl() + "). Page source: " + driver.getPageSource(), errorPage.isCurrent());
         Assert.assertEquals("No access", errorPage.getError());
     }
 
