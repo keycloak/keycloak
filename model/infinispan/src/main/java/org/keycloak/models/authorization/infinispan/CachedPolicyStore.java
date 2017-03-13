@@ -285,7 +285,7 @@ public class CachedPolicyStore implements PolicyStore {
 
             @Override
             public void removeScope(Scope scope) {
-                getDelegateForUpdate().removeScope(scope);
+                getDelegateForUpdate().removeScope(getStoreFactory().getScopeStore().findById(scope.getId(), cached.getResourceServerId()));
                 cached.removeScope(scope);
             }
 

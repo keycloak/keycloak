@@ -143,7 +143,7 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
     }
 
     @Test
-    public void createAlbumWithInvalidUser() {
+    public void createAlbumWithInvalidUser() throws Exception {
         try {
             this.deployer.deploy(RESOURCE_SERVER_ID);
 
@@ -470,6 +470,7 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
 
             this.clientPage.createAlbum(resourceName);
 
+            this.clientPage.logOut();
             loginToClientPage("admin", "admin");
 
             this.clientPage.navigateToAdminAlbum();
@@ -629,7 +630,7 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
     
     //KEYCLOAK-3777
     @Test
-    public void testEntitlementRequest() {
+    public void testEntitlementRequest() throws Exception {
         try {
             this.deployer.deploy(RESOURCE_SERVER_ID);
             
@@ -663,13 +664,11 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
     }
 
     private void deleteAllCookiesForClientPage() {
-        clientPage.navigateTo();
         driver.manage().deleteAllCookies();
     }
-    
-    private void loginToClientPage(String username, String password, String... scopes) {
+
+    private void loginToClientPage(String username, String password, String... scopes) throws InterruptedException {
         // We need to log out by deleting cookies because the log out button sometimes doesn't work in PhantomJS
-        deleteAllCookiesForClientPage();
         deleteAllCookiesForTestRealm();
         clientPage.navigateTo();
         clientPage.login(username, password, scopes);
