@@ -16,7 +16,6 @@ env:
     - TESTS=group2
     - TESTS=group3
     - TESTS=group4
-    - TESTS=adapter
     - TESTS=old
 
 jdk:
