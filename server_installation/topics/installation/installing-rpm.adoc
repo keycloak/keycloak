@@ -1,0 +1,41 @@
+[[_installing_rpm]]
+
+=== Installing RH-SSO from an RPM
+
+NOTE: With Red Hat Enterprise Linux 7, the term channel was replaced with the term repository. In these instructions only the term repository is used.
+
+You must subscribe to both the JBoss EAP 7.0 and RH-SSO 7.1 repositories before you can install RH-SSO from an RPM.
+
+NOTE: You cannot continue to receive upgrades to EAP 7.0 RPMs but stop receiving updates for RH-SSO.
+
+[[subscribing_EAP_repo]]
+==== Subscribing to the JBoss EAP 7.0 Repository
+
+.Prerequisites
+
+. Ensure that your Red Hat Enterprise Linux system is registered to your account using Red Hat Subscription Manager. For more information see the link:https://access.redhat.com/documentation/en-US/Red_Hat_Subscription_Management/1/html-single/Quick_Registration_for_RHEL/index.html[Red Hat Subscription Management documentation].
+
+. If you are already subscribed to another JBoss EAP repository, you must unsubscribe from that repository first.
+
+Using Red Hat Subscription Manager, subscribe to the JBoss EAP 7.0 repository using the following command. Replace <RHEL_VERSION> with either 6 or 7 depending on your Red Hat Enterprise Linux version.
+
+ subscription-manager repos --enable=jb-eap-7.0-for-rhel-<RHEL_VERSION>-server-rpms
+
+==== Subscribing to the RH-SSO 7.1 Repository and Installing RH-SSO 7.1
+
+.Prerequisites
+
+. Ensure that your Red Hat Enterprise Linux system is registered to your account using Red Hat Subscription Manager. For more information see the link:https://access.redhat.com/documentation/en-US/Red_Hat_Subscription_Management/1/html-single/Quick_Registration_for_RHEL/index.html[Red Hat Subscription Management documentation].
+. Ensure that you have already subscribed to the JBoss EAP 7.0 repository. For more information see xref:subscribing_EAP_repo[Subscribing to the JBoss EAP 7.0 repository].
+
+To subscribe to the RH-SSO 7.1 repository and install RH-SSO 7.1, complete the following steps:
+
+. Using Red Hat Subscription Manager, subscribe to the RH-SSO 7.1 repository using the following command. Replace <RHEL_VERSION> with either 6 or 7 depending on your Red Hat Enterprise Linux version.
+
+ subscription-manager repos --enable=rh-sso-7.1-for-rhel-<RHEL-VERSION>-server-rpms
+
+. Install RH-SSO from your subscribed RH-SSO 7.1 repository using the following command:
+
+ yum install rh-sso7-keycloak-server
+
+Your installation is complete. The default RH-SSO_HOME path for the RPM installation is /opt/rh/rh-sso7/root/usr/share/keycloak.
