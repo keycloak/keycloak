@@ -17,17 +17,27 @@
 
 package org.keycloak.broker.provider.util;
 
+import org.apache.http.Header;
+import org.apache.http.HeaderIterator;
+import org.apache.http.HttpEntity;
+import org.apache.http.StatusLine;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpRequestBase;
+import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.client.HttpClients;
+
 import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLSocketFactory;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.OutputStream;
 import java.io.StringWriter;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.net.URLEncoder;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.zip.GZIPInputStream;
@@ -35,9 +45,9 @@ import java.util.zip.GZIPInputStream;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  * @author Vlastimil Elias (velias at redhat dot com)
+ * @author David Klassen (daviddd.kl@gmail.com)
  */
 public class SimpleHttp {
-
 
     private String url;
     private String method;
@@ -87,172 +97,50 @@ public class SimpleHttp {
     }
 
     public String asString() throws IOException {
-        boolean get = method.equals("GET");
-        boolean post = method.equals("POST");
+        HttpClientBuilder httpClientBuilder = HttpClients.custom();
+        setupTruststoreIfApplicable(httpClientBuilder);
+        CloseableHttpClient httpClient = httpClientBuilder.build();
 
-        StringBuilder sb = new StringBuilder();
-        if (get) {
-            sb.append(url);
-        }
+        CloseableHttpResponse response = makeRequest(httpClient);
 
-        if (params != null) {
-            boolean f = true;
-            for (Map.Entry<String, String> p : params.entrySet()) {
-                if (f) {
-                    f = false;
-                    if (get) {
-                        sb.append("?");
-                    }
-                } else {
-                    sb.append("&");
-                }
-                sb.append(URLEncoder.encode(p.getKey(), "UTF-8"));
-                sb.append("=");
-                sb.append(URLEncoder.encode(p.getValue(), "UTF-8"));
-            }
-        }
-
-        if (get) {
-            url = sb.toString();
-        }
-
-        HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
-        setupTruststoreIfApplicable(connection);
-        OutputStream os = null;
-        InputStream is = null;
-
+        InputStream is;
         try {
-            connection.setRequestMethod(method);
-
-            if (headers != null) {
-                for (Map.Entry<String, String> h : headers.entrySet()) {
-                    connection.setRequestProperty(h.getKey(), h.getValue());
-                }
-            }
-
-            if (post) {
-                String data = sb.toString();
-
-                connection.setDoOutput(true);
-                connection.setRequestMethod("POST");
-                connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
-                connection.setRequestProperty("Content-Length", String.valueOf(data.length()));
-
-                os = connection.getOutputStream();
-                os.write(data.getBytes());
-            } else {
-                connection.setDoOutput(false);
-            }
-
-            String ce = connection.getHeaderField("Content-Encoding");
-            is = connection.getInputStream();
-            if ("gzip".equals(ce)) {
-              is = new GZIPInputStream(is);
-	          }
-            return toString(is);
-        } finally {
-            if (os != null) {
+            HttpEntity entity = response.getEntity();
+            if (entity != null) {
+                is = entity.getContent();
                 try {
-                    os.close();
-                } catch (IOException e) {
-                }
-            }
-
-            if (is != null) {
-                try {
+                    HeaderIterator it = response.headerIterator();
+                    while (it.hasNext()) {
+                        Header header = it.nextHeader();
+                        if (header.getName().equals("Content-Encoding") && header.getValue().equals("gzip")) {
+                            is = new GZIPInputStream(is);
+                        }
+                    }
+                    return toString(is);
+                } finally {
                     is.close();
-                } catch (IOException e) {
                 }
             }
-            if (connection != null) {
-                try {
-                    connection.disconnect();
-                } catch (Exception e) {
-                }
-            }
+            return null;
+        } finally {
+            response.close();
+            httpClient.close();
         }
     }
 
     public int asStatus() throws IOException {
-        boolean get = method.equals("GET");
-        boolean post = method.equals("POST");
+        HttpClientBuilder httpClientBuilder = HttpClients.custom();
+        setupTruststoreIfApplicable(httpClientBuilder);
+        CloseableHttpClient httpClient = httpClientBuilder.build();
 
-        StringBuilder sb = new StringBuilder();
-        if (get) {
-            sb.append(url);
-        }
-
-        if (params != null) {
-            boolean f = true;
-            for (Map.Entry<String, String> p : params.entrySet()) {
-                if (f) {
-                    f = false;
-                    if (get) {
-                        sb.append("?");
-                    }
-                } else {
-                    sb.append("&");
-                }
-                sb.append(URLEncoder.encode(p.getKey(), "UTF-8"));
-                sb.append("=");
-                sb.append(URLEncoder.encode(p.getValue(), "UTF-8"));
-            }
-        }
-
-        if (get) {
-            url = sb.toString();
-        }
-
-        HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
-        setupTruststoreIfApplicable(connection);
-        OutputStream os = null;
-        InputStream is = null;
+        CloseableHttpResponse response = makeRequest(httpClient);
 
         try {
-            connection.setRequestMethod(method);
-
-            if (headers != null) {
-                for (Map.Entry<String, String> h : headers.entrySet()) {
-                    connection.setRequestProperty(h.getKey(), h.getValue());
-                }
-            }
-
-            if (post) {
-                String data = sb.toString();
-
-                connection.setDoOutput(true);
-                connection.setRequestMethod("POST");
-                connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
-                connection.setRequestProperty("Content-Length", String.valueOf(data.length()));
-
-                os = connection.getOutputStream();
-                os.write(data.getBytes());
-            } else {
-                connection.setDoOutput(false);
-            }
-
-            is = connection.getInputStream();
-            return connection.getResponseCode();
+            StatusLine statusLine = response.getStatusLine();
+            return statusLine.getStatusCode();
         } finally {
-            if (os != null) {
-                try {
-                    os.close();
-                } catch (IOException e) {
-                }
-            }
-
-            if (is != null) {
-                try {
-                    is.close();
-                } catch (IOException e) {
-                }
-            }
-            if (connection != null) {
-                try {
-                    connection.disconnect();
-                } catch (Exception e) {
-                }
-            }
+            response.close();
+            httpClient.close();
         }
     }
 
@@ -269,13 +157,56 @@ public class SimpleHttp {
         return writer.toString();
     }
 
-    private void setupTruststoreIfApplicable(HttpURLConnection connection) {
-        if (connection instanceof HttpsURLConnection && sslFactory != null) {
-            HttpsURLConnection con = (HttpsURLConnection) connection;
-            con.setSSLSocketFactory(sslFactory);
+    private void setupTruststoreIfApplicable(HttpClientBuilder httpClientBuilder) {
+        if (sslFactory != null) {
+            org.apache.http.conn.ssl.SSLSocketFactory apacheSSLSocketFactory = new org.apache.http.conn.ssl.SSLSocketFactory(sslFactory, null);
+            httpClientBuilder.setSSLSocketFactory(apacheSSLSocketFactory);
             if (hostnameVerifier != null) {
-                con.setHostnameVerifier(hostnameVerifier);
+                httpClientBuilder.setSSLHostnameVerifier(hostnameVerifier);
             }
         }
+    }
+
+    private URI generateURIfromURLandParameter(String url) {
+        URI uri = null;
+
+        try {
+            URIBuilder uriBuilder = new URIBuilder(url);
+
+            if (params != null) {
+                for (Map.Entry<String, String> p : params.entrySet()) {
+                    uriBuilder.setParameter(p.getKey(), p.getValue());
+                }
+            }
+
+            uri = uriBuilder.build();
+        } catch (URISyntaxException e) {
+        }
+
+        return uri;
+    }
+
+    private CloseableHttpResponse makeRequest(CloseableHttpClient httpClient) {
+        boolean get = method.equals("GET");
+
+        URI uri = generateURIfromURLandParameter(url);
+
+        HttpRequestBase httpRequest = new HttpPost(uri);
+        if (get) {
+            httpRequest = new HttpGet(uri);
+        }
+
+        if (headers != null) {
+            for (Map.Entry<String, String> h : headers.entrySet()) {
+                httpRequest.setHeader(h.getKey(), h.getValue());
+            }
+        }
+
+        CloseableHttpResponse response = null;
+        try {
+            response = httpClient.execute(httpRequest);
+        } catch (IOException e) {
+        }
+        return response;
     }
 }
