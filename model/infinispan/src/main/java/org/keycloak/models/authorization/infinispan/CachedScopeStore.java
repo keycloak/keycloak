@@ -22,6 +22,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import org.infinispan.Cache;
 import org.keycloak.authorization.model.ResourceServer;
@@ -201,6 +202,19 @@ public class CachedScopeStore implements ScopeStore {
                 }
 
                 return this.updated;
+            }
+
+            @Override
+            public boolean equals(Object o) {
+                if (this == o) return true;
+                if (o == null || !Scope.class.isInstance(o)) return false;
+                Scope that = (Scope) o;
+                return Objects.equals(getId(), that.getId());
+            }
+
+            @Override
+            public int hashCode() {
+                return Objects.hash(getId());
             }
         };
     }
