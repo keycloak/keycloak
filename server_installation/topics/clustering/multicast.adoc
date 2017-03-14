@@ -32,3 +32,4 @@ You'll have to edit your the _standalone-ha.xml_ or _domain.xml_ sections discus
 Things you'll want to configure are the `jboss.bind.address.private` and `jboss.default.multicast.address` as well as the ports of the services on the clustering stack.
 
 NOTE: It is possible to cluster {{book.project.name}} without IP Multicast, but this topic is beyond the scope of this guide. For more information, see link:{{book.appserver.jgroups.link}}[JGroups] in the _{{book.appserver.jgroups.name}}_.
+
