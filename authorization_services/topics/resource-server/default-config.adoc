@@ -46,6 +46,6 @@ This permission is a <<fake/../../permission/create-resource.adoc#_permission_cr
 You can change the default configuration by removing the default resource, policy, or permission definitions and creating your own.
 
 [NOTE]
-The default configuration defines a resource that maps to all paths in your application. If you are about to write permissions to your own resources, make sure
+The default configuration defines a resource that maps to all paths in your application. If you are about to write permissions to your own resources, be sure
 to remove the *Default Resource* or change its ```URI``` field to a more specific path in your application. Otherwise, the policy associated with the default resource (which by default is always granting access)
 will make Keycloak grant access to any protected resource.
