@@ -184,12 +184,15 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
             try {
                 SAML2LogoutRequestBuilder logoutBuilder = buildLogoutRequest(userSession, uriInfo, realm, singleLogoutServiceUrl);
                 JaxrsSAML2BindingBuilder binding = buildLogoutBinding(session, userSession, realm);
-                return binding.postBinding(logoutBuilder.buildDocument()).request(singleLogoutServiceUrl);
+                if (getConfig().isPostBindingLogout()) {
+                    return binding.postBinding(logoutBuilder.buildDocument()).request(singleLogoutServiceUrl);
+                } else {
+                    return binding.redirectBinding(logoutBuilder.buildDocument()).request(singleLogoutServiceUrl);
+                }
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
         }
-
     }
 
     protected SAML2LogoutRequestBuilder buildLogoutRequest(UserSessionModel userSession, UriInfo uriInfo, RealmModel realm, String singleLogoutServiceUrl) {

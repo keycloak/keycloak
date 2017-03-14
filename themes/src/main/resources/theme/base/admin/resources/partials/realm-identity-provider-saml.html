@@ -157,6 +157,13 @@
                 <kc-tooltip>{{:: 'http-post-binding-for-authn-request.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group">
+                <label class="col-md-2 control-label" for="postBindingLogout">{{:: 'http-post-binding-logout' | translate}}</label>
+                <div class="col-md-6">
+                    <input ng-model="identityProvider.config.postBindingLogout" id="postBindingLogout" onoffswitchvalue on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
+                </div>
+                <kc-tooltip>{{:: 'http-post-binding-logout.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group">
                 <label class="col-md-2 control-label" for="wantAuthnRequestsSigned">{{:: 'want-authn-requests-signed' | translate}}</label>
                 <div class="col-md-6">
                     <input ng-model="identityProvider.config.wantAuthnRequestsSigned" id="wantAuthnRequestsSigned" name="wantAuthnRequestsSigned" onoffswitchvalue on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
