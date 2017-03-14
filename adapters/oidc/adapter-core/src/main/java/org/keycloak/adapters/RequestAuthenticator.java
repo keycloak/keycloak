@@ -160,26 +160,22 @@ public abstract class RequestAuthenticator {
     }
 
     protected boolean verifySSL() {
-        boolean verificationPassed  = facade.getRequest().isSecure()
-                || !deployment.getSslRequired().isRequired(facade.getRequest().getRemoteAddr());
-        if (!verificationPassed){
-            log.warn("SSL is required to authenticate");
-        }
-
-        if (log.isDebugEnabled()) {
+        boolean verificationFail  = !facade.getRequest().isSecure()
+                && deployment.getSslRequired().isRequired(facade.getRequest().getRemoteAddr());
+        if (verificationFail){
             final String remoteAddr = facade.getRequest().getRemoteAddr();
             final SslRequired sslRequired = deployment.getSslRequired();
-            log.debugf("SSL Verification. " +
+            log.warnf("SSL is required to authenticate. "+
                             "Passed: %s, request is secure: %s, " +
                             "SSL is required for: %s, " +
                             "SSL is required for remote addr %s: %s",
-                    verificationPassed,
+                    !verificationFail,
                     facade.getRequest().isSecure(),
                     sslRequired.name(),
                     remoteAddr,
                     sslRequired.isRequired(remoteAddr));
         }
-        return !verificationPassed;
+        return verificationFail;
     }
 
     protected boolean isAutodetectedBearerOnly(HttpFacade.Request request) {
