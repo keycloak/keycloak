@@ -48,7 +48,7 @@ public class GitHubIdentityProvider extends AbstractOAuth2IdentityProvider imple
 	@Override
 	protected BrokeredIdentityContext doGetFederatedIdentity(String accessToken) {
 		try {
-			JsonNode profile = JsonSimpleHttp.asJson(SimpleHttp.doGet(PROFILE_URL).header("Authorization", "Bearer " + accessToken));
+			JsonNode profile = JsonSimpleHttp.asJson(SimpleHttp.doGet(PROFILE_URL, session).header("Authorization", "Bearer " + accessToken));
 
 			BrokeredIdentityContext user = new BrokeredIdentityContext(getJsonProperty(profile, "id"));
 

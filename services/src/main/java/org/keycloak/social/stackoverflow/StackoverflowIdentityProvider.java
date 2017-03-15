@@ -63,7 +63,7 @@ public class StackoverflowIdentityProvider extends AbstractOAuth2IdentityProvide
 			if (log.isDebugEnabled()) {
 				log.debug("StackOverflow profile request to: " + URL);
 			}
-			JsonNode profile = JsonSimpleHttp.asJson(SimpleHttp.doGet(URL)).get("items").get(0);
+			JsonNode profile = JsonSimpleHttp.asJson(SimpleHttp.doGet(URL, session)).get("items").get(0);
 
 			BrokeredIdentityContext user = new BrokeredIdentityContext(getJsonProperty(profile, "user_id"));
 
