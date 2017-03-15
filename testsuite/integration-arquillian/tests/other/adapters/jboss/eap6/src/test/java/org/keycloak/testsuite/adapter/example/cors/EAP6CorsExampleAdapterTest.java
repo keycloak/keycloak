@@ -1,13 +1,11 @@
-package org.keycloak.testsuite.adapter.example;
+package org.keycloak.testsuite.adapter.example.cors;
 
-import org.junit.Ignore;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 
 /**
- * @author fkiss
+ *
+ * @author tkyjovsk
  */
 @AppServerContainer("app-server-eap6")
-@Ignore //cannot find web.xml in target/examples
 public class EAP6CorsExampleAdapterTest extends AbstractCorsExampleAdapterTest {
-
 }

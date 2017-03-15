@@ -23,6 +23,7 @@
         <module>servlet-authz</module>
         <module>servlets</module>
         <module>app-profile-jee</module>
+        <module>cors</module>
     </modules>
 
     <build>

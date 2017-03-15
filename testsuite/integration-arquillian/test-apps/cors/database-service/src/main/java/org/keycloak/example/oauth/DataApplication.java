@@ -15,29 +15,16 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.adapter.page;
+package org.keycloak.example.oauth;
 
-import org.jboss.arquillian.container.test.api.OperateOnDeployment;
-import org.jboss.arquillian.test.api.ArquillianResource;
-import org.keycloak.testsuite.page.AbstractPageWithInjectedUrl;
-
-import java.net.URL;
+import javax.ws.rs.ApplicationPath;
+import javax.ws.rs.core.Application;
 
 /**
- *
- * @author tkyjovsk
+ * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
+ * @version $Revision: 1 $
  */
-public class CorsDatabaseServiceExample extends AbstractPageWithInjectedUrl {
-
-    public static final String DEPLOYMENT_NAME = "cors-database-service";
-
-    @ArquillianResource
-    @OperateOnDeployment(DEPLOYMENT_NAME)
-    private URL url;
-
-    @Override
-    public URL getInjectedUrl() {
-        return url;
-    }
-
+@ApplicationPath("/")
+public class DataApplication extends Application
+{
 }

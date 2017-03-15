@@ -22,15 +22,17 @@ import org.jboss.arquillian.graphene.findby.FindByJQuery;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.keycloak.testsuite.page.AbstractPageWithInjectedUrl;
 import org.openqa.selenium.WebElement;
+import org.openqa.selenium.support.FindBy;
 
 import java.net.URL;
 
 /**
  * Created by fkiss.
  */
-public class AngularCorsProductExample extends AbstractPageWithInjectedUrl {
+public class AngularCorsProductTestApp extends AbstractPageWithInjectedUrl {
 
-    public static final String DEPLOYMENT_NAME = "cors-angular-product-example";
+    public static final String DEPLOYMENT_NAME = "angular-cors-product";
+    public static final String CLIENT_ID = "integration-arquillian-test-apps-cors-angular-product";
 
     @ArquillianResource
     @OperateOnDeployment(DEPLOYMENT_NAME)
@@ -62,6 +64,9 @@ public class AngularCorsProductExample extends AbstractPageWithInjectedUrl {
     @FindByJQuery("button:contains('Load version')")
     private WebElement loadVersionButton;
 
+    @FindBy(id = "output")
+    private WebElement outputArea;
+
     public void reloadData() {
         reloadDataButton.click();
     }
@@ -88,6 +93,10 @@ public class AngularCorsProductExample extends AbstractPageWithInjectedUrl {
 
     public void loadVersion() {
         loadVersionButton.click();
+    }
+
+    public WebElement getOutput() {
+        return outputArea;
     }
 
 
