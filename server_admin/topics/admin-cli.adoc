@@ -115,7 +115,7 @@ See `kcadm.sh config credentials --help` for more information about starting an 
 By default, `Admin CLI` automatically maintains a configuration file at a default location - `.keycloak/kcadm.config`
 under user's home directory.
 
-You can use `--config` option at any time to point to a different file / location. This way you can mantain multiple authenticated
+You can use `--config` option at any time to point to a different file / location. This way you can maintain multiple authenticated
 sessions in parallel. It is safest to perform operations tied to a single config file from a single thread.
 
 Make sure to not make a config file visible to other users on the system as it contains access tokens, and secrets that should be kept private.
@@ -256,7 +256,7 @@ It's very simple to delete a realm:
 
 Turning on all login page options for the realm::
 
-Set the attributes controlling specific capabilites to `true`.
+Set the attributes controlling specific capabilities to `true`.
 
 For example:
 
@@ -663,7 +663,7 @@ Use `delete` operation with the same endpoint uri as for getting a specific clie
 
 Creating a user::
 
-A new user can be created using `create` command agains `users` endpoint. For example:
+A new user can be created using the `create` command against the `users` endpoint. For example:
 
     $ kcadm.sh create users -r demorealm -s username=testuser -s enabled=true
 
