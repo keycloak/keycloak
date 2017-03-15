@@ -2,12 +2,9 @@
 
 == Export and Import
 
-{{book.project.name}} has the ability export and import the entire database.
-This can be especially useful if you want to migrate your whole {{book.project.name}} database from one environment to another
-or migrate to a different database (for example from MySQL to Oracle). Export and import
-is triggered at server boot time  and its parameters are passed in via Java system properties.
-It is important to note that because import and export happens at server startup, no other actions should be taken on the server
-or the database while this happens.
+{{book.project.name}} has the ability to export and import the entire database.
+This can be especially useful if you want to migrate your whole {{book.project.name}} database from one environment to another or migrate to a different database (for example from MySQL to Oracle). Export and import is triggered at server boot time  and its parameters are passed in via Java system properties.
+It is important to note that because import and export happens at server startup, no other actions should be taken on the server or the database while this happens.
 
 You can export/import your database either to:
 
@@ -100,3 +97,4 @@ Note: The admin console import allows just one realm per file.
 
 WARNING: The admin console import allows you to "overwrite" resources if you choose.
 Use this feature with caution, especially on a production system.
+
