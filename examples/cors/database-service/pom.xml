@@ -30,13 +30,13 @@
     <packaging>war</packaging>
     <name>JAX-RS Database Service Using OAuth Bearer Tokens</name>
     <description/>
-    <url>http://maven.apache.org</url>
+    <url>https://maven.apache.org</url>
 
     <repositories>
         <repository>
             <id>jboss</id>
             <name>jboss repo</name>
-            <url>http://repository.jboss.org/nexus/content/groups/public/</url>
+            <url>https://repository.jboss.org/nexus/content/groups/public/</url>
             <snapshots>
                 <enabled>false</enabled>
             </snapshots>

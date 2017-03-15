@@ -35,7 +35,7 @@
         <repository>
             <id>jboss</id>
             <name>jboss repo</name>
-            <url>http://repository.jboss.org/nexus/content/groups/public/</url>
+            <url>https://repository.jboss.org/nexus/content/groups/public/</url>
             <snapshots>
                 <enabled>false</enabled>
             </snapshots>
