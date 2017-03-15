@@ -1,7 +1,9 @@
 #!/bin/bash
 
-cd $(readlink -f `dirname $0`)
+GUIDE=$1
 
+cd $GUIDE
 python gitlab-conversion.py
 cd target
 asciidoctor master.adoc
+

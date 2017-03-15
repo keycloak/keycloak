@@ -42,6 +42,10 @@ To build the documentation for RH-SSO go into the directory of the specific guid
     cd target
     asciidoctor master.adoc
 
+On Linux you can also run build-product.sh DIR. For example:
+
+    ./build-product.sh server_admin
+
 You can then view the documentation by opening server_admin/target/master.html
 
 This will not create documentation that looks exactly as the official Red Hat Single Sign-On documentation, but the content will be the same.
