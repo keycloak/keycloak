@@ -43,3 +43,4 @@ image:../{{book.images}}/account-service-apps.png[]
 
 Like all UIs in {{book.project.name}}, the User Account Service is completely themeable and internationalizable.
 See the link:{{book.developerguide.link}}[{{book.developerguide.name}}] for more details.
+
