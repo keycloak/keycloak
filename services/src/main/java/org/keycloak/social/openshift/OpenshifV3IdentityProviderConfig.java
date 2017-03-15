@@ -15,6 +15,13 @@ public class OpenshifV3IdentityProviderConfig extends OAuth2IdentityProviderConf
     }
 
     public void setBaseUrl(String baseUrl) {
-        getConfig().put(BASE_URL, baseUrl);
+        getConfig().put(BASE_URL, trimTrailingSlash(baseUrl));
+    }
+
+    private String trimTrailingSlash(String baseUrl) {
+        if (baseUrl != null && baseUrl.endsWith("/")) {
+            baseUrl = baseUrl.substring(0, baseUrl.length() - 1);
+        }
+        return baseUrl;
     }
 }
