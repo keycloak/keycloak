@@ -1,7 +1,7 @@
 {
   "gitbook": "2.x.x",
   "structure": {
-    "readme": "README.adoc"
+    "readme": "OVERVIEW.adoc"
   },
   "plugins": [
     "toggle-chapters",
