@@ -20,11 +20,20 @@ package org.keycloak.authorization.client;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.http.client.HttpClient;
+import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.impl.client.HttpClients;
 import org.keycloak.util.BasicAuthHelper;
 
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.HashMap;
 import java.util.Map;
+
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSession;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -36,6 +45,9 @@ public class Configuration {
 
     @JsonProperty("auth-server-url")
     protected String authServerUrl;
+
+    @JsonProperty("no-check-certificate")
+    protected Boolean noCertCheck;
 
     @JsonProperty("realm")
     protected String realm;
@@ -74,10 +86,30 @@ public class Configuration {
 
     public HttpClient getHttpClient() {
         if (this.httpClient == null) {
-            this.httpClient = HttpClients.createDefault();
+            if(authServerUrl.startsWith("https") && noCertCheck) {
+                try {
+                    // Install a TrustManager that ignores certificate checks
+                    SSLContext sslContext = SSLContext.getInstance("TLS");
+                    TrustManager[] trustManagers = {new TrustAllManager()};
+                    sslContext.init(null, trustManagers, null);
+                    SSLConnectionSocketFactory sslConnectionSocketFactory = new SSLConnectionSocketFactory(sslContext, new AnyHostnameVerifier());
+                    this.httpClient = HttpClients.custom()
+                            .setSSLSocketFactory(sslConnectionSocketFactory)
+                            .build();
+
+                } catch (Exception e) {
+                    throw new IllegalStateException("Failed to create HttpsClient", e);
+                }
+            } else {
+                this.httpClient = HttpClients.createDefault();
+            }
         }
 
         return httpClient;
+    }
+
+    public Boolean getNoCertCheck() {
+        return noCertCheck;
     }
 
     public String getClientId() {
@@ -98,5 +130,29 @@ public class Configuration {
 
     public String getRealm() {
         return realm;
+    }
+
+    private static class TrustAllManager implements X509TrustManager {
+
+        @Override
+        public void checkClientTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
+            //ignore
+        }
+
+        @Override
+        public void checkServerTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
+            //ignore
+        }
+
+        @Override
+        public X509Certificate[] getAcceptedIssuers() {
+            return null;
+        }
+    }
+    private static class AnyHostnameVerifier implements HostnameVerifier {
+        @Override
+        public boolean verify(String s, SSLSession sslSession) {
+            return true;
+        }
     }
 }
