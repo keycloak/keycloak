@@ -35,6 +35,7 @@ import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.LoginPage;
+import org.keycloak.testsuite.pages.LoginPasswordResetPage;
 import org.keycloak.testsuite.pages.LoginTotpPage;
 import org.keycloak.testsuite.pages.RegisterPage;
 import org.keycloak.testsuite.util.GreenMailRule;
@@ -44,11 +45,16 @@ import org.keycloak.testsuite.util.UserBuilder;
 
 import java.net.MalformedURLException;
 
+import static org.junit.Assert.assertEquals;
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
  */
 public class BruteForceTest extends AbstractTestRealmKeycloakTest {
+
+    @Page
+    protected LoginPasswordResetPage resetPasswordPage;
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
@@ -273,6 +279,24 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
         expectTemporarilyDisabled();
         clearAllUserFailures();
         loginSuccess();
+    }
+
+    @Test
+    public void testBrowserPasswordResetWithTemporarilyDisabled() throws Exception {
+        String username = "test-user@localhost";
+
+        loginSuccess();
+        loginInvalidPassword();
+        loginInvalidPassword();
+        expectTemporarilyDisabled();
+
+        loginPage.resetPassword();
+
+        resetPasswordPage.assertCurrent();
+        resetPasswordPage.changePassword(username);
+
+        assertEquals("You should receive an email shortly with further instructions.", resetPasswordPage.getSuccessMessage());
+        clearAllUserFailures();
     }
 
     @Test
