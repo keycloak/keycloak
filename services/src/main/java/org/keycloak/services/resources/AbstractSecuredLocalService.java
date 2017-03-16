@@ -202,32 +202,6 @@ public abstract class AbstractSecuredLocalService {
         return oauth.redirect(uriInfo, accountUri.toString());
     }
 
-    protected Response authenticateBrowser() {
-        AppAuthManager authManager = new AppAuthManager();
-        AuthenticationManager.AuthResult authResult = authManager.authenticateIdentityCookie(session, realm);
-        if (authResult != null) {
-            auth = new Auth(realm, authResult.getToken(), authResult.getUser(), client, authResult.getSession(), true);
-        } else {
-            return login(null);
-        }
-        // don't allow cors requests
-        // This is to prevent CSRF attacks.
-        String requestOrigin = UriUtils.getOrigin(uriInfo.getBaseUri());
-        String origin = headers.getRequestHeaders().getFirst("Origin");
-        if (origin != null && !requestOrigin.equals(origin)) {
-            throw new ForbiddenException();
-        }
-
-        if (!request.getHttpMethod().equals("GET")) {
-            String referrer = headers.getRequestHeaders().getFirst("Referer");
-            if (referrer != null && !requestOrigin.equals(UriUtils.getOrigin(referrer))) {
-                throw new ForbiddenException();
-            }
-        }
-        updateCsrfChecks();
-        return null;
-    }
-
     static class OAuthRedirect extends AbstractOAuthClient {
 
         /**

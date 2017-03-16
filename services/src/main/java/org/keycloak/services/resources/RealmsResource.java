@@ -34,6 +34,8 @@ import org.keycloak.protocol.LoginProtocolFactory;
 import org.keycloak.services.clientregistration.ClientRegistrationService;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resource.RealmResourceProvider;
+import org.keycloak.services.resources.account.AccountLoader;
+import org.keycloak.services.resources.account.DeprecatedAccountFormService;
 import org.keycloak.services.util.CacheControlUtil;
 import org.keycloak.services.util.ResolveRelative;
 import org.keycloak.utils.ProfileHelper;
@@ -51,6 +53,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
+import java.io.IOException;
 import java.net.URI;
 
 /**
@@ -206,20 +209,10 @@ public class RealmsResource {
     }
 
     @Path("{realm}/account")
-    public AccountService getAccountService(final @PathParam("realm") String name) {
+    public Object getAccountService(final @PathParam("realm") String name) {
         RealmModel realm = init(name);
-
-        ClientModel client = realm.getClientByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
-        if (client == null || !client.isEnabled()) {
-            logger.debug("account management not enabled");
-            throw new NotFoundException("account management not enabled");
-        }
-
         EventBuilder event = new EventBuilder(realm, session, clientConnection);
-        AccountService accountService = new AccountService(realm, client, event);
-        ResteasyProviderFactory.getInstance().injectProperties(accountService);
-        accountService.init();
-        return accountService;
+        return AccountLoader.getAccountService(session, event);
     }
 
     @Path("{realm}")

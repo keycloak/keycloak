@@ -346,6 +346,13 @@
       ],
       "adminUrl": "http://localhost:8180/varnamedapp/base/admin",
       "secret": "password"
+    },
+    {
+      "clientId": "direct-grant",
+      "enabled": true,
+      "directAccessGrantsEnabled": true,
+      "secret": "password",
+      "webOrigins": [ "http://localtest.me:8180" ]
     }
   ],
   "roles" : {

@@ -20,7 +20,7 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.common.Version;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
-import org.keycloak.services.resources.AccountService;
+import org.keycloak.services.resources.account.DeprecatedAccountFormService;
 import org.keycloak.services.resources.IdentityBrokerService;
 import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.services.resources.RealmsResource;
@@ -35,7 +35,7 @@ import java.net.URI;
 public class Urls {
 
     public static URI accountApplicationsPage(URI baseUri, String realmId) {
-        return accountBase(baseUri).path(AccountService.class, "applicationsPage").build(realmId);
+        return accountBase(baseUri).path(DeprecatedAccountFormService.class, "applicationsPage").build(realmId);
     }
 
     public static UriBuilder accountBase(URI baseUri) {
@@ -47,19 +47,19 @@ public class Urls {
     }
 
     public static UriBuilder accountPageBuilder(URI baseUri) {
-        return accountBase(baseUri).path(AccountService.class, "accountPage");
+        return accountBase(baseUri).path(DeprecatedAccountFormService.class, "accountPage");
     }
 
     public static URI accountPasswordPage(URI baseUri, String realmId) {
-        return accountBase(baseUri).path(AccountService.class, "passwordPage").build(realmId);
+        return accountBase(baseUri).path(DeprecatedAccountFormService.class, "passwordPage").build(realmId);
     }
 
     public static URI accountFederatedIdentityPage(URI baseUri, String realmId) {
-        return accountBase(baseUri).path(AccountService.class, "federatedIdentityPage").build(realmId);
+        return accountBase(baseUri).path(DeprecatedAccountFormService.class, "federatedIdentityPage").build(realmId);
     }
 
     public static URI accountFederatedIdentityUpdate(URI baseUri, String realmName) {
-        return accountBase(baseUri).path(AccountService.class, "processFederatedIdentityUpdate").build(realmName);
+        return accountBase(baseUri).path(DeprecatedAccountFormService.class, "processFederatedIdentityUpdate").build(realmName);
     }
 
     public static URI identityProviderAuthnResponse(URI baseUri, String providerId, String realmName) {
@@ -112,31 +112,31 @@ public class Urls {
     }
 
     public static URI accountTotpPage(URI baseUri, String realmId) {
-        return accountBase(baseUri).path(AccountService.class, "totpPage").build(realmId);
+        return accountBase(baseUri).path(DeprecatedAccountFormService.class, "totpPage").build(realmId);
     }
 
     public static URI accountTotpRemove(URI baseUri, String realmId, String stateChecker) {
-        return accountBase(baseUri).path(AccountService.class, "processTotpRemove")
+        return accountBase(baseUri).path(DeprecatedAccountFormService.class, "processTotpRemove")
                 .queryParam("stateChecker", stateChecker)
                 .build(realmId);
     }
 
     public static URI accountLogPage(URI baseUri, String realmId) {
-        return accountBase(baseUri).path(AccountService.class, "logPage").build(realmId);
+        return accountBase(baseUri).path(DeprecatedAccountFormService.class, "logPage").build(realmId);
     }
 
     public static URI accountSessionsPage(URI baseUri, String realmId) {
-        return accountBase(baseUri).path(AccountService.class, "sessionsPage").build(realmId);
+        return accountBase(baseUri).path(DeprecatedAccountFormService.class, "sessionsPage").build(realmId);
     }
 
     public static URI accountSessionsLogoutPage(URI baseUri, String realmId, String stateChecker) {
-        return accountBase(baseUri).path(AccountService.class, "processSessionsLogout")
+        return accountBase(baseUri).path(DeprecatedAccountFormService.class, "processSessionsLogout")
                 .queryParam("stateChecker", stateChecker)
                 .build(realmId);
     }
 
     public static URI accountRevokeClientPage(URI baseUri, String realmId) {
-        return accountBase(baseUri).path(AccountService.class, "processRevokeGrant")
+        return accountBase(baseUri).path(DeprecatedAccountFormService.class, "processRevokeGrant")
                 .build(realmId);
     }
 
