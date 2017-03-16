@@ -38,12 +38,12 @@
             <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-core</artifactId>
-                <version>3.0.0.CR1</version>
+                <version>3.0.0.Final-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-server-spi</artifactId>
-                <version>3.0.0.CR1</version>
+                <version>3.0.0.Final-SNAPSHOT</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
