@@ -1,0 +1,15 @@
+[[_docker_config_file]]
+
+=== Docker Registry Configuration File Installation
+
+For users with more advanced docker registry configurations, it is generally recommended to provide your own registry configuration file.  The {{book.project.name}} docker provider supports this mechanism via the _Registry Config File_ Format Option.  Choosing this option will generate output similar to the following:
+
+	auth:
+	  token:
+	    realm: http://localhost:8080/auth/auth/realms/master/protocol/docker-v2/auth
+	    service: docker-test
+	    issuer: http://localhost:8080/auth/auth/realms/master
+
+This output can then be copied into any existing registry config file.  See the link:https://docs.docker.com/registry/configuration/[registry config file specification] for more information on how the file should be set up, or start with href:https://github.com/docker/distribution/blob/master/cmd/registry/config-example.yml[a basic example].
+
+WARNING: Don't forget to configure the `rootcertbundle` field with the location of the {{book.project.name}} realm's pulic certificate.  The auth configuration will not work without this argument.

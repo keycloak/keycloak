@@ -1,0 +1,6 @@
+
+== Docker Registry Configuration
+
+This section describes how you can configure a Docker registry to use {{book.project.name}} as its authentication server.
+
+Fore more information on how to set up and configure a Docker registry, see the link:https://docs.docker.com/registry/configuration/[Docker Registry Configuration Guide].

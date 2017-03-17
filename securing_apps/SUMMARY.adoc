@@ -87,5 +87,11 @@
  .... link:securing_apps/topics/saml/java/MigrationFromOlderVersions.adoc[Migration from older versions]
  {% endif %}
  ... link:securing_apps/topics/saml/mod-auth-mellon.adoc[mod_auth_mellon Apache HTTPD Module]
+ {% if book.community %}
+ . link:topics/docker/docker-overview.adoc[Docker]
+ .. link:topics/docker/config-file.adoc[Config File Installation]
+ .. link:topics/docker/variable-override.adoc[Variable Override Installation]
+ .. link:topics/docker/quickstart-zip.adoc[Quickstart .zip Installation]
+ {% endif %}
  .. link:securing_apps/topics/client-registration.adoc[Client Registration]
  ... link:securing_apps/topics/client-registration/client-registration-cli.adoc[Client Registration CLI]

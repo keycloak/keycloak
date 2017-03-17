@@ -34,6 +34,7 @@ The features that can be enabled and disabled are:
 * Authorization - authorization services
 * Impersonation - ability for admins to impersonate users
 * Script - write custom authenticators using JavaScript
+* Docker - use docker-v2 authentication protocol
 
 {% if book.product %}
 The product profile disables authorization and script.
