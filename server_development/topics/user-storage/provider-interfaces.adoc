@@ -55,7 +55,7 @@ You may be thinking that the `UserStorageProvider` interface is pretty sparse?  
 there are other mix-in interfaces your provider class may implement to support the meat of user integration.
 
 `UserStorageProvider` instances are created once per transaction.  When the transaction is complete, the
-`UserStorageProvider.close()` method is invoked and the instance is then garbage collections.  Instances are created
+`UserStorageProvider.close()` method is invoked and the instance is then garbage collected.  Instances are created
 by provider factories.  Provider factories implement the `org.keycloak.storage.UserStorageProviderFactory` interface.
 
 [source,java]
