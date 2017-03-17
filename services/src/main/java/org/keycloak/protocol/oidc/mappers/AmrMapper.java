@@ -33,6 +33,10 @@ public class AmrMapper {
     }
 
     public static String getAmr(String authenticationMethod){
-        return amrMap.getOrDefault(authenticationMethod, null);
+        for (String key : amrMap.keySet()) {
+            if(authenticationMethod.startsWith(key))
+                return amrMap.get(key);
+        }
+        return null;
     }
 }
