@@ -7,7 +7,7 @@ Instead you define a filter mapping using the {{book.project.name}} servlet filt
 
 WARNING: Backchannel logout works a bit differently than the standard adapters.
 Instead of invalidating the HTTP session it marks the session id as logged out.
-There's no way standard way to invalidate an HTTP session based on a session id.
+There's no standard way to invalidate an HTTP session based on a session id.
 
 [source,xml]
 ----
