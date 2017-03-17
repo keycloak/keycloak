@@ -152,7 +152,7 @@ org.keycloak.examples.authenticator.AnotherProviderFactory
 
 This services/ file is used by Keycloak to scan the providers it has to load into the system. 
 
-To deploy this jar, just copy it to the standalone/configuration/providers directory. 
+To deploy this jar, just copy it to the providers directory. 
 
 ==== Implementing an Authenticator
 
@@ -440,7 +440,7 @@ org.keycloak.examples.authenticator.SecretQuestionRequiredActionFactory
 
 This services/ file is used by Keycloak to scan the providers it has to load into the system. 
 
-To deploy this jar, just copy it to the standalone/configuration/providers directory. 
+To deploy this jar, just copy it to the providers directory. 
 
 ==== Implement the RequiredActionProvider
 
@@ -713,7 +713,7 @@ org.keycloak.authentication.forms.RegistrationRecaptcha
 
 This services/ file is used by Keycloak to scan the providers it has to load into the system. 
 
-To deploy this jar, just copy it to the standalone/configuration/providers directory. 
+To deploy this jar, just copy it to the providers directory. 
 
 ==== Adding FormAction to the Registration Flow
 
