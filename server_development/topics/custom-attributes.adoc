@@ -27,7 +27,7 @@ To see the changes make sure your realm is using your custom theme for the login
 
 === Account Management Console
 
-To be able to manage custom attributes in the user profile page in the account management console copy the template `themes/base/account/account.flt` to the
+To be able to manage custom attributes in the user profile page in the account management console copy the template `themes/base/account/account.ftl` to the
 account type of your custom theme. Then open the copy in an editor.
 
 As an example to add a mobile number to the account page add the following snippet to the form:
