@@ -62,7 +62,7 @@ public class ProtocolMapperUtils {
 
         String methodName = "get" + Character.toUpperCase(propertyName.charAt(0)) + propertyName.substring(1);
         try {
-            Method method = UserModel.class.getMethod(methodName);
+            Method method = user.getClass().getMethod(methodName);
             Object val = method.invoke(user);
             if (val != null) return val.toString();
         } catch (Exception ignore) {
@@ -70,7 +70,7 @@ public class ProtocolMapperUtils {
         }
         methodName = "is" + Character.toUpperCase(propertyName.charAt(0)) + propertyName.substring(1);
         try {
-            Method method = UserModel.class.getMethod(methodName);
+            Method method = user.getClass().getMethod(methodName);
             Object val = method.invoke(user);
             if (val != null) return val.toString();
         } catch (Exception ignore) {
