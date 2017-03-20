@@ -194,9 +194,6 @@ TimeSkew:
     function sendBearerToKeycloak() {
         var url = 'http://localhost:8180/auth/admin/realms/example/roles';
         if (window.location.href.indexOf("8643") > -1) {
-            url = url.replace("8180","8543");
-            url = url.replace("http","https");
-        if (window.location.href.indexOf("8543") > -1) {
             url = url.replace("8180", "8543");
             url = url.replace("http", "https");
         }
