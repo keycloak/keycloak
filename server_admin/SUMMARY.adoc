@@ -29,6 +29,7 @@
 ... link:server_admin/topics/authentication/otp-policies.adoc[OTP Policies]
 ... link:server_admin/topics/authentication/flows.adoc[Authentication Flows]
 ... link:server_admin/topics/authentication/kerberos.adoc[Kerberos]
+... link:server_admin/topics/authentication/x509.adoc[X509 Client Certificate Authentication]
 .. link:server_admin/topics/sso-protocols.adoc[SSO Protocols]
 ... link:server_admin/topics/sso-protocols/oidc.adoc[OpenID Connect]
 ... link:server_admin/topics/sso-protocols/saml.adoc[SAML]
