@@ -163,6 +163,21 @@
             }
         },
         {
+            "clientId": "http://localhost:8081/different-cookie-name/",
+            "enabled": true,
+            "fullScopeAllowed": true,
+            "protocol": "saml",
+            "baseUrl": "http://localhost:8080/different-cookie-name",
+            "redirectUris": [
+                "http://localhost:8080/different-cookie-name/*"
+            ],
+            "attributes": {
+                "saml.authnstatement": "true",
+                "saml_assertion_consumer_url_post": "http://localhost:8080/different-cookie-name/saml",
+                "saml_single_logout_service_url_post": "http://localhost:8080/different-cookie-name/saml"
+            }
+        },
+        {
             "clientId": "http://localhost:8081/sales-post/",
             "enabled": true,
             "fullScopeAllowed": true,
