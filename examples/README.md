@@ -73,3 +73,8 @@ SAML
 ----
 
 This is set of demo applications, showing how to secure your own SAML web applications. Fore more information look at `saml/README.md`   
+
+Broker
+------
+
+This is a set of two examples, showing how to broker a SAML Identity Provider in Keycloak (at `broker/saml-broker-authentication`) and how to use Social Identity Providers with Keycloak to authenticate users (at `broker/facebook-authentication`).
