@@ -206,7 +206,7 @@ realmAccess::
     The realm roles associated with the token.
 
 resourceAccess::
-    The resource roles assocaited with the token.
+    The resource roles associated with the token.
 
 refreshToken::
     The base64 encoded refresh token that can be used to retrieve a new token.
