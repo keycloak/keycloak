@@ -2,7 +2,7 @@
 
 === mod_auth_mellon Apache HTTPD Module
 
-The https://github.com/UNINETT/mod_auth_mellon[mod_auth_mellon] module is an Apache HTTPD plugin for SAML. If your language/environment supports using Apache HTTPD as a proxy, then you can use mod_auth_mellon to secure your web application with SAML. <do we still want to refer users to the github repo?>For more details on this module see the _mod_auth_mellon_ Github repo.
+The https://github.com/UNINETT/mod_auth_mellon[mod_auth_mellon] module is an Apache HTTPD plugin for SAML. If your language/environment supports using Apache HTTPD as a proxy, then you can use mod_auth_mellon to secure your web application with SAML. For more details on this module see the _mod_auth_mellon_ Github repo.
 
 To configure mod_auth_mellon you'll need:
 
@@ -23,13 +23,11 @@ image:../../{{book.images}}/mod-auth-mellon-config-download.png[]
 
 . Click *Download* to download a zip file that contains the XML descriptor and PEM files you need.
 
-<How does the following content relate to the previous paragraph?>
-
-==== Configuring mod_auth_mellon with Red Hat Single Sign-On
+==== Configuring mod_auth_mellon with {{book.project.name}}
 
 There are two hosts involved:
 
-*The host on which Red Hat Single Sign-On is running, which will be referred to as $idp_host because Red Hat Single Sign-On is a SAML identity provider (IdP). 
+*The host on which {{book.project.name}} is running, which will be referred to as $idp_host because {{book.project.name}} is a SAML identity provider (IdP). 
 
 *The host on which the web application is running, which will be referred to as $sp_host. In SAML an application using an IdP is called a service provider (SP).
 
@@ -45,7 +43,7 @@ To install the necessary packages, you will need:
 
 To install the necessary packages, run this command:
 
-`yum install httpd mod_auth_mellon mod_ssl openssl`
+ yum install httpd mod_auth_mellon mod_ssl openssl
 
 ===== Creating a Configuration Directory for Apache SAML
 
@@ -53,7 +51,7 @@ It is advisable to keep configuration files related to Apache's use of SAML in o
 
 Create a new directory named saml2 located under the Apache configuration root /etc/httpd:
 
-`mkdir /etc/httpd/saml2`
+ mkdir /etc/httpd/saml2
 
 ===== Configuring the Mellon Service Provider
 
@@ -72,7 +70,7 @@ To configure the Mellon service provider, complete the following steps:
 
 . Create the file /etc/httpd/conf.d/mellon.conf with this content:
 
-<Location / >
+ <Location / >
     MellonEnable info
     MellonEndpointPath /mellon/
     MellonSPMetadataFile /etc/httpd/saml2/mellon_metadata.xml
@@ -81,7 +79,7 @@ To configure the Mellon service provider, complete the following steps:
     MellonIdPMetadataFile /etc/httpd/saml2/idp_metadata.xml
 </Location>
 
-<Location /private >
+ <Location /private >
     AuthType Mellon
     MellonEnable auth
     Require valid-user
@@ -113,35 +111,35 @@ SAML IdPs and SPs identify themselves using a unique name known as an EntityID. 
 To create the SP metadata, complete the following steps:
 
 . Create a few helper shell variables: 
-+
-fqdn=`hostname`
-mellon_endpoint_url="https://${fqdn}/mellon"
-mellon_entity_id="${mellon_endpoint_url}/metadata"
-file_prefix="$(echo "$mellon_entity_id" | sed 's/[^A-Za-z.]/_/g' | sed 's/__*/_/g')"
+
+ fqdn=`hostname`
+ mellon_endpoint_url="https://${fqdn}/mellon"
+ mellon_entity_id="${mellon_endpoint_url}/metadata"
+ file_prefix="$(echo "$mellon_entity_id" | sed 's/[^A-Za-z.]/_/g' | sed 's/__*/_/g')"
 
 . Invoke the Mellon metadata creation tool by running this command:
 +
-`/usr/libexec/mod_auth_mellon/mellon_create_metadata.sh $mellon_entity_id $mellon_endpoint_url`
+ /usr/libexec/mod_auth_mellon/mellon_create_metadata.sh $mellon_entity_id $mellon_endpoint_url
 
 . Move the generated files to their destination (referenced in the /etc/httpd/conf.d/mellon.conf file created above):
 +
-mv ${file_prefix}.cert /etc/httpd/saml2/mellon.crt
-mv ${file_prefix}.key /etc/httpd/saml2/mellon.key
-mv ${file_prefix}.xml /etc/httpd/saml2/mellon_metadata.xml
+ mv ${file_prefix}.cert /etc/httpd/saml2/mellon.crt
+ mv ${file_prefix}.key /etc/httpd/saml2/mellon.key
+ mv ${file_prefix}.xml /etc/httpd/saml2/mellon_metadata.xml
 
-===== Adding the Mellon Service Provider to the Red Hat Single Sign-On Identity Provider
+===== Adding the Mellon Service Provider to the {{book.project.name}} Identity Provider
 
-Assumption: The Red Hat Single Sign-On IdP has already been installed on the $idp_host.
+Assumption: The {{book.project.name}} IdP has already been installed on the $idp_host.
 
-Red Hat Single Sign-On supports multiple tenancy where all users, clients, and so on are grouped in what is called a realm. Each realm is independent of other realms. You can use an existing realm in your Red Hat Single Sign-On, but this example shows how to create a new realm called test_realm and use that realm.
+{{book.project.name}} supports multiple tenancy where all users, clients, and so on are grouped in what is called a realm. Each realm is independent of other realms. You can use an existing realm in your {{book.project.name}}, but this example shows how to create a new realm called test_realm and use that realm.
 
-All these operations are performed using the Red Hat Single Sign-On administration web console. You must have the admin username and password for $idp_host.
+All these operations are performed using the {{book.project.name}} administration web console. You must have the admin username and password for $idp_host.
 
 To complete the following steps:
 
 . Open the Admin Console and log on by entering the admin username and password.
 +
-After logging into the admin console there will be an existing realm. When Red Hat Single Sign-On is first set up a root realm, master, is created by default. Any previously created realms are listed in the upper left corner of the admin console in a drop-down list. 
+After logging into the administration console there will be an existing realm. When {{book.project.name}} is first set up a root realm, master, is created by default. Any previously created realms are listed in the upper left corner of the administration console in a drop-down list. 
 
 . From the realm drop-down list select *Add realm*.
 
@@ -149,7 +147,7 @@ After logging into the admin console there will be an existing realm. When Red H
 
 ====== Adding the Mellon Service Provider as a Client of the Realm
 
-In Red Hat Single Sign-On SAML SPs are known as clients. To add the SP we must be in the Clients section of the realm. 
+In {{book.project.name}} SAML SPs are known as clients. To add the SP we must be in the Clients section of the realm. 
 
 . Click the Clients menu item on the left and click *Create* in the upper right corner to create a new client.
 
@@ -171,7 +169,7 @@ There are several client configuration parameters we suggest setting:
 . Change "postResponse" to "paosResponse". (The paosResponse URL is needed for SAML ECP.) 
 . Click *Save* at the bottom.
 
-Many SAML SPs determine authorization based on a user's membership in a group. The Red Hat Single Sign-On IdP can manage user group information but it does not supply the user's groups unless the IdP is configured to supply it as a SAML attribute. 
+Many SAML SPs determine authorization based on a user's membership in a group. The {{book.project.name}} IdP can manage user group information but it does not supply the user's groups unless the IdP is configured to supply it as a SAML attribute. 
 
 To configure the IdP to supply the user's groups as as a SAML attribute, complete the following steps:
 
@@ -189,17 +187,20 @@ The remaining steps are performed on $sp_host.
 Now that you have created the realm on the IdP you need to retrieve the IdP metadata associated with it so the Mellon SP recognizes it. In the /etc/httpd/conf.d/mellon.conf file created previously, the MellonIdPMetadataFile is specified as /etc/httpd/saml2/idp_metadata.xml but until now that file has not existed on $sp_host. To get that file we will retrieve it from the IdP.
 
 . Retrieve the file from the IdP by substituting $idp_host with the correct value:
-curl -k -o /etc/httpd/saml2/idp_metadata.xml \
-https://$idp_host/auth/realms/test_realm/protocol/saml/descriptor
+
+ curl -k -o /etc/httpd/saml2/idp_metadata.xml \
+ https://$idp_host/auth/realms/test_realm/protocol/saml/descriptor
 +
 Mellon is now fully configured.
 
 . To run a syntax check for Apache configuration files:
-apachectl configtest
+
+ apachectl configtest
 +
 Note: configtest is equivalent to the -t argument to apachectl. If the configuration test shows any errors, correct them before proceeding.
 
 . Restart the Apache server:
-systemctl restart httpd.service
 
-You have now set up both Red Hat Single Sign-On as a SAML IdP in the test_realm and mod_auth_mellon as SAML SP protecting the URL $sp_host/protected (and everything beneath it) by authenticating against the $``$idp_host`` IdP.
+ systemctl restart httpd.service
+
+You have now set up both {{book.project.name}} as a SAML IdP in the test_realm and mod_auth_mellon as SAML SP protecting the URL $sp_host/protected (and everything beneath it) by authenticating against the $``$idp_host`` IdP.
