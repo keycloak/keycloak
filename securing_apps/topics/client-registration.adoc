@@ -206,3 +206,4 @@ realm roles or client roles of other clients.
 
 * Client Disabled Policy - Newly registered client will be disabled. This means that admin needs to manually approve and enable all newly registered clients.
 This policy is not used by default even for anonymous registration.
+
