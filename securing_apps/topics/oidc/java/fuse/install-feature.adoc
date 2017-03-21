@@ -6,14 +6,14 @@ You must first install the `keycloak` feature in the JBoss Fuse environment. The
 
 ====== Installing from the Maven Repository
 
-As a prequisite, you need to be online and have access to the Maven repository.
+As a prequisite, you must be online and have access to the Maven repository.
 
 {% if book.community %}
 For community it's sufficient to be online as all the artifacts and 3rd party dependencies should be available in the maven central repository.
 {% endif %}
 {% if book.product %}
 For {{book.project.name}} you first need to configure a proper Maven repository, so you can install the artifacts. For more information see the
-https://access.redhat.com/maven-repository[Maven Repository] page.
+https://access.redhat.com/maven-repository[JBoss Enterprise Maven repository] page.
 
 Assuming the Maven repository is https://maven.repository.redhat.com/ga/, add the following to the `$FUSE_HOME/etc/org.ops4j.pax.url.mvn.cfg` file and add the repository to the list of supported repositories. For example:
 
@@ -26,10 +26,10 @@ Assuming the Maven repository is https://maven.repository.redhat.com/ga/, add th
 ----
 {% endif %}
 
-To install the keycloak feature using the maven repository complete the following steps:
+To install the keycloak feature using the Maven repository, complete the following steps:
 
 . Start {{book.fuseVersion}}; then in the Karaf terminal type:
-
++
 [source,subs="attributes"]
 ----
 features:addurl mvn:org.keycloak/keycloak-osgi-features/{{book.project.versionMvn}}/xml/features
@@ -37,12 +37,12 @@ features:install keycloak
 ----
 
 . You might also need to install the Jetty 9 feature:
-
++
 [source]
 ----
 features:install keycloak-jetty9-adapter
 ----
-
++
 NOTE: If you are using JBoss Fuse 6.2 or later, use `keycloak-jetty8-adapter`. However, upgrading to {{book.fuseVersion}} is recommended.
 
 . Ensure that the features were installed:
