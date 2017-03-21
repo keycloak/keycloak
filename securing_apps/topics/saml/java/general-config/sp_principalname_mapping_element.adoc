@@ -2,8 +2,7 @@
 ===== SP PrincipalNameMapping element
 
 This element is optional.
-When creating a Java Principal object that you obtain from methods like `HttpServletRequest.getUserPrincipal()`, you can
-define what name that is returned by the `Principal.getName()` method.
+When creating a Java Principal object that you obtain from methods such as `HttpServletRequest.getUserPrincipal()`, you can define what name is returned by the `Principal.getName()` method.
 
 [source,xml]
 ----
