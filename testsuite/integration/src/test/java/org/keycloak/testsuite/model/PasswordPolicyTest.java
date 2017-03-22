@@ -20,6 +20,7 @@ package org.keycloak.testsuite.model;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.keycloak.credential.hash.PasswordHashProvider;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.policy.PasswordPolicyManagerProvider;
@@ -180,6 +181,28 @@ public class PasswordPolicyTest extends AbstractModelTest {
         Assert.assertNotNull(policyManager.validate("12aaBB&-", "12aaBB&-"));
 
         Assert.assertNull(policyManager.validate("jdoe", "12aaBB&-"));
+    }
+
+    @Test
+    public void testHashAlgorithm() {
+        // Test default
+        PasswordHashProvider hashProvider = session.getProvider(PasswordHashProvider.class, realmModel.getPasswordPolicy().getHashAlgorithm());
+        Assert.assertNotNull(hashProvider);
+        // Test original pbkdf2 algorithm
+        realmModel.setPasswordPolicy(PasswordPolicy.parse(session, "hashAlgorithm(pbkdf2) and hashIterations(20000"));
+        hashProvider = session.getProvider(PasswordHashProvider.class, realmModel.getPasswordPolicy().getHashAlgorithm());
+        Assert.assertNotNull(hashProvider);
+        // New hash providers
+        realmModel.setPasswordPolicy(PasswordPolicy.parse(session, "hashAlgorithm(pbkdf2-sha256) and hashIterations(20000"));
+        hashProvider = session.getProvider(PasswordHashProvider.class, realmModel.getPasswordPolicy().getHashAlgorithm());
+        Assert.assertNotNull(hashProvider);
+        realmModel.setPasswordPolicy(PasswordPolicy.parse(session, "hashAlgorithm(pbkdf2-sha512) and hashIterations(10000"));
+        hashProvider = session.getProvider(PasswordHashProvider.class, realmModel.getPasswordPolicy().getHashAlgorithm());
+        Assert.assertNotNull(hashProvider);
+        // Unregistered algorithm
+        realmModel.setPasswordPolicy(PasswordPolicy.parse(session, "hashAlgorithm(bad)"));
+        hashProvider = session.getProvider(PasswordHashProvider.class, realmModel.getPasswordPolicy().getHashAlgorithm());
+        Assert.assertNull(hashProvider);
     }
 
 }

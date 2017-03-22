@@ -7,7 +7,7 @@ package org.keycloak.credential.hash;
  */
 public class Pbkdf2Sha512PasswordHashProvider extends APbkdf2PasswordHashProvider {
 
-    static final String ALIAS = "pbkdf2-hmac-sha512";
+    static final String ALIAS = "pbkdf2-sha512";
 
     @Override
     protected String getAlgorithmAlias() {

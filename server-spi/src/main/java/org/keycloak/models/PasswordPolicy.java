@@ -31,7 +31,7 @@ public class PasswordPolicy implements Serializable {
 
     public static final String HASH_ALGORITHM_ID = "hashAlgorithm";
 
-    public static final String HASH_ALGORITHM_DEFAULT = "pbkdf2";
+    public static final String HASH_ALGORITHM_DEFAULT = "pbkdf2-sha256";
 
     public static final String HASH_ITERATIONS_ID = "hashIterations";
 
