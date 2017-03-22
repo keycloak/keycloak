@@ -65,13 +65,13 @@ JMX authentication might be necessary if you want to use jconsole or another ext
 To use JMX authentication, complete the following steps:
 
 . In the `$FUSE_HOME/etc/org.apache.karaf.management.cfg` file, change this property:
-
++
 [source]
 ----
 jmxRealm=keycloak
 ----
 
-. Install the `keycloak-jaas` feature and configure the `$FUSE_HOME/etc/keycloak-direct-access.json` file as described in SSH section above.
+. Install the `keycloak-jaas` feature and configure the `$FUSE_HOME/etc/keycloak-direct-access.json` file as described in the SSH section above.
 
 . In jconsole you can use a URL such as:
 
