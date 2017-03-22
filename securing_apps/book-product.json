@@ -14,6 +14,7 @@
       "name": "Red Hat Single Sign-On",
       "version": "7.1.0",
       "versionMvn": "2.4.0.Final-redhat-1",
+      "versionNpm": "2.4.0-Final-redhat-1",
       "doc_base_url": "https://access.redhat.com/documentation/en/red-hat-single-sign-on/",
       "doc_info_version_url": "7.1"
     },
