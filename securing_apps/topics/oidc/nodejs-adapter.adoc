@@ -24,8 +24,8 @@ Use `npm init` command to create a `package.json` for your application. Now add 
 
 [source,json,subs="attributes"]
 ----
-    dependencies": {
-        "keycloak-connect": "{{book.project.versionMvn}}"
+    "dependencies": {
+        "keycloak-connect": "{{book.project.versionNpm}}"
     }
 ----
 
@@ -35,8 +35,8 @@ Use `npm init` command to create a `package.json` for your application. Now add 
 
 [source,json,subs="attributes"]
 ----
-    dependencies": {
-        "keycloak-connect": "file:rh-sso-{{book.project.version}}-nodejs-adapter.tgz"
+    "dependencies": {
+        "keycloak-connect": "file:keycloak-connect-{{book.project.versionNpm}}.tgz"
     }
 ----
 

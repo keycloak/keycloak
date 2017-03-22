@@ -21,6 +21,7 @@
       "name": "Keycloak",
       "version": "3.0.0.CR1-SNAPSHOT",
       "versionMvn": "3.0.0.CR1-SNAPSHOT"
+      "versionNpm": "3.0.0-cr.1"
     },
     "community": true,
     "product": false,
