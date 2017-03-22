@@ -19,30 +19,24 @@ package org.keycloak.migration.migrators;
 
 
 import org.keycloak.migration.ModelVersion;
-import org.keycloak.models.AccountRoles;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.utils.DefaultKeyProviders;
 
 import static org.keycloak.models.AccountRoles.MANAGE_ACCOUNT;
 import static org.keycloak.models.AccountRoles.MANAGE_ACCOUNT_LINKS;
 import static org.keycloak.models.Constants.ACCOUNT_MANAGEMENT_CLIENT_ID;
 
 /**
- * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
+ * @author <a href="mailto:bburke@redhat.com">Bill Burke</a>
  */
 public class MigrateTo3_0_0 implements Migration {
 
-    public static final ModelVersion VERSION = new ModelVersion("2.5.0");
+    public static final ModelVersion VERSION = new ModelVersion("3.0.0");
 
     @Override
     public void migrate(KeycloakSession session) {
-        session.realms().getRealms().stream().forEach(
-                r -> DefaultKeyProviders.createSecretProvider(r)
-        );
-
         for (RealmModel realm : session.realms().getRealms()) {
             ClientModel client = realm.getClientByClientId(ACCOUNT_MANAGEMENT_CLIENT_ID);
             if (client == null) continue;
@@ -50,9 +44,9 @@ public class MigrateTo3_0_0 implements Migration {
             if (linkRole == null) {
                 client.addRole(MANAGE_ACCOUNT_LINKS);
             }
-            RoleModel manageAccount = client.getRole(AccountRoles.MANAGE_ACCOUNT);
+            RoleModel manageAccount = client.getRole(MANAGE_ACCOUNT);
             if (manageAccount == null) continue;
-            RoleModel manageAccountLinks = client.getRole(AccountRoles.MANAGE_ACCOUNT_LINKS);
+            RoleModel manageAccountLinks = client.getRole(MANAGE_ACCOUNT_LINKS);
             manageAccount.addCompositeRole(manageAccountLinks);
 
         }
