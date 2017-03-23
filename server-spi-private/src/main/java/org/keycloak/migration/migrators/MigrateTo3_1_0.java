@@ -1,5 +1,6 @@
 package org.keycloak.migration.migrators;
 
+import org.apache.http.util.TextUtils;
 import org.keycloak.migration.ModelVersion;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.PasswordPolicy;
@@ -15,12 +16,20 @@ public class MigrateTo3_1_0 implements Migration {
     public void migrate(KeycloakSession session) {
         session.realms().getRealms().forEach( realm -> {
             PasswordPolicy passwordPolicy = realm.getPasswordPolicy();
+            String policyString = passwordPolicy.toString();
             if (passwordPolicy.getPolicyConfig(PasswordPolicy.HASH_ALGORITHM_ID) == null) {
-                passwordPolicy.getPolicies().add("hashAlgorithm(pbkdf2)");
+                if (!TextUtils.isEmpty(policyString)) {
+                    policyString += " and ";
+                }
+                policyString += "hashAlgorithm(pbkdf2)";
             }
             if (passwordPolicy.getPolicyConfig(PasswordPolicy.HASH_ITERATIONS_ID) == null) {
-                passwordPolicy.getPolicies().add("hashIterations(20000)");
+                if (!TextUtils.isEmpty(policyString)) {
+                    policyString += " and ";
+                }
+                policyString += "hashIterations(20000)";
             }
+            realm.setPasswordPolicy(PasswordPolicy.parse(session, policyString));
         });
     }
 
