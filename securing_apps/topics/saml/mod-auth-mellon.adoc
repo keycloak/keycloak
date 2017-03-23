@@ -12,24 +12,13 @@ To configure mod_auth_mellon you'll need:
 * A certificate PEM file, which is a text file that defines the certificate for your application.
 * mod_auth_mellon-specific Apache HTTPD module configuration.
 
-If you have already defined and registered the client application within a realm on the {{book.project.name}} application server,
-{{book.project.name}} can generate all the files you need except the Apache HTTPD module configuration. 
-To generate the Apache HTTPD module configuration, complete the following steps:
-
-. Go to the *Installation* page of your SAML client and select the *Mod Auth Mellon files* option.
-+
-.mod_auth_mellon config download
-image:../../{{book.images}}/mod-auth-mellon-config-download.png[]
-
-. Click *Download* to download a zip file that contains the XML descriptor and PEM files you need.
-
 ==== Configuring mod_auth_mellon with {{book.project.name}}
 
 There are two hosts involved:
 
-*The host on which {{book.project.name}} is running, which will be referred to as $idp_host because {{book.project.name}} is a SAML identity provider (IdP). 
+* The host on which {{book.project.name}} is running, which will be referred to as $idp_host because {{book.project.name}} is a SAML identity provider (IdP). 
 
-*The host on which the web application is running, which will be referred to as $sp_host. In SAML an application using an IdP is called a service provider (SP).
+* The host on which the web application is running, which will be referred to as $sp_host. In SAML an application using an IdP is called a service provider (SP).
 
 All of the following steps need to performed on $sp_host with root privileges.
 
@@ -64,7 +53,7 @@ Mellon's configuration directives can roughly be broken down into two classes of
 
 Apache configuration directives typically follow a hierarchical tree structure in the URL space, which are known as locations. You need to specify one or more URL locations for Mellon to protect. You have flexibility in how you add the configuration parameters that apply to each location. You can either add all the necessary parameters to the location block or you can add Mellon parameters to a common location high up in the URL location hierarchy that specific protected locations inherit (or some combination of the two). Since it is common for an SP to operate in the same way no matter which location triggers SAML actions, the example configuration used here places common Mellon configuration directives in the root of the hierarchy and then specific locations to be protected by Mellon can be defined with minimal directives. This strategy avoids duplicating the same parameters for each protected location.
 
-This example has just one protected location: https://$sp_host/protected.
+This example has just one protected location: \https://$sp_host/protected.
 
 To configure the Mellon service provider, complete the following steps:
 
@@ -77,13 +66,13 @@ To configure the Mellon service provider, complete the following steps:
     MellonSPPrivateKeyFile /etc/httpd/saml2/mellon.key
     MellonSPCertFile /etc/httpd/saml2/mellon.crt
     MellonIdPMetadataFile /etc/httpd/saml2/idp_metadata.xml
-</Location>
+ </Location>
 
  <Location /private >
     AuthType Mellon
     MellonEnable auth
     Require valid-user
-</Location>
+ </Location>
 
 Note: Some of the files referenced in the code above are created in later steps.
 
