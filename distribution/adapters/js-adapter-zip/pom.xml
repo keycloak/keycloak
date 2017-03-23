@@ -50,7 +50,7 @@
                                     <groupId>org.keycloak</groupId>
                                     <artifactId>keycloak-js-adapter</artifactId>
                                     <outputDirectory>${project.build.directory}/unpacked/js-adapter</outputDirectory>
-                                    <includes>*.js</includes>                                    
+                                    <includes>*.js,*.d.ts</includes>                                 
                                 </artifactItem>
                             </artifactItems>
                             <excludes>**/welcome-content/*</excludes>
