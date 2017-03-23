@@ -302,6 +302,10 @@ public class UserCacheSession implements UserCache {
                     invalidate = true;
                 } else if (cached.getCacheTimestamp() < model.getCacheInvalidBefore()) {
                     invalidate = true;
+                } else if (policy == UserStorageProviderModel.CachePolicy.MAX_LIFESPAN) {
+                    if (cached.getCacheTimestamp() + model.getMaxLifespan() < Time.currentTimeMillis()) {
+                        invalidate = true;
+                    }
                 } else if (policy == UserStorageProviderModel.CachePolicy.EVICT_DAILY) {
                     long dailyTimeout = dailyTimeout(model.getEvictionHour(), model.getEvictionMinute());
                     dailyTimeout = dailyTimeout - (24 * 60 * 60 * 1000);
