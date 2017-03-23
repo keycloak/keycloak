@@ -59,7 +59,7 @@ public class OpenshiftV3IdentityProvider extends AbstractOAuth2IdentityProvider<
     }
 
     private JsonNode fetchProfile(String accessToken) throws IOException {
-        return JsonSimpleHttp.asJson(SimpleHttp.doGet(getConfig().getUserInfoUrl())
+        return JsonSimpleHttp.asJson(SimpleHttp.doGet(getConfig().getUserInfoUrl(), this.session)
                              .header("Authorization", "Bearer " + accessToken));
     }
 
