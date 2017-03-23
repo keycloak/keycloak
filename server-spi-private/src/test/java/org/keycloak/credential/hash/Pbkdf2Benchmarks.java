@@ -1,8 +1,5 @@
 package org.keycloak.credential.hash;
 
-import com.fasterxml.jackson.databind.deser.Deserializers;
-import org.keycloak.common.util.SystemEnvProperties;
-
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -12,7 +9,9 @@ import java.util.Base64;
 import java.util.Collection;
 
 /**
- * Created by findyr-akaplan on 3/22/17.
+ * Utility to benchmark PBKDF2 hash providers.
+ *
+ * @author <a href="mailto:abkaplan07@gmail.com">Adam Kaplan</a>
  */
 public class Pbkdf2Benchmarks {
 
@@ -109,6 +108,16 @@ public class Pbkdf2Benchmarks {
         }
     }
 
+    /**
+     * Runs the benchmark tests. The following -D arguments are available:
+     * <ul>
+     *     <li><code>sha1Iterations</code> - number of iterations for the SHA1 variant. Default 20000.</li>
+     *     <li><code>sha256Iterations</code> - number of iterations for the SHA256 variant. Default 28000.</li>
+     *     <li><code>sha512Iterations</code> - number of iterations for the SHA512 variant. Default 18000.</li>
+     *     <li><code>output</code> - CSV file to send results to. Default benchmarks.csv.</li>
+     *     <li><code>samples</code> - number of samples to collect. Default 500.</li>
+     * </ul>
+     */
     public static void main(String[] args) {
         int sha1Iterations = Integer.parseInt(System.getProperty("sha1Iterations", "20000"));
         int sha256Iterations = Integer.parseInt(System.getProperty("sha256Iterations", "28000"));
