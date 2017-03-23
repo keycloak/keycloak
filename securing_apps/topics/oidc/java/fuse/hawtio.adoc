@@ -62,13 +62,13 @@ To run Hawtio on the Wildfly 10 server, complete the following steps:
 
 . Set up {{book.project.name}} as in the Securing the Hawtio Administration Console section above. The following assumptions apply: you have a {{book.project.name}} realm `demo` and client `hawtio-client`, and  your {{book.project.name}} is running on `localhost:8080` while the Wildfly server with deployed Hawtio will be running on `localhost:8181`.
 
-. Copy the `hawtio.war` archive to the `$WILDFLY_HOME/standalone/configuration` directory. For more details about deploying Hawtio see the Fuse Hawtio documentation.
+. Copy the `hawtio.war` archive to the `$EAP_HOME/standalone/configuration` directory. For more details about deploying Hawtio see the Fuse Hawtio documentation.
 
-. Copy the `keycloak-hawtio.json` and `keycloak-hawtio-client.json` files with the above content to the `$WILDFLY_HOME/standalone/configuration` directory.
+. Copy the `keycloak-hawtio.json` and `keycloak-hawtio-client.json` files with the above content to the `$EAP_HOME/standalone/configuration` directory.
 
 . Install the {{book.project.name}} adapter subsystem to your Wildfly server as described in the <<fake/../../jboss-adapter.adoc#_jboss_adapter,JBoss adapter documentation>>
 
-. In the `$WILDFLY_HOME/standalone/configuration/standalone.xml` file configure the system properties as in this example:
+. In the `$EAP_HOME/standalone/configuration/standalone.xml` file configure the system properties as in this example:
 +
 [source,xml]
 ----
@@ -114,7 +114,7 @@ To run Hawtio on the Wildfly 10 server, complete the following steps:
 +
 [source,xml]
 ----
-cd $WILDFLY_HOME/bin
+cd $EAP_HOME/bin
 ./standalone.sh -Djboss.socket.binding.port-offset=101
 ----
 
