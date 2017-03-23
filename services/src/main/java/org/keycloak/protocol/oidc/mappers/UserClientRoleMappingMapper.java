@@ -60,6 +60,14 @@ public class UserClientRoleMappingMapper extends AbstractUserRoleMappingMapper {
         clientRolePrefix.setType(ProviderConfigProperty.STRING_TYPE);
         CONFIG_PROPERTIES.add(clientRolePrefix);
 
+        ProviderConfigProperty multiValued = new ProviderConfigProperty();
+        multiValued.setName(ProtocolMapperUtils.MULTIVALUED);
+        multiValued.setLabel(ProtocolMapperUtils.MULTIVALUED_LABEL);
+        multiValued.setHelpText(ProtocolMapperUtils.MULTIVALUED_HELP_TEXT);
+        multiValued.setType(ProviderConfigProperty.BOOLEAN_TYPE);
+        multiValued.setDefaultValue(false);
+        CONFIG_PROPERTIES.add(multiValued);
+
         OIDCAttributeMapperHelper.addAttributeConfig(CONFIG_PROPERTIES, UserClientRoleMappingMapper.class);
     }
 
@@ -138,15 +146,23 @@ public class UserClientRoleMappingMapper extends AbstractUserRoleMappingMapper {
                                              String name,
                                              String tokenClaimName,
                                              boolean accessToken, boolean idToken) {
-        ProtocolMapperModel mapper = OIDCAttributeMapperHelper.createClaimMapper(name, "foo",
-                tokenClaimName, "String",
-                true, name,
-                accessToken, idToken,
-                PROVIDER_ID);
+        return create(clientId, clientRolePrefix, name, tokenClaimName, accessToken, idToken, false);
 
+    }
+
+    public static ProtocolMapperModel create(String clientId, String clientRolePrefix,
+                                             String name,
+                                             String tokenClaimName,
+                                             boolean accessToken, boolean idToken, boolean multiValued) {
+        ProtocolMapperModel mapper = OIDCAttributeMapperHelper.createClaimMapper(name, "foo",
+          tokenClaimName, "String",
+          true, name,
+          accessToken, idToken,
+          PROVIDER_ID);
+
+        mapper.getConfig().put(ProtocolMapperUtils.MULTIVALUED, String.valueOf(multiValued));
         mapper.getConfig().put(ProtocolMapperUtils.USER_MODEL_CLIENT_ROLE_MAPPING_CLIENT_ID, clientId);
         mapper.getConfig().put(ProtocolMapperUtils.USER_MODEL_CLIENT_ROLE_MAPPING_ROLE_PREFIX, clientRolePrefix);
         return mapper;
-
     }
 }

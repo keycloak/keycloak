@@ -24,11 +24,13 @@ import io.undertow.server.session.SessionManager;
 import io.undertow.servlet.handlers.ServletRequestContext;
 import io.undertow.servlet.spec.HttpSessionImpl;
 import org.jboss.logging.Logger;
+
 import org.keycloak.adapters.saml.SamlDeployment;
 import org.keycloak.adapters.saml.SamlSession;
 import org.keycloak.adapters.saml.SamlSessionStore;
 import org.keycloak.adapters.saml.SamlUtil;
 import org.keycloak.adapters.spi.SessionIdMapper;
+import org.keycloak.adapters.spi.SessionIdMapperUpdater;
 import org.keycloak.adapters.undertow.ChangeSessionId;
 import org.keycloak.adapters.undertow.SavedRequest;
 import org.keycloak.adapters.undertow.ServletHttpFacade;
@@ -44,6 +46,8 @@ import java.util.List;
 import java.util.Set;
 
 /**
+ * Session store manipulation methods per single HTTP exchange.
+ *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
@@ -55,17 +59,20 @@ public class ServletSamlSessionStore implements SamlSessionStore {
     private final UndertowUserSessionManagement sessionManagement;
     private final SecurityContext securityContext;
     private final SessionIdMapper idMapper;
+    private final SessionIdMapperUpdater idMapperUpdater;
     protected final SamlDeployment deployment;
 
 
     public ServletSamlSessionStore(HttpServerExchange exchange, UndertowUserSessionManagement sessionManagement,
                                    SecurityContext securityContext,
-                                   SessionIdMapper idMapper, SamlDeployment deployment) {
+                                   SessionIdMapper idMapper, SessionIdMapperUpdater idMapperUpdater,
+                                   SamlDeployment deployment) {
         this.exchange = exchange;
         this.sessionManagement = sessionManagement;
         this.securityContext = securityContext;
         this.idMapper = idMapper;
         this.deployment = deployment;
+        this.idMapperUpdater = idMapperUpdater;
     }
 
     @Override
@@ -97,7 +104,7 @@ public class ServletSamlSessionStore implements SamlSessionStore {
             SamlSession samlSession = (SamlSession)session.getAttribute(SamlSession.class.getName());
             if (samlSession != null) {
                 if (samlSession.getSessionIndex() != null) {
-                    idMapper.removeSession(session.getId());
+                    idMapperUpdater.removeSession(idMapper, session.getId());
                 }
                 session.removeAttribute(SamlSession.class.getName());
             }
@@ -113,7 +120,7 @@ public class ServletSamlSessionStore implements SamlSessionStore {
             ids.addAll(sessions);
             logoutSessionIds(ids);
             for (String id : ids) {
-                idMapper.removeSession(id);
+                idMapperUpdater.removeSession(idMapper, id);
             }
         }
 
@@ -127,7 +134,7 @@ public class ServletSamlSessionStore implements SamlSessionStore {
              String sessionId = idMapper.getSessionFromSSO(id);
              if (sessionId != null) {
                  sessionIds.add(sessionId);
-                 idMapper.removeSession(sessionId);
+                 idMapperUpdater.removeSession(idMapper, sessionId);
              }
 
         }
@@ -177,7 +184,7 @@ public class ServletSamlSessionStore implements SamlSessionStore {
         session.setAttribute(SamlSession.class.getName(), account);
         sessionManagement.login(servletRequestContext.getDeployment().getSessionManager());
         String sessionId = changeSessionId(session);
-        idMapper.map(account.getSessionIndex(), account.getPrincipal().getSamlSubject(), sessionId);
+        idMapperUpdater.map(idMapper, account.getSessionIndex(), account.getPrincipal().getSamlSubject(), sessionId);
 
     }
 

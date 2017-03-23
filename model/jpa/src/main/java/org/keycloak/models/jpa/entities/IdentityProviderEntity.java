@@ -70,6 +70,9 @@ public class IdentityProviderEntity {
     @Column(name="STORE_TOKEN")
     private boolean storeToken;
 
+    @Column(name="LINK_ONLY")
+    private boolean linkOnly;
+
     @Column(name="ADD_TOKEN_ROLE")
     protected boolean addReadTokenRoleOnCreate;
 
@@ -142,6 +145,14 @@ public class IdentityProviderEntity {
 
     public void setAuthenticateByDefault(boolean authenticateByDefault) {
         this.authenticateByDefault = authenticateByDefault;
+    }
+
+    public boolean isLinkOnly() {
+        return linkOnly;
+    }
+
+    public void setLinkOnly(boolean linkOnly) {
+        this.linkOnly = linkOnly;
     }
 
     public String getFirstBrokerLoginFlowId() {

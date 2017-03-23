@@ -1042,6 +1042,7 @@ module.controller('ResourceServerPolicyScopeDetailCtrl', function($scope, $route
             };
 
             $scope.selectResource = function() {
+                $scope.policy.config.scopes = null;
                 if ($scope.policy.config.resources) {
                     ResourceServerResource.scopes({
                         realm: $route.current.params.realm,
@@ -1055,28 +1056,48 @@ module.controller('ResourceServerPolicyScopeDetailCtrl', function($scope, $route
         },
 
         onInitUpdate : function(policy) {
-            policy.config.resources = eval(policy.config.resources);
-
-            if (policy.config.resources == null) {
-                policy.config.resources = [];
-            }
-
-            if (policy.config.resources.length > 0) {
-                ResourceServerResource.query({
-                    realm: $route.current.params.realm,
-                    client: client.id,
-                    _id: policy.config.resources[0],
-                    deep: false
-                }, function (data) {
-                    data[0].text = data[0].name;
-                    $scope.policy.config.resources = data[0];
-                    ResourceServerResource.scopes({
-                        realm: $route.current.params.realm,
-                        client: client.id,
-                        rsrid: policy.config.resources[0]
-                    }, function (data) {
-                        $scope.policy.config.resources.scopes = data;
-                    });
+            ResourceServerPolicy.resources({
+                realm : $route.current.params.realm,
+                client : client.id,
+                id : policy.id
+            }, function(resources) {
+                if (resources.length > 0) {
+                    for (i = 0; i < resources.length; i++) {
+                        ResourceServerResource.get({
+                            realm: $route.current.params.realm,
+                            client: client.id,
+                            rsrid: resources[0]._id,
+                        }, function (resource) {
+                            ResourceServerResource.query({
+                                realm: $route.current.params.realm,
+                                client: client.id,
+                                _id: resource._id,
+                                deep: false
+                            }, function (resource) {
+                                resource[0].text = resource[0].name;
+                                $scope.policy.config.resources = resource[0];
+                                ResourceServerResource.scopes({
+                                    realm: $route.current.params.realm,
+                                    client: client.id,
+                                    rsrid: resource[0]._id
+                                }, function (scopes) {
+                                    $scope.policy.config.resources.scopes = scopes;
+                                });
+                                ResourceServerPolicy.scopes({
+                                    realm: $route.current.params.realm,
+                                    client: client.id,
+                                    id: policy.id
+                                }, function (scopes) {
+                                    $scope.policy.config.scopes = [];
+                                    for (i = 0; i < scopes.length; i++) {
+                                        $scope.policy.config.scopes.push(scopes[i].id);
+                                    }
+                                });
+                            });
+                        });
+                    }
+                } else {
+                    $scope.policy.config.resources = null;
                     ResourceServerPolicy.scopes({
                         realm : $route.current.params.realm,
                         client : client.id,
@@ -1084,24 +1105,12 @@ module.controller('ResourceServerPolicyScopeDetailCtrl', function($scope, $route
                     }, function(scopes) {
                         $scope.policy.config.scopes = [];
                         for (i = 0; i < scopes.length; i++) {
-                            $scope.policy.config.scopes.push(scopes[i].id);
+                            scopes[i].text = scopes[i].name;
+                            $scope.policy.config.scopes.push(scopes[i]);
                         }
                     });
-                });
-            } else {
-                policy.config.resources = null;
-                ResourceServerPolicy.scopes({
-                    realm : $route.current.params.realm,
-                    client : client.id,
-                    id : policy.id
-                }, function(scopes) {
-                    $scope.policy.config.scopes = [];
-                    for (i = 0; i < scopes.length; i++) {
-                        scopes[i].text = scopes[i].name;
-                        $scope.policy.config.scopes.push(scopes[i]);
-                    }
-                });
-            }
+                }
+            });
 
             policy.config.applyPolicies = [];
             ResourceServerPolicy.associatedPolicies({
@@ -1119,12 +1128,14 @@ module.controller('ResourceServerPolicyScopeDetailCtrl', function($scope, $route
         onUpdate : function() {
             if ($scope.policy.config.resources != null) {
                 $scope.policy.config.resources = JSON.stringify([$scope.policy.config.resources._id]);
+            } else {
+                $scope.policy.config.resources = JSON.stringify([""]);
             }
 
             var scopes = [];
 
             for (i = 0; i < $scope.policy.config.scopes.length; i++) {
-                if ($scope.policy.config.resources == null) {
+                if ($scope.policy.config.scopes[i].id) {
                     scopes.push($scope.policy.config.scopes[i].id);
                 } else {
                     scopes.push($scope.policy.config.scopes[i]);
@@ -1237,8 +1248,12 @@ module.controller('ResourceServerPolicyUserDetailCtrl', function($scope, $route,
                 $scope.selectedUsers.push(user);
             }
 
-            $scope.removeFromList = function(list, index) {
-                list.splice(index, 1);
+            $scope.removeFromList = function(list, user) {
+                for (i = 0; i < angular.copy(list).length; i++) {
+                    if (user == list[i]) {
+                        list.splice(i, 1);
+                    }
+                }
             }
         },
 

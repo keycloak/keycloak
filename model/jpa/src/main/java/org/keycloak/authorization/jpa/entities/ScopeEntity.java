@@ -114,9 +114,9 @@ public class ScopeEntity implements Scope {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        ScopeEntity that = (ScopeEntity) o;
-        return Objects.equals(id, that.id);
+        if (o == null || !Scope.class.isInstance(o)) return false;
+        Scope that = (Scope) o;
+        return Objects.equals(id, that.getId());
     }
 
     @Override

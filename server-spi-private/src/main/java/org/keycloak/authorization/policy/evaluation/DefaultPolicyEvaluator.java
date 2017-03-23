@@ -85,7 +85,7 @@ public class DefaultPolicyEvaluator implements PolicyEvaluator {
             evaluatePolicies(() -> policyStore.findByScopeIds(scopes.stream().map(Scope::getId).collect(Collectors.toList()), resourceServer.getId()), consumer);
         }
 
-        if (PolicyEnforcementMode.PERMISSIVE.equals(enforcementMode) && verified.get()) {
+        if (PolicyEnforcementMode.PERMISSIVE.equals(enforcementMode) && !verified.get()) {
             createEvaluation(permission, executionContext, decision, null, null).grant();
         }
     }

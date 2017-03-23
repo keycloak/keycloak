@@ -17,6 +17,9 @@
 
 package org.keycloak.testsuite.federation.kerberos;
 
+import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
+import static org.keycloak.testsuite.admin.ApiUtil.findClientByClientId;
+
 import java.net.URI;
 import java.security.Principal;
 import java.util.Hashtable;
@@ -44,6 +47,7 @@ import org.jboss.resteasy.client.jaxrs.ResteasyClient;
 import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
 import org.jboss.resteasy.client.jaxrs.engines.ApacheHttpClient4Engine;
 import org.junit.After;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -75,8 +79,6 @@ import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.pages.AccountPasswordPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.util.OAuthClient;
-import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
-import static org.keycloak.testsuite.admin.ApiUtil.findClientByClientId;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -101,6 +103,8 @@ public abstract class AbstractKerberosTest extends AbstractAuthTest {
     protected abstract ComponentRepresentation getUserStorageConfiguration();
 
     protected abstract void setKrb5ConfPath();
+
+    protected abstract boolean isStartEmbeddedLdapServer();
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
@@ -256,7 +260,8 @@ public abstract class AbstractKerberosTest extends AbstractAuthTest {
 
     @Test
     public void credentialDelegationTest() throws Exception {
-        // Add kerberos delegation credential mapper
+    	Assume.assumeTrue("Ignoring test as the embedded server is not started", isStartEmbeddedLdapServer());
+    	// Add kerberos delegation credential mapper
         ProtocolMapperModel protocolMapper = UserSessionNoteMapper.createClaimMapper(KerberosConstants.GSS_DELEGATION_CREDENTIAL_DISPLAY_NAME,
                 KerberosConstants.GSS_DELEGATION_CREDENTIAL,
                 KerberosConstants.GSS_DELEGATION_CREDENTIAL, "String",

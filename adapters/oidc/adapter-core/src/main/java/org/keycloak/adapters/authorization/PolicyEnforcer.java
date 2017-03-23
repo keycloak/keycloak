@@ -51,11 +51,13 @@ public class PolicyEnforcer {
     private final AuthzClient authzClient;
     private final PolicyEnforcerConfig enforcerConfig;
     private final Map<String, PathConfig> paths;
+    private final PathMatcher pathMatcher;
 
     public PolicyEnforcer(KeycloakDeployment deployment, AdapterConfig adapterConfig) {
         this.deployment = deployment;
         this.enforcerConfig = adapterConfig.getPolicyEnforcerConfig();
         this.authzClient = AuthzClient.create(new Configuration(adapterConfig.getAuthServerUrl(), adapterConfig.getRealm(), adapterConfig.getResource(), adapterConfig.getCredentials(), deployment.getClient()));
+        this.pathMatcher = new PathMatcher(this.authzClient);
         this.paths = configurePaths(this.authzClient.protection().resource(), this.enforcerConfig);
 
         if (LOGGER.isDebugEnabled()) {
@@ -230,5 +232,9 @@ public class PolicyEnforcer {
         pathConfig.setType(resourceDescription.getType());
 
         return pathConfig;
+    }
+
+    public PathMatcher getPathMatcher() {
+        return pathMatcher;
     }
 }

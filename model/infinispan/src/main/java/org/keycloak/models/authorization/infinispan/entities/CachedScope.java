@@ -22,6 +22,7 @@ import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
 
 import java.io.Serializable;
+import java.util.Objects;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -78,5 +79,18 @@ public class CachedScope implements Scope, Serializable {
 
     public String getResourceServerId() {
         return this.resourceServerId;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || !Scope.class.isInstance(o)) return false;
+        Scope that = (Scope) o;
+        return Objects.equals(id, that.getId());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
     }
 }

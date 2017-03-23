@@ -16,7 +16,6 @@ env:
     - TESTS=group2
     - TESTS=group3
     - TESTS=group4
-    - TESTS=adapter
     - TESTS=old
 
 jdk:
@@ -26,7 +25,7 @@ before_script:
   - export MAVEN_SKIP_RC=true
 
 install: 
-  - travis_wait 60 mvn install -Pdistribution -DskipTests=true -B -V -q
+  - travis_wait 60 mvn install --no-snapshot-updates -Pdistribution -DskipTests=true -B -V -q
 
 script:
   - ./travis-run-tests.sh $TESTS

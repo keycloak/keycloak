@@ -308,7 +308,7 @@
         </xs:attribute>
         <xs:attribute name="signatureCanonicalizationMethod" type="xs:string" use="optional">
             <xs:annotation>
-                <xs:documentation>This is the signature canonicalization method that the IDP expects signed documents to use. The default value is http://www.w3.org/2001/10/xml-exc-c14n# and should be good for most IDPs.</xs:documentation>
+                <xs:documentation>This is the signature canonicalization method that the IDP expects signed documents to use. The default value is https://www.w3.org/2001/10/xml-exc-c14n# and should be good for most IDPs.</xs:documentation>
             </xs:annotation>
         </xs:attribute>
         <xs:attribute name="encryption" type="xs:boolean" use="optional">

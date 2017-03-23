@@ -396,6 +396,11 @@ public class RealmManager {
                 roleModel.setDescription("${role_" + role + "}");
                 roleModel.setScopeParamRequired(false);
             }
+            RoleModel manageAccountLinks = client.addRole(AccountRoles.MANAGE_ACCOUNT_LINKS);
+            manageAccountLinks.setDescription("${role_" + AccountRoles.MANAGE_ACCOUNT_LINKS + "}");
+            manageAccountLinks.setScopeParamRequired(false);
+            RoleModel manageAccount = client.getRole(AccountRoles.MANAGE_ACCOUNT);
+            manageAccount.addCompositeRole(manageAccountLinks);
         }
     }
 

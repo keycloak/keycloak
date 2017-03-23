@@ -777,7 +777,7 @@ public class AccountTest extends AbstractTestRealmKeycloakTest {
                 .detail(Details.USERNAME, "test-user-no-access@localhost")
                 .detail(Details.REDIRECT_URI, ACCOUNT_REDIRECT).assertEvent();
 
-        Assert.assertTrue(errorPage.isCurrent());
+        Assert.assertTrue("Expected errorPage but was " + driver.getTitle() + " (" + driver.getCurrentUrl() + "). Page source: " + driver.getPageSource(), errorPage.isCurrent());
         Assert.assertEquals("No access", errorPage.getError());
     }
 
@@ -885,7 +885,8 @@ public class AccountTest extends AbstractTestRealmKeycloakTest {
         Assert.assertThat(apps.keySet(), containsInAnyOrder("Account", "test-app", "test-app-scope", "third-party", "test-app-authz", "My Named Test App", "Test App Named - ${client_account}"));
 
         AccountApplicationsPage.AppEntry accountEntry = apps.get("Account");
-        Assert.assertEquals(2, accountEntry.getRolesAvailable().size());
+        Assert.assertEquals(3, accountEntry.getRolesAvailable().size());
+        Assert.assertTrue(accountEntry.getRolesAvailable().contains("Manage account links in Account"));
         Assert.assertTrue(accountEntry.getRolesAvailable().contains("Manage account in Account"));
         Assert.assertTrue(accountEntry.getRolesAvailable().contains("View profile in Account"));
         Assert.assertEquals(1, accountEntry.getRolesGranted().size());

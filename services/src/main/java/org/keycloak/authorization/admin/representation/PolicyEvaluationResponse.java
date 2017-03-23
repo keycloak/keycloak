@@ -18,6 +18,17 @@
 
 package org.keycloak.authorization.admin.representation;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.Decision.Effect;
 import org.keycloak.authorization.common.KeycloakIdentity;
@@ -32,17 +43,6 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -64,7 +64,7 @@ public class PolicyEvaluationResponse {
         AccessToken accessToken = identity.getAccessToken();
         AccessToken.Authorization authorizationData = new AccessToken.Authorization();
 
-        authorizationData.setPermissions(Permissions.allPermits(results, authorization, resourceServer));
+        authorizationData.setPermissions(Permissions.permits(results, authorization, resourceServer.getId()));
         accessToken.setAuthorization(authorizationData);
 
         response.rpt = accessToken;
