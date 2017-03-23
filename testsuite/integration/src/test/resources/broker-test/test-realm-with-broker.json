@@ -92,6 +92,20 @@
             }
         },
         {
+            "alias" : "model-openshift-v3",
+            "providerId" : "openshift-v3",
+            "enabled": true,
+            "storeToken": true,
+            "config": {
+                "baseUrl": "https://api.preview.openshift.com",
+                "authorizationUrl": "authorizationUrl",
+                "tokenUrl": "tokenUrl",
+                "userInfoUrl": "userInfoUrl",
+                "clientId": "clientId",
+                "clientSecret": "clientSecret"
+            }
+        },
+        {
             "alias" : "model-saml-signed-idp",
             "providerId" : "saml",
             "displayName": "My SAML",
