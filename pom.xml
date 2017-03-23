@@ -1,3 +1,4 @@
+<?xml version="1.0"?>
 <!--
 ~ Copyright 2016 Red Hat, Inc. and/or its affiliates
 ~ and other contributors as indicated by the @author tags.
@@ -36,14 +37,9 @@
     <packaging>pom</packaging>
 
     <properties>
-        <product.name>Keycloak</product.name>
-        <product.name-html>\u003Cdiv class="kc-logo-text"\u003E\u003Cspan\u003EKeycloak\u003C\u002Fspan\u003E\u003C\u002Fdiv\u003E</product.name-html>
-        <product.version>${project.version}</product.version>
         <product.build-time>${timestamp}</product.build-time>
-        <product.default-profile>community</product.default-profile>
 
         <!-- WildFly -->
-        <eap.version>7.0.0.Beta</eap.version>
         <jboss.as.version>7.2.0.Final</jboss.as.version>
         <wildfly.version>10.0.0.Final</wildfly.version>
 
@@ -76,7 +72,7 @@
         <sun.xsom.version>20140925</sun.xsom.version>
         <undertow.version>1.3.15.Final</undertow.version>
         <wildfly.core.version>2.0.10.Final</wildfly.core.version>
-        <wildfly.build-tools.version>1.1.0.Final</wildfly.build-tools.version>
+        <wildfly.build-tools.version>1.1.3.Final</wildfly.build-tools.version>
         <xmlsec.version>2.0.5</xmlsec.version>
 
         <!-- Authorization Drools Policy Provider -->
@@ -112,6 +108,7 @@
         <!-- Maven Plugins -->
         <enforcer.plugin.version>1.4</enforcer.plugin.version>
         <replacer.plugin.version>1.3.5</replacer.plugin.version>
+        <jar.plugin.version>3.0.2</jar.plugin.version>
         <jboss.as.plugin.version>7.5.Final</jboss.as.plugin.version>
         <jmeter.plugin.version>1.9.0</jmeter.plugin.version>
         <jmeter.analysis.plugin.version>1.0.4</jmeter.analysis.plugin.version>
@@ -360,6 +357,7 @@
                 <groupId>log4j</groupId>
                 <artifactId>log4j</artifactId>
                 <version>${log4j.version}</version>
+                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>junit</groupId>
@@ -1387,6 +1385,11 @@
                     </configuration>
                 </plugin>
                 <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-jar-plugin</artifactId>
+                    <version>${jar.plugin.version}</version>
+                </plugin>
+                <plugin>
                     <groupId>com.google.code.maven-replacer-plugin</groupId>
                     <artifactId>maven-replacer-plugin</artifactId>
                     <version>${replacer.plugin.version}</version>
@@ -1474,6 +1477,37 @@
     </build>
 
     <profiles>
+        <profile>
+            <id>community</id>
+            <activation>
+                <property>
+                    <name>!product</name>
+                </property>
+            </activation>
+            <properties>
+                <product.name>Keycloak</product.name>
+                <product.name-html>\u003Cdiv class="kc-logo-text"\u003E\u003Cspan\u003EKeycloak\u003C\u002Fspan\u003E\u003C\u002Fdiv\u003E</product.name-html>
+                <product.version>${project.version}</product.version>
+                <product.default-profile>community</product.default-profile>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>product</id>
+            <activation>
+                <property>
+                    <name>product</name>
+                </property>
+            </activation>
+            <properties>
+                <product.name>rh-sso</product.name>
+                <product.name-html>\u003Cstrong\u003ERed Hat\u003C\u002Fstrong\u003E\u003Csup\u003E\u00AE\u003C\u002Fsup\u003E Single Sign On</product.name-html>
+                <product.version>${project.version}</product.version>
+                <product.default-profile>product</product.default-profile>
+                <product.filename.version>7.1</product.filename.version>
+            </properties>
+        </profile>
+
         <profile>
             <id>distribution</id>
             <modules>
