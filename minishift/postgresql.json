@@ -1,0 +1,95 @@
+{
+  "kind": "Template",
+  "apiVersion": "v1",
+  "metadata": {
+    "name": "postgresql",
+    "creationTimestamp": null,
+    "annotations": {
+      "description": "PostgreSQL openshift Example",
+      "iconClass": "icon-database",
+      "tags": "database,postgresql"
+    }
+  },
+  "objects": [
+    {
+      "kind": "Service",
+      "apiVersion": "v1",
+      "metadata": {
+        "name": "postgres",
+        "labels": {
+          "name": "postgres"
+        }
+      },
+      "spec": {
+        "ports": [
+          {
+            "name": "postgres",
+            "protocol": "TCP",
+            "port": 5432,
+            "targetPort": 5432,
+            "nodePort": 0
+          }
+        ],
+        "selector": {
+          "name": "postgres"
+         },
+        "type": "ClusterIP",
+        "sessionAffinity": "None"
+      }
+    },
+    {
+      "kind": "Pod",
+      "apiVersion": "v1",
+      "metadata": {
+        "name": "postgres",
+        "labels": {
+          "name": "postgres"
+        }
+      },
+      "spec": {
+        "containers": [
+          {
+            "name": "postgres",
+            "image": "registry.centos.org/sclo/postgresql-95-centos7:latest",
+            "ports": [
+              {
+                "containerPort": 5432,
+                "protocol": "TCP"
+              }
+            ],
+            "env": [
+              {
+                "name": "POSTGRESQL_USER",
+                "value": "keycloak"
+              },
+              {
+                "name": "POSTGRESQL_PASSWORD",
+                "value": "password"
+              },
+              {
+                "name": "POSTGRESQL_DATABASE",
+                "value": "userdb"
+              },
+              {
+                "name": "POSTGRESQL_ADMIN_PASSWORD",
+                "value": "password"
+              }
+            ],
+            "volumeMounts": [
+              {
+                "mountPath": "/var/lib/pgsql/data",
+                "name": "pgdata",
+                "readOnly": false
+              }
+            ]
+          }
+        ],
+        "volumes": [
+          {
+            "name": "pgdata"
+          }
+        ]
+      }
+    }
+  ]
+}

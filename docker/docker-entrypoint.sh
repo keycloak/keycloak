@@ -28,13 +28,19 @@ mv keycloak.jks ./standalone/configuration
 
 # Set the password of the keystore to the configuration file
 sed -i -e "s/%%KEYSTORE_PASSWORD%%/${KEYSTORE_PASSWORD}/" ./standalone/configuration/standalone.xml
+sed -i -e "s/%%KEYSTORE_PASSWORD%%/${KEYSTORE_PASSWORD}/" ./standalone/configuration/standalone-ha.xml
 
 if [ $KEYCLOAK_USER ] && [ $KEYCLOAK_PASSWORD ]; then
     echo "Adding a new user..."
     /opt/jboss/keycloak/bin/add-user-keycloak.sh --user $KEYCLOAK_USER --password $KEYCLOAK_PASSWORD
 fi
 
-echo "Starting keycloak-server..."
 
-exec /opt/jboss/keycloak/bin/standalone.sh $@
+if [[ "${OPERATING_MODE}" == "clustered" ]]; then
+  echo "Starting keycloak-server on clustered mode..."
+  exec /opt/jboss/keycloak/bin/standalone.sh --server-config=standalone-ha.xml $@
+else
+  echo "Starting keycloak-server on standalone mode..."
+  exec /opt/jboss/keycloak/bin/standalone.sh $@
+fi
 exit $?
