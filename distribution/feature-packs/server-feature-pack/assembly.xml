@@ -52,7 +52,7 @@
             <outputDirectory>content</outputDirectory>
         </fileSet>
         <fileSet>
-            <directory>../../../themes/src/main/resources/theme</directory>
+            <directory>target/unpacked/theme</directory>
             <outputDirectory>content/themes</outputDirectory>
             <includes>
                 <include>**/**</include>
