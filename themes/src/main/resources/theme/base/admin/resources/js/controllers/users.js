@@ -1012,13 +1012,20 @@ module.controller('LDAPUserStorageCtrl', function($scope, $location, Notificatio
     $scope.provider = instance;
     $scope.showSync = false;
 
-    $scope.ldapVendors = [
-        { "id": "ad", "name": "Active Directory" },
-        { "id": "rhds", "name": "Red Hat Directory Server" },
-        { "id": "tivoli", "name": "Tivoli" },
-        { "id": "edirectory", "name": "Novell eDirectory" },
-        { "id": "other", "name": "Other" }
-    ];
+    if (serverInfo.profileInfo.name == 'community') {
+        $scope.ldapVendors = [
+            {"id": "ad", "name": "Active Directory"},
+            {"id": "rhds", "name": "Red Hat Directory Server"},
+            {"id": "tivoli", "name": "Tivoli"},
+            {"id": "edirectory", "name": "Novell eDirectory"},
+            {"id": "other", "name": "Other"}
+        ];
+    } else {
+        $scope.ldapVendors = [
+            {"id": "ad", "name": "Active Directory"},
+            {"id": "rhds", "name": "Red Hat Directory Server"}
+        ];
+    }
 
     $scope.authTypes = [
         { "id": "none", "name": "none" },
