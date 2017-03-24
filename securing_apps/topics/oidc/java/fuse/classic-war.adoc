@@ -4,7 +4,10 @@
 
 The needed steps to secure your WAR application are:
 
-. Declare needed security constraints in the `/WEB-INF/web.xml` file. You also need to declare login-config and all the roles inside security-role.
+. In the `/WEB-INF/web.xml` file, declare the necessary:
+* security constraints in the <security-constraint> element
+* login configuration in the <login-config> element
+* security roles in the <security-role> element.
 +
 For example:
 +
@@ -85,9 +88,9 @@ org.keycloak.*;version="{{book.project.versionMvn}}",
 [[config_external_adapter]]
 ====== Configuring the External Adapter
 
-If you do not want the `keycloak.json` adapter configuration file to be bundled inside your WAR application, but instead available externally and loaded based on naming conventions, use this configuration method.
+If you do not want the `keycloak.json` adapter configuration file to be bundled inside your WAR application, but instead made available externally and loaded based on naming conventions, use this configuration method.
 
-To enable the functionality, add this section to your `web.xml` file:
+To enable the functionality, add this section to your `/WEB_INF/web.xml` file:
 
 [source,xml]
 ----
