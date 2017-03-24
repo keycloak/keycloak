@@ -28,6 +28,10 @@
         "provider": "jpa"
     },
 
+    "authorizationPersister": {
+        "provider": "jpa"
+    },
+
     "timer": {
         "provider": "basic"
     },
