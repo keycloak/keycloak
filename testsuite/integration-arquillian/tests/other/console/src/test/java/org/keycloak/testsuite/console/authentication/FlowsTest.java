@@ -21,7 +21,6 @@
  */
 package org.keycloak.testsuite.console.authentication;
 
-import org.apache.commons.collections.CollectionUtils;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Test;
@@ -38,6 +37,7 @@ import org.keycloak.testsuite.console.page.authentication.flows.FlowsTable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static org.hamcrest.CoreMatchers.hasItem;
@@ -74,7 +74,7 @@ public class FlowsTest extends AbstractConsoleTest {
         assertAlertSuccess();
 
         // Checking if test flow is created via rest
-        AuthenticationFlowRepresentation testFlow = getLastFlowFromREST();
+        AuthenticationFlowRepresentation testFlow = getFlowFromREST("testFlow");
         assertEquals("testFlow", testFlow.getAlias());
         
         // Checking if testFlow is selected in UI
@@ -86,7 +86,7 @@ public class FlowsTest extends AbstractConsoleTest {
         assertAlertSuccess();
         
         // Checking if execution flow is created via rest
-        testFlow = getLastFlowFromREST();
+        testFlow = getFlowFromREST("testFlow");
         assertEquals("testExecution", testFlow.getAuthenticationExecutions().get(0).getFlowAlias());
         
         // Checking if testFlow is selected in UI
@@ -98,7 +98,6 @@ public class FlowsTest extends AbstractConsoleTest {
         assertAlertSuccess();
 
         // Checking if both test flow and execution flow is removed via UI
-        assertEquals("Browser", flowsPage.getFlowSelectValue());
         assertThat(flowsPage.getFlowAllValues(), not(hasItem("TestFlow")));
 
         // Checking if both test flow and execution flow is removed via rest
@@ -152,7 +151,7 @@ public class FlowsTest extends AbstractConsoleTest {
         //rest: copied flow present
         assertThat(testRealmResource().flows().getFlows().stream()
                 .map(AuthenticationFlowRepresentation::getAlias).
-                        collect(Collectors.toList()), hasItem(getLastFlowFromREST().getAlias()));
+                        collect(Collectors.toList()), hasItem(getFlowFromREST("test copy of browser").getAlias()));
     }
     
     @Test
@@ -168,8 +167,9 @@ public class FlowsTest extends AbstractConsoleTest {
         assertAlertSuccess();
         
         // REST
-        assertEquals(1, getLastFlowFromREST().getAuthenticationExecutions().size());
-        assertEquals("reset-password", getLastFlowFromREST().getAuthenticationExecutions().get(0).getAuthenticator());
+        AuthenticationFlowRepresentation flowRest = getFlowFromREST("testFlow");
+        assertEquals(1, flowRest.getAuthenticationExecutions().size());
+        assertEquals("reset-password", flowRest.getAuthenticationExecutions().get(0).getAuthenticator());
 
         // UI
         assertEquals("TestFlow", flowsPage.getFlowSelectValue());
@@ -222,10 +222,12 @@ public class FlowsTest extends AbstractConsoleTest {
         assertTrue(expectedOrder.containsAll(flowsPage.table().getFlowsAliasesWithRequirements().keySet()));
 
         //REST
-        assertEquals("auth-spnego", getLastFlowFromREST().getAuthenticationExecutions().get(0).getAuthenticator());
-        assertEquals("auth-cookie", getLastFlowFromREST().getAuthenticationExecutions().get(1).getAuthenticator());
-        assertEquals("Copy of browser forms", getLastFlowFromREST().getAuthenticationExecutions().get(2).getFlowAlias());
-        assertEquals("identity-provider-redirector", getLastFlowFromREST().getAuthenticationExecutions().get(3).getAuthenticator());
+        List<AuthenticationExecutionExportRepresentation> executionsRest =
+                getFlowFromREST("Copy of browser").getAuthenticationExecutions();
+        assertEquals("auth-spnego", executionsRest.get(0).getAuthenticator());
+        assertEquals("auth-cookie", executionsRest.get(1).getAuthenticator());
+        assertEquals("Copy of browser forms", executionsRest.get(2).getFlowAlias());
+        assertEquals("identity-provider-redirector", executionsRest.get(3).getAuthenticator());
         flowsPage.clickDelete();
         modalDialog.confirmDeletion();
     }
@@ -252,8 +254,7 @@ public class FlowsTest extends AbstractConsoleTest {
         assertTrue(expectedOrder.containsAll(flowsPage.table().getFlowsAliasesWithRequirements().values()));
         
         //REST:
-        List<AuthenticationExecutionExportRepresentation> browserFlow = testRealmResource().flows()
-                                                                    .getFlows().get(0).getAuthenticationExecutions();
+        List<AuthenticationExecutionExportRepresentation> browserFlow = getFlowFromREST("browser").getAuthenticationExecutions();
         assertEquals("DISABLED", browserFlow.get(0).getRequirement());
         assertEquals("ALTERNATIVE", browserFlow.get(1).getRequirement());
         assertEquals("ALTERNATIVE", browserFlow.get(2).getRequirement());
@@ -289,16 +290,22 @@ public class FlowsTest extends AbstractConsoleTest {
         assertTrue(expectedOrder.containsAll(flowsPage.table().getFlowsAliasesWithRequirements().keySet()));
 
         //REST
-        assertEquals("identity-provider-redirector", getLastFlowFromREST().getAuthenticationExecutions().get(0).getAuthenticator());
-        String tmpFlowAlias = getLastFlowFromREST().getAuthenticationExecutions().get(1).getFlowAlias();
+        List<AuthenticationExecutionExportRepresentation> executionsRest =
+                getFlowFromREST("Copy of browser").getAuthenticationExecutions();
+        assertEquals("identity-provider-redirector", executionsRest.get(0).getAuthenticator());
+        String tmpFlowAlias = executionsRest.get(1).getFlowAlias();
         assertEquals("Copy of browser forms", tmpFlowAlias);
         assertEquals("Username Password Form", testRealmResource().flows().getExecutions(tmpFlowAlias).get(0).getDisplayName());
         assertEquals("nestedFlow", testRealmResource().flows().getExecutions(tmpFlowAlias).get(2).getDisplayName());
     }
 
-    private AuthenticationFlowRepresentation getLastFlowFromREST() {
-        List<AuthenticationFlowRepresentation> allFlows = testRealmResource().flows().getFlows();
-        return (AuthenticationFlowRepresentation) CollectionUtils.
-                get(allFlows, (allFlows.size() - 1));
+    private AuthenticationFlowRepresentation getFlowFromREST(String alias) {
+        Optional<AuthenticationFlowRepresentation> flow = testRealmResource()
+                .flows()
+                .getFlows()
+                .stream()
+                .filter(f -> f.getAlias().equals(alias))
+                .findFirst();
+        return flow.isPresent() ? flow.get() : null;
     }
 }
