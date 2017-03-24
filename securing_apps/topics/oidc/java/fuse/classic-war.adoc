@@ -65,7 +65,7 @@ For example:
 </Configure>
 ----
 
-. Add the `/WEB-INF/keycloak.json` file to your {{book.project.name}} configuration. The format of this configuration file is described in the <<fake/../../java-adapter-config.adoc#_java_adapter_config,Java Adapters Config>> section. It is also possible to make this file available externally as described below.
+. Within the `/WEB-INF/` directory of your WAR, create a new file, keycloak.json. The format of this configuration file is described in the <<fake/../../java-adapter-config.adoc#_java_adapter_config,Java Adapters Config>> section. It is also possible to make this file available externally as described in xref:config_external_adapter[Configuring the External Adapter].
 
 . Ensure your WAR application imports `org.keycloak.adapters.jetty` and maybe some more packages in the `META-INF/MANIFEST.MF` file, under the `Import-Package` header. Using `maven-bundle-plugin` in your project properly generates OSGI headers in manifest.
 Note that "*" resolution for the package does not import the `org.keycloak.adapters.jetty` package, since it is not used by the application or the Blueprint or Spring descriptor, but is rather used in the `jetty-web.xml` file. 
@@ -82,6 +82,7 @@ org.keycloak.*;version="{{book.project.versionMvn}}",
 *;resolution:=optional
 ----
 
+[[config_external_adapter]]
 ====== Configuring the External Adapter
 
 If you do not want the `keycloak.json` adapter configuration file to be bundled inside your WAR application, but instead available externally and loaded based on naming conventions, use this configuration method.
