@@ -8,10 +8,10 @@ project.
 `$ mvn clean install -DskipTests=true -pl :keycloak-server-dist -am -P distribution`
 
 This generates some tarballs with the required executables. In our case, we just
-need to copy the generated tarball from `server-dist` e.g. `keycloak-3.0.0.CR1-SNAPSHOT.tar.gz`.
+need to copy the generated tarball from `server-dist` e.g. `keycloak-3.0.0.Final.tar.gz`.
 You can find this tarball in `./distribution/server-dist/target/` directory.
 
-`$ cp ../distribution/server-dist/target/keycloak-3.0.0.CR1-SNAPSHOT.tar.gz .`
+`$ cp ../distribution/server-dist/target/keycloak-3.0.0.Final.tar.gz .`
 
 Then you just need to build the docker image:
 
