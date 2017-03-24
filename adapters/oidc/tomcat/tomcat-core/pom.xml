@@ -29,8 +29,6 @@
 	<artifactId>keycloak-tomcat-core-adapter</artifactId>
 	<name>Keycloak Tomcat Core Integration</name>
     <properties>
-        <!-- <tomcat.version>8.0.14</tomcat.version> -->
-        <!-- <tomcat.version>7.0.52</tomcat.version> -->
         <tomcat.version>6.0.41</tomcat.version>
     </properties>
 	<description />
