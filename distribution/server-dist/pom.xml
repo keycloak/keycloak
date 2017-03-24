@@ -38,8 +38,6 @@
     </dependencies>
 
     <build>
-        <finalName>keycloak-${project.version}</finalName>
-
         <plugins>
             <plugin>
                 <groupId>org.wildfly.build</groupId>
@@ -69,7 +67,7 @@
                         </goals>
                         <configuration>
                             <descriptors>
-                                <descriptor>assembly.xml</descriptor>
+                                <descriptor>${assemblyFile}</descriptor>
                             </descriptors>
                             <recompressZippedFiles>true</recompressZippedFiles>
                             <finalName>${project.build.finalName}</finalName>
@@ -106,5 +104,45 @@
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <profile>
+            <id>community</id>
+            <activation>
+                <property>
+                    <name>!product</name>
+                </property>
+            </activation>
+            <properties>
+                <assemblyFile>assembly.xml</assemblyFile>
+            </properties>
+            <build>
+                <finalName>keycloak-${project.version}</finalName>
+            </build>
+        </profile>
+
+        <profile>
+            <id>product</id>
+            <activation>
+                <property>
+                    <name>product</name>
+                </property>
+            </activation>
+            <properties>
+                <assemblyFile>assembly.xml</assemblyFile>
+                <profileExcludes>%regex[(providers.*)|(docs/contrib.*)|(docs/examples.*)|(docs/schema.*)]</profileExcludes>
+            </properties>
+            <dependencies>
+                <dependency>
+                    <groupId>org.wildfly</groupId>
+                    <artifactId>wildfly-dist</artifactId>
+                    <type>zip</type>
+                </dependency>
+            </dependencies>
+            <build>
+                <finalName>${product.name}-${product.filename.version}</finalName>
+            </build>
+        </profile>
+    </profiles>
 
 </project>
