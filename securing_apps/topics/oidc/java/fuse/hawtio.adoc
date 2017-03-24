@@ -16,7 +16,7 @@ hawtio.rolePrincipalClasses=org.keycloak.adapters.jaas.RolePrincipal,org.apache.
 
 . Create a client in the {{book.project.name}} administration console in your realm. For example, in the {{book.project.name}} `demo` realm, create a client `hawtio-client`, specify `public` as the Access Type, and specify a redirect URI pointing to Hawtio: \http://localhost:8181/hawtio/*. You must also have a corresponding Web Origin configured (in this case, \http://localhost:8181).
 
-. Create the `keycloak-hawtio-client.json` file in the `$FUSE_HOME/etc` directory using the similar content as below. Change the `realm`, `resource`, and `auth-server-url` properties according to your {{book.project.name}} environment. The `resource` property must point to the client created in the previous step. This file is used by the client (Hawtio Javascript application) side.
+. Create the `keycloak-hawtio-client.json` file in the `$FUSE_HOME/etc` directory using content similar to that shown in the example below. Change the `realm`, `resource`, and `auth-server-url` properties according to your {{book.project.name}} environment. The `resource` property must point to the client created in the previous step. This file is used by the client (Hawtio Javascript application) side.
 +
 [source,json]
 ----
@@ -29,7 +29,7 @@ hawtio.rolePrincipalClasses=org.keycloak.adapters.jaas.RolePrincipal,org.apache.
 }
 ----
 
-. Create the `keycloak-hawtio.json` file in the `$FUSE_HOME/etc` dicrectory using similar content as below. Change the `realm` and `auth-server-url` properties according to your {{book.project.name}} environment. This file is used by the adapters on the server (JAAS Login module) side.
+. Create the `keycloak-hawtio.json` file in the `$FUSE_HOME/etc` dicrectory using content similar to that shown in the example below. Change the `realm` and `auth-server-url` properties according to your {{book.project.name}} environment. This file is used by the adapters on the server (JAAS Login module) side.
 +
 [source,json]
 ----
@@ -44,7 +44,7 @@ hawtio.rolePrincipalClasses=org.keycloak.adapters.jaas.RolePrincipal,org.apache.
 }
 ----
 
-. Start {{book.fuseVersion}} and install the keycloak feature if you have not already. The commands in Karaf terminal are similar to this example:
+. Start {{book.fuseVersion}} and install the keycloak feature if you have not already done so. The commands in Karaf terminal are similar to this example:
 +
 [source, subs="attributes"]
 ----
@@ -60,13 +60,16 @@ Note that the user needs to have the proper realm role to successfully authentic
 
 To run Hawtio on the Wildfly 10 server, complete the following steps:
 
-. Set up {{book.project.name}} as in the Securing the Hawtio Administration Console section above. The following assumptions apply: you have a {{book.project.name}} realm `demo` and client `hawtio-client`, and  your {{book.project.name}} is running on `localhost:8080` while the Wildfly server with deployed Hawtio will be running on `localhost:8181`.
+. Set up {{book.project.name}} as described in the previous section, Securing the Hawtio Administration Console. It is assumed that: 
+* you have a {{book.project.name}} realm `demo` and client `hawtio-client`
+* your {{book.project.name}} is running on `localhost:8080`
+* the Wildfly server with deployed Hawtio will be running on `localhost:8181`.
 
-. Copy the `hawtio.war` archive to the `$EAP_HOME/standalone/configuration` directory. For more details about deploying Hawtio see the Fuse Hawtio documentation.
+. Copy the `hawtio.war` archive to the `$EAP_HOME/standalone/configuration` directory. For more details about deploying Hawtio see the https://access.redhat.com/documentation/en-us/red_hat_jboss_fuse/6.3/html-single/deploying_into_a_web_server/eapcamelsubsystem#idm140313338064000[Fuse Hawtio documentation].
 
 . Copy the `keycloak-hawtio.json` and `keycloak-hawtio-client.json` files with the above content to the `$EAP_HOME/standalone/configuration` directory.
 
-. Install the {{book.project.name}} adapter subsystem to your Wildfly server as described in the <<fake/../../jboss-adapter.adoc#_jboss_adapter,JBoss adapter documentation>>
+. Install the {{book.project.name}} adapter subsystem to your Wildfly server as described in the <<fake/../../jboss-adapter.adoc#_jboss_adapter,JBoss adapter documentation>>.
 
 . In the `$EAP_HOME/standalone/configuration/standalone.xml` file configure the system properties as in this example:
 +
