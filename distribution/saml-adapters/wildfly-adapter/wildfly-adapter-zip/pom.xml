@@ -90,4 +90,18 @@
         </plugins>
     </build>
 
+    <profiles>
+        <profile>
+            <id>product</id>
+            <activation>
+                <property>
+                    <name>product</name>
+                </property>
+            </activation>
+            <build>
+                <finalName>${product.name}-${product.filename.version}-saml-eap7-adapter</finalName>
+            </build>
+        </profile>
+    </profiles>
+
 </project>
