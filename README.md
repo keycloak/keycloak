@@ -9,7 +9,7 @@ For more information about Keycloak visit [Keycloak homepage](http://keycloak.or
 Building
 --------
 
-Ensure you have JDK 8 (or newer), Maven 3.1.1 (or newer) and Git installed
+Ensure you have JDK 8 (or newer), Maven 3.1.1 (or newer) and Git installed 
 
     java -version
     mvn -version
