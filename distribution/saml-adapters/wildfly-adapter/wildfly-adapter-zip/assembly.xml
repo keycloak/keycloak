@@ -37,6 +37,7 @@
                 <include>org/keycloak/keycloak-jboss-adapter-core/**</include>
                 <include>org/keycloak/keycloak-saml-undertow-adapter/**</include>
                 <include>org/keycloak/keycloak-saml-wildfly-adapter/**</include>
+                <include>org/keycloak/keycloak-saml-wildfly-elytron-adapter/**</include>
                 <include>org/keycloak/keycloak-saml-wildfly-subsystem/**</include>
                 <include>org/keycloak/keycloak-saml-adapter-subsystem/**</include>
             </includes>

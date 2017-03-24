@@ -77,6 +77,10 @@
         <module-def name="org.keycloak.keycloak-authz-client">
             <maven-resource group="org.keycloak" artifact="keycloak-authz-client"/>
         </module-def>
+
+        <module-def name="org.keycloak.keycloak-wildfly-elytron-oidc-adapter">
+            <maven-resource group="org.keycloak" artifact="keycloak-wildfly-elytron-oidc-adapter"/>
+        </module-def>
     </target>
 
     <target name="clean-target">
