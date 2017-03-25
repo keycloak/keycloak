@@ -223,7 +223,7 @@ public class RealmManager {
 
         realm.setEventsListeners(Collections.singleton("jboss-logging"));
 
-        realm.setPasswordPolicy(PasswordPolicy.parse(session, "hashAlgorithm(pbkdf2-sha256) and hashIterations(20000)"));
+        realm.setPasswordPolicy(PasswordPolicy.parse(session, "hashAlgorithm(pbkdf2-sha256) and hashIterations(28000)"));
     }
 
     public boolean removeRealm(RealmModel realm) {

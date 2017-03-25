@@ -173,7 +173,8 @@ public class RealmTest extends AbstractAdminTest {
 
         adminClient.realms().create(rep);
 
-        assertEquals("hashIterations(20000)", adminClient.realm("new-realm").toRepresentation().getPasswordPolicy());
+        assertEquals("hashAlgorithm(pbkdf2-sha256) and hashIterations(28000)",
+                adminClient.realm("new-realm").toRepresentation().getPasswordPolicy());
 
         adminClient.realms().realm("new-realm").remove();
 
