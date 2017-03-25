@@ -861,7 +861,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
                 .detail(Details.IDENTITY_PROVIDER, newModel.getIdentityProvider())
                 .detail(Details.IDENTITY_PROVIDER_USERNAME, newModel.getUserName())
                 .success();
-        
+
         // we do this to make sure that the parent IDP is logged out when this user session is complete.
 
         clientSession.getUserSession().setNote(Details.IDENTITY_PROVIDER, context.getIdpConfig().getAlias());

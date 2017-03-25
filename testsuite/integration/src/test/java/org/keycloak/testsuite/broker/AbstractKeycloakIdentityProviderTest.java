@@ -433,6 +433,7 @@ public abstract class AbstractKeycloakIdentityProviderTest extends AbstractIdent
 
         // Assert I am logged immediately to account management due to previously linked "test-user" identity
         loginPage.clickSocial(identityProviderModel.getAlias());
+        this.loginPage.login("test-user", "password");
         doAfterProviderAuthentication();
         assertTrue(accountFederatedIdentityPage.isCurrent());
         assertTrue(driver.getPageSource().contains("id=\"remove-" + identityProviderModel.getAlias() + "\""));
