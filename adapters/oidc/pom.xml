@@ -45,5 +45,6 @@
         <module>tomcat</module>
         <module>undertow</module>
         <module>wildfly</module>
+        <module>wildfly-elytron</module>
     </modules>
 </project>

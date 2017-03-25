@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+  ~ JBoss, Home of Professional Open Source.
+  ~ Copyright 2016 Red Hat, Inc., and individual contributors
+  ~ as indicated by the @author tags.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~     http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<configuration>
+    <authentication-client xmlns="urn:elytron:1.0">
+        <authentication-rules>
+            <rule use-configuration="default">
+                <match-host name="localhost"/>
+                <match-port number="9990"/>
+            </rule>
+        </authentication-rules>
+        <!--<ssl-context-rules>-->
+            <!--<rule use-ssl-context="oauth2-authorization-server-ssl">-->
+                <!--<match-host name="localhost"/>-->
+                <!--<match-port number="8543"/>-->
+            <!--</rule>-->
+        <!--</ssl-context-rules>-->
+        <!--<ssl-contexts>-->
+            <!--<ssl-context name="oauth2-authorization-server-ssl">-->
+                <!--<key-store-ssl-certificate key-store-name="default-keystore" alias="server"/>-->
+            <!--</ssl-context>-->
+        <!--</ssl-contexts>-->
+        <!--<key-stores>-->
+            <!--<key-store name="default-keystore" type="JKS">-->
+                <!--<file name="/pedroigor/development/workspace/jboss/keycloak/keycloak/distribution/demo-dist/target/keycloak-demo-3.1.0.CR1-SNAPSHOT/keycloak/standalone/configuration/application.truststore"/>-->
+                <!--<key-store-clear-password password="password"/>-->
+            <!--</key-store>-->
+        <!--</key-stores>-->
+        <authentication-configurations>
+            <configuration name="default">
+                <credentials>
+                    <oauth2-bearer-token token-endpoint-uri="http://localhost:8180/auth/realms/wildfly/protocol/openid-connect/token">
+                        <client-credentials client-id="wildfly-cli" client-secret="826e2750-dd70-4ff8-8fd0-05f6b2e871d1"/>
+                    </oauth2-bearer-token>
+                </credentials>
+                <allow-sasl-mechanisms names="JBOSS-LOCAL-USER EXTERNAL DIGEST-MD5 PLAIN ANONYMOUS OAUTHBEARER"/>
+                <set-mechanism-properties>
+                    <property key="wildfly.sasl.local-user.quiet-auth" value="true"/>
+                </set-mechanism-properties>
+                <use-service-loader-providers/>
+            </configuration>
+            <configuration name="using-client-credentials-from-callback-handler">
+                <credentials>
+                    <oauth2-bearer-token token-endpoint-uri="http://localhost:8180/auth/realms/wildfly/protocol/openid-connect/token"/>
+                </credentials>
+                <allow-sasl-mechanisms names="JBOSS-LOCAL-USER EXTERNAL DIGEST-MD5 PLAIN ANONYMOUS OAUTHBEARER"/>
+                <set-mechanism-properties>
+                    <property key="wildfly.sasl.local-user.quiet-auth" value="true"/>
+                </set-mechanism-properties>
+                <use-service-loader-providers/>
+            </configuration>
+        </authentication-configurations>
+    </authentication-client>
+</configuration>

@@ -68,6 +68,10 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-wildfly-elytron-oidc-adapter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
             <artifactId>keycloak-wildfly-subsystem</artifactId>
         </dependency>
         <dependency>

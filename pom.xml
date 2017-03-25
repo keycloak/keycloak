@@ -42,6 +42,8 @@
         <!-- WildFly -->
         <jboss.as.version>7.2.0.Final</jboss.as.version>
         <wildfly.version>10.0.0.Final</wildfly.version>
+        <version.org.wildfly.security.wildfly-elytron>1.1.0.Beta32</version.org.wildfly.security.wildfly-elytron>
+        <version.org.wildfly.security.elytron-web.undertow-server>1.0.0.Beta14</version.org.wildfly.security.elytron-web.undertow-server>
 
         <aesh.version>0.66.15</aesh.version>
         <apache.httpcomponents.version>4.5</apache.httpcomponents.version>
@@ -620,6 +622,16 @@
                 <version>${wildfly.version}</version>
             </dependency>
             <dependency>
+                <groupId>org.wildfly.security</groupId>
+                <artifactId>wildfly-elytron</artifactId>
+                <version>${version.org.wildfly.security.wildfly-elytron}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly.security.elytron-web</groupId>
+                <artifactId>undertow-server</artifactId>
+                <version>${version.org.wildfly.security.elytron-web.undertow-server}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.infinispan</groupId>
                 <artifactId>infinispan-core</artifactId>
                 <version>${infinispan.version}</version>
@@ -917,6 +929,16 @@
             <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-wildfly-adapter</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-wildfly-elytron-oidc-adapter</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-saml-wildfly-elytron-adapter</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

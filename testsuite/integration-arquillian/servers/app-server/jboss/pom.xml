@@ -444,6 +444,45 @@
                 <module>eap6-fuse</module>
             </modules>
         </profile>
+
+        <profile>
+            <id>app-server-wildfly-elytron</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <properties>
+                <wildfly.version>${elytron.wildfly.version}</wildfly.version>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>xml-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>configure-adapter-debug-log</id>
+                                <phase>process-test-resources</phase>
+                                <goals>
+                                    <goal>transform</goal>
+                                </goals>
+                                <configuration>
+                                    <transformationSets>
+                                        <transformationSet>
+                                            <dir>${app.server.jboss.home}/standalone/configuration</dir>
+                                            <includes>
+                                                <include>standalone.xml</include>
+                                            </includes>
+                                            <stylesheet>${common.resources}/configure-elytron.xsl</stylesheet>
+                                            <outputDir>${app.server.jboss.home}/standalone/configuration</outputDir>
+                                        </transformationSet>
+                                    </transformationSets>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
     </profiles>    
 
 </project>
