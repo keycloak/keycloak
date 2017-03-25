@@ -818,49 +818,55 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
     private Response performAccountLinking(ClientSessionModel clientSession, BrokeredIdentityContext context, FederatedIdentityModel newModel, UserModel federatedUser) {
         this.event.event(EventType.FEDERATED_IDENTITY_LINK);
 
+
+
         UserModel authenticatedUser = clientSession.getUserSession().getUser();
 
-        if (federatedUser != null) {
-            if (authenticatedUser.getId().equals(federatedUser.getId())) {
-                // refresh the token
-                if (context.getIdpConfig().isStoreToken()) {
-                    FederatedIdentityModel oldModel = this.session.users().getFederatedIdentity(federatedUser, context.getIdpConfig().getAlias(), this.realmModel);
-                    if (!ObjectUtil.isEqualOrBothNull(context.getToken(), oldModel.getToken())) {
-
-                        this.session.users().updateFederatedIdentity(this.realmModel, federatedUser, newModel);
-
-                        if (isDebugEnabled()) {
-                            logger.debugf("Identity [%s] update with response from identity provider [%s].", federatedUser, context.getIdpConfig().getAlias());
-                        }
-                    }
-                }
-                return Response.status(302).location(UriBuilder.fromUri(clientSession.getRedirectUri()).build()).build();
-            } else {
-                return redirectToAccountErrorPage(clientSession, Messages.IDENTITY_PROVIDER_ALREADY_LINKED, context.getIdpConfig().getAlias());
-            }
-        }
-
-
-        if (isDebugEnabled()) {
-            logger.debugf("Linking account [%s] from identity provider [%s] to user [%s].", newModel, context.getIdpConfig().getAlias(), authenticatedUser);
-        }
-
-        if (!authenticatedUser.isEnabled()) {
-            return redirectToAccountErrorPage(clientSession, Messages.ACCOUNT_DISABLED);
+        if (federatedUser != null && !authenticatedUser.getId().equals(federatedUser.getId())) {
+            return redirectToAccountErrorPage(clientSession, Messages.IDENTITY_PROVIDER_ALREADY_LINKED, context.getIdpConfig().getAlias());
         }
 
         if (!authenticatedUser.hasRole(this.realmModel.getClientByClientId(ACCOUNT_MANAGEMENT_CLIENT_ID).getRole(MANAGE_ACCOUNT))) {
             return redirectToErrorPage(Messages.INSUFFICIENT_PERMISSION);
         }
 
-        this.session.users().addFederatedIdentity(this.realmModel, authenticatedUser, newModel);
+        if (!authenticatedUser.isEnabled()) {
+            return redirectToAccountErrorPage(clientSession, Messages.ACCOUNT_DISABLED);
+        }
+
+
+
+        if (federatedUser != null) {
+            if (context.getIdpConfig().isStoreToken()) {
+                FederatedIdentityModel oldModel = this.session.users().getFederatedIdentity(federatedUser, context.getIdpConfig().getAlias(), this.realmModel);
+                if (!ObjectUtil.isEqualOrBothNull(context.getToken(), oldModel.getToken())) {
+                    this.session.users().updateFederatedIdentity(this.realmModel, federatedUser, newModel);
+                    if (isDebugEnabled()) {
+                        logger.debugf("Identity [%s] update with response from identity provider [%s].", federatedUser, context.getIdpConfig().getAlias());
+                    }
+                }
+            }
+        } else {
+            this.session.users().addFederatedIdentity(this.realmModel, authenticatedUser, newModel);
+        }
         context.getIdp().attachUserSession(clientSession.getUserSession(), clientSession, context);
+
+
+        if (isDebugEnabled()) {
+            logger.debugf("Linking account [%s] from identity provider [%s] to user [%s].", newModel, context.getIdpConfig().getAlias(), authenticatedUser);
+        }
 
         this.event.user(authenticatedUser)
                 .detail(Details.USERNAME, authenticatedUser.getUsername())
                 .detail(Details.IDENTITY_PROVIDER, newModel.getIdentityProvider())
                 .detail(Details.IDENTITY_PROVIDER_USERNAME, newModel.getUserName())
                 .success();
+        
+        // we do this to make sure that the parent IDP is logged out when this user session is complete.
+
+        clientSession.getUserSession().setNote(Details.IDENTITY_PROVIDER, context.getIdpConfig().getAlias());
+        clientSession.getUserSession().setNote(Details.IDENTITY_PROVIDER_USERNAME, context.getUsername());
+
         return Response.status(302).location(UriBuilder.fromUri(clientSession.getRedirectUri()).build()).build();
     }
 
