@@ -2,15 +2,12 @@ package org.keycloak.testsuite.broker;
 
 import org.jboss.arquillian.graphene.Graphene;
 import org.jboss.arquillian.graphene.page.Page;
-import org.jboss.arquillian.graphene.wait.WebDriverWait;
-import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.keycloak.common.Profile;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.social.openshift.OpenshiftV3IdentityProvider;
 import org.keycloak.testsuite.AbstractKeycloakTest;
-import org.keycloak.testsuite.cli.exec.ExecutionException;
 import org.keycloak.testsuite.pages.AccountUpdateProfilePage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginUpdateProfilePage;
@@ -59,6 +56,7 @@ public class SocialLoginTest extends AbstractKeycloakTest {
         List<IdentityProviderRepresentation> idps = new LinkedList<>();
         rep.setIdentityProviders(idps);
 
+        idps.add(buildIdp("openshift-v3"));
         idps.add(buildIdp("google"));
         idps.add(buildIdp("facebook"));
         idps.add(buildIdp("github"));
@@ -68,6 +66,22 @@ public class SocialLoginTest extends AbstractKeycloakTest {
         idps.add(buildIdp("stackoverflow"));
 
         testRealms.add(rep);
+    }
+
+    @Test
+    public void openshiftLogin() throws Exception {
+        account.open("social");
+        loginPage.clickSocial("openshift-v3");
+
+        Graphene.waitGui().until(ExpectedConditions.visibilityOfElementLocated(By.id("inputUsername")));
+        driver.findElement(By.id("inputUsername")).sendKeys(config.getProperty("openshift-v3.username", config.getProperty("common.username")));
+        driver.findElement(By.id("inputPassword")).sendKeys(config.getProperty("openshift-v3.password", config.getProperty("common.password")));
+        driver.findElement(By.cssSelector("button[type=submit]")).click();
+
+        Graphene.waitGui().until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector("input[name=approve]")));
+        driver.findElement(By.cssSelector("input[name=approve]")).click();
+
+        assertEquals(config.getProperty("openshift-v3.username", config.getProperty("common.profile.username")), account.getUsername());
     }
 
     @Test
@@ -225,6 +239,9 @@ public class SocialLoginTest extends AbstractKeycloakTest {
         idp.getConfig().put("clientSecret", config.getProperty(id + ".clientSecret"));
         if (id.equals("stackoverflow")) {
             idp.getConfig().put("key", config.getProperty(id + ".clientKey"));
+        }
+        if (id.equals("openshift-v3")) {
+            idp.getConfig().put("baseUrl", config.getProperty(id + ".baseUrl", OpenshiftV3IdentityProvider.BASE_URL));
         }
         return idp;
     }
