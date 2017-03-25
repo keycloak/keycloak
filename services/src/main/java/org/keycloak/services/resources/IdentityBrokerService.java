@@ -815,7 +815,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
         return browserAuthentication(clientCode.getClientSession(), message);
     }
 
-    private Response performAccountLinking(ClientSessionModel clientSession, BrokeredIdentityContext context, FederatedIdentityModel federatedIdentityModel, UserModel federatedUser) {
+    private Response performAccountLinking(ClientSessionModel clientSession, BrokeredIdentityContext context, FederatedIdentityModel newModel, UserModel federatedUser) {
         this.event.event(EventType.FEDERATED_IDENTITY_LINK);
 
         UserModel authenticatedUser = clientSession.getUserSession().getUser();
@@ -824,10 +824,10 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
             if (authenticatedUser.getId().equals(federatedUser.getId())) {
                 // refresh the token
                 if (context.getIdpConfig().isStoreToken()) {
-                    federatedIdentityModel = this.session.users().getFederatedIdentity(federatedUser, context.getIdpConfig().getAlias(), this.realmModel);
-                    if (!ObjectUtil.isEqualOrBothNull(context.getToken(), federatedIdentityModel.getToken())) {
+                    FederatedIdentityModel oldModel = this.session.users().getFederatedIdentity(federatedUser, context.getIdpConfig().getAlias(), this.realmModel);
+                    if (!ObjectUtil.isEqualOrBothNull(context.getToken(), oldModel.getToken())) {
 
-                        this.session.users().updateFederatedIdentity(this.realmModel, federatedUser, federatedIdentityModel);
+                        this.session.users().updateFederatedIdentity(this.realmModel, federatedUser, newModel);
 
                         if (isDebugEnabled()) {
                             logger.debugf("Identity [%s] update with response from identity provider [%s].", federatedUser, context.getIdpConfig().getAlias());
@@ -842,7 +842,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
 
 
         if (isDebugEnabled()) {
-            logger.debugf("Linking account [%s] from identity provider [%s] to user [%s].", federatedIdentityModel, context.getIdpConfig().getAlias(), authenticatedUser);
+            logger.debugf("Linking account [%s] from identity provider [%s] to user [%s].", newModel, context.getIdpConfig().getAlias(), authenticatedUser);
         }
 
         if (!authenticatedUser.isEnabled()) {
@@ -853,13 +853,13 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
             return redirectToErrorPage(Messages.INSUFFICIENT_PERMISSION);
         }
 
-        this.session.users().addFederatedIdentity(this.realmModel, authenticatedUser, federatedIdentityModel);
+        this.session.users().addFederatedIdentity(this.realmModel, authenticatedUser, newModel);
         context.getIdp().attachUserSession(clientSession.getUserSession(), clientSession, context);
 
         this.event.user(authenticatedUser)
                 .detail(Details.USERNAME, authenticatedUser.getUsername())
-                .detail(Details.IDENTITY_PROVIDER, federatedIdentityModel.getIdentityProvider())
-                .detail(Details.IDENTITY_PROVIDER_USERNAME, federatedIdentityModel.getUserName())
+                .detail(Details.IDENTITY_PROVIDER, newModel.getIdentityProvider())
+                .detail(Details.IDENTITY_PROVIDER_USERNAME, newModel.getUserName())
                 .success();
         return Response.status(302).location(UriBuilder.fromUri(clientSession.getRedirectUri()).build()).build();
     }
