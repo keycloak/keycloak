@@ -29,8 +29,10 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.common.util.Base64Url;
+import org.keycloak.models.Constants;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
+import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
@@ -48,7 +50,12 @@ import org.keycloak.testsuite.pages.AccountFederatedIdentityPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.UpdateAccountInformationPage;
 import org.keycloak.testsuite.util.AdapterServletDeployment;
+import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.util.JsonSerialization;
 
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import java.net.URL;
 import java.util.LinkedList;
@@ -81,6 +88,10 @@ public class ClientInitiatedAccountLinkTest extends AbstractKeycloakTest {
 
     @Page
     protected AppServerContextRoot appServerContextRootPage;
+
+    @ArquillianResource
+    protected OAuthClient oauth;
+
 
     public boolean isRelative() {
         return testContext.isRelativeAdapterTest();
@@ -122,6 +133,7 @@ public class ClientInitiatedAccountLinkTest extends AbstractKeycloakTest {
             uri = appServerContextRootPage.toString() + uri;
         }
         servlet.setAdminUrl(uri);
+        servlet.setDirectAccessGrantsEnabled(true);
         servlet.setBaseUrl(uri);
         servlet.setRedirectUris(new LinkedList<>());
         servlet.getRedirectUris().add(uri + "/*");
@@ -172,6 +184,11 @@ public class ClientInitiatedAccountLinkTest extends AbstractKeycloakTest {
         List<RoleRepresentation> roles = new LinkedList<>();
         roles.add(role);
         realm.users().get(childUserId).roles().realmLevel().add(roles);
+        ClientRepresentation brokerService = realm.clients().findByClientId(Constants.BROKER_SERVICE_CLIENT_ID).get(0);
+        role = realm.clients().get(brokerService.getId()).roles().get(Constants.READ_TOKEN_ROLE).toRepresentation();
+        roles.clear();
+        roles.add(role);
+        realm.users().get(childUserId).roles().clientLevel(brokerService.getId()).add(roles);
 
     }
 
@@ -391,6 +408,25 @@ public class ClientInitiatedAccountLinkTest extends AbstractKeycloakTest {
         Assert.assertTrue(driver.getCurrentUrl().startsWith(linkBuilder.toTemplate()));
         Assert.assertTrue(driver.getPageSource().contains("Account Linked"));
 
+        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest(CHILD_IDP, "child", "password", null, "client-linking", "password");
+        Assert.assertNotNull(response.getAccessToken());
+        Assert.assertNull(response.getError());
+        Client httpClient = ClientBuilder.newClient();
+        String firstToken = getToken(response, httpClient);
+        Assert.assertNotNull(firstToken);
+
+
+        driver.navigate().to(linkUrl);
+        Assert.assertTrue(driver.getPageSource().contains("Account Linked"));
+        String nextToken = getToken(response, httpClient);
+        Assert.assertNotNull(nextToken);
+        Assert.assertNotEquals(firstToken, nextToken);
+
+
+
+
+
+
         links = realm.users().get(childUserId).getFederatedIdentity();
         Assert.assertFalse(links.isEmpty());
 
@@ -401,6 +437,19 @@ public class ClientInitiatedAccountLinkTest extends AbstractKeycloakTest {
         logoutAll();
 
 
+    }
+
+    private String getToken(OAuthClient.AccessTokenResponse response, Client httpClient) throws Exception {
+        String idpToken =  httpClient.target(oauth.AUTH_SERVER_ROOT)
+                .path("realms")
+                .path("child/broker")
+                .path(PARENT_IDP)
+                .path("token")
+                .request()
+                .header("Authorization", "Bearer " + response.getAccessToken())
+                .get(String.class);
+        AccessTokenResponse res = JsonSerialization.readValue(idpToken, AccessTokenResponse.class);
+        return res.getToken();
     }
 
     public void logoutAll() {
