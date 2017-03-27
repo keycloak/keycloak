@@ -34,21 +34,22 @@ import org.junit.Test;
 public class ConfigMigrationTest {
     
     private static final File TARGET_DIR = new File("./target");
+    private final String migratedVersion = System.getProperty("migrated.version");
 
     @Test
     public void testStandalone() throws IOException {
-        compareConfigs("master-standalone.txt", "migrated-standalone-1.8.1.txt");
+        compareConfigs("master-standalone.txt", "migrated-standalone-" + migratedVersion + ".txt");
     }
     
     @Test
     public void testStandaloneHA() throws IOException {
-        compareConfigs("master-standalone-ha.txt", "migrated-standalone-ha-1.8.1.txt");
+        compareConfigs("master-standalone-ha.txt", "migrated-standalone-ha-" + migratedVersion + ".txt");
     }
     
     @Test
     public void testDomain() throws IOException {
-        compareConfigs("master-domain-standalone.txt", "migrated-domain-standalone-1.8.1.txt");
-        compareConfigs("master-domain-clustered.txt", "migrated-domain-clustered-1.8.1.txt");
+        compareConfigs("master-domain-standalone.txt", "migrated-domain-standalone-" + migratedVersion + ".txt");
+        compareConfigs("master-domain-clustered.txt", "migrated-domain-clustered-" + migratedVersion + ".txt");
     }
     
     private void compareConfigs(String masterConfig, String migratedConfig) throws IOException {
