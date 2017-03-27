@@ -16,7 +16,7 @@ import java.util.Optional;
 /**
  * Identity provider for Openshift V3. Check <a href="https://docs.openshift.com/enterprise/3.0/architecture/additional_concepts/authentication.html">official documentation</a> for more details.
  */
-public class OpenshiftV3IdentityProvider extends AbstractOAuth2IdentityProvider<OpenshifV3IdentityProviderConfig> implements SocialIdentityProvider<OpenshifV3IdentityProviderConfig> {
+public class OpenshiftV3IdentityProvider extends AbstractOAuth2IdentityProvider<OpenshiftV3IdentityProviderConfig> implements SocialIdentityProvider<OpenshiftV3IdentityProviderConfig> {
 
     public static final String BASE_URL = "https://api.preview.openshift.com";
     private static final String AUTH_RESOURCE = "/oauth/authorize";
@@ -24,7 +24,7 @@ public class OpenshiftV3IdentityProvider extends AbstractOAuth2IdentityProvider<
     private static final String PROFILE_RESOURCE = "/oapi/v1/users/~";
     private static final String DEFAULT_SCOPE = "user:info";
 
-    public OpenshiftV3IdentityProvider(KeycloakSession session, OpenshifV3IdentityProviderConfig config) {
+    public OpenshiftV3IdentityProvider(KeycloakSession session, OpenshiftV3IdentityProviderConfig config) {
         super(session, config);
         final String baseUrl = Optional.ofNullable(config.getBaseUrl()).orElse(BASE_URL);
         config.setAuthorizationUrl(baseUrl + AUTH_RESOURCE);

@@ -3,10 +3,10 @@ package org.keycloak.social.openshift;
 import org.keycloak.broker.oidc.OAuth2IdentityProviderConfig;
 import org.keycloak.models.IdentityProviderModel;
 
-public class OpenshifV3IdentityProviderConfig extends OAuth2IdentityProviderConfig {
+public class OpenshiftV3IdentityProviderConfig extends OAuth2IdentityProviderConfig {
     private static final String BASE_URL = "baseUrl";
 
-    public OpenshifV3IdentityProviderConfig(IdentityProviderModel identityProviderModel) {
+    public OpenshiftV3IdentityProviderConfig(IdentityProviderModel identityProviderModel) {
         super(identityProviderModel);
     }
 
