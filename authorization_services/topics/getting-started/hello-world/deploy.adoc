@@ -44,13 +44,13 @@ image:../../../{{book.images}}/getting-started/hello-world/adapter-config.png[al
 . Move the file `keycloak.json` to the `app-authz-jee-vanilla/config` directory.
 
 . (optional) By default, the policy enforcer responds with a `403` status code when the user lacks permission to access protected resources on the resource server. However, you can also specify a redirection URL for unauthorized users. To specify a redirection URL, edit the *keycloak.json* file you updated in step 3 and replace the `policy-enforcer` configuration with the following:
-
++
 ```json
 "policy-enforcer": {
     "on-deny-redirect-to" : "/app-authz-vanilla/error.jsp"
-  }
+}
 ```
-
++
 This change specifies to the policy enforcer to redirect users to a `/app-authz-vanilla/error.jsp` page if a user does not have the necessary permissions to access a protected resource, rather than an unhelpful `403 Unauthorized` message.
 
 ==== Building and Deploying the Application
