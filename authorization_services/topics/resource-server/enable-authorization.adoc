@@ -15,7 +15,7 @@ The Authorization tab contains additional sub-tabs covering the different steps 
 
 * *Settings*
 +
-General settings for your resource server. More details about this page in this section.
+General settings for your resource server. For more details about this page see the xref:resource_server_settings[Resource Server Settings] section.
 
 * *Resource*
 +
@@ -37,6 +37,7 @@ From this page, you can manage the <<fake/../../permission/overview.adoc#_permis
 +
 From this page, you can <<fake/../../policy-evaluation-tool/overview.adoc#_policy_evaluation_overview, simulate authorization requests>> and view the result of the evaluation of the permissions and authorization policies you have defined.
 
+[[resource_server_settings]]
 ==== Resource Server Settings
 
 On the Resource Server Settings page, you can configure the policy enforcement mode, allow remote resource management, and export the authorization configuration settings.
