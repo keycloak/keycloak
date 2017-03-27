@@ -24,6 +24,7 @@ import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.common.util.ServerCookie;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.services.managers.AuthenticationManager;
 
 import javax.ws.rs.core.Cookie;
 import javax.ws.rs.core.HttpHeaders;
@@ -62,14 +63,5 @@ public class CookieHelper {
         Cookie cookie = headers.getCookies().get(name);
         return cookie != null ? cookie.getValue() : null;
     }
-
-
-    public static String getRealmCookiePath(RealmModel realm) {
-        UriInfo uriInfo = ResteasyProviderFactory.getContextData(UriInfo.class);
-        UriBuilder baseUriBuilder = uriInfo.getBaseUriBuilder();
-        URI uri = baseUriBuilder.path("/realms/{realm}").build(realm.getName());
-        return uri.getRawPath();
-    }
-
 
 }

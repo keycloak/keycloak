@@ -134,7 +134,7 @@ public class RegistrationUserCreation implements FormAction, FormActionFactory {
         user.setEnabled(true);
 
         user.setEmail(email);
-        context.getAuthenticationSession().setNote(OIDCLoginProtocol.LOGIN_HINT_PARAM, username);
+        context.getAuthenticationSession().setClientNote(OIDCLoginProtocol.LOGIN_HINT_PARAM, username);
         AttributeFormDataProcessor.process(formData, context.getRealm(), user);
         context.setUser(user);
         context.getEvent().user(user);

@@ -26,13 +26,13 @@ import org.keycloak.broker.social.SocialIdentityProvider;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
-import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.services.ErrorPage;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.messages.Messages;
+import org.keycloak.sessions.AuthenticationSessionModel;
 import twitter4j.Twitter;
 import twitter4j.TwitterFactory;
 import twitter4j.auth.AccessToken;
@@ -40,6 +40,7 @@ import twitter4j.auth.RequestToken;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
@@ -54,6 +55,10 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
         SocialIdentityProvider<OAuth2IdentityProviderConfig> {
 
     protected static final Logger logger = Logger.getLogger(TwitterIdentityProvider.class);
+
+    private static final String TWITTER_TOKEN = "twitter_token";
+    private static final String TWITTER_TOKENSECRET = "twitter_tokenSecret";
+
     public TwitterIdentityProvider(KeycloakSession session, OAuth2IdentityProviderConfig config) {
         super(session, config);
     }
@@ -72,10 +77,10 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
             URI uri = new URI(request.getRedirectUri() + "?state=" + request.getState());
 
             RequestToken requestToken = twitter.getOAuthRequestToken(uri.toString());
-            ClientSessionModel clientSession = request.getClientSession();
+            AuthenticationSessionModel authSession = request.getAuthenticationSession();
 
-            clientSession.setNote("twitter_token", requestToken.getToken());
-            clientSession.setNote("twitter_tokenSecret", requestToken.getTokenSecret());
+            authSession.setAuthNote(TWITTER_TOKEN, requestToken.getToken());
+            authSession.setAuthNote(TWITTER_TOKENSECRET, requestToken.getTokenSecret());
 
             URI authenticationUrl = URI.create(requestToken.getAuthenticationURL());
 
@@ -115,16 +120,14 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
             }
 
             try {
-                // TODO:mposolda
-                /*
                 Twitter twitter = new TwitterFactory().getInstance();
 
                 twitter.setOAuthConsumer(getConfig().getClientId(), getConfig().getClientSecret());
 
-                ClientSessionModel clientSession = ClientSessionCode.getClientSession(state, session, realm);
+                AuthenticationSessionModel authSession = ClientSessionCode.getClientSession(state, session, realm, AuthenticationSessionModel.class);
 
-                String twitterToken = clientSession.getNote("twitter_token");
-                String twitterSecret = clientSession.getNote("twitter_tokenSecret");
+                String twitterToken = authSession.getAuthNote(TWITTER_TOKEN);
+                String twitterSecret = authSession.getAuthNote(TWITTER_TOKENSECRET);
 
                 RequestToken requestToken = new RequestToken(twitterToken, twitterSecret);
 
@@ -151,8 +154,8 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
                 identity.setCode(state);
 
                 return callback.authenticated(identity);
-                */
-                return null;
+            } catch (WebApplicationException e) {
+                return e.getResponse();
             } catch (Exception e) {
                 logger.error("Could get user profile from twitter.", e);
             }

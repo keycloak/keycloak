@@ -56,6 +56,7 @@ import java.util.TreeSet;
 import org.keycloak.dom.saml.v2.metadata.KeyTypes;
 import org.keycloak.keys.KeyMetadata;
 import org.keycloak.saml.processing.core.util.KeycloakKeySamlExtensionGenerator;
+import org.keycloak.sessions.AuthenticationSessionModel;
 
 /**
  * @author Pedro Igor
@@ -132,17 +133,17 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
     }
 
     @Override
-    public void attachUserSession(UserSessionModel userSession, ClientSessionModel clientSession, BrokeredIdentityContext context) {
+    public void authenticationFinished(AuthenticationSessionModel authSession, BrokeredIdentityContext context)  {
         ResponseType responseType = (ResponseType)context.getContextData().get(SAMLEndpoint.SAML_LOGIN_RESPONSE);
         AssertionType assertion = (AssertionType)context.getContextData().get(SAMLEndpoint.SAML_ASSERTION);
         SubjectType subject = assertion.getSubject();
         SubjectType.STSubType subType = subject.getSubType();
         NameIDType subjectNameID = (NameIDType) subType.getBaseID();
-        userSession.setNote(SAMLEndpoint.SAML_FEDERATED_SUBJECT, subjectNameID.getValue());
-        if (subjectNameID.getFormat() != null) userSession.setNote(SAMLEndpoint.SAML_FEDERATED_SUBJECT_NAMEFORMAT, subjectNameID.getFormat().toString());
+        authSession.setUserSessionNote(SAMLEndpoint.SAML_FEDERATED_SUBJECT, subjectNameID.getValue());
+        if (subjectNameID.getFormat() != null) authSession.setUserSessionNote(SAMLEndpoint.SAML_FEDERATED_SUBJECT_NAMEFORMAT, subjectNameID.getFormat().toString());
         AuthnStatementType authn =  (AuthnStatementType)context.getContextData().get(SAMLEndpoint.SAML_AUTHN_STATEMENT);
         if (authn != null && authn.getSessionIndex() != null) {
-            userSession.setNote(SAMLEndpoint.SAML_FEDERATED_SESSION_INDEX, authn.getSessionIndex());
+            authSession.setUserSessionNote(SAMLEndpoint.SAML_FEDERATED_SESSION_INDEX, authn.getSessionIndex());
 
         }
     }

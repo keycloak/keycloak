@@ -31,7 +31,6 @@ import org.keycloak.models.sessions.infinispan.entities.AuthenticationSessionEnt
 import org.keycloak.models.sessions.infinispan.stream.AuthenticationSessionPredicate;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RealmInfoUtil;
-import org.keycloak.services.util.CookieHelper;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.AuthenticationSessionProvider;
 
@@ -46,8 +45,6 @@ public class InfinispanAuthenticationSessionProvider implements AuthenticationSe
     private final Cache<String, AuthenticationSessionEntity> cache;
     protected final InfinispanKeycloakTransaction tx;
 
-    public static final String AUTH_SESSION_ID = "AUTH_SESSION_ID";
-
     public InfinispanAuthenticationSessionProvider(KeycloakSession session, Cache<String, AuthenticationSessionEntity> cache) {
         this.session = session;
         this.cache = cache;
@@ -56,11 +53,14 @@ public class InfinispanAuthenticationSessionProvider implements AuthenticationSe
         session.getTransactionManager().enlistAfterCompletion(tx);
     }
 
+    @Override
+    public AuthenticationSessionModel createAuthenticationSession(RealmModel realm, ClientModel client) {
+        String id = KeycloakModelUtils.generateId();
+        return createAuthenticationSession(id, realm, client);
+    }
 
     @Override
-    public AuthenticationSessionModel createAuthenticationSession(RealmModel realm, ClientModel client, boolean browser) {
-        String id = KeycloakModelUtils.generateId();
-
+    public AuthenticationSessionModel createAuthenticationSession(String id, RealmModel realm, ClientModel client) {
         AuthenticationSessionEntity entity = new AuthenticationSessionEntity();
         entity.setId(id);
         entity.setRealm(realm.getId());
@@ -68,10 +68,6 @@ public class InfinispanAuthenticationSessionProvider implements AuthenticationSe
         entity.setClientUuid(client.getId());
 
         tx.put(cache, id, entity);
-
-        if (browser) {
-            setBrowserCookie(id, realm);
-        }
 
         AuthenticationSessionAdapter wrap = wrap(realm, entity);
         return wrap;
@@ -82,28 +78,17 @@ public class InfinispanAuthenticationSessionProvider implements AuthenticationSe
     }
 
     @Override
-    public String getCurrentAuthenticationSessionId(RealmModel realm) {
-        return getIdFromBrowserCookie();
-    }
-
-    @Override
-    public AuthenticationSessionModel getCurrentAuthenticationSession(RealmModel realm) {
-        String authSessionId = getIdFromBrowserCookie();
-        return authSessionId==null ? null : getAuthenticationSession(realm, authSessionId);
-    }
-
-    @Override
     public AuthenticationSessionModel getAuthenticationSession(RealmModel realm, String authenticationSessionId) {
         AuthenticationSessionEntity entity = getAuthenticationSessionEntity(realm, authenticationSessionId);
         return wrap(realm, entity);
     }
 
     private AuthenticationSessionEntity getAuthenticationSessionEntity(RealmModel realm, String authSessionId) {
-        AuthenticationSessionEntity entity = cache.get(authSessionId);
+        // Chance created in this transaction
+        AuthenticationSessionEntity entity = tx.get(cache, authSessionId);
 
-        // Chance created in this transaction TODO:mposolda should it be opposite and rather look locally first? Check performance...
         if (entity == null) {
-            entity = tx.get(cache, authSessionId);
+            entity = cache.get(authSessionId);
         }
 
         return entity;
@@ -156,28 +141,4 @@ public class InfinispanAuthenticationSessionProvider implements AuthenticationSe
 
     }
 
-    // COOKIE STUFF
-
-    protected void setBrowserCookie(String authSessionId, RealmModel realm) {
-        String cookiePath = CookieHelper.getRealmCookiePath(realm);
-        boolean sslRequired = realm.getSslRequired().isRequired(session.getContext().getConnection());
-        CookieHelper.addCookie(AUTH_SESSION_ID, authSessionId, cookiePath, null, null, -1, sslRequired, true);
-
-        // TODO trace with isTraceEnabled
-        log.infof("Set AUTH_SESSION_ID cookie with value %s", authSessionId);
-    }
-
-    protected String getIdFromBrowserCookie() {
-        String cookieVal = CookieHelper.getCookieValue(AUTH_SESSION_ID);
-
-        if (log.isTraceEnabled()) {
-            if (cookieVal != null) {
-                log.tracef("Found AUTH_SESSION_ID cookie with value %s", cookieVal);
-            } else {
-                log.tracef("Not found AUTH_SESSION_ID cookie");
-            }
-        }
-
-        return cookieVal;
-    }
 }

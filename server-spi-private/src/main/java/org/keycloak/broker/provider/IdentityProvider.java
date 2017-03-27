@@ -17,7 +17,6 @@
 package org.keycloak.broker.provider;
 
 import org.keycloak.events.EventBuilder;
-import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
@@ -25,6 +24,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.provider.Provider;
+import org.keycloak.sessions.AuthenticationSessionModel;
 
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
@@ -51,7 +51,7 @@ public interface IdentityProvider<C extends IdentityProviderModel> extends Provi
 
 
     void preprocessFederatedIdentity(KeycloakSession session, RealmModel realm, BrokeredIdentityContext context);
-    void attachUserSession(UserSessionModel userSession, ClientSessionModel clientSession, BrokeredIdentityContext context);
+    void authenticationFinished(AuthenticationSessionModel authSession, BrokeredIdentityContext context);
     void importNewUser(KeycloakSession session, RealmModel realm, UserModel user, BrokeredIdentityContext context);
     void updateBrokeredUser(KeycloakSession session, RealmModel realm, UserModel user, BrokeredIdentityContext context);
 

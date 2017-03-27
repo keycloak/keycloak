@@ -48,7 +48,7 @@ public abstract class AbstractIdpAuthenticator implements Authenticator {
     public static final String UPDATE_PROFILE_EMAIL_CHANGED = "UPDATE_PROFILE_EMAIL_CHANGED";
 
     // The clientSession note flag to indicate if re-authentication after first broker login happened in different browser window. This can happen for example during email verification
-    public static final String IS_DIFFERENT_BROWSER = "IS_DIFFERENT_BROWSER";
+    public static final String IS_DIFFERENT_BROWSER = "IS_DIFFERENT_BROWSER"; // TODO:mposolda can reuse the END_AFTER_REQUIRED_ACTIONS instead?
 
     // The clientSession note flag to indicate that updateProfile page will be always displayed even if "updateProfileOnFirstLogin" is off
     public static final String ENFORCE_UPDATE_PROFILE = "ENFORCE_UPDATE_PROFILE";
@@ -56,12 +56,15 @@ public abstract class AbstractIdpAuthenticator implements Authenticator {
     // clientSession.note flag specifies if we imported new user to keycloak (true) or we just linked to an existing keycloak user (false)
     public static final String BROKER_REGISTERED_NEW_USER = "BROKER_REGISTERED_NEW_USER";
 
+    // Set after firstBrokerLogin is successfully finished and contains the providerId of the provider, whose 'first-broker-login' flow was just finished
+    public static final String FIRST_BROKER_LOGIN_SUCCESS = "FIRST_BROKER_LOGIN_SUCCESS";
+
 
     @Override
     public void authenticate(AuthenticationFlowContext context) {
         AuthenticationSessionModel authSession = context.getAuthenticationSession();
 
-        SerializedBrokeredIdentityContext serializedCtx = SerializedBrokeredIdentityContext.readFromLoginSession(authSession, BROKERED_CONTEXT_NOTE);
+        SerializedBrokeredIdentityContext serializedCtx = SerializedBrokeredIdentityContext.readFromAuthenticationSession(authSession, BROKERED_CONTEXT_NOTE);
         if (serializedCtx == null) {
             throw new AuthenticationFlowException("Not found serialized context in clientSession", AuthenticationFlowError.IDENTITY_PROVIDER_ERROR);
         }
@@ -78,7 +81,7 @@ public abstract class AbstractIdpAuthenticator implements Authenticator {
     public void action(AuthenticationFlowContext context) {
         AuthenticationSessionModel clientSession = context.getAuthenticationSession();
 
-        SerializedBrokeredIdentityContext serializedCtx = SerializedBrokeredIdentityContext.readFromLoginSession(clientSession, BROKERED_CONTEXT_NOTE);
+        SerializedBrokeredIdentityContext serializedCtx = SerializedBrokeredIdentityContext.readFromAuthenticationSession(clientSession, BROKERED_CONTEXT_NOTE);
         if (serializedCtx == null) {
             throw new AuthenticationFlowException("Not found serialized context in clientSession", AuthenticationFlowError.IDENTITY_PROVIDER_ERROR);
         }

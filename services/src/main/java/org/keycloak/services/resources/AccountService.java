@@ -56,6 +56,7 @@ import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.util.ResolveRelative;
 import org.keycloak.services.validation.Validation;
+import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.storage.ReadOnlyException;
 import org.keycloak.util.JsonSerialization;
 
@@ -205,14 +206,18 @@ public class AccountService extends AbstractSecuredLocalService {
 
             setReferrerOnPage();
 
-            String forwardedError = auth.getClientSession().getNote(ACCOUNT_MGMT_FORWARDED_ERROR_NOTE);
-            if (forwardedError != null) {
-                try {
-                    FormMessage errorMessage = JsonSerialization.readValue(forwardedError, FormMessage.class);
-                    account.setError(errorMessage.getMessage(), errorMessage.getParameters());
-                    auth.getClientSession().removeNote(ACCOUNT_MGMT_FORWARDED_ERROR_NOTE);
-                } catch (IOException ioe) {
-                    throw new RuntimeException(ioe);
+            UserSessionModel userSession = auth.getClientSession().getUserSession();
+            AuthenticationSessionModel authSession = session.authenticationSessions().getAuthenticationSession(realm, userSession.getId());
+            if (authSession != null) {
+                String forwardedError = authSession.getAuthNote(ACCOUNT_MGMT_FORWARDED_ERROR_NOTE);
+                if (forwardedError != null) {
+                    try {
+                        FormMessage errorMessage = JsonSerialization.readValue(forwardedError, FormMessage.class);
+                        account.setError(errorMessage.getMessage(), errorMessage.getParameters());
+                        authSession.removeAuthNote(ACCOUNT_MGMT_FORWARDED_ERROR_NOTE);
+                    } catch (IOException ioe) {
+                        throw new RuntimeException(ioe);
+                    }
                 }
             }
 
@@ -766,7 +771,7 @@ public class AccountService extends AbstractSecuredLocalService {
                 try {
                     String nonce = UUID.randomUUID().toString();
                     MessageDigest md = MessageDigest.getInstance("SHA-256");
-                    String input = nonce + auth.getSession().getId() +  auth.getClientSession().getId() + providerId;
+                    String input = nonce + auth.getSession().getId() +  client.getClientId() + providerId;
                     byte[] check = md.digest(input.getBytes(StandardCharsets.UTF_8));
                     String hash = Base64Url.encode(check);
                     URI linkUrl = Urls.identityProviderLinkRequest(this.uriInfo.getBaseUri(), providerId, realm.getName());

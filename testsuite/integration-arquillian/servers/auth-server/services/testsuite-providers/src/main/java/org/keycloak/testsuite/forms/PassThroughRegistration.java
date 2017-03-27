@@ -52,7 +52,7 @@ public class PassThroughRegistration implements Authenticator, AuthenticatorFact
         user.setEnabled(true);
 
         user.setEmail(email);
-        context.getAuthenticationSession().setNote(OIDCLoginProtocol.LOGIN_HINT_PARAM, username);
+        context.getAuthenticationSession().setClientNote(OIDCLoginProtocol.LOGIN_HINT_PARAM, username);
         context.setUser(user);
         context.getEvent().user(user);
         context.getEvent().success();

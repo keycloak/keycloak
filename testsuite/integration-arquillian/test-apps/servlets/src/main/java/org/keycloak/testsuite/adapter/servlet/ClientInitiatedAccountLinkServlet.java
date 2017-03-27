@@ -47,7 +47,7 @@ public class ClientInitiatedAccountLinkServlet extends HttpServlet {
             String realm = request.getParameter("realm");
             KeycloakSecurityContext session = (KeycloakSecurityContext) request.getAttribute(KeycloakSecurityContext.class.getName());
             AccessToken token = session.getToken();
-            String clientSessionId = token.getClientSession();
+            String clientId = token.getAudience()[0];
             String nonce = UUID.randomUUID().toString();
             MessageDigest md = null;
             try {
@@ -55,7 +55,7 @@ public class ClientInitiatedAccountLinkServlet extends HttpServlet {
             } catch (NoSuchAlgorithmException e) {
                 throw new RuntimeException(e);
             }
-            String input = nonce + token.getSessionState() + clientSessionId + provider;
+            String input = nonce + token.getSessionState() + clientId + provider;
             byte[] check = md.digest(input.getBytes(StandardCharsets.UTF_8));
             String hash = Base64Url.encode(check);
             request.getSession().setAttribute("hash", hash);

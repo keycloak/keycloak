@@ -59,11 +59,6 @@ public class RequiredActionResetPasswordTest extends AbstractTestRealmKeycloakTe
     @Page
     protected LoginPasswordUpdatePage changePasswordPage;
 
-    @Before
-    public void before() {
-        oauth.state("mystate"); // have to set this as keycloak validates that state is sent
-    }
-
 
     @Test
     public void tempPassword() throws Exception {

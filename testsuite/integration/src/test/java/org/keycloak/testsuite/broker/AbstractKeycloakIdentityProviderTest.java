@@ -69,10 +69,12 @@ public abstract class AbstractKeycloakIdentityProviderTest extends AbstractIdent
     }
 
     @Test
-    public void testDisabledUser() {
+    public void testDisabledUser() throws Exception {
         KeycloakSession session = brokerServerRule.startSession();
         setUpdateProfileFirstLogin(session.realms().getRealmByName("realm-with-broker"), IdentityProviderRepresentation.UPFLM_OFF);
         brokerServerRule.stopSession(session, true);
+
+        Thread.sleep(10000000);
 
         driver.navigate().to("http://localhost:8081/test-app");
         loginPage.clickSocial(getProviderId());
@@ -328,7 +330,7 @@ public abstract class AbstractKeycloakIdentityProviderTest extends AbstractIdent
     }
 
     @Test
-    public void testSuccessfulAuthenticationWithoutUpdateProfile_newUser_emailAsUsername() {
+    public void testSuccessfulAuthenticationWithoutUpdateProfile_newUser_emailAsUsername() throws Exception {
         RealmModel realm = getRealm();
         realm.setRegistrationEmailAsUsername(true);
         setUpdateProfileFirstLogin(realm, IdentityProviderRepresentation.UPFLM_OFF);

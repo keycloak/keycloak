@@ -234,16 +234,12 @@ public class RealmsResource {
     public IdentityBrokerService getBrokerService(final @PathParam("realm") String name) {
         RealmModel realm = init(name);
 
-        // TODO:mposolda
-        /*
         IdentityBrokerService brokerService = new IdentityBrokerService(realm);
         ResteasyProviderFactory.getInstance().injectProperties(brokerService);
 
         brokerService.init();
 
         return brokerService;
-        */
-        return null;
     }
 
     @OPTIONS

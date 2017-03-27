@@ -66,8 +66,10 @@ public interface UserSessionModel {
     State getState();
     void setState(State state);
 
+    void setUser(UserModel user);
+
     public static enum State {
-        LOGGING_IN, // TODO: Maybe state "LOGGING_IN" is useless now once userSession is attached after requiredActions
+        LOGGING_IN, // TODO:mposolda Maybe state "LOGGING_IN" is useless now once userSession is attached after requiredActions
         LOGGED_IN,
         LOGGING_OUT,
         LOGGED_OUT

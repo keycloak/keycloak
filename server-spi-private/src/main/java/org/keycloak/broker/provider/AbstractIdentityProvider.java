@@ -23,6 +23,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.sessions.AuthenticationSessionModel;
 
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
@@ -75,7 +76,7 @@ public abstract class AbstractIdentityProvider<C extends IdentityProviderModel> 
     }
 
     @Override
-    public void attachUserSession(UserSessionModel userSession, ClientSessionModel clientSession, BrokeredIdentityContext context) {
+    public void authenticationFinished(AuthenticationSessionModel authSession, BrokeredIdentityContext context) {
 
     }
 

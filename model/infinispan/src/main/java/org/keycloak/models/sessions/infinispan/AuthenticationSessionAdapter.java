@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.infinispan.Cache;
+import org.keycloak.common.util.Time;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -142,33 +143,39 @@ public class AuthenticationSessionAdapter implements AuthenticationSessionModel 
     }
 
     @Override
-    public String getNote(String name) {
-        return entity.getNotes() != null ? entity.getNotes().get(name) : null;
+    public String getClientNote(String name) {
+        return entity.getClientNotes() != null ? entity.getClientNotes().get(name) : null;
     }
 
     @Override
-    public void setNote(String name, String value) {
-        if (entity.getNotes() == null) {
-            entity.setNotes(new HashMap<String, String>());
+    public void setClientNote(String name, String value) {
+        if (entity.getClientNotes() == null) {
+            entity.setClientNotes(new HashMap<>());
         }
-        entity.getNotes().put(name, value);
+        entity.getClientNotes().put(name, value);
         update();
     }
 
     @Override
-    public void removeNote(String name) {
-        if (entity.getNotes() != null) {
-            entity.getNotes().remove(name);
+    public void removeClientNote(String name) {
+        if (entity.getClientNotes() != null) {
+            entity.getClientNotes().remove(name);
         }
         update();
     }
 
     @Override
-    public Map<String, String> getNotes() {
-        if (entity.getNotes() == null || entity.getNotes().isEmpty()) return Collections.emptyMap();
+    public Map<String, String> getClientNotes() {
+        if (entity.getClientNotes() == null || entity.getClientNotes().isEmpty()) return Collections.emptyMap();
         Map<String, String> copy = new HashMap<>();
-        copy.putAll(entity.getNotes());
+        copy.putAll(entity.getClientNotes());
         return copy;
+    }
+
+    @Override
+    public void clearClientNotes() {
+        entity.setClientNotes(new HashMap<>());
+        update();
     }
 
     @Override
@@ -284,6 +291,23 @@ public class AuthenticationSessionAdapter implements AuthenticationSessionModel 
     public void setAuthenticatedUser(UserModel user) {
         if (user == null) entity.setAuthUserId(null);
         else entity.setAuthUserId(user.getId());
+        update();
+    }
+
+    @Override
+    public void updateClient(ClientModel client) {
+        entity.setClientUuid(client.getId());
+        update();
+    }
+
+    @Override
+    public void restartSession(RealmModel realm, ClientModel client) {
+        String id = entity.getId();
+        entity = new AuthenticationSessionEntity();
+        entity.setId(id);
+        entity.setRealm(realm.getId());
+        entity.setClientUuid(client.getId());
+        entity.setTimestamp(Time.currentTime());
         update();
     }
 }

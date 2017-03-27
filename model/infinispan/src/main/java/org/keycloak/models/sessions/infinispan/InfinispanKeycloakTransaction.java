@@ -16,6 +16,7 @@
  */
 package org.keycloak.models.sessions.infinispan;
 
+import org.infinispan.context.Flag;
 import org.keycloak.models.KeycloakTransaction;
 
 import java.util.HashMap;
@@ -31,7 +32,7 @@ public class InfinispanKeycloakTransaction implements KeycloakTransaction {
     private final static Logger log = Logger.getLogger(InfinispanKeycloakTransaction.class);
 
     public enum CacheOperation {
-        ADD, REMOVE, REPLACE
+        ADD, REMOVE, REPLACE, ADD_IF_ABSENT // ADD_IF_ABSENT throws an exception if there is existing value
     }
 
     private boolean active;
@@ -79,7 +80,18 @@ public class InfinispanKeycloakTransaction implements KeycloakTransaction {
         if (tasks.containsKey(taskKey)) {
             throw new IllegalStateException("Can't add session: task in progress for session");
         } else {
-            tasks.put(taskKey, new CacheTask(cache, CacheOperation.ADD, key, value));
+            tasks.put(taskKey, new CacheTask<>(cache, CacheOperation.ADD, key, value));
+        }
+    }
+
+    public <K, V> void putIfAbsent(Cache<K, V> cache, K key, V value) {
+        log.tracev("Adding cache operation: {0} on {1}", CacheOperation.ADD_IF_ABSENT, key);
+
+        Object taskKey = getTaskKey(cache, key);
+        if (tasks.containsKey(taskKey)) {
+            throw new IllegalStateException("Can't add session: task in progress for session");
+        } else {
+            tasks.put(taskKey, new CacheTask<>(cache, CacheOperation.ADD_IF_ABSENT, key, value));
         }
     }
 
@@ -91,6 +103,7 @@ public class InfinispanKeycloakTransaction implements KeycloakTransaction {
         if (current != null) {
             switch (current.operation) {
                 case ADD:
+                case ADD_IF_ABSENT:
                 case REPLACE:
                     current.value = value;
                     return;
@@ -98,7 +111,7 @@ public class InfinispanKeycloakTransaction implements KeycloakTransaction {
                     return;
             }
         } else {
-            tasks.put(taskKey, new CacheTask(cache, CacheOperation.REPLACE, key, value));
+            tasks.put(taskKey, new CacheTask<>(cache, CacheOperation.REPLACE, key, value));
         }
     }
 
@@ -106,7 +119,7 @@ public class InfinispanKeycloakTransaction implements KeycloakTransaction {
         log.tracev("Adding cache operation: {0} on {1}", CacheOperation.REMOVE, key);
 
         Object taskKey = getTaskKey(cache, key);
-        tasks.put(taskKey, new CacheTask(cache, CacheOperation.REMOVE, key, null));
+        tasks.put(taskKey, new CacheTask<>(cache, CacheOperation.REMOVE, key, null));
     }
 
     // This is for possibility to lookup for session by id, which was created in this transaction
@@ -116,12 +129,16 @@ public class InfinispanKeycloakTransaction implements KeycloakTransaction {
         if (current != null) {
             switch (current.operation) {
                 case ADD:
+                case ADD_IF_ABSENT:
                 case REPLACE:
                     return current.value;
+                case REMOVE:
+                    return null;
             }
         }
 
-        return null;
+        // Should we have per-transaction cache for lookups?
+        return cache.get(key);
     }
 
     private static <K, V> Object getTaskKey(Cache<K, V> cache, K key) {
@@ -152,15 +169,28 @@ public class InfinispanKeycloakTransaction implements KeycloakTransaction {
 
             switch (operation) {
                 case ADD:
-                    cache.put(key, value);
+                    decorateCache().put(key, value);
                     break;
                 case REMOVE:
-                    cache.remove(key);
+                    decorateCache().remove(key);
                     break;
                 case REPLACE:
-                    cache.replace(key, value);
+                    decorateCache().replace(key, value);
+                    break;
+                case ADD_IF_ABSENT:
+                    V existing = cache.putIfAbsent(key, value);
+                    if (existing != null) {
+                        throw new IllegalStateException("IllegalState. There is already existing value in cache for key " + key);
+                    }
                     break;
             }
+        }
+
+
+        // Ignore return values. Should have better performance within cluster / cross-dc env
+        private Cache<K, V> decorateCache() {
+            return cache.getAdvancedCache()
+                    .withFlags(Flag.IGNORE_RETURN_VALUES, Flag.SKIP_REMOTE_LOOKUP);
         }
     }
 }

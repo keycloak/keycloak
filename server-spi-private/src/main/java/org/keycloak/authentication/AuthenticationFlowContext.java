@@ -100,6 +100,12 @@ public interface AuthenticationFlowContext extends AbstractAuthenticationFlowCon
     void resetFlow();
 
     /**
+     * Reset the current flow to the beginning and restarts it. Allows to add additional listener, which is triggered after flow restarted
+     *
+     */
+    void resetFlow(Runnable afterResetListener);
+
+    /**
      * Fork the current flow.  The client session will be cloned and set to point at the realm's browser login flow.  The Response will be the result
      * of this fork.  The previous flow will still be set at the current execution.  This is used by reset password when it sends an email.
      * It sends an email linking to the current flow and redirects the browser to a new browser login flow.

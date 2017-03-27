@@ -179,6 +179,17 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
 
         String requestURI = uriInfo.getBaseUri().getPath();
         UriBuilder uriBuilder = UriBuilder.fromUri(requestURI);
+        if (page == LoginFormsPages.OAUTH_GRANT) {
+            // for some reason Resteasy 2.3.7 doesn't like query params and form params with the same name and will null out the code form param
+            uriBuilder.replaceQuery(null);
+        }
+        URI baseUri = uriBuilder.build();
+
+        if (accessCode != null) {
+            uriBuilder.queryParam(OAuth2Constants.CODE, accessCode);
+        }
+        URI baseUriWithCode = uriBuilder.build();
+
 
         for (String k : queryParameterMap.keySet()) {
 
@@ -228,11 +239,6 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
         }
         attributes.put("messagesPerField", messagesPerField);
 
-        if (page == LoginFormsPages.OAUTH_GRANT) {
-            // for some reason Resteasy 2.3.7 doesn't like query params and form params with the same name and will null out the code form param
-            uriBuilder.replaceQuery(null);
-        }
-        URI baseUri = uriBuilder.build();
         attributes.put("requiredActionUrl", new RequiredActionUrlFormatterMethod(realm, baseUri));
         if (realm != null && user != null && session != null) {
             attributes.put("authenticatorConfigured", new AuthenticatorConfiguredMethod(realm, user, session));
@@ -243,7 +249,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
 
             List<IdentityProviderModel> identityProviders = realm.getIdentityProviders();
             identityProviders = LoginFormsUtil.filterIdentityProviders(identityProviders, session, realm, attributes, formData);
-            attributes.put("social", new IdentityProviderBean(realm, session, identityProviders, baseUri, uriInfo));
+            attributes.put("social", new IdentityProviderBean(realm, session, identityProviders, baseUriWithCode));
 
             attributes.put("url", new UrlBean(realm, theme, baseUri, this.actionUri));
 
@@ -340,6 +346,11 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
         }
         URI baseUri = uriBuilder.build();
 
+        if (accessCode != null) {
+            uriBuilder.queryParam(OAuth2Constants.CODE, accessCode);
+        }
+        URI baseUriWithCode = uriBuilder.build();
+
         ThemeProvider themeProvider = session.getProvider(ThemeProvider.class, "extending");
         Theme theme;
         try {
@@ -391,7 +402,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
 
             List<IdentityProviderModel> identityProviders = realm.getIdentityProviders();
             identityProviders = LoginFormsUtil.filterIdentityProviders(identityProviders, session, realm, attributes, formData);
-            attributes.put("social", new IdentityProviderBean(realm, session, identityProviders, baseUri, uriInfo));
+            attributes.put("social", new IdentityProviderBean(realm, session, identityProviders, baseUriWithCode));
 
             attributes.put("url", new UrlBean(realm, theme, baseUri, this.actionUri));
             attributes.put("requiredActionUrl", new RequiredActionUrlFormatterMethod(realm, baseUri));

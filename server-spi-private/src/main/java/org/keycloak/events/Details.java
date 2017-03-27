@@ -48,7 +48,6 @@ public interface Details {
     String CLIENT_SESSION_STATE = "client_session_state";
     String CLIENT_SESSION_HOST = "client_session_host";
     String RESTART_AFTER_TIMEOUT = "restart_after_timeout";
-    String RESTART_REQUESTED = "restart_requested";
 
     String CONSENT = "consent";
     String CONSENT_VALUE_NO_CONSENT_REQUIRED = "no_consent_required"; // No consent is required by client
@@ -63,5 +62,7 @@ public interface Details {
     String SIGNATURE_ALGORITHM = "signature_algorithm";
 
     String CLIENT_REGISTRATION_POLICY = "client_registration_policy";
+
+    String EXISTING_USER = "previous_user";
 
 }

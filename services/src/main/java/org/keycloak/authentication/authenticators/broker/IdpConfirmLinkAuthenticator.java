@@ -20,6 +20,7 @@ package org.keycloak.authentication.authenticators.broker;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.AuthenticationFlowException;
+import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.authentication.authenticators.broker.util.ExistingUserInfo;
 import org.keycloak.authentication.authenticators.broker.util.SerializedBrokeredIdentityContext;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
@@ -65,9 +66,12 @@ public class IdpConfirmLinkAuthenticator extends AbstractIdpAuthenticator {
 
         String action = formData.getFirst("submitAction");
         if (action != null && action.equals("updateProfile")) {
-            context.getAuthenticationSession().setAuthNote(ENFORCE_UPDATE_PROFILE, "true");
-            context.getAuthenticationSession().removeAuthNote(EXISTING_USER_INFO);
-            context.resetFlow();
+            context.resetFlow(() -> {
+                AuthenticationSessionModel authSession = context.getAuthenticationSession();
+
+                serializedCtx.saveToAuthenticationSession(authSession, BROKERED_CONTEXT_NOTE);
+                authSession.setAuthNote(ENFORCE_UPDATE_PROFILE, "true");
+            });
         } else if (action != null && action.equals("linkAccount")) {
             context.success();
         } else {

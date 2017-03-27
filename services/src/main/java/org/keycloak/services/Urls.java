@@ -207,8 +207,7 @@ public class Urls {
     }
 
     public static URI realmLoginRestartPage(URI baseUri, String realmId) {
-        return loginActionsBase(baseUri).path(LoginActionsService.class, "authenticate")
-                .queryParam("restart", "true")
+        return loginActionsBase(baseUri).path(LoginActionsService.class, "restartSession")
                 .build(realmId);
     }
 

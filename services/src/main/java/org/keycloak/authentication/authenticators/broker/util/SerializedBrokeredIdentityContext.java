@@ -313,8 +313,8 @@ public class SerializedBrokeredIdentityContext implements UpdateProfileContext {
         return ctx;
     }
 
-    // Save this context as note to clientSession
-    public void saveToLoginSession(AuthenticationSessionModel authSession, String noteKey) {
+    // Save this context as note to authSession
+    public void saveToAuthenticationSession(AuthenticationSessionModel authSession, String noteKey) {
         try {
             String asString = JsonSerialization.writeValueAsString(this);
             authSession.setAuthNote(noteKey, asString);
@@ -323,7 +323,7 @@ public class SerializedBrokeredIdentityContext implements UpdateProfileContext {
         }
     }
 
-    public static SerializedBrokeredIdentityContext readFromLoginSession(AuthenticationSessionModel authSession, String noteKey) {
+    public static SerializedBrokeredIdentityContext readFromAuthenticationSession(AuthenticationSessionModel authSession, String noteKey) {
         String asString = authSession.getAuthNote(noteKey);
         if (asString == null) {
             return null;

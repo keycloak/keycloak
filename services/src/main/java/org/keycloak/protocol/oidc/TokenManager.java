@@ -57,6 +57,7 @@ import org.keycloak.representations.IDToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.managers.AuthenticationManager;
+import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.sessions.AuthenticationSessionModel;
@@ -358,14 +359,18 @@ public class TokenManager {
     public static AuthenticatedClientSessionModel attachAuthenticationSession(KeycloakSession session, UserSessionModel userSession, AuthenticationSessionModel authSession) {
         ClientModel client = authSession.getClient();
 
-        AuthenticatedClientSessionModel clientSession = session.sessions().createClientSession(userSession.getRealm(), client, userSession);
+        AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessions().get(client.getId());
+        if (clientSession == null) {
+            clientSession = session.sessions().createClientSession(userSession.getRealm(), client, userSession);
+        }
+
         clientSession.setRedirectUri(authSession.getRedirectUri());
         clientSession.setProtocol(authSession.getProtocol());
 
         clientSession.setRoles(authSession.getRoles());
         clientSession.setProtocolMappers(authSession.getProtocolMappers());
 
-        Map<String, String> transferredNotes = authSession.getNotes();
+        Map<String, String> transferredNotes = authSession.getClientNotes();
         for (Map.Entry<String, String> entry : transferredNotes.entrySet()) {
             clientSession.setNote(entry.getKey(), entry.getValue());
         }
@@ -378,7 +383,7 @@ public class TokenManager {
         clientSession.setTimestamp(Time.currentTime());
 
         // Remove authentication session now
-        session.authenticationSessions().removeAuthenticationSession(userSession.getRealm(), authSession);
+        new AuthenticationSessionManager(session).removeAuthenticationSession(userSession.getRealm(), authSession, true);
 
         return clientSession;
     }

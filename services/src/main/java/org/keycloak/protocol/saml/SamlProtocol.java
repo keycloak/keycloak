@@ -57,6 +57,7 @@ import org.keycloak.saml.common.exceptions.ProcessingException;
 import org.keycloak.saml.common.util.XmlKeyInfoKeyNameTransformer;
 import org.keycloak.saml.processing.core.util.KeycloakKeySamlExtensionGenerator;
 import org.keycloak.services.ErrorPage;
+import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.managers.ResourceAdminManager;
 import org.keycloak.services.messages.Messages;
@@ -177,7 +178,7 @@ public class SamlProtocol implements LoginProtocol {
             } else {
                 SAML2ErrorResponseBuilder builder = new SAML2ErrorResponseBuilder().destination(authSession.getRedirectUri()).issuer(getResponseIssuer(realm)).status(translateErrorToSAMLStatus(error).get());
                 try {
-                    JaxrsSAML2BindingBuilder binding = new JaxrsSAML2BindingBuilder().relayState(authSession.getNote(GeneralConstants.RELAY_STATE));
+                    JaxrsSAML2BindingBuilder binding = new JaxrsSAML2BindingBuilder().relayState(authSession.getClientNote(GeneralConstants.RELAY_STATE));
                     SamlClient samlClient = new SamlClient(client);
                     KeyManager keyManager = session.keys();
                     if (samlClient.requiresRealmSignature()) {
@@ -206,8 +207,7 @@ public class SamlProtocol implements LoginProtocol {
                 }
             }
         } finally {
-            RestartLoginCookie.expireRestartCookie(realm, session.getContext().getConnection(), uriInfo);
-            session.authenticationSessions().removeAuthenticationSession(realm, authSession);
+            new AuthenticationSessionManager(session).removeAuthenticationSession(realm, authSession, true);
         }
     }
 
@@ -250,10 +250,16 @@ public class SamlProtocol implements LoginProtocol {
         return RealmsResource.realmBaseUrl(uriInfo).build(realm.getName()).toString();
     }
 
-    protected boolean isPostBinding(CommonClientSessionModel authSession) {
+    protected boolean isPostBinding(AuthenticationSessionModel authSession) {
         ClientModel client = authSession.getClient();
         SamlClient samlClient = new SamlClient(client);
-        return SamlProtocol.SAML_POST_BINDING.equals(authSession.getNote(SamlProtocol.SAML_BINDING)) || samlClient.forcePostBinding();
+        return SamlProtocol.SAML_POST_BINDING.equals(authSession.getClientNote(SamlProtocol.SAML_BINDING)) || samlClient.forcePostBinding();
+    }
+
+    protected boolean isPostBinding(AuthenticatedClientSessionModel clientSession) {
+        ClientModel client = clientSession.getClient();
+        SamlClient samlClient = new SamlClient(client);
+        return SamlProtocol.SAML_POST_BINDING.equals(clientSession.getNote(SamlProtocol.SAML_BINDING)) || samlClient.forcePostBinding();
     }
 
     public static boolean isLogoutPostBindingForInitiator(UserSessionModel session) {
@@ -286,7 +292,7 @@ public class SamlProtocol implements LoginProtocol {
         return (logoutRedirectUrl == null || logoutRedirectUrl.trim().isEmpty());
     }
 
-    protected String getNameIdFormat(SamlClient samlClient, CommonClientSessionModel clientSession) {
+    protected String getNameIdFormat(SamlClient samlClient, AuthenticatedClientSessionModel clientSession) {
         String nameIdFormat = clientSession.getNote(GeneralConstants.NAMEID_FORMAT);
 
         boolean forceFormat = samlClient.forceNameIDFormat();
@@ -353,8 +359,8 @@ public class SamlProtocol implements LoginProtocol {
     }
 
     @Override
-    public Response authenticated(UserSessionModel userSession, ClientSessionCode<AuthenticatedClientSessionModel> accessCode) {
-        AuthenticatedClientSessionModel clientSession = accessCode.getClientSession();
+    public Response authenticated(UserSessionModel userSession, AuthenticatedClientSessionModel clientSession) {
+        ClientSessionCode<AuthenticatedClientSessionModel> accessCode = new ClientSessionCode<>(session, realm, clientSession);
         ClientModel client = clientSession.getClient();
         SamlClient samlClient = new SamlClient(client);
         String requestID = clientSession.getNote(SAML_REQUEST_ID);

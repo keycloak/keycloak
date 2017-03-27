@@ -93,10 +93,6 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
                 Response response = processResult(result, true);
                 if (response == null) {
                     processor.getAuthenticationSession().removeAuthNote(AuthenticationProcessor.CURRENT_AUTHENTICATION_EXECUTION);
-                    if (result.status == FlowStatus.SUCCESS) {
-                        // we do this so that flow can redirect to a non-action URL
-                        processor.setActionSuccessful();
-                    }
                     return processFlow();
                 } else return response;
             }
@@ -183,8 +179,8 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
                 }
             }
             // skip if action as successful already
-            Response redirect = processor.checkWasSuccessfulBrowserAction();
-            if (redirect != null) return redirect;
+//            Response redirect = processor.checkWasSuccessfulBrowserAction();
+//            if (redirect != null) return redirect;
 
             AuthenticationProcessor.Result context = processor.createAuthenticatorContext(model, authenticator, executions);
             logger.debug("invoke authenticator.authenticate");
@@ -203,13 +199,6 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
             case SUCCESS:
                 logger.debugv("authenticator SUCCESS: {0}", execution.getAuthenticator());
                 processor.getAuthenticationSession().setExecutionStatus(execution.getId(), ClientSessionModel.ExecutionStatus.SUCCESS);
-
-                // We just do another GET to ensure that page refresh will work
-                if (isAction) {
-                    processor.getAuthenticationSession().removeAuthNote(AuthenticationProcessor.CURRENT_AUTHENTICATION_EXECUTION);
-                    return processor.redirectToFlow(execution.getId());
-                }
-
                 if (execution.isAlternative()) alternativeSuccessful = true;
                 return null;
             case FAILED:
@@ -258,7 +247,7 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
                 processor.getAuthenticationSession().setExecutionStatus(execution.getId(), ClientSessionModel.ExecutionStatus.ATTEMPTED);
                 return null;
             case FLOW_RESET:
-                AuthenticationProcessor.resetFlow(processor.getAuthenticationSession());
+                processor.resetFlow();
                 return processor.authenticate();
             default:
                 logger.debugv("authenticator INTERNAL_ERROR: {0}", execution.getAuthenticator());

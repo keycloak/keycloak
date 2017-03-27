@@ -26,11 +26,10 @@ import org.keycloak.provider.Provider;
  */
 public interface AuthenticationSessionProvider extends Provider {
 
-    AuthenticationSessionModel createAuthenticationSession(RealmModel realm, ClientModel client, boolean browser);
+    // Generates random ID
+    AuthenticationSessionModel createAuthenticationSession(RealmModel realm, ClientModel client);
 
-    String getCurrentAuthenticationSessionId(RealmModel realm);
-
-    AuthenticationSessionModel getCurrentAuthenticationSession(RealmModel realm);
+    AuthenticationSessionModel createAuthenticationSession(String id, RealmModel realm, ClientModel client);
 
     AuthenticationSessionModel getAuthenticationSession(RealmModel realm, String authenticationSessionId);
 

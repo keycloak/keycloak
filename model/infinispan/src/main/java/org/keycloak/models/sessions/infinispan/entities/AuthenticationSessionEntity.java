@@ -41,7 +41,7 @@ public class AuthenticationSessionEntity extends SessionEntity {
     private Map<String, AuthenticationSessionModel.ExecutionStatus> executionStatus  = new HashMap<>();;
     private String protocol;
 
-    private Map<String, String> notes;
+    private Map<String, String> clientNotes;
     private Map<String, String> authNotes;
     private Set<String> requiredActions  = new HashSet<>();
     private Map<String, String> userSessionNotes;
@@ -118,12 +118,12 @@ public class AuthenticationSessionEntity extends SessionEntity {
         this.protocol = protocol;
     }
 
-    public Map<String, String> getNotes() {
-        return notes;
+    public Map<String, String> getClientNotes() {
+        return clientNotes;
     }
 
-    public void setNotes(Map<String, String> notes) {
-        this.notes = notes;
+    public void setClientNotes(Map<String, String> clientNotes) {
+        this.clientNotes = clientNotes;
     }
 
     public Set<String> getRequiredActions() {

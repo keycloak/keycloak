@@ -62,10 +62,14 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oidc.TokenManager;
+import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.protocol.ProtocolMapper;
+import org.keycloak.protocol.oidc.mappers.OIDCAccessTokenMapper;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.services.Urls;
+import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.resources.admin.RealmAuth;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
@@ -229,11 +233,14 @@ public class PolicyEvaluationService {
 
                 if (clientId != null) {
                     ClientModel clientModel = realm.getClientById(clientId);
-                    AuthenticationSessionModel authSession = keycloakSession.authenticationSessions().createAuthenticationSession(realm, clientModel, false);
-                    authSession.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-                    userSession = keycloakSession.sessions().createUserSession(realm, userModel, userModel.getUsername(), "127.0.0.1", "passwd", false, null, null);
+                    String id = KeycloakModelUtils.generateId();
 
-                    clientSession = new TokenManager().attachAuthenticationSession(keycloakSession, userSession, authSession);
+                    AuthenticationSessionModel authSession = keycloakSession.authenticationSessions().createAuthenticationSession(id, realm, clientModel);
+                    authSession.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+                    userSession = keycloakSession.sessions().createUserSession(id, realm, userModel, userModel.getUsername(), "127.0.0.1", "passwd", false, null, null);
+
+                    AuthenticationManager.setRolesAndMappersInSession(authSession);
+                    clientSession = TokenManager.attachAuthenticationSession(keycloakSession, userSession, authSession);
 
                     Set<RoleModel> requestedRoles = new HashSet<>();
                     for (String roleId : clientSession.getRoles()) {

@@ -32,7 +32,7 @@ public interface UserSessionProvider extends Provider {
     ClientSessionModel getClientSession(RealmModel realm, String id);
     ClientSessionModel getClientSession(String id);
 
-    UserSessionModel createUserSession(RealmModel realm, UserModel user, String loginUsername, String ipAddress, String authMethod, boolean rememberMe, String brokerSessionId, String brokerUserId);
+    UserSessionModel createUserSession(String id, RealmModel realm, UserModel user, String loginUsername, String ipAddress, String authMethod, boolean rememberMe, String brokerSessionId, String brokerUserId);
     UserSessionModel getUserSession(RealmModel realm, String id);
     List<UserSessionModel> getUserSessions(RealmModel realm, UserModel user);
     List<UserSessionModel> getUserSessions(RealmModel realm, ClientModel client);

@@ -87,9 +87,6 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
 
     @Before
     public void before() {
-        oauth.state("mystate"); // have to set this as keycloak validates that state is sent
-
-
         ApiUtil.removeUserByUsername(testRealm(), "test-user@localhost");
         UserRepresentation user = UserBuilder.create().enabled(true)
                 .username("test-user@localhost")

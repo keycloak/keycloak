@@ -79,6 +79,9 @@ public enum EventType {
     RESET_PASSWORD(true),
     RESET_PASSWORD_ERROR(true),
 
+    RESTART_AUTHENTICATION(true),
+    RESTART_AUTHENTICATION_ERROR(true),
+
     INVALID_SIGNATURE(false),
     INVALID_SIGNATURE_ERROR(false),
     REGISTER_NODE(false),

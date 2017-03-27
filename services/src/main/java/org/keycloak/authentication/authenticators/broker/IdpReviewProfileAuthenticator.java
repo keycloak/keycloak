@@ -127,7 +127,7 @@ public class IdpReviewProfileAuthenticator extends AbstractIdpAuthenticator {
 
         AttributeFormDataProcessor.process(formData, realm, userCtx);
 
-        userCtx.saveToLoginSession(context.getAuthenticationSession(), BROKERED_CONTEXT_NOTE);
+        userCtx.saveToAuthenticationSession(context.getAuthenticationSession(), BROKERED_CONTEXT_NOTE);
 
         logger.debugf("Profile updated successfully after first authentication with identity provider '%s' for broker user '%s'.", brokerContext.getIdpConfig().getAlias(), userCtx.getUsername());
 

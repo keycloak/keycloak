@@ -44,6 +44,7 @@ import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.IdentityBrokerService;
 import org.keycloak.services.resources.RealmsResource;
+import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.util.JsonSerialization;
 
 import javax.ws.rs.GET;
@@ -350,14 +351,14 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
     }
 
     @Override
-    public void attachUserSession(UserSessionModel userSession, ClientSessionModel clientSession, BrokeredIdentityContext context) {
+    public void authenticationFinished(AuthenticationSessionModel authSession, BrokeredIdentityContext context)  {
         AccessTokenResponse tokenResponse = (AccessTokenResponse)context.getContextData().get(FEDERATED_ACCESS_TOKEN_RESPONSE);
         int currentTime = Time.currentTime();
         long expiration = tokenResponse.getExpiresIn() > 0 ? tokenResponse.getExpiresIn() + currentTime : 0;
-        userSession.setNote(FEDERATED_TOKEN_EXPIRATION, Long.toString(expiration));
-        userSession.setNote(FEDERATED_REFRESH_TOKEN, tokenResponse.getRefreshToken());
-        userSession.setNote(FEDERATED_ACCESS_TOKEN, tokenResponse.getToken());
-        userSession.setNote(FEDERATED_ID_TOKEN, tokenResponse.getIdToken());
+        authSession.setUserSessionNote(FEDERATED_TOKEN_EXPIRATION, Long.toString(expiration));
+        authSession.setUserSessionNote(FEDERATED_REFRESH_TOKEN, tokenResponse.getRefreshToken());
+        authSession.setUserSessionNote(FEDERATED_ACCESS_TOKEN, tokenResponse.getToken());
+        authSession.setUserSessionNote(FEDERATED_ID_TOKEN, tokenResponse.getIdToken());
     }
 
     @Override

@@ -244,7 +244,6 @@ public class FormAuthenticationFlow implements AuthenticationFlow {
         }
         processor.getAuthenticationSession().setExecutionStatus(actionExecution, ClientSessionModel.ExecutionStatus.SUCCESS);
         processor.getAuthenticationSession().removeAuthNote(AuthenticationProcessor.CURRENT_AUTHENTICATION_EXECUTION);
-        processor.setActionSuccessful();
         return null;
     }
 

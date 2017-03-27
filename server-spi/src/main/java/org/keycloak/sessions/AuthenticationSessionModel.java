@@ -20,6 +20,8 @@ package org.keycloak.sessions;
 import java.util.Map;
 import java.util.Set;
 
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 
 /**
@@ -34,11 +36,11 @@ public interface AuthenticationSessionModel extends CommonClientSessionModel {
 //    public void setUserSession(UserSessionModel userSession);
 
 
-    public Map<String, ExecutionStatus> getExecutionStatus();
-    public void setExecutionStatus(String authenticator, ExecutionStatus status);
-    public void clearExecutionStatus();
-    public UserModel getAuthenticatedUser();
-    public void setAuthenticatedUser(UserModel user);
+    Map<String, ExecutionStatus> getExecutionStatus();
+    void setExecutionStatus(String authenticator, ExecutionStatus status);
+    void clearExecutionStatus();
+    UserModel getAuthenticatedUser();
+    void setAuthenticatedUser(UserModel user);
 
     /**
      * Required actions that are attached to this client session.
@@ -56,26 +58,26 @@ public interface AuthenticationSessionModel extends CommonClientSessionModel {
     void removeRequiredAction(UserModel.RequiredAction action);
 
 
-    /**
-     * These are notes you want applied to the UserSessionModel when the client session is attached to it.
-     *
-     * @param name
-     * @param value
-     */
-    public void setUserSessionNote(String name, String value);
+    // These are notes you want applied to the UserSessionModel when the client session is attached to it.
+    void setUserSessionNote(String name, String value);
+    Map<String, String> getUserSessionNotes();
+    void clearUserSessionNotes();
 
-    /**
-     * These are notes you want applied to the UserSessionModel when the client session is attached to it.
-     *
-     * @return
-     */
-    public Map<String, String> getUserSessionNotes();
+    // These are notes used typically by authenticators and authentication flows. They are cleared when authentication session is restarted
+    String getAuthNote(String name);
+    void setAuthNote(String name, String value);
+    void removeAuthNote(String name);
+    void clearAuthNotes();
 
-    public void clearUserSessionNotes();
+    // These are notes specific to client protocol. They are NOT cleared when authentication session is restarted
+    String getClientNote(String name);
+    void setClientNote(String name, String value);
+    void removeClientNote(String name);
+    Map<String, String> getClientNotes();
+    void clearClientNotes();
 
-    public String getAuthNote(String name);
-    public void setAuthNote(String name, String value);
-    public void removeAuthNote(String name);
-    public void clearAuthNotes();
+    void updateClient(ClientModel client);
 
+    // Will completely restart whole state of authentication session. It will just keep same ID. It will setup it with provided realm and client.
+    void restartSession(RealmModel realm, ClientModel client);
 }

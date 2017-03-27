@@ -15,23 +15,37 @@
  * limitations under the License.
  */
 
-package org.keycloak.models;
+package org.keycloak.testsuite.pages;
 
-
-import java.util.Map;
-
-import org.keycloak.sessions.CommonClientSessionModel;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.support.FindBy;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public interface AuthenticatedClientSessionModel extends CommonClientSessionModel {
+public class LoginExpiredPage extends AbstractPage {
 
-    void setUserSession(UserSessionModel userSession);
-    UserSessionModel getUserSession();
+    @FindBy(id = "loginRestartLink")
+    private WebElement loginRestartLink;
 
-    public String getNote(String name);
-    public void setNote(String name, String value);
-    public void removeNote(String name);
-    public Map<String, String> getNotes();
+    @FindBy(id = "loginContinueLink")
+    private WebElement loginContinueLink;
+
+
+    public void clickLoginRestartLink() {
+        loginRestartLink.click();
+    }
+
+    public void clickLoginContinueLink() {
+        loginContinueLink.click();
+    }
+
+
+    public boolean isCurrent() {
+        return driver.getTitle().equals("Page has expired");
+    }
+
+    public void open() {
+        throw new UnsupportedOperationException();
+    }
 }

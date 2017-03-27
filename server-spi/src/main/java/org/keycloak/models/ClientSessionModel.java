@@ -72,5 +72,10 @@ public interface ClientSessionModel extends CommonClientSessionModel {
 
     public void clearUserSessionNotes();
 
+    public String getNote(String name);
+    public void setNote(String name, String value);
+    public void removeNote(String name);
+    public Map<String, String> getNotes();
+
 
 }

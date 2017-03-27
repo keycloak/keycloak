@@ -38,6 +38,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.LoginActionsService;
+import org.keycloak.sessions.AuthenticationSessionModel;
 
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
@@ -53,16 +54,17 @@ public class IdpEmailVerificationAuthenticator extends AbstractIdpAuthenticator 
 
     @Override
     protected void authenticateImpl(AuthenticationFlowContext context, SerializedBrokeredIdentityContext serializedCtx, BrokeredIdentityContext brokerContext) {
-        /*KeycloakSession session = context.getSession();
+        KeycloakSession session = context.getSession();
         RealmModel realm = context.getRealm();
-        ClientSessionModel clientSession = context.getClientSession();
+        AuthenticationSessionModel authSession = context.getAuthenticationSession();
 
-        if (realm.getSmtpConfig().size() == 0) {
+        // TODO:mposolda (or hmlnarik :) - uncomment and have this working and have AbstractFirstBrokerLoginTest.testLinkAccountByEmailVerification tp PASS
+//        if (realm.getSmtpConfig().size() == 0) {
             ServicesLogger.LOGGER.smtpNotConfigured();
             context.attempted();
             return;
-        }
-
+//        }
+/*
         VerifyEmail.setupKey(clientSession);
 
         UserModel existingUser = getExistingUser(session, realm, clientSession);

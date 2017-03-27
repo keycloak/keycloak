@@ -20,6 +20,8 @@ package org.keycloak.services.managers;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.jboss.logging.Logger;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
@@ -34,7 +36,9 @@ import org.keycloak.sessions.AuthenticationSessionModel;
  */
 class CodeGenerateUtil {
 
-    private static final Map<Class<? extends CommonClientSessionModel>, ClientSessionParser<?>> PARSERS = new HashMap<>();
+    private static final Logger logger = Logger.getLogger(CodeGenerateUtil.class);
+
+    private static final Map<Class<? extends CommonClientSessionModel>, ClientSessionParser> PARSERS = new HashMap<>();
 
     static {
         PARSERS.put(ClientSessionModel.class, new ClientSessionModelParser());
@@ -43,26 +47,10 @@ class CodeGenerateUtil {
     }
 
 
-    public static <CS extends CommonClientSessionModel> CS parseSession(String code, KeycloakSession session, RealmModel realm, Class<CS> expectedClazz) {
-        ClientSessionParser<?> parser = PARSERS.get(expectedClazz);
 
-        CommonClientSessionModel result = parser.parseSession(code, session, realm);
-        return expectedClazz.cast(result);
-    }
-
-    public static String generateCode(CommonClientSessionModel clientSession, String actionId) {
-        ClientSessionParser parser = getParser(clientSession);
-        return parser.generateCode(clientSession, actionId);
-    }
-
-    public static void removeExpiredSession(KeycloakSession session, CommonClientSessionModel clientSession) {
-        ClientSessionParser parser = getParser(clientSession);
-        parser.removeExpiredSession(session, clientSession);
-    }
-
-    private static ClientSessionParser<?> getParser(CommonClientSessionModel clientSession) {
+    static <CS extends CommonClientSessionModel> ClientSessionParser<CS> getParser(Class<CS> clientSessionClass) {
         for (Class<?> c : PARSERS.keySet()) {
-            if (c.isAssignableFrom(clientSession.getClass())) {
+            if (c.isAssignableFrom(clientSessionClass)) {
                 return PARSERS.get(c);
             }
         }
@@ -70,13 +58,19 @@ class CodeGenerateUtil {
     }
 
 
-    private interface ClientSessionParser<CS extends CommonClientSessionModel> {
+    interface ClientSessionParser<CS extends CommonClientSessionModel> {
 
         CS parseSession(String code, KeycloakSession session, RealmModel realm);
 
         String generateCode(CS clientSession, String actionId);
 
         void removeExpiredSession(KeycloakSession session, CS clientSession);
+
+        String getNote(CS clientSession, String name);
+
+        void removeNote(CS clientSession, String name);
+
+        void setNote(CS clientSession, String name, String value);
 
     }
 
@@ -114,6 +108,21 @@ class CodeGenerateUtil {
         public void removeExpiredSession(KeycloakSession session, ClientSessionModel clientSession) {
             session.sessions().removeClientSession(clientSession.getRealm(), clientSession);
         }
+
+        @Override
+        public String getNote(ClientSessionModel clientSession, String name) {
+            return clientSession.getNote(name);
+        }
+
+        @Override
+        public void removeNote(ClientSessionModel clientSession, String name) {
+            clientSession.removeNote(name);
+        }
+
+        @Override
+        public void setNote(ClientSessionModel clientSession, String name, String value) {
+            clientSession.setNote(name, value);
+        }
     }
 
 
@@ -122,7 +131,7 @@ class CodeGenerateUtil {
         @Override
         public AuthenticationSessionModel parseSession(String code, KeycloakSession session, RealmModel realm) {
             // Read authSessionID from cookie. Code is ignored for now
-            return session.authenticationSessions().getCurrentAuthenticationSession(realm);
+            return new AuthenticationSessionManager(session).getCurrentAuthenticationSession(realm);
         }
 
         @Override
@@ -132,7 +141,22 @@ class CodeGenerateUtil {
 
         @Override
         public void removeExpiredSession(KeycloakSession session, AuthenticationSessionModel clientSession) {
-            session.authenticationSessions().removeAuthenticationSession(clientSession.getRealm(), clientSession);
+            new AuthenticationSessionManager(session).removeAuthenticationSession(clientSession.getRealm(), clientSession, true);
+        }
+
+        @Override
+        public String getNote(AuthenticationSessionModel clientSession, String name) {
+            return clientSession.getAuthNote(name);
+        }
+
+        @Override
+        public void removeNote(AuthenticationSessionModel clientSession, String name) {
+            clientSession.removeAuthNote(name);
+        }
+
+        @Override
+        public void setNote(AuthenticationSessionModel clientSession, String name, String value) {
+            clientSession.setAuthNote(name, value);
         }
     }
 
@@ -168,6 +192,21 @@ class CodeGenerateUtil {
             sb.append(userSessionId);
             sb.append('.');
             sb.append(clientUUID);
+
+            // TODO:mposolda codeChallengeMethod is not used anywhere. Not sure if it's bug of PKCE contribution. Doublecheck the PKCE specification what should be done regarding code
+            // https://tools.ietf.org/html/rfc7636#section-4
+            String codeChallenge = clientSession.getNote(OAuth2Constants.CODE_CHALLENGE);
+            String codeChallengeMethod = clientSession.getNote(OAuth2Constants.CODE_CHALLENGE_METHOD);
+            if (codeChallenge != null) {
+                logger.debugf("PKCE received codeChallenge = %s", codeChallenge);
+                if (codeChallengeMethod == null) {
+                    logger.debug("PKCE not received codeChallengeMethod, treating plain");
+                    codeChallengeMethod = OAuth2Constants.PKCE_METHOD_PLAIN;
+                } else {
+                    logger.debugf("PKCE received codeChallengeMethod = %s", codeChallengeMethod);
+                }
+            }
+
             return sb.toString();
         }
 
@@ -176,6 +215,20 @@ class CodeGenerateUtil {
             throw new IllegalStateException("Not yet implemented");
         }
 
+        @Override
+        public String getNote(AuthenticatedClientSessionModel clientSession, String name) {
+            return clientSession.getNote(name);
+        }
+
+        @Override
+        public void removeNote(AuthenticatedClientSessionModel clientSession, String name) {
+            clientSession.removeNote(name);
+        }
+
+        @Override
+        public void setNote(AuthenticatedClientSessionModel clientSession, String name, String value) {
+            clientSession.setNote(name, value);
+        }
     }
 
 

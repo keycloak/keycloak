@@ -143,6 +143,7 @@ public class OIDCKeycloakServerBrokerWithConsentTest extends AbstractIdentityPro
             this.session = brokerServerRule.startSession();
 
             session.sessions().removeExpired(getRealm());
+            session.authenticationSessions().removeExpired(getRealm());
 
             brokerServerRule.stopSession(this.session, true);
             this.session = brokerServerRule.startSession();

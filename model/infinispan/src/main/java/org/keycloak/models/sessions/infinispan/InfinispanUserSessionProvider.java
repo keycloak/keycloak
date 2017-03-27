@@ -120,9 +120,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
     }
 
     @Override
-    public UserSessionModel createUserSession(RealmModel realm, UserModel user, String loginUsername, String ipAddress, String authMethod, boolean rememberMe, String brokerSessionId, String brokerUserId) {
-        String id = KeycloakModelUtils.generateId();
-
+    public UserSessionModel createUserSession(String id, RealmModel realm, UserModel user, String loginUsername, String ipAddress, String authMethod, boolean rememberMe, String brokerSessionId, String brokerUserId) {
         UserSessionEntity entity = new UserSessionEntity();
         entity.setId(id);
         entity.setRealm(realm.getId());
@@ -139,7 +137,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         entity.setStarted(currentTime);
         entity.setLastSessionRefresh(currentTime);
 
-        tx.put(sessionCache, id, entity);
+        tx.putIfAbsent(sessionCache, id, entity);
 
         return wrap(realm, entity, false);
     }
@@ -151,11 +149,10 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
 
     protected ClientSessionModel getClientSession(RealmModel realm, String id, boolean offline) {
         Cache<String, SessionEntity> cache = getCache(offline);
-        ClientSessionEntity entity = (ClientSessionEntity) cache.get(id);
+        ClientSessionEntity entity = (ClientSessionEntity) tx.get(cache, id); // Chance created in this transaction
 
-        // Chance created in this transaction
         if (entity == null) {
-            entity = (ClientSessionEntity) tx.get(cache, id);
+            entity = (ClientSessionEntity) cache.get(id);
         }
 
         return wrap(realm, entity, offline);
@@ -163,11 +160,11 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
 
     @Override
     public ClientSessionModel getClientSession(String id) {
-        ClientSessionEntity entity = (ClientSessionEntity) sessionCache.get(id);
-
         // Chance created in this transaction
+        ClientSessionEntity entity = (ClientSessionEntity) tx.get(sessionCache, id);
+
         if (entity == null) {
-            entity = (ClientSessionEntity) tx.get(sessionCache, id);
+            entity = (ClientSessionEntity) sessionCache.get(id);
         }
 
         if (entity != null) {
@@ -184,11 +181,10 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
 
     protected UserSessionAdapter getUserSession(RealmModel realm, String id, boolean offline) {
         Cache<String, SessionEntity> cache = getCache(offline);
-        UserSessionEntity entity = (UserSessionEntity) cache.get(id);
+        UserSessionEntity entity = (UserSessionEntity) tx.get(cache, id); // Chance created in this transaction
 
-        // Chance created in this transaction
         if (entity == null) {
-            entity = (UserSessionEntity) tx.get(cache, id);
+            entity = (UserSessionEntity) cache.get(id);
         }
 
         return wrap(realm, entity, offline);
@@ -742,11 +738,10 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
     @Override
     public ClientInitialAccessModel getClientInitialAccessModel(RealmModel realm, String id) {
         Cache<String, SessionEntity> cache = getCache(false);
-        ClientInitialAccessEntity entity = (ClientInitialAccessEntity) cache.get(id);
+        ClientInitialAccessEntity entity = (ClientInitialAccessEntity) tx.get(cache, id); // Chance created in this transaction
 
-        // If created in this transaction
         if (entity == null) {
-            entity = (ClientInitialAccessEntity) tx.get(cache, id);
+            entity = (ClientInitialAccessEntity) cache.get(id);
         }
 
         return wrap(realm, entity);

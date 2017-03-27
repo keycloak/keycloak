@@ -45,6 +45,7 @@ import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserLoginFailureModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.provider.ProviderFactory;
@@ -332,7 +333,8 @@ public class UsersResource {
         }
         EventBuilder event = new EventBuilder(realm, session, clientConnection);
 
-        UserSessionModel userSession = session.sessions().createUserSession(realm, user, user.getUsername(), clientConnection.getRemoteAddr(), "impersonate", false, null, null);
+        String sessionId = KeycloakModelUtils.generateId();
+        UserSessionModel userSession = session.sessions().createUserSession(sessionId, realm, user, user.getUsername(), clientConnection.getRemoteAddr(), "impersonate", false, null, null);
         AuthenticationManager.createLoginCookie(session, realm, userSession.getUser(), userSession, uriInfo, clientConnection);
         URI redirect = AccountService.accountServiceApplicationPage(uriInfo).build(realm.getName());
         Map<String, Object> result = new HashMap<>();

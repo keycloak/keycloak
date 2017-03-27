@@ -92,7 +92,7 @@ public class ValidateX509CertificateUsername extends AbstractX509ClientCertifica
         UserModel user;
         try {
             context.getEvent().detail(Details.USERNAME, userIdentity.toString());
-            context.getAuthenticationSession().setNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME, userIdentity.toString());
+            context.getAuthenticationSession().setAuthNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME, userIdentity.toString());
             user = getUserIdentityToModelMapper(config).find(context, userIdentity);
         }
         catch(ModelDuplicateException e) {
