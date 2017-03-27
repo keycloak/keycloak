@@ -18,7 +18,7 @@
 package org.keycloak.models.session;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.keycloak.models.ClientLoginSessionModel;
+import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
@@ -162,7 +162,7 @@ public class PersistentUserSessionAdapter implements UserSessionModel {
 
     // TODO:mposolda
     @Override
-    public Map<String, ClientLoginSessionModel> getClientLoginSessions() {
+    public Map<String, AuthenticatedClientSessionModel> getAuthenticatedClientSessions() {
         return null;
     }
 

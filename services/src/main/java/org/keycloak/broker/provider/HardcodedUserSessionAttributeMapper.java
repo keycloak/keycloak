@@ -87,14 +87,14 @@ public class HardcodedUserSessionAttributeMapper extends AbstractIdentityProvide
     public void preprocessFederatedIdentity(KeycloakSession session, RealmModel realm, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
         String attribute = mapperModel.getConfig().get(ATTRIBUTE);
         String attributeValue = mapperModel.getConfig().get(ATTRIBUTE_VALUE);
-        context.getLoginSession().setUserSessionNote(attribute, attributeValue);
+        context.getAuthenticationSession().setUserSessionNote(attribute, attributeValue);
     }
 
     @Override
     public void updateBrokeredUser(KeycloakSession session, RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
         String attribute = mapperModel.getConfig().get(ATTRIBUTE);
         String attributeValue = mapperModel.getConfig().get(ATTRIBUTE_VALUE);
-        context.getLoginSession().setUserSessionNote(attribute, attributeValue);
+        context.getAuthenticationSession().setUserSessionNote(attribute, attributeValue);
     }
 
     @Override

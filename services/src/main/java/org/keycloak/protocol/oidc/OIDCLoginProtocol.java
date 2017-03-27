@@ -23,7 +23,7 @@ import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
-import org.keycloak.models.ClientLoginSessionModel;
+import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -39,7 +39,7 @@ import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.managers.ResourceAdminManager;
 import org.keycloak.sessions.CommonClientSessionModel;
-import org.keycloak.sessions.LoginSessionModel;
+import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.util.TokenUtil;
 
 import javax.ws.rs.core.HttpHeaders;
@@ -171,8 +171,8 @@ public class OIDCLoginProtocol implements LoginProtocol {
 
 
     @Override
-    public Response authenticated(UserSessionModel userSession, ClientSessionCode<ClientLoginSessionModel> accessCode) {
-        ClientLoginSessionModel clientSession = accessCode.getClientSession();
+    public Response authenticated(UserSessionModel userSession, ClientSessionCode<AuthenticatedClientSessionModel> accessCode) {
+        AuthenticatedClientSessionModel clientSession = accessCode.getClientSession();
         setupResponseTypeAndMode(clientSession);
 
         String redirect = clientSession.getRedirectUri();
@@ -229,15 +229,15 @@ public class OIDCLoginProtocol implements LoginProtocol {
 
 
     @Override
-    public Response sendError(LoginSessionModel loginSession, Error error) {
-        setupResponseTypeAndMode(loginSession);
+    public Response sendError(AuthenticationSessionModel authSession, Error error) {
+        setupResponseTypeAndMode(authSession);
 
-        String redirect = loginSession.getRedirectUri();
-        String state = loginSession.getNote(OIDCLoginProtocol.STATE_PARAM);
+        String redirect = authSession.getRedirectUri();
+        String state = authSession.getNote(OIDCLoginProtocol.STATE_PARAM);
         OIDCRedirectUriBuilder redirectUri = OIDCRedirectUriBuilder.fromUri(redirect, responseMode).addParam(OAuth2Constants.ERROR, translateError(error));
         if (state != null)
             redirectUri.addParam(OAuth2Constants.STATE, state);
-        session.loginSessions().removeLoginSession(realm, loginSession);
+        session.authenticationSessions().removeAuthenticationSession(realm, authSession);
         RestartLoginCookie.expireRestartCookie(realm, session.getContext().getConnection(), uriInfo);
         return redirectUri.build();
     }
@@ -258,13 +258,13 @@ public class OIDCLoginProtocol implements LoginProtocol {
     }
 
     @Override
-    public void backchannelLogout(UserSessionModel userSession, ClientLoginSessionModel clientSession) {
+    public void backchannelLogout(UserSessionModel userSession, AuthenticatedClientSessionModel clientSession) {
         ClientModel client = clientSession.getClient();
         new ResourceAdminManager(session).logoutClientSession(uriInfo.getRequestUri(), realm, client, clientSession);
     }
 
     @Override
-    public Response frontchannelLogout(UserSessionModel userSession, ClientLoginSessionModel clientSession) {
+    public Response frontchannelLogout(UserSessionModel userSession, AuthenticatedClientSessionModel clientSession) {
         // todo oidc redirect support
         throw new RuntimeException("NOT IMPLEMENTED");
     }
@@ -291,18 +291,18 @@ public class OIDCLoginProtocol implements LoginProtocol {
 
 
     @Override
-    public boolean requireReauthentication(UserSessionModel userSession, LoginSessionModel loginSession) {
-        return isPromptLogin(loginSession) || isAuthTimeExpired(userSession, loginSession);
+    public boolean requireReauthentication(UserSessionModel userSession, AuthenticationSessionModel authSession) {
+        return isPromptLogin(authSession) || isAuthTimeExpired(userSession, authSession);
     }
 
-    protected boolean isPromptLogin(LoginSessionModel loginSession) {
-        String prompt = loginSession.getNote(OIDCLoginProtocol.PROMPT_PARAM);
+    protected boolean isPromptLogin(AuthenticationSessionModel authSession) {
+        String prompt = authSession.getNote(OIDCLoginProtocol.PROMPT_PARAM);
         return TokenUtil.hasPrompt(prompt, OIDCLoginProtocol.PROMPT_VALUE_LOGIN);
     }
 
-    protected boolean isAuthTimeExpired(UserSessionModel userSession, LoginSessionModel loginSession) {
+    protected boolean isAuthTimeExpired(UserSessionModel userSession, AuthenticationSessionModel authSession) {
         String authTime = userSession.getNote(AuthenticationManager.AUTH_TIME);
-        String maxAge = loginSession.getNote(OIDCLoginProtocol.MAX_AGE_PARAM);
+        String maxAge = authSession.getNote(OIDCLoginProtocol.MAX_AGE_PARAM);
         if (maxAge == null) {
             return false;
         }
@@ -312,7 +312,7 @@ public class OIDCLoginProtocol implements LoginProtocol {
 
         if (authTimeInt + maxAgeInt < Time.currentTime()) {
             logger.debugf("Authentication time is expired, needs to reauthenticate. userSession=%s, clientId=%s, maxAge=%d, authTime=%d", userSession.getId(),
-                    loginSession.getClient().getId(), maxAgeInt, authTimeInt);
+                    authSession.getClient().getId(), maxAgeInt, authTimeInt);
             return true;
         }
 

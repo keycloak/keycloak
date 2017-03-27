@@ -23,14 +23,12 @@ import org.keycloak.common.ClientConnection;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.AuthenticationFlowModel;
-import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.LoginProtocol.Error;
-import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.resources.LoginActionsService;
-import org.keycloak.sessions.LoginSessionModel;
+import org.keycloak.sessions.AuthenticationSessionModel;
 
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
@@ -64,9 +62,9 @@ public abstract class AuthorizationEndpointBase {
         this.event = event;
     }
 
-    protected AuthenticationProcessor createProcessor(LoginSessionModel loginSession, String flowId, String flowPath) {
+    protected AuthenticationProcessor createProcessor(AuthenticationSessionModel authSession, String flowId, String flowPath) {
         AuthenticationProcessor processor = new AuthenticationProcessor();
-        processor.setLoginSession(loginSession)
+        processor.setAuthenticationSession(authSession)
                 .setFlowPath(flowPath)
                 .setFlowId(flowId)
                 .setBrowserFlow(true)
@@ -76,23 +74,26 @@ public abstract class AuthorizationEndpointBase {
                 .setSession(session)
                 .setUriInfo(uriInfo)
                 .setRequest(request);
+
+        authSession.setAuthNote(AuthenticationProcessor.CURRENT_FLOW_PATH, flowPath);
+
         return processor;
     }
 
     /**
      * Common method to handle browser authentication request in protocols unified way.
      *
-     * @param loginSession for current request
+     * @param authSession for current request
      * @param protocol handler for protocol used to initiate login
      * @param isPassive set to true if login should be passive (without login screen shown)
      * @param redirectToAuthentication if true redirect to flow url.  If initial call to protocol is a POST, you probably want to do this.  This is so we can disable the back button on browser
      * @return response to be returned to the browser
      */
-    protected Response handleBrowserAuthenticationRequest(LoginSessionModel loginSession, LoginProtocol protocol, boolean isPassive, boolean redirectToAuthentication) {
+    protected Response handleBrowserAuthenticationRequest(AuthenticationSessionModel authSession, LoginProtocol protocol, boolean isPassive, boolean redirectToAuthentication) {
         AuthenticationFlowModel flow = getAuthenticationFlow();
         String flowId = flow.getId();
-        AuthenticationProcessor processor = createProcessor(loginSession, flowId, LoginActionsService.AUTHENTICATE_PATH);
-        event.detail(Details.CODE_ID, loginSession.getId());
+        AuthenticationProcessor processor = createProcessor(authSession, flowId, LoginActionsService.AUTHENTICATE_PATH);
+        event.detail(Details.CODE_ID, authSession.getId());
         if (isPassive) {
             // OIDC prompt == NONE or SAML 2 IsPassive flag
             // This means that client is just checking if the user is already completely logged in.
@@ -101,13 +102,16 @@ public abstract class AuthorizationEndpointBase {
                 if (processor.authenticateOnly() == null) {
                     // processor.attachSession();
                 } else {
-                    Response response = protocol.sendError(loginSession, Error.PASSIVE_LOGIN_REQUIRED);
-                    session.loginSessions().removeLoginSession(realm, loginSession);
+                    Response response = protocol.sendError(authSession, Error.PASSIVE_LOGIN_REQUIRED);
+                    session.authenticationSessions().removeAuthenticationSession(realm, authSession);
                     return response;
                 }
+
+                AuthenticationManager.setRolesAndMappersInSession(authSession);
+
                 if (processor.isActionRequired()) {
-                    Response response = protocol.sendError(loginSession, Error.PASSIVE_INTERACTION_REQUIRED);
-                    session.loginSessions().removeLoginSession(realm, loginSession);
+                    Response response = protocol.sendError(authSession, Error.PASSIVE_INTERACTION_REQUIRED);
+                    session.authenticationSessions().removeAuthenticationSession(realm, authSession);
                     return response;
                 }
 
@@ -119,10 +123,9 @@ public abstract class AuthorizationEndpointBase {
             return processor.finishAuthentication(protocol);
         } else {
             try {
-                // TODO: Check if this is required...
-                RestartLoginCookie.setRestartCookie(session, realm, clientConnection, uriInfo, loginSession);
+                RestartLoginCookie.setRestartCookie(session, realm, clientConnection, uriInfo, authSession);
                 if (redirectToAuthentication) {
-                    return processor.redirectToFlow();
+                    return processor.redirectToFlow(null);
                 }
                 return processor.authenticate();
             } catch (Exception e) {

@@ -18,26 +18,24 @@
 package org.keycloak.models.session;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.keycloak.models.ClientLoginSessionModel;
+import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.util.JsonSerialization;
 
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class PersistentClientSessionAdapter implements ClientLoginSessionModel {
+public class PersistentAuthenticatedClientSessionAdapter implements AuthenticatedClientSessionModel {
 
     private final PersistentClientSessionModel model;
     private final RealmModel realm;
@@ -46,7 +44,7 @@ public class PersistentClientSessionAdapter implements ClientLoginSessionModel {
 
     private PersistentClientSessionData data;
 
-    public PersistentClientSessionAdapter(ClientLoginSessionModel clientSession) {
+    public PersistentAuthenticatedClientSessionAdapter(AuthenticatedClientSessionModel clientSession) {
         data = new PersistentClientSessionData();
         data.setAction(clientSession.getAction());
         data.setAuthMethod(clientSession.getProtocol());
@@ -69,7 +67,7 @@ public class PersistentClientSessionAdapter implements ClientLoginSessionModel {
         userSession = clientSession.getUserSession();
     }
 
-    public PersistentClientSessionAdapter(PersistentClientSessionModel model, RealmModel realm, ClientModel client, UserSessionModel userSession) {
+    public PersistentAuthenticatedClientSessionAdapter(PersistentClientSessionModel model, RealmModel realm, ClientModel client, UserSessionModel userSession) {
         this.model = model;
         this.realm = realm;
         this.client = client;

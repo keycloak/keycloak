@@ -24,17 +24,19 @@ import org.keycloak.provider.Provider;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public interface LoginSessionProvider extends Provider {
+public interface AuthenticationSessionProvider extends Provider {
 
-    LoginSessionModel createLoginSession(RealmModel realm, ClientModel client, boolean browser);
+    AuthenticationSessionModel createAuthenticationSession(RealmModel realm, ClientModel client, boolean browser);
 
-    LoginSessionModel getCurrentLoginSession(RealmModel realm);
+    String getCurrentAuthenticationSessionId(RealmModel realm);
 
-    LoginSessionModel getLoginSession(RealmModel realm, String loginSessionId);
+    AuthenticationSessionModel getCurrentAuthenticationSession(RealmModel realm);
 
-    void removeLoginSession(RealmModel realm, LoginSessionModel loginSession);
+    AuthenticationSessionModel getAuthenticationSession(RealmModel realm, String authenticationSessionId);
 
+    void removeAuthenticationSession(RealmModel realm, AuthenticationSessionModel authenticationSession);
 
+    // TODO: test and add to scheduler
     void removeExpired(RealmModel realm);
     void onRealmRemoved(RealmModel realm);
     void onClientRemoved(RealmModel realm, ClientModel client);

@@ -30,9 +30,8 @@ import org.keycloak.forms.account.AccountPages;
 import org.keycloak.forms.account.AccountProvider;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.AccountRoles;
-import org.keycloak.models.ClientLoginSessionModel;
+import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
@@ -45,7 +44,6 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.CredentialValidation;
 import org.keycloak.models.utils.FormMessage;
 import org.keycloak.models.utils.ModelToRepresentation;
-import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.ForbiddenException;
@@ -54,7 +52,6 @@ import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.Auth;
 import org.keycloak.services.managers.AuthenticationManager;
-import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.util.ResolveRelative;
@@ -68,13 +65,12 @@ import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
-import javax.ws.rs.core.Variant;
+
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -165,12 +161,11 @@ public class AccountService extends AbstractSecuredLocalService {
         if (authResult != null) {
             UserSessionModel userSession = authResult.getSession();
             if (userSession != null) {
-                boolean associated = userSession.getClientLoginSessions().get(client.getId()) != null;
-                if (!associated) {
-                    ClientLoginSessionModel clientSession = session.sessions().createClientSession(userSession.getRealm(), client, userSession);
-                    clientSession.setUserSession(userSession);
-                    auth.setClientSession(clientSession);
+                AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessions().get(client.getId());
+                if (clientSession == null) {
+                    clientSession = session.sessions().createClientSession(userSession.getRealm(), client, userSession);
                 }
+                auth.setClientSession(clientSession);
             }
 
             account.setUser(auth.getUser());

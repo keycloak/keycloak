@@ -19,7 +19,7 @@ package org.keycloak.protocol.saml.mappers;
 
 import org.keycloak.dom.saml.v2.assertion.AttributeStatementType;
 import org.keycloak.dom.saml.v2.assertion.AttributeType;
-import org.keycloak.models.ClientLoginSessionModel;
+import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.ProtocolMapperModel;
@@ -111,7 +111,7 @@ public class RoleListMapper extends AbstractSAMLProtocolMapper implements SAMLRo
     }
 
     @Override
-    public void mapRoles(AttributeStatementType roleAttributeStatement, ProtocolMapperModel mappingModel, KeycloakSession session, UserSessionModel userSession, ClientLoginSessionModel clientSession) {
+    public void mapRoles(AttributeStatementType roleAttributeStatement, ProtocolMapperModel mappingModel, KeycloakSession session, UserSessionModel userSession, AuthenticatedClientSessionModel clientSession) {
         String single = mappingModel.getConfig().get(SINGLE_ROLE_ATTRIBUTE);
         boolean singleAttribute = Boolean.parseBoolean(single);
 

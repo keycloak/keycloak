@@ -1,6 +1,6 @@
 package org.keycloak.protocol.oidc.mappers;
 
-import org.keycloak.models.ClientLoginSessionModel;
+import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperContainerModel;
@@ -64,19 +64,19 @@ public abstract class AbstractPairwiseSubMapper extends AbstractOIDCProtocolMapp
     }
 
     @Override
-    public final IDToken transformIDToken(IDToken token, ProtocolMapperModel mappingModel, KeycloakSession session, UserSessionModel userSession, ClientLoginSessionModel clientSession) {
+    public final IDToken transformIDToken(IDToken token, ProtocolMapperModel mappingModel, KeycloakSession session, UserSessionModel userSession, AuthenticatedClientSessionModel clientSession) {
         setSubject(token, generateSub(mappingModel, getSectorIdentifier(clientSession.getClient(), mappingModel), userSession.getUser().getId()));
         return token;
     }
 
     @Override
-    public final AccessToken transformAccessToken(AccessToken token, ProtocolMapperModel mappingModel, KeycloakSession session, UserSessionModel userSession, ClientLoginSessionModel clientSession) {
+    public final AccessToken transformAccessToken(AccessToken token, ProtocolMapperModel mappingModel, KeycloakSession session, UserSessionModel userSession, AuthenticatedClientSessionModel clientSession) {
         setSubject(token, generateSub(mappingModel, getSectorIdentifier(clientSession.getClient(), mappingModel), userSession.getUser().getId()));
         return token;
     }
 
     @Override
-    public final AccessToken transformUserInfoToken(AccessToken token, ProtocolMapperModel mappingModel, KeycloakSession session, UserSessionModel userSession, ClientLoginSessionModel clientSession) {
+    public final AccessToken transformUserInfoToken(AccessToken token, ProtocolMapperModel mappingModel, KeycloakSession session, UserSessionModel userSession, AuthenticatedClientSessionModel clientSession) {
         setSubject(token, generateSub(mappingModel, getSectorIdentifier(clientSession.getClient(), mappingModel), userSession.getUser().getId()));
         return token;
     }

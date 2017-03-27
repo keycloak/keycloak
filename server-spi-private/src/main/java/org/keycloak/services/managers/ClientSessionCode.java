@@ -64,7 +64,7 @@ public class ClientSessionCode<CLIENT_SESSION extends CommonClientSessionModel> 
 
     public static class ParseResult<CLIENT_SESSION extends CommonClientSessionModel> {
         ClientSessionCode<CLIENT_SESSION> code;
-        boolean loginSessionNotFound;
+        boolean authSessionNotFound;
         boolean illegalHash;
         CLIENT_SESSION clientSession;
 
@@ -72,8 +72,8 @@ public class ClientSessionCode<CLIENT_SESSION extends CommonClientSessionModel> 
             return code;
         }
 
-        public boolean isLoginSessionNotFound() {
-            return loginSessionNotFound;
+        public boolean isAuthSessionNotFound() {
+            return authSessionNotFound;
         }
 
         public boolean isIllegalHash() {
@@ -94,7 +94,7 @@ public class ClientSessionCode<CLIENT_SESSION extends CommonClientSessionModel> 
         try {
             result.clientSession = getClientSession(code, session, realm, sessionClass);
             if (result.clientSession == null) {
-                result.loginSessionNotFound = true;
+                result.authSessionNotFound = true;
                 return result;
             }
 
@@ -111,25 +111,15 @@ public class ClientSessionCode<CLIENT_SESSION extends CommonClientSessionModel> 
         }
     }
 
-    public static <CLIENT_SESSION extends CommonClientSessionModel> ClientSessionCode<CLIENT_SESSION> parse(String code, KeycloakSession session, RealmModel realm, Class<CLIENT_SESSION> sessionClass) {
-        try {
-            CLIENT_SESSION clientSession = getClientSession(code, session, realm, sessionClass);
-            if (clientSession == null) {
-                return null;
-            }
-
-            if (!verifyCode(code, clientSession)) {
-                return null;
-            }
-
-            return new ClientSessionCode<>(session, realm, clientSession);
-        } catch (RuntimeException e) {
-            return null;
-        }
-    }
-
     public static <CLIENT_SESSION extends CommonClientSessionModel> CLIENT_SESSION getClientSession(String code, KeycloakSession session, RealmModel realm, Class<CLIENT_SESSION> sessionClass) {
-        return CodeGenerateUtil.parseSession(code, session, realm, sessionClass);
+        CLIENT_SESSION clientSession = CodeGenerateUtil.parseSession(code, session, realm, sessionClass);
+
+        // TODO:mposolda Move this to somewhere else? Maybe LoginActionsService.sessionCodeChecks should be somehow even for non-action URLs...
+        if (clientSession != null) {
+            session.getContext().setClient(clientSession.getClient());
+        }
+
+        return clientSession;
     }
 
     public CLIENT_SESSION getClientSession() {
@@ -171,6 +161,10 @@ public class ClientSessionCode<CLIENT_SESSION extends CommonClientSessionModel> 
             return false;
         }
         return true;
+    }
+
+    public void removeExpiredClientSession() {
+        CodeGenerateUtil.removeExpiredSession(session, commonLoginSession);
     }
 
 
@@ -222,18 +216,18 @@ public class ClientSessionCode<CLIENT_SESSION extends CommonClientSessionModel> 
         return nextCode;
     }
 
-    private static String generateCode(CommonClientSessionModel loginSession) {
+    private static String generateCode(CommonClientSessionModel authSession) {
         try {
             String actionId = Base64Url.encode(KeycloakModelUtils.generateSecret());
 
             StringBuilder sb = new StringBuilder();
             sb.append(actionId);
             sb.append('.');
-            sb.append(loginSession.getId());
+            sb.append(authSession.getId());
 
             // https://tools.ietf.org/html/rfc7636#section-4
-            String codeChallenge = loginSession.getNote(OAuth2Constants.CODE_CHALLENGE);
-            String codeChallengeMethod = loginSession.getNote(OAuth2Constants.CODE_CHALLENGE_METHOD);
+            String codeChallenge = authSession.getNote(OAuth2Constants.CODE_CHALLENGE);
+            String codeChallengeMethod = authSession.getNote(OAuth2Constants.CODE_CHALLENGE_METHOD);
             if (codeChallenge != null) {
                 logger.debugf("PKCE received codeChallenge = %s", codeChallenge);
                 if (codeChallengeMethod == null) {
@@ -244,9 +238,9 @@ public class ClientSessionCode<CLIENT_SESSION extends CommonClientSessionModel> 
                 }
             }
 
-            String code = CodeGenerateUtil.generateCode(loginSession, actionId);
+            String code = CodeGenerateUtil.generateCode(authSession, actionId);
 
-            loginSession.setNote(ACTIVE_CODE, code);
+            authSession.setNote(ACTIVE_CODE, code);
 
             return code;
         } catch (Exception e) {
@@ -254,15 +248,15 @@ public class ClientSessionCode<CLIENT_SESSION extends CommonClientSessionModel> 
         }
     }
 
-    private static boolean verifyCode(String code, CommonClientSessionModel loginSession) {
+    public static boolean verifyCode(String code, CommonClientSessionModel authSession) {
         try {
-            String activeCode = loginSession.getNote(ACTIVE_CODE);
+            String activeCode = authSession.getNote(ACTIVE_CODE);
             if (activeCode == null) {
                 logger.debug("Active code not found in client session");
                 return false;
             }
 
-            loginSession.removeNote(ACTIVE_CODE);
+            authSession.removeNote(ACTIVE_CODE);
 
             return MessageDigest.isEqual(code.getBytes(), activeCode.getBytes());
         } catch (Exception e) {

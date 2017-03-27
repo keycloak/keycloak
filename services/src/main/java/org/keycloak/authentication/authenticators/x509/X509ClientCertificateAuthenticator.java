@@ -111,7 +111,7 @@ public class X509ClientCertificateAuthenticator extends AbstractX509ClientCertif
             UserModel user;
             try {
                 context.getEvent().detail(Details.USERNAME, userIdentity.toString());
-                context.getClientSession().setNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME, userIdentity.toString());
+                context.getAuthenticationSession().setAuthNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME, userIdentity.toString());
                 user = getUserIdentityToModelMapper(config).find(context, userIdentity);
             }
             catch(ModelDuplicateException e) {
@@ -166,7 +166,7 @@ public class X509ClientCertificateAuthenticator extends AbstractX509ClientCertif
                 // to call the method "challenge" results in a wrong/unexpected behavior.
                 // The question is whether calling "forceChallenge" here is ok from
                 // the design viewpoint?
-                context.getClientSession().setNote(AuthenticationProcessor.CURRENT_AUTHENTICATION_EXECUTION, context.getExecution().getId());
+                context.getAuthenticationSession().setAuthNote(AuthenticationProcessor.CURRENT_AUTHENTICATION_EXECUTION, context.getExecution().getId());
                 context.forceChallenge(createSuccessResponse(context, certs[0].getSubjectDN().getName()));
                 // Do not set the flow status yet, we want to display a form to let users
                 // choose whether to accept the identity from certificate or to specify username/password explicitly

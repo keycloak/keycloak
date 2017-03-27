@@ -53,6 +53,8 @@ public class AuthorizeClientUtil {
             throw new ErrorResponseException("invalid_client", "Client authentication ended, but client is null", Response.Status.BAD_REQUEST);
         }
 
+        session.getContext().setClient(client);
+
         return new ClientAuthResult(client, processor.getClientAuthAttributes());
     }
 

@@ -20,7 +20,7 @@ package org.keycloak.models;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.cache.UserCache;
 import org.keycloak.provider.Provider;
-import org.keycloak.sessions.LoginSessionProvider;
+import org.keycloak.sessions.AuthenticationSessionProvider;
 import org.keycloak.storage.federated.UserFederatedStorageProvider;
 
 import java.util.Set;
@@ -103,7 +103,7 @@ public interface KeycloakSession {
     UserSessionProvider sessions();
 
 
-    LoginSessionProvider loginSessions();
+    AuthenticationSessionProvider authenticationSessions();
 
 
 

@@ -18,7 +18,7 @@
 package org.keycloak.protocol.oidc.mappers;
 
 import org.keycloak.Config;
-import org.keycloak.models.ClientLoginSessionModel;
+import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.ProtocolMapperModel;
@@ -61,7 +61,7 @@ public abstract class AbstractOIDCProtocolMapper implements ProtocolMapper {
     }
 
     public AccessToken transformUserInfoToken(AccessToken token, ProtocolMapperModel mappingModel, KeycloakSession session,
-                                              UserSessionModel userSession, ClientLoginSessionModel clientSession) {
+                                              UserSessionModel userSession, AuthenticatedClientSessionModel clientSession) {
 
         if (!OIDCAttributeMapperHelper.includeInUserInfo(mappingModel)) {
             return token;
@@ -72,7 +72,7 @@ public abstract class AbstractOIDCProtocolMapper implements ProtocolMapper {
     }
 
     public AccessToken transformAccessToken(AccessToken token, ProtocolMapperModel mappingModel, KeycloakSession session,
-                                            UserSessionModel userSession, ClientLoginSessionModel clientSession) {
+                                            UserSessionModel userSession, AuthenticatedClientSessionModel clientSession) {
 
         if (!OIDCAttributeMapperHelper.includeInAccessToken(mappingModel)){
             return token;
@@ -83,7 +83,7 @@ public abstract class AbstractOIDCProtocolMapper implements ProtocolMapper {
     }
 
     public IDToken transformIDToken(IDToken token, ProtocolMapperModel mappingModel, KeycloakSession session,
-                                    UserSessionModel userSession, ClientLoginSessionModel clientSession) {
+                                    UserSessionModel userSession, AuthenticatedClientSessionModel clientSession) {
 
         if (!OIDCAttributeMapperHelper.includeInIDToken(mappingModel)){
             return token;

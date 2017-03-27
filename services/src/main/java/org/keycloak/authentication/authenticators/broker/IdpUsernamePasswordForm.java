@@ -39,7 +39,7 @@ public class IdpUsernamePasswordForm extends UsernamePasswordForm {
 
     @Override
     protected Response challenge(AuthenticationFlowContext context, MultivaluedMap<String, String> formData) {
-        UserModel existingUser = AbstractIdpAuthenticator.getExistingUser(context.getSession(), context.getRealm(), context.getLoginSession());
+        UserModel existingUser = AbstractIdpAuthenticator.getExistingUser(context.getSession(), context.getRealm(), context.getAuthenticationSession());
 
         return setupForm(context, formData, existingUser)
                 .setStatus(Response.Status.OK)
@@ -48,7 +48,7 @@ public class IdpUsernamePasswordForm extends UsernamePasswordForm {
 
     @Override
     protected boolean validateForm(AuthenticationFlowContext context, MultivaluedMap<String, String> formData) {
-        UserModel existingUser = AbstractIdpAuthenticator.getExistingUser(context.getSession(), context.getRealm(), context.getLoginSession());
+        UserModel existingUser = AbstractIdpAuthenticator.getExistingUser(context.getSession(), context.getRealm(), context.getAuthenticationSession());
         context.setUser(existingUser);
 
         // Restore formData for the case of error
@@ -58,7 +58,7 @@ public class IdpUsernamePasswordForm extends UsernamePasswordForm {
     }
 
     protected LoginFormsProvider setupForm(AuthenticationFlowContext context, MultivaluedMap<String, String> formData, UserModel existingUser) {
-        SerializedBrokeredIdentityContext serializedCtx = SerializedBrokeredIdentityContext.readFromLoginSession(context.getLoginSession(), AbstractIdpAuthenticator.BROKERED_CONTEXT_NOTE);
+        SerializedBrokeredIdentityContext serializedCtx = SerializedBrokeredIdentityContext.readFromLoginSession(context.getAuthenticationSession(), AbstractIdpAuthenticator.BROKERED_CONTEXT_NOTE);
         if (serializedCtx == null) {
             throw new AuthenticationFlowException("Not found serialized context in clientSession", AuthenticationFlowError.IDENTITY_PROVIDER_ERROR);
         }

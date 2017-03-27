@@ -17,7 +17,7 @@
 
 package org.keycloak.models.jpa.session;
 
-import org.keycloak.models.ClientLoginSessionModel;
+import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
@@ -25,7 +25,7 @@ import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.models.session.PersistentClientSessionAdapter;
+import org.keycloak.models.session.PersistentAuthenticatedClientSessionAdapter;
 import org.keycloak.models.session.PersistentClientSessionModel;
 import org.keycloak.models.session.PersistentUserSessionAdapter;
 import org.keycloak.models.session.PersistentUserSessionModel;
@@ -69,8 +69,8 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
     }
 
     @Override
-    public void createClientSession(UserSessionModel userSession, ClientLoginSessionModel clientSession, boolean offline) {
-        PersistentClientSessionAdapter adapter = new PersistentClientSessionAdapter(clientSession);
+    public void createClientSession(UserSessionModel userSession, AuthenticatedClientSessionModel clientSession, boolean offline) {
+        PersistentAuthenticatedClientSessionAdapter adapter = new PersistentAuthenticatedClientSessionAdapter(clientSession);
         PersistentClientSessionModel model = adapter.getUpdatedModel();
 
         PersistentClientSessionEntity entity = new PersistentClientSessionEntity();
@@ -260,7 +260,7 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
         return new PersistentUserSessionAdapter(model, realm, user, clientSessions);
     }
 
-    private PersistentClientSessionAdapter toAdapter(RealmModel realm, PersistentUserSessionAdapter userSession, PersistentClientSessionEntity entity) {
+    private PersistentAuthenticatedClientSessionAdapter toAdapter(RealmModel realm, PersistentUserSessionAdapter userSession, PersistentClientSessionEntity entity) {
         ClientModel client = realm.getClientById(entity.getClientId());
 
         PersistentClientSessionModel model = new PersistentClientSessionModel();
@@ -270,7 +270,7 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
         model.setUserId(userSession.getUser().getId());
         model.setTimestamp(entity.getTimestamp());
         model.setData(entity.getData());
-        return new PersistentClientSessionAdapter(model, realm, client, userSession);
+        return new PersistentAuthenticatedClientSessionAdapter(model, realm, client, userSession);
     }
 
     @Override

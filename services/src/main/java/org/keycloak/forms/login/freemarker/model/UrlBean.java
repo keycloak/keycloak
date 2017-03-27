@@ -50,6 +50,10 @@ public class UrlBean {
         return Urls.realmLoginPage(baseURI, realm).toString();
     }
 
+    public String getLoginRestartFlowUrl() {
+        return Urls.realmLoginRestartPage(baseURI, realm).toString();
+    }
+
     public String getRegistrationAction() {
         if (this.actionuri != null) {
             return this.actionuri.toString();

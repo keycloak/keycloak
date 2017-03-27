@@ -18,7 +18,7 @@
 package org.keycloak.protocol.saml.mappers;
 
 import org.keycloak.dom.saml.v2.assertion.AttributeStatementType;
-import org.keycloak.models.ClientLoginSessionModel;
+import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.UserSessionModel;
@@ -76,7 +76,7 @@ public class HardcodedAttributeMapper extends AbstractSAMLProtocolMapper impleme
     }
 
     @Override
-    public void transformAttributeStatement(AttributeStatementType attributeStatement, ProtocolMapperModel mappingModel, KeycloakSession session, UserSessionModel userSession, ClientLoginSessionModel clientSession) {
+    public void transformAttributeStatement(AttributeStatementType attributeStatement, ProtocolMapperModel mappingModel, KeycloakSession session, UserSessionModel userSession, AuthenticatedClientSessionModel clientSession) {
         String attributeValue = mappingModel.getConfig().get(ATTRIBUTE_VALUE);
         AttributeStatementHelper.addAttribute(attributeStatement, mappingModel, attributeValue);
 

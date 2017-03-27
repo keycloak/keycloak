@@ -53,7 +53,7 @@ public interface UserSessionModel {
 
     void setLastSessionRefresh(int seconds);
 
-    Map<String, ClientLoginSessionModel> getClientLoginSessions();
+    Map<String, AuthenticatedClientSessionModel> getAuthenticatedClientSessions();
 
     // TODO: Remove
     List<ClientSessionModel> getClientSessions();

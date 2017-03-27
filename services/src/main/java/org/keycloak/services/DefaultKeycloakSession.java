@@ -33,7 +33,7 @@ import org.keycloak.models.cache.CacheRealmProvider;
 import org.keycloak.models.cache.UserCache;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
-import org.keycloak.sessions.LoginSessionProvider;
+import org.keycloak.sessions.AuthenticationSessionProvider;
 import org.keycloak.storage.UserStorageManager;
 import org.keycloak.storage.federated.UserFederatedStorageProvider;
 
@@ -58,7 +58,7 @@ public class DefaultKeycloakSession implements KeycloakSession {
     private UserStorageManager userStorageManager;
     private UserCredentialStoreManager userCredentialStorageManager;
     private UserSessionProvider sessionProvider;
-    private LoginSessionProvider loginSessionProvider;
+    private AuthenticationSessionProvider authenticationSessionProvider;
     private UserFederatedStorageProvider userFederatedStorageProvider;
     private KeycloakContext context;
     private KeyManager keyManager;
@@ -238,11 +238,11 @@ public class DefaultKeycloakSession implements KeycloakSession {
     }
 
     @Override
-    public LoginSessionProvider loginSessions() {
-        if (loginSessionProvider == null) {
-            loginSessionProvider = getProvider(LoginSessionProvider.class);
+    public AuthenticationSessionProvider authenticationSessions() {
+        if (authenticationSessionProvider == null) {
+            authenticationSessionProvider = getProvider(AuthenticationSessionProvider.class);
         }
-        return loginSessionProvider;
+        return authenticationSessionProvider;
     }
 
     @Override

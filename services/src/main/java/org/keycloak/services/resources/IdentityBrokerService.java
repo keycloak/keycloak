@@ -16,101 +16,19 @@
  */
 package org.keycloak.services.resources;
 
-import org.jboss.logging.Logger;
-import org.jboss.resteasy.annotations.cache.NoCache;
-import org.jboss.resteasy.spi.HttpRequest;
-import org.jboss.resteasy.spi.ResteasyProviderFactory;
-
-import org.keycloak.OAuth2Constants;
-import org.keycloak.authentication.AuthenticationProcessor;
-import org.keycloak.authentication.authenticators.broker.AbstractIdpAuthenticator;
-import org.keycloak.authentication.authenticators.broker.util.PostBrokerLoginConstants;
-import org.keycloak.authentication.authenticators.broker.util.SerializedBrokeredIdentityContext;
-import org.keycloak.broker.provider.AuthenticationRequest;
-import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.IdentityProviderFactory;
-import org.keycloak.broker.provider.IdentityProviderMapper;
-import org.keycloak.broker.saml.SAMLEndpoint;
 import org.keycloak.broker.social.SocialIdentityProvider;
-import org.keycloak.common.ClientConnection;
-import org.keycloak.common.util.Base64Url;
-import org.keycloak.common.util.ObjectUtil;
-import org.keycloak.common.util.Time;
-import org.keycloak.common.util.UriUtils;
-import org.keycloak.events.Details;
-import org.keycloak.events.Errors;
-import org.keycloak.events.EventBuilder;
-import org.keycloak.events.EventType;
-import org.keycloak.forms.login.LoginFormsProvider;
-import org.keycloak.models.AuthenticationFlowModel;
-import org.keycloak.models.ClientLoginSessionModel;
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientSessionModel;
-import org.keycloak.models.Constants;
-import org.keycloak.models.FederatedIdentityModel;
-import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.RoleModel;
-import org.keycloak.models.UserModel;
-import org.keycloak.models.UserSessionModel;
-import org.keycloak.models.utils.FormMessage;
-import org.keycloak.protocol.oidc.OIDCLoginProtocol;
-import org.keycloak.protocol.oidc.TokenManager;
-import org.keycloak.protocol.oidc.utils.RedirectUtils;
-import org.keycloak.protocol.saml.SamlProtocol;
-import org.keycloak.protocol.saml.SamlService;
 import org.keycloak.provider.ProviderFactory;
-import org.keycloak.representations.AccessToken;
-import org.keycloak.services.ErrorPage;
-import org.keycloak.services.ErrorPageException;
-import org.keycloak.services.ErrorResponse;
-import org.keycloak.services.ServicesLogger;
-import org.keycloak.services.Urls;
-import org.keycloak.services.managers.AppAuthManager;
-import org.keycloak.services.managers.AuthenticationManager;
-import org.keycloak.services.managers.AuthenticationManager.AuthResult;
-import org.keycloak.services.managers.BruteForceProtector;
-import org.keycloak.services.managers.ClientSessionCode;
-import org.keycloak.services.messages.Messages;
-import org.keycloak.services.util.CacheControlUtil;
-import org.keycloak.services.validation.Validation;
-import org.keycloak.sessions.LoginSessionModel;
-import org.keycloak.util.JsonSerialization;
 
-import javax.ws.rs.GET;
-import javax.ws.rs.OPTIONS;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
-import javax.ws.rs.core.UriBuilder;
-import javax.ws.rs.core.UriInfo;
-import java.io.IOException;
-import java.net.URI;
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.UUID;
-
-import static org.keycloak.models.AccountRoles.MANAGE_ACCOUNT;
-import static org.keycloak.models.AccountRoles.MANAGE_ACCOUNT_LINKS;
-import static org.keycloak.models.Constants.ACCOUNT_MANAGEMENT_CLIENT_ID;
 
 /**
  * <p></p>
@@ -246,7 +164,7 @@ public class IdentityBrokerService {
 //
 //
 //        ClientLoginSessionModel clientSession = null;
-//        for (ClientLoginSessionModel cs : cookieResult.getSession().getClientLoginSessions().values()) {
+//        for (ClientLoginSessionModel cs : cookieResult.getSession().getAuthenticatedClientSessions().values()) {
 //            if (cs.getClient().getClientId().equals(clientId)) {
 //                byte[] decoded = Base64Url.decode(hash);
 //                MessageDigest md = null;
@@ -298,7 +216,7 @@ public class IdentityBrokerService {
 //        }
 //
 //
-//        // TODO: Create LoginSessionModel and Login cookie and set the state inside. See my notes document
+//        // TODO: Create AuthenticationSessionModel and Login cookie and set the state inside. See my notes document
 //        ClientSessionCode clientSessionCode = new ClientSessionCode(session, realmModel, clientSession);
 //        clientSessionCode.setAction(ClientSessionModel.Action.AUTHENTICATE.name());
 //        clientSessionCode.getCode();
@@ -487,10 +405,10 @@ public class IdentityBrokerService {
 //            context.setToken(null);
 //        }
 //
-//        LoginSessionModel loginSession = clientCode.getClientSession();
-//        context.setLoginSession(loginSession);
+//        AuthenticationSessionModel authSession = clientCode.getClientSession();
+//        context.setAuthenticationSession(authenticationSession);
 //
-//        session.getContext().setClient(loginSession.getClient());
+//        session.getContext().setClient(authenticationSession.getClient());
 //
 //        context.getIdp().preprocessFederatedIdentity(session, realmModel, context);
 //        Set<IdentityProviderMapperModel> mappers = realmModel.getIdentityProviderMappersByAlias(context.getIdpConfig().getAlias());
@@ -506,13 +424,13 @@ public class IdentityBrokerService {
 //                context.getUsername(), context.getToken());
 //
 //        this.event.event(EventType.IDENTITY_PROVIDER_LOGIN)
-//                .detail(Details.REDIRECT_URI, loginSession.getRedirectUri())
+//                .detail(Details.REDIRECT_URI, authenticationSession.getRedirectUri())
 //                .detail(Details.IDENTITY_PROVIDER_USERNAME, context.getUsername());
 //
 //        UserModel federatedUser = this.session.users().getUserByFederatedIdentity(federatedIdentityModel, this.realmModel);
 //
 //        // Check if federatedUser is already authenticated (this means linking social into existing federatedUser account)
-//        if (loginSession.getUserSession() != null) {
+//        if (authenticationSession.getUserSession() != null) {
 //            return performAccountLinking(clientSession, context, federatedIdentityModel, federatedUser);
 //        }
 //
@@ -701,30 +619,30 @@ public class IdentityBrokerService {
 //        if (parsedCode.response != null) {
 //            return parsedCode.response;
 //        }
-//        LoginSessionModel loginSession = parsedCode.clientSessionCode.getClientSession();
+//        AuthenticationSessionModel authenticationSession = parsedCode.clientSessionCode.getClientSession();
 //
 //        try {
-//            SerializedBrokeredIdentityContext serializedCtx = SerializedBrokeredIdentityContext.readFromLoginSession(loginSession, PostBrokerLoginConstants.PBL_BROKERED_IDENTITY_CONTEXT);
+//            SerializedBrokeredIdentityContext serializedCtx = SerializedBrokeredIdentityContext.readFromLoginSession(authenticationSession, PostBrokerLoginConstants.PBL_BROKERED_IDENTITY_CONTEXT);
 //            if (serializedCtx == null) {
 //                throw new IdentityBrokerException("Not found serialized context in clientSession. Note " + PostBrokerLoginConstants.PBL_BROKERED_IDENTITY_CONTEXT + " was null");
 //            }
-//            BrokeredIdentityContext context = serializedCtx.deserialize(session, loginSession);
+//            BrokeredIdentityContext context = serializedCtx.deserialize(session, authenticationSession);
 //
-//            String wasFirstBrokerLoginNote = loginSession.getNote(PostBrokerLoginConstants.PBL_AFTER_FIRST_BROKER_LOGIN);
+//            String wasFirstBrokerLoginNote = authenticationSession.getNote(PostBrokerLoginConstants.PBL_AFTER_FIRST_BROKER_LOGIN);
 //            boolean wasFirstBrokerLogin = Boolean.parseBoolean(wasFirstBrokerLoginNote);
 //
 //            // Ensure the post-broker-login flow was successfully finished
 //            String authStateNoteKey = PostBrokerLoginConstants.PBL_AUTH_STATE_PREFIX + context.getIdpConfig().getAlias();
-//            String authState = loginSession.getNote(authStateNoteKey);
+//            String authState = authenticationSession.getNote(authStateNoteKey);
 //            if (!Boolean.parseBoolean(authState)) {
 //                throw new IdentityBrokerException("Invalid request. Not found the flag that post-broker-login flow was finished");
 //            }
 //
 //            // remove notes
-//            loginSession.removeNote(PostBrokerLoginConstants.PBL_BROKERED_IDENTITY_CONTEXT);
-//            loginSession.removeNote(PostBrokerLoginConstants.PBL_AFTER_FIRST_BROKER_LOGIN);
+//            authenticationSession.removeNote(PostBrokerLoginConstants.PBL_BROKERED_IDENTITY_CONTEXT);
+//            authenticationSession.removeNote(PostBrokerLoginConstants.PBL_AFTER_FIRST_BROKER_LOGIN);
 //
-//            return afterPostBrokerLoginFlowSuccess(loginSession, context, wasFirstBrokerLogin, parsedCode.clientSessionCode);
+//            return afterPostBrokerLoginFlowSuccess(authenticationSession, context, wasFirstBrokerLogin, parsedCode.clientSessionCode);
 //        } catch (IdentityBrokerException e) {
 //            return redirectToErrorPage(Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR, e);
 //        }
@@ -903,12 +821,12 @@ public class IdentityBrokerService {
 //    }
 //
 //    private ParsedCodeContext parseClientSessionCode(String code) {
-//        ClientSessionCode<LoginSessionModel> clientCode = ClientSessionCode.parse(code, this.session, this.realmModel, LoginSessionModel.class);
+//        ClientSessionCode<LoginSessionModel> clientCode = ClientSessionCode.parse(code, this.session, this.realmModel, AuthenticationSessionModel.class);
 //
 //        if (clientCode != null) {
-//            LoginSessionModel loginSession = clientCode.getClientSession();
+//            AuthenticationSessionModel authenticationSession = clientCode.getClientSession();
 //
-//            ClientModel client = loginSession.getClient();
+//            ClientModel client = authenticationSession.getClient();
 //
 //            if (client != null) {
 //
@@ -917,7 +835,7 @@ public class IdentityBrokerService {
 //                this.session.getContext().setClient(client);
 //
 //                if (!clientCode.isValid(AUTHENTICATE.name(), ClientSessionCode.ActionType.LOGIN)) {
-//                    logger.debugf("Authorization code is not valid. Client session ID: %s, Client session's action: %s", loginSession.getId(), loginSession.getAction());
+//                    logger.debugf("Authorization code is not valid. Client session ID: %s, Client session's action: %s", authenticationSession.getId(), authenticationSession.getAction());
 //
 //                    // Check if error happened during login or during linking from account management
 //                    Response accountManagementFailedLinking = checkAccountManagementFailedLinking(clientCode.getClientSession(), Messages.STALE_CODE_ACCOUNT);
@@ -966,7 +884,7 @@ public class IdentityBrokerService {
 //        return ParsedCodeContext.clientSessionCode(new ClientSessionCode(session, this.realmModel, clientSession));
 //    }
 //
-//    private Response checkAccountManagementFailedLinking(LoginSessionModel loginSession, String error, Object... parameters) {
+//    private Response checkAccountManagementFailedLinking(LoginSessionModel authenticationSession, String error, Object... parameters) {
 //        if (clientSession.getUserSession() != null && clientSession.getClient() != null && clientSession.getClient().getClientId().equals(ACCOUNT_MANAGEMENT_CLIENT_ID)) {
 //
 //            this.event.event(EventType.FEDERATED_IDENTITY_LINK);
@@ -981,11 +899,11 @@ public class IdentityBrokerService {
 //    }
 //
 //    private AuthenticationRequest createAuthenticationRequest(String providerId, ClientSessionCode<LoginSessionModel> clientSessionCode) {
-//        LoginSessionModel loginSession = null;
+//        AuthenticationSessionModel authenticationSession = null;
 //        String relayState = null;
 //
 //        if (clientSessionCode != null) {
-//            loginSession = clientSessionCode.getClientSession();
+//            authenticationSession = clientSessionCode.getClientSession();
 //            relayState = clientSessionCode.getCode();
 //        }
 //

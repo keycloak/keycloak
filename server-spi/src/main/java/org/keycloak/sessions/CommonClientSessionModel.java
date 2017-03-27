@@ -24,7 +24,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 
 /**
- * Predecesor of LoginSessionModel, ClientLoginSessionModel and ClientSessionModel (then action tickets). Maybe we will remove it later...
+ * Predecesor of AuthenticationSessionModel, ClientLoginSessionModel and ClientSessionModel (then action tickets). Maybe we will remove it later...
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */

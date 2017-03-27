@@ -17,7 +17,7 @@
 
 package org.keycloak.models.session;
 
-import org.keycloak.models.ClientLoginSessionModel;
+import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -35,7 +35,7 @@ public interface UserSessionPersisterProvider extends Provider {
     void createUserSession(UserSessionModel userSession, boolean offline);
 
     // Assuming that corresponding userSession is already persisted
-    void createClientSession(UserSessionModel userSession, ClientLoginSessionModel clientSession, boolean offline);
+    void createClientSession(UserSessionModel userSession, AuthenticatedClientSessionModel clientSession, boolean offline);
 
     void updateUserSession(UserSessionModel userSession, boolean offline);
 

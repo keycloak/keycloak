@@ -142,15 +142,15 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
 
         updatePasswordPage.changePassword("resetPassword", "resetPassword");
 
-        String sessionId = events.expectRequiredAction(EventType.UPDATE_PASSWORD)
-                .detail(Details.REDIRECT_URI,  oauth.AUTH_SERVER_ROOT + "/realms/test/account/")
+        events.expectRequiredAction(EventType.UPDATE_PASSWORD)
+                .detail(Details.REDIRECT_URI, oauth.AUTH_SERVER_ROOT + "/realms/test/account/")
                 .client("account")
-                .user(userId).detail(Details.USERNAME, username).assertEvent().getSessionId();
+                .user(userId).detail(Details.USERNAME, username).assertEvent();
 
-        events.expectLogin().user(userId).detail(Details.USERNAME, username)
+        String sessionId = events.expectLogin().user(userId).detail(Details.USERNAME, username)
                 .detail(Details.REDIRECT_URI,  oauth.AUTH_SERVER_ROOT + "/realms/test/account/")
                 .client("account")
-                .session(sessionId).assertEvent();
+                .assertEvent().getSessionId();
 
         oauth.openLogout();
 
@@ -246,11 +246,11 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
 
         updatePasswordPage.changePassword(password, password);
 
-        String sessionId = events.expectRequiredAction(EventType.UPDATE_PASSWORD).user(userId).detail(Details.USERNAME, username.trim()).assertEvent().getSessionId();
+        events.expectRequiredAction(EventType.UPDATE_PASSWORD).user(userId).detail(Details.USERNAME, username.trim()).assertEvent();
 
         assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        events.expectLogin().user(userId).detail(Details.USERNAME, username.trim()).session(sessionId).assertEvent();
+        String sessionId = events.expectLogin().user(userId).detail(Details.USERNAME, username.trim()).assertEvent().getSessionId();
 
         oauth.openLogout();
 
@@ -513,11 +513,11 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
 
         updatePasswordPage.changePassword("resetPasswordWithPasswordPolicy", "resetPasswordWithPasswordPolicy");
 
-        String sessionId = events.expectRequiredAction(EventType.UPDATE_PASSWORD).user(userId).detail(Details.USERNAME, "login-test").assertEvent().getSessionId();
+        events.expectRequiredAction(EventType.UPDATE_PASSWORD).user(userId).detail(Details.USERNAME, "login-test").assertEvent().getSessionId();
 
         assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        events.expectLogin().user(userId).detail(Details.USERNAME, "login-test").session(sessionId).assertEvent();
+        String sessionId = events.expectLogin().user(userId).detail(Details.USERNAME, "login-test").assertEvent().getSessionId();
 
         oauth.openLogout();
 

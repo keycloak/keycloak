@@ -22,7 +22,7 @@ Adding this system property when running any test:
     -Darquillian.debug=true
     
 will add lots of info to the log. Especially about:
-* The test method names, which will be executed for each test class, will be written at the proper running order to the log at the beginning of each test (done by KcArquillian class). 
+* The test method names, which will be executed for each test class, will be written at the proper running order to the log at the beginning of each test class(done by KcArquillian class). 
 * All the triggered arquillian lifecycle events and executed observers listening to those events will be written to the log
 * The bootstrap of WebDriver will be unlimited. By default there is just 1 minute timeout and test is cancelled when WebDriver is not bootstrapped within it.
 

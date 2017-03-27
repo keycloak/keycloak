@@ -30,7 +30,7 @@ import org.keycloak.dom.saml.v2.assertion.AssertionType;
 import org.keycloak.dom.saml.v2.assertion.AttributeStatementType;
 import org.keycloak.dom.saml.v2.protocol.ResponseType;
 import org.keycloak.events.EventBuilder;
-import org.keycloak.models.ClientLoginSessionModel;
+import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeyManager;
 import org.keycloak.models.KeycloakSession;
@@ -40,6 +40,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.ProtocolMapper;
+import org.keycloak.protocol.RestartLoginCookie;
 import org.keycloak.protocol.saml.mappers.SAMLAttributeStatementMapper;
 import org.keycloak.protocol.saml.mappers.SAMLLoginResponseMapper;
 import org.keycloak.protocol.saml.mappers.SAMLRoleListMapper;
@@ -61,7 +62,7 @@ import org.keycloak.services.managers.ResourceAdminManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.sessions.CommonClientSessionModel;
-import org.keycloak.sessions.LoginSessionModel;
+import org.keycloak.sessions.AuthenticationSessionModel;
 import org.w3c.dom.Document;
 
 import javax.ws.rs.core.HttpHeaders;
@@ -157,9 +158,9 @@ public class SamlProtocol implements LoginProtocol {
     }
 
     @Override
-    public Response sendError(LoginSessionModel loginSession, Error error) {
+    public Response sendError(AuthenticationSessionModel authSession, Error error) {
         try {
-            ClientModel client = loginSession.getClient();
+            ClientModel client = authSession.getClient();
 
             if ("true".equals(client.getAttribute(SAML_IDP_INITIATED_LOGIN))) {
                 if (error == Error.CANCELLED_BY_USER) {
@@ -174,9 +175,9 @@ public class SamlProtocol implements LoginProtocol {
                     return ErrorPage.error(session, translateErrorToIdpInitiatedErrorMessage(error));
                 }
             } else {
-                SAML2ErrorResponseBuilder builder = new SAML2ErrorResponseBuilder().destination(loginSession.getRedirectUri()).issuer(getResponseIssuer(realm)).status(translateErrorToSAMLStatus(error).get());
+                SAML2ErrorResponseBuilder builder = new SAML2ErrorResponseBuilder().destination(authSession.getRedirectUri()).issuer(getResponseIssuer(realm)).status(translateErrorToSAMLStatus(error).get());
                 try {
-                    JaxrsSAML2BindingBuilder binding = new JaxrsSAML2BindingBuilder().relayState(loginSession.getNote(GeneralConstants.RELAY_STATE));
+                    JaxrsSAML2BindingBuilder binding = new JaxrsSAML2BindingBuilder().relayState(authSession.getNote(GeneralConstants.RELAY_STATE));
                     SamlClient samlClient = new SamlClient(client);
                     KeyManager keyManager = session.keys();
                     if (samlClient.requiresRealmSignature()) {
@@ -199,23 +200,22 @@ public class SamlProtocol implements LoginProtocol {
                         binding.encrypt(publicKey);
                     }
                     Document document = builder.buildDocument();
-                    return buildErrorResponse(loginSession, binding, document);
+                    return buildErrorResponse(authSession, binding, document);
                 } catch (Exception e) {
                     return ErrorPage.error(session, Messages.FAILED_TO_PROCESS_RESPONSE);
                 }
             }
         } finally {
-            // TODO:mposolda
-            //RestartLoginCookie.expireRestartCookie(realm, session.getContext().getConnection(), uriInfo);
-            session.loginSessions().removeLoginSession(realm, loginSession);
+            RestartLoginCookie.expireRestartCookie(realm, session.getContext().getConnection(), uriInfo);
+            session.authenticationSessions().removeAuthenticationSession(realm, authSession);
         }
     }
 
-    protected Response buildErrorResponse(LoginSessionModel loginSession, JaxrsSAML2BindingBuilder binding, Document document) throws ConfigurationException, ProcessingException, IOException {
-        if (isPostBinding(loginSession)) {
-            return binding.postBinding(document).response(loginSession.getRedirectUri());
+    protected Response buildErrorResponse(AuthenticationSessionModel authSession, JaxrsSAML2BindingBuilder binding, Document document) throws ConfigurationException, ProcessingException, IOException {
+        if (isPostBinding(authSession)) {
+            return binding.postBinding(document).response(authSession.getRedirectUri());
         } else {
-            return binding.redirectBinding(document).response(loginSession.getRedirectUri());
+            return binding.redirectBinding(document).response(authSession.getRedirectUri());
         }
     }
 
@@ -250,10 +250,10 @@ public class SamlProtocol implements LoginProtocol {
         return RealmsResource.realmBaseUrl(uriInfo).build(realm.getName()).toString();
     }
 
-    protected boolean isPostBinding(CommonClientSessionModel loginSession) {
-        ClientModel client = loginSession.getClient();
+    protected boolean isPostBinding(CommonClientSessionModel authSession) {
+        ClientModel client = authSession.getClient();
         SamlClient samlClient = new SamlClient(client);
-        return SamlProtocol.SAML_POST_BINDING.equals(loginSession.getNote(SamlProtocol.SAML_BINDING)) || samlClient.forcePostBinding();
+        return SamlProtocol.SAML_POST_BINDING.equals(authSession.getNote(SamlProtocol.SAML_BINDING)) || samlClient.forcePostBinding();
     }
 
     public static boolean isLogoutPostBindingForInitiator(UserSessionModel session) {
@@ -261,7 +261,7 @@ public class SamlProtocol implements LoginProtocol {
         return SamlProtocol.SAML_POST_BINDING.equals(note);
     }
 
-    protected boolean isLogoutPostBindingForClient(ClientLoginSessionModel clientSession) {
+    protected boolean isLogoutPostBindingForClient(AuthenticatedClientSessionModel clientSession) {
         ClientModel client = clientSession.getClient();
         SamlClient samlClient = new SamlClient(client);
         String logoutPostUrl = client.getAttribute(SAML_SINGLE_LOGOUT_SERVICE_URL_POST_ATTRIBUTE);
@@ -353,8 +353,8 @@ public class SamlProtocol implements LoginProtocol {
     }
 
     @Override
-    public Response authenticated(UserSessionModel userSession, ClientSessionCode<ClientLoginSessionModel> accessCode) {
-        ClientLoginSessionModel clientSession = accessCode.getClientSession();
+    public Response authenticated(UserSessionModel userSession, ClientSessionCode<AuthenticatedClientSessionModel> accessCode) {
+        AuthenticatedClientSessionModel clientSession = accessCode.getClientSession();
         ClientModel client = clientSession.getClient();
         SamlClient samlClient = new SamlClient(client);
         String requestID = clientSession.getNote(SAML_REQUEST_ID);
@@ -462,7 +462,7 @@ public class SamlProtocol implements LoginProtocol {
         }
     }
 
-    protected Response buildAuthenticatedResponse(ClientLoginSessionModel clientSession, String redirectUri, Document samlDocument, JaxrsSAML2BindingBuilder bindingBuilder) throws ConfigurationException, ProcessingException, IOException {
+    protected Response buildAuthenticatedResponse(AuthenticatedClientSessionModel clientSession, String redirectUri, Document samlDocument, JaxrsSAML2BindingBuilder bindingBuilder) throws ConfigurationException, ProcessingException, IOException {
         if (isPostBinding(clientSession)) {
             return bindingBuilder.postBinding(samlDocument).response(redirectUri);
         } else {
@@ -481,7 +481,7 @@ public class SamlProtocol implements LoginProtocol {
     }
 
     public AttributeStatementType populateAttributeStatements(List<ProtocolMapperProcessor<SAMLAttributeStatementMapper>> attributeStatementMappers, KeycloakSession session, UserSessionModel userSession,
-                                                              ClientLoginSessionModel clientSession) {
+                                                              AuthenticatedClientSessionModel clientSession) {
         AttributeStatementType attributeStatement = new AttributeStatementType();
         for (ProtocolMapperProcessor<SAMLAttributeStatementMapper> processor : attributeStatementMappers) {
             processor.mapper.transformAttributeStatement(attributeStatement, processor.model, session, userSession, clientSession);
@@ -490,14 +490,14 @@ public class SamlProtocol implements LoginProtocol {
         return attributeStatement;
     }
 
-    public ResponseType transformLoginResponse(List<ProtocolMapperProcessor<SAMLLoginResponseMapper>> mappers, ResponseType response, KeycloakSession session, UserSessionModel userSession, ClientLoginSessionModel clientSession) {
+    public ResponseType transformLoginResponse(List<ProtocolMapperProcessor<SAMLLoginResponseMapper>> mappers, ResponseType response, KeycloakSession session, UserSessionModel userSession, AuthenticatedClientSessionModel clientSession) {
         for (ProtocolMapperProcessor<SAMLLoginResponseMapper> processor : mappers) {
             response = processor.mapper.transformLoginResponse(response, processor.model, session, userSession, clientSession);
         }
         return response;
     }
 
-    public void populateRoles(ProtocolMapperProcessor<SAMLRoleListMapper> roleListMapper, KeycloakSession session, UserSessionModel userSession, ClientLoginSessionModel clientSession,
+    public void populateRoles(ProtocolMapperProcessor<SAMLRoleListMapper> roleListMapper, KeycloakSession session, UserSessionModel userSession, AuthenticatedClientSessionModel clientSession,
                               final AttributeStatementType existingAttributeStatement) {
         if (roleListMapper == null)
             return;
@@ -520,7 +520,7 @@ public class SamlProtocol implements LoginProtocol {
     }
 
     @Override
-    public Response frontchannelLogout(UserSessionModel userSession, ClientLoginSessionModel clientSession) {
+    public Response frontchannelLogout(UserSessionModel userSession, AuthenticatedClientSessionModel clientSession) {
         ClientModel client = clientSession.getClient();
         SamlClient samlClient = new SamlClient(client);
         try {
@@ -615,7 +615,7 @@ public class SamlProtocol implements LoginProtocol {
     }
 
     @Override
-    public void backchannelLogout(UserSessionModel userSession, ClientLoginSessionModel clientSession) {
+    public void backchannelLogout(UserSessionModel userSession, AuthenticatedClientSessionModel clientSession) {
         ClientModel client = clientSession.getClient();
         SamlClient samlClient = new SamlClient(client);
         String logoutUrl = getLogoutServiceUrl(uriInfo, client, SAML_POST_BINDING);
@@ -674,7 +674,7 @@ public class SamlProtocol implements LoginProtocol {
 
     }
 
-    protected SAML2LogoutRequestBuilder createLogoutRequest(String logoutUrl, ClientLoginSessionModel clientSession, ClientModel client) {
+    protected SAML2LogoutRequestBuilder createLogoutRequest(String logoutUrl, AuthenticatedClientSessionModel clientSession, ClientModel client) {
         // build userPrincipal with subject used at login
         SAML2LogoutRequestBuilder logoutBuilder = new SAML2LogoutRequestBuilder().assertionExpiration(realm.getAccessCodeLifespan()).issuer(getResponseIssuer(realm)).sessionIndex(clientSession.getId())
                 .userPrincipal(clientSession.getNote(SAML_NAME_ID), clientSession.getNote(SAML_NAME_ID_FORMAT)).destination(logoutUrl);
@@ -682,7 +682,7 @@ public class SamlProtocol implements LoginProtocol {
     }
 
     @Override
-    public boolean requireReauthentication(UserSessionModel userSession, LoginSessionModel clientSession) {
+    public boolean requireReauthentication(UserSessionModel userSession, AuthenticationSessionModel authSession) {
         // Not yet supported
         return false;
     }

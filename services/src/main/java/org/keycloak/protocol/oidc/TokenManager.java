@@ -31,9 +31,8 @@ import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.jose.jws.crypto.HashProvider;
 import org.keycloak.jose.jws.crypto.RSAProvider;
-import org.keycloak.models.ClientLoginSessionModel;
+import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.ClientTemplateModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeyManager;
@@ -60,7 +59,7 @@ import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.managers.UserSessionManager;
-import org.keycloak.sessions.LoginSessionModel;
+import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.util.TokenUtil;
 import org.keycloak.common.util.Time;
 
@@ -108,10 +107,10 @@ public class TokenManager {
     public static class TokenValidation {
         public final UserModel user;
         public final UserSessionModel userSession;
-        public final ClientLoginSessionModel clientSession;
+        public final AuthenticatedClientSessionModel clientSession;
         public final AccessToken newToken;
 
-        public TokenValidation(UserModel user, UserSessionModel userSession, ClientLoginSessionModel clientSession, AccessToken newToken) {
+        public TokenValidation(UserModel user, UserSessionModel userSession, AuthenticatedClientSessionModel clientSession, AccessToken newToken) {
             this.user = user;
             this.userSession = userSession;
             this.clientSession = clientSession;
@@ -157,7 +156,7 @@ public class TokenManager {
         }
 
         ClientModel client = session.getContext().getClient();
-        ClientLoginSessionModel clientSession = userSession.getClientLoginSessions().get(client.getId());
+        AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessions().get(client.getId());
 
         if (!client.getClientId().equals(oldToken.getIssuedFor())) {
             throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Unmatching clients", "Unmatching clients");
@@ -218,7 +217,7 @@ public class TokenManager {
             return false;
         }
 
-        ClientLoginSessionModel clientSession = userSession.getClientLoginSessions().get(client.getId());
+        AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessions().get(client.getId());
         if (clientSession == null) {
             return false;
 >>>>>>> KEYCLOAK-4626 AuthenticationSessions: start
@@ -346,7 +345,7 @@ public class TokenManager {
     }
 
     public AccessToken createClientAccessToken(KeycloakSession session, Set<RoleModel> requestedRoles, RealmModel realm, ClientModel client, UserModel user, UserSessionModel userSession,
-                                               ClientLoginSessionModel clientSession) {
+                                               AuthenticatedClientSessionModel clientSession) {
         AccessToken token = initToken(realm, client, user, userSession, clientSession, session.getContext().getUri());
         for (RoleModel role : requestedRoles) {
             addComposites(token, role);
@@ -355,68 +354,45 @@ public class TokenManager {
         return token;
     }
 
-    public static ClientLoginSessionModel attachLoginSession(KeycloakSession session, UserSessionModel userSession, LoginSessionModel loginSession) {
-        UserModel user = userSession.getUser();
-        ClientModel client = loginSession.getClient();
-        ClientLoginSessionModel clientSession = session.sessions().createClientSession(userSession.getRealm(), client, userSession);
 
-        Set<String> requestedRoles = new HashSet<String>();
-        // todo scope param protocol independent
-        String scopeParam = loginSession.getNote(OAuth2Constants.SCOPE);
-        for (RoleModel r : TokenManager.getAccess(scopeParam, true, client, user)) {
-            requestedRoles.add(r.getId());
-        }
-        clientSession.setRoles(requestedRoles);
+    public static AuthenticatedClientSessionModel attachAuthenticationSession(KeycloakSession session, UserSessionModel userSession, AuthenticationSessionModel authSession) {
+        ClientModel client = authSession.getClient();
 
-        Set<String> requestedProtocolMappers = new HashSet<String>();
-        ClientTemplateModel clientTemplate = client.getClientTemplate();
-        if (clientTemplate != null && client.useTemplateMappers()) {
-            for (ProtocolMapperModel protocolMapper : clientTemplate.getProtocolMappers()) {
-                if (protocolMapper.getProtocol().equals(loginSession.getProtocol())) {
-                    requestedProtocolMappers.add(protocolMapper.getId());
-                }
-            }
+        AuthenticatedClientSessionModel clientSession = session.sessions().createClientSession(userSession.getRealm(), client, userSession);
+        clientSession.setRedirectUri(authSession.getRedirectUri());
+        clientSession.setProtocol(authSession.getProtocol());
 
-        }
-        for (ProtocolMapperModel protocolMapper : client.getProtocolMappers()) {
-            if (protocolMapper.getProtocol().equals(loginSession.getProtocol())) {
-                requestedProtocolMappers.add(protocolMapper.getId());
-            }
-        }
-        clientSession.setProtocolMappers(requestedProtocolMappers);
+        clientSession.setRoles(authSession.getRoles());
+        clientSession.setProtocolMappers(authSession.getProtocolMappers());
 
-        Map<String, String> transferredNotes = loginSession.getNotes();
+        Map<String, String> transferredNotes = authSession.getNotes();
         for (Map.Entry<String, String> entry : transferredNotes.entrySet()) {
             clientSession.setNote(entry.getKey(), entry.getValue());
         }
 
-        Map<String, String> transferredUserSessionNotes = loginSession.getUserSessionNotes();
+        Map<String, String> transferredUserSessionNotes = authSession.getUserSessionNotes();
         for (Map.Entry<String, String> entry : transferredUserSessionNotes.entrySet()) {
             userSession.setNote(entry.getKey(), entry.getValue());
         }
 
         clientSession.setTimestamp(Time.currentTime());
 
-        userSession.getClientLoginSessions().put(client.getId(), clientSession);
-
-        // Remove login session now
-        session.loginSessions().removeLoginSession(userSession.getRealm(), loginSession);
+        // Remove authentication session now
+        session.authenticationSessions().removeAuthenticationSession(userSession.getRealm(), authSession);
 
         return clientSession;
     }
 
 
-    public static void dettachClientSession(UserSessionProvider sessions, RealmModel realm, ClientLoginSessionModel clientSession) {
+    public static void dettachClientSession(UserSessionProvider sessions, RealmModel realm, AuthenticatedClientSessionModel clientSession) {
         UserSessionModel userSession = clientSession.getUserSession();
         if (userSession == null) {
             return;
         }
 
         clientSession.setUserSession(null);
-        clientSession.setRoles(null);
-        clientSession.setProtocolMappers(null);
 
-        if (userSession.getClientSessions().isEmpty()) {
+        if (userSession.getAuthenticatedClientSessions().isEmpty()) {
             sessions.removeUserSession(realm, userSession);
         }
     }
@@ -550,7 +526,7 @@ public class TokenManager {
     }
 
     public AccessToken transformAccessToken(KeycloakSession session, AccessToken token, RealmModel realm, ClientModel client, UserModel user,
-                                            UserSessionModel userSession, ClientLoginSessionModel clientSession) {
+                                            UserSessionModel userSession, AuthenticatedClientSessionModel clientSession) {
         Set<ProtocolMapperModel> mappings = ClientSessionCode.getRequestedProtocolMappers(clientSession.getProtocolMappers(), client);
         KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
         for (ProtocolMapperModel mapping : mappings) {
@@ -565,7 +541,7 @@ public class TokenManager {
     }
 
     public AccessToken transformUserInfoAccessToken(KeycloakSession session, AccessToken token, RealmModel realm, ClientModel client, UserModel user,
-                                            UserSessionModel userSession, ClientLoginSessionModel clientSession) {
+                                            UserSessionModel userSession, AuthenticatedClientSessionModel clientSession) {
         Set<ProtocolMapperModel> mappings = ClientSessionCode.getRequestedProtocolMappers(clientSession.getProtocolMappers(), client);
         KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
         for (ProtocolMapperModel mapping : mappings) {
@@ -580,7 +556,7 @@ public class TokenManager {
     }
 
     public void transformIDToken(KeycloakSession session, IDToken token, RealmModel realm, ClientModel client, UserModel user,
-                                      UserSessionModel userSession, ClientLoginSessionModel clientSession) {
+                                      UserSessionModel userSession, AuthenticatedClientSessionModel clientSession) {
         Set<ProtocolMapperModel> mappings = ClientSessionCode.getRequestedProtocolMappers(clientSession.getProtocolMappers(), client);
         KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
         for (ProtocolMapperModel mapping : mappings) {
@@ -592,7 +568,7 @@ public class TokenManager {
         }
     }
 
-    protected AccessToken initToken(RealmModel realm, ClientModel client, UserModel user, UserSessionModel session, ClientLoginSessionModel clientSession, UriInfo uriInfo) {
+    protected AccessToken initToken(RealmModel realm, ClientModel client, UserModel user, UserSessionModel session, AuthenticatedClientSessionModel clientSession, UriInfo uriInfo) {
         AccessToken token = new AccessToken();
         token.clientSession(clientSession.getId());
         token.id(KeycloakModelUtils.generateId());
@@ -628,7 +604,7 @@ public class TokenManager {
         return token;
     }
 
-    private int getTokenLifespan(RealmModel realm, ClientLoginSessionModel clientSession) {
+    private int getTokenLifespan(RealmModel realm, AuthenticatedClientSessionModel clientSession) {
         boolean implicitFlow = false;
         String responseType = clientSession.getNote(OIDCLoginProtocol.RESPONSE_TYPE_PARAM);
         if (responseType != null) {
@@ -670,7 +646,7 @@ public class TokenManager {
         return new JWSBuilder().type(JWT).kid(activeRsaKey.getKid()).jsonContent(token).sign(jwsAlgorithm, activeRsaKey.getPrivateKey());
     }
 
-    public AccessTokenResponseBuilder responseBuilder(RealmModel realm, ClientModel client, EventBuilder event, KeycloakSession session, UserSessionModel userSession, ClientLoginSessionModel clientSession) {
+    public AccessTokenResponseBuilder responseBuilder(RealmModel realm, ClientModel client, EventBuilder event, KeycloakSession session, UserSessionModel userSession, AuthenticatedClientSessionModel clientSession) {
         return new AccessTokenResponseBuilder(realm, client, event, session, userSession, clientSession);
     }
 
@@ -680,7 +656,7 @@ public class TokenManager {
         EventBuilder event;
         KeycloakSession session;
         UserSessionModel userSession;
-        ClientLoginSessionModel clientSession;
+        AuthenticatedClientSessionModel clientSession;
 
         AccessToken accessToken;
         RefreshToken refreshToken;
@@ -689,7 +665,7 @@ public class TokenManager {
         boolean generateAccessTokenHash = false;
         String codeHash;
 
-        public AccessTokenResponseBuilder(RealmModel realm, ClientModel client, EventBuilder event, KeycloakSession session, UserSessionModel userSession, ClientLoginSessionModel clientSession) {
+        public AccessTokenResponseBuilder(RealmModel realm, ClientModel client, EventBuilder event, KeycloakSession session, UserSessionModel userSession, AuthenticatedClientSessionModel clientSession) {
             this.realm = realm;
             this.client = client;
             this.event = event;

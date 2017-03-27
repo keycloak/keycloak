@@ -15,16 +15,12 @@
  * limitations under the License.
  */
 
-package org.keycloak.models;
+package org.keycloak.sessions;
 
-
-import org.keycloak.sessions.CommonClientSessionModel;
+import org.keycloak.provider.ProviderFactory;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public interface ClientLoginSessionModel extends CommonClientSessionModel {
-
-    void setUserSession(UserSessionModel userSession);
-    UserSessionModel getUserSession();
+public interface AuthenticationSessionProviderFactory extends ProviderFactory<AuthenticationSessionProvider> {
 }

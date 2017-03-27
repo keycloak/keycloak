@@ -38,7 +38,7 @@ import javax.ws.rs.core.Response;
 
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.authorization.AuthorizationProvider;
-import org.keycloak.models.ClientLoginSessionModel;
+import org.keycloak.authorization.util.Permissions;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.idm.authorization.PolicyEvaluationRequest;
 import org.keycloak.authorization.admin.representation.PolicyEvaluationResponseBuilder;
@@ -54,7 +54,7 @@ import org.keycloak.authorization.policy.evaluation.EvaluationContext;
 import org.keycloak.authorization.policy.evaluation.Result;
 import org.keycloak.authorization.store.ScopeStore;
 import org.keycloak.authorization.store.StoreFactory;
-import org.keycloak.authorization.util.Permissions;
+import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -67,7 +67,7 @@ import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.services.Urls;
 import org.keycloak.services.resources.admin.RealmAuth;
-import org.keycloak.sessions.LoginSessionModel;
+import org.keycloak.sessions.AuthenticationSessionModel;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -215,7 +215,7 @@ public class PolicyEvaluationService {
 
         String subject = representation.getUserId();
 
-        ClientLoginSessionModel clientSession = null;
+        AuthenticatedClientSessionModel clientSession = null;
         UserSessionModel userSession = null;
         if (subject != null) {
             UserModel userModel = keycloakSession.users().getUserById(subject, realm);
@@ -229,11 +229,11 @@ public class PolicyEvaluationService {
 
                 if (clientId != null) {
                     ClientModel clientModel = realm.getClientById(clientId);
-                    LoginSessionModel loginSession = keycloakSession.loginSessions().createLoginSession(realm, clientModel, false);
-                    loginSession.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+                    AuthenticationSessionModel authSession = keycloakSession.authenticationSessions().createAuthenticationSession(realm, clientModel, false);
+                    authSession.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
                     userSession = keycloakSession.sessions().createUserSession(realm, userModel, userModel.getUsername(), "127.0.0.1", "passwd", false, null, null);
 
-                    new TokenManager().attachLoginSession(keycloakSession, userSession, loginSession);
+                    clientSession = new TokenManager().attachAuthenticationSession(keycloakSession, userSession, authSession);
 
                     Set<RoleModel> requestedRoles = new HashSet<>();
                     for (String roleId : clientSession.getRoles()) {

@@ -29,7 +29,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.messages.Messages;
-import org.keycloak.sessions.LoginSessionModel;
+import org.keycloak.sessions.AuthenticationSessionModel;
 
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
@@ -41,9 +41,9 @@ public class IdpConfirmLinkAuthenticator extends AbstractIdpAuthenticator {
 
     @Override
     protected void authenticateImpl(AuthenticationFlowContext context, SerializedBrokeredIdentityContext serializedCtx, BrokeredIdentityContext brokerContext) {
-        LoginSessionModel loginSession = context.getLoginSession();
+        AuthenticationSessionModel authSession = context.getAuthenticationSession();
 
-        String existingUserInfo = loginSession.getNote(EXISTING_USER_INFO);
+        String existingUserInfo = authSession.getAuthNote(EXISTING_USER_INFO);
         if (existingUserInfo == null) {
             ServicesLogger.LOGGER.noDuplicationDetected();
             context.attempted();
@@ -65,8 +65,8 @@ public class IdpConfirmLinkAuthenticator extends AbstractIdpAuthenticator {
 
         String action = formData.getFirst("submitAction");
         if (action != null && action.equals("updateProfile")) {
-            context.getLoginSession().setNote(ENFORCE_UPDATE_PROFILE, "true");
-            context.getLoginSession().removeNote(EXISTING_USER_INFO);
+            context.getAuthenticationSession().setAuthNote(ENFORCE_UPDATE_PROFILE, "true");
+            context.getAuthenticationSession().removeAuthNote(EXISTING_USER_INFO);
             context.resetFlow();
         } else if (action != null && action.equals("linkAccount")) {
             context.success();

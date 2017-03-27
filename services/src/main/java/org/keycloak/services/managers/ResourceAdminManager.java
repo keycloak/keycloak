@@ -24,7 +24,7 @@ import org.keycloak.common.util.StringPropertyReplacer;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.httpclient.HttpClientProvider;
 import org.keycloak.constants.AdapterConstants;
-import org.keycloak.models.ClientLoginSessionModel;
+import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -113,7 +113,7 @@ public class ResourceAdminManager {
 
     protected void logoutUserSessions(URI requestUri, RealmModel realm, List<UserSessionModel> userSessions) {
         // Map from "app" to clientSessions for this app
-        MultivaluedHashMap<String, ClientLoginSessionModel> clientSessions = new MultivaluedHashMap<>();
+        MultivaluedHashMap<String, AuthenticatedClientSessionModel> clientSessions = new MultivaluedHashMap<>();
         for (UserSessionModel userSession : userSessions) {
             putClientSessions(clientSessions, userSession);
         }
@@ -121,7 +121,7 @@ public class ResourceAdminManager {
         logger.debugv("logging out {0} resources ", clientSessions.size());
         //logger.infov("logging out resources: {0}", clientSessions);
 
-        for (Map.Entry<String, List<ClientLoginSessionModel>> entry : clientSessions.entrySet()) {
+        for (Map.Entry<String, List<AuthenticatedClientSessionModel>> entry : clientSessions.entrySet()) {
             if (entry.getValue().size() == 0) {
                 continue;
             }
@@ -129,18 +129,18 @@ public class ResourceAdminManager {
         }
     }
 
-    private void putClientSessions(MultivaluedHashMap<String, ClientLoginSessionModel> clientSessions, UserSessionModel userSession) {
-        for (Map.Entry<String, ClientLoginSessionModel> entry : userSession.getClientLoginSessions().entrySet()) {
+    private void putClientSessions(MultivaluedHashMap<String, AuthenticatedClientSessionModel> clientSessions, UserSessionModel userSession) {
+        for (Map.Entry<String, AuthenticatedClientSessionModel> entry : userSession.getAuthenticatedClientSessions().entrySet()) {
             clientSessions.add(entry.getKey(), entry.getValue());
         }
     }
 
     public void logoutUserFromClient(URI requestUri, RealmModel realm, ClientModel resource, UserModel user) {
         List<UserSessionModel> userSessions = session.sessions().getUserSessions(realm, user);
-        List<ClientLoginSessionModel> ourAppClientSessions = new LinkedList<>();
+        List<AuthenticatedClientSessionModel> ourAppClientSessions = new LinkedList<>();
         if (userSessions != null) {
             for (UserSessionModel userSession : userSessions) {
-                ClientLoginSessionModel clientSession = userSession.getClientLoginSessions().get(resource.getId());
+                AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessions().get(resource.getId());
                 if (clientSession != null) {
                     ourAppClientSessions.add(clientSession);
                 }
@@ -150,11 +150,11 @@ public class ResourceAdminManager {
         logoutClientSessions(requestUri, realm, resource, ourAppClientSessions);
     }
 
-    public boolean logoutClientSession(URI requestUri, RealmModel realm, ClientModel resource, ClientLoginSessionModel clientSession) {
+    public boolean logoutClientSession(URI requestUri, RealmModel realm, ClientModel resource, AuthenticatedClientSessionModel clientSession) {
         return logoutClientSessions(requestUri, realm, resource, Arrays.asList(clientSession));
     }
 
-    protected boolean logoutClientSessions(URI requestUri, RealmModel realm, ClientModel resource, List<ClientLoginSessionModel> clientSessions) {
+    protected boolean logoutClientSessions(URI requestUri, RealmModel realm, ClientModel resource, List<AuthenticatedClientSessionModel> clientSessions) {
         String managementUrl = getManagementUrl(requestUri, resource);
         if (managementUrl != null) {
 
@@ -163,7 +163,7 @@ public class ResourceAdminManager {
             List<String> userSessions = new LinkedList<>();
             if (clientSessions != null && clientSessions.size() > 0) {
                 adapterSessionIds = new MultivaluedHashMap<String, String>();
-                for (ClientLoginSessionModel clientSession : clientSessions) {
+                for (AuthenticatedClientSessionModel clientSession : clientSessions) {
                     String adapterSessionId = clientSession.getNote(AdapterConstants.CLIENT_SESSION_STATE);
                     if (adapterSessionId != null) {
                         String host = clientSession.getNote(AdapterConstants.CLIENT_SESSION_HOST);

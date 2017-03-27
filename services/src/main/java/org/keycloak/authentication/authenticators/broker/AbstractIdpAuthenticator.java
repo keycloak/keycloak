@@ -29,7 +29,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.services.messages.Messages;
-import org.keycloak.sessions.LoginSessionModel;
+import org.keycloak.sessions.AuthenticationSessionModel;
 
 import javax.ws.rs.core.Response;
 
@@ -59,13 +59,13 @@ public abstract class AbstractIdpAuthenticator implements Authenticator {
 
     @Override
     public void authenticate(AuthenticationFlowContext context) {
-        LoginSessionModel loginSession = context.getLoginSession();
+        AuthenticationSessionModel authSession = context.getAuthenticationSession();
 
-        SerializedBrokeredIdentityContext serializedCtx = SerializedBrokeredIdentityContext.readFromLoginSession(loginSession, BROKERED_CONTEXT_NOTE);
+        SerializedBrokeredIdentityContext serializedCtx = SerializedBrokeredIdentityContext.readFromLoginSession(authSession, BROKERED_CONTEXT_NOTE);
         if (serializedCtx == null) {
             throw new AuthenticationFlowException("Not found serialized context in clientSession", AuthenticationFlowError.IDENTITY_PROVIDER_ERROR);
         }
-        BrokeredIdentityContext brokerContext = serializedCtx.deserialize(context.getSession(), loginSession);
+        BrokeredIdentityContext brokerContext = serializedCtx.deserialize(context.getSession(), authSession);
 
         if (!brokerContext.getIdpConfig().isEnabled()) {
             sendFailureChallenge(context, Errors.IDENTITY_PROVIDER_ERROR, Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR, AuthenticationFlowError.IDENTITY_PROVIDER_ERROR);
@@ -76,7 +76,7 @@ public abstract class AbstractIdpAuthenticator implements Authenticator {
 
     @Override
     public void action(AuthenticationFlowContext context) {
-        LoginSessionModel clientSession = context.getLoginSession();
+        AuthenticationSessionModel clientSession = context.getAuthenticationSession();
 
         SerializedBrokeredIdentityContext serializedCtx = SerializedBrokeredIdentityContext.readFromLoginSession(clientSession, BROKERED_CONTEXT_NOTE);
         if (serializedCtx == null) {
@@ -112,8 +112,8 @@ public abstract class AbstractIdpAuthenticator implements Authenticator {
 
     }
 
-    public static UserModel getExistingUser(KeycloakSession session, RealmModel realm, LoginSessionModel loginSession) {
-        String existingUserId = loginSession.getNote(EXISTING_USER_INFO);
+    public static UserModel getExistingUser(KeycloakSession session, RealmModel realm, AuthenticationSessionModel authSession) {
+        String existingUserId = authSession.getAuthNote(EXISTING_USER_INFO);
         if (existingUserId == null) {
             throw new AuthenticationFlowException("Unexpected state. There is no existing duplicated user identified in ClientSession",
                     AuthenticationFlowError.INTERNAL_ERROR);

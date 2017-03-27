@@ -27,7 +27,7 @@ import org.keycloak.models.UserModel;
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public interface LoginSessionModel extends CommonClientSessionModel {
+public interface AuthenticationSessionModel extends CommonClientSessionModel {
 
 //
 //    public UserSessionModel getUserSession();
@@ -72,5 +72,10 @@ public interface LoginSessionModel extends CommonClientSessionModel {
     public Map<String, String> getUserSessionNotes();
 
     public void clearUserSessionNotes();
+
+    public String getAuthNote(String name);
+    public void setAuthNote(String name, String value);
+    public void removeAuthNote(String name);
+    public void clearAuthNotes();
 
 }

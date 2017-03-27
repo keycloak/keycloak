@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.sessions.infinispan;
+package org.keycloak.models.sessions.infinispan;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -28,30 +28,35 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
-import org.keycloak.sessions.LoginSessionModel;
+import org.keycloak.models.sessions.infinispan.entities.AuthenticationSessionEntity;
+import org.keycloak.sessions.AuthenticationSessionModel;
 
 /**
  * NOTE: Calling setter doesn't automatically enlist for update
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class LoginSessionAdapter implements LoginSessionModel {
+public class AuthenticationSessionAdapter implements AuthenticationSessionModel {
 
     private KeycloakSession session;
-    private InfinispanLoginSessionProvider provider;
-    private Cache<String, SessionEntity> cache;
+    private InfinispanAuthenticationSessionProvider provider;
+    private Cache<String, AuthenticationSessionEntity> cache;
     private RealmModel realm;
-    private LoginSessionEntity entity;
+    private AuthenticationSessionEntity entity;
 
-    public LoginSessionAdapter(KeycloakSession session, InfinispanLoginSessionProvider provider, Cache<String, SessionEntity> cache, RealmModel realm,
-                                LoginSessionEntity entity) {
+    public AuthenticationSessionAdapter(KeycloakSession session, InfinispanAuthenticationSessionProvider provider, Cache<String, AuthenticationSessionEntity> cache, RealmModel realm,
+                                        AuthenticationSessionEntity entity) {
         this.session = session;
         this.provider = provider;
         this.cache = cache;
         this.realm = realm;
         this.entity = entity;
     }
+
+    void update() {
+        provider.tx.replace(cache, entity.getId(), entity);
+    }
+
 
     @Override
     public String getId() {
@@ -68,34 +73,6 @@ public class LoginSessionAdapter implements LoginSessionModel {
         return realm.getClientById(entity.getClientUuid());
     }
 
-//    @Override
-//    public UserSessionAdapter getUserSession() {
-//        return entity.getUserSession() != null ? provider.getUserSession(realm, entity.getUserSession(), offline) : null;
-//    }
-//
-//    @Override
-//    public void setUserSession(UserSessionModel userSession) {
-//        if (userSession == null) {
-//            if (entity.getUserSession() != null) {
-//                provider.dettachSession(getUserSession(), this);
-//            }
-//            entity.setUserSession(null);
-//        } else {
-//            UserSessionAdapter userSessionAdapter = (UserSessionAdapter) userSession;
-//            if (entity.getUserSession() != null) {
-//                if (entity.getUserSession().equals(userSession.getId())) {
-//                    return;
-//                } else {
-//                    provider.dettachSession(userSessionAdapter, this);
-//                }
-//            } else {
-//                provider.attachSession(userSessionAdapter, this);
-//            }
-//
-//            entity.setUserSession(userSession.getId());
-//        }
-//    }
-
     @Override
     public String getRedirectUri() {
         return entity.getRedirectUri();
@@ -104,6 +81,7 @@ public class LoginSessionAdapter implements LoginSessionModel {
     @Override
     public void setRedirectUri(String uri) {
         entity.setRedirectUri(uri);
+        update();
     }
 
     @Override
@@ -114,6 +92,7 @@ public class LoginSessionAdapter implements LoginSessionModel {
     @Override
     public void setTimestamp(int timestamp) {
         entity.setTimestamp(timestamp);
+        update();
     }
 
     @Override
@@ -124,6 +103,7 @@ public class LoginSessionAdapter implements LoginSessionModel {
     @Override
     public void setAction(String action) {
         entity.setAction(action);
+        update();
     }
 
     @Override
@@ -135,6 +115,7 @@ public class LoginSessionAdapter implements LoginSessionModel {
     @Override
     public void setRoles(Set<String> roles) {
         entity.setRoles(roles);
+        update();
     }
 
     @Override
@@ -146,6 +127,7 @@ public class LoginSessionAdapter implements LoginSessionModel {
     @Override
     public void setProtocolMappers(Set<String> protocolMappers) {
         entity.setProtocolMappers(protocolMappers);
+        update();
     }
 
     @Override
@@ -156,6 +138,7 @@ public class LoginSessionAdapter implements LoginSessionModel {
     @Override
     public void setProtocol(String protocol) {
         entity.setProtocol(protocol);
+        update();
     }
 
     @Override
@@ -169,6 +152,7 @@ public class LoginSessionAdapter implements LoginSessionModel {
             entity.setNotes(new HashMap<String, String>());
         }
         entity.getNotes().put(name, value);
+        update();
     }
 
     @Override
@@ -176,6 +160,7 @@ public class LoginSessionAdapter implements LoginSessionModel {
         if (entity.getNotes() != null) {
             entity.getNotes().remove(name);
         }
+        update();
     }
 
     @Override
@@ -187,11 +172,40 @@ public class LoginSessionAdapter implements LoginSessionModel {
     }
 
     @Override
+    public String getAuthNote(String name) {
+        return entity.getAuthNotes() != null ? entity.getAuthNotes().get(name) : null;
+    }
+
+    @Override
+    public void setAuthNote(String name, String value) {
+        if (entity.getAuthNotes() == null) {
+            entity.setAuthNotes(new HashMap<String, String>());
+        }
+        entity.getAuthNotes().put(name, value);
+        update();
+    }
+
+    @Override
+    public void removeAuthNote(String name) {
+        if (entity.getAuthNotes() != null) {
+            entity.getAuthNotes().remove(name);
+        }
+        update();
+    }
+
+    @Override
+    public void clearAuthNotes() {
+        entity.setAuthNotes(new HashMap<>());
+        update();
+    }
+
+    @Override
     public void setUserSessionNote(String name, String value) {
         if (entity.getUserSessionNotes() == null) {
             entity.setUserSessionNotes(new HashMap<String, String>());
         }
         entity.getUserSessionNotes().put(name, value);
+        update();
 
     }
 
@@ -208,6 +222,7 @@ public class LoginSessionAdapter implements LoginSessionModel {
     @Override
     public void clearUserSessionNotes() {
         entity.setUserSessionNotes(new HashMap<String, String>());
+        update();
 
     }
 
@@ -221,19 +236,20 @@ public class LoginSessionAdapter implements LoginSessionModel {
     @Override
     public void addRequiredAction(String action) {
         entity.getRequiredActions().add(action);
+        update();
 
     }
 
     @Override
     public void removeRequiredAction(String action) {
         entity.getRequiredActions().remove(action);
+        update();
 
     }
 
     @Override
     public void addRequiredAction(UserModel.RequiredAction action) {
         addRequiredAction(action.name());
-
     }
 
     @Override
@@ -242,19 +258,22 @@ public class LoginSessionAdapter implements LoginSessionModel {
     }
 
     @Override
-    public Map<String, LoginSessionModel.ExecutionStatus> getExecutionStatus() {
+    public Map<String, AuthenticationSessionModel.ExecutionStatus> getExecutionStatus() {
+
         return entity.getExecutionStatus();
     }
 
     @Override
-    public void setExecutionStatus(String authenticator, LoginSessionModel.ExecutionStatus status) {
+    public void setExecutionStatus(String authenticator, AuthenticationSessionModel.ExecutionStatus status) {
         entity.getExecutionStatus().put(authenticator, status);
+        update();
 
     }
 
     @Override
     public void clearExecutionStatus() {
         entity.getExecutionStatus().clear();
+        update();
     }
 
     @Override
@@ -265,6 +284,6 @@ public class LoginSessionAdapter implements LoginSessionModel {
     public void setAuthenticatedUser(UserModel user) {
         if (user == null) entity.setAuthUserId(null);
         else entity.setAuthUserId(user.getId());
-
+        update();
     }
 }

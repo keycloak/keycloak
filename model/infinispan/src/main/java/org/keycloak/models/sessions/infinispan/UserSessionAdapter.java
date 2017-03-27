@@ -18,12 +18,13 @@
 package org.keycloak.models.sessions.infinispan;
 
 import org.infinispan.Cache;
-import org.keycloak.models.ClientLoginSessionModel;
+import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.sessions.infinispan.entities.ClientLoginSessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
 
@@ -61,10 +62,16 @@ public class UserSessionAdapter implements UserSessionModel {
         this.offline = offline;
     }
 
-    // TODO;mposolda
     @Override
-    public Map<String, ClientLoginSessionModel> getClientLoginSessions() {
-        return null;
+    public Map<String, AuthenticatedClientSessionModel> getAuthenticatedClientSessions() {
+        Map<String, ClientLoginSessionEntity> clientSessionEntities = entity.getClientLoginSessions();
+        Map<String, AuthenticatedClientSessionModel> result = new HashMap<>();
+
+        clientSessionEntities.forEach((String key, ClientLoginSessionEntity value) -> {
+            result.put(key, new AuthenticatedClientSessionAdapter(value, this, provider, cache));
+        });
+
+        return Collections.unmodifiableMap(result);
     }
 
     public String getId() {

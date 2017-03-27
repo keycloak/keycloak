@@ -28,7 +28,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.resources.LoginActionsService;
-import org.keycloak.sessions.LoginSessionModel;
+import org.keycloak.sessions.AuthenticationSessionModel;
 
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
@@ -39,7 +39,7 @@ import java.net.URI;
  * @version $Revision: 1 $
  */
 public class RequiredActionContextResult implements RequiredActionContext {
-    protected LoginSessionModel loginSession;
+    protected AuthenticationSessionModel authenticationSession;
     protected RealmModel realm;
     protected EventBuilder eventBuilder;
     protected KeycloakSession session;
@@ -49,11 +49,11 @@ public class RequiredActionContextResult implements RequiredActionContext {
     protected UserModel user;
     protected RequiredActionFactory factory;
 
-    public RequiredActionContextResult(LoginSessionModel loginSession,
+    public RequiredActionContextResult(AuthenticationSessionModel authSession,
                                        RealmModel realm, EventBuilder eventBuilder, KeycloakSession session,
                                        HttpRequest httpRequest,
                                        UserModel user, RequiredActionFactory factory) {
-        this.loginSession = loginSession;
+        this.authenticationSession = authSession;
         this.realm = realm;
         this.eventBuilder = eventBuilder;
         this.session = session;
@@ -78,8 +78,8 @@ public class RequiredActionContextResult implements RequiredActionContext {
     }
 
     @Override
-    public LoginSessionModel getLoginSession() {
-        return loginSession;
+    public AuthenticationSessionModel getAuthenticationSession() {
+        return authenticationSession;
     }
 
     @Override
@@ -134,14 +134,14 @@ public class RequiredActionContextResult implements RequiredActionContext {
     public URI getActionUrl(String code) {
         return LoginActionsService.requiredActionProcessor(getUriInfo())
                 .queryParam(OAuth2Constants.CODE, code)
-                .queryParam("action", factory.getId())
+                .queryParam("execution", factory.getId())
                 .build(getRealm().getName());
     }
 
     @Override
     public String generateCode() {
-        ClientSessionCode<LoginSessionModel> accessCode = new ClientSessionCode<>(session, getRealm(), getLoginSession());
-        loginSession.setTimestamp(Time.currentTime());
+        ClientSessionCode<AuthenticationSessionModel> accessCode = new ClientSessionCode<>(session, getRealm(), getAuthenticationSession());
+        authenticationSession.setTimestamp(Time.currentTime());
         return accessCode.getCode();
     }
 

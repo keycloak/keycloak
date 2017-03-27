@@ -34,7 +34,6 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.provider.ProviderConfigProperty;
-import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.messages.Messages;
 
 import javax.ws.rs.core.MultivaluedMap;
@@ -53,9 +52,9 @@ public class ResetCredentialChooseUser implements Authenticator, AuthenticatorFa
 
     @Override
     public void authenticate(AuthenticationFlowContext context) {
-        String existingUserId = context.getLoginSession().getNote(AbstractIdpAuthenticator.EXISTING_USER_INFO);
+        String existingUserId = context.getAuthenticationSession().getAuthNote(AbstractIdpAuthenticator.EXISTING_USER_INFO);
         if (existingUserId != null) {
-            UserModel existingUser = AbstractIdpAuthenticator.getExistingUser(context.getSession(), context.getRealm(), context.getLoginSession());
+            UserModel existingUser = AbstractIdpAuthenticator.getExistingUser(context.getSession(), context.getRealm(), context.getAuthenticationSession());
 
             logger.debugf("Forget-password triggered when reauthenticating user after first broker login. Skipping reset-credential-choose-user screen and using user '%s' ", existingUser.getUsername());
             context.setUser(existingUser);
@@ -89,7 +88,7 @@ public class ResetCredentialChooseUser implements Authenticator, AuthenticatorFa
             user =  context.getSession().users().getUserByEmail(username, realm);
         }
 
-        context.getLoginSession().setNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME, username);
+        context.getAuthenticationSession().setAuthNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME, username);
 
         // we don't want people guessing usernames, so if there is a problem, just continue, but don't set the user
         // a null user will notify further executions, that this was a failure.

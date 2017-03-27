@@ -15,49 +15,49 @@
  * limitations under the License.
  */
 
-package org.keycloak.sessions.infinispan;
+package org.keycloak.models.sessions.infinispan.entities;
 
 import java.util.Map;
 import java.util.Set;
 
-import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
-import org.keycloak.sessions.LoginSessionModel;
-
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class LoginSessionEntity extends SessionEntity {
+public class ClientLoginSessionEntity {
 
-    private String clientUuid;
-    private String authUserId;
-
+    private String id;
+    private String client;
+    private String authMethod;
     private String redirectUri;
     private int timestamp;
     private String action;
+
     private Set<String> roles;
     private Set<String> protocolMappers;
-
-    private Map<String, LoginSessionModel.ExecutionStatus> executionStatus;
-    private String protocol;
-
     private Map<String, String> notes;
-    private Set<String> requiredActions;
-    private Map<String, String> userSessionNotes;
 
-    public String getClientUuid() {
-        return clientUuid;
+    public String getId() {
+        return id;
     }
 
-    public void setClientUuid(String clientUuid) {
-        this.clientUuid = clientUuid;
+    public void setId(String id) {
+        this.id = id;
     }
 
-    public String getAuthUserId() {
-        return authUserId;
+    public String getClient() {
+        return client;
     }
 
-    public void setAuthUserId(String authUserId) {
-        this.authUserId = authUserId;
+    public void setClient(String client) {
+        this.client = client;
+    }
+
+    public String getAuthMethod() {
+        return authMethod;
+    }
+
+    public void setAuthMethod(String authMethod) {
+        this.authMethod = authMethod;
     }
 
     public String getRedirectUri() {
@@ -100,22 +100,6 @@ public class LoginSessionEntity extends SessionEntity {
         this.protocolMappers = protocolMappers;
     }
 
-    public Map<String, LoginSessionModel.ExecutionStatus> getExecutionStatus() {
-        return executionStatus;
-    }
-
-    public void setExecutionStatus(Map<String, LoginSessionModel.ExecutionStatus> executionStatus) {
-        this.executionStatus = executionStatus;
-    }
-
-    public String getProtocol() {
-        return protocol;
-    }
-
-    public void setProtocol(String protocol) {
-        this.protocol = protocol;
-    }
-
     public Map<String, String> getNotes() {
         return notes;
     }
@@ -124,19 +108,4 @@ public class LoginSessionEntity extends SessionEntity {
         this.notes = notes;
     }
 
-    public Set<String> getRequiredActions() {
-        return requiredActions;
-    }
-
-    public void setRequiredActions(Set<String> requiredActions) {
-        this.requiredActions = requiredActions;
-    }
-
-    public Map<String, String> getUserSessionNotes() {
-        return userSessionNotes;
-    }
-
-    public void setUserSessionNotes(Map<String, String> userSessionNotes) {
-        this.userSessionNotes = userSessionNotes;
-    }
 }
