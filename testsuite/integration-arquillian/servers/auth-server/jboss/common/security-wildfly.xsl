@@ -39,6 +39,9 @@
                         <keystore path="keycloak.jks" relative-to="jboss.server.config.dir" keystore-password="secret"/>
                     </ssl>
                 </server-identities>
+                <authentication>
+                    <truststore path="keycloak.truststore" relative-to="jboss.server.config.dir" keystore-password="secret"/>
+                </authentication>
             </security-realm>
         </xsl:copy>
     </xsl:template>
@@ -46,7 +49,7 @@
         <http-listener name="default" socket-binding="http" redirect-socket="proxy-https" proxy-address-forwarding="true"/>
     </xsl:template>
     <xsl:template match="//u:host">
-        <https-listener name="https" socket-binding="proxy-https" security-realm="UndertowRealm"/>
+        <https-listener name="https" socket-binding="proxy-https" verify-client="REQUESTED" security-realm="UndertowRealm"/>
         <xsl:copy-of select="."/>
     </xsl:template>
 

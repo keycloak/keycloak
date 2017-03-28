@@ -48,6 +48,7 @@ import java.util.List;
 import java.util.Set;
 
 /**
+ * @resource Roles
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */

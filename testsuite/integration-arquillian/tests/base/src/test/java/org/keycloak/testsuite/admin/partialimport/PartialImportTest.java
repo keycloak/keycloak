@@ -339,9 +339,9 @@ public class PartialImportTest extends AbstractAuthTest {
     @Test
     public void testAddUsersWithDuplicateEmailsAllowed() {
         
-        RealmRepresentation realmRep = new RealmRepresentation();
+        RealmRepresentation realmRep = testRealmResource().toRepresentation();
         realmRep.setDuplicateEmailsAllowed(true);
-        adminClient.realm(realmId).update(realmRep);
+        testRealmResource().update(realmRep);
                 
         assertAdminEvents.clear();
 

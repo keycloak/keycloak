@@ -21,7 +21,7 @@
   <parent>
     <artifactId>keycloak-parent</artifactId>
     <groupId>org.keycloak</groupId>
-    <version>3.0.0.CR1-SNAPSHOT</version>
+    <version>3.1.0.CR1-SNAPSHOT</version>
     <relativePath>../../../pom.xml</relativePath>
   </parent>
   <modelVersion>4.0.0</modelVersion>
@@ -31,7 +31,7 @@
   <description/>
 
   <properties>
-    <spring-boot.version>1.2.1.RELEASE</spring-boot.version>
+    <spring-boot.version>1.3.0.RELEASE</spring-boot.version>
   </properties>
 
   <dependencies>
@@ -111,6 +111,13 @@
       <artifactId>junit</artifactId>
       <scope>test</scope>
     </dependency>
+    
+     <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-configuration-processor</artifactId>
+        <optional>true</optional>
+        <version>${spring-boot.version}</version>
+     </dependency>
   </dependencies>
   <build>
     <plugins>

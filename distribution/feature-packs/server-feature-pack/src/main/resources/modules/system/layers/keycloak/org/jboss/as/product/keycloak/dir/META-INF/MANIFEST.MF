@@ -1,3 +1,0 @@
-JBoss-Product-Release-Name: ${product.name}
-JBoss-Product-Release-Version: ${product.version}
-JBoss-Product-Console-Slot: main

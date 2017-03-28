@@ -24,13 +24,11 @@ import org.keycloak.component.ComponentModel;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.provider.ProviderFactory;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.UserStorageSyncManager;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
-import org.keycloak.storage.ldap.LDAPStorageProviderFactory;
 import org.keycloak.storage.ldap.mappers.LDAPStorageMapper;
 import org.keycloak.storage.user.SynchronizationResult;
 
@@ -48,6 +46,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
+ * @resource User Storage Provider
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
@@ -94,7 +93,7 @@ public class UserStorageProviderResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     public SynchronizationResult syncUsers(@PathParam("id") String id,
-                                               @QueryParam("action") String action) {
+                                           @QueryParam("action") String action) {
         auth.requireManage();
 
         ComponentModel model = realm.getComponent(id);
@@ -127,6 +126,53 @@ public class UserStorageProviderResource {
         adminEvent.operation(OperationType.ACTION).resourcePath(uriInfo).representation(eventRep).success();
 
         return syncResult;
+    }
+
+    /**
+     * Remove imported users
+     *
+     *
+     * @param id
+     * @return
+     */
+    @POST
+    @Path("{id}/remove-imported-users")
+    @NoCache
+    public void removeImportedUsers(@PathParam("id") String id) {
+        auth.requireManage();
+
+        ComponentModel model = realm.getComponent(id);
+        if (model == null) {
+            throw new NotFoundException("Could not find component");
+        }
+        if (!model.getProviderType().equals(UserStorageProvider.class.getName())) {
+            throw new NotFoundException("found, but not a UserStorageProvider");
+        }
+
+        session.users().removeImportedUsers(realm, id);
+    }
+    /**
+     * Unlink imported users from a storage provider
+     *
+     *
+     * @param id
+     * @return
+     */
+    @POST
+    @Path("{id}/unlink-users")
+    @NoCache
+    public void unlinkUsers(@PathParam("id") String id) {
+        auth.requireManage();
+
+        ComponentModel model = realm.getComponent(id);
+        if (model == null) {
+            throw new NotFoundException("Could not find component");
+        }
+        if (!model.getProviderType().equals(UserStorageProvider.class.getName())) {
+            throw new NotFoundException("found, but not a UserStorageProvider");
+        }
+
+        session.users().unlinkUsers(realm, id);
     }
 
     /**

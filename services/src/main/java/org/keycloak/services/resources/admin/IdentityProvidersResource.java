@@ -58,6 +58,7 @@ import java.util.Map;
 import static javax.ws.rs.core.Response.Status.BAD_REQUEST;
 
 /**
+ * @resource Identity Providers
  * @author Pedro Igor
  */
 public class IdentityProvidersResource {

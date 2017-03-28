@@ -278,6 +278,8 @@ public class UserModelTest extends AbstractModelTest {
         UserModel user1 = session.users().addUser(realm, "user1");
         UserModel user2 = session.users().addUser(realm, "user2");
         UserModel user3 = session.users().addUser(realm, "user3");
+        RealmModel otherRealm = realmManager.createRealm("other");
+        UserModel otherRealmUser = session.users().addUser(otherRealm, "user1");
 
         user1.setSingleAttribute("key1", "value1");
         user1.setSingleAttribute("key2", "value21");
@@ -286,6 +288,8 @@ public class UserModelTest extends AbstractModelTest {
         user2.setSingleAttribute("key2", "value22");
 
         user3.setSingleAttribute("key2", "value21");
+
+        otherRealmUser.setSingleAttribute("key2", "value21");
 
         commit();
         realm = session.realms().getRealmByName("original");

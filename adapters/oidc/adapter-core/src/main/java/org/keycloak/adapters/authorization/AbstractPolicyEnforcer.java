@@ -17,7 +17,6 @@
  */
 package org.keycloak.adapters.authorization;
 
-import java.net.URI;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -31,8 +30,6 @@ import org.keycloak.adapters.OIDCHttpFacade;
 import org.keycloak.adapters.spi.HttpFacade.Request;
 import org.keycloak.adapters.spi.HttpFacade.Response;
 import org.keycloak.authorization.client.AuthzClient;
-import org.keycloak.authorization.client.representation.ResourceRepresentation;
-import org.keycloak.authorization.client.resource.ProtectedResource;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.adapters.config.PolicyEnforcerConfig;
 import org.keycloak.representations.adapters.config.PolicyEnforcerConfig.EnforcementMode;
@@ -56,7 +53,7 @@ public abstract class AbstractPolicyEnforcer {
         this.policyEnforcer = policyEnforcer;
         this.enforcerConfig = policyEnforcer.getEnforcerConfig();
         this.authzClient = policyEnforcer.getClient();
-        this.pathMatcher = new PathMatcher();
+        this.pathMatcher = policyEnforcer.getPathMatcher();
         this.paths = policyEnforcer.getPaths();
     }
 
@@ -95,18 +92,17 @@ public abstract class AbstractPolicyEnforcer {
                     return createEmptyAuthorizationContext(true);
                 }
 
-                PathConfig actualPathConfig = resolvePathConfig(pathConfig, request);
-                Set<String> requiredScopes = getRequiredScopes(actualPathConfig, request);
+                Set<String> requiredScopes = getRequiredScopes(pathConfig, request);
 
-                if (isAuthorized(actualPathConfig, requiredScopes, accessToken, httpFacade)) {
+                if (isAuthorized(pathConfig, requiredScopes, accessToken, httpFacade)) {
                     try {
                         return createAuthorizationContext(accessToken);
                     } catch (Exception e) {
-                        throw new RuntimeException("Error processing path [" + actualPathConfig.getPath() + "].", e);
+                        throw new RuntimeException("Error processing path [" + pathConfig.getPath() + "].", e);
                     }
                 }
 
-                if (!challenge(actualPathConfig, requiredScopes, httpFacade)) {
+                if (!challenge(pathConfig, requiredScopes, httpFacade)) {
                     LOGGER.debugf("Sending challenge to the client. Path [%s]", pathConfig);
                     response.sendError(403, "Authorization failed.");
                 }
@@ -224,32 +220,6 @@ public abstract class AbstractPolicyEnforcer {
                 return granted;
             }
         };
-    }
-
-    private PathConfig resolvePathConfig(PathConfig originalConfig, Request request) {
-        String path = getPath(request);
-
-        if (originalConfig.hasPattern()) {
-            ProtectedResource resource = this.authzClient.protection().resource();
-            Set<String> search = resource.findByFilter("uri=" + path);
-
-            if (!search.isEmpty()) {
-                // resource does exist on the server, cache it
-                ResourceRepresentation targetResource = resource.findById(search.iterator().next()).getResourceDescription();
-                PathConfig config = PolicyEnforcer.createPathConfig(targetResource);
-
-                config.setScopes(originalConfig.getScopes());
-                config.setMethods(originalConfig.getMethods());
-                config.setParentConfig(originalConfig);
-                config.setEnforcementMode(originalConfig.getEnforcementMode());
-
-                this.policyEnforcer.addPath(config);
-
-                return config;
-            }
-        }
-
-        return originalConfig;
     }
 
     private String getPath(Request request) {

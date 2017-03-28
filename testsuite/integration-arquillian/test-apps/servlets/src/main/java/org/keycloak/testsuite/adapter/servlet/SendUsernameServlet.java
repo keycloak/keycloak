@@ -65,7 +65,7 @@ public class SendUsernameServlet {
             return Response.status(Response.Status.FORBIDDEN).entity("Forbidden").build();
         }
 
-        return Response.ok(getOutput()).header(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_PLAIN_TYPE + ";charset=UTF-8").build();
+        return Response.ok(getOutput()).header(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_HTML_TYPE + ";charset=UTF-8").build();
     }
 
     @POST
@@ -85,6 +85,7 @@ public class SendUsernameServlet {
     @Path("getAttributes")
     public Response getSentPrincipal() throws IOException {
         System.out.println("In SendUsername Servlet getSentPrincipal()");
+        sentPrincipal = httpServletRequest.getUserPrincipal();
 
         return Response.ok(getAttributes()).header(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_HTML_TYPE + ";charset=UTF-8").build();
 
@@ -190,6 +191,7 @@ public class SendUsernameServlet {
         SamlPrincipal principal = (SamlPrincipal) sentPrincipal;
         String output = "attribute email: " + principal.getAttribute(X500SAMLProfileConstants.EMAIL.get());
         output += "<br /> topAttribute: " + principal.getAttribute("topAttribute");
+        output += "<br /> boolean-attribute: " + principal.getAttribute("boolean-attribute");
         output += "<br /> level2Attribute: " + principal.getAttribute("level2Attribute");
         output += "<br /> group: " + principal.getAttributes("group").toString();
         output += "<br /> friendlyAttribute email: " + principal.getFriendlyAttribute("email");

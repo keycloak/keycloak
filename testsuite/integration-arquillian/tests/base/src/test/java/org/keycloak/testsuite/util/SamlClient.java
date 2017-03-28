@@ -16,49 +16,56 @@
  */
 package org.keycloak.testsuite.util;
 
-import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
-import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.saml.BaseSAML2BindingBuilder;
-import org.keycloak.saml.SAMLRequestParser;
-import org.keycloak.saml.common.constants.GeneralConstants;
-import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
-import org.keycloak.saml.common.exceptions.ConfigurationException;
-import org.keycloak.saml.common.exceptions.ProcessingException;
-import org.keycloak.saml.processing.api.saml.v2.request.SAML2Request;
-import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
-
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.net.URI;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Objects;
-import java.util.UUID;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriBuilder;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpUriRequest;
+import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.client.utils.URLEncodedUtils;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.LaxRedirectStrategy;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-
+import org.keycloak.common.util.KeyUtils;
+import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
+import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.saml.BaseSAML2BindingBuilder;
+import org.keycloak.saml.SAMLRequestParser;
+import org.keycloak.saml.SignatureAlgorithm;
+import org.keycloak.saml.common.constants.GeneralConstants;
+import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
+import org.keycloak.saml.common.exceptions.ConfigurationException;
+import org.keycloak.saml.common.exceptions.ProcessingException;
+import org.keycloak.saml.processing.api.saml.v2.request.SAML2Request;
+import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
 import org.w3c.dom.Document;
+
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriBuilder;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URI;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Objects;
+import java.util.UUID;
 
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertThat;
 import static org.keycloak.testsuite.admin.Users.getPasswordOf;
-import static org.keycloak.testsuite.util.Matchers.*;
+import static org.keycloak.testsuite.arquillian.AuthServerTestEnricher.getAuthServerContextRoot;
+import static org.keycloak.testsuite.util.IOUtil.documentToString;
+import static org.keycloak.testsuite.util.Matchers.statusCodeIsHC;
 
 /**
- *
  * @author hmlnarik
  */
 public class SamlClient {
@@ -77,30 +84,60 @@ public class SamlClient {
             }
 
             @Override
-            public HttpPost createSamlRequest(URI samlEndpoint, String relayState, Document samlRequest) {
+            public HttpPost createSamlUnsignedRequest(URI samlEndpoint, String relayState, Document samlRequest) {
+                return createSamlPostMessage(samlEndpoint, relayState, samlRequest, GeneralConstants.SAML_REQUEST_KEY, null, null);
+            }
+
+            @Override
+            public HttpPost createSamlUnsignedResponse(URI samlEndpoint, String relayState, Document samlRequest) {
+                return createSamlPostMessage(samlEndpoint, relayState, samlRequest, GeneralConstants.SAML_RESPONSE_KEY, null, null);
+            }
+
+            @Override
+            public HttpPost createSamlSignedRequest(URI samlEndpoint, String relayState, Document samlRequest, String realmPrivateKey, String realmPublicKey) {
+                return createSamlPostMessage(samlEndpoint, relayState, samlRequest, GeneralConstants.SAML_REQUEST_KEY, realmPrivateKey, realmPublicKey);
+            }
+
+            private HttpPost createSamlPostMessage(URI samlEndpoint, String relayState, Document samlRequest, String messageType, String privateKeyStr, String publicKeyStr) {
                 HttpPost post = new HttpPost(samlEndpoint);
 
                 List<NameValuePair> parameters = new LinkedList<>();
+
+
                 try {
+                    BaseSAML2BindingBuilder binding = new BaseSAML2BindingBuilder();
+
+                    if (privateKeyStr != null && publicKeyStr != null) {
+                        PrivateKey privateKey = org.keycloak.testsuite.util.KeyUtils.privateKeyFromString(privateKeyStr);
+                        PublicKey publicKey = org.keycloak.testsuite.util.KeyUtils.publicKeyFromString(publicKeyStr);
+                        binding
+                                .signatureAlgorithm(SignatureAlgorithm.RSA_SHA256)
+                                .signWith(KeyUtils.createKeyId(privateKey), privateKey, publicKey)
+                                .signDocument();
+                    }
+
                     parameters.add(
-                      new BasicNameValuePair(GeneralConstants.SAML_REQUEST_KEY,
-                      new BaseSAML2BindingBuilder()
-                        .postBinding(samlRequest)
-                        .encoded())
+                            new BasicNameValuePair(messageType,
+                                    binding
+                                            .postBinding(samlRequest)
+                                            .encoded())
                     );
-                } catch (ProcessingException | ConfigurationException | IOException ex) {
+                } catch (IOException | ConfigurationException | ProcessingException ex) {
                     throw new RuntimeException(ex);
                 }
+
                 if (relayState != null) {
                     parameters.add(new BasicNameValuePair(GeneralConstants.RELAY_STATE, relayState));
                 }
 
                 UrlEncodedFormEntity formEntity;
+
                 try {
                     formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
                 } catch (UnsupportedEncodingException e) {
                     throw new RuntimeException(e);
                 }
+
                 post.setEntity(formEntity);
 
                 return post;
@@ -122,12 +159,12 @@ public class SamlClient {
             }
 
             @Override
-            public HttpGet createSamlRequest(URI samlEndpoint, String relayState, Document samlRequest) {
+            public HttpGet createSamlUnsignedRequest(URI samlEndpoint, String relayState, Document samlRequest) {
                 try {
                     URI requestURI = new BaseSAML2BindingBuilder()
-                      .relayState(relayState)
-                      .redirectBinding(samlRequest)
-                      .requestURI(samlEndpoint.toString());
+                            .relayState(relayState)
+                            .redirectBinding(samlRequest)
+                            .requestURI(samlEndpoint.toString());
                     return new HttpGet(requestURI);
                 } catch (ProcessingException | ConfigurationException | IOException ex) {
                     throw new RuntimeException(ex);
@@ -138,11 +175,27 @@ public class SamlClient {
             public URI getBindingUri() {
                 return URI.create(JBossSAMLURIConstants.SAML_HTTP_REDIRECT_BINDING.get());
             }
+
+            @Override
+            public HttpUriRequest createSamlUnsignedResponse(URI samlEndpoint, String relayState, Document samlRequest) {
+                return null;
+            }
+
+            @Override
+            public HttpUriRequest createSamlSignedRequest(URI samlEndpoint, String relayState, Document samlRequest, String realmPrivateKey, String realmPublicKey) {
+                return null;
+            }
         };
 
         public abstract SAMLDocumentHolder extractResponse(CloseableHttpResponse response) throws IOException;
-        public abstract HttpUriRequest createSamlRequest(URI samlEndpoint, String relayState, Document samlRequest);
+
+        public abstract HttpUriRequest createSamlUnsignedRequest(URI samlEndpoint, String relayState, Document samlRequest);
+
+        public abstract HttpUriRequest createSamlSignedRequest(URI samlEndpoint, String relayState, Document samlRequest, String realmPrivateKey, String realmPublicKey);
+
         public abstract URI getBindingUri();
+
+        public abstract HttpUriRequest createSamlUnsignedResponse(URI samlEndpoint, String relayState, Document samlRequest);
     }
 
     public static class RedirectStrategyWithSwitchableFollowRedirect extends LaxRedirectStrategy {
@@ -161,6 +214,7 @@ public class SamlClient {
 
     /**
      * Extracts and parses value of SAMLResponse input field of a form present in the given page.
+     *
      * @param responsePage HTML code of the page
      * @return
      */
@@ -176,6 +230,7 @@ public class SamlClient {
 
     /**
      * Extracts and parses value of SAMLResponse query parameter from the given URI.
+     *
      * @param responseUri
      * @return
      */
@@ -196,6 +251,7 @@ public class SamlClient {
     /**
      * Prepares a GET/POST request for logging the given user into the given login page. The login page is expected
      * to have at least input fields with id "username" and "password".
+     *
      * @param user
      * @param loginPage
      * @return
@@ -246,7 +302,61 @@ public class SamlClient {
     }
 
     /**
+     * Prepares a GET/POST request for consent granting . The consent page is expected
+     * to have at least input fields with id "kc-login" and "kc-cancel".
+     *
+     * @param consentPage
+     * @param consent
+     * @return
+     */
+    public static HttpUriRequest handleConsentPage(String consentPage, boolean consent) {
+        org.jsoup.nodes.Document theLoginPage = Jsoup.parse(consentPage);
+
+        List<NameValuePair> parameters = new LinkedList<>();
+        for (Element form : theLoginPage.getElementsByTag("form")) {
+            String method = form.attr("method");
+            String action = form.attr("action");
+            boolean isPost = method != null && "post".equalsIgnoreCase(method);
+
+            for (Element input : form.getElementsByTag("input")) {
+                if (Objects.equals(input.id(), "kc-login")) {
+                    if (consent)
+                        parameters.add(new BasicNameValuePair(input.attr("name"), input.attr("value")));
+                } else if (Objects.equals(input.id(), "kc-cancel")) {
+                    if (!consent)
+                        parameters.add(new BasicNameValuePair(input.attr("name"), input.attr("value")));
+                } else {
+                    parameters.add(new BasicNameValuePair(input.attr("name"), input.val()));
+                }
+            }
+
+            if (isPost) {
+                HttpPost res = new HttpPost(getAuthServerContextRoot() + action);
+
+                UrlEncodedFormEntity formEntity;
+                try {
+                    formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
+                } catch (UnsupportedEncodingException e) {
+                    throw new RuntimeException(e);
+                }
+                res.setEntity(formEntity);
+
+                return res;
+            } else {
+                UriBuilder b = UriBuilder.fromPath(action);
+                for (NameValuePair parameter : parameters) {
+                    b.queryParam(parameter.getName(), parameter.getValue());
+                }
+                return new HttpGet(b.build());
+            }
+        }
+
+        throw new IllegalArgumentException("Invalid consent page: " + consentPage);
+    }
+
+    /**
      * Creates a SAML login request document with the given parameters. See SAML &lt;AuthnRequest&gt; description for more details.
+     *
      * @param issuer
      * @param assertionConsumerURL
      * @param destination
@@ -262,5 +372,169 @@ public class SamlClient {
             throw new RuntimeException(ex);
         }
     }
+
+    /**
+     * Send request for login form and then login using user param. This method is designed for clients without required consent
+     *
+     * @param user
+     * @param samlEndpoint
+     * @param samlRequest
+     * @param relayState
+     * @param requestBinding
+     * @param expectedResponseBinding
+     * @return
+     */
+    public static SAMLDocumentHolder login(UserRepresentation user, URI samlEndpoint,
+                                           Document samlRequest, String relayState, Binding requestBinding, Binding expectedResponseBinding) {
+        return login(user, samlEndpoint, samlRequest, relayState, requestBinding, expectedResponseBinding, false, true);
+    }
+
+    /**
+     * Send request for login form and then login using user param. This method is designed for clients which requires consent
+     *
+     * @param user
+     * @param samlEndpoint
+     * @param samlRequest
+     * @param relayState
+     * @param requestBinding
+     * @param expectedResponseBinding
+     * @return
+     */
+    public static SAMLDocumentHolder loginWithRequiredConsent(UserRepresentation user, URI samlEndpoint,
+                                                              Document samlRequest, String relayState, Binding requestBinding, Binding expectedResponseBinding, boolean consent) {
+        return login(user, samlEndpoint, samlRequest, relayState, requestBinding, expectedResponseBinding, true, consent);
+    }
+
+    /**
+     * Send request for login form and then login using user param. Check whether client requires consent and handle consent page.
+     *
+     * @param user
+     * @param samlEndpoint
+     * @param samlRequest
+     * @param relayState
+     * @param requestBinding
+     * @param expectedResponseBinding
+     * @param consentRequired
+     * @param consent
+     * @return
+     */
+    public static SAMLDocumentHolder login(UserRepresentation user, URI samlEndpoint,
+                                           Document samlRequest, String relayState, Binding requestBinding, Binding expectedResponseBinding, boolean consentRequired, boolean consent) {
+        CloseableHttpResponse response = null;
+        SamlClient.RedirectStrategyWithSwitchableFollowRedirect strategy = new SamlClient.RedirectStrategyWithSwitchableFollowRedirect();
+        try (CloseableHttpClient client = HttpClientBuilder.create().setRedirectStrategy(strategy).build()) {
+            HttpClientContext context = HttpClientContext.create();
+
+            HttpUriRequest post = requestBinding.createSamlUnsignedRequest(samlEndpoint, relayState, samlRequest);
+            response = client.execute(post, context);
+
+            assertThat(response, statusCodeIsHC(Response.Status.OK));
+            String loginPageText = EntityUtils.toString(response.getEntity(), "UTF-8");
+            response.close();
+
+            assertThat(loginPageText, containsString("login"));
+
+            HttpUriRequest loginRequest = handleLoginPage(user, loginPageText);
+
+            if (consentRequired) {
+                // Client requires consent
+                response = client.execute(loginRequest, context);
+                String consentPageText = EntityUtils.toString(response.getEntity(), "UTF-8");
+                loginRequest = handleConsentPage(consentPageText, consent);
+            }
+
+            strategy.setRedirectable(false);
+            response = client.execute(loginRequest, context);
+            
+            return expectedResponseBinding.extractResponse(response);
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        } finally {
+            if (response != null) {
+                EntityUtils.consumeQuietly(response.getEntity());
+                try {
+                    response.close();
+                } catch (IOException ex) {
+                }
+            }
+        }
+    }
+
+    /**
+     * Send request for login form and then login using user param for clients which doesn't require consent
+     *
+     * @param user
+     * @param idpInitiatedURI
+     * @param expectedResponseBinding
+     * @return
+     */
+    public static SAMLDocumentHolder idpInitiatedLogin(UserRepresentation user, URI idpInitiatedURI, Binding expectedResponseBinding) {
+        return idpInitiatedLogin(user, idpInitiatedURI, expectedResponseBinding, false, true);
+    }
+
+    /**
+     * Send request for login form and then login using user param. For clients which requires consent
+     *
+     * @param user
+     * @param idpInitiatedURI
+     * @param expectedResponseBinding
+     * @param consent
+     * @return
+     */
+    public static SAMLDocumentHolder idpInitiatedLoginWithRequiredConsent(UserRepresentation user, URI idpInitiatedURI, Binding expectedResponseBinding, boolean consent) {
+        return idpInitiatedLogin(user, idpInitiatedURI, expectedResponseBinding, true, consent);
+    }
+
+    /**
+     * Send request for login form and then login using user param. Checks whether client requires consent and handle consent page.
+     *
+     * @param user
+     * @param idpInitiatedURI
+     * @param expectedResponseBinding
+     * @param consent
+     * @return
+     */
+    public static SAMLDocumentHolder idpInitiatedLogin(UserRepresentation user, URI idpInitiatedURI, Binding expectedResponseBinding, boolean consentRequired, boolean consent) {
+        CloseableHttpResponse response = null;
+        SamlClient.RedirectStrategyWithSwitchableFollowRedirect strategy = new SamlClient.RedirectStrategyWithSwitchableFollowRedirect();
+        try (CloseableHttpClient client = HttpClientBuilder.create().setRedirectStrategy(strategy).build()) {
+
+            HttpGet get = new HttpGet(idpInitiatedURI);
+            response = client.execute(get);
+            assertThat(response, statusCodeIsHC(Response.Status.OK));
+
+            HttpClientContext context = HttpClientContext.create();
+
+            String loginPageText = EntityUtils.toString(response.getEntity(), "UTF-8");
+            response.close();
+
+            assertThat(loginPageText, containsString("login"));
+
+            HttpUriRequest loginRequest = handleLoginPage(user, loginPageText);
+
+            if (consentRequired) {
+                // Client requires consent
+                response = client.execute(loginRequest, context);
+                String consentPageText = EntityUtils.toString(response.getEntity(), "UTF-8");
+                loginRequest = handleConsentPage(consentPageText, consent);
+            }
+
+            strategy.setRedirectable(false);
+            response = client.execute(loginRequest, context);
+
+            return expectedResponseBinding.extractResponse(response);
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        } finally {
+            if (response != null) {
+                EntityUtils.consumeQuietly(response.getEntity());
+                try {
+                    response.close();
+                } catch (IOException ex) {
+                }
+            }
+        }
+    }
+
 
 }

@@ -1,5 +1,5 @@
 embed-server --server-config=standalone.xml
-/subsystem=datasources/data-source=KeycloakDS/:add(connection-url="jdbc:h2:${jboss.server.data.dir}/keycloak;AUTO_SERVER=TRUE",jta=false,driver-name=h2,jndi-name=java:jboss/datasources/KeycloakDS,password=sa,user-name=sa,use-java-context=true)
+/subsystem=datasources/data-source=KeycloakDS/:add(connection-url="jdbc:h2:${jboss.server.data.dir}/keycloak;AUTO_SERVER=TRUE",enabled=true,driver-name=h2,jndi-name=java:jboss/datasources/KeycloakDS,password=sa,user-name=sa,use-java-context=true)
 /subsystem=infinispan/cache-container=keycloak:add(jndi-name="infinispan/Keycloak")
 /subsystem=infinispan/cache-container=keycloak/local-cache=realms:add()
 /subsystem=infinispan/cache-container=keycloak/local-cache=realms/eviction=EVICTION:add(max-entries=10000,strategy=LRU)

@@ -23,7 +23,7 @@
     <parent>
         <groupId>org.keycloak.bom</groupId>
         <artifactId>keycloak-bom-parent</artifactId>
-        <version>3.0.0.CR1-SNAPSHOT</version>
+        <version>3.1.0.CR1-SNAPSHOT</version>
     </parent>
 
     <groupId>org.keycloak.bom</groupId>
@@ -33,21 +33,17 @@
     <name>Keycloak BOM for server extensions</name>
     <description>Keycloak BOM for server extensions</description>
 
-    <properties>
-        <version.keycloak>${project.version}</version.keycloak>
-    </properties>
-
     <dependencyManagement>
         <dependencies>
             <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-core</artifactId>
-                <version>${build.version}</version>
+                <version>3.1.0.CR1-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-server-spi</artifactId>
-                <version>${build.version}</version>
+                <version>3.1.0.CR1-SNAPSHOT</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

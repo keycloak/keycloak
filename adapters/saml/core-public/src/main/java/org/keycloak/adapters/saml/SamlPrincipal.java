@@ -24,6 +24,7 @@ import java.io.Serializable;
 import java.security.Principal;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -31,6 +32,9 @@ import java.util.Set;
  * @version $Revision: 1 $
  */
 public class SamlPrincipal implements Serializable, Principal {
+
+    public static final String DEFAULT_ROLE_ATTRIBUTE_NAME = "Roles";
+
     private MultivaluedHashMap<String, String> attributes = new MultivaluedHashMap<>();
     private MultivaluedHashMap<String, String> friendlyAttributes = new MultivaluedHashMap<>();
     private String name;
@@ -96,6 +100,15 @@ public class SamlPrincipal implements Serializable, Principal {
             return Collections.emptyList();
         }
 
+    }
+
+    /**
+     * Convenience function that gets the attributes associated with this principal
+     *
+     * @return attributes associated with this principal
+     */
+    public Map<String, List<String>> getAttributes() {
+        return Collections.unmodifiableMap(attributes);
     }
 
     /**

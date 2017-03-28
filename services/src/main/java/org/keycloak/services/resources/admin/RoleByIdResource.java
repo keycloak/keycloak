@@ -45,6 +45,7 @@ import java.util.Set;
 /**
  * Sometimes its easier to just interact with roles by their ID instead of container/role-name
  *
+ * @resource Roles (by ID)
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */

@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-tests</artifactId>
-        <version>3.0.0.CR1-SNAPSHOT</version>
+        <version>3.1.0.CR1-SNAPSHOT</version>
     </parent>
 
     <artifactId>integration-arquillian-tests-other</artifactId>
@@ -60,7 +60,7 @@
                                         <artifactId>integration-arquillian-tests-base</artifactId>
                                         <version>${project.version}</version>
                                         <type>test-jar</type>
-                                        <includes>arquillian.xml,keycloak-add-user.json,test-constants.properties,kerberos/*</includes>
+                                        <includes>arquillian.xml,keycloak-add-user.json,test-constants.properties,kerberos/*,keystore/keycloak.truststore</includes>
                                     </artifactItem>
                                 </artifactItems>
                             </configuration>
@@ -131,12 +131,6 @@
             </modules>
         </profile>
         <profile>
-            <id>console-ui-no-users-tests</id>
-            <modules>
-                <module>console_no_users</module>
-            </modules>
-        </profile>
-        <profile>
             <id>mod_auth_mellon</id>
             <modules>
                 <module>mod_auth_mellon</module>
@@ -154,14 +148,12 @@
                 <module>nodejs_adapter</module>
             </modules>
         </profile>
-<!--
         <profile>
-            <id>auth-server-wildfly</id>
+            <id>server-config-migration</id>
             <modules>
                 <module>server-config-migration</module>
             </modules>
         </profile>
- -->
     </profiles>
 
 </project>

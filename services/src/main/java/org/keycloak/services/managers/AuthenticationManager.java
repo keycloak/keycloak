@@ -699,7 +699,7 @@ public class AuthenticationManager {
     }
 
 
-    protected static AuthResult verifyIdentityToken(KeycloakSession session, RealmModel realm, UriInfo uriInfo, ClientConnection connection, boolean checkActive, boolean checkTokenType,
+    public static AuthResult verifyIdentityToken(KeycloakSession session, RealmModel realm, UriInfo uriInfo, ClientConnection connection, boolean checkActive, boolean checkTokenType,
                                                     boolean isCookie, String tokenString, HttpHeaders headers) {
         try {
             TokenVerifier verifier = TokenVerifier.create(tokenString).realmUrl(Urls.realmIssuer(uriInfo.getBaseUri(), realm.getName())).checkActive(checkActive).checkTokenType(checkTokenType);
@@ -740,7 +740,7 @@ public class AuthenticationManager {
             if (!isSessionValid(realm, userSession)) {
                 // Check if accessToken was for the offline session.
                 if (!isCookie) {
-                    UserSessionModel offlineUserSession = session.sessions().getUserSession(realm, token.getSessionState());
+                    UserSessionModel offlineUserSession = session.sessions().getOfflineUserSession(realm, token.getSessionState());
                     if (isOfflineSessionValid(realm, offlineUserSession)) {
                         return new AuthResult(user, offlineUserSession, token);
                     }

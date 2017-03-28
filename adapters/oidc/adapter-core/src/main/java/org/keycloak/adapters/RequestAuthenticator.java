@@ -24,6 +24,7 @@ import org.keycloak.KeycloakPrincipal;
 import org.keycloak.adapters.spi.AuthChallenge;
 import org.keycloak.adapters.spi.AuthOutcome;
 import org.keycloak.adapters.spi.HttpFacade;
+import org.keycloak.common.enums.SslRequired;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -160,7 +161,8 @@ public abstract class RequestAuthenticator {
 
     protected boolean verifySSL() {
         if (!facade.getRequest().isSecure() && deployment.getSslRequired().isRequired(facade.getRequest().getRemoteAddr())) {
-            log.warn("SSL is required to authenticate");
+            log.warnf("SSL is required to authenticate. Remote address %s is secure: %s, SSL required for: %s .",
+                    facade.getRequest().getRemoteAddr(), facade.getRequest().isSecure(), deployment.getSslRequired().name());
             return true;
         }
         return false;

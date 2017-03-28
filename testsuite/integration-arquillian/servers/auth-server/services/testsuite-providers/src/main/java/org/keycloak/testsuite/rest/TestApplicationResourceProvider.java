@@ -17,6 +17,8 @@
 
 package org.keycloak.testsuite.rest;
 
+import org.jboss.resteasy.annotations.Query;
+import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.jose.jws.JWSInput;
@@ -35,6 +37,7 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
@@ -163,6 +166,33 @@ public class TestApplicationResourceProvider implements RealmResourceProvider {
         sb.append("<a href=\"" + RealmsResource.accountUrl(base).build("test").toString() + "\" id=\"account\">account</a>");
 
         sb.append("</body></html>");
+        return sb.toString();
+    }
+
+    @GET
+    @NoCache
+    @Produces(MediaType.TEXT_HTML)
+    @Path("/get-account-profile")
+    public String getAccountProfile(@QueryParam("token") String token, @QueryParam("account-uri") String accountUri) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("function getProfile() {\n");
+        sb.append(" var req = new XMLHttpRequest();\n");
+        sb.append(" req.open('GET', '" + accountUri + "', false);\n");
+        if (token != null) {
+            sb.append(" req.setRequestHeader('Authorization', 'Bearer " + token + "');\n");
+        }
+        sb.append(" req.setRequestHeader('Accept', 'application/json');\n");
+        sb.append(" req.send(null);\n");
+        sb.append(" document.getElementById('profileOutput').innerHTML=\"<span id='innerOutput'>\" + req.status + '///' + req.responseText; + \"</span>\"\n");
+        sb.append("}");
+        String jsScript = sb.toString();
+
+        sb = new StringBuilder();
+        sb.append("<html><head><title>Account Profile JS Test</title><script>\n")
+                .append(jsScript)
+                .append( "</script></head>\n")
+                .append("<body onload='getProfile()'><div id='profileOutput'></div></body>")
+                .append("</html>");
         return sb.toString();
     }
 

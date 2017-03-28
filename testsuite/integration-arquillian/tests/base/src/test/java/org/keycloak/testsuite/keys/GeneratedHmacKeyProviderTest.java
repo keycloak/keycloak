@@ -80,6 +80,7 @@ public class GeneratedHmacKeyProviderTest extends AbstractKeycloakTest {
 
         Response response = adminClient.realm("test").components().add(rep);
         String id = ApiUtil.getCreatedId(response);
+        response.close();
 
         ComponentRepresentation createdRep = adminClient.realm("test").components().component(id).toRepresentation();
         assertEquals(1, createdRep.getConfig().size());
@@ -114,6 +115,7 @@ public class GeneratedHmacKeyProviderTest extends AbstractKeycloakTest {
 
         Response response = adminClient.realm("test").components().add(rep);
         String id = ApiUtil.getCreatedId(response);
+        response.close();
 
         ComponentRepresentation createdRep = adminClient.realm("test").components().component(id).toRepresentation();
         assertEquals(2, createdRep.getConfig().size());
@@ -147,6 +149,7 @@ public class GeneratedHmacKeyProviderTest extends AbstractKeycloakTest {
 
         Response response = adminClient.realm("test").components().add(rep);
         String id = ApiUtil.getCreatedId(response);
+        response.close();
 
         ComponentRepresentation component = testingClient.server("test").fetch(RunHelpers.internalComponent(id));
         assertEquals(32, Base64Url.decode(component.getConfig().getFirst("secret")).length);

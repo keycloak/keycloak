@@ -39,21 +39,23 @@
             <outputDirectory/>
             <filtered>false</filtered>
             <excludes>
-                <exclude>**/*.sh</exclude>
-                <exclude>**/module.xml</exclude>
+                <exclude>bin/*.sh</exclude>
+                <exclude>module.xml</exclude>
                 <exclude>welcome-content/**</exclude>
-                <exclude>appclient</exclude>
                 <exclude>appclient/**</exclude>
+                <exclude>bin/appclient.*</exclude>
                 <exclude>copyright.txt</exclude>
                 <exclude>README.txt</exclude>
                 <exclude>themes/**</exclude>
+                <exclude>version.txt</exclude>
+                <exclude>${profileExcludes}</exclude>
             </excludes>
         </fileSet>
         <fileSet>
             <directory>target/${project.build.finalName}</directory>
             <outputDirectory/>
             <includes>
-                <include>**/*.sh</include>
+                <include>bin/*.sh</include>
             </includes>
             <fileMode>0755</fileMode>
         </fileSet>
@@ -88,4 +90,13 @@
             </includes>
         </fileSet>
     </fileSets>
+
+    <files>
+        <file>
+            <source>src/main/version.txt</source>
+            <outputDirectory/>
+            <filtered>true</filtered>
+        </file>
+    </files>
+
 </assembly>

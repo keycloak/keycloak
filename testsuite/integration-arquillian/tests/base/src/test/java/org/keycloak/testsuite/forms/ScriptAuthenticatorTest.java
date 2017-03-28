@@ -48,10 +48,6 @@ import java.io.IOException;
  */
 public class ScriptAuthenticatorTest extends AbstractFlowTest {
 
-    UserRepresentation failUser;
-
-    UserRepresentation okayUser;
-
     @Page
     protected LoginPage loginPage;
 
@@ -66,7 +62,7 @@ public class ScriptAuthenticatorTest extends AbstractFlowTest {
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
 
-        failUser = UserBuilder.create()
+        UserRepresentation failUser = UserBuilder.create()
                 .id("fail")
                 .username("fail")
                 .email("fail@test.com")
@@ -74,7 +70,7 @@ public class ScriptAuthenticatorTest extends AbstractFlowTest {
                 .password("password")
                 .build();
 
-        okayUser = UserBuilder.create()
+        UserRepresentation okayUser = UserBuilder.create()
                 .id("user")
                 .username("user")
                 .email("user@test.com")
@@ -89,6 +85,9 @@ public class ScriptAuthenticatorTest extends AbstractFlowTest {
 
     @Before
     public void configureFlows() throws Exception {
+        if (testContext.isInitialized()) {
+            return;
+        }
 
         String scriptFlow = "scriptBrowser";
 
@@ -134,6 +133,8 @@ public class ScriptAuthenticatorTest extends AbstractFlowTest {
 
         Response newExecutionConfigResponse = testRealm().flows().newExecutionConfig(scriptAuth, createScriptAuthConfig(scriptAuth, "authenticator-example.js", "/scripts/authenticator-example.js", "simple script based authenticator"));
         Assert.assertEquals(201, newExecutionConfigResponse.getStatus());
+
+        testContext.setInitialized(true);
     }
 
     /**
@@ -144,9 +145,9 @@ public class ScriptAuthenticatorTest extends AbstractFlowTest {
 
         loginPage.open();
 
-        loginPage.login(okayUser.getUsername(), "password");
+        loginPage.login("user", "password");
 
-        events.expectLogin().user(okayUser.getId()).detail(Details.USERNAME, okayUser.getUsername()).assertEvent();
+        events.expectLogin().user("user").detail(Details.USERNAME, "user").assertEvent();
     }
 
     /**
@@ -157,7 +158,7 @@ public class ScriptAuthenticatorTest extends AbstractFlowTest {
 
         loginPage.open();
 
-        loginPage.login(failUser.getUsername(), "password");
+        loginPage.login("fail", "password");
 
         events.expect(EventType.LOGIN_ERROR).user((String)null).error(Errors.USER_NOT_FOUND).assertEvent();
     }

@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian</artifactId>
-        <version>3.0.0.CR1-SNAPSHOT</version>
+        <version>3.1.0.CR1-SNAPSHOT</version>
     </parent>
 
     <packaging>pom</packaging>
@@ -70,15 +70,29 @@
         <migration.import.properties/>
         <examples.home>${project.build.directory}/examples</examples.home>
 
-        <browser>phantomjs</browser>
+        <browser>htmlUnit</browser>
+        <htmlUnitBrowserVersion>chrome</htmlUnitBrowserVersion>
         <firefox_binary>/usr/bin/firefox</firefox_binary>
+        <phantomjs.cli.args>--ignore-ssl-errors=true --web-security=false</phantomjs.cli.args>
 
         <frontend.console.output>true</frontend.console.output>
         <backends.console.output>true</backends.console.output>
 
+        <keycloak.logging.level>off</keycloak.logging.level>
+
         <testsuite.constants>${project.build.directory}/dependency/test-constants.properties</testsuite.constants>
 
         <skip.add.user.json>false</skip.add.user.json>
+        <client.certificate.keystore>${auth.server.config.dir}/client.jks</client.certificate.keystore>
+        <client.certificate.keystore.passphrase>secret</client.certificate.keystore.passphrase>
+        <client.truststore>${auth.server.config.dir}/keycloak.truststore</client.truststore>
+        <client.truststore.passphrase>secret</client.truststore.passphrase>
+        <client.certificate.ca.path>${auth.server.config.dir}/ca.crt</client.certificate.ca.path>
+        <client.certificate.file>${auth.server.config.dir}/client.crt</client.certificate.file>
+        <client.key.file>${auth.server.config.dir}/client.key</client.key.file>
+        <client.key.passphrase>secret</client.key.passphrase>
+
+        <auth.server.ocsp.responder.enabled>false</auth.server.ocsp.responder.enabled>
     </properties>
 
     <build>
@@ -132,6 +146,24 @@
                                 </resources>
                             </configuration>
                         </execution>
+                        <execution>
+                            <id>copy-truststore</id>
+                            <phase>generate-resources</phase>
+                            <goals>
+                                <goal>copy-resources</goal>
+                            </goals>
+                            <configuration>
+                                <outputDirectory>${project.build.directory}/dependency</outputDirectory>
+                                <resources>
+                                    <resource>
+                                        <directory>src/test/resources</directory>
+                                        <includes>
+                                            <include>keystore/keycloak.truststore</include>
+                                        </includes>
+                                    </resource>
+                                </resources>
+                            </configuration>
+                        </execution>
                     </executions>
                 </plugin>
                 <plugin>
@@ -181,11 +213,26 @@
                             <test.intermittent>${test.intermittent}</test.intermittent>
 
                             <browser>${browser}</browser>
+                            <htmlUnitBrowserVersion>${htmlUnitBrowserVersion}</htmlUnitBrowserVersion>
                             <firefox_binary>${firefox_binary}</firefox_binary>
+                            <phantomjs.cli.args>${phantomjs.cli.args}</phantomjs.cli.args>
+
+                            <keycloak.logging.level>${keycloak.logging.level}</keycloak.logging.level>
 
                             <project.version>${project.version}</project.version>
                             <migration.project.version>${migration.project.version}</migration.project.version>
                             <migration.product.version>${migration.product.version}</migration.product.version>
+
+                            <client.certificate.ca.path>${client.certificate.ca.path}</client.certificate.ca.path>
+                            <client.certificate.keystore>${client.certificate.keystore}</client.certificate.keystore>
+                            <client.certificate.keystore.passphrase>${client.certificate.keystore.passphrase}</client.certificate.keystore.passphrase>
+                            <client.truststore>${client.truststore}</client.truststore>
+                            <client.truststore.passphrase>${client.truststore.passphrase}</client.truststore.passphrase>
+                            <client.certificate.file>${client.certificate.file}</client.certificate.file>
+                            <client.key.file>${client.key.file}</client.key.file>
+                            <client.key.passphrase>${client.key.passphrase}</client.key.passphrase>
+
+                            <auth.server.ocsp.responder.enabled>${auth.server.ocsp.responder.enabled}</auth.server.ocsp.responder.enabled>
                         </systemPropertyVariables>
                         <properties>
                             <property>
@@ -481,6 +528,46 @@
                         </plugin>
                     </plugins>
                 </pluginManagement>
+            </build>
+        </profile>
+        
+        <profile>
+            <id>jdbc-driver-dependency</id>
+            <activation>
+                <property>
+                    <name>jdbc.mvn.artifactId</name>
+                </property>
+            </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>${jdbc.mvn.groupId}</groupId>
+                    <artifactId>${jdbc.mvn.artifactId}</artifactId>
+                    <version>${jdbc.mvn.version}</version>
+                </dependency>
+            </dependencies>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-enforcer-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>enforce</goal>
+                                </goals>
+                                <configuration>
+                                    <rules>
+                                        <requireProperty>
+                                            <property>jdbc.mvn.groupId</property>
+                                        </requireProperty>
+                                        <requireProperty>
+                                            <property>jdbc.mvn.version</property>
+                                        </requireProperty>
+                                    </rules>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
             </build>
         </profile>
 
@@ -886,10 +973,10 @@
 
                 <!-- CLI -->
                 <!--
-                   - This dependency must come after org.bouncycastle dependencies since it contains BC classes,
-                   - and MAC signature check on classes would fail otherwise with:
-                   - 'java.lang.SecurityException: JCE cannot authenticate the provider BC'
-                 -->
+                  - This dependency must come after org.bouncycastle dependencies since it contains BC classes,
+                  - and MAC signature check on classes would fail otherwise with:
+                  - 'java.lang.SecurityException: JCE cannot authenticate the provider BC'
+                -->
                 <dependency>
                     <groupId>org.keycloak</groupId>
                     <artifactId>keycloak-client-cli-dist</artifactId>

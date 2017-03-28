@@ -20,7 +20,7 @@
     <parent>
         <artifactId>keycloak-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>3.0.0.CR1-SNAPSHOT</version>
+        <version>3.1.0.CR1-SNAPSHOT</version>
         <relativePath>../../../pom.xml</relativePath>
     </parent>
     <name>Keycloak SAML Jetty Integration</name>
@@ -36,5 +36,6 @@
         <module>jetty9.1</module>
         <module>jetty9.2</module>
         <module>jetty9.3</module>
+        <module>jetty9.4</module>
     </modules>
 </project>

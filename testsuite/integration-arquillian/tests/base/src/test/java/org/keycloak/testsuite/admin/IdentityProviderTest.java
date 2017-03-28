@@ -207,6 +207,8 @@ public class IdentityProviderTest extends AbstractAdminTest {
         Assert.assertNotNull(ApiUtil.getCreatedId(response));
         response.close();
 
+        getCleanup().addIdentityProviderAlias(idpRep.getAlias());
+
         String secret = idpRep.getConfig() != null ? idpRep.getConfig().get("clientSecret") : null;
         idpRep = StripSecretsUtils.strip(idpRep);
 
@@ -422,6 +424,11 @@ public class IdentityProviderTest extends AbstractAdminTest {
         Assert.assertNotNull("mapper.config exists", mapper.getConfig());
         Assert.assertEquals("config retained", "offline_access", mapper.getConfig().get("role"));
 
+        // add duplicate mapper
+        Response error = provider.addMapper(mapper);
+        Assert.assertEquals("mapper unique name", 400, error.getStatus());
+        error.close();
+
         // update mapper
         mapper.getConfig().put("role", "master-realm.manage-realm");
         provider.update(id, mapper);
@@ -529,6 +536,7 @@ public class IdentityProviderTest extends AbstractAdminTest {
         assertThat(config.keySet(), containsInAnyOrder(
           "validateSignature",
           "singleLogoutServiceUrl",
+          "postBindingLogout",
           "postBindingResponse",
           "postBindingAuthnRequest",
           "singleSignOnServiceUrl",

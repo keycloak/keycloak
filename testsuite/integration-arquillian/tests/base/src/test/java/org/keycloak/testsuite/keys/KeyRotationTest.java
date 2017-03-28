@@ -37,6 +37,7 @@ import org.keycloak.representations.idm.KeysMetadataRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.LoginPage;
@@ -49,6 +50,7 @@ import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.security.KeyPair;
 import java.security.PublicKey;
+import java.util.LinkedList;
 import java.util.List;
 
 import static org.junit.Assert.*;
@@ -182,6 +184,9 @@ public class KeyRotationTest extends AbstractKeycloakTest {
 
         KeysMetadataRepresentation keyMetadata = adminClient.realm("test").keys().getKeyMetadata();
         assertEquals(PemUtils.encodeKey(keys2), keyMetadata.getKeys().get(0).getPublicKey());
+
+        dropKeys1();
+        dropKeys2();
     }
 
     @Test
@@ -200,6 +205,8 @@ public class KeyRotationTest extends AbstractKeycloakTest {
             keys.getConfig().putSingle("priority", "1000" + i);
             Response response = adminClient.realm("test").components().add(keys);
             assertEquals(201, response.getStatus());
+            String newId = ApiUtil.getCreatedId(response);
+            getCleanup().addComponentId(newId);
             response.close();
 
             String updatedActiveKid = adminClient.realm("test").keys().getKeyMetadata().getActive().get("RSA");
@@ -244,7 +251,8 @@ public class KeyRotationTest extends AbstractKeycloakTest {
         config.addFirst(Attributes.PRIVATE_KEY_KEY, privateKeyPem);
         rep.setConfig(config);
 
-        adminClient.realm("test").components().add(rep);
+        Response response = adminClient.realm("test").components().add(rep);
+        response.close();
 
         rep = new ComponentRepresentation();
         rep.setName("mycomponent2");
@@ -256,7 +264,8 @@ public class KeyRotationTest extends AbstractKeycloakTest {
         config.addFirst("priority", priority);
         rep.setConfig(config);
 
-        adminClient.realm("test").components().add(rep);
+        response = adminClient.realm("test").components().add(rep);
+        response.close();
 
         return publicKey;
     }

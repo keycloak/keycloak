@@ -47,7 +47,7 @@ public class FacebookIdentityProvider extends AbstractOAuth2IdentityProvider imp
 
 	protected BrokeredIdentityContext doGetFederatedIdentity(String accessToken) {
 		try {
-			JsonNode profile = JsonSimpleHttp.asJson(SimpleHttp.doGet(PROFILE_URL).header("Authorization", "Bearer " + accessToken));
+			JsonNode profile = JsonSimpleHttp.asJson(SimpleHttp.doGet(PROFILE_URL, session).header("Authorization", "Bearer " + accessToken));
 
 			String id = getJsonProperty(profile, "id");
 

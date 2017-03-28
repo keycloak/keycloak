@@ -55,6 +55,7 @@ import java.util.Properties;
 /**
  * Base resource for managing users
  *
+ * @resource Protocol Mappers
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */

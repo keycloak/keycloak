@@ -25,11 +25,16 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
 import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 
 /**
  *
  * @author <a href="mailto:vramik@redhat.com">Vlastislav Ramik</a>
+ * @author <a href="mailto:pzaoral@redhat.com">Peter Zaoral</a>
  */
 public class FlowsTable {
     public enum RequirementOption {
@@ -53,8 +58,8 @@ public class FlowsTable {
     public enum Action {
         
         DELETE("Delete"),
-        ADD_EXECUTION("Add Execution"),
-        ADD_FLOW("Add Flow");
+        ADD_EXECUTION("Add execution"),
+        ADD_FLOW("Add flow");
         
         private final String name;
         
@@ -69,26 +74,51 @@ public class FlowsTable {
     
     @FindBy(tagName = "tbody")
     private WebElement tbody;
-    
+
     private WebElement getRowByLabelText(String text) {
         WebElement row = tbody.findElement(By.xpath("//span[text() = '" + text + "']/../.."));
+        //tbody.findElement(By.xpath("//span[contains(text(),\"" + text + "\")]/../.."));
         waitUntilElement(row).is().present();
         return row;
     }
-    
+
     public void clickLevelUpButton(String rowLabel) {
-        getRowByLabelText(rowLabel).findElement(By.xpath("//i[contains(@class, 'up')]/..")).click();
+        getRowByLabelText(rowLabel).findElement(By.xpath(".//button[@data-ng-click='raisePriority(execution)']")).click();
     }
-    
+
     public void clickLevelDownButton(String rowLabel) {
-        getRowByLabelText(rowLabel).findElement(By.xpath("//i[contains(@class, 'down')]/..")).click();
+        getRowByLabelText(rowLabel).findElement(By.xpath(".//button[@data-ng-click='lowerPriority(execution)']")).click();
     }
-    
+
     public void changeRequirement(String rowLabel, RequirementOption option) {
-        getRowByLabelText(rowLabel).findElement(By.xpath("//input[@value = '" + option + "']")).click();
+        getRowByLabelText(rowLabel).findElement(By.xpath(".//input[@value = '" + option + "']")).click();
     }
-    
+
     public void performAction(String rowLabel, Action action) {
-        
+
+        getRowByLabelText(rowLabel).findElement(
+                By.xpath(".//div[@class = 'dropdown']/a[@class='dropdown-toggle ng-binding']")).click();
+        WebElement currentAction = getRowByLabelText(rowLabel).findElement(
+                    By.xpath("//div[@class = 'dropdown open']/ul[@class = 'dropdown-menu']/li/" +
+                            "a[@class='ng-binding' and text()='" + action.getName() + "']"));
+        currentAction.click();
+    }
+
+    // Returns all aliases of flows (first "Auth Type" column in table) including the names of execution flows
+    // Each returned alias (key) has also the Requirement option (value) assigned in the Map
+    public Map<String, String> getFlowsAliasesWithRequirements(){
+        Map<String, String> flows = new LinkedHashMap<>();
+        List<WebElement> aliases = tbody.findElements(By.xpath("//span[@class='ng-binding']"));
+
+        for(WebElement alias : aliases)
+        {
+            List<WebElement> requirementsOptions = alias.findElements(By.xpath(".//../parent::*//input[@type='radio']"));
+            for (WebElement requirement : requirementsOptions) {
+                if (requirement.isSelected()) {
+                    flows.put(alias.getText(), requirement.getAttribute("value"));
+                }
+            }
+        }
+        return flows;
     }
 }

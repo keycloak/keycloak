@@ -21,6 +21,7 @@ import org.junit.Before;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.auth.page.account.Account;
 import org.keycloak.testsuite.auth.page.login.OIDCLogin;
@@ -63,16 +64,22 @@ public abstract class AbstractAuthTest extends AbstractKeycloakTest {
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         RealmRepresentation testRealmRep = new RealmRepresentation();
+        testRealmRep.setId(TEST);
         testRealmRep.setRealm(TEST);
         testRealmRep.setEnabled(true);
         testRealms.add(testRealmRep);
     }
 
-    @Before
-    public void beforeAuthTest() {
+    @Override
+    public void setDefaultPageUriParameters() {
+        super.setDefaultPageUriParameters();
+        testRealmPage.setAuthRealm(TEST);
         testRealmLoginPage.setAuthRealm(testRealmPage);
         testRealmAccountPage.setAuthRealm(testRealmPage);
+    }
 
+    @Before
+    public void beforeAuthTest() {
         testUser = createUserRepresentation("test", "test@email.test", "test", "user", true);
         setPasswordFor(testUser, PASSWORD);
 
@@ -82,7 +89,10 @@ public abstract class AbstractAuthTest extends AbstractKeycloakTest {
         deleteAllCookiesForTestRealm();
     }
 
+
     public void createTestUserWithAdminClient() {
+        ApiUtil.removeUserByUsername(testRealmResource(), "test");
+
         log.debug("creating test user");
         String id = createUserAndResetPasswordWithAdminClient(testRealmResource(), testUser, PASSWORD);
         testUser.setId(id);

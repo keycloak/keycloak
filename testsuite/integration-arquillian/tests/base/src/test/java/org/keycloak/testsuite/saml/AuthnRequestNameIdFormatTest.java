@@ -60,59 +60,7 @@ import static org.keycloak.testsuite.util.Matchers.statusCodeIsHC;
  *
  * @author hmlnarik
  */
-public class AuthnRequestNameIdFormatTest extends AbstractAuthTest {
-
-    private static final String REALM_NAME = "demo";
-
-    private static final String SAML_ASSERTION_CONSUMER_URL_SALES_POST = "http://localhost:8080/sales-post/";
-    private static final String SAML_CLIENT_ID_SALES_POST = "http://localhost:8081/sales-post/";
-
-    public static SAMLDocumentHolder login(UserRepresentation user, URI samlEndpoint,
-      Document samlRequest, String relayState, Binding requestBinding, Binding expectedResponseBinding) {
-        CloseableHttpResponse response = null;
-        SamlClient.RedirectStrategyWithSwitchableFollowRedirect strategy = new SamlClient.RedirectStrategyWithSwitchableFollowRedirect();
-        try (CloseableHttpClient client = HttpClientBuilder.create().setRedirectStrategy(strategy).build()) {
-            HttpClientContext context = HttpClientContext.create();
-
-            HttpUriRequest post = requestBinding.createSamlRequest(samlEndpoint, relayState, samlRequest);
-            response = client.execute(post, context);
-
-            assertThat(response, statusCodeIsHC(Response.Status.OK));
-            String loginPageText = EntityUtils.toString(response.getEntity(), "UTF-8");
-            response.close();
-
-            assertThat(loginPageText, containsString("login"));
-
-            HttpUriRequest loginRequest = handleLoginPage(user, loginPageText);
-
-            strategy.setRedirectable(false);
-            response = client.execute(loginRequest, context);
-
-            return expectedResponseBinding.extractResponse(response);
-        } catch (Exception ex) {
-            throw new RuntimeException(ex);
-        } finally {
-            if (response != null) {
-                EntityUtils.consumeQuietly(response.getEntity());
-                try { response.close(); } catch (IOException ex) { }
-            }
-        }
-    }
-
-    @Override
-    public void addTestRealms(List<RealmRepresentation> testRealms) {
-        testRealms.add(loadRealm("/adapter-test/keycloak-saml/testsaml.json"));
-    }
-
-    public AuthnRequestType createLoginRequestDocument(String issuer, String assertionConsumerURL, String realmName) {
-        return SamlClient.createLoginRequestDocument(issuer, assertionConsumerURL, getAuthServerSamlEndpoint(realmName));
-    }
-
-    private URI getAuthServerSamlEndpoint(String realm) throws IllegalArgumentException, UriBuilderException {
-        return RealmsResource
-          .protocolUrl(UriBuilder.fromUri(getAuthServerRoot()))
-          .build(realm, SamlProtocol.LOGIN_PROTOCOL);
-    }
+public class AuthnRequestNameIdFormatTest extends AbstractSamlTest {
 
     private void testLoginWithNameIdPolicy(Binding requestBinding, Binding responseBinding, NameIDPolicyType nameIDPolicy, Matcher<String> nameIdMatcher) throws Exception {
         AuthnRequestType loginRep = createLoginRequestDocument(SAML_CLIENT_ID_SALES_POST, SAML_ASSERTION_CONSUMER_URL_SALES_POST, REALM_NAME);
@@ -195,6 +143,11 @@ public class AuthnRequestNameIdFormatTest extends AbstractAuthTest {
         clientRes.update(client);
 
         testLoginWithNameIdPolicy(Binding.REDIRECT, Binding.POST, null, is("bburke"));
+
+        // Revert
+        client = clientRes.toRepresentation();
+        client.getAttributes().put(SamlConfigAttributes.SAML_FORCE_POST_BINDING, "false");
+        clientRes.update(client);
     }
 
 }

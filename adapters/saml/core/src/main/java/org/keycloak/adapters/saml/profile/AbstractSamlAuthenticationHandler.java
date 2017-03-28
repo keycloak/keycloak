@@ -17,6 +17,8 @@
 
 package org.keycloak.adapters.saml.profile;
 
+import static org.keycloak.adapters.saml.SamlPrincipal.DEFAULT_ROLE_ATTRIBUTE_NAME;
+
 import org.jboss.logging.Logger;
 import org.keycloak.adapters.saml.AbstractInitiateLogin;
 import org.keycloak.adapters.saml.OnSessionCreated;
@@ -422,6 +424,11 @@ public abstract class AbstractSamlAuthenticationHandler implements SamlAuthentic
                 }
             }
         }
+
+        // roles should also be there as regular attributes
+        // this mainly required for elytron and its ABAC nature
+        attributes.put(DEFAULT_ROLE_ATTRIBUTE_NAME, new ArrayList<>(roles));
+
         if (deployment.getPrincipalNamePolicy() == SamlDeployment.PrincipalNamePolicy.FROM_ATTRIBUTE) {
             if (deployment.getPrincipalAttributeName() != null) {
                 String attribute = attributes.getFirst(deployment.getPrincipalAttributeName());

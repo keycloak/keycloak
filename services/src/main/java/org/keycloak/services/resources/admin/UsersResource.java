@@ -42,7 +42,6 @@ import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
-import org.keycloak.models.ModelReadOnlyException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserCredentialModel;
@@ -72,6 +71,7 @@ import org.keycloak.models.UserManager;
 import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.services.resources.AccountService;
 import org.keycloak.services.validation.Validation;
+import org.keycloak.storage.ReadOnlyException;
 import org.keycloak.utils.ProfileHelper;
 
 import javax.ws.rs.Consumes;
@@ -107,6 +107,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * Base resource for managing users
  *
+ * @resource Users
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
@@ -182,7 +183,7 @@ public class UsersResource {
             return Response.noContent().build();
         } catch (ModelDuplicateException e) {
             return ErrorResponse.exists("User exists with same username or email");
-        } catch (ModelReadOnlyException re) {
+        } catch (ReadOnlyException re) {
             return ErrorResponse.exists("User is read only!");
         } catch (ModelException me) {
             logger.warn("Could not update user!", me);
@@ -782,7 +783,7 @@ public class UsersResource {
             session.userCredentialManager().updateCredential(realm, user, cred);
         } catch (IllegalStateException ise) {
             throw new BadRequestException("Resetting to N old passwords is not allowed.");
-        } catch (ModelReadOnlyException mre) {
+        } catch (ReadOnlyException mre) {
             throw new BadRequestException("Can't reset password as account is read only");
         } catch (ModelException e) {
             Properties messages = AdminRoot.getMessages(session, realm, auth.getAuth().getToken().getLocale());

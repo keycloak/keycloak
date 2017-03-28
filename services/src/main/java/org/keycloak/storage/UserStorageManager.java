@@ -615,6 +615,16 @@ public class UserStorageManager implements UserProvider, OnUserCache, OnCreateCo
     }
 
     @Override
+    public void removeImportedUsers(RealmModel realm, String storageProviderId) {
+        localStorage().removeImportedUsers(realm, storageProviderId);
+    }
+
+    @Override
+    public void unlinkUsers(RealmModel realm, String storageProviderId) {
+        localStorage().unlinkUsers(realm, storageProviderId);
+    }
+
+    @Override
     public void onCache(RealmModel realm, CachedUserModel user, UserModel delegate) {
         if (StorageId.isLocalStorage(user)) {
             if (session.userLocalStorage() instanceof OnUserCache) {
@@ -652,4 +662,6 @@ public class UserStorageManager implements UserProvider, OnUserCache, OnCreateCo
         }
 
     }
+
+
 }

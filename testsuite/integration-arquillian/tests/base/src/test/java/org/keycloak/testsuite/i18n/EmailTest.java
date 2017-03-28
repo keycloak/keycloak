@@ -96,6 +96,9 @@ public class EmailTest extends AbstractI18NTest {
         MimeMessage message = greenMail.getReceivedMessages()[0];
 
         Assert.assertEquals("Passwort zurückzusetzen", message.getSubject());
+
+        // Revert
+        changeUserLocale("en");
     }
 
 }

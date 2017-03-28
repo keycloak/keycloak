@@ -48,6 +48,53 @@
                 </configuration>
             </container>
             
+            <container qualifier="app-server-${{app.server}}-ha-node-1" mode="manual" >
+                <configuration>
+                    <property name="enabled">true</property>
+                    <property name="adapterImplClass">org.jboss.as.arquillian.container.managed.ManagedDeployableContainer</property>
+                    <property name="jbossHome">${app.server.home}</property>
+                    <property name="javaHome">${app.server.java.home}</property>
+                    <property name="cleanServerBaseDir">${app.server.home}/standalone-ha-node-1</property>
+                    <property name="serverConfig">standalone-ha.xml</property>
+                    <property name="jbossArguments">
+                        -Djboss.socket.binding.port-offset=${app.server.1.port.offset} 
+                        -Djboss.node.name=ha-node-1
+                        ${adapter.test.props}
+                    </property>
+                    <property name="javaVmArguments">
+                        -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=7901
+                        ${app.server.memory.settings}
+                        -Djava.net.preferIPv4Stack=true
+                    </property>
+                    <property name="managementProtocol">${app.server.management.protocol}</property>
+                    <property name="managementPort">${app.server.1.management.port}</property>
+                    <property name="startupTimeoutInSeconds">${app.server.startup.timeout}</property>
+                </configuration>
+            </container>            
+            
+            <container qualifier="app-server-${{app.server}}-ha-node-2" mode="manual" >
+                <configuration>
+                    <property name="enabled">true</property>
+                    <property name="adapterImplClass">org.jboss.as.arquillian.container.managed.ManagedDeployableContainer</property>
+                    <property name="jbossHome">${app.server.home}</property>
+                    <property name="javaHome">${app.server.java.home}</property>
+                    <property name="cleanServerBaseDir">${app.server.home}/standalone-ha-node-2</property>
+                    <property name="serverConfig">standalone-ha.xml</property>
+                    <property name="jbossArguments">
+                        -Djboss.socket.binding.port-offset=${app.server.2.port.offset} 
+                        -Djboss.node.name=ha-node-2
+                        ${adapter.test.props}
+                    </property>
+                    <property name="javaVmArguments">
+                        -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=7902
+                        ${app.server.memory.settings}
+                        -Djava.net.preferIPv4Stack=true
+                    </property>
+                    <property name="managementProtocol">${app.server.management.protocol}</property>
+                    <property name="managementPort">${app.server.2.management.port}</property>
+                    <property name="startupTimeoutInSeconds">${app.server.startup.timeout}</property>
+                </configuration>
+            </container>
         </xsl:copy>
     </xsl:template>
 

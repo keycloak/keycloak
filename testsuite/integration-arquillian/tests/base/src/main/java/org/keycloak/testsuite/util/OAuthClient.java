@@ -32,8 +32,10 @@ import org.apache.http.message.BasicNameValuePair;
 import org.junit.Assert;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.RSATokenVerifier;
+import org.keycloak.adapters.HttpClientBuilder;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.common.VerificationException;
+import org.keycloak.common.util.KeystoreUtil;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.jose.jwk.JSONWebKeySet;
@@ -54,17 +56,16 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 
 import javax.ws.rs.core.UriBuilder;
+
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
+import java.security.KeyStore;
 import java.security.PublicKey;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -74,6 +75,7 @@ public class OAuthClient {
     public static final String SERVER_ROOT = AuthServerTestEnricher.getAuthServerContextRoot();
     public static final String AUTH_SERVER_ROOT = SERVER_ROOT + "/auth";
     public static final String APP_ROOT = AUTH_SERVER_ROOT + "/realms/master/app";
+    private static final boolean sslRequired = Boolean.parseBoolean(System.getProperty("auth.server.ssl.required"));
 
     private Keycloak adminClient;
 
@@ -199,8 +201,38 @@ public class OAuthClient {
         fillLoginForm(username, password);
     }
 
+    private static CloseableHttpClient newCloseableHttpClient() {
+        if (sslRequired) {
+            KeyStore keystore = null;
+            // load the keystore containing the client certificate - keystore type is probably jks or pkcs12
+            String keyStorePath = System.getProperty("client.certificate.keystore");
+            String keyStorePassword = System.getProperty("client.certificate.keystore.passphrase");
+            try {
+                keystore = KeystoreUtil.loadKeyStore(keyStorePath, keyStorePassword);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+            // load the trustore
+            KeyStore truststore = null;
+            String trustStorePath = System.getProperty("client.truststore");
+            String trustStorePassword = System.getProperty("client.truststore.passphrase");
+            try {
+                truststore = KeystoreUtil.loadKeyStore(trustStorePath, trustStorePassword);
+            } catch(Exception e) {
+                e.printStackTrace();
+            }
+            return (DefaultHttpClient)new HttpClientBuilder()
+                    .keyStore(keystore, keyStorePassword)
+                    .trustStore(truststore)
+                    .hostnameVerification(HttpClientBuilder.HostnameVerificationPolicy.ANY)
+                    .build();
+        }
+        return new DefaultHttpClient();
+    }
+
     public AccessTokenResponse doAccessTokenRequest(String code, String password) {
-        CloseableHttpClient client = new DefaultHttpClient();
+        CloseableHttpClient client = newCloseableHttpClient();
         try {
             HttpPost post = new HttpPost(getAccessTokenUrl());
 
@@ -285,7 +317,9 @@ public class OAuthClient {
             try {
                 ByteArrayOutputStream out = new ByteArrayOutputStream();
 
-                client.execute(post).getEntity().writeTo(out);
+                CloseableHttpResponse response = client.execute(post);
+                response.getEntity().writeTo(out);
+                response.close();
 
                 return new String(out.toByteArray());
             } catch (Exception e) {
@@ -306,7 +340,7 @@ public class OAuthClient {
 
     public AccessTokenResponse doGrantAccessTokenRequest(String realm, String username, String password, String totp,
                                                          String clientId, String clientSecret) throws Exception {
-        CloseableHttpClient client = new DefaultHttpClient();
+        CloseableHttpClient client = newCloseableHttpClient();
         try {
             HttpPost post = new HttpPost(getResourceOwnerPasswordCredentialGrantUrl(realm));
 
@@ -811,28 +845,32 @@ public class OAuthClient {
         private String error;
         private String errorDescription;
 
-        public AccessTokenResponse(HttpResponse response) throws Exception {
-            statusCode = response.getStatusLine().getStatusCode();
-            if (!"application/json".equals(response.getHeaders("Content-Type")[0].getValue())) {
-                Assert.fail("Invalid content type");
-            }
-
-            String s = IOUtils.toString(response.getEntity().getContent());
-            Map responseJson = JsonSerialization.readValue(s, Map.class);
-
-            if (statusCode == 200) {
-                idToken = (String)responseJson.get("id_token");
-                accessToken = (String)responseJson.get("access_token");
-                tokenType = (String)responseJson.get("token_type");
-                expiresIn = (Integer)responseJson.get("expires_in");
-                refreshExpiresIn = (Integer)responseJson.get("refresh_expires_in");
-
-                if (responseJson.containsKey(OAuth2Constants.REFRESH_TOKEN)) {
-                    refreshToken = (String)responseJson.get(OAuth2Constants.REFRESH_TOKEN);
+        public AccessTokenResponse(CloseableHttpResponse response) throws Exception {
+            try {
+                statusCode = response.getStatusLine().getStatusCode();
+                if (!"application/json".equals(response.getHeaders("Content-Type")[0].getValue())) {
+                    Assert.fail("Invalid content type");
                 }
-            } else {
-                error = (String)responseJson.get(OAuth2Constants.ERROR);
-                errorDescription = responseJson.containsKey(OAuth2Constants.ERROR_DESCRIPTION) ? (String)responseJson.get(OAuth2Constants.ERROR_DESCRIPTION) : null;
+
+                String s = IOUtils.toString(response.getEntity().getContent());
+                Map responseJson = JsonSerialization.readValue(s, Map.class);
+
+                if (statusCode == 200) {
+                    idToken = (String) responseJson.get("id_token");
+                    accessToken = (String) responseJson.get("access_token");
+                    tokenType = (String) responseJson.get("token_type");
+                    expiresIn = (Integer) responseJson.get("expires_in");
+                    refreshExpiresIn = (Integer) responseJson.get("refresh_expires_in");
+
+                    if (responseJson.containsKey(OAuth2Constants.REFRESH_TOKEN)) {
+                        refreshToken = (String) responseJson.get(OAuth2Constants.REFRESH_TOKEN);
+                    }
+                } else {
+                    error = (String) responseJson.get(OAuth2Constants.ERROR);
+                    errorDescription = responseJson.containsKey(OAuth2Constants.ERROR_DESCRIPTION) ? (String) responseJson.get(OAuth2Constants.ERROR_DESCRIPTION) : null;
+                }
+            } finally {
+                response.close();
             }
         }
 

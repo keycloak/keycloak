@@ -23,7 +23,7 @@
        <format>zip</format>
     </formats>
     <includeBaseDirectory>false</includeBaseDirectory>
-    
+
     <!-- If war is filtered it will get corrupted. Only need to filter module.xml -->
     <fileSets>
         <fileSet>
@@ -31,8 +31,12 @@
             <outputDirectory/>    
             <filtered>true</filtered>
             <includes>
-               <include>**/module.xml</include>
-               <include>**/MANIFEST.MF</include>
+                <include>**/module.xml</include>
+                <include>**/MANIFEST.MF</include>
+                <include>**/template.xml</include>
+                <include>**/host.xml</include>
+                <include>**/host-master.xml</include>
+                <include>**/host-slave.xml</include>
             </includes>
         </fileSet>
         <fileSet>
@@ -42,6 +46,10 @@
             <excludes>
                <exclude>**/module.xml</exclude>
                <exclude>**/MANIFEST.MF</exclude>
+               <exclude>**/template.xml</exclude>
+               <exclude>**/host.xml</exclude>
+               <exclude>**/host-master.xml</exclude>
+               <exclude>**/host-slave.xml</exclude>
             </excludes>
         </fileSet>
         <fileSet>
@@ -52,11 +60,27 @@
             <outputDirectory>content</outputDirectory>
         </fileSet>
         <fileSet>
-            <directory>../../../themes/src/main/resources/theme</directory>
+            <directory>target/unpacked/theme</directory>
             <outputDirectory>content/themes</outputDirectory>
             <includes>
                 <include>**/**</include>
             </includes>
+        </fileSet>
+        <fileSet>
+            <directory>src/main/resources/identity</directory>
+            <outputDirectory>content/bin</outputDirectory>
+            <includes>
+                <include>**/product.conf</include>
+            </includes>
+            <filtered>true</filtered>
+        </fileSet>
+        <fileSet>
+            <directory>src/main/resources/identity/module</directory>
+            <outputDirectory>modules/system/layers/keycloak/org/jboss/as/product/${product.slot}</outputDirectory>
+            <includes>
+                <include>**/*</include>
+            </includes>
+            <filtered>true</filtered>
         </fileSet>
     </fileSets>
 </assembly>

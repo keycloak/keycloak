@@ -17,6 +17,7 @@
 package org.keycloak.services.resources;
 
 import org.jboss.logging.Logger;
+import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.UriUtils;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.events.Details;
@@ -36,7 +37,6 @@ import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
-import org.keycloak.models.ModelReadOnlyException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
@@ -58,14 +58,10 @@ import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.util.ResolveRelative;
 import org.keycloak.services.validation.Validation;
+import org.keycloak.storage.ReadOnlyException;
 import org.keycloak.util.JsonSerialization;
 
-import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
-import javax.ws.rs.OPTIONS;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.QueryParam;
+import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
@@ -75,6 +71,9 @@ import javax.ws.rs.core.Variant;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -259,27 +258,33 @@ public class AccountService extends AbstractSecuredLocalService {
      */
     @Path("/")
     @GET
+    @Produces(MediaType.TEXT_HTML)
     public Response accountPage() {
-        List<MediaType> types = headers.getAcceptableMediaTypes();
-        if (types.contains(MediaType.WILDCARD_TYPE) || (types.contains(MediaType.TEXT_HTML_TYPE))) {
-            return forwardToPage(null, AccountPages.ACCOUNT);
-        } else if (types.contains(MediaType.APPLICATION_JSON_TYPE)) {
-            requireOneOf(AccountRoles.MANAGE_ACCOUNT, AccountRoles.VIEW_PROFILE);
+        return forwardToPage(null, AccountPages.ACCOUNT);
+    }
 
-            UserRepresentation rep = ModelToRepresentation.toRepresentation(session, realm, auth.getUser());
-            if (rep.getAttributes() != null) {
-                Iterator<String> itr = rep.getAttributes().keySet().iterator();
-                while (itr.hasNext()) {
-                    if (itr.next().startsWith("keycloak.")) {
-                        itr.remove();
-                    }
+    /**
+     * Get account information.
+     *
+     * @return
+     */
+    @Path("/")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response accountPageJson() {
+        requireOneOf(AccountRoles.MANAGE_ACCOUNT, AccountRoles.VIEW_PROFILE);
+
+        UserRepresentation rep = ModelToRepresentation.toRepresentation(session, realm, auth.getUser());
+        if (rep.getAttributes() != null) {
+            Iterator<String> itr = rep.getAttributes().keySet().iterator();
+            while (itr.hasNext()) {
+                if (itr.next().startsWith("keycloak.")) {
+                    itr.remove();
                 }
             }
-
-            return Cors.add(request, Response.ok(rep)).auth().allowedOrigins(auth.getToken()).build();
-        } else {
-            return Response.notAcceptable(Variant.VariantListBuilder.newInstance().mediaTypes(MediaType.TEXT_HTML_TYPE, MediaType.APPLICATION_JSON_TYPE).build()).build();
         }
+
+        return Cors.add(request, Response.ok(rep)).auth().allowedOrigins(auth.getToken()).build();
     }
 
     public static UriBuilder totpUrl(UriBuilder base) {
@@ -377,6 +382,8 @@ public class AccountService extends AbstractSecuredLocalService {
 
         UserModel user = auth.getUser();
 
+        event.event(EventType.UPDATE_PROFILE).client(auth.getClient()).user(auth.getUser());
+
         List<FormMessage> errors = Validation.validateUpdateProfileForm(realm.isEditUsernameAllowed(), formData);
         if (errors != null && !errors.isEmpty()) {
             setReferrerOnPage();
@@ -384,58 +391,100 @@ public class AccountService extends AbstractSecuredLocalService {
         }
 
         try {
-            if (realm.isEditUsernameAllowed()) {
-                String username = formData.getFirst("username");
+            updateUsername(formData.getFirst("username"), user);
+            updateEmail(formData.getFirst("email"), user);
 
-                UserModel existing = session.users().getUserByUsername(username, realm);
-                if (existing != null && !existing.getId().equals(user.getId())) {
-                    throw new ModelDuplicateException(Messages.USERNAME_EXISTS);
-                }
-
-                user.setUsername(username);
-            }
             user.setFirstName(formData.getFirst("firstName"));
             user.setLastName(formData.getFirst("lastName"));
 
-            String email = formData.getFirst("email");
-            String oldEmail = user.getEmail();
-            boolean emailChanged = oldEmail != null ? !oldEmail.equals(email) : email != null;
-            if (emailChanged && !realm.isDuplicateEmailsAllowed()) {
-                UserModel existing = session.users().getUserByEmail(email, realm);
-                if (existing != null && !existing.getId().equals(user.getId())) {
-                    throw new ModelDuplicateException(Messages.EMAIL_EXISTS);
-                }
-            }
-
-            user.setEmail(email);
-
             AttributeFormDataProcessor.process(formData, realm, user);
 
-            event.event(EventType.UPDATE_PROFILE).client(auth.getClient()).user(auth.getUser()).success();
-
-            if (emailChanged) {
-                user.setEmailVerified(false);
-                event.clone().event(EventType.UPDATE_EMAIL).detail(Details.PREVIOUS_EMAIL, oldEmail).detail(Details.UPDATED_EMAIL, email).success();
-            }
-
-            if (realm.isRegistrationEmailAsUsername()) {
-                if (!realm.isDuplicateEmailsAllowed()) {
-                    UserModel existing = session.users().getUserByEmail(email, realm);
-                    if (existing != null && !existing.getId().equals(user.getId())) {
-                        throw new ModelDuplicateException(Messages.USERNAME_EXISTS);
-                    }
-                }
-                user.setUsername(email);
-            }
+            event.success();
 
             setReferrerOnPage();
             return account.setSuccess(Messages.ACCOUNT_UPDATED).createResponse(AccountPages.ACCOUNT);
-        } catch (ModelReadOnlyException roe) {
+        } catch (ReadOnlyException roe) {
             setReferrerOnPage();
             return account.setError(Messages.READ_ONLY_USER).setProfileFormData(formData).createResponse(AccountPages.ACCOUNT);
         } catch (ModelDuplicateException mde) {
             setReferrerOnPage();
             return account.setError(mde.getMessage()).setProfileFormData(formData).createResponse(AccountPages.ACCOUNT);
+        }
+    }
+
+    @Path("/")
+    @POST
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response processAccountUpdateJson(UserRepresentation userRep) {
+        require(AccountRoles.MANAGE_ACCOUNT);
+        if (auth.isCookieAuthenticated()) {
+            throw new ForbiddenException();
+        }
+
+        UserModel user = auth.getUser();
+
+        event.event(EventType.UPDATE_PROFILE).client(auth.getClient()).user(auth.getUser());
+
+        updateUsername(userRep.getUsername(), user);
+        updateEmail(userRep.getEmail(), user);
+
+        user.setFirstName(userRep.getFirstName());
+        user.setLastName(userRep.getLastName());
+
+        if (userRep.getAttributes() != null) {
+            for (String k : user.getAttributes().keySet()) {
+                if (!userRep.getAttributes().containsKey(k)) {
+                    user.removeAttribute(k);
+                }
+            }
+
+            for (Map.Entry<String, List<String>> e : userRep.getAttributes().entrySet()) {
+                user.setAttribute(e.getKey(), e.getValue());
+            }
+        }
+
+        event.success();
+
+        return Cors.add(request, Response.ok()).build();
+    }
+
+    private void updateUsername(String username, UserModel user) {
+        if (realm.isEditUsernameAllowed() && username != null) {
+            UserModel existing = session.users().getUserByUsername(username, realm);
+            if (existing != null && !existing.getId().equals(user.getId())) {
+                throw new ModelDuplicateException(Messages.USERNAME_EXISTS);
+            }
+
+            user.setUsername(username);
+        }
+    }
+
+    private void updateEmail(String email, UserModel user) {
+        String oldEmail = user.getEmail();
+        boolean emailChanged = oldEmail != null ? !oldEmail.equals(email) : email != null;
+        if (emailChanged && !realm.isDuplicateEmailsAllowed()) {
+            UserModel existing = session.users().getUserByEmail(email, realm);
+            if (existing != null && !existing.getId().equals(user.getId())) {
+                throw new ModelDuplicateException(Messages.EMAIL_EXISTS);
+            }
+        }
+
+        user.setEmail(email);
+
+        if (emailChanged) {
+            user.setEmailVerified(false);
+            event.clone().event(EventType.UPDATE_EMAIL).detail(Details.PREVIOUS_EMAIL, oldEmail).detail(Details.UPDATED_EMAIL, email).success();
+        }
+
+        if (realm.isRegistrationEmailAsUsername()) {
+            if (!realm.isDuplicateEmailsAllowed()) {
+                UserModel existing = session.users().getUserByEmail(email, realm);
+                if (existing != null && !existing.getId().equals(user.getId())) {
+                    throw new ModelDuplicateException(Messages.USERNAME_EXISTS);
+                }
+            }
+            user.setUsername(email);
         }
     }
 
@@ -651,7 +700,7 @@ public class AccountService extends AbstractSecuredLocalService {
 
         try {
             session.userCredentialManager().updateCredential(realm, user, UserCredentialModel.password(passwordNew, false));
-        } catch (ModelReadOnlyException mre) {
+        } catch (ReadOnlyException mre) {
             setReferrerOnPage();
             errorEvent.error(Errors.NOT_ALLOWED);
             return account.setError(Messages.READ_ONLY_PASSWORD).createResponse(AccountPages.PASSWORD);
@@ -726,14 +775,19 @@ public class AccountService extends AbstractSecuredLocalService {
                 String redirectUri = UriBuilder.fromUri(Urls.accountFederatedIdentityPage(uriInfo.getBaseUri(), realm.getName())).build().toString();
 
                 try {
-                    ClientSessionModel clientSession = auth.getClientSession();
-                    ClientSessionCode clientSessionCode = new ClientSessionCode(session, realm, clientSession);
-                    clientSessionCode.setAction(ClientSessionModel.Action.AUTHENTICATE.name());
-                    clientSession.setRedirectUri(redirectUri);
-                    clientSession.setNote(OIDCLoginProtocol.STATE_PARAM, UUID.randomUUID().toString());
-
-                    return Response.seeOther(
-                            Urls.identityProviderAuthnRequest(this.uriInfo.getBaseUri(), providerId, realm.getName(), clientSessionCode.getCode()))
+                    String nonce = UUID.randomUUID().toString();
+                    MessageDigest md = MessageDigest.getInstance("SHA-256");
+                    String input = nonce + auth.getSession().getId() +  auth.getClientSession().getId() + providerId;
+                    byte[] check = md.digest(input.getBytes(StandardCharsets.UTF_8));
+                    String hash = Base64Url.encode(check);
+                    URI linkUrl = Urls.identityProviderLinkRequest(this.uriInfo.getBaseUri(), providerId, realm.getName());
+                    linkUrl = UriBuilder.fromUri(linkUrl)
+                            .queryParam("nonce", nonce)
+                            .queryParam("hash", hash)
+                            .queryParam("client_id", client.getClientId())
+                            .queryParam("redirect_uri", redirectUri)
+                            .build();
+                    return Response.seeOther(linkUrl)
                             .build();
                 } catch (Exception spe) {
                     setReferrerOnPage();

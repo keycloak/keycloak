@@ -575,6 +575,7 @@ public class ModelToRepresentation {
         providerRep.setAlias(identityProviderModel.getAlias());
         providerRep.setDisplayName(identityProviderModel.getDisplayName());
         providerRep.setEnabled(identityProviderModel.isEnabled());
+        providerRep.setLinkOnly(identityProviderModel.isLinkOnly());
         providerRep.setStoreToken(identityProviderModel.isStoreToken());
         providerRep.setTrustEmail(identityProviderModel.isTrustEmail());
         providerRep.setAuthenticateByDefault(identityProviderModel.isAuthenticateByDefault());

@@ -35,6 +35,7 @@ import org.keycloak.testsuite.auth.page.login.OAuthGrant;
 import org.keycloak.testsuite.console.page.events.Config;
 import org.keycloak.testsuite.console.page.events.LoginEvents;
 import org.openqa.selenium.By;
+import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebElement;
 
 import java.io.File;
@@ -42,8 +43,8 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.hamcrest.Matchers.containsString;
+import static org.junit.Assert.*;
 import static org.keycloak.testsuite.auth.page.AuthRealm.EXAMPLE;
 import static org.keycloak.testsuite.util.IOUtil.loadRealm;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlDoesntStartWith;
@@ -414,6 +415,30 @@ public abstract class AbstractJSConsoleExampleAdapterTest extends AbstractExampl
         assertTrue("TimeSkew was: " + timeSkew + ", but should be ~-40", timeSkew + 40  <= TIME_SKEW_TOLERANCE);
     }
 
+    // KEYCLOAK-4179
+    @Test
+    public void testOneSecondTimeSkewTokenUpdate() {
+        setTimeOffset(1);
+
+        logInAndInit("standard");
+
+        jsConsoleTestAppPage.refreshToken();
+
+        waitUntilElement(jsConsoleTestAppPage.getEventsElement()).text().contains("Auth Refresh Success");
+        waitUntilElement(jsConsoleTestAppPage.getOutputElement()).text().not().contains("Failed to refresh token");
+
+        try {
+            // The events element should contain "Auth logout" but we need to wait for it
+            // and text().not().contains() doesn't wait. With KEYCLOAK-4179 it took some time for "Auth Logout" to be present
+            waitUntilElement(jsConsoleTestAppPage.getEventsElement()).text().contains("Auth Logout");
+
+            throw new RuntimeException("The events element shouldn't contain \"Auth Logout\" text");
+        } catch (TimeoutException e) {
+            // OK
+        }
+
+    }
+
     @Test
     public void testLocationHeaderInResponse() {
         logInAndInit("standard");
@@ -427,6 +452,18 @@ public abstract class AbstractJSConsoleExampleAdapterTest extends AbstractExampl
         assertEquals("There should be created user mhajas", 1, users.size());
         waitUntilElement(jsConsoleTestAppPage.getOutputElement()).text()
                 .contains("location: " + authServerContextRootPage.toString() + "/auth/admin/realms/" + EXAMPLE + "/users/" + users.get(0).getId());
+    }
+
+    @Test
+    public void reentrancyCallbackTest() {
+        logInAndInit("standard");
+
+        jsConsoleTestAppPage.callReentrancyCallback();
+
+        waitUntilElement(jsConsoleTestAppPage.getEventsElement()).text().contains("First callback");
+        waitUntilElement(jsConsoleTestAppPage.getEventsElement()).text().contains("Second callback");
+
+        waitUntilElement(jsConsoleTestAppPage.getEventsElement()).text().not().contains("Auth Logout");
     }
 
     private void setImplicitFlowForClient() {
@@ -454,7 +491,7 @@ public abstract class AbstractJSConsoleExampleAdapterTest extends AbstractExampl
 
     private void assertResponseError(String errorDescription) {
         jsConsoleTestAppPage.showErrorResponse();
-        assertTrue(jsConsoleTestAppPage.getOutputElement().getText().contains(errorDescription));
+        assertThat(jsConsoleTestAppPage.getOutputElement().getText(), containsString(errorDescription));
     }
 
 }

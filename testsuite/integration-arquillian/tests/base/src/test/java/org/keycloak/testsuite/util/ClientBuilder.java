@@ -106,7 +106,10 @@ public class ClientBuilder {
     }
 
     public ClientBuilder attribute(String name, String value) {
-        Map<String, String> attributes = new HashMap<String, String>();
+        Map<String, String> attributes = rep.getAttributes();
+        if (attributes == null) {
+            attributes = new HashMap<>();
+        }
         attributes.put(name, value);
         rep.setAttributes(attributes);
         return this;

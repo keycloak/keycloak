@@ -27,34 +27,6 @@
 
     <fileSets>
         <fileSet>
-            <directory>${project.build.directory}/unpacked/keycloak-${project.version}/modules/system/layers/keycloak</directory>
-            <outputDirectory>modules/system/add-ons/keycloak</outputDirectory>
-            <includes>
-                <include>**/**</include>
-            </includes>
-        </fileSet>
-        <fileSet>
-            <directory>${project.build.directory}/unpacked/keycloak-${project.version}/themes</directory>
-            <outputDirectory>themes</outputDirectory>
-            <includes>
-                <include>**/**</include>
-            </includes>
-        </fileSet>
-        <fileSet>
-            <directory>${project.build.directory}/unpacked/keycloak-${project.version}/providers</directory>
-            <outputDirectory>providers</outputDirectory>
-            <includes>
-                <include>**/**</include>
-            </includes>
-        </fileSet>
-        <fileSet>
-            <directory>../../</directory>
-            <includes>
-                <include>License.html</include>
-            </includes>
-            <outputDirectory></outputDirectory>
-        </fileSet>
-        <fileSet>
             <directory>${project.build.directory}/cli</directory>
             <includes>
                 <include>*.cli</include>
@@ -62,21 +34,21 @@
             <outputDirectory>bin</outputDirectory>
         </fileSet>
         <fileSet>
-            <directory>${project.build.directory}/unpacked/keycloak-${project.version}/bin</directory>
+            <directory>${project.build.directory}/unpacked/${serverDistDir}</directory>
+            <outputDirectory/>
             <includes>
-                <include>add-user-keycloak.*</include>
-                <include>federation-sssd-setup.sh</include>
-                <include>kcadm.*</include>
-                <include>kcreg.*</include>
+                <include>**/**</include>
             </includes>
-            <outputDirectory>bin</outputDirectory>
+            <excludes>
+                <exclude>modules/**</exclude>
+            </excludes>
         </fileSet>
         <fileSet>
-            <directory>${project.build.directory}/unpacked/keycloak-${project.version}/bin/client</directory>
+            <directory>${project.build.directory}/unpacked/${serverDistDir}/modules/system/layers/keycloak</directory>
+            <outputDirectory>modules/system/${identityType}/keycloak</outputDirectory>
             <includes>
-                <include>keycloak*</include>
+                <include>**/**</include>
             </includes>
-            <outputDirectory>bin/client</outputDirectory>
         </fileSet>
     </fileSets>
 

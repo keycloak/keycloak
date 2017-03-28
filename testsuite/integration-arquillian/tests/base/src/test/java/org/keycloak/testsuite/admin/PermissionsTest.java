@@ -18,6 +18,8 @@
 package org.keycloak.testsuite.admin;
 
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataOutput;
+import org.junit.AfterClass;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.admin.client.Keycloak;
@@ -55,12 +57,14 @@ import org.keycloak.services.resources.admin.RealmAuth.Resource;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
+import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.CredentialBuilder;
 import org.keycloak.testsuite.util.FederatedIdentityBuilder;
 import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.IdentityProviderBuilder;
 import org.keycloak.testsuite.util.RealmBuilder;
+import org.keycloak.testsuite.util.TestCleanup;
 import org.keycloak.testsuite.util.UserBuilder;
 
 import javax.ws.rs.ClientErrorException;
@@ -100,17 +104,11 @@ public class PermissionsTest extends AbstractKeycloakTest {
                 .username(AdminRoles.REALM_ADMIN)
                 .role(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.REALM_ADMIN)
                 .addPassword("password"));
-        clients.put(AdminRoles.REALM_ADMIN,
-                Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth", REALM_NAME, AdminRoles.REALM_ADMIN, "password", "test-client",
-                        "secret"));
 
         builder.user(UserBuilder.create().username("none").addPassword("password"));
-        clients.put("none",
-                Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth", REALM_NAME, "none", "password", "test-client", "secret"));
 
         for (String role : AdminRoles.ALL_REALM_ROLES) {
             builder.user(UserBuilder.create().username(role).role(Constants.REALM_MANAGEMENT_CLIENT_ID, role).addPassword("password"));
-            clients.put(role, Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth", REALM_NAME, role, "password", "test-client"));
         }
         testRealms.add(builder.build());
 
@@ -118,40 +116,88 @@ public class PermissionsTest extends AbstractKeycloakTest {
         builder2.client(ClientBuilder.create().clientId("test-client").publicClient().directAccessGrants());
         builder2.user(UserBuilder.create().username("admin").role(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.REALM_ADMIN).addPassword("password"));
         testRealms.add(builder2.build());
-
-        clients.put("REALM2", Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth", "realm2", "admin", "password", "test-client"));
     }
 
-    @Override
-    public void beforeAbstractKeycloakTest() throws Exception {
-        super.beforeAbstractKeycloakTest();
 
-        clients.put("master-admin", adminClient);
-
-        RealmResource master = adminClient.realm("master");
-
-        {
-            Response response = master.users().create(UserBuilder.create().username("permissions-test-master-none").build());
-            String userId = ApiUtil.getCreatedId(response);
-            response.close();
-
-            master.users().get(userId).resetPassword(CredentialBuilder.create().password("password").build());
-
-            clients.put("master-none",
-                    Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth", "master", "permissions-test-master-none", "password",
-                            Constants.ADMIN_CLI_CLIENT_ID));
+    @Before
+    public void beforeClazz() {
+        if (testContext.isInitialized()) {
+            return;
         }
 
+        createTestUsers();
+
+        testContext.setInitialized(true);
+    }
+
+    private void createTestUsers() {
+        RealmResource master = adminClient.realm("master");
+
+        Response response = master.users().create(UserBuilder.create().username("permissions-test-master-none").build());
+        String userId = ApiUtil.getCreatedId(response);
+        response.close();
+        master.users().get(userId).resetPassword(CredentialBuilder.create().password("password").build());
+
         for (String role : AdminRoles.ALL_REALM_ROLES) {
-            Response response = master.users().create(UserBuilder.create().username("permissions-test-master-" + role).build());
-            String userId = ApiUtil.getCreatedId(response);
+            response = master.users().create(UserBuilder.create().username("permissions-test-master-" + role).build());
+            userId = ApiUtil.getCreatedId(response);
             response.close();
 
             master.users().get(userId).resetPassword(CredentialBuilder.create().password("password").build());
             String clientId = master.clients().findByClientId(REALM_NAME + "-realm").get(0).getId();
             RoleRepresentation roleRep = master.clients().get(clientId).roles().get(role).toRepresentation();
             master.users().get(userId).roles().clientLevel(clientId).add(Collections.singletonList(roleRep));
+        }
+    }
 
+    @AfterClass
+    public static void removeTestUsers() throws Exception {
+        Keycloak adminClient = AdminClientUtil.createAdminClient();
+        try {
+            for (UserRepresentation u : adminClient.realm("master").users().search("permissions-test-master-", 0, 100)) {
+                adminClient.realm("master").users().get(u.getId()).remove();
+            }
+        } finally {
+            adminClient.close();
+        }
+    }
+
+    private void recreatePermissionRealm() throws Exception {
+        RealmRepresentation permissionRealm = testContext.getTestRealmReps().stream().filter(realm -> {
+            return realm.getRealm().equals(REALM_NAME);
+        }).findFirst().get();
+        adminClient.realms().create(permissionRealm);
+
+        removeTestUsers();
+        createTestUsers();
+    }
+
+
+    @Override
+    public void beforeAbstractKeycloakTest() throws Exception {
+        super.beforeAbstractKeycloakTest();
+
+        clients.put(AdminRoles.REALM_ADMIN,
+                Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth", REALM_NAME, AdminRoles.REALM_ADMIN, "password", "test-client",
+                        "secret"));
+
+        clients.put("none",
+                Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth", REALM_NAME, "none", "password", "test-client", "secret"));
+
+        for (String role : AdminRoles.ALL_REALM_ROLES) {
+            clients.put(role, Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth", REALM_NAME, role, "password", "test-client"));
+        }
+
+        clients.put("REALM2", Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth", "realm2", "admin", "password", "test-client"));
+
+        clients.put("master-admin", adminClient);
+
+        clients.put("master-none",
+                Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth", "master", "permissions-test-master-none", "password",
+                        Constants.ADMIN_CLI_CLIENT_ID));
+
+
+        for (String role : AdminRoles.ALL_REALM_ROLES) {
             clients.put("master-" + role,
                     Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth", "master", "permissions-test-master-" + role, "password",
                             Constants.ADMIN_CLI_CLIENT_ID));
@@ -160,15 +206,22 @@ public class PermissionsTest extends AbstractKeycloakTest {
 
     @Override
     public void afterAbstractKeycloakTest() {
-        for (UserRepresentation u : adminClient.realm("master").users().search("permissions-test-master-", 0, 100)) {
-            adminClient.realm("master").users().get(u.getId()).remove();
-        }
+        // Don't close the "main" adminClient, but all others yes
+        clients.entrySet().stream().filter(entry -> {
 
-        super.afterAbstractKeycloakTest();
+            return !entry.getKey().equals("master-admin");
+
+        }).forEach(consumer -> {
+
+            consumer.getValue().close();
+
+        });
+
+        clients.clear();
     }
 
     @Test
-    public void realms() {
+    public void realms() throws Exception {
         // Check returned realms
         invoke(new Invocation() {
             public void invoke(RealmResource realm) {
@@ -312,6 +365,9 @@ public class PermissionsTest extends AbstractKeycloakTest {
                 clients.get(AdminRoles.REALM_ADMIN).realms().realm(REALM_NAME).remove();
             }
         }, adminClient, true);
+
+        // Revert realm removal
+        recreatePermissionRealm();
     }
 
     @Test
@@ -959,7 +1015,7 @@ public class PermissionsTest extends AbstractKeycloakTest {
     }
 
     @Test
-    public void flows() {
+    public void flows() throws Exception {
         invoke(new Invocation() {
             public void invoke(RealmResource realm) {
                 realm.flows().getFormProviders();
@@ -1113,6 +1169,11 @@ public class PermissionsTest extends AbstractKeycloakTest {
                 realm.flows().updateAuthenticatorConfig("nosuch", new AuthenticatorConfigRepresentation());
             }
         }, Resource.REALM, true);
+
+        // Re-create realm
+        adminClient.realm(REALM_NAME).remove();
+
+        recreatePermissionRealm();
     }
 
     @Test

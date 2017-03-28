@@ -142,6 +142,7 @@ public class GroupTest extends AbstractGroupTest {
     private GroupRepresentation createGroup(RealmResource realm, GroupRepresentation group) {
         Response response = realm.groups().add(group);
         String groupId = ApiUtil.getCreatedId(response);
+        getCleanup().addGroupId(groupId);
         response.close();
 
         assertAdminEvents.assertEvent("test", OperationType.CREATE, AdminEventPaths.groupPath(groupId), group, ResourceType.GROUP);

@@ -17,6 +17,7 @@
 package org.keycloak.testsuite.oauth;
 
 import org.jboss.arquillian.graphene.page.Page;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
@@ -69,11 +70,6 @@ public class OAuthGrantTest extends AbstractKeycloakTest {
     protected AccountApplicationsPage accountAppsPage;
     @Page
     protected AppPage appPage;
-
-    @Override
-    public void beforeAbstractKeycloakTest() throws Exception {
-        super.beforeAbstractKeycloakTest();
-    }
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {

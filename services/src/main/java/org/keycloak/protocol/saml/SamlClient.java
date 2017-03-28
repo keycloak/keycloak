@@ -111,6 +111,7 @@ public class SamlClient extends ClientConfigResolver {
         return "true".equals(resolveAttribute(SamlConfigAttributes.SAML_FORCE_NAME_ID_FORMAT_ATTRIBUTE));
 
     }
+
     public void setForceNameIDFormat(boolean val) {
         client.setAttribute(SamlConfigAttributes.SAML_FORCE_NAME_ID_FORMAT_ATTRIBUTE, Boolean.toString(val));
     }
@@ -139,16 +140,18 @@ public class SamlClient extends ClientConfigResolver {
         client.setAttribute(SamlConfigAttributes.SAML_FORCE_POST_BINDING, Boolean.toString(val));
 
     }
+
     public boolean requiresAssertionSignature() {
-       return "true".equals(resolveAttribute(SamlConfigAttributes.SAML_ASSERTION_SIGNATURE));
+        return "true".equals(resolveAttribute(SamlConfigAttributes.SAML_ASSERTION_SIGNATURE));
     }
 
     public void setRequiresAssertionSignature(boolean val) {
-        client.setAttribute(SamlConfigAttributes.SAML_ASSERTION_SIGNATURE   , Boolean.toString(val));
+        client.setAttribute(SamlConfigAttributes.SAML_ASSERTION_SIGNATURE, Boolean.toString(val));
 
     }
+
     public boolean requiresEncryption() {
-       return "true".equals(resolveAttribute(SamlConfigAttributes.SAML_ENCRYPT));
+        return "true".equals(resolveAttribute(SamlConfigAttributes.SAML_ENCRYPT));
     }
 
 
@@ -162,7 +165,7 @@ public class SamlClient extends ClientConfigResolver {
     }
 
     public void setRequiresClientSignature(boolean val) {
-        client.setAttribute(SamlConfigAttributes.SAML_CLIENT_SIGNATURE_ATTRIBUTE   , Boolean.toString(val));
+        client.setAttribute(SamlConfigAttributes.SAML_CLIENT_SIGNATURE_ATTRIBUTE, Boolean.toString(val));
 
     }
 
@@ -192,6 +195,7 @@ public class SamlClient extends ClientConfigResolver {
         client.setAttribute(SamlConfigAttributes.SAML_ENCRYPTION_CERTIFICATE_ATTRIBUTE, val);
 
     }
+
     public String getClientEncryptingPrivateKey() {
         return client.getAttribute(SamlConfigAttributes.SAML_ENCRYPTION_PRIVATE_KEY_ATTRIBUTE);
     }
@@ -203,19 +207,29 @@ public class SamlClient extends ClientConfigResolver {
 
     /**
      * Always returns non-{@code null} result.
+     *
      * @return Configured ransformer of {@link #DEFAULT_XML_KEY_INFO_KEY_NAME_TRANSFORMER} if not set.
      */
     public XmlKeyInfoKeyNameTransformer getXmlSigKeyInfoKeyNameTransformer() {
         return XmlKeyInfoKeyNameTransformer.from(
-          client.getAttribute(SamlConfigAttributes.SAML_SERVER_SIGNATURE_KEYINFO_KEY_NAME_TRANSFORMER),
-          DEFAULT_XML_KEY_INFO_KEY_NAME_TRANSFORMER);
+                client.getAttribute(SamlConfigAttributes.SAML_SERVER_SIGNATURE_KEYINFO_KEY_NAME_TRANSFORMER),
+                DEFAULT_XML_KEY_INFO_KEY_NAME_TRANSFORMER);
     }
 
     public void setXmlSigKeyInfoKeyNameTransformer(XmlKeyInfoKeyNameTransformer xmlSigKeyInfoKeyNameTransformer) {
         client.setAttribute(SamlConfigAttributes.SAML_SERVER_SIGNATURE_KEYINFO_KEY_NAME_TRANSFORMER,
-          xmlSigKeyInfoKeyNameTransformer == null
-            ? null
-            : xmlSigKeyInfoKeyNameTransformer.name());
+                xmlSigKeyInfoKeyNameTransformer == null
+                        ? null
+                        : xmlSigKeyInfoKeyNameTransformer.name());
     }
+
+    public boolean includeOneTimeUseCondition() {
+        return "true".equals(resolveAttribute(SamlConfigAttributes.SAML_ONETIMEUSE_CONDITION));
+    }
+
+    public void setIncludeOneTimeUseCondition(boolean val) {
+        client.setAttribute(SamlConfigAttributes.SAML_ONETIMEUSE_CONDITION, Boolean.toString(val));
+    }
+
 
 }

@@ -2468,6 +2468,10 @@ module.controller('RoleSelectorModalCtrl', function($scope, realm, config, confi
 module.controller('ProviderConfigCtrl', function ($modal, $scope, ComponentUtils) {
     $scope.fileNames = {};
 
+    // KEYCLOAK-4463
+    $scope.initEditor = function(editor){
+        editor.$blockScrolling = Infinity; // suppress warning message
+    };
 
     $scope.openRoleSelector = function (configName, config) {
         $modal.open({

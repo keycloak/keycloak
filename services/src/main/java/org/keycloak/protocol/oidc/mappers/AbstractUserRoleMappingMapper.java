@@ -23,8 +23,10 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.RoleUtils;
+import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.representations.IDToken;
 
+import java.util.List;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -100,10 +102,17 @@ abstract class AbstractUserRoleMappingMapper extends AbstractOIDCProtocolMapper 
             clientUserRoles = clientUserRoles.filter(clientRoles::contains);
         }
 
-        Set<String> realmRoleNames = clientUserRoles
+        List<String> realmRoleNames = clientUserRoles
           .map(m -> rolePrefix + m.getName())
-          .collect(Collectors.toSet());
+          .collect(Collectors.toList());
 
-        OIDCAttributeMapperHelper.mapClaim(token, mappingModel, realmRoleNames);
+        Object claimValue = realmRoleNames;
+
+        boolean multiValued = "true".equals(mappingModel.getConfig().get(ProtocolMapperUtils.MULTIVALUED));
+        if (!multiValued) {
+            claimValue = realmRoleNames.toString();
+        }
+
+        OIDCAttributeMapperHelper.mapClaim(token, mappingModel, claimValue);
     }
 }

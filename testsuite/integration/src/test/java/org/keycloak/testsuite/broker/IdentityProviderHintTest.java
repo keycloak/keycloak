@@ -87,6 +87,13 @@ public class IdentityProviderHintTest {
         assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8081/test-app"));
         assertTrue(this.driver.getPageSource().contains("idToken"));
     }
+    
+    @Test
+    public void testSuccessfulRedirectToProviderHiddenOnLoginPage() {
+        this.driver.navigate().to("http://localhost:8081/test-app?kc_idp_hint=kc-oidc-idp-hidden");
+
+        assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8082/auth/"));
+    }
 
     @Test
     public void testInvalidIdentityProviderHint() {
