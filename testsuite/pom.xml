@@ -51,12 +51,25 @@
     </build>
     <modules>
         <module>integration</module>
-        <module>proxy</module>
-        <module>tomcat6</module>
-        <module>tomcat7</module>
         <module>tomcat8</module>
-        <module>jetty</module>
         <module>integration-arquillian</module>
     </modules>
+
+    <profiles>
+        <profile>
+            <id>community</id>
+            <activation>
+                <property>
+                    <name>!product</name>
+                </property>
+            </activation>
+            <modules>
+                <module>jetty</module>
+                <module>proxy</module>
+                <module>tomcat6</module>
+                <module>tomcat7</module>
+            </modules>
+        </profile>
+    </profiles>
         
 </project>

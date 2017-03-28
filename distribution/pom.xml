@@ -34,16 +34,27 @@
     <modules>
         <module>adapters</module>
         <module>saml-adapters</module>
-        <module>demo-dist</module>
-        <module>api-docs-dist</module>
-        <module>examples-dist</module>
-        <module>proxy-dist</module>
         <module>server-dist</module>
         <module>server-overlay</module>
         <module>feature-packs</module>
     </modules>
 
     <profiles>
+        <profile>
+            <id>community</id>
+            <activation>
+                <property>
+                    <name>!product</name>
+                </property>
+            </activation>
+            <modules>
+                <module>api-docs-dist</module>
+                <module>demo-dist</module>
+                <module>examples-dist</module>
+                <module>proxy-dist</module>
+            </modules>
+        </profile>
+
         <profile>
             <id>jboss-release</id>
             <modules>
