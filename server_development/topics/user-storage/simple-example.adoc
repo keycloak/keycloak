@@ -1,10 +1,6 @@
 === Simple Read-Only, Lookup Example
 
-To illustrate the basics of implementing the User Storage SPI let's walk through a simple example.  In this chapter
-you'll see the implementation of a simple `UserStorageProvider` that looks up users in a simple property file. The
-property file contains username and password definitions and is hardcoded to a specific location on the classpath.
-The provider will be able to lookup the user by id and username and also be able to validate passwords. Users that
-originate from this provider will be read only.
+To illustrate the basics of implementing the User Storage SPI let's walk through a simple example. In this chapter you'll see the implementation of a simple `UserStorageProvider` that looks up users in a simple property file. The property file contains username and password definitions and is hardcoded to a specific location on the classpath. The provider will be able to look up the user by ID and username and also be able to validate passwords. Users that originate from this provider will be read-only.
 
 ==== Provider Class
 
@@ -22,12 +18,7 @@ public class PropertyFileUserStorageProvider implements
 }
 ----
 
-Our provider class, `PropertyFileUserStorageProvider`, implements a bunch of interfaces. It implements the
-`UserStorageProvider` as that is a base requirement of the SPI. It implements the `UserLookupProvider` interface
-because we want to be able to login with users stored by this provider.  It implements the `CredentialInputValidator`
-interface because we want to be able to validate passwords entered in via the login screen. Our property file
-is going to be read only. We implement the `CredentialInputUpdater` because was want to post an error condition
-when the user's password is attempted to be updated.
+Our provider class, `PropertyFileUserStorageProvider`, implements many interfaces. It implements the `UserStorageProvider` as that is a base requirement of the SPI. It implements the `UserLookupProvider` interface because we want to be able to log in with users stored by this provider. It implements the `CredentialInputValidator` interface because we want to be able to validate passwords entered in using the login screen. Our property file is read-only. We implement the `CredentialInputUpdater` because we want to post an error condition when the user attempts to update his password.
 
 [source,java]
 ----
@@ -44,13 +35,9 @@ when the user's password is attempted to be updated.
     }
 ----
 
-The constructor for this provider class is going to store the reference to the `KeycloakSession`, `ComponentModel`, and
-property file. We'll use all of these later. Also notice that there is a map of loaded users. Whenever we find a user
-we will store it in this map so that we avoid recreating it again within the same transaction. This is a good practice
-to do as many providers will need to do this (i.e., one that integrates with JPA). Remember also that provider class
-instances are created once per transaction and are closed after the transaction completes.
+The constructor for this provider class is going to store the reference to the `KeycloakSession`, `ComponentModel`, and property file. We'll use all of these later. Also notice that there is a map of loaded users. Whenever we find a user we will store it in this map so that we avoid re-creating it again within the same transaction. This is a good practice to follow as many providers will need to do this (that is, any provider that integrates with JPA). Remember also that provider class instances are created once per transaction and are closed after the transaction completes.
 
-===== UserLookupProvider implementation
+===== UserLookupProvider Implementation
 
 [source,java]
 ----
@@ -91,31 +78,21 @@ instances are created once per transaction and are closed after the transaction 
 
 ----
 
-The `getUserByUsername()` method is invoked by the {{book.project.name}} login page when a user logs in.  In our
-implementation we first check the `loadedUsers` map to see if the user has already been loaded within this transaction.
-If it hasn't been loaded we look in the property file for the username.   If it exists we create an implementation
-of `UserModel`, store it in `loadedUsers` for future reference and return this instance.
+The `getUserByUsername()` method is invoked by the {{book.project.name}} login page when a user logs in. In our implementation we first check the `loadedUsers` map to see if the user has already been loaded within this transaction. If it hasn't been loaded we look in the property file for the username. If it exists we create an implementation of `UserModel`, store it in `loadedUsers` for future reference, and return this instance.
 
-The `createAdapter()` method uses the helper class `org.keycloak.storage.adapter.AbstractUserAdapter`.  This provides
-a base implementation for `UserModel`.  It automatically generates a user id based on the required storage id format
-using the username of the user as the external id.
+The `createAdapter()` method uses the helper class `org.keycloak.storage.adapter.AbstractUserAdapter`. This provides a base implementation for `UserModel`. It automatically generates a user id based on the required storage id format using the username of the user as the external id.
 
 ----
 "f:" + component id + ":" + username
 ----
 
-Every get method of `AbstractUserAdapter` either returns null or empty collections.  However, methods that return
-role and group mappings will return the default roles and groups configured for the realm for every user.  Every set
-method of `AbstractUserAdapter` will throw a `org.keycloak.storage.ReadOnlyException`.  So if you attempt
-to modify the user in the admin console you will get an error.
+Every get method of `AbstractUserAdapter` either returns null or empty collections. However, methods that return role and group mappings will return the default roles and groups configured for the realm for every user.  Every set method of `AbstractUserAdapter` will throw a `org.keycloak.storage.ReadOnlyException`. So if you attempt to modify the user in the admininstration console, you will get an error.
 
-The `getUserById()` method parses the `id` parameter using the `org.keycloak.storage.StorageId' helper class.  The
-`StorageId.getExternalId()` method is invoked to obtain the username embeded in the `id` parameter.  The method
-then delegates to `getUserByUsername()`.
+The `getUserById()` method parses the `id` parameter using the `org.keycloak.storage.StorageId' helper class. The `StorageId.getExternalId()` method is invoked to obtain the username embeded in the `id` parameter. The method then delegates to `getUserByUsername()`.
 
-Emails are not stored at all, so the `getUserByEmail() method
+Emails are not stored, so the `getUserByEmail() method returns null.
 
-===== CredentialInputValidator implementation
+===== CredentialInputValidator Implementation
 
 Next let's look at the method implementations for `CredentialInputValidator`.
 
@@ -143,23 +120,15 @@ Next let's look at the method implementations for `CredentialInputValidator`.
     }
 ----
 
-The `isConfiguredFor()` method is called by the runtime to determine if a specific credential type is configured for
-the user.  This method checks to see that the password is set for the user.
+The `isConfiguredFor()` method is called by the runtime to determine if a specific credential type is configured for the user. This method checks to see that the password is set for the user.
 
-The `suportsCredentialType()` method returns whether validation is supported for a specific credential type.  We check
-to see if the credential type is `password`.
+The `suportsCredentialType()` method returns whether validation is supported for a specific credential type. We check to see if the credential type is `password`.
 
-The `isValid()` method is responsible for validating passwords.  The `CredentialInput` parameter is really just an abstract
-interface for all credential types.  We make sure that we support the credential type and also that it is an instance
-of `UserCredentialModel`.  When a user logs in through the login page, the plain text of the password input is put into
-an instance of `UserCredentialModel`.  The `isValid()` method checks this value against the plain text password stored
-in the properties file.  A return value of `true` means the password is valid.
+The `isValid()` method is responsible for validating passwords. The `CredentialInput` parameter is really just an abstract interface for all credential types. We make sure that we support the credential type and also that it is an instance of `UserCredentialModel`. When a user logs in through the login page, the plain text of the password input is put into an instance of `UserCredentialModel`. The `isValid()` method checks this value against the plain text password stored in the properties file. A return value of `true` means the password is valid.
 
-===== CredentialInputUpdater implementation
+===== CredentialInputUpdater Implementation
 
-As noted before, the only reason we implement the `CredentialInputUpdater` interface in this example is to forbid modifications of
-user passwords.  The reason we have to do this is because otherwise the runtime would allow the password to be overriden
-in {{book.project.name}} local storage. We'll talk more about this later in this chapter
+As noted before, the only reason we implement the `CredentialInputUpdater` interface in this example is to forbid modifications of user passwords. The reason we have to do this is because otherwise the runtime would allow the password to be overriden in {{book.project.name}} local storage. We'll talk more about this later in this chapter.
 
 [source,java]
 ----
@@ -181,10 +150,9 @@ in {{book.project.name}} local storage. We'll talk more about this later in this
     }
 ----
 
-The `updateCredential()` method just checks to see if the credential type is password.  If it is, a `ReadOnlyException`
-is thrown.
+The `updateCredential()` method just checks to see if the credential type is password.  If it is, a `ReadOnlyException` is thrown.
 
-==== Provider Factory implementation
+==== Provider Factory Implementation
 
 Now that the provider class is complete, we now turn our attention to the provider factory class.
 
@@ -201,14 +169,12 @@ public class PropertyFileUserStorageProviderFactory
     }
 ----
 
-First thing to notice is that when implementing the `UserStorageProviderFactory` class, you must pass in the concrete
-provider class implementation as a template parameter.  Here we specify the provider class we defined before: `PropertyFileUserStorageProvider`.
+First thing to notice is that when implementing the `UserStorageProviderFactory` class, you must pass in the concrete provider class implementation as a template parameter. Here we specify the provider class we defined before: `PropertyFileUserStorageProvider`.
 
-WARNING: If you do not specify the template parameter, your provider will not function.  The runtime does class introspection
+WARNING: If you do not specify the template parameter, your provider will not function. The runtime does class introspection
          to determine the _capability interfaces_ that the provider implements.
 
-The `getId()` method identifies the factory in the runtime and will also be the string shown in the admin console when you want
-to enable a user storage provider for the realm.
+The `getId()` method identifies the factory in the runtime and will also be the string shown in the admin console when you want to enable a user storage provider for the realm.
 
 ===== Initialization
 
@@ -238,17 +204,11 @@ to enable a user storage provider for the realm.
     }
 ----
 
-The `UserStorageProviderFactory` interface has an optional `init()` method you can implement.  When {{book.project.name}}
-boots up, one and only one instance of each different provider factory.  Also at boot time, the `init()` method will
-be called on each one of these factory instances.  There's also a `postInit()` method you can implement as well.  After
-each factory's `init()` method is invoked, their `postInit()` methods will be called.
+The `UserStorageProviderFactory` interface has an optional `init()` method you can implement. When {{book.project.name}} boots up, one and only one instance of each different provider factory. Also at boot time, the `init()` method will be called on each one of these factory instances. There's also a `postInit()` method you can implement as well. After each factory's `init()` method is invoked, their `postInit()` methods will be called.
 
-In our `init()` method implementation, we find the property file containing our user declarations from the classpath.
-We then load the `properties` field with the username and password combinations stored there.
+In our `init()` method implementation, we find the property file containing our user declarations from the classpath. We then load the `properties` field with the username and password combinations stored there.
 
-The `Config.Scope` parameter is factory configuration that can be set up
-within `standalone.xml`, `standalone-ha.xml`, or `domain.xml`.
-For more information on where the `standalone.xml`, `standalone-ha.xml`, or `domain.xml` file resides see the link:{{book.installguide.link}}[{{book.installguide.name}}].
+The `Config.Scope` parameter is factory configuration that can be set up within `standalone.xml`, `standalone-ha.xml`, or `domain.xml`. For more information on where the `standalone.xml`, `standalone-ha.xml`, or `domain.xml` file resides see the link:{{book.installguide.link}}[{{book.installguide.name}}].
 
 For example, by adding the following to `standalone.xml`:
 
@@ -263,8 +223,7 @@ For example, by adding the following to `standalone.xml`:
 </spi>
 ----
 
-We can specify the classpath of the user property file instead of hard coded it.
-Then you can retrieve the config in the `PropertyFileUserStorageProviderFactory.init()` :
+We can specify the classpath of the user property file instead of hard coded it. Then you can retrieve the config in the `PropertyFileUserStorageProviderFactory.init()`:
 
 [source,java]
 ----
@@ -276,7 +235,7 @@ public void init(Config.Scope config) {
 }
 ----
 
-===== Create method
+===== Create Method
 
 Our last step in creating the provider factory is the `create()` method.
 
@@ -292,27 +251,24 @@ We simply allocate the `PropertyFileUserStorageProvider` class.  This create met
 
 ==== Packaging and Deployment
 
-The class files for our provider implementation should be placed in a jar.  You also have to declare the provider
-factory class within the `META-INF/services/org.keycloak.storage.UserStorageProviderFactory` file.
+The class files for our provider implementation should be placed in a jar.  You also have to declare the provider factory class within the `META-INF/services/org.keycloak.storage.UserStorageProviderFactory` file.
 
 ----
 org.keycloak.examples.federation.properties.FilePropertiesStorageFactory
 ----
 
-Once you create the jar you can deploy it using regular JBoss/Wildfly means:  copy the jar into the `deploy/` directory
-or using the JBoss CLI.
+Once you create the jar you can deploy it using regular JBoss/Wildfly means: copy the jar into the `deploy/` directory or using the JBoss CLI.
 
-==== Enabling the Provider in Admin Console
+==== Enabling the Provider in the Administration Console
 
-You enable user storage providers per realm within the `User Federation` page in the admin console.
+You enable user storage providers per realm within the `User Federation` page in the administration console.
 
 {% if book.community %}
 .User Federation
 image:../../{{book.images}}/empty-user-federation-page.png[]
 {% endif %}
 
-Select the provider we just created from the list: `readonly-property-file`.  It brings you to the configuration
-page for our provider.  We do not have anything to configure, so click *Save*.
+Select the provider we just created from the list: `readonly-property-file`. It brings you to the configuration page for our provider.  We do not have anything to configure, so click *Save*.
 
 {% if book.community %}
 .Configured Provider
@@ -326,6 +282,4 @@ When you go back to the main `User Federation` page, you now see your provider l
 image:../../{{book.images}}/user-federation-page.png[]
 {% endif %}
 
-You will now be able to log in with a user declared in the `users.properties` file.  Of course, this user will have
-zero permissions to do anything and will be read only.  You can though view the user on its account page after you
-login.
+You will now be able to log in with a user declared in the `users.properties` file. Of course, this user will have zero permissions to do anything and will be read only.  You can though view the user on its account page after you log in.
