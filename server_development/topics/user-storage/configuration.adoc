@@ -1,17 +1,9 @@
 
 === Configuration Techniques
 
-Our `PropertyFileUserStorageProvider` example is bit contrived.  It is hardcoded to a property file that is embedded
-in the jar of the provider.  Not very useful at all.  We may want to make the location of this file configurable per
-instance of the provider.  In other words, we may want to re-use this provider mulitple times in multiple different realms
-and point to completely different user property files.  We'll also want to do this configuration within the admin
-console UI.
+Our `PropertyFileUserStorageProvider` example is bit contrived. It is hardcoded to a property file that is embedded in the jar of the provider. Not very useful at all. We might want to make the location of this file configurable per instance of the provider. In other words, we might want to reuse this provider mulitple times in multiple different realms and point to completely different user property files. We'll also want to perform this configuration within the administration console UI.
 
-The `UserStorageProviderFactory` has additional methods you can implement that deal with provider configuration.
-You describe the variables you want to configure per provider and the admin console will automatically render
-a generic input page to gather this configuration.  There's also callback methods to validate configuration
-before it is saved, when a provider is created for the first time, and when it is updated.  `UserStorageProviderFactory`
-inherits these methods from the `org.keycloak.component.ComponentFactory` interface.
+The `UserStorageProviderFactory` has additional methods you can implement that deal with provider configuration. You describe the variables you want to configure per provider and the administration console automatically renders a generic input page to gather this configuration. Callback methods also validate the configuration before it is saved, when a provider is created for the first time, and when it is updated. `UserStorageProviderFactory` inherits these methods from the `org.keycloak.component.ComponentFactory` interface.
 
 [source,java]
 ----
@@ -35,14 +27,11 @@ inherits these methods from the `org.keycloak.component.ComponentFactory` interf
     }
 ----
 
-The `ComponentFactory.getConfigProperties()` method returns a list of `org.keycloak.provider.ProviderConfigProperty`
-instances.  These instances declare metadata that is needed to render and store each configuration variable of the
-provider.
+The `ComponentFactory.getConfigProperties()` method returns a list of `org.keycloak.provider.ProviderConfigProperty` instances. These instances declare metadata that is needed to render and store each configuration variable of the provider.
 
 ==== Configuration Example
 
-Let's expand our `PropertyFileUserStorageProviderFactory` example to allow you to to point a provider instance to a specific
-file on disk.
+Let's expand our `PropertyFileUserStorageProviderFactory` example to allow you to point a provider instance to a specific file on disk.
 
 .PropertyFileUserStorageProviderFactory
 [source,java]
@@ -69,14 +58,9 @@ public class PropertyFileUserStorageProviderFactory
     }
 ----
 
-The `ProviderConfigurationBuilder` class is a great helper class to create a list of configuration properties.  Here
-we specify a variable named `path` that is a string type.  In the admin console config page for this provider,
-this config variable will be labed as `Path` and have a default value of `${jboss.server.config.dir}/example-users.properties`.
-When you hover over the tooltip of this config option, it will display the help text `File path to properties file`.
+The `ProviderConfigurationBuilder` class is a great helper class to create a list of configuration properties. Here we specify a variable named `path` that is a String type. On the administration console configuration page for this provider, this configuration variable is labeled as `Path` and has a default value of `${jboss.server.config.dir}/example-users.properties`. When you hover over the tooltip of this configuration option, it displays the help text, `File path to properties file`.
 
-The next thing we want to do is to verify that this file exists on disk.  We don't want to enable an instance of this
-provider in the realm unless it points to a valid user property file.  To do this we implement the `validateConfiguration()`
-method.
+The next thing we want to do is to verify that this file exists on disk. We do not want to enable an instance of this provider in the realm unless it points to a valid user property file. To do this, we implement the `validateConfiguration()` method.
 
 [source,java]
 ----
@@ -93,13 +77,9 @@ method.
     }
 ----
 
-In the `validateConfiguration()` method we get the config variable from the `ComponentModel` and we check to see
-if that file exists on disk.  Notice that we use the `org.keycloak.common.util.EnvUtil.replace()`method.  With this method
-any string that has `${}` within it will replace that with a system property value. The `${jboss.server.config.dir}`
-string corresponds to the `configuration/` directory of our server and is really useful for this example.
+In the `validateConfiguration()` method we get the configuration variable from the `ComponentModel` and we check to see if that file exists on disk. Notice that we use the `org.keycloak.common.util.EnvUtil.replace()` method. With this method any string that has `${}` within it will replace that with a system property value. The `${jboss.server.config.dir}` string corresponds to the `configuration/` directory of our server and is really useful for this example.
 
-Next thing we have to do is remove the old `init()` method. We do this because user property files are going to be
-unique per provider instance.  We move this logic to the `create()` method.
+Next thing we have to do is remove the old `init()` method. We do this because user property files are going to be unique per provider instance. We move this logic to the `create()` method.
 
 [source,java]
 ----
@@ -120,12 +100,11 @@ unique per provider instance.  We move this logic to the `create()` method.
     }
 ----
 
-This logic, is of course, is really inefficient as every different transaction will read the entire user property file from disk,
-but hopefully this illustrates, in a simple way, how to hook in configuration variables.
+This logic is, of course, inefficient as every transaction reads the entire user property file from disk, but hopefully this illustrates, in a simple way, how to hook in configuration variables.
 
-==== Configuring the Provider in Admin Console
+==== Configuring the Provider in the Administration Console
 
-Now that the configuration is enabled, you can set the `path` variable when you configure the provider in the admin console.
+Now that the configuration is enabled, you can set the `path` variable when you configure the provider in the administration console.
 
 {% if book.community %}
 .Configured Provider
