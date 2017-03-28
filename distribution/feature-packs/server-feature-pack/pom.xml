@@ -47,27 +47,10 @@
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-wildfly-server-subsystem</artifactId>
         </dependency>
-        <dependency>
-            <groupId>org.wildfly</groupId>
-            <artifactId>wildfly-feature-pack</artifactId>
-            <type>zip</type>
-            <!-- Need to exlcude that in order to use the right guava version for drools -->
-            <exclusions>
-                <exclusion>
-                    <groupId>com.google.guava</groupId>
-                    <artifactId>guava</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
     </dependencies>
 
     <build>
         <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-resources-plugin</artifactId>
-                <executions></executions>
-            </plugin>
             <plugin>
                 <groupId>org.wildfly.build</groupId>
                 <artifactId>wildfly-feature-pack-build-maven-plugin</artifactId>
@@ -111,4 +94,51 @@
         </plugins>
     </build>
 
+    <profiles>
+        <profile>
+            <id>community</id>
+            <activation>
+                <property>
+                    <name>!product</name>
+                </property>
+            </activation>
+
+            <properties>
+                <feature.parent>org.wildfly:wildfly-feature-pack</feature.parent>
+                <xmlns.domain>urn:jboss:domain:4.0</xmlns.domain>
+            </properties>
+
+            <dependencies>
+                <dependency>
+                    <groupId>org.wildfly</groupId>
+                    <artifactId>wildfly-feature-pack</artifactId>
+                    <type>zip</type>
+                </dependency>
+            </dependencies>
+        </profile>
+        <profile>
+            <id>product</id>
+            <activation>
+                <property>
+                    <name>product</name>
+                </property>
+            </activation>
+
+            <properties>
+                <feature.parent>org.jboss.eap:wildfly-feature-pack</feature.parent>
+                <xmlns.domain>urn:jboss:domain:4.1</xmlns.domain>
+            </properties>
+
+            <dependencies>
+                <dependency>
+                    <groupId>org.jboss.eap</groupId>
+                    <artifactId>wildfly-feature-pack</artifactId>
+                    <version>${eap.version}</version>
+                    <type>zip</type>
+                </dependency>
+            </dependencies>
+        </profile>
+    </profiles>
+
 </project>
+

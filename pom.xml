@@ -42,6 +42,7 @@
         <!-- WildFly -->
         <jboss.as.version>7.2.0.Final</jboss.as.version>
         <wildfly.version>10.0.0.Final</wildfly.version>
+        <eap.version>7.0.5.GA-redhat-2</eap.version>
         <version.org.wildfly.security.wildfly-elytron>1.1.0.Beta32</version.org.wildfly.security.wildfly-elytron>
         <version.org.wildfly.security.elytron-web.undertow-server>1.0.0.Beta14</version.org.wildfly.security.elytron-web.undertow-server>
 
@@ -1508,6 +1509,9 @@
             </activation>
             <properties>
                 <product.name>Keycloak</product.name>
+                <product.name.full>Keycloak</product.name.full>
+                <product.slot>keycloak</product.slot>
+                <product.wildfly.console.slot>main</product.wildfly.console.slot>
                 <product.name-html>\u003Cdiv class="kc-logo-text"\u003E\u003Cspan\u003EKeycloak\u003C\u002Fspan\u003E\u003C\u002Fdiv\u003E</product.name-html>
                 <product.version>${project.version}</product.version>
                 <product.default-profile>community</product.default-profile>
@@ -1522,7 +1526,10 @@
                 </property>
             </activation>
             <properties>
+                <product.name.full>Red Hat Single Sign-On</product.name.full>
                 <product.name>rh-sso</product.name>
+                <product.slot>rh-sso</product.slot>
+                <product.wildfly.console.slot>eap</product.wildfly.console.slot>
                 <product.name-html>\u003Cstrong\u003ERed Hat\u003C\u002Fstrong\u003E\u003Csup\u003E\u00AE\u003C\u002Fsup\u003E Single Sign On</product.name-html>
                 <product.version>${project.version}</product.version>
                 <product.default-profile>product</product.default-profile>

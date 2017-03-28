@@ -22,7 +22,7 @@
   is also started by this host controller file.  The other instance must be started
   via host-slave.xml
 -->
-<host name="master" xmlns="urn:jboss:domain:4.0">
+<host name="master" xmlns="${xmlns.domain}">
     <extensions>
         <?EXTENSIONS?>
     </extensions>
