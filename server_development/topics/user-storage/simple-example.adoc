@@ -223,7 +223,7 @@ For example, by adding the following to `standalone.xml`:
 </spi>
 ----
 
-We can specify the classpath of the user property file instead of hard coded it. Then you can retrieve the config in the `PropertyFileUserStorageProviderFactory.init()`:
+We can specify the classpath of the user property file instead of hardcoding it. Then you can retrieve the configuration in the `PropertyFileUserStorageProviderFactory.init()`:
 
 [source,java]
 ----
@@ -282,4 +282,4 @@ When you go back to the main `User Federation` page, you now see your provider l
 image:../../{{book.images}}/user-federation-page.png[]
 {% endif %}
 
-You will now be able to log in with a user declared in the `users.properties` file. Of course, this user will have zero permissions to do anything and will be read only.  You can though view the user on its account page after you log in.
+You will now be able to log in with a user declared in the `users.properties` file. This user will have read-only access, and as such will only be able to view the account page after logging in.

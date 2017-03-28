@@ -27,7 +27,7 @@ This will be a bit contrived, but we can extend our `PropertyFileUserStorageProv
 begin first by modifying the `createAdapter()` method.
 
 .PropertyFileUserStorageProvider
-[source.java]
+[source,java]
 ----
     protected UserModel createAdapter(RealmModel realm, String username) {
         UserModel local = session.userLocalStorage().getUserByUsername(username, realm);
