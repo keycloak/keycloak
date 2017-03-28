@@ -22,12 +22,16 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.AfterClass;
 import org.junit.Test;
+import org.keycloak.representations.VersionRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.adapter.AbstractExampleAdapterTest;
 import org.keycloak.testsuite.adapter.page.AngularCorsProductTestApp;
 import org.keycloak.testsuite.adapter.page.CorsDatabaseServiceTestApp;
 import org.keycloak.testsuite.auth.page.account.Account;
 
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.client.WebTarget;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
@@ -112,9 +116,12 @@ public abstract class AbstractCorsExampleAdapterTest extends AbstractExampleAdap
         angularCorsProductPage.loadPublicRealmInfo();
         waitUntilElement(angularCorsProductPage.getOutput()).text().contains("Realm name: cors");
 
-        angularCorsProductPage.loadVersion();
-        waitUntilElement(angularCorsProductPage.getOutput()).text().contains("Keycloak version: " + System.getProperty("project.version"));
+        Client client = ClientBuilder.newClient();
+        WebTarget target = client.target(authServerPage.createUriBuilder()).path("version");
+        VersionRepresentation version = target.request().get(VersionRepresentation.class);
 
+        angularCorsProductPage.loadVersion();
+        waitUntilElement(angularCorsProductPage.getOutput()).text().contains("Keycloak version: " + version.getVersion());
     }
 
     @AfterClass
