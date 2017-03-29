@@ -12,6 +12,19 @@ To configure mod_auth_mellon you'll need:
 * A certificate PEM file, which is a text file that defines the certificate for your application.
 * mod_auth_mellon-specific Apache HTTPD module configuration.
 
+{% if book.community %}
+If you have already defined and registered the client application within a realm on the {{book.project.name}} application server, {{book.project.name}} can generate all the files you need except the Apache HTTPD module configuration.
+
+To generate the Apache HTTPD module configuration, complete the following steps:
+
+. Go to the Installation page of your SAML client and select the Mod Auth Mellon files option.
++
+.mod_auth_mellon config download
+image:../../book.images/mod-auth-mellon-config-download.png[]
+
+. Click *Download* to download a zip file that contains the XML descriptor and PEM files you need.
+{% endif %}
+
 ==== Configuring mod_auth_mellon with {{book.project.name}}
 
 There are two hosts involved:
