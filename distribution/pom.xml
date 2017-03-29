@@ -34,9 +34,6 @@
     <modules>
         <module>adapters</module>
         <module>saml-adapters</module>
-        <module>demo-dist</module>
-        <module>api-docs-dist</module>
-        <module>examples-dist</module>
         <module>proxy-dist</module>
         <module>server-dist</module>
         <module>server-overlay</module>
@@ -47,7 +44,10 @@
         <profile>
             <id>jboss-release</id>
             <modules>
+                <module>api-docs-dist</module>
+                <module>demo-dist</module>
                 <module>downloads</module>
+                <module>examples-dist</module>
             </modules>
         </profile>
     </profiles>
