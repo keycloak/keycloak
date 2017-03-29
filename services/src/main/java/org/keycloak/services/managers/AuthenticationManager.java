@@ -124,7 +124,10 @@ public class AuthenticationManager {
             if (cookie == null) return;
             String tokenString = cookie.getValue();
 
-            TokenVerifier verifier = TokenVerifier.create(tokenString).realmUrl(Urls.realmIssuer(uriInfo.getBaseUri(), realm.getName())).checkActive(false).checkTokenType(false);
+            TokenVerifier<AccessToken> verifier = TokenVerifier.create(tokenString, AccessToken.class)
+              .realmUrl(Urls.realmIssuer(uriInfo.getBaseUri(), realm.getName()))
+              .checkActive(false)
+              .checkTokenType(false);
 
             String kid = verifier.getHeader().getKeyId();
             SecretKey secretKey = session.keys().getHmacSecretKey(realm, kid);
@@ -702,7 +705,7 @@ public class AuthenticationManager {
     public static AuthResult verifyIdentityToken(KeycloakSession session, RealmModel realm, UriInfo uriInfo, ClientConnection connection, boolean checkActive, boolean checkTokenType,
                                                     boolean isCookie, String tokenString, HttpHeaders headers) {
         try {
-            TokenVerifier verifier = TokenVerifier.create(tokenString).realmUrl(Urls.realmIssuer(uriInfo.getBaseUri(), realm.getName())).checkActive(checkActive).checkTokenType(checkTokenType);
+            TokenVerifier<AccessToken> verifier = TokenVerifier.create(tokenString).realmUrl(Urls.realmIssuer(uriInfo.getBaseUri(), realm.getName())).checkActive(checkActive).checkTokenType(checkTokenType);
             String kid = verifier.getHeader().getKeyId();
             AlgorithmType algorithmType = verifier.getHeader().getAlgorithm().getType();
 

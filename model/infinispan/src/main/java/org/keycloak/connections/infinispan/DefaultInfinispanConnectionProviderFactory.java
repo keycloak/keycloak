@@ -120,6 +120,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
             cacheManager.getCache(InfinispanConnectionProvider.USER_REVISIONS_CACHE_NAME, true);
             cacheManager.getCache(InfinispanConnectionProvider.AUTHORIZATION_CACHE_NAME, true);
             cacheManager.getCache(InfinispanConnectionProvider.KEYS_CACHE_NAME, true);
+            cacheManager.getCache(InfinispanConnectionProvider.ACTION_TOKEN_CACHE, true);
 
             logger.debugv("Using container managed Infinispan cache container, lookup={1}", cacheContainerLookup);
         } catch (Exception e) {
@@ -219,6 +220,9 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
 
         cacheManager.defineConfiguration(InfinispanConnectionProvider.KEYS_CACHE_NAME, getKeysCacheConfig());
         cacheManager.getCache(InfinispanConnectionProvider.KEYS_CACHE_NAME, true);
+
+        cacheManager.defineConfiguration(InfinispanConnectionProvider.ACTION_TOKEN_CACHE, getActionTokenCacheConfig());
+        cacheManager.getCache(InfinispanConnectionProvider.ACTION_TOKEN_CACHE, true);
     }
 
     private Configuration getRevisionCacheConfig(long maxEntries) {
@@ -266,6 +270,13 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
         ConfigurationBuilder cb = new ConfigurationBuilder();
         cb.eviction().strategy(EvictionStrategy.LRU).type(EvictionType.COUNT).size(InfinispanConnectionProvider.KEYS_CACHE_DEFAULT_MAX);
         cb.expiration().maxIdle(InfinispanConnectionProvider.KEYS_CACHE_MAX_IDLE_SECONDS, TimeUnit.SECONDS);
+        return cb.build();
+    }
+
+    private Configuration getActionTokenCacheConfig() {
+        ConfigurationBuilder cb = new ConfigurationBuilder();
+        cb.eviction().strategy(EvictionStrategy.LRU).type(EvictionType.COUNT).size(InfinispanConnectionProvider.ACTION_TOKEN_CACHE_DEFAULT_MAX);
+        cb.expiration().maxIdle(InfinispanConnectionProvider.ACTION_TOKEN_MAX_IDLE_SECONDS, TimeUnit.SECONDS);
         return cb.build();
     }
 

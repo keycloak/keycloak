@@ -18,7 +18,8 @@
 package org.keycloak;
 
 import org.keycloak.common.VerificationException;
-import org.keycloak.jose.jws.Algorithm;
+import org.keycloak.exceptions.TokenNotActiveException;
+import org.keycloak.exceptions.TokenSignatureInvalidException;
 import org.keycloak.jose.jws.AlgorithmType;
 import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.jose.jws.JWSInput;
@@ -26,67 +27,235 @@ import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.jose.jws.crypto.HMACProvider;
 import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.JsonWebToken;
 import org.keycloak.util.TokenUtil;
 
 import javax.crypto.SecretKey;
 import java.security.PublicKey;
+import java.util.*;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class TokenVerifier {
+public class TokenVerifier<T extends JsonWebToken> {
 
-    private final String tokenString;
+    // This interface is here as JDK 7 is a requirement for this project.
+    // Once JDK 8 would become mandatory, java.util.function.Predicate would be used instead.
+
+    // @FunctionalInterface
+    public static interface Predicate<T extends JsonWebToken> {
+        /**
+         * Performs a single check on the given token verifier.
+         * @param t Token, guaranteed to be non-null.
+         * @return
+         * @throws VerificationException
+         */
+        boolean test(T t) throws VerificationException;
+    }
+
+    public static final Predicate<JsonWebToken> SUBJECT_EXISTS_CHECK = new Predicate<JsonWebToken>() {
+        @Override
+        public boolean test(JsonWebToken t) throws VerificationException {
+            String subject = t.getSubject();
+            if (subject == null) {
+                throw new VerificationException("Subject missing in token");
+            }
+
+            return true;
+        }
+    };
+
+    public static final Predicate<JsonWebToken> IS_ACTIVE = new Predicate<JsonWebToken>() {
+        @Override
+        public boolean test(JsonWebToken t) throws VerificationException {
+            if (! t.isActive()) {
+                throw new TokenNotActiveException("Token is not active");
+            }
+
+            return true;
+        }
+    };
+
+    public static class RealmUrlCheck implements Predicate<JsonWebToken> {
+
+        private static final RealmUrlCheck NULL_INSTANCE = new RealmUrlCheck(null);
+
+        private final String realmUrl;
+
+        public RealmUrlCheck(String realmUrl) {
+            this.realmUrl = realmUrl;
+        }
+
+        @Override
+        public boolean test(JsonWebToken t) throws VerificationException {
+            if (this.realmUrl == null) {
+                throw new VerificationException("Realm URL not set");
+            }
+
+            if (! this.realmUrl.equals(t.getIssuer())) {
+                throw new VerificationException("Invalid token issuer. Expected '" + this.realmUrl + "', but was '" + t.getIssuer() + "'");
+            }
+
+            return true;
+        }
+    };
+
+    public static class TokenTypeCheck implements Predicate<JsonWebToken> {
+
+        private static final TokenTypeCheck INSTANCE_BEARER = new TokenTypeCheck(TokenUtil.TOKEN_TYPE_BEARER);
+
+        private final String tokenType;
+
+        public TokenTypeCheck(String tokenType) {
+            this.tokenType = tokenType;
+        }
+
+        @Override
+        public boolean test(JsonWebToken t) throws VerificationException {
+            if (! tokenType.equalsIgnoreCase(t.getType())) {
+                throw new VerificationException("Token type is incorrect. Expected '" + tokenType + "' but was '" + t.getType() + "'");
+            }
+            return true;
+        }
+    };
+
+    private String tokenString;
+    private Class<? extends T> clazz;
     private PublicKey publicKey;
     private SecretKey secretKey;
     private String realmUrl;
+    private String expectedTokenType = TokenUtil.TOKEN_TYPE_BEARER;
     private boolean checkTokenType = true;
-    private boolean checkActive = true;
     private boolean checkRealmUrl = true;
+    private final LinkedList<Predicate<? super T>> checks = new LinkedList<>();
 
     private JWSInput jws;
-    private AccessToken token;
+    private T token;
 
-    protected TokenVerifier(String tokenString) {
+    protected TokenVerifier(String tokenString, Class<T> clazz) {
         this.tokenString = tokenString;
+        this.clazz = clazz;
     }
 
-    public static TokenVerifier create(String tokenString) {
-        return new TokenVerifier(tokenString);
+    protected TokenVerifier(T token) {
+        this.token = token;
     }
 
-    public TokenVerifier publicKey(PublicKey publicKey) {
+    /**
+     * Creates a {@code TokenVerifier<AccessToken> instance. The method is here for backwards compatibility.
+     * @param tokenString
+     * @return
+     * @deprecated use {@link #create(java.lang.String, java.lang.Class) } instead
+     */
+    public static TokenVerifier<AccessToken> create(String tokenString) {
+        return create(tokenString, AccessToken.class);
+    }
+
+    public static <T extends JsonWebToken> TokenVerifier<T> create(String tokenString, Class<T> clazz) {
+        return new TokenVerifier(tokenString, clazz)
+          .check(RealmUrlCheck.NULL_INSTANCE)
+          .check(SUBJECT_EXISTS_CHECK)
+          .check(TokenTypeCheck.INSTANCE_BEARER)
+          .check(IS_ACTIVE);
+    }
+
+    public static <T extends JsonWebToken> TokenVerifier<T> from(T token) {
+        return new TokenVerifier(token)
+          .check(RealmUrlCheck.NULL_INSTANCE)
+          .check(SUBJECT_EXISTS_CHECK)
+          .check(TokenTypeCheck.INSTANCE_BEARER)
+          .check(IS_ACTIVE);
+    }
+
+    private void removeCheck(Class<? extends Predicate<?>> checkClass) {
+        for (Iterator<Predicate<? super T>> it = checks.iterator(); it.hasNext();) {
+            if (it.next().getClass() == checkClass) {
+                it.remove();
+            }
+        }
+    }
+
+    private void removeCheck(Predicate<? super T> check) {
+        checks.remove(check);
+    }
+
+    private <P extends Predicate<? super T>> TokenVerifier<T> replaceCheck(Class<? extends Predicate<?>> checkClass, boolean active, P predicate) {
+        removeCheck(checkClass);
+        if (active) {
+            checks.add(predicate);
+        }
+        return this;
+    }
+
+    private <P extends Predicate<? super T>> TokenVerifier<T> replaceCheck(Predicate<? super T> check, boolean active, P predicate) {
+        removeCheck(check);
+        if (active) {
+            checks.add(predicate);
+        }
+        return this;
+    }
+
+    /**
+     * Resets all preset checks and will test the given checks in {@link #verify()} method.
+     * @param checks
+     * @return
+     */
+    public TokenVerifier<T> checkOnly(Predicate<? super T>... checks) {
+        this.checks.clear();
+        if (checks != null) {
+            this.checks.addAll(Arrays.asList(checks));
+        }
+        return this;
+    }
+
+    /**
+     * Will test the given checks in {@link #verify()} method in addition to already set checks.
+     * @param checks
+     * @return
+     */
+    public TokenVerifier<T> check(Predicate<? super T>... checks) {
+        if (checks != null) {
+            this.checks.addAll(Arrays.asList(checks));
+        }
+        return this;
+    }
+
+    public TokenVerifier<T> publicKey(PublicKey publicKey) {
         this.publicKey = publicKey;
         return this;
     }
 
-    public TokenVerifier secretKey(SecretKey secretKey) {
+    public TokenVerifier<T> secretKey(SecretKey secretKey) {
         this.secretKey = secretKey;
         return this;
     }
 
-    public TokenVerifier realmUrl(String realmUrl) {
+    public TokenVerifier<T> realmUrl(String realmUrl) {
         this.realmUrl = realmUrl;
-        return this;
+        return replaceCheck(RealmUrlCheck.class, checkRealmUrl, new RealmUrlCheck(realmUrl));
     }
 
-    public TokenVerifier checkTokenType(boolean checkTokenType) {
+    public TokenVerifier<T> checkTokenType(boolean checkTokenType) {
         this.checkTokenType = checkTokenType;
-        return this;
+        return replaceCheck(TokenTypeCheck.class, this.checkTokenType, new TokenTypeCheck(expectedTokenType));
     }
 
-    public TokenVerifier checkActive(boolean checkActive) {
-        this.checkActive = checkActive;
-        return this;
+    public TokenVerifier<T> tokenType(String tokenType) {
+        this.expectedTokenType = tokenType;
+        return replaceCheck(TokenTypeCheck.class, this.checkTokenType, new TokenTypeCheck(expectedTokenType));
     }
 
-    public TokenVerifier checkRealmUrl(boolean checkRealmUrl) {
+    public TokenVerifier<T> checkActive(boolean checkActive) {
+        return replaceCheck(IS_ACTIVE, checkActive, IS_ACTIVE);
+    }
+
+    public TokenVerifier<T> checkRealmUrl(boolean checkRealmUrl) {
         this.checkRealmUrl = checkRealmUrl;
-        return this;
+        return replaceCheck(RealmUrlCheck.class, this.checkRealmUrl, new RealmUrlCheck(realmUrl));
     }
 
-    public TokenVerifier parse() throws VerificationException {
+    public TokenVerifier<T> parse() throws VerificationException {
         if (jws == null) {
             if (tokenString == null) {
                 throw new VerificationException("Token not set");
@@ -100,7 +269,7 @@ public class TokenVerifier {
 
 
             try {
-                token = jws.readJsonContent(AccessToken.class);
+                token = jws.readJsonContent(clazz);
             } catch (JWSInputException e) {
                 throw new VerificationException("Failed to read access token from JWT", e);
             }
@@ -108,8 +277,10 @@ public class TokenVerifier {
         return this;
     }
 
-    public AccessToken getToken() throws VerificationException {
-        parse();
+    public T getToken() throws VerificationException {
+        if (token == null) {
+            parse();
+        }
         return token;
     }
 
@@ -118,50 +289,43 @@ public class TokenVerifier {
         return jws.getHeader();
     }
 
-    public TokenVerifier verify() throws VerificationException {
-        parse();
-
-        if (checkRealmUrl && realmUrl == null) {
-            throw new VerificationException("Realm URL not set");
-        }
-
+    public void verifySignature() throws VerificationException {
         AlgorithmType algorithmType = getHeader().getAlgorithm().getType();
 
-        if (AlgorithmType.RSA.equals(algorithmType)) {
-            if (publicKey == null) {
-                throw new VerificationException("Public key not set");
-            }
+        if (null == algorithmType) {
+            throw new VerificationException("Unknown or unsupported token algorithm");
+        } else switch (algorithmType) {
+            case RSA:
+                if (publicKey == null) {
+                    throw new VerificationException("Public key not set");
+                }
+                if (!RSAProvider.verify(jws, publicKey)) {
+                    throw new TokenSignatureInvalidException("Invalid token signature");
+                }   break;
+            case HMAC:
+                if (secretKey == null) {
+                    throw new VerificationException("Secret key not set");
+                }
+                if (!HMACProvider.verify(jws, secretKey)) {
+                    throw new TokenSignatureInvalidException("Invalid token signature");
+                }   break;
+            default:
+                throw new VerificationException("Unknown or unsupported token algorithm");
+        }
+    }
 
-            if (!RSAProvider.verify(jws, publicKey)) {
-                throw new VerificationException("Invalid token signature");
-            }
-        } else if (AlgorithmType.HMAC.equals(algorithmType)) {
-            if (secretKey == null) {
-                throw new VerificationException("Secret key not set");
-            }
-
-            if (!HMACProvider.verify(jws, secretKey)) {
-                throw new VerificationException("Invalid token signature");
-            }
-        } else {
-            throw new VerificationException("Unknown or unsupported token algorith");
+    public TokenVerifier<T> verify() throws VerificationException {
+        if (getToken() == null) {
+            parse();
+        }
+        if (jws != null) {
+            verifySignature();
         }
 
-        String user = token.getSubject();
-        if (user == null) {
-            throw new VerificationException("Subject missing in token");
-        }
-
-        if (checkRealmUrl && !realmUrl.equals(token.getIssuer())) {
-            throw new VerificationException("Invalid token issuer. Expected '" + realmUrl + "', but was '" + token.getIssuer() + "'");
-        }
-
-        if (checkTokenType && !TokenUtil.TOKEN_TYPE_BEARER.equalsIgnoreCase(token.getType())) {
-            throw new VerificationException("Token type is incorrect. Expected '" + TokenUtil.TOKEN_TYPE_BEARER + "' but was '" + token.getType() + "'");
-        }
-
-        if (checkActive && !token.isActive()) {
-            throw new VerificationException("Token is not active");
+        for (Predicate<? super T> check : checks) {
+            if (! check.test(getToken())) {
+                throw new VerificationException("JWT check failed for check " + check);
+            }
         }
 
         return this;

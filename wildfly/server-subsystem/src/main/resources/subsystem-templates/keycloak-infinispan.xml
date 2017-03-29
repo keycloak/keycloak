@@ -38,6 +38,7 @@
                 <local-cache name="authorization">
                     <eviction max-entries="100" strategy="LRU"/>
                 </local-cache>
+                <local-cache name="actionTokens"/>
                 <local-cache name="keys">
                     <eviction max-entries="1000" strategy="LRU"/>
                     <expiration max-idle="3600000" />
@@ -100,6 +101,7 @@
                 <distributed-cache name="offlineSessions" mode="SYNC" owners="1"/>
                 <distributed-cache name="loginFailures" mode="SYNC" owners="1"/>
                 <distributed-cache name="authorization" mode="SYNC" owners="1"/>
+                <distributed-cache name="actionTokens" mode="SYNC" owners="1"/>
                 <replicated-cache name="work" mode="SYNC" />
                 <local-cache name="keys">
                     <eviction max-entries="1000" strategy="LRU"/>
