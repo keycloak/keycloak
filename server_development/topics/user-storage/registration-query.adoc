@@ -1,8 +1,8 @@
 
 === Add/Remove User and Query Capability interfaces
 
-One thing we have not done with our example is allow it to add and remove users or change passwords.  Users defined in our example are
-also not queryable or viewable in the admin console.  To add these enhancements, our example provider must implement
+One thing we have not done with our example is allow it to add and remove users or change passwords. Users defined in our example are
+also not queryable or viewable in the administration console. To add these enhancements, our example provider must implement
 the `UserQueryProvider` and `UserRegistrationProvider` interfaces.
 
 ==== Implementing UserRegistrationProvider
@@ -26,7 +26,7 @@ file to disk.
     }
 ----
 
-Then, the implementation of the `addUser()` and `removeUser()` methods becomes pretty simple.
+Then, the implementation of the `addUser()` and `removeUser()` methods becomes simple.
 
 .PropertyFileUserStorageProvider
 [source,java]
@@ -53,10 +53,10 @@ Then, the implementation of the `addUser()` and `removeUser()` methods becomes p
 ----
 
 Notice that when adding a user we set the password value of the property map to be `UNSET_PASSWORD`.  We do this as
-we can't have null values for a property in the property value.  We also have to modify the `CredentialInputValidator`
+we can't have null values for a property in the property value. We also have to modify the `CredentialInputValidator`
 methods to reflect this.
 
-`addUser()` will be called if the provider implements the `UserRegistrationProvider` interface.  If your provider has
+`addUser()` will be called if the provider implements the `UserRegistrationProvider` interface. If your provider has
 a configuration switch to turn of adding a user, returning `null` from this method will skip the provider and call
 the next one.
 
@@ -74,7 +74,7 @@ the next one.
     }
 ----
 
-Since we can now save our property file, probably also makes sense to allow password updates.
+Since we can now save our property file, it also makes sense to allow password updates.
 
 .PropertyFileUserStorageProvider
 [source,java]
@@ -120,12 +120,12 @@ We can now also implement disabling a password too.
     }
 ----
 
-With these methods implemented, you'll now be able to change and disable the password for the user in the admin console.
+With these methods implemented, you'll now be able to change and disable the password for the user in the administration console.
 
 ==== Implementing UserQueryProvider
 
-Without implementing `UserQueryProvider` the admin console would not be able to view and manage users that were loaded
-by our example provider.  Let's look at implementing this interface.
+Without implementing `UserQueryProvider` the administration console would not be able to view and manage users that were loaded
+by our example provider. Let's look at implementing this interface.
 
 .PropertyFileUserStorageProvider
 [source,java]
@@ -155,8 +155,8 @@ by our example provider.  Let's look at implementing this interface.
     }
 ----
 
-The `getUser()` method simple iterates the key set of the property file delegating to `getuserByUsername` to load a user.
-Notice that we are indexing this call based on the `firstResult` and `maxResults` parameter.  If your external store
+The `getUser()` method simple iterates over the key set of the property file delegating to `getuserByUsername` to load a user.
+Notice that we are indexing this call based on the `firstResult` and `maxResults` parameter. If your external store
 doesn't support pagination, you'll have to do similar logic.
 
 .PropertyFileUserStorageProvider
@@ -183,8 +183,8 @@ doesn't support pagination, you'll have to do similar logic.
     }
 ----
 
-The first declaration of `searchForUser()` takes a string paraeter.  This is supposed to be a string that you use to
-search username and email attributes to find the user.  This string can be a substring which is why we use the `String.contains()`
+The first declaration of `searchForUser()` takes a string parameter. This is supposed to be a string that you use to
+search username and email attributes to find the user. This string can be a substring, which is why we use the `String.contains()`
 method when doing our search.
 
 .PropertyFileUserStorageProvider
@@ -205,7 +205,7 @@ method when doing our search.
 ----
 
 The `searchForUser()` method that takes a `Map` parameter can search for a user based on first, last name, username, and email.
-We only store usernames, so we only search based on usernames.  We delegate to `searchForUser()` for this.
+We only store usernames, so we only search based on usernames. We delegate to `searchForUser()` for this.
 
 
 .PropertyFileUserStorageProvider
@@ -227,4 +227,5 @@ We only store usernames, so we only search based on usernames.  We delegate to `
     }
 ----
 
-We don't store and groups or attributes, so the other methods just return an empty list.
+We do not store groups or attributes, so the other methods return an empty list.
+

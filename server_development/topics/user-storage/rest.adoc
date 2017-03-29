@@ -1,7 +1,7 @@
 
 === REST Management API
 
-You can create, remove, and update your user storage provider deployments through the admin REST api.  The User Storage SPI
+You can create, remove, and update your user storage provider deployments through the administrator REST API. The User Storage SPI
 is built on top of a generic component interface so you will be using that generic API to manage your providers.
 
 The REST Component API lives under your realm admin resource.
@@ -10,8 +10,7 @@ The REST Component API lives under your realm admin resource.
 /admin/realms/{realm-name}/components
 ----
 
-We will only show this REST API interaction with the Java client.  Hopefully you can extract how do do this from
-curl from this api.
+We will only show this REST API interaction with the Java client. Hopefully you can extract how to do this from curl from this API.
 
 [source,java]
 ----
@@ -100,3 +99,4 @@ realmResource.components().component(component.getId()).update(component);
 
 realmREsource.components().component(component.getId()).remove();
 ----
+
