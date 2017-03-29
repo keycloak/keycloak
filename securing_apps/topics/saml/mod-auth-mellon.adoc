@@ -59,6 +59,8 @@ To configure the Mellon service provider, complete the following steps:
 
 . Create the file /etc/httpd/conf.d/mellon.conf with this content:
 
+[source,xml]
+----
  <Location / >
     MellonEnable info
     MellonEndpointPath /mellon/
@@ -67,14 +69,14 @@ To configure the Mellon service provider, complete the following steps:
     MellonSPCertFile /etc/httpd/saml2/mellon.crt
     MellonIdPMetadataFile /etc/httpd/saml2/idp_metadata.xml
  </Location>
-
  <Location /private >
     AuthType Mellon
     MellonEnable auth
     Require valid-user
  </Location>
+----
 
-Note: Some of the files referenced in the code above are created in later steps.
+NOTE: Some of the files referenced in the code above are created in later steps.
 
 ===== Creating the Service Provider Metadata
 
@@ -100,21 +102,30 @@ SAML IdPs and SPs identify themselves using a unique name known as an EntityID. 
 To create the SP metadata, complete the following steps:
 
 . Create a few helper shell variables: 
-
- fqdn=`hostname`
- mellon_endpoint_url="https://${fqdn}/mellon"
- mellon_entity_id="${mellon_endpoint_url}/metadata"
- file_prefix="$(echo "$mellon_entity_id" | sed 's/[^A-Za-z.]/_/g' | sed 's/__*/_/g')"
++
+[source]
+----
+fqdn=`hostname`
+mellon_endpoint_url="https://${fqdn}/mellon"
+mellon_entity_id="${mellon_endpoint_url}/metadata"
+file_prefix="$(echo "$mellon_entity_id" | sed 's/[^A-Za-z.]/_/g' | sed 's/__*/_/g')"
+----
 
 . Invoke the Mellon metadata creation tool by running this command:
 +
- /usr/libexec/mod_auth_mellon/mellon_create_metadata.sh $mellon_entity_id $mellon_endpoint_url
+[source]
+----
+/usr/libexec/mod_auth_mellon/mellon_create_metadata.sh $mellon_entity_id $mellon_endpoint_url
+----
 
 . Move the generated files to their destination (referenced in the /etc/httpd/conf.d/mellon.conf file created above):
 +
- mv ${file_prefix}.cert /etc/httpd/saml2/mellon.crt
- mv ${file_prefix}.key /etc/httpd/saml2/mellon.key
- mv ${file_prefix}.xml /etc/httpd/saml2/mellon_metadata.xml
+[source]
+----
+mv ${file_prefix}.cert /etc/httpd/saml2/mellon.crt
+mv ${file_prefix}.key /etc/httpd/saml2/mellon.key
+mv ${file_prefix}.xml /etc/httpd/saml2/mellon_metadata.xml
+----
 
 ===== Adding the Mellon Service Provider to the {{book.project.name}} Identity Provider
 
@@ -176,20 +187,29 @@ The remaining steps are performed on $sp_host.
 Now that you have created the realm on the IdP you need to retrieve the IdP metadata associated with it so the Mellon SP recognizes it. In the /etc/httpd/conf.d/mellon.conf file created previously, the MellonIdPMetadataFile is specified as /etc/httpd/saml2/idp_metadata.xml but until now that file has not existed on $sp_host. To get that file we will retrieve it from the IdP.
 
 . Retrieve the file from the IdP by substituting $idp_host with the correct value:
-
- curl -k -o /etc/httpd/saml2/idp_metadata.xml \
- https://$idp_host/auth/realms/test_realm/protocol/saml/descriptor
++
+[source]
+----
+curl -k -o /etc/httpd/saml2/idp_metadata.xml \
+https://$idp_host/auth/realms/test_realm/protocol/saml/descriptor
+----
 +
 Mellon is now fully configured.
 
 . To run a syntax check for Apache configuration files:
-
- apachectl configtest
 +
-Note: configtest is equivalent to the -t argument to apachectl. If the configuration test shows any errors, correct them before proceeding.
+[source]
+----
+apachectl configtest
+----
++
+NOTE: Configtest is equivalent to the -t argument to apachectl. If the configuration test shows any errors, correct them before proceeding.
 
 . Restart the Apache server:
-
- systemctl restart httpd.service
++
+[source]
+----
+systemctl restart httpd.service
+----
 
 You have now set up both {{book.project.name}} as a SAML IdP in the test_realm and mod_auth_mellon as SAML SP protecting the URL $sp_host/protected (and everything beneath it) by authenticating against the ``$idp_host`` IdP.
