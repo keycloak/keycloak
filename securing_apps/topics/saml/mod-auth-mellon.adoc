@@ -192,4 +192,4 @@ Note: configtest is equivalent to the -t argument to apachectl. If the configura
 
  systemctl restart httpd.service
 
-You have now set up both {{book.project.name}} as a SAML IdP in the test_realm and mod_auth_mellon as SAML SP protecting the URL $sp_host/protected (and everything beneath it) by authenticating against the $``$idp_host`` IdP.
+You have now set up both {{book.project.name}} as a SAML IdP in the test_realm and mod_auth_mellon as SAML SP protecting the URL $sp_host/protected (and everything beneath it) by authenticating against the ``$idp_host`` IdP.
