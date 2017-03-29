@@ -1,14 +1,14 @@
 
 === User Caches
 
-When a user is loaded by id, username, or email queries it will be cached.  When a user is cached, it iterates through
-the entire `UserModel` interface and pulls this information to a local in-memory only cache.  In a cluster, this cache
-is still local, but it becomes an invalidation cache.  When a user is modified, it is evicted.  This eviction event
-is propagated to the entire cluster so that other nodes' user cache is also invalidated.
+When a user is loaded by ID, username, or email queries it is cached. When a user is cached, it iterates through
+the entire `UserModel` interface and pulls this information to a local in-memory-only cache. In a cluster, this cache
+is still local, but it becomes an invalidation cache. When a user is modified, it is evicted. This eviction event
+is propagated to the entire cluster so that the other nodes' user cache is also invalidated.
 
 ==== Managing the user cache
 
-You can get access to the user cache by calling `KeycloakSession.userCache()`.
+You can access the user cache by calling `KeycloakSession.userCache()`.
 
 [source,java]
 ----
@@ -41,11 +41,11 @@ public interface UserCache extends UserProvider {
 }
 ----
 
-There are methods for evicting a specific users, users contained in a specific realm, or the entire cache.
+There are methods for evicting specific users, users contained in a specific realm, or the entire cache.
 
 ==== OnUserCache Callback Interface
 
-You may want to cache additional information that is specific to your provider implementation.  The User Storage SPI
+You might want to cache additional information that is specific to your provider implementation. The User Storage SPI
 has a callback whenever a user is cached: `org.keycloak.models.cache.OnUserCache`.
 
 [source,java]
@@ -55,8 +55,8 @@ public interface OnUserCache {
 }
 ----
 
-Your provider class should implement this interface if it wants this callback.  The `UserModel` delegate parameter
-is the `UserModel` instance returned by your provider.  The `CachedUserModel` is an expanded `UserModel` interface.
+Your provider class should implement this interface if it wants this callback. The `UserModel` delegate parameter
+is the `UserModel` instance returned by your provider. The `CachedUserModel` is an expanded `UserModel` interface.
 This is the instance that is cached locally in local storage.
 
 [source,java]
@@ -94,14 +94,10 @@ public interface CachedUserModel extends UserModel {
 }
 ----
 
-This `CachedUserModel` interface allows you to evict the user from cache and get the provider `UserModel` instance.
-The most interesting method is `getCachedWith()`.  This returns a map that allows you to cache additional information
-pertaining to the user.  For example, credentials are not part of the `UserModel` interface.  If you wanted to cache
-credentials in memory, you would implement `OnUserCache` and cache your user's credentials using the `getCachedWith()`
-method.
+This `CachedUserModel` interface allows you to evict the user from the cache and get the provider `UserModel` instance.
+The `getCachedWith()` method returns a map that allows you to cache additional information pertaining to the user. For example, credentials are not part of the `UserModel` interface. If you wanted to cache credentials in memory, you would implement `OnUserCache` and cache your user's credentials using the `getCachedWith()` method.
 
 ==== Cache Policies
 
-Each configured user storage provider can specify unique cache policies.  Go to the admin console management page
-for your provider to see how to do this.
+On the administration console management page for your user storage provider, you can specify a unique cache policy for each configured user storage provider.
 
