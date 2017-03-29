@@ -245,7 +245,7 @@ module.controller('ResourceServerResourceDetailCtrl', function($scope, $http, $r
                 });
             }
 
-            $scope.cancel = function() {
+            $scope.reset = function() {
                 $location.url("/realms/" + realm.realm + "/clients/" + $scope.client.id + "/authz/resource-server/resource/");
             }
         } else {
@@ -464,6 +464,10 @@ module.controller('ResourceServerScopeDetailCtrl', function($scope, $http, $rout
                         Notifications.success("The scope has been created.");
                     });
                 });
+            }
+
+            $scope.reset = function() {
+                $location.url("/realms/" + realm.realm + "/clients/" + $scope.client.id + "/authz/resource-server/scope/");
             }
         } else {
             ResourceServerScope.get({
@@ -1807,7 +1811,7 @@ module.service("PolicyController", function($http, $route, $location, ResourceSe
                     });
                 }
 
-                $scope.cancel = function() {
+                $scope.reset = function() {
                     if (delegate.isPermission()) {
                         $location.url("/realms/" + realm.realm + "/clients/" + client.id + "/authz/resource-server/permission/");
                     } else {
