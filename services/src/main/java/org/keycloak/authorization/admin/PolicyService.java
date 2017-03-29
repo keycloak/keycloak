@@ -21,6 +21,7 @@ import static org.keycloak.models.utils.ModelToRepresentation.toRepresentation;
 import static org.keycloak.models.utils.RepresentationToModel.toModel;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -48,9 +49,9 @@ import org.keycloak.authorization.policy.provider.PolicyProviderAdminService;
 import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
 import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.authorization.store.ResourceStore;
+import org.keycloak.authorization.store.ScopeStore;
 import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.models.Constants;
-import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.authorization.PolicyProviderRepresentation;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
@@ -299,6 +300,7 @@ public class PolicyService {
                             @QueryParam("name") String name,
                             @QueryParam("type") String type,
                             @QueryParam("resource") String resource,
+                            @QueryParam("scope") String scope,
                             @QueryParam("permission") Boolean permission,
                             @QueryParam("first") Integer firstResult,
                             @QueryParam("max") Integer maxResult) {
@@ -319,26 +321,39 @@ public class PolicyService {
         }
 
         StoreFactory storeFactory = authorization.getStoreFactory();
-
         PolicyStore policyStore = storeFactory.getPolicyStore();
-        if (resource != null && !"".equals(resource.trim())) {
+
+        if (resource != null || scope != null) {
             List<Policy> policies = new ArrayList<>();
-            HashMap<String, String[]> resourceSearch = new HashMap<>();
 
-            resourceSearch.put("name", new String[] {resource});
+            if (resource != null && !"".equals(resource.trim())) {
+                HashMap<String, String[]> resourceSearch = new HashMap<>();
 
-            ResourceStore resourceStore = storeFactory.getResourceStore();
-            resourceStore.findByResourceServer(resourceSearch, resourceServer.getId(), -1, -1).forEach(resource1 -> {
-                policyStore.findByResource(resource1.getId(), resourceServer.getId()).forEach(policyRepresentation -> {
-                    Policy associated = policyStore.findById(policyRepresentation.getId(), resourceServer.getId());
-                    policies.add(associated);
-                    findAssociatedPolicies(associated, policies);
+                resourceSearch.put("name", new String[]{resource});
+
+                storeFactory.getResourceStore().findByResourceServer(resourceSearch, resourceServer.getId(), -1, 1).forEach(resource1 -> {
+                    policies.addAll(policyStore.findByResource(resource1.getId(), resourceServer.getId()));
+                    if (resource1.getType() != null) {
+                        policies.addAll(policyStore.findByResourceType(resource1.getType(), resourceServer.getId()));
+                    }
                 });
-            });
+            }
+
+            if (scope != null && !"".equals(scope.trim())) {
+                HashMap<String, String[]> scopeSearch = new HashMap<>();
+
+                scopeSearch.put("name", new String[]{scope});
+
+                storeFactory.getScopeStore().findByResourceServer(scopeSearch, resourceServer.getId(), -1, 1).forEach(scope1 -> {
+                    policies.addAll(policyStore.findByScopeIds(Arrays.asList(scope1.getId()), resourceServer.getId()));
+                });
+            }
 
             if (policies.isEmpty()) {
                 return Response.ok(Collections.emptyList()).build();
             }
+
+            new ArrayList<>(policies).forEach(policy -> findAssociatedPolicies(policy, policies));
 
             search.put("id", policies.stream().map(Policy::getId).toArray(String[]::new));
         }
