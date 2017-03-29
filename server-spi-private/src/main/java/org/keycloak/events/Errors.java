@@ -76,7 +76,7 @@ public interface Errors {
     String PASSWORD_MISSING = "password_missing";
     String PASSWORD_REJECTED = "password_rejected";
 
-  　　// https://tools.ietf.org/html/rfc7636
+    // https://tools.ietf.org/html/rfc7636
     String CODE_VERIFIER_MISSING = "code_verifier_missing";
     String INVALID_CODE_VERIFIER = "invalid_code_verifier";
     String PKCE_VERIFICATION_FAILED = "pkce_verification_failed";
