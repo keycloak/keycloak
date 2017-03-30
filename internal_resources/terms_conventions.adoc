@@ -69,6 +69,17 @@
 *See also*: xref:rhsso[RH-SSO]
 
 [discrete]
+==== Red Hat Single Sign-On Server (noun)
+[[redhatsinglesignonserver]]
+*Description*: Product name for Red Hat Single Sign-On Server
+
+*Use it*: yes
+
+*Incorrect forms*: Red Hat single sign-on server, Red Hat Single Sign-on server, single sign-on server
+
+*See also*: 
+
+[discrete]
 ==== RH-SSO (noun)
 [[rhsso]]
 *Description*: Product abbreviation for Red Hat Single Sign-On
