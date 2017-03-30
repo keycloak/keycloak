@@ -1,0 +1,58 @@
+[[red-hat-single-sign-on-conventions]]
+===Red Hat Single Sign-On Terms and Conventions
+
+[discrete]
+==== ID (noun)
+[[ssoID]]
+*Description*: as in, service ID
+
+*Use it*: with caution
+
+*Incorrect forms*: id
+
+*See also*:
+
+
+[discrete]
+==== identity management (noun)
+[[identitymanage]]
+*Description*:
+
+*Use it*: yes
+
+*Incorrect forms*: 
+
+*See also*: xref:idm[IdM]
+
+[discrete]
+==== IdM (noun)
+[[idm]]
+*Description*: acceptable abbreviation for identity management
+
+*Use it*: yes
+
+*Incorrect forms*: IDM, idm
+
+*See also*: xref:identitymanage[identity management]
+
+[discrete]
+==== identity provider (noun)
+[[identityprovider]]
+*Description*:
+
+*Use it*: yes
+
+*Incorrect forms*: 
+
+*See also*: xref:idp[IdP]
+
+[discrete]
+==== IdP (noun)
+[[idp]]
+*Description*: acceptable abbreviation for identity provider
+
+*Use it*: yes
+
+*Incorrect forms*: IDP, idp
+
+*See also*: xref:identityprovider[identity provider]
