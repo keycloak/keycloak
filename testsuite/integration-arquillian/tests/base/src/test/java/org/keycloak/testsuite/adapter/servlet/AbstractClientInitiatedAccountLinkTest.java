@@ -14,9 +14,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.testsuite.broker;
+package org.keycloak.testsuite.adapter.servlet;
 
-import org.apache.http.client.utils.URIBuilder;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.container.test.api.OperateOnDeployment;
 import org.jboss.arquillian.graphene.page.Page;
@@ -25,7 +24,6 @@ import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.common.util.Base64Url;
@@ -39,23 +37,18 @@ import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.AbstractKeycloakTest;
-import org.keycloak.testsuite.adapter.page.AppServerContextRoot;
-import org.keycloak.testsuite.adapter.servlet.ClientInitiatedAccountLinkServlet;
+import org.keycloak.testsuite.adapter.AbstractServletsAdapterTest;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
-import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
-import org.keycloak.testsuite.federation.PassThroughFederatedUserStorageProvider;
+import org.keycloak.testsuite.broker.BrokerTestTools;
 import org.keycloak.testsuite.page.AbstractPageWithInjectedUrl;
-import org.keycloak.testsuite.pages.AccountFederatedIdentityPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.UpdateAccountInformationPage;
-import org.keycloak.testsuite.util.AdapterServletDeployment;
 import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.util.JsonSerialization;
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import java.net.URL;
 import java.util.LinkedList;
@@ -64,7 +57,6 @@ import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static org.junit.Assert.assertTrue;
 import static org.keycloak.models.AccountRoles.MANAGE_ACCOUNT;
 import static org.keycloak.models.AccountRoles.MANAGE_ACCOUNT_LINKS;
 import static org.keycloak.models.Constants.ACCOUNT_MANAGEMENT_CLIENT_ID;
@@ -74,8 +66,7 @@ import static org.keycloak.testsuite.admin.ApiUtil.createUserAndResetPasswordWit
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-@AppServerContainer("auth-server-undertow")
-public class ClientInitiatedAccountLinkTest extends AbstractKeycloakTest {
+public abstract class AbstractClientInitiatedAccountLinkTest extends AbstractServletsAdapterTest {
     public static final String CHILD_IDP = "child";
     public static final String PARENT_IDP = "parent-idp";
     public static final String PARENT_USERNAME = "parent";
@@ -84,18 +75,7 @@ public class ClientInitiatedAccountLinkTest extends AbstractKeycloakTest {
     protected UpdateAccountInformationPage profilePage;
 
     @Page
-    protected LoginPage loginPage;
-
-    @Page
-    protected AppServerContextRoot appServerContextRootPage;
-
-    @ArquillianResource
-    protected OAuthClient oauth;
-
-
-    public boolean isRelative() {
-        return testContext.isRelativeAdapterTest();
-    }
+    private LoginPage loginPage;
 
     public static class ClientApp extends AbstractPageWithInjectedUrl {
 
@@ -113,15 +93,14 @@ public class ClientInitiatedAccountLinkTest extends AbstractKeycloakTest {
     }
 
     @Page
-    protected ClientApp appPage;
+    private ClientApp appPage;
 
     @Override
-    protected boolean isImportAfterEachMethod() {
-        return true;
+    public void beforeAuthTest() {
     }
-
+    
     @Override
-    public void addTestRealms(List<RealmRepresentation> testRealms) {
+    public void addAdapterTestRealms(List<RealmRepresentation> testRealms) {
         RealmRepresentation realm = new RealmRepresentation();
         realm.setRealm(CHILD_IDP);
         realm.setEnabled(true);
@@ -151,13 +130,12 @@ public class ClientInitiatedAccountLinkTest extends AbstractKeycloakTest {
         testRealms.add(realm);
 
     }
-
-    @Deployment(name = "client-linking")
-    public static WebArchive customerPortal() {
-        return AdapterServletDeployment.oidcDeployment("client-linking", "/account-link-test", ClientInitiatedAccountLinkServlet.class);
+    
+    @Deployment(name = ClientApp.DEPLOYMENT_NAME)
+    protected static WebArchive accountLink() {
+        return servletDeployment(ClientApp.DEPLOYMENT_NAME, ClientInitiatedAccountLinkServlet.class, ServletTestUtils.class);
     }
-
-
+    
     @Before
     public void addIdpUser() {
         RealmResource realm = adminClient.realms().realm(PARENT_IDP);
@@ -201,7 +179,7 @@ public class ClientInitiatedAccountLinkTest extends AbstractKeycloakTest {
         BrokerTestTools.createKcOidcBroker(adminClient, CHILD_IDP, PARENT_IDP, suiteContext);
     }
 
-    //@Test
+//    @Test
     public void testUi() throws Exception {
         Thread.sleep(1000000000);
 
@@ -232,7 +210,7 @@ public class ClientInitiatedAccountLinkTest extends AbstractKeycloakTest {
 
         // test not logged in
 
-        driver.navigate().to(linkUrl);
+        navigateTo(linkUrl);
         Assert.assertTrue(loginPage.isCurrent(CHILD_IDP));
         loginPage.login("child", "password");
 
@@ -242,7 +220,7 @@ public class ClientInitiatedAccountLinkTest extends AbstractKeycloakTest {
 
         // now log in
 
-        driver.navigate().to( appPage.getInjectedUrl() + "/hello");
+        navigateTo( appPage.getInjectedUrl() + "/hello");
         Assert.assertTrue(loginPage.isCurrent(CHILD_IDP));
         loginPage.login("child", "password");
         Assert.assertTrue(driver.getCurrentUrl().startsWith(appPage.getInjectedUrl() + "/hello"));
@@ -250,7 +228,7 @@ public class ClientInitiatedAccountLinkTest extends AbstractKeycloakTest {
 
         // now test CSRF with bad hash.
 
-        driver.navigate().to(linkUrl);
+        navigateTo(linkUrl);
 
         Assert.assertTrue(driver.getPageSource().contains("We're sorry..."));
 
@@ -271,7 +249,7 @@ public class ClientInitiatedAccountLinkTest extends AbstractKeycloakTest {
         roles.add(userRole);
         clientResource.getScopeMappings().realmLevel().add(roles);
 
-        driver.navigate().to( appPage.getInjectedUrl() + "/hello");
+        navigateTo( appPage.getInjectedUrl() + "/hello");
         Assert.assertTrue(loginPage.isCurrent(CHILD_IDP));
         loginPage.login("child", "password");
         Assert.assertTrue(driver.getCurrentUrl().startsWith(appPage.getInjectedUrl() + "/hello"));
@@ -285,7 +263,7 @@ public class ClientInitiatedAccountLinkTest extends AbstractKeycloakTest {
                 .queryParam("provider", PARENT_IDP).build().toString();
 
 
-        driver.navigate().to(clientLinkUrl);
+        navigateTo(clientLinkUrl);
 
         Assert.assertTrue(driver.getCurrentUrl().contains("error=not_allowed"));
 
@@ -301,7 +279,7 @@ public class ClientInitiatedAccountLinkTest extends AbstractKeycloakTest {
         roles.add(manageLinks);
         clientResource.getScopeMappings().clientLevel(accountId).add(roles);
 
-        driver.navigate().to(clientLinkUrl);
+        navigateTo(clientLinkUrl);
         Assert.assertTrue(loginPage.isCurrent(CHILD_IDP));
         loginPage.login("child", "password");
         Assert.assertTrue(loginPage.isCurrent(PARENT_IDP));
@@ -321,7 +299,7 @@ public class ClientInitiatedAccountLinkTest extends AbstractKeycloakTest {
 
         logoutAll();
 
-        driver.navigate().to(clientLinkUrl);
+        navigateTo(clientLinkUrl);
         Assert.assertTrue(loginPage.isCurrent(CHILD_IDP));
         loginPage.login("child", "password");
 
@@ -339,7 +317,7 @@ public class ClientInitiatedAccountLinkTest extends AbstractKeycloakTest {
         roles.add(manageAccount);
         clientResource.getScopeMappings().clientLevel(accountId).add(roles);
 
-        driver.navigate().to(clientLinkUrl);
+        navigateTo(clientLinkUrl);
         Assert.assertTrue(loginPage.isCurrent(CHILD_IDP));
         loginPage.login("child", "password");
         Assert.assertTrue(loginPage.isCurrent(PARENT_IDP));
@@ -359,7 +337,7 @@ public class ClientInitiatedAccountLinkTest extends AbstractKeycloakTest {
 
         logoutAll();
 
-        driver.navigate().to(clientLinkUrl);
+        navigateTo(clientLinkUrl);
         Assert.assertTrue(loginPage.isCurrent(CHILD_IDP));
         loginPage.login("child", "password");
 
@@ -397,7 +375,7 @@ public class ClientInitiatedAccountLinkTest extends AbstractKeycloakTest {
         String linkUrl = linkBuilder.clone()
                 .queryParam("realm", CHILD_IDP)
                 .queryParam("provider", PARENT_IDP).build().toString();
-        driver.navigate().to(linkUrl);
+        navigateTo(linkUrl);
         Assert.assertTrue(loginPage.isCurrent(CHILD_IDP));
         Assert.assertTrue(driver.getPageSource().contains(PARENT_IDP));
         loginPage.login("child", "password");
@@ -416,7 +394,7 @@ public class ClientInitiatedAccountLinkTest extends AbstractKeycloakTest {
         Assert.assertNotNull(firstToken);
 
 
-        driver.navigate().to(linkUrl);
+        navigateTo(linkUrl);
         Assert.assertTrue(driver.getPageSource().contains("Account Linked"));
         String nextToken = getToken(response, httpClient);
         Assert.assertNotNull(nextToken);
@@ -440,7 +418,7 @@ public class ClientInitiatedAccountLinkTest extends AbstractKeycloakTest {
     }
 
     private String getToken(OAuthClient.AccessTokenResponse response, Client httpClient) throws Exception {
-        String idpToken =  httpClient.target(oauth.AUTH_SERVER_ROOT)
+        String idpToken =  httpClient.target(OAuthClient.AUTH_SERVER_ROOT)
                 .path("realms")
                 .path("child/broker")
                 .path(PARENT_IDP)
@@ -454,9 +432,9 @@ public class ClientInitiatedAccountLinkTest extends AbstractKeycloakTest {
 
     public void logoutAll() {
         String logoutUri = OIDCLoginProtocolService.logoutUrl(authServerPage.createUriBuilder()).build(CHILD_IDP).toString();
-        driver.navigate().to(logoutUri);
+        navigateTo(logoutUri);
         logoutUri = OIDCLoginProtocolService.logoutUrl(authServerPage.createUriBuilder()).build(PARENT_IDP).toString();
-        driver.navigate().to(logoutUri);
+        navigateTo(logoutUri);
     }
 
     @Test
@@ -475,7 +453,7 @@ public class ClientInitiatedAccountLinkTest extends AbstractKeycloakTest {
             String linkUrl = linkBuilder.clone()
                     .queryParam("realm", CHILD_IDP)
                     .queryParam("provider", PARENT_IDP).build().toString();
-            driver.navigate().to(linkUrl);
+            navigateTo(linkUrl);
             Assert.assertTrue(loginPage.isCurrent(CHILD_IDP));
 
             // should not be on login page.  This is what we are testing
@@ -501,7 +479,7 @@ public class ClientInitiatedAccountLinkTest extends AbstractKeycloakTest {
 
             System.out.println("testing link-only attack");
 
-            driver.navigate().to(linkUrl);
+            navigateTo(linkUrl);
             Assert.assertTrue(loginPage.isCurrent(CHILD_IDP));
 
             System.out.println("login page uri is: " + driver.getCurrentUrl());
@@ -537,7 +515,7 @@ public class ClientInitiatedAccountLinkTest extends AbstractKeycloakTest {
 
             System.out.println("hack uri: " + uri);
 
-            driver.navigate().to(uri);
+            navigateTo(uri);
 
             Assert.assertTrue(driver.getPageSource().contains("Could not send authentication request to identity provider."));
 
@@ -554,5 +532,11 @@ public class ClientInitiatedAccountLinkTest extends AbstractKeycloakTest {
 
     }
 
+    private void navigateTo(String uri) {
+        driver.navigate().to(uri);
+        WaitUtils.waitForPageToLoad(driver);
+    }
+
+    
 
 }
