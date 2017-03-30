@@ -110,7 +110,7 @@
 
 *Incorrect forms*: Service Provider
 
-*See also*: *See also*: xref:sp[SP]
+*See also*: xref:sp[SP]
 
 [discrete]
 ==== single sign-on (noun)
@@ -132,7 +132,7 @@
 
 *Incorrect forms*: sp
 
-*See also*: *See also*: xref:serviceprovider[service provider]
+*See also*: xref:serviceprovider[service provider]
 
 [discrete]
 ==== SSSD (noun)
