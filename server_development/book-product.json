@@ -39,6 +39,10 @@
     "adapterguide": {
       "name": "JavaScript OpenID Connect Adapter",
       "link": "https://access.redhat.com/documentation/en/red-hat-single-sign-on/7.1-beta/html-single/securing-applications-and-services-guide#javascript_adapter"
+    },
+
+    "subsystem": {
+      "undertow": "urn:jboss:domain:undertow:3.1"
     }
   }
 }

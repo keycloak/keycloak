@@ -111,17 +111,18 @@ See link:https://docs.jboss.org/author/display/WFLY10/Admin+Guide#AdminGuide-HTT
 
 * Add the <https-listener> element as shown below:
 
-```
-<subsystem xmlns="urn:jboss:domain:undertow:3.0">
+[source,xml,subs="attributes+"]
+----
+<subsystem xmlns="{{book.subsystem.undertow}}">
 	....
     <server name="default-server">
-	    <https-listener name="default" 
-                        socket-binding="https" 
-                        security-realm="ssl-realm" 
+	    <https-listener name="default"
+                        socket-binding="https"
+                        security-realm="ssl-realm"
                         verify-client="REQUESTED"/>
     </server>
 </subsystem>
-```
+----
 
 `https-listener/security-realm`::
 The value must match the name of the realm from the previous section

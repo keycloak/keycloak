@@ -45,6 +45,10 @@
     "keycloakinstallclientadapter": {
       "name": "Installing the Client Adapter",
       "link": "https://access.redhat.com/documentation/en/red-hat-single-sign-on/7.1-beta/html-single/getting-started-guide/#installing_the_client_adapter"
+    },
+
+    "subsystem": {
+      "undertow": "urn:jboss:domain:undertow:3.1"
     }
   }
 }

@@ -38,6 +38,10 @@
       "name": "Quickstarts for the Red Hat Single Sign-On (SSO) Server",
       "dir": "redhat-sso-quickstarts",
       "link": "https://github.com/redhat-developer/redhat-sso-quickstarts" 
+    },
+
+    "subsystem": {
+      "undertow": "urn:jboss:domain:undertow:3.1"
     }
   }
 }
