@@ -314,7 +314,19 @@ Returns true if the token has the given role for the resource (resource is optio
 
 Loads the users profile.
 
-Returns promise to set functions to be invoked on success or error.
+Returns promise to set functions to be invoked if the profile was loaded successfully, or if the profile could not be
+loaded.
+
+For example:
+
+[source,javascript]
+----
+keycloak.loadUserProfile().success(function(profile) {
+        alert(JSON.stringify(test, null, "  "));
+    }).error(function() {
+        alert('Failed to load user profile');
+    });
+----
 
 ====== isTokenExpired(minValidity)
 
