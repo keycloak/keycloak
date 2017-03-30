@@ -102,6 +102,17 @@
 *See also*: 
 
 [discrete]
+==== service provider (noun)
+[[serviceprovider]]
+*Description*: 
+
+*Use it*: yes
+
+*Incorrect forms*: Service Provider
+
+*See also*: *See also*: xref:sp[SP]
+
+[discrete]
 ==== single sign-on (noun)
 [[sso]]
 *Description*: Generic term for single sign-on
@@ -111,6 +122,18 @@
 *Incorrect forms*: sso
 
 *See also*: 
+
+[discrete]
+==== SP (noun)
+[[sp]]
+*Description*: Acceptable abbreviation for service provider
+
+*Use it*: yes
+
+*Incorrect forms*: sp
+
+*See also*: *See also*: xref:serviceprovider[service provider]
+
 [discrete]
 ==== SSSD (noun)
 [[sssd]]
