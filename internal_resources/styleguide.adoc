@@ -71,4 +71,5 @@
 == See Also
 
 * link:screenshots.adoc[Screenshot Guide]
+* link:terms_conventions.adoc[RH-SSO Terms and Conventions]
 * link:http://ccs-jenkins.gsslab.brq.redhat.com:8080/job/glossary-of-terms-and-conventions-for-product-documentation-branch-master/lastSuccessfulBuild/artifact/index.html[Red Hat Glossary of Terms and Conventions]
