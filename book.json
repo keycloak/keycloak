@@ -59,6 +59,8 @@
     },
 
     "fuseVersion": "JBoss Fuse 6.3.0 Rollup 1",
+    "hawtioEAPVersion": "Wildfly 10",
+    "hawtioWARVersion": "hawtio-wildfly-1.4.0.redhat-630254.war",
 
     "appserver": {
       "name": "Wildfly",

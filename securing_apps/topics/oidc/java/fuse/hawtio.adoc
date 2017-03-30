@@ -56,20 +56,20 @@ features:install keycloak
 +
 Note that the user needs to have the proper realm role to successfully authenticate to Hawtio. The available roles are configured in the `$FUSE_HOME/etc/system.properties` file in `hawtio.roles`.
 
-====== Securing Hawtio on EAP
+====== Securing Hawtio on {{book.hawtioEAPVersion}}
 
-To run Hawtio on the Wildfly 10 server, complete the following steps:
+To run Hawtio on the {{book.hawtioEAPVersion}} server, complete the following steps:
 
 . Set up {{book.project.name}} as described in the previous section, Securing the Hawtio Administration Console. It is assumed that: 
 * you have a {{book.project.name}} realm `demo` and client `hawtio-client`
 * your {{book.project.name}} is running on `localhost:8080`
-* the Wildfly server with deployed Hawtio will be running on `localhost:8181`.
+* the {{book.hawtioEAPVersion}} server with deployed Hawtio will be running on `localhost:8181`. The directory with this server is referred in next steps as `$EAP_HOME`.
 
-. Copy the `hawtio.war` archive to the `$EAP_HOME/standalone/configuration` directory. For more details about deploying Hawtio see the https://access.redhat.com/documentation/en-us/red_hat_jboss_fuse/6.3/html-single/deploying_into_a_web_server/eapcamelsubsystem#idm140313338064000[Fuse Hawtio documentation].
+. Copy the `{{book.hawtioWARVersion}}` archive to the `$EAP_HOME/standalone/configuration` directory. For more details about deploying Hawtio see the https://access.redhat.com/documentation/en-us/red_hat_jboss_fuse/6.3/html-single/deploying_into_a_web_server/eapcamelsubsystem#idm140313338064000[Fuse Hawtio documentation].
 
 . Copy the `keycloak-hawtio.json` and `keycloak-hawtio-client.json` files with the above content to the `$EAP_HOME/standalone/configuration` directory.
 
-. Install the {{book.project.name}} adapter subsystem to your Wildfly server as described in the <<fake/../../jboss-adapter.adoc#_jboss_adapter,JBoss adapter documentation>>.
+. Install the {{book.project.name}} adapter subsystem to your {{book.hawtioEAPVersion}} server as described in the <<fake/../../jboss-adapter.adoc#_jboss_adapter,JBoss adapter documentation>>.
 
 . In the `$EAP_HOME/standalone/configuration/standalone.xml` file configure the system properties as in this example:
 +
@@ -109,11 +109,11 @@ To run Hawtio on the Wildfly 10 server, complete the following steps:
 [source,xml]
 ----
 <subsystem xmlns="urn:jboss:domain:keycloak:1.1">
-    <secure-deployment name="hawtio.war" />
+    <secure-deployment name="{{book.hawtioWARVersion}}" />
 </subsystem>
 ----
 
-. Restart the Wildfly server with Hawtio:
+. Restart the {{book.hawtioEAPVersion}} server with Hawtio:
 +
 [source,xml]
 ----
