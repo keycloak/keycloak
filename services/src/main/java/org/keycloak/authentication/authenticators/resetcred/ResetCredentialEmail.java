@@ -17,7 +17,6 @@
 
 package org.keycloak.authentication.authenticators.resetcred;
 
-import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.authentication.*;
 import org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAuthenticator;
@@ -35,7 +34,6 @@ import org.keycloak.models.utils.FormMessage;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.messages.Messages;
-import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
 import java.util.*;
@@ -78,13 +76,11 @@ public class ResetCredentialEmail implements Authenticator, AuthenticatorFactory
         int validityInSecs = context.getRealm().getAccessCodeLifespanUserAction();
         int absoluteExpirationInSecs = Time.currentTime() + validityInSecs;
 
-        PasswordCredentialProvider passwordProvider = (PasswordCredentialProvider) context.getSession().getProvider(CredentialProvider.class, PasswordCredentialProviderFactory.PROVIDER_ID);
-        CredentialModel password = passwordProvider.getPassword(context.getRealm(), user);
-        Long lastCreatedPassword = password == null ? null : password.getCreatedDate();
+        KeycloakSession keycloakSession = context.getSession();
+        Long lastCreatedPassword = getLastChangedTimestamp(keycloakSession, context.getRealm(), user);
 
         // We send the secret in the email in a link as a query param.
         ResetCredentialsActionToken token = new ResetCredentialsActionToken(user.getId(), absoluteExpirationInSecs, null, lastCreatedPassword, context.getAuthenticationSession());
-        KeycloakSession keycloakSession = context.getSession();
         String link = UriBuilder
           .fromUri(context.getRefreshExecutionUrl())
           .queryParam(Constants.KEY, token.serialize(keycloakSession, context.getRealm(), context.getUriInfo()))
@@ -112,22 +108,26 @@ public class ResetCredentialEmail implements Authenticator, AuthenticatorFactory
         }
     }
 
+    public static Long getLastChangedTimestamp(KeycloakSession session, RealmModel realm, UserModel user) {
+        // TODO(hmlnarik): Make this more generic to support non-password credential types
+        PasswordCredentialProvider passwordProvider = (PasswordCredentialProvider) session.getProvider(CredentialProvider.class, PasswordCredentialProviderFactory.PROVIDER_ID);
+        CredentialModel password = passwordProvider.getPassword(realm, user);
+
+        return password == null ? null : password.getCreatedDate();
+    }
+
     @Override
     public void action(AuthenticationFlowContext context) {
         KeycloakSession keycloakSession = context.getSession();
-        String actionTokenString = context.getUriInfo().getQueryParameters().getFirst(Constants.KEY);
+        String actionTokenString = context.getAuthenticationSession().getAuthNote(ResetCredentialsActionToken.class.getName());
         ResetCredentialsActionToken tokenFromMail = null;
-        try {
-            tokenFromMail = ResetCredentialsActionToken.deserialize(keycloakSession, context.getRealm(), context.getUriInfo(), actionTokenString);
-        } catch (VerificationException ex) {
-            context.getEvent().detail(Details.REASON, ex.getMessage()).error(Errors.INVALID_CODE);
-            Response challenge = context.form()
-                    .setError(Messages.INVALID_CODE)
-                    .createErrorPage();
-            context.failure(AuthenticationFlowError.INTERNAL_ERROR, challenge);
-        }
 
-        String userId = tokenFromMail == null ? null : tokenFromMail.getUserId();
+        try {
+            tokenFromMail = ResetCredentialsActionToken.deserialize(actionTokenString);
+        } catch (VerificationException ex) {
+            context.getEvent().detail(Details.REASON, ex.getMessage());
+            // flow returns in the next condition so no "return" statmenent here
+        }
 
         if (tokenFromMail == null) {
             context.getEvent()
@@ -139,14 +139,15 @@ public class ResetCredentialEmail implements Authenticator, AuthenticatorFactory
             return;
         }
 
-        PasswordCredentialProvider passwordProvider = (PasswordCredentialProvider) context.getSession().getProvider(CredentialProvider.class, PasswordCredentialProviderFactory.PROVIDER_ID);
-        CredentialModel password = passwordProvider.getPassword(context.getRealm(), context.getUser());
+        String userId = tokenFromMail.getUserId();
 
         Long lastCreatedPasswordMail = tokenFromMail.getLastChangedPasswordTimestamp();
-        Long lastCreatedPasswordFromStore = password == null ? null : password.getCreatedDate();
+        Long lastCreatedPasswordFromStore = getLastChangedTimestamp(keycloakSession, context.getRealm(), context.getUser());
 
         String authenticationSessionId = tokenFromMail.getAuthenticationSessionId();
-        AuthenticationSessionModel authenticationSession = authenticationSessionId == null ? null : keycloakSession.authenticationSessions().getAuthenticationSession(context.getRealm(), authenticationSessionId);
+        AuthenticationSessionModel authenticationSession = authenticationSessionId == null
+          ? null
+          : keycloakSession.authenticationSessions().getAuthenticationSession(context.getRealm(), authenticationSessionId);
 
         if (authenticationSession == null
           || ! Objects.equals(lastCreatedPasswordMail, lastCreatedPasswordFromStore)
@@ -157,7 +158,7 @@ public class ResetCredentialEmail implements Authenticator, AuthenticatorFactory
               .detail(Details.TOKEN_ID, tokenFromMail.getId())
               .error(Errors.EXPIRED_CODE);
             Response challenge = context.form()
-                    .setError(Messages.INVALID_CODE)
+                    .setError(Messages.EXPIRED_CODE)
                     .createErrorPage();
             context.failure(AuthenticationFlowError.INTERNAL_ERROR, challenge);
             return;

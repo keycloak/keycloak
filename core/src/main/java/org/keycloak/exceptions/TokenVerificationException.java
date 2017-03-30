@@ -16,29 +16,39 @@
  */
 package org.keycloak.exceptions;
 
+import org.keycloak.common.VerificationException;
 import org.keycloak.representations.JsonWebToken;
 
 /**
- * Exception thrown for cases when token is invalid due to time constraints (expired, or not yet valid).
- * Cf. {@link JsonWebToken#isActive()}.
+ * Exception thrown on failed verification of a token.
+ *
  * @author hmlnarik
  */
-public class TokenNotActiveException extends TokenVerificationException {
+public class TokenVerificationException extends VerificationException {
 
-    public TokenNotActiveException(JsonWebToken token) {
-        super(token);
+    private final JsonWebToken token;
+
+    public TokenVerificationException(JsonWebToken token) {
+        this.token = token;
     }
 
-    public TokenNotActiveException(JsonWebToken token, String message) {
-        super(token, message);
+    public TokenVerificationException(JsonWebToken token, String message) {
+        super(message);
+        this.token = token;
     }
 
-    public TokenNotActiveException(JsonWebToken token, String message, Throwable cause) {
-        super(token, message, cause);
+    public TokenVerificationException(JsonWebToken token, String message, Throwable cause) {
+        super(message, cause);
+        this.token = token;
     }
 
-    public TokenNotActiveException(JsonWebToken token, Throwable cause) {
-        super(token, cause);
+    public TokenVerificationException(JsonWebToken token, Throwable cause) {
+        super(cause);
+        this.token = token;
+    }
+
+    public JsonWebToken getToken() {
+        return token;
     }
 
 }

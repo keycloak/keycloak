@@ -33,6 +33,8 @@ import org.keycloak.util.TokenUtil;
 import javax.crypto.SecretKey;
 import java.security.PublicKey;
 import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -40,9 +42,15 @@ import java.util.*;
  */
 public class TokenVerifier<T extends JsonWebToken> {
 
+    private static final Logger LOG = Logger.getLogger(TokenVerifier.class.getName());
+
     // This interface is here as JDK 7 is a requirement for this project.
     // Once JDK 8 would become mandatory, java.util.function.Predicate would be used instead.
 
+    /**
+     * Functional interface of checks that verify some part of a JWT.
+     * @param <T> Type of the token handled by this predicate.
+     */
     // @FunctionalInterface
     public static interface Predicate<T extends JsonWebToken> {
         /**
@@ -66,11 +74,15 @@ public class TokenVerifier<T extends JsonWebToken> {
         }
     };
 
+    /**
+     * Check for token being neither expired nor used before it gets valid.
+     * @see JsonWebToken#isActive()
+     */
     public static final Predicate<JsonWebToken> IS_ACTIVE = new Predicate<JsonWebToken>() {
         @Override
         public boolean test(JsonWebToken t) throws VerificationException {
             if (! t.isActive()) {
-                throw new TokenNotActiveException("Token is not active");
+                throw new TokenNotActiveException(t, "Token is not active");
             }
 
             return true;
@@ -143,29 +155,45 @@ public class TokenVerifier<T extends JsonWebToken> {
     }
 
     /**
-     * Creates a {@code TokenVerifier<AccessToken> instance. The method is here for backwards compatibility.
-     * @param tokenString
+     * Creates an instance of {@code TokenVerifier} from the given string on a JWT of the given class.
+     * The token verifier has no checks defined. Note that the checks are only tested when
+     * {@link #verify()} method is invoked.
+     * @param <T> Type of the token
+     * @param tokenString String representation of JWT
+     * @param clazz Class of the token
      * @return
-     * @deprecated use {@link #create(java.lang.String, java.lang.Class) } instead
      */
-    public static TokenVerifier<AccessToken> create(String tokenString) {
-        return create(tokenString, AccessToken.class);
-    }
-
     public static <T extends JsonWebToken> TokenVerifier<T> create(String tokenString, Class<T> clazz) {
-        return new TokenVerifier(tokenString, clazz)
-          .check(RealmUrlCheck.NULL_INSTANCE)
-          .check(SUBJECT_EXISTS_CHECK)
-          .check(TokenTypeCheck.INSTANCE_BEARER)
-          .check(IS_ACTIVE);
+        return new TokenVerifier(tokenString, clazz);
     }
 
-    public static <T extends JsonWebToken> TokenVerifier<T> from(T token) {
-        return new TokenVerifier(token)
-          .check(RealmUrlCheck.NULL_INSTANCE)
-          .check(SUBJECT_EXISTS_CHECK)
-          .check(TokenTypeCheck.INSTANCE_BEARER)
-          .check(IS_ACTIVE);
+    /**
+     * Creates an instance of {@code TokenVerifier} from the given string on a JWT of the given class.
+     * The token verifier has no checks defined. Note that the checks are only tested when
+     * {@link #verify()} method is invoked.
+     * @return
+     */
+    public static <T extends JsonWebToken> TokenVerifier<T> create(T token) {
+        return new TokenVerifier(token);
+    }
+
+    /**
+     * Adds default checks to the token verification:
+     * <ul>
+     * <li>Realm URL (JWT issuer field: {@code iss}) has to be defined and match realm set via {@link #realmUrl(java.lang.String)} method</li>
+     * <li>Subject (JWT subject field: {@code sub}) has to be defined</li>
+     * <li>Token type (JWT type field: {@code typ}) has to be {@code Bearer}. The type can be set via {@link #tokenType(java.lang.String)} method</li>
+     * <li>Token has to be active, ie. both not expired and not used before its validity (JWT issuer fields: {@code exp} and {@code nbf})</li>
+     * </ul>
+     * @return This token verifier.
+     */
+    public TokenVerifier<T> withDefaultChecks()  {
+        return withChecks(
+          RealmUrlCheck.NULL_INSTANCE,
+          SUBJECT_EXISTS_CHECK,
+          TokenTypeCheck.INSTANCE_BEARER,
+          IS_ACTIVE
+        );
     }
 
     private void removeCheck(Class<? extends Predicate<?>> checkClass) {
@@ -197,12 +225,11 @@ public class TokenVerifier<T extends JsonWebToken> {
     }
 
     /**
-     * Resets all preset checks and will test the given checks in {@link #verify()} method.
+     * Will test the given checks in {@link #verify()} method in addition to already set checks.
      * @param checks
      * @return
      */
-    public TokenVerifier<T> checkOnly(Predicate<? super T>... checks) {
-        this.checks.clear();
+    public TokenVerifier<T> withChecks(Predicate<? super T>... checks) {
         if (checks != null) {
             this.checks.addAll(Arrays.asList(checks));
         }
@@ -210,46 +237,64 @@ public class TokenVerifier<T extends JsonWebToken> {
     }
 
     /**
-     * Will test the given checks in {@link #verify()} method in addition to already set checks.
-     * @param checks
+     * Sets the key for verification of RSA-based signature.
+     * @param publicKey
      * @return
      */
-    public TokenVerifier<T> check(Predicate<? super T>... checks) {
-        if (checks != null) {
-            this.checks.addAll(Arrays.asList(checks));
-        }
-        return this;
-    }
-
     public TokenVerifier<T> publicKey(PublicKey publicKey) {
         this.publicKey = publicKey;
         return this;
     }
 
+    /**
+     * Sets the key for verification of HMAC-based signature.
+     * @param secretKey
+     * @return 
+     */
     public TokenVerifier<T> secretKey(SecretKey secretKey) {
         this.secretKey = secretKey;
         return this;
     }
 
+    /**
+     * @deprecated This method is here only for backward compatibility with previous version of {@code TokenVerifier}.
+     * @return This token verifier
+     */
     public TokenVerifier<T> realmUrl(String realmUrl) {
         this.realmUrl = realmUrl;
         return replaceCheck(RealmUrlCheck.class, checkRealmUrl, new RealmUrlCheck(realmUrl));
     }
 
+    /**
+     * @deprecated This method is here only for backward compatibility with previous version of {@code TokenVerifier}.
+     * @return This token verifier
+     */
     public TokenVerifier<T> checkTokenType(boolean checkTokenType) {
         this.checkTokenType = checkTokenType;
         return replaceCheck(TokenTypeCheck.class, this.checkTokenType, new TokenTypeCheck(expectedTokenType));
     }
 
+    /**
+     * @deprecated This method is here only for backward compatibility with previous version of {@code TokenVerifier}.
+     * @return This token verifier
+     */
     public TokenVerifier<T> tokenType(String tokenType) {
         this.expectedTokenType = tokenType;
         return replaceCheck(TokenTypeCheck.class, this.checkTokenType, new TokenTypeCheck(expectedTokenType));
     }
 
+    /**
+     * @deprecated This method is here only for backward compatibility with previous version of {@code TokenVerifier}.
+     * @return This token verifier
+     */
     public TokenVerifier<T> checkActive(boolean checkActive) {
         return replaceCheck(IS_ACTIVE, checkActive, IS_ACTIVE);
     }
 
+    /**
+     * @deprecated This method is here only for backward compatibility with previous version of {@code TokenVerifier}.
+     * @return This token verifier
+     */
     public TokenVerifier<T> checkRealmUrl(boolean checkRealmUrl) {
         this.checkRealmUrl = checkRealmUrl;
         return replaceCheck(RealmUrlCheck.class, this.checkRealmUrl, new RealmUrlCheck(realmUrl));
@@ -300,14 +345,14 @@ public class TokenVerifier<T extends JsonWebToken> {
                     throw new VerificationException("Public key not set");
                 }
                 if (!RSAProvider.verify(jws, publicKey)) {
-                    throw new TokenSignatureInvalidException("Invalid token signature");
+                    throw new TokenSignatureInvalidException(token, "Invalid token signature");
                 }   break;
             case HMAC:
                 if (secretKey == null) {
                     throw new VerificationException("Secret key not set");
                 }
                 if (!HMACProvider.verify(jws, secretKey)) {
-                    throw new TokenSignatureInvalidException("Invalid token signature");
+                    throw new TokenSignatureInvalidException(token, "Invalid token signature");
                 }   break;
             default:
                 throw new VerificationException("Unknown or unsupported token algorithm");
@@ -331,4 +376,55 @@ public class TokenVerifier<T extends JsonWebToken> {
         return this;
     }
 
+    /**
+     * Creates an optional predicate from a predicate that will proceed with check but always pass.
+     * @param <T>
+     * @param mandatoryPredicate
+     * @return
+     */
+    public static <T extends JsonWebToken> Predicate<T> optional(final Predicate<T> mandatoryPredicate) {
+        return new Predicate<T>() {
+            @Override
+            public boolean test(T t) throws VerificationException {
+                try {
+                    if (! mandatoryPredicate.test(t)) {
+                        LOG.finer("[optional] predicate failed: " + mandatoryPredicate);
+                    }
+
+                    return true;
+                } catch (VerificationException ex) {
+                    LOG.log(Level.FINER, "[optional] predicate " + mandatoryPredicate + " failed.", ex);
+                    return true;
+                }
+            }
+        };
+    }
+
+    /**
+     * Creates a predicate that will proceed with checks of the given predicates
+     * and will pass if and only if at least one of the given predicates passes.
+     * @param <T>
+     * @param predicates
+     * @return
+     */
+    public static <T extends JsonWebToken> Predicate<T> alternative(final Predicate<? super T>... predicates) {
+        return new Predicate<T>() {
+            @Override
+            public boolean test(T t) throws VerificationException {
+                for (Predicate<? super T> predicate : predicates) {
+                    try {
+                        if (predicate.test(t)) {
+                            return true;
+                        }
+
+                        LOG.finer("[alternative] predicate failed: " + predicate);
+                    } catch (VerificationException ex) {
+                        LOG.log(Level.FINER, "[alternative] predicate " + predicate + " failed.", ex);
+                    }
+                }
+
+                return false;
+            }
+        };
+    }
 }

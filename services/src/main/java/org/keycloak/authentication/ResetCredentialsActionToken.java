@@ -42,7 +42,7 @@ public class ResetCredentialsActionToken extends DefaultActionToken {
 
     private static final Logger LOG = Logger.getLogger(ResetCredentialsActionToken.class);
 
-    private static final String RESET_CREDENTIALS_ACTION = "reset-credentials";
+    public static final String RESET_CREDENTIALS_TYPE = "reset-credentials";
     public static final String NOTE_AUTHENTICATION_SESSION_ID = "clientSessionId";
     private static final String JSON_FIELD_AUTHENTICATION_SESSION_ID = "asid";
     private static final String JSON_FIELD_LAST_CHANGE_PASSWORD_TIMESTAMP = "lcpt";
@@ -54,7 +54,7 @@ public class ResetCredentialsActionToken extends DefaultActionToken {
     private Long lastChangedPasswordTimestamp;
 
     public ResetCredentialsActionToken(String userId, int absoluteExpirationInSecs, UUID actionVerificationNonce, Long lastChangedPasswordTimestamp, String authenticationSessionId) {
-        super(userId, RESET_CREDENTIALS_ACTION, absoluteExpirationInSecs, actionVerificationNonce);
+        super(userId, RESET_CREDENTIALS_TYPE, absoluteExpirationInSecs, actionVerificationNonce);
         setNote(NOTE_AUTHENTICATION_SESSION_ID, authenticationSessionId);
         this.lastChangedPasswordTimestamp = lastChangedPasswordTimestamp;
     }
@@ -131,19 +131,7 @@ public class ResetCredentialsActionToken extends DefaultActionToken {
      * @param actionTokenString
      * @return
      */
-    public static ResetCredentialsActionToken deserialize(KeycloakSession session, RealmModel realm, UriInfo uri, String token,
-      Predicate<? super ResetCredentialsActionToken>... checks) throws VerificationException {
-        return TokenVerifier.create(token, ResetCredentialsActionToken.class)
-          .secretKey(session.keys().getActiveHmacKey(realm).getSecretKey())
-          .realmUrl(getIssuer(realm, uri))
-          .tokenType(RESET_CREDENTIALS_ACTION)
-
-          .checkActive(false)   // TODO: If this line is omitted, the following tests in ResetPasswordTest fail: resetPasswordExpiredCodeShort, resetPasswordExpiredCode
-
-          .check(ACTION_TOKEN_BASIC_CHECKS)
-          .check(checks)
-          .verify()
-          .getToken()
-        ;
+    public static ResetCredentialsActionToken deserialize(String token) throws VerificationException {
+        return TokenVerifier.create(token, ResetCredentialsActionToken.class).getToken();
     }
 }

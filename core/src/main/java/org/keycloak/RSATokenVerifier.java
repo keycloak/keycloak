@@ -32,7 +32,7 @@ public class RSATokenVerifier {
     private final TokenVerifier<AccessToken> tokenVerifier;
 
     private RSATokenVerifier(String tokenString) {
-        this.tokenVerifier = TokenVerifier.create(tokenString, AccessToken.class);
+        this.tokenVerifier = TokenVerifier.create(tokenString, AccessToken.class).withDefaultChecks();
     }
 
     public static RSATokenVerifier create(String tokenString) {

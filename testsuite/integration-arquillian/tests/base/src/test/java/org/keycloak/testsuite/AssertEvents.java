@@ -40,6 +40,7 @@ import javax.ws.rs.core.Response;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import static org.hamcrest.Matchers.is;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -271,16 +272,16 @@ public class AssertEvents implements TestRule {
         }
 
         public EventRepresentation assertEvent(EventRepresentation actual) {
-            if (expected.getError() != null && !expected.getType().toString().endsWith("_ERROR")) {
+            if (expected.getError() != null && ! expected.getType().toString().endsWith("_ERROR")) {
                 expected.setType(expected.getType() + "_ERROR");
             }
-            Assert.assertEquals(expected.getType(), actual.getType());
-            Assert.assertThat(actual.getRealmId(), realmId);
-            Assert.assertEquals(expected.getClientId(), actual.getClientId());
-            Assert.assertEquals(expected.getError(), actual.getError());
-            Assert.assertEquals(expected.getIpAddress(), actual.getIpAddress());
-            Assert.assertThat(actual.getUserId(), userId);
-            Assert.assertThat(actual.getSessionId(), sessionId);
+            Assert.assertThat("type", actual.getType(), is(expected.getType()));
+            Assert.assertThat("realm ID", actual.getRealmId(), is(realmId));
+            Assert.assertThat("client ID", actual.getClientId(), is(expected.getClientId()));
+            Assert.assertThat("error", actual.getError(), is(expected.getError()));
+            Assert.assertThat("ip address", actual.getIpAddress(), is(expected.getIpAddress()));
+            Assert.assertThat("user ID", actual.getUserId(), is(userId));
+            Assert.assertThat("session ID", actual.getSessionId(), is(sessionId));
 
             if (details == null || details.isEmpty()) {
 //                Assert.assertNull(actual.getDetails());
@@ -292,7 +293,7 @@ public class AssertEvents implements TestRule {
                         Assert.fail(d.getKey() + " missing");
                     }
 
-                    Assert.assertThat("Unexpected value for " + d.getKey(), actualValue, d.getValue());
+                    Assert.assertThat("Unexpected value for " + d.getKey(), actualValue, is(d.getValue()));
                 }
                 /*
                 for (String k : actual.getDetails().keySet()) {

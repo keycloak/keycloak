@@ -17,9 +17,6 @@
 package org.keycloak.testsuite.forms;
 
 import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
@@ -51,8 +48,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.*;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -172,16 +168,34 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
-    @Ignore
     public void resetPasswordTwice() throws IOException, MessagingException {
         String changePasswordUrl = resetPassword("login-test");
+        events.clear();
+
+        // TODO:hmlnarik is this correct??
+        assertSecondPasswordResetFails(changePasswordUrl, "test-app"); // KC_RESTART exists, hence client-ID is taken from it.
+    }
+
+    @Test
+    public void resetPasswordTwiceInNewBrowser() throws IOException, MessagingException {
+        String changePasswordUrl = resetPassword("login-test");
+        events.clear();
+
+        String resetUri = oauth.AUTH_SERVER_ROOT + "/realms/test/login-actions/reset-credentials";
+        driver.navigate().to(resetUri); // This is necessary to delete KC_RESTART cookie that is restricted to /auth/realms/test path
+        driver.manage().deleteAllCookies();
+
+        assertSecondPasswordResetFails(changePasswordUrl, null);
+    }
+
+    public void assertSecondPasswordResetFails(String changePasswordUrl, String clientId) {
         driver.navigate().to(changePasswordUrl.trim());
 
         errorPage.assertCurrent();
         assertEquals("An error occurred, please login again through your application.", errorPage.getError());
 
         events.expect(EventType.RESET_PASSWORD)
-          .client((String) null)
+          .client(clientId)
           .session((String) null)
           .user(userId)
           .detail(Details.USERNAME, "login-test")
@@ -337,19 +351,19 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void resetPasswordExpiredCode() throws IOException, MessagingException, InterruptedException {
+        initiateResetPasswordFromResetPasswordPage("login-test");
+
+        events.expectRequiredAction(EventType.SEND_RESET_PASSWORD)
+                .session((String)null)
+                .user(userId).detail(Details.USERNAME, "login-test").detail(Details.EMAIL, "login@test.com").assertEvent();
+
+        assertEquals(1, greenMail.getReceivedMessages().length);
+
+        MimeMessage message = greenMail.getReceivedMessages()[0];
+
+        String changePasswordUrl = getPasswordResetEmailLink(message);
+
         try {
-            initiateResetPasswordFromResetPasswordPage("login-test");
-
-            events.expectRequiredAction(EventType.SEND_RESET_PASSWORD)
-                    .session((String)null)
-                    .user(userId).detail(Details.USERNAME, "login-test").detail(Details.EMAIL, "login@test.com").assertEvent();
-
-            assertEquals(1, greenMail.getReceivedMessages().length);
-
-            MimeMessage message = greenMail.getReceivedMessages()[0];
-
-            String changePasswordUrl = getPasswordResetEmailLink(message);
-
             setTimeOffset(1800 + 23);
 
             driver.navigate().to(changePasswordUrl.trim());
@@ -590,6 +604,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
 
         String changePasswordUrl = getPasswordResetEmailLink(message);
 
+        driver.navigate().to(resetUri); // This is necessary to delete KC_RESTART cookie that is restricted to /auth/realms/test path
         driver.manage().deleteAllCookies();
         driver.navigate().to(changePasswordUrl.trim());
 

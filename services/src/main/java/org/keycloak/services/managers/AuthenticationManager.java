@@ -750,7 +750,11 @@ public class AuthenticationManager {
     public static AuthResult verifyIdentityToken(KeycloakSession session, RealmModel realm, UriInfo uriInfo, ClientConnection connection, boolean checkActive, boolean checkTokenType,
                                                     boolean isCookie, String tokenString, HttpHeaders headers) {
         try {
-            TokenVerifier<AccessToken> verifier = TokenVerifier.create(tokenString).realmUrl(Urls.realmIssuer(uriInfo.getBaseUri(), realm.getName())).checkActive(checkActive).checkTokenType(checkTokenType);
+            TokenVerifier<AccessToken> verifier = TokenVerifier.create(tokenString, AccessToken.class)
+              .withDefaultChecks()
+              .realmUrl(Urls.realmIssuer(uriInfo.getBaseUri(), realm.getName()))
+              .checkActive(checkActive)
+              .checkTokenType(checkTokenType);
             String kid = verifier.getHeader().getKeyId();
             AlgorithmType algorithmType = verifier.getHeader().getAlgorithm().getType();
 
