@@ -62,6 +62,10 @@
     "adminguide": {
       "name": "Server Administration Guide",
       "link": "https://access.redhat.com/documentation/en/red-hat-single-sign-on/7.1-Beta/html-single/server-administration-guide/"
+    },
+
+    "subsystem": {
+      "undertow": "urn:jboss:domain:undertow:3.1"
     }
   }
 }

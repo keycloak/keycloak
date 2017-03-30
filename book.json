@@ -95,6 +95,10 @@
         "name": "WildFly 10 Documentation",
         "link": "https://docs.jboss.org/author/display/WFLY10/JPA+Reference+Guide#JPAReferenceGuide-Hibernateproperties"
       }
+    },
+
+    "subsystem": {
+      "undertow": "urn:jboss:domain:undertow:3.0"
     }
   }
 }

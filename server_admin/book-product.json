@@ -32,6 +32,10 @@
     "adapterguide": {
       "name": "Securing Applications and Services Guide",
       "link": "https://access.redhat.com/documentation/en/red-hat-single-sign-on/7.1-beta/html-single/securing-applications-and-services-guide/"
+    },
+
+    "subsystem": {
+      "undertow": "urn:jboss:domain:undertow:3.1"
     }
   }
 }

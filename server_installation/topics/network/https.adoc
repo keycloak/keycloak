@@ -124,7 +124,7 @@ the keystore and enable HTTPS.  (See <<fake/../../operating-mode.adoc#_operating
 
 In the standalone or domain configuration file, search for the `security-realms` element and add:
 
-[source]
+[source,xml]
 ----
 
 <security-realm name="UndertowRealm">
@@ -136,11 +136,11 @@ In the standalone or domain configuration file, search for the `security-realms`
 </security-realm>
 ----
 
-Find the element `server name="default-server"` (it's a child element of `subsystem xmlns="urn:jboss:domain:undertow:`) and add:
+Find the element `server name="default-server"` (it's a child element of `subsystem xmlns="{{book.subsystem.undertow}}"`) and add:
 
-[source]
+[source,xml,subs="attributes+"]
 ----
-<subsystem xmlns="urn:jboss:domain:undertow:3.0">
+<subsystem xmlns="{{book.subsystem.undertow}}">
    <buffer-cache name="default"/>
    <server name="default-server">
       <https-listener name="https" socket-binding="https" security-realm="UndertowRealm"/>

@@ -25,6 +25,10 @@
       "name": "Server Administration Guide",
       "link": "https://access.redhat.com/documentation/en/red-hat-single-sign-on/7.1-beta/html-single/server-administration-guide/"
     },
-    "fuseVersion": "JBoss Fuse 6.3.0 Rollup 1"
+    "fuseVersion": "JBoss Fuse 6.3.0 Rollup 1",
+
+    "subsystem": {
+      "undertow": "urn:jboss:domain:undertow:3.1"
+    }
   }
 }
