@@ -32,6 +32,7 @@ import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.SynchronizationResultRepresentation;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
+import org.keycloak.storage.ldap.LDAPConfig;
 import org.keycloak.storage.ldap.LDAPUtils;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
 import org.keycloak.storage.ldap.idm.query.internal.LDAPQuery;
@@ -261,6 +262,19 @@ public class LDAPTestUtils {
 
         for (LDAPObject ldapUser : allUsers) {
             ldapStore.remove(ldapUser);
+        }
+    }
+    
+    public static void removeLDAPUserByUsername(LDAPStorageProvider ldapProvider, RealmModel realm, LDAPConfig config, String username) {
+        LDAPIdentityStore ldapStore = ldapProvider.getLdapIdentityStore();
+        LDAPQuery ldapQuery = LDAPUtils.createQueryForUserSearch(ldapProvider, realm);
+        List<LDAPObject> allUsers = ldapQuery.getResultList();
+        
+        // This is ugly, we are iterating over the entire set of ldap users and deleting the one where the username matches.  TODO: Find a better way!
+        for (LDAPObject ldapUser : allUsers) {
+            if (username.equals(LDAPUtils.getUsername(ldapUser, config))) {
+            	ldapStore.remove(ldapUser);
+            }
         }
     }
 

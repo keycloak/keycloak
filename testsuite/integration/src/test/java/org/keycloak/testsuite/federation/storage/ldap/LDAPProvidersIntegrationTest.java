@@ -432,7 +432,7 @@ public class LDAPProvidersIntegrationTest {
         loginPage.open();
         loginPage.clickRegister();
         registerPage.assertCurrent();
-
+        
         // check existing username
         registerPage.register("firstName", "lastName", "email@mail.cz", "existing", "Password1", "Password1");
         registerPage.assertCurrent();
@@ -443,7 +443,36 @@ public class LDAPProvidersIntegrationTest {
         registerPage.assertCurrent();
         Assert.assertEquals("Email already exists.", registerPage.getError());
     }
-
+    @Test
+    public void deleteUserLDAPNullPtr() {
+        loginPage.open();
+        loginPage.clickRegister();
+        registerPage.assertCurrent();
+        
+     // Create the user in LDAP and register him
+        registerPage.register("firstName", "lastName", "email2@check.cz", "registerUserSuccess2", "Password1", "Password1");
+    	   Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+    	   KeycloakSession session = keycloakRule.startSession();
+        
+        try {
+        	// Log in and out of the user
+         	loginSuccessAndLogout("registerUserSuccess2", "Password1");        	
+        	
+        	// Delete the user and make sure its gone
+        	RealmModel appRealm = new RealmManager(session).getRealmByName("test");
+          LDAPStorageProvider ldapProvider = LDAPTestUtils.getLdapProvider(session, ldapModel);        	
+        	UserModel user = session.users().getUserByUsername("registerUserSuccess2", appRealm);
+        	LDAPConfig config = ldapProvider.getLdapIdentityStore().getConfig();      
+        	
+        	// Delete the user with my new method 
+        	LDAPTestUtils.removeLDAPUserByUsername(ldapProvider, appRealm, config, "registerUserSuccess2" ); 
+        	
+        	// Prove the deletion took place
+          Assert.assertNull(session.users().getUserByUsername("registerUserSuccess2", appRealm)); 
+        } finally {
+            keycloakRule.stopSession(session, false);
+        }
+    }
     @Test
     public void registerUserLdapSuccess() {
         loginPage.open();
