@@ -1,5 +1,5 @@
 [[red-hat-single-sign-on-conventions]]
-===Red Hat Single Sign-On Terms and Conventions
+=== Red Hat Single Sign-On Terms and Conventions
 
 [discrete]
 ==== ID (noun)
