@@ -46,7 +46,7 @@ public class MigrateTo3_0_0 implements Migration {
 
             realm.getClients().stream()
                     .filter(clientModel -> defaultClients.contains(clientModel.getId()))
-                    .filter(clientModel -> Objects.nonNull(clientModel.getProtocol()))
+                    .filter(clientModel -> Objects.isNull(clientModel.getProtocol()))
                     .forEach(clientModel -> clientModel.setProtocol("openid-connect"));
 
             ClientModel client = realm.getClientByClientId(ACCOUNT_MANAGEMENT_CLIENT_ID);
