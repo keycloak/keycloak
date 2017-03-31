@@ -25,6 +25,12 @@ public class MediaType {
     public static final String TEXT_HTML_UTF_8 = "text/html; charset=utf-8";
     public static final javax.ws.rs.core.MediaType TEXT_HTML_UTF_8_TYPE = new javax.ws.rs.core.MediaType("text", "html", "utf-8");
 
+    public static final String TEXT_PLAIN_UTF_8 = "text/plain; charset=utf-8";
+    public static final javax.ws.rs.core.MediaType TEXT_PLAIN_UTF_8_TYPE = new javax.ws.rs.core.MediaType("text", "plain", "utf-8");
+
+    public static final String TEXT_PLAIN_JAVASCRIPT = "text/javascript; charset=utf-8";
+    public static final javax.ws.rs.core.MediaType TEXT_JAVASCRIPT_UTF_8_TYPE = new javax.ws.rs.core.MediaType("text", "javascript", "utf-8");
+
     public static final String APPLICATION_JSON = javax.ws.rs.core.MediaType.APPLICATION_JSON;
     public static final javax.ws.rs.core.MediaType APPLICATION_JSON_TYPE = javax.ws.rs.core.MediaType.APPLICATION_JSON_TYPE;
 
