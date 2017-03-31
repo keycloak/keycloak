@@ -53,6 +53,8 @@ public class TestsHelper {
     public static String initialAccessCode;
 
     public static String appName;
+    
+    public static int initialAccessTokenCount = 2; 
 
     protected static String clientConfiguration;
 
@@ -184,11 +186,7 @@ public class TestsHelper {
                 "admin-cli");
         keycloak.realms().create(realmRepresentation);
         testRealm = realmRepresentation.getRealm();
-        ClientInitialAccessCreatePresentation rep = new ClientInitialAccessCreatePresentation();
-        rep.setCount(2);
-        rep.setExpiration(100);
-        ClientInitialAccessPresentation initialAccess = keycloak.realms().realm(testRealm).clientInitialAccess().create(rep);
-        initialAccessCode = initialAccess.getToken();
+        generateInitialAccessToken(keycloak);
         return true;
 
     }
@@ -205,12 +203,16 @@ public class TestsHelper {
                 password,
                 "admin-cli");
         keycloak.realms().create(realmRepresentation);
+        generateInitialAccessToken(keycloak);
+        return true;
+    }
+
+    private static void generateInitialAccessToken(Keycloak keycloak) {
         ClientInitialAccessCreatePresentation rep = new ClientInitialAccessCreatePresentation();
-        rep.setCount(2);
+        rep.setCount(initialAccessTokenCount);
         rep.setExpiration(100);
         ClientInitialAccessPresentation initialAccess = keycloak.realms().realm(testRealm).clientInitialAccess().create(rep);
         initialAccessCode = initialAccess.getToken();
-        return true;
     }
 
     public static boolean deleteRealm(String username, String password, String realmName) throws IOException {
