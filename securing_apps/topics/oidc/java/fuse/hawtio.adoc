@@ -73,7 +73,7 @@ To run Hawtio on the {{book.hawtioEAPVersion}} server, complete the following st
 
 . In the `$EAP_HOME/standalone/configuration/standalone.xml` file configure the system properties as in this example:
 +
-[source,xml]
+[source,xml,options="nowrap",subs="attributes+"]
 ----
 <extensions>
 ...
@@ -92,7 +92,7 @@ To run Hawtio on the {{book.hawtioEAPVersion}} server, complete the following st
 
 . Add the Hawtio realm to the same file in the `security-domains` section:
 +
-[source,xml]
+[source,xml,options="nowrap",subs="attributes+"]
 ----
 <security-domain name="hawtio" cache-type="default">
     <authentication>
@@ -106,7 +106,7 @@ To run Hawtio on the {{book.hawtioEAPVersion}} server, complete the following st
 . Add the `secure-deployment` section `hawtio` to the adapter subsystem. This ensures that the Hawtio WAR is able to find the JAAS login module classes.
 
 +
-[source,xml]
+[source,xml,options="nowrap",subs="attributes+"]
 ----
 <subsystem xmlns="urn:jboss:domain:keycloak:1.1">
     <secure-deployment name="{{book.hawtioWARVersion}}" />
