@@ -28,23 +28,23 @@
     },
     "adapterguide": {
       "name": "Securing Applications and Services Guide",
-      "link": "https://access.redhat.com/documentation/en-us/red_hat_single_sign-on/7.1-beta/html-single/securing_applications_and_services_guide/"
+      "link": "https://access.redhat.com/documentation/en-us/red_hat_single_sign-on/7.1/html-single/securing_applications_and_services_guide/"
     },
     "keycloakjsadapter": {
       "name": "JavaScript OpenID Connect Adapter",
-      "link": "https://access.redhat.com/documentation/en/red-hat-single-sign-on/7.1-beta/html-single/securing-applications-and-services-guide#javascript_adapter"
+      "link": "https://access.redhat.com/documentation/en/red-hat-single-sign-on/7.1/html-single/securing-applications-and-services-guide#javascript_adapter"
     },
     "gettingstarted": {
       "name": "Getting Started",
-      "link": "https://access.redhat.com/documentation/en/red-hat-single-sign-on/7.1-beta/html/getting-started-guide/"
+      "link": "https://access.redhat.com/documentation/en/red-hat-single-sign-on/7.1/html/getting-started-guide/"
     },
     "keycloakinstallingandboot": {
       "name": "Installing and Boot",
-      "link": "https://access.redhat.com/documentation/en/red-hat-single-sign-on/7.1-beta/html-single/getting-started-guide/#install-boot"
+      "link": "https://access.redhat.com/documentation/en/red-hat-single-sign-on/7.1/html-single/getting-started-guide/#install-boot"
     },
     "keycloakinstallclientadapter": {
       "name": "Installing the Client Adapter",
-      "link": "https://access.redhat.com/documentation/en/red-hat-single-sign-on/7.1-beta/html-single/getting-started-guide/#installing_the_client_adapter"
+      "link": "https://access.redhat.com/documentation/en/red-hat-single-sign-on/7.1/html-single/getting-started-guide/#installing_the_client_adapter"
     },
 
     "subsystem": {

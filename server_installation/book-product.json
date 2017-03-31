@@ -57,11 +57,11 @@
     },
     "developerguide": {
       "name": "Server Developer Guide",
-      "link": "https://access.redhat.com/documentation/en/red-hat-single-sign-on/7.1-Beta/html-single/server-developer-guide/"
+      "link": "https://access.redhat.com/documentation/en/red-hat-single-sign-on/7.1/html-single/server-developer-guide/"
     },
     "adminguide": {
       "name": "Server Administration Guide",
-      "link": "https://access.redhat.com/documentation/en/red-hat-single-sign-on/7.1-Beta/html-single/server-administration-guide/"
+      "link": "https://access.redhat.com/documentation/en/red-hat-single-sign-on/7.1/html-single/server-administration-guide/"
     },
 
     "subsystem": {
