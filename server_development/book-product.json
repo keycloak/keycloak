@@ -21,24 +21,24 @@
     "images": "rhsso-images",
     "adminguide": {
       "name": "Server Administration Guide",
-      "link": "https://access.redhat.com/documentation/en/red-hat-single-sign-on/7.1-beta/html-single/server-administration-guide/"
+      "link": "https://access.redhat.com/documentation/en/red-hat-single-sign-on/7.1/html-single/server-administration-guide/"
     },
     "clientguide": {
       "name": "Securing Applications and Services Guide",
-      "link": "https://access.redhat.com/documentation/en/red-hat-single-sign-on/7.1-beta/html-single/securing-applications-and-services-guide/"
+      "link": "https://access.redhat.com/documentation/en/red-hat-single-sign-on/7.1/html-single/securing-applications-and-services-guide/"
 
     },
     "installguide": {
       "name": "Server Installation and Configuration Guide",
-      "link": "https://access.redhat.com/documentation/en/red-hat-single-sign-on/7.1-beta/html-single/server-installation-and-configuration-guide/"
+      "link": "https://access.redhat.com/documentation/en/red-hat-single-sign-on/7.1/html-single/server-installation-and-configuration-guide/"
     },
     "apidocs": {
       "name": "API Documentation",
-      "link": "https://access.redhat.com/documentation/en/red-hat-single-sign-on/7.1-beta/html-single/api-documentation/"
+      "link": "https://access.redhat.com/documentation/en/red-hat-single-sign-on/7.1/html-single/api-documentation/"
     },
     "adapterguide": {
       "name": "JavaScript OpenID Connect Adapter",
-      "link": "https://access.redhat.com/documentation/en/red-hat-single-sign-on/7.1-beta/html-single/securing-applications-and-services-guide#javascript_adapter"
+      "link": "https://access.redhat.com/documentation/en/red-hat-single-sign-on/7.1/html-single/securing-applications-and-services-guide#javascript_adapter"
     },
 
     "subsystem": {
