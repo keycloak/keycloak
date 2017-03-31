@@ -29,6 +29,12 @@
                                 </div>
                             </div>
                             <div class="input-group">
+                                <input type="text" placeholder="{{:: 'authz-scope' | translate}}" data-ng-model="query.scope" class="form-control search" onkeydown="if (event.keyCode == 13) document.getElementById('policySearch').click()">
+                                <div class="input-group-addon">
+                                    <i class="fa fa-search" type="submit" data-ng-click="firstPage()"></i>
+                                </div>
+                            </div>
+                            <div class="input-group">
                                 <select class="form-control search" data-ng-model="query.type"
                                         ng-options="p.type as p.name group by p.group for p in policyProviders track by p.type" data-ng-change="firstPage()">
                                     <option value="" selected ng-click="query.type = ''">{{:: 'authz-all-types' | translate}}</option>
