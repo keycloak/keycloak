@@ -445,35 +445,35 @@ public class LDAPProvidersIntegrationTest {
     }
     @Test
     public void testLDAPUserDeletionImport() {
-        loginPage.open();
-        loginPage.clickRegister();
-        registerPage.assertCurrent();
-        
-     // Create the user in LDAP and register him
        
-        	registerPage.register("mary", "yram", "yram@gmail.com", "maryjane", "Password1", "Password1");
-        	registerPage.assertCurrent();
-        	Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-    	   
-    	   
-    	   
-    	   KeycloakSession session = keycloakRule.startSession();
+    	KeycloakSession session = keycloakRule.startSession();
+        RealmModel appRealm = new RealmManager(session).getRealmByName("test");
+        LDAPStorageProvider ldapProvider = LDAPTestUtils.getLdapProvider(session, ldapModel);        	
+      	//UserModel user = session.users().getUserByUsername("maryjane", appRealm);
+      	LDAPConfig config = ldapProvider.getLdapIdentityStore().getConfig();      
+      	
+     // Create the user in LDAP and register him
+
+       LDAPObject mary = LDAPTestUtils.addLDAPUser(ldapProvider, appRealm, "maryjane", "mary", "yram", "mj@testing.redhat.cz", null, "12398");
+       LDAPTestUtils.updateLDAPPassword(ldapProvider, mary, "Password1");
         
         try {
+        	
         	// Log in and out of the user
-         	loginSuccessAndLogout("maryjane", "Password1");        	
+         	loginSuccessAndLogout("maryjane", "Password1");  
+           
+         	// Validate Import
+         	session.users().searchForUser("mary yram", appRealm);
+            LDAPTestUtils.assertUserImported(session.userLocalStorage(), appRealm, "maryjane", "mary", "yram", "mj@testing.redhat.cz", "12398");
+            
+        
+        	// Delete the user with LDAPTestUtils.removeLDAPUserByUserObject
+        	LDAPTestUtils.removeLDAPUserByUserObject(ldapProvider, mary); 
         	
-        	// Delete the user and make sure its gone
-        	RealmModel appRealm = new RealmManager(session).getRealmByName("test");
-          LDAPStorageProvider ldapProvider = LDAPTestUtils.getLdapProvider(session, ldapModel);        	
-        	UserModel user = session.users().getUserByUsername("maryjane", appRealm);
-        	LDAPConfig config = ldapProvider.getLdapIdentityStore().getConfig();      
-        	
-        	// Delete the user with my new method 
-        	LDAPTestUtils.removeLDAPUserByUsername(ldapProvider, appRealm, config, "maryjane" ); 
-        	
-        	// Prove the deletion took place
-          Assert.assertNull(session.users().getUserByUsername("maryjane", appRealm)); 
+        	// Validate deletion
+        	UserModel user = session.userLocalStorage().getUserByUsername("maryjane", appRealm);
+            Assert.assertNull(user);
+
         } finally {
             keycloakRule.stopSession(session, false);
         }

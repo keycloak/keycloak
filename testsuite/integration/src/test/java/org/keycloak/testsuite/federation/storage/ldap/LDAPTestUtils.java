@@ -265,7 +265,7 @@ public class LDAPTestUtils {
         }
     }
     
-    public static void removeLDAPUserByUsername(LDAPStorageProvider ldapProvider, RealmModel realm, LDAPConfig config, String username) {
+    public static void removeLDAPUserByUserObject(LDAPStorageProvider ldapProvider, RealmModel realm, LDAPConfig config, String username) {
         LDAPIdentityStore ldapStore = ldapProvider.getLdapIdentityStore();
         LDAPQuery ldapQuery = LDAPUtils.createQueryForUserSearch(ldapProvider, realm);
         List<LDAPObject> allUsers = ldapQuery.getResultList();
@@ -278,6 +278,11 @@ public class LDAPTestUtils {
         }
     }
 
+    public static void removeLDAPUserByUserObject(LDAPStorageProvider ldapProvider, LDAPObject user) {
+        LDAPIdentityStore ldapStore = ldapProvider.getLdapIdentityStore();
+        ldapStore.remove(user);       
+    }
+    
     public static void removeAllLDAPRoles(KeycloakSession session, RealmModel appRealm, ComponentModel ldapModel, String mapperName) {
         ComponentModel mapperModel = getSubcomponentByName(appRealm, ldapModel, mapperName);
         LDAPStorageProvider ldapProvider = LDAPTestUtils.getLdapProvider(session, ldapModel);
