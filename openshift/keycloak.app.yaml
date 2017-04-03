@@ -1,0 +1,135 @@
+kind: Template
+apiVersion: v1
+metadata:
+  creationTimestamp: null
+  name: keycloak
+objects:
+- kind: DeploymentConfig
+  apiVersion: v1
+  metadata:
+    creationTimestamp: null
+    generation: 1
+    name: keycloak-server
+  spec:
+    strategy:
+      type: Rolling
+    triggers:
+    - type: ConfigChange
+    test: false
+    replicas: 1
+    selector:
+      name: keycloak-server
+    template:
+      metadata:
+        creationTimestamp: null
+        labels:
+          name: keycloak-server
+      spec:
+        containers:
+        - name: keycloak-server
+          image: registry.devshift.net/almighty/keycloak-postgres
+          imagePullPolicy: Always
+          ports:
+          - containerPort: 8080
+            protocol: TCP
+          resources: {}
+          livenessProbe:
+            httpGet:
+              path: /auth/version
+              port: 8080
+              scheme: HTTP
+            successThreshold: 1
+            failureThreshold: 3
+            timeoutSeconds: 1
+            periodSeconds: 10
+            initialDelaySeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /auth/realms/fabric8
+              port: 8080
+              scheme: HTTP
+            successThreshold: 1
+            failureThreshold: 3
+            timeoutSeconds: 5
+            periodSeconds: 10
+            initialDelaySeconds: 10
+          terminationMessagePath: /dev/termination-log
+          env:
+          - name: KEYCLOAK_USER
+            valueFrom:
+              secretKeyRef:
+                name: keycloak-config
+                key: user
+          - name: KEYCLOAK_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: keycloak-config
+                key: password
+          - name: POSTGRES_DATABASE
+            valueFrom:
+              secretKeyRef:
+                name: keycloak-db
+                key: database
+          - name: POSTGRES_USER
+            valueFrom:
+              secretKeyRef:
+                name: keycloak-db
+                key: user
+          - name: POSTGRES_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: keycloak-db
+                key: password
+          - name: POSTGRESQL_ADMIN_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: keycloak-db
+                key: admin.password
+          - name: POSTGRES_PORT_5432_TCP_ADDR
+            valueFrom:
+              secretKeyRef:
+                name: keycloak-config
+                key: db.host
+          - name: POSTGRES_PORT_5432_TCP_PORT
+            valueFrom:
+              secretKeyRef:
+                name: keycloak-config
+                key: db.port
+        restartPolicy: Always
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+        dnsPolicy: ClusterFirst
+  status: {}
+- kind: Service
+  apiVersion: v1
+  metadata:
+    name: keycloak-server
+    creationTimestamp: null
+    labels:
+      name: keycloak-server
+    annotations:
+      service.alpha.openshift.io/dependencies: '[{"name":"keycloak-postgresql","namespace":"","kind":"Service"}]'
+  spec:
+    ports:
+    - port: 8080
+      targetPort: 8080
+      protocol: TCP
+    selector:
+      name: keycloak-server
+    type: ClusterIP
+    sessionAffinity: None
+  status:
+    loadBalancer: {}
+- kind: Route
+  apiVersion: v1
+  metadata:
+    creationTimestamp: null
+    name: keycloak
+  spec:
+    host: ''
+    to:
+      kind: Service
+      name: keycloak-server
+      weight: 100
+      insecureEdgeTerminationPolicy: Allow
+    wildcardPolicy: None

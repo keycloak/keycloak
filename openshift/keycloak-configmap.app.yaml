@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: Template
+metadata:
+  name: keycloak-config
+  creationTimestamp: null
+objects:
+- apiVersion: v1
+  kind: Secret
+  metadata:
+    name: keycloak-config
+  type: Opaque
+  data:
+    user: YWRtaW4=
+    password: cGFzc3dvcmQ=
+    db.host: a2V5Y2xvYWstcG9zdGdyZXNxbA==
+    db.port: NTQzMg==
+- apiVersion: v1
+  kind: Secret
+  metadata:
+    name: keycloak-db
+  type: Opaque
+  data:
+    user: a2V5Y2xvYWs=
+    password: a2V5Y2xvYWs=
+    database: a2V5Y2xvYWs=
+    admin.password: cGFzc3dvcmQ=

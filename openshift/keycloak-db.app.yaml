@@ -1,0 +1,109 @@
+kind: Template
+apiVersion: v1
+metadata:
+  name: keycloak
+  creationTimestamp: null
+objects:
+- kind: PersistentVolumeClaim
+  apiVersion: v1
+  metadata:
+    name: keycloak-postgresql-data
+    creationTimestamp: null
+    labels:
+      app: keycloak
+  spec:
+    accessModes:
+    - ReadWriteOnce
+    resources:
+      requests:
+        storage: 10Gi
+  status: {}
+- kind: DeploymentConfig
+  apiVersion: v1
+  metadata:
+    name: keycloak-postgresql
+    creationTimestamp: null
+    generation: 1
+    labels:
+      app: keycloak
+  spec:
+    strategy:
+      type: Recreate
+      recreateParams:
+        timeoutSeconds: 600
+      resources: {}
+    test: false
+    triggers:
+    - type: ConfigChange
+    replicas: 1
+    selector:
+      name: keycloak-postgresql
+    template:
+      metadata:
+        creationTimestamp: null
+        labels:
+          app: keycloak
+          name: keycloak-postgresql
+      spec:
+        containers:
+        - name: keycloak-postgresql
+          image: registry.centos.org/sclo/postgresql-95-centos7:latest
+          imagePullPolicy: Always
+          ports:
+          - containerPort: 5432
+            protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          volumeMounts:
+            - mountPath: "/var/lib/pgsql"
+              name: pgdata
+          env:
+          - name: POSTGRESQL_USER
+            valueFrom:
+              secretKeyRef:
+                name: keycloak-db
+                key: user
+          - name: POSTGRESQL_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: keycloak-db
+                key: password
+          - name: POSTGRESQL_DATABASE
+            valueFrom:
+              secretKeyRef:
+                name: keycloak-db
+                key: database
+          - name: POSTGRESQL_ADMIN_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: keycloak-db
+                key: admin.password
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+        volumes:
+          - name: pgdata
+            persistentVolumeClaim:
+              claimName: keycloak-postgresql-data
+  status: {}
+- kind: Service
+  apiVersion: v1
+  metadata:
+    name: keycloak-postgresql
+    creationTimestamp: null
+    labels:
+      app: keycloak
+      name: keycloak-postgresql
+  spec:
+    selector:
+      name: keycloak-postgresql
+    ports:
+    - name: postgresql
+      protocol: TCP
+      port: 5432
+      targetPort: 5432
+    type: ClusterIP
+    sessionAffinity: None
+  status:
+    loadBalancer: {}
