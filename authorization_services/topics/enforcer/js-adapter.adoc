@@ -7,7 +7,7 @@ This library is based on the {{book.project.name}} JavaScript adapter, which can
 You can obtain this library from a running a {{book.project.name}} Server instance by including the following `script` tag in your web page:
 
 ```html
-<script src="http://$.../auth/js/keycloak-authz.js"></script>
+<script src="http://.../auth/js/keycloak-authz.js"></script>
 ```
 Once you do that, you can create a `KeycloakAuthorization` instance as follows:
 
