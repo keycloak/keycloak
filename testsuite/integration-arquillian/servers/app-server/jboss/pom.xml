@@ -200,6 +200,7 @@
                                         <JAVA_HOME>${app.server.java.home}</JAVA_HOME>
                                         <JBOSS_HOME>${app.server.jboss.home}</JBOSS_HOME>
                                         <SAML_SUPPORTED>${app.server.saml.adapter.supported}</SAML_SUPPORTED>
+                                        <ELYTRON_SUPPORTED>${app.server.elytron.adapter.supported}</ELYTRON_SUPPORTED>
                                     </environmentVariables>
                                 </configuration>
                             </execution>
@@ -452,36 +453,8 @@
             </activation>
             <properties>
                 <wildfly.version>${elytron.wildfly.version}</wildfly.version>
+                <app.server.elytron.adapter.supported>true</app.server.elytron.adapter.supported>
             </properties>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.codehaus.mojo</groupId>
-                        <artifactId>xml-maven-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>configure-adapter-debug-log</id>
-                                <phase>process-test-resources</phase>
-                                <goals>
-                                    <goal>transform</goal>
-                                </goals>
-                                <configuration>
-                                    <transformationSets>
-                                        <transformationSet>
-                                            <dir>${app.server.jboss.home}/standalone/configuration</dir>
-                                            <includes>
-                                                <include>standalone.xml</include>
-                                            </includes>
-                                            <stylesheet>${common.resources}/configure-elytron.xsl</stylesheet>
-                                            <outputDir>${app.server.jboss.home}/standalone/configuration</outputDir>
-                                        </transformationSet>
-                                    </transformationSets>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
         </profile>
     </profiles>    
 

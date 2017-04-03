@@ -52,5 +52,9 @@
              <source>../../shared-cli/adapter-install-saml.cli</source>
              <outputDirectory>bin</outputDirectory>
         </file>
+        <file>
+            <source>../../shared-cli/adapter-elytron-install-saml.cli</source>
+            <outputDirectory>bin</outputDirectory>
+        </file>
     </files>
 </assembly>

@@ -58,5 +58,13 @@
              <source>cli/adapter-install-offline.cli</source>
              <outputDirectory>bin</outputDirectory>
         </file>
+        <file>
+            <source>../../shared-cli/adapter-elytron-install.cli</source>
+            <outputDirectory>bin</outputDirectory>
+        </file>
+        <file>
+            <source>cli/adapter-elytron-install-offline.cli</source>
+            <outputDirectory>bin</outputDirectory>
+        </file>
     </files>
 </assembly>
