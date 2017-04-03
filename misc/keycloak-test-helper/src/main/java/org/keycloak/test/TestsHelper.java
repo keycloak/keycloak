@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.helper;
+package org.keycloak.test;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -27,20 +27,21 @@ import org.keycloak.admin.client.Keycloak;
 import org.keycloak.client.registration.Auth;
 import org.keycloak.client.registration.ClientRegistration;
 import org.keycloak.client.registration.ClientRegistrationException;
-import org.keycloak.representations.idm.ClientRepresentation;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URI;
-import java.util.Arrays;
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.Response;
 import org.keycloak.representations.idm.ClientInitialAccessCreatePresentation;
 import org.keycloak.representations.idm.ClientInitialAccessPresentation;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.test.builders.ClientBuilder;
+
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.Response;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URI;
+import java.util.Arrays;
 
 public class TestsHelper {
 
@@ -82,30 +83,7 @@ public class TestsHelper {
     }
     
     public static String createDirectGrantClient() {
-        ClientRepresentation clientRepresentation = new ClientRepresentation();
-        clientRepresentation.setClientId("test-dga");
-        clientRepresentation.setFullScopeAllowed(true);
-        clientRepresentation.setPublicClient(Boolean.TRUE);
-        clientRepresentation.setDirectAccessGrantsEnabled(true);
-        
-        ClientRegistration reg = ClientRegistration.create()
-                .url(keycloakBaseUrl, testRealm)
-                .build();
-
-        reg.auth(Auth.token(initialAccessCode));
-        try {
-            clientRepresentation = reg.create(clientRepresentation);
-            registrationAccessCode = clientRepresentation.getRegistrationAccessToken();
-            ObjectMapper mapper = new ObjectMapper();
-            reg.auth(Auth.token(registrationAccessCode));
-            clientConfiguration = mapper.writeValueAsString(reg.getAdapterConfig(clientRepresentation.getClientId()));
-        } catch (ClientRegistrationException e) {
-            e.printStackTrace();
-        } catch (JsonProcessingException e) {
-            e.printStackTrace();
-        }
-
-        return clientConfiguration;
+        return createClient(ClientBuilder.create("test-dga").publicClient(true));
     }
 
     public static void deleteClient(String clientId) {
@@ -171,7 +149,7 @@ public class TestsHelper {
 
     }
 
-    public static boolean ImportTestRealm(String username, String password, String realmJsonPath) throws IOException {
+    public static boolean importTestRealm(String username, String password, String realmJsonPath) throws IOException {
 
         ObjectMapper mapper = new ObjectMapper();
         ClassLoader classLoader = TestsHelper.class.getClassLoader();
@@ -191,7 +169,7 @@ public class TestsHelper {
 
     }
 
-    public static boolean ImportTestRealm(String username, String password) throws IOException {
+    public static boolean importTestRealm(String username, String password) throws IOException {
         testRealm = appName + "-realm";
         RealmRepresentation realmRepresentation = new RealmRepresentation();
         realmRepresentation.setRealm(testRealm);
@@ -237,19 +215,20 @@ public class TestsHelper {
                 password,
                 "admin-cli");
         UserRepresentation userRepresentation = new UserRepresentation();
-        userRepresentation.setUsername("testuser");
+        userRepresentation.setUsername(username);
         userRepresentation.setEnabled(Boolean.TRUE);
         Response response = keycloak.realms().realm(realmName).users().create(userRepresentation);
         String userId = getCreatedId(response);
         response.close();
         CredentialRepresentation rep = new CredentialRepresentation();
         rep.setType(CredentialRepresentation.PASSWORD);
-        rep.setValue("password");
+        rep.setValue(password);
         rep.setTemporary(false);
         keycloak.realms().realm(realmName).users().get(userId).resetPassword(rep);
         //add roles
         RoleRepresentation representation = new RoleRepresentation();
         representation.setName("user");
+
         keycloak.realms().realm(realmName).roles().create(representation);
         RoleRepresentation realmRole =  keycloak.realms().realm(realmName).roles().get("user").toRepresentation();
         keycloak.realms().realm(realmName).users().get(userId).roles().realmLevel().add(Arrays.asList(realmRole));
