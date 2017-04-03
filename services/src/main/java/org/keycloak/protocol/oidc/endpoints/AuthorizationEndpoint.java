@@ -114,6 +114,8 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         }
 
         createClientSession();
+        checkCodeChallenge();
+
         // So back button doesn't work
         CacheControlUtil.noBackButtonCacheControlHeader();
         switch (action) {
@@ -285,6 +287,22 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         }
     }
 
+    private void checkCodeChallenge() {
+        if (request.getCodeChallenge() != null){
+            String codeChallengeMethod = OAuth2Constants.CHALLENGE_PLAIN;
+            String codeChallengeMethodParam = request.getCodeChallengeMethod();
+
+            if (codeChallengeMethodParam != null) {
+                if (!codeChallengeMethodParam.equals(OAuth2Constants.CHALLENGE_PLAIN) && !codeChallengeMethodParam.equals(OAuth2Constants.CHALLENGE_S256)) {
+                    event.error(Errors.INVALID_CODE_CHALLENGE_METHOD);
+                    throw new ErrorPageException(session, Messages.INVALID_PARAMETER, OIDCLoginProtocol.CODE_CHALLENGE_METHOD_PARAM);
+                }
+                codeChallengeMethod = codeChallengeMethodParam;
+            }
+            clientSession.setNote(OIDCLoginProtocol.CODE_CHALLENGE_METHOD_PARAM, codeChallengeMethod);
+        }
+    }
+
     private void createClientSession() {
         clientSession = session.sessions().createClientSession(realm, client);
         clientSession.setAuthMethod(OIDCLoginProtocol.LOGIN_PROTOCOL);
@@ -295,6 +313,7 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         clientSession.setNote(OIDCLoginProtocol.ISSUER, Urls.realmIssuer(uriInfo.getBaseUri(), realm.getName()));
 
         if (request.getState() != null) clientSession.setNote(OIDCLoginProtocol.STATE_PARAM, request.getState());
+        if (request.getCodeChallenge() != null) clientSession.setNote(OIDCLoginProtocol.CODE_CHALLENGE_PARAM, request.getCodeChallenge());
         if (request.getNonce() != null) clientSession.setNote(OIDCLoginProtocol.NONCE_PARAM, request.getNonce());
         if (request.getMaxAge() != null) clientSession.setNote(OIDCLoginProtocol.MAX_AGE_PARAM, String.valueOf(request.getMaxAge()));
         if (request.getScope() != null) clientSession.setNote(OIDCLoginProtocol.SCOPE_PARAM, request.getScope());

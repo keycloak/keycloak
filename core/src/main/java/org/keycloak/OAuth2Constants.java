@@ -60,6 +60,13 @@ public interface OAuth2Constants {
     String CLIENT_ASSERTION_TYPE = "client_assertion_type";
     String CLIENT_ASSERTION = "client_assertion";
 
+    // https://tools.ietf.org/html/rfc7636#section-6.1
+    String CODE_VERIFIER = "code_verifier";
+    String CODE_CHALLENGE = "code_challenge";
+    String CODE_CHALLENGE_METHOD = "code_challenge_method";
+    String CHALLENGE_PLAIN = "plain";
+    String CHALLENGE_S256 = "S256";
+
     // https://tools.ietf.org/html/draft-jones-oauth-jwt-bearer-03#section-2.2
     String CLIENT_ASSERTION_TYPE_JWT = "urn:ietf:params:oauth:client-assertion-type:jwt-bearer";
 

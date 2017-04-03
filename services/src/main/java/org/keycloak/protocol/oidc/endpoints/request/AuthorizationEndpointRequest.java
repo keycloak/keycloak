@@ -30,6 +30,8 @@ public class AuthorizationEndpointRequest {
     String responseType;
     String responseMode;
     String state;
+    String codeChallenge;
+    String codeChallengeMethod;
     String scope;
     String loginHint;
     String prompt;
@@ -56,6 +58,14 @@ public class AuthorizationEndpointRequest {
 
     public String getState() {
         return state;
+    }
+
+    public String getCodeChallenge() {
+        return codeChallenge;
+    }
+
+    public String getCodeChallengeMethod() {
+        return codeChallengeMethod;
     }
 
     public String getScope() {

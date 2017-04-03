@@ -25,6 +25,7 @@ import org.keycloak.OAuthErrorException;
 import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.constants.ServiceAccountConstants;
+import org.keycloak.common.util.Base64Url;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -61,6 +62,10 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import java.util.Map;
 
@@ -100,6 +105,8 @@ public class TokenEndpoint {
     private Action action;
 
     private String grantType;
+
+    private static final String HASH_ALGORITHM = "SHA-256";
 
     public TokenEndpoint(TokenManager tokenManager, RealmModel realm, EventBuilder event) {
         this.tokenManager = tokenManager;
@@ -259,6 +266,31 @@ public class TokenEndpoint {
         if (!client.isStandardFlowEnabled()) {
             event.error(Errors.NOT_ALLOWED);
             throw new ErrorResponseException(OAuthErrorException.INVALID_GRANT, "Client not allowed to exchange code", Response.Status.BAD_REQUEST);
+        }
+
+        String codeVerifier = formParams.getFirst(OAuth2Constants.CODE_VERIFIER);
+        String codeChallenge = clientSession.getNote(OIDCLoginProtocol.CODE_CHALLENGE_PARAM);
+        String codeChallengeMethod = clientSession.getNote(OIDCLoginProtocol.CODE_CHALLENGE_METHOD_PARAM);
+
+        if (codeChallenge != null && codeChallengeMethod != null){
+            if (codeChallengeMethod.equals(OAuth2Constants.CHALLENGE_S256)){
+
+                String hashedCodeVerifier;
+                try {
+                    MessageDigest sha256 = MessageDigest.getInstance(HASH_ALGORITHM);
+                    hashedCodeVerifier = Base64Url.encode(sha256.digest(codeVerifier.getBytes(StandardCharsets.US_ASCII)));
+                } catch (NoSuchAlgorithmException e) {
+                    throw new RuntimeException("invalid message digest algorithm");
+                }
+
+                if (!codeChallenge.equals(hashedCodeVerifier)){
+                    event.error(Errors.INVALID_CODE);
+                    throw new ErrorResponseException(OAuthErrorException.INVALID_GRANT, "Incorrect code_verifier", Response.Status.BAD_REQUEST);
+                }
+            } else if (codeChallengeMethod.equals(OAuth2Constants.CHALLENGE_PLAIN) && !codeChallenge.equals(codeVerifier)){
+                event.error(Errors.INVALID_CODE);
+                throw new ErrorResponseException(OAuthErrorException.INVALID_GRANT, "Incorrect code_verifier", Response.Status.BAD_REQUEST);
+            }
         }
 
         if (!AuthenticationManager.isSessionValid(realm, userSession)) {
