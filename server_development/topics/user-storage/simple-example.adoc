@@ -90,7 +90,7 @@ Every get method of `AbstractUserAdapter` either returns null or empty collectio
 
 The `getUserById()` method parses the `id` parameter using the `org.keycloak.storage.StorageId' helper class. The `StorageId.getExternalId()` method is invoked to obtain the username embeded in the `id` parameter. The method then delegates to `getUserByUsername()`.
 
-Emails are not stored, so the `getUserByEmail() method returns null.
+Emails are not stored, so the `getUserByEmail()` method returns null.
 
 ===== CredentialInputValidator Implementation
 
