@@ -565,7 +565,7 @@ For example:
 
 Adding realm roles to a composite role::
 
-There is a dedicated `add-roles` command that can be used for adding both realm roles, and client roles.
+There is a dedicated `add-roles` command that can be used for adding both realm roles and client roles.
 
 For example, to add 'user' role to composite role 'testrole' :
 
@@ -574,7 +574,7 @@ For example, to add 'user' role to composite role 'testrole' :
 
 Removing realm roles from a composite role::
 
-There is a dedicated `remove-roles` command that can be used to remove both realm roles, and client roles.
+There is a dedicated `remove-roles` command that can be used to remove both realm roles and client roles.
 
 For example, to remove 'user' role from target composite role 'testrole':
 
@@ -583,7 +583,7 @@ For example, to remove 'user' role from target composite role 'testrole':
 
 Adding client roles to a composite role::
 
-There is a dedicated `add-realm` operation that can be used for adding both realm roles, and client roles.
+There is a dedicated `add-roles` operation that can be used for adding both realm roles and client roles.
 
 For example, to add to `testrole` composite role two roles defined on client `realm-management` - `create-client` role and `view-users` role:
 
@@ -592,7 +592,7 @@ For example, to add to `testrole` composite role two roles defined on client `re
 
 Removing client roles from a composite role::
 
-There is a dedicated `remove-realm` operation that can be used for removing both realm roles, and client roles.
+There is a dedicated `remove-roles` operation that can be used for removing both realm roles and client roles.
 
 For example, to remove from `testrole` composite role two roles defined on client `realm management` - `create-client` role and `view-users` role:
 
