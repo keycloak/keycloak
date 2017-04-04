@@ -204,7 +204,7 @@ The `getId()` method identifies the factory in the runtime and will also be the 
     }
 ----
 
-The `UserStorageProviderFactory` interface has an optional `init()` method you can implement. When {{book.project.name}} boots up, one and only one instance of each different provider factory. Also at boot time, the `init()` method will be called on each one of these factory instances. There's also a `postInit()` method you can implement as well. After each factory's `init()` method is invoked, their `postInit()` methods will be called.
+The `UserStorageProviderFactory` interface has an optional `init()` method you can implement. When {{book.project.name}} boots up, only one instance of each provider factory is created. Also at boot time, the `init()` method is called on each of these factory instances. There's also a `postInit()` method you can implement as well. After each factory's `init()` method is invoked, their `postInit()` methods are called.
 
 In our `init()` method implementation, we find the property file containing our user declarations from the classpath. We then load the `properties` field with the username and password combinations stored there.
 
@@ -282,4 +282,4 @@ When you go back to the main `User Federation` page, you now see your provider l
 image:../../{{book.images}}/user-federation-page.png[]
 {% endif %}
 
-You will now be able to log in with a user declared in the `users.properties` file. This user will have read-only access, and as such will only be able to view the account page after logging in.
+You will now be able to log in with a user declared in the `users.properties` file. This user will only be able to view the account page after logging in.
