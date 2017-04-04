@@ -277,11 +277,6 @@ public class LDAPTestUtils {
             }
         }
     }
-
-    public static void removeLDAPUserByUserObject(LDAPStorageProvider ldapProvider, LDAPObject user) {
-        LDAPIdentityStore ldapStore = ldapProvider.getLdapIdentityStore();
-        ldapStore.remove(user);       
-    }
     
     public static void removeAllLDAPRoles(KeycloakSession session, RealmModel appRealm, ComponentModel ldapModel, String mapperName) {
         ComponentModel mapperModel = getSubcomponentByName(appRealm, ldapModel, mapperName);
