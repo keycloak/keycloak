@@ -17,12 +17,10 @@
 
 package org.keycloak.authentication.authenticators.resetcred;
 
+import org.keycloak.authentication.actiontoken.DefaultActionTokenKey;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
-import org.keycloak.authentication.AuthenticationFlowContext;
-import org.keycloak.authentication.AuthenticationFlowError;
-import org.keycloak.authentication.Authenticator;
-import org.keycloak.authentication.AuthenticatorFactory;
+import org.keycloak.authentication.*;
 import org.keycloak.authentication.authenticators.broker.AbstractIdpAuthenticator;
 import org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAuthenticator;
 import org.keycloak.events.Details;
@@ -57,6 +55,18 @@ public class ResetCredentialChooseUser implements Authenticator, AuthenticatorFa
             UserModel existingUser = AbstractIdpAuthenticator.getExistingUser(context.getSession(), context.getRealm(), context.getAuthenticationSession());
 
             logger.debugf("Forget-password triggered when reauthenticating user after first broker login. Skipping reset-credential-choose-user screen and using user '%s' ", existingUser.getUsername());
+            context.setUser(existingUser);
+            context.success();
+            return;
+        }
+
+        String actionTokenUserId = context.getAuthenticationSession().getAuthNote(DefaultActionTokenKey.ACTION_TOKEN_USER_ID);
+        if (actionTokenUserId != null) {
+            UserModel existingUser = context.getSession().users().getUserById(actionTokenUserId, context.getRealm());
+
+            // Action token logics handles checks for user ID validity and user being enabled
+
+            logger.debugf("Forget-password triggered when reauthenticating user after authentication via action token. Skipping reset-credential-choose-user screen and using user '%s' ", existingUser.getUsername());
             context.setUser(existingUser);
             context.success();
             return;

@@ -348,6 +348,10 @@ public abstract class AbstractKeycloakTest {
         userResource.update(userRepresentation);
     }
 
+    /**
+     * Sets time offset in seconds that will be added to Time.currentTime() and Time.currentTimeMillis() both for client and server.
+     * @param offset
+     */
     public void setTimeOffset(int offset) {
         String response = invokeTimeOffset(offset);
         resetTimeOffset = offset != 0;

@@ -22,20 +22,23 @@ import org.keycloak.Config;
 import org.keycloak.authentication.RequiredActionContext;
 import org.keycloak.authentication.RequiredActionFactory;
 import org.keycloak.authentication.RequiredActionProvider;
+import org.keycloak.authentication.actiontoken.verifyemail.VerifyEmailActionToken;
+import org.keycloak.common.util.Time;
+import org.keycloak.email.EmailException;
+import org.keycloak.email.EmailTemplateProvider;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
 import org.keycloak.forms.login.LoginFormsProvider;
-import org.keycloak.models.ClientSessionModel;
-import org.keycloak.models.Constants;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.UserModel;
+import org.keycloak.models.*;
+import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.models.utils.HmacOTP;
-import org.keycloak.services.ServicesLogger;
-import org.keycloak.services.resources.LoginActionsService;
+import org.keycloak.services.Urls;
 import org.keycloak.services.validation.Validation;
 
-import javax.ws.rs.core.Response;
+import org.keycloak.sessions.AuthenticationSessionModel;
+import java.util.Objects;
+import java.util.concurrent.TimeUnit;
+import javax.ws.rs.core.*;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -52,30 +55,36 @@ public class VerifyEmail implements RequiredActionProvider, RequiredActionFactor
     }
     @Override
     public void requiredActionChallenge(RequiredActionContext context) {
+        AuthenticationSessionModel authSession = context.getAuthenticationSession();
+
         if (context.getUser().isEmailVerified()) {
             context.success();
+            authSession.removeAuthNote(Constants.VERIFY_EMAIL_KEY);
             return;
         }
 
-        if (Validation.isBlank(context.getUser().getEmail())) {
+        String email = context.getUser().getEmail();
+        if (Validation.isBlank(email)) {
             context.ignore();
             return;
         }
 
-        // TODO:mposolda
-        /*
-        context.getEvent().clone().event(EventType.SEND_VERIFY_EMAIL).detail(Details.EMAIL, context.getUser().getEmail()).success();
-        LoginActionsService.createActionCookie(context.getRealm(), context.getUriInfo(), context.getConnection(), context.getUserSession().getId());
-
-        setupKey(context.getClientSession());
-
         LoginFormsProvider loginFormsProvider = context.getSession().getProvider(LoginFormsProvider.class)
                 .setClientSessionCode(context.generateCode())
-                .setClientSession(context.getClientSession())
+                .setAuthenticationSession(authSession)
                 .setUser(context.getUser());
-        Response challenge = loginFormsProvider.createResponse(UserModel.RequiredAction.VERIFY_EMAIL);
+        Response challenge;
+
+        // Do not allow resending e-mail by simple page refresh, i.e. when e-mail sent, it should be resent properly via email-verification endpoint
+        if (! Objects.equals(authSession.getAuthNote(Constants.VERIFY_EMAIL_KEY), email)) {
+            authSession.setAuthNote(Constants.VERIFY_EMAIL_KEY, email);
+            context.getEvent().clone().event(EventType.SEND_VERIFY_EMAIL).detail(Details.EMAIL, email).success();
+            challenge = sendVerifyEmail(context.getSession(), context.generateCode(), context.getUser(), context.getAuthenticationSession());
+        } else {
+            challenge = loginFormsProvider.createResponse(UserModel.RequiredAction.VERIFY_EMAIL);
+        }
+
         context.challenge(challenge);
-        */
     }
 
     @Override
@@ -115,8 +124,39 @@ public class VerifyEmail implements RequiredActionProvider, RequiredActionFactor
         return UserModel.RequiredAction.VERIFY_EMAIL.name();
     }
 
-    public static void setupKey(ClientSessionModel clientSession) {
+    public static Response sendVerifyEmail(KeycloakSession session, String clientCode, UserModel user, AuthenticationSessionModel authSession) throws UriBuilderException, IllegalArgumentException {
+        RealmModel realm = session.getContext().getRealm();
+        UriInfo uriInfo = session.getContext().getUri();
+
+        LoginFormsProvider forms = session.getProvider(LoginFormsProvider.class)
+          .setClientSessionCode(clientCode)
+          .setAuthenticationSession(authSession)
+          .setUser(authSession.getAuthenticatedUser());
+
+        int validityInSecs = realm.getAccessCodeLifespanUserAction();
+        int absoluteExpirationInSecs = Time.currentTime() + validityInSecs;
+//        ExecuteActionsActionToken token = new ExecuteActionsActionToken(user.getId(), absoluteExpirationInSecs, null,
+//          Collections.singletonList(UserModel.RequiredAction.VERIFY_EMAIL.name()),
+//          null, null);
+//        token.setAuthenticationSessionId(authenticationSession.getId());
+
+        VerifyEmailActionToken token = new VerifyEmailActionToken(user.getId(), absoluteExpirationInSecs, null, authSession.getId(), user.getEmail());
+        UriBuilder builder = Urls.actionTokenBuilder(uriInfo.getBaseUri(), token.serialize(session, realm, uriInfo));
+        String link = builder.build(realm.getName()).toString();
+        long expirationInMinutes = TimeUnit.SECONDS.toMinutes(validityInSecs);
+
+        try {
+            session.getProvider(EmailTemplateProvider.class).setRealm(realm).setUser(user).sendVerifyEmail(link, expirationInMinutes);
+        } catch (EmailException e) {
+            logger.error("Failed to send verification email", e);
+            return forms.createResponse(RequiredAction.VERIFY_EMAIL);
+        }
+
+        return forms.createResponse(UserModel.RequiredAction.VERIFY_EMAIL);
+    }
+
+    public static void setupKey(AuthenticationSessionModel session) {
         String secret = HmacOTP.generateSecret(10);
-        clientSession.setNote(Constants.VERIFY_EMAIL_KEY, secret);
+        session.setAuthNote(Constants.VERIFY_EMAIL_KEY, secret);
     }
 }

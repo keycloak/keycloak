@@ -182,6 +182,11 @@ public class Urls {
         return loginActionsBase(baseUri).path(LoginActionsService.class, "executeActions");
     }
 
+    public static UriBuilder actionTokenBuilder(URI baseUri, String tokenString) {
+        return loginActionsBase(baseUri).path(LoginActionsService.class, "executeActionToken")
+          .queryParam("key", tokenString);
+    }
+
     public static UriBuilder loginResetCredentialsBuilder(URI baseUri) {
         return loginActionsBase(baseUri).path(LoginActionsService.RESET_CREDENTIALS_PATH);
     }

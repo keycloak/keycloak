@@ -15,14 +15,21 @@
  * limitations under the License.
  */
 
-package org.keycloak.authentication;
+package org.keycloak.authentication.actiontoken;
 
 import org.keycloak.TokenVerifier.Predicate;
 import org.keycloak.common.VerificationException;
 
+import org.keycloak.common.util.Time;
+import org.keycloak.jose.jws.JWSBuilder;
+import org.keycloak.models.KeyManager;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+import org.keycloak.services.Urls;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.*;
+import javax.ws.rs.core.UriInfo;
 
 /**
  * Part of action token that is intended to be used e.g. in link sent in password-reset email.
@@ -33,6 +40,7 @@ import java.util.*;
 public class DefaultActionToken extends DefaultActionTokenKey {
 
     public static final String JSON_FIELD_ACTION_VERIFICATION_NONCE = "nonce";
+    public static final String JSON_FIELD_AUTHENTICATION_SESSION_ID = "asid";
 
     public static Predicate<DefaultActionToken> ACTION_TOKEN_BASIC_CHECKS = t -> {
         if (t.getActionVerificationNonce() == null) {
@@ -46,7 +54,11 @@ public class DefaultActionToken extends DefaultActionTokenKey {
      * Single-use random value used for verification whether the relevant action is allowed.
      */
     @JsonProperty(value = JSON_FIELD_ACTION_VERIFICATION_NONCE, required = true)
-    private final UUID actionVerificationNonce;
+    private UUID actionVerificationNonce;
+
+    public DefaultActionToken() {
+        super(null, null);
+    }
 
     public DefaultActionToken(String userId, String actionId, int expirationInSecs) {
         this(userId, actionId, expirationInSecs, UUID.randomUUID());
@@ -65,6 +77,17 @@ public class DefaultActionToken extends DefaultActionTokenKey {
         expiration = absoluteExpirationInSecs;
     }
 
+
+    @JsonProperty(value = JSON_FIELD_AUTHENTICATION_SESSION_ID)
+    public String getAuthenticationSessionId() {
+        return (String) getOtherClaims().get(JSON_FIELD_AUTHENTICATION_SESSION_ID);
+    }
+
+    @JsonProperty(value = JSON_FIELD_AUTHENTICATION_SESSION_ID)
+    public final void setAuthenticationSessionId(String authenticationSessionId) {
+        setOtherClaims(JSON_FIELD_AUTHENTICATION_SESSION_ID, authenticationSessionId);
+    }
+
     public UUID getActionVerificationNonce() {
         return actionVerificationNonce;
     }
@@ -72,6 +95,9 @@ public class DefaultActionToken extends DefaultActionTokenKey {
     @JsonIgnore
     public Map<String, String> getNotes() {
         Map<String, String> res = new HashMap<>();
+        if (getAuthenticationSessionId() != null) {
+            res.put(JSON_FIELD_AUTHENTICATION_SESSION_ID, getAuthenticationSessionId());
+        }
         return res;
     }
 
@@ -98,6 +124,40 @@ public class DefaultActionToken extends DefaultActionTokenKey {
     public final String removeNote(String name) {
         Object res = getOtherClaims().remove(name);
         return res instanceof String ? (String) res : null;
+    }
+
+    /**
+     * Updates the following fields and serializes this token into a signed JWT. The list of updated fields follows:
+     * <ul>
+     * <li>{@code id}: random nonce</li>
+     * <li>{@code issuedAt}: Current time</li>
+     * <li>{@code issuer}: URI of the given realm</li>
+     * <li>{@code audience}: URI of the given realm (same as issuer)</li>
+     * </ul>
+     * 
+     * @param session
+     * @param realm
+     * @param uri
+     * @return
+     */
+    public String serialize(KeycloakSession session, RealmModel realm, UriInfo uri) {
+        String issuerUri = getIssuer(realm, uri);
+        KeyManager.ActiveHmacKey keys = session.keys().getActiveHmacKey(realm);
+
+        this
+          .issuedAt(Time.currentTime())
+          .id(getActionVerificationNonce().toString())
+          .issuer(issuerUri)
+          .audience(issuerUri);
+
+        return new JWSBuilder()
+          .kid(keys.getKid())
+          .jsonContent(this)
+          .hmac512(keys.getSecretKey());
+    }
+
+    private static String getIssuer(RealmModel realm, UriInfo uri) {
+        return Urls.realmIssuer(uri.getBaseUri(), realm.getName());
     }
 
 }

@@ -80,6 +80,14 @@ public interface AuthenticationFlowContext extends AbstractAuthenticationFlowCon
     URI getActionUrl(String code);
 
     /**
+     * Get the action URL for the action token executor.
+     *
+     * @param tokenString String representation (JWT) of action token
+     * @return
+     */
+    URI getActionTokenUrl(String tokenString);
+
+    /**
      * Get the refresh URL for the required action.
      *
      * @return

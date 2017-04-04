@@ -108,6 +108,8 @@ public enum EventType {
     CUSTOM_REQUIRED_ACTION_ERROR(true),
     EXECUTE_ACTIONS(true),
     EXECUTE_ACTIONS_ERROR(true),
+    EXECUTE_ACTION_TOKEN(true),
+    EXECUTE_ACTION_TOKEN_ERROR(true),
 
     CLIENT_INFO(false),
     CLIENT_INFO_ERROR(false),

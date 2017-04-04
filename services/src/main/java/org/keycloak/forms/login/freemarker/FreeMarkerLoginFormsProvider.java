@@ -36,13 +36,7 @@ import org.keycloak.forms.login.freemarker.model.RegisterBean;
 import org.keycloak.forms.login.freemarker.model.RequiredActionUrlFormatterMethod;
 import org.keycloak.forms.login.freemarker.model.TotpBean;
 import org.keycloak.forms.login.freemarker.model.UrlBean;
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.IdentityProviderModel;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.ProtocolMapperModel;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.RoleModel;
-import org.keycloak.models.UserModel;
+import org.keycloak.models.*;
 import org.keycloak.models.utils.FormMessage;
 import org.keycloak.services.Urls;
 import org.keycloak.services.messages.Messages;
@@ -67,13 +61,7 @@ import javax.ws.rs.core.UriInfo;
 import java.io.IOException;
 import java.net.URI;
 import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -119,7 +107,6 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
 
     public Response createResponse(UserModel.RequiredAction action) {
         RealmModel realm = session.getContext().getRealm();
-        UriInfo uriInfo = session.getContext().getUri();
 
         String actionMessage;
         LoginFormsPages page;
@@ -141,21 +128,6 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                 page = LoginFormsPages.LOGIN_UPDATE_PASSWORD;
                 break;
             case VERIFY_EMAIL:
-                // TODO:mposolda It should be also clientSession (actionTicket) involved here. Not just authSession
-                /*try {
-                    UriBuilder builder = Urls.loginActionEmailVerificationBuilder(uriInfo.getBaseUri());
-                    builder.queryParam(OAuth2Constants.CODE, accessCode);
-                    builder.queryParam(Constants.KEY, authSession.getNote(Constants.VERIFY_EMAIL_KEY));
-
-                    String link = builder.build(realm.getName()).toString();
-                    long expiration = TimeUnit.SECONDS.toMinutes(realm.getAccessCodeLifespanUserAction());
-
-                    session.getProvider(EmailTemplateProvider.class).setRealm(realm).setUser(user).sendVerifyEmail(link, expiration);
-                } catch (EmailException e) {
-                    logger.error("Failed to send verification email", e);
-                    return setError(Messages.EMAIL_SENT_ERROR).createErrorPage();
-                }*/
-
                 actionMessage = Messages.VERIFY_EMAIL;
                 page = LoginFormsPages.LOGIN_VERIFY_EMAIL;
                 break;
@@ -183,13 +155,6 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
             // for some reason Resteasy 2.3.7 doesn't like query params and form params with the same name and will null out the code form param
             uriBuilder.replaceQuery(null);
         }
-        URI baseUri = uriBuilder.build();
-
-        if (accessCode != null) {
-            uriBuilder.queryParam(OAuth2Constants.CODE, accessCode);
-        }
-        URI baseUriWithCode = uriBuilder.build();
-
 
         for (String k : queryParameterMap.keySet()) {
 
@@ -197,6 +162,13 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
             if (objects.length == 1 && objects[0] == null) continue; //
             uriBuilder.replaceQueryParam(k, objects);
         }
+
+        // TODO:hmlnarik Why was the following removed in https://github.com/hmlnarik/keycloak/commit/6df8f13109d6ea77b455e04d884994e5831ea52b#diff-d795b851c2db89d5198c897aba4c40c9
+        if (accessCode != null) {
+            uriBuilder.replaceQueryParam(OAuth2Constants.CODE, accessCode);
+        }
+
+        URI baseUri = uriBuilder.build();
 
         ThemeProvider themeProvider = session.getProvider(ThemeProvider.class, "extending");
         Theme theme;
@@ -249,7 +221,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
 
             List<IdentityProviderModel> identityProviders = realm.getIdentityProviders();
             identityProviders = LoginFormsUtil.filterIdentityProviders(identityProviders, session, realm, attributes, formData);
-            attributes.put("social", new IdentityProviderBean(realm, session, identityProviders, baseUriWithCode));
+            attributes.put("social", new IdentityProviderBean(realm, session, identityProviders, baseUri));
 
             attributes.put("url", new UrlBean(realm, theme, baseUri, this.actionUri));
 

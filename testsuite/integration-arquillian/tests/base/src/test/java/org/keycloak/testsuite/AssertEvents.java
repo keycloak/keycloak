@@ -177,7 +177,7 @@ public class AssertEvents implements TestRule {
         private Matcher<String> realmId;
         private Matcher<String> userId;
         private Matcher<String> sessionId;
-        private HashMap<String, Matcher<String>> details;
+        private HashMap<String, Matcher<? super String>> details;
 
         public ExpectedEvent realm(Matcher<String> realmId) {
             this.realmId = realmId;
@@ -242,9 +242,9 @@ public class AssertEvents implements TestRule {
             return detail(key, CoreMatchers.equalTo(value));
         }
 
-        public ExpectedEvent detail(String key, Matcher<String> matcher) {
+        public ExpectedEvent detail(String key, Matcher<? super String> matcher) {
             if (details == null) {
-                details = new HashMap<String, Matcher<String>>();
+                details = new HashMap<String, Matcher<? super String>>();
             }
             details.put(key, matcher);
             return this;
@@ -287,7 +287,7 @@ public class AssertEvents implements TestRule {
 //                Assert.assertNull(actual.getDetails());
             } else {
                 Assert.assertNotNull(actual.getDetails());
-                for (Map.Entry<String, Matcher<String>> d : details.entrySet()) {
+                for (Map.Entry<String, Matcher<? super String>> d : details.entrySet()) {
                     String actualValue = actual.getDetails().get(d.getKey());
                     if (!actual.getDetails().containsKey(d.getKey())) {
                         Assert.fail(d.getKey() + " missing");

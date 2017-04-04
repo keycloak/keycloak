@@ -492,6 +492,14 @@ public class AuthenticationProcessor {
         }
 
         @Override
+        public URI getActionTokenUrl(String tokenString) {
+            return LoginActionsService.actionTokenProcessor(getUriInfo())
+                    .queryParam("key", tokenString)
+                    .queryParam("execution", getExecution().getId())
+                    .build(getRealm().getName());
+        }
+
+        @Override
         public URI getRefreshExecutionUrl() {
             return LoginActionsService.loginActionsBaseUrl(getUriInfo())
                     .path(AuthenticationProcessor.this.flowPath)

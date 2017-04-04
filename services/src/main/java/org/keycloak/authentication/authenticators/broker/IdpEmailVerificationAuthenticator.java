@@ -58,12 +58,11 @@ public class IdpEmailVerificationAuthenticator extends AbstractIdpAuthenticator 
         RealmModel realm = context.getRealm();
         AuthenticationSessionModel authSession = context.getAuthenticationSession();
 
-        // TODO:mposolda (or hmlnarik :) - uncomment and have this working and have AbstractFirstBrokerLoginTest.testLinkAccountByEmailVerification tp PASS
-//        if (realm.getSmtpConfig().size() == 0) {
+        if (realm.getSmtpConfig().size() == 0) {
             ServicesLogger.LOGGER.smtpNotConfigured();
             context.attempted();
             return;
-//        }
+        }
 /*
         VerifyEmail.setupKey(clientSession);
 

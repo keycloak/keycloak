@@ -22,32 +22,23 @@ import org.jboss.resteasy.spi.BadRequestException;
 import org.jboss.resteasy.spi.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.authentication.RequiredActionProvider;
+import org.keycloak.authentication.actiontoken.execactions.ExecuteActionsActionToken;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
+import org.keycloak.common.util.Time;
 import org.keycloak.credential.CredentialModel;
+import org.keycloak.email.EmailException;
+import org.keycloak.email.EmailTemplateProvider;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
-import org.keycloak.models.AuthenticatedClientSessionModel;
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.Constants;
-import org.keycloak.models.FederatedIdentityModel;
-import org.keycloak.models.GroupModel;
-import org.keycloak.models.IdentityProviderModel;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.ModelDuplicateException;
-import org.keycloak.models.ModelException;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserConsentModel;
-import org.keycloak.models.UserCredentialModel;
-import org.keycloak.models.UserLoginFailureModel;
-import org.keycloak.models.UserModel;
-import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.*;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
@@ -59,9 +50,10 @@ import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.BruteForceProtector;
-import org.keycloak.models.UserManager;
-import org.keycloak.services.managers.UserSessionManager;
+import org.keycloak.services.*;
+import org.keycloak.services.managers.*;
 import org.keycloak.services.resources.AccountService;
+import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.storage.ReadOnlyException;
 import org.keycloak.utils.ProfileHelper;
@@ -83,15 +75,10 @@ import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriInfo;
 import java.net.URI;
 import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
+import javax.ws.rs.*;
+import javax.ws.rs.core.*;
 
 /**
  * Base resource for managing users
@@ -856,8 +843,6 @@ public class UsersResource {
                                         List<String> actions) {
         auth.requireManage();
 
-        // TODO: This stuff must be refactored for actionTickets (clientSessions)
-        /*
         UserModel user = session.users().getUserById(id, realm);
         if (user == null) {
             return ErrorResponse.error("User not found", Response.Status.NOT_FOUND);
@@ -867,26 +852,49 @@ public class UsersResource {
             return ErrorResponse.error("User email missing", Response.Status.BAD_REQUEST);
         }
 
-        ClientSessionModel clientSession = createClientSession(user, redirectUri, clientId);
-        for (String action : actions) {
-            clientSession.addRequiredAction(action);
+        if (!user.isEnabled()) {
+            throw new WebApplicationException(
+                ErrorResponse.error("User is disabled", Response.Status.BAD_REQUEST));
         }
+
+        if (redirectUri != null && clientId == null) {
+            throw new WebApplicationException(
+                ErrorResponse.error("Client id missing", Response.Status.BAD_REQUEST));
+        }
+
+        if (clientId == null) {
+            clientId = Constants.ACCOUNT_MANAGEMENT_CLIENT_ID;
+        }
+
+        ClientModel client = realm.getClientByClientId(clientId);
+        if (client == null || !client.isEnabled()) {
+            throw new WebApplicationException(
+                ErrorResponse.error(clientId + " not enabled", Response.Status.BAD_REQUEST));
+        }
+
+        String redirect;
         if (redirectUri != null) {
-            clientSession.setNote(AuthenticationManager.SET_REDIRECT_URI_AFTER_REQUIRED_ACTIONS, "true");
-
+            redirect = RedirectUtils.verifyRedirectUri(uriInfo, redirectUri, realm, client);
+            if (redirect == null) {
+                throw new WebApplicationException(
+                    ErrorResponse.error("Invalid redirect uri.", Response.Status.BAD_REQUEST));
+            }
         }
-        ClientSessionCode accessCode = new ClientSessionCode(session, realm, clientSession);
-        accessCode.setAction(ClientSessionModel.Action.EXECUTE_ACTIONS.name());
 
+        long relativeExpiration = realm.getAccessCodeLifespanUserAction();
+        int expiration = Time.currentTime() + realm.getAccessCodeLifespanUserAction();
+        ExecuteActionsActionToken token = new ExecuteActionsActionToken(id, expiration, UUID.randomUUID(), actions, redirectUri, clientId);
 
         try {
-            UriBuilder builder = Urls.executeActionsBuilder(uriInfo.getBaseUri());
-            builder.queryParam("key", accessCode.getCode());
+            UriBuilder builder = LoginActionsService.actionTokenProcessor(uriInfo);
+            builder.queryParam("key", token.serialize(session, realm, uriInfo));
 
             String link = builder.build(realm.getName()).toString();
-            long expiration = TimeUnit.SECONDS.toMinutes(realm.getAccessCodeLifespanUserAction());
 
-            this.session.getProvider(EmailTemplateProvider.class).setRealm(realm).setUser(user).sendExecuteActions(link, expiration);
+            this.session.getProvider(EmailTemplateProvider.class)
+              .setRealm(realm)
+              .setUser(user)
+              .sendExecuteActions(link, TimeUnit.SECONDS.toMinutes(relativeExpiration));
 
             //audit.user(user).detail(Details.EMAIL, user.getEmail()).detail(Details.CODE_ID, accessCode.getCodeId()).success();
 
@@ -896,8 +904,7 @@ public class UsersResource {
         } catch (EmailException e) {
             ServicesLogger.LOGGER.failedToSendActionsEmail(e);
             return ErrorResponse.error("Failed to send execute actions email", Response.Status.INTERNAL_SERVER_ERROR);
-        }*/
-        return null;
+        }
     }
 
     /**
@@ -920,49 +927,6 @@ public class UsersResource {
         actions.add(UserModel.RequiredAction.VERIFY_EMAIL.name());
         return executeActionsEmail(id, redirectUri, clientId, actions);
     }
-
-    /*
-    private ClientSessionModel createClientSession(UserModel user, String redirectUri, String clientId) {
-
-        if (!user.isEnabled()) {
-            throw new WebApplicationException(
-                ErrorResponse.error("User is disabled", Response.Status.BAD_REQUEST));
-        }
-
-        if (redirectUri != null && clientId == null) {
-            throw new WebApplicationException(
-                ErrorResponse.error("Client id missing", Response.Status.BAD_REQUEST));
-        }
-
-        if (clientId == null) {
-            clientId = Constants.ACCOUNT_MANAGEMENT_CLIENT_ID;
-        }
-
-        ClientModel client = realm.getClientByClientId(clientId);
-        if (client == null || !client.isEnabled()) {
-            throw new WebApplicationException(
-                ErrorResponse.error(clientId + " not enabled", Response.Status.BAD_REQUEST));
-        }
-
-        String redirect = null;
-        if (redirectUri != null) {
-            redirect = RedirectUtils.verifyRedirectUri(uriInfo, redirectUri, realm, client);
-            if (redirect == null) {
-                throw new WebApplicationException(
-                    ErrorResponse.error("Invalid redirect uri.", Response.Status.BAD_REQUEST));
-            }
-        }
-
-
-        UserSessionModel userSession = session.sessions().createUserSession(realm, user, user.getUsername(), clientConnection.getRemoteAddr(), "form", false, null, null);
-        //audit.session(userSession);
-        ClientSessionModel clientSession = session.sessions().createClientSession(realm, client);
-        clientSession.setAuthMethod(OIDCLoginProtocol.LOGIN_PROTOCOL);
-        clientSession.setRedirectUri(redirect);
-        clientSession.setUserSession(userSession);
-
-        return clientSession;
-    }*/
 
     @GET
     @Path("{id}/groups")

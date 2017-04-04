@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.authentication;
+package org.keycloak.authentication.actiontoken;
 
 import org.keycloak.representations.JsonWebToken;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -24,6 +24,9 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
  * @author hmlnarik
  */
 public class DefaultActionTokenKey extends JsonWebToken {
+
+    // The authenticationSession note with ID of the user authenticated via the action token
+    public static final String ACTION_TOKEN_USER_ID = "ACTION_TOKEN_USER";
 
     public DefaultActionTokenKey(String userId, String actionId) {
         subject = userId;
