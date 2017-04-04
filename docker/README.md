@@ -29,3 +29,4 @@ In the content of the Dockerfile, you could find this ENV variables:
 ENV OSO_ADDRESS tsrv.devshift.net:8443
 ENV OSO_DOMAIN_NAME tsrv.devshift.net
 ```
+
