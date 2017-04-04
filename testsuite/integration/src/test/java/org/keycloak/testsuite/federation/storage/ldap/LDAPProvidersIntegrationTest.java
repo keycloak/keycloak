@@ -455,8 +455,10 @@ public class LDAPProvidersIntegrationTest {
     	KeycloakSession session = keycloakRule.startSession();
         RealmModel appRealm = new RealmManager(session).getRealmByName("test");
         LDAPStorageProvider ldapProvider = LDAPTestUtils.getLdapProvider(session, ldapModel);        	
-      	//UserModel user = session.users().getUserByUsername("maryjane", appRealm);
       	LDAPConfig config = ldapProvider.getLdapIdentityStore().getConfig();      
+      
+      	// Make sure mary is gone
+      	LDAPTestUtils.removeLDAPUserByUsername(ldapProvider, appRealm, config, "maryjane");
       	
      // Create the user in LDAP and register him
 
