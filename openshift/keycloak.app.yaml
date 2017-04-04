@@ -40,7 +40,7 @@ objects:
               scheme: HTTP
             successThreshold: 1
             failureThreshold: 3
-            timeoutSeconds: 1
+            timeoutSeconds: 5
             periodSeconds: 10
             initialDelaySeconds: 5
           readinessProbe:
@@ -52,7 +52,7 @@ objects:
             failureThreshold: 3
             timeoutSeconds: 5
             periodSeconds: 10
-            initialDelaySeconds: 10
+            initialDelaySeconds: 60
           terminationMessagePath: /dev/termination-log
           env:
           - name: KEYCLOAK_USER
