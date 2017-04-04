@@ -787,7 +787,7 @@ For example:
 
 Adding realm roles to a user::
 
-There is a dedicated `add-roles` command that can be used for adding both realm roles, and client roles.
+There is a dedicated `add-roles` command that can be used for adding both realm roles and client roles.
 
 For example, to add 'user' role to user 'testuser' :
 
@@ -796,7 +796,7 @@ For example, to add 'user' role to user 'testuser' :
 
 Removing realm roles from a user::
 
-There is a dedicated `remove-roles` command that can be used to remove both realm roles, and client roles.
+There is a dedicated `remove-roles` command that can be used to remove both realm roles and client roles.
 
 For example, to remove 'user' role from user 'testuser':
 
@@ -805,7 +805,7 @@ For example, to remove 'user' role from user 'testuser':
 
 Adding client roles to a user::
 
-There is a dedicated `add-realm` operation that can be used for adding both realm roles, and client roles.
+There is a dedicated `add-role` operation that can be used for adding both realm roles and client roles.
 
 For example, to add to user `testuser` two roles defined on client `realm management` - `create-client` role and `view-users` role:
 
@@ -814,7 +814,7 @@ For example, to add to user `testuser` two roles defined on client `realm manage
 
 Removing client roles from a user::
 
-There is a dedicated `remove-realm` operation that can be used for removing both realm roles, and client roles.
+There is a dedicated `remove-role` operation that can be used for removing both realm roles and client roles.
 
 For example, to remove from user `testuser` two roles defined on client `realm management` - `create-client` role and `view-users` role:
 
