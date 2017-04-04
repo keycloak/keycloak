@@ -3,7 +3,7 @@
 
 Our `PropertyFileUserStorageProvider` example is bit contrived. It is hardcoded to a property file that is embedded in the jar of the provider. Not very useful at all. We might want to make the location of this file configurable per instance of the provider. In other words, we might want to reuse this provider mulitple times in multiple different realms and point to completely different user property files. We'll also want to perform this configuration within the administration console UI.
 
-The `UserStorageProviderFactory` has additional methods you can implement that deal with provider configuration. You describe the variables you want to configure per provider and the administration console automatically renders a generic input page to gather this configuration. Callback methods also validate the configuration before it is saved, when a provider is created for the first time, and when it is updated. `UserStorageProviderFactory` inherits these methods from the `org.keycloak.component.ComponentFactory` interface.
+The `UserStorageProviderFactory` has additional methods you can implement that handle provider configuration. You describe the variables you want to configure per provider and the administration console automatically renders a generic input page to gather this configuration. When implemented, callback methods also validate the configuration before it is saved, when a provider is created for the first time, and when it is updated. `UserStorageProviderFactory` inherits these methods from the `org.keycloak.component.ComponentFactory` interface.
 
 [source,java]
 ----
