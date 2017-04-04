@@ -26,16 +26,17 @@ import java.util.Set;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
+ * @author <a href="mailto:abkaplan07@gmail.com">Adam Kaplan</a>
  */
 public class PasswordPolicy implements Serializable {
 
     public static final String HASH_ALGORITHM_ID = "hashAlgorithm";
 
-    public static final String HASH_ALGORITHM_DEFAULT = "pbkdf2";
+    public static final String HASH_ALGORITHM_DEFAULT = "pbkdf2-sha256";
 
     public static final String HASH_ITERATIONS_ID = "hashIterations";
 
-    public static final int HASH_ITERATIONS_DEFAULT = 20000;
+    public static final int HASH_ITERATIONS_DEFAULT = 28000;
 
     public static final String PASSWORD_HISTORY_ID = "passwordHistory";
 
