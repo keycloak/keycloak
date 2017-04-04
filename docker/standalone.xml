@@ -376,9 +376,7 @@
         <subsystem xmlns="urn:jboss:domain:undertow:3.0">
             <buffer-cache name="default"/>
             <server name="default-server">
-                <!-- proxy-address-forwarding="true" added and redirect-socket="proxy-https" changed by openshift.io keycloak team -->
-                <http-listener name="default" socket-binding="http" redirect-socket="proxy-https" proxy-address-forwarding="true"/>
-                <!--   xxxxxxxxxxxxxxxxxxxxxxxxx   -->
+                <http-listener name="default" socket-binding="http" redirect-socket="https"/>
                 <host name="default-host" alias="localhost">
                     <location name="/" handler="welcome-content"/>
                     <filter-ref name="server-header"/>
@@ -480,9 +478,6 @@
         <socket-binding name="ajp" port="${jboss.ajp.port:8009}"/>
         <socket-binding name="http" port="${jboss.http.port:8080}"/>
         <socket-binding name="https" port="${jboss.https.port:8443}"/>
-        <!-- Added by openshift.io keycloak team -->
-        <socket-binding name="proxy-https" port="443"/>
-        <!--   xxxxxxxxxxxxxxxxxxxxxxxxx   -->
         <socket-binding name="txn-recovery-environment" port="4712"/>
         <socket-binding name="txn-status-manager" port="4713"/>
         <outbound-socket-binding name="mail-smtp">
