@@ -462,18 +462,13 @@ public class LDAPProvidersIntegrationTest {
         	// Log in and out of the user
          	loginSuccessAndLogout("maryjane", "Password1");  
            
-         	// Validate Import
-         	session.users().searchForUser("mary yram", appRealm);
-            LDAPTestUtils.assertUserImported(session.userLocalStorage(), appRealm, "maryjane", "mary", "yram", "mj@testing.redhat.cz", "12398");
-            
-        
-        	// Delete the user with LDAPTestUtils.removeLDAPUserByUserObject
-        	LDAPTestUtils.removeLDAPUserByUserObject(ldapProvider, mary); 
-        	
-        	// Validate deletion
-        	UserModel user = session.userLocalStorage().getUserByUsername("maryjane", appRealm);
-            Assert.assertNull(user);
-
+         	// Delete LDAP User
+        	LDAPTestUtils.removeLDAPUserByUsername(ldapProvider, appRealm, config, "maryjane");
+   
+        	// Make sure the deletion took place. 
+        	List<UserModel> deletedUsers = session.users().searchForUser("mary yram", appRealm);
+            Assert.assertTrue(deletedUsers.isEmpty());
+                  
         } finally {
             keycloakRule.stopSession(session, false);
         }
