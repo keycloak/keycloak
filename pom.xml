@@ -42,7 +42,11 @@
         <!-- WildFly -->
         <jboss.as.version>7.2.0.Final</jboss.as.version>
         <wildfly.version>10.0.0.Final</wildfly.version>
-        <eap.version>7.0.5.GA-redhat-2</eap.version>
+        <wildfly11.version>11.0.0.Alpha1</wildfly11.version> <!-- for testing with wf11 pre-releases -->
+        <eap.version>7.1.0.Alpha1-redhat-16</eap.version>
+        <wildfly.core.version>2.0.10.Final</wildfly.core.version>
+        <wildfly.build-tools.version>1.1.8.Final</wildfly.build-tools.version>
+
         <version.org.wildfly.security.wildfly-elytron>1.1.0.Beta32</version.org.wildfly.security.wildfly-elytron>
         <version.org.wildfly.security.elytron-web.undertow-server>1.0.0.Beta14</version.org.wildfly.security.elytron-web.undertow-server>
 
@@ -74,8 +78,6 @@
         <sun.jaxb.version>2.2.11</sun.jaxb.version>
         <sun.xsom.version>20140925</sun.xsom.version>
         <undertow.version>1.3.15.Final</undertow.version>
-        <wildfly.core.version>2.0.10.Final</wildfly.core.version>
-        <wildfly.build-tools.version>1.1.3.Final</wildfly.build-tools.version>
         <xmlsec.version>2.0.5</xmlsec.version>
 
         <!-- Authorization Drools Policy Provider -->
