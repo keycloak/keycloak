@@ -10,7 +10,7 @@ The REST Component API lives under your realm admin resource.
 /admin/realms/{realm-name}/components
 ----
 
-We will only show this REST API interaction with the Java client. Hopefully you can extract how to do this from curl from this API.
+We will only show this REST API interaction with the Java client. Hopefully you can extract how to do this from `curl` from this API.
 
 [source,java]
 ----

@@ -99,5 +99,5 @@ The `getCachedWith()` method returns a map that allows you to cache additional i
 
 ==== Cache Policies
 
-On the administration console management page for your user storage provider, you can specify a unique cache policy for each configured user storage provider.
+On the administration console management page for your user storage provider, you can specify a unique cache policy.
 

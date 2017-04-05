@@ -155,9 +155,8 @@ by our example provider. Let's look at implementing this interface.
     }
 ----
 
-The `getUser()` method simple iterates over the key set of the property file delegating to `getuserByUsername` to load a user.
-Notice that we are indexing this call based on the `firstResult` and `maxResults` parameter. If your external store
-doesn't support pagination, you'll have to do similar logic.
+The `getUser()` method iterates over the key set of the property file, delegating to `getUserByUsername()` to load a user.
+Notice that we are indexing this call based on the `firstResult` and `maxResults` parameter. If your external store does not support pagination, you will have to do similar logic.
 
 .PropertyFileUserStorageProvider
 [source,java]
