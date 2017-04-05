@@ -320,6 +320,17 @@ module.factory('RealmLDAPConnectionTester', function($resource) {
     return $resource(authUrl + '/admin/realms/:realm/testLDAPConnection');
 });
 
+module.factory('RealmSMTPConnectionTester', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/testSMTPConnection/:config', {
+        realm : '@realm',
+        config : '@config'
+    }, {
+       send: {
+           method: 'POST'
+       }
+    });
+});
+
 module.service('ServerInfo', function($resource, $q, $http) {
     var info = {};
     var delay = $q.defer();
