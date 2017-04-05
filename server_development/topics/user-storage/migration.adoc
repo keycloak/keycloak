@@ -73,7 +73,7 @@ If you have implemented synchronization logic, then have your new `UserStoragePr
 
 ==== Upgrading to a New Model
 
-The User Storage SPI instances are stored in a completely different set of relational tables or Mongo schema. {{book.project.name}}
+The User Storage SPI instances are stored in a different set of relational tables. {{book.project.name}}
 automatically runs a migration script. If any earlier User Federation providers are deployed for a realm, they are converted
 to the later storage model as is, including the `id` of the data. This migration will only happen if a User Storage provider exists
 with the same provider ID (i.e., "ldap", "kerberos") as the earlier User Federation provider.
