@@ -73,7 +73,7 @@
         <sun.istack.version>2.21</sun.istack.version>
         <sun.jaxb.version>2.2.11</sun.jaxb.version>
         <sun.xsom.version>20140925</sun.xsom.version>
-        <undertow.version>1.3.15.Final</undertow.version>
+        <undertow.version>1.3.27.Final</undertow.version>
         <wildfly.core.version>2.0.10.Final</wildfly.core.version>
         <wildfly.build-tools.version>1.1.3.Final</wildfly.build-tools.version>
         <xmlsec.version>2.0.5</xmlsec.version>
