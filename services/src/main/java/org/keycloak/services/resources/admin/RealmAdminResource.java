@@ -16,6 +16,7 @@
  */
 package org.keycloak.services.resources.admin;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.BadRequestException;
@@ -26,6 +27,7 @@ import org.keycloak.KeyPairVerifier;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.PemUtils;
+import org.keycloak.email.EmailTemplateProvider;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventQuery;
 import org.keycloak.events.EventStoreProvider;
@@ -44,6 +46,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.cache.CacheRealmProvider;
 import org.keycloak.models.cache.UserCache;
@@ -58,7 +61,6 @@ import org.keycloak.representations.adapters.action.GlobalRequestResult;
 import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
-import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.PartialImportRepresentation;
@@ -99,12 +101,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.PatternSyntaxException;
 
+import static javax.ws.rs.core.Response.Status.INTERNAL_SERVER_ERROR;
+import static org.keycloak.util.JsonSerialization.readValue;
+
 /**
  * Base resource class for the admin REST api of one realm
  *
- * @resource Realms Admin
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
+ * @resource Realms Admin
  */
 public class RealmAdminResource {
     protected static final Logger logger = Logger.getLogger(RealmAdminResource.class);
@@ -141,7 +146,7 @@ public class RealmAdminResource {
      * @return
      */
     @Path("client-description-converter")
-    @Consumes({ MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN })
+    @Consumes({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     public ClientRepresentation convertClientDescription(String description) {
@@ -239,7 +244,7 @@ public class RealmAdminResource {
 
     /**
      * Get the top-level representation of the realm
-     *
+     * <p>
      * It will not include nested information like User and Client representations.
      *
      * @return
@@ -268,7 +273,7 @@ public class RealmAdminResource {
 
     /**
      * Update the top-level information of the realm
-     *
+     * <p>
      * Any user, roles or client information in the representation
      * will be ignored.  This will only update top-level attributes of the realm.
      *
@@ -301,7 +306,7 @@ public class RealmAdminResource {
                     if (cert == null) {
                         return ErrorResponse.error("Failed to decode certificate", Status.BAD_REQUEST);
                     }
-                } catch (Exception e)  {
+                } catch (Exception e) {
                     return ErrorResponse.error("Failed to decode certificate", Status.BAD_REQUEST);
                 }
             }
@@ -317,12 +322,12 @@ public class RealmAdminResource {
             }
 
             adminEvent.operation(OperationType.UPDATE).representation(StripSecretsUtils.strip(rep)).success();
-            
+
             if (rep.isDuplicateEmailsAllowed() != null && rep.isDuplicateEmailsAllowed() != wasDuplicateEmailsAllowed) {
                 UserCache cache = session.getProvider(UserCache.class);
                 if (cache != null) cache.clear();
             }
-            
+
             return Response.noContent().build();
         } catch (PatternSyntaxException e) {
             return ErrorResponse.error("Specified regex pattern(s) is invalid.", Response.Status.BAD_REQUEST);
@@ -330,13 +335,12 @@ public class RealmAdminResource {
             return ErrorResponse.exists("Realm with same name exists");
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
-            return ErrorResponse.error("Failed to update realm", Response.Status.INTERNAL_SERVER_ERROR);
+            return ErrorResponse.error("Failed to update realm", INTERNAL_SERVER_ERROR);
         }
     }
 
     /**
      * Delete the realm
-     *
      */
     @DELETE
     public void deleteRealm() {
@@ -392,7 +396,6 @@ public class RealmAdminResource {
 
     /**
      * Push the realm's revocation policy to any client that has an admin url associated with it.
-     *
      */
     @Path("push-revocation")
     @POST
@@ -407,7 +410,6 @@ public class RealmAdminResource {
     /**
      * Removes all user sessions.  Any client that has an admin url will also be told to invalidate any sessions
      * they have.
-     *
      */
     @Path("logout-all")
     @POST
@@ -440,7 +442,7 @@ public class RealmAdminResource {
 
     /**
      * Get client session stats
-     *
+     * <p>
      * Returns a JSON map.  The key is the client id, the value is the number of sessions that currently are active
      * with that client.  Only clients that actually have a session associated with them will be in this map.
      *
@@ -468,7 +470,7 @@ public class RealmAdminResource {
 
     /**
      * Get the events provider configuration
-     *
+     * <p>
      * Returns JSON object with events provider configuration
      *
      * @return
@@ -494,7 +496,7 @@ public class RealmAdminResource {
 
     /**
      * Update the events provider
-     *
+     * <p>
      * Change the events provider and/or its configuration
      *
      * @param rep
@@ -511,17 +513,17 @@ public class RealmAdminResource {
 
     /**
      * Get events
-     *
+     * <p>
      * Returns all events, or filters them based on URL query parameters listed here
      *
-     * @param types The types of events to return
-     * @param client App or oauth client name
-     * @param user User id
-     * @param ipAddress IP address
-     * @param dateTo To date
-     * @param dateFrom From date
+     * @param types       The types of events to return
+     * @param client      App or oauth client name
+     * @param user        User id
+     * @param ipAddress   IP address
+     * @param dateTo      To date
+     * @param dateFrom    From date
      * @param firstResult Paging offset
-     * @param maxResults Maximum results size (defaults to 100)
+     * @param maxResults  Maximum results size (defaults to 100)
      * @return
      */
     @Path("events")
@@ -553,7 +555,7 @@ public class RealmAdminResource {
             query.user(user);
         }
 
-        if(dateFrom != null) {
+        if (dateFrom != null) {
             SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
             Date from = null;
             try {
@@ -564,7 +566,7 @@ public class RealmAdminResource {
             query.fromDate(from);
         }
 
-        if(dateTo != null) {
+        if (dateTo != null) {
             SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
             Date to = null;
             try {
@@ -600,19 +602,19 @@ public class RealmAdminResource {
 
     /**
      * Get admin events
-     *
+     * <p>
      * Returns all admin events, or filters events based on URL query parameters listed here
      *
      * @param operationTypes
      * @param authRealm
      * @param authClient
-     * @param authUser user id
+     * @param authUser       user id
      * @param authIpAddress
      * @param resourcePath
      * @param dateTo
      * @param dateFrom
      * @param firstResult
-     * @param maxResults Maximum results size (defaults to 100)
+     * @param maxResults     Maximum results size (defaults to 100)
      * @return
      */
     @Path("admin-events")
@@ -628,7 +630,8 @@ public class RealmAdminResource {
         auth.init(RealmAuth.Resource.EVENTS).requireView();
 
         EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
-        AdminEventQuery query = eventStore.createAdminQuery().realm(realm.getId());;
+        AdminEventQuery query = eventStore.createAdminQuery().realm(realm.getId());
+        ;
 
         if (authRealm != null) {
             query.authRealm(authRealm);
@@ -667,8 +670,7 @@ public class RealmAdminResource {
         }
 
 
-
-        if(dateFrom != null) {
+        if (dateFrom != null) {
             SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
             Date from = null;
             try {
@@ -679,7 +681,7 @@ public class RealmAdminResource {
             query.fromTime(from);
         }
 
-        if(dateTo != null) {
+        if (dateTo != null) {
             SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
             Date to = null;
             try {
@@ -713,7 +715,6 @@ public class RealmAdminResource {
 
     /**
      * Delete all events
-     *
      */
     @Path("events")
     @DELETE
@@ -726,7 +727,6 @@ public class RealmAdminResource {
 
     /**
      * Delete all admin events
-     *
      */
     @Path("admin-events")
     @DELETE
@@ -763,6 +763,35 @@ public class RealmAdminResource {
         return result ? Response.noContent().build() : ErrorResponse.error("LDAP test error", Response.Status.BAD_REQUEST);
     }
 
+    /**
+     * Test SMTP connection with current logged in user
+     *
+     * @param settings SMTP settings
+     * @return
+     * @throws Exception
+     */
+    @Path("testSMTPConnection")
+    @GET
+    @NoCache
+    public Response testSMTPConnection(@QueryParam("settings") String settings) throws Exception {
+        Map<String, String> config = readValue(settings, new TypeReference<Map<String, String>>() {
+        });
+
+        try {
+            UserModel user = auth.getAuth().getUser();
+            if (user.getEmail() == null) {
+                return ErrorResponse.error("Logged in user does not have an e-mail.", Response.Status.INTERNAL_SERVER_ERROR);
+            }
+            session.getProvider(EmailTemplateProvider.class).sendSmtpTestEmail(config, user, realm);
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.errorf("Failed to send email \n %s", e.getCause());
+            return ErrorResponse.error("Failed to send email", Response.Status.INTERNAL_SERVER_ERROR);
+        }
+
+        return Response.noContent().build();
+    }
+
     @Path("identity-provider")
     public IdentityProvidersResource getIdentityProviderResource() {
         return new IdentityProvidersResource(realm, session, this.auth, adminEvent);
@@ -786,6 +815,7 @@ public class RealmAdminResource {
         }
         return defaults;
     }
+
     @PUT
     @NoCache
     @Path("default-groups/{groupId}")
@@ -819,7 +849,7 @@ public class RealmAdminResource {
 
     @Path("groups")
     public GroupsResource getGroups() {
-        GroupsResource resource =  new GroupsResource(realm, session, this.auth, adminEvent);
+        GroupsResource resource = new GroupsResource(realm, session, this.auth, adminEvent);
         ResteasyProviderFactory.getInstance().injectProperties(resource);
         return resource;
     }
@@ -858,7 +888,6 @@ public class RealmAdminResource {
 
     /**
      * Clear realm cache
-     *
      */
     @Path("clear-realm-cache")
     @POST
@@ -875,7 +904,6 @@ public class RealmAdminResource {
 
     /**
      * Clear user cache
-     *
      */
     @Path("clear-user-cache")
     @POST
@@ -892,7 +920,6 @@ public class RealmAdminResource {
 
     /**
      * Clear cache of external public keys (Public keys of clients or Identity providers)
-     *
      */
     @Path("clear-keys-cache")
     @POST
@@ -909,7 +936,7 @@ public class RealmAdminResource {
 
     @Path("keys")
     public KeyResource keys() {
-        KeyResource resource =  new KeyResource(realm, session, this.auth);
+        KeyResource resource = new KeyResource(realm, session, this.auth);
         ResteasyProviderFactory.getInstance().injectProperties(resource);
         return resource;
     }

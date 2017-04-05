@@ -43,6 +43,10 @@ public class GreenMailRule extends ExternalResource {
         greenMail.start();
     }
 
+    public void credentials(String username, String password) {
+        greenMail.setUser(username, password);
+    }
+
     @Override
     protected void after() {
         if (greenMail != null) {
