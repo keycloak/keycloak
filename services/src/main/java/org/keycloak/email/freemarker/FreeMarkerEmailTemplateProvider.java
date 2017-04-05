@@ -108,6 +108,19 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
     }
 
     @Override
+    public void sendSmtpTestEmail(Map<String, String> config, UserModel user) throws EmailException {
+        setRealm(session.getContext().getRealm());
+        setUser(user);
+
+        Map<String, Object> attributes = new HashMap<String, Object>();
+        attributes.put("user", new ProfileBean(user));
+        attributes.put("realmName", realm.getName());
+
+        EmailTemplate email = processTemplate("emailTestSubject", Collections.emptyList(), "email-test.ftl", attributes);
+        send(config, email.getSubject(), email.getTextBody(), email.getHtmlBody());
+    }
+
+    @Override
     public void sendConfirmIdentityBrokerLink(String link, long expirationInMinutes) throws EmailException {
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put("user", new ProfileBean(user));
@@ -156,7 +169,7 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
         send(subjectKey, Collections.emptyList(), template, attributes);
     }
 
-    private void send(String subjectKey, List<Object> subjectAttributes, String template, Map<String, Object> attributes) throws EmailException {
+    private EmailTemplate processTemplate(String subjectKey, List<Object> subjectAttributes, String template, Map<String, Object> attributes) throws EmailException {
         try {
             ThemeProvider themeProvider = session.getProvider(ThemeProvider.class, "extending");
             Theme theme = themeProvider.getTheme(realm.getEmailTheme(), Theme.Type.EMAIL);
@@ -168,27 +181,39 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
             String textTemplate = String.format("text/%s", template);
             String textBody;
             try {
-            	textBody = freeMarker.processTemplate(attributes, textTemplate, theme);
+                textBody = freeMarker.processTemplate(attributes, textTemplate, theme);
             } catch (final FreeMarkerException e ) {
-            	textBody = null;
+                textBody = null;
             }
             String htmlTemplate = String.format("html/%s", template);
             String htmlBody;
             try {
-            	htmlBody = freeMarker.processTemplate(attributes, htmlTemplate, theme);
+                htmlBody = freeMarker.processTemplate(attributes, htmlTemplate, theme);
             } catch (final FreeMarkerException e ) {
-            	htmlBody = null;
+                htmlBody = null;
             }
 
-            send(subject, textBody, htmlBody);
+            return new EmailTemplate(subject, textBody, htmlBody);
+        } catch (Exception e) {
+            throw new EmailException("Failed to template email", e);
+        }
+    }
+    private void send(String subjectKey, List<Object> subjectAttributes, String template, Map<String, Object> attributes) throws EmailException {
+        try {
+            EmailTemplate email = processTemplate(subjectKey, subjectAttributes, template, attributes);
+            send(email.getSubject(), email.getTextBody(), email.getHtmlBody());
         } catch (Exception e) {
             throw new EmailException("Failed to template email", e);
         }
     }
 
     private void send(String subject, String textBody, String htmlBody) throws EmailException {
+        send(realm.getSmtpConfig(), subject, textBody, htmlBody);
+    }
+
+    private void send(Map<String, String> config, String subject, String textBody, String htmlBody) throws EmailException {
         EmailSenderProvider emailSender = session.getProvider(EmailSenderProvider.class);
-        emailSender.send(realm, user, subject, textBody, htmlBody);
+        emailSender.send(config, user, subject, textBody, htmlBody);
     }
 
     @Override
@@ -201,6 +226,31 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
             sb.append(ObjectUtil.capitalize(s));
         }
         return sb.toString();
+    }
+
+    private class EmailTemplate {
+
+        private String subject;
+        private String textBody;
+        private String htmlBody;
+
+        public EmailTemplate(String subject, String textBody, String htmlBody) {
+            this.subject = subject;
+            this.textBody = textBody;
+            this.htmlBody = htmlBody;
+        }
+
+        public String getSubject() {
+            return subject;
+        }
+
+        public String getTextBody() {
+            return textBody;
+        }
+
+        public String getHtmlBody() {
+            return htmlBody;
+        }
     }
 
 }

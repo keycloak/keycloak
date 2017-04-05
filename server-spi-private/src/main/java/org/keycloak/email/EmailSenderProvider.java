@@ -17,15 +17,15 @@
 
 package org.keycloak.email;
 
-import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.provider.Provider;
+
+import java.util.Map;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public interface EmailSenderProvider extends Provider {
 
-    void send(RealmModel realm, UserModel user, String subject, String textBody, String htmlBody) throws EmailException;
-
+    void send(Map<String, String> config, UserModel user, String subject, String textBody, String htmlBody) throws EmailException;
 }

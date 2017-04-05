@@ -16,6 +16,7 @@
  */
 package org.keycloak.services.resources.admin;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.BadRequestException;
@@ -26,6 +27,7 @@ import org.keycloak.KeyPairVerifier;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.PemUtils;
+import org.keycloak.email.EmailTemplateProvider;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventQuery;
 import org.keycloak.events.EventStoreProvider;
@@ -47,6 +49,7 @@ import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.cache.CacheRealmProvider;
 import org.keycloak.models.cache.UserCache;
@@ -99,9 +102,9 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.PatternSyntaxException;
 
 import static org.keycloak.models.utils.StripSecretsUtils.stripForExport;
+import static org.keycloak.util.JsonSerialization.readValue;
 
 /**
  * Base resource class for the admin REST api of one realm
@@ -765,6 +768,35 @@ public class RealmAdminResource {
 
         boolean result = new LDAPConnectionTestManager().testLDAP(action, connectionUrl, bindDn, bindCredential, useTruststoreSpi, connectionTimeout);
         return result ? Response.noContent().build() : ErrorResponse.error("LDAP test error", Response.Status.BAD_REQUEST);
+    }
+
+    /**
+     * Test SMTP connection with current logged in user
+     *
+     * @param config SMTP server configuration
+     * @return
+     * @throws Exception
+     */
+    @Path("testSMTPConnection/{config}")
+    @POST
+    @NoCache
+    public Response testSMTPConnection(final @PathParam("config") String config) throws Exception {
+        Map<String, String> settings = readValue(config, new TypeReference<Map<String, String>>() {
+        });
+
+        try {
+            UserModel user = auth.getAuth().getUser();
+            if (user.getEmail() == null) {
+                return ErrorResponse.error("Logged in user does not have an e-mail.", Response.Status.INTERNAL_SERVER_ERROR);
+            }
+            session.getProvider(EmailTemplateProvider.class).sendSmtpTestEmail(settings, user);
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.errorf("Failed to send email \n %s", e.getCause());
+            return ErrorResponse.error("Failed to send email", Response.Status.INTERNAL_SERVER_ERROR);
+        }
+
+        return Response.noContent().build();
     }
 
     @Path("identity-provider")
