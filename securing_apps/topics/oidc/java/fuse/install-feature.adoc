@@ -65,7 +65,7 @@ Use this for {{book.fuseVersion}}:
 +
 [source,subs="attributes"]
 ----
-cd /path-to-fuse/jboss-fuse-6.3.0.redhat-224
+cd /path-to-fuse/jboss-fuse-6.3.0.redhat-254
 {% if book.community %}
 unzip -q /path-to-adapter-zip/keycloak-fuse-adapter-{{book.project.versionMvn}}.zip
 {% endif %}
