@@ -42,7 +42,7 @@ objects:
             failureThreshold: 3
             timeoutSeconds: 5
             periodSeconds: 10
-            initialDelaySeconds: 5
+            initialDelaySeconds: 60
           readinessProbe:
             httpGet:
               path: /auth/realms/fabric8
