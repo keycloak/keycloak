@@ -56,6 +56,14 @@
                 ],
                 "env":[
                   {
+                    "name":"INTERNAL_POD_IP",
+                    "valueFrom": {
+                       "fieldRef": {
+                          "fieldPath": "status.podIP"
+                       }
+                    }
+                  },
+                  {
                     "name":"KEYCLOAK_USER",
                     "value":"admin"
                   },
