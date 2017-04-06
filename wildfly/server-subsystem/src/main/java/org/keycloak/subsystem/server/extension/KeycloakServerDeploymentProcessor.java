@@ -42,9 +42,7 @@ public class KeycloakServerDeploymentProcessor implements DeploymentUnitProcesso
     // org.keycloak.services.resources.KeycloakApplication.  We have this value in
     // two places to avoid dependency between Keycloak Subsystem and Keyclaok Services module.
     public static final String KEYCLOAK_CONFIG_PARAM_NAME = "org.keycloak.server-subsystem.Config";
-    
-    private static final ServiceName cacheContainerService = ServiceName.of("jboss", "infinispan", "keycloak");
-    
+
     @Override
     public void deploy(DeploymentPhaseContext phaseContext) throws DeploymentUnitProcessingException {
         DeploymentUnit deploymentUnit = phaseContext.getDeploymentUnit();
@@ -80,7 +78,7 @@ public class KeycloakServerDeploymentProcessor implements DeploymentUnitProcesso
 
         List<ParamValueMetaData> contextParams = webMetaData.getContextParams();
         if (contextParams == null) {
-            contextParams = new ArrayList<ParamValueMetaData>();
+            contextParams = new ArrayList<>();
         }
 
         ParamValueMetaData param = new ParamValueMetaData();
@@ -92,18 +90,19 @@ public class KeycloakServerDeploymentProcessor implements DeploymentUnitProcesso
     }
 
     private void addInfinispanCaches(DeploymentPhaseContext context) {
-        if (context.getServiceRegistry().getService(cacheContainerService) != null) {
-            ServiceTarget st = context.getServiceTarget();
-            st.addDependency(cacheContainerService);
-            st.addDependency(cacheContainerService.append("realms"));
-            st.addDependency(cacheContainerService.append("users"));
-            st.addDependency(cacheContainerService.append("sessions"));
-            st.addDependency(cacheContainerService.append("offlineSessions"));
-            st.addDependency(cacheContainerService.append("loginFailures"));
-            st.addDependency(cacheContainerService.append("work"));
-            st.addDependency(cacheContainerService.append("authorization"));
-            st.addDependency(cacheContainerService.append("keys"));
-        }
+        ServiceTarget st = context.getServiceTarget();
+        st.addDependency(getServiceName("realms"));
+        st.addDependency(getServiceName("users"));
+        st.addDependency(getServiceName("sessions"));
+        st.addDependency(getServiceName("offlineSessions"));
+        st.addDependency(getServiceName("loginFailures"));
+        st.addDependency(getServiceName("work"));
+        st.addDependency(getServiceName("authorization"));
+        st.addDependency(getServiceName("keys"));
+    }
+
+    private ServiceName getServiceName(String cache) {
+        return ServiceName.parse("jboss.naming.context.java.infinispan/cache/keycloak/" + cache);
     }
 
     @Override
