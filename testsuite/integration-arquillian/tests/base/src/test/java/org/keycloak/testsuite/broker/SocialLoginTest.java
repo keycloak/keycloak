@@ -2,15 +2,14 @@ package org.keycloak.testsuite.broker;
 
 import org.jboss.arquillian.graphene.Graphene;
 import org.jboss.arquillian.graphene.page.Page;
-import org.jboss.arquillian.graphene.wait.WebDriverWait;
-import org.junit.Assume;
+import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.keycloak.common.Profile;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.social.openshift.OpenshiftV3IdentityProvider;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
-import org.keycloak.testsuite.cli.exec.ExecutionException;
 import org.keycloak.testsuite.pages.AccountUpdateProfilePage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginUpdateProfilePage;
@@ -34,6 +33,7 @@ import static org.junit.Assume.assumeTrue;
 public class SocialLoginTest extends AbstractKeycloakTest {
 
     public static final String SOCIAL_CONFIG = "social.config";
+    public static final String REALM = "social";
 
     private static Properties config = new Properties();
 
@@ -53,12 +53,21 @@ public class SocialLoginTest extends AbstractKeycloakTest {
         config.load(new FileInputStream(System.getProperty(SOCIAL_CONFIG)));
     }
 
+    @After
+    public void removeUser() {
+        List<UserRepresentation> users = adminClient.realm(REALM).users().search(null, null, null);
+        for (UserRepresentation user : users) {
+            adminClient.realm(REALM).users().get(user.getId()).remove();
+        }
+    }
+
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
-        RealmRepresentation rep = RealmBuilder.create().name("social").build();
+        RealmRepresentation rep = RealmBuilder.create().name(REALM).build();
         List<IdentityProviderRepresentation> idps = new LinkedList<>();
         rep.setIdentityProviders(idps);
 
+        idps.add(buildIdp("openshift-v3"));
         idps.add(buildIdp("google"));
         idps.add(buildIdp("facebook"));
         idps.add(buildIdp("github"));
@@ -71,8 +80,24 @@ public class SocialLoginTest extends AbstractKeycloakTest {
     }
 
     @Test
+    public void openshiftLogin() throws Exception {
+        account.open(REALM);
+        loginPage.clickSocial("openshift-v3");
+
+        Graphene.waitGui().until(ExpectedConditions.visibilityOfElementLocated(By.id("inputUsername")));
+        driver.findElement(By.id("inputUsername")).sendKeys(config.getProperty("openshift-v3.username", config.getProperty("common.username")));
+        driver.findElement(By.id("inputPassword")).sendKeys(config.getProperty("openshift-v3.password", config.getProperty("common.password")));
+        driver.findElement(By.cssSelector("button[type=submit]")).click();
+
+        Graphene.waitGui().until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector("input[name=approve]")));
+        driver.findElement(By.cssSelector("input[name=approve]")).click();
+
+        assertEquals(config.getProperty("openshift-v3.username", config.getProperty("common.profile.username")), account.getUsername());
+    }
+
+    @Test
     public void googleLogin() throws InterruptedException {
-        account.open("social");
+        account.open(REALM);
 
         loginPage.clickSocial("google");
 
@@ -97,7 +122,7 @@ public class SocialLoginTest extends AbstractKeycloakTest {
 
     @Test
     public void faceBookLogin() {
-        account.open("social");
+        account.open(REALM);
 
         loginPage.clickSocial("facebook");
 
@@ -114,7 +139,7 @@ public class SocialLoginTest extends AbstractKeycloakTest {
 
     @Test
     public void githubLogin() {
-        account.open("social");
+        account.open(REALM);
 
         loginPage.clickSocial("github");
 
@@ -131,7 +156,7 @@ public class SocialLoginTest extends AbstractKeycloakTest {
 
     @Test
     public void twitterLogin() {
-        account.open("social");
+        account.open(REALM);
 
         loginPage.clickSocial("twitter");
 
@@ -156,7 +181,7 @@ public class SocialLoginTest extends AbstractKeycloakTest {
 
     @Test
     public void linkedinLogin() {
-        account.open("social");
+        account.open(REALM);
 
         loginPage.clickSocial("linkedin");
 
@@ -173,7 +198,7 @@ public class SocialLoginTest extends AbstractKeycloakTest {
 
     @Test
     public void microsoftLogin() {
-        account.open("social");
+        account.open(REALM);
 
         loginPage.clickSocial("microsoft");
 
@@ -192,7 +217,7 @@ public class SocialLoginTest extends AbstractKeycloakTest {
 
     @Test
     public void stackoverflowLogin() {
-        account.open("social");
+        account.open(REALM);
 
         loginPage.clickSocial("stackoverflow");
 
@@ -225,6 +250,9 @@ public class SocialLoginTest extends AbstractKeycloakTest {
         idp.getConfig().put("clientSecret", config.getProperty(id + ".clientSecret"));
         if (id.equals("stackoverflow")) {
             idp.getConfig().put("key", config.getProperty(id + ".clientKey"));
+        }
+        if (id.equals("openshift-v3")) {
+            idp.getConfig().put("baseUrl", config.getProperty(id + ".baseUrl", OpenshiftV3IdentityProvider.BASE_URL));
         }
         return idp;
     }

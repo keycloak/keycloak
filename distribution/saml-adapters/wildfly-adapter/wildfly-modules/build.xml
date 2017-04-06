@@ -76,6 +76,10 @@
             <maven-resource group="org.keycloak" artifact="keycloak-saml-wildfly-subsystem"/>
         </module-def>
 
+        <module-def name="org.keycloak.keycloak-saml-wildfly-elytron-adapter">
+            <maven-resource group="org.keycloak" artifact="keycloak-saml-wildfly-elytron-adapter"/>
+        </module-def>
+
     </target>
 
     <target name="clean-target">

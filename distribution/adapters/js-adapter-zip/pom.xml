@@ -85,4 +85,18 @@
         </plugins>
     </build>
 
+    <profiles>
+        <profile>
+            <id>product</id>
+            <activation>
+                <property>
+                    <name>product</name>
+                </property>
+            </activation>
+            <build>
+                <finalName>${product.name}-${product.filename.version}-js-adapter</finalName>
+            </build>
+        </profile>
+    </profiles>
+
 </project>

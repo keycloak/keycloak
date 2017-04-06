@@ -35,9 +35,23 @@
         <module>core</module>
         <module>undertow</module>
         <module>tomcat</module>
-        <module>jetty</module>
         <module>wildfly</module>
         <module>as7-eap6</module>
         <module>servlet-filter</module>
+        <module>wildfly-elytron</module>
     </modules>
+
+    <profiles>
+        <profile>
+            <id>community</id>
+            <activation>
+                <property>
+                    <name>!product</name>
+                </property>
+            </activation>
+            <modules>
+                <module>jetty</module>
+            </modules>
+        </profile>
+    </profiles>
 </project>

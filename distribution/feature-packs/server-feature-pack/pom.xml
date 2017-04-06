@@ -47,27 +47,153 @@
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-wildfly-server-subsystem</artifactId>
         </dependency>
-        <dependency>
-            <groupId>org.wildfly</groupId>
-            <artifactId>wildfly-feature-pack</artifactId>
-            <type>zip</type>
-            <!-- Need to exlcude that in order to use the right guava version for drools -->
-            <exclusions>
-                <exclusion>
-                    <groupId>com.google.guava</groupId>
-                    <artifactId>guava</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
     </dependencies>
 
     <build>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-resources-plugin</artifactId>
-                <executions></executions>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>unpack-theme</id>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>unpack</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>org.keycloak</groupId>
+                                    <artifactId>keycloak-themes</artifactId>
+                                    <outputDirectory>target/unpacked-themes</outputDirectory>
+                                </artifactItem>
+                            </artifactItems>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
+
+            <plugin>
+                    <artifactId>maven-resources-plugin</artifactId>
+                    <executions>
+                        <execution>
+                            <id>copy-configuration</id>
+                            <phase>validate</phase>
+                            <goals>
+                                <goal>copy-resources</goal>
+                            </goals>
+                            <configuration>
+                                <outputDirectory>target/resources/configuration</outputDirectory>
+                                <resources>
+                                    <resource>
+                                        <directory>src/main/resources/configuration</directory>
+                                        <filtering>true</filtering>
+                                    </resource>
+                                </resources>
+                            </configuration>
+                        </execution>
+                        <execution>
+                            <id>copy-modules</id>
+                            <phase>validate</phase>
+                            <goals>
+                                <goal>copy-resources</goal>
+                            </goals>
+                            <configuration>
+                                <outputDirectory>target/resources/modules</outputDirectory>
+                                <resources>
+                                    <resource>
+                                        <directory>src/main/resources/modules</directory>
+                                    </resource>
+                                </resources>
+                            </configuration>
+                        </execution>
+                        <execution>
+                            <id>copy-content</id>
+                            <phase>validate</phase>
+                            <goals>
+                                <goal>copy-resources</goal>
+                            </goals>
+                            <configuration>
+                                <outputDirectory>target/resources/content</outputDirectory>
+                                <resources>
+                                    <resource>
+                                        <directory>src/main/resources/content</directory>
+                                    </resource>
+                                </resources>
+                            </configuration>
+                        </execution>
+                        <execution>
+                            <id>copy-identity</id>
+                            <phase>validate</phase>
+                            <goals>
+                                <goal>copy-resources</goal>
+                            </goals>
+                            <configuration>
+                                <outputDirectory>target/resources/content/bin</outputDirectory>
+                                <resources>
+                                    <resource>
+                                        <directory>src/main/resources/identity</directory>
+                                        <includes>
+                                            <include>**/product.conf</include>
+                                        </includes>
+                                        <filtering>true</filtering>
+                                    </resource>
+                                </resources>
+                            </configuration>
+                        </execution>
+                        <execution>
+                            <id>copy-identity-module</id>
+                            <phase>validate</phase>
+                            <goals>
+                                <goal>copy-resources</goal>
+                            </goals>
+                            <configuration>
+                                <outputDirectory>target/resources/modules/system/layers/keycloak/org/jboss/as/product/${product.slot}</outputDirectory>
+                                <resources>
+                                    <resource>
+                                        <directory>src/main/resources/identity/module</directory>
+                                        <filtering>true</filtering>
+                                    </resource>
+                                </resources>
+                            </configuration>
+                        </execution>
+                        <execution>
+                            <id>copy-themes</id>
+                            <phase>validate</phase>
+                            <goals>
+                                <goal>copy-resources</goal>
+                            </goals>
+                            <configuration>
+                                <outputDirectory>target/resources/content/themes</outputDirectory>
+                                <resources>
+                                    <resource>
+                                        <directory>target/unpacked-themes/theme</directory>
+                                    </resource>
+                                </resources>
+                            </configuration>
+                        </execution>
+                        <execution>
+                            <id>copy-license</id>
+                            <phase>validate</phase>
+                            <goals>
+                                <goal>copy-resources</goal>
+                            </goals>
+                            <configuration>
+                                <outputDirectory>target/resources/content</outputDirectory>
+                                <resources>
+                                    <resource>
+                                        <directory>../../../</directory>
+                                        <includes>
+                                            <include>License.html</include>
+                                        </includes>
+                                    </resource>
+                                </resources>
+                            </configuration>
+                        </execution>
+                </executions>
+            </plugin>
+
             <plugin>
                 <groupId>org.wildfly.build</groupId>
                 <artifactId>wildfly-feature-pack-build-maven-plugin</artifactId>
@@ -80,6 +206,7 @@
                         <phase>compile</phase>
                         <configuration>
                             <config-file>feature-pack-build.xml</config-file>
+                            <resources-dir>target/resources</resources-dir>
                         </configuration>
                     </execution>
                 </executions>
@@ -111,4 +238,121 @@
         </plugins>
     </build>
 
+    <profiles>
+        <profile>
+            <id>community</id>
+            <activation>
+                <property>
+                    <name>!product</name>
+                </property>
+            </activation>
+
+            <properties>
+                <feature.parent>org.wildfly:wildfly-feature-pack</feature.parent>
+                <xmlns.domain>urn:jboss:domain:4.0</xmlns.domain>
+            </properties>
+
+            <dependencies>
+                <dependency>
+                    <groupId>org.wildfly</groupId>
+                    <artifactId>wildfly-feature-pack</artifactId>
+                    <type>zip</type>
+                </dependency>
+            </dependencies>
+        </profile>
+
+        <!-- Temporary profile to test with WildFly 11 -->
+        <profile>
+            <id>wf11</id>
+
+            <properties>
+                <xmlns.domain>urn:jboss:domain:5.0</xmlns.domain>
+            </properties>
+
+            <dependencies>
+                <dependency>
+                    <groupId>org.wildfly</groupId>
+                    <artifactId>wildfly-feature-pack</artifactId>
+                    <version>${wildfly11.version}</version>
+                    <type>zip</type>
+                </dependency>
+            </dependencies>
+
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-resources-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>copy-configuration-wf11</id>
+                                <phase>validate</phase>
+                                <goals>
+                                    <goal>copy-resources</goal>
+                                </goals>
+                                <configuration>
+                                    <outputDirectory>target/resources/configuration</outputDirectory>
+                                    <resources>
+                                        <resource>
+                                            <directory>src/main/resources-wf11/configuration</directory>
+                                            <filtering>true</filtering>
+                                        </resource>
+                                    </resources>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>product</id>
+            <activation>
+                <property>
+                    <name>product</name>
+                </property>
+            </activation>
+
+            <properties>
+                <feature.parent>org.jboss.eap:wildfly-feature-pack</feature.parent>
+                <xmlns.domain>urn:jboss:domain:5.0</xmlns.domain>
+            </properties>
+
+            <dependencies>
+                <dependency>
+                    <groupId>org.jboss.eap</groupId>
+                    <artifactId>wildfly-feature-pack</artifactId>
+                    <version>${eap.version}</version>
+                    <type>zip</type>
+                </dependency>
+            </dependencies>
+
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-resources-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>copy-configuration-wf11</id>
+                                <phase>validate</phase>
+                                <goals>
+                                    <goal>copy-resources</goal>
+                                </goals>
+                                <configuration>
+                                    <outputDirectory>target/resources/configuration</outputDirectory>
+                                    <resources>
+                                        <resource>
+                                            <directory>src/main/resources-wf11/configuration</directory>
+                                            <filtering>true</filtering>
+                                        </resource>
+                                    </resources>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+
 </project>
+

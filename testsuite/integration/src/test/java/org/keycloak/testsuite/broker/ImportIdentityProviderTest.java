@@ -37,6 +37,9 @@ import org.keycloak.social.google.GoogleIdentityProvider;
 import org.keycloak.social.google.GoogleIdentityProviderFactory;
 import org.keycloak.social.linkedin.LinkedInIdentityProvider;
 import org.keycloak.social.linkedin.LinkedInIdentityProviderFactory;
+import org.keycloak.social.openshift.OpenshifV3IdentityProviderConfig;
+import org.keycloak.social.openshift.OpenshiftV3IdentityProvider;
+import org.keycloak.social.openshift.OpenshiftV3IdentityProviderFactory;
 import org.keycloak.social.stackoverflow.StackOverflowIdentityProviderConfig;
 import org.keycloak.social.stackoverflow.StackoverflowIdentityProvider;
 import org.keycloak.social.stackoverflow.StackoverflowIdentityProviderFactory;
@@ -146,6 +149,8 @@ public class ImportIdentityProviderTest extends AbstractIdentityProviderModelTes
                     assertLinkedInIdentityProviderConfig(identityProvider);
                 } else if (StackoverflowIdentityProviderFactory.PROVIDER_ID.equals(providerId)) {
                     assertStackoverflowIdentityProviderConfig(identityProvider);
+                } else if (OpenshiftV3IdentityProviderFactory.PROVIDER_ID.equals(providerId)) {
+                    assertOpenshiftIdentityProviderConfig(identityProvider);
                 } else {
                     continue;
                 }
@@ -281,6 +286,21 @@ public class ImportIdentityProviderTest extends AbstractIdentityProviderModelTes
         assertEquals(StackoverflowIdentityProvider.AUTH_URL, config.getAuthorizationUrl());
         assertEquals(StackoverflowIdentityProvider.TOKEN_URL, config.getTokenUrl());
         assertEquals(StackoverflowIdentityProvider.PROFILE_URL, config.getUserInfoUrl());
+    }
+
+    private void assertOpenshiftIdentityProviderConfig(IdentityProviderModel identityProvider) {
+        OpenshiftV3IdentityProvider osoIdentityProvider = new OpenshiftV3IdentityProviderFactory().create(session, identityProvider);
+        OpenshifV3IdentityProviderConfig config = osoIdentityProvider.getConfig();
+
+        assertEquals("model-openshift-v3", config.getAlias());
+        assertEquals(OpenshiftV3IdentityProviderFactory.PROVIDER_ID, config.getProviderId());
+        assertEquals(true, config.isEnabled());
+        assertEquals(false, config.isTrustEmail());
+        assertEquals(false, config.isAuthenticateByDefault());
+        assertEquals(true, config.isStoreToken());
+        assertEquals(OpenshiftV3IdentityProvider.BASE_URL, config.getBaseUrl());
+        assertEquals("clientId", config.getClientId());
+        assertEquals("clientSecret", config.getClientSecret());
     }
 
     private void assertTwitterIdentityProviderConfig(IdentityProviderModel identityProvider) {

@@ -35,6 +35,7 @@
                 <include>org/keycloak/keycloak-jboss-adapter-core/**</include>
                 <include>org/keycloak/keycloak-undertow-adapter/**</include>
                 <include>org/keycloak/keycloak-wildfly-adapter/**</include>
+                <include>org/keycloak/keycloak-wildfly-elytron-oidc-adapter/**</include>
                 <include>org/keycloak/keycloak-wildfly-subsystem/**</include>
                 <include>org/keycloak/keycloak-adapter-subsystem/**</include>
                 <include>org/keycloak/keycloak-servlet-oauth-client/**</include>
@@ -56,6 +57,14 @@
         <file>
              <source>cli/adapter-install-offline.cli</source>
              <outputDirectory>bin</outputDirectory>
+        </file>
+        <file>
+            <source>../../shared-cli/adapter-elytron-install.cli</source>
+            <outputDirectory>bin</outputDirectory>
+        </file>
+        <file>
+            <source>cli/adapter-elytron-install-offline.cli</source>
+            <outputDirectory>bin</outputDirectory>
         </file>
     </files>
 </assembly>
