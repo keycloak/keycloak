@@ -16,8 +16,10 @@
  * limitations under the License.
  */
 
-package org.keycloak.authorization.admin.representation;
+package org.keycloak.representations.idm.authorization;
 
+import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -29,11 +31,11 @@ import org.keycloak.representations.idm.authorization.ResourceRepresentation;
  */
 public class PolicyEvaluationRequest {
 
-    private Map<String, Map<String, String>> context;
-    private List<Resource> resources;
+    private Map<String, Map<String, String>> context = new HashMap<>();
+    private List<ResourceRepresentation> resources = new LinkedList<>();
     private String clientId;
     private String userId;
-    private List<String> roleIds;
+    private List<String> roleIds = new LinkedList<>();
     private boolean entitlements;
 
     public Map<String, Map<String, String>> getContext() {
@@ -44,11 +46,11 @@ public class PolicyEvaluationRequest {
         this.context = context;
     }
 
-    public List<Resource> getResources() {
+    public List<ResourceRepresentation> getResources() {
         return this.resources;
     }
 
-    public void setResources(List<Resource> resources) {
+    public void setResources(List<ResourceRepresentation> resources) {
         this.resources = resources;
     }
 
@@ -84,7 +86,13 @@ public class PolicyEvaluationRequest {
         this.entitlements = entitlements;
     }
 
-    public static class Resource extends ResourceRepresentation {
-
+    public PolicyEvaluationRequest addResource(String name, String... scopes) {
+        if (resources == null) {
+            resources = new LinkedList<>();
+        }
+        resources.add(new ResourceRepresentation(name, scopes));
+        return this;
     }
+
+
 }

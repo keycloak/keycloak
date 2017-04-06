@@ -17,6 +17,8 @@
 package org.keycloak.admin.client.resource;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
+import org.keycloak.representations.idm.authorization.PolicyEvaluationRequest;
+import org.keycloak.representations.idm.authorization.PolicyEvaluationResponse;
 import org.keycloak.representations.idm.authorization.PolicyProviderRepresentation;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 
@@ -53,4 +55,11 @@ public interface PoliciesResource {
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     List<PolicyProviderRepresentation> policyProviders();
+
+    @POST
+    @Consumes("application/json")
+    @Produces("application/json")
+    @Path("evaluate")
+    PolicyEvaluationResponse evaluate(PolicyEvaluationRequest evaluationRequest);
+
 }
