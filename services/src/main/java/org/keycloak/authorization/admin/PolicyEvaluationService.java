@@ -38,6 +38,7 @@ import javax.ws.rs.core.Response;
 
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.authorization.AuthorizationProvider;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.idm.authorization.PolicyEvaluationRequest;
 import org.keycloak.authorization.admin.representation.PolicyEvaluationResponseBuilder;
 import org.keycloak.authorization.attribute.Attributes;
@@ -234,6 +235,7 @@ public class PolicyEvaluationService {
                 if (clientId != null) {
                     ClientModel clientModel = realm.getClientById(clientId);
                     clientSession = keycloakSession.sessions().createClientSession(realm, clientModel);
+                    clientSession.setAuthMethod(OIDCLoginProtocol.LOGIN_PROTOCOL);
                     userSession = keycloakSession.sessions().createUserSession(realm, userModel, userModel.getUsername(), "127.0.0.1", "passwd", false, null, null);
 
                     new TokenManager().attachClientSession(userSession, clientSession);
