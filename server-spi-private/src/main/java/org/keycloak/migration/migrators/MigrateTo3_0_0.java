@@ -20,13 +20,18 @@ package org.keycloak.migration.migrators;
 
 import org.keycloak.migration.ModelVersion;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.representations.oidc.OIDCClientRepresentation;
+
+import java.util.Objects;
 
 import static org.keycloak.models.AccountRoles.MANAGE_ACCOUNT;
 import static org.keycloak.models.AccountRoles.MANAGE_ACCOUNT_LINKS;
 import static org.keycloak.models.Constants.ACCOUNT_MANAGEMENT_CLIENT_ID;
+import static org.keycloak.models.Constants.defaultClients;
 
 /**
  * @author <a href="mailto:bburke@redhat.com">Bill Burke</a>
@@ -38,6 +43,12 @@ public class MigrateTo3_0_0 implements Migration {
     @Override
     public void migrate(KeycloakSession session) {
         for (RealmModel realm : session.realms().getRealms()) {
+
+            realm.getClients().stream()
+                    .filter(clientModel -> defaultClients.contains(clientModel.getId()))
+                    .filter(clientModel -> Objects.isNull(clientModel.getProtocol()))
+                    .forEach(clientModel -> clientModel.setProtocol("openid-connect"));
+
             ClientModel client = realm.getClientByClientId(ACCOUNT_MANAGEMENT_CLIENT_ID);
             if (client == null) continue;
             RoleModel linkRole = client.getRole(MANAGE_ACCOUNT_LINKS);
