@@ -376,8 +376,9 @@ public class LDAPProvidersIntegrationNoImportTest {
       	// Make sure mary is gone
       	LDAPTestUtils.removeLDAPUserByUsername(ldapProvider, appRealm, config, "maryjane");
       	
-     // Create the user in LDAP and register him
-
+     
+      // Create the user in LDAP and register him
+      //
        LDAPObject mary = LDAPTestUtils.addLDAPUser(ldapProvider, appRealm, "maryjane", "mary", "yram", "mj@testing.redhat.cz", null, "12398");
        LDAPTestUtils.updateLDAPPassword(ldapProvider, mary, "Password1");
         
