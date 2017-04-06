@@ -835,9 +835,13 @@
                 if ((event.origin !== loginIframe.iframeOrigin) || (loginIframe.iframe.contentWindow !== event.source)) {
                     return;
                 }
-                
 
-                if (event.data != "unchanged") {
+                if (!(event.data == 'unchanged' || event.data == 'changed' || event.data == 'error')) {
+                    return;
+                }
+
+
+                if (event.data != 'unchanged') {
                     kc.clearToken();
                 }
 
@@ -845,7 +849,7 @@
 
                 for (var i = callbacks.length - 1; i >= 0; --i) {
                     var promise = callbacks[i];
-                    if (event.data == "unchanged") {
+                    if (event.data == 'unchanged') {
                         promise.setSuccess();
                     } else {
                         promise.setError();
