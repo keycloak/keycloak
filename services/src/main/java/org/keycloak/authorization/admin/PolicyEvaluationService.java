@@ -112,14 +112,18 @@ public class PolicyEvaluationService {
     @Produces("application/json")
     public Response evaluate(PolicyEvaluationRequest evaluationRequest) throws Throwable {
         this.auth.requireView();
-        KeycloakIdentity identity = createIdentity(evaluationRequest);
-        EvaluationContext evaluationContext = createEvaluationContext(evaluationRequest, identity);
-        Decision decisionCollector = new Decision();
-        authorization.evaluators().from(createPermissions(evaluationRequest, evaluationContext, authorization), evaluationContext).evaluate(decisionCollector);
-        if (decisionCollector.error != null) {
-            throw decisionCollector.error;
+        CloseableKeycloakIdentity identity = createIdentity(evaluationRequest);
+        try {
+            EvaluationContext evaluationContext = createEvaluationContext(evaluationRequest, identity);
+            Decision decisionCollector = new Decision();
+            authorization.evaluators().from(createPermissions(evaluationRequest, evaluationContext, authorization), evaluationContext).evaluate(decisionCollector);
+            if (decisionCollector.error != null) {
+                throw decisionCollector.error;
+            }
+            return Response.ok(PolicyEvaluationResponseBuilder.build(decisionCollector.results, resourceServer, authorization, identity)).build();
+        } finally {
+            identity.close();
         }
-        return Response.ok(PolicyEvaluationResponseBuilder.build(decisionCollector.results, resourceServer,  authorization, identity)).build();
     }
 
     private EvaluationContext createEvaluationContext(PolicyEvaluationRequest representation, KeycloakIdentity identity) {
@@ -185,7 +189,29 @@ public class PolicyEvaluationService {
         }).collect(Collectors.toList());
     }
 
-    private KeycloakIdentity createIdentity(PolicyEvaluationRequest representation) {
+    private static class CloseableKeycloakIdentity extends KeycloakIdentity {
+        private UserSessionModel userSession;
+        private ClientSessionModel clientSession;
+
+        public CloseableKeycloakIdentity(AccessToken accessToken, KeycloakSession keycloakSession, UserSessionModel userSession, ClientSessionModel clientSession) {
+            super(accessToken, keycloakSession);
+            this.userSession = userSession;
+            this.clientSession = clientSession;
+        }
+
+        public void close() {
+            if (clientSession != null) {
+                keycloakSession.sessions().removeClientSession(realm, clientSession);
+            }
+
+            if (userSession != null) {
+                keycloakSession.sessions().removeUserSession(realm, userSession);
+            }
+
+        }
+    }
+
+    private CloseableKeycloakIdentity createIdentity(PolicyEvaluationRequest representation) {
         KeycloakSession keycloakSession = this.authorization.getKeycloakSession();
         RealmModel realm = keycloakSession.getContext().getRealm();
         AccessToken accessToken = null;
@@ -193,6 +219,8 @@ public class PolicyEvaluationService {
 
         String subject = representation.getUserId();
 
+        ClientSessionModel clientSession = null;
+        UserSessionModel userSession = null;
         if (subject != null) {
             UserModel userModel = keycloakSession.users().getUserById(subject, realm);
 
@@ -205,33 +233,19 @@ public class PolicyEvaluationService {
 
                 if (clientId != null) {
                     ClientModel clientModel = realm.getClientById(clientId);
-                    ClientSessionModel clientSession = null;
-                    UserSessionModel userSession = null;
-                    try {
-                        clientSession = keycloakSession.sessions().createClientSession(realm, clientModel);
-                        userSession = keycloakSession.sessions().createUserSession(realm, userModel, userModel.getUsername(), "127.0.0.1", "passwd", false, null, null);
+                    clientSession = keycloakSession.sessions().createClientSession(realm, clientModel);
+                    userSession = keycloakSession.sessions().createUserSession(realm, userModel, userModel.getUsername(), "127.0.0.1", "passwd", false, null, null);
 
-                        new TokenManager().attachClientSession(userSession, clientSession);
+                    new TokenManager().attachClientSession(userSession, clientSession);
 
-                        Set<RoleModel> requestedRoles = new HashSet<>();
-                        for (String roleId : clientSession.getRoles()) {
-                            RoleModel role = realm.getRoleById(roleId);
-                            if (role != null) {
-                                requestedRoles.add(role);
-                            }
-                        }
-
-
-                        accessToken = new TokenManager().createClientAccessToken(keycloakSession, requestedRoles, realm, clientModel, userModel, userSession, clientSession);
-                    } finally {
-                        if (clientSession != null) {
-                            keycloakSession.sessions().removeClientSession(realm, clientSession);
-                        }
-
-                        if (userSession != null) {
-                            keycloakSession.sessions().removeUserSession(realm, userSession);
+                    Set<RoleModel> requestedRoles = new HashSet<>();
+                    for (String roleId : clientSession.getRoles()) {
+                        RoleModel role = realm.getRoleById(roleId);
+                        if (role != null) {
+                            requestedRoles.add(role);
                         }
                     }
+                    accessToken = new TokenManager().createClientAccessToken(keycloakSession, requestedRoles, realm, clientModel, userModel, userSession, clientSession);
                 }
             }
         }
@@ -260,6 +274,6 @@ public class PolicyEvaluationService {
             representation.getRoleIds().forEach(roleName -> realmAccess.addRole(roleName));
         }
 
-        return new KeycloakIdentity(accessToken, keycloakSession);
+        return new CloseableKeycloakIdentity(accessToken, keycloakSession, userSession, clientSession);
     }
 }

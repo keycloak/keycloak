@@ -45,10 +45,10 @@ import java.util.Map;
  */
 public class KeycloakIdentity implements Identity {
 
-    private final AccessToken accessToken;
-    private final RealmModel realm;
-    private final KeycloakSession keycloakSession;
-    private final Attributes attributes;
+    protected final AccessToken accessToken;
+    protected final RealmModel realm;
+    protected final KeycloakSession keycloakSession;
+    protected final Attributes attributes;
 
     public KeycloakIdentity(KeycloakSession keycloakSession) {
         this(Tokens.getAccessToken(keycloakSession), keycloakSession);
