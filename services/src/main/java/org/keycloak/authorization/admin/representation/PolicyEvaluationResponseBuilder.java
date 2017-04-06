@@ -1,13 +1,12 @@
 /*
- * JBoss, Home of Professional Open Source.
- * Copyright 2016 Red Hat, Inc., and individual contributors
- * as indicated by the @author tags.
+ * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,8 +14,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.keycloak.authorization.admin.representation;
+
+import org.keycloak.authorization.AuthorizationProvider;
+import org.keycloak.authorization.Decision;
+import org.keycloak.authorization.common.KeycloakIdentity;
+import org.keycloak.authorization.model.Policy;
+import org.keycloak.authorization.model.ResourceServer;
+import org.keycloak.authorization.model.Scope;
+import org.keycloak.authorization.policy.evaluation.Result;
+import org.keycloak.authorization.util.Permissions;
+import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.idm.authorization.DecisionEffect;
+import org.keycloak.representations.idm.authorization.PolicyEvaluationResponse;
+import org.keycloak.representations.idm.authorization.PolicyRepresentation;
+import org.keycloak.representations.idm.authorization.ResourceRepresentation;
+import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -29,56 +43,37 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.keycloak.authorization.AuthorizationProvider;
-import org.keycloak.authorization.Decision.Effect;
-import org.keycloak.authorization.common.KeycloakIdentity;
-import org.keycloak.authorization.model.Policy;
-import org.keycloak.authorization.model.ResourceServer;
-import org.keycloak.authorization.model.Scope;
-import org.keycloak.authorization.policy.evaluation.Result;
-import org.keycloak.authorization.policy.evaluation.Result.PolicyResult;
-import org.keycloak.authorization.util.Permissions;
-import org.keycloak.models.utils.ModelToRepresentation;
-import org.keycloak.representations.AccessToken;
-import org.keycloak.representations.idm.authorization.PolicyRepresentation;
-import org.keycloak.representations.idm.authorization.ResourceRepresentation;
-import org.keycloak.representations.idm.authorization.ScopeRepresentation;
-
 /**
- * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
+ * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
+ * @version $Revision: 1 $
  */
-public class PolicyEvaluationResponse {
-
-    private List<EvaluationResultRepresentation> results;
-    private boolean entitlements;
-    private Effect status;
-    private AccessToken rpt;
-
-    private PolicyEvaluationResponse() {
-
-    }
-
+public class PolicyEvaluationResponseBuilder {
     public static PolicyEvaluationResponse build(List<Result> results, ResourceServer resourceServer, AuthorizationProvider authorization, KeycloakIdentity identity) {
         PolicyEvaluationResponse response = new PolicyEvaluationResponse();
-        List<EvaluationResultRepresentation> resultsRep = new ArrayList<>();
+        List<PolicyEvaluationResponse.EvaluationResultRepresentation> resultsRep = new ArrayList<>();
         AccessToken accessToken = identity.getAccessToken();
         AccessToken.Authorization authorizationData = new AccessToken.Authorization();
 
         authorizationData.setPermissions(Permissions.permits(results, authorization, resourceServer.getId()));
         accessToken.setAuthorization(authorizationData);
 
-        response.rpt = accessToken;
+        response.setRpt(accessToken);
 
-        if (results.stream().anyMatch(evaluationResult -> evaluationResult.getEffect().equals(Effect.DENY))) {
-            response.status = Effect.DENY;
+        if (results.stream().anyMatch(evaluationResult -> evaluationResult.getEffect().equals(Decision.Effect.DENY))) {
+            response.setStatus(DecisionEffect.DENY);
         } else {
-            response.status = Effect.PERMIT;
+            response.setStatus(DecisionEffect.PERMIT);
         }
 
         for (Result result : results) {
-            EvaluationResultRepresentation rep = new EvaluationResultRepresentation();
+            PolicyEvaluationResponse.EvaluationResultRepresentation rep = new PolicyEvaluationResponse.EvaluationResultRepresentation();
 
-            rep.setStatus(result.getEffect());
+            if (result.getEffect() == Decision.Effect.DENY) {
+                rep.setStatus(DecisionEffect.DENY);
+            } else {
+                rep.setStatus(DecisionEffect.PERMIT);
+
+            }
             resultsRep.add(rep);
 
             if (result.getPermission().getResource() != null) {
@@ -105,9 +100,9 @@ public class PolicyEvaluationResponse {
                 return representation;
             }).collect(Collectors.toList()));
 
-            List<PolicyResultRepresentation> policies = new ArrayList<>();
+            List<PolicyEvaluationResponse.PolicyResultRepresentation> policies = new ArrayList<>();
 
-            for (PolicyResult policy : result.getResults()) {
+            for (Result.PolicyResult policy : result.getResults()) {
                 policies.add(toRepresentation(policy, authorization));
             }
 
@@ -116,10 +111,10 @@ public class PolicyEvaluationResponse {
 
         resultsRep.sort(Comparator.comparing(o -> o.getResource().getName()));
 
-        Map<String, EvaluationResultRepresentation> groupedResults = new HashMap<>();
+        Map<String, PolicyEvaluationResponse.EvaluationResultRepresentation> groupedResults = new HashMap<>();
 
         resultsRep.forEach(evaluationResultRepresentation -> {
-            EvaluationResultRepresentation result = groupedResults.get(evaluationResultRepresentation.getResource().getId());
+            PolicyEvaluationResponse.EvaluationResultRepresentation result = groupedResults.get(evaluationResultRepresentation.getResource().getId());
             ResourceRepresentation resource = evaluationResultRepresentation.getResource();
 
             if (result == null) {
@@ -127,8 +122,8 @@ public class PolicyEvaluationResponse {
                 result = evaluationResultRepresentation;
             }
 
-            if (result.getStatus().equals(Effect.PERMIT) || (evaluationResultRepresentation.getStatus().equals(Effect.PERMIT) && result.getStatus().equals(Effect.DENY))) {
-                result.setStatus(Effect.PERMIT);
+            if (result.getStatus().equals(DecisionEffect.PERMIT) || (evaluationResultRepresentation.getStatus().equals(DecisionEffect.PERMIT) && result.getStatus().equals(DecisionEffect.DENY))) {
+                result.setStatus(DecisionEffect.PERMIT);
             }
 
             List<ScopeRepresentation> scopes = result.getScopes();
@@ -146,15 +141,15 @@ public class PolicyEvaluationResponse {
                     if (!scopes.contains(scope)) {
                         scopes.add(scope);
                     }
-                    if (evaluationResultRepresentation.getStatus().equals(Effect.PERMIT)) {
+                    if (evaluationResultRepresentation.getStatus().equals(Decision.Effect.PERMIT)) {
                         if (!allowedScopes.contains(scope)) {
                             allowedScopes.add(scope);
                         }
                     } else {
-                        evaluationResultRepresentation.getPolicies().forEach(new Consumer<PolicyResultRepresentation>() {
+                        evaluationResultRepresentation.getPolicies().forEach(new Consumer<PolicyEvaluationResponse.PolicyResultRepresentation>() {
                             @Override
-                            public void accept(PolicyResultRepresentation policyResultRepresentation) {
-                                if (policyResultRepresentation.getStatus().equals(Effect.PERMIT)) {
+                            public void accept(PolicyEvaluationResponse.PolicyResultRepresentation policyResultRepresentation) {
+                                if (policyResultRepresentation.getStatus().equals(Decision.Effect.PERMIT)) {
                                     if (!allowedScopes.contains(scope)) {
                                         allowedScopes.add(scope);
                                     }
@@ -176,16 +171,16 @@ public class PolicyEvaluationResponse {
                 result.getResource().setName("Any Resource with Scopes " + scopes.stream().flatMap((Function<ScopeRepresentation, Stream<?>>) scopeRepresentation -> Arrays.asList(scopeRepresentation.getName()).stream()).collect(Collectors.toList()));
             }
 
-            List<PolicyResultRepresentation> policies = result.getPolicies();
+            List<PolicyEvaluationResponse.PolicyResultRepresentation> policies = result.getPolicies();
 
-            for (PolicyResultRepresentation policy : new ArrayList<>(evaluationResultRepresentation.getPolicies())) {
+            for (PolicyEvaluationResponse.PolicyResultRepresentation policy : new ArrayList<>(evaluationResultRepresentation.getPolicies())) {
                 if (!policies.contains(policy)) {
                     policies.add(policy);
                 } else {
                     policy = policies.get(policies.indexOf(policy));
                 }
 
-                if (policy.getStatus().equals(Effect.DENY)) {
+                if (policy.getStatus().equals(Decision.Effect.DENY)) {
                     Policy policyModel = authorization.getStoreFactory().getPolicyStore().findById(policy.getPolicy().getId(), resourceServer.getId());
                     for (ScopeRepresentation scope : policyModel.getScopes().stream().map(scopeModel -> ModelToRepresentation.toRepresentation(scopeModel, authorization)).collect(Collectors.toList())) {
                         if (!policy.getScopes().contains(scope) && policyModel.getScopes().stream().filter(policyScope -> policyScope.getId().equals(scope.getId())).findFirst().isPresent()) {
@@ -197,13 +192,13 @@ public class PolicyEvaluationResponse {
             }
         });
 
-        response.results = groupedResults.values().stream().collect(Collectors.toList());
+        response.setResults(groupedResults.values().stream().collect(Collectors.toList()));
 
         return response;
     }
 
-    private static PolicyResultRepresentation toRepresentation(PolicyResult policy, AuthorizationProvider authorization) {
-        PolicyResultRepresentation policyResultRep = new PolicyResultRepresentation();
+    private static PolicyEvaluationResponse.PolicyResultRepresentation toRepresentation(Result.PolicyResult policy, AuthorizationProvider authorization) {
+        PolicyEvaluationResponse.PolicyResultRepresentation policyResultRep = new PolicyEvaluationResponse.PolicyResultRepresentation();
 
         PolicyRepresentation representation = new PolicyRepresentation();
 
@@ -213,127 +208,15 @@ public class PolicyEvaluationResponse {
         representation.setDecisionStrategy(policy.getPolicy().getDecisionStrategy());
 
         policyResultRep.setPolicy(representation);
-        policyResultRep.setStatus(policy.getStatus());
+        if (policy.getStatus() == Decision.Effect.DENY) {
+            policyResultRep.setStatus(DecisionEffect.DENY);
+        } else {
+            policyResultRep.setStatus(DecisionEffect.PERMIT);
+
+        }
+
         policyResultRep.setAssociatedPolicies(policy.getAssociatedPolicies().stream().map(result -> toRepresentation(result, authorization)).collect(Collectors.toList()));
 
         return policyResultRep;
-    }
-
-    public List<EvaluationResultRepresentation> getResults() {
-        return results;
-    }
-
-    public Effect getStatus() {
-        return status;
-    }
-
-    public boolean isEntitlements() {
-        return entitlements;
-    }
-
-    public AccessToken getRpt() {
-        return rpt;
-    }
-
-    public static class EvaluationResultRepresentation {
-
-        private ResourceRepresentation resource;
-        private List<ScopeRepresentation> scopes;
-        private List<PolicyResultRepresentation> policies;
-        private Effect status;
-        private List<ScopeRepresentation> allowedScopes = new ArrayList<>();
-
-        public void setResource(final ResourceRepresentation resource) {
-            this.resource = resource;
-        }
-
-        public ResourceRepresentation getResource() {
-            return resource;
-        }
-
-        public void setScopes(List<ScopeRepresentation> scopes) {
-            this.scopes = scopes;
-        }
-
-        public List<ScopeRepresentation> getScopes() {
-            return scopes;
-        }
-
-        public void setPolicies(final List<PolicyResultRepresentation> policies) {
-            this.policies = policies;
-        }
-
-        public List<PolicyResultRepresentation> getPolicies() {
-            return policies;
-        }
-
-        public void setStatus(final Effect status) {
-            this.status = status;
-        }
-
-        public Effect getStatus() {
-            return status;
-        }
-
-        public void setAllowedScopes(List<ScopeRepresentation> allowedScopes) {
-            this.allowedScopes = allowedScopes;
-        }
-
-        public List<ScopeRepresentation> getAllowedScopes() {
-            return allowedScopes;
-        }
-    }
-
-    public static class PolicyResultRepresentation {
-
-        private PolicyRepresentation policy;
-        private Effect status;
-        private List<PolicyResultRepresentation> associatedPolicies;
-        private List<ScopeRepresentation> scopes = new ArrayList<>();
-
-        public PolicyRepresentation getPolicy() {
-            return policy;
-        }
-
-        public void setPolicy(final PolicyRepresentation policy) {
-            this.policy = policy;
-        }
-
-        public Effect getStatus() {
-            return status;
-        }
-
-        public void setStatus(final Effect status) {
-            this.status = status;
-        }
-
-        public List<PolicyResultRepresentation> getAssociatedPolicies() {
-            return associatedPolicies;
-        }
-
-        public void setAssociatedPolicies(final List<PolicyResultRepresentation> associatedPolicies) {
-            this.associatedPolicies = associatedPolicies;
-        }
-
-        @Override
-        public int hashCode() {
-            return this.policy.hashCode();
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            final PolicyResultRepresentation policy = (PolicyResultRepresentation) o;
-            return this.policy.equals(policy.getPolicy());
-        }
-
-        public void setScopes(List<ScopeRepresentation> scopes) {
-            this.scopes = scopes;
-        }
-
-        public List<ScopeRepresentation> getScopes() {
-            return scopes;
-        }
     }
 }
