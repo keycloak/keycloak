@@ -18,6 +18,7 @@ package org.keycloak.testsuite.account;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -28,8 +29,9 @@ import org.keycloak.testsuite.auth.page.account.AccountManagement;
 import org.keycloak.testsuite.auth.page.login.OIDCLogin;
 import org.keycloak.testsuite.auth.page.login.VerifyEmail;
 import org.keycloak.testsuite.util.MailServerConfiguration;
-import org.keycloak.testsuite.util.RealmRepUtil;
 import org.keycloak.testsuite.util.SslMailServer;
+
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 import static org.keycloak.testsuite.util.MailAssert.assertEmailAndGetUrl;
@@ -77,6 +79,10 @@ public class TrustStoreEmailTest extends AbstractTestRealmKeycloakTest {
         SslMailServer.stop();
     }
 
+    @Before
+    public void increaseRequestTimeout() {
+        driver.manage().timeouts().pageLoadTimeout(30, TimeUnit.SECONDS);
+    }
 
     @Test
     public void verifyEmailWithSslEnabled() {

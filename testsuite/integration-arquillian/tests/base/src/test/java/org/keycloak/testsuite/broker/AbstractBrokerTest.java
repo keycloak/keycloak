@@ -174,6 +174,7 @@ public abstract class AbstractBrokerTest extends AbstractBaseBrokerTest {
             resetUserPassword(adminClient.realm(bc.consumerRealmName()).users().get(userId), "password", false);
         
             //test
+            driver.manage().timeouts().pageLoadTimeout(30, TimeUnit.SECONDS);
             driver.navigate().to(getAccountUrl(bc.consumerRealmName()));
 
             log.debug("Clicking social " + bc.getIDPAlias());
