@@ -8,7 +8,7 @@ public class OpenshiftV3IdentityProviderTest {
 
     @Test
     public void shouldConstructProviderUrls() throws Exception {
-        final OpenshifV3IdentityProviderConfig config = new OpenshifV3IdentityProviderConfig(new IdentityProviderModel());
+        final OpenshiftV3IdentityProviderConfig config = new OpenshiftV3IdentityProviderConfig(new IdentityProviderModel());
         config.setBaseUrl("http://openshift.io:8443");
         final OpenshiftV3IdentityProvider openshiftV3IdentityProvider = new OpenshiftV3IdentityProvider(null, config);
 
@@ -17,7 +17,7 @@ public class OpenshiftV3IdentityProviderTest {
 
     @Test
     public void shouldConstructProviderUrlsForBaseUrlWithTrailingSlash() throws Exception {
-        final OpenshifV3IdentityProviderConfig config = new OpenshifV3IdentityProviderConfig(new IdentityProviderModel());
+        final OpenshiftV3IdentityProviderConfig config = new OpenshiftV3IdentityProviderConfig(new IdentityProviderModel());
         config.setBaseUrl("http://openshift.io:8443/");
         final OpenshiftV3IdentityProvider openshiftV3IdentityProvider = new OpenshiftV3IdentityProvider(null, config);
 

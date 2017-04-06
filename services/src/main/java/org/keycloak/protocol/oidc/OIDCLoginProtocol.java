@@ -85,6 +85,22 @@ public class OIDCLoginProtocol implements LoginProtocol {
     public static final String CLIENT_SECRET_JWT = "client_secret_jwt";
     public static final String PRIVATE_KEY_JWT = "private_key_jwt";
 
+    // https://tools.ietf.org/html/rfc7636#section-4.3
+    public static final String CODE_CHALLENGE_PARAM = "code_challenge";
+    public static final String CODE_CHALLENGE_METHOD_PARAM = "code_challenge_method";
+
+    // https://tools.ietf.org/html/rfc7636#section-4.2
+    public static final int PKCE_CODE_CHALLENGE_MIN_LENGTH = 43;
+    public static final int PKCE_CODE_CHALLENGE_MAX_LENGTH = 128;
+
+    // https://tools.ietf.org/html/rfc7636#section-4.1
+    public static final int PKCE_CODE_VERIFIER_MIN_LENGTH = 43;
+    public static final int PKCE_CODE_VERIFIER_MAX_LENGTH = 128;    
+    
+    // https://tools.ietf.org/html/rfc7636#section-6.2.2
+    public static final String PKCE_METHOD_PLAIN = "plain";
+    public static final String PKCE_METHOD_S256 = "S256";
+
     private static final Logger logger = Logger.getLogger(OIDCLoginProtocol.class);
 
     protected KeycloakSession session;

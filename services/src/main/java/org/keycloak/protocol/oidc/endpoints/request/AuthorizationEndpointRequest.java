@@ -38,6 +38,10 @@ public class AuthorizationEndpointRequest {
     String idpHint;
     Map<String, String> additionalReqParams = new HashMap<>();
 
+    // https://tools.ietf.org/html/rfc7636#section-6.1
+    String codeChallenge;
+    String codeChallengeMethod;
+
     public String getClientId() {
         return clientId;
     }
@@ -85,4 +89,15 @@ public class AuthorizationEndpointRequest {
     public Map<String, String> getAdditionalReqParams() {
         return additionalReqParams;
     }
+
+    // https://tools.ietf.org/html/rfc7636#section-6.1
+    public String getCodeChallenge() {
+        return codeChallenge;
+    }
+
+    // https://tools.ietf.org/html/rfc7636#section-6.1
+    public String getCodeChallengeMethod() {
+        return codeChallengeMethod;
+    }
+
 }

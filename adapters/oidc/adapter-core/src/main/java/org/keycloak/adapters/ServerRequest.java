@@ -33,6 +33,8 @@ import org.keycloak.constants.AdapterConstants;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.util.JsonSerialization;
 
+import org.jboss.logging.Logger;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -45,6 +47,8 @@ import java.util.List;
  * @version $Revision: 1 $
  */
 public class ServerRequest {
+
+	private static Logger logger = Logger.getLogger(ServerRequest.class);
 
     public static class HttpFailure extends Exception {
         private int status;
@@ -97,6 +101,62 @@ public class ServerRequest {
         if (sessionId != null) {
             formparams.add(new BasicNameValuePair(AdapterConstants.CLIENT_SESSION_STATE, sessionId));
             formparams.add(new BasicNameValuePair(AdapterConstants.CLIENT_SESSION_HOST, HostUtils.getHostName()));
+        }
+
+        HttpPost post = new HttpPost(deployment.getTokenUrl());
+        ClientCredentialsProviderUtils.setClientCredentials(deployment, post, formparams);
+
+        UrlEncodedFormEntity form = new UrlEncodedFormEntity(formparams, "UTF-8");
+        post.setEntity(form);
+        HttpResponse response = deployment.getClient().execute(post);
+        int status = response.getStatusLine().getStatusCode();
+        HttpEntity entity = response.getEntity();
+        if (status != 200) {
+            error(status, entity);
+        }
+        if (entity == null) {
+            throw new HttpFailure(status, null);
+        }
+        InputStream is = entity.getContent();
+        try {
+            ByteArrayOutputStream os = new ByteArrayOutputStream();
+            int c;
+            while ((c = is.read()) != -1) {
+                os.write(c);
+            }
+            byte[] bytes = os.toByteArray();
+            String json = new String(bytes);
+            try {
+                return JsonSerialization.readValue(json, AccessTokenResponse.class);
+            } catch (IOException e) {
+                throw new IOException(json, e);
+            }
+        } finally {
+            try {
+                is.close();
+            } catch (IOException ignored) {
+
+            }
+        }
+    }
+
+    // https://tools.ietf.org/html/rfc7636#section-4
+    public static AccessTokenResponse invokeAccessCodeToToken(KeycloakDeployment deployment, String code, String redirectUri, String sessionId, String codeVerifier) throws IOException, HttpFailure {
+        List<NameValuePair> formparams = new ArrayList<>();
+        redirectUri = stripOauthParametersFromRedirect(redirectUri);
+        formparams.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, "authorization_code"));
+        formparams.add(new BasicNameValuePair(OAuth2Constants.CODE, code));
+        formparams.add(new BasicNameValuePair(OAuth2Constants.REDIRECT_URI, redirectUri));
+        if (sessionId != null) {
+            formparams.add(new BasicNameValuePair(AdapterConstants.CLIENT_SESSION_STATE, sessionId));
+            formparams.add(new BasicNameValuePair(AdapterConstants.CLIENT_SESSION_HOST, HostUtils.getHostName()));
+        }
+        // https://tools.ietf.org/html/rfc7636#section-4
+        if (codeVerifier != null) {
+            logger.debugf("add to POST parameters of Token Request, codeVerifier = %s", codeVerifier);
+            formparams.add(new BasicNameValuePair(OAuth2Constants.CODE_VERIFIER, codeVerifier));
+        } else {
+            logger.debug("add to POST parameters of Token Request without codeVerifier");
         }
 
         HttpPost post = new HttpPost(deployment.getTokenUrl());

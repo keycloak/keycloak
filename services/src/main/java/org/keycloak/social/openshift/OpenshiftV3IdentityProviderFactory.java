@@ -16,7 +16,7 @@ public class OpenshiftV3IdentityProviderFactory extends AbstractIdentityProvider
 
     @Override
     public OpenshiftV3IdentityProvider create(KeycloakSession keycloakSession, IdentityProviderModel identityProviderModel) {
-        return new OpenshiftV3IdentityProvider(keycloakSession, new OpenshifV3IdentityProviderConfig(identityProviderModel));
+        return new OpenshiftV3IdentityProvider(keycloakSession, new OpenshiftV3IdentityProviderConfig(identityProviderModel));
     }
 
     @Override
