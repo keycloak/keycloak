@@ -51,8 +51,11 @@ involves no arguments.
 
 [source,javascript]
 ----
+    var session = require('express-session');
     var Keycloak = require('keycloak-connect');
-    var keycloak = new Keycloak();
+
+    var memoryStore = new session.MemoryStore();
+    var keycloak = new Keycloak({ store: memoryStore });
 ----
 
 By default, this will locate a file named `keycloak.json` alongside
