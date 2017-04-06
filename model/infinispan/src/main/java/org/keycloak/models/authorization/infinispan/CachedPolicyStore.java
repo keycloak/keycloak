@@ -97,9 +97,7 @@ public class CachedPolicyStore implements PolicyStore {
         }
         ResourceServer resourceServer = policy.getResourceServer();
         getDelegate().delete(id);
-        this.transaction.whenCommit(() -> {
-            invalidateCache(resourceServer.getId());
-        });
+        invalidateCache(resourceServer.getId());
     }
 
     @Override
