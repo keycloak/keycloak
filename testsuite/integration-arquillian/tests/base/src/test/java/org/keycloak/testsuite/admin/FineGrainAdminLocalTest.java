@@ -53,7 +53,7 @@ import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-//@Ignore
+@Ignore
 public class FineGrainAdminLocalTest extends AbstractKeycloakTest {
 
     @Override
