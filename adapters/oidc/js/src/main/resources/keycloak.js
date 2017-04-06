@@ -922,7 +922,7 @@
                             var redirectUri = location.href;
                             if (location.hash && encodeHash) {
                                 redirectUri = redirectUri.substring(0, location.href.indexOf('#'));
-                                redirectUri += (redirectUri.indexOf('?') == -1 ? '?' : '&') + 'redirect_fragment=' + encodeURIComponent(location.hash.substring(1));
+                                redirectUri += (redirectUri.indexOf('?') == -1 ? '?' : '&') + 'redirect_fragment=' + location.hash.substring(1);
                             }
                             return redirectUri;
                         }
