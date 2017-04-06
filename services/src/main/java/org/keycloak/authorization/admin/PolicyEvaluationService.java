@@ -245,7 +245,6 @@ public class PolicyEvaluationService {
                             requestedRoles.add(role);
                         }
                     }
-                    clientSession.setProtocolMappers(clientModel.getProtocolMappers().stream().map(protocolMapperModel -> protocolMapperModel.getId()).collect(Collectors.toSet()));
                     accessToken = new TokenManager().createClientAccessToken(keycloakSession, requestedRoles, realm, clientModel, userModel, userSession, clientSession);
                 }
             }
