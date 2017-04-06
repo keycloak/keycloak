@@ -83,6 +83,14 @@ public interface OAuth2Constants {
 
     String JWT = "JWT";
 
+    // https://tools.ietf.org/html/rfc7636#section-6.1
+    String CODE_VERIFIER = "code_verifier";
+    String CODE_CHALLENGE = "code_challenge";
+    String CODE_CHALLENGE_METHOD = "code_challenge_method";
+
+    // https://tools.ietf.org/html/rfc7636#section-6.2.2
+    String PKCE_METHOD_PLAIN = "plain";
+    String PKCE_METHOD_S256 = "S256";
 
 }
 

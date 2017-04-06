@@ -113,6 +113,11 @@ public class OAuthClient {
 
     private Map<String, PublicKey> publicKeys = new HashMap<>();
 
+    // https://tools.ietf.org/html/rfc7636#section-4
+    private String codeVerifier;
+    private String codeChallenge;
+    private String codeChallengeMethod;
+
     public class LogoutUrlBuilder {
         private final UriBuilder b = OIDCLoginProtocolService.logoutUrl(UriBuilder.fromUri(baseUrl));
 
@@ -166,6 +171,10 @@ public class OAuthClient {
         nonce = null;
         request = null;
         requestUri = null;
+        // https://tools.ietf.org/html/rfc7636#section-4
+        codeVerifier = null;
+        codeChallenge = null;
+        codeChallengeMethod = null;
     }
 
     public AuthorizationEndpointResponse doLogin(String username, String password) {
@@ -249,6 +258,11 @@ public class OAuthClient {
 
             if (clientSessionHost != null) {
                 parameters.add(new BasicNameValuePair(AdapterConstants.CLIENT_SESSION_HOST, clientSessionHost));
+            }
+
+            // https://tools.ietf.org/html/rfc7636#section-4.5
+            if (codeVerifier != null) {
+                parameters.add(new BasicNameValuePair(OAuth2Constants.CODE_VERIFIER, codeVerifier));
             }
 
             UrlEncodedFormEntity formEntity = null;
@@ -615,6 +629,13 @@ public class OAuthClient {
         if (requestUri != null) {
             b.queryParam(OIDCLoginProtocol.REQUEST_URI_PARAM, requestUri);
         }
+        // https://tools.ietf.org/html/rfc7636#section-4.3
+        if (codeChallenge != null) {
+            b.queryParam(OAuth2Constants.CODE_CHALLENGE, codeChallenge);
+        }
+        if (codeChallengeMethod != null) {
+            b.queryParam(OAuth2Constants.CODE_CHALLENGE_METHOD, codeChallengeMethod);
+        }  
         return b.build(realm).toString();
     }
 
@@ -728,6 +749,20 @@ public class OAuthClient {
 
     public String getRealm() {
         return realm;
+    }
+
+    // https://tools.ietf.org/html/rfc7636#section-4
+    public OAuthClient codeVerifier(String codeVerifier) {
+    	this.codeVerifier = codeVerifier;
+    	return this;
+    }
+    public OAuthClient codeChallenge(String codeChallenge) {
+    	this.codeChallenge = codeChallenge;
+    	return this;
+    }
+    public OAuthClient codeChallengeMethod(String codeChallengeMethod) {
+    	this.codeChallengeMethod = codeChallengeMethod;
+    	return this;
     }
 
     public static class AuthorizationEndpointResponse {
