@@ -3,6 +3,7 @@ package org.keycloak.testsuite.broker;
 import org.jboss.arquillian.graphene.Graphene;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.After;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
@@ -10,11 +11,18 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.social.openshift.OpenshiftV3IdentityProvider;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
-import org.keycloak.testsuite.pages.AccountUpdateProfilePage;
+import org.keycloak.testsuite.auth.page.login.UpdateAccount;
 import org.keycloak.testsuite.pages.LoginPage;
-import org.keycloak.testsuite.pages.LoginUpdateProfilePage;
+import org.keycloak.testsuite.pages.social.FacebookLoginPage;
+import org.keycloak.testsuite.pages.social.GitHubLoginPage;
+import org.keycloak.testsuite.pages.social.GoogleLoginPage;
+import org.keycloak.testsuite.pages.social.LinkedInLoginPage;
+import org.keycloak.testsuite.pages.social.MicrosoftLoginPage;
+import org.keycloak.testsuite.pages.social.StackOverflowLoginPage;
+import org.keycloak.testsuite.pages.social.TwitterLoginPage;
 import org.keycloak.testsuite.util.IdentityProviderBuilder;
 import org.keycloak.testsuite.util.RealmBuilder;
+import org.keycloak.testsuite.util.URLUtils;
 import org.openqa.selenium.By;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 
@@ -26,9 +34,18 @@ import java.util.Properties;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assume.assumeTrue;
+import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.FACEBOOK;
+import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.GITHUB;
+import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.GOOGLE;
+import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.LINKEDIN;
+import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.MICROSOFT;
+import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.OPENSHIFT;
+import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.STACKOVERFLOW;
+import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.TWITTER;
 
 /**
- * Created by st on 19.01.17.
+ * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
+ * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
 public class SocialLoginTest extends AbstractKeycloakTest {
 
@@ -38,13 +55,46 @@ public class SocialLoginTest extends AbstractKeycloakTest {
     private static Properties config = new Properties();
 
     @Page
-    public AccountUpdateProfilePage account;
+    private LoginPage loginPage;
 
     @Page
-    public LoginPage loginPage;
+    private UpdateAccount updateAccountPage;
 
     @Page
-    public LoginUpdateProfilePage updateProfilePage;
+    private GoogleLoginPage googleLoginPage;
+    @Page
+    private FacebookLoginPage facebookLoginPage;
+    @Page
+    private GitHubLoginPage gitHubLoginPage;
+    @Page
+    private TwitterLoginPage twitterLoginPage;
+    @Page
+    private LinkedInLoginPage linkedInLoginPage;
+    @Page
+    private MicrosoftLoginPage microsoftLoginPage;
+    @Page
+    private StackOverflowLoginPage stackOverflowLoginPage;
+
+    public enum Provider {
+        GOOGLE("google"),
+        FACEBOOK("facebook"),
+        GITHUB("github"),
+        TWITTER("twitter"),
+        LINKEDIN("linkedin"),
+        MICROSOFT("microsoft"),
+        STACKOVERFLOW("stackoverflow"),
+        OPENSHIFT("openshift-v3");
+
+        private String id;
+
+        Provider(String id) {
+            this.id = id;
+        }
+
+        public String id() {
+            return id;
+        }
+    }
 
     @BeforeClass
     public static void loadConfig() throws Exception {
@@ -52,12 +102,21 @@ public class SocialLoginTest extends AbstractKeycloakTest {
 
         config.load(new FileInputStream(System.getProperty(SOCIAL_CONFIG)));
     }
+    
+    @Before
+    public void beforeSocialLoginTest() {
+        accountPage.setAuthRealm(REALM);
+        accountPage.navigateTo();
+    }
 
     @After
     public void removeUser() {
+        log.info("Removing test user");
         List<UserRepresentation> users = adminClient.realm(REALM).users().search(null, null, null);
         for (UserRepresentation user : users) {
-            adminClient.realm(REALM).users().get(user.getId()).remove();
+            if (user.getServiceAccountClientId() == null) {
+                adminClient.realm(REALM).users().get(user.getId()).remove();
+            }
         }
     }
 
@@ -67,21 +126,21 @@ public class SocialLoginTest extends AbstractKeycloakTest {
         List<IdentityProviderRepresentation> idps = new LinkedList<>();
         rep.setIdentityProviders(idps);
 
-        idps.add(buildIdp("openshift-v3"));
-        idps.add(buildIdp("google"));
-        idps.add(buildIdp("facebook"));
-        idps.add(buildIdp("github"));
-        idps.add(buildIdp("twitter"));
-        idps.add(buildIdp("linkedin"));
-        idps.add(buildIdp("microsoft"));
-        idps.add(buildIdp("stackoverflow"));
+        idps.add(buildIdp(OPENSHIFT));
+        idps.add(buildIdp(GOOGLE));
+        idps.add(buildIdp(FACEBOOK));
+        idps.add(buildIdp(GITHUB));
+        idps.add(buildIdp(TWITTER));
+        idps.add(buildIdp(LINKEDIN));
+        idps.add(buildIdp(MICROSOFT));
+        idps.add(buildIdp(STACKOVERFLOW));
 
         testRealms.add(rep);
     }
 
     @Test
+    // TODO: Fix and revamp this test
     public void openshiftLogin() throws Exception {
-        account.open(REALM);
         loginPage.clickSocial("openshift-v3");
 
         Graphene.waitGui().until(ExpectedConditions.visibilityOfElementLocated(By.id("inputUsername")));
@@ -92,169 +151,115 @@ public class SocialLoginTest extends AbstractKeycloakTest {
         Graphene.waitGui().until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector("input[name=approve]")));
         driver.findElement(By.cssSelector("input[name=approve]")).click();
 
-        assertEquals(config.getProperty("openshift-v3.username", config.getProperty("common.profile.username")), account.getUsername());
+        assertEquals(config.getProperty("openshift-v3.username", config.getProperty("common.profile.username")), accountPage.getUsername());
     }
 
     @Test
     public void googleLogin() throws InterruptedException {
-        account.open(REALM);
-
-        loginPage.clickSocial("google");
-
-        Graphene.waitGui().until(ExpectedConditions.visibilityOfElementLocated(By.id("Email")));
-
-        driver.findElement(By.id("Email")).sendKeys(config.getProperty("google.username", config.getProperty("common.username")));
-        driver.findElement(By.id("next")).click();
-
-        Graphene.waitGui().until(ExpectedConditions.visibilityOfElementLocated(By.id("Passwd")));
-
-        driver.findElement(By.id("Passwd")).sendKeys(config.getProperty("google.password", config.getProperty("common.password")));
-        driver.findElement(By.id("signIn")).click();
-
-        Graphene.waitGui().until(ExpectedConditions.elementToBeClickable(By.id("submit_approve_access")));
-
-        driver.findElement(By.id("submit_approve_access")).click();
-
-        assertEquals(config.getProperty("google.profile.firstName", config.getProperty("common.profile.firstName")), account.getFirstName());
-        assertEquals(config.getProperty("google.profile.lastName", config.getProperty("common.profile.lastName")), account.getLastName());
-        assertEquals(config.getProperty("google.profile.email", config.getProperty("common.profile.email")), account.getEmail());
+        loginPage.clickSocial(GOOGLE.id());
+        googleLoginPage.login(getConfig(GOOGLE, "username"), getConfig(GOOGLE, "password"));
+        assertAccount(GOOGLE);
     }
 
     @Test
-    public void faceBookLogin() {
-        account.open(REALM);
-
-        loginPage.clickSocial("facebook");
-
-        Graphene.waitGui().until(ExpectedConditions.visibilityOfElementLocated(By.id("email")));
-        driver.findElement(By.id("email")).sendKeys(config.getProperty("facebook.username", config.getProperty("common.username")));
-        driver.findElement(By.id("pass")).sendKeys(config.getProperty("facebook.password", config.getProperty("common.password")));
-
-        driver.findElement(By.id("loginbutton")).click();
-
-        assertEquals(config.getProperty("facebook.profile.firstName", config.getProperty("common.profile.firstName")), account.getFirstName());
-        assertEquals(config.getProperty("facebook.profile.lastName", config.getProperty("common.profile.lastName")), account.getLastName());
-        assertEquals(config.getProperty("facebook.profile.email", config.getProperty("common.profile.email")), account.getEmail());
+    public void facebookLogin() {
+        loginPage.clickSocial(FACEBOOK.id());
+        facebookLoginPage.login(getConfig(FACEBOOK, "profile.email"), getConfig(FACEBOOK, "password"));
+        assertAccount(FACEBOOK);
     }
 
     @Test
     public void githubLogin() {
-        account.open(REALM);
-
-        loginPage.clickSocial("github");
-
-        Graphene.waitGui().until(ExpectedConditions.visibilityOfElementLocated(By.id("login_field")));
-        driver.findElement(By.id("login_field")).sendKeys(config.getProperty("github.username", config.getProperty("common.username")));
-        driver.findElement(By.id("password")).sendKeys(config.getProperty("github.password", config.getProperty("common.password")));
-
-        driver.findElement(By.name("commit")).click();
-
-        assertEquals(config.getProperty("github.profile.firstName", config.getProperty("common.profile.firstName")), account.getFirstName());
-        assertEquals(config.getProperty("github.profile.lastName", config.getProperty("common.profile.lastName")), account.getLastName());
-        assertEquals(config.getProperty("github.profile.email", config.getProperty("common.profile.email")), account.getEmail());
+        loginPage.clickSocial(GITHUB.id());
+        gitHubLoginPage.login(getConfig(GITHUB, "username"), getConfig(GITHUB, "password"));
+        assertAccount(GITHUB);
     }
 
     @Test
     public void twitterLogin() {
-        account.open(REALM);
+        loginPage.clickSocial(TWITTER.id());
+        twitterLoginPage.login(getConfig(TWITTER, "username"), getConfig(TWITTER, "password"));
 
-        loginPage.clickSocial("twitter");
-
-        Graphene.waitGui().until(ExpectedConditions.visibilityOfElementLocated(By.id("username_or_email")));
-        driver.findElement(By.id("username_or_email")).sendKeys(config.getProperty("twitter.username", config.getProperty("common.username")));
-        driver.findElement(By.id("password")).sendKeys(config.getProperty("twitter.password", config.getProperty("common.password")));
-
-        driver.findElement(By.id("allow")).click();
-
-        assertTrue(updateProfilePage.isCurrent());
-
-        assertEquals(config.getProperty("twitter.profile.firstName", config.getProperty("common.profile.firstName")), account.getFirstName());
-        assertEquals(config.getProperty("twitter.profile.lastName", config.getProperty("common.profile.lastName")), account.getLastName());
-        assertEquals("", updateProfilePage.getEmail());
-
-        updateProfilePage.update(null, null, "keycloakey@gmail.com");
-
-        assertEquals(config.getProperty("twitter.profile.firstName", config.getProperty("common.profile.firstName")), account.getFirstName());
-        assertEquals(config.getProperty("twitter.profile.lastName", config.getProperty("common.profile.lastName")), account.getLastName());
-        assertEquals(config.getProperty("twitter.profile.email", config.getProperty("common.profile.email")), account.getEmail());
+        assertUpdateProfile(TWITTER, false, false, true);
+        assertAccount(TWITTER);
     }
 
     @Test
     public void linkedinLogin() {
-        account.open(REALM);
-
-        loginPage.clickSocial("linkedin");
-
-        Graphene.waitGui().until(ExpectedConditions.visibilityOfElementLocated(By.id("session_key-oauth2SAuthorizeForm")));
-        driver.findElement(By.id("session_key-oauth2SAuthorizeForm")).sendKeys(config.getProperty("linkedin.username", config.getProperty("common.username")));
-        driver.findElement(By.id("session_password-oauth2SAuthorizeForm")).sendKeys(config.getProperty("linkedin.password", config.getProperty("common.password")));
-
-        driver.findElement(By.name("authorize")).click();
-
-        assertEquals(config.getProperty("linkedin.profile.firstName", config.getProperty("common.profile.firstName")), account.getFirstName());
-        assertEquals(config.getProperty("linkedin.profile.lastName", config.getProperty("common.profile.lastName")), account.getLastName());
-        assertEquals(config.getProperty("linkedin.profile.email", config.getProperty("common.profile.email")), account.getEmail());
+        loginPage.clickSocial(LINKEDIN.id());
+        linkedInLoginPage.login(getConfig(LINKEDIN, "profile.email"), getConfig(LINKEDIN, "password"));
+        assertAccount(LINKEDIN);
     }
 
     @Test
     public void microsoftLogin() {
-        account.open(REALM);
-
-        loginPage.clickSocial("microsoft");
-
-        Graphene.waitGui().until(ExpectedConditions.visibilityOfElementLocated(By.name("loginfmt")));
-        driver.findElement(By.name("loginfmt")).sendKeys(config.getProperty("microsoft.username", config.getProperty("common.username")));
-        driver.findElement(By.xpath("//input[@value='Next']")).click();
-
-        Graphene.waitGui().until(ExpectedConditions.visibilityOfElementLocated(By.name("passwd")));
-        driver.findElement(By.name("passwd")).sendKeys(config.getProperty("microsoft.password", config.getProperty("common.password")));
-        driver.findElement(By.xpath("//input[@value='Sign in']")).click();
-
-        assertEquals(config.getProperty("microsoft.profile.firstName", config.getProperty("common.profile.firstName")), account.getFirstName());
-        assertEquals(config.getProperty("microsoft.profile.lastName", config.getProperty("common.profile.lastName")), account.getLastName());
-        assertEquals(config.getProperty("microsoft.profile.email", config.getProperty("common.profile.email")), account.getEmail());
+        loginPage.clickSocial(MICROSOFT.id());
+        microsoftLoginPage.login(getConfig(MICROSOFT, "profile.email"), getConfig(MICROSOFT, "password"));
+        assertAccount(MICROSOFT);
     }
 
     @Test
     public void stackoverflowLogin() {
-        account.open(REALM);
+        loginPage.clickSocial(STACKOVERFLOW.id());
+        stackOverflowLoginPage.login(getConfig(STACKOVERFLOW, "profile.email"), getConfig(STACKOVERFLOW, "password"));
 
-        loginPage.clickSocial("stackoverflow");
-
-        Graphene.waitModel().until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//a[@title='log in with Stack_Exchange']")));
-        driver.findElement(By.xpath("//a[@title='log in with Stack_Exchange']")).click();
-
-        driver.switchTo().frame(driver.findElement(By.id("affiliate-signin-iframe")));
-
-        Graphene.waitGui().until(ExpectedConditions.visibilityOfElementLocated(By.name("email")));
-        driver.findElement(By.name("email")).sendKeys(config.getProperty("stackoverflow.username", config.getProperty("common.username")));
-        driver.findElement(By.name("password")).sendKeys(config.getProperty("stackoverflow.password", config.getProperty("common.password")));
-
-        driver.findElement(By.xpath("//input[@value='Sign In']")).click();
-
-        assertEquals(config.getProperty("stackoverflow.profile.firstName", config.getProperty("common.profile.firstName")), updateProfilePage.getFirstName());
-        assertEquals(config.getProperty("stackoverflow.profile.lastName", config.getProperty("common.profile.lastName")), updateProfilePage.getLastName());
-        assertEquals("", updateProfilePage.getEmail());
-
-        updateProfilePage.update(null, null, "keycloakey@gmail.com");
-
-        assertEquals(config.getProperty("stackoverflow.profile.firstName", config.getProperty("common.profile.firstName")), account.getFirstName());
-        assertEquals(config.getProperty("stackoverflow.profile.lastName", config.getProperty("common.profile.lastName")), account.getLastName());
-        assertEquals(config.getProperty("stackoverflow.profile.email", config.getProperty("common.profile.email")), account.getEmail());
+        assertUpdateProfile(STACKOVERFLOW, false, false, true);
+        assertAccount(STACKOVERFLOW);
     }
 
-    private IdentityProviderRepresentation buildIdp(String id) {
-        IdentityProviderRepresentation idp = IdentityProviderBuilder.create().alias(id).providerId(id).build();
+    private IdentityProviderRepresentation buildIdp(Provider provider) {
+        IdentityProviderRepresentation idp = IdentityProviderBuilder.create().alias(provider.id()).providerId(provider.id()).build();
         idp.setEnabled(true);
-        idp.getConfig().put("clientId", config.getProperty(id + ".clientId"));
-        idp.getConfig().put("clientSecret", config.getProperty(id + ".clientSecret"));
-        if (id.equals("stackoverflow")) {
-            idp.getConfig().put("key", config.getProperty(id + ".clientKey"));
+        idp.getConfig().put("clientId", getConfig(provider, "clientId"));
+        idp.getConfig().put("clientSecret", getConfig(provider, "clientSecret"));
+        if (provider == STACKOVERFLOW) {
+            idp.getConfig().put("key", getConfig(provider, "clientKey"));
         }
-        if (id.equals("openshift-v3")) {
-            idp.getConfig().put("baseUrl", config.getProperty(id + ".baseUrl", OpenshiftV3IdentityProvider.BASE_URL));
+        if (provider == OPENSHIFT) {
+            idp.getConfig().put("baseUrl", config.getProperty(provider.id() + ".baseUrl", OpenshiftV3IdentityProvider.BASE_URL));
         }
         return idp;
     }
 
+    private String getConfig(Provider provider, String key) {
+        return config.getProperty(provider.id() + "." + key, config.getProperty("common." + key));
+    }
+
+    private void assertAccount(Provider provider) {
+        assertTrue(URLUtils.currentUrlStartWith(driver, accountPage.toString())); // Sometimes after login the URL ends with /# or similar
+
+        assertEquals(getConfig(provider, "profile.firstName"), accountPage.getFirstName());
+        assertEquals(getConfig(provider, "profile.lastName"), accountPage.getLastName());
+        assertEquals(getConfig(provider, "profile.email"), accountPage.getEmail());
+    }
+
+    private void assertUpdateProfile(Provider provider, boolean firstName, boolean lastName, boolean email) {
+        assertTrue(URLUtils.currentUrlDoesntStartWith(driver, accountPage.toString()));
+
+        if (firstName) {
+            assertTrue(updateAccountPage.fields().getFirstName().isEmpty());
+            updateAccountPage.fields().setFirstName(getConfig(provider, "profile.firstName"));
+        }
+        else {
+            assertEquals(getConfig(provider, "profile.firstName"), updateAccountPage.fields().getFirstName());
+        }
+
+        if (lastName) {
+            assertTrue(updateAccountPage.fields().getLastName().isEmpty());
+            updateAccountPage.fields().setLastName(getConfig(provider, "profile.lastName"));
+        }
+        else {
+            assertEquals(getConfig(provider, "profile.lastName"), updateAccountPage.fields().getLastName());
+        }
+
+        if (email) {
+            assertTrue(updateAccountPage.fields().getEmail().isEmpty());
+            updateAccountPage.fields().setEmail(getConfig(provider, "profile.email"));
+        }
+        else {
+            assertEquals(getConfig(provider, "profile.email"), updateAccountPage.fields().getEmail());
+        }
+
+        updateAccountPage.submit();
+    }
 }
