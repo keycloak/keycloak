@@ -361,8 +361,12 @@ public class LDAPProvidersIntegrationNoImportTest {
         Assert.assertEquals("Your password has been updated.", profilePage.getSuccess());
     }
 
+    //
+    //  KEYCLOAK-3964
+    //
+    // Adding a user to LDAP and Logging In as him - Verifying he is not added locally both times
     @Test
-    public void testLDAPUserDeletionImport() {
+    public void testLDAPUserImportOnCreationOrLogin() {
        
     	KeycloakSession session = keycloakRule.startSession();
         RealmModel appRealm = new RealmManager(session).getRealmByName("test");
