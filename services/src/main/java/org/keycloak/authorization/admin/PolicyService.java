@@ -72,7 +72,6 @@ public class PolicyService {
 
     @Path("{type}")
     public Object getResource(@PathParam("type") String type) {
-        this.auth.requireManage();
         PolicyProviderFactory providerFactory = authorization.getProviderFactory(type);
 
         if (providerFactory != null) {
@@ -80,10 +79,6 @@ public class PolicyService {
         }
 
         Policy policy = authorization.getStoreFactory().getPolicyStore().findById(type, resourceServer.getId());
-
-        if (policy == null) {
-            return Response.status(Status.NOT_FOUND).build();
-        }
 
         return doCreatePolicyResource(policy);
     }

@@ -70,6 +70,10 @@ public class PolicyResourceService {
     public Response update(String payload) {
         this.auth.requireManage();
 
+        if (policy == null) {
+            return Response.status(Status.NOT_FOUND).build();
+        }
+
         doUpdate(policy, payload);
 
         return Response.status(Status.CREATED).build();
@@ -102,6 +106,11 @@ public class PolicyResourceService {
     @DELETE
     public Response delete() {
         this.auth.requireManage();
+
+        if (policy == null) {
+            return Response.status(Status.NOT_FOUND).build();
+        }
+
         StoreFactory storeFactory = authorization.getStoreFactory();
         PolicyStore policyStore = storeFactory.getPolicyStore();
         PolicyProviderAdminService resource = getPolicyProviderAdminResource(policy.getType());
@@ -132,6 +141,11 @@ public class PolicyResourceService {
     @NoCache
     public Response findById() {
         this.auth.requireView();
+
+        if (policy == null) {
+            return Response.status(Status.NOT_FOUND).build();
+        }
+
         return Response.ok(toRepresentation(policy)).build();
     }
 
@@ -145,6 +159,11 @@ public class PolicyResourceService {
     @NoCache
     public Response getDependentPolicies() {
         this.auth.requireView();
+
+        if (policy == null) {
+            return Response.status(Status.NOT_FOUND).build();
+        }
+
         List<Policy> policies = authorization.getStoreFactory().getPolicyStore().findDependentPolicies(policy.getId(), resourceServer.getId());
 
         return Response.ok(policies.stream().map(policy -> {
@@ -164,6 +183,11 @@ public class PolicyResourceService {
     @NoCache
     public Response getScopes() {
         this.auth.requireView();
+
+        if (policy == null) {
+            return Response.status(Status.NOT_FOUND).build();
+        }
+
         return Response.ok(policy.getScopes().stream().map(scope -> {
             ScopeRepresentation representation = new ScopeRepresentation();
 
@@ -181,6 +205,10 @@ public class PolicyResourceService {
     public Response getResources() {
         this.auth.requireView();
 
+        if (policy == null) {
+            return Response.status(Status.NOT_FOUND).build();
+        }
+
         return Response.ok(policy.getResources().stream().map(resource -> {
             ResourceRepresentation representation = new ResourceRepresentation();
 
@@ -197,6 +225,10 @@ public class PolicyResourceService {
     @NoCache
     public Response getAssociatedPolicies() {
         this.auth.requireView();
+
+        if (policy == null) {
+            return Response.status(Status.NOT_FOUND).build();
+        }
 
         return Response.ok(policy.getAssociatedPolicies().stream().map(policy -> {
             PolicyRepresentation representation1 = new PolicyRepresentation();
