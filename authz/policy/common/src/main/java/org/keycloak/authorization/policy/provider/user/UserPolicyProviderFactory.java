@@ -133,16 +133,16 @@ public class UserPolicyProviderFactory implements PolicyProviderFactory {
     }
 
     static String[] getUsers(Policy policy) {
-        String roles = policy.getConfig().get("users");
+        String users = policy.getConfig().get("users");
 
-        if (roles != null) {
+        if (users != null) {
             try {
-                return JsonSerialization.readValue(roles.getBytes(), String[].class);
+                return JsonSerialization.readValue(users.getBytes(), String[].class);
             } catch (IOException e) {
-                throw new RuntimeException("Could not parse roles [" + roles + "] from policy config [" + policy.getName() + ".", e);
+                throw new RuntimeException("Could not parse users [" + users + "] from policy config [" + policy.getName() + ".", e);
             }
         }
 
-        return new String[]{};
+        return new String[0];
     }
 }
