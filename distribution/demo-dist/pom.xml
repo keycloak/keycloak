@@ -206,7 +206,6 @@
                             </execution>
                         </executions>
                     </plugin>
-
                     <plugin>
                         <artifactId>maven-assembly-plugin</artifactId>
                         <executions>
@@ -223,12 +222,10 @@
                                     <outputDirectory>target</outputDirectory>
                                     <workDirectory>target/assembly/work</workDirectory>
                                     <appendAssemblyId>false</appendAssemblyId>
-                                    <tarLongFileMode>gnu</tarLongFileMode>
                                 </configuration>
                             </execution>
                         </executions>
                     </plugin>
-
                 </plugins>
             </build>
         </profile>
