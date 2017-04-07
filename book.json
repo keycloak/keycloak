@@ -16,7 +16,6 @@
   },
 
   "variables": {
-    "title": "Keycloak Documentation",
     "project": {
       "name": "Keycloak",
       "version": "SNAPSHOT",

@@ -1,4 +1,4 @@
-= {{book.title}}
+= Authorization Services Guide
 
  .. link:authorization_services/topics/overview/overview.adoc[Overview]
 

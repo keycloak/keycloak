@@ -1,4 +1,4 @@
-= {{book.title}}
+= Getting Started Guide
 
  .. link:getting_started/topics/overview.adoc[Overview]
  .. link:getting_started/topics/first-boot.adoc[Installing and Booting]
