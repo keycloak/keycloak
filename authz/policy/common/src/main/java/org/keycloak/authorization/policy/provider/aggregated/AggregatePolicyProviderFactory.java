@@ -49,8 +49,8 @@ public class AggregatePolicyProviderFactory implements PolicyProviderFactory {
     }
 
     @Override
-    public PolicyProviderAdminService getAdminResource(ResourceServer resourceServer) {
-        return new AggregatePolicyAdminResource(resourceServer);
+    public PolicyProviderAdminService getAdminResource(ResourceServer resourceServer, AuthorizationProvider authorization) {
+        return new AggregatePolicyAdminResource();
     }
 
     @Override

@@ -19,8 +19,8 @@
 package org.keycloak.authorization.policy.provider.aggregated;
 
 import org.keycloak.authorization.model.Policy;
-import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.policy.provider.PolicyProviderAdminService;
+import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentation;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,19 +30,13 @@ import java.util.List;
  */
 public class AggregatePolicyAdminResource implements PolicyProviderAdminService {
 
-    private final ResourceServer resourceServer;
-
-    public AggregatePolicyAdminResource(ResourceServer resourceServer) {
-        this.resourceServer = resourceServer;
-    }
-
     @Override
-    public void onCreate(Policy policy) {
+    public void onCreate(Policy policy, AbstractPolicyRepresentation representation) {
         verifyCircularReference(policy, new ArrayList<>());
     }
 
     @Override
-    public void onUpdate(Policy policy) {
+    public void onUpdate(Policy policy, AbstractPolicyRepresentation representation) {
         verifyCircularReference(policy, new ArrayList<>());
     }
 

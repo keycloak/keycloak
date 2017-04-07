@@ -49,8 +49,8 @@ public class DroolsPolicyProviderFactory implements PolicyProviderFactory {
     }
 
     @Override
-    public PolicyProviderAdminService getAdminResource(ResourceServer resourceServer) {
-        return new DroolsPolicyAdminResource(resourceServer, this);
+    public PolicyProviderAdminService getAdminResource(ResourceServer resourceServer, AuthorizationProvider authorization) {
+        return new DroolsPolicyAdminResource(this);
     }
 
     @Override

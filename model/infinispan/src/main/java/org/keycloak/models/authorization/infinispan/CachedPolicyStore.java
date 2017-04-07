@@ -285,6 +285,7 @@ public class CachedPolicyStore implements PolicyStore {
             public void removeScope(Scope scope) {
                 getDelegateForUpdate().removeScope(getStoreFactory().getScopeStore().findById(scope.getId(), cached.getResourceServerId()));
                 cached.removeScope(scope);
+                scopes.remove(scope);
             }
 
             @Override
@@ -297,6 +298,7 @@ public class CachedPolicyStore implements PolicyStore {
             public void removeAssociatedPolicy(Policy associatedPolicy) {
                 getDelegateForUpdate().removeAssociatedPolicy(getStoreFactory().getPolicyStore().findById(associatedPolicy.getId(), cached.getResourceServerId()));
                 cached.removeAssociatedPolicy(associatedPolicy);
+                associatedPolicies.remove(associatedPolicy);
             }
 
             @Override
@@ -309,6 +311,7 @@ public class CachedPolicyStore implements PolicyStore {
             public void removeResource(Resource resource) {
                 getDelegateForUpdate().removeResource(getStoreFactory().getResourceStore().findById(resource.getId(), cached.getResourceServerId()));
                 cached.removeResource(resource);
+                resources.remove(resource);
             }
 
             @Override

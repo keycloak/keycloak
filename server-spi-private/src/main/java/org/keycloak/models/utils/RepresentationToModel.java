@@ -25,6 +25,7 @@ import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.policy.provider.PolicyProvider;
+import org.keycloak.authorization.policy.provider.PolicyProviderAdminService;
 import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.authorization.store.ResourceServerStore;
 import org.keycloak.authorization.store.ResourceStore;
@@ -92,6 +93,7 @@ import org.keycloak.representations.idm.UserConsentRepresentation;
 import org.keycloak.representations.idm.UserFederationMapperRepresentation;
 import org.keycloak.representations.idm.UserFederationProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.PolicyEnforcementMode;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceOwnerRepresentation;
@@ -2099,6 +2101,168 @@ public class RepresentationToModel {
         }
 
         return null;
+    }
+
+    public static Policy toModel(AbstractPolicyRepresentation representation, ResourceServer resourceServer, AuthorizationProvider authorization) {
+        String type = representation.getType();
+        PolicyProvider provider = authorization.getProvider(type);
+
+        if (provider == null) {
+            //TODO: temporary, remove this check on future versions as drools type is now deprecated
+            if ("drools".equalsIgnoreCase(type)) {
+                type = "rules";
+            }
+            if (authorization.getProvider(type) == null) {
+                throw new RuntimeException("Unknown polucy type [" + type + "]. Could not find a provider for this type.");
+            }
+        }
+
+        PolicyStore policyStore = authorization.getStoreFactory().getPolicyStore();
+        Policy existing;
+
+        if (representation.getId() != null) {
+            existing = policyStore.findById(representation.getId(), resourceServer.getId());
+        } else {
+            existing = policyStore.findByName(representation.getName(), resourceServer.getId());
+        }
+
+        if (existing != null) {
+            existing.setName(representation.getName());
+            existing.setDescription(representation.getDescription());
+            existing.setDecisionStrategy(representation.getDecisionStrategy());
+            existing.setLogic(representation.getLogic());
+
+            updatePolicy(existing, representation, authorization);
+
+            return existing;
+        }
+
+        Policy model = policyStore.create(representation.getName(), type, resourceServer);
+
+        model.setDescription(representation.getDescription());
+        model.setDecisionStrategy(representation.getDecisionStrategy());
+        model.setLogic(representation.getLogic());
+
+        updatePolicy(model, representation, authorization);
+
+        representation.setId(model.getId());
+
+        return model;
+    }
+
+    private static void updatePolicy(Policy policy, AbstractPolicyRepresentation representation, AuthorizationProvider authorization) {
+        ResourceServer resourceServer = policy.getResourceServer();
+        StoreFactory storeFactory = authorization.getStoreFactory();
+        Set<String> newResources = representation.getResources();
+
+        if (newResources != null && !newResources.isEmpty()) {
+            Set<Resource> associatedResources = policy.getResources();
+            String newResourceId = newResources.iterator().next();
+
+            if (newResourceId != null) {
+                Resource newResource = storeFactory.getResourceStore().findById(newResourceId, resourceServer.getId());
+
+                if (newResource == null) {
+                    throw new RuntimeException("Resource with id [" + newResourceId + "] does not exist");
+                }
+
+                if (!associatedResources.isEmpty()) {
+                    Resource associatedResource = associatedResources.iterator().next();
+
+                    if (!associatedResource.getId().equals(newResource.getId())) {
+                        policy.removeResource(associatedResource);
+                    }
+                }
+
+                policy.addResource(newResource);
+            } else {
+                for (Resource resource : new ArrayList<>(associatedResources)) {
+                    policy.removeResource(resource);
+                }
+            }
+        } else {
+            for (Resource associatedResource : new HashSet<Resource>(policy.getResources())) {
+                policy.removeResource(associatedResource);
+            }
+        }
+
+        PolicyStore policyStore = storeFactory.getPolicyStore();
+        Set<String> policies = representation.getPolicies();
+
+        for (String policyId : policies) {
+            boolean hasPolicy = false;
+
+            for (Policy policyModel : new HashSet<Policy>(policy.getAssociatedPolicies())) {
+                if (policyModel.getId().equals(policyId) || policyModel.getName().equals(policyId)) {
+                    hasPolicy = true;
+                }
+            }
+
+
+            if (!hasPolicy) {
+                Policy associatedPolicy = policyStore.findById(policyId, resourceServer.getId());
+
+                if (associatedPolicy == null) {
+                    associatedPolicy = policyStore.findByName(policyId, resourceServer.getId());
+                }
+
+                policy.addAssociatedPolicy(associatedPolicy);
+            }
+        }
+
+        for (Policy policyModel : new HashSet<Policy>(policy.getAssociatedPolicies())) {
+            boolean hasPolicy = false;
+
+            for (String policyId : policies) {
+                if (policyModel.getId().equals(policyId) || policyModel.getName().equals(policyId)) {
+                    hasPolicy = true;
+                }
+            }
+            if (!hasPolicy) {
+                policy.removeAssociatedPolicy(policyModel);
+                ;
+            }
+        }
+
+        Set<String> newScopes = representation.getScopes();
+
+        if (newScopes != null && !newScopes.isEmpty()) {
+            for (String scopeId : newScopes) {
+                boolean hasScope = false;
+
+                for (Scope scopeModel : new HashSet<Scope>(policy.getScopes())) {
+                    if (scopeModel.getId().equals(scopeId)) {
+                        hasScope = true;
+                    }
+                }
+                if (!hasScope) {
+                    Scope scope = storeFactory.getScopeStore().findById(scopeId, resourceServer.getId());
+
+                    if (scope == null) {
+                        storeFactory.getScopeStore().findByName(scopeId, resourceServer.getId());
+                    }
+
+                    policy.addScope(scope);
+                }
+            }
+
+            for (Scope scopeModel : new HashSet<Scope>(policy.getScopes())) {
+                boolean hasScope = false;
+
+                for (String scopeId : newScopes) {
+                    if (scopeModel.getId().equals(scopeId)) {
+                        hasScope = true;
+                    }
+                }
+                if (!hasScope) {
+                    policy.removeScope(scopeModel);
+                }
+            }
+        } else {
+            for (Scope associatedScope : new HashSet<Scope>(policy.getScopes())) {
+                policy.removeScope(associatedScope);
+            }
+        }
     }
 
     public static Policy toModel(PolicyRepresentation policy, ResourceServer resourceServer, AuthorizationProvider authorization) {

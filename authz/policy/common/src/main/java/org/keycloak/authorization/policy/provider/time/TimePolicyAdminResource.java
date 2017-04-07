@@ -20,6 +20,7 @@ package org.keycloak.authorization.policy.provider.time;
 
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.policy.provider.PolicyProviderAdminService;
+import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentation;
 
 import java.text.SimpleDateFormat;
 
@@ -29,7 +30,7 @@ import java.text.SimpleDateFormat;
 public class TimePolicyAdminResource implements PolicyProviderAdminService {
 
     @Override
-    public void onCreate(Policy policy) {
+    public void onCreate(Policy policy, AbstractPolicyRepresentation representation) {
         validateConfig(policy);
     }
 
@@ -44,7 +45,7 @@ public class TimePolicyAdminResource implements PolicyProviderAdminService {
     }
 
     @Override
-    public void onUpdate(Policy policy) {
+    public void onUpdate(Policy policy, AbstractPolicyRepresentation representation) {
         validateConfig(policy);
     }
 

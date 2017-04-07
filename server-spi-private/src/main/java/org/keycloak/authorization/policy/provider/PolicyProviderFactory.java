@@ -19,7 +19,6 @@
 package org.keycloak.authorization.policy.provider;
 
 import org.keycloak.authorization.AuthorizationProvider;
-import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.provider.ProviderFactory;
 
@@ -34,5 +33,5 @@ public interface PolicyProviderFactory extends ProviderFactory<PolicyProvider> {
 
     PolicyProvider create(AuthorizationProvider authorization);
 
-    PolicyProviderAdminService getAdminResource(ResourceServer resourceServer);
+    PolicyProviderAdminService getAdminResource(ResourceServer resourceServer, AuthorizationProvider authorization);
 }
