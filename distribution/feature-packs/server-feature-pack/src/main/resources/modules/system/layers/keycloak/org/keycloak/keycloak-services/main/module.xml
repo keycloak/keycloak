@@ -66,5 +66,6 @@
         <module name="org.apache.httpcomponents"/>
         <module name="org.twitter4j"/>
         <module name="javax.transaction.api"/>
+        <module name="sun.jdk"/>
     </dependencies>
 </module>

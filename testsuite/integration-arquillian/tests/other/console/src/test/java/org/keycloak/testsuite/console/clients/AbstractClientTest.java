@@ -87,7 +87,6 @@ public abstract class AbstractClientTest extends AbstractConsoleTest {
         attributes.put(SAML_SIGNATURE_ALGORITHM, "RSA_SHA256");
         attributes.put(SAML_FORCE_NAME_ID_FORMAT, "false");
         attributes.put(SAML_NAME_ID_FORMAT, "username");
-        attributes.put(SAML_ONETIMEUSE_CONDITION, "true");
         return attributes;
     }
 

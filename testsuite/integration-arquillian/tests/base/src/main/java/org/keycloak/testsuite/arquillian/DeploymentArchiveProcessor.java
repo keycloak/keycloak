@@ -80,7 +80,9 @@ public class DeploymentArchiveProcessor implements ApplicationArchiveProcessor {
         log.info("Processing archive " + archive.getName());
 //        if (isAdapterTest(testClass)) {
         modifyAdapterConfigs(archive, testClass);
-        modifyWebXml(archive, testClass);
+        if (archive.contains(WEBXML_PATH)) {
+            modifyWebXml(archive, testClass);
+        }
 //        } else {
 //            log.info(testClass.getJavaClass().getSimpleName() + " is not an AdapterTest");
 //        }

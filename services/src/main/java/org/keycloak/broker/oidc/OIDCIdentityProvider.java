@@ -24,7 +24,6 @@ import org.keycloak.broker.provider.AuthenticationRequest;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.broker.provider.util.SimpleHttp;
-import org.keycloak.common.util.PemUtils;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
@@ -45,7 +44,6 @@ import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.IdentityBrokerService;
 import org.keycloak.services.resources.RealmsResource;
-import org.keycloak.truststore.JSSETruststoreConfigurator;
 import org.keycloak.util.JsonSerialization;
 
 import javax.ws.rs.GET;
@@ -132,7 +130,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         logoutUri.queryParam("id_token_hint", idToken);
         String url = logoutUri.build().toString();
         try {
-            int status = JsonSimpleHttp.doGet(url).asStatus();
+            int status = JsonSimpleHttp.doGet(url, session).asStatus();
             boolean success = status >=200 && status < 400;
             if (!success) {
                 logger.warn("Failed backchannel broker logout to: " + url);
@@ -174,15 +172,12 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
      */
     public String refreshToken(KeycloakSession session, UserSessionModel userSession) {
         String refreshToken = userSession.getNote(FEDERATED_REFRESH_TOKEN);
-        JSSETruststoreConfigurator configurator = new JSSETruststoreConfigurator(session);
         try {
-            return SimpleHttp.doPost(getConfig().getTokenUrl())
+            return SimpleHttp.doPost(getConfig().getTokenUrl(), session)
                     .param("refresh_token", refreshToken)
                     .param(OAUTH2_PARAMETER_GRANT_TYPE, OAUTH2_GRANT_TYPE_REFRESH_TOKEN)
                     .param(OAUTH2_PARAMETER_CLIENT_ID, getConfig().getClientId())
-                    .param(OAUTH2_PARAMETER_CLIENT_SECRET, getConfig().getClientSecret())
-                    .sslFactory(configurator.getSSLSocketFactory())
-                    .hostnameVerifier(configurator.getHostnameVerifier()).asString();
+                    .param(OAUTH2_PARAMETER_CLIENT_SECRET, getConfig().getClientSecret()).asString();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -246,7 +241,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
             if (!getConfig().isDisableUserInfoService()) {
                 String userInfoUrl = getUserInfoUrl();
                 if (userInfoUrl != null && !userInfoUrl.isEmpty() && (id == null || name == null || preferredUsername == null || email == null)) {
-                    SimpleHttp request = JsonSimpleHttp.doGet(userInfoUrl)
+                    SimpleHttp request = JsonSimpleHttp.doGet(userInfoUrl, session)
                             .header("Authorization", "Bearer " + accessToken);
                     JsonNode userInfo = JsonSimpleHttp.asJson(request);
 

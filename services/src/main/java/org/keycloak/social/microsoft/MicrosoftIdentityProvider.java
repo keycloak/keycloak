@@ -62,7 +62,7 @@ public class MicrosoftIdentityProvider extends AbstractOAuth2IdentityProvider im
             if (log.isDebugEnabled()) {
                 log.debug("Microsoft Live user profile request to: " + URL);
             }
-            JsonNode profile = JsonSimpleHttp.asJson(SimpleHttp.doGet(URL));
+            JsonNode profile = JsonSimpleHttp.asJson(SimpleHttp.doGet(URL, session));
 
             String id = getJsonProperty(profile, "id");
 

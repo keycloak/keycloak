@@ -21,7 +21,7 @@
     <parent>
         <artifactId>keycloak-examples-demo-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>3.0.0.CR1-SNAPSHOT</version>
+        <version>3.1.0.CR1-SNAPSHOT</version>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
@@ -30,13 +30,16 @@
     <packaging>war</packaging>
     <name>JAX-RS Database Service Using OAuth Bearer Tokens</name>
     <description/>
-    <url>http://maven.apache.org</url>
+    <url>https://maven.apache.org</url>
 
     <repositories>
         <repository>
             <id>jboss</id>
             <name>jboss repo</name>
-            <url>http://repository.jboss.org/nexus/content/groups/public/</url>
+            <url>https://repository.jboss.org/nexus/content/groups/public/</url>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
         </repository>
     </repositories>
 

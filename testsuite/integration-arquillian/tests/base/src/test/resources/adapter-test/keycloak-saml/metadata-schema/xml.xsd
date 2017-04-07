@@ -102,7 +102,7 @@
 
     <xs:attribute name="base" type="xs:anyURI">
         <xs:annotation>
-            <xs:documentation>See http://www.w3.org/TR/xmlbase/ for
+            <xs:documentation>See https://www.w3.org/TR/xmlbase/ for
                 information about this attribute.</xs:documentation>
         </xs:annotation>
     </xs:attribute>

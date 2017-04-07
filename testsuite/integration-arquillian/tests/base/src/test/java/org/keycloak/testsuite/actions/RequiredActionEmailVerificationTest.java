@@ -46,7 +46,6 @@ import javax.mail.MessagingException;
 import javax.mail.Multipart;
 import javax.mail.internet.MimeMessage;
 import java.io.IOException;
-import java.util.Collections;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -96,6 +95,28 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
                 .username("test-user@localhost")
                 .email("test-user@localhost").build();
         ApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), user, "password");
+    }
+
+    /**
+     * see KEYCLOAK-4163
+     */
+    @Test
+    public void verifyEmailConfig() throws IOException, MessagingException {
+
+        loginPage.open();
+        loginPage.login("test-user@localhost", "password");
+
+        Assert.assertTrue(verifyEmailPage.isCurrent());
+
+        Assert.assertEquals(1, greenMail.getReceivedMessages().length);
+
+        MimeMessage message = greenMail.getReceivedMessages()[0];
+
+        // see testsuite/integration-arquillian/tests/base/src/test/resources/testrealm.json
+        Assert.assertEquals("<auto+bounces@keycloak.org>", message.getHeader("Return-Path")[0]);
+        // displayname <email@example.org>
+        Assert.assertEquals("Keycloak SSO <auto@keycloak.org>", message.getHeader("From")[0]);
+        Assert.assertEquals("Keycloak no-reply <reply-to@keycloak.org>", message.getHeader("Reply-To")[0]);
     }
 
     @Test

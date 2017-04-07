@@ -40,6 +40,15 @@ import org.bouncycastle.operator.DigestCalculator;
 import org.bouncycastle.operator.bc.BcDigestCalculatorProvider;
 import org.bouncycastle.operator.bc.BcRSAContentSignerBuilder;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
+import java.net.URI;
+
+import java.math.BigInteger;
+import java.security.KeyPair;
+import java.security.PrivateKey;
+import java.security.SecureRandom;
+import java.security.cert.X509Certificate;
+import java.util.Calendar;
+import java.util.Date;
 
 import java.math.BigInteger;
 import java.security.KeyPair;
@@ -75,7 +84,6 @@ public class CertificateUtils {
      */
     public static X509Certificate generateV3Certificate(KeyPair keyPair, PrivateKey caPrivateKey, X509Certificate caCert,
             String subject) throws Exception {
-
         try {
             X500Name subjectDN = new X500Name("CN=" + subject);
 

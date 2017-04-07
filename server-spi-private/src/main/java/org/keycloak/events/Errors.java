@@ -75,7 +75,16 @@ public interface Errors {
     String PASSWORD_CONFIRM_ERROR = "password_confirm_error";
     String PASSWORD_MISSING = "password_missing";
     String PASSWORD_REJECTED = "password_rejected";
+
+    // https://tools.ietf.org/html/rfc7636
+    String CODE_VERIFIER_MISSING = "code_verifier_missing";
+    String INVALID_CODE_VERIFIER = "invalid_code_verifier";
+    String PKCE_VERIFICATION_FAILED = "pkce_verification_failed";
+    String INVALID_CODE_CHALLENGE_METHOD = "invalid_code_challenge_method";
+
+
     String NOT_LOGGED_IN = "not_logged_in";
     String UNKNOWN_IDENTITY_PROVIDER = "unknown_identity_provider";
     String ILLEGAL_ORIGIN = "illegal_origin";
+
 }

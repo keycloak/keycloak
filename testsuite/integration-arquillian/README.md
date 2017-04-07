@@ -29,7 +29,7 @@ Testsuite supports running server on Wildfly/EAP. For this it's necessary to:
 
 The cluster setup for server can be enabled by activating profile `auth-server-cluster`.
 
-The cluster setup is not supported for server on Undetow. Profile `auth-server-wildfly` or `auth-server-eap` needs to be activated.
+The cluster setup is not supported for server on Undertow. Profile `auth-server-wildfly` or `auth-server-eap` needs to be activated.
 
 The setup includes:
 - a `mod_cluster` load balancer on Wildfly
@@ -84,9 +84,12 @@ and the URL hierarchy is modeled by the class inheritance hierarchy (subclasses/
 
 ### Browsers
 
-The default browser for UI testing is `phantomjs` which is used for fast "headless" testing.
+The default browser for UI testing is `htmlunit` which is used for fast "headless" testing.
 Other browsers can be selected with the `-Dbrowser` property, for example `firefox`.
-See Arquillian Graphene documentation for more details.
+See [HOW-TO-RUN.md](HOW-TO-RUN.md) and Arquillian Graphene documentation for more details.
+
+### Utils classes
+UI testing is sometimes very tricky due to different demands and behaviours of different browsers and their drivers. So there are some very useful Utils classes which are already dealing with some common stability issues while testing. See `UIUtils`, `URLUtils` and `WaitUtils` classes in the Base Testsuite.
 
 
 ## Test Modules

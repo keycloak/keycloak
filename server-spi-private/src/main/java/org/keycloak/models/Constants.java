@@ -19,6 +19,9 @@ package org.keycloak.models;
 
 import org.keycloak.OAuth2Constants;
 
+import java.util.Arrays;
+import java.util.Collection;
+
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
@@ -30,6 +33,8 @@ public interface Constants {
     String ACCOUNT_MANAGEMENT_CLIENT_ID = "account";
     String BROKER_SERVICE_CLIENT_ID = "broker";
     String REALM_MANAGEMENT_CLIENT_ID = "realm-management";
+
+    Collection<String> defaultClients = Arrays.asList(ACCOUNT_MANAGEMENT_CLIENT_ID, ADMIN_CLI_CLIENT_ID, BROKER_SERVICE_CLIENT_ID, REALM_MANAGEMENT_CLIENT_ID, ADMIN_CONSOLE_CLIENT_ID);
 
     String INSTALLED_APP_URN = "urn:ietf:wg:oauth:2.0:oob";
     String INSTALLED_APP_URL = "http://localhost";

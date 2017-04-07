@@ -447,7 +447,6 @@ public class UserStorageTest extends AbstractAuthTest {
     }
 
     @Test
-    @Ignore
     public void testMaxLifespan() {
         ApiUtil.findUserByUsername(testRealmResource(), "thor");
 

@@ -97,9 +97,7 @@ public class CachedPolicyStore implements PolicyStore {
         }
         ResourceServer resourceServer = policy.getResourceServer();
         getDelegate().delete(id);
-        this.transaction.whenCommit(() -> {
-            invalidateCache(resourceServer.getId());
-        });
+        invalidateCache(resourceServer.getId());
     }
 
     @Override
@@ -285,7 +283,7 @@ public class CachedPolicyStore implements PolicyStore {
 
             @Override
             public void removeScope(Scope scope) {
-                getDelegateForUpdate().removeScope(scope);
+                getDelegateForUpdate().removeScope(getStoreFactory().getScopeStore().findById(scope.getId(), cached.getResourceServerId()));
                 cached.removeScope(scope);
             }
 

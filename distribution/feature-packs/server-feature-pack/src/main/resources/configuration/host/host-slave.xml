@@ -17,7 +17,7 @@
   ~ limitations under the License.
   -->
 
-<host xmlns="urn:jboss:domain:4.0">
+<host xmlns="${xmlns.domain}">
     <extensions>
         <?EXTENSIONS?>
     </extensions>

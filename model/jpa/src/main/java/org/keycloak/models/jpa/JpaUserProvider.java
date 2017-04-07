@@ -678,14 +678,14 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
 
     @Override
     public List<UserModel> searchForUserByUserAttribute(String attrName, String attrValue, RealmModel realm) {
-        TypedQuery<UserAttributeEntity> query = em.createNamedQuery("getAttributesByNameAndValue", UserAttributeEntity.class);
+        TypedQuery<UserEntity> query = em.createNamedQuery("getRealmUsersByAttributeNameAndValue", UserEntity.class);
         query.setParameter("name", attrName);
         query.setParameter("value", attrValue);
-        List<UserAttributeEntity> results = query.getResultList();
+        query.setParameter("realmId", realm.getId());
+        List<UserEntity> results = query.getResultList();
 
         List<UserModel> users = new ArrayList<UserModel>();
-        for (UserAttributeEntity attr : results) {
-            UserEntity user = attr.getUser();
+        for (UserEntity user : results) {
             users.add(new UserAdapter(session, realm, em, user));
         }
         return users;
