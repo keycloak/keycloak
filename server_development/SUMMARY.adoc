@@ -1,4 +1,4 @@
-= {{book.title}}
+= Server Developer Guide
 
  .. link:server_development/topics/preface.adoc[Preface]
  .. link:server_development/topics/admin-rest-api.adoc[Admin REST API]

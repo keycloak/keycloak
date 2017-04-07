@@ -38,13 +38,21 @@ Keycloak is the basis of [Red Hat Single Sign-On](https://access.redhat.com/prod
 To build the documentation for RH-SSO go into the directory of the specific guide you want to build. For example to build Server Admin guide run:
 
     cd server_admin
-    python gitlab-conversion.py
+    python ../gitlab-conversion.py
     cd target
     asciidoctor master.adoc
 
 On Linux you can also run build-product.sh DIR. For example:
 
     ./build-product.sh server_admin
+
+Or build all guides with:
+
+    ./build-product.sh
+
+If you have ccutil available you can build the guides with:
+
+    ./build-product.sh -u
 
 You can then view the documentation by opening server_admin/target/master.html
 

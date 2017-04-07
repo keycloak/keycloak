@@ -1,4 +1,4 @@
-= {{book.title}}
+= Server Installation Guide
 
 .. link:server_installation/topics/overview.adoc[Overview]
 ... link:server_installation/topics/overview/recommended-reading.adoc[Recommended Reading]

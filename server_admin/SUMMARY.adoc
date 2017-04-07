@@ -1,4 +1,4 @@
-= {{book.title}}
+= Server Administration Guide
 
 .. link:server_admin/topics/overview.adoc[Overview]
 ... link:server_admin/topics/overview/features.adoc[Features]

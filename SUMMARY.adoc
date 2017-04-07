@@ -1,4 +1,4 @@
-= {{book.title}}
+= Keycloak Documentation
 
 . link:getting_started/README.adoc[Getting Started]
 {% include "./getting_started/SUMMARY.adoc" %}

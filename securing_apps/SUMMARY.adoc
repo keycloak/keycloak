@@ -1,4 +1,4 @@
-= {{book.title}}
+= Securing Applications and Services Guide
 
  .. link:securing_apps/topics/overview/overview.adoc[Overview]
    ... link:securing_apps/topics/overview/what-are-client-adapters.adoc[What are Client Adapters?]

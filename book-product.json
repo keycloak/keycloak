@@ -1,0 +1,105 @@
+{
+  "gitbook": "2.x.x",
+  "structure": {
+    "readme": "OVERVIEW.adoc"
+  },
+  "plugins": [
+    "toggle-chapters",
+    "ungrey",
+    "splitter",
+    "ga"
+  ],
+  "pluginsConfig": {
+    "ga": {
+      "token": "UA-86203452-1"
+    }
+  },
+
+  "variables": {
+    "project": {
+      "name": "Red Hat Single Sign-On",
+      "version": "SNAPSHOT",
+      "versionMvn": "SNAPSHOT",
+      "versionNpm": "SNAPSHOT",
+      "doc_base_url": "https://access.redhat.com/documentation/en/red-hat-single-sign-on/",
+      "doc_info_version_url": "7.1"
+    },
+    "community": false,
+    "product": true,
+    "images": "rhsso-images",
+
+    "adminguide": {
+      "name": "Server Administration",
+      "link": "https://keycloak.gitbooks.io/documentation/content/server_admin/index.html"
+    },
+    "developerguide": {
+      "name": "Server Development",
+      "link": "https://access.redhat.com/documentation/en/red-hat-single-sign-on/SNAPSHOT/html-single/server-developer-guide/"
+    },
+    "installguide": {
+      "name": "Server Installation and Configuration",
+      "link": "https://access.redhat.com/documentation/en/red-hat-single-sign-on/SNAPSHOT/html-single/server-installation-and-configuration-guide/"
+    },
+    "adapterguide": {
+      "name": "Securing Applications and Services Guide",
+      "link": "https://access.redhat.com/documentation/en/red-hat-single-sign-on/SNAPSHOT/html-single/securing-applications-and-services-guide/"
+    },
+    "gettingstarted": {
+      "name": "Getting Started Tutorial",
+      "link": "https://access.redhat.com/documentation/en/red-hat-single-sign-on/SNAPSHOT/html/getting-started-guide/"
+    },
+    "apidocs": {
+      "name": "API Documentation",
+      "link": "https://access.redhat.com/documentation/en/red-hat-single-sign-on/SNAPSHOT/html-single/api-documentation/"
+    },
+
+    "quickstartRepo": {
+      "name": "Keycloak Quickstarts Repository",
+      "link": "https://github.com/keycloak/keycloak-quickstarts",
+      "dir": "keycloak-quickstarts"
+    },
+
+    "fuseVersion": "JBoss Fuse 6.3.0 Rollup 1",
+
+    "appserver": {
+      "name": "JBoss EAP",
+      "version": "7.0",
+      "admindoc": {
+        "name": "JBoss EAP Configuration Guide",
+        "link": "https://access.redhat.com/documentation/en/red-hat-jboss-enterprise-application-platform/7.0/html-single/configuration-guide/configuration-guide"
+      },
+      "datasource": {
+        "name": "JBoss EAP Configuration Guide",
+        "link": "https://access.redhat.com/documentation/en/red-hat-jboss-enterprise-application-platform/7.0/html-single/configuration-guide/#datasource_management"
+      },
+      "network": {
+        "name": "JBoss EAP Configuration Guide",
+        "link": "https://access.redhat.com/documentation/en/red-hat-jboss-enterprise-application-platform/7.0/html-single/configuration-guide/#network_and_port_configuration"
+      },
+      "socket": {
+        "name": "JBoss EAP Configuration Guide",
+        "link": "https://access.redhat.com/documentation/en/red-hat-jboss-enterprise-application-platform/7.0/html-single/configuration-guide/#network_and_port_configuration"
+      },
+      "loadbalancer": {
+        "name": "JBoss EAP Configuration Guide",
+        "link": "https://access.redhat.com/documentation/en/red-hat-jboss-enterprise-application-platform/7.0/html-single/configuration-guide/#configuring_high_availability"
+      },
+      "jgroups": {
+        "name": "JBoss EAP Configuration Guide",
+        "link": "https://access.redhat.com/documentation/en/red-hat-jboss-enterprise-application-platform/7.0/html-single/configuration-guide/#cluster_communication_jgroups"
+      },
+      "caching": {
+        "name": "JBoss EAP Configuration Guide",
+        "link": "https://access.redhat.com/documentation/en/red-hat-jboss-enterprise-application-platform/7.0/html-single/configuration-guide/#infinispan"
+      },
+      "jpa": {
+        "name": "JBoss EAP Development Guide",
+        "link": "https://access.redhat.com/documentation/en/red-hat-jboss-enterprise-application-platform/7.0/html-single/development-guide/#hibernate"
+      }
+    },
+
+    "subsystem": {
+      "undertow": "urn:jboss:domain:undertow:3.1"
+    }
+  }
+}
