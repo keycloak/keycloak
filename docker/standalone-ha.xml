@@ -300,30 +300,33 @@
         </subsystem>
         <subsystem xmlns="urn:jboss:domain:jdr:1.0"/>
         <subsystem xmlns="urn:jboss:domain:jgroups:4.0">
+          <!-- Added and modified by openshift.io keycloak team -->
             <channels default="ee">
-                <channel name="ee" stack="udp"/>
+                <channel name="ee" stack="tcp"/>
             </channels>
-            <stacks>
-                <stack name="udp">
-                    <transport type="UDP" socket-binding="jgroups-udp"/>
-                    <protocol type="PING"/>
-                    <protocol type="MERGE3"/>
-                    <protocol type="FD_SOCK" socket-binding="jgroups-udp-fd"/>
-                    <protocol type="FD_ALL"/>
-                    <protocol type="VERIFY_SUSPECT"/>
-                    <protocol type="pbcast.NAKACK2"/>
-                    <protocol type="UNICAST3"/>
-                    <protocol type="pbcast.STABLE"/>
-                    <protocol type="pbcast.GMS"/>
-                    <protocol type="UFC"/>
-                    <protocol type="MFC"/>
-                    <protocol type="FRAG2"/>
-                </stack>
+            <stacks default="tcp">
                 <stack name="tcp">
-                    <transport type="TCP" socket-binding="jgroups-tcp"/>
-                    <protocol type="MPING" socket-binding="jgroups-mping"/>
+                    <transport type="TCP" socket-binding="jgroups-tcp">
+                      <property name="external_addr">${env.INTERNAL_POD_IP}</property>
+                    </transport>
+                    <protocol type="JDBC_PING">
+                     <property name="connection_driver">org.postgresql.Driver</property>
+                     <property name="connection_url">jdbc:postgresql://${env.POSTGRES_PORT_5432_TCP_ADDR}:${env.POSTGRES_PORT_5432_TCP_PORT:5432}/${env.POSTGRES_DATABASE:keycloak}</property>
+                     <property name="connection_username">${env.POSTGRES_USER}</property>
+                     <property name="connection_password">${env.POSTGRES_PASSWORD}</property>
+                     <property name="initialize_sql">
+                     CREATE TABLE IF NOT EXISTS jgroupsping (
+                     own_addr VARCHAR(200) NOT NULL,
+                     cluster_name VARCHAR(200) NOT NULL,
+                     ping_data BYTEA DEFAULT NULL,
+                     PRIMARY KEY (own_addr, cluster_name)
+                     )
+                     </property>
+                   </protocol>
                     <protocol type="MERGE3"/>
-                    <protocol type="FD_SOCK" socket-binding="jgroups-tcp-fd"/>
+                    <protocol type="FD_SOCK" socket-binding="jgroups-tcp-fd">
+                      <property name="external_addr">${env.INTERNAL_POD_IP}</property>
+                    </protocol>
                     <protocol type="FD"/>
                     <protocol type="VERIFY_SUSPECT"/>
                     <protocol type="pbcast.NAKACK2"/>
@@ -334,6 +337,7 @@
                     <protocol type="FRAG2"/>
                 </stack>
             </stacks>
+            <!--   xxxxxxxxxxxxxxxxxxxxxxxxx   -->
         </subsystem>
         <subsystem xmlns="urn:jboss:domain:jmx:1.3">
             <expose-resolved-model/>
@@ -526,8 +530,10 @@
         <socket-binding name="proxy-https" port="443"/>
         <!--   xxxxxxxxxxxxxxxxxxxxxxxxx   -->
         <socket-binding name="jgroups-mping" interface="private" port="0" multicast-address="${jboss.default.multicast.address:230.0.0.4}" multicast-port="45700"/>
-        <socket-binding name="jgroups-tcp" interface="private" port="7600"/>
-        <socket-binding name="jgroups-tcp-fd" interface="private" port="57600"/>
+        <!-- Modified by openshift.io keycloak team -->
+        <socket-binding name="jgroups-tcp" interface="public" port="7600"/>
+        <socket-binding name="jgroups-tcp-fd" interface="public" port="57600"/>
+        <!--   xxxxxxxxxxxxxxxxxxxxxxxxx   -->
         <socket-binding name="jgroups-udp" interface="private" port="55200" multicast-address="${jboss.default.multicast.address:230.0.0.4}" multicast-port="45688"/>
         <socket-binding name="jgroups-udp-fd" interface="private" port="54200"/>
         <socket-binding name="modcluster" port="0" multicast-address="224.0.1.105" multicast-port="23364"/>

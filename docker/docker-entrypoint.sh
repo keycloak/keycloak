@@ -5,6 +5,7 @@ KEYSTORE_PASSWORD=${KEYSTORE_PASSWORD:-"almighty"}
 KEYCLOAK_SERVER_DOMAIN=${KEYCLOAK_SERVER_DOMAIN:-"localhost"}
 INTERNAL_POD_IP=${INTERNAL_POD_IP:-"127.0.0.1"}
 
+
 echo "Create keycloak store"
 keytool -genkey -alias ${KEYCLOAK_SERVER_DOMAIN} -keyalg RSA -keystore keycloak.jks -validity 10950 -keypass $KEYSTORE_PASSWORD -storepass $KEYSTORE_PASSWORD << ANSWERS
 ${KEYCLOAK_SERVER_DOMAIN}
@@ -35,7 +36,7 @@ fi
 
 if [[ "${OPERATING_MODE}" == "clustered" ]]; then
   echo "Starting keycloak-server on clustered mode..."
-  exec /opt/jboss/keycloak/bin/standalone.sh --server-config=standalone-ha.xml -bmanagement=$INTERNAL_POD_IP -bprivate=$INTERNAL_POD_IP -u 230.0.0.4 $@
+  exec /opt/jboss/keycloak/bin/standalone.sh --server-config=standalone-ha.xml -bmanagement=$INTERNAL_POD_IP -bprivate=$INTERNAL_POD_IP $@
 else
   echo "Starting keycloak-server on standalone mode..."
   exec /opt/jboss/keycloak/bin/standalone.sh $@

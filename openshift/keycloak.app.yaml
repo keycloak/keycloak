@@ -28,6 +28,17 @@ objects:
         containers:
         - name: keycloak-server
           image: registry.devshift.net/almighty/keycloak-postgres
+          args:
+            - '-b $(INTERNAL_POD_IP)'
+            - '-Djgroups.bind_addr=global'
+            - '-Djboss.node.name=$(INTERNAL_POD_IP)'
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+            - containerPort: 7600
+              protocol: TCP
+            - containerPort: 57600
+              protocol: TCP
           imagePullPolicy: Always
           ports:
           - containerPort: 8080
@@ -40,8 +51,8 @@ objects:
               scheme: HTTP
             successThreshold: 1
             failureThreshold: 3
-            timeoutSeconds: 5
-            periodSeconds: 10
+            timeoutSeconds: 10
+            periodSeconds: 20
             initialDelaySeconds: 60
           readinessProbe:
             httpGet:
@@ -50,8 +61,8 @@ objects:
               scheme: HTTP
             successThreshold: 1
             failureThreshold: 3
-            timeoutSeconds: 5
-            periodSeconds: 10
+            timeoutSeconds: 10
+            periodSeconds: 20
             initialDelaySeconds: 60
           terminationMessagePath: /dev/termination-log
           env:
