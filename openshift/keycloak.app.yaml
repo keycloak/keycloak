@@ -27,7 +27,7 @@ objects:
       spec:
         containers:
         - name: keycloak-server
-          image: registry.devshift.net/almighty/keycloak-postgres
+          image: registry.devshift.net/almighty/keycloak-postgres:${IMAGE_TAG}
           args:
             - '-b $(INTERNAL_POD_IP)'
             - '-Djgroups.bind_addr=global'
@@ -148,3 +148,6 @@ objects:
       weight: 100
       insecureEdgeTerminationPolicy: Allow
     wildcardPolicy: None
+parameters:
+- name: IMAGE_TAG
+  value: latest
