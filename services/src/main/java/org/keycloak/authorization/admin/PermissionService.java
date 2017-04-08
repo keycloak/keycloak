@@ -28,18 +28,14 @@ import org.keycloak.services.resources.admin.RealmAuth;
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 public class PermissionService extends PolicyService {
+
     public PermissionService(ResourceServer resourceServer, AuthorizationProvider authorization, RealmAuth auth) {
         super(resourceServer, authorization, auth);
     }
 
     @Override
-    protected Object doCreatePolicyTypeResource(String type) {
-        return new PermissionTypeService(type, resourceServer, authorization, auth);
-    }
-
-    @Override
     protected PolicyResourceService doCreatePolicyResource(Policy policy) {
-        return new PermissionResourceService(policy, resourceServer, authorization, auth);
+        return new PolicyTypeResourceService(policy, resourceServer, authorization, auth);
     }
 
     @Override

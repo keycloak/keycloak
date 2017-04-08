@@ -14,23 +14,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.representations.idm.authorization;
+package org.keycloak.admin.client.resource;
 
-import java.util.HashMap;
-import java.util.Map;
+import javax.ws.rs.Path;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-public class PolicyRepresentation extends AbstractPolicyRepresentation {
+public interface PermissionsResource {
 
-    private Map<String, String> config = new HashMap();
-
-    public Map<String, String> getConfig() {
-        return this.config;
-    }
-
-    public void setConfig(Map<String, String> config) {
-        this.config = config;
-    }
+    @Path("resource")
+    ResourcePermissionsResource resource();
 }

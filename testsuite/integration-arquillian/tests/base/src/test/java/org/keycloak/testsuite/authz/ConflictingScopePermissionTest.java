@@ -33,6 +33,7 @@ import java.util.stream.Collectors;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.RealmResource;
@@ -192,8 +193,9 @@ public class ConflictingScopePermissionTest extends AbstractKeycloakTest {
     }
 
     private void createResourcePermission(String name, String resourceName, List<String> policies, ClientResource client) throws IOException {
-        String resourceId = client.authorization().resources().find(resourceName, null, null, null, null, -1, -1).stream().map(representation -> representation.getId()).findFirst().orElseThrow(() -> new RuntimeException("Expected user [userId]"));
-        List<String> policyIds = client.authorization().policies().policies().stream().filter(representation -> policies.contains(representation.getName())).map(representation -> representation.getId()).collect(Collectors.toList());
+        AuthorizationResource authorization = client.authorization();
+        String resourceId = getResourceId(resourceName, authorization);
+        List<String> policyIds = getPolicyIds(policies, authorization);
 
         PolicyRepresentation representation = new PolicyRepresentation();
 
@@ -207,18 +209,23 @@ public class ConflictingScopePermissionTest extends AbstractKeycloakTest {
 
         representation.setConfig(config);
 
-        client.authorization().policies().create(representation);
+        authorization.policies().create(representation);
+    }
+
+    private String getResourceId(String resourceName, AuthorizationResource authorization) {
+        return authorization.resources().findByName(resourceName).stream().map(representation -> representation.getId()).findFirst().orElseThrow(() -> new RuntimeException("Expected user [userId]"));
     }
 
     private void createScopePermission(String name, String resourceName, List<String> scopes, List<String> policies, ClientResource client) throws IOException {
+        AuthorizationResource authorization = client.authorization();
         String resourceId = null;
 
         if (resourceName != null) {
-            resourceId = client.authorization().resources().find(resourceName, null, null, null, null, -1, -1).stream().map(representation -> representation.getId()).findFirst().orElseThrow(() -> new RuntimeException("Expected user [userId]"));
+            resourceId = getResourceId(resourceName, authorization);
         }
 
-        List<String> scopeIds = client.authorization().scopes().scopes().stream().filter(representation -> policies.contains(representation.getName())).map(representation -> representation.getId()).collect(Collectors.toList());
-        List<String> policyIds = client.authorization().policies().policies().stream().filter(representation -> policies.contains(representation.getName())).map(representation -> representation.getId()).collect(Collectors.toList());
+        List<String> scopeIds = scopes.stream().map(scopeName -> authorization.scopes().findByName(scopeName).getId()).collect(Collectors.toList());
+        List<String> policyIds = getPolicyIds(policies, authorization);
 
         PolicyRepresentation representation = new PolicyRepresentation();
 
@@ -236,7 +243,11 @@ public class ConflictingScopePermissionTest extends AbstractKeycloakTest {
 
         representation.setConfig(config);
 
-        client.authorization().policies().create(representation);
+        authorization.policies().create(representation);
+    }
+
+    private List<String> getPolicyIds(List<String> policies, AuthorizationResource authorization) {
+        return policies.stream().map(policyName -> authorization.policies().findByName(policyName).getId()).collect(Collectors.toList());
     }
 
     private AuthzClient getAuthzClient() {

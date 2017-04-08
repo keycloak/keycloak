@@ -16,13 +16,20 @@
  */
 package org.keycloak.authorization.admin;
 
+import static org.keycloak.models.utils.RepresentationToModel.toModel;
+
+import java.io.IOException;
+
 import javax.ws.rs.Path;
 
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.authorization.AuthorizationProvider;
+import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.policy.provider.PolicyProviderAdminService;
+import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentation;
 import org.keycloak.services.resources.admin.RealmAuth;
+import org.keycloak.util.JsonSerialization;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -43,5 +50,37 @@ public class PolicyTypeService extends PolicyService {
         ResteasyProviderFactory.getInstance().injectProperties(resource);
 
         return resource;
+    }
+
+    @Override
+    protected Object doCreatePolicyResource(Policy policy) {
+        return new PolicyTypeResourceService(policy, resourceServer,authorization, auth);
+    }
+
+    @Override
+    protected AbstractPolicyRepresentation doCreateRepresentation(String payload) {
+        PolicyProviderAdminService provider = getPolicyProviderAdminResource(type);
+        Class<? extends AbstractPolicyRepresentation> representationType = provider.getRepresentationType();
+
+        if (representationType == null) {
+            throw new RuntimeException("Policy provider for type [" + type + "] returned a null representation type.");
+        }
+
+        AbstractPolicyRepresentation representation;
+
+        try {
+            representation = JsonSerialization.readValue(payload, representationType);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to deserialize JSON using policy provider for type [" + type + "].", e);
+        }
+
+        representation.setType(type);
+
+        return representation;
+    }
+
+    @Override
+    protected Policy doCreate(AbstractPolicyRepresentation representation) {
+        return toModel(representation, resourceServer, authorization);
     }
 }

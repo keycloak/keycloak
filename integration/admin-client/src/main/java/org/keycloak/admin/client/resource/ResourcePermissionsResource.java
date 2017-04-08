@@ -16,41 +16,27 @@
  */
 package org.keycloak.admin.client.resource;
 
-import org.jboss.resteasy.annotations.cache.NoCache;
-import org.keycloak.representations.idm.authorization.ScopeRepresentation;
-
 import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.util.List;
+
+import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-public interface ResourceScopesResource {
+public interface ResourcePermissionsResource {
 
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    Response create(ScopeRepresentation scope);
+    Response create(ResourcePermissionRepresentation representation);
 
     @Path("{id}")
-    ResourceScopeResource scope(@PathParam("id") String id);
+    ResourcePermissionResource findById(@PathParam("id") String id);
 
-    @GET
-    @NoCache
-    @Produces(MediaType.APPLICATION_JSON)
-    List<ScopeRepresentation> scopes();
-
-    @Path("/search")
-    @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    @NoCache
-    ScopeRepresentation findByName(@QueryParam("name") String name);
 }

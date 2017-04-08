@@ -50,8 +50,10 @@ import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.models.Constants;
 import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.PolicyProviderRepresentation;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
+import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.resources.admin.RealmAuth;
 import org.keycloak.util.JsonSerialization;
 
@@ -72,19 +74,15 @@ public class PolicyService {
 
     @Path("{type}")
     public Object getResource(@PathParam("type") String type) {
-        PolicyProviderFactory providerFactory = authorization.getProviderFactory(type);
+        PolicyProviderFactory providerFactory = getPolicyProviderFactory(type);
 
         if (providerFactory != null) {
-            return doCreatePolicyTypeResource(type);
+            return new PolicyTypeService(type, resourceServer, authorization, auth);
         }
 
         Policy policy = authorization.getStoreFactory().getPolicyStore().findById(type, resourceServer.getId());
 
         return doCreatePolicyResource(policy);
-    }
-
-    protected Object doCreatePolicyTypeResource(String type) {
-        return new PolicyTypeService(type, resourceServer, authorization, auth);
     }
 
     protected Object doCreatePolicyResource(Policy policy) {
@@ -95,13 +93,39 @@ public class PolicyService {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
-    @Deprecated
     public Response create(String payload) {
         this.auth.requireManage();
-        return Response.status(Status.CREATED).entity(doCreate(payload)).build();
+
+        AbstractPolicyRepresentation representation = doCreateRepresentation(payload);
+
+        Policy existing = authorization.getStoreFactory().getPolicyStore().findByName(representation.getName(), resourceServer.getId());
+
+        if (existing != null) {
+            return ErrorResponse.exists("Policy with name [" + representation.getName() + "] already exists");
+        }
+
+        Policy policy = doCreate(representation);
+        PolicyProviderAdminService provider = getPolicyProviderAdminResource(representation.getType());
+
+        if (provider != null) {
+            try {
+                provider.onCreate(policy, representation);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+
+        representation.setId(policy.getId());
+
+        return Response.status(Status.CREATED).entity(representation).build();
     }
 
-    protected Object doCreate(String payload) {
+    protected Policy doCreate(AbstractPolicyRepresentation representation) {
+        return create(PolicyRepresentation.class.cast(representation));
+    }
+
+    protected AbstractPolicyRepresentation doCreateRepresentation(String payload) {
         PolicyRepresentation representation;
 
         try {
@@ -110,12 +134,10 @@ public class PolicyService {
             throw new RuntimeException("Failed to deserialize representation", cause);
         }
 
-        create(representation);
-
         return representation;
     }
 
-    public void create(PolicyRepresentation representation) {
+    public Policy create(PolicyRepresentation representation) {
         Policy policy = toModel(representation, this.resourceServer, authorization);
         PolicyProviderAdminService resource = getPolicyProviderAdminResource(policy.getType());
 
@@ -127,7 +149,7 @@ public class PolicyService {
             }
         }
 
-        representation.setId(policy.getId());
+        return policy;
     }
 
     protected Object toRepresentation(Policy model) {
@@ -268,13 +290,17 @@ public class PolicyService {
     }
 
     protected PolicyProviderAdminService getPolicyProviderAdminResource(String policyType) {
-        PolicyProviderFactory providerFactory = authorization.getProviderFactory(policyType);
+        PolicyProviderFactory providerFactory = getPolicyProviderFactory(policyType);
 
         if (providerFactory != null) {
             return providerFactory.getAdminResource(resourceServer, authorization);
         }
 
         return null;
+    }
+
+    private PolicyProviderFactory getPolicyProviderFactory(String policyType) {
+        return authorization.getProviderFactory(policyType);
     }
 
     private void findAssociatedPolicies(Policy policy, List<Policy> policies) {

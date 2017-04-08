@@ -31,9 +31,9 @@ import org.keycloak.util.JsonSerialization;
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-public class PermissionResourceService extends PolicyResourceService {
+public class PolicyTypeResourceService extends PolicyResourceService {
 
-    public PermissionResourceService(Policy policy, ResourceServer resourceServer, AuthorizationProvider authorization, RealmAuth auth) {
+    public PolicyTypeResourceService(Policy policy, ResourceServer resourceServer, AuthorizationProvider authorization, RealmAuth auth) {
         super(policy, resourceServer, authorization, auth);
     }
 
@@ -82,10 +82,6 @@ public class PermissionResourceService extends PolicyResourceService {
         representation.setType(policy.getType());
         representation.setDecisionStrategy(policy.getDecisionStrategy());
         representation.setLogic(policy.getLogic());
-        representation.addResource(policy.getResources().stream().map(resource -> resource.getId()).findFirst().orElse(null));
-        representation.addPolicies(policy.getAssociatedPolicies().stream().map(associated -> associated.getId()).toArray(value -> new String[value]));
-        representation.addScopes(policy.getScopes().stream().map(associated -> associated.getId()).toArray(value -> new String[value]));
-
         return representation;
     }
 }

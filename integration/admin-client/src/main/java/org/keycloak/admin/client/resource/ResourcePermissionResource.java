@@ -16,57 +16,54 @@
  */
 package org.keycloak.admin.client.resource;
 
-import org.jboss.resteasy.annotations.cache.NoCache;
-import org.keycloak.representations.idm.authorization.PolicyEvaluationRequest;
-import org.keycloak.representations.idm.authorization.PolicyEvaluationResponse;
-import org.keycloak.representations.idm.authorization.PolicyProviderRepresentation;
-import org.keycloak.representations.idm.authorization.PolicyRepresentation;
+import java.util.List;
 
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
-import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import java.util.List;
+
+import org.jboss.resteasy.annotations.cache.NoCache;
+import org.keycloak.representations.idm.authorization.PolicyRepresentation;
+import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
+import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-public interface PoliciesResource {
+public interface ResourcePermissionResource {
 
-    @POST
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @NoCache
+    ResourcePermissionRepresentation toRepresentation();
+
+    @PUT
     @Consumes(MediaType.APPLICATION_JSON)
-    @Produces(MediaType.APPLICATION_JSON)
-    Response create(PolicyRepresentation representation);
+    void update(ResourcePermissionRepresentation representation);
 
-    @Path("{id}")
-    PolicyResource policy(@PathParam("id") String id);
+    @DELETE
+    void remove();
 
-    @Path("/search")
+    @Path("/associatedPolicies")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
-    PolicyRepresentation findByName(@QueryParam("name") String name);
+    List<PolicyRepresentation> associatedPolicies();
 
+    @Path("/dependentPolicies")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
-    List<PolicyRepresentation> policies();
+    List<PolicyRepresentation> dependentPolicies();
 
-    @Path("providers")
+    @Path("/resources")
     @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    @NoCache
-    List<PolicyProviderRepresentation> policyProviders();
-
-    @POST
-    @Consumes("application/json")
     @Produces("application/json")
-    @Path("evaluate")
-    PolicyEvaluationResponse evaluate(PolicyEvaluationRequest evaluationRequest);
+    @NoCache
+    List<ResourceRepresentation> resources();
 
 }

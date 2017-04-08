@@ -2113,7 +2113,7 @@ public class RepresentationToModel {
                 type = "rules";
             }
             if (authorization.getProvider(type) == null) {
-                throw new RuntimeException("Unknown polucy type [" + type + "]. Could not find a provider for this type.");
+                throw new RuntimeException("Unknown policy type [" + type + "]. Could not find a provider for this type.");
             }
         }
 
