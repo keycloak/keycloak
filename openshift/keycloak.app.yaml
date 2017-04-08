@@ -16,7 +16,7 @@ objects:
     triggers:
     - type: ConfigChange
     test: false
-    replicas: 1
+    replicas: 3
     selector:
       name: keycloak-server
     template:
