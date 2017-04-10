@@ -48,6 +48,14 @@ public class JSConsoleTestApp extends AbstractPageWithInjectedUrl {
 
     @FindBy(xpath = "//button[text() = 'Init']")
     private WebElement initButton;
+    @FindBy(xpath = "//button[text() = 'Init with both tokens']")
+    private WebElement initWithBothTokens;
+    @FindBy(xpath = "//button[text() = 'Init with refresh token']")
+    private WebElement initWithRefreshToken;
+    @FindBy(xpath = "//button[text() = 'Init with TimeSkew']")
+    private WebElement initWithTimeSkew;
+    @FindBy(xpath = "//button[text() = 'Init with different realm name']")
+    private WebElement initWithDifferentRealmName;
     @FindBy(xpath = "//button[text() = 'Login']")
     private WebElement logInButton;
     @FindBy(xpath = "//button[text() = 'Logout']")
@@ -88,8 +96,12 @@ public class JSConsoleTestApp extends AbstractPageWithInjectedUrl {
 
     @FindBy(id = "timeSkew")
     private WebElement timeSkewValue;
-    @FindBy(id = "timeSkewInput")
-    private WebElement timeSkewInput;
+    @FindBy(id = "inputField")
+    private WebElement generalInput;
+    @FindBy(id = "inputField2")
+    private WebElement generalInput2;
+    @FindBy(id = "inputField3")
+    private WebElement generalInput3;
     @FindBy(xpath = "//button[text() = 'timeSkew offset']")
     private WebElement timeSkewButton;
 
@@ -143,6 +155,22 @@ public class JSConsoleTestApp extends AbstractPageWithInjectedUrl {
         initButton.click();
     }
 
+    public void initWithBothTokens() {
+        initWithBothTokens.click();
+    }
+
+    public void initWithRefreshToken() {
+        initWithRefreshToken.click();
+    }
+
+    public void initWithTimeSkew() {
+        initWithTimeSkew.click();
+    }
+
+    public void initWithDifferentRealmName() {
+        initWithDifferentRealmName.click();
+    }
+
     public void createBearerRequest() {
         createBearerRequest.click();
     }
@@ -175,9 +203,27 @@ public class JSConsoleTestApp extends AbstractPageWithInjectedUrl {
         return timeSkewValue;
     }
 
-    public void setTimeSkewOffset(int value) {
-        timeSkewInput.clear();
-        timeSkewInput.sendKeys(Integer.toString(value));
+    public void setInput(String value) {
+        generalInput.clear();
+        generalInput.sendKeys(value);
+    }
+
+    public void setInput2(String value) {
+        generalInput2.clear();
+        generalInput2.sendKeys(value);
+    }
+
+    public void setInput3(String value) {
+        generalInput3.clear();
+        generalInput3.sendKeys(value);
+    }
+
+    public void setInput(int value) {
+        setInput(Integer.toString(value));
+    }
+
+    public void setTimeSkew(int value) {
+        setInput(value);
         timeSkewButton.click();
     }
 
