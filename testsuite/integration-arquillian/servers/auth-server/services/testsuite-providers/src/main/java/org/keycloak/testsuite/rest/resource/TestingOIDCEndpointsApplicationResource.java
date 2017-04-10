@@ -18,7 +18,6 @@
 package org.keycloak.testsuite.rest.resource;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
-import org.jboss.resteasy.spi.BadRequestException;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.PemUtils;
@@ -30,6 +29,7 @@ import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.testsuite.rest.TestApplicationResourceProviderFactory;
 
+import javax.ws.rs.BadRequestException;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;

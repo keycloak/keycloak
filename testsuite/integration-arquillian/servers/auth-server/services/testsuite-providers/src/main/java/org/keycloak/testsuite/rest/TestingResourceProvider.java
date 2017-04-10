@@ -18,7 +18,6 @@
 package org.keycloak.testsuite.rest;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
-import org.jboss.resteasy.spi.BadRequestException;
 import org.keycloak.common.util.Time;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.events.Event;
@@ -65,6 +64,7 @@ import org.keycloak.testsuite.runonserver.RunOnServer;
 import org.keycloak.testsuite.runonserver.SerializationUtil;
 import org.keycloak.util.JsonSerialization;
 
+import javax.ws.rs.BadRequestException;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.NotFoundException;

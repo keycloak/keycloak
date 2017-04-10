@@ -16,12 +16,12 @@
  */
 package org.keycloak.services.managers;
 
-import org.jboss.resteasy.spi.UnauthorizedException;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 
+import javax.ws.rs.NotAuthorizedException;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.UriInfo;
 
@@ -46,8 +46,8 @@ public class AppAuthManager extends AuthenticationManager {
         String authHeader = headers.getRequestHeaders().getFirst(HttpHeaders.AUTHORIZATION);
         if (authHeader != null) {
             String[] split = authHeader.trim().split("\\s+");
-            if (split == null || split.length != 2) throw new UnauthorizedException("Bearer");
-            if (!split[0].equalsIgnoreCase("Bearer")) throw new UnauthorizedException("Bearer");
+            if (split == null || split.length != 2) throw new NotAuthorizedException("Bearer");
+            if (!split[0].equalsIgnoreCase("Bearer")) throw new NotAuthorizedException("Bearer");
             tokenString = split[1];
         }
         return tokenString;

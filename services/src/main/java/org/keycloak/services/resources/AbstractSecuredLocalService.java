@@ -17,7 +17,6 @@
 package org.keycloak.services.resources;
 
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.spi.BadRequestException;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.AbstractOAuthClient;
 import org.keycloak.OAuth2Constants;
@@ -36,6 +35,7 @@ import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.util.CookieHelper;
 import org.keycloak.util.TokenUtil;
 
+import javax.ws.rs.BadRequestException;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.QueryParam;

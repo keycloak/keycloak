@@ -17,9 +17,7 @@
 package org.keycloak.services.resources;
 
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.spi.BadRequestException;
 import org.jboss.resteasy.spi.HttpRequest;
-import org.jboss.resteasy.spi.UnauthorizedException;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.util.Time;
@@ -35,7 +33,9 @@ import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
 import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.services.ForbiddenException;
 
+import javax.ws.rs.BadRequestException;
 import javax.ws.rs.HeaderParam;
+import javax.ws.rs.NotAuthorizedException;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -115,7 +115,7 @@ public class ClientsManagementService {
 
         if (!realm.isEnabled()) {
             event.error(Errors.REALM_DISABLED);
-            throw new UnauthorizedException("Realm not enabled");
+            throw new NotAuthorizedException("Realm not enabled");
         }
 
         ClientModel client = authorizeClient();
@@ -151,7 +151,7 @@ public class ClientsManagementService {
 
         if (!realm.isEnabled()) {
             event.error(Errors.REALM_DISABLED);
-            throw new UnauthorizedException("Realm not enabled");
+            throw new NotAuthorizedException("Realm not enabled");
         }
 
         ClientModel client = authorizeClient();
