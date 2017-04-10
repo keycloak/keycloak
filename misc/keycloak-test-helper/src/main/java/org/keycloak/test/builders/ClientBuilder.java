@@ -28,6 +28,8 @@ public class ClientBuilder {
 
     private ClientRepresentation rep;
 
+    public enum AccessType { BEARER_ONLY, PUBLIC, CONFIDENTIAL };
+
     public static ClientBuilder create(String clientId) {
         ClientRepresentation rep = new ClientRepresentation();
         rep.setEnabled(Boolean.TRUE);
@@ -39,9 +41,19 @@ public class ClientBuilder {
         this.rep = rep;
     }
 
-    public ClientRepresentation bearerOnly(boolean bearerOnly) {
-        rep.setBearerOnly(bearerOnly);
-        return rep;
+    public ClientRepresentation accessType(AccessType accessType) {
+        switch (accessType) {
+            case BEARER_ONLY:
+                rep.setBearerOnly(true);
+                break;
+            case PUBLIC:
+                rep.setPublicClient(true);
+                break;
+            case CONFIDENTIAL:
+                rep.setPublicClient(false);
+                break;
+        }
+        return defaultSettings();
     }
 
     public ClientBuilder rootUrl(String rootUrl) {
@@ -64,9 +76,13 @@ public class ClientBuilder {
         return this;
     }
 
-    public ClientRepresentation publicClient(boolean publicClient) {
+    public ClientBuilder secret(String secret) {
+        rep.setSecret(secret);
+        return this;
+    }
+
+    private ClientRepresentation defaultSettings() {
         rep.setFullScopeAllowed(true);
-        rep.setPublicClient(publicClient);
         rep.setDirectAccessGrantsEnabled(true);
         rep.setAdminUrl(rep.getRootUrl());
 

@@ -43,6 +43,8 @@ import java.io.InputStream;
 import java.net.URI;
 import java.util.Arrays;
 
+import static org.keycloak.test.builders.ClientBuilder.AccessType.PUBLIC;
+
 public class TestsHelper {
 
     public static String baseUrl;
@@ -83,7 +85,7 @@ public class TestsHelper {
     }
     
     public static String createDirectGrantClient() {
-        return createClient(ClientBuilder.create("test-dga").publicClient(true));
+        return createClient(ClientBuilder.create("test-dga").accessType(PUBLIC));
     }
 
     public static void deleteClient(String clientId) {
