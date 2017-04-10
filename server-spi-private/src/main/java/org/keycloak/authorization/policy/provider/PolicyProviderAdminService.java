@@ -26,13 +26,19 @@ import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentati
  */
 public interface PolicyProviderAdminService<R extends AbstractPolicyRepresentation> {
 
-    void onCreate(Policy policy, R representation);
+    default void onCreate(Policy policy, R representation) {
 
-    void onUpdate(Policy policy, R representation);
+    }
 
-    void onRemove(Policy policy);
+    default void onUpdate(Policy policy, R representation) {
 
-    default AbstractPolicyRepresentation toRepresentation(Policy policy) {
+    }
+
+    default void onRemove(Policy policy) {
+
+    }
+
+    default R toRepresentation(Policy policy) {
         return null;
     }
 

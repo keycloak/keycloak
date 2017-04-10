@@ -16,8 +16,6 @@
  */
 package org.keycloak.authorization.admin;
 
-import static org.keycloak.models.utils.RepresentationToModel.toModel;
-
 import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -40,6 +38,8 @@ import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
 import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.models.utils.RepresentationToModel;
+import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
@@ -70,37 +70,31 @@ public class PolicyResourceService {
     public Response update(String payload) {
         this.auth.requireManage();
 
+        AbstractPolicyRepresentation representation = doCreateRepresentation(payload);
+
         if (policy == null) {
             return Response.status(Status.NOT_FOUND).build();
         }
 
-        doUpdate(policy, payload);
-
-        return Response.status(Status.CREATED).build();
-    }
-
-    protected void doUpdate(Policy policy, String payload) {
-        PolicyRepresentation representation;
-
-        try {
-            representation = JsonSerialization.readValue(payload, PolicyRepresentation.class);
-        } catch (IOException cause) {
-            throw new RuntimeException("Failed to deserialize representation", cause);
-        }
-
         representation.setId(policy.getId());
 
-        policy = toModel(representation, resourceServer, authorization);
+        Policy updated = toModel(representation);
 
-        PolicyProviderAdminService resource = getPolicyProviderAdminResource(policy.getType());
+        PolicyProviderAdminService resource = getPolicyProviderAdminResource(updated.getType());
 
         if (resource != null) {
             try {
-                resource.onUpdate(policy, null);
+                resource.onUpdate(updated, representation);
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
         }
+
+        return Response.status(Status.CREATED).build();
+    }
+
+    protected Policy toModel(AbstractPolicyRepresentation representation) {
+        return RepresentationToModel.toModel(PolicyRepresentation.class.cast(representation), resourceServer, authorization);
     }
 
     @DELETE
@@ -241,6 +235,18 @@ public class PolicyResourceService {
         }).collect(Collectors.toList())).build();
     }
 
+    protected AbstractPolicyRepresentation doCreateRepresentation(String payload) {
+        PolicyRepresentation representation;
+
+        try {
+            representation = JsonSerialization.readValue(payload, PolicyRepresentation.class);
+        } catch (IOException cause) {
+            throw new RuntimeException("Failed to deserialize representation", cause);
+        }
+
+        return representation;
+    }
+
     protected PolicyProviderAdminService getPolicyProviderAdminResource(String policyType) {
         PolicyProviderFactory providerFactory = authorization.getProviderFactory(policyType);
 
@@ -249,5 +255,9 @@ public class PolicyResourceService {
         }
 
         return null;
+    }
+
+    protected Policy getPolicy() {
+        return policy;
     }
 }

@@ -88,7 +88,7 @@ public class AbstractPolicyRepresentation {
         return policies;
     }
 
-    public void addPolicies(String... id) {
+    public void addPolicy(String... id) {
         if (this.policies == null) {
             this.policies = new HashSet<>();
         }

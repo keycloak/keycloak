@@ -29,7 +29,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -48,6 +47,8 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.authorization.Permission;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
+import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
+import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.ClientBuilder;
@@ -193,61 +194,29 @@ public class ConflictingScopePermissionTest extends AbstractKeycloakTest {
     }
 
     private void createResourcePermission(String name, String resourceName, List<String> policies, ClientResource client) throws IOException {
-        AuthorizationResource authorization = client.authorization();
-        String resourceId = getResourceId(resourceName, authorization);
-        List<String> policyIds = getPolicyIds(policies, authorization);
-
-        PolicyRepresentation representation = new PolicyRepresentation();
+        ResourcePermissionRepresentation representation = new ResourcePermissionRepresentation();
 
         representation.setName(name);
-        representation.setType("resource");
+        representation.addResource(resourceName);
+        representation.addPolicy(policies.toArray(new String[policies.size()]));
 
-        Map<String, String> config = new HashMap<>();
-
-        config.put("resources", JsonSerialization.writeValueAsString(new String[] {resourceId}));
-        config.put("applyPolicies", JsonSerialization.writeValueAsString(policyIds));
-
-        representation.setConfig(config);
-
-        authorization.policies().create(representation);
-    }
-
-    private String getResourceId(String resourceName, AuthorizationResource authorization) {
-        return authorization.resources().findByName(resourceName).stream().map(representation -> representation.getId()).findFirst().orElseThrow(() -> new RuntimeException("Expected user [userId]"));
+        client.authorization().permissions().resource().create(representation);
     }
 
     private void createScopePermission(String name, String resourceName, List<String> scopes, List<String> policies, ClientResource client) throws IOException {
         AuthorizationResource authorization = client.authorization();
-        String resourceId = null;
-
-        if (resourceName != null) {
-            resourceId = getResourceId(resourceName, authorization);
-        }
-
-        List<String> scopeIds = scopes.stream().map(scopeName -> authorization.scopes().findByName(scopeName).getId()).collect(Collectors.toList());
-        List<String> policyIds = getPolicyIds(policies, authorization);
-
-        PolicyRepresentation representation = new PolicyRepresentation();
+        ScopePermissionRepresentation representation = new ScopePermissionRepresentation();
 
         representation.setName(name);
-        representation.setType("resource");
 
-        Map<String, String> config = new HashMap<>();
-
-        if (resourceId != null) {
-            config.put("resources", JsonSerialization.writeValueAsString(new String[]{resourceId}));
+        if (resourceName != null) {
+            representation.addResource(resourceName);
         }
 
-        config.put("scopes", JsonSerialization.writeValueAsString(scopeIds));
-        config.put("applyPolicies", JsonSerialization.writeValueAsString(policyIds));
+        representation.addScopes(scopes.toArray(new String[scopes.size()]));
+        representation.addPolicy(scopes.toArray(new String[policies.size()]));
 
-        representation.setConfig(config);
-
-        authorization.policies().create(representation);
-    }
-
-    private List<String> getPolicyIds(List<String> policies, AuthorizationResource authorization) {
-        return policies.stream().map(policyName -> authorization.policies().findByName(policyName).getId()).collect(Collectors.toList());
+        authorization.permissions().scope().create(representation);
     }
 
     private AuthzClient getAuthzClient() {

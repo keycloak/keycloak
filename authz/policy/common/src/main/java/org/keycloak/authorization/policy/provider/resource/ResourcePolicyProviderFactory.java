@@ -11,6 +11,7 @@ import org.keycloak.authorization.policy.provider.PolicyProviderAdminService;
 import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
 
 /**
@@ -37,28 +38,32 @@ public class ResourcePolicyProviderFactory implements PolicyProviderFactory {
 
     @Override
     public PolicyProviderAdminService getAdminResource(ResourceServer resourceServer, AuthorizationProvider authorization) {
-        return new PolicyProviderAdminService<ResourcePermissionRepresentation>() {
+        return new PolicyProviderAdminService() {
             @Override
-            public void onCreate(Policy policy, ResourcePermissionRepresentation representation) {
+            public void onCreate(Policy policy, AbstractPolicyRepresentation representation) {
                 updateResourceType(policy, representation);
             }
 
             @Override
-            public void onUpdate(Policy policy, ResourcePermissionRepresentation representation) {
+            public void onUpdate(Policy policy, AbstractPolicyRepresentation representation) {
                 updateResourceType(policy, representation);
             }
 
-            private void updateResourceType(Policy policy, ResourcePermissionRepresentation representation) {
-                //TODO: remove this check once we migrate to new API
+            private void updateResourceType(Policy policy, AbstractPolicyRepresentation representation) {
                 if (representation != null) {
-                    Map<String, String> config = policy.getConfig();
+                    //TODO: remove this check once we migrate to new API
+                    if (ResourcePermissionRepresentation.class.equals(representation.getClass())) {
+                        ResourcePermissionRepresentation resourcePermission = ResourcePermissionRepresentation.class.cast(representation);
+                        Map<String, String> config = policy.getConfig();
 
-                    config.compute("defaultResourceType", (key, value) -> {
-                        String resourceType = representation.getResourceType();
-                        return resourceType != null ? representation.getResourceType() : null;
-                    });
+                        config.compute("defaultResourceType", (key, value) -> {
+                            String resourceType = resourcePermission.getResourceType();
+                            return resourceType != null ? resourcePermission.getResourceType() : null;
+                        });
 
-                    policy.setConfig(config);
+                        policy.setConfig(config);
+
+                    }
                 }
             }
 
@@ -68,7 +73,7 @@ public class ResourcePolicyProviderFactory implements PolicyProviderFactory {
             }
 
             @Override
-            public Class<ResourcePermissionRepresentation> getRepresentationType() {
+            public Class<? extends AbstractPolicyRepresentation> getRepresentationType() {
                 return ResourcePermissionRepresentation.class;
             }
 

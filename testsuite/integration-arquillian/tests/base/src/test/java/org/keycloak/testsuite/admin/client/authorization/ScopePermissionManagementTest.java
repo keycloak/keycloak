@@ -26,42 +26,43 @@ import javax.ws.rs.core.Response;
 
 import org.junit.Test;
 import org.keycloak.admin.client.resource.AuthorizationResource;
-import org.keycloak.admin.client.resource.ResourcePermissionResource;
-import org.keycloak.admin.client.resource.ResourcePermissionsResource;
+import org.keycloak.admin.client.resource.ScopePermissionResource;
+import org.keycloak.admin.client.resource.ScopePermissionsResource;
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.Logic;
-import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
+import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-public class ResourcePermissionManagementTest extends AbstractPermissionManagementTest {
+public class ScopePermissionManagementTest extends AbstractPermissionManagementTest {
 
     @Test
-    public void testCreateResourcePermission() {
+    public void testCreateResourceScopePermission() {
         AuthorizationResource authorization = getClient().authorization();
-        ResourcePermissionRepresentation representation = new ResourcePermissionRepresentation();
+        ScopePermissionRepresentation representation = new ScopePermissionRepresentation();
 
-        representation.setName("Resource A Permission");
+        representation.setName("Resource  A Scope Permission");
         representation.setDescription("description");
         representation.setDecisionStrategy(DecisionStrategy.CONSENSUS);
         representation.setLogic(Logic.NEGATIVE);
         representation.addResource("Resource A");
+        representation.addScopes("read", "execute");
         representation.addPolicy("Only Marta Policy", "Only Kolo Policy");
 
         assertCreated(authorization, representation);
     }
 
     @Test
-    public void testCreateResourceType() {
+    public void testCreateScopePermission() {
         AuthorizationResource authorization = getClient().authorization();
-        ResourcePermissionRepresentation representation = new ResourcePermissionRepresentation();
+        ScopePermissionRepresentation representation = new ScopePermissionRepresentation();
 
-        representation.setName("Resource A Type Permission");
+        representation.setName("Read Permission");
         representation.setDescription("description");
         representation.setDecisionStrategy(DecisionStrategy.CONSENSUS);
         representation.setLogic(Logic.NEGATIVE);
-        representation.setResourceType("test-resource");
+        representation.addScopes("read", "write");
         representation.addPolicy("Only Marta Policy");
 
         assertCreated(authorization, representation);
@@ -70,13 +71,14 @@ public class ResourcePermissionManagementTest extends AbstractPermissionManageme
     @Test
     public void testUpdate() {
         AuthorizationResource authorization = getClient().authorization();
-        ResourcePermissionRepresentation representation = new ResourcePermissionRepresentation();
+        ScopePermissionRepresentation representation = new ScopePermissionRepresentation();
 
-        representation.setName("Update Test Resource Permission");
+        representation.setName("Update Test Scope Permission");
         representation.setDescription("description");
         representation.setDecisionStrategy(DecisionStrategy.CONSENSUS);
         representation.setLogic(Logic.NEGATIVE);
         representation.addResource("Resource A");
+        representation.addScopes("read", "execute");
         representation.addPolicy("Only Marta Policy", "Only Kolo Policy");
 
         assertCreated(authorization, representation);
@@ -87,17 +89,11 @@ public class ResourcePermissionManagementTest extends AbstractPermissionManageme
         representation.setLogic(Logic.POSITIVE);
         representation.getResources().remove("Resource A");
         representation.addResource("Resource B");
+        representation.getScopes().remove("execute");
         representation.getPolicies().remove("Only Marta Policy");
 
-        ResourcePermissionsResource permissions = authorization.permissions().resource();
-        ResourcePermissionResource permission = permissions.findById(representation.getId());
-
-        permission.update(representation);
-
-        assertRepresentation(representation, permission);
-
-        representation.getResources().clear();
-        representation.setResourceType("changed");
+        ScopePermissionsResource permissions = authorization.permissions().scope();
+        ScopePermissionResource permission = permissions.findById(representation.getId());
 
         permission.update(representation);
 
@@ -107,19 +103,19 @@ public class ResourcePermissionManagementTest extends AbstractPermissionManageme
     @Test
     public void testDelete() {
         AuthorizationResource authorization = getClient().authorization();
-        ResourcePermissionRepresentation representation = new ResourcePermissionRepresentation();
+        ScopePermissionRepresentation representation = new ScopePermissionRepresentation();
 
         representation.setName("Test Delete Permission");
-        representation.setResourceType("test-resource");
+        representation.addScopes("execute");
         representation.addPolicy("Only Marta Policy");
 
-        ResourcePermissionsResource permissions = authorization.permissions().resource();
-        Response response = permissions.create(representation);
-        ResourcePermissionRepresentation created = response.readEntity(ResourcePermissionRepresentation.class);
+        assertCreated(authorization, representation);
 
-        permissions.findById(created.getId()).remove();
+        ScopePermissionsResource permissions = authorization.permissions().scope();
 
-        ResourcePermissionResource removed = permissions.findById(created.getId());
+        permissions.findById(representation.getId()).remove();
+
+        ScopePermissionResource removed = permissions.findById(representation.getId());
 
         try {
             removed.toRepresentation();
@@ -132,17 +128,17 @@ public class ResourcePermissionManagementTest extends AbstractPermissionManageme
     @Test
     public void failCreateWithSameName() {
         AuthorizationResource authorization = getClient().authorization();
-        ResourcePermissionRepresentation permission1 = new ResourcePermissionRepresentation();
+        ScopePermissionRepresentation permission1 = new ScopePermissionRepresentation();
 
         permission1.setName("Conflicting Name Permission");
-        permission1.setResourceType("test-resource");
+        permission1.addScopes("read");
         permission1.addPolicy("Only Marta Policy");
 
-        ResourcePermissionsResource permissions = authorization.permissions().resource();
+        ScopePermissionsResource permissions = authorization.permissions().scope();
 
         permissions.create(permission1);
 
-        ResourcePermissionRepresentation permission2 = new ResourcePermissionRepresentation();
+        ScopePermissionRepresentation permission2 = new ScopePermissionRepresentation();
 
         permission2.setName(permission1.getName());
 
@@ -151,15 +147,15 @@ public class ResourcePermissionManagementTest extends AbstractPermissionManageme
         assertEquals(Response.Status.CONFLICT.getStatusCode(), response.getStatus());
     }
 
-    private void assertCreated(AuthorizationResource authorization, ResourcePermissionRepresentation representation) {
-        ResourcePermissionsResource permissions = authorization.permissions().resource();
+    private void assertCreated(AuthorizationResource authorization, ScopePermissionRepresentation representation) {
+        ScopePermissionsResource permissions = authorization.permissions().scope();
         Response response = permissions.create(representation);
-        ResourcePermissionRepresentation created = response.readEntity(ResourcePermissionRepresentation.class);
-        ResourcePermissionResource permission = permissions.findById(created.getId());
+        ScopePermissionRepresentation created = response.readEntity(ScopePermissionRepresentation.class);
+        ScopePermissionResource permission = permissions.findById(created.getId());
         assertRepresentation(representation, permission);
     }
 
-    private void assertRepresentation(ResourcePermissionRepresentation representation, ResourcePermissionResource permission) {
-        assertRepresentation(representation, permission.toRepresentation(), () -> permission.resources(), () -> Collections.emptyList(), () -> permission.associatedPolicies());
+    private void assertRepresentation(ScopePermissionRepresentation representation, ScopePermissionResource permission) {
+        assertRepresentation(representation, permission.toRepresentation(), () -> permission.resources(), () -> permission.scopes(), () -> permission.associatedPolicies());
     }
 }

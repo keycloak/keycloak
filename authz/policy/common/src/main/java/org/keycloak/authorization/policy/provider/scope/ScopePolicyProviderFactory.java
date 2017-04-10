@@ -35,22 +35,7 @@ public class ScopePolicyProviderFactory implements PolicyProviderFactory {
 
     @Override
     public PolicyProviderAdminService getAdminResource(ResourceServer resourceServer, AuthorizationProvider authorization) {
-        return new PolicyProviderAdminService<ScopePermissionRepresentation>() {
-            @Override
-            public void onCreate(Policy policy, ScopePermissionRepresentation representation) {
-
-            }
-
-            @Override
-            public void onUpdate(Policy policy, ScopePermissionRepresentation representation) {
-
-            }
-
-            @Override
-            public void onRemove(Policy policy) {
-
-            }
-
+        return new PolicyProviderAdminService() {
             @Override
             public Class<ScopePermissionRepresentation> getRepresentationType() {
                 return ScopePermissionRepresentation.class;

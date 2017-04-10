@@ -16,14 +16,13 @@
  */
 package org.keycloak.authorization.admin;
 
-import static org.keycloak.models.utils.RepresentationToModel.toModel;
-
 import java.io.IOException;
 
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.policy.provider.PolicyProviderAdminService;
+import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentation;
 import org.keycloak.services.resources.admin.RealmAuth;
 import org.keycloak.util.JsonSerialization;
@@ -38,22 +37,9 @@ public class PolicyTypeResourceService extends PolicyResourceService {
     }
 
     @Override
-    protected void doUpdate(Policy policy, String payload) {
-        String type = policy.getType();
-        PolicyProviderAdminService provider = getPolicyProviderAdminResource(type);
-        AbstractPolicyRepresentation representation = toRepresentation(type, payload, provider);
-
-        policy = toModel(representation, policy.getResourceServer(), authorization);
-
-        try {
-            provider.onUpdate(policy, representation);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private AbstractPolicyRepresentation toRepresentation(String type, String payload, PolicyProviderAdminService provider) {
-        Class<? extends AbstractPolicyRepresentation> representationType = provider.getRepresentationType();
+    protected AbstractPolicyRepresentation doCreateRepresentation(String payload) {
+        String type = getPolicy().getType();
+        Class<? extends AbstractPolicyRepresentation> representationType = getPolicyProviderAdminResource(type).getRepresentationType();
 
         if (representationType == null) {
             throw new RuntimeException("Policy provider for type [" + type + "] returned a null representation type.");
@@ -66,22 +52,29 @@ public class PolicyTypeResourceService extends PolicyResourceService {
         } catch (IOException e) {
             throw new RuntimeException("Failed to deserialize JSON using policy provider for type [" + type + "].", e);
         }
+
+        representation.setType(type);
+
         return representation;
+    }
+
+    @Override
+    protected Policy toModel(AbstractPolicyRepresentation representation) {
+        return RepresentationToModel.toModel(representation, resourceServer, authorization);
     }
 
     @Override
     protected Object toRepresentation(Policy policy) {
         PolicyProviderAdminService provider = getPolicyProviderAdminResource(policy.getType());
-        return toRepresentation(policy, provider.toRepresentation(policy));
-    }
+        AbstractPolicyRepresentation representation = provider.toRepresentation(policy);
 
-    private AbstractPolicyRepresentation toRepresentation(Policy policy, AbstractPolicyRepresentation representation) {
         representation.setId(policy.getId());
         representation.setName(policy.getName());
         representation.setDescription(policy.getDescription());
         representation.setType(policy.getType());
         representation.setDecisionStrategy(policy.getDecisionStrategy());
         representation.setLogic(policy.getLogic());
+
         return representation;
     }
 }
