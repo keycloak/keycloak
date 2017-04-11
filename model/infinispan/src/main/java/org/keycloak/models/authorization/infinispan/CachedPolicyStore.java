@@ -42,6 +42,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.authorization.infinispan.InfinispanStoreFactoryProvider.CacheTransaction;
 import org.keycloak.models.authorization.infinispan.entities.CachedPolicy;
 import org.keycloak.models.cache.authorization.CachedStoreFactoryProvider;
+import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.Logic;
 
@@ -74,8 +75,8 @@ public class CachedPolicyStore implements PolicyStore {
     }
 
     @Override
-    public Policy create(String name, String type, ResourceServer resourceServer) {
-        Policy policy = getDelegate().create(name, type, getStoreFactory().getResourceServerStore().findById(resourceServer.getId()));
+    public Policy create(AbstractPolicyRepresentation representation, ResourceServer resourceServer) {
+        Policy policy = getDelegate().create(representation, getStoreFactory().getResourceServerStore().findById(resourceServer.getId()));
         String id = policy.getId();
 
         this.transaction.whenRollback(() -> {

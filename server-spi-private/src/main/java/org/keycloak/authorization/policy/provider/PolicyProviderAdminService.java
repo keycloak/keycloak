@@ -37,12 +37,4 @@ public interface PolicyProviderAdminService<R extends AbstractPolicyRepresentati
     default void onRemove(Policy policy) {
 
     }
-
-    default R toRepresentation(Policy policy) {
-        return null;
-    }
-
-    default Class<R> getRepresentationType() {
-        return null;
-    }
 }

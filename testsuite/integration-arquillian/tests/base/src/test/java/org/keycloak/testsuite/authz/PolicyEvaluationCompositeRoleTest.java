@@ -24,9 +24,7 @@ import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
-import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -38,6 +36,8 @@ import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.Logic;
 import org.keycloak.representations.idm.authorization.PolicyEvaluationRequest;
 import org.keycloak.representations.idm.authorization.PolicyEvaluationResponse;
+import org.keycloak.representations.idm.authorization.PolicyRepresentation;
+import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 
 import java.util.HashMap;
@@ -82,34 +82,33 @@ public class PolicyEvaluationCompositeRoleTest extends AbstractKeycloakTest {
     }
 
     private static Policy addScopePermission(AuthorizationProvider authz, ResourceServer resourceServer, String name, Resource resource, Scope scope, Policy policy) {
-        Policy permission = authz.getStoreFactory().getPolicyStore().create(name, "scope", resourceServer);
-        String resources = "[\"" + resource.getId() + "\"]";
-        String scopes = "[\"" + scope.getId() + "\"]";
-        String applyPolicies = "[\"" + policy.getId() + "\"]";
-        Map<String, String> config = new HashMap<>();
-        config.put("resources", resources);
-        config.put("scopes", scopes);
-        config.put("applyPolicies", applyPolicies);
-        permission.setConfig(config);
-        permission.setDecisionStrategy(DecisionStrategy.UNANIMOUS);
-        permission.setLogic(Logic.POSITIVE);
-        permission.addResource(resource);
-        permission.addScope(scope);
-        permission.addAssociatedPolicy(policy);
-        return permission;
+        ScopePermissionRepresentation representation = new ScopePermissionRepresentation();
+
+        representation.setName(name);
+        representation.setType("scope");
+        representation.addResource(resource.getName());
+        representation.addScope(scope.getName());
+        representation.addPolicy(policy.getName());
+        representation.setDecisionStrategy(DecisionStrategy.UNANIMOUS);
+        representation.setLogic(Logic.POSITIVE);
+
+        return authz.getStoreFactory().getPolicyStore().create(representation, resourceServer);
     }
 
 
     private static Policy createRolePolicy(AuthorizationProvider authz, ResourceServer resourceServer, RoleModel role) {
-        Policy policy = authz.getStoreFactory().getPolicyStore().create(role.getName(), "role", resourceServer);
+        PolicyRepresentation representation = new PolicyRepresentation();
 
+        representation.setName(role.getName());
+        representation.setType("role");
+        representation.setDecisionStrategy(DecisionStrategy.UNANIMOUS);
+        representation.setLogic(Logic.POSITIVE);
         String roleValues = "[{\"id\":\"" + role.getId() + "\",\"required\": true}]";
-        policy.setDecisionStrategy(DecisionStrategy.UNANIMOUS);
-        policy.setLogic(Logic.POSITIVE);
         Map<String, String> config = new HashMap<>();
         config.put("roles", roleValues);
-        policy.setConfig(config);
-        return policy;
+        representation.setConfig(config);
+
+        return authz.getStoreFactory().getPolicyStore().create(representation, resourceServer);
     }
 
 

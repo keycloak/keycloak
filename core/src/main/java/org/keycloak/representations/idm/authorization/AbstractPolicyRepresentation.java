@@ -110,7 +110,7 @@ public class AbstractPolicyRepresentation {
         return scopes;
     }
 
-    public void addScopes(String... id) {
+    public void addScope(String... id) {
         if (this.scopes == null) {
             this.scopes = new HashSet<>();
         }

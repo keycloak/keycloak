@@ -16,8 +16,6 @@
  */
 package org.keycloak.authorization.admin;
 
-import static org.keycloak.models.utils.RepresentationToModel.toModel;
-
 import java.io.IOException;
 
 import javax.ws.rs.Path;
@@ -27,6 +25,8 @@ import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.policy.provider.PolicyProviderAdminService;
+import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
+import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentation;
 import org.keycloak.services.resources.admin.RealmAuth;
 import org.keycloak.util.JsonSerialization;
@@ -47,6 +47,10 @@ public class PolicyTypeService extends PolicyService {
     public Object getPolicyAdminResourceProvider() {
         PolicyProviderAdminService resource = getPolicyProviderAdminResource(type);
 
+        if (resource == null) {
+            return null;
+        }
+
         ResteasyProviderFactory.getInstance().injectProperties(resource);
 
         return resource;
@@ -59,7 +63,7 @@ public class PolicyTypeService extends PolicyService {
 
     @Override
     protected AbstractPolicyRepresentation doCreateRepresentation(String payload) {
-        PolicyProviderAdminService provider = getPolicyProviderAdminResource(type);
+        PolicyProviderFactory provider = getPolicyProviderFactory(type);
         Class<? extends AbstractPolicyRepresentation> representationType = provider.getRepresentationType();
 
         if (representationType == null) {
@@ -80,7 +84,8 @@ public class PolicyTypeService extends PolicyService {
     }
 
     @Override
-    protected Policy doCreate(AbstractPolicyRepresentation representation) {
-        return toModel(representation, resourceServer, authorization);
+    protected AbstractPolicyRepresentation toRepresentation(Policy policy, AuthorizationProvider authorization) {
+        PolicyProviderFactory providerFactory = authorization.getProviderFactory(policy.getType());
+        return ModelToRepresentation.toRepresentation(policy, providerFactory.getRepresentationType(), authorization);
     }
 }

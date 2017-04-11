@@ -17,7 +17,7 @@ import org.keycloak.representations.idm.authorization.ResourcePermissionRepresen
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-public class ResourcePolicyProviderFactory implements PolicyProviderFactory {
+public class ResourcePolicyProviderFactory implements PolicyProviderFactory<ResourcePermissionRepresentation> {
 
     private ResourcePolicyProvider provider = new ResourcePolicyProvider();
 
@@ -34,6 +34,17 @@ public class ResourcePolicyProviderFactory implements PolicyProviderFactory {
     @Override
     public PolicyProvider create(AuthorizationProvider authorization) {
         return provider;
+    }
+
+    @Override
+    public Class<ResourcePermissionRepresentation> getRepresentationType() {
+        return ResourcePermissionRepresentation.class;
+    }
+
+    @Override
+    public ResourcePermissionRepresentation toRepresentation(Policy policy, ResourcePermissionRepresentation representation) {
+        representation.setResourceType(policy.getConfig().get("defaultResourceType"));
+        return representation;
     }
 
     @Override
@@ -70,20 +81,6 @@ public class ResourcePolicyProviderFactory implements PolicyProviderFactory {
             @Override
             public void onRemove(Policy policy) {
 
-            }
-
-            @Override
-            public Class<? extends AbstractPolicyRepresentation> getRepresentationType() {
-                return ResourcePermissionRepresentation.class;
-            }
-
-            @Override
-            public ResourcePermissionRepresentation toRepresentation(Policy policy) {
-                ResourcePermissionRepresentation representation = new ResourcePermissionRepresentation();
-
-                representation.setResourceType(policy.getConfig().get("defaultResourceType"));
-
-                return representation;
             }
         };
     }

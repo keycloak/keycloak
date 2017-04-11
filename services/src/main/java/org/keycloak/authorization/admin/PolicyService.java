@@ -17,8 +17,6 @@
  */
 package org.keycloak.authorization.admin;
 
-import static org.keycloak.models.utils.RepresentationToModel.toModel;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -53,7 +51,7 @@ import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.PolicyProviderRepresentation;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
-import org.keycloak.services.ErrorResponse;
+import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.resources.admin.RealmAuth;
 import org.keycloak.util.JsonSerialization;
 
@@ -97,14 +95,7 @@ public class PolicyService {
         this.auth.requireManage();
 
         AbstractPolicyRepresentation representation = doCreateRepresentation(payload);
-
-        Policy existing = authorization.getStoreFactory().getPolicyStore().findByName(representation.getName(), resourceServer.getId());
-
-        if (existing != null) {
-            return ErrorResponse.exists("Policy with name [" + representation.getName() + "] already exists");
-        }
-
-        Policy policy = doCreate(representation);
+        Policy policy = create(representation);
         PolicyProviderAdminService provider = getPolicyProviderAdminResource(representation.getType());
 
         if (provider != null) {
@@ -121,10 +112,6 @@ public class PolicyService {
         return Response.status(Status.CREATED).entity(representation).build();
     }
 
-    protected Policy doCreate(AbstractPolicyRepresentation representation) {
-        return create(PolicyRepresentation.class.cast(representation));
-    }
-
     protected AbstractPolicyRepresentation doCreateRepresentation(String payload) {
         PolicyRepresentation representation;
 
@@ -137,8 +124,15 @@ public class PolicyService {
         return representation;
     }
 
-    public Policy create(PolicyRepresentation representation) {
-        Policy policy = toModel(representation, this.resourceServer, authorization);
+    public Policy create(AbstractPolicyRepresentation representation) {
+        PolicyStore policyStore = authorization.getStoreFactory().getPolicyStore();
+        Policy existing = policyStore.findByName(representation.getName(), resourceServer.getId());
+
+        if (existing != null) {
+            throw new ErrorResponseException("Policy with name [" + representation.getName() + "] already exists", "Conflicting policy", Status.CONFLICT);
+        }
+
+        Policy policy = policyStore.create(representation, resourceServer);
         PolicyProviderAdminService resource = getPolicyProviderAdminResource(policy.getType());
 
         if (resource != null) {
@@ -150,10 +144,6 @@ public class PolicyService {
         }
 
         return policy;
-    }
-
-    protected Object toRepresentation(Policy model) {
-        return ModelToRepresentation.toRepresentation(model);
     }
 
     @Path("/search")
@@ -174,7 +164,7 @@ public class PolicyService {
             return Response.status(Status.OK).build();
         }
 
-        return Response.ok(toRepresentation(model)).build();
+        return Response.ok(toRepresentation(model, authorization)).build();
     }
 
     @GET
@@ -251,10 +241,14 @@ public class PolicyService {
                 .build();
     }
 
+    protected AbstractPolicyRepresentation toRepresentation(Policy model, AuthorizationProvider authorization) {
+        return ModelToRepresentation.toRepresentation(model, PolicyRepresentation.class, authorization);
+    }
+
     protected List<Object> doSearch(Integer firstResult, Integer maxResult, Map<String, String[]> filters) {
         PolicyStore policyStore = authorization.getStoreFactory().getPolicyStore();
         return policyStore.findByResourceServer(filters, resourceServer.getId(), firstResult != null ? firstResult : -1, maxResult != null ? maxResult : Constants.DEFAULT_MAX_RESULTS).stream()
-                .map(policy -> toRepresentation(policy))
+                .map(policy -> toRepresentation(policy, authorization))
                 .collect(Collectors.toList());
     }
 
@@ -290,16 +284,10 @@ public class PolicyService {
     }
 
     protected PolicyProviderAdminService getPolicyProviderAdminResource(String policyType) {
-        PolicyProviderFactory providerFactory = getPolicyProviderFactory(policyType);
-
-        if (providerFactory != null) {
-            return providerFactory.getAdminResource(resourceServer, authorization);
-        }
-
-        return null;
+        return getPolicyProviderFactory(policyType).getAdminResource(resourceServer, authorization);
     }
 
-    private PolicyProviderFactory getPolicyProviderFactory(String policyType) {
+    protected PolicyProviderFactory getPolicyProviderFactory(String policyType) {
         return authorization.getProviderFactory(policyType);
     }
 

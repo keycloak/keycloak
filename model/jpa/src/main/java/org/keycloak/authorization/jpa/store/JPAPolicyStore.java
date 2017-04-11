@@ -19,12 +19,13 @@ package org.keycloak.authorization.jpa.store;
 
 import org.keycloak.authorization.jpa.entities.PolicyEntity;
 import org.keycloak.authorization.jpa.entities.ResourceServerEntity;
-import org.keycloak.authorization.jpa.entities.ScopeEntity;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.ResourceServer;
-import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.store.PolicyStore;
+import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.models.utils.RepresentationToModel;
+import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentation;
 
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
@@ -34,7 +35,6 @@ import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -45,19 +45,22 @@ import java.util.Map;
 public class JPAPolicyStore implements PolicyStore {
 
     private final EntityManager entityManager;
+    private final StoreFactory storeFactory;
 
-    public JPAPolicyStore(EntityManager entityManager) {
+    public JPAPolicyStore(EntityManager entityManager, StoreFactory storeFactory) {
         this.entityManager = entityManager;
+        this.storeFactory = storeFactory;
     }
 
     @Override
-    public Policy create(String name, String type, ResourceServer resourceServer) {
+    public Policy create(AbstractPolicyRepresentation representation, ResourceServer resourceServer) {
         PolicyEntity entity = new PolicyEntity();
 
         entity.setId(KeycloakModelUtils.generateId());
-        entity.setName(name);
-        entity.setType(type);
         entity.setResourceServer((ResourceServerEntity) resourceServer);
+        entity.setType(representation.getType());
+
+        entity = (PolicyEntity) RepresentationToModel.toModel(representation, storeFactory, entity);
 
         this.entityManager.persist(entity);
 

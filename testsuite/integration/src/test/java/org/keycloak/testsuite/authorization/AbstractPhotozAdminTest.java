@@ -38,6 +38,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.util.JsonSerialization;
@@ -246,10 +247,14 @@ public abstract class AbstractPhotozAdminTest extends AbstractAuthorizationTest 
         return onAuthorizationSession(authorizationProvider -> {
             StoreFactory storeFactory = authorizationProvider.getStoreFactory();
             PolicyStore policyStore = storeFactory.getPolicyStore();
-            Policy policy = policyStore.create("Administration Policy", "aggregate", resourceServer);
+            PolicyRepresentation representation = new PolicyRepresentation();
 
-            policy.addAssociatedPolicy(anyAdminPolicy);
-            policy.addAssociatedPolicy(onlyFromSpecificAddressPolicy);
+            representation.setName("Administration Policy");
+            representation.setType("aggregate");
+            representation.addPolicy(anyAdminPolicy.getName());
+            representation.addPolicy(onlyFromSpecificAddressPolicy.getName());
+
+            Policy policy = policyStore.create(representation, resourceServer);
 
             return policy;
         });
@@ -259,19 +264,22 @@ public abstract class AbstractPhotozAdminTest extends AbstractAuthorizationTest 
         return onAuthorizationSession(authorizationProvider -> {
             StoreFactory storeFactory = authorizationProvider.getStoreFactory();
             PolicyStore policyStore = storeFactory.getPolicyStore();
-            Policy policy = policyStore.create("Only From a Specific Client Address", "js", resourceServer);
+            PolicyRepresentation representation = new PolicyRepresentation();
+
+            representation.setName("Only From a Specific Client Address");
+            representation.setType("js");
             HashedMap config = new HashedMap();
 
             config.put("code",
                     "var contextAttributes = $evaluation.getContext().getAttributes();" +
-                    "var networkAddress = contextAttributes.getValue('kc.client.network.ip_address');" +
-                    "if ('127.0.0.1'.equals(networkAddress.asInetAddress(0).getHostAddress())) {" +
-                        "$evaluation.grant();" +
-                    "}");
+                            "var networkAddress = contextAttributes.getValue('kc.client.network.ip_address');" +
+                            "if ('127.0.0.1'.equals(networkAddress.asInetAddress(0).getHostAddress())) {" +
+                            "$evaluation.grant();" +
+                            "}");
 
-            policy.setConfig(config);
+            representation.setConfig(config);
 
-            return policy;
+            return policyStore.create(representation, resourceServer);
         });
     }
 
@@ -279,7 +287,11 @@ public abstract class AbstractPhotozAdminTest extends AbstractAuthorizationTest 
         return onAuthorizationSession(authorizationProvider -> {
             StoreFactory storeFactory = authorizationProvider.getStoreFactory();
             PolicyStore policyStore = storeFactory.getPolicyStore();
-            Policy policy = policyStore.create("Any Admin Policy", "role", resourceServer);
+            PolicyRepresentation representation = new PolicyRepresentation();
+
+            representation.setName("Any Admin Policy");
+            representation.setType("role");
+
             HashedMap config = new HashedMap();
             RealmModel realm = authorizationProvider.getKeycloakSession().realms().getRealmByName(TEST_REALM_NAME);
             RoleModel adminRole = realm.getRole("admin");
@@ -294,9 +306,9 @@ public abstract class AbstractPhotozAdminTest extends AbstractAuthorizationTest 
                 throw new RuntimeException(e);
             }
 
-            policy.setConfig(config);
+            representation.setConfig(config);
 
-            return policy;
+            return policyStore.create(representation, resourceServer);
         });
     }
 
@@ -358,7 +370,11 @@ public abstract class AbstractPhotozAdminTest extends AbstractAuthorizationTest 
         return onAuthorizationSession(authorizationProvider -> {
             StoreFactory storeFactory = authorizationProvider.getStoreFactory();
             PolicyStore policyStore = storeFactory.getPolicyStore();
-            Policy policy = policyStore.create("Any User Policy", "role", resourceServer);
+            PolicyRepresentation representation = new PolicyRepresentation();
+
+            representation.setName("Any User Policy");
+            representation.setType("role");
+
             HashedMap config = new HashedMap();
             RealmModel realm = authorizationProvider.getKeycloakSession().realms().getRealmByName(TEST_REALM_NAME);
             RoleModel userRole = realm.getRole("user");
@@ -373,7 +389,9 @@ public abstract class AbstractPhotozAdminTest extends AbstractAuthorizationTest 
                 throw new RuntimeException(e);
             }
 
-            policy.setConfig(config);
+            representation.setConfig(config);
+
+            Policy policy = policyStore.create(representation, resourceServer);
 
             return policy;
         });

@@ -213,7 +213,7 @@ public class ConflictingScopePermissionTest extends AbstractKeycloakTest {
             representation.addResource(resourceName);
         }
 
-        representation.addScopes(scopes.toArray(new String[scopes.size()]));
+        representation.addScope(scopes.toArray(new String[scopes.size()]));
         representation.addPolicy(scopes.toArray(new String[policies.size()]));
 
         authorization.permissions().scope().create(representation);

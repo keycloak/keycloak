@@ -39,7 +39,7 @@ public class JPAStoreFactory implements StoreFactory {
 
     @Override
     public PolicyStore getPolicyStore() {
-        return new JPAPolicyStore(this.entityManager);
+        return new JPAPolicyStore(this.entityManager, this);
     }
 
     @Override

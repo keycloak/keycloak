@@ -21,8 +21,8 @@ import java.io.IOException;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.ResourceServer;
-import org.keycloak.authorization.policy.provider.PolicyProviderAdminService;
-import org.keycloak.models.utils.RepresentationToModel;
+import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
+import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentation;
 import org.keycloak.services.resources.admin.RealmAuth;
 import org.keycloak.util.JsonSerialization;
@@ -39,7 +39,7 @@ public class PolicyTypeResourceService extends PolicyResourceService {
     @Override
     protected AbstractPolicyRepresentation doCreateRepresentation(String payload) {
         String type = getPolicy().getType();
-        Class<? extends AbstractPolicyRepresentation> representationType = getPolicyProviderAdminResource(type).getRepresentationType();
+        Class<? extends AbstractPolicyRepresentation> representationType = authorization.getProviderFactory(type).getRepresentationType();
 
         if (representationType == null) {
             throw new RuntimeException("Policy provider for type [" + type + "] returned a null representation type.");
@@ -59,22 +59,8 @@ public class PolicyTypeResourceService extends PolicyResourceService {
     }
 
     @Override
-    protected Policy toModel(AbstractPolicyRepresentation representation) {
-        return RepresentationToModel.toModel(representation, resourceServer, authorization);
-    }
-
-    @Override
-    protected Object toRepresentation(Policy policy) {
-        PolicyProviderAdminService provider = getPolicyProviderAdminResource(policy.getType());
-        AbstractPolicyRepresentation representation = provider.toRepresentation(policy);
-
-        representation.setId(policy.getId());
-        representation.setName(policy.getName());
-        representation.setDescription(policy.getDescription());
-        representation.setType(policy.getType());
-        representation.setDecisionStrategy(policy.getDecisionStrategy());
-        representation.setLogic(policy.getLogic());
-
-        return representation;
+    protected AbstractPolicyRepresentation toRepresentation(Policy policy, AuthorizationProvider authorization) {
+        PolicyProviderFactory providerFactory = authorization.getProviderFactory(policy.getType());
+        return ModelToRepresentation.toRepresentation(policy, providerFactory.getRepresentationType(), authorization);
     }
 }

@@ -20,4 +20,9 @@ package org.keycloak.representations.idm.authorization;
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 public class ScopePermissionRepresentation extends AbstractPolicyRepresentation {
+
+    @Override
+    public String getType() {
+        return "scope";
+    }
 }

@@ -19,8 +19,6 @@ package org.keycloak.testsuite.admin.client.authorization;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
-import java.util.Collections;
-
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
 
@@ -47,7 +45,7 @@ public class ScopePermissionManagementTest extends AbstractPermissionManagementT
         representation.setDecisionStrategy(DecisionStrategy.CONSENSUS);
         representation.setLogic(Logic.NEGATIVE);
         representation.addResource("Resource A");
-        representation.addScopes("read", "execute");
+        representation.addScope("read", "execute");
         representation.addPolicy("Only Marta Policy", "Only Kolo Policy");
 
         assertCreated(authorization, representation);
@@ -62,7 +60,7 @@ public class ScopePermissionManagementTest extends AbstractPermissionManagementT
         representation.setDescription("description");
         representation.setDecisionStrategy(DecisionStrategy.CONSENSUS);
         representation.setLogic(Logic.NEGATIVE);
-        representation.addScopes("read", "write");
+        representation.addScope("read", "write");
         representation.addPolicy("Only Marta Policy");
 
         assertCreated(authorization, representation);
@@ -78,7 +76,7 @@ public class ScopePermissionManagementTest extends AbstractPermissionManagementT
         representation.setDecisionStrategy(DecisionStrategy.CONSENSUS);
         representation.setLogic(Logic.NEGATIVE);
         representation.addResource("Resource A");
-        representation.addScopes("read", "execute");
+        representation.addScope("read", "execute");
         representation.addPolicy("Only Marta Policy", "Only Kolo Policy");
 
         assertCreated(authorization, representation);
@@ -106,7 +104,7 @@ public class ScopePermissionManagementTest extends AbstractPermissionManagementT
         ScopePermissionRepresentation representation = new ScopePermissionRepresentation();
 
         representation.setName("Test Delete Permission");
-        representation.addScopes("execute");
+        representation.addScope("execute");
         representation.addPolicy("Only Marta Policy");
 
         assertCreated(authorization, representation);
@@ -131,7 +129,7 @@ public class ScopePermissionManagementTest extends AbstractPermissionManagementT
         ScopePermissionRepresentation permission1 = new ScopePermissionRepresentation();
 
         permission1.setName("Conflicting Name Permission");
-        permission1.addScopes("read");
+        permission1.addScope("read");
         permission1.addPolicy("Only Marta Policy");
 
         ScopePermissionsResource permissions = authorization.permissions().scope();

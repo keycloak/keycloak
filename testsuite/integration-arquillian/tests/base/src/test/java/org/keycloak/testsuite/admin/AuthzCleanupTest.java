@@ -29,6 +29,7 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.Logic;
+import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
 
@@ -73,15 +74,19 @@ public class AuthzCleanupTest extends AbstractKeycloakTest {
     }
 
     private static Policy createRolePolicy(AuthorizationProvider authz, ResourceServer resourceServer, RoleModel role) {
-        Policy policy = authz.getStoreFactory().getPolicyStore().create(role.getName(), "role", resourceServer);
+        PolicyRepresentation representation = new PolicyRepresentation();
+
+        representation.setName(role.getName());
+        representation.setType("role");
+        representation.setDecisionStrategy(DecisionStrategy.UNANIMOUS);
+        representation.setLogic(Logic.POSITIVE);
 
         String roleValues = "[{\"id\":\"" + role.getId() + "\",\"required\": true}]";
-        policy.setDecisionStrategy(DecisionStrategy.UNANIMOUS);
-        policy.setLogic(Logic.POSITIVE);
         Map<String, String> config = new HashMap<>();
         config.put("roles", roleValues);
-        policy.setConfig(config);
-        return policy;
+        representation.setConfig(config);
+
+        return authz.getStoreFactory().getPolicyStore().create(representation, resourceServer);
     }
 
 

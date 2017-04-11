@@ -34,7 +34,6 @@ import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.policy.provider.PolicyProviderAdminService;
-import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
 import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.models.utils.ModelToRepresentation;
@@ -78,7 +77,7 @@ public class PolicyResourceService {
 
         representation.setId(policy.getId());
 
-        Policy updated = toModel(representation);
+        Policy updated = RepresentationToModel.toModel(representation, authorization.getStoreFactory(), policy);
 
         PolicyProviderAdminService resource = getPolicyProviderAdminResource(updated.getType());
 
@@ -91,10 +90,6 @@ public class PolicyResourceService {
         }
 
         return Response.status(Status.CREATED).build();
-    }
-
-    protected Policy toModel(AbstractPolicyRepresentation representation) {
-        return RepresentationToModel.toModel(PolicyRepresentation.class.cast(representation), resourceServer, authorization);
     }
 
     @DELETE
@@ -140,11 +135,11 @@ public class PolicyResourceService {
             return Response.status(Status.NOT_FOUND).build();
         }
 
-        return Response.ok(toRepresentation(policy)).build();
+        return Response.ok(toRepresentation(policy, authorization)).build();
     }
 
-    protected Object toRepresentation(Policy model) {
-        return ModelToRepresentation.toRepresentation(model);
+    protected AbstractPolicyRepresentation toRepresentation(Policy policy, AuthorizationProvider authorization) {
+        return ModelToRepresentation.toRepresentation(policy, PolicyRepresentation.class, authorization);
     }
 
     @Path("/dependentPolicies")
@@ -248,13 +243,7 @@ public class PolicyResourceService {
     }
 
     protected PolicyProviderAdminService getPolicyProviderAdminResource(String policyType) {
-        PolicyProviderFactory providerFactory = authorization.getProviderFactory(policyType);
-
-        if (providerFactory != null) {
-            return providerFactory.getAdminResource(resourceServer, authorization);
-        }
-
-        return null;
+        return authorization.getProviderFactory(policyType).getAdminResource(resourceServer, authorization);
     }
 
     protected Policy getPolicy() {
