@@ -110,7 +110,7 @@ public abstract class AbstractPermissionManagementTest extends AbstractKeycloakT
 
         if (expected.getScopes() != null) {
             assertEquals(expected.getScopes().size(), associatedScopes.size());
-            assertEquals(expected.getScopes().size(), associatedScopes.stream().map(representation1 -> representation1.getName()).filter(scopeName -> !expected.getScopes().contains(scopeName)).count());
+            assertEquals(0, associatedScopes.stream().map(representation1 -> representation1.getName()).filter(scopeName -> !expected.getScopes().contains(scopeName)).count());
         } else {
             assertTrue(associatedScopes.isEmpty());
         }

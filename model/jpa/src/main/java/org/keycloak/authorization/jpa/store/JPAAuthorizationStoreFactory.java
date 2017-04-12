@@ -33,7 +33,7 @@ import org.keycloak.models.KeycloakSession;
 public class JPAAuthorizationStoreFactory implements AuthorizationStoreFactory {
     @Override
     public StoreFactory  create(KeycloakSession session) {
-        return null;
+        return new JPAStoreFactory(getEntityManager(session));
     }
 
     @Override
@@ -53,10 +53,5 @@ public class JPAAuthorizationStoreFactory implements AuthorizationStoreFactory {
 
     private EntityManager getEntityManager(KeycloakSession session) {
         return session.getProvider(JpaConnectionProvider.class).getEntityManager();
-    }
-
-    @Override
-    public StoreFactory create(AuthorizationProvider authorizationProvider) {
-        return new JPAStoreFactory(getEntityManager(authorizationProvider.getKeycloakSession()), authorizationProvider);
     }
 }

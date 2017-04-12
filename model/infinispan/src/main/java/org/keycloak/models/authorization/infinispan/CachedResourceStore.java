@@ -49,16 +49,14 @@ public class CachedResourceStore implements ResourceStore {
     private static final String RESOURCE_ID_CACHE_PREFIX = "rsc-id-";
     private static final String RESOURCE_NAME_CACHE_PREFIX = "rsc-name-";
 
-    private final KeycloakSession session;
     private final CachedStoreFactoryProvider cacheStoreFactory;
     private final CacheTransaction transaction;
     private final List<String> cacheKeys;
-    private StoreFactory storeFactory;
+    private StoreFactory delegateStoreFactory;
     private ResourceStore delegate;
     private final Cache<String, Map<String, List<CachedResource>>> cache;
 
     public CachedResourceStore(KeycloakSession session, CachedStoreFactoryProvider cacheStoreFactory, CacheTransaction transaction, StoreFactory delegate) {
-        this.session = session;
         this.cacheStoreFactory = cacheStoreFactory;
         InfinispanConnectionProvider provider = session.getProvider(InfinispanConnectionProvider.class);
         this.cache = provider.getCache(InfinispanConnectionProvider.AUTHORIZATION_CACHE_NAME);
@@ -67,12 +65,12 @@ public class CachedResourceStore implements ResourceStore {
         cacheKeys.add("findByOwner");
         cacheKeys.add("findByUri");
         cacheKeys.add("findByName");
-        this.storeFactory = delegate;
+        this.delegateStoreFactory = delegate;
     }
 
     @Override
     public Resource create(String name, ResourceServer resourceServer, String owner) {
-        Resource resource = getDelegate().create(name, getStoreFactory().getResourceServerStore().findById(resourceServer.getId()), owner);
+        Resource resource = getDelegate().create(name, getDelegateStoreFactory().getResourceServerStore().findById(resourceServer.getId()), owner);
 
         this.transaction.whenRollback(() -> {
             resolveResourceServerCache(resourceServer.getId()).remove(getCacheKeyForResource(resource.getId()));
@@ -178,14 +176,14 @@ public class CachedResourceStore implements ResourceStore {
 
     private ResourceStore getDelegate() {
         if (this.delegate == null) {
-            this.delegate = getStoreFactory().getResourceStore();
+            this.delegate = getDelegateStoreFactory().getResourceStore();
         }
 
         return this.delegate;
     }
 
-    private StoreFactory getStoreFactory() {
-        return this.storeFactory;
+    private StoreFactory getDelegateStoreFactory() {
+        return this.delegateStoreFactory;
     }
 
     private Resource createAdapter(CachedResource cached) {
@@ -272,7 +270,7 @@ public class CachedResourceStore implements ResourceStore {
 
             @Override
             public void updateScopes(Set<Scope> scopes) {
-                getDelegateForUpdate().updateScopes(scopes.stream().map(scope -> getStoreFactory().getScopeStore().findById(scope.getId(), cached.getResourceServerId())).collect(Collectors.toSet()));
+                getDelegateForUpdate().updateScopes(scopes.stream().map(scope -> getDelegateStoreFactory().getScopeStore().findById(scope.getId(), cached.getResourceServerId())).collect(Collectors.toSet()));
                 cached.updateScopes(scopes);
             }
 

@@ -39,6 +39,7 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.UserRemovedEvent;
+import org.keycloak.models.UserProvider;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
 import org.keycloak.util.JsonSerialization;
@@ -112,30 +113,36 @@ public class UserPolicyProviderFactory implements PolicyProviderFactory<UserPoli
         try {
             KeycloakSession session = authorization.getKeycloakSession();
             RealmModel realm = authorization.getRealm();
-            Set<String> updatedRoles = new HashSet<>();
+            UserProvider userProvider = session.users();
+            Set<String> updatedUsers = new HashSet<>();
 
             if (users != null) {
-                for (String userId : users) {
-                    UserModel user = session.users().getUserByUsername(userId, realm);
-
-                    if (user == null) {
-                        user = session.users().getUserById(userId, realm);
-                    }
-
-                    if (user == null) {
-                        throw new RuntimeException("Error while importing configuration. User [" + userId + "] could not be found.");
-                    }
-
-                    updatedRoles.add(user.getId());
-                }
                 try {
+                    for (String userId : users) {
+                        UserModel user = null;
+
+                        try {
+                            user = userProvider.getUserByUsername(userId, realm);
+                        } catch (Exception ignore) {
+                        }
+
+                        if (user == null) {
+                            user = userProvider.getUserById(userId, realm);
+                        }
+
+                        if (user == null) {
+                            throw new RuntimeException("Error while importing configuration. User [" + userId + "] could not be found.");
+                        }
+
+                        updatedUsers.add(user.getId());
+                    }
                 } catch (Exception e) {
                     throw new RuntimeException("Error while updating policy [" + policy.getName() + "].", e);
                 }
             }
 
             Map<String, String> config = policy.getConfig();
-            config.put("users", JsonSerialization.writeValueAsString(updatedRoles));
+            config.put("users", JsonSerialization.writeValueAsString(updatedUsers));
             policy.setConfig(config);
         } catch (IOException cause) {
             throw new RuntimeException("Failed to deserialize roles", cause);

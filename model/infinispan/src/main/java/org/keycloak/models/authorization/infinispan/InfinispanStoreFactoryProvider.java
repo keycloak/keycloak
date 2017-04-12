@@ -21,8 +21,6 @@ package org.keycloak.models.authorization.infinispan;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.keycloak.authorization.AuthorizationProvider;
-import org.keycloak.authorization.store.AuthorizationStoreFactory;
 import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.authorization.store.ResourceServerStore;
 import org.keycloak.authorization.store.ResourceStore;
@@ -37,24 +35,20 @@ import org.keycloak.models.cache.authorization.CachedStoreFactoryProvider;
  */
 public class InfinispanStoreFactoryProvider implements CachedStoreFactoryProvider {
 
-    private final KeycloakSession session;
     private final CacheTransaction transaction;
-    private final StoreFactory delegate;
     private final CachedResourceStore resourceStore;
     private final CachedScopeStore scopeStore;
     private final CachedPolicyStore policyStore;
     private ResourceServerStore resourceServerStore;
 
-    public InfinispanStoreFactoryProvider(AuthorizationProvider authorizationProvider) {
-        this.session = authorizationProvider.getKeycloakSession();
+    public InfinispanStoreFactoryProvider(KeycloakSession session) {
         this.transaction = new CacheTransaction();
-        this.session.getTransactionManager().enlistAfterCompletion(transaction);
-        AuthorizationStoreFactory providerFactory = (AuthorizationStoreFactory) this.session.getKeycloakSessionFactory().getProviderFactory(StoreFactory.class);
-        delegate = providerFactory.create(authorizationProvider);
-        resourceStore = new CachedResourceStore(this.session, this, this.transaction, delegate);
-        resourceServerStore = new CachedResourceServerStore(this.session, this.transaction, delegate);
-        scopeStore = new CachedScopeStore(this.session, this, this.transaction, delegate);
-        policyStore = new CachedPolicyStore(this.session, this, this.transaction, delegate);
+        session.getTransactionManager().enlistAfterCompletion(transaction);
+        StoreFactory delegate = session.getProvider(StoreFactory.class);
+        resourceStore = new CachedResourceStore(session, this, this.transaction, delegate);
+        resourceServerStore = new CachedResourceServerStore(session, this.transaction, delegate);
+        scopeStore = new CachedScopeStore(session, this, this.transaction, delegate);
+        policyStore = new CachedPolicyStore(session, this, this.transaction, delegate);
     }
 
     @Override

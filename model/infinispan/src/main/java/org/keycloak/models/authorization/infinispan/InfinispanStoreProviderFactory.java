@@ -33,7 +33,7 @@ import org.keycloak.provider.EnvironmentDependentProviderFactory;
 public class InfinispanStoreProviderFactory implements CachedStoreProviderFactory, EnvironmentDependentProviderFactory {
     @Override
     public CachedStoreFactoryProvider create(KeycloakSession session) {
-        return null;
+        return new InfinispanStoreFactoryProvider(session);
     }
 
     @Override
@@ -59,10 +59,5 @@ public class InfinispanStoreProviderFactory implements CachedStoreProviderFactor
     @Override
     public boolean isSupported() {
         return true;
-    }
-
-    @Override
-    public StoreFactory create(AuthorizationProvider authorizationProvider) {
-        return new InfinispanStoreFactoryProvider(authorizationProvider);
     }
 }

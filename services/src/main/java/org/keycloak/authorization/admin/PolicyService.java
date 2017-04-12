@@ -122,16 +122,7 @@ public class PolicyService {
             throw new ErrorResponseException("Policy with name [" + representation.getName() + "] already exists", "Conflicting policy", Status.CONFLICT);
         }
 
-        Policy policy = policyStore.create(representation, resourceServer);
-        PolicyProviderFactory provider = getPolicyProviderFactory(policy.getType());
-
-        if (representation instanceof PolicyRepresentation) {
-            provider.onImport(policy, PolicyRepresentation.class.cast(representation), authorization);
-        } else {
-            provider.onCreate(policy, representation, authorization);
-        }
-
-        return policy;
+        return policyStore.create(representation, resourceServer);
     }
 
     @Path("/search")

@@ -1933,88 +1933,9 @@ public class RepresentationToModel {
 
     private static Policy importPolicies(AuthorizationProvider authorization, ResourceServer resourceServer, List<PolicyRepresentation> policiesToImport, String parentPolicyName) {
         StoreFactory storeFactory = authorization.getStoreFactory();
-        KeycloakSession session = authorization.getKeycloakSession();
-        RealmModel realm = authorization.getRealm();
         for (PolicyRepresentation policyRepresentation : policiesToImport) {
             if (parentPolicyName != null && !parentPolicyName.equals(policyRepresentation.getName())) {
                 continue;
-            }
-
-            Map<String, String> config = policyRepresentation.getConfig();
-
-            String scopes = config.get("scopes");
-
-            if (scopes != null && !scopes.isEmpty()) {
-                try {
-                    ScopeStore scopeStore = storeFactory.getScopeStore();
-                    List<String> scopesMap = (List<String>) JsonSerialization.readValue(scopes, List.class);
-                    config.put("scopes", JsonSerialization.writeValueAsString(scopesMap.stream().map(scopeName -> {
-                        Scope newScope = scopeStore.findByName(scopeName, resourceServer.getId());
-
-                        if (newScope == null) {
-                            newScope = scopeStore.findById(scopeName, resourceServer.getId());
-                        }
-
-                        if (newScope == null) {
-                            throw new RuntimeException("Scope with name [" + scopeName + "] not defined.");
-                        }
-
-                        return newScope.getId();
-                    }).collect(Collectors.toList())));
-                } catch (Exception e) {
-                    throw new RuntimeException("Error while importing policy [" + policyRepresentation.getName() + "].", e);
-                }
-            }
-
-            String policyResources = config.get("resources");
-
-            if (policyResources != null && !policyResources.isEmpty()) {
-                ResourceStore resourceStore = storeFactory.getResourceStore();
-                try {
-                    List<String> resources = JsonSerialization.readValue(policyResources, List.class);
-                    config.put("resources", JsonSerialization.writeValueAsString(resources.stream().map(resourceName -> {
-                        Resource resource = resourceStore.findByName(resourceName, resourceServer.getId());
-
-                        if (resource == null) {
-                            resource = resourceStore.findById(resourceName, resourceServer.getId());
-                        }
-
-                        if (resource == null) {
-                            throw new RuntimeException("Resource with name [" + resourceName + "] not defined.");
-                        }
-
-                        return resource.getId();
-                    }).collect(Collectors.toList())));
-                } catch (Exception e) {
-                    throw new RuntimeException("Error while importing policy [" + policyRepresentation.getName() + "].", e);
-                }
-            }
-
-            String applyPolicies = config.get("applyPolicies");
-
-            if (applyPolicies != null && !applyPolicies.isEmpty()) {
-                PolicyStore policyStore = storeFactory.getPolicyStore();
-                try {
-                    List<String> policies = (List<String>) JsonSerialization.readValue(applyPolicies, List.class);
-                    config.put("applyPolicies", JsonSerialization.writeValueAsString(policies.stream().map(policyName -> {
-                        Policy policy = policyStore.findByName(policyName, resourceServer.getId());
-
-                        if (policy == null) {
-                            policy = policyStore.findById(policyName, resourceServer.getId());
-                        }
-
-                        if (policy == null) {
-                            policy = importPolicies(authorization, resourceServer, policiesToImport, policyName);
-                            if (policy == null) {
-                                throw new RuntimeException("Policy with name [" + policyName + "] not defined.");
-                            }
-                        }
-
-                        return policy.getId();
-                    }).collect(Collectors.toList())));
-                } catch (Exception e) {
-                    throw new RuntimeException("Error while importing policy [" + policyRepresentation.getName() + "].", e);
-                }
             }
 
             PolicyStore policyStore = storeFactory.getPolicyStore();
@@ -2024,15 +1945,11 @@ public class RepresentationToModel {
                 policy = policyStore.findByName(policyRepresentation.getName(), resourceServer.getId());
             }
 
-            PolicyProviderFactory providerFactory = authorization.getProviderFactory(policyRepresentation.getType());
-
             if (policy == null) {
                 policy = policyStore.create(policyRepresentation, resourceServer);
             } else {
-                toModel(policyRepresentation, storeFactory, policy);
+                policy = toModel(policyRepresentation, authorization, policy);
             }
-
-            providerFactory.onImport(policy, policyRepresentation, authorization);
 
             if (parentPolicyName != null && parentPolicyName.equals(policyRepresentation.getName())) {
                 return policy;
@@ -2042,7 +1959,7 @@ public class RepresentationToModel {
         return null;
     }
 
-    public static Policy toModel(AbstractPolicyRepresentation representation, StoreFactory storeFactory, Policy model) {
+    public static Policy toModel(AbstractPolicyRepresentation representation, AuthorizationProvider authorization, Policy model) {
         model.setName(representation.getName());
         model.setDescription(representation.getDescription());
         model.setDecisionStrategy(representation.getDecisionStrategy());
@@ -2087,9 +2004,22 @@ public class RepresentationToModel {
             model.setConfig(policy.getConfig());
         }
 
+        StoreFactory storeFactory = authorization.getStoreFactory();
+
         updateResources(resources, model, storeFactory);
         updateScopes(scopes, model, storeFactory);
         updateAssociatedPolicies(policies, model, storeFactory);
+
+        PolicyProviderFactory provider = authorization.getProviderFactory(model.getType());
+
+        if (representation instanceof PolicyRepresentation) {
+            provider.onImport(model, PolicyRepresentation.class.cast(representation), authorization);
+        } else if (representation.getId() == null) {
+            provider.onCreate(model, representation, authorization);
+        } else {
+            provider.onUpdate(model, representation, authorization);
+        }
+
 
         representation.setId(model.getId());
 
@@ -2237,10 +2167,6 @@ public class RepresentationToModel {
                 if (!hasResource) {
                     policy.removeResource(resourceModel);
                 }
-            }
-        } else {
-            for (Resource resourceModel : new HashSet<Resource>(policy.getResources())) {
-                policy.removeResource(resourceModel);
             }
         }
 

@@ -41,6 +41,18 @@ public class RolePolicyRepresentation extends AbstractPolicyRepresentation {
         roles.add(new RoleDefinition(name, required));
     }
 
+    public void addRole(String name) {
+        addRole(name, false);
+    }
+
+    public void addClientRole(String clientId, String name) {
+        addRole(clientId + "/" +name, false);
+    }
+
+    public void addClientRole(String clientId, String name, boolean required) {
+        addRole(clientId + "/" + name, required);
+    }
+
     public static class RoleDefinition {
 
         private String id;

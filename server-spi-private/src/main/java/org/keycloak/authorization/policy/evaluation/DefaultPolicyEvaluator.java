@@ -35,6 +35,7 @@ import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.permission.ResourcePermission;
 import org.keycloak.authorization.policy.provider.PolicyProvider;
 import org.keycloak.authorization.store.PolicyStore;
+import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.representations.idm.authorization.PolicyEnforcementMode;
 
@@ -46,11 +47,13 @@ public class DefaultPolicyEvaluator implements PolicyEvaluator {
     private final AuthorizationProvider authorization;
     private final StoreFactory storeFactory;
     private final PolicyStore policyStore;
+    private final ResourceStore resourceStore;
 
     public DefaultPolicyEvaluator(AuthorizationProvider authorization) {
         this.authorization = authorization;
         storeFactory = this.authorization.getStoreFactory();
         policyStore = storeFactory.getPolicyStore();
+        resourceStore = storeFactory.getResourceStore();
     }
 
     @Override
@@ -159,7 +162,7 @@ public class DefaultPolicyEvaluator implements PolicyEvaluator {
                 String type = resource.getType();
 
                 if (type != null) {
-                    List<Resource> resourcesByType = authorization.getStoreFactory().getResourceStore().findByType(type, resource.getResourceServer().getId());
+                    List<Resource> resourcesByType = resourceStore.findByType(type, resource.getResourceServer().getId());
 
                     for (Resource resourceType : resourcesByType) {
                         if (resourceType.getOwner().equals(resource.getResourceServer().getClientId())) {

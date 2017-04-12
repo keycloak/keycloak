@@ -16,6 +16,22 @@
  */
 package org.keycloak.testsuite.adapter.example.authorization;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.keycloak.testsuite.util.IOUtil.loadJson;
+import static org.keycloak.testsuite.util.IOUtil.loadRealm;
+import static org.keycloak.testsuite.util.WaitUtils.pause;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+
 import org.jboss.arquillian.container.test.api.Deployer;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.test.api.ArquillianResource;
@@ -40,22 +56,6 @@ import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.util.JsonSerialization;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.keycloak.testsuite.util.IOUtil.loadJson;
-import static org.keycloak.testsuite.util.IOUtil.loadRealm;
-import static org.keycloak.testsuite.util.WaitUtils.pause;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -82,17 +82,9 @@ public abstract class AbstractServletAuthzAdapterTest extends AbstractExampleAda
         return exampleDeployment(RESOURCE_SERVER_ID);
     }
 
-    @Override
-    public void beforeAbstractKeycloakTest() throws Exception {
-        super.beforeAbstractKeycloakTest();
-        importResourceServerSettings();
-    }
-
     @Test
     public void testRegularUserPermissions() throws Exception {
-        try {
-            this.deployer.deploy(RESOURCE_SERVER_ID);
-
+        performTests(() -> {
             login("alice", "alice");
             assertFalse(wasDenied());
             assertTrue(hasLink("User Premium"));
@@ -111,16 +103,12 @@ public abstract class AbstractServletAuthzAdapterTest extends AbstractExampleAda
 
             navigateToAdminPage();
             assertTrue(wasDenied());
-        } finally {
-            this.deployer.undeploy(RESOURCE_SERVER_ID);
-        }
+        });
     }
 
     @Test
     public void testUserPremiumPermissions() throws Exception {
-        try {
-            this.deployer.deploy(RESOURCE_SERVER_ID);
-
+        performTests(() -> {
             login("jdoe", "jdoe");
             assertFalse(wasDenied());
             assertTrue(hasLink("User Premium"));
@@ -139,16 +127,12 @@ public abstract class AbstractServletAuthzAdapterTest extends AbstractExampleAda
 
             navigateToAdminPage();
             assertTrue(wasDenied());
-        } finally {
-            this.deployer.undeploy(RESOURCE_SERVER_ID);
-        }
+        });
     }
 
     @Test
     public void testAdminPermissions() throws Exception {
-        try {
-            this.deployer.deploy(RESOURCE_SERVER_ID);
-
+        performTests(() -> {
             login("admin", "admin");
             assertFalse(wasDenied());
             assertTrue(hasLink("User Premium"));
@@ -167,16 +151,12 @@ public abstract class AbstractServletAuthzAdapterTest extends AbstractExampleAda
 
             navigateToAdminPage();
             assertFalse(wasDenied());
-        } finally {
-            this.deployer.undeploy(RESOURCE_SERVER_ID);
-        }
+        });
     }
 
     @Test
     public void testGrantPremiumAccessToUser() throws Exception {
-        try {
-            this.deployer.deploy(RESOURCE_SERVER_ID);
-
+        performTests(() -> {
             login("alice", "alice");
             assertFalse(wasDenied());
 
@@ -233,16 +213,12 @@ public abstract class AbstractServletAuthzAdapterTest extends AbstractExampleAda
 
             navigateToUserPremiumPage();
             assertFalse(wasDenied());
-        } finally {
-            this.deployer.undeploy(RESOURCE_SERVER_ID);
-        }
+        });
     }
 
     @Test
     public void testGrantAdministrativePermissions() throws Exception {
-        try {
-            this.deployer.deploy(RESOURCE_SERVER_ID);
-
+        performTests(() -> {
             login("jdoe", "jdoe");
 
             navigateToAdminPage();
@@ -263,23 +239,30 @@ public abstract class AbstractServletAuthzAdapterTest extends AbstractExampleAda
 
             navigateToAdminPage();
             assertFalse(wasDenied());
-        } finally {
-            this.deployer.undeploy(RESOURCE_SERVER_ID);
-        }
+        });
     }
     
     //KEYCLOAK-3830
     @Test
     public void testAccessPublicResource() throws Exception {
-        try {
-            this.deployer.deploy(RESOURCE_SERVER_ID);
-            
+        performTests(() -> {
             driver.navigate().to(getResourceServerUrl() + "/public-html.html");
             WaitUtils.waitForPageToLoad(driver);
             assertTrue(hasText("This is public resource that should be accessible without login."));
-            
+        });
+    }
+
+    private void performTests(TestRunnable assertion) {
+        try {
+            importResourceServerSettings();
+            deployer.deploy(RESOURCE_SERVER_ID);
+            assertion.run();
+        } catch (FileNotFoundException cause) {
+            throw new RuntimeException("Failed to import authorization settings", cause);
+        } catch (Exception cause) {
+            throw new RuntimeException("Error while executing tests", cause);
         } finally {
-            this.deployer.undeploy(RESOURCE_SERVER_ID);
+            deployer.undeploy(RESOURCE_SERVER_ID);
         }
     }
 
@@ -299,7 +282,7 @@ public abstract class AbstractServletAuthzAdapterTest extends AbstractExampleAda
         getAuthorizationResource().importSettings(loadJson(new FileInputStream(new File(TEST_APPS_HOME_DIR + "/servlet-authz-app/servlet-authz-app-authz-service.json")), ResourceServerRepresentation.class));
     }
 
-    private AuthorizationResource getAuthorizationResource() throws FileNotFoundException {
+    private AuthorizationResource getAuthorizationResource() {
         return getClientResource(RESOURCE_SERVER_ID).authorization();
     }
 
@@ -317,18 +300,22 @@ public abstract class AbstractServletAuthzAdapterTest extends AbstractExampleAda
         pause(500);
     }
 
-    private void login(String username, String password) throws InterruptedException {
-        navigateTo();
-        Thread.sleep(2000);
-        if (this.driver.getCurrentUrl().startsWith(getResourceServerUrl().toString())) {
-            Thread.sleep(2000);
-            logOut();
+    private void login(String username, String password) {
+        try {
             navigateTo();
+            Thread.sleep(2000);
+            if (this.driver.getCurrentUrl().startsWith(getResourceServerUrl().toString())) {
+                Thread.sleep(2000);
+                logOut();
+                navigateTo();
+            }
+
+            Thread.sleep(2000);
+
+            this.loginPage.form().login(username, password);
+        } catch (Exception cause) {
+            throw new RuntimeException("Login failed", cause);
         }
-
-        Thread.sleep(2000);
-
-        this.loginPage.form().login(username, password);
     }
 
     private void navigateTo() {
@@ -361,5 +348,9 @@ public abstract class AbstractServletAuthzAdapterTest extends AbstractExampleAda
     private void navigateToAdminPage() {
         navigateTo();
         getLink("Administration").click();
+    }
+
+    private interface TestRunnable {
+        void run() throws Exception;
     }
 }

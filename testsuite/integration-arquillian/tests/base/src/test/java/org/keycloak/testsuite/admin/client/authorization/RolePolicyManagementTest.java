@@ -17,17 +17,21 @@
 package org.keycloak.testsuite.admin.client.authorization;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.util.Collections;
 import java.util.stream.Collectors;
 
+import javax.management.relation.Role;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
 
 import org.junit.Test;
 import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.admin.client.resource.PolicyResource;
 import org.keycloak.admin.client.resource.RolePoliciesResource;
 import org.keycloak.admin.client.resource.RolePolicyResource;
 import org.keycloak.admin.client.resource.RolesResource;
@@ -35,6 +39,7 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.Logic;
+import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.RolePolicyRepresentation;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.RolesBuilder;
@@ -88,8 +93,8 @@ public class RolePolicyManagementTest extends AbstractPermissionManagementTest {
 
         roles.create(new RoleRepresentation("Client Role B", "desc", false));
 
-        representation.addRole("Client Role A", true);
-        representation.addRole(clientRep.getClientId() + "/Client Role B", true);
+        representation.addRole("Client Role A");
+        representation.addClientRole(clientRep.getClientId(), "Client Role B", true);
 
         assertCreated(authorization, representation);
     }
@@ -156,6 +161,29 @@ public class RolePolicyManagementTest extends AbstractPermissionManagementTest {
         } catch (NotFoundException ignore) {
 
         }
+    }
+
+    @Test
+    public void testGenericConfig() {
+        AuthorizationResource authorization = getClient().authorization();
+        RolePolicyRepresentation representation = new RolePolicyRepresentation();
+
+        representation.setName("Test Generic Config  Permission");
+        representation.addRole("Role A", false);
+
+        RolePoliciesResource policies = authorization.policies().roles();
+        Response response = policies.create(representation);
+        RolePolicyRepresentation created = response.readEntity(RolePolicyRepresentation.class);
+
+        PolicyResource policy = authorization.policies().policy(created.getId());
+        PolicyRepresentation genericConfig = policy.toRepresentation();
+
+        assertNotNull(genericConfig.getConfig());
+        assertNotNull(genericConfig.getConfig().get("roles"));
+
+        RoleRepresentation role = getRealm().roles().get("Role A").toRepresentation();
+
+        assertTrue(genericConfig.getConfig().get("roles").contains(role.getId()));
     }
 
     private void assertCreated(AuthorizationResource authorization, RolePolicyRepresentation representation) {

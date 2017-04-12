@@ -18,13 +18,10 @@
 
 package org.keycloak.models.cache.authorization;
 
-import org.keycloak.authorization.AuthorizationProvider;
-import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.provider.ProviderFactory;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 public interface CachedStoreProviderFactory extends ProviderFactory<CachedStoreFactoryProvider> {
-    StoreFactory create(AuthorizationProvider authorizationProvider);
 }

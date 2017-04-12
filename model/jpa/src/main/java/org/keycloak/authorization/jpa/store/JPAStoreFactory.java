@@ -18,46 +18,49 @@
 
 package org.keycloak.authorization.jpa.store;
 
-import org.keycloak.authorization.AuthorizationProvider;
+import javax.persistence.EntityManager;
+
 import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.authorization.store.ResourceServerStore;
 import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.authorization.store.ScopeStore;
 import org.keycloak.authorization.store.StoreFactory;
 
-import javax.persistence.EntityManager;
-
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 public class JPAStoreFactory implements StoreFactory {
 
-    private final EntityManager entityManager;
-    private final AuthorizationProvider authorization;
+    private final PolicyStore policyStore;
+    private final ResourceServerStore resourceServerStore;
+    private final ResourceStore resourceStore;
+    private final ScopeStore scopeStore;
 
-    public JPAStoreFactory(EntityManager entityManager, AuthorizationProvider authorizationProvider) {
-        this.entityManager = entityManager;
-        this.authorization = authorizationProvider;
+    public JPAStoreFactory(EntityManager entityManager) {
+        policyStore = new JPAPolicyStore(entityManager);
+        resourceServerStore = new JPAResourceServerStore(entityManager);
+        resourceStore = new JPAResourceStore(entityManager);
+        scopeStore = new JPAScopeStore(entityManager);
     }
 
     @Override
     public PolicyStore getPolicyStore() {
-        return new JPAPolicyStore(entityManager, this, authorization);
+        return policyStore;
     }
 
     @Override
     public ResourceServerStore getResourceServerStore() {
-        return new JPAResourceServerStore(this.entityManager);
+        return resourceServerStore;
     }
 
     @Override
     public ResourceStore getResourceStore() {
-        return new JPAResourceStore(this.entityManager);
+        return resourceStore;
     }
 
     @Override
     public ScopeStore getScopeStore() {
-        return new JPAScopeStore(this.entityManager);
+        return scopeStore;
     }
 
     @Override

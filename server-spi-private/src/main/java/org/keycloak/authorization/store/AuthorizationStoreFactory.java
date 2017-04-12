@@ -18,7 +18,9 @@
 
 package org.keycloak.authorization.store;
 
-import org.keycloak.authorization.AuthorizationProvider;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.keycloak.authorization.store.syncronization.ClientApplicationSynchronizer;
 import org.keycloak.authorization.store.syncronization.RealmSynchronizer;
 import org.keycloak.authorization.store.syncronization.Synchronizer;
@@ -29,9 +31,6 @@ import org.keycloak.models.RealmModel.RealmRemovedEvent;
 import org.keycloak.models.UserModel.UserRemovedEvent;
 import org.keycloak.provider.ProviderEvent;
 import org.keycloak.provider.ProviderFactory;
-
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -62,6 +61,4 @@ public interface AuthorizationStoreFactory extends ProviderFactory<StoreFactory>
             }
         });
     }
-
-    StoreFactory create(AuthorizationProvider authorizationProvider);
 }

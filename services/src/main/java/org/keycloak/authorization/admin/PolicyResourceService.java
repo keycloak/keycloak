@@ -33,7 +33,6 @@ import org.jboss.resteasy.annotations.cache.NoCache;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.ResourceServer;
-import org.keycloak.authorization.policy.provider.PolicyProviderAdminService;
 import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
 import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.authorization.store.StoreFactory;
@@ -78,15 +77,7 @@ public class PolicyResourceService {
 
         representation.setId(policy.getId());
 
-        Policy updated = RepresentationToModel.toModel(representation, authorization.getStoreFactory(), policy);
-
-        PolicyProviderFactory resource = getProviderFactory(updated.getType());
-
-        if (representation instanceof PolicyRepresentation) {
-            resource.onImport(updated, PolicyRepresentation.class.cast(representation), authorization);
-        } else {
-            resource.onUpdate(updated, representation, authorization);
-        }
+        RepresentationToModel.toModel(representation, authorization, policy);
 
         return Response.status(Status.CREATED).build();
     }
