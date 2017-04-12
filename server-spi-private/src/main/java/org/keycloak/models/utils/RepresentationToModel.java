@@ -1897,9 +1897,6 @@ public class RepresentationToModel {
         resourceServer.setPolicyEnforcementMode(rep.getPolicyEnforcementMode());
         resourceServer.setAllowRemoteResourceManagement(rep.isAllowRemoteResourceManagement());
 
-        StoreFactory storeFactory = authorization.getStoreFactory();
-        ScopeStore scopeStore = storeFactory.getScopeStore();
-
         rep.getScopes().forEach(scope -> {
             toModel(scope, resourceServer, authorization);
         });
@@ -1936,6 +1933,34 @@ public class RepresentationToModel {
         for (PolicyRepresentation policyRepresentation : policiesToImport) {
             if (parentPolicyName != null && !parentPolicyName.equals(policyRepresentation.getName())) {
                 continue;
+            }
+
+            Map<String, String> config = policyRepresentation.getConfig();
+            String applyPolicies = config.get("applyPolicies");
+
+            if (applyPolicies != null && !applyPolicies.isEmpty()) {
+                PolicyStore policyStore = storeFactory.getPolicyStore();
+                try {
+                    List<String> policies = (List<String>) JsonSerialization.readValue(applyPolicies, List.class);
+                    config.put("applyPolicies", JsonSerialization.writeValueAsString(policies.stream().map(policyName -> {
+                        Policy policy = policyStore.findByName(policyName, resourceServer.getId());
+
+                        if (policy == null) {
+                            policy = policyStore.findById(policyName, resourceServer.getId());
+                        }
+
+                        if (policy == null) {
+                            policy = importPolicies(authorization, resourceServer, policiesToImport, policyName);
+                            if (policy == null) {
+                                throw new RuntimeException("Policy with name [" + policyName + "] not defined.");
+                            }
+                        }
+
+                        return policy.getId();
+                    }).collect(Collectors.toList())));
+                } catch (Exception e) {
+                    throw new RuntimeException("Error while importing policy [" + policyRepresentation.getName() + "].", e);
+                }
             }
 
             PolicyStore policyStore = storeFactory.getPolicyStore();
