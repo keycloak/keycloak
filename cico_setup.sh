@@ -60,6 +60,12 @@ function build() {
   echo 'CICO: keycloak-server build completed successfully!'
 }
 
+function tag_push() {
+  TARGET=$1
+  docker tag $DOCKER_IMAGE_DEPLOY $TARGET
+  docker push $TARGET
+}
+
 function deploy() {
   cp distribution/server-dist/target/keycloak-$KEYCLOAK_VERSION.tar.gz docker
 
@@ -68,8 +74,10 @@ function deploy() {
 
   rm docker/keycloak-$KEYCLOAK_VERSION.tar.gz
 
-  docker tag $DOCKER_IMAGE_DEPLOY registry.devshift.net/$REPO_NAME/$PROJECT_NAME-postgres:latest
-  docker push registry.devshift.net/$REPO_NAME/$PROJECT_NAME-postgres:latest
+  TAG=$(echo $GIT_COMMIT | cut -c1-6)
+
+  tag_push registry.devshift.net/$REPO_NAME/$PROJECT_NAME-postgres:$TAG
+  tag_push registry.devshift.net/$REPO_NAME/$PROJECT_NAME-postgres:latest
   echo 'CICO: Image pushed, ready to update deployed app'
 }
 
