@@ -39,6 +39,8 @@ import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.Logic;
 import org.keycloak.representations.idm.authorization.PolicyEvaluationRequest;
 import org.keycloak.representations.idm.authorization.PolicyEvaluationResponse;
+import org.keycloak.representations.idm.authorization.PolicyRepresentation;
+import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 
 import java.util.HashMap;
@@ -102,21 +104,16 @@ public class FineGrainAdminLocalTest extends AbstractKeycloakTest {
     }
 
     private static Policy addScopePermission(AuthorizationProvider authz, ResourceServer resourceServer, String name, Resource resource, Scope scope, Policy policy) {
-        Policy permission = authz.getStoreFactory().getPolicyStore().create(name, "scope", resourceServer);
-        String resources = "[\"" + resource.getId() + "\"]";
-        String scopes = "[\"" + scope.getId() + "\"]";
-        String applyPolicies = "[\"" + policy.getId() + "\"]";
-        Map<String, String> config = new HashMap<>();
-        config.put("resources", resources);
-        config.put("scopes", scopes);
-        config.put("applyPolicies", applyPolicies);
-        permission.setConfig(config);
-        permission.setDecisionStrategy(DecisionStrategy.UNANIMOUS);
-        permission.setLogic(Logic.POSITIVE);
-        permission.addResource(resource);
-        permission.addScope(scope);
-        permission.addAssociatedPolicy(policy);
-        return permission;
+        ScopePermissionRepresentation representation = new ScopePermissionRepresentation();
+
+        representation.setName(name);
+        representation.setDecisionStrategy(DecisionStrategy.UNANIMOUS);
+        representation.setLogic(Logic.POSITIVE);
+        representation.addResource(resource.getName());
+        representation.addScope(scope.getName());
+        representation.addPolicy(policy.getName());
+
+        return authz.getStoreFactory().getPolicyStore().create(representation, resourceServer);
     }
 
     private static Resource createRoleResource(AuthorizationProvider authz, ResourceServer resourceServer, RoleModel role) {
@@ -144,15 +141,18 @@ public class FineGrainAdminLocalTest extends AbstractKeycloakTest {
             roleName = client.getClientId() ;
         }
         roleName = "role.policy." + roleName + "." + role.getName();
-        Policy policy = authz.getStoreFactory().getPolicyStore().create(roleName, "role", resourceServer);
+        PolicyRepresentation representation = new PolicyRepresentation();
 
+        representation.setName(roleName);
+        representation.setType("role");
+        representation.setDecisionStrategy(DecisionStrategy.UNANIMOUS);
+        representation.setLogic(Logic.POSITIVE);
         String roleValues = "[{\"id\":\"" + role.getId() + "\",\"required\": true}]";
-        policy.setDecisionStrategy(DecisionStrategy.UNANIMOUS);
-        policy.setLogic(Logic.POSITIVE);
         Map<String, String> config = new HashMap<>();
         config.put("roles", roleValues);
-        policy.setConfig(config);
-        return policy;
+        representation.setConfig(config);
+
+        return authz.getStoreFactory().getPolicyStore().create(representation, resourceServer);
     }
 
     public static void setupUsers(KeycloakSession session) {

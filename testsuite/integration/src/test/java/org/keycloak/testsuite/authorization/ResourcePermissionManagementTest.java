@@ -46,12 +46,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -392,7 +389,10 @@ public class ResourcePermissionManagementTest extends AbstractPhotozAdminTest {
         return onAuthorizationSession(authorizationProvider -> {
             StoreFactory storeFactory = authorizationProvider.getStoreFactory();
             PolicyStore policyStore = storeFactory.getPolicyStore();
-            Policy policy = policyStore.create("Client-Based Policy", "client", resourceServer);
+            PolicyRepresentation representation = new PolicyRepresentation();
+
+            representation.setName("Client-Based Policy");
+            representation.setType("client");
 
             List<String> clientIds = new ArrayList<>();
             for (ClientModel client : allowedClients) {
@@ -408,9 +408,9 @@ public class ResourcePermissionManagementTest extends AbstractPhotozAdminTest {
                 throw new RuntimeException(e);
             }
 
-            policy.setConfig(config);
+            representation.setConfig(config);
 
-            return policy;
+            return policyStore.create(representation, resourceServer);
         });
     }
 

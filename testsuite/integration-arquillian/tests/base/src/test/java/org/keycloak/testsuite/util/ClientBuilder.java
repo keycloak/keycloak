@@ -159,4 +159,9 @@ public class ClientBuilder {
         rep.setRootUrl(rootUrl);
         return this;
     }
+
+    public ClientBuilder authorizationServicesEnabled(boolean enable) {
+        rep.setAuthorizationServicesEnabled(true);
+        return this;
+    }
 }

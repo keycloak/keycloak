@@ -28,6 +28,7 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.util.List;
@@ -44,6 +45,12 @@ public interface PoliciesResource {
 
     @Path("{id}")
     PolicyResource policy(@PathParam("id") String id);
+
+    @Path("/search")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @NoCache
+    PolicyRepresentation findByName(@QueryParam("name") String name);
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
@@ -62,4 +69,9 @@ public interface PoliciesResource {
     @Path("evaluate")
     PolicyEvaluationResponse evaluate(PolicyEvaluationRequest evaluationRequest);
 
+    @Path("role")
+    RolePoliciesResource roles();
+
+    @Path("user")
+    UserPoliciesResource users();
 }

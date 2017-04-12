@@ -17,22 +17,18 @@
  */
 package org.keycloak.authorization.permission.evaluator;
 
-import java.util.concurrent.Executor;
-
 import org.keycloak.authorization.Decision;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  * @see PermissionEvaluator
  */
-class ScheduledPermissionEvaluator implements PermissionEvaluator {
+class DefaultPermissionEvaluator implements PermissionEvaluator {
 
     private final PermissionEvaluator publisher;
-    private final Executor scheduler;
 
-    ScheduledPermissionEvaluator(PermissionEvaluator publisher, Executor scheduler) {
+    DefaultPermissionEvaluator(PermissionEvaluator publisher) {
         this.publisher = publisher;
-        this.scheduler = scheduler;
     }
 
     @Override

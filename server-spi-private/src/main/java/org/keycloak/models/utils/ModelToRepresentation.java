@@ -33,6 +33,7 @@ import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
+import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
 import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.Time;
@@ -87,6 +88,7 @@ import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserConsentRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
+import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceOwnerRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
@@ -793,16 +795,29 @@ public class ModelToRepresentation {
         return server;
     }
 
-    public static PolicyRepresentation toRepresentation(Policy model) {
-        PolicyRepresentation representation = new PolicyRepresentation();
+    public static <R extends AbstractPolicyRepresentation> R toRepresentation(Policy policy, Class<R> representationType, AuthorizationProvider authorization) {
+        R representation;
 
-        representation.setId(model.getId());
-        representation.setName(model.getName());
-        representation.setDescription(model.getDescription());
-        representation.setType(model.getType());
-        representation.setDecisionStrategy(model.getDecisionStrategy());
-        representation.setLogic(model.getLogic());
-        representation.setConfig(new HashMap<>(model.getConfig()));
+        try {
+            representation = representationType.newInstance();
+        } catch (Exception cause) {
+            throw new RuntimeException("Could not create policy [" + policy.getType() + "] representation", cause);
+        }
+
+        PolicyProviderFactory providerFactory = authorization.getProviderFactory(policy.getType());
+
+        representation.setId(policy.getId());
+        representation.setName(policy.getName());
+        representation.setDescription(policy.getDescription());
+        representation.setType(policy.getType());
+        representation.setDecisionStrategy(policy.getDecisionStrategy());
+        representation.setLogic(policy.getLogic());
+
+        if (representation instanceof PolicyRepresentation) {
+            PolicyRepresentation.class.cast(representation).setConfig(policy.getConfig());
+        } else {
+            representation = (R) providerFactory.toRepresentation(policy, representation);
+        }
 
         return representation;
     }

@@ -18,45 +18,11 @@
 
 package org.keycloak.authorization.policy.provider.time;
 
-import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.policy.provider.PolicyProviderAdminService;
-
-import java.text.SimpleDateFormat;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 public class TimePolicyAdminResource implements PolicyProviderAdminService {
 
-    @Override
-    public void onCreate(Policy policy) {
-        validateConfig(policy);
-    }
-
-    private void validateConfig(Policy policy) {
-        String nbf = policy.getConfig().get("nbf");
-        String noa = policy.getConfig().get("noa");
-
-        if (nbf != null && noa != null) {
-            validateFormat(nbf);
-            validateFormat(noa);
-        }
-    }
-
-    @Override
-    public void onUpdate(Policy policy) {
-        validateConfig(policy);
-    }
-
-    @Override
-    public void onRemove(Policy policy) {
-    }
-
-    private void validateFormat(String date) {
-        try {
-            new SimpleDateFormat(TimePolicyProvider.DEFAULT_DATE_PATTERN).parse(TimePolicyProvider.format(date));
-        } catch (Exception e) {
-            throw new RuntimeException("Could not parse a date using format [" + date + "]");
-        }
-    }
 }
