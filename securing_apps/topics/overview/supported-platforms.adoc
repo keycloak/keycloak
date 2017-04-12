@@ -43,7 +43,7 @@
 
 {% if book.community %}
 ==== Python
-* https://pypi.python.org/pypi/python-openid/[python-openid] (generic)
+* https://pypi.python.org/pypi/oic/[oidc] (generic)
 {% endif %}
 
 {% if book.community %}
