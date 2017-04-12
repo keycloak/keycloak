@@ -21,8 +21,6 @@ package org.keycloak.authorization;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Executor;
-import java.util.function.Supplier;
 
 import org.keycloak.authorization.permission.evaluator.Evaluators;
 import org.keycloak.authorization.policy.evaluation.DefaultPolicyEvaluator;
@@ -31,6 +29,8 @@ import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
 import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.cache.authorization.CachedStoreFactoryProvider;
+import org.keycloak.models.cache.authorization.CachedStoreProviderFactory;
 import org.keycloak.provider.Provider;
 
 /**
@@ -62,23 +62,18 @@ import org.keycloak.provider.Provider;
 public final class AuthorizationProvider implements Provider {
 
     private final DefaultPolicyEvaluator policyEvaluator;
-    private final Executor scheduller;
-    private final Supplier<StoreFactory> storeFactory;
+    private StoreFactory storeFactory;
     private final Map<String, PolicyProviderFactory> policyProviderFactories;
     private final KeycloakSession keycloakSession;
     private final RealmModel realm;
 
-    public AuthorizationProvider(KeycloakSession session, RealmModel realm, Supplier<StoreFactory> storeFactory, Map<String, PolicyProviderFactory> policyProviderFactories, Executor scheduller) {
+    public AuthorizationProvider(KeycloakSession session, RealmModel realm, Map<String, PolicyProviderFactory> policyProviderFactories) {
         this.keycloakSession = session;
         this.realm = realm;
-        this.storeFactory = storeFactory;
-        this.scheduller = scheduller;
+        CachedStoreProviderFactory providerFactory = (CachedStoreProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(CachedStoreFactoryProvider.class);
+        storeFactory = providerFactory.create(this);
         this.policyProviderFactories = policyProviderFactories;
         this.policyEvaluator = new DefaultPolicyEvaluator(this);
-    }
-
-    public AuthorizationProvider(KeycloakSession session, RealmModel realm, StoreFactory storeFactory, Map<String, PolicyProviderFactory> policyProviderFactories) {
-        this(session, realm, () -> storeFactory, policyProviderFactories, Runnable::run);
     }
 
     /**
@@ -88,7 +83,7 @@ public final class AuthorizationProvider implements Provider {
      * @return a {@link Evaluators} instance
      */
     public Evaluators evaluators() {
-        return new Evaluators(this.policyEvaluator, this.scheduller);
+        return new Evaluators(policyEvaluator);
     }
 
     /**
@@ -97,7 +92,7 @@ public final class AuthorizationProvider implements Provider {
      * @return the {@link StoreFactory}
      */
     public StoreFactory getStoreFactory() {
-        return this.storeFactory.get();
+        return this.storeFactory;
     }
 
     /**

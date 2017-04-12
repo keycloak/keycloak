@@ -1326,8 +1326,8 @@ module.controller('ResourceServerPolicyUserDetailCtrl', function($scope, $route,
         onInitUpdate : function(policy) {
             var selectedUsers = [];
 
-            if (policy.config.users) {
-                var users = eval(policy.config.users);
+            if (policy.users) {
+                var users = policy.users;
 
                 for (i = 0; i < users.length; i++) {
                     User.get({realm: $route.current.params.realm, userId: users[i]}, function(data) {
@@ -1351,7 +1351,8 @@ module.controller('ResourceServerPolicyUserDetailCtrl', function($scope, $route,
                 users.push($scope.selectedUsers[i].id);
             }
 
-            $scope.policy.config.users = JSON.stringify(users);
+            $scope.policy.users = users;
+            delete $scope.policy.config;
         },
 
         onCreate : function() {
@@ -1361,7 +1362,8 @@ module.controller('ResourceServerPolicyUserDetailCtrl', function($scope, $route,
                 users.push($scope.selectedUsers[i].id);
             }
 
-            $scope.policy.config.users = JSON.stringify(users);
+            $scope.policy.users = users;
+            delete $scope.policy.config;
         }
     }, realm, client, $scope);
 });
@@ -1545,8 +1547,8 @@ module.controller('ResourceServerPolicyRoleDetailCtrl', function($scope, $route,
         onInitUpdate : function(policy) {
             var selectedRoles = [];
 
-            if (policy.config.roles) {
-                var roles = eval(policy.config.roles);
+            if (policy.roles) {
+                var roles = policy.roles;
 
                 for (i = 0; i < roles.length; i++) {
                     RoleById.get({realm: $route.current.params.realm, role: roles[i].id}, function(data) {
@@ -1586,7 +1588,7 @@ module.controller('ResourceServerPolicyRoleDetailCtrl', function($scope, $route,
                 roles.push(role);
             }
 
-            $scope.policy.config.roles = JSON.stringify(roles);
+            $scope.policy.roles = roles;
         },
 
         onCreate : function() {
@@ -1601,7 +1603,7 @@ module.controller('ResourceServerPolicyRoleDetailCtrl', function($scope, $route,
                 roles.push(role);
             }
 
-            $scope.policy.config.roles = JSON.stringify(roles);
+            $scope.policy.roles = roles;
         }
     }, realm, client, $scope);
     

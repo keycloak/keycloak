@@ -13,6 +13,8 @@ import org.keycloak.authorization.policy.provider.PolicyProviderAdminService;
 import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentation;
+import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.kie.api.KieServices;
 import org.kie.api.KieServices.Factory;
 import org.kie.api.runtime.KieContainer;
@@ -56,6 +58,26 @@ public class DroolsPolicyProviderFactory implements PolicyProviderFactory {
     @Override
     public PolicyProvider create(KeycloakSession session) {
         return null;
+    }
+
+    @Override
+    public void onCreate(Policy policy, AbstractPolicyRepresentation representation, AuthorizationProvider authorization) {
+        update(policy);
+    }
+
+    @Override
+    public void onUpdate(Policy policy, AbstractPolicyRepresentation representation, AuthorizationProvider authorization) {
+        update(policy);
+    }
+
+    @Override
+    public void onImport(Policy policy, PolicyRepresentation representation, AuthorizationProvider authorization) {
+        update(policy);
+    }
+
+    @Override
+    public void onRemove(Policy policy, AuthorizationProvider authorization) {
+        remove(policy);
     }
 
     @Override

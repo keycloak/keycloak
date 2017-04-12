@@ -16,9 +16,7 @@
  */
 package org.keycloak.authorization.policy.provider.drools;
 
-import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.policy.provider.PolicyProviderAdminService;
-import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.kie.api.runtime.KieContainer;
 
@@ -37,21 +35,6 @@ public class DroolsPolicyAdminResource implements PolicyProviderAdminService {
 
     public DroolsPolicyAdminResource(DroolsPolicyProviderFactory factory) {
         this.factory = factory;
-    }
-
-    @Override
-    public void onCreate(Policy policy, AbstractPolicyRepresentation representation) {
-        this.factory.update(policy);
-    }
-
-    @Override
-    public void onUpdate(Policy policy, AbstractPolicyRepresentation representation) {
-        this.factory.update(policy);
-    }
-
-    @Override
-    public void onRemove(Policy policy) {
-        this.factory.remove(policy);
     }
 
     @Path("/resolveModules")

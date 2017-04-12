@@ -50,14 +50,16 @@ public class CachedResourceStore implements ResourceStore {
     private static final String RESOURCE_NAME_CACHE_PREFIX = "rsc-name-";
 
     private final KeycloakSession session;
+    private final CachedStoreFactoryProvider cacheStoreFactory;
     private final CacheTransaction transaction;
     private final List<String> cacheKeys;
     private StoreFactory storeFactory;
     private ResourceStore delegate;
     private final Cache<String, Map<String, List<CachedResource>>> cache;
 
-    public CachedResourceStore(KeycloakSession session, CacheTransaction transaction, StoreFactory storeFactory) {
+    public CachedResourceStore(KeycloakSession session, CachedStoreFactoryProvider cacheStoreFactory, CacheTransaction transaction, StoreFactory delegate) {
         this.session = session;
+        this.cacheStoreFactory = cacheStoreFactory;
         InfinispanConnectionProvider provider = session.getProvider(InfinispanConnectionProvider.class);
         this.cache = provider.getCache(InfinispanConnectionProvider.AUTHORIZATION_CACHE_NAME);
         this.transaction = transaction;
@@ -65,7 +67,7 @@ public class CachedResourceStore implements ResourceStore {
         cacheKeys.add("findByOwner");
         cacheKeys.add("findByUri");
         cacheKeys.add("findByName");
-        this.storeFactory = storeFactory;
+        this.storeFactory = delegate;
     }
 
     @Override
@@ -293,7 +295,7 @@ public class CachedResourceStore implements ResourceStore {
     }
 
     private CachedStoreFactoryProvider getCachedStoreFactory() {
-        return session.getProvider(CachedStoreFactoryProvider.class);
+        return cacheStoreFactory;
     }
 
     private List<Resource> cacheResult(String resourceServerId, String key, Supplier<List<Resource>> provider) {

@@ -18,7 +18,6 @@
 
 package org.keycloak.authorization.policy.provider;
 
-import org.keycloak.authorization.model.Policy;
 import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentation;
 
 /**
@@ -26,15 +25,4 @@ import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentati
  */
 public interface PolicyProviderAdminService<R extends AbstractPolicyRepresentation> {
 
-    default void onCreate(Policy policy, R representation) {
-
-    }
-
-    default void onUpdate(Policy policy, R representation) {
-
-    }
-
-    default void onRemove(Policy policy) {
-
-    }
 }

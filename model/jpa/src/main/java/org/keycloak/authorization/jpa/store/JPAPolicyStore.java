@@ -17,15 +17,18 @@
  */
 package org.keycloak.authorization.jpa.store;
 
+import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.jpa.entities.PolicyEntity;
 import org.keycloak.authorization.jpa.entities.ResourceServerEntity;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.ResourceServer;
+import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
 import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentation;
+import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
@@ -46,10 +49,12 @@ public class JPAPolicyStore implements PolicyStore {
 
     private final EntityManager entityManager;
     private final StoreFactory storeFactory;
+    private final AuthorizationProvider authorization;
 
-    public JPAPolicyStore(EntityManager entityManager, StoreFactory storeFactory) {
+    public JPAPolicyStore(EntityManager entityManager, JPAStoreFactory jpaStoreFactory, AuthorizationProvider authorization) {
         this.entityManager = entityManager;
-        this.storeFactory = storeFactory;
+        this.storeFactory = jpaStoreFactory;
+        this.authorization = authorization;
     }
 
     @Override
@@ -59,10 +64,20 @@ public class JPAPolicyStore implements PolicyStore {
         entity.setId(KeycloakModelUtils.generateId());
         entity.setResourceServer((ResourceServerEntity) resourceServer);
         entity.setType(representation.getType());
+        entity.setName(representation.getName());
+
+        this.entityManager.persist(entity);
 
         entity = (PolicyEntity) RepresentationToModel.toModel(representation, storeFactory, entity);
 
-        this.entityManager.persist(entity);
+        PolicyProviderFactory provider = authorization.getProviderFactory(entity.getType());
+
+        if (representation instanceof PolicyRepresentation) {
+            provider.onImport(entity, PolicyRepresentation.class.cast(representation), authorization);
+        } else {
+            provider.onCreate(entity, representation, authorization);
+        }
+
 
         return entity;
     }

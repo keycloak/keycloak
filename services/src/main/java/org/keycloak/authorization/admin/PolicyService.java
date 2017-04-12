@@ -96,16 +96,6 @@ public class PolicyService {
 
         AbstractPolicyRepresentation representation = doCreateRepresentation(payload);
         Policy policy = create(representation);
-        PolicyProviderAdminService provider = getPolicyProviderAdminResource(representation.getType());
-
-        if (provider != null) {
-            try {
-                provider.onCreate(policy, representation);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        }
-
 
         representation.setId(policy.getId());
 
@@ -133,14 +123,12 @@ public class PolicyService {
         }
 
         Policy policy = policyStore.create(representation, resourceServer);
-        PolicyProviderAdminService resource = getPolicyProviderAdminResource(policy.getType());
+        PolicyProviderFactory provider = getPolicyProviderFactory(policy.getType());
 
-        if (resource != null) {
-            try {
-                resource.onCreate(policy, null);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
+        if (representation instanceof PolicyRepresentation) {
+            provider.onImport(policy, PolicyRepresentation.class.cast(representation), authorization);
+        } else {
+            provider.onCreate(policy, representation, authorization);
         }
 
         return policy;

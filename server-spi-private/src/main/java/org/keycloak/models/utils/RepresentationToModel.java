@@ -36,6 +36,7 @@ import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
+import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
 import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.authorization.store.ResourceServerStore;
 import org.keycloak.authorization.store.ResourceStore;
@@ -1941,81 +1942,6 @@ public class RepresentationToModel {
 
             Map<String, String> config = policyRepresentation.getConfig();
 
-            String roles = config.get("roles");
-
-            if (roles != null && !roles.isEmpty()) {
-                try {
-                    List<Map> rolesMap = (List<Map>) JsonSerialization.readValue(roles, List.class);
-                    config.put("roles", JsonSerialization.writeValueAsString(rolesMap.stream().map(roleConfig -> {
-                        String roleName = roleConfig.get("id").toString();
-                        String clientId = null;
-                        int clientIdSeparator = roleName.indexOf("/");
-
-                        if (clientIdSeparator != -1) {
-                            clientId = roleName.substring(0, clientIdSeparator);
-                            roleName = roleName.substring(clientIdSeparator + 1);
-                        }
-
-                        RoleModel role;
-
-                        if (clientId == null) {
-                            role = realm.getRole(roleName);
-                        } else {
-                            role = realm.getClientByClientId(clientId).getRole(roleName);
-                        }
-
-                        // fallback to find any client role with the given name
-                        if (role == null) {
-                            String finalRoleName = roleName;
-                            role = realm.getClients().stream().map(clientModel -> clientModel.getRole(finalRoleName)).filter(roleModel -> roleModel != null)
-                                    .findFirst().orElse(null);
-                        }
-
-                        if (role == null) {
-                            role = realm.getRoleById(roleName);
-
-                            if (role == null) {
-                                String finalRoleName1 = roleName;
-                                role = realm.getClients().stream().map(clientModel -> clientModel.getRole(finalRoleName1)).filter(roleModel -> roleModel != null)
-                                        .findFirst().orElse(null);
-                            }
-                        }
-
-                        if (role == null) {
-                            throw new RuntimeException("Error while importing configuration. Role [" + roleName + "] could not be found.");
-                        }
-
-                        roleConfig.put("id", role.getId());
-                        return roleConfig;
-                    }).collect(Collectors.toList())));
-                } catch (Exception e) {
-                    throw new RuntimeException("Error while exporting policy [" + policyRepresentation.getName() + "].", e);
-                }
-            }
-
-            String users = config.get("users");
-
-            if (users != null && !users.isEmpty()) {
-                try {
-                    List<String> usersMap = (List<String>) JsonSerialization.readValue(users, List.class);
-                    config.put("users", JsonSerialization.writeValueAsString(usersMap.stream().map(userId -> {
-                        UserModel user = session.users().getUserByUsername(userId, realm);
-
-                        if (user == null) {
-                            user = session.users().getUserById(userId, realm);
-                        }
-
-                        if (user == null) {
-                            throw new RuntimeException("Error while importing configuration. User [" + userId + "] could not be found.");
-                        }
-
-                        return user.getId();
-                    }).collect(Collectors.toList())));
-                } catch (Exception e) {
-                    throw new RuntimeException("Error while exporting policy [" + policyRepresentation.getName() + "].", e);
-                }
-            }
-
             String scopes = config.get("scopes");
 
             if (scopes != null && !scopes.isEmpty()) {
@@ -2098,11 +2024,15 @@ public class RepresentationToModel {
                 policy = policyStore.findByName(policyRepresentation.getName(), resourceServer.getId());
             }
 
+            PolicyProviderFactory providerFactory = authorization.getProviderFactory(policyRepresentation.getType());
+
             if (policy == null) {
                 policy = policyStore.create(policyRepresentation, resourceServer);
             } else {
                 toModel(policyRepresentation, storeFactory, policy);
             }
+
+            providerFactory.onImport(policy, policyRepresentation, authorization);
 
             if (parentPolicyName != null && parentPolicyName.equals(policyRepresentation.getName())) {
                 return policy;

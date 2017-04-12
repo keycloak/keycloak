@@ -54,15 +54,14 @@ public class CachedPolicyStore implements PolicyStore {
     private static final String POLICY_ID_CACHE_PREFIX = "policy-id-";
 
     private final Cache<String, Map<String, List<CachedPolicy>>> cache;
-    private final KeycloakSession session;
+    private final CachedStoreFactoryProvider cacheStoreFactory;
     private final CacheTransaction transaction;
     private final List<String> cacheKeys;
-    private StoreFactory storeFactory;
+    private final StoreFactory storeFactory;
     private PolicyStore delegate;
-    private CachedStoreFactoryProvider cachedStoreFactory;
 
-    public CachedPolicyStore(KeycloakSession session, CacheTransaction transaction, StoreFactory storeFactory) {
-        this.session = session;
+    public CachedPolicyStore(KeycloakSession session, CachedStoreFactoryProvider cacheStoreFactory, CacheTransaction transaction, StoreFactory delegate) {
+        this.cacheStoreFactory = cacheStoreFactory;
         this.transaction = transaction;
         InfinispanConnectionProvider provider = session.getProvider(InfinispanConnectionProvider.class);
         this.cache = provider.getCache(InfinispanConnectionProvider.AUTHORIZATION_CACHE_NAME);
@@ -71,7 +70,7 @@ public class CachedPolicyStore implements PolicyStore {
         cacheKeys.add("findByResourceType");
         cacheKeys.add("findByScopeIds");
         cacheKeys.add("findByType");
-        this.storeFactory = storeFactory;
+        this.storeFactory = delegate;
     }
 
     @Override
@@ -405,10 +404,7 @@ public class CachedPolicyStore implements PolicyStore {
     }
 
     private CachedStoreFactoryProvider getCachedStoreFactory() {
-        if (cachedStoreFactory == null) {
-            cachedStoreFactory = session.getProvider(CachedStoreFactoryProvider.class);
-        }
-        return cachedStoreFactory;
+        return cacheStoreFactory;
     }
 
     private void invalidateCache(String resourceServerId) {

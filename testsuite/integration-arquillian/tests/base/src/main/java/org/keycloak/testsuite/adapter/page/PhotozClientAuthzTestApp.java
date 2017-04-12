@@ -108,10 +108,12 @@ public class PhotozClientAuthzTestApp extends AbstractPageWithInjectedUrl {
     public void requestEntitlement() {
         entitlement.click();
         pause(WAIT_AFTER_OPERATION);
+        pause(WAIT_AFTER_OPERATION);
     }
     
     public void requestEntitlements() {
         entitlements.click();
+        pause(WAIT_AFTER_OPERATION);
         pause(WAIT_AFTER_OPERATION);
     }
 

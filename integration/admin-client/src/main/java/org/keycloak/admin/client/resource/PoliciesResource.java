@@ -69,4 +69,9 @@ public interface PoliciesResource {
     @Path("evaluate")
     PolicyEvaluationResponse evaluate(PolicyEvaluationRequest evaluationRequest);
 
+    @Path("role")
+    RolePoliciesResource roles();
+
+    @Path("user")
+    UserPoliciesResource users();
 }

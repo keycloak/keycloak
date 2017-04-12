@@ -50,6 +50,7 @@ import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.Logic;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
+import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
 import org.keycloak.services.resources.admin.RealmAuth;
@@ -183,21 +184,15 @@ public class ResourceServerService {
     }
 
     private void createDefaultPermission(ResourceRepresentation resource, PolicyRepresentation policy) {
-        PolicyRepresentation defaultPermission = new PolicyRepresentation();
+        ResourcePermissionRepresentation defaultPermission = new ResourcePermissionRepresentation();
 
         defaultPermission.setName("Default Permission");
-        defaultPermission.setType("resource");
         defaultPermission.setDescription("A permission that applies to the default resource type");
         defaultPermission.setDecisionStrategy(DecisionStrategy.UNANIMOUS);
         defaultPermission.setLogic(Logic.POSITIVE);
 
-        HashMap<String, String> defaultPermissionConfig = new HashMap<>();
-
-        defaultPermissionConfig.put("default", "true");
-        defaultPermissionConfig.put("defaultResourceType", resource.getType());
-        defaultPermissionConfig.put("applyPolicies", "[\"" + policy.getName() + "\"]");
-
-        defaultPermission.setConfig(defaultPermissionConfig);
+        defaultPermission.setResourceType(resource.getType());
+        defaultPermission.addPolicy(policy.getName());
 
         getPolicyResource().create(defaultPermission);
     }

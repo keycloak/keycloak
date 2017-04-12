@@ -40,6 +40,7 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
+import org.keycloak.representations.idm.authorization.RolePolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.util.JsonSerialization;
 
@@ -287,26 +288,11 @@ public abstract class AbstractPhotozAdminTest extends AbstractAuthorizationTest 
         return onAuthorizationSession(authorizationProvider -> {
             StoreFactory storeFactory = authorizationProvider.getStoreFactory();
             PolicyStore policyStore = storeFactory.getPolicyStore();
-            PolicyRepresentation representation = new PolicyRepresentation();
+            RolePolicyRepresentation representation = new RolePolicyRepresentation();
 
             representation.setName("Any Admin Policy");
             representation.setType("role");
-
-            HashedMap config = new HashedMap();
-            RealmModel realm = authorizationProvider.getKeycloakSession().realms().getRealmByName(TEST_REALM_NAME);
-            RoleModel adminRole = realm.getRole("admin");
-
-            Map role = new HashMap();
-
-            role.put("id", adminRole.getId());
-
-            try {
-                config.put("roles", JsonSerialization.writeValueAsString(new Map[] {role}));
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-
-            representation.setConfig(config);
+            representation.addRole("admin", false);
 
             return policyStore.create(representation, resourceServer);
         });

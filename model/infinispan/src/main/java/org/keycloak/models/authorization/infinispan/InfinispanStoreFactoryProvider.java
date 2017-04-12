@@ -18,6 +18,11 @@
 
 package org.keycloak.models.authorization.infinispan;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import org.keycloak.authorization.AuthorizationProvider;
+import org.keycloak.authorization.store.AuthorizationStoreFactory;
 import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.authorization.store.ResourceServerStore;
 import org.keycloak.authorization.store.ResourceStore;
@@ -27,9 +32,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakTransaction;
 import org.keycloak.models.cache.authorization.CachedStoreFactoryProvider;
 
-import java.util.ArrayList;
-import java.util.List;
-
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
@@ -37,21 +39,22 @@ public class InfinispanStoreFactoryProvider implements CachedStoreFactoryProvide
 
     private final KeycloakSession session;
     private final CacheTransaction transaction;
-    private final StoreFactory storeFactory;
+    private final StoreFactory delegate;
     private final CachedResourceStore resourceStore;
     private final CachedScopeStore scopeStore;
     private final CachedPolicyStore policyStore;
     private ResourceServerStore resourceServerStore;
 
-    InfinispanStoreFactoryProvider(KeycloakSession delegate) {
-        this.session = delegate;
+    public InfinispanStoreFactoryProvider(AuthorizationProvider authorizationProvider) {
+        this.session = authorizationProvider.getKeycloakSession();
         this.transaction = new CacheTransaction();
         this.session.getTransactionManager().enlistAfterCompletion(transaction);
-        storeFactory = this.session.getProvider(StoreFactory.class);
-        resourceStore = new CachedResourceStore(this.session, this.transaction, storeFactory);
-        resourceServerStore = new CachedResourceServerStore(this.session, this.transaction, storeFactory);
-        scopeStore = new CachedScopeStore(this.session, this.transaction, storeFactory);
-        policyStore = new CachedPolicyStore(this.session, this.transaction, storeFactory);
+        AuthorizationStoreFactory providerFactory = (AuthorizationStoreFactory) this.session.getKeycloakSessionFactory().getProviderFactory(StoreFactory.class);
+        delegate = providerFactory.create(authorizationProvider);
+        resourceStore = new CachedResourceStore(this.session, this, this.transaction, delegate);
+        resourceServerStore = new CachedResourceServerStore(this.session, this.transaction, delegate);
+        scopeStore = new CachedScopeStore(this.session, this, this.transaction, delegate);
+        policyStore = new CachedPolicyStore(this.session, this, this.transaction, delegate);
     }
 
     @Override

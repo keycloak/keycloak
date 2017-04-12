@@ -44,17 +44,17 @@ public class CachedScopeStore implements ScopeStore {
     private static final String SCOPE_NAME_CACHE_PREFIX = "scp-name-";
 
     private final Cache<String, Map<String, List<CachedScope>>> cache;
-    private final KeycloakSession session;
+    private final CachedStoreFactoryProvider cacheStoreFactory;
     private final CacheTransaction transaction;
     private ScopeStore delegate;
     private StoreFactory storeFactory;
 
-    public CachedScopeStore(KeycloakSession session, CacheTransaction transaction, StoreFactory storeFactory) {
-        this.session = session;
+    public CachedScopeStore(KeycloakSession session, CachedStoreFactoryProvider cacheStoreFactory, CacheTransaction transaction, StoreFactory delegate) {
+        this.cacheStoreFactory = cacheStoreFactory;
         this.transaction = transaction;
         InfinispanConnectionProvider provider = session.getProvider(InfinispanConnectionProvider.class);
         this.cache = provider.getCache(InfinispanConnectionProvider.AUTHORIZATION_CACHE_NAME);
-        this.storeFactory = storeFactory;
+        this.storeFactory = delegate;
     }
 
     @Override
@@ -220,7 +220,7 @@ public class CachedScopeStore implements ScopeStore {
     }
 
     private CachedStoreFactoryProvider getCachedStoreFactory() {
-        return session.getProvider(CachedStoreFactoryProvider.class);
+        return cacheStoreFactory;
     }
 
     private void invalidateCache(String resourceServerId) {

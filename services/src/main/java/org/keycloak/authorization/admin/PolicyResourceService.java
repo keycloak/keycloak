@@ -34,6 +34,7 @@ import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.policy.provider.PolicyProviderAdminService;
+import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
 import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.models.utils.ModelToRepresentation;
@@ -79,14 +80,12 @@ public class PolicyResourceService {
 
         Policy updated = RepresentationToModel.toModel(representation, authorization.getStoreFactory(), policy);
 
-        PolicyProviderAdminService resource = getPolicyProviderAdminResource(updated.getType());
+        PolicyProviderFactory resource = getProviderFactory(updated.getType());
 
-        if (resource != null) {
-            try {
-                resource.onUpdate(updated, representation);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
+        if (representation instanceof PolicyRepresentation) {
+            resource.onImport(updated, PolicyRepresentation.class.cast(representation), authorization);
+        } else {
+            resource.onUpdate(updated, representation, authorization);
         }
 
         return Response.status(Status.CREATED).build();
@@ -102,15 +101,9 @@ public class PolicyResourceService {
 
         StoreFactory storeFactory = authorization.getStoreFactory();
         PolicyStore policyStore = storeFactory.getPolicyStore();
-        PolicyProviderAdminService resource = getPolicyProviderAdminResource(policy.getType());
+        PolicyProviderFactory resource = getProviderFactory(policy.getType());
 
-        if (resource != null) {
-            try {
-                resource.onRemove(policy);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        }
+        resource.onRemove(policy, authorization);
 
         policyStore.findDependentPolicies(policy.getId(), resourceServer.getId()).forEach(dependentPolicy -> {
             if (dependentPolicy.getAssociatedPolicies().size() == 1) {
@@ -242,8 +235,8 @@ public class PolicyResourceService {
         return representation;
     }
 
-    protected PolicyProviderAdminService getPolicyProviderAdminResource(String policyType) {
-        return authorization.getProviderFactory(policyType).getAdminResource(resourceServer, authorization);
+    private PolicyProviderFactory getProviderFactory(String policyType) {
+        return authorization.getProviderFactory(policyType);
     }
 
     protected Policy getPolicy() {

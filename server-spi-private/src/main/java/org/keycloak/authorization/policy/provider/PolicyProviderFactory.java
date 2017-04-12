@@ -44,6 +44,22 @@ public interface PolicyProviderFactory<R extends AbstractPolicyRepresentation> e
         return (Class<R>) PolicyRepresentation.class;
     }
 
+    default void onCreate(Policy policy, R representation, AuthorizationProvider authorization) {
+
+    }
+
+    default void onUpdate(Policy policy, R representation, AuthorizationProvider authorization) {
+
+    }
+
+    default void onRemove(Policy policy, AuthorizationProvider authorization) {
+
+    }
+
+    default void onImport(Policy policy, PolicyRepresentation representation, AuthorizationProvider authorization) {
+
+    }
+
     default PolicyProviderAdminService getAdminResource(ResourceServer resourceServer, AuthorizationProvider authorization) {
         return null;
     }

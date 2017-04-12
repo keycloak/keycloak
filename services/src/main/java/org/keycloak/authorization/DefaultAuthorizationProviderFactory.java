@@ -26,11 +26,9 @@ import java.util.concurrent.Executor;
 import org.keycloak.Config;
 import org.keycloak.authorization.policy.provider.PolicyProvider;
 import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
-import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.cache.authorization.CachedStoreFactoryProvider;
 import org.keycloak.provider.ProviderFactory;
 
 /**
@@ -76,13 +74,7 @@ public class DefaultAuthorizationProviderFactory implements AuthorizationProvide
 
     @Override
     public AuthorizationProvider create(KeycloakSession session, RealmModel realm) {
-        StoreFactory storeFactory = session.getProvider(CachedStoreFactoryProvider.class);
-
-        if (storeFactory == null) {
-            storeFactory = session.getProvider(StoreFactory.class);
-        }
-
-        return new AuthorizationProvider(session, realm, storeFactory, policyProviderFactories);
+        return new AuthorizationProvider(session, realm, policyProviderFactories);
     }
 
     private Map<String, PolicyProviderFactory> configurePolicyProviderFactories(KeycloakSessionFactory keycloakSessionFactory) {

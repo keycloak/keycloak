@@ -23,10 +23,8 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
 
@@ -34,27 +32,30 @@ import org.junit.Before;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.RealmResource;
-import org.keycloak.authorization.client.AuthzClient;
-import org.keycloak.authorization.client.Configuration;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
+import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
-import org.keycloak.util.JsonSerialization;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 public abstract class AbstractPermissionManagementTest extends AbstractKeycloakTest {
+
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
-        testRealms.add(RealmBuilder.create().name("authz-test")
+        testRealms.add(createTestRealm().build());
+    }
+
+    protected RealmBuilder createTestRealm() {
+        return RealmBuilder.create().name("authz-test")
                 .user(UserBuilder.create().username("marta").password("password"))
                 .user(UserBuilder.create().username("kolo").password("password"))
                 .client(ClientBuilder.create().clientId("resource-server-test")
@@ -62,8 +63,7 @@ public abstract class AbstractPermissionManagementTest extends AbstractKeycloakT
                         .authorizationServicesEnabled(true)
                         .redirectUris("http://localhost/resource-server-test")
                         .defaultRoles("uma_protection")
-                        .directAccessGrants())
-                .build());
+                        .directAccessGrants());
     }
 
     @Before
@@ -88,18 +88,31 @@ public abstract class AbstractPermissionManagementTest extends AbstractKeycloakT
         assertNull(actual.getPolicies());
         assertNull(actual.getScopes());
 
-        assertEquals(expected.getPolicies().size(), policies.get().stream().map(representation1 -> representation1.getName()).filter(policyName -> expected.getPolicies().contains(policyName)).count());
+        List<PolicyRepresentation> associatedPolicies = policies.get();
 
-        if (expected.getResources() != null) {
-            assertEquals(expected.getResources().size(), resources.get().stream().map(representation1 -> representation1.getName()).filter(resourceName -> expected.getResources().contains(resourceName)).count());
+        if (expected.getPolicies() != null) {
+            assertEquals(expected.getPolicies().size(), associatedPolicies.size());
+            assertEquals(0, associatedPolicies.stream().map(representation1 -> representation1.getName()).filter(policyName -> !expected.getPolicies().contains(policyName)).count());
         } else {
-            assertTrue(resources.get().isEmpty());
+            assertTrue(associatedPolicies.isEmpty());
         }
 
-        if (expected.getScopes() != null) {
-            assertEquals(expected.getScopes().size(), scopes.get().stream().map(representation1 -> representation1.getName()).filter(scopeName -> expected.getScopes().contains(scopeName)).count());
+        List<ResourceRepresentation> associatedResources = resources.get();
+
+        if (expected.getResources() != null) {
+            assertEquals(expected.getResources().size(), associatedResources.size());
+            assertEquals(0, associatedResources.stream().map(representation1 -> representation1.getName()).filter(resourceName -> !expected.getResources().contains(resourceName)).count());
         } else {
-            assertTrue(scopes.get().isEmpty());
+            assertTrue(associatedResources.isEmpty());
+        }
+
+        List<ScopeRepresentation> associatedScopes = scopes.get();
+
+        if (expected.getScopes() != null) {
+            assertEquals(expected.getScopes().size(), associatedScopes.size());
+            assertEquals(expected.getScopes().size(), associatedScopes.stream().map(representation1 -> representation1.getName()).filter(scopeName -> !expected.getScopes().contains(scopeName)).count());
+        } else {
+            assertTrue(associatedScopes.isEmpty());
         }
 
         expected.setId(actual.getId());
@@ -129,18 +142,12 @@ public abstract class AbstractPermissionManagementTest extends AbstractKeycloakT
     private void createUserPolicy(String name, RealmResource realm, ClientResource client, String username) throws IOException {
         String userId = realm.users().search(username).stream().map(representation -> representation.getId()).findFirst().orElseThrow(() -> new RuntimeException("Expected user [userId]"));
 
-        PolicyRepresentation representation = new PolicyRepresentation();
+        UserPolicyRepresentation representation = new UserPolicyRepresentation();
 
         representation.setName(name);
-        representation.setType("user");
+        representation.addUser(userId);
 
-        Map<String, String> config = new HashMap<>();
-
-        config.put("users", JsonSerialization.writeValueAsString(new String[]{userId}));
-
-        representation.setConfig(config);
-
-        client.authorization().policies().create(representation);
+        client.authorization().policies().users().create(representation);
     }
 
     protected ClientResource getClient() {
@@ -157,14 +164,6 @@ public abstract class AbstractPermissionManagementTest extends AbstractKeycloakT
             return AdminClientUtil.createAdminClient().realm("authz-test");
         } catch (Exception cause) {
             throw new RuntimeException("Failed to create admin client", cause);
-        }
-    }
-
-    private AuthzClient getAuthzClient() {
-        try {
-            return AuthzClient.create(JsonSerialization.readValue(getClass().getResourceAsStream("/authorization-test/default-keycloak.json"), Configuration.class));
-        } catch (IOException cause) {
-            throw new RuntimeException("Failed to create authz client", cause);
         }
     }
 }

@@ -18,6 +18,7 @@
 
 package org.keycloak.authorization.store;
 
+import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.store.syncronization.ClientApplicationSynchronizer;
 import org.keycloak.authorization.store.syncronization.RealmSynchronizer;
 import org.keycloak.authorization.store.syncronization.Synchronizer;
@@ -61,4 +62,6 @@ public interface AuthorizationStoreFactory extends ProviderFactory<StoreFactory>
             }
         });
     }
+
+    StoreFactory create(AuthorizationProvider authorizationProvider);
 }
