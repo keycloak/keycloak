@@ -56,6 +56,9 @@ public class BearerTokenPolicyEnforcer extends AbstractPolicyEnforcer {
         String  authorizationServerUri = authzClient.getServerConfiguration().getIssuer().toString() + "/authz/entitlement";
         response.setStatus(401);
         response.setHeader("WWW-Authenticate", "KC_ETT realm=\"" + clientId + "\",as_uri=\"" + authorizationServerUri + "\"");
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Sending Entitlement challenge");
+        }
     }
 
     private void challengeUmaAuthentication(PathConfig pathConfig, Set<String> requiredScopes, OIDCHttpFacade facade) {
@@ -66,6 +69,9 @@ public class BearerTokenPolicyEnforcer extends AbstractPolicyEnforcer {
         String authorizationServerUri = authzClient.getServerConfiguration().getIssuer().toString() + "/authz/authorize";
         response.setStatus(401);
         response.setHeader("WWW-Authenticate", "UMA realm=\"" + clientId + "\",as_uri=\"" + authorizationServerUri + "\",ticket=\"" + ticket + "\"");
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Sending UMA challenge");
+        }
     }
 
     private String getPermissionTicket(PathConfig pathConfig, Set<String> requiredScopes, AuthzClient authzClient) {

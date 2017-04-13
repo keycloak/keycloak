@@ -28,7 +28,6 @@ import org.keycloak.AuthorizationContext;
 import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.adapters.OIDCHttpFacade;
 import org.keycloak.adapters.spi.HttpFacade.Request;
-import org.keycloak.adapters.spi.HttpFacade.Response;
 import org.keycloak.authorization.client.AuthzClient;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.adapters.config.PolicyEnforcerConfig;
@@ -71,7 +70,6 @@ public abstract class AbstractPolicyEnforcer {
 
             if (accessToken != null) {
                 Request request = httpFacade.getRequest();
-                Response response = httpFacade.getResponse();
                 String path = getPath(request);
                 PathConfig pathConfig = this.pathMatcher.matches(path, this.paths);
 
@@ -83,7 +81,12 @@ public abstract class AbstractPolicyEnforcer {
                     }
 
                     LOGGER.debugf("Could not find a configuration for path [%s]", path);
-                    response.sendError(403, "Could not find a configuration for path [" + path + "].");
+
+                    if (isDefaultAccessDeniedUri(request, enforcerConfig)) {
+                        return createAuthorizationContext(accessToken);
+                    }
+
+                    handleAccessDenied(httpFacade);
 
                     return createEmptyAuthorizationContext(false);
                 }
@@ -102,9 +105,11 @@ public abstract class AbstractPolicyEnforcer {
                     }
                 }
 
+                LOGGER.debugf("Sending challenge to the client. Path [%s]", pathConfig);
+
                 if (!challenge(pathConfig, requiredScopes, httpFacade)) {
-                    LOGGER.debugf("Sending challenge to the client. Path [%s]", pathConfig);
-                    response.sendError(403, "Authorization failed.");
+                    LOGGER.debugf("Challenge not sent, sending default forbidden response. Path [%s]", pathConfig);
+                    handleAccessDenied(httpFacade);
                 }
             }
         }
@@ -163,6 +168,10 @@ public abstract class AbstractPolicyEnforcer {
         LOGGER.debugf("Authorization FAILED for path [%s]. No enough permissions [%s].", actualPathConfig, permissions);
 
         return false;
+    }
+
+    protected void handleAccessDenied(OIDCHttpFacade httpFacade) {
+        httpFacade.getResponse().sendError(403);
     }
 
     private boolean isDefaultAccessDeniedUri(Request request, PolicyEnforcerConfig enforcerConfig) {

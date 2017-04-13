@@ -25,6 +25,6 @@ import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
  */
 @RunAsClient
 @AppServerContainer("app-server-eap6")
-public class EAP6ServletAuthzAdapterTest extends AbstractServletAuthzAdapterTest {
+public class EAP6ServletAuthzAdapterTest extends AbstractServletAuthzFunctionalAdapterTest {
 
 }
