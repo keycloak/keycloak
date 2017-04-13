@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,25 +16,14 @@
  */
 package org.keycloak.testsuite.console.page.clients.authorization;
 
-import static org.keycloak.testsuite.util.WaitUtils.pause;
-import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
 import org.keycloak.representations.adapters.config.PolicyEnforcerConfig;
-import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.testsuite.console.page.clients.CreateClientForm;
 import org.keycloak.testsuite.console.page.fragment.OnOffSwitch;
 import org.keycloak.testsuite.page.Form;
-import org.keycloak.testsuite.util.Timer;
-import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.ui.Select;
 
 /**
- * @author tkyjovsk
+ * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 public class AuthorizationSettingsForm extends Form {
 
