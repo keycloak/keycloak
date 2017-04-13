@@ -67,6 +67,12 @@ public class ClientSettingsForm extends CreateClientForm {
     @FindBy(xpath = ".//button[contains(@data-ng-click, 'deleteWebOrigin')]")
     private List<WebElement> deleteWebOriginIcons;
 
+    @FindBy(xpath = ".//div[@class='onoffswitch' and ./input[@id='authorizationServicesEnabled']]")
+    private OnOffSwitch authorizationSettingsEnabledSwitch;
+
+    @FindBy(xpath = ACTIVE_DIV_XPATH + "/button[text()='Disable Authorization Settings']")
+    private WebElement confirmDisableAuthorizationSettingsButton;
+
     public enum OidcAccessType {
         BEARER_ONLY("bearer-only"), PUBLIC("public"), CONFIDENTIAL("confidential");
 
@@ -210,6 +216,18 @@ public class ClientSettingsForm extends CreateClientForm {
 
     public void setServiceAccountsEnabled(boolean serviceAccountsEnabled) {
         serviceAccountsEnabledSwitch.setOn(serviceAccountsEnabled);
+    }
+
+    public void setAuthorizationSettingsEnabled(boolean enabled) {
+        authorizationSettingsEnabledSwitch.setOn(enabled);
+    }
+
+    public boolean isAuthorizationSettingsEnabled() {
+        return authorizationSettingsEnabledSwitch.isOn();
+    }
+
+    public void confirmDisableAuthorizationSettings() {
+        confirmDisableAuthorizationSettingsButton.click();
     }
 
     public class SAMLClientSettingsForm extends Form {
