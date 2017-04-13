@@ -15,6 +15,16 @@ USER root
 
 RUN yum install -y epel-release jq git && yum clean all
 
+# Install little pcp pmcd server for metrics collection
+# would prefer only pmcd, and not the /bin/pm*tools etc.
+COPY pcp.repo /etc/yum.repos.d/pcp.repo
+RUN yum install -y pcp && yum clean all && \
+    mkdir -p /etc/pcp /var/run/pcp /var/lib/pcp /var/log/pcp && \
+    chown -R 1000 /etc/pcp /var/run/pcp /var/lib/pcp /var/log/pcp && \
+    chmod -R ug+rw /etc/pcp /var/run/pcp /var/lib/pcp /var/log/pcp
+COPY ./keycloak+pmcd.sh /keycloak+pmcd.sh
+EXPOSE 44321
+
 ENV JBOSS_HOME /opt/jboss/keycloak
 
 ADD keycloak-$KEYCLOAK_VERSION.tar.gz /opt/jboss/
@@ -50,6 +60,6 @@ ADD module.xml /opt/jboss/keycloak/modules/system/layers/base/org/postgresql/jdb
 RUN sed -ie 's@\(</dependencies>\)@    <module name="org.postgresql.jdbc"/>\n    \1@' /opt/jboss/keycloak/modules/system/layers/base/org/jgroups/main/module.xml
 
 EXPOSE 8080
-ENTRYPOINT [ "/opt/jboss/docker-entrypoint.sh" ]
+ENTRYPOINT [ "/keycloak+pmcd.sh" ]
 
 CMD ["--debug", "-b", "0.0.0.0"]

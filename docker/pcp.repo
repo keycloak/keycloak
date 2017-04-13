@@ -1,0 +1,10 @@
+[fche-pcp]
+name=Copr repo for pcp owned by fche
+baseurl=https://copr-be.cloud.fedoraproject.org/results/fche/pcp/epel-7-$basearch/
+type=rpm-md
+skip_if_unavailable=True
+gpgcheck=1
+gpgkey=https://copr-be.cloud.fedoraproject.org/results/fche/pcp/pubkey.gpg
+repo_gpgcheck=0
+enabled=1
+enabled_metadata=1
