@@ -1,2 +1,2 @@
 org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
-org.keycloak.adapters.springboot.KeycloakSpringBootConfiguration
+org.keycloak.adapters.springboot.KeycloakAutoConfiguration

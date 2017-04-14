@@ -43,75 +43,61 @@
       <groupId>org.keycloak</groupId>
       <artifactId>keycloak-core</artifactId>
     </dependency>
+    <dependency>
+      <groupId>org.keycloak</groupId>
+      <artifactId>spring-boot-container-bundle</artifactId>
+      <version>${project.version}</version>
+      <optional>true</optional>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.keycloak</groupId>
+      <artifactId>keycloak-spring-security-adapter</artifactId>
+      <version>${project.version}</version>
+      <scope>compile</scope>
 
-    <dependency>
-      <groupId>org.keycloak</groupId>
-      <artifactId>keycloak-tomcat8-adapter</artifactId>
-      <scope>provided</scope>
     </dependency>
-    <dependency>
-      <groupId>org.keycloak</groupId>
-      <artifactId>keycloak-undertow-adapter</artifactId>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.keycloak</groupId>
-      <artifactId>keycloak-jetty93-adapter</artifactId>
-      <scope>provided</scope>
-    </dependency>
-
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-web</artifactId>
       <version>${spring-boot.version}</version>
-      <scope>provided</scope>
+      <scope>compile</scope>
+      <optional>true</optional>
     </dependency>
-
+    <dependency>
+      <groupId>io.undertow</groupId>
+      <artifactId>undertow-servlet</artifactId>
+      <scope>compile</scope>
+      <optional>true</optional>
+    </dependency>
     <dependency>
       <groupId>org.eclipse.jetty</groupId>
       <artifactId>jetty-server</artifactId>
       <version>${jetty9.version}</version>
-      <scope>provided</scope>
+      <scope>compile</scope>
+      <optional>true</optional>
     </dependency>
 
     <dependency>
       <groupId>org.eclipse.jetty</groupId>
       <artifactId>jetty-security</artifactId>
       <version>${jetty9.version}</version>
-      <scope>provided</scope>
+      <scope>compile</scope>
+      <optional>true</optional>
     </dependency>
 
     <dependency>
       <groupId>org.eclipse.jetty</groupId>
       <artifactId>jetty-webapp</artifactId>
       <version>${jetty9.version}</version>
-      <scope>provided</scope>
+      <scope>compile</scope>
+      <optional>true</optional>
     </dependency>
-
-    <dependency>
-      <groupId>io.undertow</groupId>
-      <artifactId>undertow-servlet</artifactId>
-      <scope>provided</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>io.undertow</groupId>
-      <artifactId>undertow-core</artifactId>
-      <scope>provided</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>org.keycloak</groupId>
-      <artifactId>keycloak-undertow-adapter-spi</artifactId>
-      <scope>provided</scope>
-    </dependency>
-
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
       <scope>test</scope>
     </dependency>
-    
      <dependency>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-configuration-processor</artifactId>
@@ -125,11 +111,10 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
         <configuration>
-          <source>1.6</source>
-          <target>1.6</target>
+          <source>1.7</source>
+          <target>1.7</target>
         </configuration>
       </plugin>
     </plugins>
   </build>
-
 </project>
