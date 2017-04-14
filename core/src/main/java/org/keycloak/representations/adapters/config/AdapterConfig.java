@@ -24,6 +24,8 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
  * Configuration for Java based adapters
  *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
+ * @author <a href="mailto:brad.culley@spartasystems.com">Brad Culley</a>
+ * @author <a href="mailto:john.ament@spartasystems.com">John D. Ament</a>
  * @version $Revision: 1 $
  */
 @JsonPropertyOrder({"realm", "realm-public-key", "auth-server-url", "ssl-required",
@@ -38,7 +40,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
         "register-node-at-startup", "register-node-period", "token-store", "principal-attribute",
         "proxy-url", "turn-off-change-session-id-on-login", "token-minimum-time-to-live",
         "min-time-between-jwks-requests", "public-key-cache-ttl",
-        "policy-enforcer"
+        "policy-enforcer", "ignore-oauth-query-parameter"
 })
 public class AdapterConfig extends BaseAdapterConfig implements AdapterHttpClientConfig {
 
@@ -81,6 +83,8 @@ public class AdapterConfig extends BaseAdapterConfig implements AdapterHttpClien
     // https://tools.ietf.org/html/rfc7636
     @JsonProperty("enable-pkce")
     protected boolean pkce = false;
+    @JsonProperty("ignore-oauth-query-parameter")
+    protected boolean ignoreOAuthQueryParameter = false;
 
     /**
      * The Proxy url to use for requests to the auth-server, configurable via the adapter config property {@code proxy-url}.
@@ -257,4 +261,11 @@ public class AdapterConfig extends BaseAdapterConfig implements AdapterHttpClien
         this.pkce = pkce;
     }
 
+    public boolean isIgnoreOAuthQueryParameter() {
+        return ignoreOAuthQueryParameter;
+    }
+
+    public void setIgnoreOAuthQueryParameter(boolean ignoreOAuthQueryParameter) {
+        this.ignoreOAuthQueryParameter = ignoreOAuthQueryParameter;
+    }
 }
