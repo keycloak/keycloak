@@ -25,7 +25,10 @@ GitHub Repository
 
     git fetch upstream
     git rebase upstream/master
-    
+   
+### Use jboss-developer settings.xml for access to repositories
+
+[https://github.com/keycloak/keycloak/blob/master/misc/settings.xml](settings.xml)
     
 Discuss changes
 ---------------
