@@ -17,7 +17,7 @@
 
 package org.keycloak.adapters.saml;
 
-import org.keycloak.adapters.spi.KeycloakAccount;
+import org.keycloak.adapters.spi.internal.KeycloakAccount;
 
 import java.io.Serializable;
 import java.util.Set;

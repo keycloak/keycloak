@@ -17,7 +17,7 @@
 
 package org.keycloak.adapters.springsecurity.token;
 
-import org.keycloak.adapters.spi.KeycloakAccount;
+import org.keycloak.adapters.spi.internal.KeycloakAccount;
 import org.keycloak.adapters.OidcKeycloakAccount;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.authentication.AuthenticationManager;

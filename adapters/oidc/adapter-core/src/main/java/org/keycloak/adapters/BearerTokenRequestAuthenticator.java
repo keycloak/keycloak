@@ -19,8 +19,8 @@ package org.keycloak.adapters;
 
 import org.jboss.logging.Logger;
 import org.keycloak.RSATokenVerifier;
-import org.keycloak.adapters.spi.AuthChallenge;
-import org.keycloak.adapters.spi.AuthOutcome;
+import org.keycloak.adapters.spi.internal.AuthChallenge;
+import org.keycloak.adapters.spi.internal.AuthOutcome;
 import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.common.VerificationException;
 import org.keycloak.representations.AccessToken;

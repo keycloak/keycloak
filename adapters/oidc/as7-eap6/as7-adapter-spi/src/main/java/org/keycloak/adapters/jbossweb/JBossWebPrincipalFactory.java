@@ -26,7 +26,7 @@ import org.jboss.security.SecurityContext;
 import org.jboss.security.SecurityContextAssociation;
 import org.jboss.security.SimpleGroup;
 import org.jboss.security.SimplePrincipal;
-import org.keycloak.adapters.spi.KeycloakAccount;
+import org.keycloak.adapters.spi.internal.KeycloakAccount;
 import org.keycloak.adapters.tomcat.GenericPrincipalFactory;
 
 import javax.security.auth.Subject;

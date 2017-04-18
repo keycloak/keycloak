@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.adapters.spi;
+package org.keycloak.adapters.spi.internal;
 
 import java.util.List;
 

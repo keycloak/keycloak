@@ -33,6 +33,7 @@
         <bundle>mvn:org.keycloak/keycloak-common/${project.version}</bundle>
         <bundle>mvn:org.keycloak/keycloak-core/${project.version}</bundle>
         <bundle>mvn:org.keycloak/keycloak-adapter-spi/${project.version}</bundle>
+        <bundle>mvn:org.keycloak/keycloak-adapter-spi-public/${project.version}</bundle>
         <bundle>mvn:org.keycloak/keycloak-adapter-core/${project.version}</bundle>
     </feature>
 

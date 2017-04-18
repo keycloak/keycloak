@@ -18,8 +18,8 @@
 package org.keycloak.adapters.saml.profile;
 
 import org.keycloak.adapters.saml.OnSessionCreated;
-import org.keycloak.adapters.spi.AuthChallenge;
-import org.keycloak.adapters.spi.AuthOutcome;
+import org.keycloak.adapters.spi.internal.AuthChallenge;
+import org.keycloak.adapters.spi.internal.AuthOutcome;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>

@@ -15,17 +15,12 @@
  * limitations under the License.
  */
 
-package org.keycloak.adapters.spi;
-
-import java.security.Principal;
-import java.util.Set;
+package org.keycloak.adapters.spi.internal;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public interface KeycloakAccount {
-    Principal getPrincipal();
-
-    Set<String> getRoles();
+public enum AuthOutcome {
+    NOT_ATTEMPTED, FAILED, AUTHENTICATED, NOT_AUTHENTICATED, LOGGED_OUT
 }

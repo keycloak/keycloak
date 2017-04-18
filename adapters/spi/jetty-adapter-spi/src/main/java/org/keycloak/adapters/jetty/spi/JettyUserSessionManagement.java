@@ -19,7 +19,7 @@ package org.keycloak.adapters.jetty.spi;
 
 import org.eclipse.jetty.server.SessionManager;
 import org.jboss.logging.Logger;
-import org.keycloak.adapters.spi.UserSessionManagement;
+import org.keycloak.adapters.spi.internal.UserSessionManagement;
 
 import javax.servlet.http.HttpSession;
 import java.util.List;

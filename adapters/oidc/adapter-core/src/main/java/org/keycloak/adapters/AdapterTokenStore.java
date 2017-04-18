@@ -17,7 +17,7 @@
 
 package org.keycloak.adapters;
 
-import org.keycloak.adapters.spi.AdapterSessionStore;
+import org.keycloak.adapters.spi.internal.AdapterSessionStore;
 
 /**
  * Abstraction for storing token info on adapter side. Intended to be per-request object

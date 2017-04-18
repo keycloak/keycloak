@@ -27,7 +27,7 @@ import org.keycloak.adapters.OIDCHttpFacade;
 import org.keycloak.adapters.OidcKeycloakAccount;
 import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
 import org.keycloak.adapters.RequestAuthenticator;
-import org.keycloak.adapters.spi.KeycloakAccount;
+import org.keycloak.adapters.spi.internal.KeycloakAccount;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;

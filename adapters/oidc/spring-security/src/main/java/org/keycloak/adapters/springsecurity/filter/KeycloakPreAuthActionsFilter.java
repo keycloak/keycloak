@@ -21,7 +21,7 @@ import org.keycloak.adapters.AdapterDeploymentContext;
 import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.adapters.NodesRegistrationManagement;
 import org.keycloak.adapters.PreAuthActionsHandler;
-import org.keycloak.adapters.spi.UserSessionManagement;
+import org.keycloak.adapters.spi.internal.UserSessionManagement;
 import org.keycloak.adapters.springsecurity.facade.SimpleHttpFacade;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
