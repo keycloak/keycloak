@@ -26,12 +26,12 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import static org.keycloak.models.utils.KeycloakModelUtils.getDefaultClientAuthenticatorType;
 
 /**
- * This is a client-side version of KeycloakModelUtils that uses the adminClient to
+ * This is a client-side version of ClientTestUtils that uses the adminClient to
  * manipulate the model.
  *
  * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
  */
-public class KeycloakModelUtils {
+public class ClientTestUtils {
 
     public static ClientRepresentation createClient(RealmRepresentation realm, String name) {
         ClientRepresentation app = new ClientRepresentation();
