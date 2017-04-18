@@ -36,6 +36,6 @@ To subscribe to the RH-SSO 7.1 repository and install RH-SSO 7.1, complete the f
 
 . Install RH-SSO from your subscribed RH-SSO 7.1 repository using the following command:
 
- yum install rh-sso7-keycloak-server
+ yum groupinstall rh-sso7
 
 Your installation is complete. The default RH-SSO_HOME path for the RPM installation is /opt/rh/rh-sso7/root/usr/share/keycloak.
