@@ -17,6 +17,7 @@
 
 package org.keycloak.connections.httpclient;
 
+import org.apache.http.HttpHost;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.conn.ssl.AllowAllHostnameVerifier;
 import org.apache.http.conn.ssl.BrowserCompatHostnameVerifier;
@@ -35,6 +36,7 @@ import javax.net.ssl.SSLSocket;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 import java.io.IOException;
+import java.net.URI;
 import java.security.KeyManagementException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
@@ -104,7 +106,7 @@ public class HttpClientBuilder {
     protected long establishConnectionTimeout = -1;
     protected TimeUnit establishConnectionTimeoutUnits = TimeUnit.MILLISECONDS;
     protected boolean disableCookies = false;
-
+    private String proxyUrl;
 
     /**
      * Socket inactivity timeout
@@ -208,6 +210,11 @@ public class HttpClientBuilder {
         return this;
     }
 
+    public HttpClientBuilder proxyUrl(String proxyUrl) {
+        this.proxyUrl = proxyUrl;
+        return this;
+    }
+
 
     static class VerifierWrapper implements X509HostnameVerifier {
         protected HostnameVerifier verifier;
@@ -272,9 +279,7 @@ public class HttpClientBuilder {
                 tlsContext.init(null, null, null);
                 sslsf = new SSLConnectionSocketFactory(tlsContext, verifier);
             }
-            RequestConfig requestConfig = RequestConfig.custom()
-                    .setConnectTimeout((int) establishConnectionTimeout)
-                    .setSocketTimeout((int) socketTimeout).build();
+            RequestConfig requestConfig = createRequestConfig();
 
             org.apache.http.impl.client.HttpClientBuilder builder = HttpClients.custom()
                     .setDefaultRequestConfig(requestConfig)
@@ -293,6 +298,21 @@ public class HttpClientBuilder {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private RequestConfig createRequestConfig() {
+
+        RequestConfig.Builder builder = RequestConfig.custom()
+          .setConnectTimeout((int) establishConnectionTimeout)
+          .setSocketTimeout((int) socketTimeout);
+
+        if (proxyUrl != null && !proxyUrl.isEmpty()) {
+            URI uri = URI.create(proxyUrl);
+            HttpHost proxyHost = new HttpHost(uri.getHost(), uri.getPort(), uri.getScheme());
+            builder.setProxy(proxyHost);
+        }
+
+        return builder.build();
     }
 
     private SSLContext createSslContext(

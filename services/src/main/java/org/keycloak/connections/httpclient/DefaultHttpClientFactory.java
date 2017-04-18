@@ -127,6 +127,7 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
                     String clientKeystore = config.get("client-keystore");
                     String clientKeystorePassword = config.get("client-keystore-password");
                     String clientPrivateKeyPassword = config.get("client-key-password");
+                    String proxyUrl= config.get("proxy-url");
 
                     TruststoreProvider truststoreProvider = session.getProvider(TruststoreProvider.class);
                     boolean disableTrustManager = truststoreProvider == null || truststoreProvider.getTruststore() == null;
@@ -137,13 +138,15 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
                             : HttpClientBuilder.HostnameVerificationPolicy.valueOf(truststoreProvider.getPolicy().name());
 
                     HttpClientBuilder builder = new HttpClientBuilder();
+
                     builder.socketTimeout(socketTimeout, TimeUnit.MILLISECONDS)
                             .establishConnectionTimeout(establishConnectionTimeout, TimeUnit.MILLISECONDS)
                             .maxPooledPerRoute(maxPooledPerRoute)
                             .connectionPoolSize(connectionPoolSize)
                             .connectionTTL(connectionTTL, TimeUnit.MILLISECONDS)
                             .maxConnectionIdleTime(maxConnectionIdleTime, TimeUnit.MILLISECONDS)
-                            .disableCookies(disableCookies);
+                            .disableCookies(disableCookies)
+                            .proxyUrl(proxyUrl);
 
                     if (disableTrustManager) {
                         // TODO: is it ok to do away with disabling trust manager?
