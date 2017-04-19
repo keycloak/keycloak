@@ -74,25 +74,14 @@
 </div>
 
 <div class="feedback-aligner" data-ng-show="notification.display">
-    <div class="alert alert-{{notification.type}} alert-dismissable">
-        <button type="button" class="close" data-ng-click="notification.remove()" id="notification-close">
-            <span class="pficon pficon-close"/>
-        </button>
-
-        <span class="pficon pficon-ok" ng-show="notification.type == 'success'"></span>
-        <span class="pficon pficon-info" ng-show="notification.type == 'info'"></span>
-        <span class="pficon-layered" ng-show="notification.type == 'danger'">
-            <span class="pficon pficon-error-octagon"></span>
-            <span class="pficon pficon-error-exclamation"></span>
-        </span>
-        <span class="pficon-layered" ng-show="notification.type == 'warning'">
-            <span class="pficon pficon-warning-triangle"></span>
-            <span class="pficon pficon-warning-exclamation"></span>
-        </span>
-        <strong>{{notification.header}}</strong> {{notification.message}}
-    </div>
+    <div class="toast-pf alert alert-{{notification.type}} alert-dismissable">
+      <button type="button" class="close" data-dismiss="alert" aria-hidden="true" data-ng-click="notification.remove()">
+        <span class="pficon pficon-close"></span>
+    </button>
+    <span class="pficon pficon-{{notification.icon}}"></span>
+    <strong>{{notification.header}}</strong> {{notification.message}}
 </div>
-
+</div>
 <div id="loading" class="loading">Loading...</div>
 
 </body>

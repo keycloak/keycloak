@@ -151,18 +151,20 @@ module.factory('Notifications', function($rootScope, $timeout) {
         delete notifications.current.type;
         delete notifications.current.header;
         delete notifications.current.message;
+        delete notifications.current.icon;
         notifications.current.display = false;
         console.debug("Remove message");
     }
 
     $rootScope.notification = notifications.current;
 
-	notifications.message = function(type, header, message) {
+	notifications.message = function(type, header, message, icon) {
         notifications.current.remove();
-        
+
         notifications.current.type = type;
         notifications.current.header = header;
         notifications.current.message = message;
+        notifications.current.icon = icon;
         notifications.current.display = true;
 
         notifications.scheduled = $timeout(function() {
@@ -173,19 +175,19 @@ module.factory('Notifications', function($rootScope, $timeout) {
 	}
 
 	notifications.info = function(message) {
-		notifications.message("info", "Info!", message);
+		notifications.message("info", "Info!", message, "info");
 	};
 
 	notifications.success = function(message) {
-		notifications.message("success", "Success!", message);
+		notifications.message("success", "Success!", message, "ok");
 	};
 
 	notifications.error = function(message) {
-		notifications.message("danger", "Error!", message);
+		notifications.message("danger", "Error!", message, "error-circle-o");
 	};
 
 	notifications.warn = function(message) {
-		notifications.message("warning", "Warning!", message);
+		notifications.message("warning", "Warning!", message, "warning-triangle-o");
 	};
 
 	return notifications;
