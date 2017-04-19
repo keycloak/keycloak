@@ -2,10 +2,10 @@
 
 # Almighty-Keycloak Docker Image
 
-To build this image is neccessary to previously generate the executables of this
+To build this image is necessary to previously generate the executables of this
 project.
 
-`$ mvn clean install -DskipTests=true -pl :keycloak-server-dist -am -P distribution`
+`$ mvn clean install -DskipTests -pl :keycloak-server-dist -am -P distribution`
 
 This generates some tarballs with the required executables. In our case, we just
 need to copy the generated tarball from `server-dist` e.g. `keycloak-3.0.0.Final.tar.gz`.
