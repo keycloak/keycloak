@@ -58,7 +58,7 @@ public abstract class AbstractUndertowKeycloakAuthMech implements Authentication
         if (challenge != null) {
             UndertowHttpFacade facade = createFacade(exchange);
             if (challenge.challenge(facade)) {
-                return new ChallengeResult(true, exchange.getResponseCode());
+                return new ChallengeResult(true, exchange.getStatusCode());
             }
         }
         return new ChallengeResult(false);
