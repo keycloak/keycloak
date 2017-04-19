@@ -135,7 +135,7 @@ public abstract class AbstractKeycloakTest {
     public void beforeAbstractKeycloakTest() throws Exception {
         adminClient = testContext.getAdminClient();
         if (adminClient == null) {
-            adminClient = AdminClientUtil.createAdminClient();
+            adminClient = AdminClientUtil.createAdminClient(suiteContext.isAdapterCompatTesting());
             testContext.setAdminClient(adminClient);
         }
 

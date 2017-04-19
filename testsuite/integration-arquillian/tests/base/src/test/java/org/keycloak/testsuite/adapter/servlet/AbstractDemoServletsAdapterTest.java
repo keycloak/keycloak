@@ -469,8 +469,10 @@ public abstract class AbstractDemoServletsAdapterTest extends AbstractServletsAd
         assertNotNull(version2);
         assertNotNull(version2.getVersion());
         assertNotNull(version2.getBuildTime());
-        assertEquals(version.getVersion(), version2.getVersion());
-        assertEquals(version.getBuildTime(), version2.getBuildTime());
+        if (!suiteContext.isAdapterCompatTesting()) {
+            assertEquals(version.getVersion(), version2.getVersion());
+            assertEquals(version.getBuildTime(), version2.getBuildTime());
+        }
         client.close();
     }
 
