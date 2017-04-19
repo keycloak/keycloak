@@ -6,7 +6,7 @@ MAINTAINER Hector Fernandez <hfernand@redhat.com>
 ENV LAUNCH_JBOSS_IN_BACKGROUND 1
 
 ENV KEYCLOAK_VERSION 3.0.0.Final
-ENV OPERATING_MODE clustered
+#ENV OPERATING_MODE clustered
 
 ENV OSO_ADDRESS tsrv.devshift.net:8443
 ENV OSO_DOMAIN_NAME tsrv.devshift.net
