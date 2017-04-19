@@ -16,7 +16,7 @@ objects:
     triggers:
     - type: ConfigChange
     test: false
-    replicas: 2
+    replicas: 1
     selector:
       name: keycloak-server
     template:
@@ -34,10 +34,6 @@ objects:
             - '-Djboss.node.name=$(INTERNAL_POD_IP)'
           ports:
             - containerPort: 8080
-              protocol: TCP
-            - containerPort: 7600
-              protocol: TCP
-            - containerPort: 57600
               protocol: TCP
           imagePullPolicy: Always
           ports:
