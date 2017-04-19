@@ -36,9 +36,6 @@ objects:
             - containerPort: 8080
               protocol: TCP
           imagePullPolicy: Always
-          ports:
-          - containerPort: 8080
-            protocol: TCP
           resources: {}
           livenessProbe:
             httpGet:
