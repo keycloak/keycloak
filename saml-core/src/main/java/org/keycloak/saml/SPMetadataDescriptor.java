@@ -27,9 +27,9 @@ public class SPMetadataDescriptor {
                 "<EntityDescriptor xmlns=\"urn:oasis:names:tc:SAML:2.0:metadata\" entityID=\"" + entityId + "\">\n" +
                 "    <SPSSODescriptor AuthnRequestsSigned=\"" + wantAuthnRequestsSigned + "\"\n" +
                 "            protocolSupportEnumeration=\"urn:oasis:names:tc:SAML:2.0:protocol urn:oasis:names:tc:SAML:1.1:protocol http://schemas.xmlsoap.org/ws/2003/07/secext\">\n" +
+                "        <SingleLogoutService Binding=\"" + binding + "\" Location=\"" + logoutEndpoint + "\"/>\n" +
                 "        <NameIDFormat>" + nameIDPolicyFormat + "\n" +
                 "        </NameIDFormat>\n" +
-                "        <SingleLogoutService Binding=\"" + binding + "\" Location=\"" + logoutEndpoint + "\"/>\n" +
                 "        <AssertionConsumerService\n" +
                 "                Binding=\"" + binding + "\" Location=\"" + assertionEndpoint + "\"\n" +
                 "                index=\"1\" isDefault=\"true\" />\n";
