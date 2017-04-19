@@ -42,6 +42,7 @@
             <plugin>
                 <groupId>org.wildfly.build</groupId>
                 <artifactId>wildfly-server-provisioning-maven-plugin</artifactId>
+                <version>${build-tools.version}</version>
                 <executions>
                     <execution>
                         <id>server-provisioning</id>
@@ -113,11 +114,19 @@
                 </property>
             </activation>
             <properties>
+                <build-tools.version>${wildfly.build-tools.version}</build-tools.version>
                 <assemblyFile>assembly.xml</assemblyFile>
             </properties>
             <build>
                 <finalName>keycloak-${project.version}</finalName>
             </build>
+        </profile>
+
+        <profile>
+            <id>wf11</id>
+            <properties>
+                <build-tools.version>${wildfly11.build-tools.version}</build-tools.version>
+            </properties>
         </profile>
 
         <profile>
@@ -128,6 +137,7 @@
                 </property>
             </activation>
             <properties>
+                <build-tools.version>${eap.build-tools.version}</build-tools.version>
                 <assemblyFile>assembly.xml</assemblyFile>
                 <profileExcludes>%regex[(providers.*)|(docs/contrib.*)|(docs/examples.*)|(docs/schema.*)]</profileExcludes>
             </properties>
