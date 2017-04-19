@@ -55,6 +55,72 @@ client-key-password::
   Password for the client's key.
   This is _REQUIRED_ if `client-keystore` is set.
 
+proxy-mappings::
+  Dennotes proxy configurations for outgoing HTTP requests. 
+  See the section on <<_proxymappings, Proxy Mappings for Outgoing HTTP Requests>> for more details.
+
+[[_proxymappings]]
+==== Proxy Mappings for Outgoing HTTP Requests
+
+Outgoing HTTP requests sent by {project_name} can optionally use a proxy server based on a comma delimited list of proxy-mappings.
+A proxy-mapping denotes the combination of a regex based hostname pattern and a proxy-uri in the form of `hostnamePattern;proxyUri`,
+e.g.:
+[source]
+----
+.*\.(google|googleapis)\.com;http://www-proxy.acme.com:8080
+----
+
+To determine the proxy for an outgoing HTTP request the target hostname is matched against the configured
+hostname patterns. The first matching pattern determines the proxy-uri to use.
+If none of the configured patterns match for the given hostname then no proxy is used.
+
+The special value `NO_PROXY` for the proxy-uri can be used to indicate that no proxy 
+should be used for hosts matching the associated hostname pattern.
+It is possible to specify a catch-all pattern at the end of the proxy-mappings to define a default 
+proxy for all outgoing requests.
+
+The following example demonstrates the proxy-mapping configuration.
+
+[source]
+----
+# All requests to Google APIs should use http://www-proxy.acme.com:8080 as proxy
+.*\.(google|googleapis)\.com;http://www-proxy.acme.com:8080
+
+# All requests to internal systems should use no proxy
+.*\.acme\.com;NO_PROXY
+
+# All other requests should use http://fallback:8080 as proxy
+.*;http://fallback:8080
+----
+
+This can be configured via the following `jboss-cli` command.
+Note that you need to properly escape the regex-pattern as shown below.
+[source]
+----
+echo SETUP: Configure proxy routes for HttpClient SPI
+
+# In case there is no connectionsHttpClient definition yet
+/subsystem=keycloak-server/spi=connectionsHttpClient/provider=default:add(enabled=true)
+
+# Configure the proxy-mappings
+/subsystem=keycloak-server/spi=connectionsHttpClient/provider=default:write-attribute(name=properties.proxy-mappings,value=[".*\\.(google|googleapis)\\.com;http://www-proxy.acme.com:8080",".*\\.acme\\.com;NO_PROXY",".*;http://fallback:8080"])
+----
+
+The `jboss-cli` command results in the following subsystem configuration.
+Note that one needs to encode `"` characters with `&quot;`. 
+[source,xml]
+----
+<spi name="connectionsHttpClient">
+    <provider name="default" enabled="true">
+        <properties>
+            <property 
+            name="proxy-mappings" 
+            value="[&quot;.*\\.(google|googleapis)\\.com;http://www-proxy.acme.com:8080&quot;,&quot;.*\\.acme\\.com;NO_PROXY&quot;,&quot;.*;http://fallback:8080&quot;]"/>
+        </properties>
+    </provider>
+</spi>
+----
+
 [[_truststore]]
 ==== Outgoing HTTPS Request Truststore
 
