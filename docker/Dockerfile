@@ -28,7 +28,7 @@ EXPOSE 44321
 ENV JBOSS_HOME /opt/jboss/keycloak
 
 ADD keycloak-$KEYCLOAK_VERSION.tar.gz /opt/jboss/
-RUN mkdir -p $JBOSS_HOME && cd /opt/jboss/keycloak-$KEYCLOAK_VERSION && cp -R * $JBOSS_HOME
+RUN mv /opt/jboss/keycloak-$KEYCLOAK_VERSION $JBOSS_HOME
 
 WORKDIR $JBOSS_HOME
 
