@@ -27,7 +27,7 @@ Both methods are described in this section.
 Adapters are available as a separate archive depending on what server version you are using.
 
 {% if book.community %}
-Install on Wildfly 9 or 10:
+Install on Wildfly 9, 10 or 11:
 
 [source, subs="attributes"]
 ----
@@ -91,6 +91,15 @@ to configure the adapter subsystem.
 
 To configure the adapter subsystem if the server is not running execute:
 
+{% if book.community %}
+.Wildfly 11
+[source]
+----
+$ ./bin/jboss-cli.sh --file=adapter-elytron-install-offline.cli
+----
+{% endif %}
+
+.Any other server but Wildfly 11
 [source]
 ----
 $ ./bin/jboss-cli.sh --file=adapter-install-offline.cli
@@ -100,6 +109,15 @@ NOTE: The offline script is not available for JBoss EAP 6
 
 Alternatively, if the server is running execute:
 
+{% if book.community %}
+.Wildfly 11
+[source]
+----
+$ ./bin/jboss-cli.sh --file=adapter-elytron-install.cli
+----
+{% endif %}
+
+.Any other server but Wildfly 11
 [source]
 ----
 $ ./bin/jboss-cli.sh --file=adapter-install.cli

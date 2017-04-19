@@ -5,7 +5,7 @@
 Each adapter is a separate download on the {{book.project.name}} download site.
 
 {% if book.community %}
-Install on Wildfly 9 or 10, or JBoss EAP 7:
+Install on Wildfly 9 or 10, 11 or JBoss EAP 7:
 
 [source]
 ----
@@ -52,6 +52,15 @@ After adding the modules, you must then enable the {{book.project.name}} SAML Su
 There is a CLI script that will help you modify your server configuration.
 Start the server and run the script  from the server's bin directory: 
 
+{% if book.community %}
+.Wildfly 11
+[source]
+----
+$ ./bin/jboss-cli.sh --file=adapter-elytron-install-saml.cli
+----
+{% endif %}
+
+.Any other server but Wildfly 11
 [source]
 ----
 
