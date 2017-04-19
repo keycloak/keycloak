@@ -28,6 +28,43 @@
         <fileSet>
             <directory>target/${project.build.finalName}</directory>
             <outputDirectory/>
+            <excludes>
+                <exclude>configuration/**</exclude>
+            </excludes>
+        </fileSet>
+        <fileSet>
+            <directory>target/unpacked-themes/theme</directory>
+            <outputDirectory>content/themes</outputDirectory>
+        </fileSet>
+        <fileSet>
+            <directory>src/main/resources/identity/module</directory>
+            <includes>
+                <include>**/**</include>
+            </includes>
+            <outputDirectory>modules/system/layers/keycloak/org/jboss/as/product/${product.slot}</outputDirectory>
+            <filtered>true</filtered>
+        </fileSet>
+        <fileSet>
+            <directory>src/main/resources/identity</directory>
+            <includes>
+                <include>product.conf</include>
+            </includes>
+            <outputDirectory>content/bin</outputDirectory>
+            <filtered>true</filtered>
+        </fileSet>
+        <fileSet>
+            <directory>${configDir}</directory>
+            <includes>
+                <include>**/**</include>
+            </includes>
+            <outputDirectory>configuration</outputDirectory>
+        </fileSet>
+        <fileSet>
+            <directory>../../../</directory>
+            <includes>
+                <include>License.html</include>
+            </includes>
+            <outputDirectory>content</outputDirectory>
         </fileSet>
     </fileSets>
 </assembly>
