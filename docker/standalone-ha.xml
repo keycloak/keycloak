@@ -309,27 +309,16 @@
                     <transport type="TCP" socket-binding="jgroups-tcp">
                       <property name="external_addr">${env.INTERNAL_POD_IP}</property>
                     </transport>
-                    <protocol type="JDBC_PING">
-                     <property name="connection_driver">org.postgresql.Driver</property>
-                     <property name="connection_url">jdbc:postgresql://${env.POSTGRES_PORT_5432_TCP_ADDR}:${env.POSTGRES_PORT_5432_TCP_PORT:5432}/${env.POSTGRES_DATABASE:keycloak}</property>
-                     <property name="connection_username">${env.POSTGRES_USER}</property>
-                     <property name="connection_password">${env.POSTGRES_PASSWORD}</property>
-                     <property name="initialize_sql">
-                     CREATE TABLE IF NOT EXISTS jgroupsping (
-                     own_addr VARCHAR(200) NOT NULL,
-                     cluster_name VARCHAR(200) NOT NULL,
-                     ping_data BYTEA DEFAULT NULL,
-                     PRIMARY KEY (own_addr, cluster_name)
-                     )
-                     </property>
-                   </protocol>
+                    <protocol type="kubernetes.KUBE_PING" />
                     <protocol type="MERGE3"/>
                     <protocol type="FD_SOCK" socket-binding="jgroups-tcp-fd">
                       <property name="external_addr">${env.INTERNAL_POD_IP}</property>
                     </protocol>
-                    <protocol type="FD"/>
+                    <protocol type="FD_ALL" />
                     <protocol type="VERIFY_SUSPECT"/>
-                    <protocol type="pbcast.NAKACK2"/>
+                    <protocol type="pbcast.NAKACK2">
+                        <property name="use_mcast_xmit">false</property>
+                    </protocol>
                     <protocol type="UNICAST3"/>
                     <protocol type="pbcast.STABLE"/>
                     <protocol type="pbcast.GMS"/>
