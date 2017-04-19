@@ -70,7 +70,6 @@ RUN cd $KEYCLOAK_HOME/modules/system/layers/base/org/jgroups/kubernetes/kubernet
 ADD module-jgroups-k8s.xml $KEYCLOAK_HOME/modules/system/layers/base/org/jgroups/kubernetes/kubernetes/main
 RUN envsubst < $KEYCLOAK_HOME/modules/system/layers/base/org/jgroups/kubernetes/kubernetes/main/module-jgroups-k8s.xml > $KEYCLOAK_HOME/modules/system/layers/base/org/jgroups/kubernetes/kubernetes/main/module.xml
 RUN rm $KEYCLOAK_HOME/modules/system/layers/base/org/jgroups/kubernetes/kubernetes/main/module-jgroups-k8s.xml
-RUN curl --version
 
 EXPOSE 8080
 ENTRYPOINT [ "/keycloak+pmcd.sh" ]
