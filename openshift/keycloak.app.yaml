@@ -35,6 +35,12 @@ objects:
           ports:
             - containerPort: 8080
               protocol: TCP
+            - containerPort: 7600
+              protocol: TCP
+            - containerPort: 47600
+              protocol: TCP
+            - containerPort: 57600
+              protocol: TCP
           imagePullPolicy: Always
           resources: {}
           livenessProbe:
@@ -103,6 +109,14 @@ objects:
               secretKeyRef:
                 name: keycloak-config
                 key: db.port
+          - name: OPENSHIFT_KUBE_PING_NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+          - name: OPENSHIFT_KUBE_PING_LABELS
+            value: 'name=keycloak-server'
+          - name: OPENSHIFT_KUBE_PING_SERVER_PORT
+            value: '47600'
         restartPolicy: Always
         securityContext: {}
         terminationGracePeriodSeconds: 30
