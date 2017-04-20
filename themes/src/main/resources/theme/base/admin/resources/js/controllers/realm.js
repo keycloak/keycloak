@@ -468,7 +468,7 @@ module.controller('RealmPasswordPolicyCtrl', function($scope, Realm, realm, $htt
                 value = null;
             } else {
                 id = policyToken.substring(0, policyToken.indexOf('('));
-                value = policyToken.substring(policyToken.indexOf('(') + 1, policyToken.indexOf(')')).trim();
+                value = policyToken.substring(policyToken.indexOf('(') + 1, policyToken.lastIndexOf(')')).trim();
             }
 
             for (var j = 0; j < serverInfo.passwordPolicies.length; j++) {
