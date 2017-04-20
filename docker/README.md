@@ -33,3 +33,14 @@ ENV OSO_ADDRESS tsrv.devshift.net:8443
 ENV OSO_DOMAIN_NAME tsrv.devshift.net
 ```
 
+# Openshift Configuration for clustered deployment
+
+Majority of the config is defined in `DeploymentConfig` files you can find in `openshift` folder in the root of this repository.
+
+There is one thing needed however to have properly functioning cluster (using [k8s PING protocol in `jgroups`](https://github.com/jgroups-extras/jgroups-kubernetes)). 
+Service account has to have `view` privileges. This can be enabled using `oc` cli as follows:
+
+```
+$ oc policy add-role-to-user view system:serviceaccount:$(oc project -q):default -n $(oc project -q)
+```
+
