@@ -404,7 +404,7 @@
             </core-environment>
             <recovery-environment socket-binding="txn-recovery-environment" status-socket-binding="txn-status-manager"/>
         </subsystem>
-        <subsystem xmlns="urn:jboss:domain:undertow:3.0">
+        <subsystem xmlns="urn:jboss:domain:undertow:3.0" statistics-enabled="true">
             <buffer-cache name="default"/>
             <server name="default-server">
                 <ajp-listener name="ajp" socket-binding="ajp"/>
