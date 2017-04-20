@@ -220,7 +220,14 @@ public class PolicyEnforcer {
 
         pathConfig.setId(resourceDescription.getId());
         pathConfig.setName(resourceDescription.getName());
-        pathConfig.setPath(resourceDescription.getUri());
+
+        String uri = resourceDescription.getUri();
+
+        if (uri == null || "".equals(uri.trim())) {
+            throw new RuntimeException("Failed to configure paths. Resource [" + resourceDescription.getName() + "] has an invalid or empty URI [" + uri + "].");
+        }
+
+        pathConfig.setPath(uri);
 
         List<String> scopeNames = new ArrayList<>();
 

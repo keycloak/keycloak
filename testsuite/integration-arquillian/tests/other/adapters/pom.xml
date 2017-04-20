@@ -352,6 +352,12 @@
                                             </artifactItem>
                                             <artifactItem>
                                                 <groupId>org.keycloak.testsuite</groupId>
+                                                <artifactId>servlet-policy-enforcer</artifactId>
+                                                <version>${project.version}</version>
+                                                <type>war</type>
+                                            </artifactItem>
+                                            <artifactItem>
+                                                <groupId>org.keycloak.testsuite</groupId>
                                                 <artifactId>integration-arquillian-test-apps-cors-angular-product</artifactId>
                                                 <version>${project.version}</version>
                                                 <type>war</type>
