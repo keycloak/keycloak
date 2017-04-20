@@ -128,7 +128,20 @@ public final class AuthorizationProvider implements Provider {
 
                     @Override
                     public void delete(String id) {
-                        policyStore.delete(id);
+                        Policy policy = findById(id, null);
+
+                        if (policy != null) {
+                            ResourceServer resourceServer = policy.getResourceServer();
+
+                            findDependentPolicies(policy.getId(), resourceServer.getId()).forEach(dependentPolicy -> {
+                                dependentPolicy.removeAssociatedPolicy(policy);
+                                if (dependentPolicy.getAssociatedPolicies().isEmpty()) {
+                                    delete(dependentPolicy.getId());
+                                }
+                            });
+
+                            policyStore.delete(id);
+                        }
                     }
 
                     @Override

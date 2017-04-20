@@ -23,20 +23,24 @@ import java.util.List;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Test;
+import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.Logic;
+import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
 import org.keycloak.representations.idm.authorization.RolePolicyRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.RealmBuilder;
+import org.keycloak.util.JsonSerialization;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -56,7 +60,17 @@ public class AuthzCleanupTest extends AbstractKeycloakTest {
                         .secret("secret")
                         .authorizationServicesEnabled(true)
                         .redirectUris("http://localhost/myclient")
-                        .defaultRoles("client-role-1", "client-role-2").build()).build());
+                        .defaultRoles(
+                                "client-role-1",
+                                "client-role-2",
+                                "Acme administrator",
+                                "Acme viewer",
+                                "tenant administrator",
+                                "tenant viewer",
+                                "tenant user"
+                                )
+                            .build())
+                .build());
     }
 
     public static void setup(KeycloakSession session) {
@@ -84,6 +98,12 @@ public class AuthzCleanupTest extends AbstractKeycloakTest {
 
     @Test
     public void testCreate() throws Exception {
+        ClientsResource clients = getAdminClient().realms().realm(TEST).clients();
+        ClientRepresentation client = clients.findByClientId("myclient").get(0);
+        ResourceServerRepresentation settings = JsonSerialization.readValue(getClass().getResourceAsStream("/authorization-test/acme-resource-server-cleanup-test.json"), ResourceServerRepresentation.class);
+
+        clients.get(client.getId()).authorization().importSettings(settings);
+
         testingClient.server().run(AuthzCleanupTest::setup);
     }
 
