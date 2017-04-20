@@ -54,9 +54,12 @@ RUN java -jar /usr/share/java/saxon.jar -s:$KEYCLOAK_HOME/standalone/configurati
     java -jar /usr/share/java/saxon.jar -s:$KEYCLOAK_HOME/standalone/configuration/standalone-ha.xml -xsl:$KEYCLOAK_HOME/changeDatabase.xsl -o:$KEYCLOAK_HOME/standalone/configuration/standalone-ha.xml && \
     rm $KEYCLOAK_HOME/changeDatabase.xsl
 
-#RUN mkdir -p $KEYCLOAK_HOME/modules/system/layers/base/org/postgresql/jdbc/main; cd $KEYCLOAK_HOME/modules/system/layers/base/org/postgresql/jdbc/main; curl -O http://central.maven.org/maven2/org/postgresql/postgresql/9.3-1102-jdbc3/postgresql-9.3-1102-jdbc3.jar
-#ADD module-postgres-jdbc.xml $KEYCLOAK_HOME/modules/system/layers/base/org/postgresql/jdbc/main/
-#RUN mv $KEYCLOAK_HOME/modules/system/layers/base/org/postgresql/jdbc/main/module-postgres-jdbc.xml $KEYCLOAK_HOME/modules/system/layers/base/org/postgresql/jdbc/main/module.xml
+ENV PSQL_JDBC_VERSION 9.3-1104-jdbc41
+
+RUN mkdir -p $KEYCLOAK_HOME/modules/system/layers/base/org/postgresql/jdbc/main; cd $KEYCLOAK_HOME/modules/system/layers/base/org/postgresql/jdbc/main; curl -O http://central.maven.org/maven2/org/postgresql/postgresql/$PSQL_JDBC_VERSION/postgresql-$PSQL_JDBC_VERSION.jar
+ADD module-postgres-jdbc.xml $KEYCLOAK_HOME/modules/system/layers/base/org/postgresql/jdbc/main/
+RUN envsubst < $KEYCLOAK_HOME/modules/system/layers/base/org/postgresql/jdbc/main/module-postgres-jdbc.xml > $KEYCLOAK_HOME/modules/system/layers/base/org/postgresql/jdbc/main/module.xml
+RUN rm $KEYCLOAK_HOME/modules/system/layers/base/org/postgresql/jdbc/main/module-postgres-jdbc.xml
 #RUN sed -ie 's@\(</dependencies>\)@    <module name="org.postgresql.jdbc"/>\n    \1@' /opt/jboss/keycloak/modules/system/layers/base/org/jgroups/main/module.xml
 
 ENV JGROUPS_K8S_VERSION 0.9.2
