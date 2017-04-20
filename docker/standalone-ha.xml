@@ -220,7 +220,7 @@
             <log-system-exceptions value="true"/>
         </subsystem>
         <subsystem xmlns="urn:jboss:domain:io:1.1">
-            <worker name="default"/>
+            <worker name="default" io-threads="32" task-max-threads="512"/>
             <buffer-pool name="default"/>
         </subsystem>
         <subsystem xmlns="urn:jboss:domain:infinispan:4.0">
@@ -301,8 +301,8 @@
         <subsystem xmlns="urn:jboss:domain:jdr:1.0"/>
         <subsystem xmlns="urn:jboss:domain:jgroups:4.0">
           <!-- Added and modified by openshift.io keycloak team -->
-            <channels default="ee">
-                <channel name="ee" stack="tcp"/>
+            <channels default="kubernetes">
+                <channel name="kubernetes" stack="tcp"/>
             </channels>
             <stacks default="tcp">
                 <stack name="tcp">
@@ -409,7 +409,9 @@
             <server name="default-server">
                 <ajp-listener name="ajp" socket-binding="ajp"/>
                 <!-- proxy-address-forwarding="true" added and redirect-socket="proxy-https" changed by openshift.io keycloak team -->
-                <http-listener name="default" socket-binding="http" redirect-socket="proxy-https" proxy-address-forwarding="true"/>
+                <http-listener name="default" socket-binding="http" redirect-socket="proxy-https" proxy-address-forwarding="true"
+                               no-request-timeout="25000" request-parse-timeout="25000"
+                               tcp-keep-alive="true" read-timeout="60000"/>
                 <!--   xxxxxxxxxxxxxxxxxxxxxxxxx   -->
                 <host name="default-host" alias="localhost">
                     <location name="/" handler="welcome-content"/>
@@ -417,7 +419,9 @@
                     <filter-ref name="x-powered-by-header"/>
                 </host>
                 <!-- Added by openshift.io keycloak team -->
-                <https-listener name="https" socket-binding="https" security-realm="UndertowRealm"/>
+                <https-listener name="https" socket-binding="https" security-realm="UndertowRealm"
+                    no-request-timeout="25000" request-parse-timeout="25000"
+                    tcp-keep-alive="true" read-timeout="60000"/>
                 <!--   xxxxxxxxxxxxxxxxxxxxxxxxx   -->
             </server>
             <servlet-container name="default">
