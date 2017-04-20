@@ -308,14 +308,36 @@
                 <stack name="tcp">
                     <transport type="TCP" socket-binding="jgroups-tcp">
                       <property name="external_addr">${env.INTERNAL_POD_IP}</property>
+                      <property name="logical_addr_cache_expiration">360000</property>
                     </transport>
-                    <protocol type="kubernetes.KUBE_PING" />
-                    <protocol type="MERGE3"/>
+                    <protocol type="kubernetes.KUBE_PING">
+                      <property name="operationSleep">2000</property>
+                      <property name="operationAttempts">3</property>
+                    </protocol>
+                    <protocol type="MERGE3">
+                      <!-- The min and max intervals need to fit in Liveness probe -->
+                      <!-- We use 3 * 10s = 30s total -->
+                      <property name="min_interval">1000</property>
+                      <property name="max_interval">8000</property>
+                      <!-- We check for inconsistencies every 20s -->
+                      <!-- This should play nice with Readiness Probe -->
+                      <property name="check_interval">20000</property>
+                    </protocol>
                     <protocol type="FD_SOCK" socket-binding="jgroups-tcp-fd">
                       <property name="external_addr">${env.INTERNAL_POD_IP}</property>
                     </protocol>
-                    <protocol type="FD_ALL" />
-                    <protocol type="VERIFY_SUSPECT"/>
+                    <protocol type="FD_ALL">
+                      <!-- The timeout after which we suspect P -->
+                      <!-- Needs to be much larger than GC -->
+                      <!-- Let's use 10 * 0.8s (GC) = 8s -->
+                      <property name="timeout">8000</property>
+                      <!-- How often we check heartbeat messages -->
+                      <property name="timeout_check_interval">2000</property>
+                      <!-- How often we send out heartbeats -->
+                      <property name="interval">3000</property>
+                    </protocol>
+                    <!-- If we want to go fast, we need to remove verify suspect -->
+                    <!-- <protocol type="VERIFY_SUSPECT"/> -->
                     <protocol type="pbcast.NAKACK2">
                         <property name="use_mcast_xmit">false</property>
                     </protocol>
@@ -404,7 +426,7 @@
             </core-environment>
             <recovery-environment socket-binding="txn-recovery-environment" status-socket-binding="txn-status-manager"/>
         </subsystem>
-        <subsystem xmlns="urn:jboss:domain:undertow:3.0" statistics-enabled="true">
+        <subsystem xmlns="urn:jboss:domain:undertow:3.0">
             <buffer-cache name="default"/>
             <server name="default-server">
                 <ajp-listener name="ajp" socket-binding="ajp"/>
