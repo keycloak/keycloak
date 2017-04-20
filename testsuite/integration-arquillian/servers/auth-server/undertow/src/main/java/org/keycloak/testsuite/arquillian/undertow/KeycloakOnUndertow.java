@@ -79,6 +79,7 @@ public class KeycloakOnUndertow implements DeployableContainer<KeycloakOnUnderto
         FilterInfo filter = Servlets.filter("SessionFilter", KeycloakSessionServletFilter.class);
         di.addFilter(filter);
         di.addFilterUrlMapping("SessionFilter", "/*", DispatcherType.REQUEST);
+        filter.setAsyncSupported(true);
 
         return di;
     }

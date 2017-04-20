@@ -1,0 +1,62 @@
+{
+    "realm": "servlet-policy-enforcer-authz",
+    "auth-server-url": "http://localhost:8180/auth",
+    "ssl-required": "external",
+    "resource": "servlet-policy-enforcer",
+    "credentials": {
+        "secret": "secret"
+    },
+    "policy-enforcer": {
+        "on-deny-redirect-to": "/servlet-policy-enforcer/denied.jsp",
+        "paths": [
+            {
+                "name": "Welcome Resource",
+                "path": "/index.jsp"
+            },
+            {
+                "name": "Pattern 1",
+                "path": "/resource/{pattern}/{sub-resource}"
+            },
+            {
+                "name": "Pattern 2",
+                "path": "/{pattern}/resource-a"
+            },
+            {
+                "name": "Pattern 3",
+                "path": "/{pattern}/resource-b"
+            },
+            {
+                "name": "Pattern 4",
+                "path": "/resource-c"
+            },
+            {
+                "name": "Pattern 5",
+                "path": "/resource/{pattern}/resource-d"
+            },
+            {
+                "name": "Pattern 6",
+                "path": "/resource/{pattern}"
+            },
+            {
+                "name": "Pattern 7",
+                "path": "/resource/{pattern}/f/{resource}"
+            },
+            {
+                "name": "Pattern 8",
+                "path": "/resource"
+            },
+            {
+                "name": "Pattern 9",
+                "path": "/file/*.suffix"
+            },
+            {
+                "name": "Pattern 10",
+                "path": "/resource/{pattern}/i/{resource}/*"
+            },
+            {
+                "name": "Pattern 11",
+                "path": "/api/{version}/{resource}"
+            }
+        ]
+    }
+}
