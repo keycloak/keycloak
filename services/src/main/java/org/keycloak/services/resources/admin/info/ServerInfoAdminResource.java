@@ -68,6 +68,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -286,7 +287,7 @@ public class ServerInfoAdminResource {
     }
 
     private static Map<String, List<String>> createEnumsMap(Class... enums) {
-        Map<String, List<String>> m = new HashMap<>();
+        Map<String, List<String>> m = new ConcurrentHashMap<>();
         for (Class e : enums) {
             String n = e.getSimpleName();
             n = Character.toLowerCase(n.charAt(0)) + n.substring(1);
@@ -300,6 +301,90 @@ public class ServerInfoAdminResource {
             m.put(n, l);
         }
         return m;
+    }
+
+    /**
+     * Add enums to the map
+     * @param enums enums to add
+     */
+    public static void addEnumMaps(Class... enums) {
+        for (Class e : enums) {
+            addEnumMap(e);
+        }
+    }
+
+    /**
+     * Add single enum to the map
+     * @param clazz enum to add
+     * @return created map entry
+     */
+    public static List<String> addEnumMap(Class clazz) {
+
+        String n = clazz.getSimpleName();
+        n = Character.toLowerCase(n.charAt(0)) + n.substring(1);
+
+        List<String> l = new LinkedList<>();
+
+        for (Object c : clazz.getEnumConstants()) {
+            l.add(c.toString());
+        }
+
+        Collections.sort(l);
+
+        ENUMS.put(n, l);
+
+        return l;
+
+    }
+
+    /**
+     * Add values to the map.
+     * If non-existent, the map will be created for the given enum class.
+     *
+     * @param clazz class that the map corresponds to
+     * @param values enum keys to add
+     */
+    public static void addEnumMap(Class clazz, String[] values) {
+
+        String n = clazz.getSimpleName();
+        n = Character.toLowerCase(n.charAt(0)) + n.substring(1);
+        List<String> l = ENUMS.get(n);
+
+        if (l == null)
+            l = addEnumMap(clazz);
+
+        for (String v : values) {
+            if (!l.contains(v))
+                l.add(v);
+        }
+
+        Collections.sort(l);
+
+    }
+
+    /**
+     * Add values to the map.
+     * If non-existent, the map will be created.
+     *
+     * @param name map name
+     * @param values enum keys to add
+     */
+    public static void addEnumMap(String name, String[] values) {
+
+        List<String> l = ENUMS.get(name);
+
+        if (l == null) {
+            l = new LinkedList<>();
+            ENUMS.put(name, l);
+        }
+
+        for (String v : values) {
+            if (!l.contains(v))
+                l.add(v);
+        }
+
+        Collections.sort(l);
+
     }
 
 }
