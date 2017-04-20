@@ -22,7 +22,7 @@
   -->
 <module xmlns="urn:jboss:module:1.0" name="org.postgresql.jdbc">
    <resources>
-      <resource-root path="postgresql-9.3-1102-jdbc3.jar"/>
+      <resource-root path="postgresql-$PSQL_JDBC_VERSION.jar"/>
    </resources>
    <dependencies>
       <module name="javax.api"/>
