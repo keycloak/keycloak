@@ -102,6 +102,10 @@ public class CachedPolicyStore implements PolicyStore {
 
     @Override
     public Policy findById(String id, String resourceServerId) {
+        if (resourceServerId == null) {
+            return getDelegate().findById(id, null);
+        }
+
         String cacheKeyForPolicy = getCacheKeyForPolicy(id);
         List<CachedPolicy> cached = resolveResourceServerCache(resourceServerId).get(cacheKeyForPolicy);
 

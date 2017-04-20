@@ -180,12 +180,6 @@ public class UserPolicyProviderFactory implements PolicyProviderFactory<UserPoli
 
                             try {
                                 if (users.isEmpty()) {
-                                    policyStore.findDependentPolicies(policy.getId(), resourceServer.getId()).forEach(dependentPolicy -> {
-                                        dependentPolicy.removeAssociatedPolicy(policy);
-                                        if (dependentPolicy.getAssociatedPolicies().isEmpty()) {
-                                            policyStore.delete(dependentPolicy.getId());
-                                        }
-                                    });
                                     policyStore.delete(policy.getId());
                                 } else {
                                     policy.getConfig().put("users", JsonSerialization.writeValueAsString(users));

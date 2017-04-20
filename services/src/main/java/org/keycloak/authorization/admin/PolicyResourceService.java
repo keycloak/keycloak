@@ -96,14 +96,6 @@ public class PolicyResourceService {
 
         resource.onRemove(policy, authorization);
 
-        policyStore.findDependentPolicies(policy.getId(), resourceServer.getId()).forEach(dependentPolicy -> {
-            if (dependentPolicy.getAssociatedPolicies().size() == 1) {
-                policyStore.delete(dependentPolicy.getId());
-            } else {
-                dependentPolicy.removeAssociatedPolicy(policy);
-            }
-        });
-
         policyStore.delete(policy.getId());
 
         return Response.noContent().build();

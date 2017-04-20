@@ -230,12 +230,6 @@ public class RolePolicyProviderFactory implements PolicyProviderFactory<RolePoli
 
                 try {
                     if (roles.isEmpty()) {
-                        policyStore.findDependentPolicies(policy.getId(), resourceServer.getId()).forEach(dependentPolicy -> {
-                            dependentPolicy.removeAssociatedPolicy(policy);
-                            if (dependentPolicy.getAssociatedPolicies().isEmpty()) {
-                                policyStore.delete(dependentPolicy.getId());
-                            }
-                        });
                         policyStore.delete(policy.getId());
                     } else {
                         Map<String, String> config = policy.getConfig();
