@@ -15,8 +15,11 @@ You can find this tarball in `./distribution/server-dist/target/` directory.
 
 Then you just need to build the docker image:
 
-`$ docker build -t IMAGE_NAME .`
+`$ docker build --tag IMAGE_NAME .`
 
+If you would like to build image for clustered mode add build argument
+
+`$ docker build  --build-arg OPERATING_MODE=clustered --tag IMAGE_NAME .`
 
 Note that, this docker image installs the certificate to securely talk to OpenShift Online.
 This step is done inside the `install_certificate.sh` script which adds this
