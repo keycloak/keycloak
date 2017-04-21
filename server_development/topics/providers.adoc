@@ -175,14 +175,12 @@ public class MyEventListenerProviderFactory implements EventListenerProviderFact
 
 === Registering provider implementations
 
-There are two ways to register provider implementations.  The easiest way is to just throw your provider jar within
-the Keycloak `deploy/` directory.  Keycloak supports hot deployment as well in this scenario.  This is also the best
-solution.
+There are two ways to register provider implementations. In most cases the simplest way is to use the Keyclopak Deployer
+approach as this handles a number of dependencies automatically for you. It also supports hot deployment as well as re-deployment.
 
-The alternative is not really recommended, but exists for legacy purposes as the Keycloak deployer didn't exist in
-previous versions of the project.  Keycloak can load provider implementations from JBoss Modules or directly from the file-system.
-Using Modules is recommended as you can control exactly what classes are available to your provider.
-Any providers loaded from the file-system uses a classloader with the Keycloak classloader as its parent.
+The alternative approach is to deploy as a module.
+
+If you are creating a custom SPI you will need to deploy it as a module, otherwise we recommend using the Keycloak Deployer approach.
 
 ==== Using the Keycloak Deployer
 
@@ -234,33 +232,6 @@ This is done by editing the keycloak-server subsystem section of
         <provider>module:org.keycloak.examples.event-sysout</provider>
     </providers>
     ...
-----            
-
-==== Register a provider using file-system
-
-To register your provider simply copy the JAR including the ProviderFactory and Provider classes and the service configuration file to server's root `providers` directory. 
-
-You can also define multiple provider class-path if you want to create isolated class-loaders.
-To do this edit `standalone.xml`, `standalone-ha.xml`, or `domain.xml` and add more classpath entries to the providers element.
-For example: 
-
-[source,xml]
-----
-<providers>
-    <provider>classpath:provider1.jar;lib-v1.jar</provider>
-    <provider>classpath:provider2.jar;lib-v2.jar</provider>
-</providers>
-----
-
-The above example will create two separate class-loaders for providers.
-The classpath entries follow the same syntax as Java classpath, with ';' separating multiple-entries.
-Wildcard is also supported allowing loading all jars (files with .jar or .JAR extension) in a folder, for example: 
-
-[source,xml]
-----
-<providers>
-    <provider>classpath:/home/user/providers/*</provider>
-</providers>
 ----            
 
 ==== Configuring a provider
