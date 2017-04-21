@@ -19,6 +19,7 @@ package org.keycloak.broker.provider;
 import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.UserModel;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -218,5 +219,17 @@ public class BrokeredIdentityContext {
                 ", username='" + username + '\'' +
                 ", email='" + email + '\'' +
                 '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null) return false;
+
+        UserModel userModel = (UserModel) o;
+
+        if (username != null ? !username.equals(userModel.getUsername()) : userModel.getUsername() != null) return false;
+        if (email != null ? !email.equals(userModel.getEmail()) : userModel.getEmail() != null) return false;
+        if (firstName != null ? !firstName.equals(userModel.getFirstName()) : userModel.getFirstName() != null) return false;
+        return lastName != null ? lastName.equals(userModel.getLastName()) : userModel.getLastName() != null;
     }
 }

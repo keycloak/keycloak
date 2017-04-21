@@ -547,7 +547,8 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
                 return response;
             }
 
-            updateFederatedIdentity(context, federatedUser);
+            if (!context.equals(federatedUser))
+                updateFederatedIdentity(context, federatedUser);
             clientSession.setAuthenticatedUser(federatedUser);
 
             return finishOrRedirectToPostBrokerLogin(clientSession, context, false, parsedCode.clientSessionCode);
