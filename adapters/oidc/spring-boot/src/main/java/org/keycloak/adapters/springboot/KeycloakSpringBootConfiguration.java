@@ -210,6 +210,10 @@ public class KeycloakSpringBootConfiguration {
             }
 
             WebAppContext webAppContext = server.getBean(WebAppContext.class);
+            //if not found as registered bean let's try the handler
+            if(webAppContext==null){
+                webAppContext = (WebAppContext) server.getHandler();
+            }
 
             ConstraintSecurityHandler securityHandler = new ConstraintSecurityHandler();
             securityHandler.setConstraintMappings(jettyConstraintMappings);
