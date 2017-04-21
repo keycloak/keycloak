@@ -19,7 +19,7 @@ Let's walk through each of the items on this page.
 
 |SSO Session Idle
 |Also pertains to OIDC clients.  If the user is not active for longer than this timeout, the user session will be invalidated.  How is idle time checked?
- A client requesting authentication will bump the idle timeout.  Referesh token requests will also bump the idle timeout.
+ A client requesting authentication will bump the idle timeout.  Refresh token requests will also bump the idle timeout.
 
 |SSO Session Max
 |Maximum time before a user session is expired and invalidated.  This is a hard number and time.  It controls the maximum time
