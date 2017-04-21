@@ -1228,7 +1228,7 @@
                             break;
                         default:
                             if (responseMode != 'query' || !handleQueryParam(param, queryParams[param], oauth)) {
-                                oauth.newUrl += (oauth.newUrl.indexOf('?') == -1 ? '?' : '&') + param + '=' + queryParams[param];
+                                oauth.newUrl += (oauth.newUrl.indexOf('?') == -1 ? '?' : '&') + param + '=' + encodeURIComponent(queryParams[param]);
                             }
                             break;
                     }
