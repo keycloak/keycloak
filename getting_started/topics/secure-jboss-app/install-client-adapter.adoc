@@ -5,7 +5,7 @@ Download the {{book.appserver.name}} distribution and unzip
 it into a directory on your machine.
 
 {% if book.community %}
-Next download the keycloak-wildfly-adapter-dist-{{book.project.version}}.zip distribution.
+Next download the WildFly OpenID Connect adapter distribution from link:http://www.keycloak.org/downloads.html[keycloak.org].
 {% endif %}
 
 {% if book.product %}
