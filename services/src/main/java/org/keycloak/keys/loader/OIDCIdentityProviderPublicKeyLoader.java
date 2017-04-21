@@ -60,7 +60,10 @@ public class OIDCIdentityProviderPublicKeyLoader implements PublicKeyLoader {
                     return Collections.emptyMap();
                 }
 
-                String kid = KeyUtils.createKeyId(publicKey);
+                String presetKeyId = config.getPublicKeySignatureVerifierKeyId();
+                String kid = (presetKeyId == null || presetKeyId.trim().isEmpty())
+                  ? KeyUtils.createKeyId(publicKey)
+                  : presetKeyId;
                 return Collections.singletonMap(kid, publicKey);
             } catch (Exception e) {
                 logger.warnf(e, "Unable to retrieve publicKey for verify signature of identityProvider '%s' . Error details: %s", config.getAlias(), e.getMessage());

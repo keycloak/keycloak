@@ -1482,11 +1482,6 @@ module.controller('RealmEventsConfigCtrl', function($scope, eventsConfig, RealmE
 
     $scope.eventsConfig.expirationUnit = TimeUnit.autoUnit(eventsConfig.eventsExpiration);
     $scope.eventsConfig.eventsExpiration = TimeUnit.toUnit(eventsConfig.eventsExpiration, $scope.eventsConfig.expirationUnit);
-    $scope.$watch('eventsConfig.expirationUnit', function(to, from) {
-        if ($scope.eventsConfig.eventsExpiration) {
-            $scope.eventsConfig.eventsExpiration = TimeUnit.convert($scope.eventsConfig.eventsExpiration, from, to);
-        }
-    });
 
     $scope.eventListeners = Object.keys(serverInfo.providers.eventsListener.providers);
 
@@ -1724,27 +1719,15 @@ module.controller('RealmBruteForceCtrl', function($scope, Realm, realm, $http, $
 
     $scope.realm.waitIncrementUnit = TimeUnit.autoUnit(realm.waitIncrementSeconds);
     $scope.realm.waitIncrement = TimeUnit.toUnit(realm.waitIncrementSeconds, $scope.realm.waitIncrementUnit);
-    $scope.$watch('realm.waitIncrementUnit', function(to, from) {
-        $scope.realm.waitIncrement = TimeUnit.convert($scope.realm.waitIncrement, from, to);
-    });
 
     $scope.realm.minimumQuickLoginWaitUnit = TimeUnit.autoUnit(realm.minimumQuickLoginWaitSeconds);
     $scope.realm.minimumQuickLoginWait = TimeUnit.toUnit(realm.minimumQuickLoginWaitSeconds, $scope.realm.minimumQuickLoginWaitUnit);
-    $scope.$watch('realm.minimumQuickLoginWaitUnit', function(to, from) {
-        $scope.realm.minimumQuickLoginWait = TimeUnit.convert($scope.realm.minimumQuickLoginWait, from, to);
-    });
 
     $scope.realm.maxFailureWaitUnit = TimeUnit.autoUnit(realm.maxFailureWaitSeconds);
     $scope.realm.maxFailureWait = TimeUnit.toUnit(realm.maxFailureWaitSeconds, $scope.realm.maxFailureWaitUnit);
-    $scope.$watch('realm.maxFailureWaitUnit', function(to, from) {
-        $scope.realm.maxFailureWait = TimeUnit.convert($scope.realm.maxFailureWait, from, to);
-    });
 
     $scope.realm.maxDeltaTimeUnit = TimeUnit.autoUnit(realm.maxDeltaTimeSeconds);
     $scope.realm.maxDeltaTime = TimeUnit.toUnit(realm.maxDeltaTimeSeconds, $scope.realm.maxDeltaTimeUnit);
-    $scope.$watch('realm.maxDeltaTimeUnit', function(to, from) {
-        $scope.realm.maxDeltaTime = TimeUnit.convert($scope.realm.maxDeltaTime, from, to);
-    });
 
     var oldCopy = angular.copy($scope.realm);
     $scope.changed = false;
@@ -2332,10 +2315,6 @@ module.controller('ClientInitialAccessCreateCtrl', function($scope, realm, Clien
     $scope.expiration = TimeUnit.toUnit(0, $scope.expirationUnit);
     $scope.count = 1;
     $scope.realm = realm;
-
-    $scope.$watch('expirationUnit', function(to, from) {
-        $scope.expiration = TimeUnit.convert($scope.expiration, from, to);
-    });
 
     $scope.save = function() {
         var expiration = TimeUnit.toSeconds($scope.expiration, $scope.expirationUnit);

@@ -9,6 +9,7 @@
     "cors-max-age": 1000,
     "cors-allowed-methods": "POST, PUT, DELETE, GET",
     "cors-allowed-headers": "X-Custom, X-Custom2",
+    "cors-exposed-headers": "X-Custom3, X-Custom4",
     "bearer-only": true,
     "public-client": true,
     "enable-basic-auth": true,

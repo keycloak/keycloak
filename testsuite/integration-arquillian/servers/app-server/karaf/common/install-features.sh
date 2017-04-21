@@ -23,7 +23,7 @@ do
         fi
 
         if "$UPDATE_CONFIG" == "true"; then
-            echo "Updating Config - org.ops4j.pax.url.mvn"
+            echo "Updating Config"
             ./client $CLIENT_AUTH -f update-config.cli
             if [ $? -ne 0 ]; then 
                 RESULT=1; 
@@ -35,6 +35,14 @@ do
         echo "Installing features."
         ./client $CLIENT_AUTH -f install-features.cli
         if [ $? -ne 0 ]; then RESULT=1; fi
+
+        if "$UPDATE_CONFIG" == "true"; then
+            echo "Updating Config - Keycloak authentication"
+            ./client $CLIENT_AUTH -f update-config-auth.cli
+            if [ $? -ne 0 ]; then
+                RESULT=1;
+            fi
+        fi
 
         ./stop
         rm -rf ../data/log

@@ -50,6 +50,7 @@ public interface ComponentFactory<CreatedType, ProviderType extends Provider> ex
 
     }
 
+
     default
     void onUpdate(KeycloakSession session, RealmModel realm, ComponentModel model) {
 

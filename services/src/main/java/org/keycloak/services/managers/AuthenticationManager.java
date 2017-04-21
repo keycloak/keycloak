@@ -108,6 +108,15 @@ public class AuthenticationManager {
         return userSession.getLastSessionRefresh() + realm.getSsoSessionIdleTimeout() > currentTime && max > currentTime;
     }
 
+    public static boolean isOfflineSessionValid(RealmModel realm, UserSessionModel userSession) {
+        if (userSession == null) {
+            logger.debug("No offline user session");
+            return false;
+        }
+        int currentTime = Time.currentTime();
+        return userSession.getLastSessionRefresh() + realm.getOfflineSessionIdleTimeout() > currentTime;
+    }
+
     public static void expireUserSessionCookie(KeycloakSession session, UserSessionModel userSession, RealmModel realm, UriInfo uriInfo, HttpHeaders headers, ClientConnection connection) {
         try {
             // check to see if any identity cookie is set with the same session and expire it if necessary
@@ -390,7 +399,7 @@ public class AuthenticationManager {
         }
 
         String tokenString = cookie.getValue();
-        AuthResult authResult = verifyIdentityToken(session, realm, session.getContext().getUri(), session.getContext().getConnection(), checkActive, false, tokenString, session.getContext().getRequestHeaders());
+        AuthResult authResult = verifyIdentityToken(session, realm, session.getContext().getUri(), session.getContext().getConnection(), checkActive, false, true, tokenString, session.getContext().getRequestHeaders());
         if (authResult == null) {
             expireIdentityCookie(realm, session.getContext().getUri(), session.getContext().getConnection());
             return null;
@@ -691,7 +700,7 @@ public class AuthenticationManager {
 
 
     protected static AuthResult verifyIdentityToken(KeycloakSession session, RealmModel realm, UriInfo uriInfo, ClientConnection connection, boolean checkActive, boolean checkTokenType,
-                                                    String tokenString, HttpHeaders headers) {
+                                                    boolean isCookie, String tokenString, HttpHeaders headers) {
         try {
             TokenVerifier verifier = TokenVerifier.create(tokenString).realmUrl(Urls.realmIssuer(uriInfo.getBaseUri(), realm.getName())).checkActive(checkActive).checkTokenType(checkTokenType);
             String kid = verifier.getHeader().getKeyId();
@@ -729,6 +738,14 @@ public class AuthenticationManager {
 
             UserSessionModel userSession = session.sessions().getUserSession(realm, token.getSessionState());
             if (!isSessionValid(realm, userSession)) {
+                // Check if accessToken was for the offline session.
+                if (!isCookie) {
+                    UserSessionModel offlineUserSession = session.sessions().getUserSession(realm, token.getSessionState());
+                    if (isOfflineSessionValid(realm, offlineUserSession)) {
+                        return new AuthResult(user, offlineUserSession, token);
+                    }
+                }
+
                 if (userSession != null) backchannelLogout(session, realm, userSession, uriInfo, connection, headers, true);
                 logger.debug("User session not active");
                 return null;

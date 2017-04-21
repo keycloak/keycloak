@@ -78,8 +78,8 @@ public class Keycloak {
         return new Keycloak(serverUrl, realm, username, password, clientId, null, PASSWORD, null, null);
     }
 
-    public static Keycloak getInstance(String serverUrl, String realm, String clientId, String authtoken) {
-        return new Keycloak(serverUrl, realm, null, null, clientId, null, PASSWORD, null, null);
+    public static Keycloak getInstance(String serverUrl, String realm, String clientId, String authToken) {
+        return new Keycloak(serverUrl, realm, null, null, clientId, null, PASSWORD, null, authToken);
     }
 
     public RealmsResource realms() {

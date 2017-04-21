@@ -325,6 +325,14 @@ public class KeycloakDeployment {
         this.corsAllowedMethods = corsAllowedMethods;
     }
 
+    public String getCorsExposedHeaders() {
+        return corsExposedHeaders;
+    }
+
+    public void setCorsExposedHeaders(String corsExposedHeaders) {
+        this.corsExposedHeaders = corsExposedHeaders;
+    }
+
     public boolean isExposeToken() {
         return exposeToken;
     }

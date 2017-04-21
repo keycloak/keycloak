@@ -19,6 +19,7 @@ package org.keycloak.storage;
 
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.reflections.Types;
+import org.keycloak.component.ComponentFactory;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.FederatedIdentityModel;
@@ -36,6 +37,8 @@ import org.keycloak.models.UserProvider;
 import org.keycloak.models.cache.CachedUserModel;
 import org.keycloak.models.cache.OnUserCache;
 import org.keycloak.models.cache.UserCache;
+import org.keycloak.models.utils.ComponentUtil;
+import org.keycloak.services.managers.UserStorageSyncManager;
 import org.keycloak.storage.federated.UserFederatedStorageProvider;
 import org.keycloak.storage.user.ImportedUserValidation;
 import org.keycloak.storage.user.UserBulkUpdateProvider;
@@ -57,7 +60,7 @@ import static org.keycloak.models.utils.KeycloakModelUtils.runJobInTransaction;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class UserStorageManager implements UserProvider, OnUserCache {
+public class UserStorageManager implements UserProvider, OnUserCache, OnCreateComponent {
 
     private static final Logger logger = Logger.getLogger(UserStorageManager.class);
 
@@ -606,6 +609,7 @@ public class UserStorageManager implements UserProvider, OnUserCache {
         if (!component.getProviderType().equals(UserStorageProvider.class.getName())) return;
         localStorage().preRemove(realm, component);
         if (getFederatedStorage() != null) getFederatedStorage().preRemove(realm, component);
+        new UserStorageSyncManager().notifyToRefreshPeriodicSync(session, realm, new UserStorageProviderModel(component), true);
 
     }
 
@@ -626,6 +630,15 @@ public class UserStorageManager implements UserProvider, OnUserCache {
     @Override
     public void close() {
     }
+
+    @Override
+    public void onCreate(KeycloakSession session, RealmModel realm, ComponentModel model) {
+        ComponentFactory factory = ComponentUtil.getComponentFactory(session, model);
+        if (!(factory instanceof UserStorageProviderFactory)) return;
+        new UserStorageSyncManager().notifyToRefreshPeriodicSync(session, realm, new UserStorageProviderModel(model), false);
+
+    }
+
 
 
 }

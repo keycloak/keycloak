@@ -211,11 +211,19 @@
                 </div>
 
                 <div class="form-group clearfix" data-ng-hide="identityProvider.config.useJwksUrl == 'true'">
-                    <label class="col-md-2 control-label" for="publicKeySignatureVerifier">{{:: 'validating-public-key' | translate}}</label>
+                    <label class="col-md-2 control-label" for="publicKeySignatureVerifierKey">{{:: 'validating-public-key' | translate}}</label>
                     <div class="col-md-6">
                         <textarea class="form-control" id="publicKeySignatureVerifier" ng-model="identityProvider.config.publicKeySignatureVerifier"/>
                     </div>
                     <kc-tooltip>{{:: 'identity-provider.validating-public-key.tooltip' | translate}}</kc-tooltip>
+                </div>
+
+                <div class="form-group clearfix" data-ng-hide="identityProvider.config.useJwksUrl == 'true'">
+                    <label class="col-md-2 control-label" for="publicKeySignatureVerifierKeyId">{{:: 'validating-public-key-id' | translate}}</label>
+                    <div class="col-md-6">
+                        <input class="form-control" id="publicKeySignatureVerifierKeyId" ng-model="identityProvider.config.publicKeySignatureVerifierKeyId"/>
+                    </div>
+                    <kc-tooltip>{{:: 'identity-provider.validating-public-key-id.tooltip' | translate}}</kc-tooltip>
                 </div>
 
             </div>

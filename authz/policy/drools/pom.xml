@@ -17,6 +17,19 @@
     <name>KeyCloak AuthZ: Drools Policy Provider</name>
     <description>KeyCloak AuthZ: Drools Policy Provider</description>
 
+    <dependencyManagement>
+        <dependencies>
+            <!-- Authorization Drools Policy Provider -->
+            <dependency>
+                <groupId>org.drools</groupId>
+                <artifactId>drools-bom</artifactId>
+                <type>pom</type>
+                <version>${version.org.drools}</version>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
     <dependencies>
         <dependency>
             <groupId>org.keycloak</groupId>

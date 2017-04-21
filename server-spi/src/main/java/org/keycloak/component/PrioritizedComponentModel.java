@@ -23,6 +23,7 @@ import java.util.Comparator;
  * @version $Revision: 1 $
  */
 public class PrioritizedComponentModel extends ComponentModel {
+    public static final String PRIORITY = "priority";
     public static Comparator<ComponentModel> comparator = new Comparator<ComponentModel>() {
         @Override
         public int compare(ComponentModel o1, ComponentModel o2) {
@@ -38,7 +39,7 @@ public class PrioritizedComponentModel extends ComponentModel {
     }
 
     public static int parsePriority(ComponentModel component) {
-        String priority = component.getConfig().getFirst("priority");
+        String priority = component.getConfig().getFirst(PRIORITY);
         if (priority == null) return 0;
         return Integer.valueOf(priority);
 

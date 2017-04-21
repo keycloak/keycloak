@@ -86,7 +86,12 @@
                     <groupId>org.apache.karaf</groupId>
                     <artifactId>org.apache.karaf.client</artifactId>
                     <version>3.0.3</version>
-                </dependency>  
+                </dependency>
+                <dependency>
+                    <groupId>org.apache.sshd</groupId>
+                    <artifactId>sshd-core</artifactId>
+                    <version>1.2.0</version>
+                </dependency>
             </dependencies>
             <build>
                 <plugins>

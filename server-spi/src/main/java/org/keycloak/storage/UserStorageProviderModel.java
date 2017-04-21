@@ -28,6 +28,17 @@ import org.keycloak.component.PrioritizedComponentModel;
  */
 public class UserStorageProviderModel extends PrioritizedComponentModel {
 
+    public static final String CACHE_POLICY = "cachePolicy";
+    public static final String MAX_LIFESPAN = "maxLifespan";
+    public static final String EVICTION_HOUR = "evictionHour";
+    public static final String EVICTION_MINUTE = "evictionMinute";
+    public static final String EVICTION_DAY = "evictionDay";
+    public static final String CACHE_INVALID_BEFORE = "cacheInvalidBefore";
+    public static final String IMPORT_ENABLED = "importEnabled";
+    public static final String FULL_SYNC_PERIOD = "fullSyncPeriod";
+    public static final String CHANGED_SYNC_PERIOD = "changedSyncPeriod";
+    public static final String LAST_SYNC = "lastSync";
+
     public static enum CachePolicy {
         NO_CACHE,
         DEFAULT,
@@ -57,7 +68,7 @@ public class UserStorageProviderModel extends PrioritizedComponentModel {
 
     public CachePolicy getCachePolicy() {
         if (cachePolicy == null) {
-            String str = getConfig().getFirst("cachePolicy");
+            String str = getConfig().getFirst(CACHE_POLICY);
             if (str == null) return null;
             cachePolicy = CachePolicy.valueOf(str);
         }
@@ -67,16 +78,16 @@ public class UserStorageProviderModel extends PrioritizedComponentModel {
     public void setCachePolicy(CachePolicy cachePolicy) {
         this.cachePolicy = cachePolicy;
         if (cachePolicy == null) {
-            getConfig().remove("cachePolicy");
+            getConfig().remove(CACHE_POLICY);
 
         } else {
-            getConfig().putSingle("cachePolicy", cachePolicy.name());
+            getConfig().putSingle(CACHE_POLICY, cachePolicy.name());
         }
     }
 
     public long getMaxLifespan() {
         if (maxLifespan < 0) {
-            String str = getConfig().getFirst("maxLifespan");
+            String str = getConfig().getFirst(MAX_LIFESPAN);
             if (str == null) return -1;
             maxLifespan = Long.valueOf(str);
         }
@@ -85,12 +96,12 @@ public class UserStorageProviderModel extends PrioritizedComponentModel {
 
     public void setMaxLifespan(long maxLifespan) {
         this.maxLifespan = maxLifespan;
-        getConfig().putSingle("maxLifespan", Long.toString(maxLifespan));
+        getConfig().putSingle(MAX_LIFESPAN, Long.toString(maxLifespan));
     }
 
     public int getEvictionHour() {
         if (evictionHour < 0) {
-            String str = getConfig().getFirst("evictionHour");
+            String str = getConfig().getFirst(EVICTION_HOUR);
             if (str == null) return -1;
             evictionHour = Integer.valueOf(str);
         }
@@ -100,12 +111,12 @@ public class UserStorageProviderModel extends PrioritizedComponentModel {
     public void setEvictionHour(int evictionHour) {
         if (evictionHour > 23 || evictionHour < 0) throw new IllegalArgumentException("Must be between 0 and 23");
         this.evictionHour = evictionHour;
-        getConfig().putSingle("evictionHour", Integer.toString(evictionHour));
+        getConfig().putSingle(EVICTION_HOUR, Integer.toString(evictionHour));
     }
 
     public int getEvictionMinute() {
         if (evictionMinute < 0) {
-            String str = getConfig().getFirst("evictionMinute");
+            String str = getConfig().getFirst(EVICTION_MINUTE);
             if (str == null) return -1;
             evictionMinute = Integer.valueOf(str);
         }
@@ -115,12 +126,12 @@ public class UserStorageProviderModel extends PrioritizedComponentModel {
     public void setEvictionMinute(int evictionMinute) {
         if (evictionMinute > 59 || evictionMinute < 0) throw new IllegalArgumentException("Must be between 0 and 59");
         this.evictionMinute = evictionMinute;
-        getConfig().putSingle("evictionMinute", Integer.toString(evictionMinute));
+        getConfig().putSingle(EVICTION_MINUTE, Integer.toString(evictionMinute));
     }
 
     public int getEvictionDay() {
         if (evictionDay < 0) {
-            String str = getConfig().getFirst("evictionDay");
+            String str = getConfig().getFirst(EVICTION_DAY);
             if (str == null) return -1;
             evictionDay = Integer.valueOf(str);
         }
@@ -130,12 +141,12 @@ public class UserStorageProviderModel extends PrioritizedComponentModel {
     public void setEvictionDay(int evictionDay) {
         if (evictionDay > 7 || evictionDay < 1) throw new IllegalArgumentException("Must be between 1 and 7");
         this.evictionDay = evictionDay;
-        getConfig().putSingle("evictionDay", Integer.toString(evictionDay));
+        getConfig().putSingle(EVICTION_DAY, Integer.toString(evictionDay));
     }
 
     public long getCacheInvalidBefore() {
         if (cacheInvalidBefore < 0) {
-            String str = getConfig().getFirst("cacheInvalidBefore");
+            String str = getConfig().getFirst(CACHE_INVALID_BEFORE);
             if (str == null) return -1;
             cacheInvalidBefore = Long.valueOf(str);
         }
@@ -144,12 +155,12 @@ public class UserStorageProviderModel extends PrioritizedComponentModel {
 
     public void setCacheInvalidBefore(long cacheInvalidBefore) {
         this.cacheInvalidBefore = cacheInvalidBefore;
-        getConfig().putSingle("cacheInvalidBefore", Long.toString(cacheInvalidBefore));
+        getConfig().putSingle(CACHE_INVALID_BEFORE, Long.toString(cacheInvalidBefore));
     }
 
     public boolean isImportEnabled() {
         if (importEnabled == null) {
-            String val = getConfig().getFirst("importEnabled");
+            String val = getConfig().getFirst(IMPORT_ENABLED);
             if (val == null) {
                 importEnabled = true;
             } else {
@@ -164,12 +175,12 @@ public class UserStorageProviderModel extends PrioritizedComponentModel {
 
     public void setImportEnabled(boolean flag) {
         importEnabled = flag;
-        getConfig().putSingle("importEnabled", Boolean.toString(flag));
+        getConfig().putSingle(IMPORT_ENABLED, Boolean.toString(flag));
     }
 
     public int getFullSyncPeriod() {
         if (fullSyncPeriod == null) {
-            String val = getConfig().getFirst("fullSyncPeriod");
+            String val = getConfig().getFirst(FULL_SYNC_PERIOD);
             if (val == null) {
                 fullSyncPeriod = -1;
             } else {
@@ -181,12 +192,12 @@ public class UserStorageProviderModel extends PrioritizedComponentModel {
 
     public void setFullSyncPeriod(int fullSyncPeriod) {
         this.fullSyncPeriod = fullSyncPeriod;
-        getConfig().putSingle("fullSyncPeriod", Integer.toString(fullSyncPeriod));
+        getConfig().putSingle(FULL_SYNC_PERIOD, Integer.toString(fullSyncPeriod));
     }
 
     public int getChangedSyncPeriod() {
         if (changedSyncPeriod == null) {
-            String val = getConfig().getFirst("changedSyncPeriod");
+            String val = getConfig().getFirst(CHANGED_SYNC_PERIOD);
             if (val == null) {
                 changedSyncPeriod = -1;
             } else {
@@ -198,12 +209,12 @@ public class UserStorageProviderModel extends PrioritizedComponentModel {
 
     public void setChangedSyncPeriod(int changedSyncPeriod) {
         this.changedSyncPeriod = changedSyncPeriod;
-        getConfig().putSingle("changedSyncPeriod", Integer.toString(changedSyncPeriod));
+        getConfig().putSingle(CHANGED_SYNC_PERIOD, Integer.toString(changedSyncPeriod));
     }
 
     public int getLastSync() {
         if (lastSync == null) {
-            String val = getConfig().getFirst("lastSync");
+            String val = getConfig().getFirst(LAST_SYNC);
             if (val == null) {
                 lastSync = 0;
             } else {
@@ -215,6 +226,6 @@ public class UserStorageProviderModel extends PrioritizedComponentModel {
 
     public void setLastSync(int lastSync) {
         this.lastSync = lastSync;
-        getConfig().putSingle("lastSync", Integer.toString(lastSync));
+        getConfig().putSingle(LAST_SYNC, Integer.toString(lastSync));
     }
 }
