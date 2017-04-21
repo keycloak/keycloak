@@ -3,7 +3,7 @@
 
 {{book.project.name}} can broker identity providers based on the SAML v2.0 protocol.
 
-To begin configuring an OIDC provider, go to the `Identity Providers` left menu item
+To begin configuring an SAML v2.0 provider, go to the `Identity Providers` left menu item
 and select `SAML v2.0` from the `Add provider` drop down list.  This will bring you to the `Add identity provider` page.
 
 .Add Identity Provider
