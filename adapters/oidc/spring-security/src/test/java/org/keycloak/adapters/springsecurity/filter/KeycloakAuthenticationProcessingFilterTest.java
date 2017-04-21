@@ -27,7 +27,6 @@ import org.keycloak.adapters.OidcKeycloakAccount;
 import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.adapters.springsecurity.KeycloakAuthenticationException;
 import org.keycloak.adapters.springsecurity.account.KeycloakRole;
-import org.keycloak.adapters.springsecurity.authentication.KeycloakAuthenticationFailureHandler;
 import org.keycloak.adapters.springsecurity.token.KeycloakAuthenticationToken;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.common.util.KeycloakUriBuilder;
@@ -90,8 +89,6 @@ public class KeycloakAuthenticationProcessingFilterTest {
 
     @Mock
     private AuthenticationFailureHandler failureHandler;
-    
-    private KeycloakAuthenticationFailureHandler keycloakFailureHandler;
 
     @Mock
     private OidcKeycloakAccount keycloakAccount;
@@ -109,7 +106,6 @@ public class KeycloakAuthenticationProcessingFilterTest {
         MockitoAnnotations.initMocks(this);
         request = spy(new MockHttpServletRequest());
         filter = new KeycloakAuthenticationProcessingFilter(authenticationManager);
-        keycloakFailureHandler = new KeycloakAuthenticationFailureHandler();
 
         filter.setApplicationContext(applicationContext);
         filter.setAuthenticationSuccessHandler(successHandler);
@@ -159,12 +155,10 @@ public class KeycloakAuthenticationProcessingFilterTest {
         when(keycloakDeployment.getStateCookieName()).thenReturn("kc-cookie");
         when(keycloakDeployment.getSslRequired()).thenReturn(SslRequired.NONE);
         when(keycloakDeployment.isBearerOnly()).thenReturn(Boolean.FALSE);
-        try {
-        	filter.attemptAuthentication(request, response);
-        } catch (KeycloakAuthenticationException e) {
-        	verify(response).setStatus(302);
-            verify(response).setHeader(eq("Location"), startsWith("http://localhost:8080/auth"));
-        }
+        filter.attemptAuthentication(request, response);
+
+        verify(response).setStatus(302);
+        verify(response).setHeader(eq("Location"), startsWith("http://localhost:8080/auth"));
     }
 
     @Test(expected = KeycloakAuthenticationException.class)
@@ -216,7 +210,8 @@ public class KeycloakAuthenticationProcessingFilterTest {
         AuthenticationException exception = new BadCredentialsException("OOPS");
         this.setBearerAuthHeader(request);
         filter.unsuccessfulAuthentication(request, response, exception);
-        verify(failureHandler).onAuthenticationFailure(any(HttpServletRequest.class), any(HttpServletResponse.class),
+        verify(response).sendError(eq(HttpServletResponse.SC_UNAUTHORIZED), anyString());
+        verify(failureHandler, never()).onAuthenticationFailure(any(HttpServletRequest.class), any(HttpServletResponse.class),
                 any(AuthenticationException.class));
     }
 
@@ -225,17 +220,9 @@ public class KeycloakAuthenticationProcessingFilterTest {
         AuthenticationException exception = new BadCredentialsException("OOPS");
         this.setBasicAuthHeader(request);
         filter.unsuccessfulAuthentication(request, response, exception);
-        verify(failureHandler).onAuthenticationFailure(any(HttpServletRequest.class), any(HttpServletResponse.class),
+        verify(response).sendError(eq(HttpServletResponse.SC_UNAUTHORIZED), anyString());
+        verify(failureHandler, never()).onAuthenticationFailure(any(HttpServletRequest.class), any(HttpServletResponse.class),
                 any(AuthenticationException.class));
-    }
-    
-    @Test
-    public void testDefaultFailureHanlder() throws Exception {
-        AuthenticationException exception = new BadCredentialsException("OOPS");
-        filter.setAuthenticationFailureHandler(keycloakFailureHandler);
-        filter.unsuccessfulAuthentication(request, response, exception);
-        
-        verify(response).sendError(eq(HttpServletResponse.SC_UNAUTHORIZED), any(String.class));
     }
 
     @Test(expected = UnsupportedOperationException.class)
@@ -257,6 +244,6 @@ public class KeycloakAuthenticationProcessingFilterTest {
     }
 
     private void setAuthorizationHeader(MockHttpServletRequest request, String scheme) {
-        request.addHeader(KeycloakAuthenticationProcessingFilter.AUTHORIZATION_HEADER, scheme + " " + UUID.randomUUID().toString());
+      request.addHeader(KeycloakAuthenticationProcessingFilter.AUTHORIZATION_HEADER, scheme + " " + UUID.randomUUID().toString());
     }
 }

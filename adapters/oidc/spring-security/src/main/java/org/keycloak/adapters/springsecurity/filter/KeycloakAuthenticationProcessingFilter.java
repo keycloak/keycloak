@@ -109,7 +109,7 @@ public class KeycloakAuthenticationProcessingFilter extends AbstractAuthenticati
      *
      */
     public KeycloakAuthenticationProcessingFilter(AuthenticationManager authenticationManager, RequestMatcher
-            requiresAuthenticationRequestMatcher) {
+                requiresAuthenticationRequestMatcher) {
         super(requiresAuthenticationRequestMatcher);
         Assert.notNull(authenticationManager, "authenticationManager cannot be null");
         this.authenticationManager = authenticationManager;
@@ -184,7 +184,7 @@ public class KeycloakAuthenticationProcessingFilter extends AbstractAuthenticati
 
     @Override
     protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain,
-                                            Authentication authResult) throws IOException, ServletException {
+            Authentication authResult) throws IOException, ServletException {
 
         if (!(this.isBearerTokenRequest(request) || this.isBasicAuthRequest(request))) {
             super.successfulAuthentication(request, response, chain, authResult);
@@ -212,7 +212,7 @@ public class KeycloakAuthenticationProcessingFilter extends AbstractAuthenticati
 
     @Override
     protected void unsuccessfulAuthentication(HttpServletRequest request, HttpServletResponse response,
-                                              AuthenticationException failed) throws IOException, ServletException {
+            AuthenticationException failed) throws IOException, ServletException {
 
         if (this.isBearerTokenRequest(request)) {
             SecurityContextHolder.clearContext();

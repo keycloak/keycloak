@@ -124,6 +124,12 @@ public class SharedAttributeDefinitons {
             .setAllowExpression(true)
             .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, true, true))
             .build();
+    protected static final SimpleAttributeDefinition CORS_EXPOSED_HEADERS =
+            new SimpleAttributeDefinitionBuilder("cors-exposed-headers", ModelType.STRING, true)
+            .setXmlName("cors-exposed-headers")
+            .setAllowExpression(true)
+            .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, true, true))
+            .build();
     protected static final SimpleAttributeDefinition EXPOSE_TOKEN =
             new SimpleAttributeDefinitionBuilder("expose-token", ModelType.BOOLEAN, true)
                     .setXmlName("expose-token")
@@ -169,6 +175,8 @@ public class SharedAttributeDefinitons {
 
 
 
+
+
     protected static final List<SimpleAttributeDefinition> ATTRIBUTES = new ArrayList<SimpleAttributeDefinition>();
     static {
         ATTRIBUTES.add(REALM_PUBLIC_KEY);
@@ -186,6 +194,7 @@ public class SharedAttributeDefinitons {
         ATTRIBUTES.add(CORS_MAX_AGE);
         ATTRIBUTES.add(CORS_ALLOWED_HEADERS);
         ATTRIBUTES.add(CORS_ALLOWED_METHODS);
+        ATTRIBUTES.add(CORS_EXPOSED_HEADERS);
         ATTRIBUTES.add(EXPOSE_TOKEN);
         ATTRIBUTES.add(AUTH_SERVER_URL_FOR_BACKEND_REQUESTS);
         ATTRIBUTES.add(ALWAYS_REFRESH_TOKEN);

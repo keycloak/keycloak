@@ -125,7 +125,9 @@ public class AuthenticatedActionsHandler {
             facade.getResponse().setStatus(200);
             facade.getResponse().setHeader(CorsHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, origin);
             facade.getResponse().setHeader(CorsHeaders.ACCESS_CONTROL_ALLOW_CREDENTIALS, "true");
-            facade.getResponse().setHeader(CorsHeaders.ACCESS_CONTROL_EXPOSE_HEADERS, exposeHeaders);
+            if (exposeHeaders != null) {
+                facade.getResponse().setHeader(CorsHeaders.ACCESS_CONTROL_EXPOSE_HEADERS, exposeHeaders);
+            }
         } else {
             log.debugv("cors validation not needed as we're not a secure session or origin header was null: {0}", facade.getRequest().getURI());
         }
