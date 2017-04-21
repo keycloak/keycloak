@@ -1,5 +1,5 @@
 #
-# Copyright 2016 Red Hat, Inc. and/or its affiliates
+# Copyright 2017 Analytical Graphics, Inc. and/or its affiliates
 # and other contributors as indicated by the @author tags.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,10 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+#
 
-org.keycloak.exportimport.ClientDescriptionConverterSpi
-org.keycloak.wellknown.WellKnownSpi
-org.keycloak.services.clientregistration.ClientRegistrationSpi
-org.keycloak.services.clientregistration.policy.ClientRegistrationPolicySpi
-org.keycloak.authentication.actiontoken.ActionTokenHandlerSpi
-org.keycloak.services.x509.X509ClientCertificateLookupSpi
+org.keycloak.services.x509.DefaultClientCertificateLookupFactory
+org.keycloak.services.x509.HaProxySslClientCertificateLookupFactory
+org.keycloak.services.x509.ApacheProxySslClientCertificateLookupFactory

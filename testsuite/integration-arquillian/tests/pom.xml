@@ -90,7 +90,9 @@
         <keycloak.connectionsJpa.url.crossdc>jdbc:h2:mem:test-dc-shared</keycloak.connectionsJpa.url.crossdc>
         <keycloak.testsuite.logging.pattern>%d{HH:mm:ss,SSS} %-5p [%c] %m%n</keycloak.testsuite.logging.pattern>
 
-        <adapter.test.props/>
+        <adapter.test.props>
+            -Dkeycloak.x509cert.lookup.provider=${keycloak.x509cert.lookup.provider}
+        </adapter.test.props>
         <migration.import.properties/>
         <kie.maven.settings/>
 
@@ -125,6 +127,7 @@
         <client.key.passphrase>secret</client.key.passphrase>
 
         <auth.server.ocsp.responder.enabled>false</auth.server.ocsp.responder.enabled>
+        <keycloak.x509cert.lookup.provider>default</keycloak.x509cert.lookup.provider>
     </properties>
 
     <build>
