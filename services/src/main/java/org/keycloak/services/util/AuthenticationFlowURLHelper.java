@@ -35,15 +35,15 @@ import org.keycloak.sessions.AuthenticationSessionModel;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class PageExpiredRedirect {
+public class AuthenticationFlowURLHelper {
 
-    protected static final Logger logger = Logger.getLogger(PageExpiredRedirect.class);
+    protected static final Logger logger = Logger.getLogger(AuthenticationFlowURLHelper.class);
 
     private final KeycloakSession session;
     private final RealmModel realm;
     private final UriInfo uriInfo;
 
-    public PageExpiredRedirect(KeycloakSession session, RealmModel realm, UriInfo uriInfo) {
+    public AuthenticationFlowURLHelper(KeycloakSession session, RealmModel realm, UriInfo uriInfo) {
         this.session = session;
         this.realm = realm;
         this.uriInfo = uriInfo;
@@ -53,7 +53,7 @@ public class PageExpiredRedirect {
     public Response showPageExpired(AuthenticationSessionModel authSession) {
         URI lastStepUrl = getLastExecutionUrl(authSession);
 
-        logger.infof("Redirecting to 'page expired' now. Will use last step URL: %s", lastStepUrl);
+        logger.debugf("Redirecting to 'page expired' now. Will use last step URL: %s", lastStepUrl);
 
         return session.getProvider(LoginFormsProvider.class)
                 .setActionUri(lastStepUrl)

@@ -112,11 +112,6 @@ public class ClientSessionCode<CLIENT_SESSION extends CommonClientSessionModel> 
         CommonClientSessionModel clientSessionn = CodeGenerateUtil.getParser(sessionClass).parseSession(code, session, realm);;
         CLIENT_SESSION clientSession = sessionClass.cast(clientSessionn);
 
-        // TODO:mposolda Move this to somewhere else? Maybe LoginActionsService.sessionCodeChecks should be somehow even for non-action URLs...
-        if (clientSession != null) {
-            session.getContext().setClient(clientSession.getClient());
-        }
-
         return clientSession;
     }
 
@@ -168,8 +163,12 @@ public class ClientSessionCode<CLIENT_SESSION extends CommonClientSessionModel> 
 
 
     public Set<RoleModel> getRequestedRoles() {
+        return getRequestedRoles(commonLoginSession, realm);
+    }
+
+    public static Set<RoleModel> getRequestedRoles(CommonClientSessionModel clientSession, RealmModel realm) {
         Set<RoleModel> requestedRoles = new HashSet<>();
-        for (String roleId : commonLoginSession.getRoles()) {
+        for (String roleId : clientSession.getRoles()) {
             RoleModel role = realm.getRoleById(roleId);
             if (role != null) {
                 requestedRoles.add(role);

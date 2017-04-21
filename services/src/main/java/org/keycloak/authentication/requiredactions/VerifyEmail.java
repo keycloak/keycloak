@@ -69,17 +69,14 @@ public class VerifyEmail implements RequiredActionProvider, RequiredActionFactor
             return;
         }
 
-        LoginFormsProvider loginFormsProvider = context.getSession().getProvider(LoginFormsProvider.class)
-                .setClientSessionCode(context.generateCode())
-                .setAuthenticationSession(authSession)
-                .setUser(context.getUser());
+        LoginFormsProvider loginFormsProvider = context.form();
         Response challenge;
 
         // Do not allow resending e-mail by simple page refresh, i.e. when e-mail sent, it should be resent properly via email-verification endpoint
         if (! Objects.equals(authSession.getAuthNote(Constants.VERIFY_EMAIL_KEY), email)) {
             authSession.setAuthNote(Constants.VERIFY_EMAIL_KEY, email);
             context.getEvent().clone().event(EventType.SEND_VERIFY_EMAIL).detail(Details.EMAIL, email).success();
-            challenge = sendVerifyEmail(context.getSession(), context.generateCode(), context.getUser(), context.getAuthenticationSession());
+            challenge = sendVerifyEmail(context.getSession(), loginFormsProvider, context.getUser(), context.getAuthenticationSession());
         } else {
             challenge = loginFormsProvider.createResponse(UserModel.RequiredAction.VERIFY_EMAIL);
         }
@@ -87,9 +84,15 @@ public class VerifyEmail implements RequiredActionProvider, RequiredActionFactor
         context.challenge(challenge);
     }
 
+
     @Override
     public void processAction(RequiredActionContext context) {
-        context.failure();
+        logger.infof("Re-sending email requested for user: %s", context.getUser().getUsername());
+
+        // This will allow user to re-send email again
+        context.getAuthenticationSession().removeAuthNote(Constants.VERIFY_EMAIL_KEY);
+
+        requiredActionChallenge(context);
     }
 
 
@@ -124,14 +127,9 @@ public class VerifyEmail implements RequiredActionProvider, RequiredActionFactor
         return UserModel.RequiredAction.VERIFY_EMAIL.name();
     }
 
-    public static Response sendVerifyEmail(KeycloakSession session, String clientCode, UserModel user, AuthenticationSessionModel authSession) throws UriBuilderException, IllegalArgumentException {
+    private Response sendVerifyEmail(KeycloakSession session, LoginFormsProvider forms, UserModel user, AuthenticationSessionModel authSession) throws UriBuilderException, IllegalArgumentException {
         RealmModel realm = session.getContext().getRealm();
         UriInfo uriInfo = session.getContext().getUri();
-
-        LoginFormsProvider forms = session.getProvider(LoginFormsProvider.class)
-          .setClientSessionCode(clientCode)
-          .setAuthenticationSession(authSession)
-          .setUser(authSession.getAuthenticatedUser());
 
         int validityInSecs = realm.getAccessCodeLifespanUserAction();
         int absoluteExpirationInSecs = Time.currentTime() + validityInSecs;

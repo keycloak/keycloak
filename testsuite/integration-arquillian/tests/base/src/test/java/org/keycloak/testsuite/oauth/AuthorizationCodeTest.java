@@ -155,7 +155,7 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
     }
 
     private void assertCode(String expectedCodeId, String actualCode) {
-        assertEquals(expectedCodeId, actualCode.split("\\.")[1]);
+        assertEquals(expectedCodeId, actualCode.split("\\.")[2]);
     }
 
 }

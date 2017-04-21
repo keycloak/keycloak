@@ -170,8 +170,8 @@ public class HttpClientBuilder {
         return this;
     }
 
-    public HttpClientBuilder disableCookieCache() {
-        this.disableCookieCache = true;
+    public HttpClientBuilder disableCookieCache(boolean disable) {
+        this.disableCookieCache = disable;
         return this;
     }
 
@@ -334,7 +334,7 @@ public class HttpClientBuilder {
     }
 
     public HttpClient build(AdapterHttpClientConfig adapterConfig) {
-        disableCookieCache(); // disable cookie cache as we don't want sticky sessions for load balancing
+        disableCookieCache(true); // disable cookie cache as we don't want sticky sessions for load balancing
 
         String truststorePath = adapterConfig.getTruststore();
         if (truststorePath != null) {

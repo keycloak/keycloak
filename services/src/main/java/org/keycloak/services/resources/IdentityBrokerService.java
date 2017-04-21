@@ -75,6 +75,7 @@ import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.managers.BruteForceProtector;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.messages.Messages;
+import org.keycloak.services.util.BrowserHistoryHelper;
 import org.keycloak.services.util.CacheControlUtil;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.sessions.AuthenticationSessionModel;
@@ -210,6 +211,8 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
             throw new ErrorPageException(session, Messages.INVALID_REQUEST);
         }
 
+        event.detail(Details.REDIRECT_URI, redirectUri);
+
         if (nonce == null || hash == null) {
             event.error(Errors.INVALID_REDIRECT_URI);
             throw new ErrorPageException(session, Messages.INVALID_REQUEST);
@@ -239,7 +242,10 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
             return Response.status(302).location(builder.build()).build();
         }
 
-
+        cookieResult.getSession();
+        event.session(cookieResult.getSession());
+        event.user(cookieResult.getUser());
+        event.detail(Details.USERNAME, cookieResult.getUser().getUsername());
 
         AuthenticatedClientSessionModel clientSession = null;
         for (AuthenticatedClientSessionModel cs : cookieResult.getSession().getAuthenticatedClientSessions().values()) {
@@ -264,7 +270,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
             throw new ErrorPageException(session, Messages.INVALID_REQUEST);
         }
 
-
+        event.detail(Details.IDENTITY_PROVIDER, providerId);
 
         ClientModel accountService = this.realmModel.getClientByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
         if (!accountService.getId().equals(client.getId())) {
@@ -307,6 +313,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
         authSession.setClientNote(OIDCLoginProtocol.STATE_PARAM, UUID.randomUUID().toString());
         authSession.setAuthNote(LINKING_IDENTITY_PROVIDER, cookieResult.getSession().getId() + clientId + providerId);
 
+        event.detail(Details.CODE_ID, userSession.getId());
         event.success();
 
         try {
@@ -508,6 +515,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
 
         this.event.event(EventType.IDENTITY_PROVIDER_LOGIN)
                 .detail(Details.REDIRECT_URI, authenticationSession.getRedirectUri())
+                .detail(Details.IDENTITY_PROVIDER, providerId)
                 .detail(Details.IDENTITY_PROVIDER_USERNAME, context.getUsername());
 
         UserModel federatedUser = this.session.users().getUserByFederatedIdentity(federatedIdentityModel, this.realmModel);
@@ -786,6 +794,9 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
         authSession.setUserSessionNote(Details.IDENTITY_PROVIDER, providerId);
         authSession.setUserSessionNote(Details.IDENTITY_PROVIDER_USERNAME, context.getUsername());
 
+        event.detail(Details.IDENTITY_PROVIDER, providerId)
+                .detail(Details.IDENTITY_PROVIDER_USERNAME, context.getUsername());
+
         if (isDebugEnabled()) {
             logger.debugf("Performing local authentication for user [%s].", federatedUser);
         }
@@ -961,43 +972,39 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
     }
 
     private ParsedCodeContext parseClientSessionCode(String code) {
-        ClientSessionCode.ParseResult<AuthenticationSessionModel> parseResult = ClientSessionCode.parseResult(code, this.session, this.realmModel, AuthenticationSessionModel.class);
-        ClientSessionCode<AuthenticationSessionModel> clientCode = parseResult.getCode();
-
-        if (clientCode != null) {
-            AuthenticationSessionModel authenticationSession = clientCode.getClientSession();
-
-            ClientModel client = authenticationSession.getClient();
-
-            if (client != null) {
-
-                logger.debugf("Got authorization code from client [%s].", client.getClientId());
-                this.event.client(client);
-                this.session.getContext().setClient(client);
-
-                if (!clientCode.isValid(AuthenticationSessionModel.Action.AUTHENTICATE.name(), ClientSessionCode.ActionType.LOGIN)) {
-                    logger.debugf("Authorization code is not valid. Client session ID: %s, Client session's action: %s", authenticationSession.getId(), authenticationSession.getAction());
-
-                    // Check if error happened during login or during linking from account management
-                    Response accountManagementFailedLinking = checkAccountManagementFailedLinking(clientCode.getClientSession(), Messages.STALE_CODE_ACCOUNT);
-                    Response staleCodeError = (accountManagementFailedLinking != null) ? accountManagementFailedLinking : redirectToErrorPage(Messages.STALE_CODE);
-
-
-                    return ParsedCodeContext.response(staleCodeError);
-                }
-
-                if (isDebugEnabled()) {
-                    logger.debugf("Authorization code is valid.");
-                }
-
-                return ParsedCodeContext.clientSessionCode(clientCode);
-            }
+        if (code == null) {
+            logger.debugf("Invalid request. Authorization code was null");
+            Response staleCodeError = redirectToErrorPage(Messages.INVALID_REQUEST);
+            return ParsedCodeContext.response(staleCodeError);
         }
 
-        // TODO:mposolda rather some different page? Maybe "PageExpired" page?
-        logger.debugf("Authorization code is not valid. Code: %s", code);
-        Response staleCodeError = redirectToErrorPage(Messages.STALE_CODE);
-        return ParsedCodeContext.response(staleCodeError);
+        SessionCodeChecks checks = new SessionCodeChecks(realmModel, uriInfo, clientConnection, session, event, code, null, LoginActionsService.AUTHENTICATE_PATH);
+        checks.initialVerify();
+        if (!checks.verifyActiveAndValidAction(AuthenticationSessionModel.Action.AUTHENTICATE.name(), ClientSessionCode.ActionType.LOGIN)) {
+
+            AuthenticationSessionModel authSession = checks.getAuthenticationSession();
+            if (authSession != null) {
+                // Check if error happened during login or during linking from account management
+                Response accountManagementFailedLinking = checkAccountManagementFailedLinking(authSession, Messages.STALE_CODE_ACCOUNT);
+                if (accountManagementFailedLinking != null) {
+                    return ParsedCodeContext.response(accountManagementFailedLinking);
+                } else {
+                    Response errorResponse = checks.getResponse();
+
+                    // Remove "code" from browser history
+                    errorResponse = BrowserHistoryHelper.getInstance().saveResponseAndRedirect(session, authSession, errorResponse, true);
+                    return ParsedCodeContext.response(errorResponse);
+                }
+            } else {
+                return ParsedCodeContext.response(checks.getResponse());
+            }
+        } else {
+            if (isDebugEnabled()) {
+                logger.debugf("Authorization code is valid.");
+            }
+
+            return ParsedCodeContext.clientSessionCode(checks.getClientCode());
+        }
     }
 
     /**
@@ -1022,6 +1029,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
         }
 
         SamlService samlService = new SamlService(realmModel, event);
+        ResteasyProviderFactory.getInstance().injectProperties(samlService);
         AuthenticationSessionModel authSession = samlService.getOrCreateLoginSessionForIdpInitiatedSso(session, realmModel, oClient.get(), null);
 
         return ParsedCodeContext.clientSessionCode(new ClientSessionCode<>(session, this.realmModel, authSession));
@@ -1091,16 +1099,6 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
         return Response.status(302).location(UriBuilder.fromUri(authSession.getRedirectUri()).build()).build();
     }
 
-    private Response redirectToLoginPage(Throwable t, ClientSessionCode<AuthenticationSessionModel> clientCode) {
-        String message = t.getMessage();
-
-        if (message == null) {
-            message = Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR;
-        }
-
-        fireErrorEvent(message);
-        return browserAuthentication(clientCode.getClientSession(), message);
-    }
 
     protected Response browserAuthentication(AuthenticationSessionModel authSession, String errorMessage) {
         this.event.event(EventType.LOGIN);

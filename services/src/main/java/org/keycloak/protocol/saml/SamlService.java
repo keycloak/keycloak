@@ -37,8 +37,8 @@ import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.keys.RsaKeyMetadata;
+import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeyManager;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -55,7 +55,6 @@ import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
 import org.keycloak.services.ErrorPage;
 import org.keycloak.services.managers.AuthenticationManager;
-import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.services.util.CacheControlUtil;
@@ -98,11 +97,6 @@ import org.keycloak.sessions.AuthenticationSessionModel;
 public class SamlService extends AuthorizationEndpointBase {
 
     protected static final Logger logger = Logger.getLogger(SamlService.class);
-
-    @Context
-    protected KeycloakSession session;
-
-    private String requestRelayState;
 
     public SamlService(RealmModel realm, EventBuilder event) {
         super(realm, event);
@@ -283,7 +277,7 @@ public class SamlService extends AuthorizationEndpointBase {
 
             authSession.setProtocol(SamlProtocol.LOGIN_PROTOCOL);
             authSession.setRedirectUri(redirect);
-            authSession.setAction(ClientSessionModel.Action.AUTHENTICATE.name());
+            authSession.setAction(AuthenticationSessionModel.Action.AUTHENTICATE.name());
             authSession.setClientNote(SamlProtocol.SAML_BINDING, bindingType);
             authSession.setClientNote(GeneralConstants.RELAY_STATE, relayState);
             authSession.setClientNote(SamlProtocol.SAML_REQUEST_ID, requestAbstractType.getID());
@@ -378,31 +372,22 @@ public class SamlService extends AuthorizationEndpointBase {
                 userSession.setNote(SamlProtocol.SAML_LOGOUT_CANONICALIZATION, samlClient.getCanonicalizationMethod());
                 userSession.setNote(AuthenticationManager.KEYCLOAK_LOGOUT_PROTOCOL, SamlProtocol.LOGIN_PROTOCOL);
                 // remove client from logout requests
-                for (ClientSessionModel clientSession : userSession.getClientSessions()) {
-                    if (clientSession.getClient().getId().equals(client.getId())) {
-                        clientSession.setAction(ClientSessionModel.Action.LOGGED_OUT.name());
-                    }
+                AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessions().get(client.getId());
+                if (clientSession != null) {
+                    clientSession.setAction(AuthenticationSessionModel.Action.LOGGED_OUT.name());
                 }
                 logger.debug("browser Logout");
                 return authManager.browserLogout(session, realm, userSession, uriInfo, clientConnection, headers);
             } else if (logoutRequest.getSessionIndex() != null) {
                 for (String sessionIndex : logoutRequest.getSessionIndex()) {
-                    ClientSessionModel clientSession = session.sessions().getClientSession(realm, sessionIndex);
+
+                    AuthenticatedClientSessionModel clientSession = SamlSessionUtils.getClientSession(session, realm, sessionIndex);
                     if (clientSession == null)
                         continue;
                     UserSessionModel userSession = clientSession.getUserSession();
                     if (clientSession.getClient().getClientId().equals(client.getClientId())) {
                         // remove requesting client from logout
-                        clientSession.setAction(ClientSessionModel.Action.LOGGED_OUT.name());
-
-                        // Remove also other clientSessions of this client as there could be more in this UserSession
-                        if (userSession != null) {
-                            for (ClientSessionModel clientSession2 : userSession.getClientSessions()) {
-                                if (clientSession2.getClient().getId().equals(client.getId())) {
-                                    clientSession2.setAction(ClientSessionModel.Action.LOGGED_OUT.name());
-                                }
-                            }
-                        }
+                        clientSession.setAction(AuthenticationSessionModel.Action.LOGGED_OUT.name());
                     }
 
                     try {
@@ -609,6 +594,10 @@ public class SamlService extends AuthorizationEndpointBase {
             event.error(Errors.CLIENT_NOT_FOUND);
             return ErrorPage.error(session, Messages.CLIENT_NOT_FOUND);
         }
+        if (!client.isEnabled()) {
+            event.error(Errors.CLIENT_DISABLED);
+            return ErrorPage.error(session, Messages.CLIENT_DISABLED);
+        }
         if (client.getManagementUrl() == null && client.getAttribute(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_POST_ATTRIBUTE) == null && client.getAttribute(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_REDIRECT_ATTRIBUTE) == null) {
             logger.error("SAML assertion consumer url not set up");
             event.error(Errors.INVALID_REDIRECT_URI);
@@ -654,7 +643,7 @@ public class SamlService extends AuthorizationEndpointBase {
 
         AuthenticationSessionModel authSession = checks.authSession;
         authSession.setProtocol(SamlProtocol.LOGIN_PROTOCOL);
-        authSession.setAction(ClientSessionModel.Action.AUTHENTICATE.name());
+        authSession.setAction(AuthenticationSessionModel.Action.AUTHENTICATE.name());
         authSession.setClientNote(SamlProtocol.SAML_BINDING, SamlProtocol.SAML_POST_BINDING);
         authSession.setClientNote(SamlProtocol.SAML_IDP_INITIATED_LOGIN, "true");
         authSession.setRedirectUri(redirect);

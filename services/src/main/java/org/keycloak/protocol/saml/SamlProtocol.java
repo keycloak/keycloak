@@ -376,8 +376,12 @@ public class SamlProtocol implements LoginProtocol {
         clientSession.setNote(SAML_NAME_ID_FORMAT, nameIdFormat);
 
         SAML2LoginResponseBuilder builder = new SAML2LoginResponseBuilder();
-        builder.requestID(requestID).destination(redirectUri).issuer(responseIssuer).assertionExpiration(realm.getAccessCodeLifespan()).subjectExpiration(realm.getAccessTokenLifespan()).sessionIndex(clientSession.getId())
+        builder.requestID(requestID).destination(redirectUri).issuer(responseIssuer).assertionExpiration(realm.getAccessCodeLifespan()).subjectExpiration(realm.getAccessTokenLifespan())
                 .requestIssuer(clientSession.getClient().getClientId()).nameIdentifier(nameIdFormat, nameId).authMethod(JBossSAMLURIConstants.AC_UNSPECIFIED.get());
+
+        String sessionIndex = SamlSessionUtils.getSessionIndex(clientSession);
+        builder.sessionIndex(sessionIndex);
+
         if (!samlClient.includeAuthnStatement()) {
             builder.disableAuthnStatement(true);
         }
@@ -682,8 +686,12 @@ public class SamlProtocol implements LoginProtocol {
 
     protected SAML2LogoutRequestBuilder createLogoutRequest(String logoutUrl, AuthenticatedClientSessionModel clientSession, ClientModel client) {
         // build userPrincipal with subject used at login
-        SAML2LogoutRequestBuilder logoutBuilder = new SAML2LogoutRequestBuilder().assertionExpiration(realm.getAccessCodeLifespan()).issuer(getResponseIssuer(realm)).sessionIndex(clientSession.getId())
+        SAML2LogoutRequestBuilder logoutBuilder = new SAML2LogoutRequestBuilder().assertionExpiration(realm.getAccessCodeLifespan()).issuer(getResponseIssuer(realm))
                 .userPrincipal(clientSession.getNote(SAML_NAME_ID), clientSession.getNote(SAML_NAME_ID_FORMAT)).destination(logoutUrl);
+
+        String sessionIndex = SamlSessionUtils.getSessionIndex(clientSession);
+        logoutBuilder.sessionIndex(sessionIndex);
+
         return logoutBuilder;
     }
 

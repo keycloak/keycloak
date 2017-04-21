@@ -23,7 +23,6 @@ import org.keycloak.authorization.attribute.Attributes;
 import org.keycloak.authorization.identity.Identity;
 import org.keycloak.authorization.util.Tokens;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -118,8 +117,8 @@ public class KeycloakIdentity implements Identity {
     @Override
     public String getId() {
         if (isResourceServer()) {
-            ClientSessionModel clientSession = this.keycloakSession.sessions().getClientSession(this.accessToken.getClientSession());
-            return clientSession.getClient().getId();
+            ClientModel client = getTargetClient();
+            return client==null ? null : client.getId();
         }
 
         return this.accessToken.getSubject();
@@ -137,20 +136,10 @@ public class KeycloakIdentity implements Identity {
     private  boolean isResourceServer() {
         UserModel clientUser = null;
 
-        if (this.accessToken.getClientSession() != null) {
-            ClientSessionModel clientSession = this.keycloakSession.sessions().getClientSession(this.accessToken.getClientSession());
+        ClientModel clientModel = getTargetClient();
 
-            if (clientSession != null) {
-                clientUser = this.keycloakSession.users().getServiceAccount(clientSession.getClient());
-            }
-        }
-
-        if (this.accessToken.getIssuedFor() != null) {
-            ClientModel clientModel = this.keycloakSession.realms().getClientById(this.accessToken.getIssuedFor(), this.realm);
-
-            if (clientModel != null) {
-                clientUser = this.keycloakSession.users().getServiceAccount(clientModel);
-            }
+        if (clientModel != null) {
+            clientUser = this.keycloakSession.users().getServiceAccount(clientModel);
         }
 
         if (clientUser == null) {
@@ -158,5 +147,18 @@ public class KeycloakIdentity implements Identity {
         }
 
         return this.accessToken.getSubject().equals(clientUser.getId());
+    }
+
+    private ClientModel getTargetClient() {
+        if (this.accessToken.getIssuedFor() != null) {
+            return realm.getClientByClientId(accessToken.getIssuedFor());
+        }
+
+        if (this.accessToken.getAudience() != null && this.accessToken.getAudience().length > 0) {
+            String audience = this.accessToken.getAudience()[0];
+            return realm.getClientByClientId(audience);
+        }
+
+        return null;
     }
 }

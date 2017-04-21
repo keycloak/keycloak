@@ -20,7 +20,6 @@ package org.keycloak.models.session;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
@@ -55,10 +54,7 @@ public class PersistentAuthenticatedClientSessionAdapter implements Authenticate
 
         model = new PersistentClientSessionModel();
         model.setClientId(clientSession.getClient().getId());
-        model.setClientSessionId(clientSession.getId());
-        if (clientSession.getUserSession() != null) {
-            model.setUserId(clientSession.getUserSession().getUser().getId());
-        }
+        model.setUserId(clientSession.getUserSession().getUser().getId());
         model.setUserSessionId(clientSession.getUserSession().getId());
         model.setTimestamp(clientSession.getTimestamp());
 
@@ -101,7 +97,7 @@ public class PersistentAuthenticatedClientSessionAdapter implements Authenticate
 
     @Override
     public String getId() {
-        return model.getClientSessionId();
+        return null;
     }
 
     @Override
@@ -194,7 +190,7 @@ public class PersistentAuthenticatedClientSessionAdapter implements Authenticate
     public void setNote(String name, String value) {
         PersistentClientSessionData entity = getData();
         if (entity.getNotes() == null) {
-            entity.setNotes(new HashMap<String, String>());
+            entity.setNotes(new HashMap<>());
         }
         entity.getNotes().put(name, value);
     }
@@ -214,13 +210,12 @@ public class PersistentAuthenticatedClientSessionAdapter implements Authenticate
         return entity.getNotes();
     }
 
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || !(o instanceof ClientSessionModel)) return false;
+        if (o == null || !(o instanceof AuthenticatedClientSessionModel)) return false;
 
-        ClientSessionModel that = (ClientSessionModel) o;
+        AuthenticatedClientSessionModel that = (AuthenticatedClientSessionModel) o;
         return that.getId().equals(getId());
     }
 

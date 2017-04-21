@@ -575,7 +575,6 @@ public class TokenManager {
 
     protected AccessToken initToken(RealmModel realm, ClientModel client, UserModel user, UserSessionModel session, AuthenticatedClientSessionModel clientSession, UriInfo uriInfo) {
         AccessToken token = new AccessToken();
-        token.clientSession(clientSession.getId());
         token.id(KeycloakModelUtils.generateId());
         token.type(TokenUtil.TOKEN_TYPE_BEARER);
         token.subject(user.getId());

@@ -74,8 +74,6 @@ public abstract class AbstractKeycloakIdentityProviderTest extends AbstractIdent
         setUpdateProfileFirstLogin(session.realms().getRealmByName("realm-with-broker"), IdentityProviderRepresentation.UPFLM_OFF);
         brokerServerRule.stopSession(session, true);
 
-        Thread.sleep(10000000);
-
         driver.navigate().to("http://localhost:8081/test-app");
         loginPage.clickSocial(getProviderId());
         loginPage.login("test-user", "password");

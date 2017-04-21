@@ -35,7 +35,7 @@ public interface UserSessionPersisterProvider extends Provider {
     void createUserSession(UserSessionModel userSession, boolean offline);
 
     // Assuming that corresponding userSession is already persisted
-    void createClientSession(UserSessionModel userSession, AuthenticatedClientSessionModel clientSession, boolean offline);
+    void createClientSession(AuthenticatedClientSessionModel clientSession, boolean offline);
 
     void updateUserSession(UserSessionModel userSession, boolean offline);
 
@@ -43,7 +43,7 @@ public interface UserSessionPersisterProvider extends Provider {
     void removeUserSession(String userSessionId, boolean offline);
 
     // Called during revoke. It will remove userSession too if this was last clientSession attached to it
-    void removeClientSession(String clientSessionId, boolean offline);
+    void removeClientSession(String userSessionId, String clientUUID, boolean offline);
 
     void onRealmRemoved(RealmModel realm);
     void onClientRemoved(RealmModel realm, ClientModel client);

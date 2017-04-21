@@ -210,12 +210,13 @@ public class TokenEndpoint {
             throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Missing parameter: " + OAuth2Constants.CODE, Response.Status.BAD_REQUEST);
         }
 
+        String[] parts = code.split("\\.");
+        if (parts.length == 4) {
+            event.detail(Details.CODE_ID, parts[2]);
+        }
+
         ClientSessionCode.ParseResult<AuthenticatedClientSessionModel> parseResult = ClientSessionCode.parseResult(code, session, realm, AuthenticatedClientSessionModel.class);
         if (parseResult.isAuthSessionNotFound() || parseResult.isIllegalHash()) {
-            String[] parts = code.split("\\.");
-            if (parts.length == 2) {
-                event.detail(Details.CODE_ID, parts[1]);
-            }
             event.error(Errors.INVALID_CODE);
 
             // Attempt to use same code twice should invalidate existing clientSession
@@ -228,17 +229,16 @@ public class TokenEndpoint {
         }
 
         AuthenticatedClientSessionModel clientSession = parseResult.getClientSession();
-        event.detail(Details.CODE_ID, clientSession.getId());
 
         if (!parseResult.getCode().isValid(AuthenticatedClientSessionModel.Action.CODE_TO_TOKEN.name(), ClientSessionCode.ActionType.CLIENT)) {
             event.error(Errors.INVALID_CODE);
             throw new ErrorResponseException(OAuthErrorException.INVALID_GRANT, "Code is expired", Response.Status.BAD_REQUEST);
         }
 
-        // TODO: This shouldn't be needed to write into the clientLoginSessionModel itself
+        // TODO: This shouldn't be needed to write into the AuthenticatedClientSessionModel itself
         parseResult.getCode().setAction(null);
 
-        // TODO: Maybe rather create userSession even at this stage? Not sure...
+        // TODO: Maybe rather create userSession even at this stage?
         UserSessionModel userSession = clientSession.getUserSession();
 
         if (userSession == null) {

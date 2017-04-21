@@ -163,7 +163,9 @@ public class OAuthClient {
         realm = "test";
         clientId = "test-app";
         redirectUri = APP_ROOT + "/auth";
-        state = KeycloakModelUtils::generateId;
+        state = () -> {
+            return KeycloakModelUtils.generateId();
+        };
         scope = null;
         uiLocales = null;
         clientSessionState = null;

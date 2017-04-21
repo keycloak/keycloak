@@ -122,9 +122,9 @@ public class AssertEvents implements TestRule {
                 .session(isUUID());
     }
 
-    // TODO:mposolda codeId is not needed anymore
     public ExpectedEvent expectCodeToToken(String codeId, String sessionId) {
         return expect(EventType.CODE_TO_TOKEN)
+                .detail(Details.CODE_ID, codeId)
                 .detail(Details.TOKEN_ID, isUUID())
                 .detail(Details.REFRESH_TOKEN_ID, isUUID())
                 .detail(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_REFRESH)

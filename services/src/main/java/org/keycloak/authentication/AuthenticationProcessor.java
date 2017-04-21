@@ -33,7 +33,6 @@ import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -53,11 +52,11 @@ import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.services.util.CacheControlUtil;
-import org.keycloak.services.util.PageExpiredRedirect;
+import org.keycloak.services.util.AuthenticationFlowURLHelper;
 import org.keycloak.sessions.AuthenticationSessionModel;
+import org.keycloak.sessions.CommonClientSessionModel;
 
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import java.net.URI;
 import java.util.HashMap;
@@ -73,7 +72,6 @@ public class AuthenticationProcessor {
     public static final String LAST_PROCESSED_EXECUTION = "last.processed.execution";
     public static final String CURRENT_FLOW_PATH = "current.flow.path";
     public static final String FORKED_FROM = "forked.from";
-    public static final String FORWARDED_ERROR_MESSAGE_NOTE = "forwardedErrorMessage";
 
     public static final String BROKER_SESSION_ID = "broker.session.id";
     public static final String BROKER_USER_ID = "broker.user.id";
@@ -595,9 +593,9 @@ public class AuthenticationProcessor {
     }
 
     public boolean isSuccessful(AuthenticationExecutionModel model) {
-        ClientSessionModel.ExecutionStatus status = authenticationSession.getExecutionStatus().get(model.getId());
+        AuthenticationSessionModel.ExecutionStatus status = authenticationSession.getExecutionStatus().get(model.getId());
         if (status == null) return false;
-        return status == ClientSessionModel.ExecutionStatus.SUCCESS;
+        return status == AuthenticationSessionModel.ExecutionStatus.SUCCESS;
     }
 
     public Response handleBrowserException(Exception failure) {
@@ -629,7 +627,7 @@ public class AuthenticationProcessor {
             } else if (e.getError() == AuthenticationFlowError.FORK_FLOW) {
                 ForkFlowException reset = (ForkFlowException)e;
                 AuthenticationSessionModel clone = clone(session, authenticationSession);
-                clone.setAction(ClientSessionModel.Action.AUTHENTICATE.name());
+                clone.setAction(AuthenticationSessionModel.Action.AUTHENTICATE.name());
                 setAuthenticationSession(clone);
 
                 AuthenticationProcessor processor = new AuthenticationProcessor();
@@ -726,9 +724,9 @@ public class AuthenticationProcessor {
 
 
     public Response redirectToFlow() {
-        URI redirect = new PageExpiredRedirect(session, realm, uriInfo).getLastExecutionUrl(authenticationSession);
+        URI redirect = new AuthenticationFlowURLHelper(session, realm, uriInfo).getLastExecutionUrl(authenticationSession);
 
-        logger.info("Redirecting to URL: " + redirect.toString());
+        logger.debug("Redirecting to URL: " + redirect.toString());
 
         return Response.status(302).location(redirect).build();
 
@@ -750,6 +748,8 @@ public class AuthenticationProcessor {
         authSession.clearUserSessionNotes();
         authSession.clearAuthNotes();
 
+        authSession.setAction(CommonClientSessionModel.Action.AUTHENTICATE.name());
+
         authSession.setAuthNote(CURRENT_FLOW_PATH, flowPath);
     }
 
@@ -766,7 +766,7 @@ public class AuthenticationProcessor {
         clone.setTimestamp(Time.currentTime());
 
         clone.setAuthNote(FORKED_FROM, authSession.getId());
-        logger.infof("Forked authSession %s from authSession %s", clone.getId(), authSession.getId());
+        logger.debugf("Forked authSession %s from authSession %s", clone.getId(), authSession.getId());
 
         return clone;
 
@@ -777,10 +777,9 @@ public class AuthenticationProcessor {
         logger.debug("authenticationAction");
         checkClientSession(true);
         String current = authenticationSession.getAuthNote(CURRENT_AUTHENTICATION_EXECUTION);
-        if (!execution.equals(current)) {
-            // TODO:mposolda debug
-            logger.info("Current execution does not equal executed execution.  Might be a page refresh");
-            return new PageExpiredRedirect(session, realm, uriInfo).showPageExpired(authenticationSession);
+        if (execution == null || !execution.equals(current)) {
+            logger.debug("Current execution does not equal executed execution.  Might be a page refresh");
+            return new AuthenticationFlowURLHelper(session, realm, uriInfo).showPageExpired(authenticationSession);
         }
         UserModel authUser = authenticationSession.getAuthenticatedUser();
         validateUser(authUser);
@@ -812,7 +811,7 @@ public class AuthenticationProcessor {
         ClientSessionCode code = new ClientSessionCode(session, realm, authenticationSession);
 
         if (checkAction) {
-            String action = ClientSessionModel.Action.AUTHENTICATE.name();
+            String action = AuthenticationSessionModel.Action.AUTHENTICATE.name();
             if (!code.isValidAction(action)) {
                 throw new AuthenticationFlowException(AuthenticationFlowError.INVALID_CLIENT_SESSION);
             }
@@ -862,26 +861,29 @@ public class AuthenticationProcessor {
         if (attemptedUsername != null) username = attemptedUsername;
         String rememberMe = authSession.getAuthNote(Details.REMEMBER_ME);
         boolean remember = rememberMe != null && rememberMe.equalsIgnoreCase("true");
+        String brokerSessionId = authSession.getAuthNote(BROKER_SESSION_ID);
+        String brokerUserId = authSession.getAuthNote(BROKER_USER_ID);
 
         if (userSession == null) { // if no authenticator attached a usersession
 
             userSession = session.sessions().getUserSession(realm, authSession.getId());
             if (userSession == null) {
-                String brokerSessionId = authSession.getAuthNote(BROKER_SESSION_ID);
-                String brokerUserId = authSession.getAuthNote(BROKER_USER_ID);
                 userSession = session.sessions().createUserSession(authSession.getId(), realm, authSession.getAuthenticatedUser(), username, connection.getRemoteAddr(), authSession.getProtocol()
+                        , remember, brokerSessionId, brokerUserId);
+            } else if (userSession.getUser() == null || !AuthenticationManager.isSessionValid(realm, userSession)) {
+                userSession.restartSession(realm, authSession.getAuthenticatedUser(), username, connection.getRemoteAddr(), authSession.getProtocol()
                         , remember, brokerSessionId, brokerUserId);
             } else {
                 // We have existing userSession even if it wasn't attached to authenticator. Could happen if SSO authentication was ignored (eg. prompt=login) and in some other cases.
-                // We need to handle case when different user was used and update that (TODO:mposolda evaluate this again and corner cases like token refresh etc. AND ROLES!!! LIKELY ERROR SHOULD BE SHOWN IF ATTEMPT TO AUTHENTICATE AS DIFFERENT USER)
-                logger.info("No SSO login, but found existing userSession with ID '%s' after finished authentication.");
+                // We need to handle case when different user was used
+                logger.debugf("No SSO login, but found existing userSession with ID '%s' after finished authentication.", userSession.getId());
                 if (!authSession.getAuthenticatedUser().equals(userSession.getUser())) {
                     event.detail(Details.EXISTING_USER, userSession.getUser().getId());
                     event.error(Errors.DIFFERENT_USER_AUTHENTICATED);
                     throw new ErrorPageException(session, Messages.DIFFERENT_USER_AUTHENTICATED, userSession.getUser().getUsername());
                 }
             }
-            userSession.setState(UserSessionModel.State.LOGGING_IN);
+            userSession.setState(UserSessionModel.State.LOGGED_IN);
         }
 
         if (remember) {

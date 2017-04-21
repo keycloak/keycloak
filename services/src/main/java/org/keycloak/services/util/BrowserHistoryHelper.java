@@ -77,7 +77,7 @@ public abstract class BrowserHistoryHelper {
                 if (entity instanceof String) {
                     String responseString = (String) entity;
 
-                    URI lastExecutionURL = new PageExpiredRedirect(session, session.getContext().getRealm(), session.getContext().getUri()).getLastExecutionUrl(authSession);
+                    URI lastExecutionURL = new AuthenticationFlowURLHelper(session, session.getContext().getRealm(), session.getContext().getUri()).getLastExecutionUrl(authSession);
 
                     // Inject javascript for history "replaceState"
                     String responseWithJavascript = responseWithJavascript(responseString, lastExecutionURL.toString());
@@ -124,6 +124,7 @@ public abstract class BrowserHistoryHelper {
     }
 
 
+    // This impl is limited ATM. Saved request doesn't save response HTTP headers, so they may not be fully restored..
     private static class RedirectAfterPostHelper extends BrowserHistoryHelper {
 
         private static final String CACHED_RESPONSE = "cached.response";
@@ -141,10 +142,11 @@ public abstract class BrowserHistoryHelper {
                     String responseString = (String) entity;
                     authSession.setAuthNote(CACHED_RESPONSE, responseString);
 
-                    URI lastExecutionURL = new PageExpiredRedirect(session, session.getContext().getRealm(), session.getContext().getUri()).getLastExecutionUrl(authSession);
+                    URI lastExecutionURL = new AuthenticationFlowURLHelper(session, session.getContext().getRealm(), session.getContext().getUri()).getLastExecutionUrl(authSession);
 
-                    // TODO:mposolda trace
-                    logger.infof("Saved response challenge and redirect to %s", lastExecutionURL);
+                    if (logger.isTraceEnabled()) {
+                        logger.tracef("Saved response challenge and redirect to %s", lastExecutionURL);
+                    }
 
                     return Response.status(302).location(lastExecutionURL).build();
                 }
@@ -160,11 +162,12 @@ public abstract class BrowserHistoryHelper {
             if (savedResponse != null) {
                 authSession.removeAuthNote(CACHED_RESPONSE);
 
-                // TODO:mposolda trace
-                logger.infof("Restored previously saved request");
+                if (logger.isTraceEnabled()) {
+                    logger.tracef("Restored previously saved request");
+                }
 
                 Response.ResponseBuilder builder = Response.status(200).type(MediaType.TEXT_HTML_UTF_8).entity(savedResponse);
-                BrowserSecurityHeaderSetup.headers(builder, session.getContext().getRealm()); // TODO:mposolda cRather all the headers from the saved response should be added here.
+                BrowserSecurityHeaderSetup.headers(builder, session.getContext().getRealm()); // TODO rather all the headers from the saved response should be added here.
                 return builder.build();
             }
 

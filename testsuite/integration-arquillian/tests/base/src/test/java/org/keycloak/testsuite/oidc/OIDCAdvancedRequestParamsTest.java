@@ -304,6 +304,31 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
 
     }
 
+
+    @Test
+    public void promptLoginDifferentUser() throws Exception {
+        String sss = oauth.getLoginFormUrl();
+        System.out.println(sss);
+
+        // Login user
+        loginPage.open();
+        loginPage.login("test-user@localhost", "password");
+        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+
+        EventRepresentation loginEvent = events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
+        IDToken idToken = sendTokenRequestAndGetIDToken(loginEvent);
+
+        // Assert need to re-authenticate with prompt=login
+        driver.navigate().to(oauth.getLoginFormUrl() + "&prompt=login");
+
+        // Authenticate as different user
+        loginPage.assertCurrent();
+        loginPage.login("john-doh@localhost", "password");
+
+        errorPage.assertCurrent();
+        Assert.assertTrue(errorPage.getError().startsWith("You are already authenticated as different user"));
+    }
+
     // DISPLAY & OTHERS
 
     @Test

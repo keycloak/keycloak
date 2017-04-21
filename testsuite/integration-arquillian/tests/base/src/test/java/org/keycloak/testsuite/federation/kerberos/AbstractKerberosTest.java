@@ -40,6 +40,7 @@ import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.Credentials;
 import org.apache.http.client.params.AuthPolicy;
 import org.apache.http.client.utils.URLEncodedUtils;
+import org.apache.http.impl.client.AbstractHttpClient;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.ietf.jgss.GSSCredential;
 import org.jboss.arquillian.graphene.page.Page;
@@ -347,7 +348,10 @@ public abstract class AbstractKerberosTest extends AbstractAuthTest {
             cleanupApacheHttpClient();
         }
 
-        DefaultHttpClient httpClient = (DefaultHttpClient) new HttpClientBuilder().build();
+        DefaultHttpClient httpClient = (DefaultHttpClient) new HttpClientBuilder()
+                .disableCookieCache(false)
+                .build();
+
         httpClient.getAuthSchemes().register(AuthPolicy.SPNEGO, spnegoSchemeFactory);
 
         if (useSpnego) {

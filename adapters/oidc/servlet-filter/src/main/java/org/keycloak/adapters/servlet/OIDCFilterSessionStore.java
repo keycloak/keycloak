@@ -168,7 +168,7 @@ public class OIDCFilterSessionStore extends FilterSessionStore implements Adapte
         HttpSession httpSession = request.getSession();
         httpSession.setAttribute(KeycloakAccount.class.getName(), sAccount);
         httpSession.setAttribute(KeycloakSecurityContext.class.getName(), sAccount.getKeycloakSecurityContext());
-        if (idMapper != null) idMapper.map(account.getKeycloakSecurityContext().getToken().getClientSession(),  account.getPrincipal().getName(), httpSession.getId());
+        if (idMapper != null) idMapper.map(account.getKeycloakSecurityContext().getToken().getSessionState(),  account.getPrincipal().getName(), httpSession.getId());
         //String username = securityContext.getToken().getSubject();
         //log.fine("userSessionManagement.login: " + username);
     }

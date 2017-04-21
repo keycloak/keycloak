@@ -117,11 +117,9 @@ public class OIDCKeycloakServerBrokerWithConsentTest extends AbstractIdentityPro
             grantPage.assertCurrent();
             grantPage.cancel();
 
-            // Assert error page with backToApplication link displayed
-            errorPage.assertCurrent();
-            errorPage.clickBackToApplication();
-
-            assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8081/auth/realms/realm-with-broker/protocol/openid-connect/auth"));
+            // Assert login page with "You took too long to login..." message
+            assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8081/auth/realms/realm-with-broker/login-actions/authenticate"));
+            Assert.assertEquals("You took too long to login. Login process starting from beginning.", loginPage.getError());
 
         } finally {
             Time.setOffset(0);
@@ -152,14 +150,9 @@ public class OIDCKeycloakServerBrokerWithConsentTest extends AbstractIdentityPro
             grantPage.assertCurrent();
             grantPage.cancel();
 
-            // Assert error page without backToApplication link (clientSession expired and was removed on the server)
-            errorPage.assertCurrent();
-            try {
-                errorPage.clickBackToApplication();
-                fail("Not expected to have link backToApplication available");
-            } catch (NoSuchElementException nsee) {
-                // Expected;
-            }
+            // Assert login page with "You took too long to login..." message
+            assertTrue(this.driver.getCurrentUrl().startsWith("http://localhost:8081/auth/realms/realm-with-broker/login-actions/authenticate"));
+            Assert.assertEquals("You took too long to login. Login process starting from beginning.", loginPage.getError());
 
         } finally {
             Time.setOffset(0);

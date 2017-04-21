@@ -78,8 +78,6 @@ public interface LoginFormsProvider extends Provider {
 
     public LoginFormsProvider setClientSessionCode(String accessCode);
 
-    public LoginFormsProvider setAuthenticationSession(AuthenticationSessionModel authenticationSession);
-
     public LoginFormsProvider setAccessRequest(List<RoleModel> realmRolesRequested, MultivaluedMap<String,RoleModel> resourceRolesRequested, List<ProtocolMapperModel> protocolMappers);
     public LoginFormsProvider setAccessRequest(String message);
 

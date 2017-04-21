@@ -90,7 +90,6 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
 
     private UserModel user;
 
-    private AuthenticationSessionModel authenticationSession;
     private final Map<String, Object> attributes = new HashMap<String, Object>();
 
     public FreeMarkerLoginFormsProvider(KeycloakSession session, FreeMarkerUtil freeMarker) {
@@ -156,19 +155,19 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
             uriBuilder.replaceQuery(null);
         }
 
+        URI baseUri = uriBuilder.build();
+
+        if (accessCode != null) {
+            uriBuilder.queryParam(OAuth2Constants.CODE, accessCode);
+        }
+        URI baseUriWithCode = uriBuilder.build();
+
         for (String k : queryParameterMap.keySet()) {
 
             Object[] objects = queryParameterMap.get(k).toArray();
             if (objects.length == 1 && objects[0] == null) continue; //
             uriBuilder.replaceQueryParam(k, objects);
         }
-
-        // TODO:hmlnarik Why was the following removed in https://github.com/hmlnarik/keycloak/commit/6df8f13109d6ea77b455e04d884994e5831ea52b#diff-d795b851c2db89d5198c897aba4c40c9
-        if (accessCode != null) {
-            uriBuilder.replaceQueryParam(OAuth2Constants.CODE, accessCode);
-        }
-
-        URI baseUri = uriBuilder.build();
 
         ThemeProvider themeProvider = session.getProvider(ThemeProvider.class, "extending");
         Theme theme;
@@ -221,7 +220,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
 
             List<IdentityProviderModel> identityProviders = realm.getIdentityProviders();
             identityProviders = LoginFormsUtil.filterIdentityProviders(identityProviders, session, realm, attributes, formData);
-            attributes.put("social", new IdentityProviderBean(realm, session, identityProviders, baseUri));
+            attributes.put("social", new IdentityProviderBean(realm, session, identityProviders, baseUriWithCode));
 
             attributes.put("url", new UrlBean(realm, theme, baseUri, this.actionUri));
 
@@ -313,9 +312,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
             if (objects.length == 1 && objects[0] == null) continue; //
             uriBuilder.replaceQueryParam(k, objects);
         }
-        if (accessCode != null) {
-            uriBuilder.replaceQueryParam(OAuth2Constants.CODE, accessCode);
-        }
+
         URI baseUri = uriBuilder.build();
 
         if (accessCode != null) {
@@ -569,12 +566,6 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
     @Override
     public LoginFormsProvider setClientSessionCode(String accessCode) {
         this.accessCode = accessCode;
-        return this;
-    }
-
-    @Override
-    public LoginFormsProvider setAuthenticationSession(AuthenticationSessionModel authSession) {
-        this.authenticationSession = authSession;
         return this;
     }
 

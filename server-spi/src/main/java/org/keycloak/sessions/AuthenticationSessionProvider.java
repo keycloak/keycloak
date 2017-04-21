@@ -35,7 +35,6 @@ public interface AuthenticationSessionProvider extends Provider {
 
     void removeAuthenticationSession(RealmModel realm, AuthenticationSessionModel authenticationSession);
 
-    // TODO: test and add to scheduler
     void removeExpired(RealmModel realm);
     void onRealmRemoved(RealmModel realm);
     void onClientRemoved(RealmModel realm, ClientModel client);

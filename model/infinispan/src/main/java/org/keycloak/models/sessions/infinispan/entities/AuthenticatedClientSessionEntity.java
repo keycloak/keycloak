@@ -17,53 +17,30 @@
 
 package org.keycloak.models.sessions.infinispan.entities;
 
-import org.keycloak.models.ClientSessionModel;
-
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
 /**
- * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
+ * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class ClientSessionEntity extends SessionEntity {
+public class AuthenticatedClientSessionEntity {
 
-    private String client;
-
-    private String userSession;
-
+    private String id;
     private String authMethod;
-
     private String redirectUri;
-
     private int timestamp;
-
     private String action;
 
     private Set<String> roles;
     private Set<String> protocolMappers;
     private Map<String, String> notes;
-    private Map<String, String> userSessionNotes;
-    private Map<String, ClientSessionModel.ExecutionStatus> authenticatorStatus = new HashMap<>();
-    private String authUserId;
-    private Set<String> requiredActions = new HashSet<>();
 
-
-    public String getClient() {
-        return client;
+    public String getId() {
+        return id;
     }
 
-    public void setClient(String client) {
-        this.client = client;
-    }
-
-    public String getUserSession() {
-        return userSession;
-    }
-
-    public void setUserSession(String userSession) {
-        this.userSession = userSession;
+    public void setId(String id) {
+        this.id = id;
     }
 
     public String getAuthMethod() {
@@ -122,31 +99,4 @@ public class ClientSessionEntity extends SessionEntity {
         this.notes = notes;
     }
 
-    public Map<String, ClientSessionModel.ExecutionStatus> getAuthenticatorStatus() {
-        return authenticatorStatus;
-    }
-
-    public void setAuthenticatorStatus(Map<String, ClientSessionModel.ExecutionStatus> authenticatorStatus) {
-        this.authenticatorStatus = authenticatorStatus;
-    }
-
-    public String getAuthUserId() {
-        return authUserId;
-    }
-
-    public void setAuthUserId(String authUserId) {
-        this.authUserId = authUserId;
-    }
-
-    public Map<String, String> getUserSessionNotes() {
-        return userSessionNotes;
-    }
-
-    public void setUserSessionNotes(Map<String, String> userSessionNotes) {
-        this.userSessionNotes = userSessionNotes;
-    }
-
-    public Set<String> getRequiredActions() {
-        return requiredActions;
-    }
 }

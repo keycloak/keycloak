@@ -20,12 +20,14 @@ import org.keycloak.TokenVerifier.Predicate;
 import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.authentication.actiontoken.*;
 import org.keycloak.authentication.authenticators.broker.AbstractIdpAuthenticator;
+import org.keycloak.authentication.authenticators.broker.util.SerializedBrokeredIdentityContext;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.models.UserModel;
 import org.keycloak.services.ErrorPage;
 import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.messages.Messages;
+import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.services.resources.LoginActionsServiceChecks.IsActionRequired;
 import org.keycloak.sessions.CommonClientSessionModel.Action;
 import javax.ws.rs.core.Response;
@@ -61,7 +63,7 @@ public class ResetCredentialsActionTokenHandler extends AbstractActionTokenHande
 
     @Override
     public Response handleToken(ResetCredentialsActionToken token, ActionTokenContext tokenContext, ProcessFlow processFlow) {
-        AuthenticationProcessor authProcessor = new ResetCredsAuthenticationProcessor(tokenContext);
+        AuthenticationProcessor authProcessor = new ResetCredsAuthenticationProcessor();
 
         return processFlow.processFlow(
           false,
@@ -87,34 +89,31 @@ public class ResetCredentialsActionTokenHandler extends AbstractActionTokenHande
 
     public static class ResetCredsAuthenticationProcessor extends AuthenticationProcessor {
 
-        private final ActionTokenContext tokenContext;
-
-        public ResetCredsAuthenticationProcessor(ActionTokenContext tokenContext) {
-            this.tokenContext = tokenContext;
-        }
-
         @Override
         protected Response authenticationComplete() {
-            boolean firstBrokerLoginInProgress = (tokenContext.getAuthenticationSession().getAuthNote(AbstractIdpAuthenticator.BROKERED_CONTEXT_NOTE) != null);
+            boolean firstBrokerLoginInProgress = (authenticationSession.getAuthNote(AbstractIdpAuthenticator.BROKERED_CONTEXT_NOTE) != null);
             if (firstBrokerLoginInProgress) {
 
-                UserModel linkingUser = AbstractIdpAuthenticator.getExistingUser(session, tokenContext.getRealm(), tokenContext.getAuthenticationSession());
-                if (!linkingUser.getId().equals(tokenContext.getAuthenticationSession().getAuthenticatedUser().getId())) {
+                UserModel linkingUser = AbstractIdpAuthenticator.getExistingUser(session, realm, authenticationSession);
+                if (!linkingUser.getId().equals(authenticationSession.getAuthenticatedUser().getId())) {
                     return ErrorPage.error(session,
                       Messages.IDENTITY_PROVIDER_DIFFERENT_USER_MESSAGE,
-                      tokenContext.getAuthenticationSession().getAuthenticatedUser().getUsername(),
+                      authenticationSession.getAuthenticatedUser().getUsername(),
                       linkingUser.getUsername()
                     );
                 }
 
-                logger.debugf("Forget-password flow finished when authenticated user '%s' after first broker login.", linkingUser.getUsername());
+                SerializedBrokeredIdentityContext serializedCtx = SerializedBrokeredIdentityContext.readFromAuthenticationSession(authenticationSession, AbstractIdpAuthenticator.BROKERED_CONTEXT_NOTE);
+                authenticationSession.setAuthNote(AbstractIdpAuthenticator.FIRST_BROKER_LOGIN_SUCCESS, serializedCtx.getIdentityProviderId());
 
-                // TODO:mposolda Isn't this a bug that we redirect to 'afterBrokerLoginEndpoint' without rather continue with firstBrokerLogin and other authenticators like OTP?
-                //return redirectToAfterBrokerLoginEndpoint(authSession, true);
-                return null;
+                logger.debugf("Forget-password flow finished when authenticated user '%s' after first broker login with identity provider '%s'.",
+                        linkingUser.getUsername(), serializedCtx.getIdentityProviderId());
+
+                return LoginActionsService.redirectToAfterBrokerLoginEndpoint(session, realm, uriInfo, authenticationSession, true);
             } else {
                 return super.authenticationComplete();
             }
         }
+
     }
 }

@@ -17,7 +17,6 @@
 package org.keycloak.broker.provider;
 
 import org.jboss.resteasy.spi.HttpRequest;
-import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.sessions.AuthenticationSessionModel;

@@ -120,6 +120,7 @@ public class InfinispanAuthenticationSessionProvider implements AuthenticationSe
         log.debugf("Removed %d expired user sessions for realm '%s'", counter, realm.getName());
     }
 
+    // TODO: Should likely listen to "RealmRemovedEvent" received from cluster and clean just local sessions
     @Override
     public void onRealmRemoved(RealmModel realm) {
         Iterator<Map.Entry<String, AuthenticationSessionEntity>> itr = cache.entrySet().stream().filter(AuthenticationSessionPredicate.create(realm.getId())).iterator();
@@ -128,6 +129,7 @@ public class InfinispanAuthenticationSessionProvider implements AuthenticationSe
         }
     }
 
+    // TODO: Should likely listen to "ClientRemovedEvent" received from cluster and clean just local sessions
     @Override
     public void onClientRemoved(RealmModel realm, ClientModel client) {
         Iterator<Map.Entry<String, AuthenticationSessionEntity>> itr = cache.entrySet().stream().filter(AuthenticationSessionPredicate.create(realm.getId()).client(client.getId())).iterator();

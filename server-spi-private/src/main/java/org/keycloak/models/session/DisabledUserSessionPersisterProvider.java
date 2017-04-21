@@ -70,7 +70,7 @@ public class DisabledUserSessionPersisterProvider implements UserSessionPersiste
     }
 
     @Override
-    public void createClientSession(UserSessionModel userSession, AuthenticatedClientSessionModel clientSession, boolean offline) {
+    public void createClientSession(AuthenticatedClientSessionModel clientSession, boolean offline) {
 
     }
 
@@ -85,7 +85,7 @@ public class DisabledUserSessionPersisterProvider implements UserSessionPersiste
     }
 
     @Override
-    public void removeClientSession(String clientSessionId, boolean offline) {
+    public void removeClientSession(String userSessionId, String clientUUID, boolean offline) {
 
     }
 

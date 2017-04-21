@@ -21,6 +21,8 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.events.Details;
+import org.keycloak.models.Constants;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -28,6 +30,7 @@ import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.InfoPage;
@@ -43,7 +46,7 @@ import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.UserBuilder;
 
 /**
- * Tries to test multiple browser tabs
+ * Tries to simulate testing with multiple browser tabs
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
@@ -243,6 +246,45 @@ public class MultipleTabsLoginTest extends AbstractTestRealmKeycloakTest {
         updateProfilePage.update("John", "Doe3", "john@doe3.com");
         appPage.assertCurrent();
     }
+
+
+    @Test
+    public void loginActionWithoutExecution() throws Exception {
+        oauth.openLoginForm();
+
+        // Manually remove execution from the URL and try to simulate the request just with "code" parameter
+        String actionUrl = driver.getPageSource().split("action=\"")[1].split("\"")[0].replaceAll("&amp;", "&");
+        actionUrl = actionUrl.replaceFirst("&execution=.*", "");
+
+        driver.navigate().to(actionUrl);
+
+        loginExpiredPage.assertCurrent();
+    }
+
+
+    // Same like "loginActionWithoutExecution", but AuthenticationSession is in REQUIRED_ACTIONS action
+    @Test
+    public void loginActionWithoutExecutionInRequiredActions() throws Exception {
+        oauth.openLoginForm();
+        loginPage.assertCurrent();
+
+        loginPage.login("login-test", "password");
+        updatePasswordPage.assertCurrent();
+
+        // Manually remove execution from the URL and try to simulate the request just with "code" parameter
+        String actionUrl = driver.getPageSource().split("action=\"")[1].split("\"")[0].replaceAll("&amp;", "&");
+        actionUrl = actionUrl.replaceFirst("&execution=.*", "");
+
+        driver.navigate().to(actionUrl);
+
+        // Back on updatePasswordPage now
+        updatePasswordPage.assertCurrent();
+
+        updatePasswordPage.changePassword("password", "password");
+        updateProfilePage.update("John", "Doe3", "john@doe3.com");
+        appPage.assertCurrent();
+    }
+
 
 
 }

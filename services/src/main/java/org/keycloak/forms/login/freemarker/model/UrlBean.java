@@ -85,10 +85,6 @@ public class UrlBean {
         return Urls.loginUsernameReminder(baseURI, realm).toString();
     }
 
-    public String getLoginEmailVerificationUrl() {
-        return Urls.loginActionEmailVerification(baseURI, realm).toString();
-    }
-
     public String getFirstBrokerLoginUrl() {
         return Urls.firstBrokerLoginProcessor(baseURI, realm).toString();
     }

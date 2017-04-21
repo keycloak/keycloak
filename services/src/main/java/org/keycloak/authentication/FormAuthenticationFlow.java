@@ -24,7 +24,6 @@ import org.keycloak.events.EventBuilder;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticatorConfigModel;
-import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -167,13 +166,13 @@ public class FormAuthenticationFlow implements AuthenticationFlow {
         if (!actionExecution.equals(formExecution.getId())) {
             throw new AuthenticationFlowException("action is not current execution", AuthenticationFlowError.INTERNAL_ERROR);
         }
-        Map<String, ClientSessionModel.ExecutionStatus> executionStatus = new HashMap<>();
+        Map<String, AuthenticationSessionModel.ExecutionStatus> executionStatus = new HashMap<>();
         List<FormAction> requiredActions = new LinkedList<>();
         List<ValidationContextImpl> successes = new LinkedList<>();
         List<ValidationContextImpl> errors = new LinkedList<>();
         for (AuthenticationExecutionModel formActionExecution : formActionExecutions) {
             if (!formActionExecution.isEnabled()) {
-                executionStatus.put(formActionExecution.getId(), ClientSessionModel.ExecutionStatus.SKIPPED);
+                executionStatus.put(formActionExecution.getId(), AuthenticationSessionModel.ExecutionStatus.SKIPPED);
                 continue;
             }
             FormActionFactory factory = (FormActionFactory)processor.getSession().getKeycloakSessionFactory().getProviderFactory(FormAction.class, formActionExecution.getAuthenticator());
@@ -190,14 +189,14 @@ public class FormAuthenticationFlow implements AuthenticationFlow {
                     if (formActionExecution.isRequired()) {
                         if (factory.isUserSetupAllowed()) {
                             AuthenticationProcessor.logger.debugv("authenticator SETUP_REQUIRED: {0}", formExecution.getAuthenticator());
-                            executionStatus.put(formActionExecution.getId(), ClientSessionModel.ExecutionStatus.SETUP_REQUIRED);
+                            executionStatus.put(formActionExecution.getId(), AuthenticationSessionModel.ExecutionStatus.SETUP_REQUIRED);
                             requiredActions.add(action);
                             continue;
                         } else {
                             throw new AuthenticationFlowException(AuthenticationFlowError.CREDENTIAL_SETUP_REQUIRED);
                         }
                     } else if (formActionExecution.isOptional()) {
-                        executionStatus.put(formActionExecution.getId(), ClientSessionModel.ExecutionStatus.SKIPPED);
+                        executionStatus.put(formActionExecution.getId(), AuthenticationSessionModel.ExecutionStatus.SKIPPED);
                         continue;
                     }
                 }
@@ -206,10 +205,10 @@ public class FormAuthenticationFlow implements AuthenticationFlow {
             ValidationContextImpl result = new ValidationContextImpl(formActionExecution, action);
             action.validate(result);
             if (result.success) {
-                executionStatus.put(formActionExecution.getId(), ClientSessionModel.ExecutionStatus.SUCCESS);
+                executionStatus.put(formActionExecution.getId(), AuthenticationSessionModel.ExecutionStatus.SUCCESS);
                 successes.add(result);
             } else {
-                executionStatus.put(formActionExecution.getId(), ClientSessionModel.ExecutionStatus.CHALLENGED);
+                executionStatus.put(formActionExecution.getId(), AuthenticationSessionModel.ExecutionStatus.CHALLENGED);
                 errors.add(result);
             }
         }
@@ -235,14 +234,14 @@ public class FormAuthenticationFlow implements AuthenticationFlow {
             context.action.success(context);
         }
         // set status and required actions only if form is fully successful
-        for (Map.Entry<String, ClientSessionModel.ExecutionStatus> entry : executionStatus.entrySet()) {
+        for (Map.Entry<String, AuthenticationSessionModel.ExecutionStatus> entry : executionStatus.entrySet()) {
             processor.getAuthenticationSession().setExecutionStatus(entry.getKey(), entry.getValue());
         }
         for (FormAction action : requiredActions) {
             action.setRequiredActions(processor.getSession(), processor.getRealm(), processor.getAuthenticationSession().getAuthenticatedUser());
 
         }
-        processor.getAuthenticationSession().setExecutionStatus(actionExecution, ClientSessionModel.ExecutionStatus.SUCCESS);
+        processor.getAuthenticationSession().setExecutionStatus(actionExecution, AuthenticationSessionModel.ExecutionStatus.SUCCESS);
         processor.getAuthenticationSession().removeAuthNote(AuthenticationProcessor.CURRENT_AUTHENTICATION_EXECUTION);
         return null;
     }

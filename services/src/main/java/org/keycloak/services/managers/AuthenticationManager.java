@@ -537,7 +537,7 @@ public class AuthenticationManager {
                     .createInfoPage();
             return response;
 
-            // TODO:mposolda doublecheck if restart-cookie and authentication session are cleared in this flow
+            // Don't remove authentication session for now, to ensure that browser buttons (back/refresh) will still work fine.
 
         }
         RealmModel realm = authSession.getRealm();

@@ -23,7 +23,6 @@ import java.util.Map;
 import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.models.AuthenticatedClientSessionModel;
-import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
@@ -41,7 +40,6 @@ class CodeGenerateUtil {
     private static final Map<Class<? extends CommonClientSessionModel>, ClientSessionParser> PARSERS = new HashMap<>();
 
     static {
-        PARSERS.put(ClientSessionModel.class, new ClientSessionModelParser());
         PARSERS.put(AuthenticationSessionModel.class, new AuthenticationSessionModelParser());
         PARSERS.put(AuthenticatedClientSessionModel.class, new AuthenticatedClientSessionModelParser());
     }
@@ -76,54 +74,6 @@ class CodeGenerateUtil {
 
 
     // IMPLEMENTATIONS
-
-
-    // TODO: remove
-    private static class ClientSessionModelParser implements ClientSessionParser<ClientSessionModel> {
-
-
-        @Override
-        public ClientSessionModel parseSession(String code, KeycloakSession session, RealmModel realm) {
-            try {
-                String[] parts = code.split("\\.");
-                String id = parts[2];
-                return session.sessions().getClientSession(realm, id);
-            } catch (ArrayIndexOutOfBoundsException e) {
-                return null;
-            }
-        }
-
-        @Override
-        public String generateCode(ClientSessionModel clientSession, String actionId) {
-            StringBuilder sb = new StringBuilder();
-            sb.append("cls.");
-            sb.append(actionId);
-            sb.append('.');
-            sb.append(clientSession.getId());
-
-            return sb.toString();
-        }
-
-        @Override
-        public void removeExpiredSession(KeycloakSession session, ClientSessionModel clientSession) {
-            session.sessions().removeClientSession(clientSession.getRealm(), clientSession);
-        }
-
-        @Override
-        public String getNote(ClientSessionModel clientSession, String name) {
-            return clientSession.getNote(name);
-        }
-
-        @Override
-        public void removeNote(ClientSessionModel clientSession, String name) {
-            clientSession.removeNote(name);
-        }
-
-        @Override
-        public void setNote(ClientSessionModel clientSession, String name, String value) {
-            clientSession.setNote(name, value);
-        }
-    }
 
 
     private static class AuthenticationSessionModelParser implements ClientSessionParser<AuthenticationSessionModel> {
@@ -192,20 +142,6 @@ class CodeGenerateUtil {
             sb.append(userSessionId);
             sb.append('.');
             sb.append(clientUUID);
-
-            // TODO:mposolda codeChallengeMethod is not used anywhere. Not sure if it's bug of PKCE contribution. Doublecheck the PKCE specification what should be done regarding code
-            // https://tools.ietf.org/html/rfc7636#section-4
-            String codeChallenge = clientSession.getNote(OAuth2Constants.CODE_CHALLENGE);
-            String codeChallengeMethod = clientSession.getNote(OAuth2Constants.CODE_CHALLENGE_METHOD);
-            if (codeChallenge != null) {
-                logger.debugf("PKCE received codeChallenge = %s", codeChallenge);
-                if (codeChallengeMethod == null) {
-                    logger.debug("PKCE not received codeChallengeMethod, treating plain");
-                    codeChallengeMethod = OAuth2Constants.PKCE_METHOD_PLAIN;
-                } else {
-                    logger.debugf("PKCE received codeChallengeMethod = %s", codeChallengeMethod);
-                }
-            }
 
             return sb.toString();
         }

@@ -74,20 +74,17 @@ public class AuthenticationSessionManager {
         boolean sslRequired = realm.getSslRequired().isRequired(session.getContext().getConnection());
         CookieHelper.addCookie(AUTH_SESSION_ID, authSessionId, cookiePath, null, null, -1, sslRequired, true);
 
-        // TODO trace with isTraceEnabled
-        log.infof("Set AUTH_SESSION_ID cookie with value %s", authSessionId);
+        log.debugf("Set AUTH_SESSION_ID cookie with value %s", authSessionId);
     }
 
 
     public String getAuthSessionCookie() {
         String cookieVal = CookieHelper.getCookieValue(AUTH_SESSION_ID);
 
-        if (log.isTraceEnabled()) {
-            if (cookieVal != null) {
-                log.tracef("Found AUTH_SESSION_ID cookie with value %s", cookieVal);
-            } else {
-                log.tracef("Not found AUTH_SESSION_ID cookie");
-            }
+        if (cookieVal != null) {
+            log.debugf("Found AUTH_SESSION_ID cookie with value %s", cookieVal);
+        } else {
+            log.debugf("Not found AUTH_SESSION_ID cookie");
         }
 
         return cookieVal;
@@ -95,7 +92,7 @@ public class AuthenticationSessionManager {
 
 
     public void removeAuthenticationSession(RealmModel realm, AuthenticationSessionModel authSession, boolean expireRestartCookie) {
-        log.infof("Removing authSession '%s'. Expire restart cookie: %b", authSession.getId(), expireRestartCookie);
+        log.debugf("Removing authSession '%s'. Expire restart cookie: %b", authSession.getId(), expireRestartCookie);
         session.authenticationSessions().removeAuthenticationSession(realm, authSession);
 
         // expire restart cookie

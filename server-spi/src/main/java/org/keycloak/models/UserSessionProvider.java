@@ -27,10 +27,7 @@ import java.util.List;
  */
 public interface UserSessionProvider extends Provider {
 
-    ClientSessionModel createClientSession(RealmModel realm, ClientModel client);
     AuthenticatedClientSessionModel createClientSession(RealmModel realm, ClientModel client, UserSessionModel userSession);
-    ClientSessionModel getClientSession(RealmModel realm, String id);
-    ClientSessionModel getClientSession(String id);
 
     UserSessionModel createUserSession(String id, RealmModel realm, UserModel user, String loginUsername, String ipAddress, String authMethod, boolean rememberMe, String brokerSessionId, String brokerUserId);
     UserSessionModel getUserSession(RealmModel realm, String id);
@@ -42,14 +39,13 @@ public interface UserSessionProvider extends Provider {
 
     long getActiveUserSessions(RealmModel realm, ClientModel client);
 
-    // This will remove attached ClientLoginSessionModels too
+    /** This will remove attached ClientLoginSessionModels too **/
     void removeUserSession(RealmModel realm, UserSessionModel session);
     void removeUserSessions(RealmModel realm, UserModel user);
 
-    // Implementation should propagate removal of expired userSessions to userSessionPersister too
+    /** Implementation should propagate removal of expired userSessions to userSessionPersister too **/
     void removeExpired(RealmModel realm);
     void removeUserSessions(RealmModel realm);
-    void removeClientSession(RealmModel realm, ClientSessionModel clientSession);
 
     UserLoginFailureModel getUserLoginFailure(RealmModel realm, String userId);
     UserLoginFailureModel addUserLoginFailure(RealmModel realm, String userId);
@@ -59,25 +55,22 @@ public interface UserSessionProvider extends Provider {
     void onRealmRemoved(RealmModel realm);
     void onClientRemoved(RealmModel realm, ClientModel client);
 
+    /** Newly created userSession won't contain attached AuthenticatedClientSessions **/
     UserSessionModel createOfflineUserSession(UserSessionModel userSession);
     UserSessionModel getOfflineUserSession(RealmModel realm, String userSessionId);
 
-    // Removes the attached clientSessions as well
+    /** Removes the attached clientSessions as well **/
     void removeOfflineUserSession(RealmModel realm, UserSessionModel userSession);
 
-    AuthenticatedClientSessionModel createOfflineClientSession(AuthenticatedClientSessionModel clientSession);
-    ClientSessionModel getOfflineClientSession(RealmModel realm, String clientSessionId);
+    /** Will automatically attach newly created offline client session to the offlineUserSession **/
+    AuthenticatedClientSessionModel createOfflineClientSession(AuthenticatedClientSessionModel clientSession, UserSessionModel offlineUserSession);
     List<UserSessionModel> getOfflineUserSessions(RealmModel realm, UserModel user);
-
-    // Don't remove userSession even if it's last userSession
-    void removeOfflineClientSession(RealmModel realm, String clientSessionId);
 
     long getOfflineSessionsCount(RealmModel realm, ClientModel client);
     List<UserSessionModel> getOfflineUserSessions(RealmModel realm, ClientModel client, int first, int max);
 
-    // Triggered by persister during pre-load
-    UserSessionModel importUserSession(UserSessionModel persistentUserSession, boolean offline);
-    ClientSessionModel importClientSession(ClientSessionModel persistentClientSession, boolean offline);
+    /** Triggered by persister during pre-load. It optionally imports authenticatedClientSessions too if requested. Otherwise the imported UserSession will have empty list of AuthenticationSessionModel **/
+    UserSessionModel importUserSession(UserSessionModel persistentUserSession, boolean offline, boolean importAuthenticatedClientSessions);
 
     ClientInitialAccessModel createClientInitialAccessModel(RealmModel realm, int expiration, int count);
     ClientInitialAccessModel getClientInitialAccessModel(RealmModel realm, String id);

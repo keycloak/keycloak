@@ -27,7 +27,7 @@ import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.models.sessions.infinispan.entities.ClientLoginSessionEntity;
+import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
 
@@ -36,14 +36,16 @@ import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
  */
 public class AuthenticatedClientSessionAdapter implements AuthenticatedClientSessionModel {
 
-    private final ClientLoginSessionEntity entity;
+    private final AuthenticatedClientSessionEntity entity;
+    private final ClientModel client;
     private final InfinispanUserSessionProvider provider;
     private final Cache<String, SessionEntity> cache;
     private UserSessionAdapter userSession;
 
-    public AuthenticatedClientSessionAdapter(ClientLoginSessionEntity entity, UserSessionAdapter userSession, InfinispanUserSessionProvider provider, Cache<String, SessionEntity> cache) {
+    public AuthenticatedClientSessionAdapter(AuthenticatedClientSessionEntity entity, ClientModel client, UserSessionAdapter userSession, InfinispanUserSessionProvider provider, Cache<String, SessionEntity> cache) {
         this.provider = provider;
         this.entity = entity;
+        this.client = client;
         this.cache = cache;
         this.userSession = userSession;
     }
@@ -55,23 +57,23 @@ public class AuthenticatedClientSessionAdapter implements AuthenticatedClientSes
 
     @Override
     public void setUserSession(UserSessionModel userSession) {
-        String clientUUID = entity.getClient();
+        String clientUUID = client.getId();
         UserSessionEntity sessionEntity = this.userSession.getEntity();
 
         // Dettach userSession
         if (userSession == null) {
-            if (sessionEntity.getClientLoginSessions() != null) {
-                sessionEntity.getClientLoginSessions().remove(clientUUID);
+            if (sessionEntity.getAuthenticatedClientSessions() != null) {
+                sessionEntity.getAuthenticatedClientSessions().remove(clientUUID);
                 update();
                 this.userSession = null;
             }
         } else {
             this.userSession = (UserSessionAdapter) userSession;
 
-            if (sessionEntity.getClientLoginSessions() == null) {
-                sessionEntity.setClientLoginSessions(new HashMap<>());
+            if (sessionEntity.getAuthenticatedClientSessions() == null) {
+                sessionEntity.setAuthenticatedClientSessions(new HashMap<>());
             }
-            sessionEntity.getClientLoginSessions().put(clientUUID, entity);
+            sessionEntity.getAuthenticatedClientSessions().put(clientUUID, entity);
             update();
         }
     }
@@ -104,8 +106,7 @@ public class AuthenticatedClientSessionAdapter implements AuthenticatedClientSes
 
     @Override
     public ClientModel getClient() {
-        String client = entity.getClient();
-        return getRealm().getClientById(client);
+        return client;
     }
 
     @Override
@@ -192,4 +193,5 @@ public class AuthenticatedClientSessionAdapter implements AuthenticatedClientSes
         copy.putAll(entity.getNotes());
         return copy;
     }
+
 }

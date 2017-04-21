@@ -19,7 +19,6 @@ package org.keycloak.models.session;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.keycloak.models.AuthenticatedClientSessionModel;
-import org.keycloak.models.ClientSessionModel;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -28,7 +27,6 @@ import org.keycloak.util.JsonSerialization;
 
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -39,7 +37,7 @@ public class PersistentUserSessionAdapter implements UserSessionModel {
     private final PersistentUserSessionModel model;
     private final UserModel user;
     private final RealmModel realm;
-    private final List<ClientSessionModel> clientSessions;
+    private final Map<String, AuthenticatedClientSessionModel> authenticatedClientSessions;
 
     private PersistentUserSessionData data;
 
@@ -60,14 +58,14 @@ public class PersistentUserSessionAdapter implements UserSessionModel {
 
         this.user = other.getUser();
         this.realm = other.getRealm();
-        this.clientSessions = other.getClientSessions();
+        this.authenticatedClientSessions = other.getAuthenticatedClientSessions();
     }
 
-    public PersistentUserSessionAdapter(PersistentUserSessionModel model, RealmModel realm, UserModel user, List<ClientSessionModel> clientSessions) {
+    public PersistentUserSessionAdapter(PersistentUserSessionModel model, RealmModel realm, UserModel user, Map<String, AuthenticatedClientSessionModel> clientSessions) {
         this.model = model;
         this.realm = realm;
         this.user = user;
-        this.clientSessions = clientSessions;
+        this.authenticatedClientSessions = clientSessions;
     }
 
     // Lazily init data
@@ -161,14 +159,8 @@ public class PersistentUserSessionAdapter implements UserSessionModel {
     }
 
     @Override
-    public List<ClientSessionModel> getClientSessions() {
-        return clientSessions;
-    }
-
-    // TODO:mposolda
-    @Override
     public Map<String, AuthenticatedClientSessionModel> getAuthenticatedClientSessions() {
-        return null;
+        return authenticatedClientSessions;
     }
 
     @Override
@@ -206,6 +198,11 @@ public class PersistentUserSessionAdapter implements UserSessionModel {
     @Override
     public void setState(State state) {
         getData().setState(state);
+    }
+
+    @Override
+    public void restartSession(RealmModel realm, UserModel user, String loginUsername, String ipAddress, String authMethod, boolean rememberMe, String brokerSessionId, String brokerUserId) {
+        throw new IllegalStateException("Not supported");
     }
 
     @Override

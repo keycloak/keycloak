@@ -47,9 +47,9 @@ public abstract class AbstractOfflineCacheCommand extends AbstractCommand {
     }
 
     protected String toString(UserSessionEntity userSession) {
-        int clientSessionsSize = userSession.getClientSessions()==null ? 0 : userSession.getClientSessions().size();
+        int clientSessionsSize = userSession.getAuthenticatedClientSessions()==null ? 0 : userSession.getAuthenticatedClientSessions().size();
         return "ID: " + userSession.getId() + ", realm: " + userSession.getRealm() + ", lastAccessTime: " + Time.toDate(userSession.getLastSessionRefresh()) +
-                ", clientSessions: " + clientSessionsSize;
+                ", authenticatedClientSessions: " + clientSessionsSize;
     }
 
     protected abstract void doRunCacheCommand(KeycloakSession session, Cache<String, SessionEntity> cache);

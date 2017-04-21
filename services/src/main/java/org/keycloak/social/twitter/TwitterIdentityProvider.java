@@ -119,6 +119,8 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
                 return callback.cancelled(state);
             }
 
+            Response errorResponse = null;
+
             try {
                 Twitter twitter = new TwitterFactory().getInstance();
 
@@ -155,16 +157,20 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
 
                 return callback.authenticated(identity);
             } catch (WebApplicationException e) {
+                sendErrorEvent();
                 return e.getResponse();
             } catch (Exception e) {
                 logger.error("Could get user profile from twitter.", e);
+                sendErrorEvent();
+                return ErrorPage.error(session, Messages.UNEXPECTED_ERROR_HANDLING_RESPONSE);
             }
+        }
+
+        private void sendErrorEvent() {
             EventBuilder event = new EventBuilder(realm, session, clientConnection);
             event.event(EventType.LOGIN);
             event.error("twitter_login_failed");
-            return ErrorPage.error(session, Messages.UNEXPECTED_ERROR_HANDLING_RESPONSE);
         }
-
 
     }
 
