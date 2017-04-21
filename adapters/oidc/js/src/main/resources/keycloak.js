@@ -157,7 +157,7 @@
                     processCallback(callback, initPromise);
                     return;
                 } else if (initOptions) {
-                    if (initOptions.refreshToken) {
+                    if (initOptions.token && initOptions.refreshToken) {
                         setToken(initOptions.token, initOptions.refreshToken, initOptions.idToken);
 
                         if (loginIframe.enable) {
