@@ -10,7 +10,7 @@ installed on your machine and available in your PATH before you can continue:
 * Apache Maven 3.1.1 or higher
 * Git
 
-You can obtain the code by cloning the repository at {{book.quickstartRepo.link}}. Use the branch matching the version of Red Hat Single Sign-On in use. Follow these steps to download the code.
+You can obtain the code by cloning the repository at {{book.quickstartRepo.link}}. The default branch corresponds to the latest release of {{book.project.name}}. Follow these steps to download the code.
 
 .Clone Project
 [source, subs="attributes"]
