@@ -18,6 +18,7 @@
 
 package org.keycloak.authentication.authenticators.x509;
 
+import java.security.GeneralSecurityException;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.util.function.Function;
@@ -34,6 +35,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.services.ServicesLogger;
+import org.keycloak.services.x509.X509ClientCertificateLookup;
 
 /**
  * @author <a href="mailto:pnalyvayko@agi.com">Peter Nalyvayko</a>
@@ -45,8 +47,6 @@ public abstract class AbstractX509ClientCertificateAuthenticator implements Auth
 
     public static final String DEFAULT_ATTRIBUTE_NAME = "usercertificate";
     protected static ServicesLogger logger = ServicesLogger.LOGGER;
-
-    public static final String JAVAX_SERVLET_REQUEST_X509_CERTIFICATE = "javax.servlet.request.X509Certificate";
 
     public static final String REGULAR_EXPRESSION = "x509-cert-auth.regular-expression";
     public static final String ENABLE_CRL = "x509-cert-auth.crl-checking-enabled";
@@ -190,16 +190,29 @@ public abstract class AbstractX509ClientCertificateAuthenticator implements Auth
     }
 
     protected X509Certificate[] getCertificateChain(AuthenticationFlowContext context) {
-        // Get a x509 client certificate
-        X509Certificate[] certs = (X509Certificate[]) context.getHttpRequest().getAttribute(JAVAX_SERVLET_REQUEST_X509_CERTIFICATE);
-
-        if (certs != null) {
-            for (X509Certificate cert : certs) {
-                logger.tracef("[X509ClientCertificateAuthenticator:getCertificateChain] \"%s\"", cert.getSubjectDN().getName());
+        try {
+            // Get a x509 client certificate
+            X509ClientCertificateLookup provider = context.getSession().getProvider(X509ClientCertificateLookup.class);
+            if (provider == null) {
+                logger.errorv("\"{0}\" Spi is not available, did you forget to update the configuration?",
+                        X509ClientCertificateLookup.class);
+                return null;
             }
-        }
 
-        return certs;
+            X509Certificate[] certs = provider.getCertificateChain(context.getHttpRequest());
+
+            if (certs != null) {
+                for (X509Certificate cert : certs) {
+                    logger.tracev("\"{0}\"", cert.getSubjectDN().getName());
+                }
+            }
+
+            return certs;
+        }
+        catch (GeneralSecurityException e) {
+            logger.error(e.getMessage(), e);
+        }
+        return null;
     }
     // Purely for unit testing
     public UserIdentityExtractor getUserIdentityExtractor(X509AuthenticatorConfigModel config) {
