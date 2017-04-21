@@ -6,4 +6,4 @@ It's possible to automatically redirect to a identity provider instead of displa
 
 If the configured default identity provider is not found the login form will be displayed instead.
 
-This authenticator is also responsible for dealing with the `kc_idp_hint` query parameter. See client suggested identity provider section for more details.
+This authenticator is also responsible for dealing with the `kc_idp_hint` query parameter. See <<fake/../suggested.adoc#_client_suggested_idp, client suggested identity provider>> section for more details.
