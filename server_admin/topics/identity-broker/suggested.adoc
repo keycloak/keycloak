@@ -1,4 +1,4 @@
-
+[[_client_suggested_idp]]
 === Client Suggested Identity Provider
 
 OIDC applications can bypass the {{book.project.name}} login page by specifying a hint on which
