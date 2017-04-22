@@ -1,6 +1,6 @@
 FROM ubuntu
 
-RUN apt-get update && apt-get install -y apache2 && apt-get install -y libapache2-mod-auth-mellon
+RUN apt-get update && apt-get install -y apache2 openssh-server mc && apt-get install -y libapache2-mod-auth-mellon
 
 RUN mkdir /etc/apache2/mellon
 
@@ -14,4 +14,12 @@ RUN mkdir /var/www/html/auth
 
 COPY www/auth/* /var/www/html/auth/
 
-CMD /usr/sbin/apache2ctl -D FOREGROUND
+RUN echo 'root:a' | chpasswd
+
+RUN mkdir /var/run/sshd
+
+RUN sed -ri 's/^PermitRootLogin\s+.*/PermitRootLogin yes/' /etc/ssh/sshd_config
+
+RUN sed -ri 's/UsePAM yes/#UsePAM yes/g' /etc/ssh/sshd_config
+
+CMD bash -c '(/usr/sbin/sshd -D & ) ; /usr/sbin/apache2ctl -D FOREGROUND'
