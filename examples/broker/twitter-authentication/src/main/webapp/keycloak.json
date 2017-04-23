@@ -1,7 +1,0 @@
-{
-  "realm" : "twitter-identity-provider-realm",
-  "resource" : "twitter-authentication",
-  "auth-server-url": "/auth",
-  "ssl-required" : "external",
-  "public-client" : true
-}

@@ -1,7 +1,0 @@
-{
-  "realm" : "google-identity-provider-realm",
-  "resource" : "google-authentication",
-  "auth-server-url": "/auth",
-  "ssl-required" : "external",
-  "public-client" : true
-}
