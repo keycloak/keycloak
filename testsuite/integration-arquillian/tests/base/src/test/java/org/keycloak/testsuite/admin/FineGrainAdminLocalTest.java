@@ -21,10 +21,18 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.authorization.AuthorizationProvider;
+import org.keycloak.authorization.Decision;
+import org.keycloak.authorization.common.DefaultEvaluationContext;
+import org.keycloak.authorization.common.UserModelIdentity;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
+import org.keycloak.authorization.permission.ResourcePermission;
+import org.keycloak.authorization.permission.evaluator.PermissionEvaluator;
+import org.keycloak.authorization.policy.evaluation.DecisionResult;
+import org.keycloak.authorization.policy.evaluation.EvaluationContext;
+import org.keycloak.authorization.util.Permissions;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
@@ -43,6 +51,7 @@ import org.keycloak.testsuite.AbstractKeycloakTest;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -53,7 +62,7 @@ import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-@Ignore
+//@Ignore
 public class FineGrainAdminLocalTest extends AbstractKeycloakTest {
 
     @Override
@@ -170,15 +179,16 @@ public class FineGrainAdminLocalTest extends AbstractKeycloakTest {
 
     }
 
-    @Test
+    //@Test
     public void testUI() throws Exception {
         testingClient.server().run(FineGrainAdminLocalTest::setupDefaults);
         testingClient.server().run(FineGrainAdminLocalTest::setupUsers);
-        //Thread.sleep(1000000000);
+        Thread.sleep(1000000000);
     }
 
     public static void evaluateAdminHasManageRealmPermissions(KeycloakSession session) {
         RealmModel realm = session.realms().getRealmByName(TEST);
+        session.getContext().setRealm(realm);
         UserModel admin = session.users().getUserByUsername("admin", realm);
 
         AuthorizationProvider authz = session.getProvider(AuthorizationProvider.class);
@@ -187,9 +197,29 @@ public class FineGrainAdminLocalTest extends AbstractKeycloakTest {
 
         RoleModel manageRealmRole = client.getRole(AdminRoles.MANAGE_REALM);
         Resource roleResource = authz.getStoreFactory().getResourceStore().findByName(getRoleResourceName(manageRealmRole), resourceServer.getId());
+        Scope mapRoleScope = authz.getStoreFactory().getScopeStore().findByName("map-role", resourceServer.getId());
+
+        UserModelIdentity identity = new UserModelIdentity(realm, admin);
+        EvaluationContext context = new DefaultEvaluationContext(identity, session);
+        DecisionResult decisionCollector = new DecisionResult();
+
+        List<ResourcePermission> permissions = Permissions.permission(resourceServer, roleResource, mapRoleScope);
+        PermissionEvaluator from = authz.evaluators().from(permissions, context);
+        from.evaluate(decisionCollector);
+        if (!decisionCollector.completed()) {
+            decisionCollector.getError().printStackTrace();
+        }
+        Assert.assertTrue(decisionCollector.completed());
+        Assert.assertEquals(decisionCollector.getResults().get(0).getEffect(), Decision.Effect.PERMIT);
 
 
+    }
 
+    @Test
+    public void testEvaluation2() throws Exception {
+        testingClient.server().run(FineGrainAdminLocalTest::setupDefaults);
+        testingClient.server().run(FineGrainAdminLocalTest::setupUsers);
+        testingClient.server().run(FineGrainAdminLocalTest::evaluateAdminHasManageRealmPermissions);
     }
 
     @Test

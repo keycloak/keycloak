@@ -38,6 +38,7 @@ import javax.ws.rs.core.Response;
 
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.authorization.AuthorizationProvider;
+import org.keycloak.authorization.policy.evaluation.DecisionResult;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.idm.authorization.PolicyEvaluationRequest;
 import org.keycloak.authorization.admin.representation.PolicyEvaluationResponseBuilder;
@@ -86,21 +87,6 @@ public class PolicyEvaluationService {
         this.auth = auth;
     }
 
-    static class Decision extends DecisionResultCollector {
-        Throwable error;
-        List<Result> results;
-
-        @Override
-        protected void onComplete(List<Result> results) {
-            this.results = results;
-        }
-
-        @Override
-        public void onError(Throwable cause) {
-            this.error = cause;
-
-        }
-    }
 
     public static <T> List<T> asList(T... a) {
         List<T> list = new LinkedList<T>();
@@ -116,12 +102,12 @@ public class PolicyEvaluationService {
         CloseableKeycloakIdentity identity = createIdentity(evaluationRequest);
         try {
             EvaluationContext evaluationContext = createEvaluationContext(evaluationRequest, identity);
-            Decision decisionCollector = new Decision();
+            DecisionResult decisionCollector = new DecisionResult();
             authorization.evaluators().from(createPermissions(evaluationRequest, evaluationContext, authorization), evaluationContext).evaluate(decisionCollector);
-            if (decisionCollector.error != null) {
-                throw decisionCollector.error;
+            if (!decisionCollector.completed()) {
+                throw decisionCollector.getError();
             }
-            return Response.ok(PolicyEvaluationResponseBuilder.build(decisionCollector.results, resourceServer, authorization, identity)).build();
+            return Response.ok(PolicyEvaluationResponseBuilder.build(decisionCollector.getResults(), resourceServer, authorization, identity)).build();
         } finally {
             identity.close();
         }
