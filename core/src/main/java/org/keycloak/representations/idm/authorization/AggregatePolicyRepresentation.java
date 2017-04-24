@@ -16,33 +16,13 @@
  */
 package org.keycloak.representations.idm.authorization;
 
-import java.util.HashSet;
-import java.util.Set;
-
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-public class UserPolicyRepresentation extends AbstractPolicyRepresentation {
-
-    private Set<String> users;
+public class AggregatePolicyRepresentation extends AbstractPolicyRepresentation {
 
     @Override
     public String getType() {
-        return "user";
-    }
-
-    public Set<String> getUsers() {
-        return users;
-    }
-
-    public void setUsers(Set<String> users) {
-        this.users= users;
-    }
-
-    public void addUser(String name) {
-        if (users == null) {
-            users = new HashSet<>();
-        }
-        users.add(name);
+        return "aggregate";
     }
 }

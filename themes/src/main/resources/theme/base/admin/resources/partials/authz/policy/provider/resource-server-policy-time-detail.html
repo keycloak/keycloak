@@ -34,66 +34,66 @@
                 <kc-tooltip>{{:: 'authz-policy-description.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group">
-                <label class="col-md-2 control-label" for="policy.config.nbf">{{:: 'not-before' | translate}}</label>
+                <label class="col-md-2 control-label" for="notBefore">{{:: 'not-before' | translate}}</label>
 
                 <div class="col-md-6 time-selector">
-                    <input class="form-control" style="width: 150px" type="text" id="policy.config.nbf" name="notBefore" data-ng-model="policy.config.nbf" placeholder="yyyy-MM-dd hh:mm:ss" data-ng-required="isRequired()">
+                    <input class="form-control" style="width: 150px" type="text" id="notBefore" name="notBefore" data-ng-model="policy.notBefore" placeholder="yyyy-MM-dd hh:mm:ss" data-ng-required="isRequired()">
                 </div>
                 <kc-tooltip>{{:: 'authz-policy-time-not-before.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group">
-                <label class="col-md-2 control-label" for="policy.config.noa">{{:: 'authz-policy-time-not-on-after' | translate}}</label>
+                <label class="col-md-2 control-label" for="notOnOrAfter">{{:: 'authz-policy-time-not-on-after' | translate}}</label>
 
                 <div class="col-md-6 time-selector">
-                    <input class="form-control" style="width: 150px" type="text" id="policy.config.noa" name="policy.config.noa" data-ng-model="policy.config.noa" placeholder="yyyy-MM-dd hh:mm:ss" data-ng-required="isRequired()">
+                    <input class="form-control" style="width: 150px" type="text" id="notOnOrAfter" name="notOnOrAfter" data-ng-model="policy.notOnOrAfter" placeholder="yyyy-MM-dd hh:mm:ss" data-ng-required="isRequired()">
                 </div>
                 <kc-tooltip>{{:: 'authz-policy-time-not-on-after.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group">
-                <label class="col-md-2 control-label" for="policy.config.noa">{{:: 'authz-policy-time-day-month' | translate}}</label>
+                <label class="col-md-2 control-label" for="dayMonth">{{:: 'authz-policy-time-day-month' | translate}}</label>
 
                 <div class="col-md-6 time-selector">
-                    <input class="form-control" type="number" min="1" max="31" data-ng-model="policy.config.dayMonth" id="dayMonth" name="dayMonth" data-ng-required="isRequired()"/>&nbsp;&nbsp;to&nbsp;&nbsp;<input class="form-control" type="number" min="{{policy.config.dayMonth}}" max="31" data-ng-model="policy.config.dayMonthEnd" id="dayMonthEnd" name="dayMonthEnd"/>
+                    <input class="form-control" type="number" min="1" max="31" data-ng-model="policy.dayMonth" id="dayMonth" name="dayMonth" data-ng-required="isRequired()"/>&nbsp;&nbsp;to&nbsp;&nbsp;<input class="form-control" type="number" min="{{policy.dayMonth}}" max="31" data-ng-model="policy.dayMonthEnd" id="dayMonthEnd" name="dayMonthEnd"/>
                 </div>
                 <kc-tooltip>{{:: 'authz-policy-time-day-month.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group">
-                <label class="col-md-2 control-label" for="policy.config.noa">{{:: 'authz-policy-time-month' | translate}}</label>
+                <label class="col-md-2 control-label" for="month">{{:: 'authz-policy-time-month' | translate}}</label>
 
                 <div class="col-md-6 time-selector">
-                    <input class="form-control" type="number" min="1" max="12" data-ng-model="policy.config.month" id="month" name="month" data-ng-required="isRequired()"/>&nbsp;&nbsp;to&nbsp;&nbsp;<input class="form-control" type="number" min="{{policy.config.month}}" max="12" data-ng-model="policy.config.monthEnd" id="monthEnd" name="monthEnd"/>
+                    <input class="form-control" type="number" min="1" max="12" data-ng-model="policy.month" id="month" name="month" data-ng-required="isRequired()"/>&nbsp;&nbsp;to&nbsp;&nbsp;<input class="form-control" type="number" min="{{policy.month}}" max="12" data-ng-model="policy.monthEnd" id="monthEnd" name="monthEnd"/>
                 </div>
                 <kc-tooltip>{{:: 'authz-policy-time-month.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group">
-                <label class="col-md-2 control-label" for="policy.config.noa">{{:: 'authz-policy-time-year' | translate}}</label>
+                <label class="col-md-2 control-label" for="year">{{:: 'authz-policy-time-year' | translate}}</label>
 
                 <div class="col-md-6 time-selector">
-                    <input class="form-control" type="number" min="2016" max="2050" data-ng-model="policy.config.year" id="year" name="year" data-ng-required="isRequired()"/>&nbsp;&nbsp;to&nbsp;&nbsp;<input class="form-control" type="number" min="{{policy.config.year}}" max="2050" data-ng-model="policy.config.yearEnd" id="yearEnd" name="yearEnd"/>
+                    <input class="form-control" type="number" data-ng-model="policy.year" id="year" name="year" data-ng-required="isRequired()"/>&nbsp;&nbsp;to&nbsp;&nbsp;<input class="form-control" type="number" min="{{policy.year}}" max="2050" data-ng-model="policy.yearEnd" id="yearEnd" name="yearEnd"/>
                 </div>
                 <kc-tooltip>{{:: 'authz-policy-time-year.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group">
-                <label class="col-md-2 control-label" for="policy.config.noa">{{:: 'authz-policy-time-hour' | translate}}</label>
+                <label class="col-md-2 control-label" for="hour">{{:: 'authz-policy-time-hour' | translate}}</label>
 
                 <div class="col-md-6 time-selector">
-                    <input class="form-control" type="number" min="0" max="23" data-ng-model="policy.config.hour" id="hour" name="hour" data-ng-required="isRequired()"/>&nbsp;&nbsp;to&nbsp;&nbsp;<input class="form-control" type="number" min="{{policy.config.hour}}" max="23" data-ng-model="policy.config.hourEnd" id="hourEnd" name="hourEnd"/>
+                    <input class="form-control" type="number" min="0" max="23" data-ng-model="policy.hour" id="hour" name="hour" data-ng-required="isRequired()"/>&nbsp;&nbsp;to&nbsp;&nbsp;<input class="form-control" type="number" min="{{policy.hour}}" max="23" data-ng-model="policy.hourEnd" id="hourEnd" name="hourEnd"/>
                 </div>
                 <kc-tooltip>{{:: 'authz-policy-time-hour.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group">
-                <label class="col-md-2 control-label" for="policy.config.noa">{{:: 'authz-policy-time-minute' | translate}}</label>
+                <label class="col-md-2 control-label" for="minute">{{:: 'authz-policy-time-minute' | translate}}</label>
 
                 <div class="col-md-6 time-selector">
-                    <input class="form-control" type="number" min="0" max="59" data-ng-model="policy.config.minute" id="minute" name="minute" data-ng-required="isRequired()"/>&nbsp;&nbsp;to&nbsp;&nbsp;<input class="form-control" type="number" min="{{policy.config.minute}}" max="59" data-ng-model="policy.config.minuteEnd" id="minuteEnd" name="minuteEnd"/>
+                    <input class="form-control" type="number" min="0" max="59" data-ng-model="policy.minute" id="minute" name="minute" data-ng-required="isRequired()"/>&nbsp;&nbsp;to&nbsp;&nbsp;<input class="form-control" type="number" min="{{policy.minute}}" max="59" data-ng-model="policy.minuteEnd" id="minuteEnd" name="minuteEnd"/>
                 </div>
                 <kc-tooltip>{{:: 'authz-policy-time-minute.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group clearfix">
-                <label class="col-md-2 control-label" for="policy.logic">{{:: 'authz-policy-logic' | translate}}</label>
+                <label class="col-md-2 control-label" for="logic">{{:: 'authz-policy-logic' | translate}}</label>
 
                 <div class="col-sm-1">
-                    <select class="form-control" id="policy.logic"
+                    <select class="form-control" id="logic"
                             data-ng-model="policy.logic">
                         <option value="POSITIVE">{{:: 'authz-policy-logic-positive' | translate}}</option>
                         <option value="NEGATIVE">{{:: 'authz-policy-logic-negative' | translate}}</option>

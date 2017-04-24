@@ -14,35 +14,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.representations.idm.authorization;
+package org.keycloak.testsuite.console.page.clients.authorization.permission;
 
-import java.util.HashSet;
-import java.util.Set;
+import org.jboss.arquillian.graphene.page.Page;
+import org.keycloak.representations.idm.authorization.JSPolicyRepresentation;
+import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
+import org.keycloak.testsuite.console.page.clients.authorization.policy.PolicyTypeUI;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-public class UserPolicyRepresentation extends AbstractPolicyRepresentation {
+public class ResourcePermission implements PolicyTypeUI {
 
-    private Set<String> users;
+    @Page
+    private ResourcePermissionForm form;
 
-    @Override
-    public String getType() {
-        return "user";
+    public ResourcePermissionForm form() {
+        return form;
     }
 
-    public Set<String> getUsers() {
-        return users;
+    public ResourcePermissionRepresentation toRepresentation() {
+        return form.toRepresentation();
     }
 
-    public void setUsers(Set<String> users) {
-        this.users= users;
-    }
-
-    public void addUser(String name) {
-        if (users == null) {
-            users = new HashSet<>();
-        }
-        users.add(name);
+    public void update(ResourcePermissionRepresentation expected) {
+        form().populate(expected);
     }
 }

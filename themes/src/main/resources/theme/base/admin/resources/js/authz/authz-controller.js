@@ -1340,6 +1340,8 @@ module.controller('ResourceServerPolicyUserDetailCtrl', function($scope, $route,
             $scope.$watch('selectedUsers', function() {
                 if (!angular.equals($scope.selectedUsers, selectedUsers)) {
                     $scope.changed = true;
+                } else {
+                    $scope.changed = false;
                 }
             }, true);
         },
@@ -1413,8 +1415,11 @@ module.controller('ResourceServerPolicyClientDetailCtrl', function($scope, $rout
                 $scope.selectedClients.push(client);
             }
 
-            $scope.removeFromList = function(list, index) {
-                list.splice(index, 1);
+            $scope.removeFromList = function(client) {
+                var index = $scope.selectedClients.indexOf(client);
+                if (index != -1) {
+                    $scope.selectedClients.splice(index, 1);
+                }
             }
         },
 
@@ -1435,6 +1440,8 @@ module.controller('ResourceServerPolicyClientDetailCtrl', function($scope, $rout
             $scope.$watch('selectedClients', function() {
                 if (!angular.equals($scope.selectedClients, selectedClients)) {
                     $scope.changed = true;
+                } else {
+                    $scope.changed = false;
                 }
             }, true);
         },
@@ -1447,6 +1454,16 @@ module.controller('ResourceServerPolicyClientDetailCtrl', function($scope, $rout
             }
 
             $scope.policy.config.clients = JSON.stringify(clients);
+        },
+
+        onInitCreate : function() {
+            var selectedClients = [];
+
+            $scope.$watch('selectedClients', function() {
+                if (!angular.equals($scope.selectedClients, selectedClients)) {
+                    $scope.changed = true;
+                }
+            }, true);
         },
 
         onCreate : function() {
@@ -1572,6 +1589,8 @@ module.controller('ResourceServerPolicyRoleDetailCtrl', function($scope, $route,
             $scope.$watch('selectedRoles', function() {
                 if (!angular.equals($scope.selectedRoles, selectedRoles)) {
                     $scope.changed = true;
+                } else {
+                    $scope.changed = false;
                 }
             }, true);
         },
@@ -1589,6 +1608,7 @@ module.controller('ResourceServerPolicyRoleDetailCtrl', function($scope, $route,
             }
 
             $scope.policy.roles = roles;
+            delete $scope.policy.config;
         },
 
         onCreate : function() {
@@ -1604,6 +1624,7 @@ module.controller('ResourceServerPolicyRoleDetailCtrl', function($scope, $route,
             }
 
             $scope.policy.roles = roles;
+            delete $scope.policy.config;
         }
     }, realm, client, $scope);
     
@@ -1636,7 +1657,6 @@ module.controller('ResourceServerPolicyJSDetailCtrl', function($scope, $route, $
             $scope.initEditor = function(editor){
                 editor.$blockScrolling = Infinity;
                 var session = editor.getSession();
-                
                 session.setMode('ace/mode/javascript');
             };
         },
@@ -1646,15 +1666,14 @@ module.controller('ResourceServerPolicyJSDetailCtrl', function($scope, $route, $
         },
 
         onUpdate : function() {
-
+            delete $scope.policy.config;
         },
 
         onInitCreate : function(newPolicy) {
-            newPolicy.config = {};
         },
 
         onCreate : function() {
-
+            delete $scope.policy.config;
         }
     }, realm, client, $scope);
 });
@@ -1669,60 +1688,63 @@ module.controller('ResourceServerPolicyTimeDetailCtrl', function($scope, $route,
         },
 
         onInitUpdate : function(policy) {
-            if (policy.config.dayMonth) {
-                policy.config.dayMonth = parseInt(policy.config.dayMonth);
+            if (policy.dayMonth) {
+                policy.dayMonth = parseInt(policy.dayMonth);
             }
-            if (policy.config.dayMonthEnd) {
-                policy.config.dayMonthEnd = parseInt(policy.config.dayMonthEnd);
+            if (policy.dayMonthEnd) {
+                policy.dayMonthEnd = parseInt(policy.dayMonthEnd);
             }
-            if (policy.config.month) {
-                policy.config.month = parseInt(policy.config.month);
+            if (policy.month) {
+                policy.month = parseInt(policy.month);
             }
-            if (policy.config.monthEnd) {
-                policy.config.monthEnd = parseInt(policy.config.monthEnd);
+            if (policy.monthEnd) {
+                policy.monthEnd = parseInt(policy.monthEnd);
             }
-            if (policy.config.year) {
-                policy.config.year = parseInt(policy.config.year);
+            if (policy.year) {
+                policy.year = parseInt(policy.year);
             }
-            if (policy.config.yearEnd) {
-                policy.config.yearEnd = parseInt(policy.config.yearEnd);
+            if (policy.yearEnd) {
+                policy.yearEnd = parseInt(policy.yearEnd);
             }
-            if (policy.config.hour) {
-                policy.config.hour = parseInt(policy.config.hour);
+            if (policy.hour) {
+                policy.hour = parseInt(policy.hour);
             }
-            if (policy.config.hourEnd) {
-                policy.config.hourEnd = parseInt(policy.config.hourEnd);
+            if (policy.hourEnd) {
+                policy.hourEnd = parseInt(policy.hourEnd);
             }
-            if (policy.config.minute) {
-                policy.config.minute = parseInt(policy.config.minute);
+            if (policy.minute) {
+                policy.minute = parseInt(policy.minute);
             }
-            if (policy.config.minuteEnd) {
-                policy.config.minuteEnd = parseInt(policy.config.minuteEnd);
+            if (policy.minuteEnd) {
+                policy.minuteEnd = parseInt(policy.minuteEnd);
             }
         },
 
         onUpdate : function() {
-
+            delete $scope.policy.config;
         },
 
         onInitCreate : function(newPolicy) {
-            newPolicy.config.expirationTime = 1;
-            newPolicy.config.expirationUnit = 'Minutes';
         },
 
         onCreate : function() {
-
+            delete $scope.policy.config;
         }
     }, realm, client, $scope);
 
     $scope.isRequired = function () {
         var policy = $scope.policy;
-        if (policy.config.noa || policy.config.nbf
-            || policy.config.dayMonth
-            || policy.config.month
-            || policy.config.year
-            || policy.config.hour
-            || policy.config.minute) {
+
+        if (!policy) {
+            return true;
+        }
+
+        if (policy.notOnOrAfter || policy.notBefore
+            || policy.dayMonth
+            || policy.month
+            || policy.year
+            || policy.hour
+            || policy.minute) {
             return false;
         }
         return true;
@@ -1767,42 +1789,49 @@ module.controller('ResourceServerPolicyAggregateDetailCtrl', function($scope, $r
         },
 
         onInitUpdate : function(policy) {
-            policy.config.applyPolicies = [];
             ResourceServerPolicy.associatedPolicies({
                 realm : $route.current.params.realm,
                 client : client.id,
                 id : policy.id
             }, function(policies) {
+                $scope.selectedPolicies = [];
                 for (i = 0; i < policies.length; i++) {
                     policies[i].text = policies[i].name;
-                    $scope.policy.config.applyPolicies.push(policies[i]);
+                    $scope.selectedPolicies.push(policies[i]);
                 }
+                var copy = angular.copy($scope.selectedPolicies);
+                $scope.$watch('selectedPolicies', function() {
+                    if (!angular.equals($scope.selectedPolicies, copy)) {
+                        $scope.changed = true;
+                    }
+                }, true);
             });
         },
 
         onUpdate : function() {
             var policies = [];
 
-            for (i = 0; i < $scope.policy.config.applyPolicies.length; i++) {
-                policies.push($scope.policy.config.applyPolicies[i].id);
+            for (i = 0; i < $scope.selectedPolicies.length; i++) {
+                policies.push($scope.selectedPolicies[i].id);
             }
 
-            $scope.policy.config.applyPolicies = JSON.stringify(policies);
+            $scope.policy.policies = policies;
+            delete $scope.policy.config;
         },
 
         onInitCreate : function(newPolicy) {
-            newPolicy.config = {};
             newPolicy.decisionStrategy = 'UNANIMOUS';
         },
 
         onCreate : function() {
             var policies = [];
 
-            for (i = 0; i < $scope.policy.config.applyPolicies.length; i++) {
-                policies.push($scope.policy.config.applyPolicies[i].id);
+            for (i = 0; i < $scope.selectedPolicies.length; i++) {
+                policies.push($scope.selectedPolicies[i].id);
             }
 
-            $scope.policy.config.applyPolicies = JSON.stringify(policies);
+            $scope.policy.policies = policies;
+            delete $scope.policy.config;
         }
     }, realm, client, $scope);
 });
