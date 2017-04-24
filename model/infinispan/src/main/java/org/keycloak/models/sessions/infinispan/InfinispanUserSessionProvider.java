@@ -637,6 +637,11 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         while(itr.hasNext()) {
             UserSessionEntity entity = (UserSessionEntity) itr.next().getValue();
             Set<String> currClientSessions = entity.getClientSessions();
+
+            if (currClientSessions == null) {
+                continue;
+            }
+
             for (String clientSessionId : currClientSessions) {
                 ClientSessionEntity cls = (ClientSessionEntity) offlineSessionCache.get(clientSessionId);
                 if (cls != null) {
