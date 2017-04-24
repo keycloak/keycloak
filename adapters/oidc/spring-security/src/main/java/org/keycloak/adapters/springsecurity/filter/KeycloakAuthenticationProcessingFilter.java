@@ -65,12 +65,12 @@ public class KeycloakAuthenticationProcessingFilter extends AbstractAuthenticati
     public static final String AUTHORIZATION_HEADER = "Authorization";
     public static final String SCHEME_BEARER = "bearer ";
     public static final String SCHEME_BASIC = "basic ";
-    
+
     /**
      * Request matcher that matches all requests.
      */
     private static RequestMatcher DEFAULT_REQUEST_MATCHER = new AntPathRequestMatcher("/**");
-    
+
     private static final Logger log = LoggerFactory.getLogger(KeycloakAuthenticationProcessingFilter.class);
 
     private ApplicationContext applicationContext;
@@ -216,9 +216,8 @@ public class KeycloakAuthenticationProcessingFilter extends AbstractAuthenticati
         } finally {
             SecurityContextHolder.clearContext();
         }
+
     }
-    
-    
 
     @Override
 	protected void unsuccessfulAuthentication(HttpServletRequest request, HttpServletResponse response,
