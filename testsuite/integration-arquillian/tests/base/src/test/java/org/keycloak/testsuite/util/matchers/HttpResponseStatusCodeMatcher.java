@@ -16,8 +16,10 @@
  */
 package org.keycloak.testsuite.util.matchers;
 
+import java.io.IOException;
 import javax.ws.rs.core.Response;
 import org.apache.http.HttpResponse;
+import org.apache.http.util.EntityUtils;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
@@ -37,6 +39,17 @@ public class HttpResponseStatusCodeMatcher extends BaseMatcher<HttpResponse> {
     @Override
     public boolean matches(Object item) {
         return (item instanceof HttpResponse) && this.matcher.matches(((HttpResponse) item).getStatusLine().getStatusCode());
+    }
+
+    @Override
+    public void describeMismatch(Object item, Description description) {
+        Description d = description.appendText("was ").appendValue(item)
+          .appendText(" with entity ");
+        try {
+            d.appendText(EntityUtils.toString(((HttpResponse) item).getEntity()));
+        } catch (IOException e) {
+            d.appendText("<Cannot decode entity: " + e.getMessage() + ">");
+        }
     }
 
     @Override
