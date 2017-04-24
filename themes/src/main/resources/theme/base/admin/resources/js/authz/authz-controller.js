@@ -1636,7 +1636,6 @@ module.controller('ResourceServerPolicyJSDetailCtrl', function($scope, $route, $
             $scope.initEditor = function(editor){
                 editor.$blockScrolling = Infinity;
                 var session = editor.getSession();
-                
                 session.setMode('ace/mode/javascript');
             };
         },
@@ -1646,15 +1645,14 @@ module.controller('ResourceServerPolicyJSDetailCtrl', function($scope, $route, $
         },
 
         onUpdate : function() {
-
+            delete $scope.policy.config;
         },
 
         onInitCreate : function(newPolicy) {
-            newPolicy.config = {};
         },
 
         onCreate : function() {
-
+            delete $scope.policy.config;
         }
     }, realm, client, $scope);
 });
@@ -1669,60 +1667,63 @@ module.controller('ResourceServerPolicyTimeDetailCtrl', function($scope, $route,
         },
 
         onInitUpdate : function(policy) {
-            if (policy.config.dayMonth) {
-                policy.config.dayMonth = parseInt(policy.config.dayMonth);
+            if (policy.dayMonth) {
+                policy.dayMonth = parseInt(policy.dayMonth);
             }
-            if (policy.config.dayMonthEnd) {
-                policy.config.dayMonthEnd = parseInt(policy.config.dayMonthEnd);
+            if (policy.dayMonthEnd) {
+                policy.dayMonthEnd = parseInt(policy.dayMonthEnd);
             }
-            if (policy.config.month) {
-                policy.config.month = parseInt(policy.config.month);
+            if (policy.month) {
+                policy.month = parseInt(policy.month);
             }
-            if (policy.config.monthEnd) {
-                policy.config.monthEnd = parseInt(policy.config.monthEnd);
+            if (policy.monthEnd) {
+                policy.monthEnd = parseInt(policy.monthEnd);
             }
-            if (policy.config.year) {
-                policy.config.year = parseInt(policy.config.year);
+            if (policy.year) {
+                policy.year = parseInt(policy.year);
             }
-            if (policy.config.yearEnd) {
-                policy.config.yearEnd = parseInt(policy.config.yearEnd);
+            if (policy.yearEnd) {
+                policy.yearEnd = parseInt(policy.yearEnd);
             }
-            if (policy.config.hour) {
-                policy.config.hour = parseInt(policy.config.hour);
+            if (policy.hour) {
+                policy.hour = parseInt(policy.hour);
             }
-            if (policy.config.hourEnd) {
-                policy.config.hourEnd = parseInt(policy.config.hourEnd);
+            if (policy.hourEnd) {
+                policy.hourEnd = parseInt(policy.hourEnd);
             }
-            if (policy.config.minute) {
-                policy.config.minute = parseInt(policy.config.minute);
+            if (policy.minute) {
+                policy.minute = parseInt(policy.minute);
             }
-            if (policy.config.minuteEnd) {
-                policy.config.minuteEnd = parseInt(policy.config.minuteEnd);
+            if (policy.minuteEnd) {
+                policy.minuteEnd = parseInt(policy.minuteEnd);
             }
         },
 
         onUpdate : function() {
-
+            delete $scope.policy.config;
         },
 
         onInitCreate : function(newPolicy) {
-            newPolicy.config.expirationTime = 1;
-            newPolicy.config.expirationUnit = 'Minutes';
         },
 
         onCreate : function() {
-
+            delete $scope.policy.config;
         }
     }, realm, client, $scope);
 
     $scope.isRequired = function () {
         var policy = $scope.policy;
-        if (policy.config.noa || policy.config.nbf
-            || policy.config.dayMonth
-            || policy.config.month
-            || policy.config.year
-            || policy.config.hour
-            || policy.config.minute) {
+
+        if (!policy) {
+            return true;
+        }
+
+        if (policy.notOnOrAfter || policy.notBefore
+            || policy.dayMonth
+            || policy.month
+            || policy.year
+            || policy.hour
+            || policy.minute) {
             return false;
         }
         return true;

@@ -35,7 +35,7 @@
             <div class="form-group">
                 <label class="col-md-2 control-label" for="description">{{:: 'authz-policy-js-code' | translate}} </label>
                 <div class="col-sm-6">
-                    <div ui-ace="{ onLoad : initEditor }" data-ng-model="policy.config.code"></div>
+                    <div ui-ace="{ onLoad : initEditor }" data-ng-model="policy.code"></div>
                 </div>
                 <kc-tooltip>{{:: 'authz-policy-js-code.tooltip' | translate}}</kc-tooltip>
             </div>

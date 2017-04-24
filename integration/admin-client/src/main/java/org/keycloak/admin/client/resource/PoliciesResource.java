@@ -74,4 +74,10 @@ public interface PoliciesResource {
 
     @Path("user")
     UserPoliciesResource users();
+
+    @Path("js")
+    JSPoliciesResource js();
+
+    @Path("time")
+    TimePoliciesResource time();
 }
