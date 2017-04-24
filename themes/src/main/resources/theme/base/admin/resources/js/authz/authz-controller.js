@@ -1789,7 +1789,6 @@ module.controller('ResourceServerPolicyAggregateDetailCtrl', function($scope, $r
         },
 
         onInitUpdate : function(policy) {
-            policy.config.applyPolicies = [];
             ResourceServerPolicy.associatedPolicies({
                 realm : $route.current.params.realm,
                 client : client.id,
@@ -1816,11 +1815,11 @@ module.controller('ResourceServerPolicyAggregateDetailCtrl', function($scope, $r
                 policies.push($scope.selectedPolicies[i].id);
             }
 
-            $scope.policy.config.applyPolicies = JSON.stringify(policies);
+            $scope.policy.policies = policies;
+            delete $scope.policy.config;
         },
 
         onInitCreate : function(newPolicy) {
-            newPolicy.config = {};
             newPolicy.decisionStrategy = 'UNANIMOUS';
         },
 
@@ -1831,7 +1830,8 @@ module.controller('ResourceServerPolicyAggregateDetailCtrl', function($scope, $r
                 policies.push($scope.selectedPolicies[i].id);
             }
 
-            $scope.policy.config.applyPolicies = JSON.stringify(policies);
+            $scope.policy.policies = policies;
+            delete $scope.policy.config;
         }
     }, realm, client, $scope);
 });

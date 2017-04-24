@@ -88,6 +88,10 @@ public class AbstractPolicyRepresentation {
         return policies;
     }
 
+    public void setPolicies(Set<String> policies) {
+        this.policies = policies;
+    }
+
     public void addPolicy(String... id) {
         if (this.policies == null) {
             this.policies = new HashSet<>();
@@ -97,6 +101,10 @@ public class AbstractPolicyRepresentation {
 
     public Set<String> getResources() {
         return resources;
+    }
+
+    public void setResources(Set<String> resources) {
+        this.resources = resources;
     }
 
     public void addResource(String id) {

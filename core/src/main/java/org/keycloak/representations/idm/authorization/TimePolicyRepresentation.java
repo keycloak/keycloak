@@ -34,6 +34,11 @@ public class TimePolicyRepresentation extends AbstractPolicyRepresentation {
     private String minute;
     private String minuteEnd;
 
+    @Override
+    public String getType() {
+        return "time";
+    }
+
     public String getNotBefore() {
         return notBefore;
     }

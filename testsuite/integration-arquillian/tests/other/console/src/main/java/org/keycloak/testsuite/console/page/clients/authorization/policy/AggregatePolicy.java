@@ -14,25 +14,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.representations.idm.authorization;
+package org.keycloak.testsuite.console.page.clients.authorization.policy;
+
+import org.jboss.arquillian.graphene.page.Page;
+import org.keycloak.representations.idm.authorization.AggregatePolicyRepresentation;
+import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-public class JSPolicyRepresentation extends AbstractPolicyRepresentation {
+public class AggregatePolicy implements PolicyTypeUI {
 
-    private String code;
+    @Page
+    private AggregatePolicyForm form;
 
-    @Override
-    public String getType() {
-        return "js";
+    public AggregatePolicyForm form() {
+        return form;
     }
 
-    public String getCode() {
-        return code;
+    public AggregatePolicyRepresentation toRepresentation() {
+        return form.toRepresentation();
     }
 
-    public void setCode(String code) {
-        this.code = code;
+    public void update(AggregatePolicyRepresentation expected) {
+        form().populate(expected);
     }
 }

@@ -19,20 +19,10 @@ package org.keycloak.representations.idm.authorization;
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-public class JSPolicyRepresentation extends AbstractPolicyRepresentation {
-
-    private String code;
+public class AggregatePolicyRepresentation extends AbstractPolicyRepresentation {
 
     @Override
     public String getType() {
-        return "js";
-    }
-
-    public String getCode() {
-        return code;
-    }
-
-    public void setCode(String code) {
-        this.code = code;
+        return "aggregate";
     }
 }

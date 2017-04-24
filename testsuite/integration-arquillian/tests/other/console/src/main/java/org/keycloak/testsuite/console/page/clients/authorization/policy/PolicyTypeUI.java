@@ -14,25 +14,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.representations.idm.authorization;
+package org.keycloak.testsuite.console.page.clients.authorization.policy;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-public class JSPolicyRepresentation extends AbstractPolicyRepresentation {
-
-    private String code;
-
-    @Override
-    public String getType() {
-        return "js";
-    }
-
-    public String getCode() {
-        return code;
-    }
-
-    public void setCode(String code) {
-        this.code = code;
-    }
+public interface PolicyTypeUI {
 }

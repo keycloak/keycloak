@@ -26,6 +26,11 @@ public class RolePolicyRepresentation extends AbstractPolicyRepresentation {
 
     private Set<RoleDefinition> roles;
 
+    @Override
+    public String getType() {
+        return "role";
+    }
+
     public Set<RoleDefinition> getRoles() {
         return roles;
     }

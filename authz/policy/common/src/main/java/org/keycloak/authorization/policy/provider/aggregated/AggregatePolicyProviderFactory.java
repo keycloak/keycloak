@@ -29,12 +29,13 @@ import org.keycloak.authorization.policy.provider.PolicyProviderAdminService;
 import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.representations.idm.authorization.AggregatePolicyRepresentation;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-public class AggregatePolicyProviderFactory implements PolicyProviderFactory<PolicyRepresentation> {
+public class AggregatePolicyProviderFactory implements PolicyProviderFactory<AggregatePolicyRepresentation> {
 
     private AggregatePolicyProvider provider = new AggregatePolicyProvider();
 
@@ -54,22 +55,17 @@ public class AggregatePolicyProviderFactory implements PolicyProviderFactory<Pol
     }
 
     @Override
-    public PolicyProviderAdminService getAdminResource(ResourceServer resourceServer, AuthorizationProvider authorization) {
-        return null;
-    }
-
-    @Override
     public PolicyProvider create(KeycloakSession session) {
         return null;
     }
 
     @Override
-    public void onCreate(Policy policy, PolicyRepresentation representation, AuthorizationProvider authorization) {
+    public void onCreate(Policy policy, AggregatePolicyRepresentation representation, AuthorizationProvider authorization) {
         verifyCircularReference(policy, new ArrayList<>());
     }
 
     @Override
-    public void onUpdate(Policy policy, PolicyRepresentation representation, AuthorizationProvider authorization) {
+    public void onUpdate(Policy policy, AggregatePolicyRepresentation representation, AuthorizationProvider authorization) {
         verifyCircularReference(policy, new ArrayList<>());
     }
 

@@ -26,6 +26,11 @@ public class UserPolicyRepresentation extends AbstractPolicyRepresentation {
 
     private Set<String> users;
 
+    @Override
+    public String getType() {
+        return "user";
+    }
+
     public Set<String> getUsers() {
         return users;
     }

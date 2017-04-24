@@ -34,18 +34,18 @@
                 <kc-tooltip>{{:: 'authz-policy-description.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group">
-                <label class="col-md-2 control-label" for="policy.notBefore">{{:: 'not-before' | translate}}</label>
+                <label class="col-md-2 control-label" for="notBefore">{{:: 'not-before' | translate}}</label>
 
                 <div class="col-md-6 time-selector">
-                    <input class="form-control" style="width: 150px" type="text" id="policy.notBefore" name="notBefore" data-ng-model="policy.notBefore" placeholder="yyyy-MM-dd hh:mm:ss" data-ng-required="isRequired()">
+                    <input class="form-control" style="width: 150px" type="text" id="notBefore" name="notBefore" data-ng-model="policy.notBefore" placeholder="yyyy-MM-dd hh:mm:ss" data-ng-required="isRequired()">
                 </div>
                 <kc-tooltip>{{:: 'authz-policy-time-not-before.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group">
-                <label class="col-md-2 control-label" for="policy.notOnOrAfter">{{:: 'authz-policy-time-not-on-after' | translate}}</label>
+                <label class="col-md-2 control-label" for="notOnOrAfter">{{:: 'authz-policy-time-not-on-after' | translate}}</label>
 
                 <div class="col-md-6 time-selector">
-                    <input class="form-control" style="width: 150px" type="text" id="policy.notOnOrAfter" name="policy.notOnOrAfter" data-ng-model="policy.notOnOrAfter" placeholder="yyyy-MM-dd hh:mm:ss" data-ng-required="isRequired()">
+                    <input class="form-control" style="width: 150px" type="text" id="notOnOrAfter" name="notOnOrAfter" data-ng-model="policy.notOnOrAfter" placeholder="yyyy-MM-dd hh:mm:ss" data-ng-required="isRequired()">
                 </div>
                 <kc-tooltip>{{:: 'authz-policy-time-not-on-after.tooltip' | translate}}</kc-tooltip>
             </div>
@@ -90,10 +90,10 @@
                 <kc-tooltip>{{:: 'authz-policy-time-minute.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group clearfix">
-                <label class="col-md-2 control-label" for="policy.logic">{{:: 'authz-policy-logic' | translate}}</label>
+                <label class="col-md-2 control-label" for="logic">{{:: 'authz-policy-logic' | translate}}</label>
 
                 <div class="col-sm-1">
-                    <select class="form-control" id="policy.logic"
+                    <select class="form-control" id="logic"
                             data-ng-model="policy.logic">
                         <option value="POSITIVE">{{:: 'authz-policy-logic-positive' | translate}}</option>
                         <option value="NEGATIVE">{{:: 'authz-policy-logic-negative' | translate}}</option>
