@@ -40,7 +40,7 @@ public class ClientPolicyProviderFactory implements PolicyProviderFactory {
     }
 
     @Override
-    public PolicyProviderAdminService getAdminResource(ResourceServer resourceServer) {
+    public PolicyProviderAdminService getAdminResource(ResourceServer resourceServer, AuthorizationProvider authorization) {
         return null;
     }
 
@@ -78,9 +78,6 @@ public class ClientPolicyProviderFactory implements PolicyProviderFactory {
 
                         try {
                             if (clients.isEmpty()) {
-                                policyStore.findDependentPolicies(policy.getId(), resourceServer.getId()).forEach(dependentPolicy -> {
-                                    dependentPolicy.removeAssociatedPolicy(policy);
-                                });
                                 policyStore.delete(policy.getId());
                             } else {
                                 policy.getConfig().put("clients", JsonSerialization.writeValueAsString(clients));

@@ -82,6 +82,7 @@ import static java.lang.Boolean.TRUE;
 /**
  * Base resource class for managing one particular client of a realm.
  *
+ * @resource Clients
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */

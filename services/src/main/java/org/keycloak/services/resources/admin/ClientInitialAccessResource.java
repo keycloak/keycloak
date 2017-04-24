@@ -43,6 +43,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 /**
+ * @resource Client Initial Access
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class ClientInitialAccessResource {

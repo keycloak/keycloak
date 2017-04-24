@@ -106,6 +106,8 @@ public abstract class AbstractKeycloakJettyAuthenticator extends LoginAuthentica
 
     public abstract AdapterTokenStore createSessionTokenStore(Request request, KeycloakDeployment resolvedDeployment);
 
+    public abstract JettyUserSessionManagement createSessionManagement(Request request);
+
     public void logoutCurrent(Request request) {
         AdapterDeploymentContext deploymentContext = (AdapterDeploymentContext) request.getAttribute(AdapterDeploymentContext.class.getName());
         KeycloakSecurityContext ksc = (KeycloakSecurityContext) request.getAttribute(KeycloakSecurityContext.class.getName());
@@ -287,7 +289,7 @@ public abstract class AbstractKeycloakJettyAuthenticator extends LoginAuthentica
             log.debug("*** deployment isn't configured return false");
             return Authentication.UNAUTHENTICATED;
         }
-        PreAuthActionsHandler handler = new PreAuthActionsHandler(new JettyUserSessionManagement(request.getSessionManager()), deploymentContext, facade);
+        PreAuthActionsHandler handler = new PreAuthActionsHandler(createSessionManagement(request), deploymentContext, facade);
         if (handler.handleRequest()) {
             return Authentication.SEND_SUCCESS;
         }

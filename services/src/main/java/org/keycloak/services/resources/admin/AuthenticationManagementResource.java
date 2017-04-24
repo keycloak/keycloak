@@ -73,6 +73,7 @@ import java.util.Map;
 import static javax.ws.rs.core.Response.Status.NOT_FOUND;
 
 /**
+ * @resource Authentication Management
  * @author Bill Burke
  */
 public class AuthenticationManagementResource {
@@ -220,7 +221,7 @@ public class AuthenticationManagementResource {
 
         flow.setId(createdModel.getId());
         adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo, createdModel.getId()).representation(flow).success();
-        return Response.status(201).build();
+        return Response.created(uriInfo.getAbsolutePathBuilder().path(flow.getId()).build()).build();
     }
 
     /**

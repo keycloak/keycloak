@@ -77,6 +77,10 @@ public class JsonSerialization {
         return readValue(bytes, type, false);
     }
 
+    public static <T> T readValue(String string, TypeReference<T> type) throws IOException {
+        return mapper.readValue(string, type);
+    }
+
     public static <T> T readValue(InputStream bytes, TypeReference<T> type) throws IOException {
         return mapper.readValue(bytes, type);
     }

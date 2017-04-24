@@ -801,10 +801,7 @@ public class RealmAdapter implements CachedRealmModel {
 
     @Override
     public RoleModel getRole(String name) {
-        for (RoleModel role : getRoles()) {
-            if (role.getName().equals(name)) return role;
-        }
-        return null;
+        return cacheSession.getRealmRole(this, name);
     }
 
     @Override

@@ -25,6 +25,7 @@ import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientTemplateResource;
 import org.keycloak.admin.client.resource.ClientTemplatesResource;
 import org.keycloak.admin.client.resource.ClientsResource;
+import org.keycloak.admin.client.resource.ComponentsResource;
 import org.keycloak.admin.client.resource.GroupResource;
 import org.keycloak.admin.client.resource.GroupsResource;
 import org.keycloak.admin.client.resource.IdentityProviderResource;
@@ -281,6 +282,20 @@ public class AdminEventPaths {
         URI uri = UriBuilder.fromUri(identityProviderPath(idpAlias)).path(IdentityProviderResource.class, "getMapperById").build(idpMapperId);
         return uri.toString();
     }
+
+    // COMPONENTS
+    public static String componentsPath() {
+        URI uri = UriBuilder.fromUri("").path(RealmResource.class, "components").build();
+        return uri.toString();
+    }
+
+    public static String componentPath(String componentId) {
+        URI uri = UriBuilder.fromUri(componentsPath()).path(ComponentsResource.class, "component").build(componentId);
+        return uri.toString();
+    }
+
+
+
 
     // CLIENT INITIAL ACCESS
 

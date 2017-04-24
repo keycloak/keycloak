@@ -19,6 +19,7 @@ package org.keycloak.broker.saml;
 
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
+
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.broker.provider.IdentityProvider;
@@ -78,9 +79,12 @@ import java.security.Key;
 import java.security.cert.X509Certificate;
 import java.util.LinkedList;
 import java.util.List;
+
 import org.keycloak.rotation.HardcodedKeyLocator;
 import org.keycloak.rotation.KeyLocator;
 import org.keycloak.saml.processing.core.util.KeycloakKeySamlExtensionGenerator;
+
+import java.util.*;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -299,7 +303,7 @@ public class SAMLEndpoint {
             builder.issuer(issuerURL);
             JaxrsSAML2BindingBuilder binding = new JaxrsSAML2BindingBuilder()
                         .relayState(relayState);
-            boolean postBinding = config.isPostBindingResponse();
+            boolean postBinding = config.isPostBindingLogout();
             if (config.isWantAuthnRequestsSigned()) {
                 KeyManager.ActiveRsaKey keys = session.keys().getActiveRsaKey(realm);
                 String keyName = config.getXmlSigKeyInfoKeyNameTransformer().getKeyName(keys.getKid(), keys.getCertificate());
@@ -333,6 +337,13 @@ public class SAMLEndpoint {
 
             try {
                 KeyManager.ActiveRsaKey keys = session.keys().getActiveRsaKey(realm);
+                if (! isSuccessfulSamlResponse(responseType)) {
+                    String statusMessage = responseType.getStatus() == null ? Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR : responseType.getStatus().getStatusMessage();
+                    return callback.error(relayState, statusMessage);
+                }
+                if (responseType.getAssertions() == null || responseType.getAssertions().isEmpty()) {
+                    return callback.error(relayState, Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR);
+                }
                 AssertionType assertion = AssertionUtil.getAssertion(responseType, keys.getPrivateKey());
                 SubjectType subject = assertion.getSubject();
                 SubjectType.STSubType subType = subject.getSubType();
@@ -395,6 +406,13 @@ public class SAMLEndpoint {
         }
 
 
+        private boolean isSuccessfulSamlResponse(ResponseType responseType) {
+            return responseType != null
+              && responseType.getStatus() != null
+              && responseType.getStatus().getStatusCode() != null
+              && responseType.getStatus().getStatusCode().getValue() != null
+              && Objects.equals(responseType.getStatus().getStatusCode().getValue().toString(), JBossSAMLURIConstants.STATUS_SUCCESS.get());
+        }
 
 
         public Response handleSamlResponse(String samlResponse, String relayState, String clientId) {

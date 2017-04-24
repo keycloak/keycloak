@@ -57,7 +57,7 @@ public class ResourcePermission {
      * @return a lit of permitted scopes
      */
     public List<Scope> getScopes() {
-        return Collections.unmodifiableList(this.scopes);
+        return this.scopes;
     }
 
     /**

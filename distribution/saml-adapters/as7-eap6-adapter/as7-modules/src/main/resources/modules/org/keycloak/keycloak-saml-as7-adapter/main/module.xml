@@ -42,6 +42,9 @@
         <module name="org.keycloak.keycloak-saml-adapter-core"/>
         <module name="org.keycloak.keycloak-common"/>
         <module name="org.apache.httpcomponents"/>
+        <module name="org.infinispan"/>
+        <module name="org.infinispan.cachestore.remote"/>
+        <module name="org.infinispan.client.hotrod"/>
     </dependencies>
 
 </module>

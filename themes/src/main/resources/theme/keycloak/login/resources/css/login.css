@@ -152,6 +152,11 @@ ol#kc-totp-settings li:first-of-type {
     margin-top: 0;
 }
 
+#kc-totp-secret-qr-code {
+    max-width:150px;
+    max-height:150px;
+}
+
 /* OAuth */
 
 #kc-oauth h3 {
@@ -244,18 +249,6 @@ ol#kc-totp-settings li:first-of-type {
 .zocial.microsoft {background-color: #0052a4; color: #fff;}
 .zocial.microsoft:before { content: "\f15d"; }
 
-@media (min-width: 1281px) {
-    #kc-container-wrapper {
-        bottom: 13%;        
-    }
-    
-    #kc-logo-wrapper {
-        position: absolute;
-        top: 50px;
-        right: 50px;
-    }
-}
-
 @media (min-width: 768px) {
     #kc-container-wrapper {
         position: absolute;
@@ -263,7 +256,9 @@ ol#kc-totp-settings li:first-of-type {
     }
 
     #kc-logo-wrapper {
-        margin-left: auto;
+        position: absolute;
+        top: 50px;
+        right: 50px;
     }
 
     .login-pf .container {
@@ -326,7 +321,15 @@ ol#kc-totp-settings li:first-of-type {
     }
 }
 
-@media (max-height: 500px) {
+@media (min-height: 646px) {
     #kc-container-wrapper {
+        bottom: 12%;
+    }
+}
+
+@media (max-height: 645px) {
+    #kc-container-wrapper {
+        padding-top: 50px;
+        top: 20%;
     }
 }

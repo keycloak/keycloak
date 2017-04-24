@@ -50,6 +50,9 @@ import javax.ws.rs.GET;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
@@ -66,6 +69,9 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
      * @see ClientSessionModel#getNote(String)
      */
     public static final String CLIENT_SESSION_NOTE_ADDITIONAL_REQ_PARAMS_PREFIX = "client_request_param_";
+
+    // https://tools.ietf.org/html/rfc7636#section-4.2
+    private static final Pattern VALID_CODE_CHALLENGE_PATTERN = Pattern.compile("^[0-9a-zA-Z\\-\\.~_]+$");
 
     private enum Action {
         REGISTER, CODE, FORGOT_CREDENTIALS
@@ -109,6 +115,12 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         }
 
         errorResponse = checkOIDCParams();
+        if (errorResponse != null) {
+            return errorResponse;
+        }
+
+        // https://tools.ietf.org/html/rfc7636#section-4
+        errorResponse = checkPKCEParams();
         if (errorResponse != null) {
             return errorResponse;
         }
@@ -258,6 +270,65 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         return null;
     }
 
+    // https://tools.ietf.org/html/rfc7636#section-4
+    private Response checkPKCEParams() {
+        String codeChallenge = request.getCodeChallenge();
+        String codeChallengeMethod = request.getCodeChallengeMethod();
+        
+        // PKCE not adopted to OAuth2 Implicit Grant and OIDC Implicit Flow,
+        // adopted to OAuth2 Authorization Code Grant and OIDC Authorization Code Flow, Hybrid Flow
+        // Namely, flows using authorization code.
+        if (parsedResponseType.isImplicitFlow()) return null;
+        
+        if (codeChallenge == null && codeChallengeMethod != null) {
+            logger.info("PKCE supporting Client without code challenge");
+            event.error(Errors.INVALID_REQUEST);
+            return redirectErrorToClient(parsedResponseMode, OAuthErrorException.INVALID_REQUEST, "Missing parameter: code_challenge");
+        }
+        
+        // based on code_challenge value decide whether this client(RP) supports PKCE
+        if (codeChallenge == null) {
+            logger.debug("PKCE non-supporting Client");
+            return null;
+        }
+        
+        if (codeChallengeMethod != null) {
+        	// https://tools.ietf.org/html/rfc7636#section-4.2
+        	// plain or S256
+            if (!codeChallengeMethod.equals(OIDCLoginProtocol.PKCE_METHOD_S256) && !codeChallengeMethod.equals(OIDCLoginProtocol.PKCE_METHOD_PLAIN)) {
+                logger.infof("PKCE supporting Client with invalid code challenge method not specified in PKCE, codeChallengeMethod = %s", codeChallengeMethod);
+                event.error(Errors.INVALID_REQUEST);
+                return redirectErrorToClient(parsedResponseMode, OAuthErrorException.INVALID_REQUEST, "Invalid parameter: code_challenge_method");
+            }
+        } else {
+        	// https://tools.ietf.org/html/rfc7636#section-4.3
+        	// default code_challenge_method is plane
+        	codeChallengeMethod = OIDCLoginProtocol.PKCE_METHOD_PLAIN;
+        }
+        
+        if (!isValidPkceCodeChallenge(codeChallenge)) {
+            logger.infof("PKCE supporting Client with invalid code challenge specified in PKCE, codeChallenge = %s", codeChallenge);
+            event.error(Errors.INVALID_REQUEST);
+            return redirectErrorToClient(parsedResponseMode, OAuthErrorException.INVALID_REQUEST, "Invalid parameter: code_challenge");
+        }
+        
+        return null;
+    }
+
+    // https://tools.ietf.org/html/rfc7636#section-4
+    private boolean isValidPkceCodeChallenge(String codeChallenge) {
+        if (codeChallenge.length() < OIDCLoginProtocol.PKCE_CODE_CHALLENGE_MIN_LENGTH) {
+           logger.debugf("PKCE codeChallenge length under lower limit , codeChallenge = %s", codeChallenge);
+           return false;
+       }
+       if (codeChallenge.length() > OIDCLoginProtocol.PKCE_CODE_CHALLENGE_MAX_LENGTH) {
+           logger.debugf("PKCE codeChallenge length over upper limit , codeChallenge = %s", codeChallenge);
+           return false;
+       }
+       Matcher m = VALID_CODE_CHALLENGE_PATTERN.matcher(codeChallenge);
+       return m.matches() ? true : false;
+    }
+
     private Response redirectErrorToClient(OIDCResponseMode responseMode, String error, String errorDescription) {
         OIDCRedirectUriBuilder errorResponseBuilder = OIDCRedirectUriBuilder.fromUri(redirectUri, responseMode)
                 .addParam(OAuth2Constants.ERROR, error);
@@ -302,6 +373,14 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         if (request.getPrompt() != null) clientSession.setNote(OIDCLoginProtocol.PROMPT_PARAM, request.getPrompt());
         if (request.getIdpHint() != null) clientSession.setNote(AdapterConstants.KC_IDP_HINT, request.getIdpHint());
         if (request.getResponseMode() != null) clientSession.setNote(OIDCLoginProtocol.RESPONSE_MODE_PARAM, request.getResponseMode());
+
+        // https://tools.ietf.org/html/rfc7636#section-4
+        if (request.getCodeChallenge() != null) clientSession.setNote(OIDCLoginProtocol.CODE_CHALLENGE_PARAM, request.getCodeChallenge());
+        if (request.getCodeChallengeMethod() != null) {
+        	clientSession.setNote(OIDCLoginProtocol.CODE_CHALLENGE_METHOD_PARAM, request.getCodeChallengeMethod());
+        } else {
+        	clientSession.setNote(OIDCLoginProtocol.CODE_CHALLENGE_METHOD_PARAM, OIDCLoginProtocol.PKCE_METHOD_PLAIN);
+        }
 
         if (request.getAdditionalReqParams() != null) {
             for (String paramName : request.getAdditionalReqParams().keySet()) {

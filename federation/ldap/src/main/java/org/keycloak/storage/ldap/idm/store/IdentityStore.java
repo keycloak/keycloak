@@ -20,6 +20,7 @@ package org.keycloak.storage.ldap.idm.store;
 import org.keycloak.storage.ldap.LDAPConfig;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
 import org.keycloak.storage.ldap.idm.query.internal.LDAPQuery;
+import org.keycloak.storage.ldap.mappers.LDAPOperationDecorator;
 
 import javax.naming.AuthenticationException;
 import java.util.List;
@@ -92,7 +93,8 @@ public interface IdentityStore {
      *
      * @param user Keycloak user
      * @param password Ldap password
+     * @param passwordUpdateDecorator Callback to be executed before/after password update. Can be null
      */
-    void updatePassword(LDAPObject user, String password);
+    void updatePassword(LDAPObject user, String password, LDAPOperationDecorator passwordUpdateDecorator);
 
 }

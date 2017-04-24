@@ -24,13 +24,15 @@ import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.credential.PasswordUserCredentialModel;
 import org.keycloak.models.utils.UserModelDelegate;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
 import org.keycloak.storage.ldap.idm.query.internal.LDAPQuery;
 import org.keycloak.storage.ldap.mappers.AbstractLDAPStorageMapper;
-import org.keycloak.storage.ldap.mappers.PasswordUpdated;
+import org.keycloak.storage.ldap.mappers.LDAPOperationDecorator;
+import org.keycloak.storage.ldap.mappers.PasswordUpdateCallback;
 
 import javax.naming.AuthenticationException;
 import java.util.HashSet;
@@ -45,7 +47,7 @@ import java.util.regex.Pattern;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  * @author <a href="mailto:slawomir@dabek.name">Slawomir Dabek</a>
  */
-public class MSADLDSUserAccountControlStorageMapper extends AbstractLDAPStorageMapper implements PasswordUpdated {
+public class MSADLDSUserAccountControlStorageMapper extends AbstractLDAPStorageMapper implements PasswordUpdateCallback {
 
     private static final Logger logger = Logger.getLogger(MSADLDSUserAccountControlStorageMapper.class);
 
@@ -71,7 +73,12 @@ public class MSADLDSUserAccountControlStorageMapper extends AbstractLDAPStorageM
     }
 
     @Override
-    public void passwordUpdated(UserModel user, LDAPObject ldapUser, CredentialInput input) {
+    public LDAPOperationDecorator beforePasswordUpdate(UserModel user, LDAPObject ldapUser, PasswordUserCredentialModel password) {
+        return null; // Not supported for now. Not sure if LDAP_SERVER_POLICY_HINTS_OID works in MSAD LDS
+    }
+
+    @Override
+    public void passwordUpdated(UserModel user, LDAPObject ldapUser, PasswordUserCredentialModel password) {
         logger.debugf("Going to update pwdLastSet for ldap user '%s' after successful password update", ldapUser.getDn().toString());
 
         // Normally it's read-only
@@ -89,7 +96,7 @@ public class MSADLDSUserAccountControlStorageMapper extends AbstractLDAPStorageM
     }
 
     @Override
-    public void passwordUpdateFailed(UserModel user, LDAPObject ldapUser, CredentialInput input, ModelException exception) {
+    public void passwordUpdateFailed(UserModel user, LDAPObject ldapUser, PasswordUserCredentialModel password, ModelException exception) {
         throw processFailedPasswordUpdateException(exception);
     }
 
@@ -126,11 +133,15 @@ public class MSADLDSUserAccountControlStorageMapper extends AbstractLDAPStorageM
         if (ldapProvider.getEditMode() == UserStorageProvider.EditMode.WRITABLE) {
             if (errorCode.equals("532") || errorCode.equals("773")) {
                 // User needs to change his MSAD password. Allow him to login, but add UPDATE_PASSWORD required action
-                user.addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
+                if (!user.getRequiredActions().contains(UserModel.RequiredAction.UPDATE_PASSWORD.name())) {
+                    user.addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
+                }
                 return true;
             } else if (errorCode.equals("533")) {
                 // User is disabled in MSAD LDS. Set him to disabled in KC as well
-                user.setEnabled(false);
+                if (user.isEnabled()) {
+                    user.setEnabled(false);
+                }
                 return true;
             } else if (errorCode.equals("775")) {
                 logger.warnf("Locked user '%s' attempt to login", user.getUsername());

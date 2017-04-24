@@ -17,10 +17,11 @@
 
 package org.keycloak.services.resources;
 
+import org.keycloak.utils.MediaType;
+
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
-import javax.ws.rs.core.MediaType;
 
 @Path("/robots.txt")
 public class RobotsResource {
@@ -28,7 +29,7 @@ public class RobotsResource {
     private static final String robots = "User-agent: *\n" + "Disallow: /";
 
     @GET
-    @Produces(MediaType.TEXT_PLAIN)
+    @Produces(MediaType.TEXT_PLAIN_UTF_8)
     public String getRobots() {
         return robots;
     }

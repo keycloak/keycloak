@@ -128,7 +128,7 @@ public class SamlAdapterTest {
 
     @Test
     public void testPostPassiveLoginLogout() {
-        testStrategy.testPostPassiveLoginLogout(false);
+        testStrategy.testPostPassiveLoginLogout(true);
     }
 
     @Test

@@ -20,6 +20,8 @@ package org.keycloak.testsuite.adapter.undertow.servlet;
 import org.keycloak.testsuite.adapter.servlet.AbstractDemoFilterServletAdapterTest;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 
+import org.junit.Ignore;
+
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */

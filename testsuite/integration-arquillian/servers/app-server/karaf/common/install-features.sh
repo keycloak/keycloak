@@ -23,9 +23,10 @@ do
         fi
 
         if "$UPDATE_CONFIG" == "true"; then
-            echo "Updating Config - org.ops4j.pax.url.mvn"
+            echo "Updating Config"
             ./client $CLIENT_AUTH -f update-config.cli
-            if [ $? -ne 0 ]; then 
+            if [ $? -ne 0 ]; then
+                echo "Call update-config.cli failed!";
                 RESULT=1; 
             else
                 ./client $CLIENT_AUTH config:list | grep org.ops4j.pax.url.mvn.
@@ -34,7 +35,19 @@ do
 
         echo "Installing features."
         ./client $CLIENT_AUTH -f install-features.cli
-        if [ $? -ne 0 ]; then RESULT=1; fi
+        if [ $? -ne 0 ]; then
+            echo "Call install-features.cli failed!";
+            RESULT=1;
+        fi
+
+        if "$UPDATE_CONFIG" == "true"; then
+            echo "Updating Config - Keycloak authentication"
+            ./client $CLIENT_AUTH -f update-config-auth.cli
+            if [ $? -ne 0 ]; then
+                echo "Call update-config-auth.cli failed!";
+                RESULT=1;
+            fi
+        fi
 
         ./stop
         rm -rf ../data/log

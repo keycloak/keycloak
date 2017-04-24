@@ -16,6 +16,8 @@
  */
 package org.keycloak.storage.jpa.entity;
 
+import org.keycloak.storage.jpa.KeyUtils;
+
 import javax.persistence.Access;
 import javax.persistence.AccessType;
 import javax.persistence.Column;
@@ -58,6 +60,7 @@ public class FederatedUser {
     }
 
     public void setId(String id) {
+        KeyUtils.assertValidKey(id);
         this.id = id;
     }
 

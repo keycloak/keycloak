@@ -47,6 +47,7 @@ import javax.ws.rs.core.UriInfo;
 /**
  * Base resource class for managing one particular client of a realm.
  *
+ * @resource Client Templates
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
@@ -104,6 +105,9 @@ public class ClientTemplateResource {
 
         try {
             RepresentationToModel.updateClientTemplate(rep, template);
+            if (session.getTransactionManager().isActive()) {
+                session.getTransactionManager().commit();
+            }
             adminEvent.operation(OperationType.UPDATE).resourcePath(uriInfo).representation(rep).success();
             return Response.noContent().build();
         } catch (ModelDuplicateException e) {

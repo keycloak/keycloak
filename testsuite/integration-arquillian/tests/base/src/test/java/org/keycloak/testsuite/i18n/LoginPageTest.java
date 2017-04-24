@@ -97,7 +97,7 @@ public class LoginPageTest extends AbstractI18NTest {
 
     @Test
     public void acceptLanguageHeader() {
-        ProfileAssume.assumePreview();
+        ProfileAssume.assumeCommunity();
         
         DefaultHttpClient httpClient = (DefaultHttpClient) new HttpClientBuilder().build();
         ApacheHttpClient4Engine engine = new ApacheHttpClient4Engine(httpClient);

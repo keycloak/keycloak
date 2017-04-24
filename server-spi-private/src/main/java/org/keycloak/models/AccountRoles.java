@@ -24,6 +24,7 @@ public interface AccountRoles {
 
     String VIEW_PROFILE = "view-profile";
     String MANAGE_ACCOUNT = "manage-account";
+    String MANAGE_ACCOUNT_LINKS = "manage-account-links";
 
     String[] ALL = {VIEW_PROFILE, MANAGE_ACCOUNT};
 

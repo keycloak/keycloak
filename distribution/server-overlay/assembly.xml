@@ -27,68 +27,28 @@
 
     <fileSets>
         <fileSet>
-            <directory>${project.build.directory}/unpacked/keycloak-${project.version}/modules/system/layers/keycloak</directory>
-            <outputDirectory>modules/system/add-ons/keycloak</outputDirectory>
-            <includes>
-                <include>com/google/zxing/**</include>
-                <include>org/freemarker/**</include>
-                <include>org/jboss/aesh/0.65/**</include>
-                <include>org/keycloak/**</include>
-                <include>org/liquibase/**</include>
-                <include>org/mongodb/**</include>
-                <include>org/twitter4j/**</include>
-                <include>aopalliance/**</include>
-                <include>com/thoughtworks/xstream/**</include>
-                <include>org/antlr/**</include>
-                <include>org/apache/**</include>
-                <include>org/codehouse/**</include>
-                <include>org/drools/**</include>
-                <include>org/eclipse/**</include>
-                <include>org/kie/**</include>
-                <include>org/mvel/**</include>
-                <include>org/sonatype/**</include>
-                <include>sun/jdk/jgss/**</include>
-            </includes>
-        </fileSet>
-        <!-- Authorization -->
-        <fileSet>
-            <directory>${project.build.directory}/unpacked/keycloak-${project.version}/modules/system/layers/keycloak-authz</directory>
-            <outputDirectory>modules/system/add-ons/keycloak-authz</outputDirectory>
-            <includes>
-                <include>**/**</include>
-            </includes>
-        </fileSet>
-        <fileSet>
-            <directory>${project.build.directory}/unpacked/keycloak-${project.version}/content</directory>
-            <outputDirectory></outputDirectory>
-        </fileSet>
-        <fileSet>
-            <directory>${project.build.directory}/unpacked/keycloak-${project.version}/themes</directory>
-            <outputDirectory>themes</outputDirectory>
-            <includes>
-                <include>**/**</include>
-            </includes>
-        </fileSet>
-        <fileSet>
-            <directory>${project.build.directory}/unpacked/keycloak-${project.version}/providers</directory>
-            <outputDirectory>providers</outputDirectory>
-            <includes>
-                <include>**/**</include>
-            </includes>
-        </fileSet>
-        <fileSet>
-            <directory>../../</directory>
-            <includes>
-                <include>License.html</include>
-            </includes>
-            <outputDirectory></outputDirectory>
-        </fileSet>
-        <fileSet>
             <directory>${project.build.directory}/cli</directory>
             <includes>
                 <include>*.cli</include>
             </includes>
             <outputDirectory>bin</outputDirectory>
+        </fileSet>
+        <fileSet>
+            <directory>${project.build.directory}/unpacked/${serverDistDir}</directory>
+            <outputDirectory/>
+            <includes>
+                <include>**/**</include>
+            </includes>
+            <excludes>
+                <exclude>modules/**</exclude>
+            </excludes>
+        </fileSet>
+        <fileSet>
+            <directory>${project.build.directory}/unpacked/${serverDistDir}/modules/system/layers/keycloak</directory>
+            <outputDirectory>modules/system/${identityType}/keycloak</outputDirectory>
+            <includes>
+                <include>**/**</include>
+            </includes>
         </fileSet>
     </fileSets>
 
@@ -96,16 +56,6 @@
         <file>
             <source>target/README.txt</source>
             <outputDirectory></outputDirectory>
-        </file>
-        <file>
-            <source>${project.build.directory}/unpacked/keycloak-${project.version}/bin/add-user-keycloak.sh</source>
-            <outputDirectory>bin</outputDirectory>
-            <destName>add-user-keycloak.sh</destName>
-        </file>
-        <file>
-            <source>${project.build.directory}/unpacked/keycloak-${project.version}/bin/add-user-keycloak.bat</source>
-            <outputDirectory>bin</outputDirectory>
-            <destName>add-user-keycloak.bat</destName>
         </file>
     </files>
 

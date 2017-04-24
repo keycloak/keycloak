@@ -29,25 +29,25 @@
                 <kc-tooltip>{{:: 'authz-permission-description.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group">
-                <label class="col-md-2 control-label" for="policy.config.default">{{:: 'authz-permission-resource-apply-to-resource-type' | translate}}</label>
+                <label class="col-md-2 control-label" for="applyToResourceTypeFlag">{{:: 'authz-permission-resource-apply-to-resource-type' | translate}}</label>
                 <div class="col-md-6">
-                    <input ng-model="policy.config.default" id="policy.config.default" onoffswitch data-ng-click="applyToResourceType()"/>
+                    <input ng-model="applyToResourceTypeFlag" id="applyToResourceTypeFlag" onoffswitch data-ng-click="applyToResourceType()"/>
                 </div>
                 <kc-tooltip>{{:: 'authz-permission-resource-apply-to-resource-type.tooltip' | translate}}</kc-tooltip>
             </div>
-            <div class="form-group clearfix" data-ng-hide="policy.config.default">
+            <div class="form-group clearfix" data-ng-hide="applyToResourceTypeFlag">
                 <label class="col-md-2 control-label" for="reqActions">{{:: 'authz-resources' | translate}} <span class="required">*</span></label>
 
                 <div class="col-md-6">
-                    <input type="hidden" ui-select2="resourcesUiSelect" id="reqActions" data-ng-model="policy.config.resources" data-placeholder="{{:: 'authz-select-resource' | translate}}..." data-ng-required="!policy.config.default"/>
+                    <input type="hidden" ui-select2="resourcesUiSelect" id="reqActions" data-ng-model="selectedResource" data-placeholder="{{:: 'authz-select-resource' | translate}}..." data-ng-required="!applyToResourceTypeFlag"/>
                 </div>
                 <kc-tooltip>{{:: 'authz-permission-resource-resource.tooltip' | translate}}</kc-tooltip>
             </div>
-            <div class="form-group clearfix" data-ng-show="policy.config.default">
-                <label class="col-md-2 control-label" for="policy.config.defaultResourceType">{{:: 'authz-resource-type' | translate}} <span class="required">*</span></label>
+            <div class="form-group clearfix" data-ng-show="applyToResourceTypeFlag">
+                <label class="col-md-2 control-label" for="policy.resourceType">{{:: 'authz-resource-type' | translate}} <span class="required">*</span></label>
 
                 <div class="col-md-6">
-                    <input class="form-control" type="text" id="policy.config.defaultResourceType" name="policy.config.defaultResourceType" data-ng-model="policy.config.defaultResourceType" data-ng-required="policy.config.default">
+                    <input class="form-control" type="text" id="policy.resourceType" name="policy.resourceType" data-ng-model="policy.resourceType" data-ng-required="applyToResourceTypeFlag">
                 </div>
 
                 <kc-tooltip>{{:: 'authz-permission-resource-type.tooltip' | translate}}</kc-tooltip>
@@ -56,7 +56,7 @@
                 <label class="col-md-2 control-label" for="reqActions">{{:: 'authz-policy-apply-policy' | translate}} <span class="required">*</span></label>
 
                 <div class="col-md-6">
-                    <input type="hidden" ui-select2="policiesUiSelect" id="reqActions" data-ng-model="policy.config.applyPolicies" data-placeholder="{{:: 'authz-select-a-policy' | translate}}..." multiple required />
+                    <input type="hidden" ui-select2="policiesUiSelect" id="reqActions" data-ng-model="selectedPolicies" data-placeholder="{{:: 'authz-select-a-policy' | translate}}..." multiple required />
                 </div>
 
                 <kc-tooltip>{{:: 'authz-policy-apply-policy.tooltip' | translate}}</kc-tooltip>

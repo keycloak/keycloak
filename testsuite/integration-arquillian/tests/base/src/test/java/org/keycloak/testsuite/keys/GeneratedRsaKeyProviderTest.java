@@ -73,6 +73,8 @@ public class GeneratedRsaKeyProviderTest extends AbstractKeycloakTest {
 
         Response response = adminClient.realm("test").components().add(rep);
         String id = ApiUtil.getCreatedId(response);
+        getCleanup().addComponentId(id);
+        response.close();
 
         ComponentRepresentation createdRep = adminClient.realm("test").components().component(id).toRepresentation();
         assertEquals(1, createdRep.getConfig().size());
@@ -99,6 +101,8 @@ public class GeneratedRsaKeyProviderTest extends AbstractKeycloakTest {
 
         Response response = adminClient.realm("test").components().add(rep);
         String id = ApiUtil.getCreatedId(response);
+        getCleanup().addComponentId(id);
+        response.close();
 
         ComponentRepresentation createdRep = adminClient.realm("test").components().component(id).toRepresentation();
         assertEquals(2, createdRep.getConfig().size());
@@ -124,6 +128,8 @@ public class GeneratedRsaKeyProviderTest extends AbstractKeycloakTest {
 
         Response response = adminClient.realm("test").components().add(rep);
         String id = ApiUtil.getCreatedId(response);
+        getCleanup().addComponentId(id);
+        response.close();
 
         KeysMetadataRepresentation keys = adminClient.realm("test").keys().getKeyMetadata();
 
@@ -153,6 +159,8 @@ public class GeneratedRsaKeyProviderTest extends AbstractKeycloakTest {
 
         Response response = adminClient.realm("test").components().add(rep);
         String id = ApiUtil.getCreatedId(response);
+        getCleanup().addComponentId(id);
+        response.close();
 
         KeysMetadataRepresentation keys = adminClient.realm("test").keys().getKeyMetadata();
 
@@ -187,6 +195,7 @@ public class GeneratedRsaKeyProviderTest extends AbstractKeycloakTest {
 
         ErrorRepresentation errorRepresentation = response.readEntity(ErrorRepresentation.class);
         assertEquals(error, errorRepresentation.getErrorMessage());
+        response.close();
     }
 
     protected ComponentRepresentation createRep(String name, String providerId) {

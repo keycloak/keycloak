@@ -13,7 +13,11 @@
   "smtpServer": {
     "from": "auto@keycloak.org",
     "host": "localhost",
-    "port":"3025"
+    "port":"3025",
+    "fromDisplayName": "Keycloak SSO",
+    "replyTo":"reply-to@keycloak.org",
+    "replyToDisplayName": "Keycloak no-reply",
+    "envelopeFrom": "auto+bounces@keycloak.org"
   },
   "users" : [
     {
@@ -330,6 +334,17 @@
         "http://localhost:8180/namedapp/base/*"
       ],
       "adminUrl": "http://localhost:8180/namedapp/base/admin",
+      "secret": "password"
+    },
+    {
+      "clientId": "var-named-test-app",
+      "name": "Test App Named - ${client_account}",
+      "enabled": true,
+      "baseUrl": "http://localhost:8180/varnamedapp/base",
+      "redirectUris": [
+        "http://localhost:8180/varnamedapp/base/*"
+      ],
+      "adminUrl": "http://localhost:8180/varnamedapp/base/admin",
       "secret": "password"
     }
   ],

@@ -78,6 +78,8 @@ public class NodejsAdapterTest extends AbstractAuthTest {
     public void setDefaultPageUriParameters() {
         super.setDefaultPageUriParameters();
         testRealmPage.setAuthRealm(exampleRealm.getRealm());
+        testRealmLoginPage.setAuthRealm(testRealmPage);
+        testRealmAccountPage.setAuthRealm(testRealmPage);
     }
 
     @Override

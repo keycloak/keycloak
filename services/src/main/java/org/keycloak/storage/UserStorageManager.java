@@ -19,6 +19,7 @@ package org.keycloak.storage;
 
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.reflections.Types;
+import org.keycloak.component.ComponentFactory;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.FederatedIdentityModel;
@@ -36,6 +37,8 @@ import org.keycloak.models.UserProvider;
 import org.keycloak.models.cache.CachedUserModel;
 import org.keycloak.models.cache.OnUserCache;
 import org.keycloak.models.cache.UserCache;
+import org.keycloak.models.utils.ComponentUtil;
+import org.keycloak.services.managers.UserStorageSyncManager;
 import org.keycloak.storage.federated.UserFederatedStorageProvider;
 import org.keycloak.storage.user.ImportedUserValidation;
 import org.keycloak.storage.user.UserBulkUpdateProvider;
@@ -57,7 +60,7 @@ import static org.keycloak.models.utils.KeycloakModelUtils.runJobInTransaction;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class UserStorageManager implements UserProvider, OnUserCache {
+public class UserStorageManager implements UserProvider, OnUserCache, OnCreateComponent, OnUpdateComponent {
 
     private static final Logger logger = Logger.getLogger(UserStorageManager.class);
 
@@ -298,6 +301,7 @@ public class UserStorageManager implements UserProvider, OnUserCache {
             return importValidation(realm, user);
         }
         UserLookupProvider provider = (UserLookupProvider)getStorageProvider(session, realm, storageId.getProviderId());
+        if (provider == null) return null;
         return provider.getUserById(id, realm);
     }
 
@@ -606,7 +610,18 @@ public class UserStorageManager implements UserProvider, OnUserCache {
         if (!component.getProviderType().equals(UserStorageProvider.class.getName())) return;
         localStorage().preRemove(realm, component);
         if (getFederatedStorage() != null) getFederatedStorage().preRemove(realm, component);
+        new UserStorageSyncManager().notifyToRefreshPeriodicSync(session, realm, new UserStorageProviderModel(component), true);
 
+    }
+
+    @Override
+    public void removeImportedUsers(RealmModel realm, String storageProviderId) {
+        localStorage().removeImportedUsers(realm, storageProviderId);
+    }
+
+    @Override
+    public void unlinkUsers(RealmModel realm, String storageProviderId) {
+        localStorage().unlinkUsers(realm, storageProviderId);
     }
 
     @Override
@@ -625,6 +640,27 @@ public class UserStorageManager implements UserProvider, OnUserCache {
 
     @Override
     public void close() {
+    }
+
+    @Override
+    public void onCreate(KeycloakSession session, RealmModel realm, ComponentModel model) {
+        ComponentFactory factory = ComponentUtil.getComponentFactory(session, model);
+        if (!(factory instanceof UserStorageProviderFactory)) return;
+        new UserStorageSyncManager().notifyToRefreshPeriodicSync(session, realm, new UserStorageProviderModel(model), false);
+
+    }
+
+    @Override
+    public void onUpdate(KeycloakSession session, RealmModel realm, ComponentModel oldModel, ComponentModel newModel) {
+        ComponentFactory factory = ComponentUtil.getComponentFactory(session, newModel);
+        if (!(factory instanceof UserStorageProviderFactory)) return;
+        UserStorageProviderModel old = new UserStorageProviderModel(oldModel);
+        UserStorageProviderModel newP= new UserStorageProviderModel(newModel);
+        if (old.getChangedSyncPeriod() != newP.getChangedSyncPeriod() || old.getFullSyncPeriod() != newP.getFullSyncPeriod()
+                || old.isImportEnabled() != newP.isImportEnabled()) {
+            new UserStorageSyncManager().notifyToRefreshPeriodicSync(session, realm, new UserStorageProviderModel(newModel), false);
+        }
+
     }
 
 

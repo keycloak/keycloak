@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
+ * @resource Key
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class KeyResource {

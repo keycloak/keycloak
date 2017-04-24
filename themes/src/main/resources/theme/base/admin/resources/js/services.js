@@ -1210,11 +1210,6 @@ module.factory('TimeUnit', function() {
         }
     }
 
-    t.convert = function(time, from, to) {
-        var seconds = t.toSeconds(time, from);
-        return t.toUnit(seconds, to);
-    }
-
     return t;
 });
 
@@ -1692,12 +1687,23 @@ module.factory('Components', function($resource, ComponentUtils) {
     });
 });
 
-module.factory('UserStorageSync', function($resource) {
-    return $resource(authUrl + '/admin/realms/:realm/user-storage/:componentId/sync', {
+module.factory('UserStorageOperations', function($resource) {
+    var object = {}
+    object.sync = $resource(authUrl + '/admin/realms/:realm/user-storage/:componentId/sync', {
         realm : '@realm',
         componentId : '@componentId'
     });
+    object.removeImportedUsers = $resource(authUrl + '/admin/realms/:realm/user-storage/:componentId/remove-imported-users', {
+        realm : '@realm',
+        componentId : '@componentId'
+    });
+    object.unlinkUsers = $resource(authUrl + '/admin/realms/:realm/user-storage/:componentId/unlink-users', {
+        realm : '@realm',
+        componentId : '@componentId'
+    });
+    return object;
 });
+
 
 module.factory('ClientRegistrationPolicyProviders', function($resource) {
     return $resource(authUrl + '/admin/realms/:realm/client-registration-policy/providers', {

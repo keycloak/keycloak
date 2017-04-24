@@ -61,6 +61,11 @@ public class ClientBuilder {
         return this;
     }
 
+    public ClientBuilder consentRequired(boolean consentRequired) {
+        rep.setConsentRequired(consentRequired);
+        return this;
+    }
+
     public ClientBuilder publicClient() {
         rep.setPublicClient(true);
         return this;
@@ -101,7 +106,10 @@ public class ClientBuilder {
     }
 
     public ClientBuilder attribute(String name, String value) {
-        Map<String, String> attributes = new HashMap<String, String>();
+        Map<String, String> attributes = rep.getAttributes();
+        if (attributes == null) {
+            attributes = new HashMap<>();
+        }
         attributes.put(name, value);
         rep.setAttributes(attributes);
         return this;
@@ -149,6 +157,11 @@ public class ClientBuilder {
 
     public ClientBuilder rootUrl(String rootUrl) {
         rep.setRootUrl(rootUrl);
+        return this;
+    }
+
+    public ClientBuilder authorizationServicesEnabled(boolean enable) {
+        rep.setAuthorizationServicesEnabled(true);
         return this;
     }
 }

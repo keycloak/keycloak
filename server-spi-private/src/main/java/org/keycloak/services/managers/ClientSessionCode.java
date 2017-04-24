@@ -27,6 +27,7 @@ import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.OAuth2Constants;
 
 import java.security.MessageDigest;
 import java.util.HashSet;
@@ -232,6 +233,19 @@ public class ClientSessionCode {
             sb.append(actionId);
             sb.append('.');
             sb.append(clientSession.getId());
+
+            // https://tools.ietf.org/html/rfc7636#section-4
+            String codeChallenge = clientSession.getNote(OAuth2Constants.CODE_CHALLENGE);
+            String codeChallengeMethod = clientSession.getNote(OAuth2Constants.CODE_CHALLENGE_METHOD);
+            if (codeChallenge != null) {
+                logger.debugf("PKCE received codeChallenge = %s", codeChallenge);
+                if (codeChallengeMethod == null) {
+                    logger.debug("PKCE not received codeChallengeMethod, treating plain");
+                    codeChallengeMethod = OAuth2Constants.PKCE_METHOD_PLAIN;
+                } else {
+                    logger.debugf("PKCE received codeChallengeMethod = %s", codeChallengeMethod);
+                }
+            }
 
             String code = sb.toString();
 

@@ -1,7 +1,0 @@
-{
-  "realm": "demo",
-  "auth-server-url": "/auth",
-  "ssl-required": "external",
-  "resource": "angular2-product",
-  "public-client": true
-}

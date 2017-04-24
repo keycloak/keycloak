@@ -1008,6 +1008,7 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
         copy.putAll(config);
         identityProviderModel.setConfig(copy);
         identityProviderModel.setEnabled(entity.isEnabled());
+        identityProviderModel.setLinkOnly(entity.isLinkOnly());
         identityProviderModel.setTrustEmail(entity.isTrustEmail());
         identityProviderModel.setAuthenticateByDefault(entity.isAuthenticateByDefault());
         identityProviderModel.setFirstBrokerLoginFlowId(entity.getFirstBrokerLoginFlowId());
@@ -1044,6 +1045,7 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
         entity.setFirstBrokerLoginFlowId(identityProvider.getFirstBrokerLoginFlowId());
         entity.setPostBrokerLoginFlowId(identityProvider.getPostBrokerLoginFlowId());
         entity.setConfig(identityProvider.getConfig());
+        entity.setLinkOnly(identityProvider.isLinkOnly());
 
         realm.addIdentityProvider(entity);
 
@@ -1098,6 +1100,7 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
                 entity.setAddReadTokenRoleOnCreate(identityProvider.isAddReadTokenRoleOnCreate());
                 entity.setStoreToken(identityProvider.isStoreToken());
                 entity.setConfig(identityProvider.getConfig());
+                entity.setLinkOnly(identityProvider.isLinkOnly());
             }
         }
 
@@ -1191,7 +1194,7 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
 
     @Override
     public IdentityProviderMapperModel addIdentityProviderMapper(IdentityProviderMapperModel model) {
-        if (getIdentityProviderMapperByName(model.getIdentityProviderAlias(), model.getIdentityProviderMapper()) != null) {
+        if (getIdentityProviderMapperByName(model.getIdentityProviderAlias(), model.getName()) != null) {
             throw new RuntimeException("identity provider mapper name must be unique per identity provider");
         }
         String id = KeycloakModelUtils.generateId();
@@ -1845,6 +1848,7 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
 
         ComponentEntity c = em.find(ComponentEntity.class, component.getId());
         if (c == null) return;
+        ComponentModel old = entityToModel(c);
         c.setName(component.getName());
         c.setProviderId(component.getProviderId());
         c.setProviderType(component.getProviderType());
@@ -1853,7 +1857,7 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
         em.createNamedQuery("deleteComponentConfigByComponent").setParameter("component", c).executeUpdate();
         em.flush();
         setConfig(component, c);
-        ComponentUtil.notifyUpdated(session, this, component);
+        ComponentUtil.notifyUpdated(session, this, old, component);
 
 
     }

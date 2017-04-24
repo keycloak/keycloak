@@ -117,8 +117,12 @@ public class SamlAdapterTest {
         testStrategy.testSavedPostRequest();
     }
     @Test
-    public void testErrorHandling() throws Exception {
-        testStrategy.testErrorHandling();
+    public void testErrorHandlingSigned() throws Exception {
+        testStrategy.testErrorHandlingSigned();
+    }
+    @Test
+    public void testErrorHandlingUnsigned() throws Exception {
+        testStrategy.testErrorHandlingUnsigned();
     }
     @Test
     public void testMetadataPostSignedLoginLogout() throws Exception {

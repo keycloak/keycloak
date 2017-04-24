@@ -21,35 +21,89 @@ import io.undertow.security.api.SecurityContext;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.servlet.handlers.ServletRequestContext;
 import io.undertow.util.Headers;
+
 import org.keycloak.adapters.saml.SamlDeployment;
 import org.keycloak.adapters.saml.SamlDeploymentContext;
 import org.keycloak.adapters.saml.SamlSessionStore;
-import org.keycloak.adapters.spi.HttpFacade;
-import org.keycloak.adapters.spi.InMemorySessionIdMapper;
-import org.keycloak.adapters.spi.SessionIdMapper;
+import org.keycloak.adapters.spi.*;
 import org.keycloak.adapters.undertow.ServletHttpFacade;
 import org.keycloak.adapters.undertow.UndertowHttpFacade;
 import org.keycloak.adapters.undertow.UndertowUserSessionManagement;
 
+import io.undertow.servlet.api.DeploymentInfo;
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import java.io.IOException;
+import java.lang.reflect.*;
+import java.util.Map;
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
 public class ServletSamlAuthMech extends AbstractSamlAuthMech {
+
+    private static final Logger LOG = Logger.getLogger(ServletSamlAuthMech.class);
+
     protected SessionIdMapper idMapper = new InMemorySessionIdMapper();
+    protected SessionIdMapperUpdater idMapperUpdater = SessionIdMapperUpdater.DIRECT;
+
     public ServletSamlAuthMech(SamlDeploymentContext deploymentContext, UndertowUserSessionManagement sessionManagement, String errorPage) {
         super(deploymentContext, sessionManagement, errorPage);
     }
 
+    public void addTokenStoreUpdaters(DeploymentInfo deploymentInfo) {
+        deploymentInfo.addSessionListener(new IdMapperUpdaterSessionListener(idMapper));    // This takes care of HTTP sessions manipulated locally
+        SessionIdMapperUpdater updater = SessionIdMapperUpdater.EXTERNAL;
+
+        try {
+            Map<String, String> initParameters = deploymentInfo.getInitParameters();
+            String idMapperSessionUpdaterClasses = initParameters == null
+              ? null
+              : initParameters.get("keycloak.sessionIdMapperUpdater.classes");
+            if (idMapperSessionUpdaterClasses == null) {
+                return;
+            }
+
+            for (String clazz : idMapperSessionUpdaterClasses.split("\\s*,\\s*")) {
+                if (! clazz.isEmpty()) {
+                    updater = invokeAddTokenStoreUpdaterMethod(clazz, deploymentInfo, updater);
+                }
+            }
+        } finally {
+            setIdMapperUpdater(updater);
+        }
+    }
+
+    private SessionIdMapperUpdater invokeAddTokenStoreUpdaterMethod(String idMapperSessionUpdaterClass, DeploymentInfo deploymentInfo,
+      SessionIdMapperUpdater previousIdMapperUpdater) {
+        try {
+            Class<?> clazz = deploymentInfo.getClassLoader().loadClass(idMapperSessionUpdaterClass);
+            Method addTokenStoreUpdatersMethod = clazz.getMethod("addTokenStoreUpdaters", DeploymentInfo.class, SessionIdMapper.class, SessionIdMapperUpdater.class);
+            if (! Modifier.isStatic(addTokenStoreUpdatersMethod.getModifiers())
+              || ! Modifier.isPublic(addTokenStoreUpdatersMethod.getModifiers())
+              || ! SessionIdMapperUpdater.class.isAssignableFrom(addTokenStoreUpdatersMethod.getReturnType())) {
+                LOG.errorv("addTokenStoreUpdaters method in class {0} has to be public static. Ignoring class.", idMapperSessionUpdaterClass);
+                return previousIdMapperUpdater;
+            }
+
+            LOG.debugv("Initializing sessionIdMapperUpdater class {0}", idMapperSessionUpdaterClass);
+            return (SessionIdMapperUpdater) addTokenStoreUpdatersMethod.invoke(null, deploymentInfo, idMapper, previousIdMapperUpdater);
+        } catch (ClassNotFoundException | NoSuchMethodException | SecurityException ex) {
+            LOG.warnv(ex, "Cannot use sessionIdMapperUpdater class {0}", idMapperSessionUpdaterClass);
+            return previousIdMapperUpdater;
+        } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
+            LOG.warnv(ex, "Cannot use {0}.addTokenStoreUpdaters(DeploymentInfo, SessionIdMapper) method", idMapperSessionUpdaterClass);
+            return previousIdMapperUpdater;
+        }
+    }
+
     @Override
     protected SamlSessionStore getTokenStore(HttpServerExchange exchange, HttpFacade facade, SamlDeployment deployment, SecurityContext securityContext) {
-        return new ServletSamlSessionStore(exchange, sessionManagement, securityContext, idMapper, deployment);
+        return new ServletSamlSessionStore(exchange, sessionManagement, securityContext, idMapper, idMapperUpdater, deployment);
     }
 
     @Override
@@ -84,5 +138,11 @@ public class ServletSamlAuthMech extends AbstractSamlAuthMech {
         return null;
     }
 
+    public SessionIdMapperUpdater getIdMapperUpdater() {
+        return idMapperUpdater;
+    }
 
+    protected void setIdMapperUpdater(SessionIdMapperUpdater idMapperUpdater) {
+        this.idMapperUpdater = idMapperUpdater;
+    }
 }

@@ -85,6 +85,9 @@ public class KeycloakDeployment {
     protected int publicKeyCacheTtl;
     private PolicyEnforcer policyEnforcer;
 
+    // https://tools.ietf.org/html/rfc7636
+    protected boolean pkce = false;
+
     public KeycloakDeployment() {
     }
 
@@ -414,4 +417,14 @@ public class KeycloakDeployment {
     public PolicyEnforcer getPolicyEnforcer() {
         return policyEnforcer;
     }
+
+    // https://tools.ietf.org/html/rfc7636
+    public boolean isPkce() {
+        return pkce;
+    }
+
+    public void setPkce(boolean pkce) {
+        this.pkce = pkce;
+    }
+
 }

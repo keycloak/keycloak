@@ -101,6 +101,7 @@ public class OIDCClientRegistrationProvider extends AbstractClientRegistrationPr
     @PUT
     @Path("{clientId}")
     @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
     public Response updateOIDC(@PathParam("clientId") String clientId, OIDCClientRepresentation clientOIDC) {
         try {
             ClientRepresentation client = DescriptionConverter.toInternal(session, clientOIDC);

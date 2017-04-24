@@ -24,12 +24,12 @@ import javax.ws.rs.core.UriBuilder;
 
 import org.junit.Before;
 import org.junit.Test;
+
 import org.keycloak.admin.client.resource.RealmResource;
-import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.common.util.*;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.keys.KeyProvider;
 import org.keycloak.keys.PublicKeyStorageUtils;
-import org.keycloak.keys.loader.PublicKeyStorageManager;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
@@ -78,7 +78,8 @@ public class KcOIDCBrokerWithSignatureTest extends AbstractBaseBrokerTest {
         log.debug("adding identity provider to realm " + bc.consumerRealmName());
 
         RealmResource realm = adminClient.realm(bc.consumerRealmName());
-        realm.identityProviders().create(bc.setUpIdentityProvider(suiteContext));
+        Response resp = realm.identityProviders().create(bc.setUpIdentityProvider(suiteContext));
+        resp.close();
     }
 
 
@@ -90,7 +91,8 @@ public class KcOIDCBrokerWithSignatureTest extends AbstractBaseBrokerTest {
             for (ClientRepresentation client : clients) {
                 log.debug("adding client " + client.getName() + " to realm " + bc.providerRealmName());
 
-                providerRealm.clients().create(client);
+                Response resp = providerRealm.clients().create(client);
+                resp.close();
             }
         }
 
@@ -100,7 +102,8 @@ public class KcOIDCBrokerWithSignatureTest extends AbstractBaseBrokerTest {
             for (ClientRepresentation client : clients) {
                 log.debug("adding client " + client.getName() + " to realm " + bc.consumerRealmName());
 
-                consumerRealm.clients().create(client);
+                Response resp = consumerRealm.clients().create(client);
+                resp.close();
             }
         }
     }
@@ -179,6 +182,55 @@ public class KcOIDCBrokerWithSignatureTest extends AbstractBaseBrokerTest {
 
         logInAsUserInIDP();
         assertErrorPage("Unexpected error when authenticating with identity provider");
+    }
+
+    @Test
+    public void testSignatureVerificationHardcodedPublicKeyWithKeyIdSetExplicitly() throws Exception {
+        // Configure OIDC identity provider with JWKS URL
+        IdentityProviderRepresentation idpRep = getIdentityProvider();
+        OIDCIdentityProviderConfigRep cfg = new OIDCIdentityProviderConfigRep(idpRep);
+        cfg.setValidateSignature(true);
+        cfg.setUseJwksUrl(false);
+
+        KeysMetadataRepresentation.KeyMetadataRepresentation key = ApiUtil.findActiveKey(providerRealm());
+        String pemData = key.getPublicKey();
+        cfg.setPublicKeySignatureVerifier(pemData);
+        String expectedKeyId = KeyUtils.createKeyId(PemUtils.decodePublicKey(pemData));
+        updateIdentityProvider(idpRep);
+
+        // Check that user is able to login
+        logInAsUserInIDPForFirstTime();
+        assertLoggedInAccountManagement();
+
+        logoutFromRealm(bc.consumerRealmName());
+
+        // Set key id to an invalid one
+        cfg.setPublicKeySignatureVerifierKeyId("invalid-key-id");
+        updateIdentityProvider(idpRep);
+
+        logInAsUserInIDP();
+        assertErrorPage("Unexpected error when authenticating with identity provider");
+
+        // Set key id to a valid one
+        cfg.setPublicKeySignatureVerifierKeyId(expectedKeyId);
+        updateIdentityProvider(idpRep);
+        logInAsUserInIDP();
+        assertLoggedInAccountManagement();
+        logoutFromRealm(bc.consumerRealmName());
+
+        // Set key id to empty
+        cfg.setPublicKeySignatureVerifierKeyId("");
+        updateIdentityProvider(idpRep);
+        logInAsUserInIDP();
+        assertLoggedInAccountManagement();
+        logoutFromRealm(bc.consumerRealmName());
+
+        // Unset key id
+        cfg.setPublicKeySignatureVerifierKeyId(null);
+        updateIdentityProvider(idpRep);
+        logInAsUserInIDP();
+        assertLoggedInAccountManagement();
+        logoutFromRealm(bc.consumerRealmName());
     }
 
 

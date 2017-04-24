@@ -107,10 +107,7 @@ public class RoleAdapter implements RoleModel, JpaModel<RoleEntity> {
     @Override
     public void removeCompositeRole(RoleModel role) {
         RoleEntity entity = RoleAdapter.toRoleEntity(role, em);
-        Iterator<RoleEntity> it = getEntity().getCompositeRoles().iterator();
-        while (it.hasNext()) {
-            if (it.next().equals(entity)) it.remove();
-        }
+        getEntity().getCompositeRoles().remove(entity);
     }
 
     @Override
@@ -128,7 +125,7 @@ public class RoleAdapter implements RoleModel, JpaModel<RoleEntity> {
 
     @Override
     public boolean hasRole(RoleModel role) {
-        return this.equals(role) || KeycloakModelUtils.searchFor(role, this);
+        return this.equals(role) || KeycloakModelUtils.searchFor(role, this, new HashSet<>());
     }
 
     @Override

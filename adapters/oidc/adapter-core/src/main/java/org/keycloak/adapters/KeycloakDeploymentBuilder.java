@@ -98,6 +98,11 @@ public class KeycloakDeploymentBuilder {
             deployment.setCorsAllowedMethods(adapterConfig.getCorsAllowedMethods());
         }
 
+        // https://tools.ietf.org/html/rfc7636
+        if (adapterConfig.isPkce()) {
+            deployment.setPkce(true);
+        }
+
         deployment.setBearerOnly(adapterConfig.isBearerOnly());
         deployment.setAutodetectBearerOnly(adapterConfig.isAutodetectBearerOnly());
         deployment.setEnableBasicAuth(adapterConfig.isEnableBasicAuth());

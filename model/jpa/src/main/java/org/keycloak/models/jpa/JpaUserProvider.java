@@ -380,38 +380,47 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
                 .setParameter("realmId", realm.getId()).executeUpdate();
     }
 
-    public void removeUserDataByLink(RealmModel realm, String linkId) {
+    @Override
+    public void removeImportedUsers(RealmModel realm, String storageProviderId) {
         int num = em.createNamedQuery("deleteUserRoleMappingsByRealmAndLink")
                 .setParameter("realmId", realm.getId())
-                .setParameter("link", linkId)
+                .setParameter("link", storageProviderId)
                 .executeUpdate();
         num = em.createNamedQuery("deleteUserRequiredActionsByRealmAndLink")
                 .setParameter("realmId", realm.getId())
-                .setParameter("link", linkId)
+                .setParameter("link", storageProviderId)
                 .executeUpdate();
         num = em.createNamedQuery("deleteFederatedIdentityByRealmAndLink")
                 .setParameter("realmId", realm.getId())
-                .setParameter("link", linkId)
+                .setParameter("link", storageProviderId)
                 .executeUpdate();
         num = em.createNamedQuery("deleteCredentialAttributeByRealmAndLink")
                 .setParameter("realmId", realm.getId())
-                .setParameter("link", linkId)
+                .setParameter("link", storageProviderId)
                 .executeUpdate();
         num = em.createNamedQuery("deleteCredentialsByRealmAndLink")
                 .setParameter("realmId", realm.getId())
-                .setParameter("link", linkId)
+                .setParameter("link", storageProviderId)
                 .executeUpdate();
         num = em.createNamedQuery("deleteUserAttributesByRealmAndLink")
                 .setParameter("realmId", realm.getId())
-                .setParameter("link", linkId)
+                .setParameter("link", storageProviderId)
                 .executeUpdate();
         num = em.createNamedQuery("deleteUserGroupMembershipsByRealmAndLink")
                 .setParameter("realmId", realm.getId())
-                .setParameter("link", linkId)
+                .setParameter("link", storageProviderId)
                 .executeUpdate();
         num = em.createNamedQuery("deleteUsersByRealmAndLink")
                 .setParameter("realmId", realm.getId())
-                .setParameter("link", linkId)
+                .setParameter("link", storageProviderId)
+                .executeUpdate();
+    }
+
+    @Override
+    public void unlinkUsers(RealmModel realm, String storageProviderId) {
+        em.createNamedQuery("unlinkUsers")
+                .setParameter("realmId", realm.getId())
+                .setParameter("link", storageProviderId)
                 .executeUpdate();
     }
 
@@ -669,14 +678,14 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
 
     @Override
     public List<UserModel> searchForUserByUserAttribute(String attrName, String attrValue, RealmModel realm) {
-        TypedQuery<UserAttributeEntity> query = em.createNamedQuery("getAttributesByNameAndValue", UserAttributeEntity.class);
+        TypedQuery<UserEntity> query = em.createNamedQuery("getRealmUsersByAttributeNameAndValue", UserEntity.class);
         query.setParameter("name", attrName);
         query.setParameter("value", attrValue);
-        List<UserAttributeEntity> results = query.getResultList();
+        query.setParameter("realmId", realm.getId());
+        List<UserEntity> results = query.getResultList();
 
         List<UserModel> users = new ArrayList<UserModel>();
-        for (UserAttributeEntity attr : results) {
-            UserEntity user = attr.getUser();
+        for (UserEntity user : results) {
             users.add(new UserAdapter(session, realm, em, user));
         }
         return users;
@@ -714,7 +723,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
     @Override
     public void preRemove(RealmModel realm, ComponentModel component) {
         if (!component.getProviderType().equals(UserStorageProvider.class.getName())) return;
-        removeUserDataByLink(realm, component.getId());
+        removeImportedUsers(realm, component.getId());
 
     }
 

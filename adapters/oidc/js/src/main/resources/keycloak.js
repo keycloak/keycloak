@@ -87,6 +87,10 @@
                     }
                     kc.flow = initOptions.flow;
                 }
+
+                if (initOptions.timeSkew != null) {
+                    kc.timeSkew = initOptions.timeSkew;
+                }
             }
 
             if (!kc.responseMode) {
@@ -153,7 +157,7 @@
                     processCallback(callback, initPromise);
                     return;
                 } else if (initOptions) {
-                    if (initOptions.refreshToken) {
+                    if (initOptions.token && initOptions.refreshToken) {
                         setToken(initOptions.token, initOptions.refreshToken, initOptions.idToken);
 
                         if (loginIframe.enable) {
@@ -162,12 +166,8 @@
                                     kc.onAuthSuccess && kc.onAuthSuccess();
                                     initPromise.setSuccess();
                                 }).error(function () {
-                                    kc.onAuthError && kc.onAuthError();
-                                    if (initOptions.onLoad) {
-                                        onLoad();
-                                    } else {
-                                        initPromise.setError();
-                                    }
+                                    setToken(null, null, null);
+                                    initPromise.setSuccess();
                                 });
                             });
                         } else {
@@ -367,6 +367,11 @@
         kc.isTokenExpired = function(minValidity) {
             if (!kc.tokenParsed || (!kc.refreshToken && kc.flow != 'implicit' )) {
                 throw 'Not authenticated';
+            }
+
+            if (kc.timeSkew == null) {
+                console.info('[KEYCLOAK] Unable to determine if token is expired as timeskew is not set');
+                return true;
             }
 
             var expiresIn = kc.tokenParsed['exp'] - Math.ceil(new Date().getTime() / 1000) + kc.timeSkew;
@@ -653,12 +658,7 @@
             if (token) {
                 kc.token = token;
                 kc.tokenParsed = decodeToken(token);
-
-                var sessionId = kc.realm + '/' + kc.tokenParsed.sub;
-                if (kc.tokenParsed.session_state) {
-                    sessionId = sessionId + '/' + kc.tokenParsed.session_state;
-                }
-                kc.sessionId = sessionId;
+                kc.sessionId = kc.tokenParsed.session_state;
                 kc.authenticated = true;
                 kc.subject = kc.tokenParsed.sub;
                 kc.realmAccess = kc.tokenParsed.realm_access;
@@ -666,6 +666,9 @@
 
                 if (timeLocal) {
                     kc.timeSkew = Math.floor(timeLocal / 1000) - kc.tokenParsed.iat;
+                }
+
+                if (kc.timeSkew != null) {
                     console.info('[KEYCLOAK] Estimated time difference between browser and server is ' + kc.timeSkew + ' seconds');
 
                     if (kc.onTokenExpired) {
@@ -677,11 +680,7 @@
                             kc.tokenTimeoutHandle = setTimeout(kc.onTokenExpired, expiresIn);
                         }
                     }
-                } else {
-                    kc.updateToken(-1);
                 }
-            } else if (refreshToken) {
-                kc.updateToken(-1);
             } else {
                 delete kc.token;
                 delete kc.tokenParsed;
@@ -833,11 +832,16 @@
             document.body.appendChild(iframe);
 
             var messageCallback = function(event) {
-                if (event.origin !== loginIframe.iframeOrigin) {
+                if ((event.origin !== loginIframe.iframeOrigin) || (loginIframe.iframe.contentWindow !== event.source)) {
                     return;
                 }
 
-                if (event.data != "unchanged") {
+                if (!(event.data == 'unchanged' || event.data == 'changed' || event.data == 'error')) {
+                    return;
+                }
+
+
+                if (event.data != 'unchanged') {
                     kc.clearToken();
                 }
 
@@ -845,7 +849,7 @@
 
                 for (var i = callbacks.length - 1; i >= 0; --i) {
                     var promise = callbacks[i];
-                    if (event.data == "unchanged") {
+                    if (event.data == 'unchanged') {
                         promise.setSuccess();
                     } else {
                         promise.setError();
@@ -1224,7 +1228,7 @@
                             break;
                         default:
                             if (responseMode != 'query' || !handleQueryParam(param, queryParams[param], oauth)) {
-                                oauth.newUrl += (oauth.newUrl.indexOf('?') == -1 ? '?' : '&') + param + '=' + queryParams[param];
+                                oauth.newUrl += (oauth.newUrl.indexOf('?') == -1 ? '?' : '&') + param + '=' + encodeURIComponent(queryParams[param]);
                             }
                             break;
                     }

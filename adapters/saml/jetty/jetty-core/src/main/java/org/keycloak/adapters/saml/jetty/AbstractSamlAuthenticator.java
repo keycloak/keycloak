@@ -104,11 +104,13 @@ public abstract class AbstractSamlAuthenticator extends LoginAuthenticator {
 
     protected JettySamlSessionStore createJettySamlSessionStore(Request request, HttpFacade facade, SamlDeployment resolvedDeployment) {
         JettySamlSessionStore store;
-        store = new JettySamlSessionStore(request, createSessionTokenStore(request, resolvedDeployment), facade, idMapper, new JettyUserSessionManagement(request.getSessionManager()), resolvedDeployment);
+        store = new JettySamlSessionStore(request, createSessionTokenStore(request, resolvedDeployment), facade, idMapper, createSessionManagement(request), resolvedDeployment);
         return store;
     }
 
     public abstract AdapterSessionStore createSessionTokenStore(Request request, SamlDeployment resolvedDeployment);
+
+    public abstract JettyUserSessionManagement createSessionManagement(Request request);
 
     public void logoutCurrent(Request request) {
         JettyHttpFacade facade = new JettyHttpFacade(request, null);

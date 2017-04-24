@@ -1,0 +1,475 @@
+<?xml version="1.0"?>
+<!--
+~ Copyright 2016 Red Hat, Inc. and/or its affiliates
+~ and other contributors as indicated by the @author tags.
+~
+~ Licensed under the Apache License, Version 2.0 (the "License");
+~ you may not use this file except in compliance with the License.
+~ You may obtain a copy of the License at
+~
+~ http://www.apache.org/licenses/LICENSE-2.0
+~
+~ Unless required by applicable law or agreed to in writing, software
+~ distributed under the License is distributed on an "AS IS" BASIS,
+~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+~ See the License for the specific language governing permissions and
+~ limitations under the License.
+-->
+
+<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.keycloak.testsuite</groupId>
+        <artifactId>integration-arquillian-tests-other</artifactId>
+        <version>3.1.0.CR1-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+    
+    <groupId>org.keycloak.testsuite</groupId>
+    <artifactId>server-config-migration</artifactId>
+
+    <name>Keycloak Migration TestSuite For Server Config</name>
+
+    <properties>
+        <jbossHome>${project.build.directory}/keycloak-${project.version}</jbossHome>
+        <migrated.version>1.8.1</migrated.version>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss</groupId>
+            <artifactId>jboss-dmr</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-server-dist</artifactId>
+            <type>zip</type>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+    
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>unpack</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>unpack</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>org.keycloak</groupId>
+                                    <artifactId>keycloak-server-dist</artifactId>
+                                    <version>${project.version}</version>
+                                    <type>zip</type>
+                                    <overWrite>true</overWrite>
+                                    <outputDirectory>${project.build.directory}</outputDirectory>
+                                </artifactItem>
+                            </artifactItems>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            
+            <plugin>
+                <artifactId>maven-resources-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>copy-standalone</id>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <overwrite>true</overwrite>
+                            <outputDirectory>${jbossHome}/standalone/configuration</outputDirectory>
+                            <resources>          
+                                <resource>
+                                    <directory>src/test/resources/standalone</directory>
+                                    <filtering>false</filtering>
+                                </resource>
+                            </resources>              
+                        </configuration>            
+                    </execution>
+                    <execution>
+                        <id>copy-domain</id>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <overwrite>true</overwrite>
+                            <outputDirectory>${jbossHome}/domain/configuration</outputDirectory>
+                            <resources>          
+                                <resource>
+                                    <directory>src/test/resources/domain</directory>
+                                    <filtering>false</filtering>
+                                </resource>
+                            </resources>              
+                        </configuration>            
+                    </execution>
+                </executions>
+            </plugin>
+            
+            <plugin>
+                <groupId>com.coderplus.maven.plugins</groupId>
+                <artifactId>copy-rename-maven-plugin</artifactId>
+                <version>1.0.1</version>
+                <executions>
+                    <execution>
+                        <id>rename-keycloak-server-json-standalone</id>
+                        <phase>generate-test-sources</phase>
+                        <goals>
+                            <goal>rename</goal>
+                        </goals>
+                        <configuration>
+                            <sourceFile>${jbossHome}/standalone/configuration/keycloak-server-${migrated.version}.json</sourceFile>
+                            <destinationFile>${jbossHome}/standalone/configuration/keycloak-server.json</destinationFile>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>rename-keycloak-server-json-domain</id>
+                        <phase>generate-test-sources</phase>
+                        <goals>
+                            <goal>rename</goal>
+                        </goals>
+                        <configuration>
+                            <sourceFile>${jbossHome}/domain/configuration/keycloak-server-${migrated.version}.json</sourceFile>
+                            <destinationFile>${jbossHome}/domain/configuration/keycloak-server.json</destinationFile>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            
+            <plugin>
+                <groupId>com.google.code.maven-replacer-plugin</groupId>
+                <artifactId>maven-replacer-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>replaceTokens</id>
+                        <phase>process-test-sources</phase>
+                        <goals>
+                            <goal>replace</goal>
+                        </goals>
+                        <configuration>
+                            <!-- Comment out embeds.  For wildfly-maven-plugin,
+                                 CLI commands have to execute against a running
+                                 server. BTW, CLI Comments only work if the # is in the
+                                 first column.
+                            -->
+                            <replacements>
+                                <replacement>
+                                    <token>embed-server</token>
+                                    <value>#embed-server</value>
+                                </replacement>
+                                <replacement>
+                                    <token>embed-host-controller</token>
+                                    <value>#embed-host-controller</value>
+                                </replacement>
+                                <replacement>
+                                    <token>:migrate-json(file=$pathToJson)</token>
+                                    <value>:migrate-json</value>
+                                </replacement>
+                            </replacements>
+                        </configuration>
+                    </execution>
+                </executions>
+                <configuration>
+                    <regex>false</regex>
+                    <basedir>${jbossHome}</basedir>
+                    <filesToInclude>bin\migrate**.cli</filesToInclude>
+                </configuration>
+            </plugin>
+            
+            <plugin>
+                <groupId>org.wildfly.plugins</groupId>
+                <artifactId>wildfly-maven-plugin</artifactId>
+                <configuration>
+                    <skip>false</skip>
+                    <jbossHome>${jbossHome}</jbossHome>
+                    <port>10990</port>
+                </configuration>
+                
+                <executions>
+                    
+                    <!-- standalone.xml -->
+                    <execution>
+                        <id>migrate-standalone</id>
+                        <phase>generate-test-resources</phase>
+                        <goals>
+                            <goal>start</goal>
+                            <goal>execute-commands</goal>
+                            <goal>shutdown</goal>
+                        </goals>
+                        <configuration>
+                            <serverConfig>standalone-${migrated.version}.xml</serverConfig>
+                            <java-opts>
+                                <java-opt>-Djboss.socket.binding.port-offset=1000</java-opt>
+                            </java-opts>
+                            <execute-commands>
+                                <scripts>
+                                    <script>${jbossHome}/bin/migrate-standalone.cli</script>
+                                </scripts>
+                            </execute-commands>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>read-migrated-standalone</id>
+                        <phase>process-test-resources</phase>
+                        <goals>
+                            <goal>start</goal>
+                            <goal>execute-commands</goal>
+                            <goal>shutdown</goal>
+                        </goals>
+                        <configuration>
+                            <serverConfig>standalone-${migrated.version}.xml</serverConfig>
+                            <java-opts>
+                                <java-opt>-Djboss.socket.binding.port-offset=1000</java-opt>
+                            </java-opts>
+                            <execute-commands>
+                                <commands>
+                                    <command>echo Reading subsystems for migrated standalone-${migrated.version}.xml</command>
+                                    <command>/subsystem=*/:read-resource(recursive=true)>${project.build.directory}/migrated-standalone-${migrated.version}.txt</command>
+                                </commands>
+                            </execute-commands>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>read-master-standalone</id>
+                        <phase>process-test-resources</phase>
+                        <goals>
+                            <goal>start</goal>
+                            <goal>execute-commands</goal>
+                            <goal>shutdown</goal>
+                        </goals>
+                        <configuration>
+                            <serverConfig>standalone.xml</serverConfig>
+                            <java-opts>
+                                <java-opt>-Djboss.socket.binding.port-offset=1000</java-opt>
+                            </java-opts>
+                            <execute-commands>
+                                <commands>
+                                    <command>echo Reading subsystems for master standalone.xml</command>
+                                    <command>/subsystem=*/:read-resource(recursive=true)>${project.build.directory}/master-standalone.txt</command>
+                                </commands>
+                            </execute-commands>
+                        </configuration>
+                    </execution>
+                    
+                    <!-- standalone-ha.xml -->
+                    <execution>
+                        <id>migrate-standalone-ha</id>
+                        <phase>generate-test-resources</phase>
+                        <goals>
+                            <goal>start</goal>
+                            <goal>execute-commands</goal>
+                            <goal>shutdown</goal>
+                        </goals>
+                        <configuration>
+                            <serverConfig>standalone-ha-${migrated.version}.xml</serverConfig>
+                            <java-opts>
+                                <java-opt>-Djboss.socket.binding.port-offset=1000</java-opt>
+                            </java-opts>
+                            <execute-commands>
+                                <scripts>
+                                    <script>${jbossHome}/bin/migrate-standalone-ha.cli</script>
+                                </scripts>
+                            </execute-commands>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>read-migrated-standalone-ha</id>
+                        <phase>process-test-resources</phase>
+                        <goals>
+                            <goal>start</goal>
+                            <goal>execute-commands</goal>
+                            <goal>shutdown</goal>
+                        </goals>
+                        <configuration>
+                            <serverConfig>standalone-ha-${migrated.version}.xml</serverConfig>
+                            <java-opts>
+                                <java-opt>-Djboss.socket.binding.port-offset=1000</java-opt>
+                            </java-opts>
+                            <execute-commands>
+                                <commands>
+                                    <command>echo Reading subsystems for migrated standalone-ha-${migrated.version}.xml</command>
+                                    <command>/subsystem=*/:read-resource(recursive=true)>${project.build.directory}/migrated-standalone-ha-${migrated.version}.txt</command>
+                                </commands>
+                            </execute-commands>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>read-master-standalone-ha</id>
+                        <phase>process-test-resources</phase>
+                        <goals>
+                            <goal>start</goal>
+                            <goal>execute-commands</goal>
+                            <goal>shutdown</goal>
+                        </goals>
+                        <configuration>
+                            <serverConfig>standalone-ha.xml</serverConfig>
+                            <java-opts>
+                                <java-opt>-Djboss.socket.binding.port-offset=1000</java-opt>
+                            </java-opts>
+                            <execute-commands>
+                                <commands>
+                                    <command>echo Reading subsystems for master standalone-ha.xml</command>
+                                    <command>/subsystem=*/:read-resource(recursive=true)>${project.build.directory}/master-standalone-ha.txt</command>
+                                </commands>
+                            </execute-commands>
+                        </configuration>
+                    </execution>
+                    
+                    <!-- domain.xml -->
+                    <execution>
+                        <id>migrate-domain</id>
+                        <phase>generate-test-resources</phase>
+                        <goals>
+                            <goal>start</goal>
+                            <goal>execute-commands</goal>
+                            <goal>shutdown</goal>
+                        </goals>
+                        <configuration>
+                            <serverType>DOMAIN</serverType>
+                            <domainConfig>domain-${migrated.version}.xml</domainConfig>
+                            <server-args>
+                                <server-arg>--host-config=host-master-${migrated.version}.xml</server-arg>
+                            </server-args>
+                            <!-- jboss.server.config.dir is set to trick the migrate-json operation into -->
+                            <!-- finding keycloak-server.json.  Normally, that would be uploaded using   -->
+                            <!-- a file=<localfile> parameter.                                           -->
+                            <!-- Ports are set to avoid conflicts with other server instances.           -->
+                            <java-opts>
+                                <java-opt>-Djboss.management.http.port=10990</java-opt>
+                                <java-opt>-Djboss.management.native.port=10999</java-opt>
+                                <java-opt>-Djboss.server.config.dir=${jbossHome}/domain/configuration/</java-opt>
+                            </java-opts>
+                            <execute-commands>
+                                <scripts>
+                                    <script>${jbossHome}/bin/migrate-domain-standalone.cli</script>
+                                    <script>${jbossHome}/bin/migrate-domain-clustered.cli</script>
+                                </scripts>
+                            </execute-commands>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>read-migrated-domain</id>
+                        <phase>process-test-resources</phase>
+                        <goals>
+                            <goal>start</goal>
+                            <goal>execute-commands</goal>
+                            <goal>shutdown</goal>
+                        </goals>
+                        <configuration>
+                            <serverType>DOMAIN</serverType>
+                            <domainConfig>domain-${migrated.version}.xml</domainConfig>
+                            <server-args>
+                                <server-arg>--host-config=host-master-${migrated.version}.xml</server-arg>
+                            </server-args>
+                            <java-opts>
+                                <java-opt>-Djboss.management.http.port=10990</java-opt>
+                                <java-opt>-Djboss.management.native.port=10999</java-opt>
+                            </java-opts>
+                            <execute-commands>
+                                <commands>
+                                    <command>echo Reading subsystems for migrated domain-${migrated.version}.xml</command>
+                                    <command>/profile=auth-server-standalone/subsystem=*/:read-resource(recursive=true)>${project.build.directory}/migrated-domain-standalone-${migrated.version}.txt</command>
+                                    <command>/profile=auth-server-clustered/subsystem=*/:read-resource(recursive=true)>${project.build.directory}/migrated-domain-clustered-${migrated.version}.txt</command>
+                                </commands>
+                            </execute-commands>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>read-master-domain</id>
+                        <phase>process-test-resources</phase>
+                        <goals>
+                            <goal>start</goal>
+                            <goal>execute-commands</goal>
+                            <goal>shutdown</goal>
+                        </goals>
+                        <configuration>
+                            <serverType>DOMAIN</serverType>
+                            <domainConfig>domain.xml</domainConfig>
+                            <java-opts>
+                                <java-opt>-Djboss.management.http.port=10990</java-opt>
+                                <java-opt>-Djboss.management.native.port=10999</java-opt>
+                            </java-opts>
+                            <server-args>
+                                <server-arg>--host-config=host-master.xml</server-arg>
+                            </server-args>
+                            <execute-commands>
+                                <commands>
+                                    <command>echo Reading subsystems for master domain.xml</command>
+                                    <command>/profile=auth-server-standalone/subsystem=*/:read-resource(recursive=true)>${project.build.directory}/master-domain-standalone.txt</command>
+                                    <command>/profile=auth-server-clustered/subsystem=*/:read-resource(recursive=true)>${project.build.directory}/master-domain-clustered.txt</command>
+                                </commands>
+                            </execute-commands>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            
+            <plugin>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <systemPropertyVariables>
+                        <migrated.version>${migrated.version}</migrated.version>
+                    </systemPropertyVariables>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+    
+    <profiles>
+        <profile>
+            <id>product</id>
+            <properties>
+                <jbossHome>${project.build.directory}/rh-sso-7.1</jbossHome>
+                <migrated.version>1.9.8.Final-redhat-1</migrated.version>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-dependency-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>unpack</id>
+                                <phase>compile</phase>
+                                <goals>
+                                    <goal>unpack</goal>
+                                </goals>
+                                <configuration>
+                                    <artifactItems>
+                                        <artifactItem>
+                                            <groupId>org.keycloak</groupId>
+                                            <artifactId>keycloak-server-dist</artifactId>
+                                            <version>2.5.4.Final-redhat-1</version>
+                                            <type>zip</type>
+                                            <overWrite>true</overWrite>
+                                            <outputDirectory>${project.build.directory}</outputDirectory>
+                                        </artifactItem>
+                                    </artifactItems>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+</project>

@@ -24,15 +24,43 @@ import java.util.Set;
  * @version $Revision: 1 $
  */
 public interface SessionIdMapper {
+    /**
+     * Returns {@code true} if the mapper contains mapping for the given HTTP session ID.
+     * @param id
+     * @return
+     */
     boolean hasSession(String id);
 
+    /**
+     * Clears all mappings from this mapper.
+     */
     void clear();
 
+    /**
+     * Returns set of HTTP session IDs for the given principal.
+     * @param principal Principal
+     * @return
+     */
     Set<String> getUserSessions(String principal);
 
+    /**
+     * Returns HTTP session ID from the given user session ID.
+     * @param sso User session ID
+     * @return
+     */
     String getSessionFromSSO(String sso);
 
+    /**
+     * Establishes mapping between user session ID, principal and HTTP session ID.
+     * @param sso User session ID
+     * @param principal Principal
+     * @param session HTTP session ID
+     */
     void map(String sso, String principal, String session);
 
+    /**
+     * Removes mappings for the given HTTP session ID.
+     * @param session HTTP session ID.
+     */
     void removeSession(String session);
 }

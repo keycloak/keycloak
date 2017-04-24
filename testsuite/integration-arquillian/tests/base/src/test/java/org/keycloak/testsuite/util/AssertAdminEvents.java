@@ -64,7 +64,7 @@ public class AssertAdminEvents implements TestRule {
             @Override
             public void evaluate() throws Throwable {
                 // TODO: Ideally clear the queue just before testClass rather then before each method
-                context.getTestingClient().testing().clearAdminEventQueue();
+                clear();
                 base.evaluate();
                 // TODO Test should fail if there are leftover events
             }
@@ -85,12 +85,7 @@ public class AssertAdminEvents implements TestRule {
 
     // Clears both "classic" and admin events for now
     public void clear() {
-        Response res = context.getTestingClient().testing().clearAdminEventQueue();
-        try {
-            Assert.assertEquals("clear-admin-event-queue success", res.getStatus(), 200);
-        } finally {
-            res.close();
-        }
+        context.getTestingClient().testing().clearAdminEventQueue();
     }
 
     private AdminEventRepresentation fetchNextEvent() {

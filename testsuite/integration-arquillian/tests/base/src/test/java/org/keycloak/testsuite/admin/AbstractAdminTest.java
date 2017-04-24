@@ -17,7 +17,6 @@
 
 package org.keycloak.testsuite.admin;
 
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.keycloak.admin.client.resource.RealmResource;
@@ -25,6 +24,7 @@ import org.keycloak.events.log.JBossLoggingEventListenerProviderFactory;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.events.EventsListenerProviderFactory;
+import org.keycloak.testsuite.util.TestCleanup;
 import org.keycloak.testsuite.util.AssertAdminEvents;
 import org.keycloak.util.JsonSerialization;
 
@@ -55,11 +55,14 @@ public abstract class AbstractAdminTest extends AbstractTestRealmKeycloakTest {
         findTestApp(testRealm).setDirectAccessGrantsEnabled(true);
     }
 
+
+
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         super.addTestRealms(testRealms);
 
         RealmRepresentation adminRealmRep = new RealmRepresentation();
+        adminRealmRep.setId(REALM_NAME);
         adminRealmRep.setRealm(REALM_NAME);
         adminRealmRep.setEnabled(true);
         Map<String, String> config = new HashMap<>();
@@ -82,14 +85,9 @@ public abstract class AbstractAdminTest extends AbstractTestRealmKeycloakTest {
         realmId = realm.toRepresentation().getId();
     }
 
-    // old testsuite expects this realm to be removed at the end of the test
-    @After
-    public void after() {
-        for (RealmRepresentation r : adminClient.realms().findAll()) {
-            if (r.getRealm().equals(REALM_NAME)) {
-                removeRealm(r);
-            }
-        }
+    @Override
+    protected TestCleanup getCleanup() {
+        return getCleanup(REALM_NAME);
     }
 
     // Taken from Keycloak class in old testsuite.

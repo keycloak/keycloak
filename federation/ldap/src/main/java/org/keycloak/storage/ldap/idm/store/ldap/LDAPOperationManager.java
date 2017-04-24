@@ -21,12 +21,15 @@ import org.jboss.logging.Logger;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.ModelException;
 import org.keycloak.storage.ldap.LDAPConfig;
+import org.keycloak.storage.ldap.idm.model.LDAPDn;
 import org.keycloak.storage.ldap.idm.query.internal.LDAPQuery;
+import org.keycloak.storage.ldap.mappers.LDAPOperationDecorator;
 
 import javax.naming.AuthenticationException;
 import javax.naming.Binding;
 import javax.naming.Context;
 import javax.naming.InitialContext;
+import javax.naming.NameAlreadyBoundException;
 import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
 import javax.naming.directory.Attribute;
@@ -81,7 +84,7 @@ public class LDAPOperationManager {
      */
     public void modifyAttribute(String dn, Attribute attribute) {
         ModificationItem[] mods = new ModificationItem[]{new ModificationItem(DirContext.REPLACE_ATTRIBUTE, attribute)};
-        modifyAttributes(dn, mods);
+        modifyAttributes(dn, mods, null);
     }
 
     /**
@@ -101,7 +104,7 @@ public class LDAPOperationManager {
                 modItems.add(modItem);
             }
 
-            modifyAttributes(dn, modItems.toArray(new ModificationItem[] {}));
+            modifyAttributes(dn, modItems.toArray(new ModificationItem[] {}), null);
         } catch (NamingException ne) {
             throw new ModelException("Could not modify attributes on entry from DN [" + dn + "]", ne);
         }
@@ -119,7 +122,7 @@ public class LDAPOperationManager {
      */
     public void removeAttribute(String dn, Attribute attribute) {
         ModificationItem[] mods = new ModificationItem[]{new ModificationItem(DirContext.REMOVE_ATTRIBUTE, attribute)};
-        modifyAttributes(dn, mods);
+        modifyAttributes(dn, mods, null);
     }
 
     /**
@@ -132,7 +135,7 @@ public class LDAPOperationManager {
      */
     public void addAttribute(String dn, Attribute attribute) {
         ModificationItem[] mods = new ModificationItem[]{new ModificationItem(DirContext.ADD_ATTRIBUTE, attribute)};
-        modifyAttributes(dn, mods);
+        modifyAttributes(dn, mods, null);
     }
 
     /**
@@ -156,6 +159,64 @@ public class LDAPOperationManager {
             throw new ModelException("Could not remove entry from DN [" + entryDn + "]", e);
         }
     }
+
+
+    /**
+     * Rename LDAPObject name (DN)
+     *
+     * @param oldDn
+     * @param newDn
+     * @param fallback With fallback=true, we will try to find the another DN in case of conflict. For example if there is an
+     *                 attempt to rename to "CN=John Doe", but there is already existing "CN=John Doe", we will try "CN=John Doe0"
+     * @return the non-conflicting DN, which was used in the end
+     */
+    public String renameEntry(String oldDn, String newDn, boolean fallback) {
+        try {
+            String newNonConflictingDn = execute(new LdapOperation<String>() {
+                @Override
+                public String execute(LdapContext context) throws NamingException {
+                    String dn = newDn;
+
+                    // Max 5 attempts for now
+                    int max = 5;
+                    for (int i=0 ; i<max ; i++) {
+                        try {
+                            context.rename(oldDn, dn);
+                            return dn;
+                        } catch (NameAlreadyBoundException ex) {
+                            if (!fallback) {
+                                throw ex;
+                            } else {
+                                String failedDn = dn;
+                                if (i<max) {
+                                    dn = findNextDNForFallback(newDn, i);
+                                    logger.warnf("Failed to rename DN [%s] to [%s]. Will try to fallback to DN [%s]", oldDn, failedDn, dn);
+                                } else {
+                                    logger.warnf("Failed all fallbacks for renaming [%s]", oldDn);
+                                    throw ex;
+                                }
+                            }
+                        }
+                    }
+
+                    throw new ModelException("Could not rename entry from DN [" + oldDn + "] to new DN [" + newDn + "]. All fallbacks failed");
+                }
+            });
+            return newNonConflictingDn;
+        } catch (NamingException e) {
+            throw new ModelException("Could not rename entry from DN [" + oldDn + "] to new DN [" + newDn + "]", e);
+        }
+    }
+
+    private String findNextDNForFallback(String newDn, int counter) {
+        LDAPDn dn = LDAPDn.fromString(newDn);
+        String rdnAttrName = dn.getFirstRdnAttrName();
+        String rdnAttrVal = dn.getFirstRdnAttrValue();
+        LDAPDn parentDn = dn.getParentDn();
+        parentDn.addFirst(rdnAttrName, rdnAttrVal + counter);
+        return parentDn.toString();
+    }
+
 
     public List<SearchResult> search(final String baseDN, final String filter, Collection<String> returningAttributes, int searchScope) throws NamingException {
         final List<SearchResult> result = new ArrayList<SearchResult>();
@@ -379,7 +440,7 @@ public class LDAPOperationManager {
         }
     }
 
-    public void modifyAttributes(final String dn, final ModificationItem[] mods) {
+    public void modifyAttributes(final String dn, final ModificationItem[] mods, LDAPOperationDecorator decorator) {
         try {
             if (logger.isTraceEnabled()) {
                 logger.tracef("Modifying attributes for entry [%s]: [", dn);
@@ -391,6 +452,11 @@ public class LDAPOperationManager {
                         values = item.getAttribute().get();
                     } else {
                         values = "No values";
+                    }
+
+                    String attrName = item.getAttribute().getID().toUpperCase();
+                    if (attrName.contains("PASSWORD") || attrName.contains("UNICODEPWD")) {
+                        values = "********************";
                     }
 
                     logger.tracef("  Op [%s]: %s = %s", item.getModificationOp(), item.getAttribute().getID(), values);
@@ -405,7 +471,7 @@ public class LDAPOperationManager {
                     context.modifyAttributes(dn, mods);
                     return null;
                 }
-            });
+            }, decorator);
         } catch (NamingException e) {
             throw new ModelException("Could not modify attribute for DN [" + dn + "]", e);
         }
@@ -421,7 +487,13 @@ public class LDAPOperationManager {
                 while (all.hasMore()) {
                     Attribute attribute = all.next();
 
-                    logger.tracef("  %s = %s", attribute.getID(), attribute.get());
+                    String attrName = attribute.getID().toUpperCase();
+                    Object attrVal = attribute.get();
+                    if (attrName.contains("PASSWORD") || attrName.contains("UNICODEPWD")) {
+                        attrVal = "********************";
+                    }
+
+                    logger.tracef("  %s = %s", attribute.getID(), attrVal);
                 }
 
                 logger.tracef("]");
@@ -539,20 +611,30 @@ public class LDAPOperationManager {
         }
 
         if (logger.isDebugEnabled()) {
-            logger.debugf("Creating LdapContext using properties: [%s]", env);
+            Map<String, Object> copyEnv = new HashMap<>(env);
+            if (copyEnv.containsKey(Context.SECURITY_CREDENTIALS)) {
+                copyEnv.put(Context.SECURITY_CREDENTIALS, "**************************************");
+            }
+            logger.debugf("Creating LdapContext using properties: [%s]", copyEnv);
         }
 
         return env;
     }
 
     private <R> R execute(LdapOperation<R> operation) throws NamingException {
+        return execute(operation, null);
+    }
+
+    private <R> R execute(LdapOperation<R> operation, LDAPOperationDecorator decorator) throws NamingException {
         LdapContext context = null;
 
         try {
             context = createLdapContext();
+            if (decorator != null) {
+                decorator.beforeLDAPOperation(context, operation);
+            }
+
             return operation.execute(context);
-        } catch (NamingException ne) {
-            throw ne;
         } finally {
             if (context != null) {
                 try {
@@ -564,7 +646,7 @@ public class LDAPOperationManager {
         }
     }
 
-    private interface LdapOperation<R> {
+    public interface LdapOperation<R> {
         R execute(LdapContext context) throws NamingException;
     }
 

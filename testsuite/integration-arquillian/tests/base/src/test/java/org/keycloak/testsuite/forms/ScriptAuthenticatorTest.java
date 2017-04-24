@@ -16,9 +16,14 @@
  */
 package org.keycloak.testsuite.forms;
 
+import com.google.common.collect.ImmutableMap;
 import org.apache.commons.io.IOUtils;
 import org.jboss.arquillian.graphene.page.Page;
-import org.junit.*;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Rule;
+import org.junit.Test;
 import org.keycloak.authentication.authenticators.browser.ScriptBasedAuthenticatorFactory;
 import org.keycloak.authentication.authenticators.browser.UsernamePasswordFormFactory;
 import org.keycloak.events.Details;
@@ -40,6 +45,7 @@ import org.keycloak.testsuite.util.UserBuilder;
 
 import javax.ws.rs.core.Response;
 import java.io.IOException;
+import java.util.Map;
 
 /**
  * Tests for {@link org.keycloak.authentication.authenticators.browser.ScriptBasedAuthenticator}
@@ -47,10 +53,6 @@ import java.io.IOException;
  * @author <a href="mailto:thomas.darimont@gmail.com">Thomas Darimont</a>
  */
 public class ScriptAuthenticatorTest extends AbstractFlowTest {
-
-    UserRepresentation failUser;
-
-    UserRepresentation okayUser;
 
     @Page
     protected LoginPage loginPage;
@@ -60,13 +62,17 @@ public class ScriptAuthenticatorTest extends AbstractFlowTest {
 
     private AuthenticationFlowRepresentation flow;
 
+    public static final String EXECUTION_ID = "scriptAuth";
+
     @BeforeClass
-    public static void enabled() { ProfileAssume.assumePreview(); }
+    public static void enabled() {
+        ProfileAssume.assumePreview();
+    }
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
 
-        failUser = UserBuilder.create()
+        UserRepresentation failUser = UserBuilder.create()
                 .id("fail")
                 .username("fail")
                 .email("fail@test.com")
@@ -74,7 +80,7 @@ public class ScriptAuthenticatorTest extends AbstractFlowTest {
                 .password("password")
                 .build();
 
-        okayUser = UserBuilder.create()
+        UserRepresentation okayUser = UserBuilder.create()
                 .id("user")
                 .username("user")
                 .email("user@test.com")
@@ -89,6 +95,9 @@ public class ScriptAuthenticatorTest extends AbstractFlowTest {
 
     @Before
     public void configureFlows() throws Exception {
+        if (testContext.isInitialized()) {
+            return;
+        }
 
         String scriptFlow = "scriptBrowser";
 
@@ -99,8 +108,6 @@ public class ScriptAuthenticatorTest extends AbstractFlowTest {
                 .topLevel(true)
                 .builtIn(false)
                 .build();
-
-        String scriptAuth = "scriptAuth";
 
         Response createFlowResponse = testRealm().flows().createFlow(scriptBrowserFlow);
         Assert.assertEquals(201, createFlowResponse.getStatus());
@@ -120,7 +127,7 @@ public class ScriptAuthenticatorTest extends AbstractFlowTest {
                 .build();
 
         AuthenticationExecutionRepresentation authScriptExecution = ExecutionBuilder.create()
-                .id(scriptAuth)
+                .id(EXECUTION_ID)
                 .parentFlow(this.flow.getId())
                 .requirement(AuthenticationExecutionModel.Requirement.REQUIRED.name())
                 .authenticator(ScriptBasedAuthenticatorFactory.PROVIDER_ID)
@@ -128,12 +135,13 @@ public class ScriptAuthenticatorTest extends AbstractFlowTest {
 
         Response addExecutionResponse = testRealm().flows().addExecution(usernamePasswordFormExecution);
         Assert.assertEquals(201, addExecutionResponse.getStatus());
+        addExecutionResponse.close();
 
         addExecutionResponse = testRealm().flows().addExecution(authScriptExecution);
         Assert.assertEquals(201, addExecutionResponse.getStatus());
+        addExecutionResponse.close();
 
-        Response newExecutionConfigResponse = testRealm().flows().newExecutionConfig(scriptAuth, createScriptAuthConfig(scriptAuth, "authenticator-example.js", "/scripts/authenticator-example.js", "simple script based authenticator"));
-        Assert.assertEquals(201, newExecutionConfigResponse.getStatus());
+        testContext.setInitialized(true);
     }
 
     /**
@@ -141,12 +149,13 @@ public class ScriptAuthenticatorTest extends AbstractFlowTest {
      */
     @Test
     public void loginShouldWorkWithScriptAuthenticator() {
+        addConfigFromFile("/scripts/authenticator-example.js");
 
         loginPage.open();
 
-        loginPage.login(okayUser.getUsername(), "password");
+        loginPage.login("user", "password");
 
-        events.expectLogin().user(okayUser.getId()).detail(Details.USERNAME, okayUser.getUsername()).assertEvent();
+        events.expectLogin().user("user").detail(Details.USERNAME, "user").assertEvent();
     }
 
     /**
@@ -154,20 +163,70 @@ public class ScriptAuthenticatorTest extends AbstractFlowTest {
      */
     @Test
     public void loginShouldFailWithScriptAuthenticator() {
+        addConfigFromFile("/scripts/authenticator-example.js");
 
         loginPage.open();
 
-        loginPage.login(failUser.getUsername(), "password");
+        loginPage.login("fail", "password");
 
-        events.expect(EventType.LOGIN_ERROR).user((String)null).error(Errors.USER_NOT_FOUND).assertEvent();
+        events.expect(EventType.LOGIN_ERROR).user((String) null).error(Errors.USER_NOT_FOUND).assertEvent();
     }
 
-    private AuthenticatorConfigRepresentation createScriptAuthConfig(String alias, String scriptName, String scriptCodePath, String scriptDescription) throws IOException {
+    /**
+     * KEYCLOAK-4505
+     */
+    @Test
+    public void scriptWithClientSession()  {
+        addConfigFromFile("/scripts/client-session-test.js", ImmutableMap.of(
+                "realm", "test",
+                "clientId", "test-app",
+                "authMethod", "openid-connect"));
+
+        loginPage.open();
+
+        loginPage.login("user", "password");
+
+        events.expectLogin().user("user").detail(Details.USERNAME, "user").assertEvent();
+    }
+
+    private void addConfigFromFile(String filename) {
+        addConfigFromFile(filename, null);
+    }
+
+    private void addConfigFromFile(String filename, Map<String, String> parameters) {
+
+        String alias = filename.substring(filename.lastIndexOf("/") + 1);
+        String script = loadFile(filename, parameters);
+
+        Response newExecutionConfigResponse = testRealm().flows().
+                newExecutionConfig(EXECUTION_ID, createScriptAuthConfig(EXECUTION_ID, alias, script, "script based authenticator"));
+        newExecutionConfigResponse.close();
+
+        Assert.assertEquals(201, newExecutionConfigResponse.getStatus());
+    }
+
+    private String loadFile(String filename, Map<String, String> parameters) {
+        String script = null;
+        try {
+            script = IOUtils.toString(getClass().getResourceAsStream(filename));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        if (parameters != null) {
+            for (Map.Entry<String, String> entry : parameters.entrySet()) {
+                script = script.replaceAll("\\$\\{" + entry.getKey() + "}", entry.getValue());
+            }
+        }
+
+        return script;
+    }
+
+    private AuthenticatorConfigRepresentation createScriptAuthConfig(String alias, String scriptName, String script, String scriptDescription) {
 
         AuthenticatorConfigRepresentation configRep = new AuthenticatorConfigRepresentation();
-
         configRep.setAlias(alias);
-        configRep.getConfig().put("scriptCode", IOUtils.toString(getClass().getResourceAsStream(scriptCodePath)));
+        configRep.getConfig().put("scriptCode", script);
         configRep.getConfig().put("scriptName", scriptName);
         configRep.getConfig().put("scriptDescription", scriptDescription);
 

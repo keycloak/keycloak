@@ -27,7 +27,7 @@
     <xsl:param name="version" select="''"/>
     
     <xsl:variable name="newModuleDefinition">
-        <module xmlns="urn:jboss:module:1.1" name="com.{$database}">
+        <module xmlns="urn:jboss:module:1.1" name="test.jdbc.{$database}">
             <resources>
                 <resource-root path="{$database}-{$version}.jar"/>
             </resources>

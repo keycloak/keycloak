@@ -177,14 +177,23 @@ public final class KeycloakModelUtils {
      * @param visited   set of already visited roles (used for recursion)
      * @return true if "role" is descendant of "composite"
      */
-    public static boolean searchFor(RoleModel role, RoleModel composite) {
-        return composite.isComposite() && (
-                composite.getComposites().contains(role) ||
-                        composite.getComposites().stream()
-                                .filter(x -> x.isComposite() && x.hasRole(role))
+    public static boolean searchFor(RoleModel role, RoleModel composite, Set<String> visited) {
+        if (visited.contains(composite.getId())) {
+            return false;
+        }
+
+        visited.add(composite.getId());
+
+        if (!composite.isComposite()) {
+            return false;
+        }
+
+        Set<RoleModel> compositeRoles = composite.getComposites();
+        return compositeRoles.contains(role) ||
+                        compositeRoles.stream()
+                                .filter(x -> x.isComposite() && searchFor(role, x, visited))
                                 .findFirst()
-                                .isPresent()
-        );
+                                .isPresent();
     }
 
     /**

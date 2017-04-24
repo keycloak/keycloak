@@ -268,12 +268,13 @@ public class ConcurrencyTest extends AbstractAdminTest {
             Thread thread = new Thread() {
                 @Override
                 public void run() {
+                    Keycloak keycloak = null;
                     try {
                         if (lock != null) {
                             lock.lock();
                         }
 
-                        Keycloak keycloak = Keycloak.getInstance(getAuthServerRoot().toString(), "master", "admin", "admin", org.keycloak.models.Constants.ADMIN_CLI_CLIENT_ID);
+                        keycloak = Keycloak.getInstance(getAuthServerRoot().toString(), "master", "admin", "admin", org.keycloak.models.Constants.ADMIN_CLI_CLIENT_ID);
                         RealmResource realm = keycloak.realm(REALM_NAME);
                         for (int i = 0; i < numIterationsPerThread && latch.getCount() > 0; i++) {
                             log.infov("thread {0}, iteration {1}", threadNum, i);
@@ -286,6 +287,7 @@ public class ConcurrencyTest extends AbstractAdminTest {
                             latch.countDown();
                         }
                     } finally {
+                        keycloak.close();
                         if (lock != null) {
                             lock.unlock();
                         }

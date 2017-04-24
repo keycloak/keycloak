@@ -95,6 +95,10 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
                 .property().name(LDAPConstants.EDIT_MODE)
                 .type(ProviderConfigProperty.STRING_TYPE)
                 .add()
+                .property().name(UserStorageProviderModel.IMPORT_ENABLED)
+                .type(ProviderConfigProperty.BOOLEAN_TYPE)
+                .defaultValue("true")
+                .add()
                 .property().name(LDAPConstants.SYNC_REGISTRATIONS)
                 .type(ProviderConfigProperty.BOOLEAN_TYPE)
                 .defaultValue("false")
@@ -192,7 +196,7 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
     public LDAPStorageProvider create(KeycloakSession session, ComponentModel model) {
         Map<ComponentModel, LDAPConfigDecorator> configDecorators = getLDAPConfigDecorators(session, model);
 
-        LDAPIdentityStore ldapIdentityStore = this.ldapStoreRegistry.getLdapStore(model, configDecorators);
+        LDAPIdentityStore ldapIdentityStore = this.ldapStoreRegistry.getLdapStore(session, model, configDecorators);
         return new LDAPStorageProvider(this, session, model, ldapIdentityStore);
     }
 
@@ -375,8 +379,8 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
     }
 
     @Override
-    public void onUpdate(KeycloakSession session, RealmModel realm, ComponentModel model) {
-        checkKerberosCredential(session, realm, model);
+    public void onUpdate(KeycloakSession session, RealmModel realm, ComponentModel oldModel, ComponentModel newModel) {
+        checkKerberosCredential(session, realm, newModel);
 
     }
 
@@ -521,9 +525,9 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
 
                                 // Update keycloak user
                                 List<ComponentModel> federationMappers = currentRealm.getComponents(fedModel.getId(), LDAPStorageMapper.class.getName());
-                                List<ComponentModel> sortedMappers = ldapFedProvider.sortMappersDesc(federationMappers);
+                                List<ComponentModel> sortedMappers = ldapFedProvider.getMapperManager().sortMappersDesc(federationMappers);
                                 for (ComponentModel mapperModel : sortedMappers) {
-                                    LDAPStorageMapper ldapMapper = ldapFedProvider.getMapper(mapperModel);
+                                    LDAPStorageMapper ldapMapper = ldapFedProvider.getMapperManager().getMapper(mapperModel);
                                     ldapMapper.onImportUserFromLDAP(ldapUser, currentUser, currentRealm, false);
                                 }
 

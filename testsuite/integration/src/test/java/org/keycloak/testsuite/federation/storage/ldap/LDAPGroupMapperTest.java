@@ -109,7 +109,6 @@ public class LDAPGroupMapperTest {
             LDAPObject group1 = LDAPTestUtils.createLDAPGroup(manager.getSession(), appRealm, ldapModel, "group1", descriptionAttrName, "group1 - description");
             LDAPObject group11 = LDAPTestUtils.createLDAPGroup(manager.getSession(), appRealm, ldapModel, "group11");
             LDAPObject group12 = LDAPTestUtils.createLDAPGroup(manager.getSession(), appRealm, ldapModel, "group12", descriptionAttrName, "group12 - description");
-            LDAPObject groupSpecialCharacters = LDAPTestUtils.createLDAPGroup(manager.getSession(), appRealm, ldapModel, "group-spec,ia*l_characžter)s", descriptionAttrName, "group-special-characters");
 
             LDAPUtils.addMember(ldapFedProvider, MembershipType.DN, LDAPConstants.MEMBER, "not-used", group1, group11, false);
             LDAPUtils.addMember(ldapFedProvider, MembershipType.DN, LDAPConstants.MEMBER, "not-used", group1, group12, true);
@@ -134,14 +133,11 @@ public class LDAPGroupMapperTest {
             LDAPObject james = LDAPTestUtils.addLDAPUser(ldapFedProvider, appRealm, "jameskeycloak", "James", "Brown", "james@email.org", null, "8910");
             LDAPTestUtils.updateLDAPPassword(ldapFedProvider, james, "Password1");
 
-            LDAPObject james2 = LDAPTestUtils.addLDAPUser(ldapFedProvider, appRealm, "jamees,key*cložak)ppp", "James2", "Brown2", "james2@email.org", null, "89102");
-            LDAPTestUtils.updateLDAPPassword(ldapFedProvider, james2, "Password1");
-
-            postSetup();
+            postSetup(appRealm, ldapFedProvider);
         }
 
 
-        void postSetup() {
+        void postSetup(RealmModel appRealm, LDAPStorageProvider ldapProvider) {
             LDAPGroupMapperTest.ldapModel = this.ldapModel;
             LDAPGroupMapperTest.descriptionAttrName = this.descriptionAttrName;
         }

@@ -98,6 +98,8 @@ public abstract class SAMLRequestAbstractParser {
             request.setIssuer(issuer);
         } else if (JBossSAMLConstants.SIGNATURE.get().equals(elementName)) {
             request.setSignature(StaxParserUtil.getDOMElement(xmlEventReader));
+        } else if (JBossSAMLConstants.EXTENSIONS.get().equals(elementName)) {
+            request.setExtensions(new SAMLExtensionsParser().parse(xmlEventReader));
         }
     }
 

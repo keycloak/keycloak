@@ -45,18 +45,6 @@ For example to use the example themes run the server with:
     
 **NOTE:** If `keycloak.theme.dir` is specified the default themes (base, rcue and keycloak) are loaded from the classpath
 
-### Run server with Mongo model
-
-To start a Keycloak server with identity model data persisted in Mongo database instead of default JPA/H2 you can run:
-
-    mvn exec:java -Pkeycloak-server -Dkeycloak.realm.provider=mongo -Dkeycloak.user.provider=mongo -Dkeycloak.audit.provider=mongo
-
-By default it's using database `keycloak` on localhost/27017 and it uses already existing data from this DB (no cleanup of existing data during bootstrap). Assumption is that you already have DB running on localhost/27017 . Use system properties to configure things differently:
-
-    mvn exec:java -Pkeycloak-server -Dkeycloak.realm.provider=mongo -Dkeycloak.user.provider=mongo -Dkeycloak.eventStore.provider=mongo -Dkeycloak.connectionsMongo.host=localhost -Dkeycloak.connectionsMongo.port=27017 -Dkeycloak.connectionsMongo.db=keycloak -Dkeycloak.connectionsMongo.clearOnStartup=false
-
-Note that if you are using Mongo model, it would mean that Mongo will be used for audit as well. You may need to use audit related properties for configuration of Mongo if you want to override default ones (For example keycloak.audit.mongo.host, keycloak.audit.mongo.port etc)
-
 TOTP codes
 ----------
 

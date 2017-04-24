@@ -1,6 +1,8 @@
 package org.keycloak.testsuite.util;
 
+import org.keycloak.admin.client.resource.ProtocolMappersResource;
 import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.protocol.oidc.mappers.AddressMapper;
 import org.keycloak.protocol.oidc.mappers.HardcodedClaim;
 import org.keycloak.protocol.oidc.mappers.HardcodedRole;
@@ -112,15 +114,39 @@ public class ProtocolMapperUtil {
                                                                                 String tokenClaimName,
                                                                                 boolean accessToken, boolean idToken) {
 
-        return ModelToRepresentation.toRepresentation(UserRealmRoleMappingMapper.create(realmRolePrefix, name, tokenClaimName, accessToken, idToken));
+        return createUserRealmRoleMappingMapper(realmRolePrefix, name, tokenClaimName, accessToken, idToken, false);
     }
 
+    public static ProtocolMapperRepresentation createUserRealmRoleMappingMapper(String realmRolePrefix,
+                                                                                String name,
+                                                                                String tokenClaimName,
+                                                                                boolean accessToken, boolean idToken, boolean multiValued) {
+
+        return ModelToRepresentation.toRepresentation(UserRealmRoleMappingMapper.create(realmRolePrefix, name, tokenClaimName, accessToken, idToken, multiValued));
+    }
 
     public static ProtocolMapperRepresentation createUserClientRoleMappingMapper(String clientId, String clientRolePrefix,
                                                                                 String name,
                                                                                 String tokenClaimName,
                                                                                 boolean accessToken, boolean idToken) {
 
-        return ModelToRepresentation.toRepresentation(UserClientRoleMappingMapper.create(clientId, clientRolePrefix, name, tokenClaimName, accessToken, idToken));
+        return createUserClientRoleMappingMapper(clientId, clientRolePrefix, name, tokenClaimName, accessToken, idToken, false);
+    }
+
+    public static ProtocolMapperRepresentation createUserClientRoleMappingMapper(String clientId, String clientRolePrefix,
+                                                                                 String name,
+                                                                                 String tokenClaimName,
+                                                                                 boolean accessToken, boolean idToken, boolean multiValued) {
+
+        return ModelToRepresentation.toRepresentation(UserClientRoleMappingMapper.create(clientId, clientRolePrefix, name, tokenClaimName, accessToken, idToken, multiValued));
+    }
+
+    public static ProtocolMapperRepresentation getMapperByNameAndProtocol(ProtocolMappersResource protocolMappers, String protocol, String name) {
+        for (ProtocolMapperRepresentation mapper : protocolMappers.getMappersPerProtocol(protocol)) {
+            if (name.equals(mapper.getName())) {
+                return mapper;
+            }
+        }
+        return null;
     }
 }

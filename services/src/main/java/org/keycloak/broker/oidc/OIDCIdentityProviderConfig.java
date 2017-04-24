@@ -17,7 +17,6 @@
 package org.keycloak.broker.oidc;
 
 import org.keycloak.models.IdentityProviderModel;
-import org.keycloak.models.KeycloakSession;
 
 /**
  * @author Pedro Igor
@@ -59,6 +58,14 @@ public class OIDCIdentityProviderConfig extends OAuth2IdentityProviderConfig {
 
     public void setPublicKeySignatureVerifier(String signingCertificate) {
         getConfig().put("publicKeySignatureVerifier", signingCertificate);
+    }
+
+    public String getPublicKeySignatureVerifierKeyId() {
+        return getConfig().get("publicKeySignatureVerifierKeyId");
+    }
+
+    public void setPublicKeySignatureVerifierKeyId(String publicKeySignatureVerifierKeyId) {
+        getConfig().put("publicKeySignatureVerifierKeyId", publicKeySignatureVerifierKeyId);
     }
 
     public boolean isValidateSignature() {

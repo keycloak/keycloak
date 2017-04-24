@@ -41,6 +41,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
@@ -69,8 +70,8 @@ public class ScopeService {
     }
 
     @POST
-    @Consumes("application/json")
-    @Produces("application/json")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
     public Response create(ScopeRepresentation scope) {
         this.auth.requireManage();
         Scope model = toModel(scope, this.resourceServer, authorization);
@@ -82,8 +83,8 @@ public class ScopeService {
 
     @Path("{id}")
     @PUT
-    @Consumes("application/json")
-    @Produces("application/json")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
     public Response update(@PathParam("id") String id, ScopeRepresentation scope) {
         this.auth.requireManage();
         scope.setId(id);
@@ -134,7 +135,7 @@ public class ScopeService {
 
     @Path("{id}")
     @GET
-    @Produces("application/json")
+    @Produces(MediaType.APPLICATION_JSON)
     public Response findById(@PathParam("id") String id) {
         this.auth.requireView();
         Scope model = this.authorization.getStoreFactory().getScopeStore().findById(id, resourceServer.getId());
@@ -148,7 +149,7 @@ public class ScopeService {
 
     @Path("{id}/resources")
     @GET
-    @Produces("application/json")
+    @Produces(MediaType.APPLICATION_JSON)
     public Response getResources(@PathParam("id") String id) {
         this.auth.requireView();
         StoreFactory storeFactory = this.authorization.getStoreFactory();
@@ -170,7 +171,7 @@ public class ScopeService {
 
     @Path("{id}/permissions")
     @GET
-    @Produces("application/json")
+    @Produces(MediaType.APPLICATION_JSON)
     public Response getPermissions(@PathParam("id") String id) {
         this.auth.requireView();
         StoreFactory storeFactory = this.authorization.getStoreFactory();
@@ -195,7 +196,7 @@ public class ScopeService {
 
     @Path("/search")
     @GET
-    @Produces("application/json")
+    @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     public Response find(@QueryParam("name") String name) {
         this.auth.requireView();

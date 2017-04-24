@@ -39,7 +39,7 @@ public class AbstractJsonUserAttributeMapperTest {
 
 	private JsonNode getJsonNode() throws IOException {
 		if (baseNode == null)
-			baseNode = mapper.readTree("{ \"value1\" : \"v1 \",\"value_empty\" : \"\", \"value_b\" : true, \"value_i\" : 454, " + " \"value_array\":[\"a1\",\"a2\"], " +" \"nest1\": {\"value1\": \" fgh \",\"value_empty\" : \"\", \"nest2\":{\"value_b\" : false, \"value_i\" : 43}}, "+ " \"nesta\": { \"a\":[{\"av1\": \"vala1\"},{\"av1\": \"vala2\"}]}"+" }");
+			baseNode = mapper.readTree("{ \"value1\" : \"v1 \",\"value_null\" : null,\"value_empty\" : \"\", \"value_b\" : true, \"value_i\" : 454, " + " \"value_array\":[\"a1\",\"a2\"], " +" \"nest1\": {\"value1\": \" fgh \",\"value_null\" : null,\"value_empty\" : \"\", \"nest2\":{\"value_b\" : false, \"value_i\" : 43}}, "+ " \"nesta\": { \"a\":[{\"av1\": \"vala1\"},{\"av1\": \"vala2\"}]}"+" }");
 		return baseNode;
 	}
 
@@ -62,6 +62,8 @@ public class AbstractJsonUserAttributeMapperTest {
 
 		// we check value is trimmed also!
 		Assert.assertEquals("v1", AbstractJsonUserAttributeMapper.getJsonValue(getJsonNode(), "value1"));
+		// test for KEYCLOAK-4202 bug (null value handling)
+		Assert.assertEquals(null, AbstractJsonUserAttributeMapper.getJsonValue(getJsonNode(), "value_null"));
 		Assert.assertEquals(null, AbstractJsonUserAttributeMapper.getJsonValue(getJsonNode(), "value_empty"));
 
 		Assert.assertEquals("true", AbstractJsonUserAttributeMapper.getJsonValue(getJsonNode(), "value_b"));
@@ -82,6 +84,8 @@ public class AbstractJsonUserAttributeMapperTest {
 
 		// we check value is trimmed also!
 		Assert.assertEquals("fgh", AbstractJsonUserAttributeMapper.getJsonValue(getJsonNode(), "nest1.value1"));
+		// test for KEYCLOAK-4202 bug (null value handling)
+        Assert.assertEquals(null, AbstractJsonUserAttributeMapper.getJsonValue(getJsonNode(), "nest1.value_null"));
 		Assert.assertEquals(null, AbstractJsonUserAttributeMapper.getJsonValue(getJsonNode(), "nest1.value_empty"));
 
 		Assert.assertEquals("false", AbstractJsonUserAttributeMapper.getJsonValue(getJsonNode(), "nest1.nest2.value_b"));

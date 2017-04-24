@@ -19,8 +19,13 @@ package org.keycloak.testsuite.i18n;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
 import org.junit.Test;
+import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.testsuite.pages.AccountUpdateProfilePage;
 import org.keycloak.testsuite.pages.LoginPage;
+import org.keycloak.testsuite.ProfileAssume;
+
+import java.util.List;
 
 /**
  * @author <a href="mailto:gerbermichi@me.com">Michael Gerber</a>
@@ -48,5 +53,28 @@ public class AccountPageTest extends AbstractI18NTest {
         accountUpdateProfilePage.openLanguage("English");
         Assert.assertEquals("English", accountUpdateProfilePage.getLanguageDropdownText());
         accountUpdateProfilePage.logout();
+    }
+
+    @Test
+    public void testLocalizedReferrerLinkContent() {
+        ProfileAssume.assumeCommunity();
+        
+        RealmResource testRealm = testRealm();
+        List<ClientRepresentation> foundClients = testRealm.clients().findByClientId("var-named-test-app");
+        if (foundClients.isEmpty()) {
+            Assert.fail("Unable to find var-named-test-app");
+        }
+        ClientRepresentation namedClient = foundClients.get(0);
+
+        driver.navigate().to(accountUpdateProfilePage.getPath() + "?referrer=" + namedClient.getClientId());
+        loginPage.login("test-user@localhost", "password");
+        Assert.assertTrue(accountUpdateProfilePage.isCurrent());
+
+        accountUpdateProfilePage.openLanguage("Deutsch");
+        Assert.assertEquals("Deutsch", accountUpdateProfilePage.getLanguageDropdownText());
+
+        // When a client has a name provided as a variable, the name should be resolved using a localized bundle and available to the back link
+        Assert.assertEquals("Zur\u00FCck zu Test App Named - Konto", accountUpdateProfilePage.getBackToApplicationLinkText());
+        Assert.assertEquals(namedClient.getBaseUrl(), accountUpdateProfilePage.getBackToApplicationLinkHref());
     }
 }
