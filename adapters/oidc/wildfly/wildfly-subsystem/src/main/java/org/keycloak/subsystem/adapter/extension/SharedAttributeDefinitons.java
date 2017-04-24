@@ -166,6 +166,12 @@ public class SharedAttributeDefinitons {
                     .setAllowExpression(true)
                     .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, true, true))
                     .build();
+    protected static final SimpleAttributeDefinition AUTODETECT_BEARER_ONLY =
+            new SimpleAttributeDefinitionBuilder("autodetect-bearer-only", ModelType.BOOLEAN, true)
+            .setXmlName("autodetect-bearer-only")
+            .setAllowExpression(true)
+            .setDefaultValue(new ModelNode(false))
+            .build();
 
 
 
@@ -193,6 +199,7 @@ public class SharedAttributeDefinitons {
         ATTRIBUTES.add(REGISTER_NODE_PERIOD);
         ATTRIBUTES.add(TOKEN_STORE);
         ATTRIBUTES.add(PRINCIPAL_ATTRIBUTE);
+        ATTRIBUTES.add(AUTODETECT_BEARER_ONLY);
     }
 
     private static boolean isSet(ModelNode attributes, SimpleAttributeDefinition def) {

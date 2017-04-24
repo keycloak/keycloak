@@ -76,6 +76,8 @@ public class Client extends Clients {
         private WebElement installationLink;
         @FindBy(linkText = "Service Account Roles")
         private WebElement serviceAccountRoles;
+        @FindBy(linkText = "Authorization")
+        private WebElement authorizationLink;
 
         public void settings() {
             settingsLink.click();
@@ -103,6 +105,10 @@ public class Client extends Clients {
 
         public void installation() {
             installationLink.click();
+        }
+
+        public void authorization() {
+            authorizationLink.click();
         }
         
         public boolean isServiceAccountRolesDisplayed() {

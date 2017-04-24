@@ -196,10 +196,12 @@ public class PolicyEnforcerConfig {
                     '}';
         }
 
+        @JsonIgnore
         public boolean hasPattern() {
             return getPath().indexOf("{") != -1;
         }
 
+        @JsonIgnore
         public boolean isInstance() {
             return this.parentConfig != null;
         }

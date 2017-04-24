@@ -65,6 +65,7 @@
             <xs:element name="register-node-period" type="xs:integer" minOccurs="0" maxOccurs="1"/>
             <xs:element name="token-store" type="xs:string" minOccurs="0" maxOccurs="1"/>
             <xs:element name="principal-attribute" type="xs:string" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="autodetect-bearer-only" type="xs:boolean" minOccurs="0" maxOccurs="1"/>
         </xs:all>
         <xs:attribute name="name" type="xs:string" use="required">
             <xs:annotation>
@@ -107,6 +108,7 @@
             <xs:element name="turn-off-change-session-id-on-login" type="xs:boolean" minOccurs="0" maxOccurs="1" />
             <xs:element name="token-minimum-time-to-live" type="xs:integer" minOccurs="0" maxOccurs="1"/>
             <xs:element name="min-time-between-jwks-requests" type="xs:integer" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="autodetect-bearer-only" type="xs:boolean" minOccurs="0" maxOccurs="1"/>
         </xs:all>
         <xs:attribute name="name" type="xs:string" use="required">
             <xs:annotation>

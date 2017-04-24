@@ -17,6 +17,18 @@
 
 package org.keycloak.models.utils;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
 import org.jboss.logging.Logger;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.AuthorizationProviderFactory;
@@ -24,7 +36,7 @@ import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
-import org.keycloak.authorization.policy.provider.PolicyProvider;
+import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
 import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.authorization.store.ResourceServerStore;
 import org.keycloak.authorization.store.ResourceStore;
@@ -92,6 +104,7 @@ import org.keycloak.representations.idm.UserConsentRepresentation;
 import org.keycloak.representations.idm.UserFederationMapperRepresentation;
 import org.keycloak.representations.idm.UserFederationProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.PolicyEnforcementMode;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceOwnerRepresentation;
@@ -102,18 +115,6 @@ import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.storage.federated.UserFederatedStorageProvider;
 import org.keycloak.util.JsonSerialization;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.ListIterator;
-import java.util.Map;
-import java.util.Set;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 public class RepresentationToModel {
 
@@ -1896,9 +1897,6 @@ public class RepresentationToModel {
         resourceServer.setPolicyEnforcementMode(rep.getPolicyEnforcementMode());
         resourceServer.setAllowRemoteResourceManagement(rep.isAllowRemoteResourceManagement());
 
-        StoreFactory storeFactory = authorization.getStoreFactory();
-        ScopeStore scopeStore = storeFactory.getScopeStore();
-
         rep.getScopes().forEach(scope -> {
             toModel(scope, resourceServer, authorization);
         });
@@ -1932,138 +1930,12 @@ public class RepresentationToModel {
 
     private static Policy importPolicies(AuthorizationProvider authorization, ResourceServer resourceServer, List<PolicyRepresentation> policiesToImport, String parentPolicyName) {
         StoreFactory storeFactory = authorization.getStoreFactory();
-        KeycloakSession session = authorization.getKeycloakSession();
-        RealmModel realm = authorization.getRealm();
         for (PolicyRepresentation policyRepresentation : policiesToImport) {
             if (parentPolicyName != null && !parentPolicyName.equals(policyRepresentation.getName())) {
                 continue;
             }
 
             Map<String, String> config = policyRepresentation.getConfig();
-
-            String roles = config.get("roles");
-
-            if (roles != null && !roles.isEmpty()) {
-                try {
-                    List<Map> rolesMap = (List<Map>) JsonSerialization.readValue(roles, List.class);
-                    config.put("roles", JsonSerialization.writeValueAsString(rolesMap.stream().map(roleConfig -> {
-                        String roleName = roleConfig.get("id").toString();
-                        String clientId = null;
-                        int clientIdSeparator = roleName.indexOf("/");
-
-                        if (clientIdSeparator != -1) {
-                            clientId = roleName.substring(0, clientIdSeparator);
-                            roleName = roleName.substring(clientIdSeparator + 1);
-                        }
-
-                        RoleModel role;
-
-                        if (clientId == null) {
-                            role = realm.getRole(roleName);
-                        } else {
-                            role = realm.getClientByClientId(clientId).getRole(roleName);
-                        }
-
-                        // fallback to find any client role with the given name
-                        if (role == null) {
-                            String finalRoleName = roleName;
-                            role = realm.getClients().stream().map(clientModel -> clientModel.getRole(finalRoleName)).filter(roleModel -> roleModel != null)
-                                    .findFirst().orElse(null);
-                        }
-
-                        if (role == null) {
-                            role = realm.getRoleById(roleName);
-
-                            if (role == null) {
-                                String finalRoleName1 = roleName;
-                                role = realm.getClients().stream().map(clientModel -> clientModel.getRole(finalRoleName1)).filter(roleModel -> roleModel != null)
-                                        .findFirst().orElse(null);
-                            }
-                        }
-
-                        if (role == null) {
-                            throw new RuntimeException("Error while importing configuration. Role [" + roleName + "] could not be found.");
-                        }
-
-                        roleConfig.put("id", role.getId());
-                        return roleConfig;
-                    }).collect(Collectors.toList())));
-                } catch (Exception e) {
-                    throw new RuntimeException("Error while exporting policy [" + policyRepresentation.getName() + "].", e);
-                }
-            }
-
-            String users = config.get("users");
-
-            if (users != null && !users.isEmpty()) {
-                try {
-                    List<String> usersMap = (List<String>) JsonSerialization.readValue(users, List.class);
-                    config.put("users", JsonSerialization.writeValueAsString(usersMap.stream().map(userId -> {
-                        UserModel user = session.users().getUserByUsername(userId, realm);
-
-                        if (user == null) {
-                            user = session.users().getUserById(userId, realm);
-                        }
-
-                        if (user == null) {
-                            throw new RuntimeException("Error while importing configuration. User [" + userId + "] could not be found.");
-                        }
-
-                        return user.getId();
-                    }).collect(Collectors.toList())));
-                } catch (Exception e) {
-                    throw new RuntimeException("Error while exporting policy [" + policyRepresentation.getName() + "].", e);
-                }
-            }
-
-            String scopes = config.get("scopes");
-
-            if (scopes != null && !scopes.isEmpty()) {
-                try {
-                    ScopeStore scopeStore = storeFactory.getScopeStore();
-                    List<String> scopesMap = (List<String>) JsonSerialization.readValue(scopes, List.class);
-                    config.put("scopes", JsonSerialization.writeValueAsString(scopesMap.stream().map(scopeName -> {
-                        Scope newScope = scopeStore.findByName(scopeName, resourceServer.getId());
-
-                        if (newScope == null) {
-                            newScope = scopeStore.findById(scopeName, resourceServer.getId());
-                        }
-
-                        if (newScope == null) {
-                            throw new RuntimeException("Scope with name [" + scopeName + "] not defined.");
-                        }
-
-                        return newScope.getId();
-                    }).collect(Collectors.toList())));
-                } catch (Exception e) {
-                    throw new RuntimeException("Error while exporting policy [" + policyRepresentation.getName() + "].", e);
-                }
-            }
-
-            String policyResources = config.get("resources");
-
-            if (policyResources != null && !policyResources.isEmpty()) {
-                ResourceStore resourceStore = storeFactory.getResourceStore();
-                try {
-                    List<String> resources = JsonSerialization.readValue(policyResources, List.class);
-                    config.put("resources", JsonSerialization.writeValueAsString(resources.stream().map(resourceName -> {
-                        Resource resource = resourceStore.findByName(resourceName, resourceServer.getId());
-
-                        if (resource == null) {
-                            resource = resourceStore.findById(resourceName, resourceServer.getId());
-                        }
-
-                        if (resource == null) {
-                            throw new RuntimeException("Resource with name [" + resourceName + "] not defined.");
-                        }
-
-                        return resource.getId();
-                    }).collect(Collectors.toList())));
-                } catch (Exception e) {
-                    throw new RuntimeException("Error while exporting policy [" + policyRepresentation.getName() + "].", e);
-                }
-            }
-
             String applyPolicies = config.get("applyPolicies");
 
             if (applyPolicies != null && !applyPolicies.isEmpty()) {
@@ -2087,91 +1959,111 @@ public class RepresentationToModel {
                         return policy.getId();
                     }).collect(Collectors.toList())));
                 } catch (Exception e) {
-                    throw new RuntimeException("Error while exporting policy [" + policyRepresentation.getName() + "].", e);
+                    throw new RuntimeException("Error while importing policy [" + policyRepresentation.getName() + "].", e);
                 }
             }
 
-            if (parentPolicyName == null) {
-                toModel(policyRepresentation, resourceServer, authorization);
-            } else if (parentPolicyName.equals(policyRepresentation.getName())) {
-                return toModel(policyRepresentation, resourceServer, authorization);
+            PolicyStore policyStore = storeFactory.getPolicyStore();
+            Policy policy = policyStore.findById(policyRepresentation.getId(), resourceServer.getId());
+
+            if (policy == null) {
+                policy = policyStore.findByName(policyRepresentation.getName(), resourceServer.getId());
+            }
+
+            if (policy == null) {
+                policy = policyStore.create(policyRepresentation, resourceServer);
+            } else {
+                policy = toModel(policyRepresentation, authorization, policy);
+            }
+
+            if (parentPolicyName != null && parentPolicyName.equals(policyRepresentation.getName())) {
+                return policy;
             }
         }
 
         return null;
     }
 
-    public static Policy toModel(PolicyRepresentation policy, ResourceServer resourceServer, AuthorizationProvider authorization) {
-        String type = policy.getType();
-        PolicyProvider provider = authorization.getProvider(type);
+    public static Policy toModel(AbstractPolicyRepresentation representation, AuthorizationProvider authorization, Policy model) {
+        model.setName(representation.getName());
+        model.setDescription(representation.getDescription());
+        model.setDecisionStrategy(representation.getDecisionStrategy());
+        model.setLogic(representation.getLogic());
 
-        if (provider == null) {
-            //TODO: temporary, remove this check on future versions as drools type is now deprecated
-            if ("drools".equalsIgnoreCase(type)) {
-                type = "rules";
+        Set resources = representation.getResources();
+        Set scopes = representation.getScopes();
+        Set policies = representation.getPolicies();
+
+        if (representation instanceof PolicyRepresentation) {
+            PolicyRepresentation policy = PolicyRepresentation.class.cast(representation);
+            String resourcesConfig = policy.getConfig().get("resources");
+
+            if (resourcesConfig != null) {
+                try {
+                    resources = JsonSerialization.readValue(resourcesConfig, Set.class);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
             }
-            if (authorization.getProvider(type) == null) {
-                throw new RuntimeException("Unknown polucy type [" + type + "]. Could not find a provider for this type.");
+
+            String scopesConfig = policy.getConfig().get("scopes");
+
+            if (scopesConfig != null) {
+                try {
+                    scopes = JsonSerialization.readValue(scopesConfig, Set.class);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
             }
+
+            String policiesConfig = policy.getConfig().get("applyPolicies");
+
+            if (policiesConfig != null) {
+                try {
+                    policies = JsonSerialization.readValue(policiesConfig, Set.class);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+
+            model.setConfig(policy.getConfig());
         }
 
-        PolicyStore policyStore = authorization.getStoreFactory().getPolicyStore();
-        Policy existing;
+        StoreFactory storeFactory = authorization.getStoreFactory();
 
-        if (policy.getId() != null) {
-            existing = policyStore.findById(policy.getId(), resourceServer.getId());
+        updateResources(resources, model, storeFactory);
+        updateScopes(scopes, model, storeFactory);
+        updateAssociatedPolicies(policies, model, storeFactory);
+
+        PolicyProviderFactory provider = authorization.getProviderFactory(model.getType());
+
+        if (representation instanceof PolicyRepresentation) {
+            provider.onImport(model, PolicyRepresentation.class.cast(representation), authorization);
+        } else if (representation.getId() == null) {
+            provider.onCreate(model, representation, authorization);
         } else {
-            existing = policyStore.findByName(policy.getName(), resourceServer.getId());
+            provider.onUpdate(model, representation, authorization);
         }
 
-        if (existing != null) {
-            existing.setName(policy.getName());
-            existing.setDescription(policy.getDescription());
-            existing.setConfig(policy.getConfig());
-            existing.setDecisionStrategy(policy.getDecisionStrategy());
-            existing.setLogic(policy.getLogic());
 
-            updateResources(existing, authorization);
-            updateAssociatedPolicies(existing, resourceServer, authorization);
-            updateScopes(existing, authorization);
-
-            return existing;
-        }
-
-        Policy model = policyStore.create(policy.getName(), type, resourceServer);
-
-        model.setDescription(policy.getDescription());
-        model.setDecisionStrategy(policy.getDecisionStrategy());
-        model.setLogic(policy.getLogic());
-        model.setConfig(policy.getConfig());
-
-        updateResources(model, authorization);
-        updateAssociatedPolicies(model, resourceServer, authorization);
-        updateScopes(model, authorization);
-
-        policy.setId(model.getId());
+        representation.setId(model.getId());
 
         return model;
     }
 
-    private static void updateScopes(Policy policy, AuthorizationProvider authorization) {
-        String scopes = policy.getConfig().get("scopes");
-        if (scopes != null) {
-            String[] scopeIds;
-
-            try {
-                scopeIds = JsonSerialization.readValue(scopes, String[].class);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
+    private static void updateScopes(Set<String> scopeIds, Policy policy, StoreFactory storeFactory) {
+        if (scopeIds != null) {
+            if (scopeIds.isEmpty()) {
+                for (Scope scope : new HashSet<Scope>(policy.getScopes())) {
+                    policy.removeScope(scope);
+                }
+                return;
             }
-
-            StoreFactory storeFactory = authorization.getStoreFactory();
-
             for (String scopeId : scopeIds) {
                 boolean hasScope = false;
 
                 for (Scope scopeModel : new HashSet<Scope>(policy.getScopes())) {
-                    if (scopeModel.getId().equals(scopeId)) {
+                    if (scopeModel.getId().equals(scopeId) || scopeModel.getName().equals(scopeId)) {
                         hasScope = true;
                     }
                 }
@@ -2180,7 +2072,10 @@ public class RepresentationToModel {
                     Scope scope = storeFactory.getScopeStore().findById(scopeId, resourceServer.getId());
 
                     if (scope == null) {
-                        storeFactory.getScopeStore().findByName(scopeId, resourceServer.getId());
+                        scope = storeFactory.getScopeStore().findByName(scopeId, resourceServer.getId());
+                        if (scope == null) {
+                            throw new RuntimeException("Scope with id or name [" + scopeId + "] does not exist");
+                        }
                     }
 
                     policy.addScope(scope);
@@ -2191,7 +2086,7 @@ public class RepresentationToModel {
                 boolean hasScope = false;
 
                 for (String scopeId : scopeIds) {
-                    if (scopeModel.getId().equals(scopeId)) {
+                    if (scopeModel.getId().equals(scopeId) || scopeModel.getName().equals(scopeId)) {
                         hasScope = true;
                     }
                 }
@@ -2199,24 +2094,22 @@ public class RepresentationToModel {
                     policy.removeScope(scopeModel);
                 }
             }
-
-            policy.getConfig().remove("scopes");
         }
+
+        policy.getConfig().remove("scopes");
     }
 
-    private static void updateAssociatedPolicies(Policy policy, ResourceServer resourceServer, AuthorizationProvider authorization) {
-        String policies = policy.getConfig().get("applyPolicies");
+    private static void updateAssociatedPolicies(Set<String> policyIds, Policy policy, StoreFactory storeFactory) {
+        ResourceServer resourceServer = policy.getResourceServer();
 
-        if (policies != null) {
-            String[] policyIds;
-
-            try {
-                policyIds = JsonSerialization.readValue(policies, String[].class);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
+        if (policyIds != null) {
+            if (policyIds.isEmpty()) {
+                for (Policy associated: new HashSet<Policy>(policy.getAssociatedPolicies())) {
+                    policy.removeAssociatedPolicy(associated);
+                }
+                return;
             }
 
-            StoreFactory storeFactory = authorization.getStoreFactory();
             PolicyStore policyStore = storeFactory.getPolicyStore();
 
             for (String policyId : policyIds) {
@@ -2228,12 +2121,14 @@ public class RepresentationToModel {
                     }
                 }
 
-
                 if (!hasPolicy) {
                     Policy associatedPolicy = policyStore.findById(policyId, resourceServer.getId());
 
                     if (associatedPolicy == null) {
                         associatedPolicy = policyStore.findByName(policyId, resourceServer.getId());
+                        if (associatedPolicy == null) {
+                            throw new RuntimeException("Policy with id or name [" + policyId + "] does not exist");
+                        }
                     }
 
                     policy.addAssociatedPolicy(associatedPolicy);
@@ -2250,31 +2145,24 @@ public class RepresentationToModel {
                 }
                 if (!hasPolicy) {
                     policy.removeAssociatedPolicy(policyModel);
-                    ;
                 }
             }
-
-            policy.getConfig().remove("applyPolicies");
         }
+
+        policy.getConfig().remove("applyPolicies");
     }
 
-    private static void updateResources(Policy policy, AuthorizationProvider authorization) {
-        String resources = policy.getConfig().get("resources");
-        if (resources != null) {
-            String[] resourceIds;
-
-            try {
-                resourceIds = JsonSerialization.readValue(resources, String[].class);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
+    private static void updateResources(Set<String> resourceIds, Policy policy, StoreFactory storeFactory) {
+        if (resourceIds != null) {
+            if (resourceIds.isEmpty()) {
+                for (Scope scope : new HashSet<Scope>(policy.getScopes())) {
+                    policy.removeScope(scope);
+                }
             }
-
-            StoreFactory storeFactory = authorization.getStoreFactory();
-
             for (String resourceId : resourceIds) {
                 boolean hasResource = false;
                 for (Resource resourceModel : new HashSet<Resource>(policy.getResources())) {
-                    if (resourceModel.getId().equals(resourceId)) {
+                    if (resourceModel.getId().equals(resourceId) || resourceModel.getName().equals(resourceId)) {
                         hasResource = true;
                     }
                 }
@@ -2282,7 +2170,10 @@ public class RepresentationToModel {
                     Resource resource = storeFactory.getResourceStore().findById(resourceId, policy.getResourceServer().getId());
 
                     if (resource == null) {
-                        throw new RuntimeException("Resource [" + resourceId + "] not found.");
+                        resource = storeFactory.getResourceStore().findByName(resourceId, policy.getResourceServer().getId());
+                        if (resource == null) {
+                            throw new RuntimeException("Resource with id or name [" + resourceId + "] does not exist");
+                        }
                     }
 
                     policy.addResource(resource);
@@ -2293,7 +2184,7 @@ public class RepresentationToModel {
                 boolean hasResource = false;
 
                 for (String resourceId : resourceIds) {
-                    if (resourceModel.getId().equals(resourceId)) {
+                    if (resourceModel.getId().equals(resourceId) || resourceModel.getName().equals(resourceId)) {
                         hasResource = true;
                     }
                 }
@@ -2302,9 +2193,9 @@ public class RepresentationToModel {
                     policy.removeResource(resourceModel);
                 }
             }
-
-            policy.getConfig().remove("resources");
         }
+
+        policy.getConfig().remove("resources");
     }
 
     public static Resource toModel(ResourceRepresentation resource, ResourceServer resourceServer, AuthorizationProvider authorization) {

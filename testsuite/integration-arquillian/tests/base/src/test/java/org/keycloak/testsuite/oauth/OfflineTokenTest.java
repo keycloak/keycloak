@@ -43,9 +43,11 @@ import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.account.AccountTest;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.testsuite.auth.page.AuthRealm;
+import org.keycloak.testsuite.pages.AccountApplicationsPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.ClientManager;
@@ -58,6 +60,7 @@ import org.keycloak.util.TokenUtil;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import javax.ws.rs.NotFoundException;
 
@@ -79,6 +82,10 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
 
     @Page
     protected LoginPage loginPage;
+
+    @Page
+    protected AccountApplicationsPage applicationsPage;
+
     @Rule
     public AssertEvents events = new AssertEvents(this);
 
@@ -481,5 +488,66 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
                 AuthRealm.MASTER, Constants.ADMIN_CLI_CLIENT_ID, tokenResponse.getAccessToken());
         RealmRepresentation testRealm = offlineTokenAdmin.realm("test").toRepresentation();
         Assert.assertNotNull(testRealm);
+    }
+
+
+    // KEYCLOAK-4525
+    @Test
+    public void offlineTokenRemoveClientWithTokens() throws Exception {
+        // Create new client
+        RealmResource appRealm = adminClient.realm("test");
+
+        ClientRepresentation clientRep = ClientBuilder.create().clientId("offline-client-2")
+                .id(KeycloakModelUtils.generateId())
+                .directAccessGrants()
+                .secret("secret1").build();
+
+        appRealm.clients().create(clientRep);
+
+        // Direct grant login requesting offline token
+        oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
+        oauth.clientId("offline-client-2");
+        OAuthClient.AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("secret1", "test-user@localhost", "password");
+        Assert.assertNull(tokenResponse.getErrorDescription());
+        AccessToken token = oauth.verifyToken(tokenResponse.getAccessToken());
+        String offlineTokenString = tokenResponse.getRefreshToken();
+        RefreshToken offlineToken = oauth.verifyRefreshToken(offlineTokenString);
+
+        events.expectLogin()
+                .client("offline-client-2")
+                .user(userId)
+                .session(token.getSessionState())
+                .detail(Details.GRANT_TYPE, OAuth2Constants.PASSWORD)
+                .detail(Details.TOKEN_ID, token.getId())
+                .detail(Details.REFRESH_TOKEN_ID, offlineToken.getId())
+                .detail(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_OFFLINE)
+                .detail(Details.USERNAME, "test-user@localhost")
+                .removeDetail(Details.CODE_ID)
+                .removeDetail(Details.REDIRECT_URI)
+                .removeDetail(Details.CONSENT)
+                .assertEvent();
+
+        // Go to account mgmt applications page
+        applicationsPage.open();
+        loginPage.login("test-user@localhost", "password");
+        events.expectLogin().client("account").detail(Details.REDIRECT_URI, AccountTest.ACCOUNT_REDIRECT + "?path=applications").assertEvent();
+        Assert.assertTrue(applicationsPage.isCurrent());
+        Map<String, AccountApplicationsPage.AppEntry> apps = applicationsPage.getApplications();
+        Assert.assertTrue(apps.containsKey("offline-client-2"));
+        Assert.assertEquals("Offline Token", apps.get("offline-client-2").getAdditionalGrants().get(0));
+
+        // Now remove the client
+        ClientResource offlineTokenClient2 = ApiUtil.findClientByClientId(appRealm, "offline-client-2" );
+        offlineTokenClient2.remove();
+
+        // Go to applications page and see offline-client not anymore
+        applicationsPage.open();
+        apps = applicationsPage.getApplications();
+        Assert.assertFalse(apps.containsKey("offline-client-2"));
+
+        // Login as admin and see consents of user
+        UserResource user = ApiUtil.findUserByUsernameId(appRealm, "test-user@localhost");
+        List<Map<String, Object>> consents = user.getConsents();
+        Assert.assertTrue(consents.isEmpty());
     }
 }

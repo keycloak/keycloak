@@ -16,27 +16,31 @@
  */
 package org.keycloak.testsuite.admin;
 
+import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
+
+import java.util.List;
+
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Test;
+import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.RoleModel;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.Logic;
+import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
+import org.keycloak.representations.idm.authorization.RolePolicyRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
-
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
+import org.keycloak.testsuite.util.ClientBuilder;
+import org.keycloak.testsuite.util.RealmBuilder;
+import org.keycloak.util.JsonSerialization;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -51,42 +55,55 @@ public class AuthzCleanupTest extends AbstractKeycloakTest {
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
-        RealmRepresentation testRealmRep = new RealmRepresentation();
-        testRealmRep.setId(TEST);
-        testRealmRep.setRealm(TEST);
-        testRealmRep.setEnabled(true);
-        testRealms.add(testRealmRep);
+        testRealms.add(RealmBuilder.create().name(TEST)
+                .client(ClientBuilder.create().clientId("myclient")
+                        .secret("secret")
+                        .authorizationServicesEnabled(true)
+                        .redirectUris("http://localhost/myclient")
+                        .defaultRoles(
+                                "client-role-1",
+                                "client-role-2",
+                                "Acme administrator",
+                                "Acme viewer",
+                                "tenant administrator",
+                                "tenant viewer",
+                                "tenant user"
+                                )
+                            .build())
+                .build());
     }
 
     public static void setup(KeycloakSession session) {
         RealmModel realm = session.realms().getRealmByName(TEST);
-        ClientModel client = session.realms().addClient(realm, "myclient");
-        RoleModel role1 = client.addRole("client-role1");
-        RoleModel role2 = client.addRole("client-role2");
-
+        session.getContext().setRealm(realm);
         AuthorizationProvider authz = session.getProvider(AuthorizationProvider.class);
-        ResourceServer resourceServer = authz.getStoreFactory().getResourceServerStore().create(client.getId());
-        createRolePolicy(authz, resourceServer, role1);
-        createRolePolicy(authz, resourceServer, role2);
-
-
+        ClientModel myclient = realm.getClientByClientId("myclient");
+        ResourceServer resourceServer = authz.getStoreFactory().getResourceServerStore().findByClient(myclient.getId());
+        createRolePolicy(authz, resourceServer, "client-role-1");
+        createRolePolicy(authz, resourceServer, "client-role-2");
     }
 
-    private static Policy createRolePolicy(AuthorizationProvider authz, ResourceServer resourceServer, RoleModel role) {
-        Policy policy = authz.getStoreFactory().getPolicyStore().create(role.getName(), "role", resourceServer);
+    private static Policy createRolePolicy(AuthorizationProvider authz, ResourceServer resourceServer, String roleName) {
+        RolePolicyRepresentation representation = new RolePolicyRepresentation();
 
-        String roleValues = "[{\"id\":\"" + role.getId() + "\",\"required\": true}]";
-        policy.setDecisionStrategy(DecisionStrategy.UNANIMOUS);
-        policy.setLogic(Logic.POSITIVE);
-        Map<String, String> config = new HashMap<>();
-        config.put("roles", roleValues);
-        policy.setConfig(config);
-        return policy;
+        representation.setName(roleName);
+        representation.setType("role");
+        representation.setDecisionStrategy(DecisionStrategy.UNANIMOUS);
+        representation.setLogic(Logic.POSITIVE);
+        representation.addRole(roleName, true);
+
+        return authz.getStoreFactory().getPolicyStore().create(representation, resourceServer);
     }
 
 
     @Test
     public void testCreate() throws Exception {
+        ClientsResource clients = getAdminClient().realms().realm(TEST).clients();
+        ClientRepresentation client = clients.findByClientId("myclient").get(0);
+        ResourceServerRepresentation settings = JsonSerialization.readValue(getClass().getResourceAsStream("/authorization-test/acme-resource-server-cleanup-test.json"), ResourceServerRepresentation.class);
+
+        clients.get(client.getId()).authorization().importSettings(settings);
+
         testingClient.server().run(AuthzCleanupTest::setup);
     }
 

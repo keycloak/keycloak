@@ -45,6 +45,12 @@ public final class SuiteContext {
     private boolean adminPasswordUpdated;
     private final Map<String, String> smtpServer = new HashMap<>();
 
+    /**
+     * True if the testsuite is running in the adapter backward compatibility testing mode,
+     * i.e. if the tests are running against newer auth server
+     */
+    private static final boolean adapterCompatTesting = Boolean.parseBoolean(System.getProperty("testsuite.adapter.compat.testing"));
+
     public SuiteContext(Set<ContainerInfo> arquillianContainers) {
         this.container = arquillianContainers;
         this.adminPasswordUpdated = false;
@@ -101,6 +107,10 @@ public final class SuiteContext {
         return container;
     }
 
+    public boolean isAdapterCompatTesting() {
+        return adapterCompatTesting;
+    }
+
     @Override
     public String toString() {
         String containers = "Auth server: " + (isAuthServerCluster() ? "\nFrontend: " : "")
@@ -110,6 +120,9 @@ public final class SuiteContext {
         }
         if (isAuthServerMigrationEnabled()) {
             containers += "Migrated from: " + System.getProperty("migrated.auth.server.version") + "\n";
+        }
+        if (isAdapterCompatTesting()) {
+            containers += "Adapter backward compatibility testing mode!\n";
         }
         return "SUITE CONTEXT:\n"
                 + containers;

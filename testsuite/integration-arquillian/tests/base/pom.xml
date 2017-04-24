@@ -96,6 +96,7 @@
                 <filtering>true</filtering>
                 <includes>
                     <include>migration-test/*</include>
+                    <include>authorization-test/*</include>
                 </includes>
             </testResource>
             <testResource>

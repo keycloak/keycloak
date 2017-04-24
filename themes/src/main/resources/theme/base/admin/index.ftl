@@ -17,6 +17,7 @@
 
     <script type="text/javascript">
         var authUrl = '${authUrl}';
+        var consoleBaseUrl = '${consoleBaseUrl}';
         var resourceUrl = '${resourceUrl}';
         var masterRealm = '${masterRealm}';
     </script>

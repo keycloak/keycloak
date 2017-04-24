@@ -49,7 +49,6 @@ class PathMatcher {
 
         PathConfig matchingAnyPath = null;
         PathConfig matchingAnySuffixPath = null;
-        PathConfig matchingPath = null;
 
         for (PathConfig entry : paths.values()) {
             String expectedUri = entry.getPath();
@@ -132,56 +131,77 @@ class PathMatcher {
             return targetUri.startsWith(expectedUri.substring(0, expectedUri.length() - 2));
         }
 
+        String suffix = "/*.";
+        int suffixIndex = expectedUri.indexOf(suffix);
+
+        if (suffixIndex != -1) {
+            return targetUri.endsWith(expectedUri.substring(suffixIndex + suffix.length() - 1));
+        }
+
         return false;
     }
 
     public String buildUriFromTemplate(String expectedUri, String targetUri) {
         int patternStartIndex = expectedUri.indexOf("{");
 
-        if (patternStartIndex >= targetUri.length()) {
+        if (patternStartIndex == -1 || patternStartIndex >= targetUri.length()) {
+            return null;
+        }
+
+        if (expectedUri.split("/").length > targetUri.split("/").length) {
             return null;
         }
 
         char[] expectedUriChars = expectedUri.toCharArray();
         char[] matchingUri = Arrays.copyOfRange(expectedUriChars, 0, patternStartIndex);
+        int matchingUriLastIndex = matchingUri.length;
+        String targetUriParams = targetUri.substring(patternStartIndex);
 
         if (Arrays.equals(matchingUri, Arrays.copyOf(targetUri.toCharArray(), matchingUri.length))) {
-            int matchingLastIndex = matchingUri.length;
-            matchingUri = Arrays.copyOf(matchingUri, targetUri.length()); // +1 so we can add a slash at the end
-            int targetPatternStartIndex = patternStartIndex;
+            matchingUri = Arrays.copyOf(matchingUri, targetUri.length());
+            int paramIndex = 0;
 
-            while (patternStartIndex != -1) {
-                int parameterStartIndex = -1;
-
-                for (int i = targetPatternStartIndex; i < targetUri.length(); i++) {
-                    char c = targetUri.charAt(i);
-
-                    if (c != '/') {
-                        if (parameterStartIndex == -1) {
-                            parameterStartIndex = matchingLastIndex;
-                        }
-                        matchingUri[matchingLastIndex] = c;
-                        matchingLastIndex++;
-                    }
-
-                    if (c == '/' || ((i + 1 == targetUri.length()))) {
-                        if (matchingUri[matchingLastIndex - 1] != '/' && matchingLastIndex < matchingUri.length) {
-                            matchingUri[matchingLastIndex] = '/';
-                            matchingLastIndex++;
-                        }
-
-                        targetPatternStartIndex = targetUri.indexOf('/', i) + 1;
-                        break;
-                    }
-                }
-
-                if ((patternStartIndex = expectedUri.indexOf('{', patternStartIndex + 1)) == -1) {
+            for (int i = patternStartIndex; i < expectedUriChars.length; i++) {
+                if (matchingUriLastIndex >= matchingUri.length) {
                     break;
                 }
 
-                if ((targetPatternStartIndex == 0 || targetPatternStartIndex == targetUri.length()) && parameterStartIndex != -1) {
-                    return null;
+                char c = expectedUriChars[i];
+
+                if (c == '{' || c == '*') {
+                    String[] params = targetUriParams.split("/");
+
+                    for (int k = paramIndex; k <= (c == '*' ? params.length : paramIndex); k++) {
+                        if (k == params.length) {
+                            break;
+                        }
+
+                        int paramLength = params[k].length();
+
+                        if (matchingUriLastIndex + paramLength > matchingUri.length) {
+                            return null;
+                        }
+
+                        for (int j = 0; j < paramLength; j++) {
+                            matchingUri[matchingUriLastIndex++] = params[k].charAt(j);
+                        }
+
+                        if (c == '*' && matchingUriLastIndex < matchingUri.length) {
+                            matchingUri[matchingUriLastIndex++] = '/';
+                        }
+                    }
+
+                    i = expectedUri.indexOf('}', i);
+                } else {
+                    if (c == '/') {
+                        paramIndex++;
+                    }
+                    matchingUri[matchingUriLastIndex++] = c;
                 }
+            }
+
+            if (matchingUri[matchingUri.length - 1] == '\u0000') {
+                return null;
             }
 
             return String.valueOf(matchingUri);

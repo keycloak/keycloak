@@ -56,7 +56,7 @@
     </dependency>
     <dependency>
       <groupId>org.keycloak</groupId>
-      <artifactId>keycloak-jetty92-adapter</artifactId>
+      <artifactId>keycloak-jetty93-adapter</artifactId>
       <scope>provided</scope>
     </dependency>
 
