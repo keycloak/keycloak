@@ -30,12 +30,16 @@ import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.ClientTemplateRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.account.AccountTest;
+import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.AccountApplicationsPage;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
@@ -48,6 +52,8 @@ import org.openqa.selenium.By;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+
+import javax.ws.rs.core.Response;
 
 import static org.junit.Assert.assertEquals;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
@@ -325,6 +331,75 @@ public class OAuthGrantTest extends AbstractKeycloakTest {
         // cleanup
         appRealm.roles().deleteRole(fooRole.getName());
         thirdParty.roles().deleteRole(barAppRole.getName());
+
+    }
+
+
+    // KEYCLOAK-4326
+    @Test
+    public void oauthGrantClientTemplateMappers() throws Exception {
+        // Add client template with some protocol mapper
+        RealmResource appRealm = adminClient.realm(REALM_NAME);
+
+        ClientTemplateRepresentation template1 = new ClientTemplateRepresentation();
+        template1.setName("foo");
+        template1.setFullScopeAllowed(false);
+        template1.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+        Response response = appRealm.clientTemplates().create(template1);
+        String templateId = ApiUtil.getCreatedId(response);
+        response.close();
+
+        ProtocolMapperRepresentation protocolMapper = ProtocolMapperUtil.createAddressMapper(true, true);
+        response = appRealm.clientTemplates().get(templateId).getProtocolMappers().createMapper(protocolMapper);
+        response.close();
+
+        // Add template to client
+        ClientResource thirdParty = findClientByClientId(appRealm, THIRD_PARTY_APP);
+        ClientRepresentation thirdPartyRep = thirdParty.toRepresentation();
+        thirdPartyRep.setClientTemplate("foo");
+        thirdPartyRep.setUseTemplateMappers(true);
+        thirdParty.update(thirdPartyRep);
+
+        // Login
+        oauth.clientId(THIRD_PARTY_APP);
+        oauth.doLoginGrant("test-user@localhost", "password");
+        grantPage.assertCurrent();
+        Assert.assertTrue(driver.getPageSource().contains("Email"));
+        Assert.assertTrue(driver.getPageSource().contains("Address"));
+        grantPage.accept();
+
+        events.expectLogin()
+                .client(THIRD_PARTY_APP)
+                .detail(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED)
+                .assertEvent();
+
+        // Go to user's application screen
+        accountAppsPage.open();
+        Assert.assertTrue(accountAppsPage.isCurrent());
+        Map<String, AccountApplicationsPage.AppEntry> apps = accountAppsPage.getApplications();
+        Assert.assertTrue(apps.containsKey("third-party"));
+        Assert.assertTrue(apps.get("third-party").getProtocolMappersGranted().contains("Address"));
+
+        // Login as admin and see the consent screen of particular user
+        UserResource user = ApiUtil.findUserByUsernameId(appRealm, "test-user@localhost");
+        List<Map<String, Object>> consents = user.getConsents();
+        Assert.assertEquals(1, consents.size());
+
+        // Assert automatically logged another time
+        oauth.openLoginForm();
+        appPage.assertCurrent();
+        events.expectLogin()
+                .detail(Details.AUTH_METHOD, OIDCLoginProtocol.LOGIN_PROTOCOL)
+                .detail(Details.CONSENT, Details.CONSENT_VALUE_PERSISTED_CONSENT)
+                .removeDetail(Details.USERNAME)
+                .client(THIRD_PARTY_APP).assertEvent();
+
+        // Revoke
+        accountAppsPage.open();
+        accountAppsPage.revokeGrant(THIRD_PARTY_APP);
+        events.expect(EventType.REVOKE_GRANT)
+                .client("account").detail(Details.REVOKED_CLIENT, THIRD_PARTY_APP).assertEvent();
+
 
     }
 
