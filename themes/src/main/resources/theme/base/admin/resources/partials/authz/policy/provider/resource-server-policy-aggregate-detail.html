@@ -34,7 +34,7 @@
                 <label class="col-md-2 control-label" for="reqActions">{{:: 'authz-policy-apply-policy' | translate}} <span class="required">*</span></label>
 
                 <div class="col-md-6">
-                    <input type="hidden" ui-select2="policiesUiSelect" id="reqActions" data-ng-model="policy.config.applyPolicies" data-placeholder="{{:: 'authz-select-a-policy' | translate}}..." multiple required />
+                    <input type="hidden" ui-select2="policiesUiSelect" id="reqActions" data-ng-model="selectedPolicies" data-placeholder="{{:: 'authz-select-a-policy' | translate}}..." multiple required />
                 </div>
                 <kc-tooltip>{{:: 'authz-policy-apply-policy.tooltip' | translate}}</kc-tooltip>
             </div>

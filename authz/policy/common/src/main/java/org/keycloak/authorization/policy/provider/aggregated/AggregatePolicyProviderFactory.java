@@ -73,6 +73,11 @@ public class AggregatePolicyProviderFactory implements PolicyProviderFactory<Pol
         verifyCircularReference(policy, new ArrayList<>());
     }
 
+    @Override
+    public void onImport(Policy policy, PolicyRepresentation representation, AuthorizationProvider authorization) {
+        verifyCircularReference(policy, new ArrayList<>());
+    }
+
     private void verifyCircularReference(Policy policy, List<String> ids) {
         if (!policy.getType().equals("aggregate")) {
             return;

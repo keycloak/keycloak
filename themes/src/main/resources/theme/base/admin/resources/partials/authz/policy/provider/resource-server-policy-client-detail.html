@@ -53,7 +53,7 @@
                         <tr ng-repeat="client in selectedClients | orderBy:'clientId'">
                             <td>{{client.clientId}}</td>
                             <td class="kc-action-cell">
-                                <button class="btn btn-default btn-block btn-sm" ng-click="removeFromList(selectedClients, $index);">{{:: 'remove' | translate}}</button>
+                                <button class="btn btn-default btn-block btn-sm" ng-click="removeFromList(client);">{{:: 'remove' | translate}}</button>
                             </td>
                         </tr>
                         <tr data-ng-show="!selectedClients.length">

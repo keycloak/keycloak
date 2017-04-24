@@ -1340,6 +1340,8 @@ module.controller('ResourceServerPolicyUserDetailCtrl', function($scope, $route,
             $scope.$watch('selectedUsers', function() {
                 if (!angular.equals($scope.selectedUsers, selectedUsers)) {
                     $scope.changed = true;
+                } else {
+                    $scope.changed = false;
                 }
             }, true);
         },
@@ -1413,8 +1415,11 @@ module.controller('ResourceServerPolicyClientDetailCtrl', function($scope, $rout
                 $scope.selectedClients.push(client);
             }
 
-            $scope.removeFromList = function(list, index) {
-                list.splice(index, 1);
+            $scope.removeFromList = function(client) {
+                var index = $scope.selectedClients.indexOf(client);
+                if (index != -1) {
+                    $scope.selectedClients.splice(index, 1);
+                }
             }
         },
 
@@ -1435,6 +1440,8 @@ module.controller('ResourceServerPolicyClientDetailCtrl', function($scope, $rout
             $scope.$watch('selectedClients', function() {
                 if (!angular.equals($scope.selectedClients, selectedClients)) {
                     $scope.changed = true;
+                } else {
+                    $scope.changed = false;
                 }
             }, true);
         },
@@ -1447,6 +1454,16 @@ module.controller('ResourceServerPolicyClientDetailCtrl', function($scope, $rout
             }
 
             $scope.policy.config.clients = JSON.stringify(clients);
+        },
+
+        onInitCreate : function() {
+            var selectedClients = [];
+
+            $scope.$watch('selectedClients', function() {
+                if (!angular.equals($scope.selectedClients, selectedClients)) {
+                    $scope.changed = true;
+                }
+            }, true);
         },
 
         onCreate : function() {
@@ -1572,6 +1589,8 @@ module.controller('ResourceServerPolicyRoleDetailCtrl', function($scope, $route,
             $scope.$watch('selectedRoles', function() {
                 if (!angular.equals($scope.selectedRoles, selectedRoles)) {
                     $scope.changed = true;
+                } else {
+                    $scope.changed = false;
                 }
             }, true);
         },
@@ -1589,6 +1608,7 @@ module.controller('ResourceServerPolicyRoleDetailCtrl', function($scope, $route,
             }
 
             $scope.policy.roles = roles;
+            delete $scope.policy.config;
         },
 
         onCreate : function() {
@@ -1604,6 +1624,7 @@ module.controller('ResourceServerPolicyRoleDetailCtrl', function($scope, $route,
             }
 
             $scope.policy.roles = roles;
+            delete $scope.policy.config;
         }
     }, realm, client, $scope);
     
@@ -1774,18 +1795,25 @@ module.controller('ResourceServerPolicyAggregateDetailCtrl', function($scope, $r
                 client : client.id,
                 id : policy.id
             }, function(policies) {
+                $scope.selectedPolicies = [];
                 for (i = 0; i < policies.length; i++) {
                     policies[i].text = policies[i].name;
-                    $scope.policy.config.applyPolicies.push(policies[i]);
+                    $scope.selectedPolicies.push(policies[i]);
                 }
+                var copy = angular.copy($scope.selectedPolicies);
+                $scope.$watch('selectedPolicies', function() {
+                    if (!angular.equals($scope.selectedPolicies, copy)) {
+                        $scope.changed = true;
+                    }
+                }, true);
             });
         },
 
         onUpdate : function() {
             var policies = [];
 
-            for (i = 0; i < $scope.policy.config.applyPolicies.length; i++) {
-                policies.push($scope.policy.config.applyPolicies[i].id);
+            for (i = 0; i < $scope.selectedPolicies.length; i++) {
+                policies.push($scope.selectedPolicies[i].id);
             }
 
             $scope.policy.config.applyPolicies = JSON.stringify(policies);
@@ -1799,8 +1827,8 @@ module.controller('ResourceServerPolicyAggregateDetailCtrl', function($scope, $r
         onCreate : function() {
             var policies = [];
 
-            for (i = 0; i < $scope.policy.config.applyPolicies.length; i++) {
-                policies.push($scope.policy.config.applyPolicies[i].id);
+            for (i = 0; i < $scope.selectedPolicies.length; i++) {
+                policies.push($scope.selectedPolicies[i].id);
             }
 
             $scope.policy.config.applyPolicies = JSON.stringify(policies);
