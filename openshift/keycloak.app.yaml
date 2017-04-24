@@ -104,11 +104,11 @@ objects:
                 name: keycloak-config
                 key: db.port
           - name: JAVA_OPTS
-              value: >-
-                -server -Xms256m -Xmx4096m -XX:MetaspaceSize=96M
-                -XX:MaxMetaspaceSize=512m -Djava.net.preferIPv4Stack=true
-                -Djboss.modules.system.pkgs=org.jboss.byteman
-                -Djava.awt.headless=true
+            value: >-
+              -server -Xms256m -Xmx4096m -XX:MetaspaceSize=96M
+              -XX:MaxMetaspaceSize=512m -Djava.net.preferIPv4Stack=true
+              -Djboss.modules.system.pkgs=org.jboss.byteman
+              -Djava.awt.headless=true
         restartPolicy: Always
         securityContext: {}
         terminationGracePeriodSeconds: 30
