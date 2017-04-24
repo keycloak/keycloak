@@ -23,17 +23,33 @@ import org.jboss.resteasy.client.jaxrs.ResteasyWebTarget;
 import org.keycloak.testsuite.client.resources.TestApplicationResource;
 import org.keycloak.testsuite.client.resources.TestExampleCompanyResource;
 import org.keycloak.testsuite.client.resources.TestingResource;
+import org.keycloak.testsuite.runonserver.*;
+import org.keycloak.util.JsonSerialization;
+
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.SSLSession;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
 public class KeycloakTestingClient {
+
     private final ResteasyWebTarget target;
     private final ResteasyClient client;
+    private static final boolean authServerSslRequired = Boolean.parseBoolean(System.getProperty("auth.server.ssl.required"));
 
     KeycloakTestingClient(String serverUrl, ResteasyClient resteasyClient) {
-        client = resteasyClient != null ? resteasyClient : new ResteasyClientBuilder().connectionPoolSize(10).build();
+        client = resteasyClient != null ? resteasyClient : newResteasyClientBuilder().connectionPoolSize(10).build();
         target = client.target(serverUrl);
+    }
+
+    private static ResteasyClientBuilder newResteasyClientBuilder() {
+        if (authServerSslRequired) {
+            // Disable PKIX path validation errors when running tests using SSL
+            HostnameVerifier hostnameVerifier = (hostName, session) -> true;
+            return new ResteasyClientBuilder().disableTrustManager().hostnameVerifier(hostnameVerifier);
+        }
+        return new ResteasyClientBuilder();
     }
 
     public static KeycloakTestingClient getInstance(String serverUrl) {
@@ -51,6 +67,67 @@ public class KeycloakTestingClient {
     public TestApplicationResource testApp() { return target.proxy(TestApplicationResource.class); }
 
     public TestExampleCompanyResource testExampleCompany() { return target.proxy(TestExampleCompanyResource.class); }
+
+    public Server server() {
+        return new Server("master");
+    }
+
+    public Server server(String realm) {
+        return new Server(realm);
+    }
+
+    public class Server {
+
+        private String realm;
+
+        public Server(String realm) {
+            this.realm = realm;
+        }
+
+        public <T> T fetch(FetchOnServerWrapper<T> wrapper) throws RunOnServerException {
+            return fetch(wrapper.getRunOnServer(), wrapper.getResultClass());
+        }
+
+        public <T> T fetch(FetchOnServer function, Class<T> clazz) throws RunOnServerException {
+            try {
+                String s = fetch(function);
+                return JsonSerialization.readValue(s, clazz);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        public String fetch(FetchOnServer function) throws RunOnServerException {
+            String encoded = SerializationUtil.encode(function);
+
+            String result = testing(realm != null ? realm : "master").runOnServer(encoded);
+            if (result != null && !result.isEmpty() && !result.trim().startsWith("{")) {
+                Throwable t = SerializationUtil.decodeException(result);
+                if (t instanceof AssertionError) {
+                    throw (AssertionError) t;
+                } else {
+                    throw new RunOnServerException(t);
+                }
+            } else {
+                return result;
+            }
+        }
+
+        public void run(RunOnServer function) throws RunOnServerException {
+            String encoded = SerializationUtil.encode(function);
+
+            String result = testing(realm != null ? realm : "master").runOnServer(encoded);
+            if (result != null && !result.isEmpty() && !result.trim().startsWith("{")) {
+                Throwable t = SerializationUtil.decodeException(result);
+                if (t instanceof AssertionError) {
+                    throw (AssertionError) t;
+                } else {
+                    throw new RunOnServerException(t);
+                }
+            }
+        }
+
+    }
 
     public void close() {
         client.close();

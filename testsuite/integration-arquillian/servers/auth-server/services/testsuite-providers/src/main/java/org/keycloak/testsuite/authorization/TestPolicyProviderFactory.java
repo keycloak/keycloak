@@ -47,7 +47,7 @@ public class TestPolicyProviderFactory implements PolicyProviderFactory {
     }
 
     @Override
-    public PolicyProviderAdminService getAdminResource(ResourceServer resourceServer) {
+    public PolicyProviderAdminService getAdminResource(ResourceServer resourceServer, AuthorizationProvider authorization) {
         return null;
     }
 

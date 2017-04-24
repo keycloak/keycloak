@@ -52,7 +52,7 @@ import static org.junit.Assert.assertTrue;
  */
 public class GenericPolicyManagementTest extends AbstractAuthorizationTest {
 
-    private static final String[] EXPECTED_BUILTIN_POLICY_PROVIDERS = {"test", "user", "role", "drools", "js", "time", "aggregate", "scope", "resource"};
+    private static final String[] EXPECTED_BUILTIN_POLICY_PROVIDERS = {"test", "user", "role", "rules", "js", "time", "aggregate", "scope", "resource"};
 
     @Before
     @Override

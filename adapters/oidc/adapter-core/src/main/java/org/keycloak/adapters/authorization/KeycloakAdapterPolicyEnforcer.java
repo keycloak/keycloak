@@ -83,6 +83,12 @@ public class KeycloakAdapterPolicyEnforcer extends AbstractPolicyEnforcer {
 
     @Override
     protected boolean challenge(PathConfig pathConfig, Set<String> requiredScopes, OIDCHttpFacade facade) {
+        handleAccessDenied(facade);
+        return true;
+    }
+
+    @Override
+    protected void handleAccessDenied(OIDCHttpFacade facade) {
         String accessDeniedPath = getEnforcerConfig().getOnDenyRedirectTo();
         HttpFacade.Response response = facade.getResponse();
 
@@ -92,8 +98,6 @@ public class KeycloakAdapterPolicyEnforcer extends AbstractPolicyEnforcer {
         } else {
             response.sendError(403);
         }
-
-        return true;
     }
 
     private AccessToken requestAuthorizationToken(PathConfig pathConfig, Set<String> requiredScopes, OIDCHttpFacade httpFacade) {

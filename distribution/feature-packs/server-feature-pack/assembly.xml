@@ -23,26 +23,41 @@
        <format>zip</format>
     </formats>
     <includeBaseDirectory>false</includeBaseDirectory>
-    
-    <!-- If war is filtered it will get corrupted. Only need to filter module.xml -->
+
     <fileSets>
         <fileSet>
             <directory>target/${project.build.finalName}</directory>
-            <outputDirectory/>    
-            <filtered>true</filtered>
-            <includes>
-               <include>**/module.xml</include>
-               <include>**/MANIFEST.MF</include>
-            </includes>
+            <outputDirectory/>
+            <excludes>
+                <exclude>configuration/**</exclude>
+            </excludes>
         </fileSet>
         <fileSet>
-            <directory>target/${project.build.finalName}</directory>
-            <outputDirectory/>    
-            <filtered>false</filtered>
-            <excludes>
-               <exclude>**/module.xml</exclude>
-               <exclude>**/MANIFEST.MF</exclude>
-            </excludes>
+            <directory>target/unpacked-themes/theme</directory>
+            <outputDirectory>content/themes</outputDirectory>
+        </fileSet>
+        <fileSet>
+            <directory>src/main/resources/identity/module</directory>
+            <includes>
+                <include>**/**</include>
+            </includes>
+            <outputDirectory>modules/system/layers/keycloak/org/jboss/as/product/${product.slot}</outputDirectory>
+            <filtered>true</filtered>
+        </fileSet>
+        <fileSet>
+            <directory>src/main/resources/identity</directory>
+            <includes>
+                <include>product.conf</include>
+            </includes>
+            <outputDirectory>content/bin</outputDirectory>
+            <filtered>true</filtered>
+        </fileSet>
+        <fileSet>
+            <directory>${configDir}</directory>
+            <includes>
+                <include>**/**</include>
+            </includes>
+            <outputDirectory>configuration</outputDirectory>
         </fileSet>
         <fileSet>
             <directory>../../../</directory>
@@ -50,13 +65,6 @@
                 <include>License.html</include>
             </includes>
             <outputDirectory>content</outputDirectory>
-        </fileSet>
-        <fileSet>
-            <directory>../../../themes/src/main/resources/theme</directory>
-            <outputDirectory>content/themes</outputDirectory>
-            <includes>
-                <include>**/**</include>
-            </includes>
         </fileSet>
     </fileSets>
 </assembly>

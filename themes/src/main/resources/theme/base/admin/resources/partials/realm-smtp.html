@@ -18,10 +18,37 @@
             </div>
         </div>
         <div class="form-group clearfix">
+            <label class="col-md-2 control-label" for="smtpFromDisplayName">{{:: 'fromDisplayName' | translate}}</label>
+            <div class="col-md-6">
+                <input class="form-control" id="smtpFromDisplayName" type="text" ng-model="realm.smtpServer.fromDisplayName" placeholder="{{:: 'sender-email-addr-display' | translate}}">
+            </div>
+            <kc-tooltip>{{:: 'fromDisplayName.tooltip' | translate}}</kc-tooltip>
+        </div>
+        <div class="form-group clearfix">
             <label class="col-md-2 control-label" for="smtpFrom"><span class="required">*</span> {{:: 'from' | translate}}</label>
             <div class="col-md-6">
                 <input class="form-control" id="smtpFrom" type="email" ng-model="realm.smtpServer.from" placeholder="{{:: 'sender-email-addr' | translate}}" required>
             </div>
+        </div>
+        <div class="form-group clearfix">
+            <label class="col-md-2 control-label" for="smtpReplyToDisplayName">{{:: 'replyToDisplayName' | translate}}</label>
+            <div class="col-md-6">
+                <input class="form-control" id="smtpReplyToDisplayName" type="text" ng-model="realm.smtpServer.replyToDisplayName" placeholder="{{:: 'reply-to-email-addr-display' | translate}}">
+            </div>
+            <kc-tooltip>{{:: 'replyToDisplayName.tooltip' | translate}}</kc-tooltip>
+        </div>
+        <div class="form-group clearfix">
+            <label class="col-md-2 control-label" for="smtpReplyTo">{{:: 'replyTo' | translate}}</label>
+            <div class="col-md-6">
+                <input class="form-control" id="smtpReplyTo" type="email" ng-model="realm.smtpServer.replyTo" placeholder="{{:: 'reply-to-email-addr' | translate}}">
+            </div>
+        </div>
+        <div class="form-group clearfix">
+            <label class="col-md-2 control-label" for="smtpEnvelopeFrom">{{:: 'envelopeFrom' | translate}}</label>
+            <div class="col-md-6">
+                <input class="form-control" id="smtpEnvelopeFrom" type="email" ng-model="realm.smtpServer.envelopeFrom" placeholder="{{:: 'sender-envelope-email-addr' | translate}}">
+            </div>
+            <kc-tooltip>{{:: 'envelopeFrom.tooltip' | translate}}</kc-tooltip>
         </div>
         <div class="form-group clearfix">
             <label class="col-md-2 control-label" for="smtpSSL">{{:: 'enable-ssl' | translate}}</label>

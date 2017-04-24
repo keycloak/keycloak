@@ -21,7 +21,9 @@ import org.hamcrest.Matchers;
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.arquillian.test.api.ArquillianResource;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.IdentityProviderResource;
@@ -60,6 +62,7 @@ import org.openqa.selenium.WebDriver;
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
 import javax.ws.rs.ClientErrorException;
+import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import java.io.IOException;
@@ -118,6 +121,9 @@ public class UserTest extends AbstractAdminTest {
         response.close();
 
         assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.userResourcePath(createdId), userRep, ResourceType.USER);
+
+        getCleanup().addUserId(createdId);
+
         return createdId;
     }
 
@@ -280,7 +286,7 @@ public class UserTest extends AbstractAdminTest {
     @Test
     public void delete() {
         String userId = createUser();
-        Response response = realm.users().delete( userId );
+        Response response = realm.users().delete(userId);
         assertEquals(204, response.getStatus());
         response.close();
         assertAdminEvents.assertEvent(realmId, OperationType.DELETE, AdminEventPaths.userResourcePath(userId), ResourceType.USER);
@@ -288,7 +294,7 @@ public class UserTest extends AbstractAdminTest {
 
     @Test
     public void deleteNonExistent() {
-        Response response = realm.users().delete( "does-not-exist" );
+        Response response = realm.users().delete("does-not-exist");
         assertEquals(404, response.getStatus());
         response.close();
         assertAdminEvents.assertEmpty();
@@ -671,7 +677,7 @@ public class UserTest extends AbstractAdminTest {
 
     @Test
     public void updateUserWithNewUsername() {
-        switchEditUsernameAllowedOn();
+        switchEditUsernameAllowedOn(true);
         String id = createUser();
 
         UserResource user = realm.users().get(id);
@@ -681,13 +687,14 @@ public class UserTest extends AbstractAdminTest {
 
         userRep = realm.users().get(id).toRepresentation();
         assertEquals("user11", userRep.getUsername());
+
+        // Revert
+        switchEditUsernameAllowedOn(false);
     }
 
     @Test
     public void updateUserWithoutUsername() {
-
-
-        switchEditUsernameAllowedOn();
+        switchEditUsernameAllowedOn(true);
 
         String id = createUser();
 
@@ -711,6 +718,9 @@ public class UserTest extends AbstractAdminTest {
         assertEquals("user1@localhost", rep.getEmail());
         assertEquals("Firstname", rep.getFirstName());
         assertEquals("Lastname", rep.getLastName());
+
+        // Revert
+        switchEditUsernameAllowedOn(false);
     }
 
     @Test
@@ -728,7 +738,7 @@ public class UserTest extends AbstractAdminTest {
 
     @Test
     public void updateUserWithNewUsernameAccessingViaOldUsername() {
-        switchEditUsernameAllowedOn();
+        switchEditUsernameAllowedOn(true);
         createUser();
 
         try {
@@ -741,13 +751,15 @@ public class UserTest extends AbstractAdminTest {
             fail("Expected failure");
         } catch (ClientErrorException e) {
             assertEquals(404, e.getResponse().getStatus());
+        } finally {
+            switchEditUsernameAllowedOn(false);
         }
     }
 
     @Test
     public void updateUserWithExistingUsername() {
-        switchEditUsernameAllowedOn();
-        enableBruteForce();
+        switchEditUsernameAllowedOn(true);
+        enableBruteForce(true);
         createUser();
 
         UserRepresentation userRep = new UserRepresentation();
@@ -767,6 +779,9 @@ public class UserTest extends AbstractAdminTest {
             // TODO adminEvents: Event queue should be empty, but it's not because of bug in UsersResource.updateUser, which sends event earlier than transaction commit.
             // assertAdminEvents.assertEmpty();
             assertAdminEvents.poll();
+        } finally {
+            enableBruteForce(false);
+            switchEditUsernameAllowedOn(false);
         }
     }
 
@@ -927,16 +942,16 @@ public class UserTest extends AbstractAdminTest {
         assertEquals(111, users.search("test", 0, 1000).size());
     }
 
-    private void switchEditUsernameAllowedOn() {
+    private void switchEditUsernameAllowedOn(boolean enable) {
         RealmRepresentation rep = realm.toRepresentation();
-        rep.setEditUsernameAllowed(true);
+        rep.setEditUsernameAllowed(enable);
         realm.update(rep);
         assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, Matchers.nullValue(String.class), rep, ResourceType.REALM);
     }
 
-    private void enableBruteForce() {
+    private void enableBruteForce(boolean enable) {
         RealmRepresentation rep = realm.toRepresentation();
-        rep.setBruteForceProtected(true);
+        rep.setBruteForceProtected(enable);
         realm.update(rep);
         assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, Matchers.nullValue(String.class), rep, ResourceType.REALM);
     }

@@ -81,6 +81,7 @@ public class ClientTest extends AbstractAdminTest {
         Response response = realm.clients().create(rep);
         response.close();
         String id = ApiUtil.getCreatedId(response);
+        getCleanup().addClientUuid(id);
 
         assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.clientResourcePath(id), rep, ResourceType.CLIENT);
 
@@ -212,6 +213,8 @@ public class ClientTest extends AbstractAdminTest {
     public void serviceAccount() {
         Response response = realm.clients().create(ClientBuilder.create().clientId("serviceClient").serviceAccount().build());
         String id = ApiUtil.getCreatedId(response);
+        getCleanup().addClientUuid(id);
+        response.close();
         UserRepresentation userRep = realm.clients().get(id).getServiceAccountUser();
         assertEquals("service-account-serviceclient", userRep.getUsername());
     }
@@ -237,7 +240,10 @@ public class ClientTest extends AbstractAdminTest {
                 .redirectUris("http://localhost/auth", "http://localhost/auth*")
                 .build();
         Response response = realm.clients().create(client);
-        ClientResource clientResource = realm.clients().get(ApiUtil.getCreatedId(response));
+        String clientUuid = ApiUtil.getCreatedId(response);
+        ClientResource clientResource = realm.clients().get(clientUuid);
+        getCleanup().addClientUuid(clientUuid);
+        response.close();
 
         client = clientResource.toRepresentation();
         client.setRootUrl("http://localhost/base#someFragment");
@@ -291,6 +297,7 @@ public class ClientTest extends AbstractAdminTest {
 
         Response response = realm.clients().create(client);
         String id = ApiUtil.getCreatedId(response);
+        getCleanup().addClientUuid(id);
         response.close();
 
         assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.clientResourcePath(id), client, ResourceType.CLIENT);
@@ -378,6 +385,7 @@ public class ClientTest extends AbstractAdminTest {
     public void scopes() {
         Response response = realm.clients().create(ClientBuilder.create().clientId("client").fullScopeEnabled(false).build());
         String id = ApiUtil.getCreatedId(response);
+        getCleanup().addClientUuid(id);
         response.close();
 
         assertAdminEvents.poll();
@@ -414,7 +422,8 @@ public class ClientTest extends AbstractAdminTest {
 
         Assert.assertNames(scopesResource.clientLevel(accountMgmtId).listAll(), AccountRoles.VIEW_PROFILE);
         Assert.assertNames(scopesResource.clientLevel(accountMgmtId).listEffective(), AccountRoles.VIEW_PROFILE);
-        Assert.assertNames(scopesResource.clientLevel(accountMgmtId).listAvailable(), AccountRoles.MANAGE_ACCOUNT);
+
+        Assert.assertNames(scopesResource.clientLevel(accountMgmtId).listAvailable(), AccountRoles.MANAGE_ACCOUNT, AccountRoles.MANAGE_ACCOUNT_LINKS);
 
         Assert.assertNames(scopesResource.getAll().getRealmMappings(), "role1");
         Assert.assertNames(scopesResource.getAll().getClientMappings().get(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID).getMappings(), AccountRoles.VIEW_PROFILE);
@@ -429,7 +438,7 @@ public class ClientTest extends AbstractAdminTest {
         Assert.assertNames(scopesResource.realmLevel().listEffective());
         Assert.assertNames(scopesResource.realmLevel().listAvailable(), "offline_access", Constants.AUTHZ_UMA_AUTHORIZATION, "role1", "role2");
         Assert.assertNames(scopesResource.clientLevel(accountMgmtId).listAll());
-        Assert.assertNames(scopesResource.clientLevel(accountMgmtId).listAvailable(), AccountRoles.VIEW_PROFILE, AccountRoles.MANAGE_ACCOUNT);
+        Assert.assertNames(scopesResource.clientLevel(accountMgmtId).listAvailable(), AccountRoles.VIEW_PROFILE, AccountRoles.MANAGE_ACCOUNT, AccountRoles.MANAGE_ACCOUNT_LINKS);
         Assert.assertNames(scopesResource.clientLevel(accountMgmtId).listEffective());
     }
 

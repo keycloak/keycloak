@@ -98,16 +98,6 @@
         }
     },
 
-    "connectionsMongo": {
-        "default": {
-            "host": "${keycloak.connectionsMongo.host:127.0.0.1}",
-            "port": "${keycloak.connectionsMongo.port:27017}",
-            "db": "${keycloak.connectionsMongo.db:keycloak}",
-            "databaseSchema": "${keycloak.connectionsMongo.databaseSchema:update}",
-            "connectionsPerHost": "${keycloak.connectionsMongo.connectionsPerHost:100}"
-        }
-    },
-
     "realmCache": {
         "provider": "${keycloak.realm.cache.provider:default}",
         "default" : {
@@ -129,7 +119,7 @@
 
     "truststore": {
         "file": {
-            "file": "${keycloak.truststore.file:src/test/resources/keystore/keycloak.truststore}",
+            "file": "${keycloak.truststore.file:target/dependency/keystore/keycloak.truststore}",
             "password": "${keycloak.truststore.password:secret}",
             "hostname-verification-policy": "${keycloak.truststore.policy:WILDCARD}",
             "disabled": "${keycloak.truststore.disabled:false}"

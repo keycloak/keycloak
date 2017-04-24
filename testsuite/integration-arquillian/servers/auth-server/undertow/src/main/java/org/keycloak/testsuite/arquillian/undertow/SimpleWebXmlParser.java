@@ -95,6 +95,14 @@ class SimpleWebXmlParser {
 
                 Class<? extends Filter> filterClazz = (Class<? extends Filter>) Class.forName(filterClass);
                 FilterInfo undertowFilter = new FilterInfo(filterName, filterClazz);
+
+                List<ElementWrapper> initParams = filter.getElementsByTagName("init-param");
+                for (ElementWrapper initParam : initParams) {
+                    String paramName = initParam.getElementByTagName("param-name").getText();
+                    String paramValue = initParam.getElementByTagName("param-value").getText();
+                    undertowFilter.addInitParam(paramName, paramValue);
+                }
+
                 di.addFilter(undertowFilter);
 
                 if (filterMappings.containsKey(filterName)) {

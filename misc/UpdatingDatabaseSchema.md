@@ -2,7 +2,7 @@ Updating Database Schema
 ========================
 
 Keycloak supports automatically migrating the database to a new version. This is done by applying one or more change-sets
-to the existing database. This means if you need to do any changes to database schemas for JPA or Mongo you need to create 
+to the existing database. This means if you need to do any changes to database schemas you need to create 
 a change-set that can transform the schema as well as any existing data.
 
 This includes changes to:
@@ -13,7 +13,7 @@ This includes changes to:
 * Event entities
 
  
-Creating a JPA change-set
+Creating a change-set
 -------------------------
 
 We use Liquibase to support updating the database. The change-sets are located in 
@@ -55,20 +55,6 @@ When you have update the change-set Hibernate can validate the schema for you. F
 Once the server has started fully, stop it and run:
     
     mvn -f testsuite/integration exec:java -Pkeycloak-server -Dkeycloak.connectionsJpa.url='jdbc:h2:keycloak' -Dkeycloak.connectionsJpa.databaseSchema='development-validate'
-
-
-Creating a Mongo change-set
----------------------------
-
-As Mongo is schema-less it's significantly easier to create a change-set. You only need to create/delete collections as
-needed, as well as update any indexes. You will also need to update existing data if required.
- 
-Mongo change-sets are written in Java and are located in the `connections/mongo` module, to add a new change-set create 
-a new class that implements `org.keycloak.connections.mongo.updater.updates.Update` the name of the class should be 
-`Update<version>` with `.` replaced with `_`.
-
-You also need to add a reference to this file in `org.keycloak.connections.mongo.updater.DefaultMongoUpdaterProvider`. 
-It should be added last to the `DefaultMongoUpdaterProvider#updates` array.
 
 
 Testing database migration

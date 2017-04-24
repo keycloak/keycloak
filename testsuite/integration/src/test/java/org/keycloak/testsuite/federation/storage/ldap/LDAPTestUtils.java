@@ -32,6 +32,7 @@ import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.SynchronizationResultRepresentation;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
+import org.keycloak.storage.ldap.LDAPConfig;
 import org.keycloak.storage.ldap.LDAPUtils;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
 import org.keycloak.storage.ldap.idm.query.internal.LDAPQuery;
@@ -128,7 +129,7 @@ public class LDAPTestUtils {
     }
 
     public static void updateLDAPPassword(LDAPStorageProvider ldapProvider, LDAPObject ldapUser, String password) {
-        ldapProvider.getLdapIdentityStore().updatePassword(ldapUser, password);
+        ldapProvider.getLdapIdentityStore().updatePassword(ldapUser, password, null);
 
         // Enable MSAD user through userAccountControls
         if (ldapProvider.getLdapIdentityStore().getConfig().isActiveDirectory()) {
@@ -141,8 +142,17 @@ public class LDAPTestUtils {
         return (LDAPStorageProvider)keycloakSession.getProvider(UserStorageProvider.class, ldapFedModel);
     }
 
-    public static void assertUserImported(UserProvider userProvider, RealmModel realm, String username, String expectedFirstName, String expectedLastName, String expectedEmail, String expectedPostalCode) {
+    public static UserModel assertUserImported(UserProvider userProvider, RealmModel realm, String username, String expectedFirstName, String expectedLastName, String expectedEmail, String expectedPostalCode) {
         UserModel user = userProvider.getUserByUsername(username, realm);
+        Assert.assertNotNull(user);
+        Assert.assertEquals(expectedFirstName, user.getFirstName());
+        Assert.assertEquals(expectedLastName, user.getLastName());
+        Assert.assertEquals(expectedEmail, user.getEmail());
+        Assert.assertEquals(expectedPostalCode, user.getFirstAttribute("postal_code"));
+        return user;
+    }
+
+    public static void assertLoaded(UserModel user, String username, String expectedFirstName, String expectedLastName, String expectedEmail, String expectedPostalCode) {
         Assert.assertNotNull(user);
         Assert.assertEquals(expectedFirstName, user.getFirstName());
         Assert.assertEquals(expectedLastName, user.getLastName());
@@ -254,7 +264,20 @@ public class LDAPTestUtils {
             ldapStore.remove(ldapUser);
         }
     }
-
+    
+    public static void removeLDAPUserByUsername(LDAPStorageProvider ldapProvider, RealmModel realm, LDAPConfig config, String username) {
+        LDAPIdentityStore ldapStore = ldapProvider.getLdapIdentityStore();
+        LDAPQuery ldapQuery = LDAPUtils.createQueryForUserSearch(ldapProvider, realm);
+        List<LDAPObject> allUsers = ldapQuery.getResultList();
+        
+        // This is ugly, we are iterating over the entire set of ldap users and deleting the one where the username matches.  TODO: Find a better way!
+        for (LDAPObject ldapUser : allUsers) {
+            if (username.equals(LDAPUtils.getUsername(ldapUser, config))) {
+            	ldapStore.remove(ldapUser);
+            }
+        }
+    }
+    
     public static void removeAllLDAPRoles(KeycloakSession session, RealmModel appRealm, ComponentModel ldapModel, String mapperName) {
         ComponentModel mapperModel = getSubcomponentByName(appRealm, ldapModel, mapperName);
         LDAPStorageProvider ldapProvider = LDAPTestUtils.getLdapProvider(session, ldapModel);

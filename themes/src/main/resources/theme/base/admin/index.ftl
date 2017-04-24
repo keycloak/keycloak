@@ -17,6 +17,7 @@
 
     <script type="text/javascript">
         var authUrl = '${authUrl}';
+        var consoleBaseUrl = '${consoleBaseUrl}';
         var resourceUrl = '${resourceUrl}';
         var masterRealm = '${masterRealm}';
     </script>
@@ -39,6 +40,7 @@
     <script src="${resourceUrl}/lib/filesaver/FileSaver.js"></script>
     <script src="${resourceUrl}/lib/ui-ace/min/ace.js"></script>
     <script src="${resourceUrl}/lib/ui-ace/ui-ace.min.js"></script>
+    <script src="${resourceUrl}/lib/autofill-event/autofill-event-1.0.0.js"></script>
 
     <script src="${authUrl}/js/${resourceVersion}/keycloak.js" type="text/javascript"></script>
 

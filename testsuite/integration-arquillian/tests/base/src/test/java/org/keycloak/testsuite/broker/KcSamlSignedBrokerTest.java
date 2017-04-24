@@ -15,8 +15,6 @@ public class KcSamlSignedBrokerTest extends KcSamlBrokerTest {
 
     public static class KcSamlSignedBrokerConfiguration extends KcSamlBrokerConfiguration {
 
-        public static final KcSamlSignedBrokerConfiguration INSTANCE = new KcSamlSignedBrokerConfiguration();
-
         @Override
         public RealmRepresentation createProviderRealm() {
             RealmRepresentation realm = super.createProviderRealm();

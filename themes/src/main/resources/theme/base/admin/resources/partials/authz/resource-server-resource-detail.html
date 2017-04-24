@@ -4,7 +4,7 @@
         <li><a href="#/realms/{{realm.realm}}/clients">{{:: 'clients' | translate}}</a></li>
         <li><a href="#/realms/{{realm.realm}}/clients/{{client.id}}">{{client.clientId}}</a></li>
         <li><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server">{{:: 'authz-authorization' | translate}}</a></li>
-        <li><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server/resource">{{:: 'authz-resource' | translate}}</a></li>
+        <li><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server/resource">{{:: 'authz-resources' | translate}}</a></li>
         <li data-ng-show="create">{{:: 'authz-add-resource' | translate}}</li>
         <li data-ng-hide="create">{{originalResource.name}}</li>
     </ol>
@@ -44,10 +44,10 @@
                 <kc-tooltip>{{:: 'authz-resource-uri.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group clearfix">
-                <label class="col-md-2 control-label" for="reqActions">{{:: 'authz-scopes' | translate}}</label>
+                <label class="col-md-2 control-label" for="scopes">{{:: 'authz-scopes' | translate}}</label>
 
                 <div class="col-md-6">
-                    <input type="hidden" ui-select2="scopesUiSelect" id="reqActions" data-ng-model="resource.scopes" data-placeholder="{{:: 'authz-select-scope' | translate}}..." multiple/>
+                    <input type="hidden" ui-select2="scopesUiSelect" id="scopes" data-ng-model="resource.scopes" data-placeholder="{{:: 'authz-select-scope' | translate}}..." multiple/>
                 </div>
 
                 <kc-tooltip>{{:: 'authz-resource-scopes.tooltip' | translate}}</kc-tooltip>

@@ -65,6 +65,14 @@ public class FederatedUserConsentEntity {
     @Column(name="CLIENT_ID")
     protected String clientId;
 
+    @Column(name = "CREATED_DATE")
+    private Long createdDate;
+
+    @Column(name = "LAST_UPDATED_DATE")
+    private Long lastUpdatedDate;
+
+
+
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "userConsent")
     Collection<FederatedUserConsentRoleEntity> grantedRoles = new ArrayList<FederatedUserConsentRoleEntity>();
 
@@ -125,6 +133,22 @@ public class FederatedUserConsentEntity {
 
     public void setGrantedProtocolMappers(Collection<FederatedUserConsentProtocolMapperEntity> grantedProtocolMappers) {
         this.grantedProtocolMappers = grantedProtocolMappers;
+    }
+
+    public Long getCreatedDate() {
+        return createdDate;
+    }
+
+    public void setCreatedDate(Long createdDate) {
+        this.createdDate = createdDate;
+    }
+
+    public Long getLastUpdatedDate() {
+        return lastUpdatedDate;
+    }
+
+    public void setLastUpdatedDate(Long lastUpdatedDate) {
+        this.lastUpdatedDate = lastUpdatedDate;
     }
 
     @Override

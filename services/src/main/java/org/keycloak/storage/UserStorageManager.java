@@ -60,7 +60,7 @@ import static org.keycloak.models.utils.KeycloakModelUtils.runJobInTransaction;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class UserStorageManager implements UserProvider, OnUserCache, OnCreateComponent {
+public class UserStorageManager implements UserProvider, OnUserCache, OnCreateComponent, OnUpdateComponent {
 
     private static final Logger logger = Logger.getLogger(UserStorageManager.class);
 
@@ -301,6 +301,7 @@ public class UserStorageManager implements UserProvider, OnUserCache, OnCreateCo
             return importValidation(realm, user);
         }
         UserLookupProvider provider = (UserLookupProvider)getStorageProvider(session, realm, storageId.getProviderId());
+        if (provider == null) return null;
         return provider.getUserById(id, realm);
     }
 
@@ -614,6 +615,16 @@ public class UserStorageManager implements UserProvider, OnUserCache, OnCreateCo
     }
 
     @Override
+    public void removeImportedUsers(RealmModel realm, String storageProviderId) {
+        localStorage().removeImportedUsers(realm, storageProviderId);
+    }
+
+    @Override
+    public void unlinkUsers(RealmModel realm, String storageProviderId) {
+        localStorage().unlinkUsers(realm, storageProviderId);
+    }
+
+    @Override
     public void onCache(RealmModel realm, CachedUserModel user, UserModel delegate) {
         if (StorageId.isLocalStorage(user)) {
             if (session.userLocalStorage() instanceof OnUserCache) {
@@ -639,6 +650,18 @@ public class UserStorageManager implements UserProvider, OnUserCache, OnCreateCo
 
     }
 
+    @Override
+    public void onUpdate(KeycloakSession session, RealmModel realm, ComponentModel oldModel, ComponentModel newModel) {
+        ComponentFactory factory = ComponentUtil.getComponentFactory(session, newModel);
+        if (!(factory instanceof UserStorageProviderFactory)) return;
+        UserStorageProviderModel old = new UserStorageProviderModel(oldModel);
+        UserStorageProviderModel newP= new UserStorageProviderModel(newModel);
+        if (old.getChangedSyncPeriod() != newP.getChangedSyncPeriod() || old.getFullSyncPeriod() != newP.getFullSyncPeriod()
+                || old.isImportEnabled() != newP.isImportEnabled()) {
+            new UserStorageSyncManager().notifyToRefreshPeriodicSync(session, realm, new UserStorageProviderModel(newModel), false);
+        }
+
+    }
 
 
 }

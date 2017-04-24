@@ -79,6 +79,7 @@ public class KeycloakOnUndertow implements DeployableContainer<KeycloakOnUnderto
         FilterInfo filter = Servlets.filter("SessionFilter", KeycloakSessionServletFilter.class);
         di.addFilter(filter);
         di.addFilterUrlMapping("SessionFilter", "/*", DispatcherType.REQUEST);
+        filter.setAsyncSupported(true);
 
         return di;
     }
@@ -146,6 +147,11 @@ public class KeycloakOnUndertow implements DeployableContainer<KeycloakOnUnderto
 
     @Override
     public void start() throws LifecycleException {
+        if (isRemoteMode()) {
+            log.info("Skip bootstrap undertow. We are in remote mode");
+            return;
+        }
+
         log.info("Starting auth server on embedded Undertow.");
         long start = System.currentTimeMillis();
 
@@ -169,9 +175,19 @@ public class KeycloakOnUndertow implements DeployableContainer<KeycloakOnUnderto
 
     @Override
     public void stop() throws LifecycleException {
+        if (isRemoteMode()) {
+            log.info("Skip stopping undertow. We are in remote mode");
+            return;
+        }
+
         log.info("Stopping auth server.");
         sessionFactory.close();
         undertow.stop();
+    }
+
+    private boolean isRemoteMode() {
+        //return true;
+        return "true".equals(System.getProperty("remote.mode"));
     }
 
     @Override

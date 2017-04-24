@@ -18,6 +18,8 @@ package org.keycloak.representations.idm.authorization;
 
 import java.net.URI;
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -89,6 +91,15 @@ public class ResourceRepresentation {
      */
     public ResourceRepresentation(String name, Set<ScopeRepresentation> scopes) {
         this(name, scopes, null, null, null);
+    }
+
+    public ResourceRepresentation(String name, String... scopes) {
+        this.name = name;
+        this.scopes = new HashSet<>();
+        for (String s : scopes) {
+            ScopeRepresentation rep = new ScopeRepresentation(s);
+            this.scopes.add(rep);
+        }
     }
 
     /**

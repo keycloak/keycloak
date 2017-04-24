@@ -28,7 +28,6 @@ import org.keycloak.exportimport.Strategy;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
-import org.keycloak.models.utils.RealmImporter;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -55,7 +54,7 @@ public class ImportUtils {
         // Import admin realm first
         for (RealmRepresentation realm : realms) {
             if (Config.getAdminRealm().equals(realm.getRealm())) {
-                if (importRealm(session, realm, strategy)) {
+                if (importRealm(session, realm, strategy, false)) {
                     masterImported = true;
                 }
             }
@@ -63,7 +62,7 @@ public class ImportUtils {
 
         for (RealmRepresentation realm : realms) {
             if (!Config.getAdminRealm().equals(realm.getRealm())) {
-                importRealm(session, realm, strategy);
+                importRealm(session, realm, strategy, false);
             }
         }
 
@@ -84,9 +83,10 @@ public class ImportUtils {
      * @param session
      * @param rep
      * @param strategy specifies whether to overwrite or ignore existing realm or user entries
+     * @param skipUserDependent If true, then import of any models, which needs users already imported in DB, will be skipped. For example authorization
      * @return newly imported realm (or existing realm if ignoreExisting is true and realm of this name already exists)
      */
-    public static boolean importRealm(KeycloakSession session, RealmRepresentation rep, Strategy strategy) {
+    public static boolean importRealm(KeycloakSession session, RealmRepresentation rep, Strategy strategy, boolean skipUserDependent) {
         String realmName = rep.getRealm();
         RealmProvider model = session.realms();
         RealmModel realm = model.getRealmByName(realmName);
@@ -110,7 +110,7 @@ public class ImportUtils {
 
         RealmManager realmManager = new RealmManager(session);
         realmManager.setContextPath(session.getContext().getContextPath());
-        realmManager.importRealm(rep);
+        realmManager.importRealm(rep, skipUserDependent);
 
         if (System.getProperty(ExportImportConfig.ACTION) != null) {
             logger.infof("Realm '%s' imported", realmName);

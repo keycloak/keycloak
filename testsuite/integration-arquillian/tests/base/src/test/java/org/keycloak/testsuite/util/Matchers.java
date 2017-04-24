@@ -39,6 +39,15 @@ public class Matchers {
     }
 
     /**
+     * Matcher on HTTP body of a {@link Response} instance.
+     * @param matcher
+     * @return
+     */
+    public static Matcher<HttpResponse> bodyHC(Matcher<String> matcher) {
+        return new HttpResponseBodyMatcher(matcher);
+    }
+
+    /**
      * Matcher on HTTP status code of a {@link Response} instance.
      * @param matcher
      * @return

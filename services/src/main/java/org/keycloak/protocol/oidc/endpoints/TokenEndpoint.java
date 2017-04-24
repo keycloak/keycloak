@@ -25,6 +25,7 @@ import org.keycloak.OAuthErrorException;
 import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.constants.ServiceAccountConstants;
+import org.keycloak.common.util.Base64Url;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -63,6 +64,9 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.security.MessageDigest;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -77,6 +81,9 @@ public class TokenEndpoint {
     private enum Action {
         AUTHORIZATION_CODE, REFRESH_TOKEN, PASSWORD, CLIENT_CREDENTIALS
     }
+
+    // https://tools.ietf.org/html/rfc7636#section-4.2
+    private static final Pattern VALID_CODE_VERIFIER_PATTERN = Pattern.compile("^[0-9a-zA-Z\\-\\.~_]+$");
 
     @Context
     private KeycloakSession session;
@@ -265,6 +272,60 @@ public class TokenEndpoint {
             event.error(Errors.USER_SESSION_NOT_FOUND);
             throw new ErrorResponseException(OAuthErrorException.INVALID_GRANT, "Session not active", Response.Status.BAD_REQUEST);
         }
+
+        // https://tools.ietf.org/html/rfc7636#section-4.6
+        String codeVerifier = formParams.getFirst(OAuth2Constants.CODE_VERIFIER);
+        String codeChallenge = clientSession.getNote(OIDCLoginProtocol.CODE_CHALLENGE_PARAM);
+        String codeChallengeMethod = clientSession.getNote(OIDCLoginProtocol.CODE_CHALLENGE_METHOD_PARAM);
+        String authUserId = user.getId();
+        String authUsername = user.getUsername();
+        if (authUserId == null) {
+            authUserId = "unknown";
+        }
+        if (authUsername == null) {
+            authUsername = "unknown";
+        }
+        if (codeChallenge != null && codeVerifier == null) {
+            logger.warnf("PKCE code verifier not specified, authUserId = %s, authUsername = %s", authUserId, authUsername);
+            event.error(Errors.CODE_VERIFIER_MISSING);
+            throw new ErrorResponseException(OAuthErrorException.INVALID_GRANT, "PKCE code verifier not specified", Response.Status.BAD_REQUEST);
+        }
+
+        if (codeChallenge != null) {
+            // based on whether code_challenge has been stored at corresponding authorization code request previously
+        	// decide whether this client(RP) supports PKCE
+            if (!isValidPkceCodeVerifier(codeVerifier)) {
+                logger.infof("PKCE invalid code verifier");
+                event.error(Errors.INVALID_CODE_VERIFIER);
+                throw new ErrorResponseException(OAuthErrorException.INVALID_GRANT, "PKCE invalid code verifier", Response.Status.BAD_REQUEST);
+            }
+            
+            logger.debugf("PKCE supporting Client, codeVerifier = %s", codeVerifier);
+            String codeVerifierEncoded = codeVerifier;
+            try {
+            	// https://tools.ietf.org/html/rfc7636#section-4.2
+            	// plain or S256
+                if (codeChallengeMethod != null && codeChallengeMethod.equals(OAuth2Constants.PKCE_METHOD_S256)) {
+                    logger.debugf("PKCE codeChallengeMethod = %s", codeChallengeMethod);                    
+                    codeVerifierEncoded = generateS256CodeChallenge(codeVerifier);
+                } else {
+                    logger.debug("PKCE codeChallengeMethod is plain");
+                    codeVerifierEncoded = codeVerifier;
+                }
+            } catch (Exception nae) {
+                logger.infof("PKCE code verification failed, not supported algorithm specified");
+                event.error(Errors.PKCE_VERIFICATION_FAILED);
+                throw new ErrorResponseException(OAuthErrorException.INVALID_GRANT, "PKCE code verification failed, not supported algorithm specified", Response.Status.BAD_REQUEST);
+            }
+            if (!codeChallenge.equals(codeVerifierEncoded)) {
+                logger.warnf("PKCE verification failed. authUserId = %s, authUsername = %s", authUserId, authUsername);
+                event.error(Errors.PKCE_VERIFICATION_FAILED);
+                throw new ErrorResponseException(OAuthErrorException.INVALID_GRANT, "PKCE verification failed", Response.Status.BAD_REQUEST);
+            } else {
+                logger.debugf("PKCE verification success. codeVerifierEncoded = %s, codeChallenge = %s", codeVerifierEncoded, codeChallenge);
+            }
+        }
+
 
         updateClientSession(clientSession);
         updateUserSessionFromClientAuth(userSession);
@@ -474,4 +535,31 @@ public class TokenEndpoint {
         return Cors.add(request, Response.ok(res, MediaType.APPLICATION_JSON_TYPE)).auth().allowedOrigins(uriInfo, client).allowedMethods("POST").exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS).build();
     }
 
+    // https://tools.ietf.org/html/rfc7636#section-4.1
+    private boolean isValidPkceCodeVerifier(String codeVerifier) {
+        if (codeVerifier.length() < OIDCLoginProtocol.PKCE_CODE_VERIFIER_MIN_LENGTH) {
+            logger.infof(" Error: PKCE codeVerifier length under lower limit , codeVerifier = %s", codeVerifier);
+            return false;
+        }
+        if (codeVerifier.length() > OIDCLoginProtocol.PKCE_CODE_VERIFIER_MAX_LENGTH) {
+            logger.infof(" Error: PKCE codeVerifier length over upper limit , codeVerifier = %s", codeVerifier);
+            return false;
+        }
+        Matcher m = VALID_CODE_VERIFIER_PATTERN.matcher(codeVerifier);
+        return m.matches() ? true : false;
+    }
+
+    // https://tools.ietf.org/html/rfc7636#section-4.6
+    private String generateS256CodeChallenge(String codeVerifier) throws Exception {
+        MessageDigest md = MessageDigest.getInstance("SHA-256");
+        md.update(codeVerifier.getBytes());
+        StringBuilder sb = new StringBuilder();
+        for (byte b : md.digest()) {
+            String hex = String.format("%02x", b);
+            sb.append(hex);
+        }
+        String codeVerifierEncoded = Base64Url.encode(sb.toString().getBytes());
+        return codeVerifierEncoded;
+    }
+ 
 }

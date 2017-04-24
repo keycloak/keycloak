@@ -21,368 +21,67 @@
     <parent>
         <artifactId>keycloak-distribution-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>2.5.1.Final-SNAPSHOT</version>
+        <version>3.1.0.CR1-SNAPSHOT</version>
     </parent>
 
     <artifactId>keycloak-dist-downloads</artifactId>
-    <packaging>pom</packaging>
+    <packaging>jar</packaging>
     <name>Keycloak Release Downloads</name>
     <description/>
 
-    <dependencies>
+    <properties>
+        <maven.compiler.target>1.8</maven.compiler.target>
+        <maven.compiler.source>1.8</maven.compiler.source>
+    </properties>
 
-    </dependencies>
-
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-deploy-plugin</artifactId>
-                <configuration>
-                    <skip>true</skip>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-dependency-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>server-downloads</id>
-                        <phase>install</phase>
-                        <goals>
-                            <goal>copy</goal>
-                        </goals>
+    <profiles>
+        <profile>
+            <id>community</id>
+            <activation>
+                <property>
+                    <name>!product</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-compiler-plugin</artifactId>
                         <configuration>
-                            <artifactItems>
-                                <artifactItem>
-                                    <groupId>org.keycloak</groupId>
-                                    <artifactId>keycloak-server-dist</artifactId>
-                                    <type>zip</type>
-                                    <destFileName>keycloak-${project.version}.zip</destFileName>
-                                </artifactItem>
-                                <artifactItem>
-                                    <groupId>org.keycloak</groupId>
-                                    <artifactId>keycloak-server-dist</artifactId>
-                                    <type>tar.gz</type>
-                                    <destFileName>keycloak-${project.version}.tar.gz</destFileName>
-                                </artifactItem>
-
-                                <artifactItem>
-                                    <groupId>org.keycloak</groupId>
-                                    <artifactId>keycloak-demo-dist</artifactId>
-                                    <type>zip</type>
-                                    <destFileName>keycloak-demo-${project.version}.zip</destFileName>
-                                </artifactItem>
-                                <artifactItem>
-                                    <groupId>org.keycloak</groupId>
-                                    <artifactId>keycloak-demo-dist</artifactId>
-                                    <type>tar.gz</type>
-                                    <destFileName>keycloak-demo-${project.version}.tar.gz</destFileName>
-                                </artifactItem>
-
-                                <artifactItem>
-                                    <groupId>org.keycloak</groupId>
-                                    <artifactId>keycloak-server-overlay</artifactId>
-                                    <type>zip</type>
-                                    <destFileName>keycloak-overlay-${project.version}.zip</destFileName>
-                                </artifactItem>
-                                <artifactItem>
-                                    <groupId>org.keycloak</groupId>
-                                    <artifactId>keycloak-server-overlay</artifactId>
-                                    <type>tar.gz</type>
-                                    <destFileName>keycloak-overlay-${project.version}.tar.gz</destFileName>
-                                </artifactItem>
-
-                                <artifactItem>
-                                    <groupId>org.keycloak</groupId>
-                                    <artifactId>keycloak-proxy-dist</artifactId>
-                                    <type>zip</type>
-                                    <destFileName>keycloak-proxy-${project.version}.zip</destFileName>
-                                </artifactItem>
-
-                                <artifactItem>
-                                    <groupId>org.keycloak</groupId>
-                                    <artifactId>keycloak-api-docs-dist</artifactId>
-                                    <type>zip</type>
-                                    <destFileName>keycloak-api-docs-${project.version}.zip</destFileName>
-                                </artifactItem>
-                                <artifactItem>
-                                    <groupId>org.keycloak</groupId>
-                                    <artifactId>keycloak-examples-dist</artifactId>
-                                    <type>zip</type>
-                                    <destFileName>keycloak-examples-${project.version}.zip</destFileName>
-                                </artifactItem>
-                            </artifactItems>
-                            <outputDirectory>target/${project.version}</outputDirectory>
+                            <source>${maven.compiler.source}</source>
+                            <target>${maven.compiler.target}</target>
                         </configuration>
-                    </execution>
-
-                    <execution>
-                        <id>adapter-downloads</id>
-                        <phase>install</phase>
-                        <goals>
-                            <goal>copy</goal>
-                        </goals>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-deploy-plugin</artifactId>
                         <configuration>
-                            <artifactItems>
-                                <artifactItem>
-                                    <groupId>org.keycloak</groupId>
-                                    <artifactId>keycloak-as7-adapter-dist</artifactId>
-                                    <type>zip</type>
-                                </artifactItem>
-                                <artifactItem>
-                                    <groupId>org.keycloak</groupId>
-                                    <artifactId>keycloak-as7-adapter-dist</artifactId>
-                                    <type>tar.gz</type>
-                                </artifactItem>
-
-                                <artifactItem>
-                                    <groupId>org.keycloak</groupId>
-                                    <artifactId>keycloak-eap6-adapter-dist</artifactId>
-                                    <type>zip</type>
-                                </artifactItem>
-                                <artifactItem>
-                                    <groupId>org.keycloak</groupId>
-                                    <artifactId>keycloak-eap6-adapter-dist</artifactId>
-                                    <type>tar.gz</type>
-                                </artifactItem>
-
-                                <artifactItem>
-                                    <groupId>org.keycloak</groupId>
-                                    <artifactId>keycloak-jetty81-adapter-dist</artifactId>
-                                    <type>zip</type>
-                                </artifactItem>
-                                <artifactItem>
-                                    <groupId>org.keycloak</groupId>
-                                    <artifactId>keycloak-jetty81-adapter-dist</artifactId>
-                                    <type>tar.gz</type>
-                                </artifactItem>
-
-                                <artifactItem>
-                                    <groupId>org.keycloak</groupId>
-                                    <artifactId>keycloak-jetty91-adapter-dist</artifactId>
-                                    <type>zip</type>
-                                </artifactItem>
-                                <artifactItem>
-                                    <groupId>org.keycloak</groupId>
-                                    <artifactId>keycloak-jetty91-adapter-dist</artifactId>
-                                    <type>tar.gz</type>
-                                </artifactItem>
-
-                                <artifactItem>
-                                    <groupId>org.keycloak</groupId>
-                                    <artifactId>keycloak-jetty92-adapter-dist</artifactId>
-                                    <type>zip</type>
-                                </artifactItem>
-                                <artifactItem>
-                                    <groupId>org.keycloak</groupId>
-                                    <artifactId>keycloak-jetty92-adapter-dist</artifactId>
-                                    <type>tar.gz</type>
-                                </artifactItem>
-
-                                <artifactItem>
-                                    <groupId>org.keycloak</groupId>
-                                    <artifactId>keycloak-jetty93-adapter-dist</artifactId>
-                                    <type>zip</type>
-                                </artifactItem>
-                                <artifactItem>
-                                    <groupId>org.keycloak</groupId>
-                                    <artifactId>keycloak-jetty93-adapter-dist</artifactId>
-                                    <type>tar.gz</type>
-                                </artifactItem>
-
-                                <artifactItem>
-                                    <groupId>org.keycloak</groupId>
-                                    <artifactId>keycloak-js-adapter-dist</artifactId>
-                                    <type>zip</type>
-                                </artifactItem>
-                                <artifactItem>
-                                    <groupId>org.keycloak</groupId>
-                                    <artifactId>keycloak-js-adapter-dist</artifactId>
-                                    <type>tar.gz</type>
-                                </artifactItem>
-
-                                <artifactItem>
-                                    <groupId>org.keycloak</groupId>
-                                    <artifactId>keycloak-tomcat6-adapter-dist</artifactId>
-                                    <type>zip</type>
-                                </artifactItem>
-                                <artifactItem>
-                                    <groupId>org.keycloak</groupId>
-                                    <artifactId>keycloak-tomcat6-adapter-dist</artifactId>
-                                    <type>tar.gz</type>
-                                </artifactItem>
-
-                                <artifactItem>
-                                    <groupId>org.keycloak</groupId>
-                                    <artifactId>keycloak-tomcat7-adapter-dist</artifactId>
-                                    <type>zip</type>
-                                </artifactItem>
-                                <artifactItem>
-                                    <groupId>org.keycloak</groupId>
-                                    <artifactId>keycloak-tomcat7-adapter-dist</artifactId>
-                                    <type>tar.gz</type>
-                                </artifactItem>
-
-                                <artifactItem>
-                                    <groupId>org.keycloak</groupId>
-                                    <artifactId>keycloak-tomcat8-adapter-dist</artifactId>
-                                    <type>zip</type>
-                                </artifactItem>
-                                <artifactItem>
-                                    <groupId>org.keycloak</groupId>
-                                    <artifactId>keycloak-tomcat8-adapter-dist</artifactId>
-                                    <type>tar.gz</type>
-                                </artifactItem>
-
-                                <artifactItem>
-                                    <groupId>org.keycloak</groupId>
-                                    <artifactId>keycloak-wf8-adapter-dist</artifactId>
-                                    <type>zip</type>
-                                </artifactItem>
-                                <artifactItem>
-                                    <groupId>org.keycloak</groupId>
-                                    <artifactId>keycloak-wf8-adapter-dist</artifactId>
-                                    <type>tar.gz</type>
-                                </artifactItem>
-
-                                <artifactItem>
-                                    <groupId>org.keycloak</groupId>
-                                    <artifactId>keycloak-wildfly-adapter-dist</artifactId>
-                                    <type>zip</type>
-                                </artifactItem>
-                                <artifactItem>
-                                    <groupId>org.keycloak</groupId>
-                                    <artifactId>keycloak-wildfly-adapter-dist</artifactId>
-                                    <type>tar.gz</type>
-                                </artifactItem>
-
-                                <artifactItem>
-                                    <groupId>org.keycloak</groupId>
-                                    <artifactId>keycloak-fuse-adapter-dist</artifactId>
-                                    <type>zip</type>
-                                </artifactItem>
-                                <artifactItem>
-                                    <groupId>org.keycloak</groupId>
-                                    <artifactId>keycloak-fuse-adapter-dist</artifactId>
-                                    <type>tar.gz</type>
-                                </artifactItem>
-                            </artifactItems>
-                            <outputDirectory>target/${project.version}/adapters/keycloak-oidc</outputDirectory>
+                            <skip>true</skip>
                         </configuration>
-                    </execution>
-                    <execution>
-                        <id>saml-adapter-downloads</id>
-                        <phase>install</phase>
-                        <goals>
-                            <goal>copy</goal>
-                        </goals>
-                        <configuration>
-                            <artifactItems>
-                                <artifactItem>
-                                    <groupId>org.keycloak</groupId>
-                                    <artifactId>keycloak-saml-as7-adapter-dist</artifactId>
-                                    <type>zip</type>
-                                </artifactItem>
-                                <artifactItem>
-                                    <groupId>org.keycloak</groupId>
-                                    <artifactId>keycloak-saml-as7-adapter-dist</artifactId>
-                                    <type>tar.gz</type>
-                                </artifactItem>
-
-                                <artifactItem>
-                                    <groupId>org.keycloak</groupId>
-                                    <artifactId>keycloak-saml-eap6-adapter-dist</artifactId>
-                                    <type>zip</type>
-                                </artifactItem>
-                                <artifactItem>
-                                    <groupId>org.keycloak</groupId>
-                                    <artifactId>keycloak-saml-eap6-adapter-dist</artifactId>
-                                    <type>tar.gz</type>
-                                </artifactItem>
-
-                                <artifactItem>
-                                    <groupId>org.keycloak</groupId>
-                                    <artifactId>keycloak-saml-jetty81-adapter-dist</artifactId>
-                                    <type>zip</type>
-                                </artifactItem>
-                                <artifactItem>
-                                    <groupId>org.keycloak</groupId>
-                                    <artifactId>keycloak-saml-jetty81-adapter-dist</artifactId>
-                                    <type>tar.gz</type>
-                                </artifactItem>
-
-                                <artifactItem>
-                                    <groupId>org.keycloak</groupId>
-                                    <artifactId>keycloak-saml-jetty92-adapter-dist</artifactId>
-                                    <type>zip</type>
-                                </artifactItem>
-                                <artifactItem>
-                                    <groupId>org.keycloak</groupId>
-                                    <artifactId>keycloak-saml-jetty92-adapter-dist</artifactId>
-                                    <type>tar.gz</type>
-                                </artifactItem>
-
-                                <artifactItem>
-                                    <groupId>org.keycloak</groupId>
-                                    <artifactId>keycloak-saml-jetty93-adapter-dist</artifactId>
-                                    <type>zip</type>
-                                </artifactItem>
-                                <artifactItem>
-                                    <groupId>org.keycloak</groupId>
-                                    <artifactId>keycloak-saml-jetty93-adapter-dist</artifactId>
-                                    <type>tar.gz</type>
-                                </artifactItem>
-
-                                <artifactItem>
-                                    <groupId>org.keycloak</groupId>
-                                    <artifactId>keycloak-saml-tomcat6-adapter-dist</artifactId>
-                                    <type>zip</type>
-                                </artifactItem>
-                                <artifactItem>
-                                    <groupId>org.keycloak</groupId>
-                                    <artifactId>keycloak-saml-tomcat6-adapter-dist</artifactId>
-                                    <type>tar.gz</type>
-                                </artifactItem>
-
-                                <artifactItem>
-                                    <groupId>org.keycloak</groupId>
-                                    <artifactId>keycloak-saml-tomcat7-adapter-dist</artifactId>
-                                    <type>zip</type>
-                                </artifactItem>
-                                <artifactItem>
-                                    <groupId>org.keycloak</groupId>
-                                    <artifactId>keycloak-saml-tomcat7-adapter-dist</artifactId>
-                                    <type>tar.gz</type>
-                                </artifactItem>
-
-                                <artifactItem>
-                                    <groupId>org.keycloak</groupId>
-                                    <artifactId>keycloak-saml-tomcat8-adapter-dist</artifactId>
-                                    <type>zip</type>
-                                </artifactItem>
-                                <artifactItem>
-                                    <groupId>org.keycloak</groupId>
-                                    <artifactId>keycloak-saml-tomcat8-adapter-dist</artifactId>
-                                    <type>tar.gz</type>
-                                </artifactItem>
-
-                               <artifactItem>
-                                    <groupId>org.keycloak</groupId>
-                                    <artifactId>keycloak-saml-wildfly-adapter-dist</artifactId>
-                                    <type>zip</type>
-                                </artifactItem>
-                                <artifactItem>
-                                    <groupId>org.keycloak</groupId>
-                                    <artifactId>keycloak-saml-wildfly-adapter-dist</artifactId>
-                                    <type>tar.gz</type>
-                                </artifactItem>
-                            </artifactItems>
-                            <outputDirectory>target/${project.version}/adapters/saml</outputDirectory>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-        </plugins>
-    </build>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>server-downloads</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>java</goal>
+                                </goals>
+                                <configuration>
+                                    <mainClass>CopyDependencies</mainClass>
+                                    <arguments>
+                                        <argument>${settings.localRepository}</argument>
+                                        <argument>${project.build.directory}</argument>
+                                        <argument>${project.version}</argument>
+                                    </arguments>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>

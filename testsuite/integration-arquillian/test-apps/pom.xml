@@ -5,7 +5,7 @@
     <parent>
         <artifactId>integration-arquillian</artifactId>
         <groupId>org.keycloak.testsuite</groupId>
-        <version>2.5.1.Final-SNAPSHOT</version>
+        <version>3.1.0.CR1-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -21,8 +21,10 @@
         <module>photoz</module>
         <module>hello-world-authz-service</module>
         <module>servlet-authz</module>
+        <module>servlet-policy-enforcer</module>
         <module>servlets</module>
         <module>app-profile-jee</module>
+        <module>cors</module>
     </modules>
 
     <build>

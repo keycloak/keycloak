@@ -23,6 +23,9 @@ package org.keycloak.storage;
  * @version $Revision: 1 $
  */
 public class ReadOnlyException extends RuntimeException {
+    public ReadOnlyException() {
+    }
+
     public ReadOnlyException(String message) {
         super(message);
     }

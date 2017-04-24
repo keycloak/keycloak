@@ -18,10 +18,15 @@
 package org.keycloak.testsuite.arquillian;
 
 import org.jboss.arquillian.container.spi.client.container.DeployableContainer;
+import org.jboss.arquillian.container.osgi.OSGiApplicationArchiveProcessor;
 import org.jboss.arquillian.container.test.impl.enricher.resource.URLResourceProvider;
 import org.jboss.arquillian.container.test.spi.client.deployment.ApplicationArchiveProcessor;
 import org.jboss.arquillian.container.test.spi.client.deployment.DeploymentScenarioGenerator;
 import org.jboss.arquillian.core.spi.LoadableExtension;
+import org.jboss.arquillian.drone.spi.Configurator;
+import org.jboss.arquillian.drone.spi.Instantiator;
+import org.jboss.arquillian.drone.webdriver.factory.HtmlUnitDriverFactory;
+import org.jboss.arquillian.drone.webdriver.factory.WebDriverFactory;
 import org.jboss.arquillian.graphene.location.ContainerCustomizableURLResourceProvider;
 import org.jboss.arquillian.graphene.location.CustomizableURLResourceProvider;
 import org.jboss.arquillian.test.spi.enricher.resource.ResourceProvider;
@@ -34,6 +39,10 @@ import org.keycloak.testsuite.arquillian.provider.OAuthClientProvider;
 import org.keycloak.testsuite.arquillian.provider.SuiteContextProvider;
 import org.keycloak.testsuite.arquillian.provider.TestContextProvider;
 import org.keycloak.testsuite.arquillian.provider.URLProvider;
+import org.keycloak.testsuite.drone.HtmlUnitScreenshots;
+import org.keycloak.testsuite.drone.KeycloakDronePostSetup;
+import org.keycloak.testsuite.drone.KeycloakHtmlUnitInstantiator;
+import org.keycloak.testsuite.drone.KeycloakWebDriverConfigurator;
 
 /**
  *
@@ -63,7 +72,15 @@ public class KeycloakArquillianExtension implements LoadableExtension {
         builder
                 .override(ResourceProvider.class, URLResourceProvider.class, URLProvider.class)
                 .override(ResourceProvider.class, CustomizableURLResourceProvider.class, URLProvider.class)
-                .override(ResourceProvider.class, ContainerCustomizableURLResourceProvider.class, URLProvider.class);
+                .override(ResourceProvider.class, ContainerCustomizableURLResourceProvider.class, URLProvider.class)
+                .override(ApplicationArchiveProcessor.class, OSGiApplicationArchiveProcessor.class, KeycloakOSGiApplicationArchiveProcessor.class);
+
+        builder
+                .override(Configurator.class, WebDriverFactory.class, KeycloakWebDriverConfigurator.class)
+                .override(Instantiator.class, HtmlUnitDriverFactory.class, KeycloakHtmlUnitInstantiator.class)
+                .observer(HtmlUnitScreenshots.class)
+                .observer(KeycloakDronePostSetup.class);
+
 
     }
 

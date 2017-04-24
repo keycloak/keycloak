@@ -77,9 +77,9 @@ public class LDAPMultipleAttributesTest {
     });
 
 
-    private static ComponentModel ldapModel = null;
+    public static UserStorageProviderModel ldapModel = null;
 
-    private static KeycloakRule keycloakRule = new KeycloakRule(new KeycloakRule.KeycloakSetup() {
+    public static KeycloakRule keycloakRule = new KeycloakRule(new KeycloakRule.KeycloakSetup() {
 
         @Override
         public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
@@ -94,7 +94,7 @@ public class LDAPMultipleAttributesTest {
             model.setPriority(0);
             model.setProviderId(LDAPStorageProviderFactory.PROVIDER_NAME);
             model.setConfig(ldapConfig);
-            ldapModel = appRealm.addComponentModel(model);
+            ldapModel = new UserStorageProviderModel(appRealm.addComponentModel(model));
 
             LDAPTestUtils.addZipCodeLDAPMapper(appRealm, ldapModel);
             LDAPTestUtils.addUserAttributeMapper(appRealm, ldapModel, "streetMapper", "street", LDAPConstants.STREET);
@@ -148,15 +148,27 @@ public class LDAPMultipleAttributesTest {
     @WebResource
     protected LoginPage loginPage;
 
+    protected void checkUserAndImportMode(KeycloakSession session, RealmModel realm, String username, String expectedFirstName, String expectedLastName, String expectedEmail, String expectedPostalCode) {
+        LDAPTestUtils.assertUserImported(session.userLocalStorage(), realm, "jbrown", "James", "Brown", "jbrown@keycloak.org", "88441");
+    }
+
+    protected void checkImportMode(KeycloakSession session, RealmModel realm, UserModel user) {
+        Assert.assertNotNull(session.userLocalStorage().getUserById(user.getId(), realm));
+
+    }
+
+
     @Test
     public void testModel() {
         KeycloakSession session = keycloakRule.startSession();
         try {
+            session.userCache().clear();
             RealmModel appRealm = session.realms().getRealmByName("test");
 
-            LDAPTestUtils.assertUserImported(session.users(), appRealm, "jbrown", "James", "Brown", "jbrown@keycloak.org", "88441");
+            checkUserAndImportMode(session, appRealm, "jbrown", "James", "Brown", "jbrown@keycloak.org", "88441");
 
             UserModel user = session.users().getUserByUsername("bwilson", appRealm);
+            checkImportMode(session, appRealm, user);
             Assert.assertEquals("bwilson@keycloak.org", user.getEmail());
             Assert.assertEquals("Bruce", user.getFirstName());
 

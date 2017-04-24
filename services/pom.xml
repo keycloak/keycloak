@@ -21,7 +21,7 @@
     <parent>
         <artifactId>keycloak-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>2.5.1.Final-SNAPSHOT</version>
+        <version>3.1.0.CR1-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -31,7 +31,7 @@
     <description />
 
     <properties>
-        <version.swagger.doclet>1.0.5</version.swagger.doclet>
+        <version.swagger.doclet>1.1.2</version.swagger.doclet>
         <maven.compiler.target>1.8</maven.compiler.target>
         <maven.compiler.source>1.8</maven.compiler.source>
     </properties>
@@ -202,12 +202,43 @@
                     </snapshots>
                     <id>central</id>
                     <name>bintray</name>
-                    <url>http://jcenter.bintray.com</url>
+                    <url>https://jcenter.bintray.com</url>
                 </repository>
             </repositories>
+            <pluginRepositories>
+                <pluginRepository>
+                    <snapshots>
+                        <enabled>false</enabled>
+                    </snapshots>
+                    <id>central</id>
+                    <name>bintray</name>
+                    <url>https://jcenter.bintray.com</url>
+                </pluginRepository>
+            </pluginRepositories>
 
             <build>
                 <plugins>
+                    <plugin>
+                        <artifactId>maven-resources-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>copy-resources</id>
+                                <phase>validate</phase>
+                                <goals>
+                                    <goal>copy-resources</goal>
+                                </goals>
+                                <configuration>
+                                    <outputDirectory>target/docs</outputDirectory>
+                                    <resources>
+                                        <resource>
+                                            <directory>src/docs</directory>
+                                            <filtering>true</filtering>
+                                        </resource>
+                                    </resources>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-javadoc-plugin</artifactId>
@@ -234,7 +265,7 @@
 
                                     <reportOutputDirectory>${project.basedir}/target/apidocs-rest/swagger</reportOutputDirectory>
                                     <useStandardDocletOptions>false</useStandardDocletOptions>
-                                    <additionalparam> -skipUiFiles -apiVersion 1 -includeResourcePrefixes org.keycloak.services.resources.admin,org.keycloak.protocol.oidc -docBasePath /apidocs -apiBasePath http://localhost:8080/auth -apiInfoFile ${project.basedir}/src/docs/swagger/apiinfo.json</additionalparam>
+                                    <additionalparam> -skipUiFiles -apiVersion 1 -includeResourcePrefixes org.keycloak.services.resources.admin,org.keycloak.protocol.oidc -docBasePath /apidocs -apiBasePath http://localhost:8080/auth -apiInfoFile ${project.basedir}/target/docs/swagger/apiinfo.json</additionalparam>
                                 </configuration>
                                 <goals>
                                     <goal>javadoc</goal>
@@ -244,29 +275,24 @@
                     </plugin>
 
                     <plugin>
-                        <groupId>com.redowlanalytics</groupId>
+                        <groupId>io.github.swagger2markup</groupId>
                         <artifactId>swagger2markup-maven-plugin</artifactId>
-                        <version>0.7.1</version>
-
-                        <dependencies>
-                            <dependency>
-                                <groupId>io.github.robwin</groupId>
-                                <artifactId>swagger2markup</artifactId>
-                                <version>0.7.1</version>
-                            </dependency>
-                        </dependencies>
+                        <version>1.1.0</version>
 
                         <executions>
                             <execution>
                                 <id>gen-asciidoc</id>
                                 <phase>process-resources</phase>
                                 <goals>
-                                    <goal>process-swagger</goal>
+                                    <goal>convertSwagger2markup</goal>
                                 </goals>
                                 <configuration>
-                                    <inputDirectory>${project.basedir}/target/apidocs-rest/swagger/apidocs</inputDirectory>
-                                    <outputDirectory>${project.basedir}/target/apidocs-rest/asciidoc</outputDirectory>
-                                    <markupLanguage>asciidoc</markupLanguage>
+                                    <swaggerInput>${project.build.directory}/apidocs-rest/swagger/apidocs/service.json</swaggerInput>
+                                    <outputDir>${project.build.directory}/apidocs-rest/asciidoc/</outputDir>
+                                    <config>
+                                        <swagger2markup.markupLanguage>ASCIIDOC</swagger2markup.markupLanguage>
+                                        <swagger2markup.pathsGroupedBy>TAGS</swagger2markup.pathsGroupedBy>
+                                    </config>
                                 </configuration>
                             </execution>
                         </executions>
@@ -275,7 +301,7 @@
                     <plugin>
                         <groupId>org.asciidoctor</groupId>
                         <artifactId>asciidoctor-maven-plugin</artifactId>
-                        <version>1.5.2</version>
+                        <version>1.5.3</version>
                         <executions>
                             <execution>
                                 <id>generate-docs</id>
@@ -284,7 +310,7 @@
                                     <goal>process-asciidoc</goal>
                                 </goals>
                                 <configuration>
-                                    <sourceDirectory>${project.basedir}/src/docs/asciidoc</sourceDirectory>
+                                    <sourceDirectory>${project.basedir}/target/docs/asciidoc</sourceDirectory>
                                     <sourceDocumentName>index.adoc</sourceDocumentName>
                                     <outputDirectory>${project.basedir}/target/apidocs-rest/output</outputDirectory>
                                     <backend>html5</backend>
@@ -293,6 +319,7 @@
                                         https://github.com/asciidoctor/asciidoctorj/blob/master/asciidoctorj-core/src/main/java/org/asciidoctor/Attributes.java
                                          -->
                                         <toc/>
+                                        <toc-position>left</toc-position>
                                         <generated>${project.basedir}/target/apidocs-rest/asciidoc</generated>
                                     </attributes>
                                 </configuration>

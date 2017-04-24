@@ -22,3 +22,4 @@ org.keycloak.social.linkedin.LinkedInIdentityProviderFactory
 org.keycloak.social.stackoverflow.StackoverflowIdentityProviderFactory
 org.keycloak.social.twitter.TwitterIdentityProviderFactory
 org.keycloak.social.microsoft.MicrosoftIdentityProviderFactory
+org.keycloak.social.openshift.OpenshiftV3IdentityProviderFactory

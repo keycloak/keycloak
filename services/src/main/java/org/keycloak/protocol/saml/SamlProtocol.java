@@ -25,7 +25,6 @@ import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.message.BasicNameValuePair;
 import org.jboss.logging.Logger;
-
 import org.keycloak.connections.httpclient.HttpClientProvider;
 import org.keycloak.dom.saml.v2.assertion.AssertionType;
 import org.keycloak.dom.saml.v2.assertion.AttributeStatementType;
@@ -56,12 +55,12 @@ import org.keycloak.saml.common.exceptions.ConfigurationException;
 import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.saml.common.exceptions.ProcessingException;
 import org.keycloak.saml.common.util.XmlKeyInfoKeyNameTransformer;
+import org.keycloak.saml.processing.core.util.KeycloakKeySamlExtensionGenerator;
 import org.keycloak.services.ErrorPage;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.managers.ResourceAdminManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.RealmsResource;
-
 import org.w3c.dom.Document;
 
 import javax.ws.rs.core.HttpHeaders;
@@ -80,8 +79,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
-
-import org.keycloak.saml.processing.core.util.KeycloakKeySamlExtensionGenerator;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -161,13 +158,15 @@ public class SamlProtocol implements LoginProtocol {
     @Override
     public Response sendError(ClientSessionModel clientSession, Error error) {
         try {
-            if ("true".equals(clientSession.getClient().getAttribute(SAML_IDP_INITIATED_LOGIN))) {
+            ClientModel client = clientSession.getClient();
+
+            if ("true".equals(client.getAttribute(SAML_IDP_INITIATED_LOGIN))) {
                 if (error == Error.CANCELLED_BY_USER) {
                     UriBuilder builder = RealmsResource.protocolUrl(uriInfo).path(SamlService.class, "idpInitiatedSSO");
                     Map<String, String> params = new HashMap<>();
                     params.put("realm", realm.getName());
                     params.put("protocol", LOGIN_PROTOCOL);
-                    params.put("client", clientSession.getClient().getAttribute(SAML_IDP_INITIATED_SSO_URL_NAME));
+                    params.put("client", client.getAttribute(SAML_IDP_INITIATED_SSO_URL_NAME));
                     URI redirect = builder.buildFromMap(params);
                     return Response.status(302).location(redirect).build();
                 } else {
@@ -177,6 +176,27 @@ public class SamlProtocol implements LoginProtocol {
                 SAML2ErrorResponseBuilder builder = new SAML2ErrorResponseBuilder().destination(clientSession.getRedirectUri()).issuer(getResponseIssuer(realm)).status(translateErrorToSAMLStatus(error).get());
                 try {
                     JaxrsSAML2BindingBuilder binding = new JaxrsSAML2BindingBuilder().relayState(clientSession.getNote(GeneralConstants.RELAY_STATE));
+                    SamlClient samlClient = new SamlClient(client);
+                    KeyManager keyManager = session.keys();
+                    if (samlClient.requiresRealmSignature()) {
+                        KeyManager.ActiveRsaKey keys = keyManager.getActiveRsaKey(realm);
+                        String keyName = samlClient.getXmlSigKeyInfoKeyNameTransformer().getKeyName(keys.getKid(), keys.getCertificate());
+                        String canonicalization = samlClient.getCanonicalizationMethod();
+                        if (canonicalization != null) {
+                            binding.canonicalizationMethod(canonicalization);
+                        }
+                        binding.signatureAlgorithm(samlClient.getSignatureAlgorithm()).signWith(keyName, keys.getPrivateKey(), keys.getPublicKey(), keys.getCertificate()).signDocument();
+                    }
+                    if (samlClient.requiresEncryption()) {
+                        PublicKey publicKey;
+                        try {
+                            publicKey = SamlProtocolUtils.getEncryptionValidationKey(client);
+                        } catch (Exception e) {
+                            logger.error("failed", e);
+                            return ErrorPage.error(session, Messages.FAILED_TO_PROCESS_RESPONSE);
+                        }
+                        binding.encrypt(publicKey);
+                    }
                     Document document = builder.buildDocument();
                     return buildErrorResponse(clientSession, binding, document);
                 } catch (Exception e) {
@@ -245,9 +265,9 @@ public class SamlProtocol implements LoginProtocol {
         String logoutPostUrl = client.getAttribute(SAML_SINGLE_LOGOUT_SERVICE_URL_POST_ATTRIBUTE);
         String logoutRedirectUrl = client.getAttribute(SAML_SINGLE_LOGOUT_SERVICE_URL_REDIRECT_ATTRIBUTE);
 
-        if (logoutPostUrl == null) {
+        if (logoutPostUrl == null || logoutPostUrl.trim().isEmpty()) {
             // if we don't have a redirect uri either, return true and default to the admin url + POST binding
-            if (logoutRedirectUrl == null)
+            if (logoutRedirectUrl == null || logoutRedirectUrl.trim().isEmpty())
                 return true;
             return false;
         }
@@ -262,7 +282,7 @@ public class SamlProtocol implements LoginProtocol {
         if (SAML_POST_BINDING.equals(bindingType))
             return true;
 
-        if (logoutRedirectUrl == null)
+        if (logoutRedirectUrl == null || logoutRedirectUrl.trim().isEmpty())
             return true; // we don't have a redirect binding url, so use post binding
 
         return false; // redirect binding
@@ -358,6 +378,8 @@ public class SamlProtocol implements LoginProtocol {
         if (!samlClient.includeAuthnStatement()) {
             builder.disableAuthnStatement(true);
         }
+
+		builder.includeOneTimeUseCondition(samlClient.includeOneTimeUseCondition());
 
         List<ProtocolMapperProcessor<SAMLAttributeStatementMapper>> attributeStatementMappers = new LinkedList<>();
         List<ProtocolMapperProcessor<SAMLLoginResponseMapper>> loginResponseMappers = new LinkedList<>();

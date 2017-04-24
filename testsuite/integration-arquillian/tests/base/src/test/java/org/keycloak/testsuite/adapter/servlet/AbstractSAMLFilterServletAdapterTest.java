@@ -25,7 +25,6 @@ public abstract class AbstractSAMLFilterServletAdapterTest extends AbstractSAMLS
         salesPostEncServletPage.checkRoles(true);
         salesPostSigServletPage.checkRoles(true);
         salesPostPassiveServletPage.checkRoles(true);
-        salesPostSigEmailServletPage.checkRoles(true);
         salesPostSigPersistentServletPage.checkRoles(true);
         salesPostSigTransientServletPage.checkRoles(true);
         salesPostAssertionAndResponseSigPage.checkRoles(true);
@@ -39,7 +38,10 @@ public abstract class AbstractSAMLFilterServletAdapterTest extends AbstractSAMLS
         employee2ServletPage.checkRolesEndPoint(true);
         employee2ServletPage.logout();
 
-        forbiddenIfNotAuthenticated = false;
+        salesPostSigEmailServletPage.navigateTo();
+        testRealmLoginPage.form().login(bburkeUser);
+        salesPostSigEmailServletPage.checkRolesEndPoint(true);
+        salesPostSigEmailServletPage.logout();
     }
 
     @After
@@ -72,7 +74,7 @@ public abstract class AbstractSAMLFilterServletAdapterTest extends AbstractSAMLS
     @Test
     @Override
     @Ignore
-    public void testErrorHandling() {
+    public void testErrorHandlingUnsigned() {
 
     }
 }

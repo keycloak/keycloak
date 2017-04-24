@@ -55,7 +55,8 @@ public class LoginStatusIframeEndpoint {
 
     @GET
     @Produces(MediaType.TEXT_HTML_UTF_8)
-    public Response getLoginStatusIframe() {
+    public Response getLoginStatusIframe(@QueryParam("client_id") String client_id,
+                                         @QueryParam("origin") String origin) {
         InputStream resource = getClass().getClassLoader().getResourceAsStream("login-status-iframe.html");
         if (resource != null) {
             P3PHelper.addP3PHeader(session);

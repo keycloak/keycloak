@@ -21,6 +21,7 @@ import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Test;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -34,7 +35,9 @@ import org.keycloak.testsuite.auth.page.account.Applications;
 import org.keycloak.testsuite.auth.page.login.OAuthGrant;
 import org.keycloak.testsuite.console.page.events.Config;
 import org.keycloak.testsuite.console.page.events.LoginEvents;
+import org.keycloak.testsuite.util.RealmBuilder;
 import org.openqa.selenium.By;
+import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebElement;
 
 import java.io.File;
@@ -42,8 +45,8 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.hamcrest.Matchers.containsString;
+import static org.junit.Assert.*;
 import static org.keycloak.testsuite.auth.page.AuthRealm.EXAMPLE;
 import static org.keycloak.testsuite.util.IOUtil.loadRealm;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlDoesntStartWith;
@@ -378,12 +381,12 @@ public abstract class AbstractJSConsoleExampleAdapterTest extends AbstractExampl
     public void testUpdateToken() {
         logInAndInit("standard");
 
-        jsConsoleTestAppPage.setTimeSkewOffset(-33);
+        jsConsoleTestAppPage.setTimeSkew(-33);
         setTimeOffset(33);
 
         jsConsoleTestAppPage.refreshTokenIfUnder5s();
 
-        jsConsoleTestAppPage.setTimeSkewOffset(-34);
+        jsConsoleTestAppPage.setTimeSkew(-34);
         setTimeOffset(67);
 
         jsConsoleTestAppPage.refreshTokenIfUnder5s();
@@ -414,6 +417,30 @@ public abstract class AbstractJSConsoleExampleAdapterTest extends AbstractExampl
         assertTrue("TimeSkew was: " + timeSkew + ", but should be ~-40", timeSkew + 40  <= TIME_SKEW_TOLERANCE);
     }
 
+    // KEYCLOAK-4179
+    @Test
+    public void testOneSecondTimeSkewTokenUpdate() {
+        setTimeOffset(1);
+
+        logInAndInit("standard");
+
+        jsConsoleTestAppPage.refreshToken();
+
+        waitUntilElement(jsConsoleTestAppPage.getEventsElement()).text().contains("Auth Refresh Success");
+        waitUntilElement(jsConsoleTestAppPage.getOutputElement()).text().not().contains("Failed to refresh token");
+
+        try {
+            // The events element should contain "Auth logout" but we need to wait for it
+            // and text().not().contains() doesn't wait. With KEYCLOAK-4179 it took some time for "Auth Logout" to be present
+            waitUntilElement(jsConsoleTestAppPage.getEventsElement()).text().contains("Auth Logout");
+
+            throw new RuntimeException("The events element shouldn't contain \"Auth Logout\" text");
+        } catch (TimeoutException e) {
+            // OK
+        }
+
+    }
+
     @Test
     public void testLocationHeaderInResponse() {
         logInAndInit("standard");
@@ -427,6 +454,87 @@ public abstract class AbstractJSConsoleExampleAdapterTest extends AbstractExampl
         assertEquals("There should be created user mhajas", 1, users.size());
         waitUntilElement(jsConsoleTestAppPage.getOutputElement()).text()
                 .contains("location: " + authServerContextRootPage.toString() + "/auth/admin/realms/" + EXAMPLE + "/users/" + users.get(0).getId());
+    }
+
+    @Test
+    public void spaceInRealmNameTest() {
+        String SPACE_REALM_NAME = "Example realm";
+        adminClient.realm(EXAMPLE).update(RealmBuilder.edit(adminClient.realm(EXAMPLE).toRepresentation()).name(SPACE_REALM_NAME).build());
+
+        jsConsoleTestAppPage.navigateTo();
+        jsConsoleTestAppPage.setInput(SPACE_REALM_NAME);
+        jsConsoleTestAppPage.initWithDifferentRealmName();
+        waitUntilElement(jsConsoleTestAppPage.getOutputElement()).text().contains("Init Success (Not Authenticated)");
+        jsConsoleTestAppPage.logIn();
+        waitUntilElement(By.xpath("//body")).is().present();
+        testRealmLoginPage.form().login("user", "password");
+        jsConsoleTestAppPage.setInput(SPACE_REALM_NAME);
+        jsConsoleTestAppPage.initWithDifferentRealmName();
+
+        waitUntilElement(jsConsoleTestAppPage.getOutputElement()).text().contains("Init Success (Authenticated)");
+        waitUntilElement(jsConsoleTestAppPage.getEventsElement()).text().contains("Auth Success");
+    }
+
+    @Test
+    public void initializeWithTokenTest() {
+        oauth.realm(EXAMPLE);
+        oauth.clientId("js-console");
+        oauth.redirectUri(appServerContextRootPage + "/js-console");
+        oauth.doLogin("user", "password");
+
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String token = oauth.doAccessTokenRequest(code, "password").getAccessToken();
+        String refreshToken = oauth.doRefreshTokenRequest(token, "password").getRefreshToken();
+
+        jsConsoleTestAppPage.navigateTo();
+        jsConsoleTestAppPage.setInput(token);
+        jsConsoleTestAppPage.setInput2(refreshToken);
+
+        jsConsoleTestAppPage.initWithBothTokens();
+
+        waitUntilElement(jsConsoleTestAppPage.getOutputElement()).text().contains("Init Success (Authenticated)");
+
+        jsConsoleTestAppPage.refreshToken();
+        waitUntilElement(jsConsoleTestAppPage.getEventsElement()).text().contains("Auth Refresh Success");
+    }
+
+    @Test
+    public void initializeWithTimeSkew() {
+        setTimeOffset(600);
+        oauth.realm(EXAMPLE);
+        oauth.clientId("js-console");
+        oauth.redirectUri(appServerContextRootPage + "/js-console");
+        oauth.doLogin("user", "password");
+
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String token = oauth.doAccessTokenRequest(code, "password").getAccessToken();
+        String refreshToken = oauth.doRefreshTokenRequest(token, "password").getRefreshToken();
+
+        jsConsoleTestAppPage.navigateTo();
+        jsConsoleTestAppPage.setInput(token);
+        jsConsoleTestAppPage.setInput2(refreshToken);
+        jsConsoleTestAppPage.setInput3("-600");
+
+        jsConsoleTestAppPage.initWithTimeSkew();
+
+        waitUntilElement(jsConsoleTestAppPage.getOutputElement()).text().contains("Init Success (Authenticated)");
+
+        jsConsoleTestAppPage.refreshToken();
+        waitUntilElement(jsConsoleTestAppPage.getEventsElement()).text().contains("Auth Refresh Success");
+
+        setTimeOffset(0);
+    }
+
+    @Test
+    public void reentrancyCallbackTest() {
+        logInAndInit("standard");
+
+        jsConsoleTestAppPage.callReentrancyCallback();
+
+        waitUntilElement(jsConsoleTestAppPage.getEventsElement()).text().contains("First callback");
+        waitUntilElement(jsConsoleTestAppPage.getEventsElement()).text().contains("Second callback");
+
+        waitUntilElement(jsConsoleTestAppPage.getEventsElement()).text().not().contains("Auth Logout");
     }
 
     private void setImplicitFlowForClient() {
@@ -454,7 +562,7 @@ public abstract class AbstractJSConsoleExampleAdapterTest extends AbstractExampl
 
     private void assertResponseError(String errorDescription) {
         jsConsoleTestAppPage.showErrorResponse();
-        assertTrue(jsConsoleTestAppPage.getOutputElement().getText().contains(errorDescription));
+        assertThat(jsConsoleTestAppPage.getOutputElement().getText(), containsString(errorDescription));
     }
 
 }

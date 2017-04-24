@@ -39,6 +39,7 @@ import org.keycloak.services.clientregistration.policy.ClientRegistrationPolicy;
 import org.keycloak.services.clientregistration.policy.ClientRegistrationPolicyFactory;
 
 /**
+ * @resource Client Registration Policy
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class ClientRegistrationPolicyResource {

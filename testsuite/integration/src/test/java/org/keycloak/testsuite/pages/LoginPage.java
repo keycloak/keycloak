@@ -143,13 +143,13 @@ public class LoginPage extends AbstractPage {
         registerLink.click();
     }
 
-    public void clickSocial(String providerId) {
-        WebElement socialButton = findSocialButton(providerId);
+    public void clickSocial(String alias) {
+        WebElement socialButton = findSocialButton(alias);
         socialButton.click();
     }
 
-    public WebElement findSocialButton(String providerId) {
-        String id = "zocial-" + providerId;
+    public WebElement findSocialButton(String alias) {
+        String id = "zocial-" + alias;
         return this.driver.findElement(By.id(id));
     }
 

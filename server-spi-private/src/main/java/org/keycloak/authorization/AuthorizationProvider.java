@@ -21,17 +21,23 @@ package org.keycloak.authorization;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Executor;
-import java.util.function.Supplier;
 
+import org.keycloak.authorization.model.Policy;
+import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.permission.evaluator.Evaluators;
 import org.keycloak.authorization.policy.evaluation.DefaultPolicyEvaluator;
 import org.keycloak.authorization.policy.provider.PolicyProvider;
 import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
+import org.keycloak.authorization.store.PolicyStore;
+import org.keycloak.authorization.store.ResourceServerStore;
+import org.keycloak.authorization.store.ResourceStore;
+import org.keycloak.authorization.store.ScopeStore;
 import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.provider.Provider;
+import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentation;
 
 /**
  * <p>The main contract here is the creation of {@link org.keycloak.authorization.permission.evaluator.PermissionEvaluator} instances.  Usually
@@ -62,23 +68,17 @@ import org.keycloak.provider.Provider;
 public final class AuthorizationProvider implements Provider {
 
     private final DefaultPolicyEvaluator policyEvaluator;
-    private final Executor scheduller;
-    private final Supplier<StoreFactory> storeFactory;
+    private StoreFactory storeFactory;
     private final Map<String, PolicyProviderFactory> policyProviderFactories;
     private final KeycloakSession keycloakSession;
     private final RealmModel realm;
 
-    public AuthorizationProvider(KeycloakSession session, RealmModel realm, Supplier<StoreFactory> storeFactory, Map<String, PolicyProviderFactory> policyProviderFactories, Executor scheduller) {
+    public AuthorizationProvider(KeycloakSession session, RealmModel realm, StoreFactory storeFactory, Map<String, PolicyProviderFactory> policyProviderFactories) {
         this.keycloakSession = session;
         this.realm = realm;
         this.storeFactory = storeFactory;
-        this.scheduller = scheduller;
         this.policyProviderFactories = policyProviderFactories;
         this.policyEvaluator = new DefaultPolicyEvaluator(this);
-    }
-
-    public AuthorizationProvider(KeycloakSession session, RealmModel realm, StoreFactory storeFactory, Map<String, PolicyProviderFactory> policyProviderFactories) {
-        this(session, realm, () -> storeFactory, policyProviderFactories, Runnable::run);
     }
 
     /**
@@ -88,7 +88,7 @@ public final class AuthorizationProvider implements Provider {
      * @return a {@link Evaluators} instance
      */
     public Evaluators evaluators() {
-        return new Evaluators(this.policyEvaluator, this.scheduller);
+        return new Evaluators(policyEvaluator);
     }
 
     /**
@@ -97,7 +97,105 @@ public final class AuthorizationProvider implements Provider {
      * @return the {@link StoreFactory}
      */
     public StoreFactory getStoreFactory() {
-        return this.storeFactory.get();
+        return createStoreFactory();
+    }
+
+    private StoreFactory createStoreFactory() {
+        return new StoreFactory() {
+            @Override
+            public ResourceStore getResourceStore() {
+                return storeFactory.getResourceStore();
+            }
+
+            @Override
+            public ResourceServerStore getResourceServerStore() {
+                return storeFactory.getResourceServerStore();
+            }
+
+            @Override
+            public ScopeStore getScopeStore() {
+                return storeFactory.getScopeStore();
+            }
+
+            @Override
+            public PolicyStore getPolicyStore() {
+                PolicyStore policyStore = storeFactory.getPolicyStore();
+                return new PolicyStore() {
+                    @Override
+                    public Policy create(AbstractPolicyRepresentation representation, ResourceServer resourceServer) {
+                        return RepresentationToModel.toModel(representation, AuthorizationProvider.this, policyStore.create(representation, resourceServer));
+                    }
+
+                    @Override
+                    public void delete(String id) {
+                        Policy policy = findById(id, null);
+
+                        if (policy != null) {
+                            ResourceServer resourceServer = policy.getResourceServer();
+
+                            findDependentPolicies(policy.getId(), resourceServer.getId()).forEach(dependentPolicy -> {
+                                dependentPolicy.removeAssociatedPolicy(policy);
+                                if (dependentPolicy.getAssociatedPolicies().isEmpty()) {
+                                    delete(dependentPolicy.getId());
+                                }
+                            });
+
+                            policyStore.delete(id);
+                        }
+                    }
+
+                    @Override
+                    public Policy findById(String id, String resourceServerId) {
+                        return policyStore.findById(id, resourceServerId);
+                    }
+
+                    @Override
+                    public Policy findByName(String name, String resourceServerId) {
+                        return policyStore.findByName(name, resourceServerId);
+                    }
+
+                    @Override
+                    public List<Policy> findByResourceServer(String resourceServerId) {
+                        return policyStore.findByResourceServer(resourceServerId);
+                    }
+
+                    @Override
+                    public List<Policy> findByResourceServer(Map<String, String[]> attributes, String resourceServerId, int firstResult, int maxResult) {
+                        return policyStore.findByResourceServer(attributes, resourceServerId, firstResult, maxResult);
+                    }
+
+                    @Override
+                    public List<Policy> findByResource(String resourceId, String resourceServerId) {
+                        return policyStore.findByResource(resourceId, resourceServerId);
+                    }
+
+                    @Override
+                    public List<Policy> findByResourceType(String resourceType, String resourceServerId) {
+                        return policyStore.findByResourceType(resourceType, resourceServerId);
+                    }
+
+                    @Override
+                    public List<Policy> findByScopeIds(List<String> scopeIds, String resourceServerId) {
+                        return policyStore.findByScopeIds(scopeIds, resourceServerId);
+                    }
+
+                    @Override
+                    public List<Policy> findByType(String type, String resourceServerId) {
+                        return policyStore.findByType(type, resourceServerId);
+                    }
+
+                    @Override
+                    public List<Policy> findDependentPolicies(String id, String resourceServerId) {
+                        return policyStore.findDependentPolicies(id, resourceServerId);
+                    }
+                };
+            }
+
+            @Override
+            public void close() {
+                storeFactory.close();
+            }
+        };
     }
 
     /**

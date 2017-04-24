@@ -43,6 +43,11 @@ public interface BrokerConfiguration {
     String consumerRealmName();
 
     /**
+     * @return Client ID of the identity provider as set in provider realm.
+     */
+    String getIDPClientIdInProviderRealm(SuiteContext suiteContext);
+
+    /**
      * @return User login name of the brokered user
      */
     String getUserLogin();

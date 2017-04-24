@@ -151,7 +151,7 @@ public class KerberosFederationProviderFactory implements UserStorageProviderFac
     }
 
     @Override
-    public void onUpdate(KeycloakSession session, RealmModel realm, ComponentModel model) {
+    public void onUpdate(KeycloakSession session, RealmModel realm, ComponentModel oldModel, ComponentModel newModel) {
         CredentialHelper.setOrReplaceAuthenticationRequirement(session, realm, CredentialRepresentation.KERBEROS,
                 AuthenticationExecutionModel.Requirement.ALTERNATIVE, AuthenticationExecutionModel.Requirement.DISABLED);
     }

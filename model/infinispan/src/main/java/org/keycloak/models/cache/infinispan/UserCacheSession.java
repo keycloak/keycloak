@@ -302,6 +302,10 @@ public class UserCacheSession implements UserCache {
                     invalidate = true;
                 } else if (cached.getCacheTimestamp() < model.getCacheInvalidBefore()) {
                     invalidate = true;
+                } else if (policy == UserStorageProviderModel.CachePolicy.MAX_LIFESPAN) {
+                    if (cached.getCacheTimestamp() + model.getMaxLifespan() < Time.currentTimeMillis()) {
+                        invalidate = true;
+                    }
                 } else if (policy == UserStorageProviderModel.CachePolicy.EVICT_DAILY) {
                     long dailyTimeout = dailyTimeout(model.getEvictionHour(), model.getEvictionMinute());
                     dailyTimeout = dailyTimeout - (24 * 60 * 60 * 1000);
@@ -865,6 +869,21 @@ public class UserCacheSession implements UserCache {
         if (!component.getProviderType().equals(UserStorageProvider.class.getName())) return;
         addRealmInvalidation(realm.getId()); // easier to just invalidate whole realm
         getDelegate().preRemove(realm, component);
+
+    }
+
+    @Override
+    public void removeImportedUsers(RealmModel realm, String storageProviderId) {
+        getDelegate().removeImportedUsers(realm, storageProviderId);
+        clear();
+        addRealmInvalidation(realm.getId()); // easier to just invalidate whole realm
+    }
+
+    @Override
+    public void unlinkUsers(RealmModel realm, String storageProviderId) {
+        getDelegate().unlinkUsers(realm, storageProviderId);
+        clear();
+        addRealmInvalidation(realm.getId()); // easier to just invalidate whole realm
 
     }
 

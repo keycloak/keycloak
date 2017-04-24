@@ -19,6 +19,7 @@ package org.keycloak.services.resources;
 
 import org.keycloak.Config;
 import org.keycloak.common.Version;
+import org.keycloak.utils.MediaType;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -43,14 +44,14 @@ public class JsResource {
      */
     @GET
     @Path("/keycloak.js")
-    @Produces("text/javascript")
+    @Produces(MediaType.TEXT_PLAIN_JAVASCRIPT)
     public Response getKeycloakJs() {
         return getJs("keycloak.js");
     }
 
     @GET
     @Path("/{version}/keycloak.js")
-    @Produces("text/javascript")
+    @Produces(MediaType.TEXT_PLAIN_JAVASCRIPT)
     public Response getKeycloakJsWithVersion(@PathParam("version") String version) {
         if (!version.equals(Version.RESOURCES_VERSION)) {
             return Response.status(Response.Status.NOT_FOUND).build();
@@ -61,14 +62,14 @@ public class JsResource {
 
     @GET
     @Path("/keycloak.min.js")
-    @Produces("text/javascript")
+    @Produces(MediaType.TEXT_PLAIN_JAVASCRIPT)
     public Response getKeycloakMinJs() {
         return getJs("keycloak.min.js");
     }
 
     @GET
     @Path("/{version}/keycloak.min.js")
-    @Produces("text/javascript")
+    @Produces(MediaType.TEXT_PLAIN_JAVASCRIPT)
     public Response getKeycloakMinJsWithVersion(@PathParam("version") String version) {
         if (!version.equals(Version.RESOURCES_VERSION)) {
             return Response.status(Response.Status.NOT_FOUND).build();
@@ -84,14 +85,14 @@ public class JsResource {
      */
     @GET
     @Path("/keycloak-authz.js")
-    @Produces("text/javascript")
+    @Produces(MediaType.TEXT_PLAIN_JAVASCRIPT)
     public Response getKeycloakAuthzJs() {
         return getJs("keycloak-authz.js");
     }
 
     @GET
     @Path("/{version}/keycloak-authz.js")
-    @Produces("text/javascript")
+    @Produces(MediaType.TEXT_PLAIN_JAVASCRIPT)
     public Response getKeycloakAuthzJsWithVersion(@PathParam("version") String version) {
         if (!version.equals(Version.RESOURCES_VERSION)) {
             return Response.status(Response.Status.NOT_FOUND).build();
@@ -102,14 +103,14 @@ public class JsResource {
 
     @GET
     @Path("/keycloak-authz.min.js")
-    @Produces("text/javascript")
+    @Produces(MediaType.TEXT_PLAIN_JAVASCRIPT)
     public Response getKeycloakAuthzMinJs() {
         return getJs("keycloak-authz.min.js");
     }
 
     @GET
     @Path("/{version}/keycloak-authz.min.js")
-    @Produces("text/javascript")
+    @Produces(MediaType.TEXT_PLAIN_JAVASCRIPT)
     public Response getKeycloakAuthzMinJsWithVersion(@PathParam("version") String version) {
         if (!version.equals(Version.RESOURCES_VERSION)) {
             return Response.status(Response.Status.NOT_FOUND).build();

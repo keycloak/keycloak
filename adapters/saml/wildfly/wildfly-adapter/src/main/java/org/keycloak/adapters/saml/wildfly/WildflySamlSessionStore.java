@@ -23,6 +23,7 @@ import org.keycloak.adapters.saml.SamlDeployment;
 import org.keycloak.adapters.saml.SamlSession;
 import org.keycloak.adapters.saml.undertow.ServletSamlSessionStore;
 import org.keycloak.adapters.spi.SessionIdMapper;
+import org.keycloak.adapters.spi.SessionIdMapperUpdater;
 import org.keycloak.adapters.undertow.UndertowUserSessionManagement;
 
 /**
@@ -31,8 +32,10 @@ import org.keycloak.adapters.undertow.UndertowUserSessionManagement;
  */
 public class WildflySamlSessionStore extends ServletSamlSessionStore {
     public WildflySamlSessionStore(HttpServerExchange exchange, UndertowUserSessionManagement sessionManagement,
-                                   SecurityContext securityContext, SessionIdMapper idMapper, SamlDeployment resolvedDeployment) {
-        super(exchange, sessionManagement, securityContext, idMapper, resolvedDeployment);
+                                   SecurityContext securityContext,
+                                   SessionIdMapper idMapper, SessionIdMapperUpdater idMapperUpdater,
+                                   SamlDeployment resolvedDeployment) {
+        super(exchange, sessionManagement, securityContext, idMapper, idMapperUpdater, resolvedDeployment);
     }
 
     @Override

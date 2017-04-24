@@ -45,6 +45,11 @@ public class KeycloakSamlAuthenticator extends AbstractSamlAuthenticator {
     }
 
     @Override
+    public JettyUserSessionManagement createSessionManagement(Request request) {
+        return new JettyUserSessionManagement(new Jetty9SessionManager(request.getSessionManager()));
+    }
+
+    @Override
     protected Request resolveRequest(ServletRequest req) {
         return (req instanceof Request) ? (Request)req : HttpChannel.getCurrentHttpChannel().getRequest();
     }
@@ -62,7 +67,7 @@ public class KeycloakSamlAuthenticator extends AbstractSamlAuthenticator {
     @Override
     protected JettySamlSessionStore createJettySamlSessionStore(Request request, HttpFacade facade, SamlDeployment resolvedDeployment) {
         JettySamlSessionStore store;
-        store = new Jetty9SamlSessionStore(request, createSessionTokenStore(request, resolvedDeployment), facade, idMapper, new JettyUserSessionManagement(request.getSessionManager()), resolvedDeployment);
+        store = new Jetty9SamlSessionStore(request, createSessionTokenStore(request, resolvedDeployment), facade, idMapper, createSessionManagement(request), resolvedDeployment);
         return store;
     }
 

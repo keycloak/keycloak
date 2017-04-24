@@ -34,7 +34,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.services.ErrorPage;
 import org.keycloak.services.messages.Messages;
-import org.keycloak.truststore.JSSETruststoreConfigurator;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.QueryParam;
@@ -216,8 +215,10 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
             if (error != null) {
                 //logger.error("Failed " + getConfig().getAlias() + " broker login: " + error);
                 if (error.equals(ACCESS_DENIED)) {
+                    logger.error(ACCESS_DENIED + " for broker login " + getConfig().getProviderId());
                     return callback.cancelled(state);
                 } else {
+                    logger.error(error + " for broker login " + getConfig().getProviderId());
                     return callback.error(state, Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR);
                 }
             }
@@ -248,15 +249,12 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
         }
 
         public SimpleHttp generateTokenRequest(String authorizationCode) {
-            JSSETruststoreConfigurator configurator = new JSSETruststoreConfigurator(session);
-            return SimpleHttp.doPost(getConfig().getTokenUrl())
+            return SimpleHttp.doPost(getConfig().getTokenUrl(), session)
                     .param(OAUTH2_PARAMETER_CODE, authorizationCode)
                     .param(OAUTH2_PARAMETER_CLIENT_ID, getConfig().getClientId())
                     .param(OAUTH2_PARAMETER_CLIENT_SECRET, getConfig().getClientSecret())
                     .param(OAUTH2_PARAMETER_REDIRECT_URI, uriInfo.getAbsolutePath().toString())
-                    .param(OAUTH2_PARAMETER_GRANT_TYPE, OAUTH2_GRANT_TYPE_AUTHORIZATION_CODE)
-                    .sslFactory(configurator.getSSLSocketFactory())
-                    .hostnameVerifier(configurator.getHostnameVerifier());
+                    .param(OAUTH2_PARAMETER_GRANT_TYPE, OAUTH2_GRANT_TYPE_AUTHORIZATION_CODE);
         }
     }
 }

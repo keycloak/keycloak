@@ -29,6 +29,7 @@ public interface SamlConfigAttributes {
     String SAML_SIGNATURE_ALGORITHM = "saml.signature.algorithm";
     String SAML_NAME_ID_FORMAT_ATTRIBUTE = "saml_name_id_format";
     String SAML_AUTHNSTATEMENT = "saml.authnstatement";
+    String SAML_ONETIMEUSE_CONDITION = "saml.onetimeuse.condition";
     String SAML_FORCE_NAME_ID_FORMAT_ATTRIBUTE = "saml_force_name_id_format";
     String SAML_SERVER_SIGNATURE = "saml.server.signature";
     String SAML_SERVER_SIGNATURE_KEYINFO_EXT = "saml.server.signature.keyinfo.ext";

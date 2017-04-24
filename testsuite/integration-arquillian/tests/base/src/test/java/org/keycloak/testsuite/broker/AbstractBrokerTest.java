@@ -1,34 +1,47 @@
 package org.keycloak.testsuite.broker;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+
+import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.Assert;
-import org.keycloak.testsuite.util.RealmBuilder;
+import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.pages.ConsentPage;
+import org.keycloak.testsuite.util.*;
 
 import org.openqa.selenium.TimeoutException;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.admin.ApiUtil.createUserWithAdminClient;
 import static org.keycloak.testsuite.admin.ApiUtil.resetUserPassword;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.USER_EMAIL;
-import static org.keycloak.testsuite.broker.BrokerTestTools.*;
 import static org.keycloak.testsuite.util.MailAssert.assertEmailAndGetUrl;
-import org.keycloak.testsuite.util.MailServer;
-import org.keycloak.testsuite.util.MailServerConfiguration;
-import org.keycloak.testsuite.util.UserBuilder;
+
+import org.jboss.arquillian.graphene.page.Page;
+
+import javax.ws.rs.core.Response;
+
+import static org.keycloak.testsuite.broker.BrokerTestTools.*;
 
 public abstract class AbstractBrokerTest extends AbstractBaseBrokerTest {
 
     @Before
-    public void createUser() {
+    public void beforeBrokerTest() {
         log.debug("creating user for realm " + bc.providerRealmName());
 
         UserRepresentation user = new UserRepresentation();
@@ -38,21 +51,19 @@ public abstract class AbstractBrokerTest extends AbstractBaseBrokerTest {
         user.setEnabled(true);
 
         RealmResource realmResource = adminClient.realm(bc.providerRealmName());
-        String userId = createUserWithAdminClient(realmResource, user);
+        userId = createUserWithAdminClient(realmResource, user);
 
         resetUserPassword(realmResource.users().get(userId), bc.getUserPassword(), false);
-    }
 
-    @Before
-    public void addIdentityProviderToProviderRealm() {
+        if (testContext.isInitialized()) {
+            return;
+        }
+
         log.debug("adding identity provider to realm " + bc.consumerRealmName());
-
         RealmResource realm = adminClient.realm(bc.consumerRealmName());
         realm.identityProviders().create(bc.setUpIdentityProvider(suiteContext));
-    }
 
-    @Before
-    public void addClients() {
+        // addClients
         List<ClientRepresentation> clients = bc.createProviderClients(suiteContext);
         if (clients != null) {
             RealmResource providerRealm = adminClient.realm(bc.providerRealmName());
@@ -72,6 +83,8 @@ public abstract class AbstractBrokerTest extends AbstractBaseBrokerTest {
                 consumerRealm.clients().create(client);
             }
         }
+
+        testContext.setInitialized(true);
     }
 
 
@@ -256,6 +269,51 @@ public abstract class AbstractBrokerTest extends AbstractBaseBrokerTest {
         assertEquals("Account is disabled, contact admin.", errorPage.getError());
     }
 
+    @Page
+    ConsentPage consentPage;
+
+    // KEYCLOAK-4181
+    @Test
+    public void loginWithExistingUserWithErrorFromProviderIdP() {
+        ClientRepresentation client = adminClient.realm(bc.providerRealmName())
+          .clients()
+          .findByClientId(bc.getIDPClientIdInProviderRealm(suiteContext))
+          .get(0);
+
+        adminClient.realm(bc.providerRealmName())
+          .clients()
+          .get(client.getId())
+          .update(ClientBuilder.edit(client).consentRequired(true).build());
+
+        driver.navigate().to(getAccountUrl(bc.consumerRealmName()));
+
+        log.debug("Clicking social " + bc.getIDPAlias());
+        accountLoginPage.clickSocial(bc.getIDPAlias());
+
+        waitForPage(driver, "log in to");
+
+        Assert.assertTrue("Driver should be on the provider realm page right now",
+                driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));
+
+        log.debug("Logging in");
+        accountLoginPage.login(bc.getUserLogin(), bc.getUserPassword());
+
+        driver.manage().timeouts().pageLoadTimeout(30, TimeUnit.MINUTES);
+
+        waitForPage(driver, "grant access");
+        consentPage.cancel();
+
+        waitForPage(driver, "log in to");
+
+        // Revert consentRequired
+        adminClient.realm(bc.providerRealmName())
+                .clients()
+                .get(client.getId())
+                .update(ClientBuilder.edit(client).consentRequired(false).build());
+
+    }
+
+
 
     protected void testSingleLogout() {
         log.debug("Testing single log out");
@@ -272,5 +330,61 @@ public abstract class AbstractBrokerTest extends AbstractBaseBrokerTest {
 
         Assert.assertTrue("Should be on " + bc.consumerRealmName() + " realm on login page",
                 driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/protocol/openid-connect/"));
+    }
+
+    protected void createRolesForRealm(String realm) {
+        RoleRepresentation managerRole = new RoleRepresentation("manager",null, false);
+        RoleRepresentation userRole = new RoleRepresentation("user",null, false);
+        adminClient.realm(realm).roles().create(managerRole);
+        adminClient.realm(realm).roles().create(userRole);
+    }
+
+    protected void createRoleMappersForConsumerRealm() {
+        log.debug("adding mappers to identity provider in realm " + bc.consumerRealmName());
+
+        RealmResource realm = adminClient.realm(bc.consumerRealmName());
+
+        IdentityProviderResource idpResource = realm.identityProviders().get(bc.getIDPAlias());
+        for (IdentityProviderMapperRepresentation mapper : createIdentityProviderMappers()) {
+            mapper.setIdentityProviderAlias(bc.getIDPAlias());
+            Response resp = idpResource.addMapper(mapper);
+            resp.close();
+        }
+    }
+
+    protected abstract Iterable<IdentityProviderMapperRepresentation> createIdentityProviderMappers();
+
+    // KEYCLOAK-3987
+    @Test
+    public void grantNewRoleFromToken() {
+        createRolesForRealm(bc.providerRealmName());
+        createRolesForRealm(bc.consumerRealmName());
+
+        createRoleMappersForConsumerRealm();
+
+        RoleRepresentation managerRole = adminClient.realm(bc.providerRealmName()).roles().get("manager").toRepresentation();
+        RoleRepresentation userRole = adminClient.realm(bc.providerRealmName()).roles().get("user").toRepresentation();
+
+        UserResource userResource = adminClient.realm(bc.providerRealmName()).users().get(userId);
+        userResource.roles().realmLevel().add(Collections.singletonList(managerRole));
+
+        logInAsUserInIDPForFirstTime();
+
+        List<RoleRepresentation> currentRoles = userResource.roles().realmLevel().listAll();
+        assertEquals("There should be manager role",1, currentRoles.stream().filter(role -> role.getName().equals("manager")).collect(Collectors.toList()).size());
+        assertEquals("User shouldn't have user role", 0, currentRoles.stream().filter(role -> role.getName().equals("user")).collect(Collectors.toList()).size());
+
+        logoutFromRealm(bc.consumerRealmName());
+
+        userResource.roles().realmLevel().add(Collections.singletonList(userRole));
+
+        logInAsUserInIDP();
+
+        currentRoles = userResource.roles().realmLevel().listAll();
+        assertEquals("There should be manager role",1, currentRoles.stream().filter(role -> role.getName().equals("manager")).collect(Collectors.toList()).size());
+        assertEquals("There should be user role",1, currentRoles.stream().filter(role -> role.getName().equals("user")).collect(Collectors.toList()).size());
+
+        logoutFromRealm(bc.providerRealmName());
+        logoutFromRealm(bc.consumerRealmName());
     }
 }

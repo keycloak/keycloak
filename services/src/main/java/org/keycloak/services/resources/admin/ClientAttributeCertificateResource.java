@@ -62,6 +62,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
+ * @resource Client Attribute Certificate
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */

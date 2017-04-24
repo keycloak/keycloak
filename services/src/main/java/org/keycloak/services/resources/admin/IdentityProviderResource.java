@@ -65,6 +65,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
+ * @resource Identity Providers
  * @author Pedro Igor
  */
 public class IdentityProviderResource {
@@ -318,7 +319,11 @@ public class IdentityProviderResource {
         }
 
         IdentityProviderMapperModel model = RepresentationToModel.toModel(mapper);
-        model = realm.addIdentityProviderMapper(model);
+        try {
+            model = realm.addIdentityProviderMapper(model);
+        } catch (Exception e) {
+            return ErrorResponse.error("Failed to add mapper '" + model.getName() + "' to identity provider [" + identityProviderModel.getProviderId() + "].", Response.Status.BAD_REQUEST);
+        }
 
         adminEvent.operation(OperationType.CREATE).resource(ResourceType.IDENTITY_PROVIDER_MAPPER).resourcePath(uriInfo, model.getId())
             .representation(mapper).success();

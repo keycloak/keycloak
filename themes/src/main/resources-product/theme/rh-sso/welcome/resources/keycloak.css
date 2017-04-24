@@ -1,0 +1,172 @@
+/*
+  ~ JBoss, Home of Professional Open Source.
+  ~ Copyright (c) 2011, Red Hat, Inc., and individual contributors
+  ~ as indicated by the @author tags. See the copyright.txt file in the
+  ~ distribution for a full listing of individual contributors.
+  ~
+  ~ This is free software; you can redistribute it and/or modify it
+  ~ under the terms of the GNU Lesser General Public License as
+  ~ published by the Free Software Foundation; either version 2.1 of
+  ~ the License, or (at your option) any later version.
+  ~
+  ~ This software is distributed in the hope that it will be useful,
+  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of
+  ~ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+  ~ Lesser General Public License for more details.
+  ~
+  ~ You should have received a copy of the GNU Lesser General Public
+  ~ License along with this software; if not, write to the Free
+  ~ Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+  ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+*/
+
+
+@font-face {
+  font-family: 'Open Sans';
+  font-style: normal;
+  font-weight: 300;
+  src: local('Open Sans Light'), local('OpenSans-Light'), url(OpenSans-Light.ttf) format('truetype');
+}
+@font-face {
+  font-family: 'Open Sans';
+  font-style: normal;
+  font-weight: 400;
+  src: local('Open Sans'), local('OpenSans'), url(OpenSans-Regular.ttf) format('truetype');
+}
+@font-face {
+  font-family: 'Open Sans';
+  font-style: normal;
+  font-weight: 600;
+  src: local('Open Sans Semibold'), local('OpenSans-Semibold'), url(OpenSans-Semibold.ttf) format('truetype');
+}
+@font-face {
+  font-family: 'Open Sans';
+  font-style: normal;
+  font-weight: 700;
+  src: local('Open Sans Bold'), local('OpenSans-Bold'), url(OpenSans-Bold.ttf) format('truetype');
+}
+
+body {
+    background-color: #ECECEC;    
+    color: #4E5255;
+    font: 12px/1.4 "Open Sans","Lucida Sans Unicode","Lucida Grande",sans-serif;
+    margin: 0;
+}
+
+#container {
+    background: none repeat scroll 0 0 #FFFFFF;
+    border-left: 1px solid #CECECE;
+    border-right: 1px solid #CECECE;
+    box-shadow: 6px 6px 6px #E3E3E3, -6px 6px 6px #E3E3E3, 6px -6px 6px #E3E3E3, -6px -6px 6px #E3E3E3;
+    margin: 0 auto;
+    min-width: 1003px;
+    width: 1003px;
+}
+
+#content {
+    background-color: #ffffff;
+    margin-top: 4px;
+    height: 100%;
+}
+#content sub{
+    font-size: 12px;
+}
+
+
+#footer {    
+    background-color: #F1F1F1;
+    border-top: 1px solid #CFCFCF;
+    height: 42px;
+    min-height: 42px;
+    width: 100%;
+    position: absolute;    
+    bottom: 0;
+}
+
+.section {
+    margin-left: 170px;
+    margin-right: 170px;
+    padding-top: 20px;
+}
+
+a {
+    color: #009ADA;
+    outline: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+a:active {
+    outline: none;
+}
+
+a:link {
+    outline: none;
+}
+
+H1 {
+    color: #656565;
+    font-size: 20px;
+    font-weight: 300 !important;
+    padding-bottom: 8px;
+}
+
+H2 {
+   color: #656565;
+    font-size: 14px;
+    font-weight: 300 !important;    
+}
+
+sub {
+    color: #a3a7aa;
+}
+
+.prod-title {
+    position: relative;
+    top: 50%;
+    transform: translateY(-50%);
+    height: 11px;
+}
+
+.prod-img {
+    height: 100%;
+}
+
+.WarnBlock {
+    color: #000000;
+    padding: 15px;
+    background-color: #FFD272;
+    -moz-border-radius: 4px;
+    border-radius: 4px;
+}
+
+.header-top {
+    background-color: #383F45;
+    border-bottom: 1px solid #53565B;
+    height:32px;
+    max-height:32px;
+    padding-left:15px;
+}
+
+.header-bottom {
+    background-color: #46494E;
+    border-bottom: 1px solid #272A2F;
+    height:43px;
+    max-height:43px;
+}
+
+.header-line {
+    background-color: #C82E2E;
+    border-bottom: 1px solid #272A2F;
+    max-height:3px;
+    height:3px;
+}
+
+.header-panel {
+    height: 80px;
+    min-height: 80px;
+    width: 100%;
+}
+

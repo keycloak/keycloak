@@ -28,6 +28,7 @@ import org.jboss.logging.Logger.Level;
 import org.jboss.shrinkwrap.api.Archive;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
+import org.keycloak.adapters.servlet.KeycloakOIDCFilter;
 import org.keycloak.representations.adapters.config.AdapterConfig;
 import org.keycloak.testsuite.arquillian.annotation.UseServletFilter;
 import org.keycloak.testsuite.util.IOUtil;
@@ -71,10 +72,17 @@ public class DeploymentArchiveProcessor implements ApplicationArchiveProcessor {
 
     @Override
     public void process(Archive<?> archive, TestClass testClass) {
+        // Ignore run on server classes
+        if (archive.getName().equals("run-on-server-classes.war")) {
+            return;
+        }
+
         log.info("Processing archive " + archive.getName());
 //        if (isAdapterTest(testClass)) {
         modifyAdapterConfigs(archive, testClass);
-        modifyWebXml(archive, testClass);
+        if (archive.contains(WEBXML_PATH)) {
+            modifyWebXml(archive, testClass);
+        }
 //        } else {
 //            log.info(testClass.getJavaClass().getSimpleName() + " is not an AdapterTest");
 //        }
@@ -113,12 +121,8 @@ public class DeploymentArchiveProcessor implements ApplicationArchiveProcessor {
                     modifyDocElementAttribute(doc, "SingleLogoutService", "redirectBindingUrl", "8080", System.getProperty("auth.server.http.port"));
                 }
 
-                try {
-                    archive.add(new StringAsset(IOUtil.documentToString(doc)), adapterConfigPath);
-                } catch (TransformerException e) {
-                    log.error("Can't transform document to String");
-                    throw new RuntimeException(e);
-                }
+                archive.add(new StringAsset(IOUtil.documentToString(doc)), adapterConfigPath);
+
 
                 // For running SAML tests it is necessary to have few dependencies on app-server side.
                 // Few of them are not in adapter zip so we need to add them manually here
@@ -174,78 +178,90 @@ public class DeploymentArchiveProcessor implements ApplicationArchiveProcessor {
         String dependency = testClass.getAnnotation(UseServletFilter.class).filterDependency();
         ((WebArchive) archive).addAsLibraries(KeycloakDependenciesResolver.resolveDependencies((dependency + ":" + System.getProperty("project.version"))));
 
-        try {
-            Document jbossXmlDoc = loadXML(archive.get(JBOSS_DEPLOYMENT_XML_PATH).getAsset().openStream());
-            removeNodeByAttributeValue(jbossXmlDoc, "dependencies", "module", "name", "org.keycloak.keycloak-saml-core");
-            removeNodeByAttributeValue(jbossXmlDoc, "dependencies", "module", "name", "org.keycloak.keycloak-adapter-spi");
-            archive.add(new StringAsset((documentToString(jbossXmlDoc))), JBOSS_DEPLOYMENT_XML_PATH);
-        } catch (TransformerException e) {
-            log.error("Can't transform document to String");
-            throw new RuntimeException(e);
-        }
+        Document jbossXmlDoc = loadXML(archive.get(JBOSS_DEPLOYMENT_XML_PATH).getAsset().openStream());
+        removeNodeByAttributeValue(jbossXmlDoc, "dependencies", "module", "name", "org.keycloak.keycloak-saml-core");
+        removeNodeByAttributeValue(jbossXmlDoc, "dependencies", "module", "name", "org.keycloak.keycloak-adapter-spi");
+        archive.add(new StringAsset((documentToString(jbossXmlDoc))), JBOSS_DEPLOYMENT_XML_PATH);
 
     }
 
     protected void modifyWebXml(Archive<?> archive, TestClass testClass) {
-        try {
-            Document webXmlDoc = loadXML(
-                    archive.get(WEBXML_PATH).getAsset().openStream());
-            if (isTomcatAppServer(testClass.getJavaClass())) {
-                modifyDocElementValue(webXmlDoc, "auth-method", "KEYCLOAK", "BASIC");
-            }
-
-            if (testClass.getJavaClass().isAnnotationPresent(UseServletFilter.class)) {
-
-                addFilterDependencies(archive, testClass);
-
-                //We need to add filter declaration to web.xml
-                log.info("Adding filter to " + testClass.getAnnotation(UseServletFilter.class).filterClass() + " with mapping " + testClass.getAnnotation(UseServletFilter.class).filterPattern() + " for " + archive.getName());
-
-                Element filter = webXmlDoc.createElement("filter");
-                Element filterName = webXmlDoc.createElement("filter-name");
-                Element filterClass = webXmlDoc.createElement("filter-class");
-
-                filterName.setTextContent(testClass.getAnnotation(UseServletFilter.class).filterName());
-                filterClass.setTextContent(testClass.getAnnotation(UseServletFilter.class).filterClass());
-
-                filter.appendChild(filterName);
-                filter.appendChild(filterClass);
-                appendChildInDocument(webXmlDoc, "web-app", filter);
-
-                Element filterMapping = webXmlDoc.createElement("filter-mapping");
-
-
-                Element urlPattern = webXmlDoc.createElement("url-pattern");
-
-                filterName = webXmlDoc.createElement("filter-name");
-
-                filterName.setTextContent(testClass.getAnnotation(UseServletFilter.class).filterName());
-                urlPattern.setTextContent(getElementTextContent(webXmlDoc, "web-app/security-constraint/web-resource-collection/url-pattern"));
-
-                filterMapping.appendChild(filterName);
-                filterMapping.appendChild(urlPattern);
-
-                if (!testClass.getAnnotation(UseServletFilter.class).dispatcherType().isEmpty()) {
-                    Element dispatcher = webXmlDoc.createElement("dispatcher");
-                    dispatcher.setTextContent(testClass.getAnnotation(UseServletFilter.class).dispatcherType());
-                    filterMapping.appendChild(dispatcher);
-                }
-                appendChildInDocument(webXmlDoc, "web-app", filterMapping);
-
-                //finally we need to remove all keycloak related configuration from web.xml
-                removeElementsFromDoc(webXmlDoc, "web-app", "security-constraint");
-                removeElementsFromDoc(webXmlDoc, "web-app", "login-config");
-                removeElementsFromDoc(webXmlDoc, "web-app", "security-role");
-
-
-            }
-
-
-            archive.add(new StringAsset((documentToString(webXmlDoc))), WEBXML_PATH);
-        } catch (TransformerException e) {
-            log.error("Can't transform document to String");
-            throw new RuntimeException(e);
+        Document webXmlDoc = loadXML(
+                archive.get(WEBXML_PATH).getAsset().openStream());
+        if (isTomcatAppServer(testClass.getJavaClass())) {
+            modifyDocElementValue(webXmlDoc, "auth-method", "KEYCLOAK", "BASIC");
         }
+
+        if (testClass.getJavaClass().isAnnotationPresent(UseServletFilter.class)) {
+
+            addFilterDependencies(archive, testClass);
+
+            //We need to add filter declaration to web.xml
+            log.info("Adding filter to " + testClass.getAnnotation(UseServletFilter.class).filterClass() + " with mapping " + testClass.getAnnotation(UseServletFilter.class).filterPattern() + " for " + archive.getName());
+
+            Element filter = webXmlDoc.createElement("filter");
+            Element filterName = webXmlDoc.createElement("filter-name");
+            Element filterClass = webXmlDoc.createElement("filter-class");
+
+            filterName.setTextContent(testClass.getAnnotation(UseServletFilter.class).filterName());
+            filterClass.setTextContent(testClass.getAnnotation(UseServletFilter.class).filterClass());
+
+            filter.appendChild(filterName);
+            filter.appendChild(filterClass);
+            appendChildInDocument(webXmlDoc, "web-app", filter);
+
+            filter.appendChild(filterName);
+            filter.appendChild(filterClass);
+
+            // Limitation that all deployments of annotated class use same skipPattern. Refactor if something more flexible is needed (would require more tricky web.xml parsing though...)
+            String skipPattern = testClass.getAnnotation(UseServletFilter.class).skipPattern();
+            if (skipPattern != null && !skipPattern.isEmpty()) {
+                Element initParam = webXmlDoc.createElement("init-param");
+
+                Element paramName = webXmlDoc.createElement("param-name");
+                paramName.setTextContent(KeycloakOIDCFilter.SKIP_PATTERN_PARAM);
+
+                Element paramValue = webXmlDoc.createElement("param-value");
+                paramValue.setTextContent(skipPattern);
+
+                initParam.appendChild(paramName);
+                initParam.appendChild(paramValue);
+
+                filter.appendChild(initParam);
+            }
+
+            appendChildInDocument(webXmlDoc, "web-app", filter);
+
+            Element filterMapping = webXmlDoc.createElement("filter-mapping");
+
+
+            Element urlPattern = webXmlDoc.createElement("url-pattern");
+
+            filterName = webXmlDoc.createElement("filter-name");
+
+            filterName.setTextContent(testClass.getAnnotation(UseServletFilter.class).filterName());
+            urlPattern.setTextContent(getElementTextContent(webXmlDoc, "web-app/security-constraint/web-resource-collection/url-pattern"));
+
+            filterMapping.appendChild(filterName);
+            filterMapping.appendChild(urlPattern);
+
+            if (!testClass.getAnnotation(UseServletFilter.class).dispatcherType().isEmpty()) {
+                Element dispatcher = webXmlDoc.createElement("dispatcher");
+                dispatcher.setTextContent(testClass.getAnnotation(UseServletFilter.class).dispatcherType());
+                filterMapping.appendChild(dispatcher);
+            }
+            appendChildInDocument(webXmlDoc, "web-app", filterMapping);
+
+            //finally we need to remove all keycloak related configuration from web.xml
+            removeElementsFromDoc(webXmlDoc, "web-app", "security-constraint");
+            removeElementsFromDoc(webXmlDoc, "web-app", "login-config");
+            removeElementsFromDoc(webXmlDoc, "web-app", "security-role");
+
+
+        }
+
+
+        archive.add(new StringAsset((documentToString(webXmlDoc))), WEBXML_PATH);
     }
 
 }

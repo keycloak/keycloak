@@ -66,7 +66,7 @@ public class LogoutTest extends AbstractTestRealmKeycloakTest {
 
         String redirectUri = AppPage.baseUrl + "?logout";
 
-        String logoutUrl = oauth.getLogoutUrl(redirectUri, null);
+        String logoutUrl = oauth.getLogoutUrl().redirectUri(redirectUri).build();
         driver.navigate().to(logoutUrl);
 
         events.expectLogout(sessionId).detail(Details.REDIRECT_URI, redirectUri).assertEvent();
@@ -79,6 +79,9 @@ public class LogoutTest extends AbstractTestRealmKeycloakTest {
 
         String sessionId2 = events.expectLogin().assertEvent().getSessionId();
         assertNotEquals(sessionId, sessionId2);
+
+        driver.navigate().to(logoutUrl);
+        events.expectLogout(sessionId2).detail(Details.REDIRECT_URI, redirectUri).assertEvent();
     }
 
     @Test
@@ -89,7 +92,7 @@ public class LogoutTest extends AbstractTestRealmKeycloakTest {
 
         String sessionId = events.expectLogin().assertEvent().getSessionId();
 
-        String logoutUrl = oauth.getLogoutUrl(null, sessionId);
+        String logoutUrl = oauth.getLogoutUrl().sessionState(sessionId).build();
         driver.navigate().to(logoutUrl);
 
         events.expectLogout(sessionId).removeDetail(Details.REDIRECT_URI).assertEvent();
@@ -118,7 +121,7 @@ public class LogoutTest extends AbstractTestRealmKeycloakTest {
         events.expectLogin().session(sessionId).removeDetail(Details.USERNAME).assertEvent();
 
          //  Logout session 1 by redirect
-        driver.navigate().to(oauth.getLogoutUrl(AppPage.baseUrl, null));
+        driver.navigate().to(oauth.getLogoutUrl().redirectUri(AppPage.baseUrl).build());
         events.expectLogout(sessionId).detail(Details.REDIRECT_URI, AppPage.baseUrl).assertEvent();
 
          // Check session 1 not logged-in
@@ -133,6 +136,10 @@ public class LogoutTest extends AbstractTestRealmKeycloakTest {
         // Check session 3 logged-in
         oauth.openLoginForm();
         events.expectLogin().session(sessionId3).removeDetail(Details.USERNAME).assertEvent();
+
+        //  Logout session 3 by redirect
+        driver.navigate().to(oauth.getLogoutUrl().redirectUri(AppPage.baseUrl).build());
+        events.expectLogout(sessionId3).detail(Details.REDIRECT_URI, AppPage.baseUrl).assertEvent();
     }
 
     //KEYCLOAK-2741
@@ -176,4 +183,31 @@ public class LogoutTest extends AbstractTestRealmKeycloakTest {
         rep.setRememberMe(enabled);
         adminClient.realm("test").update(rep);
     }
+
+    @Test
+    public void logoutSessionWhenLoggedOutByAdmin() {
+        loginPage.open();
+        loginPage.login("test-user@localhost", "password");
+        assertTrue(appPage.isCurrent());
+
+        String sessionId = events.expectLogin().assertEvent().getSessionId();
+
+        adminClient.realm("test").logoutAll();
+
+        String logoutUrl = oauth.getLogoutUrl().sessionState(sessionId).build();
+        driver.navigate().to(logoutUrl);
+
+        assertEquals(logoutUrl, driver.getCurrentUrl());
+
+        loginPage.open();
+        loginPage.login("test-user@localhost", "password");
+        assertTrue(appPage.isCurrent());
+
+        String sessionId2 = events.expectLogin().assertEvent().getSessionId();
+        assertNotEquals(sessionId, sessionId2);
+
+        driver.navigate().to(logoutUrl);
+        events.expectLogout(sessionId2).removeDetail(Details.REDIRECT_URI).assertEvent();
+    }
+
 }

@@ -18,6 +18,7 @@
 package org.keycloak.testsuite.admin;
 
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.Config;
@@ -63,11 +64,6 @@ public class ImpersonationTest extends AbstractKeycloakTest {
     private String impersonatedUserId;
 
     @Override
-    public void beforeAbstractKeycloakTest() throws Exception {
-        super.beforeAbstractKeycloakTest();
-    }
-
-    @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         RealmBuilder realm = RealmBuilder.create().name("test").testEventListener();
 
@@ -85,8 +81,13 @@ public class ImpersonationTest extends AbstractKeycloakTest {
     
     @BeforeClass
     public static void enabled() {
-        Assume.assumeFalse("impersonation".equals(System.getProperty("feature.name")) 
+        Assume.assumeFalse("impersonation".equals(System.getProperty("feature.name"))
                 && "disabled".equals(System.getProperty("feature.value")));
+    }
+
+    @Before
+    public void beforeTest() {
+        impersonatedUserId = ApiUtil.findUserByUsername(adminClient.realm("test"), "test-user@localhost").getId();
     }
 
     @Test

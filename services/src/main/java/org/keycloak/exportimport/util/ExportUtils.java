@@ -337,7 +337,7 @@ public class ExportUtils {
         RealmModel realm = authorizationProvider.getRealm();
         StoreFactory storeFactory = authorizationProvider.getStoreFactory();
         try {
-            PolicyRepresentation rep = toRepresentation(policy);
+            PolicyRepresentation rep = toRepresentation(policy, PolicyRepresentation.class, authorizationProvider);
 
             rep.setId(null);
 
@@ -371,7 +371,7 @@ public class ExportUtils {
             Set<Resource> policyResources = policy.getResources();
 
             if (!policyResources.isEmpty()) {
-                List<String> resourceNames = scopes.stream().map(Scope::getName).collect(Collectors.toList());
+                List<String> resourceNames = policyResources.stream().map(Resource::getName).collect(Collectors.toList());
                 config.put("resources", JsonSerialization.writeValueAsString(resourceNames));
             }
 

@@ -37,7 +37,6 @@ import org.keycloak.models.session.UserSessionPersisterProvider;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.models.utils.DefaultRequiredActions;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.models.utils.RealmImporter;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -61,7 +60,7 @@ import java.util.List;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class RealmManager implements RealmImporter {
+public class RealmManager {
 
     protected KeycloakSession session;
     protected RealmProvider model;
@@ -149,6 +148,7 @@ public class RealmManager implements RealmImporter {
         adminConsole.setPublicClient(true);
         adminConsole.addRedirectUri(baseUrl + "/*");
         adminConsole.setFullScopeAllowed(false);
+        adminConsole.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
 
         RoleModel adminRole;
         if (realm.getName().equals(Config.getAdminRealm())) {
@@ -183,6 +183,7 @@ public class RealmManager implements RealmImporter {
             adminCli.setFullScopeAllowed(false);
             adminCli.setStandardFlowEnabled(false);
             adminCli.setDirectAccessGrantsEnabled(true);
+            adminCli.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
 
             RoleModel adminRole;
             if (realm.getName().equals(Config.getAdminRealm())) {
@@ -349,6 +350,7 @@ public class RealmManager implements RealmImporter {
         adminRole.setScopeParamRequired(false);
         realmAdminClient.setBearerOnly(true);
         realmAdminClient.setFullScopeAllowed(false);
+        realmAdminClient.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
 
         for (String r : AdminRoles.ALL_REALM_ROLES) {
             addAndSetAdminRole(r, realmAdminClient, adminRole);
@@ -390,6 +392,7 @@ public class RealmManager implements RealmImporter {
             String redirectUri = base + "/*";
             client.addRedirectUri(redirectUri);
             client.setBaseUrl(base);
+            client.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
 
             for (String role : AccountRoles.ALL) {
                 client.addDefaultRole(role);
@@ -397,6 +400,11 @@ public class RealmManager implements RealmImporter {
                 roleModel.setDescription("${role_" + role + "}");
                 roleModel.setScopeParamRequired(false);
             }
+            RoleModel manageAccountLinks = client.addRole(AccountRoles.MANAGE_ACCOUNT_LINKS);
+            manageAccountLinks.setDescription("${role_" + AccountRoles.MANAGE_ACCOUNT_LINKS + "}");
+            manageAccountLinks.setScopeParamRequired(false);
+            RoleModel manageAccount = client.getRole(AccountRoles.MANAGE_ACCOUNT);
+            manageAccount.addCompositeRole(manageAccountLinks);
         }
     }
 
@@ -411,6 +419,7 @@ public class RealmManager implements RealmImporter {
             client.setEnabled(true);
             client.setName("${client_" + Constants.BROKER_SERVICE_CLIENT_ID + "}");
             client.setFullScopeAllowed(false);
+            client.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
 
             for (String role : Constants.BROKER_SERVICE_ROLES) {
                 RoleModel roleModel = client.addRole(role);
@@ -420,8 +429,15 @@ public class RealmManager implements RealmImporter {
         }
     }
 
-    @Override
     public RealmModel importRealm(RealmRepresentation rep) {
+        return importRealm(rep, false);
+    }
+
+
+    /**
+     * if "skipUserDependent" is true, then import of any models, which needs users already imported in DB, will be skipped. For example authorization
+     */
+    public RealmModel importRealm(RealmRepresentation rep, boolean skipUserDependent) {
         String id = rep.getId();
         if (id == null) {
             id = KeycloakModelUtils.generateId();
@@ -463,7 +479,7 @@ public class RealmManager implements RealmImporter {
 
         if (!hasRealmRole(rep, Constants.OFFLINE_ACCESS_ROLE)) setupOfflineTokens(realm);
 
-        RepresentationToModel.importRealm(session, rep, realm);
+        RepresentationToModel.importRealm(session, rep, realm, skipUserDependent);
 
         setupAdminConsoleLocaleMapper(realm);
 

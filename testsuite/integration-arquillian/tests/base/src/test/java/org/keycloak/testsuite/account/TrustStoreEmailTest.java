@@ -22,6 +22,7 @@ import org.junit.Test;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
+import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.auth.page.account.AccountManagement;
 import org.keycloak.testsuite.auth.page.login.OIDCLogin;
@@ -53,13 +54,10 @@ public class TrustStoreEmailTest extends AbstractTestRealmKeycloakTest {
     @Page
     private VerifyEmail testRealmVerifyEmailPage;
 
-    private UserRepresentation user;
-
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
         log.info("enable verify email and configure smtp server to run with ssl in test realm");
 
-        user = RealmRepUtil.findUser(testRealm, "test-user@localhost");
         testRealm.setSmtpServer(SslMailServer.getServerConfiguration());
         testRealm.setVerifyEmail(true);
     }
@@ -82,6 +80,8 @@ public class TrustStoreEmailTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void verifyEmailWithSslEnabled() {
+        UserRepresentation user = ApiUtil.findUserByUsername(testRealm(), "test-user@localhost");
+
         SslMailServer.startWithSsl(this.getClass().getClassLoader().getResource(SslMailServer.PRIVATE_KEY).getFile());
         accountManagement.navigateTo();
         testRealmLoginPage.form().login(user.getUsername(), "password");
@@ -98,15 +98,17 @@ public class TrustStoreEmailTest extends AbstractTestRealmKeycloakTest {
 
         assertCurrentUrlStartsWith(accountManagement);
         accountManagement.signOut();
-        testRealmLoginPage.form().login(user);
+        testRealmLoginPage.form().login(user.getUsername(), "password");
         assertCurrentUrlStartsWith(accountManagement);
     }
 
     @Test
     public void verifyEmailWithSslWrongCertificate() {
+        UserRepresentation user = ApiUtil.findUserByUsername(testRealm(), "test-user@localhost");
+
         SslMailServer.startWithSsl(this.getClass().getClassLoader().getResource(SslMailServer.INVALID_KEY).getFile());
         accountManagement.navigateTo();
-        loginPage.form().login(user);
+        loginPage.form().login(user.getUsername(), "password");
 
         assertEquals("Failed to send email, please try again later.\n" +
                         "« Back to Application",

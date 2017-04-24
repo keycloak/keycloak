@@ -28,6 +28,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
+import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.ErrorPage;
@@ -52,40 +53,29 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-//import org.keycloak.testsuite.Constants;
-
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
  */
 public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
 
-    static int lifespan = 0;
+    private String userId;
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
+    }
+
+    @Before
+    public void setup() {
         UserRepresentation user = UserBuilder.create()
-                                             .username("login-test")
-                                             .email("login@test.com")
-                                             .enabled(true)
-                                             .password("password")
-                                             .build();
-        testRealm.getUsers().add(user);
+                .username("login-test")
+                .email("login@test.com")
+                .enabled(true)
+                .build();
+
+        userId = ApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), user, "password");
+        getCleanup().addUserId(userId);
     }
-
-    @Before
-    public void setAccessCodeLifespanUserAction() {
-        // Must do this with adminClient because default is not set until after testRealm.json is loaded.
-        lifespan = testRealm().toRepresentation().getAccessCodeLifespanUserAction();
-    }
-
-    @Before
-    public void setUserId() {
-        userId = findUser("login-test").getId();
-    }
-
-
-    private static String userId;
 
     @Rule
     public GreenMailRule greenMail = new GreenMailRule();
@@ -466,6 +456,9 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
         assertEquals(0, greenMail.getReceivedMessages().length);
 
         events.expectRequiredAction(EventType.RESET_PASSWORD).session((String) null).user(userId).detail(Details.USERNAME, "login-test").removeDetail(Details.CODE_ID).error("user_disabled").assertEvent();
+
+        user.setEnabled(true);
+        updateUser(user);
     }
 
     @Test
@@ -501,6 +494,8 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
         host[0] =  smtpConfig.get("host");
         smtpConfig.put("host", "invalid_host");
         RealmRepresentation realmRep = testRealm().toRepresentation();
+        Map<String, String> oldSmtp = realmRep.getSmtpServer();
+
         realmRep.setSmtpServer(smtpConfig);
         testRealm().update(realmRep);
 
@@ -520,6 +515,10 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
         events.expectRequiredAction(EventType.SEND_RESET_PASSWORD_ERROR).user(userId)
                 .session((String)null)
                 .detail(Details.USERNAME, "login-test").removeDetail(Details.CODE_ID).error(Errors.EMAIL_SEND_FAILED).assertEvent();
+
+        // Revert SMTP back
+        realmRep.setSmtpServer(oldSmtp);
+        testRealm().update(realmRep);
     }
 
     private void setPasswordPolicy(String policy) {

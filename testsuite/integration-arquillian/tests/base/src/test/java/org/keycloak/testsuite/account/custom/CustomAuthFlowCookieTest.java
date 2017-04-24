@@ -20,8 +20,11 @@ import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.models.AuthenticationExecutionModel.Requirement;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.testsuite.admin.ApiUtil;
 
 import java.util.Arrays;
+
+import javax.ws.rs.core.Response;
 
 import static org.junit.Assert.assertEquals;
 import static org.keycloak.testsuite.util.OAuthClient.APP_ROOT;
@@ -36,7 +39,7 @@ public class CustomAuthFlowCookieTest extends AbstractCustomAccountManagementTes
     @Override
     public void beforeTest() {
         super.beforeTest();
-        
+
         ClientRepresentation testApp = new ClientRepresentation();
         testApp.setClientId("test-app");
         testApp.setEnabled(true);
@@ -44,7 +47,10 @@ public class CustomAuthFlowCookieTest extends AbstractCustomAccountManagementTes
         testApp.setRedirectUris(Arrays.asList(new String[]{APP_ROOT + "/*"}));
         testApp.setAdminUrl(APP_ROOT + "/logout");
         testApp.setSecret("password");
-        assertEquals(201, testRealmResource().clients().create(testApp).getStatus());
+        Response response = testRealmResource().clients().create(testApp);
+        assertEquals(201, response.getStatus());
+        getCleanup().addClientUuid(ApiUtil.getCreatedId(response));
+        response.close();
     }
 
     @Test

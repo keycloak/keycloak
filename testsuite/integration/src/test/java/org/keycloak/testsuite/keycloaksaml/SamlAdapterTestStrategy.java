@@ -20,10 +20,12 @@ package org.keycloak.testsuite.keycloaksaml;
 import org.apache.commons.io.IOUtils;
 import org.junit.Assert;
 import org.junit.rules.ExternalResource;
+
 import org.keycloak.adapters.saml.SamlAuthenticationError;
 import org.keycloak.adapters.saml.SamlPrincipal;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.common.util.*;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
@@ -38,9 +40,8 @@ import org.keycloak.protocol.saml.mappers.RoleNameMapper;
 import org.keycloak.protocol.saml.mappers.UserAttributeStatementMapper;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.saml.BaseSAML2BindingBuilder;
-import org.keycloak.saml.SAML2ErrorResponseBuilder;
-import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
+import org.keycloak.saml.*;
+import org.keycloak.saml.common.constants.*;
 import org.keycloak.saml.processing.core.saml.v2.constants.X500SAMLProfileConstants;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.KeycloakServer;
@@ -51,6 +52,7 @@ import org.keycloak.testsuite.rule.ErrorServlet;
 import org.keycloak.testsuite.rule.KeycloakRule;
 import org.keycloak.testsuite.rule.WebResource;
 import org.keycloak.testsuite.rule.WebRule;
+
 import org.openqa.selenium.WebDriver;
 import org.w3c.dom.Document;
 
@@ -61,10 +63,11 @@ import javax.ws.rs.core.Form;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.net.URI;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
+import java.security.*;
+import java.security.spec.*;
+import java.util.*;
+import java.util.Base64;
+import java.util.logging.*;
 
 import static org.junit.Assert.assertEquals;
 
@@ -76,6 +79,24 @@ public class SamlAdapterTestStrategy  extends ExternalResource {
     protected String AUTH_SERVER_URL = "http://localhost:8081/auth";
     protected String APP_SERVER_BASE_URL = "http://localhost:8081";
     protected AbstractKeycloakRule keycloakRule;
+
+    private static final String REALM_PRIVATE_KEY_STR = "MIICXAIBAAKBgQCrVrCuTtArbgaZzL1hvh0xtL5mc7o0NqPVnYXkLvgcwiC3BjLGw1tGEGoJaXDuSaRllobm53JBhjx33UNv+5z/UMG4kytBWxheNVKnL6GgqlNabMaFfPLPCF8kAgKnsi79NMo+n6KnSY8YeUmec/p2vjO2NjsSAVcWEQMVhJ31LwIDAQABAoGAfmO8gVhyBxdqlxmIuglbz8bcjQbhXJLR2EoS8ngTXmN1bo2L90M0mUKSdc7qF10LgETBzqL8jYlQIbt+e6TH8fcEpKCjUlyq0Mf/vVbfZSNaVycY13nTzo27iPyWQHK5NLuJzn1xvxxrUeXI6A2WFpGEBLbHjwpx5WQG9A+2scECQQDvdn9NE75HPTVPxBqsEd2z10TKkl9CZxu10Qby3iQQmWLEJ9LNmy3acvKrE3gMiYNWb6xHPKiIqOR1as7L24aTAkEAtyvQOlCvr5kAjVqrEKXalj0Tzewjweuxc0pskvArTI2Oo070h65GpoIKLc9jf+UA69cRtquwP93aZKtW06U8dQJAF2Y44ks/mK5+eyDqik3koCI08qaC8HYq2wVl7G2QkJ6sbAaILtcvD92ToOvyGyeE0flvmDZxMYlvaZnaQ0lcSQJBAKZU6umJi3/xeEbkJqMfeLclD27XGEFoPeNrmdx0q10Azp4NfJAY+Z8KRyQCR2BEG+oNitBOZ+YXF9KCpH3cdmECQHEigJhYg+ykOvr1aiZUMFT72HU0jnmQe2FVekuG+LJUt2Tm7GtMjTFoGpf0JwrVuZN39fOYAlo+nTixgeW7X8Y=";
+    private static PrivateKey REALM_PRIVATE_KEY;
+    private static final String REALM_PUBLIC_KEY_STR = "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCrVrCuTtArbgaZzL1hvh0xtL5mc7o0NqPVnYXkLvgcwiC3BjLGw1tGEGoJaXDuSaRllobm53JBhjx33UNv+5z/UMG4kytBWxheNVKnL6GgqlNabMaFfPLPCF8kAgKnsi79NMo+n6KnSY8YeUmec/p2vjO2NjsSAVcWEQMVhJ31LwIDAQAB";
+    private static PublicKey REALM_PUBLIC_KEY;
+
+    static {
+        try {
+            KeyFactory kf = KeyFactory.getInstance("RSA");
+            byte[] encoded = Base64.getDecoder().decode(REALM_PUBLIC_KEY_STR);
+            REALM_PUBLIC_KEY = (PublicKey) kf.generatePublic(new X509EncodedKeySpec(encoded));
+
+            encoded = Base64.getDecoder().decode(REALM_PRIVATE_KEY_STR);
+            REALM_PRIVATE_KEY = (PrivateKey) kf.generatePrivate(new PKCS8EncodedKeySpec(encoded));
+        } catch (NoSuchAlgorithmException | InvalidKeySpecException ex) {
+            Logger.getLogger(SamlAdapterTestStrategy.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
 
     public SamlAdapterTestStrategy(String AUTH_SERVER_URL, String APP_SERVER_BASE_URL, AbstractKeycloakRule keycloakRule) {
         this.AUTH_SERVER_URL = AUTH_SERVER_URL;
@@ -173,7 +194,7 @@ public class SamlAdapterTestStrategy  extends ExternalResource {
 
 
 
-    public void testErrorHandling() throws Exception {
+    public void testErrorHandlingUnsigned() throws Exception {
         ErrorServlet.authError = null;
         Client client = ClientBuilder.newClient();
         // make sure
@@ -187,6 +208,36 @@ public class SamlAdapterTestStrategy  extends ExternalResource {
                 .relayState(null);
         Document document = builder.buildDocument();
         URI uri = binding.redirectBinding(document).generateURI(APP_SERVER_BASE_URL + "/employee-sig/saml", false);
+        response = client.target(uri).request().get();
+        String errorPage = response.readEntity(String.class);
+        response.close();
+        Assert.assertTrue(errorPage.contains("Error Page"));
+        client.close();
+        Assert.assertNotNull(ErrorServlet.authError);
+        SamlAuthenticationError error = (SamlAuthenticationError)ErrorServlet.authError;
+        Assert.assertEquals(SamlAuthenticationError.Reason.INVALID_SIGNATURE, error.getReason());
+        Assert.assertNotNull(error.getStatus());
+        ErrorServlet.authError = null;
+
+    }
+
+    public void testErrorHandlingSigned() throws Exception {
+        ErrorServlet.authError = null;
+        Client client = ClientBuilder.newClient();
+        // make sure
+        Response response = client.target(APP_SERVER_BASE_URL + "/employee-sig/").request().get();
+        response.close();
+        SAML2ErrorResponseBuilder builder = new SAML2ErrorResponseBuilder()
+                .destination(APP_SERVER_BASE_URL + "/employee-sig/saml")
+                        .issuer(AUTH_SERVER_URL + "/realms/demo")
+                        .status(JBossSAMLURIConstants.STATUS_REQUEST_DENIED.get());
+        BaseSAML2BindingBuilder binding = new BaseSAML2BindingBuilder()
+                .relayState(null)
+                .signatureAlgorithm(SignatureAlgorithm.RSA_SHA256)
+                .signWith(KeyUtils.createKeyId(REALM_PRIVATE_KEY), REALM_PRIVATE_KEY, REALM_PUBLIC_KEY)
+                .signDocument();
+        Document document = builder.buildDocument();
+        URI uri = binding.generateRedirectUri(GeneralConstants.SAML_RESPONSE_KEY, APP_SERVER_BASE_URL + "/employee-sig/saml", document);
         response = client.target(uri).request().get();
         String errorPage = response.readEntity(String.class);
         response.close();

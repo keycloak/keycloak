@@ -20,13 +20,14 @@ package org.keycloak.testsuite.broker;
 import java.util.List;
 
 import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Before;
+import org.junit.After;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.Retry;
+import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.AccountPasswordPage;
 import org.keycloak.testsuite.pages.AccountUpdateProfilePage;
 import org.keycloak.testsuite.pages.ErrorPage;
@@ -35,8 +36,6 @@ import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.UpdateAccountInformationPage;
 import org.openqa.selenium.TimeoutException;
 
-import static org.keycloak.testsuite.admin.ApiUtil.createUserWithAdminClient;
-import static org.keycloak.testsuite.admin.ApiUtil.resetUserPassword;
 import static org.keycloak.testsuite.broker.BrokerTestTools.encodeUrl;
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 
@@ -44,6 +43,8 @@ import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
  * No test methods there. Just some useful common functionality
  */
 public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
+
+    protected static final String ATTRIBUTE_VALUE = "attribute.value";
 
     @Page
     protected AccountUpdateProfilePage accountUpdateProfilePage;
@@ -82,6 +83,22 @@ public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
 
         testRealms.add(providerRealm);
         testRealms.add(consumerRealm);
+    }
+
+
+    @After
+    public void cleanupUsers() {
+        RealmResource providerRealm = adminClient.realm(bc.providerRealmName());
+        UserRepresentation userRep = ApiUtil.findUserByUsername(providerRealm, bc.getUserLogin());
+        if (userRep != null) {
+            providerRealm.users().get(userRep.getId()).remove();
+        }
+
+        RealmResource childRealm = adminClient.realm(bc.consumerRealmName());
+        userRep = ApiUtil.findUserByUsername(childRealm, bc.getUserLogin());
+        if (userRep != null) {
+            childRealm.users().get(userRep.getId()).remove();
+        }
     }
 
 

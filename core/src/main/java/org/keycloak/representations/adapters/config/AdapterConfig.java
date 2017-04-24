@@ -78,6 +78,9 @@ public class AdapterConfig extends BaseAdapterConfig implements AdapterHttpClien
     protected int publicKeyCacheTtl = 86400; // 1 day
     @JsonProperty("policy-enforcer")
     protected PolicyEnforcerConfig policyEnforcerConfig;
+    // https://tools.ietf.org/html/rfc7636
+    @JsonProperty("enable-pkce")
+    protected boolean pkce = false;
 
     /**
      * The Proxy url to use for requests to the auth-server, configurable via the adapter config property {@code proxy-url}.
@@ -244,4 +247,14 @@ public class AdapterConfig extends BaseAdapterConfig implements AdapterHttpClien
     public void setPublicKeyCacheTtl(int publicKeyCacheTtl) {
         this.publicKeyCacheTtl = publicKeyCacheTtl;
     }
+
+    // https://tools.ietf.org/html/rfc7636
+    public boolean isPkce() {
+        return pkce;
+    }
+
+    public void setPkce(boolean pkce) {
+        this.pkce = pkce;
+    }
+
 }

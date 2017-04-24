@@ -141,10 +141,10 @@ public class KeycloakSpringBootConfiguration {
             List<io.undertow.servlet.api.SecurityConstraint> undertowSecurityConstraints = new ArrayList<io.undertow.servlet.api.SecurityConstraint>();
             for (KeycloakSpringBootProperties.SecurityConstraint constraintDefinition : keycloakProperties.getSecurityConstraints()) {
 
-                for (KeycloakSpringBootProperties.SecurityCollection collectionDefinition : constraintDefinition.getSecurityCollections()) {
+                io.undertow.servlet.api.SecurityConstraint undertowSecurityConstraint = new io.undertow.servlet.api.SecurityConstraint();
+                undertowSecurityConstraint.addRolesAllowed(constraintDefinition.getAuthRoles());
 
-                    io.undertow.servlet.api.SecurityConstraint undertowSecurityConstraint = new io.undertow.servlet.api.SecurityConstraint();
-                    undertowSecurityConstraint.addRolesAllowed(collectionDefinition.getAuthRoles());
+                for (KeycloakSpringBootProperties.SecurityCollection collectionDefinition : constraintDefinition.getSecurityCollections()) {
 
                     WebResourceCollection webResourceCollection = new WebResourceCollection();
                     webResourceCollection.addHttpMethods(collectionDefinition.getMethods());
@@ -153,8 +153,9 @@ public class KeycloakSpringBootConfiguration {
 
                     undertowSecurityConstraint.addWebResourceCollections(webResourceCollection);
 
-                    undertowSecurityConstraints.add(undertowSecurityConstraint);
                 }
+
+                undertowSecurityConstraints.add(undertowSecurityConstraint);
             }
             return undertowSecurityConstraints;
         }
@@ -174,42 +175,70 @@ public class KeycloakSpringBootConfiguration {
             KeycloakJettyAuthenticator keycloakJettyAuthenticator = new KeycloakJettyAuthenticator();
             keycloakJettyAuthenticator.setConfigResolver(new KeycloakSpringBootConfigResolver());
 
+            /* see org.eclipse.jetty.webapp.StandardDescriptorProcessor#visitSecurityConstraint for an example
+               on how to map servlet spec to Constraints */
+
             List<ConstraintMapping> jettyConstraintMappings = new ArrayList<ConstraintMapping>();
             for (KeycloakSpringBootProperties.SecurityConstraint constraintDefinition : keycloakProperties.getSecurityConstraints()) {
 
                 for (KeycloakSpringBootProperties.SecurityCollection securityCollectionDefinition : constraintDefinition
                         .getSecurityCollections()) {
-
+                    // securityCollection matches servlet spec's web-resource-collection
                     Constraint jettyConstraint = new Constraint();
+
+                    if (constraintDefinition.getAuthRoles().size() > 0) {
+                        jettyConstraint.setAuthenticate(true);
+                        jettyConstraint.setRoles(constraintDefinition.getAuthRoles().toArray(new String[0]));
+                    }
+
                     jettyConstraint.setName(securityCollectionDefinition.getName());
-                    jettyConstraint.setAuthenticate(true);
 
-                    if (securityCollectionDefinition.getName() != null) {
-                        jettyConstraint.setName(securityCollectionDefinition.getName());
+                    // according to the servlet spec each security-constraint has at least one URL pattern
+                    for(String pattern : securityCollectionDefinition.getPatterns()) {
+
+                        /* the following code is asymmetric as Jetty's ConstraintMapping accepts only one allowed HTTP method,
+                           but multiple omitted methods. Therefore we add one ConstraintMapping for each allowed
+                           mapping but only one mapping in the cases of omitted methods or no methods.
+                         */
+
+                        if (securityCollectionDefinition.getMethods().size() > 0) {
+                            // according to the servlet spec we have either methods ...
+                            for(String method : securityCollectionDefinition.getMethods()) {
+                                ConstraintMapping jettyConstraintMapping = new ConstraintMapping();
+                                jettyConstraintMappings.add(jettyConstraintMapping);
+
+                                jettyConstraintMapping.setConstraint(jettyConstraint);
+                                jettyConstraintMapping.setPathSpec(pattern);
+                                jettyConstraintMapping.setMethod(method);
+                            }
+                        } else if (securityCollectionDefinition.getOmittedMethods().size() > 0){
+                            // ... omitted methods ...
+                            ConstraintMapping jettyConstraintMapping = new ConstraintMapping();
+                            jettyConstraintMappings.add(jettyConstraintMapping);
+
+                            jettyConstraintMapping.setConstraint(jettyConstraint);
+                            jettyConstraintMapping.setPathSpec(pattern);
+                            jettyConstraintMapping.setMethodOmissions(
+                                    securityCollectionDefinition.getOmittedMethods().toArray(new String[0]));
+                        } else {
+                            // ... or no methods at all
+                            ConstraintMapping jettyConstraintMapping = new ConstraintMapping();
+                            jettyConstraintMappings.add(jettyConstraintMapping);
+
+                            jettyConstraintMapping.setConstraint(jettyConstraint);
+                            jettyConstraintMapping.setPathSpec(pattern);
+                        }
+
                     }
 
-                    jettyConstraint.setRoles(securityCollectionDefinition.getAuthRoles().toArray(new String[0]));
-
-                    ConstraintMapping jettyConstraintMapping = new ConstraintMapping();
-                    if (securityCollectionDefinition.getPatterns().size() > 0) {
-                        //First pattern wins
-                        jettyConstraintMapping.setPathSpec(securityCollectionDefinition.getPatterns().get(0));
-                        jettyConstraintMapping.setConstraint(jettyConstraint);
-                    }
-
-                    if (securityCollectionDefinition.getMethods().size() > 0) {
-                        //First method wins
-                        jettyConstraintMapping.setMethod(securityCollectionDefinition.getMethods().get(0));
-                    }
-
-                    jettyConstraintMapping.setMethodOmissions(
-                            securityCollectionDefinition.getOmittedMethods().toArray(new String[0]));
-
-                    jettyConstraintMappings.add(jettyConstraintMapping);
                 }
             }
 
             WebAppContext webAppContext = server.getBean(WebAppContext.class);
+            //if not found as registered bean let's try the handler
+            if(webAppContext==null){
+                webAppContext = (WebAppContext) server.getHandler();
+            }
 
             ConstraintSecurityHandler securityHandler = new ConstraintSecurityHandler();
             securityHandler.setConstraintMappings(jettyConstraintMappings);
@@ -235,18 +264,20 @@ public class KeycloakSpringBootConfiguration {
 
             Set<String> authRoles = new HashSet<String>();
             for (KeycloakSpringBootProperties.SecurityConstraint constraint : keycloakProperties.getSecurityConstraints()) {
-                for (KeycloakSpringBootProperties.SecurityCollection collection : constraint.getSecurityCollections()) {
-                    for (String authRole : collection.getAuthRoles()) {
-                        if (!authRoles.contains(authRole)) {
-                            context.addSecurityRole(authRole);
-                            authRoles.add(authRole);
-                        }
+                for (String authRole : constraint.getAuthRoles()) {
+                    if (!authRoles.contains(authRole)) {
+                        context.addSecurityRole(authRole);
+                        authRoles.add(authRole);
                     }
                 }
             }
 
             for (KeycloakSpringBootProperties.SecurityConstraint constraint : keycloakProperties.getSecurityConstraints()) {
                 SecurityConstraint tomcatConstraint = new SecurityConstraint();
+
+                for (String authRole : constraint.getAuthRoles()) {
+                    tomcatConstraint.addAuthRole(authRole);
+                }
 
                 for (KeycloakSpringBootProperties.SecurityCollection collection : constraint.getSecurityCollections()) {
                     SecurityCollection tomcatSecCollection = new SecurityCollection();
@@ -256,10 +287,6 @@ public class KeycloakSpringBootConfiguration {
                     }
                     if (collection.getDescription() != null) {
                         tomcatSecCollection.setDescription(collection.getDescription());
-                    }
-
-                    for (String authRole : collection.getAuthRoles()) {
-                        tomcatConstraint.addAuthRole(authRole);
                     }
 
                     for (String pattern : collection.getPatterns()) {

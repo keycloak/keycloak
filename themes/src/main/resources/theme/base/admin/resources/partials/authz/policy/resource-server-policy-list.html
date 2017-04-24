@@ -1,5 +1,12 @@
 <div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
 
+    <ol class="breadcrumb">
+        <li><a href="#/realms/{{realm.realm}}/clients">{{:: 'clients' | translate}}</a></li>
+        <li><a href="#/realms/{{realm.realm}}/clients/{{client.id}}">{{client.clientId}}</a></li>
+        <li><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server">{{:: 'authz-authorization' | translate}}</a></li>
+        <li><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server/policy">{{:: 'authz-policies' | translate}}</a></li>
+    </ol>
+
     <kc-tabs-resource-server></kc-tabs-resource-server>
 
     <table class="table table-striped table-bordered">
@@ -17,6 +24,12 @@
                             </div>
                             <div class="input-group">
                                 <input type="text" placeholder="{{:: 'authz-resource' | translate}}" data-ng-model="query.resource" class="form-control search" onkeydown="if (event.keyCode == 13) document.getElementById('policySearch').click()">
+                                <div class="input-group-addon">
+                                    <i class="fa fa-search" type="submit" data-ng-click="firstPage()"></i>
+                                </div>
+                            </div>
+                            <div class="input-group">
+                                <input type="text" placeholder="{{:: 'authz-scope' | translate}}" data-ng-model="query.scope" class="form-control search" onkeydown="if (event.keyCode == 13) document.getElementById('policySearch').click()">
                                 <div class="input-group-addon">
                                     <i class="fa fa-search" type="submit" data-ng-click="firstPage()"></i>
                                 </div>
@@ -82,7 +95,7 @@
                         <table class="table kc-authz-table-expanded table-striped">
                             <thead>
                             <tr>
-                                <th>Dependent Permissions</th>
+                                <th>Dependent Permissions and Policies</th>
                             </tr>
                             </thead>
                             <tbody>
@@ -91,7 +104,7 @@
                                     <span data-ng-show="policy.dependentPolicies && !policy.dependentPolicies.length">{{:: 'authz-no-permission-assigned' | translate}}</span>
                                     <ul ng-repeat="dep in policy.dependentPolicies" data-ng-show="policy.dependentPolicies.length > 0">
                                         <li>
-                                            <a href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server/permission/{{dep.type}}/{{dep.id}}">{{dep.name}}</a>
+                                            <a href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server/{{dep.type == 'scope' || dep.type == 'resource' ? 'permission' : 'policy'}}/{{dep.type}}/{{dep.id}}">{{dep.name}}</a>
                                         </li>
                                     </ul>
                                 </td>

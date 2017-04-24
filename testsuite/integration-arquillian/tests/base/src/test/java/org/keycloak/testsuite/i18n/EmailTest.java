@@ -83,7 +83,7 @@ public class EmailTest extends AbstractI18NTest {
 
     @Test
     public void restPasswordEmailGerman() throws IOException, MessagingException {
-        ProfileAssume.assumePreview();
+        ProfileAssume.assumeCommunity();
         
         changeUserLocale("de");
 
@@ -95,7 +95,10 @@ public class EmailTest extends AbstractI18NTest {
 
         MimeMessage message = greenMail.getReceivedMessages()[0];
 
-        Assert.assertEquals("Passwort zurückzusetzen", message.getSubject());
+        Assert.assertEquals("Passwort zurücksetzen", message.getSubject());
+
+        // Revert
+        changeUserLocale("en");
     }
 
 }

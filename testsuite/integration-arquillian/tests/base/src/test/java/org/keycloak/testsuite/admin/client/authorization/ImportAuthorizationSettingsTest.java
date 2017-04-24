@@ -17,20 +17,16 @@
 
 package org.keycloak.testsuite.admin.client.authorization;
 
-import static com.sun.corba.se.impl.oa.poa.Policies.defaultPolicies;
 import static org.junit.Assert.assertEquals;
 
-import java.util.List;
 
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.ClientResource;
-import org.keycloak.representations.adapters.config.PolicyEnforcerConfig;
 import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
-import org.keycloak.representations.idm.authorization.PolicyRepresentation;
-import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
 import org.keycloak.util.JsonSerialization;
 
@@ -39,6 +35,27 @@ import org.keycloak.util.JsonSerialization;
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 public class ImportAuthorizationSettingsTest extends AbstractAuthorizationTest {
+
+    @Before
+    public void createRole() {
+        ClientResource clientResource = getClientResource();
+
+        RoleRepresentation role = new RoleRepresentation();
+        role.setName("admin");
+        clientResource.roles().create(role);
+    }
+
+    @After
+    public void onAfterAuthzTests() {
+        ClientResource clientResource = getClientResource();
+
+        // Needed to disable authz first. TODO: Looks like a bug. Check later...
+        ClientRepresentation client = clientResource.toRepresentation();
+        client.setAuthorizationServicesEnabled(false);
+        clientResource.update(client);
+
+        getClientResource().remove();
+    }
 
     @Test
     public void testImportUnorderedSettings() throws Exception {

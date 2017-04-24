@@ -18,6 +18,7 @@ package org.keycloak.testsuite.account;
 
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
@@ -40,6 +41,7 @@ import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.drone.Different;
 import org.keycloak.testsuite.pages.AccountApplicationsPage;
+import org.keycloak.testsuite.pages.AccountFederatedIdentityPage;
 import org.keycloak.testsuite.pages.AccountLogPage;
 import org.keycloak.testsuite.pages.AccountPasswordPage;
 import org.keycloak.testsuite.pages.AccountSessionsPage;
@@ -95,6 +97,12 @@ public class AccountTest extends AbstractTestRealmKeycloakTest {
                                               .alias("myoidc")
                                               .displayName("MyOIDC")
                                               .build());
+        testRealm.addIdentityProvider(IdentityProviderBuilder.create()
+                                              .providerId("oidc")
+                                              .alias("myhiddenoidc")
+                                              .displayName("MyHiddenOIDC")
+                                              .hideOnLoginPage()
+                                              .build());
 
         RealmBuilder.edit(testRealm)
                     .user(user2);
@@ -138,6 +146,9 @@ public class AccountTest extends AbstractTestRealmKeycloakTest {
 
     @Page
     protected AccountApplicationsPage applicationsPage;
+    
+    @Page
+    protected AccountFederatedIdentityPage federatedIdentityPage;
 
     @Page
     protected ErrorPage errorPage;
@@ -149,6 +160,10 @@ public class AccountTest extends AbstractTestRealmKeycloakTest {
     public void before() {
         oauth.state("mystate"); // keycloak enforces that a state param has been sent by client
         userId = findUser("test-user@localhost").getId();
+
+        // Revert any password policy and user password changes
+        setPasswordPolicy("");
+        ApiUtil.resetUserPassword(testRealm().users().get(userId), "password", false);
     }
 
     @Test
@@ -389,18 +404,18 @@ public class AccountTest extends AbstractTestRealmKeycloakTest {
         events.expectLogin().client("account").detail(Details.REDIRECT_URI, ACCOUNT_REDIRECT + "?path=password").assertEvent();
 
         assertChangePasswordFails   ("password",  "password");  // current: password
-        assertChangePasswordSucceeds("password",  "password1"); // current: password
+        assertChangePasswordSucceeds("password",  "password3"); // current: password
 
-        assertChangePasswordFails   ("password1", "password");  // current: password1, history: password
-        assertChangePasswordFails   ("password1", "password1"); // current: password1, history: password
-        assertChangePasswordSucceeds("password1", "password2"); // current: password1, history: password
+        assertChangePasswordFails   ("password3", "password");  // current: password1, history: password
+        assertChangePasswordFails   ("password3", "password3"); // current: password1, history: password
+        assertChangePasswordSucceeds("password3", "password4"); // current: password1, history: password
 
-        assertChangePasswordFails   ("password2", "password");  // current: password2, history: password, password1
-        assertChangePasswordFails   ("password2", "password1"); // current: password2, history: password, password1
-        assertChangePasswordFails   ("password2", "password2"); // current: password2, history: password, password1
-        assertChangePasswordSucceeds("password2", "password3"); // current: password2, history: password, password1
+        assertChangePasswordFails   ("password4", "password");  // current: password2, history: password, password1
+        assertChangePasswordFails   ("password4", "password3"); // current: password2, history: password, password1
+        assertChangePasswordFails   ("password4", "password4"); // current: password2, history: password, password1
+        assertChangePasswordSucceeds("password4", "password5"); // current: password2, history: password, password1
 
-        assertChangePasswordSucceeds("password3", "password");  // current: password3, history: password1, password2
+        assertChangePasswordSucceeds("password5", "password");  // current: password3, history: password1, password2
     }
 
     @Test
@@ -433,10 +448,10 @@ public class AccountTest extends AbstractTestRealmKeycloakTest {
         events.expectLogin().client("account").detail(Details.REDIRECT_URI, ACCOUNT_REDIRECT + "?path=password").assertEvent();
 
         assertChangePasswordFails   ("password",  "password");  // current: password
-        assertChangePasswordSucceeds("password",  "password1"); // current: password
+        assertChangePasswordSucceeds("password",  "password6"); // current: password
 
-        assertChangePasswordFails   ("password1", "password1"); // current: password1
-        assertChangePasswordSucceeds("password1", "password");  // current: password1
+        assertChangePasswordFails   ("password6", "password6"); // current: password1
+        assertChangePasswordSucceeds("password6", "password");  // current: password1
     }
 
     @Test
@@ -515,8 +530,8 @@ public class AccountTest extends AbstractTestRealmKeycloakTest {
         Assert.assertEquals("New last", profilePage.getLastName());
         Assert.assertEquals("new@email.com", profilePage.getEmail());
 
-        events.expectAccount(EventType.UPDATE_PROFILE).assertEvent();
         events.expectAccount(EventType.UPDATE_EMAIL).detail(Details.PREVIOUS_EMAIL, "test-user@localhost").detail(Details.UPDATED_EMAIL, "new@email.com").assertEvent();
+        events.expectAccount(EventType.UPDATE_PROFILE).assertEvent();
 
         // reset user for other tests
         profilePage.updateProfile("Tom", "Brady", "test-user@localhost");
@@ -601,6 +616,9 @@ public class AccountTest extends AbstractTestRealmKeycloakTest {
         Assert.assertEquals("New first", profilePage.getFirstName());
         Assert.assertEquals("New last", profilePage.getLastName());
         Assert.assertEquals("new@email.com", profilePage.getEmail());
+
+        // Revert
+        profilePage.updateProfile("test-user@localhost", "Tom", "Brady", "test-user@localhost");
     }
 
     private void addUser(String username, String email) {
@@ -759,7 +777,7 @@ public class AccountTest extends AbstractTestRealmKeycloakTest {
                 .detail(Details.USERNAME, "test-user-no-access@localhost")
                 .detail(Details.REDIRECT_URI, ACCOUNT_REDIRECT).assertEvent();
 
-        Assert.assertTrue(errorPage.isCurrent());
+        Assert.assertTrue("Expected errorPage but was " + driver.getTitle() + " (" + driver.getCurrentUrl() + "). Page source: " + driver.getPageSource(), errorPage.isCurrent());
         Assert.assertEquals("No access", errorPage.getError());
     }
 
@@ -864,10 +882,11 @@ public class AccountTest extends AbstractTestRealmKeycloakTest {
         Assert.assertTrue(applicationsPage.isCurrent());
 
         Map<String, AccountApplicationsPage.AppEntry> apps = applicationsPage.getApplications();
-        Assert.assertThat(apps.keySet(), containsInAnyOrder("Account", "test-app", "test-app-scope", "third-party", "test-app-authz", "My Named Test App"));
+        Assert.assertThat(apps.keySet(), containsInAnyOrder("Account", "test-app", "test-app-scope", "third-party", "test-app-authz", "My Named Test App", "Test App Named - ${client_account}"));
 
         AccountApplicationsPage.AppEntry accountEntry = apps.get("Account");
-        Assert.assertEquals(2, accountEntry.getRolesAvailable().size());
+        Assert.assertEquals(3, accountEntry.getRolesAvailable().size());
+        Assert.assertTrue(accountEntry.getRolesAvailable().contains("Manage account links in Account"));
         Assert.assertTrue(accountEntry.getRolesAvailable().contains("Manage account in Account"));
         Assert.assertTrue(accountEntry.getRolesAvailable().contains("View profile in Account"));
         Assert.assertEquals(1, accountEntry.getRolesGranted().size());
@@ -918,7 +937,13 @@ public class AccountTest extends AbstractTestRealmKeycloakTest {
         Assert.assertEquals("GitHub", loginPage.findSocialButton("github").getText());
         Assert.assertEquals("mysaml", loginPage.findSocialButton("mysaml").getText());
         Assert.assertEquals("MyOIDC", loginPage.findSocialButton("myoidc").getText());
-
+    }
+    
+    @Test
+    public void testIdentityProviderHiddenOnLoginPageIsVisbleInAccount(){
+        federatedIdentityPage.open();
+        loginPage.login("test-user@localhost", "password");
+        Assert.assertNotNull(federatedIdentityPage.findAddProviderButton("myhiddenoidc"));
     }
 
     @Test
@@ -951,7 +976,20 @@ public class AccountTest extends AbstractTestRealmKeycloakTest {
         // When a client has a name provided, the name should be available to the back link
         Assert.assertEquals("Back to " + namedClient.getName(), profilePage.getBackToApplicationLinkText());
         Assert.assertEquals(namedClient.getBaseUrl(), profilePage.getBackToApplicationLinkHref());
-        
+
+        foundClients = testRealm.clients().findByClientId("var-named-test-app");
+        if (foundClients.isEmpty()) {
+            Assert.fail("Unable to find var-named-test-app");
+        }
+        namedClient = foundClients.get(0);
+
+        driver.navigate().to(profilePage.getPath() + "?referrer=" + namedClient.getClientId());
+        Assert.assertTrue(profilePage.isCurrent());
+        // When a client has a name provided as a variable, the name should be resolved using a localized bundle and available to the back link
+        Assert.assertEquals("Back to Test App Named - Account", profilePage.getBackToApplicationLinkText());
+        Assert.assertEquals(namedClient.getBaseUrl(), profilePage.getBackToApplicationLinkHref());
+
+
         foundClients = testRealm.clients().findByClientId("test-app");
         if (foundClients.isEmpty()) {
             Assert.fail("Unable to find test-app");

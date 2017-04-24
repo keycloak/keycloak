@@ -59,6 +59,7 @@ import java.util.Set;
 /**
  * Base resource for managing users
  *
+ * @resource Role Mapper
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */

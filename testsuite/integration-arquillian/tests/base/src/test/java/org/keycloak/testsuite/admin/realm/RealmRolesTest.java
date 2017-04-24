@@ -65,6 +65,8 @@ public class RealmRolesTest extends AbstractAdminTest {
         ClientRepresentation clientRep = ClientBuilder.create().clientId("client-a").build();
         Response response = adminClient.realm(REALM_NAME).clients().create(clientRep);
         clientUuid = ApiUtil.getCreatedId(response);
+        getCleanup().addClientUuid(clientUuid);
+        response.close();
 
         RoleRepresentation roleC = RoleBuilder.create().name("role-c").description("Role C").build();
         adminClient.realm(REALM_NAME).clients().get(clientUuid).roles().create(roleC);
@@ -76,6 +78,10 @@ public class RealmRolesTest extends AbstractAdminTest {
         for (RoleRepresentation r : adminClient.realm(REALM_NAME).clients().get(clientUuid).roles().list()) {
             ids.put(r.getName(), r.getId());
         }
+
+        getCleanup().addRoleId(ids.get("role-a"));
+        getCleanup().addRoleId(ids.get("role-b"));
+        getCleanup().addRoleId(ids.get("role-c"));
 
         resource = adminClient.realm(REALM_NAME).roles();
 

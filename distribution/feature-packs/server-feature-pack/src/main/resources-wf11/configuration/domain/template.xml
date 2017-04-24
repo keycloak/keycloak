@@ -1,0 +1,146 @@
+<?xml version='1.0' encoding='UTF-8'?>
+
+<!--
+  ~ Copyright 2016 Red Hat, Inc. and/or its affiliates
+  ~ and other contributors as indicated by the @author tags.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<domain xmlns="urn:jboss:domain:4.0">
+
+    <extensions>
+        <?EXTENSIONS?>
+    </extensions>
+
+    <system-properties>
+        <!-- IPv4 is not required, but setting this helps avoid unintended use of IPv6 -->
+        <property name="java.net.preferIPv4Stack" value="true"/>
+    </system-properties>
+
+    <management>
+        <access-control provider="simple">
+            <role-mapping>
+                <role name="SuperUser">
+                    <include>
+                        <user name="$local"/>
+                    </include>
+                </role>
+            </role-mapping>
+        </access-control>
+    </management>
+
+    <profiles>
+        <!-- Non clustered authentication server profile -->
+        <profile name="auth-server-standalone">
+            <?SUBSYSTEMS socket-binding-group="standard-sockets"?>
+        </profile>
+        <!--
+           Clustering authentication server setup.
+
+           You must configure a remote shared external database like PostgreSQL or MySql if you want this to be
+           able to work on multiple machines.
+        -->
+        <profile name="auth-server-clustered">
+            <?SUBSYSTEMS socket-binding-group="ha-sockets"?>
+        </profile>
+        <!--
+           This is a profile for the built-in Underto Loadbalancer
+           It should be removed in production systems and replaced with a better software or hardware based one
+         -->
+        <profile name="load-balancer">
+            <?SUBSYSTEMS socket-binding-group="load-balancer-sockets"?>
+            <subsystem xmlns="urn:jboss:domain:undertow:3.0">
+                <buffer-cache name="default"/>
+                <server name="default-server">
+                    <http-listener name="default" socket-binding="http" redirect-socket="https"/>
+                    <host name="default-host" alias="localhost">
+                        <location name="/" handler="lb-handler"/>
+                        <filter-ref name="server-header"/>
+                        <filter-ref name="x-powered-by-header"/>
+                    </host>
+                </server>
+                <servlet-container name="default">
+                    <jsp-config/>
+                    <websockets/>
+                </servlet-container>
+                <handlers>
+                    <reverse-proxy name="lb-handler">
+                        <host name="host1" outbound-socket-binding="remote-host1" scheme="ajp" path="/" instance-id="myroute1"/>
+                        <host name="host2" outbound-socket-binding="remote-host2" scheme="ajp" path="/" instance-id="myroute2"/>
+                    </reverse-proxy>
+                </handlers>
+                <filters>
+                    <response-header name="server-header" header-name="Server" header-value="WildFly/10"/>
+                    <response-header name="x-powered-by-header" header-name="X-Powered-By" header-value="Undertow/1"/>
+                </filters>
+            </subsystem>
+        </profile>
+    </profiles>
+
+    <!--
+         Named interfaces that can be referenced elsewhere in the configuration. The configuration
+         for how to associate these logical names with an actual network interface can either
+         be specified here or can be declared on a per-host basis in the equivalent element in host.xml.
+
+         These default configurations require the binding specification to be done in host.xml.
+    -->
+    <interfaces>
+        <interface name="management">
+            <inet-address value="${jboss.bind.address.management:127.0.0.1}"/>
+        </interface>
+        <interface name="public">
+            <inet-address value="${jboss.bind.address:127.0.0.1}"/>
+        </interface>
+        <?INTERFACES?>
+    </interfaces>
+
+    <socket-binding-groups>
+        <socket-binding-group name="standard-sockets" default-interface="public">
+            <?SOCKET-BINDINGS?>
+        </socket-binding-group>
+        <socket-binding-group name="ha-sockets" default-interface="public">
+            <?SOCKET-BINDINGS?>
+        </socket-binding-group>
+        <!-- load-balancer-sockets should be removed in production systems and replaced with a better softare or hardare based one -->
+        <socket-binding-group name="load-balancer-sockets" default-interface="public">
+            <socket-binding name="ajp" port="${jboss.ajp.port:8009}"/>
+            <socket-binding name="http" port="${jboss.http.port:8080}"/>
+            <socket-binding name="https" port="${jboss.https.port:8443}"/>
+            <outbound-socket-binding name="remote-host1">
+                <remote-destination host="localhost" port="8159"/>
+            </outbound-socket-binding>
+            <outbound-socket-binding name="remote-host2">
+                <remote-destination host="localhost" port="8259"/>
+            </outbound-socket-binding>
+            <?SOCKET-BINDINGS?>
+        </socket-binding-group>
+    </socket-binding-groups>
+
+    <server-groups>
+        <!-- load-balancer-group should be removed in production systems and replaced with a better softare or hardare based one -->
+        <server-group name="load-balancer-group" profile="load-balancer">
+            <jvm name="default">
+                <heap size="64m" max-size="512m"/>
+            </jvm>
+            <socket-binding-group ref="load-balancer-sockets"/>
+        </server-group>
+        <server-group name="auth-server-group" profile="auth-server-clustered">
+            <jvm name="default">
+                <heap size="64m" max-size="512m"/>
+            </jvm>
+            <socket-binding-group ref="ha-sockets"/>
+        </server-group>
+    </server-groups>
+
+</domain>

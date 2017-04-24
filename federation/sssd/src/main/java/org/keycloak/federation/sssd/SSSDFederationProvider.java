@@ -17,13 +17,13 @@
 
 package org.keycloak.federation.sssd;
 
-import org.freedesktop.dbus.Variant;
 import org.jboss.logging.Logger;
 import org.keycloak.credential.CredentialInput;
 import org.keycloak.credential.CredentialInputUpdater;
 import org.keycloak.credential.CredentialInputValidator;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.federation.sssd.api.Sssd;
+import org.keycloak.federation.sssd.api.Sssd.User;
 import org.keycloak.federation.sssd.impl.PAMAuthenticator;
 import org.keycloak.models.*;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -34,7 +34,6 @@ import org.keycloak.storage.user.UserLookupProvider;
 
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -112,14 +111,14 @@ public class SSSDFederationProvider implements UserStorageProvider,
 
     protected UserModel importUserToKeycloak(RealmModel realm, String username) {
         Sssd sssd = new Sssd(username);
-        Map<String, Variant> sssdUser = sssd.getUserAttributes();
+        User sssdUser = sssd.getUser();
         logger.debugf("Creating SSSD user: %s to local Keycloak storage", username);
         UserModel user = session.userLocalStorage().addUser(realm, username);
         user.setEnabled(true);
-        user.setEmail(Sssd.getRawAttribute(sssdUser.get("mail")));
-        user.setFirstName(Sssd.getRawAttribute(sssdUser.get("givenname")));
-        user.setLastName(Sssd.getRawAttribute(sssdUser.get("sn")));
-        for (String s : sssd.getUserGroups()) {
+        user.setEmail(sssdUser.getEmail());
+        user.setFirstName(sssdUser.getFirstName());
+        user.setLastName(sssdUser.getLastName());
+        for (String s : sssd.getGroups()) {
             GroupModel group = KeycloakModelUtils.findGroupByPath(realm, "/" + s);
             if (group == null) {
                 group = session.realms().createGroup(realm, s);
@@ -158,8 +157,8 @@ public class SSSDFederationProvider implements UserStorageProvider,
     }
 
     public boolean isValid(RealmModel realm, UserModel local) {
-        Map<String, Variant> attributes = new Sssd(local.getUsername()).getUserAttributes();
-        return Sssd.getRawAttribute(attributes.get("mail")).equalsIgnoreCase(local.getEmail());
+        User user = new Sssd(local.getUsername()).getUser();
+        return user.equals(local);
     }
 
     @Override

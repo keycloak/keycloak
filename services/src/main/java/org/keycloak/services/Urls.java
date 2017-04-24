@@ -25,6 +25,7 @@ import org.keycloak.services.resources.IdentityBrokerService;
 import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.services.resources.ThemeResource;
+import org.keycloak.services.resources.admin.AdminRoot;
 
 import javax.ws.rs.core.UriBuilder;
 import java.net.URI;
@@ -33,6 +34,10 @@ import java.net.URI;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class Urls {
+
+    public static URI adminConsoleRoot(URI baseUri, String realmId) {
+        return UriBuilder.fromUri(baseUri).path(AdminRoot.class).path("{realm}/console/").build(realmId);
+    }
 
     public static URI accountApplicationsPage(URI baseUri, String realmId) {
         return accountBase(baseUri).path(AccountService.class, "applicationsPage").build(realmId);
@@ -75,6 +80,14 @@ public class Urls {
         if (accessCode != null) {
             uriBuilder.replaceQueryParam(OAuth2Constants.CODE, accessCode);
         }
+
+        return uriBuilder.build(realmName, providerId);
+    }
+
+    public static URI identityProviderLinkRequest(URI baseUri, String providerId, String realmName) {
+        UriBuilder uriBuilder = realmBase(baseUri).path(RealmsResource.class, "getBrokerService")
+                .replaceQuery(null)
+                .path(IdentityBrokerService.class, "clientInitiatedAccountLinking");
 
         return uriBuilder.build(realmName, providerId);
     }

@@ -75,6 +75,11 @@ public class KerberosLdapTest extends AbstractKerberosTest {
     protected boolean isCaseSensitiveLogin() {
         return kerberosRule.isCaseSensitiveLogin();
     }
+    
+    @Override
+    protected boolean isStartEmbeddedLdapServer() {
+        return kerberosRule.isStartEmbeddedLdapServer();
+    }
 
 
     @Override

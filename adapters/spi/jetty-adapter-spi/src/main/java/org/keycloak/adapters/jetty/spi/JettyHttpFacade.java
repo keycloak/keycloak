@@ -79,6 +79,11 @@ public class JettyHttpFacade implements HttpFacade {
         }
 
         @Override
+        public String getRelativePath() {
+            return request.getServletPath();
+        }
+
+        @Override
         public String getFirstParam(String param) {
             return request.getParameter(param);
         }

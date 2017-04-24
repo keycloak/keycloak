@@ -99,6 +99,11 @@ public class AdapterTest {
     @Rule
     public AdapterTestStrategy testStrategy = new AdapterTestStrategy("http://localhost:8081/auth", "http://localhost:8081", keycloakRule);
 
+    //@Test
+    public void testUi() throws Exception {
+        Thread.sleep(1000000000);
+    }
+
     @Test
     public void testLoginSSOAndLogout() throws Exception {
         testStrategy.testLoginSSOMax();

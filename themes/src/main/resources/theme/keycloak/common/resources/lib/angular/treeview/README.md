@@ -1,9 +1,9 @@
 Angular Treeview
 ================
 
-Pure [AngularJS](http://www.angularjs.org) based tree menu directive.
+Pure [AngularJS](https://www.angularjs.org) based tree menu directive.
 
-[![ScreenShot](https://github.com/eu81273/angular.treeview/raw/master/img/preview.png)](http://jsfiddle.net/eu81273/8LWUc/)
+[![ScreenShot](https://github.com/eu81273/angular.treeview/raw/master/img/preview.png)](https://jsfiddle.net/eu81273/8LWUc/)
 
 ## Installation
 
@@ -83,14 +83,14 @@ $scope.$watch( 'abc.currentNode', function( newObj, oldObj ) {
 ## Examples
 
 #### Basic example
-[![ScreenShot](https://github.com/eu81273/angular.treeview/raw/master/img/jsfiddle01.png)](http://jsfiddle.net/eu81273/8LWUc/)
+[![ScreenShot](https://github.com/eu81273/angular.treeview/raw/master/img/jsfiddle01.png)](https://jsfiddle.net/eu81273/8LWUc/)
 
-[jsFiddle - http://jsfiddle.net/eu81273/8LWUc/](http://jsfiddle.net/eu81273/8LWUc/)
+[jsFiddle - http://jsfiddle.net/eu81273/8LWUc/](https://jsfiddle.net/eu81273/8LWUc/)
 
 #### Multiple treeview example
-[![ScreenShot](https://github.com/eu81273/angular.treeview/raw/master/img/jsfiddle02.png)](http://jsfiddle.net/eu81273/b9Pnw/)
+[![ScreenShot](https://github.com/eu81273/angular.treeview/raw/master/img/jsfiddle02.png)](https://jsfiddle.net/eu81273/b9Pnw/)
 
-[jsFiddle - http://jsfiddle.net/eu81273/b9Pnw/](http://jsfiddle.net/eu81273/b9Pnw/)
+[jsFiddle - http://jsfiddle.net/eu81273/b9Pnw/](https://jsfiddle.net/eu81273/b9Pnw/)
 
 ## Browser Compatibility
 

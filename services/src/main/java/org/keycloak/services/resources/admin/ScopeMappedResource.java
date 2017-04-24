@@ -50,6 +50,7 @@ import java.util.Set;
 /**
  * Base class for managing the scope mappings of a specific client.
  *
+ * @resource Scope Mappings
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */

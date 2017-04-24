@@ -29,6 +29,7 @@ import org.keycloak.storage.ldap.idm.query.EscapeStrategy;
 import org.keycloak.storage.ldap.idm.query.internal.EqualCondition;
 import org.keycloak.storage.ldap.idm.query.internal.LDAPQuery;
 import org.keycloak.storage.ldap.idm.store.IdentityStore;
+import org.keycloak.storage.ldap.mappers.LDAPOperationDecorator;
 
 import javax.naming.AuthenticationException;
 import javax.naming.NamingEnumeration;
@@ -102,6 +103,8 @@ public class LDAPIdentityStore implements IdentityStore {
 
     @Override
     public void update(LDAPObject ldapObject) {
+        checkRename(ldapObject);
+
         BasicAttributes updatedAttributes = extractAttributes(ldapObject, false);
         NamingEnumeration<Attribute> attributes = updatedAttributes.getAll();
 
@@ -110,6 +113,38 @@ public class LDAPIdentityStore implements IdentityStore {
 
         if (logger.isDebugEnabled()) {
             logger.debugf("Type with identifier [%s] and DN [%s] successfully updated to LDAP store.", ldapObject.getUuid(), entryDn);
+        }
+    }
+
+    protected void checkRename(LDAPObject ldapObject) {
+        String rdnAttrName = ldapObject.getRdnAttributeName();
+        if (ldapObject.getReadOnlyAttributeNames().contains(rdnAttrName.toLowerCase())) {
+            return;
+        }
+
+        String rdnAttrVal = ldapObject.getAttributeAsString(rdnAttrName);
+
+        // Could be the case when RDN attribute of the target object is not included in Keycloak mappers
+        if (rdnAttrVal == null) {
+            return;
+        }
+
+        String oldRdnAttrVal = ldapObject.getDn().getFirstRdnAttrValue();
+        if (!oldRdnAttrVal.equals(rdnAttrVal)) {
+            LDAPDn newLdapDn = ldapObject.getDn().getParentDn();
+            newLdapDn.addFirst(rdnAttrName, rdnAttrVal);
+
+            String oldDn = ldapObject.getDn().toString();
+            String newDn = newLdapDn.toString();
+
+            if (logger.isDebugEnabled()) {
+                logger.debugf("Renaming LDAP Object. Old DN: [%s], New DN: [%s]", oldDn, newDn);
+            }
+
+            // In case, that there is conflict (For example already existing "CN=John Anthony"), the different DN is returned
+            newDn = this.operationManager.renameEntry(oldDn, newDn, true);
+
+            ldapObject.setDn(LDAPDn.fromString(newDn));
         }
     }
 
@@ -205,7 +240,7 @@ public class LDAPIdentityStore implements IdentityStore {
     }
 
     @Override
-    public void updatePassword(LDAPObject user, String password) {
+    public void updatePassword(LDAPObject user, String password, LDAPOperationDecorator passwordUpdateDecorator) {
         String userDN = user.getDn().toString();
 
         if (logger.isDebugEnabled()) {
@@ -213,7 +248,7 @@ public class LDAPIdentityStore implements IdentityStore {
         }
 
         if (getConfig().isActiveDirectory()) {
-            updateADPassword(userDN, password);
+            updateADPassword(userDN, password, passwordUpdateDecorator);
         } else {
             ModificationItem[] mods = new ModificationItem[1];
 
@@ -222,7 +257,7 @@ public class LDAPIdentityStore implements IdentityStore {
 
                 mods[0] = new ModificationItem(DirContext.REPLACE_ATTRIBUTE, mod0);
 
-                operationManager.modifyAttribute(userDN, mod0);
+                operationManager.modifyAttributes(userDN, mods, passwordUpdateDecorator);
             } catch (ModelException me) {
                 throw me;
             } catch (Exception e) {
@@ -232,7 +267,7 @@ public class LDAPIdentityStore implements IdentityStore {
     }
 
 
-    private void updateADPassword(String userDN, String password) {
+    private void updateADPassword(String userDN, String password, LDAPOperationDecorator passwordUpdateDecorator) {
         try {
             // Replace the "unicdodePwd" attribute with a new value
             // Password must be both Unicode and a quoted string
@@ -244,7 +279,7 @@ public class LDAPIdentityStore implements IdentityStore {
             List<ModificationItem> modItems = new ArrayList<ModificationItem>();
             modItems.add(new ModificationItem(DirContext.REPLACE_ATTRIBUTE, unicodePwd));
 
-            operationManager.modifyAttributes(userDN, modItems.toArray(new ModificationItem[] {}));
+            operationManager.modifyAttributes(userDN, modItems.toArray(new ModificationItem[] {}), passwordUpdateDecorator);
         } catch (ModelException me) {
             throw me;
         } catch (Exception e) {

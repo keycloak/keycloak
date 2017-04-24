@@ -41,18 +41,16 @@ public class CachedResourceServerStore implements ResourceServerStore {
     private static final String RS_ID_CACHE_PREFIX = "rs-id-";
     private static final String RS_CLIENT_ID_CACHE_PREFIX = "rs-client-id-";
 
-    private final KeycloakSession session;
     private final CacheTransaction transaction;
     private StoreFactory storeFactory;
     private ResourceServerStore delegate;
     private final Cache<String, Map<String, List<CachedResourceServer>>> cache;
 
-    public CachedResourceServerStore(KeycloakSession session, CacheTransaction transaction, StoreFactory storeFactory) {
-        this.session = session;
+    public CachedResourceServerStore(KeycloakSession session, CacheTransaction transaction, StoreFactory delegate) {
         this.transaction = transaction;
         InfinispanConnectionProvider provider = session.getProvider(InfinispanConnectionProvider.class);
         this.cache = provider.getCache(InfinispanConnectionProvider.AUTHORIZATION_CACHE_NAME);
-        this.storeFactory = storeFactory;
+        this.storeFactory = delegate;
     }
 
     @Override

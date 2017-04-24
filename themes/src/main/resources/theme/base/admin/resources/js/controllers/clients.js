@@ -863,6 +863,7 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, templates,
 
     $scope.realm = realm;
     $scope.samlAuthnStatement = false;
+    $scope.samlOneTimeUseCondition = false;
     $scope.samlMultiValuedRoles = false;
     $scope.samlServerSignature = false;
     $scope.samlServerSignatureEnableKeyInfoExtension = false;
@@ -959,6 +960,13 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, templates,
                 $scope.samlAuthnStatement = false;
             }
         }
+         if ($scope.client.attributes["saml.onetimeuse.condition"]) {
+                    if ($scope.client.attributes["saml.onetimeuse.condition"] == "true") {
+                        $scope.samlOneTimeUseCondition = true;
+                    } else {
+                        $scope.samlOneTimeUseCondition = false;
+                    }
+                }
         if ($scope.client.attributes["saml_force_name_id_format"]) {
             if ($scope.client.attributes["saml_force_name_id_format"] == "true") {
                 $scope.samlForceNameIdFormat = true;
@@ -1177,6 +1185,12 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, templates,
             $scope.clientEdit.attributes["saml.authnstatement"] = "false";
 
         }
+        if ($scope.samlOneTimeUseCondition == true) {
+                    $scope.clientEdit.attributes["saml.onetimeuse.condition"] = "true";
+                } else {
+                    $scope.clientEdit.attributes["saml.onetimeuse.condition"] = "false";
+
+                }
         if ($scope.samlForceNameIdFormat == true) {
             $scope.clientEdit.attributes["saml_force_name_id_format"] = "true";
         } else {
@@ -1226,11 +1240,19 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, templates,
     $scope.cancel = function() {
         $location.url("/realms/" + realm.realm + "/clients");
     };
+
+    $scope.onAuthorizationSettingsChange = function () {
+        if ($scope.client.authorizationServicesEnabled && !$scope.clientEdit.authorizationServicesEnabled) {
+            Dialog.confirm("Disable Authorization Settings", "Are you sure you want to disable authorization ? Once you save your changes, all authorization settings associated with this client will be removed. This operation can not be reverted.", function () {
+            }, function () {
+                $scope.clientEdit.authorizationServicesEnabled = true;
+            });
+        }
+    }
 });
 
 module.controller('CreateClientCtrl', function($scope, realm, client, templates, $route, serverInfo, Client, ClientDescriptionConverter, $location, $modal, Dialog, Notifications) {
-    $scope.protocols = ['openid-connect',
-        'saml'];//Object.keys(serverInfo.providers['login-protocol'].providers).sort();
+    $scope.protocols = Object.keys(serverInfo.providers['login-protocol'].providers).sort();
     $scope.create = true;
     $scope.templates = [ {name:'NONE'}];
     var templateNameMap = new Object();
@@ -1381,7 +1403,7 @@ module.controller('ClientScopeMappingCtrl', function($scope, $http, realm, clien
        return ($scope.client.useTemplateScope && $scope.template && template.fullScopeAllowed)
                || (!$scope.template && $scope.client.fullScopeAllowed);
     }
-    
+
     $scope.changeFlag = function() {
         Client.update({
             realm : realm.realm,
@@ -1588,7 +1610,7 @@ module.controller('ClientClusteringCtrl', function($scope, client, Client, Clien
     };
 });
 
-module.controller('ClientClusteringNodeCtrl', function($scope, client, Client, ClientClusterNode, realm, 
+module.controller('ClientClusteringNodeCtrl', function($scope, client, Client, ClientClusterNode, realm,
                                                        $location, $routeParams, Notifications, Dialog) {
     $scope.client = client;
     $scope.realm = realm;
@@ -1853,7 +1875,7 @@ module.controller('ClientProtocolMapperCreateCtrl', function($scope, realm, serv
         changed: false,
         mapperTypes: serverInfo.protocolMapperTypes[protocol]
     }
-    
+
     $scope.model.mapperType = $scope.model.mapperTypes[0];
 
     $scope.$watch(function() {
@@ -2131,7 +2153,7 @@ module.controller('ClientTemplateProtocolMapperCreateCtrl', function($scope, rea
         changed: false,
         mapperTypes: serverInfo.protocolMapperTypes[protocol]
     }
-    
+
     $scope.model.mapperType = $scope.model.mapperTypes[0];
 
     $scope.$watch(function() {
