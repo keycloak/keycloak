@@ -22,6 +22,7 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
+import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
 import org.keycloak.testsuite.console.page.clients.authorization.policy.PolicyTypeUI;
 import org.keycloak.testsuite.page.Form;
 import org.keycloak.testsuite.util.WaitUtils;
@@ -43,6 +44,9 @@ public class Permissions extends Form {
     @Page
     private ResourcePermission resourcePermission;
 
+    @Page
+    private ScopePermission scopePermission;
+
     public PermissionsTable permissions() {
         return table;
     }
@@ -57,7 +61,9 @@ public class Permissions extends Form {
             resourcePermission.form().save();
             return (P) resourcePermission;
         } else if ("scope".equals(type)) {
-            return null;
+            scopePermission.form().populate((ScopePermissionRepresentation) expected);
+            scopePermission.form().save();
+            return (P) scopePermission;
         }
 
         return null;
@@ -73,6 +79,8 @@ public class Permissions extends Form {
 
                 if ("resource".equals(type)) {
                     resourcePermission.form().populate((ResourcePermissionRepresentation) representation);
+                } else if ("scope".equals(type)) {
+                    scopePermission.form().populate((ScopePermissionRepresentation) representation);
                 }
 
                 return;
@@ -89,6 +97,8 @@ public class Permissions extends Form {
                 String type = actual.getType();
                 if ("resource".equals(type)) {
                     return (P) resourcePermission;
+                } else if ("scope".equals(type)) {
+                    return (P) scopePermission;
                 }
             }
         }
@@ -106,6 +116,8 @@ public class Permissions extends Form {
 
                 if ("resource".equals(type)) {
                     resourcePermission.form().delete();
+                } else if ("scope".equals(type)) {
+                    scopePermission.form().delete();
                 }
 
                 return;

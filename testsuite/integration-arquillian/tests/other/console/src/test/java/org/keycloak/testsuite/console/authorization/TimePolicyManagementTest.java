@@ -82,7 +82,7 @@ public class TimePolicyManagementTest extends AbstractAuthorizationSettingsTest 
     }
 
     @Test
-    public void testDeletePolicy() throws InterruptedException {
+    public void testDelete() throws InterruptedException {
         authorizationPage.navigateTo();
         TimePolicyRepresentation expected = new TimePolicyRepresentation();
 

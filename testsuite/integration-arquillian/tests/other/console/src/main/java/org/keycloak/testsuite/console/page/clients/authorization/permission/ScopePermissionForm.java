@@ -16,10 +16,13 @@
  */
 package org.keycloak.testsuite.console.page.clients.authorization.permission;
 
+import java.util.Set;
+import java.util.function.Function;
+
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
-import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
+import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
 import org.keycloak.testsuite.console.page.fragment.MultipleStringSelect2;
-import org.keycloak.testsuite.console.page.fragment.OnOffSwitch;
+import org.keycloak.testsuite.console.page.fragment.SingleStringSelect2;
 import org.keycloak.testsuite.page.Form;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
@@ -28,7 +31,7 @@ import org.openqa.selenium.support.ui.Select;
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-public class ResourcePermissionForm extends Form {
+public class ScopePermissionForm extends Form {
 
     @FindBy(id = "name")
     private WebElement name;
@@ -39,12 +42,6 @@ public class ResourcePermissionForm extends Form {
     @FindBy(id = "decisionStrategy")
     private Select decisionStrategy;
 
-    @FindBy(xpath = ".//div[@class='onoffswitch' and ./input[@id='applyToResourceTypeFlag']]")
-    private OnOffSwitch resourceTypeSwitch;
-
-    @FindBy(id = "resourceType")
-    private WebElement resourceType;
-
     @FindBy(xpath = "//i[contains(@class,'pficon-delete')]")
     private WebElement deleteButton;
 
@@ -54,21 +51,27 @@ public class ResourcePermissionForm extends Form {
     @FindBy(id = "s2id_policies")
     private MultipleStringSelect2 policySelect;
 
-    @FindBy(id = "s2id_resources")
-    private MultipleStringSelect2 resourceSelect;
+    @FindBy(id = "s2id_scopes")
+    private MultipleStringSelect2 scopeSelect;
 
-    public void populate(ResourcePermissionRepresentation expected) {
+    @FindBy(id = "s2id_resourceScopes")
+    private MultipleStringSelect2 resourceScopeSelect;
+
+    @FindBy(id = "s2id_resources")
+    private ResourceSelect resourceSelect;
+
+    public void populate(ScopePermissionRepresentation expected) {
         setInputValue(name, expected.getName());
         setInputValue(description, expected.getDescription());
         decisionStrategy.selectByValue(expected.getDecisionStrategy().name());
 
-        resourceTypeSwitch.setOn(expected.getResourceType() != null);
+        Set<String> resources = expected.getResources();
 
-        if (expected.getResourceType() != null) {
-            setInputValue(resourceType, expected.getResourceType());
+        if (resources != null && !resources.isEmpty()) {
+            resourceSelect.update(resources);
+            resourceScopeSelect.update(expected.getScopes());
         } else {
-            resourceTypeSwitch.setOn(false);
-            resourceSelect.update(expected.getResources());
+            scopeSelect.update(expected.getScopes());
         }
 
         policySelect.update(expected.getPolicies());
@@ -81,21 +84,24 @@ public class ResourcePermissionForm extends Form {
         confirmDelete.click();
     }
 
-    public ResourcePermissionRepresentation toRepresentation() {
-        ResourcePermissionRepresentation representation = new ResourcePermissionRepresentation();
+    public ScopePermissionRepresentation toRepresentation() {
+        ScopePermissionRepresentation representation = new ScopePermissionRepresentation();
 
         representation.setName(getInputValue(name));
         representation.setDescription(getInputValue(description));
         representation.setDecisionStrategy(DecisionStrategy.valueOf(decisionStrategy.getFirstSelectedOption().getText().toUpperCase()));
         representation.setPolicies(policySelect.getSelected());
-        String inputValue = getInputValue(resourceType);
-
-        if (!"".equals(inputValue)) {
-            representation.setResourceType(inputValue);
-        }
-
         representation.setResources(resourceSelect.getSelected());
+        representation.setScopes(scopeSelect.getSelected());
+        representation.getScopes().addAll(resourceScopeSelect.getSelected());
 
         return representation;
+    }
+
+    public class ResourceSelect extends SingleStringSelect2 {
+        @Override
+        protected Function<WebElement, String> representation() {
+            return super.representation().andThen(s -> "".equals(s) || s.contains("Any resource...") ? null : s);
+        }
     }
 }

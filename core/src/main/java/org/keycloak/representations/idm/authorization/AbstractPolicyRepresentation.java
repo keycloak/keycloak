@@ -118,6 +118,10 @@ public class AbstractPolicyRepresentation {
         return scopes;
     }
 
+    public void setScopes(Set<String> scopes) {
+        this.scopes = scopes;
+    }
+
     public void addScope(String... id) {
         if (this.scopes == null) {
             this.scopes = new HashSet<>();
