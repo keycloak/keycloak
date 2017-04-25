@@ -757,6 +757,8 @@ module.controller('ResourceServerPolicyDroolsDetailCtrl', function($scope, $http
                     policy = $scope.policy;
                 }
 
+                delete policy.config;
+
                 $http.post(authUrl + '/admin/realms/'+ $route.current.params.realm + '/clients/' + client.id + '/authz/resource-server/policy/rules/provider/resolveModules'
                         , policy).success(function(data) {
                             $scope.drools.moduleNames = data;
@@ -765,6 +767,8 @@ module.controller('ResourceServerPolicyDroolsDetailCtrl', function($scope, $http
             }
 
             $scope.resolveSessions = function() {
+                delete $scope.policy.config;
+
                 $http.post(authUrl + '/admin/realms/'+ $route.current.params.realm + '/clients/' + client.id + '/authz/resource-server/policy/rules/provider/resolveSessions'
                         , $scope.policy).success(function(data) {
                             $scope.drools.moduleSessions = data;
@@ -773,17 +777,21 @@ module.controller('ResourceServerPolicyDroolsDetailCtrl', function($scope, $http
         },
 
         onInitUpdate : function(policy) {
-            policy.config.scannerPeriod = parseInt(policy.config.scannerPeriod);
+            policy.scannerPeriod = parseInt(policy.scannerPeriod);
             $scope.resolveModules(policy);
         },
 
         onUpdate : function() {
-            $scope.policy.config.resources = JSON.stringify($scope.policy.config.resources);
+            delete $scope.policy.config;
         },
 
         onInitCreate : function(newPolicy) {
-            newPolicy.config.scannerPeriod = 1;
-            newPolicy.config.scannerPeriodUnit = 'Hours';
+            newPolicy.scannerPeriod = 1;
+            newPolicy.scannerPeriodUnit = 'Hours';
+        },
+
+        onCreate : function() {
+            delete $scope.policy.config;
         }
     }, realm, client, $scope);
 });

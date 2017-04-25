@@ -35,7 +35,7 @@ import org.keycloak.representations.idm.authorization.Logic;
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-public class TimePolicyManagementTest extends AbstractPermissionManagementTest {
+public class TimePolicyManagementTest extends AbstractPolicyManagementTest {
 
     @Test
     public void testCreate() {

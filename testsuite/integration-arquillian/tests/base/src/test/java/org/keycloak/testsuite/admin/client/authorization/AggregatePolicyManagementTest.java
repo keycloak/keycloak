@@ -16,7 +16,6 @@
  */
 package org.keycloak.testsuite.admin.client.authorization;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 import java.util.Collections;
@@ -25,28 +24,28 @@ import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
 
 import org.junit.Test;
+import org.keycloak.admin.client.resource.AggregatePoliciesResource;
+import org.keycloak.admin.client.resource.AggregatePolicyResource;
 import org.keycloak.admin.client.resource.AuthorizationResource;
-import org.keycloak.admin.client.resource.JSPoliciesResource;
-import org.keycloak.admin.client.resource.JSPolicyResource;
+import org.keycloak.representations.idm.authorization.AggregatePolicyRepresentation;
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
-import org.keycloak.representations.idm.authorization.JSPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.Logic;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-public class JSPolicyManagementTest extends AbstractPolicyManagementTest {
+public class AggregatePolicyManagementTest extends AbstractPolicyManagementTest {
 
     @Test
     public void testCreate() {
         AuthorizationResource authorization = getClient().authorization();
-        JSPolicyRepresentation representation = new JSPolicyRepresentation();
+        AggregatePolicyRepresentation representation = new AggregatePolicyRepresentation();
 
-        representation.setName("JS Policy");
+        representation.setName("Aggregate Policy");
         representation.setDescription("description");
         representation.setDecisionStrategy(DecisionStrategy.CONSENSUS);
         representation.setLogic(Logic.NEGATIVE);
-        representation.setCode("$evaluation.grant();");
+        representation.addPolicy("Only Marta Policy", "Only Kolo Policy");
 
         assertCreated(authorization, representation);
     }
@@ -54,13 +53,13 @@ public class JSPolicyManagementTest extends AbstractPolicyManagementTest {
     @Test
     public void testUpdate() {
         AuthorizationResource authorization = getClient().authorization();
-        JSPolicyRepresentation representation = new JSPolicyRepresentation();
+        AggregatePolicyRepresentation representation = new AggregatePolicyRepresentation();
 
-        representation.setName("Update JS Policy");
+        representation.setName("Update Aggregate Policy");
         representation.setDescription("description");
         representation.setDecisionStrategy(DecisionStrategy.CONSENSUS);
         representation.setLogic(Logic.NEGATIVE);
-        representation.setCode("$evaluation.grant();");
+        representation.addPolicy("Only Marta Policy", "Only Kolo Policy");
 
         assertCreated(authorization, representation);
 
@@ -68,50 +67,50 @@ public class JSPolicyManagementTest extends AbstractPolicyManagementTest {
         representation.setDescription("changed");
         representation.setDecisionStrategy(DecisionStrategy.AFFIRMATIVE);
         representation.setLogic(Logic.POSITIVE);
-        representation.setCode("$evaluation.deny()");
+        representation.getPolicies().clear();
+        representation.addPolicy("Only Kolo Policy");
 
-        JSPoliciesResource policies = authorization.policies().js();
-        JSPolicyResource permission = policies.findById(representation.getId());
+        AggregatePoliciesResource policies = authorization.policies().aggregate();
+        AggregatePolicyResource policy = policies.findById(representation.getId());
 
-        permission.update(representation);
-        assertRepresentation(representation, permission);
+        policy.update(representation);
+        assertRepresentation(representation, policy);
     }
 
     @Test
     public void testDelete() {
         AuthorizationResource authorization = getClient().authorization();
-        JSPolicyRepresentation representation = new JSPolicyRepresentation();
+        AggregatePolicyRepresentation representation = new AggregatePolicyRepresentation();
 
         representation.setName("Test Delete Policy");
-        representation.setCode("$evaluation.grant()");
+        representation.addPolicy("Only Marta Policy");
 
-        JSPoliciesResource policies = authorization.policies().js();
+        AggregatePoliciesResource policies = authorization.policies().aggregate();
         Response response = policies.create(representation);
-        JSPolicyRepresentation created = response.readEntity(JSPolicyRepresentation.class);
+        AggregatePolicyRepresentation created = response.readEntity(AggregatePolicyRepresentation.class);
 
         policies.findById(created.getId()).remove();
 
-        JSPolicyResource removed = policies.findById(created.getId());
+        AggregatePolicyResource removed = policies.findById(created.getId());
 
         try {
             removed.toRepresentation();
-            fail("Permission not removed");
+            fail("Policy not removed");
         } catch (NotFoundException ignore) {
 
         }
     }
 
-    private void assertCreated(AuthorizationResource authorization, JSPolicyRepresentation representation) {
-        JSPoliciesResource permissions = authorization.policies().js();
+    private void assertCreated(AuthorizationResource authorization, AggregatePolicyRepresentation representation) {
+        AggregatePoliciesResource permissions = authorization.policies().aggregate();
         Response response = permissions.create(representation);
-        JSPolicyRepresentation created = response.readEntity(JSPolicyRepresentation.class);
-        JSPolicyResource permission = permissions.findById(created.getId());
+        AggregatePolicyRepresentation created = response.readEntity(AggregatePolicyRepresentation.class);
+        AggregatePolicyResource permission = permissions.findById(created.getId());
         assertRepresentation(representation, permission);
     }
 
-    private void assertRepresentation(JSPolicyRepresentation representation, JSPolicyResource permission) {
-        JSPolicyRepresentation actual = permission.toRepresentation();
-        assertRepresentation(representation, actual, () -> permission.resources(), () -> Collections.emptyList(), () -> permission.associatedPolicies());
-        assertEquals(representation.getCode(), actual.getCode());
+    private void assertRepresentation(AggregatePolicyRepresentation representation, AggregatePolicyResource policy) {
+        AggregatePolicyRepresentation actual = policy.toRepresentation();
+        assertRepresentation(representation, actual, () -> policy.resources(), () -> Collections.emptyList(), () -> policy.associatedPolicies());
     }
 }

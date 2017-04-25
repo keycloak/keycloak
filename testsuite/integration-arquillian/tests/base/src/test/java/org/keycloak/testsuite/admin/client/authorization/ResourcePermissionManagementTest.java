@@ -35,7 +35,7 @@ import org.keycloak.representations.idm.authorization.ResourcePermissionRepresen
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-public class ResourcePermissionManagementTest extends AbstractPermissionManagementTest {
+public class ResourcePermissionManagementTest extends AbstractPolicyManagementTest {
 
     @Test
     public void testCreateResourcePermission() {

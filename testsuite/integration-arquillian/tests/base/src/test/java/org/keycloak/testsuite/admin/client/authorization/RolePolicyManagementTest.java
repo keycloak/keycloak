@@ -24,7 +24,6 @@ import static org.junit.Assert.fail;
 import java.util.Collections;
 import java.util.stream.Collectors;
 
-import javax.management.relation.Role;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
 
@@ -47,7 +46,7 @@ import org.keycloak.testsuite.util.RolesBuilder;
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-public class RolePolicyManagementTest extends AbstractPermissionManagementTest {
+public class RolePolicyManagementTest extends AbstractPolicyManagementTest {
 
     @Override
     protected RealmBuilder createTestRealm() {

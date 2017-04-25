@@ -80,4 +80,10 @@ public interface PoliciesResource {
 
     @Path("time")
     TimePoliciesResource time();
+
+    @Path("aggregate")
+    AggregatePoliciesResource aggregate();
+
+    @Path("rules")
+    RulePoliciesResource rule();
 }
