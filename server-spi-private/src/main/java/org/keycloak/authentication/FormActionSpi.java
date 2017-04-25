@@ -28,7 +28,7 @@ public class FormActionSpi implements Spi {
 
     @Override
     public boolean isInternal() {
-        return false;
+        return true;
     }
 
     @Override
