@@ -111,6 +111,7 @@ Currently a very basic logic for path matching is supported. Examples of valid p
 **** Sub-paths: `/path/*`
 **** Path parameters: /resource/{id}
 **** Exact match: /resource
+**** Patterns: /{version}/resource, /api/{version}/resource, /api/{version}/resource/*
 +
 *** *methods*
 The HTTP methods (for example, GET, POST, PATCH) to protect and how they are associated with the scopes for a given resource in the server.
